@@ -1,0 +1,79 @@
+/* ===== infographic, real life and why boxes (shared by every topic page) ===== */
+.xi-sub{margin:2px 0 0; color:var(--ink2); font-size:13.5px; font-weight:600}
+.xi{position:relative}
+.xi-head{display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:12px}
+.xi-head>div{flex:1; min-width:200px}
+.xi-head h3{margin:0}
+.xi-play{border:0; border-radius:12px; padding:9px 16px; font-weight:800; cursor:pointer; background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#fff; box-shadow:var(--shadow); font-family:inherit; font-size:14px; transition:transform .2s}
+.xi-play:hover{transform:translateY(-2px) rotate(-1deg)}
+.xi-strip{display:flex; align-items:stretch; gap:6px}
+.xi-arrow{align-self:center; flex:none; font-size:20px; color:var(--accent); animation:xi-nudge 1.4s ease-in-out infinite}
+@keyframes xi-nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+.xi-panel{flex:1 1 0; min-width:0; perspective:900px; border:0; padding:0; background:none; cursor:pointer; font:inherit; color:inherit; text-align:left; transition-delay:calc(var(--i) * 90ms)}
+.xi-inner{position:relative; display:grid; height:100%; transition:transform .6s cubic-bezier(.3,1.3,.5,1); transform-style:preserve-3d}
+.xi-panel.flip .xi-inner{transform:rotateY(180deg)}
+.xi-front,.xi-back{grid-area:1/1; display:flex; flex-direction:column; gap:6px; padding:14px 12px 10px; border-radius:18px; border:2px solid var(--line); background:var(--surface); backface-visibility:hidden; -webkit-backface-visibility:hidden; box-shadow:var(--shadow); position:relative; min-height:100%}
+.xi-front{background:linear-gradient(180deg, color-mix(in srgb, var(--accent2) 10%, var(--surface)), var(--surface) 60%)}
+.xi-back{transform:rotateY(180deg); background:linear-gradient(160deg, var(--accent-soft), var(--surface)); border-color:color-mix(in srgb, var(--accent) 40%, var(--line))}
+.xi-panel:hover .xi-front{border-color:var(--accent)}
+.xi-panel.lit .xi-front{border-color:var(--yellow); box-shadow:0 0 0 4px color-mix(in srgb, var(--yellow) 40%, transparent), var(--shadow-pop); transform:translateY(-4px)}
+.xi-num{position:absolute; top:-10px; left:-6px; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background:var(--ink); color:var(--surface); font-weight:800; font-size:14px; font-family:var(--font-head); box-shadow:var(--shadow)}
+.xi-front b,.xi-back b{font-family:var(--font-head); font-size:17px; line-height:1.15}
+.xi-cap{font-size:13.5px; color:var(--ink2); font-weight:600; line-height:1.45}
+.xi-cap code{font-family:var(--font-mono); font-size:12px; background:var(--surface2); border-radius:5px; padding:0 4px; color:var(--ink)}
+.xi-flip{margin-top:auto; font-size:11px; font-weight:800; color:var(--accent-deep); text-transform:uppercase; letter-spacing:.05em; opacity:.75}
+.xi-svg{width:100%; height:auto; display:block; margin:2px 0}
+.xi-svg text{font-family:var(--font-mono); font-weight:700; fill:var(--box-ink)}
+.xi-svg .xi-emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.xi-svg .xi-txt{fill:var(--ink)} .xi-svg .xi-txt.b{fill:var(--accent-deep)}
+.xi-svg .xi-ix{font-size:9px; fill:var(--ink2)}
+.xi-svg .xi-ptr{font-size:10px; fill:var(--accent-deep)}
+.xi-svg .xi-edge{stroke:var(--box-line); stroke-width:2}
+.xi-cell rect{fill:var(--box); stroke:var(--box-line); stroke-width:1.5}
+.xi-bar rect{fill:var(--accent2); opacity:.85}
+.xi-cell.hl rect{fill:var(--hl); stroke:var(--hl-line)} .xi-cell.ok rect{fill:var(--ok); stroke:var(--ok-line)} .xi-cell.bad rect{fill:var(--bad); stroke:var(--bad-line)}
+.xi-cell.sel rect{fill:var(--sel); stroke:var(--sel-line)} .xi-cell.mv rect{fill:var(--mv); stroke:var(--mv-line)} .xi-cell.piv rect{fill:var(--piv); stroke:var(--piv-line)}
+.xi-cell.win rect{fill:var(--win); stroke:var(--win-line)} .xi-cell.dim rect{fill:var(--dimbox); stroke:var(--line)} .xi-cell.dim text{fill:var(--dimink)}
+.xi-bar.hl rect{fill:var(--yellow)} .xi-bar.ok rect{fill:var(--green)} .xi-bar.bad rect{fill:var(--red)} .xi-bar.mv rect{fill:var(--purple)} .xi-bar.piv rect{fill:var(--orange)} .xi-bar.dim rect{fill:var(--dimink); opacity:.4}
+.xi-panel.poke .xi-cell,.xi-panel.poke .xi-bar,.xi-panel.poke .xi-emo{animation:xi-hop .5s cubic-bezier(.3,1.8,.5,1) both; animation-delay:var(--d,0ms); transform-box:fill-box; transform-origin:center bottom}
+@keyframes xi-hop{0%{transform:translateY(0)}40%{transform:translateY(-7px) scale(1.06)}100%{transform:none}}
+.xi-note{display:flex; gap:10px; align-items:flex-start; margin-top:14px; padding:10px 14px; border-radius:14px; background:color-mix(in srgb, var(--yellow) 22%, var(--surface)); border:1.5px dashed color-mix(in srgb, var(--yellow) 70%, var(--line)); font-size:14.5px; font-weight:600; transform:rotate(-.4deg)}
+.xi-note span{font-size:20px}
+
+.xr h3{margin:0}
+.xr-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:12px}
+.xr-card{position:relative; padding:14px 14px 12px; border-radius:18px; background:var(--surface); border:2px solid var(--line); box-shadow:var(--shadow); transition:transform .3s cubic-bezier(.2,1.6,.4,1), border-color .2s, opacity .6s; transition-delay:0s, 0s, calc(var(--i) * 100ms)}
+.xr-card:nth-child(3n+1){--rc:var(--accent)} .xr-card:nth-child(3n+2){--rc:var(--pink)} .xr-card:nth-child(3n){--rc:var(--green)}
+.xr-card::before{content:""; position:absolute; inset:0 0 auto 0; height:6px; border-radius:18px 18px 0 0; background:var(--rc)}
+.xr-card:hover{transform:translateY(-5px) rotate(-1deg); border-color:var(--rc)}
+.xr-em{display:inline-block; font-size:38px; line-height:1; transition:transform .4s cubic-bezier(.2,1.8,.4,1)}
+.xr-card:hover .xr-em{transform:scale(1.2) rotate(-12deg)}
+.xr-card b{display:block; font-family:var(--font-head); font-size:18px; margin-top:6px}
+.xr-card p{margin:4px 0 0; font-size:14px; color:var(--ink2); font-weight:600; line-height:1.5}
+
+.xw{margin-top:12px; border:2px solid color-mix(in srgb, var(--green) 45%, var(--line)); border-radius:16px; background:color-mix(in srgb, var(--green) 7%, var(--surface)); overflow:hidden}
+.xw-h{padding:9px 14px; font-weight:800; font-family:var(--font-head); font-size:17px; border-bottom:1px solid var(--line)}
+.xw-tw{overflow-x:auto}
+.xw-t{width:100%; border-collapse:collapse; font-size:14px}
+.xw-t th{text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink2); padding:8px 12px; border-bottom:1px solid var(--line)}
+.xw-t td{padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+.xw-t tr:last-child td{border-bottom:0}
+.xw-n{font-size:12px; color:var(--ink2); font-weight:600}
+.xw-o{font-family:var(--font-mono); font-weight:700; white-space:nowrap}
+.xw-dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:1px}
+.xw-dot.n{background:var(--red)} .xw-dot.o{background:var(--green)}
+.xw-r{padding:10px 14px 12px; font-size:14.5px; line-height:1.6}
+.xw-r p{margin:.35em 0}
+.xw-r ul,.xw-r ol{margin:.3em 0; padding-left:1.25em}
+.xw-r code{font-family:var(--font-mono); font-size:.88em; background:var(--surface2); border-radius:5px; padding:0 4px}
+
+@media (max-width:760px){
+  .xi-strip{flex-direction:column}
+  .xi-arrow{transform:rotate(90deg); animation:none}
+  .xi-panel{flex:none}
+}
+@media (prefers-reduced-motion: reduce){
+  .xi-inner{transition:none}
+  .xi-panel.poke .xi-cell,.xi-panel.poke .xi-bar,.xi-panel.poke .xi-emo,.xi-arrow{animation:none}
+}
+.xi-head h3,.xr h3{font-family:var(--font-head); font-weight:800; font-size:20px; line-height:1.2}

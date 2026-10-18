@@ -1,0 +1,69 @@
+/* ===== Shared platform theme: white with light blue. Used by the portal and every topic page. ===== */
+:root{
+  --bg:#f3f8ff; --surface:#ffffff; --surface2:#eef5ff; --ink:#0f2747; --ink2:#4d6383; --line:#d6e5f6;
+  --panel:var(--surface); --panel2:var(--surface2);
+  --accent:#2b7de9; --accent-ink:#ffffff; --accent-soft:#e2efff; --accent2:#4fc0f0; --accent-deep:#1a5fc0;
+  --blue:#2b7de9; --green:#1fa774; --red:#e9485a; --yellow:#ffc928; --purple:#8467f0; --teal:#12b0a8; --orange:#ff9238; --pink:#f25da0;
+  --easy:#138a5a; --easy-soft:#dbf6ea; --med:#b2610b; --med-soft:#fff0d6; --hard:#c2214a; --hard-soft:#ffe3ea; --exp:#6b3fd6; --exp-soft:#eee6ff;
+  --box:#ffffff; --box-ink:#0f2747; --box-line:#b7cde8; --dimbox:#edf2f9; --dimink:#9aabc2;
+  --hl:#ffe27a; --hl-line:#e0a300; --ok:#a5ecc8; --ok-line:#1fa774; --bad:#ffc1c9; --bad-line:#e9485a;
+  --sel:#bcd6ff; --sel-line:#2b7de9; --mv:#e2d4ff; --mv-line:#8467f0; --piv:#ffd29e; --piv-line:#ff9238;
+  --win:#bdf0ec; --win-line:#12b0a8;
+  --g0:#ffd8a8; --g1:#c6f3c0; --g2:#b5ecff; --g3:#d3c8ff; --g4:#ffcdeb; --g5:#fff3b0;
+  --code-bg:#122340; --code-ink:#e6eef9;
+  --shadow:0 1px 2px rgba(23,64,120,.06), 0 8px 24px rgba(23,64,120,.07);
+  --shadow-pop:0 2px 4px rgba(23,64,120,.08), 0 16px 40px rgba(23,64,120,.14);
+  --radius:18px;
+  --font:"Nunito",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-head:"Baloo 2","Nunito",system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a1424; --surface:#0f1d33; --surface2:#152844; --ink:#e8f1fd; --ink2:#9db3d2; --line:#22395b;
+    --accent:#62a6ff; --accent-ink:#06101f; --accent-soft:#16305a; --accent2:#5fd0ff; --accent-deep:#9cc6ff;
+    --easy:#5fe0a6; --easy-soft:#0f3a2b; --med:#ffc46b; --med-soft:#3d2a0c; --hard:#ff7f9b; --hard-soft:#45142a; --exp:#c3a8ff; --exp-soft:#2c1f55;
+    --box:#16294a; --box-ink:#e8f1fd; --box-line:#33507a; --dimbox:#0f1d33; --dimink:#4f6487;
+    --hl:#7a6414; --ok:#165c40; --bad:#6f2030; --sel:#22468a; --mv:#47307e; --piv:#704010; --win:#0f5754;
+    --g0:#6a4a22; --g1:#2c5a2c; --g2:#1c5468; --g3:#3e3878; --g4:#652c5c; --g5:#5c5520;
+    --code-bg:#07101f; --code-ink:#e6eef9;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.3);
+    --shadow-pop:0 2px 4px rgba(0,0,0,.4), 0 16px 40px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a1424; --surface:#0f1d33; --surface2:#152844; --ink:#e8f1fd; --ink2:#9db3d2; --line:#22395b;
+  --accent:#62a6ff; --accent-ink:#06101f; --accent-soft:#16305a; --accent2:#5fd0ff; --accent-deep:#9cc6ff;
+  --easy:#5fe0a6; --easy-soft:#0f3a2b; --med:#ffc46b; --med-soft:#3d2a0c; --hard:#ff7f9b; --hard-soft:#45142a; --exp:#c3a8ff; --exp-soft:#2c1f55;
+  --box:#16294a; --box-ink:#e8f1fd; --box-line:#33507a; --dimbox:#0f1d33; --dimink:#4f6487;
+  --hl:#7a6414; --ok:#165c40; --bad:#6f2030; --sel:#22468a; --mv:#47307e; --piv:#704010; --win:#0f5754;
+  --g0:#6a4a22; --g1:#2c5a2c; --g2:#1c5468; --g3:#3e3878; --g4:#652c5c; --g5:#5c5520;
+  --code-bg:#07101f; --code-ink:#e6eef9;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.3);
+  --shadow-pop:0 2px 4px rgba(0,0,0,.4), 0 16px 40px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
+
+/* ===== shared fun effects ===== */
+.fun-progress{position:fixed; top:0; left:0; height:4px; width:0; z-index:9999; background:linear-gradient(90deg,var(--accent),var(--accent2),var(--pink),var(--yellow)); border-radius:0 4px 4px 0; transition:width .1s linear; pointer-events:none}
+.reveal{opacity:0; transform:translateY(26px) scale(.985); transition:opacity .6s ease, transform .7s cubic-bezier(.2,1.4,.4,1)}
+.reveal.in{opacity:1; transform:none}
+.fun-top{position:fixed; right:18px; bottom:18px; z-index:9000; width:48px; height:48px; border-radius:50%; border:0; background:var(--accent); color:var(--accent-ink); font-size:22px; cursor:pointer; box-shadow:var(--shadow-pop); opacity:0; transform:translateY(20px) scale(.8); pointer-events:none; transition:opacity .3s, transform .35s cubic-bezier(.2,1.6,.4,1)}
+.fun-top.show{opacity:1; transform:none; pointer-events:auto}
+.fun-top:hover{transform:translateY(-4px) rotate(-8deg)}
+.fun-top.launch{animation:fun-launch .7s ease-in forwards}
+@keyframes fun-launch{to{transform:translateY(-110vh) rotate(-12deg); opacity:0}}
+.fun-confetti{position:fixed; inset:0; pointer-events:none; z-index:10000}
+.wiggle:hover{animation:fun-wiggle .5s ease}
+@keyframes fun-wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+@keyframes fun-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes fun-pop{0%{transform:scale(.6); opacity:0}70%{transform:scale(1.08); opacity:1}100%{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){
+  .reveal{opacity:1; transform:none; transition:none}
+  .wiggle:hover,.fun-top.launch{animation:none}
+  *{scroll-behavior:auto !important}
+}
+html.embedded .fun-top{display:none}
+@media print{ .reveal{opacity:1 !important; transform:none !important} .fun-progress,.fun-top{display:none !important} }

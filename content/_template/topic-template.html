@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- 1. Change the title -->
+<title>My New Topic</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<!-- Shared theme. These paths work when this file sits in content/<subject>/ -->
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); font-size:16.5px; line-height:1.65}
+.wrap{max-width:980px; margin:0 auto; padding:26px 20px 80px}
+h1,h2,h3{font-family:var(--font-head); line-height:1.15; margin:0}
+h1{font-size:clamp(32px,5vw,44px)}
+h2{font-size:26px; margin-bottom:8px}
+.crumb{color:var(--ink2); font-weight:800; font-size:14px}
+.hero{display:flex; align-items:center; gap:14px; margin:6px 0 18px}
+.hero .em{font-size:48px; animation:fun-float 3.5s ease-in-out infinite}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:20px 22px; margin-top:16px; box-shadow:var(--shadow); transition:box-shadow .3s}
+.card:hover{box-shadow:var(--shadow-pop)}
+.kid{background:linear-gradient(180deg,color-mix(in srgb, var(--accent2) 16%, transparent),transparent 70%), var(--surface)}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px}
+.toc{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+.toc a{padding:5px 12px; border-radius:999px; background:var(--surface); border:1.5px solid var(--line); text-decoration:none; color:var(--accent-deep); font-weight:800; font-size:14px}
+.toc a:hover{border-color:var(--accent)}
+.eq{display:block; margin:10px 0; padding:10px 14px; border-radius:12px; background:var(--surface2); border:1px dashed var(--box-line); font-family:var(--font-mono); text-align:center; overflow-x:auto}
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:14px; padding:14px 16px; overflow:auto; font-family:var(--font-mono); font-size:13.5px; line-height:1.55}
+code{font-family:var(--font-mono); font-size:.9em}
+section{scroll-margin-top:20px}
+html.embedded .wrap{padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 2. Change the breadcrumb, emoji and heading -->
+  <div class="crumb">Subject name · Module name</div>
+  <div class="hero"><span class="em">🔤</span><h1>My New Topic</h1></div>
+
+  <!-- Quick links. Each href="#id" matches a section id below. Use the same ids in data/catalog.js sections so search can jump here. -->
+  <nav class="toc">
+    <a href="#idea">The idea</a>
+    <a href="#example">Worked example</a>
+    <a href="#code">Code</a>
+  </nav>
+
+  <div class="grid2">
+    <section class="card kid reveal" id="idea">
+      <h2>Story time</h2>
+      <p>Explain the idea as if to a curious 10 year old. One short paragraph is plenty.</p>
+      <span class="eq">answer = something + clever</span>
+    </section>
+    <section class="card reveal">
+      <h2>Grown-up notes</h2>
+      <ul>
+        <li>The precise definition.</li>
+        <li>Time and space complexity.</li>
+        <li>Common mistakes and edge cases.</li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- The comic infographic and the real life cards are drawn from the data at the bottom of this file -->
+  <section class="card reveal" id="infoCard"></section>
+  <section class="card reveal" id="realCard"></section>
+
+  <section class="card reveal" id="example">
+    <h2>Worked example</h2>
+    <p>Walk through one small input step by step.</p>
+  </section>
+
+  <section class="card reveal" id="code">
+    <h2>Code</h2>
+<pre><code>def solve(a):
+    # your solution here
+    return a</code></pre>
+  </section>
+</div>
+
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script>
+/* 3. Edit this data. Scene rows: ['e', 'emoji text'], ['t', 'formula'], ['c', [values], {hl: {index: 'hl'|'ok'|'bad'|'sel'|'mv'|'piv'|'win'|'dim'}, p: {index: 'label'}}],
+      ['b', [bar heights]], ['g', [[row], [row]]], ['tree', [['root'], ['a', 'b']]] */
+const PAGE = {
+  info: {
+    title: 'The idea in three pictures',
+    panels: [
+      { s: [['e', '🍎🍌🍇'], ['c', [3, 1, 4], { hl: { 1: 'hl' } }]], h: 'Step one', t: 'What happens first.', more: 'A deeper explanation shown when the panel is flipped.' },
+      { s: [['t', 'x = x + 1', { b: 1 }]], h: 'Step two', t: 'What changes next.', more: 'Why this step matters.' },
+      { s: [['c', [1, 3, 4], { hl: { 0: 'ok', 1: 'ok', 2: 'ok' } }]], h: 'Step three', t: 'The result.', more: 'How to remember it.' }
+    ],
+    remember: 'One sentence the learner should never forget.'
+  },
+  real: [
+    ['🍕', 'Everyday example', 'Where this idea hides in normal life.'],
+    ['🚌', 'Another example', 'Keep it short and a little funny.'],
+    ['📱', 'One more', 'Three examples fit nicely in a row.']
+  ]
+};
+document.getElementById('infoCard').innerHTML = XTRA.infoHtml(PAGE.info);
+document.getElementById('realCard').innerHTML = XTRA.realHtml(PAGE.real);
+XTRA.wire(document);
+FUN.initScroll();
+FUN.observe();
+</script>
+</body>
+</html>

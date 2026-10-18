@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learning Hub</title>
+<meta name="description" content="Free, fun and deep learning notes with animations, line by line code runs and practice problems.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+<link rel="stylesheet" href="assets/portal.css">
+</head>
+<body>
+<header class="hdr" id="hdr">
+  <span id="brandSlot"></span>
+  <span class="grow"></span>
+  <button class="ibtn searchpill" data-search title="Search everything (Ctrl+K)">🔎 <span class="lbl">Search everything</span><kbd class="k">Ctrl K</kbd></button>
+  <span id="themeSlot"></span>
+</header>
+
+<section class="hero">
+  <div class="doodles" id="doodles" aria-hidden="true"></div>
+  <div class="hero-in">
+    <div>
+      <span class="hello"><i></i><span id="hello">Fresh notes are live</span></span>
+      <h1 id="headline"></h1>
+      <p class="lede" id="lede"></p>
+      <div class="bigsearch" data-search role="button" tabindex="0" aria-label="Open search">
+        <span>🔎</span><span class="ph" id="ph">Search any topic</span><span class="ibtn primary">Search</span>
+      </div>
+      <div class="herobtns">
+        <a class="ibtn" href="#subjects">📚 Browse subjects</a>
+        <button class="ibtn" id="surprise">🎲 Surprise me</button>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="mascot-wrap">
+      <div class="bubble" id="bubble" aria-live="polite"></div>
+      <div id="mascotSlot"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal" id="subjects">
+  <div class="sechead">
+    <div><h2>Pick your adventure</h2><p>Every card opens its subject in a new tab.</p></div>
+    <span class="grow"></span>
+    <div class="filters" id="filters"></div>
+  </div>
+  <div class="subjects" id="subjectGrid"></div>
+</section>
+
+<section class="section reveal" id="newSec">
+  <div class="sechead"><div><h2>Freshly baked</h2><p>The newest topics, straight out of the oven.</p></div></div>
+  <div class="newlist" id="newList"></div>
+</section>
+
+<section class="section reveal">
+  <div class="sechead"><div><h2>How each topic teaches</h2><p>Same friendly recipe everywhere.</p></div></div>
+  <div class="howto">
+    <div class="step wiggle"><span class="n">1</span><h4>See it move</h4><p>Animations with play, pause and your own inputs show the idea step by step.</p></div>
+    <div class="step wiggle"><span class="n">2</span><h4>Laugh and relate</h4><p>Everyday examples and comic infographics connect each concept to real life.</p></div>
+    <div class="step wiggle"><span class="n">3</span><h4>Run the code</h4><p>Watch Java, JavaScript and Python run line by line with live variables and output.</p></div>
+    <div class="step wiggle"><span class="n">4</span><h4>Practice</h4><p>Problems from easy to expert, each with a brute force and an optimized solution.</p></div>
+  </div>
+</section>
+
+<div class="joke reveal"><div class="jokebox"><span class="em">😂</span><div><b>Joke of the day</b><span id="jotd"></span></div></div></div>
+<footer class="footer"><span id="foot"></span><span>Press <b>/</b> or <b>Ctrl K</b> anywhere to search.</span></footer>
+
+<script src="assets/fun.js"></script>
+<script src="assets/portal.js"></script>
+<script src="assets/home.js"></script>
+</body>
+</html>
