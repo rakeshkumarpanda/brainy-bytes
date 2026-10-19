@@ -1,0 +1,119 @@
+/* ===== Quiz, calculation practice and listen mode (shared by every topic page) ===== */
+.lq{position:relative}
+.lq-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px}
+.lq-ic{font-size:34px; line-height:1; animation:fun-float 3.4s ease-in-out infinite}
+.lq-ht{flex:1; min-width:200px}
+.lq-ht h3{margin:0; font-family:var(--font-head); font-weight:800; font-size:21px; line-height:1.2}
+.lq-sub{margin:2px 0 0; color:var(--ink2); font-size:13.5px; font-weight:600}
+.lq-score{display:flex; align-items:baseline; gap:2px; padding:8px 14px; border-radius:14px; background:var(--accent-soft); color:var(--accent-deep); font-family:var(--font-head); font-weight:800}
+.lq-score b{font-size:24px} .lq-score span{font-size:16px} .lq-score small{font-family:var(--font); font-size:12px; margin-left:6px; font-weight:800}
+.lq-score.bump,.lc-show.bump{animation:lq-bump .45s cubic-bezier(.3,1.8,.5,1)}
+@keyframes lq-bump{40%{transform:scale(1.15)}}
+.lq-tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+.lq-tab{--lc:var(--accent); display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px; border:2px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; font-weight:800; font-size:14px; cursor:pointer; transition:transform .2s, border-color .2s, background .2s}
+.lq-tab.lv-easy{--lc:var(--easy); --ls:var(--easy-soft)} .lq-tab.lv-med{--lc:var(--med); --ls:var(--med-soft)} .lq-tab.lv-hard{--lc:var(--hard); --ls:var(--hard-soft)} .lq-tab.lv-exp{--lc:var(--exp); --ls:var(--exp-soft)}
+.lq-tab:hover{transform:translateY(-2px); border-color:var(--lc)}
+.lq-tab.on{background:var(--ls); border-color:var(--lc); color:var(--lc)}
+.lq-tct{font-size:12px; padding:1px 8px; border-radius:999px; background:var(--surface2); color:var(--ink2)}
+.lq-tab.done .lq-tct{background:var(--lc); color:#fff}
+.lq-tab.done .lq-tct::after{content:" ⭐"}
+.lq-item,.lc-item{padding:14px 16px; border-radius:16px; border:2px solid var(--line); background:var(--surface); margin-bottom:12px; transition:border-color .3s, box-shadow .3s}
+.lq-item.right,.lc-item.right{border-color:color-mix(in srgb, var(--green) 60%, var(--line)); box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 14%, transparent)}
+.lq-item.wrong{border-color:color-mix(in srgb, var(--red) 50%, var(--line))}
+.lq-q{display:flex; gap:10px; align-items:flex-start; font-weight:700; line-height:1.55}
+.lq-q>div{flex:1; min-width:0}
+.lq-q code,.lq-ot code,.lq-why code,.lq-hint code,.lc-steps code{font-family:var(--font-mono); font-size:.88em; background:var(--surface2); border-radius:5px; padding:0 4px}
+.lq-n{flex:none; display:grid; place-items:center; min-width:34px; height:26px; padding:0 6px; border-radius:8px; font-family:var(--font-head); font-size:14px; color:#fff; background:var(--accent)}
+.lq-n.lv-easy{background:var(--easy)} .lq-n.lv-med{background:var(--med)} .lq-n.lv-hard{background:var(--hard)} .lq-n.lv-exp{background:var(--exp)}
+.lq-code{margin:10px 0 0; background:var(--code-bg); color:var(--code-ink); border-radius:12px; padding:12px 14px; overflow:auto; font-family:var(--font-mono); font-size:13px; line-height:1.55; white-space:pre}
+.lq-code .k{color:#ff8fb1} .lq-code .s{color:#a5e8a0} .lq-code .n{color:#ffcf70} .lq-code .c{color:#8aa0c2; font-style:italic} .lq-code .t{color:#7fd3ff} .lq-code .a{color:#d4b2ff}
+.lq-opts{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; margin-top:12px}
+.lq-opt{display:flex; align-items:flex-start; gap:10px; text-align:left; padding:10px 12px; border-radius:12px; border:2px solid var(--line); background:var(--surface2); color:var(--ink); font:inherit; font-size:14.5px; font-weight:600; cursor:pointer; transition:transform .15s, border-color .2s, background .2s}
+.lq-opt:hover:not(:disabled){transform:translateY(-2px); border-color:var(--accent)}
+.lq-opt:disabled{cursor:default}
+.lq-key{flex:none; display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--surface); border:1.5px solid var(--box-line); font-weight:800; font-size:12.5px}
+.lq-ot{flex:1; min-width:0; overflow-wrap:anywhere}
+.lq-opt.ok{border-color:var(--ok-line); background:var(--ok)} .lq-opt.ok .lq-key{background:var(--ok-line); color:#fff; border-color:var(--ok-line)}
+.lq-opt.bad{border-color:var(--bad-line); background:var(--bad); animation:lq-shake .4s} .lq-opt.bad .lq-key{background:var(--bad-line); color:#fff; border-color:var(--bad-line)}
+@keyframes lq-shake{20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+.lq-tools{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+.lq-hintbtn,.lc-show,.lq-reset{border:1.5px dashed var(--box-line); background:transparent; color:var(--accent-deep); font:inherit; font-size:13.5px; font-weight:800; padding:5px 12px; border-radius:999px; cursor:pointer}
+.lq-hintbtn:hover,.lc-show:hover,.lq-reset:hover,.lq-hintbtn.on,.lc-show.on{background:var(--accent-soft); border-style:solid}
+.lq-hint{margin-top:8px; padding:10px 12px; border-radius:12px; background:color-mix(in srgb, var(--yellow) 20%, var(--surface)); border:1.5px dashed color-mix(in srgb, var(--yellow) 70%, var(--line)); font-size:14.5px; font-weight:600}
+.lq-hint::before{content:"💡 "}
+.lq-why{margin-top:10px; padding:10px 14px; border-radius:12px; background:var(--surface2); border-left:5px solid var(--accent); font-size:14.5px; line-height:1.6; animation:fun-pop .4s ease}
+.lq-item.right .lq-why{border-left-color:var(--green)} .lq-item.wrong .lq-why{border-left-color:var(--red)}
+.lq-verdict{margin-bottom:4px}
+.lq-foot{display:flex; justify-content:flex-end}
+.lc-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:12px}
+.lc-in{flex:1; min-width:150px; max-width:340px; padding:10px 12px; border-radius:12px; border:2px solid var(--line); background:var(--surface2); color:var(--ink); font-family:var(--font-mono); font-size:15px; font-weight:700}
+.lc-in:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.lc-unit{font-weight:800; color:var(--ink2)}
+.lc-check{border:0; border-radius:12px; padding:10px 18px; font:inherit; font-weight:800; cursor:pointer; background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#fff; box-shadow:var(--shadow)}
+.lc-check:hover:not(:disabled){transform:translateY(-2px)}
+.lc-check:disabled{opacity:.55; cursor:default}
+.lc-fb{min-height:0; margin-top:6px; font-size:14.5px; font-weight:600}
+.lc-yes{color:var(--easy)} .lc-no{color:var(--hard)} .lc-meh{color:var(--med)}
+.lc-item.wrong .lc-in{border-color:color-mix(in srgb, var(--red) 55%, var(--line)); animation:lq-shake .4s}
+.lc-work{margin-top:10px; padding:12px 14px; border-radius:12px; background:var(--surface2); border-left:5px solid var(--green); animation:fun-pop .4s ease}
+.lc-ans{font-weight:700; margin-bottom:6px} .lc-ans b{font-family:var(--font-mono); color:var(--easy); font-size:1.05em}
+.lc-steps{margin:0; padding-left:1.4em; line-height:1.7; font-size:14.5px}
+.lc-steps li{margin:4px 0}
+.lc-steps li::marker{font-weight:800; color:var(--accent-deep)}
+.eq{display:block; margin:6px 0; padding:8px 12px; border-radius:10px; background:var(--surface); border:1px dashed var(--box-line); font-family:"Cambria Math","STIX Two Math","Latin Modern Math",var(--font-mono); font-size:15.5px; text-align:center; overflow-x:auto; white-space:nowrap; letter-spacing:.01em}
+.fr{display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; margin:0 3px; line-height:1.15}
+.fr>i{font-style:normal; padding:0 4px} .fr>i:first-child{border-bottom:1.5px solid currentColor}
+.mx{font-family:"Cambria Math","STIX Two Math",var(--font-mono); white-space:nowrap}
+
+/* ----- listen mode ----- */
+.vx-fab{position:fixed; left:18px; bottom:18px; z-index:9001; display:flex; align-items:center; gap:8px; padding:10px 16px 10px 12px; border:0; border-radius:999px; background:linear-gradient(135deg,var(--pink),var(--purple)); color:#fff; font:inherit; font-weight:800; font-size:15px; cursor:pointer; box-shadow:var(--shadow-pop); transition:transform .3s cubic-bezier(.2,1.6,.4,1)}
+.vx-fab:hover{transform:translateY(-3px) rotate(-2deg)}
+.vx-fab.open{transform:scale(.9); opacity:.85}
+.vx-fem{font-size:20px}
+.vx-fab.talking .vx-fem{animation:vx-bob .6s ease-in-out infinite}
+@keyframes vx-bob{50%{transform:translateY(-3px) rotate(-8deg)}}
+.vx-panel{position:fixed; left:18px; bottom:76px; z-index:9002; width:min(380px, calc(100vw - 32px)); max-height:calc(100vh - 100px); overflow:auto; padding:14px; border-radius:22px; background:var(--surface); border:2px solid color-mix(in srgb, var(--pink) 45%, var(--line)); box-shadow:var(--shadow-pop); animation:fun-pop .35s ease; font-size:14.5px}
+.vx-top{display:flex; align-items:center; gap:10px}
+.vx-face{width:48px; height:48px; flex:none; border-radius:50%; background:var(--accent-soft); display:grid; place-items:center}
+.vx-face svg{width:44px; height:44px}
+.vx-panel.talking .vx-mouth{animation:vx-talk .28s ease-in-out infinite alternate; transform-origin:24px 32px}
+@keyframes vx-talk{to{transform:scaleY(2.2)}}
+.vx-tt{flex:1; min-width:0; display:flex; flex-direction:column}
+.vx-tt b{font-family:var(--font-head); font-size:18px; line-height:1.15}
+.vx-sub{color:var(--ink2); font-size:12.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.vx-x{border:0; background:var(--surface2); color:var(--ink); width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:14px}
+.vx-langs{display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 10px}
+.vx-langs button{padding:6px 11px; border-radius:999px; border:1.5px solid var(--line); background:var(--surface2); color:var(--ink); font:inherit; font-weight:800; font-size:13.5px; cursor:pointer}
+.vx-langs button.on{background:var(--pink); border-color:var(--pink); color:#fff}
+.vx-ctrl{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.vx-b{width:40px; height:40px; border-radius:50%; border:0; background:var(--surface2); color:var(--ink); font-size:16px; cursor:pointer; transition:transform .15s}
+.vx-b:hover{transform:scale(1.1)}
+.vx-play{width:48px; height:48px; font-size:19px; background:linear-gradient(135deg,var(--pink),var(--purple)); color:#fff; box-shadow:var(--shadow)}
+.vx-rate{display:flex; align-items:center; gap:4px; margin-left:auto; font-size:15px}
+.vx-rate input{width:86px; accent-color:var(--pink)}
+.vx-where{display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; margin:10px 0 4px; font-size:12.5px; color:var(--ink2); font-weight:800}
+.vx-where b{color:var(--ink); font-size:13.5px}
+.vx-cap{max-height:160px; overflow:auto; padding:10px 12px; border-radius:14px; background:var(--surface2); line-height:1.75; font-size:15px}
+.vx-s{transition:background .25s, color .25s; border-radius:6px}
+.vx-s.now{background:color-mix(in srgb, var(--pink) 25%, transparent); color:var(--ink); font-weight:700}
+.vx-s.said{color:var(--ink2)}
+.vx-empty{color:var(--ink2); font-style:italic}
+.vx-more{margin-top:10px}
+.vx-more summary{cursor:pointer; font-weight:800; color:var(--accent-deep); font-size:13.5px}
+.vx-row{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:13.5px; font-weight:600}
+.vx-row select{flex:1; min-width:0; padding:6px 8px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface2); color:var(--ink); font:inherit}
+.vx-row[hidden]{display:none}
+.vx-note{margin-top:10px; font-size:12.5px; color:var(--ink2); font-weight:600; line-height:1.5}
+.vx-say{margin-left:8px; vertical-align:middle; border:1.5px solid var(--line); background:var(--surface2); border-radius:999px; width:34px; height:30px; font-size:15px; cursor:pointer; transition:transform .2s}
+.vx-say:hover{transform:scale(1.12) rotate(-6deg); border-color:var(--pink)}
+.vx-say.on{background:var(--pink); border-color:var(--pink); animation:vx-bob .6s ease-in-out infinite}
+.vx-on{box-shadow:0 0 0 3px color-mix(in srgb, var(--pink) 45%, transparent), var(--shadow-pop) !important; transition:box-shadow .4s}
+@media (max-width:560px){
+  .vx-fab{left:12px; bottom:12px; padding:9px 13px 9px 10px}
+  .vx-panel{left:8px; right:8px; bottom:68px; width:auto}
+  .lq-opts{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion: reduce){
+  .lq-ic,.vx-fab.talking .vx-fem,.vx-panel.talking .vx-mouth,.vx-say.on{animation:none}
+}
+@media print{ .vx-fab,.vx-panel,.vx-say,.lq-tools,.lc-row{display:none !important} .lq-pane[hidden],.lq-hint[hidden],.lq-why[hidden],.lc-work[hidden]{display:block !important} }

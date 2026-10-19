@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operators and Assignments · Java</title>
+<meta name="description" content="Increment and decrement, arithmetic rules, string joining, comparisons, instanceof, bitwise and short-circuit operators, casting, assignments, the ternary operator and evaluation order.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🌱 Java Basics</span><span>›</span><span>Chapter 2 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">➗</span><div><h1>Operators and Assignments</h1><p class="lead">Operators are the verbs of Java. They add, compare, join and decide. A few of them have sneaky rules, and those rules are exactly what interviewers love to ask about.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 17 min read</span><span class="chip">📚 12 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#increment-decrement"><span>➕</span>Increment and decrement</a><a href="#arithmetic"><span>🧮</span>Arithmetic operators</a><a href="#string-concat"><span>🔗</span>String concatenation</a><a href="#relational"><span>📐</span>Relational operators</a><a href="#equality"><span>⚖️</span>Equality operators</a><a href="#instanceof"><span>🔎</span>The instanceof operator</a><a href="#bitwise"><span>💡</span>Bitwise and boolean operators</a><a href="#short-circuit"><span>⚡</span>Short-circuit operators</a><a href="#type-casting"><span>🎭</span>Type casting</a><a href="#assignment"><span>📝</span>Assignment operators</a><a href="#conditional"><span>❓</span>The conditional operator</a><a href="#precedence"><span>🧭</span>new, [ ] and the evaluation order</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="increment-decrement" data-say="increment-decrement"><div class="sec-num">Part 1</div><h2><span class="sec-em">➕</span><span>Increment and decrement</span></h2>
+<p><code>++</code> adds 1 to a variable and <code>--</code> takes 1 away. Each comes in two flavours.</p>
+<div class="grid2">
+<div class="box"><h4>Pre: change first, then use</h4><code>y = ++x;</code> raises x, then gives the new value to y.</div>
+<div class="box"><h4>Post: use first, then change</h4><code>y = x++;</code> gives the old value to y, then raises x.</div>
+</div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Expression</th><th>x before</th><th>x after</th><th>y</th></tr>
+<tr><td><code>y = ++x;</code></td><td>10</td><td>11</td><td>11</td></tr>
+<tr><td><code>y = x++;</code></td><td>10</td><td>11</td><td>10</td></tr>
+<tr><td><code>y = --x;</code></td><td>10</td><td>9</td><td>9</td></tr>
+<tr><td><code>y = x--;</code></td><td>10</td><td>9</td><td>10</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">See it happen · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> x = <span class="n">10</span>;
+<span class="k">int</span> y = x++;
+<span class="t">System</span>.out.println(<span class="s">"x = "</span> + x + <span class="s">", y = "</span> + y);
+<span class="k">int</span> a = <span class="n">10</span>;
+<span class="k">int</span> b = ++a;
+<span class="t">System</span>.out.println(<span class="s">"a = "</span> + a + <span class="s">", b = "</span> + b);</pre><div class="out"><span>Output</span><pre>x = 11, y = 10
+a = 11, b = 11</pre></div></div>
+<h3>Rules</h3>
+<ol>
+<li>They work only on <b>variables</b>, never on plain values. <code>++10</code> does not compile.</li>
+<li>They cannot be nested. <code>++(++x)</code> does not compile, because the inner part produces a value, not a variable.</li>
+<li>They cannot change a <code>final</code> variable.</li>
+<li>They work on every primitive type except <code>boolean</code>, so a char or a double can be incremented too.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Not on a plain value · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> y = ++<span class="n">10</span>;</pre><div class="err"><span>❌ Compile error</span><pre>unexpected type
+required: variable
+found:    value</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">No nesting · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> x = <span class="n">4</span>;
+<span class="k">int</span> y = ++(++x);</pre><div class="err"><span>❌ Compile error</span><pre>unexpected type
+required: variable
+found:    value</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">char and double can be incremented · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">char</span> ch = <span class="s">'a'</span>;
+ch++;
+<span class="k">double</span> d = <span class="n">10.5</span>;
+d++;
+<span class="t">System</span>.out.println(ch + <span class="s">" "</span> + d);</pre><div class="out"><span>Output</span><pre>b 11.5</pre></div></div>
+<h3>b++ is not the same as b = b + 1</h3>
+<p>Any arithmetic on byte, short or char produces an int. So <code>b = b + 1</code> tries to put an int back into a byte and fails. <code>b++</code> carries a hidden cast and works.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">int result does not fit in a byte · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">byte</span> b = <span class="n">10</span>;
+b = b + <span class="n">1</span>;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: possible lossy conversion from int to byte</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">b++ hides the cast · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">byte</span> b = <span class="n">10</span>;
+b++;               <span class="c">// means b = (byte)(b + 1)</span>
+<span class="t">System</span>.out.println(b);</pre><div class="out"><span>Output</span><pre>11</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="arithmetic" data-say="arithmetic"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧮</span><span>Arithmetic operators</span></h2>
+<p>The arithmetic operators are <code>+ - * / %</code>. The type of the result follows one simple rule.</p>
+<span class="eq">result type = the biggest of (int, type of a, type of b)</span>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Operation</th><th>Result type</th></tr>
+<tr><td>byte + byte</td><td>int</td></tr>
+<tr><td>byte + short</td><td>int</td></tr>
+<tr><td>char + char</td><td>int</td></tr>
+<tr><td>int + long</td><td>long</td></tr>
+<tr><td>long + float</td><td>float</td></tr>
+<tr><td>char + double</td><td>double</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">chars turn into numbers · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="s">'a'</span> + <span class="s">'b'</span>);
+<span class="t">System</span>.out.println(<span class="s">'a'</span> + <span class="n">1</span>);
+<span class="t">System</span>.out.println((<span class="k">char</span>) (<span class="s">'a'</span> + <span class="n">1</span>));
+<span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">3</span> + <span class="s">" "</span> + <span class="n">10</span> / <span class="n">3.0</span>);</pre><div class="out"><span>Output</span><pre>195
+98
+b
+3 3.3333333333333335</pre></div></div>
+<h3>Dividing by zero</h3>
+<p>Whole numbers have no way to show infinity, so integer division by zero throws <code>ArithmeticException</code>. Floating point numbers do have special values: <code>Infinity</code>, <code>-Infinity</code> and <code>NaN</code> (not a number).</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Integer division by zero · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">0</span>);</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.ArithmeticException: / by zero</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Floating point division by zero · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">0.0</span>);
+<span class="t">System</span>.out.println(-<span class="n">10.0</span> / <span class="n">0</span>);
+<span class="t">System</span>.out.println(<span class="n">0.0</span> / <span class="n">0</span>);
+<span class="t">System</span>.out.println(<span class="n">10</span> % <span class="n">0.0</span>);</pre><div class="out"><span>Output</span><pre>Infinity
+-Infinity
+NaN
+NaN</pre></div></div>
+<div class="exam">Every comparison with <code>NaN</code> is false, even <code>NaN == NaN</code>. The only one that is true is <code>!=</code>. Use <code>Double.isNaN(x)</code> to test for it.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">NaN is not equal to itself · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">double</span> n = <span class="n">0.0</span> / <span class="n">0</span>;
+<span class="t">System</span>.out.println(n == n);
+<span class="t">System</span>.out.println(n != n);
+<span class="t">System</span>.out.println(n &gt; <span class="n">10</span> || n &lt; <span class="n">10</span>);
+<span class="t">System</span>.out.println(<span class="t">Double</span>.isNaN(n));</pre><div class="out"><span>Output</span><pre>false
+true
+false
+true</pre></div></div>
+<h3>The remainder operator %</h3>
+<p><code>a % b</code> gives what is left after dividing. The sign of the answer always follows the left side.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Signs follow the dividend · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="n">17</span> % <span class="n">5</span>);
+<span class="t">System</span>.out.println(-<span class="n">17</span> % <span class="n">5</span>);
+<span class="t">System</span>.out.println(<span class="n">17</span> % -<span class="n">5</span>);
+<span class="t">System</span>.out.println(<span class="n">5.5</span> % <span class="n">2</span>);</pre><div class="out"><span>Output</span><pre>2
+-2
+2
+1.5</pre></div></div>
+<span class="eq">a % b = a − b × (a / b), where a / b is cut towards zero</span>
+<span class="eq">−17 % 5 = −17 − 5 × (−3) = −17 + 15 = −2</span>
+<div class="warn">Integer overflow is silent. <code>Integer.MAX_VALUE + 1</code> becomes <code>Integer.MIN_VALUE</code> without any error. Use <code>Math.addExact</code> or <code>long</code> when numbers can grow large.</div>
+</section>
+
+<section class="card reveal jsec" id="string-concat" data-say="string-concat"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔗</span><span>String concatenation</span></h2>
+<p>The <code>+</code> operator is the only overloaded operator in Java. If at least one side is a <code>String</code> it joins text, otherwise it adds numbers. Java works from <b>left to right</b>, so the moment a String appears, every <code>+</code> after it joins text.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Where the String appears changes everything · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> a = <span class="n">10</span>, b = <span class="n">20</span>, c = <span class="n">30</span>;
+<span class="t">String</span> d = <span class="s">"java"</span>;
+<span class="t">System</span>.out.println(a + b + c + d);
+<span class="t">System</span>.out.println(d + a + b + c);
+<span class="t">System</span>.out.println(a + b + d + c);
+<span class="t">System</span>.out.println(d + (a + b) + c);</pre><div class="out"><span>Output</span><pre>60java
+java102030
+30java30
+java3030</pre></div></div>
+<span class="eq">a + b + c + d = ((10 + 20) + 30) + "java" = 60 + "java" = "60java"</span>
+<span class="eq">a + b + d + c = (30 + "java") + 30 = "30java" + 30 = "30java30"</span>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The result of a join is a String · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">String</span> s = <span class="s">"java"</span>;
+<span class="k">int</span> a = <span class="n">10</span>;
+a = a + s;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: String cannot be converted to int</pre></div></div>
+<div class="tip">Parentheses run first, so <code>"Sum: " + (a + b)</code> prints <code>Sum: 30</code> while <code>"Sum: " + a + b</code> prints <code>Sum: 1020</code>.</div>
+</section>
+
+<section class="card reveal jsec" id="relational" data-say="relational"><div class="sec-num">Part 4</div><h2><span class="sec-em">📐</span><span>Relational operators</span></h2> >=, comparison, relational chaining">
+<p><code>&lt; &lt;= &gt; &gt;=</code> compare numbers and chars. They work on every primitive type except <code>boolean</code>, and never on objects.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Comparing numbers and chars · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="n">10</span> &lt; <span class="n">20</span>);
+<span class="t">System</span>.out.println(<span class="s">'a'</span> &lt; <span class="s">'b'</span>);
+<span class="t">System</span>.out.println(<span class="s">'a'</span> &gt; <span class="n">10.5</span>);
+<span class="t">System</span>.out.println(<span class="n">10.5</span> &gt;= <span class="n">10</span>);</pre><div class="out"><span>Output</span><pre>true
+true
+true
+true</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Not on booleans · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="k">true</span> &gt; <span class="k">false</span>);</pre><div class="err"><span>❌ Compile error</span><pre>bad operand types for binary operator '&gt;'
+first type:  boolean
+second type: boolean</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Not on objects · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="s">"apple"</span> &lt; <span class="s">"banana"</span>);</pre><div class="err"><span>❌ Compile error</span><pre>bad operand types for binary operator '&lt;'
+first type:  String
+second type: String</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">No chaining · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="n">10</span> &lt; <span class="n">20</span> &lt; <span class="n">30</span>);</pre><div class="err"><span>❌ Compile error</span><pre>bad operand types for binary operator '&lt;'
+first type:  boolean
+second type: int</pre></div></div>
+<p>The last one fails because <code>10 &lt; 20</code> becomes <code>true</code>, and <code>true &lt; 30</code> makes no sense. Write <code>10 &lt; 20 &amp;&amp; 20 &lt; 30</code> instead.</p>
+</section>
+
+<section class="card reveal jsec" id="equality" data-say="equality"><div class="sec-num">Part 5</div><h2><span class="sec-em">⚖️</span><span>Equality operators</span></h2>
+<p><code>==</code> and <code>!=</code> work on every primitive, including <code>boolean</code>, and also on object references.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Primitives compare values · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="n">10</span> == <span class="n">20</span>);
+<span class="t">System</span>.out.println(<span class="s">'a'</span> == <span class="n">97.0</span>);
+<span class="t">System</span>.out.println(<span class="k">false</span> == <span class="k">false</span>);</pre><div class="out"><span>Output</span><pre>false
+true
+true</pre></div></div>
+<p>For objects, <code>==</code> asks one question: <b>do both references point at the very same object</b>. It does not look inside.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Same contents, different objects · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Thread</span> t1 = <span class="k">new</span> <span class="t">Thread</span>();
+<span class="t">Thread</span> t2 = <span class="k">new</span> <span class="t">Thread</span>();
+<span class="t">Thread</span> t3 = t1;
+<span class="t">System</span>.out.println(t1 == t2);
+<span class="t">System</span>.out.println(t1 == t3);
+<span class="t">String</span> s1 = <span class="k">new</span> <span class="t">String</span>(<span class="s">"hi"</span>);
+<span class="t">String</span> s2 = <span class="k">new</span> <span class="t">String</span>(<span class="s">"hi"</span>);
+<span class="t">System</span>.out.println(s1 == s2);
+<span class="t">System</span>.out.println(s1.equals(s2));</pre><div class="out"><span>Output</span><pre>false
+true
+false
+true</pre></div></div>
+<div class="rule">To compare two references with <code>==</code>, their types must be related (parent and child, or the same type). Otherwise the compiler stops you with "incomparable types". And <code>r == null</code> is always allowed.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Unrelated types · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">String</span> s = <span class="s">"hi"</span>;
+<span class="t">Thread</span> t = <span class="k">new</span> <span class="t">Thread</span>();
+<span class="t">System</span>.out.println(s == t);</pre><div class="err"><span>❌ Compile error</span><pre>incomparable types: String and Thread</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="instanceof" data-say="instanceof"><div class="sec-num">Part 6</div><h2><span class="sec-em">🔎</span><span>The instanceof operator</span></h2>
+<p><code>instanceof</code> checks whether an object is of a certain type, which includes its parent classes and interfaces.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Checking the real type · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Object</span> o = <span class="k">new</span> <span class="t">ArrayList</span>&lt;<span class="t">String</span>&gt;();
+<span class="t">System</span>.out.println(o <span class="k">instanceof</span> <span class="t">ArrayList</span>);
+<span class="t">System</span>.out.println(o <span class="k">instanceof</span> <span class="t">List</span>);
+<span class="t">System</span>.out.println(o <span class="k">instanceof</span> <span class="t">Collection</span>);
+<span class="t">System</span>.out.println(o <span class="k">instanceof</span> <span class="t">Map</span>);
+<span class="t">System</span>.out.println(<span class="k">null</span> <span class="k">instanceof</span> <span class="t">Object</span>);</pre><div class="out"><span>Output</span><pre>true
+true
+true
+false
+false</pre></div></div>
+<ul>
+<li><code>null instanceof Anything</code> is always <code>false</code>.</li>
+<li>If the two types can never be related, the code does not compile.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A Thread can never be a String · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Thread</span> t = <span class="k">new</span> <span class="t">Thread</span>();
+<span class="t">System</span>.out.println(t <span class="k">instanceof</span> <span class="t">String</span>);</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: Thread cannot be converted to String</pre></div></div>
+<div class="modern">Since Java 16 you can test and name the variable in one go. This is called <b>pattern matching for instanceof</b> and it removes the extra cast.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Test and cast at once · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Object</span> o = <span class="s">"Brainy Bytes"</span>;
+<span class="k">if</span> (o <span class="k">instanceof</span> <span class="t">String</span> s &amp;&amp; s.length() &gt; <span class="n">5</span>) {
+    <span class="t">System</span>.out.println(s.toUpperCase());
+}</pre><div class="out"><span>Output</span><pre>BRAINY BYTES</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="bitwise" data-say="bitwise"><div class="sec-num">Part 7</div><h2><span class="sec-em">💡</span><span>Bitwise and boolean operators</span></h2>>, >>>">
+<p>The operators <code>&amp; | ^</code> work on whole numbers bit by bit, and on booleans as logic. <code>~</code> flips every bit of a whole number. <code>!</code> flips a boolean.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Operator</th><th>Name</th><th>Gives 1 (true) when</th></tr>
+<tr><td><code>&amp;</code></td><td>AND</td><td>both bits are 1</td></tr>
+<tr><td><code>|</code></td><td>OR</td><td>at least one bit is 1</td></tr>
+<tr><td><code>^</code></td><td>XOR</td><td>the bits are different</td></tr>
+<tr><td><code>~</code></td><td>complement</td><td>flips every bit (integral types only)</td></tr>
+<tr><td><code>!</code></td><td>NOT</td><td>flips a boolean (boolean only)</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Bit by bit · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="n">4</span> &amp; <span class="n">5</span>);
+<span class="t">System</span>.out.println(<span class="n">4</span> | <span class="n">5</span>);
+<span class="t">System</span>.out.println(<span class="n">4</span> ^ <span class="n">5</span>);
+<span class="t">System</span>.out.println(~<span class="n">4</span>);
+<span class="t">System</span>.out.println(<span class="k">true</span> ^ <span class="k">false</span>);
+<span class="t">System</span>.out.println(!<span class="k">true</span>);</pre><div class="out"><span>Output</span><pre>4
+5
+1
+-5
+true
+false</pre></div></div>
+<span class="eq">4 = 100<sub>2</sub>, 5 = 101<sub>2</sub> → 4 &amp; 5 = 100<sub>2</sub> = 4, 4 | 5 = 101<sub>2</sub> = 5, 4 ^ 5 = 001<sub>2</sub> = 1</span>
+<span class="eq">~x = −x − 1, so ~4 = −5</span>
+<p>Why <code>~4</code> is −5: flipping all 32 bits of 4 gives a number whose first bit is 1, so it is negative. Negative numbers are stored in two's complement, and reading it back gives −5.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">~ needs a whole number · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(~<span class="k">true</span>);</pre><div class="err"><span>❌ Compile error</span><pre>bad operand type boolean for unary operator '~'</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">! needs a boolean · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(!<span class="n">4</span>);</pre><div class="err"><span>❌ Compile error</span><pre>bad operand type int for unary operator '!'</pre></div></div>
+<h3>Shift operators</h3>
+<ul>
+<li><code>a &lt;&lt; n</code> moves bits left, which multiplies by 2<sup>n</sup>.</li>
+<li><code>a &gt;&gt; n</code> moves bits right and copies the sign bit, which divides by 2<sup>n</sup> rounding down.</li>
+<li><code>a &gt;&gt;&gt; n</code> moves bits right and fills with zeros, so negative numbers become large positive ones.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Shifting · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="n">5</span> &lt;&lt; <span class="n">3</span>);
+<span class="t">System</span>.out.println(<span class="n">40</span> &gt;&gt; <span class="n">2</span>);
+<span class="t">System</span>.out.println(-<span class="n">16</span> &gt;&gt; <span class="n">2</span>);
+<span class="t">System</span>.out.println(-<span class="n">16</span> &gt;&gt;&gt; <span class="n">28</span>);</pre><div class="out"><span>Output</span><pre>40
+10
+-4
+15</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="short-circuit" data-say="short-circuit"><div class="sec-num">Part 8</div><h2><span class="sec-em">⚡</span><span>Short-circuit operators</span></h2>
+<p><code>&amp;&amp;</code> and <code>||</code> are the lazy cousins of <code>&amp;</code> and <code>|</code>. They skip the right side when the left side already decides the answer.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th></th><th><code>&amp;</code> and <code>|</code></th><th><code>&amp;&amp;</code> and <code>||</code></th></tr>
+<tr><td>Right side evaluated</td><td>always</td><td>only when needed</td></tr>
+<tr><td>Speed</td><td>slower</td><td>faster</td></tr>
+<tr><td>Works on</td><td>booleans and whole numbers</td><td>booleans only</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Count the evaluations · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> x = <span class="n">10</span>, y = <span class="n">15</span>;
+<span class="k">if</span> (++x &lt; <span class="n">10</span> &amp; ++y &gt; <span class="n">15</span>) x++;
+<span class="k">else</span> y++;
+<span class="t">System</span>.out.println(x + <span class="s">" "</span> + y);
+
+<span class="k">int</span> p = <span class="n">10</span>, q = <span class="n">15</span>;
+<span class="k">if</span> (++p &lt; <span class="n">10</span> &amp;&amp; ++q &gt; <span class="n">15</span>) p++;
+<span class="k">else</span> q++;
+<span class="t">System</span>.out.println(p + <span class="s">" "</span> + q);</pre><div class="out"><span>Output</span><pre>11 17
+11 16</pre></div></div>
+<p>With <code>&amp;</code>, both <code>++x</code> and <code>++y</code> run. With <code>&amp;&amp;</code>, <code>++p &lt; 10</code> is already false, so <code>++q</code> never runs.</p>
+<div class="tip">Short-circuiting is how you guard against crashes: <code>if (s != null &amp;&amp; s.length() &gt; 0)</code> never calls <code>length()</code> on a null reference.</div>
+</section>
+
+<section class="card reveal jsec" id="type-casting" data-say="type-casting"><div class="sec-num">Part 9</div><h2><span class="sec-em">🎭</span><span>Type casting</span></h2>
+<p>There are two kinds of casting.</p>
+<div class="grid2">
+<div class="box"><h4>Implicit (widening)</h4><p>The compiler does it for you when a smaller type goes into a bigger one. No information is lost.</p><code>int x = 'a';  double d = 10;</code></div>
+<div class="box"><h4>Explicit (narrowing)</h4><p>You ask for it when a bigger type goes into a smaller one. Information may be lost.</p><code>byte b = (byte) 130;  int i = (int) 9.99;</code></div>
+</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">What gets lost · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> x = <span class="n">130</span>;
+<span class="k">byte</span> b = (<span class="k">byte</span>) x;
+<span class="t">System</span>.out.println(b);
+<span class="k">double</span> d = <span class="n">130.456</span>;
+<span class="k">int</span> i = (<span class="k">int</span>) d;
+<span class="k">byte</span> b2 = (<span class="k">byte</span>) d;
+<span class="t">System</span>.out.println(i + <span class="s">" "</span> + b2);
+<span class="t">System</span>.out.println((<span class="k">int</span>) -<span class="n">9.99</span>);</pre><div class="out"><span>Output</span><pre>-126
+130 -126
+-9</pre></div></div>
+<ul>
+<li>From a whole number to a smaller whole number, Java keeps only the lowest bits.</li>
+<li>From a decimal number to a whole number, the decimal part is <b>cut off</b>, not rounded. Use <code>Math.round</code> to round.</li>
+</ul>
+<span class="eq">130 = 1000 0010<sub>2</sub> → as a byte: −128 + 2 = −126</span>
+</section>
+
+<section class="card reveal jsec" id="assignment" data-say="assignment"><div class="sec-num">Part 10</div><h2><span class="sec-em">📝</span><span>Assignment operators</span></h2>
+<p>There are three kinds of assignment.</p>
+<ol>
+<li><b>Simple</b>: <code>int x = 10;</code></li>
+<li><b>Chained</b>: <code>a = b = c = d = 20;</code> works from right to left. All variables must already be declared.</li>
+<li><b>Compound</b>: <code>+= -= *= /= %= &amp;= |= ^= &lt;&lt;= &gt;&gt;= &gt;&gt;&gt;=</code></li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Cannot declare and chain at once · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> a = b = c = d = <span class="n">20</span>;</pre><div class="err"><span>❌ Compile error</span><pre>cannot find symbol
+symbol:   variable b</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Chained assignment · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> a, b, c, d;
+a = b = c = d = <span class="n">20</span>;
+<span class="t">System</span>.out.println(a + b + c + d);</pre><div class="out"><span>Output</span><pre>80</pre></div></div>
+<div class="rule">Every compound assignment hides a cast back to the type on the left. <code>b += 1</code> means <code>b = (byte)(b + 1)</code>.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Compound assignment casts quietly · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">byte</span> b = <span class="n">127</span>;
+b += <span class="n">3</span>;            <span class="c">// 130 does not fit, wraps around</span>
+<span class="t">System</span>.out.println(b);</pre><div class="out"><span>Output</span><pre>-126</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Right to left, one step at a time · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> a, b, c, d;
+a = b = c = d = <span class="n">20</span>;
+a += b -= c *= d /= <span class="n">2</span>;
+<span class="t">System</span>.out.println(a + <span class="s">" "</span> + b + <span class="s">" "</span> + c + <span class="s">" "</span> + d);</pre><div class="out"><span>Output</span><pre>-160 -180 200 10</pre></div></div>
+<span class="eq">d /= 2 → d = 10</span>
+<span class="eq">c *= d → c = 20 × 10 = 200</span>
+<span class="eq">b −= c → b = 20 − 200 = −180</span>
+<span class="eq">a += b → a = 20 + (−180) = −160</span>
+</section>
+
+<section class="card reveal jsec" id="conditional" data-say="conditional"><div class="sec-num">Part 11</div><h2><span class="sec-em">❓</span><span>The conditional operator</span></h2>
+<p>The only <b>ternary</b> operator in Java takes three parts: a condition, a value for true and a value for false. It is a compact <code>if else</code> that produces a value.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Choose a value · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> marks = <span class="n">72</span>;
+<span class="t">String</span> result = marks &gt;= <span class="n">35</span> ? <span class="s">"Pass"</span> : <span class="s">"Fail"</span>;
+<span class="t">System</span>.out.println(result);
+<span class="k">int</span> x = <span class="n">5</span>;
+<span class="t">String</span> size = x &gt; <span class="n">10</span> ? <span class="s">"big"</span> : x &gt; <span class="n">3</span> ? <span class="s">"medium"</span> : <span class="s">"small"</span>;
+<span class="t">System</span>.out.println(size);</pre><div class="out"><span>Output</span><pre>Pass
+medium</pre></div></div>
+<div class="tip">Nest it at most once. Beyond that a normal <code>if else</code> is kinder to the next reader.</div>
+</section>
+
+<section class="card reveal jsec" id="precedence" data-say="precedence"><div class="sec-num">Part 12</div><h2><span class="sec-em">🧭</span><span>new, [ ] and the evaluation order</span></h2>
+<p><code>new</code> creates objects and <code>[]</code> declares or indexes arrays. Java has no <code>delete</code> operator, because the garbage collector removes unused objects.</p>
+<h3>Precedence, from strongest to weakest</h3>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Group</th><th>Operators</th></tr>
+<tr><td>Unary</td><td><code>[] x++ x--</code>, then <code>++x --x ~ !</code>, then <code>new</code> and casts</td></tr>
+<tr><td>Multiplicative</td><td><code>* / %</code></td></tr>
+<tr><td>Additive</td><td><code>+ -</code></td></tr>
+<tr><td>Shift</td><td><code>&lt;&lt; &gt;&gt; &gt;&gt;&gt;</code></td></tr>
+<tr><td>Relational</td><td><code>&lt; &lt;= &gt; &gt;= instanceof</code></td></tr>
+<tr><td>Equality</td><td><code>== !=</code></td></tr>
+<tr><td>Bitwise</td><td><code>&amp;</code>, then <code>^</code>, then <code>|</code></td></tr>
+<tr><td>Short-circuit</td><td><code>&amp;&amp;</code>, then <code>||</code></td></tr>
+<tr><td>Conditional</td><td><code>?:</code></td></tr>
+<tr><td>Assignment</td><td><code>= += -= *=</code> and the rest</td></tr>
+</table></div></div>
+<div class="rule">Precedence decides how the expression is grouped. The <b>operands</b> are still evaluated strictly from left to right.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Left to right, then precedence · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> m(<span class="k">int</span> i) {
+        <span class="t">System</span>.out.print(i + <span class="s">" "</span>);
+        <span class="k">return</span> i;
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> r = m(<span class="n">1</span>) + m(<span class="n">2</span>) * m(<span class="n">3</span>) / m(<span class="n">4</span>) * m(<span class="n">5</span>) + m(<span class="n">6</span>);
+        <span class="t">System</span>.out.println(<span class="s">"= "</span> + r);
+    }
+}</pre><div class="out"><span>Output</span><pre>1 2 3 4 5 6 = 12</pre></div></div>
+<p>The methods are called in the order 1, 2, 3, 4, 5, 6. Only after that are the values combined using precedence.</p>
+<span class="eq">1 + ((2 × 3) / 4) × 5 + 6 = 1 + (6 / 4) × 5 + 6 = 1 + 1 × 5 + 6 = 12</span>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./language-fundamentals.html" data-topic="language-fundamentals"><small>← Previous chapter</small><b>🧱 Language Fundamentals</b></a><a class="next" href="./flow-control.html" data-topic="flow-control"><small>Next chapter →</small><b>🔀 Flow Control</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "How Java reads x = x++ + ++x", "panels": [{"s": [["e", "🧺"], ["c", [10], {"ix": false, "hl": {"0": "hl"}}]], "h": "Start with x = 10", "t": "One variable, one value. Watch it change twice.", "more": "Java reads the right side first, from left to right, operand by operand."}, {"s": [["e", "📸"], ["t", "x++  →  gives 10", {"b": 1}], ["c", [11], {"ix": false, "hl": {"0": "mv"}}]], "h": "Post: use, then bump", "t": "The old value 10 is used. Then x quietly becomes 11.", "more": "Think of a photo taken before the change. The expression keeps the photo, the variable moves on."}, {"s": [["e", "🚀"], ["t", "++x  →  gives 12", {"b": 1}], ["c", [12], {"ix": false, "hl": {"0": "mv"}}]], "h": "Pre: bump, then use", "t": "x becomes 12 first, and 12 is used.", "more": "Pre increment changes the variable before handing over its value."}, {"s": [["e", "🎯"], ["t", "10 + 12 = 22", {"b": 1}], ["c", [22], {"ix": false, "hl": {"0": "ok"}}]], "h": "Assign last", "t": "The sum 22 overwrites x. The 11 and 12 were only stepping stones.", "more": "Assignment has the lowest precedence, so it always happens after the whole right side is done."}], "remember": "Operands are read left to right. Precedence only groups them. The assignment happens last."}, "real": [["☕", "The coffee loyalty card", "The cashier stamps your card after you get your coffee. Today you are served at the old count, then the count goes up. That is <code>x++<\/code>."], ["🚦", "The red light", "When the light is red you stop, without even checking whether the road is empty. <code>&&<\/code> does the same: when the left side is false, it never looks at the right side."], ["🧾", "The text-only cashier", "<code>\"Total: \" + 10 + 20<\/code> prints <b>Total: 1020<\/b>, like a cashier who glues numbers together instead of adding them. Brackets fix the bill: <code>\"Total: \" + (10 + 20)<\/code>."]], "quiz": [{"lv": "e", "q": "After <code>int x = 5; int y = x++ + 1;<\/code> what are x and y?", "code": "int x = 5;\nint y = x++ + 1;\nSystem.out.println(\"x=\" + x + \", y=\" + y);", "o": ["x=6, y=6", "x=6, y=7", "x=5, y=6", "x=5, y=7"], "a": 0, "run": 1, "hint": "Post increment hands over the old value first.", "why": "<code>x++<\/code> gives 5 to the expression, so y = 5 + 1 = 6. After that, x becomes 6."}, {"lv": "e", "q": "Which is the only overloaded operator in Java?", "o": ["<code>+<\/code>", "<code>*<\/code>", "<code>==<\/code>", "<code>&amp;<\/code>"], "a": 0, "hint": "One operator both adds numbers and joins text.", "why": "<code>+<\/code> adds numbers and also joins Strings. Java does not let programmers overload operators, and this is the single built-in exception."}, {"lv": "e", "q": "What is the type of <code>b1 + b2<\/code> when both are bytes?", "o": ["byte", "short", "int", "long"], "a": 2, "hint": "Arithmetic never produces anything smaller than one particular type.", "why": "The result type is the biggest of int and the two operand types. So byte + byte is int, which is why <code>byte c = b1 + b2;<\/code> needs a cast."}, {"lv": "m", "q": "What does this print?", "code": "System.out.println(10 / 0.0);", "o": ["ArithmeticException", "Infinity", "NaN", "0"], "a": 1, "run": 1, "hint": "One of the operands is a double.", "why": "Floating point division follows the IEEE 754 standard, which has a value for infinity. Only integer division by zero throws ArithmeticException."}, {"lv": "m", "q": "What does this print?", "code": "System.out.println(1 + 2 + \"3\" + 4 + 5);", "o": ["12345", "3345", "15", "339"], "a": 1, "run": 1, "hint": "Work left to right and notice when the String first appears.", "why": "1 + 2 = 3 (numbers). Then 3 + \"3\" = \"33\" (text). From there everything joins: \"334\", then \"3345\"."}, {"lv": "m", "q": "Which of these compiles?", "o": ["<code>byte b = 10; b = b + 1;<\/code>", "<code>byte b = 10; b += 1;<\/code>", "<code>int x = ++10;<\/code>", "<code>boolean f = true; f++;<\/code>"], "a": 1, "hint": "Compound assignments carry a hidden cast.", "why": "<code>b + 1<\/code> is an int, so assigning it to a byte fails. <code>b += 1<\/code> includes a cast and works. <code>++10<\/code> needs a variable, and booleans cannot be incremented."}, {"lv": "h", "q": "What does this print?", "code": "int x = 10, y = 15;\nif (++x < 10 && ++y > 15) x++;\nelse y++;\nSystem.out.println(x + \" \" + y);", "o": ["11 16", "11 17", "12 16", "12 17"], "a": 0, "run": 1, "hint": "Is <code>++y<\/code> ever executed?", "why": "<code>++x<\/code> makes x 11, and 11 &lt; 10 is false. <code>&&<\/code> stops there, so <code>++y<\/code> never runs. The else branch makes y 16."}, {"lv": "h", "q": "What does this print?", "code": "System.out.println(-17 % 5);", "o": ["2", "-2", "3", "-3"], "a": 1, "run": 1, "hint": "The sign of a remainder follows the left operand.", "why": "−17 / 5 is −3 (cut towards zero), and −17 − 5 × (−3) = −2. The result takes the sign of −17."}, {"lv": "h", "q": "What does this print?", "code": "Object o = \"hi\";\nSystem.out.println(o instanceof Integer);", "o": ["true", "false", "Compile error", "ClassCastException"], "a": 1, "run": 1, "hint": "The declared type is Object, and Object is related to every class.", "why": "Because o is declared as Object, an Integer check is allowed at compile time. At run time the object is a String, so the answer is false. No exception is involved."}, {"lv": "x", "q": "What does this print?", "code": "int i = 10;\ni = i++ + ++i;\nSystem.out.println(i);", "o": ["21", "22", "23", "20"], "a": 1, "run": 1, "hint": "Track i through each operand from left to right.", "why": "<code>i++<\/code> gives 10 and makes i 11. <code>++i<\/code> makes i 12 and gives 12. The sum 22 is then assigned to i."}, {"lv": "x", "q": "What does this print?", "code": "System.out.println(~-1 + \" \" + (-1 >>> 31));", "o": ["0 1", "-2 1", "0 -1", "2 0"], "a": 0, "run": 1, "hint": "Use ~x = −x − 1. And −1 has all 32 bits set.", "why": "~(−1) = 1 − 1 = 0. −1 is 32 ones, and shifting right by 31 with zero fill leaves just the single top bit, which is 1."}, {"lv": "x", "q": "What does this print?", "code": "System.out.println(true ? 'x' : 0);", "o": ["x", "120", "0", "Compile error"], "a": 0, "run": 1, "hint": "When one branch is a char and the other is an int constant that fits in a char, the result stays a char.", "why": "The rule for <code>?:<\/code> keeps the type char when the other operand is a constant int that fits in char. So it prints the letter x. With a non constant int variable it would print 120."}], "calc": [{"lv": "e", "q": "What does this print?", "code": "int a = 7, b = 2;\nSystem.out.println(a / b + a % b);", "ans": "4", "run": 1, "hint": "Integer division drops the remainder. % gives the remainder.", "steps": ["<span class=\"eq\">7 / 2 = 3 (integer division)<\/span>", "<span class=\"eq\">7 % 2 = 1<\/span>", "<span class=\"eq\">3 + 1 = 4<\/span>"]}, {"lv": "e", "q": "What does <code>System.out.println(6 &amp; 3);<\/code> print?", "code": "System.out.println(6 & 3);", "ans": "2", "run": 1, "hint": "Write both numbers in binary and keep only the bits that are 1 in both.", "steps": ["<span class=\"eq\">6 = 110<sub>2<\/sub>, 3 = 011<sub>2<\/sub><\/span>", "<span class=\"eq\">110 &amp; 011 = 010<sub>2<\/sub><\/span>", "<span class=\"eq\">010<sub>2<\/sub> = 2<\/span>"]}, {"lv": "m", "q": "What does this print?", "code": "System.out.println(1 << 10);", "ans": "1024", "run": 1, "hint": "Shifting left by n multiplies by 2<sup>n<\/sup>.", "steps": ["<span class=\"eq\">1 &lt;&lt; 10 = 1 × 2<sup>10<\/sup><\/span>", "<span class=\"eq\">2<sup>10<\/sup> = 1024<\/span>"]}, {"lv": "m", "q": "What is x at the end?", "code": "int x = 5;\nx += x++ * 2;\nSystem.out.println(x);", "ans": "15", "run": 1, "hint": "<code>x += e<\/code> means <code>x = x + e<\/code>, and the left x is read before e is evaluated.", "steps": ["<code>x += x++ * 2<\/code> becomes <code>x = x + (x++ * 2)<\/code>.", "The first x is read first: 5.", "<code>x++<\/code> gives 5 (x becomes 6 for a moment), so the product is 10.", "<span class=\"eq\">x = 5 + 10 = 15<\/span>", "The temporary 6 is overwritten by the assignment."]}, {"lv": "h", "q": "What does this print?", "code": "System.out.println(~10 + (-10 >> 1));", "ans": "-16", "run": 1, "hint": "~x = −x − 1, and an arithmetic right shift by 1 divides by 2 rounding down.", "steps": ["<span class=\"eq\">~10 = −10 − 1 = −11<\/span>", "<span class=\"eq\">−10 &gt;&gt; 1 = ⌊−10 / 2⌋ = −5<\/span>", "<span class=\"eq\">−11 + (−5) = −16<\/span>"]}, {"lv": "h", "q": "What does this print?", "code": "byte b = 100;\nb *= 3;\nSystem.out.println(b);", "ans": "44", "run": 1, "hint": "The compound operator casts 300 back into a byte.", "steps": ["<span class=\"eq\">100 × 3 = 300<\/span>", "<code>b *= 3<\/code> casts the result to byte, which keeps the value modulo 256.", "<span class=\"eq\">300 − 256 = 44<\/span>", "44 fits in −128 to 127, so b is 44."]}, {"lv": "x", "q": "What is r?", "code": "int r = 2 + 3 * 4 % 5 - 6 / 4;\nSystem.out.println(r);", "ans": "3", "run": 1, "hint": "* / % share the same level and go left to right, before + and −.", "steps": ["Multiplicative operators first, left to right: <span class=\"eq\">3 × 4 = 12, then 12 % 5 = 2<\/span>", "<span class=\"eq\">6 / 4 = 1 (integer division)<\/span>", "<span class=\"eq\">2 + 2 − 1 = 3<\/span>"]}, {"lv": "x", "q": "What does this print? Type the whole line.", "code": "System.out.println(-7 / 2 + \" \" + -7 % 2 + \" \" + Math.floorMod(-7, 2));", "ans": "-3 -1 1", "run": 1, "hint": "/ and % cut towards zero. floorMod rounds down and always matches the sign of the divisor.", "steps": ["<span class=\"eq\">−7 / 2 = −3.5 → cut towards zero → −3<\/span>", "<span class=\"eq\">−7 % 2 = −7 − 2 × (−3) = −1<\/span>", "<span class=\"eq\">floorMod(−7, 2) = −7 − 2 × ⌊−3.5⌋ = −7 − 2 × (−4) = 1<\/span>", "So the line is <code>-3 -1 1<\/code>."]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to Operators and Assignments. Operators add, compare, join and decide. In this chapter you will learn their rules and the tricky cases that interviewers love.", "hi": "Operators and Assignments में आपका स्वागत है। Operators जोड़ते हैं, तुलना करते हैं, जोड़ते हैं और फ़ैसला करते हैं। इस अध्याय में आप इनके नियम और वे पेचीदा मामले सीखेंगे जो interview में खूब पूछे जाते हैं।", "kn": "Operators and Assignments ಗೆ ಸ್ವಾಗತ. Operators ಕೂಡಿಸುತ್ತವೆ, ಹೋಲಿಸುತ್ತವೆ, ಜೋಡಿಸುತ್ತವೆ ಮತ್ತು ನಿರ್ಧರಿಸುತ್ತವೆ. ಈ ಅಧ್ಯಾಯದಲ್ಲಿ ಅವುಗಳ ನಿಯಮಗಳನ್ನು ಮತ್ತು interview ಗಳಲ್ಲಿ ಹೆಚ್ಚು ಕೇಳುವ ಕಠಿಣ ಸಂದರ್ಭಗಳನ್ನು ಕಲಿಯುತ್ತೀರಿ.", "or": "Operators and Assignments କୁ ସ୍ୱାଗତ। Operators ଯୋଗ କରନ୍ତି, ତୁଳନା କରନ୍ତି, ଯୋଡ଼ନ୍ତି ଏବଂ ନିଷ୍ପତ୍ତି ନିଅନ୍ତି। ଏହି ଅଧ୍ୟାୟରେ ଆପଣ ସେମାନଙ୍କ ନିୟମ ଏବଂ interview ରେ ବହୁତ ପଚରାଯାଉଥିବା କଠିନ ଉଦାହରଣ ଶିଖିବେ।", "ar": "مرحبًا بك في فصل العوامل والإسناد. العوامل تجمع وتقارن وتربط وتقرر. في هذا الفصل ستتعلم قواعدها والحالات الصعبة التي يحب المقابِلون السؤال عنها.", "de": "Willkommen bei Operatoren und Zuweisungen. Operatoren addieren, vergleichen, verbinden und entscheiden. In diesem Kapitel lernst du ihre Regeln und die kniffligen Fälle, die in Vorstellungsgesprächen so beliebt sind."}, {"id": "increment-decrement", "h": "Increment and decrement", "en": "Plus plus adds one and minus minus takes one away. Pre increment changes the variable first and then uses it. Post increment uses the old value and then changes it. They only work on variables, and b plus plus hides a cast that b equals b plus one does not have.", "hi": "प्लस प्लस एक जोड़ता है और माइनस माइनस एक घटाता है। Pre increment पहले variable बदलता है फिर उसका इस्तेमाल करता है। Post increment पुराना मान इस्तेमाल करता है फिर बदलता है। ये सिर्फ़ variables पर काम करते हैं, और b प्लस प्लस में एक छुपा cast होता है जो b बराबर b प्लस एक में नहीं होता।", "kn": "ಪ್ಲಸ್ ಪ್ಲಸ್ ಒಂದನ್ನು ಸೇರಿಸುತ್ತದೆ, ಮೈನಸ್ ಮೈನಸ್ ಒಂದನ್ನು ಕಳೆಯುತ್ತದೆ. Pre increment ಮೊದಲು variable ಬದಲಿಸಿ ನಂತರ ಬಳಸುತ್ತದೆ. Post increment ಹಳೆಯ ಮೌಲ್ಯ ಬಳಸಿ ನಂತರ ಬದಲಿಸುತ್ತದೆ. ಇವು variables ಮೇಲೆ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತವೆ, ಮತ್ತು b ಪ್ಲಸ್ ಪ್ಲಸ್ ನಲ್ಲಿ ಒಂದು ಗುಪ್ತ cast ಇದೆ, ಅದು b ಸಮ b ಪ್ಲಸ್ ಒಂದು ನಲ್ಲಿ ಇಲ್ಲ.", "or": "ପ୍ଲସ ପ୍ଲସ ଏକ ଯୋଗ କରେ ଏବଂ ମାଇନସ ମାଇନସ ଏକ କମାଏ। Pre increment ପ୍ରଥମେ variable ବଦଳାଏ ତା ପରେ ବ୍ୟବହାର କରେ। Post increment ପୁରୁଣା ମୂଲ୍ୟ ବ୍ୟବହାର କରେ ତା ପରେ ବଦଳାଏ। ଏଗୁଡ଼ିକ କେବଳ variables ଉପରେ କାମ କରେ, ଏବଂ b ପ୍ଲସ ପ୍ଲସ ରେ ଏକ ଲୁଚିଥିବା cast ଅଛି ଯାହା b ସମାନ b ପ୍ଲସ ଏକ ରେ ନାହିଁ।", "ar": "العامل زائد زائد يضيف واحدًا، والعامل ناقص ناقص يطرح واحدًا. الزيادة القبلية تغيّر المتغير أولًا ثم تستخدمه، والزيادة البعدية تستخدم القيمة القديمة ثم تغيّرها. تعمل فقط على المتغيرات، و b زائد زائد يخفي تحويلًا غير موجود في b يساوي b زائد واحد.", "de": "Plus plus addiert eins und minus minus zieht eins ab. Das Präfix ändert zuerst die Variable und benutzt sie dann. Das Postfix benutzt den alten Wert und ändert ihn danach. Beides geht nur mit Variablen, und b plus plus enthält einen versteckten Cast, den b gleich b plus eins nicht hat."}, {"id": "arithmetic", "h": "Arithmetic operators", "en": "Arithmetic on byte, short or char always gives at least an int. Integer division by zero throws an ArithmeticException, but floating point division gives Infinity or NaN. The remainder takes the sign of the left side.", "hi": "byte, short या char पर गणित का नतीजा कम से कम int होता है। Integer को शून्य से भाग देने पर ArithmeticException आता है, लेकिन floating point में Infinity या NaN मिलता है। शेषफल का चिह्न बाईं तरफ़ की संख्या जैसा होता है।", "kn": "byte, short ಅಥವಾ char ಮೇಲಿನ ಗಣಿತದ ಫಲಿತಾಂಶ ಕನಿಷ್ಠ int ಆಗಿರುತ್ತದೆ. Integer ಅನ್ನು ಸೊನ್ನೆಯಿಂದ ಭಾಗಿಸಿದರೆ ArithmeticException ಬರುತ್ತದೆ, ಆದರೆ floating point ನಲ್ಲಿ Infinity ಅಥವಾ NaN ಸಿಗುತ್ತದೆ. ಶೇಷದ ಚಿಹ್ನೆ ಎಡಭಾಗದ ಸಂಖ್ಯೆಯಂತೆ ಇರುತ್ತದೆ.", "or": "byte, short କିମ୍ବା char ଉପରେ ଗଣିତର ଫଳ ଅତି କମରେ int ହୁଏ। Integer କୁ ଶୂନ୍ୟରେ ଭାଗ କଲେ ArithmeticException ଆସେ, କିନ୍ତୁ floating point ରେ Infinity କିମ୍ବା NaN ମିଳେ। ଭାଗଶେଷର ଚିହ୍ନ ବାମ ପଟ ସଂଖ୍ୟା ପରି ହୁଏ।", "ar": "العمليات الحسابية على byte أو short أو char تعطي دائمًا int على الأقل. القسمة الصحيحة على صفر ترمي ArithmeticException، أما القسمة العشرية فتعطي Infinity أو NaN. وباقي القسمة يأخذ إشارة الطرف الأيسر.", "de": "Rechnen mit byte, short oder char ergibt immer mindestens ein int. Ganzzahlige Division durch null wirft eine ArithmeticException, Gleitkommadivision ergibt dagegen Infinity oder NaN. Der Rest übernimmt das Vorzeichen der linken Seite."}, {"id": "string-concat", "h": "String concatenation", "en": "Plus is the only overloaded operator. Java reads from left to right, and once a String appears, every later plus joins text instead of adding numbers. Use brackets when you want a sum inside a sentence.", "hi": "प्लस अकेला overloaded operator है। Java बाएँ से दाएँ पढ़ता है, और जैसे ही कोई String आती है, उसके बाद का हर प्लस संख्याएँ जोड़ने के बजाय text जोड़ता है। वाक्य के अंदर जोड़ चाहिए तो कोष्ठक लगाइए।", "kn": "ಪ್ಲಸ್ ಒಂದೇ overloaded operator. Java ಎಡದಿಂದ ಬಲಕ್ಕೆ ಓದುತ್ತದೆ, ಮತ್ತು ಒಂದು String ಬಂದ ತಕ್ಷಣ ನಂತರದ ಪ್ರತಿಯೊಂದು ಪ್ಲಸ್ ಸಂಖ್ಯೆಗಳನ್ನು ಕೂಡಿಸುವ ಬದಲು text ಜೋಡಿಸುತ್ತದೆ. ವಾಕ್ಯದೊಳಗೆ ಮೊತ್ತ ಬೇಕಾದರೆ ಆವರಣ ಬಳಸಿ.", "or": "ପ୍ଲସ ଏକମାତ୍ର overloaded operator। Java ବାମରୁ ଡାହାଣକୁ ପଢ଼େ, ଏବଂ ଥରେ String ଆସିଗଲେ ତା ପରର ପ୍ରତ୍ୟେକ ପ୍ଲସ ସଂଖ୍ୟା ଯୋଗ କରିବା ବଦଳରେ text ଯୋଡ଼େ। ବାକ୍ୟ ଭିତରେ ଯୋଗଫଳ ଦରକାର ହେଲେ ବନ୍ଧନୀ ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "العامل زائد هو العامل الوحيد المحمّل بأكثر من معنى. تقرأ Java من اليسار إلى اليمين، وبمجرد ظهور String يصبح كل زائد بعده ربطًا للنص بدل جمع الأرقام. استخدم الأقواس عندما تريد مجموعًا داخل جملة.", "de": "Plus ist der einzige überladene Operator. Java liest von links nach rechts, und sobald ein String auftaucht, verbindet jedes weitere Plus Text, statt Zahlen zu addieren. Setze Klammern, wenn du in einem Satz eine Summe willst."}, {"id": "relational", "h": "Relational operators", "en": "Less than and greater than work on numbers and chars, but never on booleans or objects. You also cannot chain them like ten less than twenty less than thirty. Join two comparisons with and and instead.", "hi": "छोटा और बड़ा वाले operators संख्याओं और chars पर काम करते हैं, लेकिन booleans या objects पर कभी नहीं। इन्हें दस छोटा बीस छोटा तीस की तरह जोड़ भी नहीं सकते। इसके बजाय दो तुलनाओं को and and से जोड़िए।", "kn": "ಕಡಿಮೆ ಮತ್ತು ಹೆಚ್ಚು ಎಂಬ operators ಸಂಖ್ಯೆಗಳು ಮತ್ತು chars ಮೇಲೆ ಕೆಲಸ ಮಾಡುತ್ತವೆ, ಆದರೆ booleans ಅಥವಾ objects ಮೇಲೆ ಎಂದಿಗೂ ಇಲ್ಲ. ಹತ್ತು ಕಡಿಮೆ ಇಪ್ಪತ್ತು ಕಡಿಮೆ ಮೂವತ್ತು ಎಂದು ಸರಪಳಿಯಾಗಿ ಬರೆಯಲೂ ಆಗುವುದಿಲ್ಲ. ಬದಲಿಗೆ ಎರಡು ಹೋಲಿಕೆಗಳನ್ನು and and ನಿಂದ ಜೋಡಿಸಿ.", "or": "ଛୋଟ ଏବଂ ବଡ଼ operators ସଂଖ୍ୟା ଏବଂ chars ଉପରେ କାମ କରନ୍ତି, କିନ୍ତୁ booleans କିମ୍ବା objects ଉପରେ କେବେ ନୁହେଁ। ଦଶ ଛୋଟ କୋଡ଼ିଏ ଛୋଟ ତିରିଶ ଭଳି ଶୃଙ୍ଖଳ ମଧ୍ୟ କରିହେବ ନାହିଁ। ଏହା ବଦଳରେ ଦୁଇଟି ତୁଳନାକୁ and and ଦ୍ୱାରା ଯୋଡ଼ନ୍ତୁ।", "ar": "عوامل أصغر من وأكبر من تعمل على الأرقام والأحرف، لكنها لا تعمل أبدًا على القيم المنطقية أو الكائنات. ولا يمكنك سلسلتها مثل عشرة أصغر من عشرين أصغر من ثلاثين. اربط مقارنتين باستخدام and and بدلًا من ذلك.", "de": "Kleiner und größer funktionieren mit Zahlen und Zeichen, aber nie mit booleans oder Objekten. Man kann sie auch nicht verketten wie zehn kleiner zwanzig kleiner dreißig. Verbinde stattdessen zwei Vergleiche mit und und."}, {"id": "equality", "h": "Equality operators", "en": "Double equals compares values for primitives. For objects it only checks whether both references point to the same object. To compare the contents of two strings, use the equals method.", "hi": "डबल बराबर primitives के लिए मानों की तुलना करता है। Objects के लिए यह सिर्फ़ देखता है कि दोनों references एक ही object की ओर इशारा करते हैं या नहीं। दो strings की सामग्री की तुलना के लिए equals method इस्तेमाल कीजिए।", "kn": "ಡಬಲ್ ಈಕ್ವಲ್ಸ್ primitives ಗೆ ಮೌಲ್ಯಗಳನ್ನು ಹೋಲಿಸುತ್ತದೆ. Objects ಗೆ ಎರಡೂ references ಒಂದೇ object ಅನ್ನು ತೋರಿಸುತ್ತವೆಯೇ ಎಂದು ಮಾತ್ರ ನೋಡುತ್ತದೆ. ಎರಡು strings ನ ವಿಷಯ ಹೋಲಿಸಲು equals method ಬಳಸಿ.", "or": "ଡବଲ ଇକ୍ୱାଲ primitives ପାଇଁ ମୂଲ୍ୟର ତୁଳନା କରେ। Objects ପାଇଁ ଏହା କେବଳ ଦେଖେ ଯେ ଦୁଇଟି reference ଏକା object କୁ ଦର୍ଶାଉଛନ୍ତି କି ନାହିଁ। ଦୁଇଟି string ର ବିଷୟବସ୍ତୁ ତୁଳନା ପାଇଁ equals method ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "عامل يساوي يساوي يقارن القيم في الأنواع الأولية. أما مع الكائنات فيتحقق فقط مما إذا كان المرجعان يشيران إلى الكائن نفسه. لمقارنة محتوى نصين استخدم الدالة equals.", "de": "Doppeltes Gleich vergleicht bei primitiven Typen die Werte. Bei Objekten prüft es nur, ob beide Referenzen auf dasselbe Objekt zeigen. Um den Inhalt zweier Strings zu vergleichen, nimm die Methode equals."}, {"id": "instanceof", "h": "The instanceof operator", "en": "instanceof checks whether an object belongs to a type, including parent classes and interfaces. null instanceof anything is false. Since Java sixteen you can test and name the variable in one step.", "hi": "instanceof जाँचता है कि कोई object किसी type का है या नहीं, जिसमें parent classes और interfaces भी शामिल हैं। null instanceof कुछ भी हमेशा false होता है। Java सोलह से आप एक ही कदम में जाँच भी सकते हैं और variable को नाम भी दे सकते हैं।", "kn": "instanceof ಒಂದು object ಯಾವುದಾದರೂ type ಗೆ ಸೇರಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸುತ್ತದೆ, parent classes ಮತ್ತು interfaces ಸೇರಿ. null instanceof ಯಾವುದೇ ಆದರೂ false. Java ಹದಿನಾರರಿಂದ ಒಂದೇ ಹೆಜ್ಜೆಯಲ್ಲಿ ಪರಿಶೀಲಿಸಿ variable ಗೆ ಹೆಸರು ಕೊಡಬಹುದು.", "or": "instanceof ଯାଞ୍ଚ କରେ ଯେ ଏକ object କୌଣସି type ର କି ନାହିଁ, parent classes ଏବଂ interfaces ସହିତ। null instanceof ଯାହା ବି ହେଉ false। Java ଷୋହଳରୁ ଆପଣ ଗୋଟିଏ ପଦକ୍ଷେପରେ ଯାଞ୍ଚ କରି variable କୁ ନାମ ଦେଇପାରିବେ।", "ar": "العامل instanceof يتحقق مما إذا كان الكائن من نوع معين، بما في ذلك الأصناف الأم والواجهات. والتعبير null instanceof أي شيء يعطي دائمًا false. منذ Java ستة عشر يمكنك الفحص وتسمية المتغير في خطوة واحدة.", "de": "instanceof prüft, ob ein Objekt zu einem Typ gehört, einschließlich Elternklassen und Interfaces. null instanceof irgendwas ist immer false. Seit Java sechzehn kannst du in einem Schritt prüfen und die Variable benennen."}, {"id": "bitwise", "h": "Bitwise operators", "en": "And, or and xor work bit by bit on whole numbers and as logic on booleans. The tilde flips every bit of a number, and the exclamation mark flips a boolean. Shifts move bits left or right, which multiplies or divides by powers of two.", "hi": "And, or और xor पूर्ण संख्याओं पर bit दर bit और booleans पर logic की तरह काम करते हैं। Tilde किसी संख्या का हर bit उलट देता है, और विस्मयादिबोधक चिह्न boolean को उलटता है। Shift bits को बाएँ या दाएँ खिसकाते हैं, जिससे दो की घातों से गुणा या भाग होता है।", "kn": "And, or ಮತ್ತು xor ಪೂರ್ಣ ಸಂಖ್ಯೆಗಳ ಮೇಲೆ bit ಮೂಲಕ ಮತ್ತು booleans ಮೇಲೆ logic ಆಗಿ ಕೆಲಸ ಮಾಡುತ್ತವೆ. Tilde ಸಂಖ್ಯೆಯ ಪ್ರತಿಯೊಂದು bit ಅನ್ನು ತಿರುಗಿಸುತ್ತದೆ, ಆಶ್ಚರ್ಯ ಚಿಹ್ನೆ boolean ಅನ್ನು ತಿರುಗಿಸುತ್ತದೆ. Shift ಗಳು bits ಅನ್ನು ಎಡ ಅಥವಾ ಬಲಕ್ಕೆ ಸರಿಸುತ್ತವೆ, ಇದು ಎರಡರ ಘಾತಗಳಿಂದ ಗುಣಿಸುವುದು ಅಥವಾ ಭಾಗಿಸುವುದು.", "or": "And, or ଏବଂ xor ପୂର୍ଣ୍ଣ ସଂଖ୍ୟା ଉପରେ bit ଅନୁସାରେ ଏବଂ booleans ଉପରେ logic ଭାବେ କାମ କରନ୍ତି। Tilde ସଂଖ୍ୟାର ପ୍ରତ୍ୟେକ bit ଓଲଟାଏ, ଏବଂ ବିସ୍ମୟ ଚିହ୍ନ boolean କୁ ଓଲଟାଏ। Shift bits କୁ ବାମ କିମ୍ବା ଡାହାଣକୁ ଘୁଞ୍ଚାଏ, ଯାହା ଦୁଇର ଘାତରେ ଗୁଣନ କିମ୍ବା ହରଣ କରେ।", "ar": "العوامل and و or و xor تعمل بتًا بتًا على الأعداد الصحيحة، وتعمل كمنطق على القيم المنطقية. علامة التلدة تقلب كل بت في العدد، وعلامة التعجب تقلب القيمة المنطقية. عوامل الإزاحة تحرك البتات يمينًا أو يسارًا، وهذا يضرب أو يقسم على قوى العدد اثنين.", "de": "Und, oder und xor arbeiten bei ganzen Zahlen Bit für Bit und bei booleans als Logik. Die Tilde kippt jedes Bit einer Zahl, das Ausrufezeichen kippt einen boolean. Shifts schieben Bits nach links oder rechts, das multipliziert oder teilt durch Zweierpotenzen."}, {"id": "short-circuit", "h": "Short-circuit operators", "en": "Double and and double or skip the right side when the left side already decides the answer. That makes them faster, and it lets you guard against crashes, such as checking for null before calling a method.", "hi": "डबल and और डबल or दाईं तरफ़ को छोड़ देते हैं जब बाईं तरफ़ ही जवाब तय कर दे। इससे ये तेज़ होते हैं, और crash से बचाते भी हैं, जैसे method बुलाने से पहले null की जाँच करना।", "kn": "ಡಬಲ್ and ಮತ್ತು ಡಬಲ್ or ಎಡಭಾಗವೇ ಉತ್ತರ ನಿರ್ಧರಿಸಿದಾಗ ಬಲಭಾಗವನ್ನು ಬಿಟ್ಟುಬಿಡುತ್ತವೆ. ಇದರಿಂದ ಅವು ವೇಗವಾಗಿವೆ, ಮತ್ತು crash ಆಗದಂತೆ ಕಾಯುತ್ತವೆ, ಉದಾಹರಣೆಗೆ method ಕರೆಯುವ ಮೊದಲು null ಪರಿಶೀಲನೆ.", "or": "ଡବଲ and ଏବଂ ଡବଲ or ଡାହାଣ ପଟକୁ ଛାଡ଼ିଦିଅନ୍ତି ଯେତେବେଳେ ବାମ ପଟ ହିଁ ଉତ୍ତର ସ୍ଥିର କରିଦିଏ। ଏହା ସେମାନଙ୍କୁ ଦ୍ରୁତ କରେ, ଏବଂ crash ରୁ ରକ୍ଷା କରେ, ଯେପରି method ଡାକିବା ପୂର୍ବରୁ null ଯାଞ୍ଚ।", "ar": "العاملان and and و or or يتجاوزان الطرف الأيمن عندما يحسم الطرف الأيسر الإجابة. هذا يجعلهما أسرع، ويسمح لك بالحماية من الأعطال، مثل التحقق من null قبل استدعاء دالة.", "de": "Doppeltes Und und doppeltes Oder überspringen die rechte Seite, wenn die linke die Antwort schon festlegt. Das macht sie schneller und schützt vor Abstürzen, zum Beispiel wenn man vor einem Methodenaufruf auf null prüft."}, {"id": "type-casting", "h": "Type casting", "en": "Widening from a small type to a big type happens automatically. Narrowing needs a cast in brackets. Whole numbers keep only their lowest bits, and decimals are cut off, not rounded.", "hi": "छोटे type से बड़े type में बदलाव अपने आप होता है। उल्टी दिशा में कोष्ठक वाला cast चाहिए। पूर्ण संख्याएँ सिर्फ़ अपने निचले bits रखती हैं, और दशमलव काट दिया जाता है, गोल नहीं किया जाता।", "kn": "ಸಣ್ಣ type ನಿಂದ ದೊಡ್ಡ type ಗೆ ಬದಲಾವಣೆ ತಾನಾಗಿಯೇ ಆಗುತ್ತದೆ. ವಿರುದ್ಧ ದಿಕ್ಕಿಗೆ ಆವರಣದ cast ಬೇಕು. ಪೂರ್ಣ ಸಂಖ್ಯೆಗಳು ತಮ್ಮ ಕೆಳಗಿನ bits ಮಾತ್ರ ಉಳಿಸಿಕೊಳ್ಳುತ್ತವೆ, ಮತ್ತು ದಶಮಾಂಶ ಭಾಗವನ್ನು ಕತ್ತರಿಸಲಾಗುತ್ತದೆ, ಪೂರ್ಣಾಂಕ ಮಾಡುವುದಿಲ್ಲ.", "or": "ଛୋଟ type ରୁ ବଡ଼ type କୁ ବଦଳ ନିଜେ ହୁଏ। ଓଲଟା ଦିଗରେ ବନ୍ଧନୀ ଥିବା cast ଦରକାର। ପୂର୍ଣ୍ଣ ସଂଖ୍ୟା କେବଳ ତଳ bits ରଖେ, ଏବଂ ଦଶମିକ ଅଂଶ କାଟିଦିଆଯାଏ, ଗୋଲ କରାଯାଏ ନାହିଁ।", "ar": "التوسيع من نوع صغير إلى نوع كبير يحدث تلقائيًا. أما التضييق فيحتاج إلى تحويل بين قوسين. الأعداد الصحيحة تحتفظ ببتاتها السفلى فقط، والكسور تُقطع ولا تُقرّب.", "de": "Die Erweiterung von einem kleinen zu einem großen Typ passiert automatisch. Für die Verengung brauchst du einen Cast in Klammern. Ganze Zahlen behalten nur ihre unteren Bits, und Nachkommastellen werden abgeschnitten, nicht gerundet."}, {"id": "assignment", "h": "Assignment operators", "en": "There are simple, chained and compound assignments. Chained assignment works from right to left on variables that already exist. Every compound assignment, like plus equals, hides a cast back to the type on the left.", "hi": "Assignment तीन तरह के होते हैं: simple, chained और compound। Chained assignment दाएँ से बाएँ चलता है और variables पहले से मौजूद होने चाहिए। हर compound assignment, जैसे प्लस बराबर, में बाईं तरफ़ के type में एक छुपा cast होता है।", "kn": "Assignment ಮೂರು ರೀತಿ: simple, chained ಮತ್ತು compound. Chained assignment ಬಲದಿಂದ ಎಡಕ್ಕೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ, variables ಮೊದಲೇ ಇರಬೇಕು. ಪ್ಲಸ್ ಈಕ್ವಲ್ಸ್ ನಂತಹ ಪ್ರತಿಯೊಂದು compound assignment ಎಡಭಾಗದ type ಗೆ ಒಂದು ಗುಪ್ತ cast ಹೊಂದಿದೆ.", "or": "Assignment ତିନି ପ୍ରକାର: simple, chained ଏବଂ compound। Chained assignment ଡାହାଣରୁ ବାମକୁ କାମ କରେ ଏବଂ variables ପୂର୍ବରୁ ଥିବା ଦରକାର। ପ୍ଲସ ଇକ୍ୱାଲ ଭଳି ପ୍ରତ୍ୟେକ compound assignment ବାମ ପଟ type କୁ ଏକ ଲୁଚିଥିବା cast କରେ।", "ar": "هناك إسناد بسيط وإسناد متسلسل وإسناد مركب. الإسناد المتسلسل يعمل من اليمين إلى اليسار على متغيرات موجودة مسبقًا. وكل إسناد مركب مثل زائد يساوي يخفي تحويلًا إلى نوع الطرف الأيسر.", "de": "Es gibt einfache, verkettete und zusammengesetzte Zuweisungen. Die verkettete Zuweisung arbeitet von rechts nach links mit Variablen, die es schon gibt. Jede zusammengesetzte Zuweisung wie plus gleich enthält einen versteckten Cast zurück auf den Typ der linken Seite."}, {"id": "conditional", "h": "The conditional operator", "en": "The ternary operator picks one of two values with a condition, question mark and colon. It is a short if else that produces a value. Nest it at most once to keep it readable.", "hi": "Ternary operator एक शर्त, प्रश्नचिह्न और कोलन से दो में से एक मान चुनता है। यह छोटा सा if else है जो एक मान देता है। पढ़ने में आसान रखने के लिए इसे ज़्यादा से ज़्यादा एक बार nest कीजिए।", "kn": "Ternary operator ಒಂದು ಷರತ್ತು, ಪ್ರಶ್ನಾರ್ಥಕ ಚಿಹ್ನೆ ಮತ್ತು ಕೋಲನ್ ಬಳಸಿ ಎರಡರಲ್ಲಿ ಒಂದು ಮೌಲ್ಯ ಆಯ್ಕೆ ಮಾಡುತ್ತದೆ. ಇದು ಮೌಲ್ಯ ಕೊಡುವ ಚಿಕ್ಕ if else. ಓದಲು ಸುಲಭವಾಗಿರಲು ಗರಿಷ್ಠ ಒಮ್ಮೆ ಮಾತ್ರ nest ಮಾಡಿ.", "or": "Ternary operator ଏକ ସର୍ତ୍ତ, ପ୍ରଶ୍ନବାଚକ ଚିହ୍ନ ଏବଂ କୋଲନ ଦ୍ୱାରା ଦୁଇଟି ମୂଲ୍ୟରୁ ଗୋଟିଏ ବାଛେ। ଏହା ମୂଲ୍ୟ ଦେଉଥିବା ଛୋଟ if else। ପଢ଼ିବାକୁ ସହଜ ରଖିବା ପାଇଁ ଅଧିକରୁ ଅଧିକ ଥରେ nest କରନ୍ତୁ।", "ar": "العامل الثلاثي يختار إحدى قيمتين باستخدام شرط وعلامة استفهام ونقطتين. إنه if else قصير يُنتج قيمة. لا تتداخله أكثر من مرة واحدة حتى يبقى مقروءًا.", "de": "Der ternäre Operator wählt mit einer Bedingung, einem Fragezeichen und einem Doppelpunkt einen von zwei Werten. Er ist ein kurzes if else, das einen Wert liefert. Verschachtle ihn höchstens einmal, damit er lesbar bleibt."}, {"id": "precedence", "h": "Evaluation order", "en": "Precedence decides how an expression is grouped, but the operands are always evaluated from left to right. So methods inside an expression are called in the order they are written, and only then combined.", "hi": "Precedence तय करता है कि expression कैसे समूहित होगा, लेकिन operands हमेशा बाएँ से दाएँ evaluate होते हैं। इसलिए expression के अंदर के methods उसी क्रम में बुलाए जाते हैं जिसमें लिखे हैं, और उसके बाद जोड़े जाते हैं।", "kn": "Precedence ಒಂದು expression ಹೇಗೆ ಗುಂಪಾಗುತ್ತದೆ ಎಂದು ನಿರ್ಧರಿಸುತ್ತದೆ, ಆದರೆ operands ಯಾವಾಗಲೂ ಎಡದಿಂದ ಬಲಕ್ಕೆ evaluate ಆಗುತ್ತವೆ. ಆದ್ದರಿಂದ expression ಒಳಗಿನ methods ಬರೆದ ಕ್ರಮದಲ್ಲೇ ಕರೆಯಲ್ಪಡುತ್ತವೆ, ನಂತರವೇ ಸಂಯೋಜಿಸಲ್ಪಡುತ್ತವೆ.", "or": "Precedence ସ୍ଥିର କରେ ଯେ expression କିପରି ଗୋଷ୍ଠୀବଦ୍ଧ ହେବ, କିନ୍ତୁ operands ସର୍ବଦା ବାମରୁ ଡାହାଣକୁ evaluate ହୁଅନ୍ତି। ତେଣୁ expression ଭିତରର methods ଲେଖାଯାଇଥିବା କ୍ରମରେ ଡକାଯାଆନ୍ତି, ତା ପରେ ମିଶାଯାଆନ୍ତି।", "ar": "الأولوية تحدد كيفية تجميع التعبير، لكن المعاملات تُقيَّم دائمًا من اليسار إلى اليمين. لذلك تُستدعى الدوال داخل التعبير بالترتيب الذي كُتبت به، ثم تُجمع النتائج بعد ذلك.", "de": "Die Rangfolge bestimmt, wie ein Ausdruck gruppiert wird, aber die Operanden werden immer von links nach rechts ausgewertet. Methoden in einem Ausdruck werden also in der geschriebenen Reihenfolge aufgerufen und erst danach verknüpft."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Operators and Assignments", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

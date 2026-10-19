@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OOP Concepts · Java</title>
+<meta name="description" content="Data hiding, abstraction, encapsulation, IS-A and HAS-A, overloading, overriding, polymorphism, static and instance control flow, constructors, singletons, coupling, cohesion and type casting.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🧩 Object Oriented Java</span><span>›</span><span>Chapter 5 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧬</span><div><h1>OOP Concepts</h1><p class="lead">Object oriented programming is about building software from objects that keep their own data, promise clear services and can stand in for each other. This chapter is the heart of Java.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 26 min read</span><span class="chip">📚 16 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#data-hiding"><span>🙈</span>Data hiding</a><a href="#abstraction"><span>🎭</span>Abstraction</a><a href="#encapsulation"><span>💊</span>Encapsulation</a><a href="#is-a"><span>👨‍👧</span>IS-A relationship (inheritance)</a><a href="#has-a"><span>🚗</span>HAS-A relationship</a><a href="#method-signature"><span>✒️</span>Method signature</a><a href="#overloading"><span>🎚️</span>Overloading</a><a href="#overriding"><span>🔁</span>Overriding</a><a href="#overload-vs-override"><span>🆚</span>Overloading versus overriding</a><a href="#polymorphism"><span>🦎</span>Polymorphism</a><a href="#static-control-flow"><span>🧊</span>Static control flow</a><a href="#instance-control-flow"><span>🏗️</span>Instance control flow</a><a href="#constructors"><span>🔨</span>Constructors</a><a href="#singleton"><span>☝️</span>Singleton classes</a><a href="#coupling-cohesion"><span>🧷</span>Coupling and cohesion</a><a href="#type-casting"><span>🎭</span>Object type casting</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="data-hiding" data-say="data-hiding"><div class="sec-num">Part 1</div><h2><span class="sec-em">🙈</span><span>Data hiding</span></h2>
+<p><b>Data hiding</b> means outsiders cannot touch an object's data directly. They have to go through methods, and those methods can check every request. In Java you hide data by making fields <code>private</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A bank account that guards its balance · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Account</span> {
+    <span class="k">private</span> <span class="k">double</span> balance;                       <span class="c">// hidden</span>
+    <span class="k">public</span> <span class="k">void</span> deposit(<span class="k">double</span> amount) {
+        <span class="k">if</span> (amount &lt;= <span class="n">0</span>) { <span class="t">System</span>.out.println(<span class="s">"Rejected: "</span> + amount); <span class="k">return</span>; }
+        balance += amount;
+    }
+    <span class="k">public</span> <span class="k">double</span> getBalance() { <span class="k">return</span> balance; }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Account</span> a = <span class="k">new</span> <span class="t">Account</span>();
+        a.deposit(<span class="n">500</span>);
+        a.deposit(-<span class="n">100</span>);                          <span class="c">// validation catches it</span>
+        <span class="t">System</span>.out.println(a.getBalance());
+    }
+}</pre><div class="out"><span>Output</span><pre>Rejected: -100.0
+500.0</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Direct access is refused · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Account</span> { <span class="k">private</span> <span class="k">double</span> balance; }
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">new</span> <span class="t">Account</span>().balance = <span class="n">1_000_000</span>;
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>balance has private access in Account</pre></div></div>
+<div class="tip">The main gain is <b>security</b>: nobody can set a negative balance or skip the checks.</div>
+</section>
+
+<section class="card reveal jsec" id="abstraction" data-say="abstraction"><div class="sec-num">Part 2</div><h2><span class="sec-em">🎭</span><span>Abstraction</span></h2>
+<p><b>Abstraction</b> means showing what something does while hiding how it does it. An ATM shows "withdraw" and "check balance", and hides the network calls and database updates behind the screen.</p>
+<ul>
+<li><b>Security</b>: the inner workings stay private.</li>
+<li><b>Easy change</b>: the inside can be rewritten without disturbing any user.</li>
+<li><b>Easy use</b>: users learn a few services instead of every detail.</li>
+</ul>
+<p>Java achieves abstraction with <b>interfaces</b> and <b>abstract classes</b>, as shown in the previous chapter.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Callers know the service, not the engine · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Maps</span> {
+    <span class="t">String</span> route(<span class="t">String</span> from, <span class="t">String</span> to);
+}
+<span class="k">class</span> <span class="t">FastMaps</span> <span class="k">implements</span> <span class="t">Maps</span> {
+    <span class="k">public</span> <span class="t">String</span> route(<span class="t">String</span> from, <span class="t">String</span> to) {
+        <span class="k">return</span> from + <span class="s">" → "</span> + to + <span class="s">" (shortest path computed with secret sauce)"</span>;
+    }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Maps</span> m = <span class="k">new</span> <span class="t">FastMaps</span>();                 <span class="c">// the caller only knows Maps</span>
+        <span class="t">System</span>.out.println(m.route(<span class="s">"Home"</span>, <span class="s">"Office"</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>Home → Office (shortest path computed with secret sauce)</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="encapsulation" data-say="encapsulation"><div class="sec-num">Part 3</div><h2><span class="sec-em">💊</span><span>Encapsulation</span></h2>
+<p><b>Encapsulation</b> wraps data and the code that works on it into one unit, a class. Every Java class is encapsulated. When it also hides its data (data hiding) and offers services instead (abstraction), we get the full benefit.</p>
+<span class="eq">Encapsulation = Data hiding + Abstraction</span>
+<p>The usual pattern is private fields with public getter and setter methods. The cost is a little more code, which also makes the program slightly longer to write.</p>
+<h3>Tightly encapsulated classes</h3>
+<p>A class is <b>tightly encapsulated</b> when <b>every</b> field is private, including inherited ones. Whether it has getters and setters, and whether those are public, does not matter.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Java snippet</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">A</span> { <span class="k">private</span> <span class="k">int</span> x = <span class="n">10</span>; }          <span class="c">// tightly encapsulated</span>
+<span class="k">class</span> <span class="t">B</span> <span class="k">extends</span> <span class="t">A</span> { <span class="k">int</span> y = <span class="n">20</span>; }        <span class="c">// not: y is not private</span>
+<span class="k">class</span> <span class="t">C</span> <span class="k">extends</span> <span class="t">A</span> { <span class="k">private</span> <span class="k">int</span> z = <span class="n">30</span>; } <span class="c">// tightly encapsulated</span></pre></div>
+<div class="exam">If the parent class is not tightly encapsulated, no child can be either, because the child inherits the non-private field.</div>
+</section>
+
+<section class="card reveal jsec" id="is-a" data-say="is-a"><div class="sec-num">Part 4</div><h2><span class="sec-em">👨‍👧</span><span>IS-A relationship (inheritance)</span></h2>
+<p>The <b>IS-A</b> relationship is inheritance, written with <code>extends</code>. A <code>Dog</code> IS-A <code>Animal</code>, so it gets everything an Animal has. The big win is <b>code reuse</b>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">What a child gets and what a parent can hold · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Animal</span> {
+    <span class="k">void</span> eat() { <span class="t">System</span>.out.println(<span class="s">"eating"</span>); }
+}
+<span class="k">class</span> <span class="t">Dog</span> <span class="k">extends</span> <span class="t">Animal</span> {
+    <span class="k">void</span> bark() { <span class="t">System</span>.out.println(<span class="s">"woof"</span>); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Dog</span> d = <span class="k">new</span> <span class="t">Dog</span>();
+        d.eat();              <span class="c">// inherited</span>
+        d.bark();
+        <span class="t">Animal</span> a = <span class="k">new</span> <span class="t">Dog</span>(); <span class="c">// a parent reference can hold a child object</span>
+        a.eat();
+    }
+}</pre><div class="out"><span>Output</span><pre>eating
+woof
+eating</pre></div></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Statement</th><th>Allowed</th></tr>
+<tr><td>Parent methods called on a child object</td><td class="yes">yes</td></tr>
+<tr><td>Child methods called on a parent object</td><td class="no">no</td></tr>
+<tr><td>Parent reference holding a child object</td><td class="yes">yes</td></tr>
+<tr><td>Child methods through a parent reference</td><td class="no">no, the compiler only knows the parent type</td></tr>
+<tr><td>Child reference holding a parent object</td><td class="no">no</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A parent reference does not know child methods · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Animal</span> { }
+<span class="k">class</span> <span class="t">Dog</span> <span class="k">extends</span> <span class="t">Animal</span> { <span class="k">void</span> bark() { } }
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Animal</span> a = <span class="k">new</span> <span class="t">Dog</span>();
+        a.bark();
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>cannot find symbol
+symbol:   method bark()</pre></div></div>
+<h3>Rules</h3>
+<ul>
+<li>Every class has <code>Object</code> as its root. A class that extends nothing extends <code>Object</code> directly.</li>
+<li>A class can extend only one class. Two parents with the same method would leave the child confused, which is the "diamond problem". Interfaces avoid it because they had no implementation to fight over.</li>
+<li>Cyclic inheritance is not allowed: <code>class A extends B</code> and <code>class B extends A</code> do not compile, and neither does <code>class A extends A</code>.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two parents are not allowed · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">A</span> { } <span class="k">class</span> <span class="t">B</span> { }
+<span class="k">class</span> <span class="t">C</span> <span class="k">extends</span> <span class="t">A</span>, <span class="t">B</span> { }</pre><div class="err"><span>❌ Compile error</span><pre>'{' expected</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A class cannot be its own parent · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">A</span> <span class="k">extends</span> <span class="t">A</span> { }</pre><div class="err"><span>❌ Compile error</span><pre>cyclic inheritance involving A</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="has-a" data-say="has-a"><div class="sec-num">Part 5</div><h2><span class="sec-em">🚗</span><span>HAS-A relationship</span></h2>
+<p><b>HAS-A</b> means one object holds a reference to another. A <code>Car</code> HAS-A <code>Engine</code>. There is no special keyword, you just declare a field. It also reuses code, without the tight bond of inheritance.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A car that has an engine · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Engine</span> { <span class="t">String</span> start() { <span class="k">return</span> <span class="s">"vroom"</span>; } }
+<span class="k">class</span> <span class="t">Car</span> {
+    <span class="k">private</span> <span class="k">final</span> <span class="t">Engine</span> engine = <span class="k">new</span> <span class="t">Engine</span>();     <span class="c">// HAS-A</span>
+    <span class="k">void</span> drive() { <span class="t">System</span>.out.println(<span class="s">"Engine says "</span> + engine.start()); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="k">new</span> <span class="t">Car</span>().drive(); }
+}</pre><div class="out"><span>Output</span><pre>Engine says vroom</pre></div></div>
+<div class="grid2">
+<div class="box"><h4>Composition (strong)</h4><p>The part cannot live without the whole. A university and its departments: close the university and the departments vanish.</p></div>
+<div class="box"><h4>Aggregation (weak)</h4><p>The part lives on its own. A department and its professors: close the department and the professors still exist.</p></div>
+</div>
+<div class="tip">"Favour HAS-A over IS-A" is common advice. Use inheritance only when the child truly is a kind of the parent.</div>
+</section>
+
+<section class="card reveal jsec" id="method-signature" data-say="method-signature"><div class="sec-num">Part 6</div><h2><span class="sec-em">✒️</span><span>Method signature</span></h2>
+<p>A method's <b>signature</b> is its name plus the types of its parameters, in order. The return type is <b>not</b> part of it. The compiler uses signatures to find the right method.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Java snippet</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">public</span> <span class="k">static</span> <span class="k">int</span> m1(<span class="k">int</span> i, <span class="k">float</span> f)   →   signature: m1(<span class="k">int</span>, <span class="k">float</span>)</pre></div>
+<p>Two methods with the same signature cannot live in one class, even if the return types differ.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Same signature, different return type · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">void</span> m1(<span class="k">int</span> i) { }
+    <span class="k">public</span> <span class="k">int</span> m1(<span class="k">int</span> x) { <span class="k">return</span> <span class="n">10</span>; }
+}</pre><div class="err"><span>❌ Compile error</span><pre>method m1(int) is already defined in class Main</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="overloading" data-say="overloading"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎚️</span><span>Overloading</span></h2>
+<p>Methods are <b>overloaded</b> when they share a name but have different parameter lists. The compiler picks one by looking at the <b>argument types</b> at compile time, so overloading is called <b>compile-time</b> or static polymorphism.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One name, three methods · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> print(<span class="k">int</span> i)    { <span class="t">System</span>.out.println(<span class="s">"int: "</span> + i); }
+    <span class="k">static</span> <span class="k">void</span> print(<span class="k">double</span> d) { <span class="t">System</span>.out.println(<span class="s">"double: "</span> + d); }
+    <span class="k">static</span> <span class="k">void</span> print(<span class="t">String</span> s) { <span class="t">System</span>.out.println(<span class="s">"String: "</span> + s); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        print(<span class="n">10</span>); print(<span class="n">10.5</span>); print(<span class="s">"ten"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>int: 10
+double: 10.5
+String: ten</pre></div></div>
+<h3>How the compiler picks</h3>
+<ol>
+<li>Look for an exact match.</li>
+<li>If none, <b>widen</b> the argument step by step (byte → short → int → long → float → double, and char → int) and look again.</li>
+<li>If still none, try <b>boxing</b> (int → Integer).</li>
+<li>Last of all, try a <b>var-arg</b> method.</li>
+<li>If two candidates remain equally good, the call is <b>ambiguous</b> and does not compile.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Automatic promotion · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> m(<span class="k">int</span> i)   { <span class="t">System</span>.out.println(<span class="s">"int"</span>); }
+    <span class="k">static</span> <span class="k">void</span> m(<span class="k">float</span> f) { <span class="t">System</span>.out.println(<span class="s">"float"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        m(<span class="s">'a'</span>);     <span class="c">// char widens to int</span>
+        m(<span class="n">10L</span>);     <span class="c">// long widens to float</span>
+    }
+}</pre><div class="out"><span>Output</span><pre>int
+float</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">double cannot shrink · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> m(<span class="k">int</span> i)   { }
+    <span class="k">static</span> <span class="k">void</span> m(<span class="k">float</span> f) { }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { m(<span class="n">10.5</span>); }
+}</pre><div class="err"><span>❌ Compile error</span><pre>no suitable method found for m(double)
+method Main.m(int) is not applicable
+(argument mismatch; possible lossy conversion from double to int)
+method Main.m(float) is not applicable
+(argument mismatch; possible lossy conversion from double to float)</pre></div></div>
+<h3>The most specific method wins</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">null prefers the child type · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> m(<span class="t">Object</span> o) { <span class="t">System</span>.out.println(<span class="s">"Object"</span>); }
+    <span class="k">static</span> <span class="k">void</span> m(<span class="t">String</span> s) { <span class="t">System</span>.out.println(<span class="s">"String"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        m(<span class="k">new</span> <span class="t">Object</span>());
+        m(<span class="s">"hi"</span>);
+        m(<span class="k">null</span>);    <span class="c">// String is more specific than Object</span>
+    }
+}</pre><div class="out"><span>Output</span><pre>Object
+String
+String</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two unrelated candidates for null · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> m(<span class="t">String</span> s)        { }
+    <span class="k">static</span> <span class="k">void</span> m(<span class="t">StringBuilder</span> b) { }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { m(<span class="k">null</span>); }
+}</pre><div class="err"><span>❌ Compile error</span><pre>reference to m is ambiguous
+both method m(String) in Main and method m(StringBuilder) in Main match</pre></div></div>
+<div class="exam">Overload resolution looks at the <b>reference</b> type, never the runtime object. With <code>m(Animal)</code> and <code>m(Monkey)</code>, the call <code>m(a)</code> where <code>Animal a = new Monkey();</code> picks <code>m(Animal)</code>.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Reference type decides · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Animal</span> { } <span class="k">class</span> <span class="t">Monkey</span> <span class="k">extends</span> <span class="t">Animal</span> { }
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> m(<span class="t">Animal</span> a) { <span class="t">System</span>.out.println(<span class="s">"Animal version"</span>); }
+    <span class="k">static</span> <span class="k">void</span> m(<span class="t">Monkey</span> m) { <span class="t">System</span>.out.println(<span class="s">"Monkey version"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Animal</span> a = <span class="k">new</span> <span class="t">Monkey</span>();
+        m(a);
+        m(<span class="k">new</span> <span class="t">Monkey</span>());
+    }
+}</pre><div class="out"><span>Output</span><pre>Animal version
+Monkey version</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="overriding" data-say="overriding"><div class="sec-num">Part 8</div><h2><span class="sec-em">🔁</span><span>Overriding</span></h2>
+<p>A child <b>overrides</b> a parent method by declaring the same signature with its own body. Which body runs is decided at <b>run time</b>, by the actual object. That is why overriding is called runtime polymorphism, dynamic method dispatch or late binding.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The object decides · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Parent</span> {
+    <span class="k">void</span> marry() { <span class="t">System</span>.out.println(<span class="s">"Parent picks the match"</span>); }
+}
+<span class="k">class</span> <span class="t">Child</span> <span class="k">extends</span> <span class="t">Parent</span> {
+    <span class="k">void</span> marry() { <span class="t">System</span>.out.println(<span class="s">"Child picks the match"</span>); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Parent</span> p = <span class="k">new</span> <span class="t">Child</span>();
+        p.marry();
+    }
+}</pre><div class="out"><span>Output</span><pre>Child picks the match</pre></div></div>
+<h3>Rules</h3>
+<ol>
+<li>Same name and same parameter types.</li>
+<li>The return type must be the same, or a child type of it for objects (<b>covariant return</b>, since Java 5). Primitives must match exactly.</li>
+<li><code>private</code> methods are not visible in the child, so a child method with the same name is a new method, not an override.</li>
+<li><code>final</code> methods cannot be overridden.</li>
+<li>Access can stay the same or get wider, never narrower. public stays public.</li>
+<li>The child may not throw a broader <b>checked</b> exception. Unchecked exceptions are free.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Covariant return type · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Parent</span> { <span class="t">Object</span> get() { <span class="k">return</span> <span class="s">"parent"</span>; } }
+<span class="k">class</span> <span class="t">Child</span> <span class="k">extends</span> <span class="t">Parent</span> {
+    <span class="a">@Override</span> <span class="t">String</span> get() { <span class="k">return</span> <span class="s">"child"</span>; }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="k">new</span> <span class="t">Child</span>().get().length());
+    }
+}</pre><div class="out"><span>Output</span><pre>5</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Narrower access · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Parent</span> { <span class="k">public</span> <span class="k">void</span> m() { } }
+<span class="k">class</span> <span class="t">Child</span> <span class="k">extends</span> <span class="t">Parent</span> { <span class="k">protected</span> <span class="k">void</span> m() { } }</pre><div class="err"><span>❌ Compile error</span><pre>m() in Child cannot override m() in Parent
+attempting to assign weaker access privileges; was public</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Broader checked exception · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Parent</span> { <span class="k">void</span> m() <span class="k">throws</span> java.io.<span class="t">IOException</span> { } }
+<span class="k">class</span> <span class="t">Child</span> <span class="k">extends</span> <span class="t">Parent</span> { <span class="k">void</span> m() <span class="k">throws</span> <span class="t">Exception</span> { } }</pre><div class="err"><span>❌ Compile error</span><pre>m() in Child cannot override m() in Parent
+overridden method does not throw Exception</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Primitive return must match · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Parent</span> { <span class="k">int</span> m() { <span class="k">return</span> <span class="n">1</span>; } }
+<span class="k">class</span> <span class="t">Child</span> <span class="k">extends</span> <span class="t">Parent</span> { <span class="k">long</span> m() { <span class="k">return</span> <span class="n">1</span>; } }</pre><div class="err"><span>❌ Compile error</span><pre>m() in Child cannot override m() in Parent
+return type long is not compatible with int</pre></div></div>
+<h3>Static methods are hidden, not overridden</h3>
+<p>If both parent and child have the same static method, the reference type decides which one runs. This is <b>method hiding</b>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Hiding versus overriding · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Parent</span> {
+    <span class="k">static</span> <span class="k">void</span> s() { <span class="t">System</span>.out.println(<span class="s">"Parent static"</span>); }
+    <span class="k">void</span> i() { <span class="t">System</span>.out.println(<span class="s">"Parent instance"</span>); }
+}
+<span class="k">class</span> <span class="t">Child</span> <span class="k">extends</span> <span class="t">Parent</span> {
+    <span class="k">static</span> <span class="k">void</span> s() { <span class="t">System</span>.out.println(<span class="s">"Child static"</span>); }
+    <span class="k">void</span> i() { <span class="t">System</span>.out.println(<span class="s">"Child instance"</span>); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Parent</span> p = <span class="k">new</span> <span class="t">Child</span>();
+        p.s();     <span class="c">// reference type: Parent</span>
+        p.i();     <span class="c">// object type: Child</span>
+    }
+}</pre><div class="out"><span>Output</span><pre>Parent static
+Child instance</pre></div></div>
+<h3>Variables are never overridden</h3>
+<p>Fields are resolved by the reference type at compile time, even when the child declares a field with the same name.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Fields follow the reference · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Parent</span> { <span class="t">String</span> x = <span class="s">"parent field"</span>; }
+<span class="k">class</span> <span class="t">Child</span> <span class="k">extends</span> <span class="t">Parent</span> { <span class="t">String</span> x = <span class="s">"child field"</span>; }
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Parent</span> p = <span class="k">new</span> <span class="t">Child</span>();
+        <span class="t">System</span>.out.println(p.x);
+        <span class="t">System</span>.out.println(((<span class="t">Child</span>) p).x);
+    }
+}</pre><div class="out"><span>Output</span><pre>parent field
+child field</pre></div></div>
+<div class="tip">Write <code>@Override</code> above every overriding method. If you misspell the name, the compiler tells you instead of quietly creating a new method.</div>
+</section>
+
+<section class="card reveal jsec" id="overload-vs-override" data-say="overload-vs-override"><div class="sec-num">Part 9</div><h2><span class="sec-em">🆚</span><span>Overloading versus overriding</span></h2>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Property</th><th>Overloading</th><th>Overriding</th></tr>
+<tr><td>Method names</td><td>same</td><td>same</td></tr>
+<tr><td>Parameter types</td><td>must differ</td><td>must match</td></tr>
+<tr><td>Return type</td><td>free</td><td>same or covariant</td></tr>
+<tr><td>private, static, final methods</td><td>can be overloaded</td><td>cannot be overridden</td></tr>
+<tr><td>Access modifiers</td><td>free</td><td>cannot become narrower</td></tr>
+<tr><td>throws clause</td><td>free</td><td>no broader checked exceptions</td></tr>
+<tr><td>Decided by</td><td>compiler, using reference types</td><td>JVM, using the runtime object</td></tr>
+<tr><td>Also called</td><td>compile-time, static, early binding</td><td>runtime, dynamic, late binding</td></tr>
+</table></div></div>
+</section>
+
+<section class="card reveal jsec" id="polymorphism" data-say="polymorphism"><div class="sec-num">Part 10</div><h2><span class="sec-em">🦎</span><span>Polymorphism</span></h2>
+<p><b>Polymorphism</b> means "many forms": one name, different behaviour depending on the situation. Java has two kinds.</p>
+<div class="grid2">
+<div class="box"><h4>Compile-time</h4><p>Overloading, and method hiding. The compiler decides.</p></div>
+<div class="box"><h4>Runtime</h4><p>Overriding. The JVM decides by looking at the real object.</p></div>
+</div>
+<p>The everyday benefit: write code against a parent type, and it keeps working for every child, including children written later.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One loop, many shapes · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">abstract</span> <span class="k">class</span> <span class="t">Shape</span> { <span class="k">abstract</span> <span class="k">double</span> area(); }
+<span class="k">class</span> <span class="t">Circle</span> <span class="k">extends</span> <span class="t">Shape</span> { <span class="k">double</span> r; <span class="t">Circle</span>(<span class="k">double</span> r) { <span class="k">this</span>.r = r; } <span class="k">double</span> area() { <span class="k">return</span> <span class="t">Math</span>.<span class="t">PI</span> * r * r; } }
+<span class="k">class</span> <span class="t">Rect</span> <span class="k">extends</span> <span class="t">Shape</span> { <span class="k">double</span> w, h; <span class="t">Rect</span>(<span class="k">double</span> w, <span class="k">double</span> h) { <span class="k">this</span>.w = w; <span class="k">this</span>.h = h; } <span class="k">double</span> area() { <span class="k">return</span> w * h; } }
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">List</span>&lt;<span class="t">Shape</span>&gt; shapes = <span class="t">List</span>.of(<span class="k">new</span> <span class="t">Circle</span>(<span class="n">1</span>), <span class="k">new</span> <span class="t">Rect</span>(<span class="n">2</span>, <span class="n">3</span>));
+        <span class="k">for</span> (<span class="t">Shape</span> s : shapes) <span class="t">System</span>.out.printf(<span class="s">"%s %.2f%n"</span>, s.getClass().getSimpleName(), s.area());
+    }
+}</pre><div class="out"><span>Output</span><pre>Circle 3.14
+Rect 6.00</pre></div></div>
+<div class="fun">The three pillars of OOP are encapsulation (security), polymorphism (flexibility) and inheritance (reusability).</div>
+</section>
+
+<section class="card reveal jsec" id="static-control-flow" data-say="static-control-flow"><div class="sec-num">Part 11</div><h2><span class="sec-em">🧊</span><span>Static control flow</span></h2>
+<p>When a class is loaded, Java runs its static parts in three steps:</p>
+<ol>
+<li>Identify every static member, top to bottom. Each static variable starts with its default value.</li>
+<li>Run static variable assignments and static blocks, in the order they are written.</li>
+<li>Run <code>main</code>.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Predict the order first · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> i = <span class="n">10</span>;
+    <span class="k">static</span> {
+        m1();
+        <span class="t">System</span>.out.println(<span class="s">"first static block"</span>);
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        m1();
+        <span class="t">System</span>.out.println(<span class="s">"main method"</span>);
+    }
+    <span class="k">static</span> <span class="k">void</span> m1() { <span class="t">System</span>.out.println(j); }
+    <span class="k">static</span> { <span class="t">System</span>.out.println(<span class="s">"second static block"</span>); }
+    <span class="k">static</span> <span class="k">int</span> j = <span class="n">20</span>;
+}</pre><div class="out"><span>Output</span><pre>0
+first static block
+second static block
+20
+main method</pre></div></div>
+<p>The first line prints 0 because <code>j</code> has been identified but not yet assigned. A variable in that state is called <b>read indirectly, write only</b> (RIWO).</p>
+<div class="rule">During RIWO you may read a variable through a method (indirectly) but not by name directly. A direct read before the declaration is an "illegal forward reference".</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Direct read during RIWO · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> { <span class="t">System</span>.out.println(x); }
+    <span class="k">static</span> <span class="k">int</span> x = <span class="n">10</span>;
+}</pre><div class="err"><span>❌ Compile error</span><pre>illegal forward reference</pre></div></div>
+<h3>Parent and child</h3>
+<p>Loading a child class loads the parent first. So the parent's static flow runs completely, then the child's, then <code>main</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Parent static first · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Base</span> {
+    <span class="k">static</span> { <span class="t">System</span>.out.println(<span class="s">"Base static block"</span>); }
+}
+<span class="k">class</span> <span class="t">Derived</span> <span class="k">extends</span> <span class="t">Base</span> {
+    <span class="k">static</span> { <span class="t">System</span>.out.println(<span class="s">"Derived static block"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">System</span>.out.println(<span class="s">"Derived main"</span>); }
+}</pre><div class="out"><span>Output</span><pre>Base static block
+Derived static block
+Derived main</pre></div></div>
+<div class="tip">Use a static block for one-time setup when the class loads, such as loading a native library or filling a lookup table.</div>
+</section>
+
+<section class="card reveal jsec" id="instance-control-flow" data-say="instance-control-flow"><div class="sec-num">Part 12</div><h2><span class="sec-em">🏗️</span><span>Instance control flow</span></h2>
+<p>Every time you create an object, Java runs these steps:</p>
+<ol>
+<li>Identify instance members, top to bottom (with default values).</li>
+<li>Run instance variable assignments and instance blocks, in the order they are written.</li>
+<li>Run the constructor.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Instance flow for one object · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">int</span> i = <span class="n">10</span>;
+    { m1(); <span class="t">System</span>.out.println(<span class="s">"first instance block"</span>); }
+    <span class="t">Main</span>() { <span class="t">System</span>.out.println(<span class="s">"constructor"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Main</span> t = <span class="k">new</span> <span class="t">Main</span>();
+        <span class="t">System</span>.out.println(<span class="s">"main"</span>);
+    }
+    <span class="k">void</span> m1() { <span class="t">System</span>.out.println(j); }
+    { <span class="t">System</span>.out.println(<span class="s">"second instance block"</span>); }
+    <span class="k">int</span> j = <span class="n">20</span>;
+}</pre><div class="out"><span>Output</span><pre>0
+first instance block
+second instance block
+constructor
+main</pre></div></div>
+<h3>The full picture with a parent</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Everything together · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Parent</span> {
+    <span class="k">static</span> { <span class="t">System</span>.out.println(<span class="s">"1. Parent static"</span>); }
+    { <span class="t">System</span>.out.println(<span class="s">"3. Parent instance block"</span>); }
+    <span class="t">Parent</span>() { <span class="t">System</span>.out.println(<span class="s">"4. Parent constructor"</span>); }
+}
+<span class="k">class</span> <span class="t">Child</span> <span class="k">extends</span> <span class="t">Parent</span> {
+    <span class="k">static</span> { <span class="t">System</span>.out.println(<span class="s">"2. Child static"</span>); }
+    { <span class="t">System</span>.out.println(<span class="s">"5. Child instance block"</span>); }
+    <span class="t">Child</span>() { <span class="t">System</span>.out.println(<span class="s">"6. Child constructor"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">new</span> <span class="t">Child</span>();
+        <span class="t">System</span>.out.println(<span class="s">"--- second object ---"</span>);
+        <span class="k">new</span> <span class="t">Child</span>();
+    }
+}</pre><div class="out"><span>Output</span><pre>1. Parent static
+2. Child static
+3. Parent instance block
+4. Parent constructor
+5. Child instance block
+6. Child constructor
+--- second object ---
+3. Parent instance block
+4. Parent constructor
+5. Child instance block
+6. Child constructor</pre></div></div>
+<p>Static parts run once per class. Instance parts run for every object, parent first, then child.</p>
+</section>
+
+<section class="card reveal jsec" id="constructors" data-say="constructors"><div class="sec-num">Part 13</div><h2><span class="sec-em">🔨</span><span>Constructors</span></h2>
+<p>Creating an object is not enough. It also needs its starting values. A <b>constructor</b> runs automatically at creation to do exactly that.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two constructors, two students · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Student</span> {
+    <span class="t">String</span> name; <span class="k">int</span> roll;
+    <span class="t">Student</span>(<span class="t">String</span> name, <span class="k">int</span> roll) { <span class="k">this</span>.name = name; <span class="k">this</span>.roll = roll; }
+    <span class="t">Student</span>() { <span class="k">this</span>(<span class="s">"Unknown"</span>, <span class="n">0</span>); }          <span class="c">// calls the other constructor</span>
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Student</span> a = <span class="k">new</span> <span class="t">Student</span>(<span class="s">"Priya"</span>, <span class="n">101</span>);
+        <span class="t">Student</span> b = <span class="k">new</span> <span class="t">Student</span>();
+        <span class="t">System</span>.out.println(a.name + <span class="s">" "</span> + a.roll + <span class="s">", "</span> + b.name + <span class="s">" "</span> + b.roll);
+    }
+}</pre><div class="out"><span>Output</span><pre>Priya 101, Unknown 0</pre></div></div>
+<h3>Rules</h3>
+<ol>
+<li>The name must match the class name exactly.</li>
+<li>There is no return type, not even <code>void</code>. Add one and it becomes an ordinary method that just happens to share the class name.</li>
+<li>Allowed modifiers are only the four access levels.</li>
+<li>If you write no constructor, the compiler adds a <b>default constructor</b> with no parameters, whose only line is <code>super();</code>. If you write any constructor, no default is added.</li>
+<li>The first line of every constructor is <code>super(...)</code> or <code>this(...)</code>. If you write neither, the compiler inserts <code>super();</code>. You cannot use both, and they are allowed only as the first line of a constructor.</li>
+<li>Constructors can be overloaded, but they are not inherited, so they cannot be overridden.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">void makes it a method, not a constructor · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">void</span> <span class="t">Main</span>() { <span class="t">System</span>.out.println(<span class="s">"method"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Main</span> m = <span class="k">new</span> <span class="t">Main</span>();         <span class="c">// default constructor, prints nothing</span>
+        m.<span class="t">Main</span>();                    <span class="c">// the method runs only when called</span>
+    }
+}</pre><div class="out"><span>Output</span><pre>method</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Parent has no no-arg constructor · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Parent</span> { <span class="t">Parent</span>(<span class="k">int</span> x) { } }
+<span class="k">class</span> <span class="t">Child</span> <span class="k">extends</span> <span class="t">Parent</span> { }</pre><div class="err"><span>❌ Compile error</span><pre>constructor Parent in class Parent cannot be applied to given types;
+required: int
+found:    no arguments
+reason: actual and formal argument lists differ in length</pre></div></div>
+<p>The child's default constructor calls <code>super()</code>, but Parent only has <code>Parent(int)</code>. Fix it by calling <code>super(10)</code> in a child constructor, or by adding <code>Parent()</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Constructors calling each other in a circle · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="t">Main</span>() { <span class="k">this</span>(<span class="n">10</span>); }
+    <span class="t">Main</span>(<span class="k">int</span> i) { <span class="k">this</span>(); }
+}</pre><div class="err"><span>❌ Compile error</span><pre>recursive constructor invocation</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">super() must be first · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="t">Main</span>() {
+        <span class="t">System</span>.out.println(<span class="s">"hello"</span>);
+        <span class="k">super</span>();
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>call to super must be first statement in constructor</pre></div></div>
+<div class="exam">Constructors and instance blocks both run at object creation. The instance blocks run first, then the constructor body.</div>
+</section>
+
+<section class="card reveal jsec" id="singleton" data-say="singleton"><div class="sec-num">Part 14</div><h2><span class="sec-em">☝️</span><span>Singleton classes</span></h2>
+<p>A <b>singleton</b> class allows only one object. <code>Runtime</code> is one: <code>Runtime.getRuntime()</code> always returns the same object. Singletons save memory when every user can share one object, such as a configuration or a connection pool.</p>
+<h3>How to build one</h3>
+<ol>
+<li>Make the constructor <code>private</code>, so nobody outside can call <code>new</code>.</li>
+<li>Keep one private static instance.</li>
+<li>Offer a public static method that returns it.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One object, however many times you ask · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Config</span> {
+    <span class="k">private</span> <span class="k">static</span> <span class="k">final</span> <span class="t">Config</span> <span class="t">INSTANCE</span> = <span class="k">new</span> <span class="t">Config</span>();
+    <span class="k">private</span> <span class="t">Config</span>() { <span class="t">System</span>.out.println(<span class="s">"Config created"</span>); }
+    <span class="k">static</span> <span class="t">Config</span> get() { <span class="k">return</span> <span class="t">INSTANCE</span>; }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Config</span> a = <span class="t">Config</span>.get();
+        <span class="t">Config</span> b = <span class="t">Config</span>.get();
+        <span class="t">System</span>.out.println(a == b);
+        <span class="t">System</span>.out.println(<span class="t">Runtime</span>.getRuntime() == <span class="t">Runtime</span>.getRuntime());
+    }
+}</pre><div class="out"><span>Output</span><pre>Config created
+true
+true</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lazy version: create on first use · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Logger</span> {
+    <span class="k">private</span> <span class="k">static</span> <span class="t">Logger</span> instance;
+    <span class="k">private</span> <span class="t">Logger</span>() { <span class="t">System</span>.out.println(<span class="s">"Logger created"</span>); }
+    <span class="k">static</span> <span class="k">synchronized</span> <span class="t">Logger</span> get() {
+        <span class="k">if</span> (instance == <span class="k">null</span>) instance = <span class="k">new</span> <span class="t">Logger</span>();
+        <span class="k">return</span> instance;
+    }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="s">"before first use"</span>);
+        <span class="t">Logger</span>.get(); <span class="t">Logger</span>.get();
+    }
+}</pre><div class="out"><span>Output</span><pre>before first use
+Logger created</pre></div></div>
+<div class="tip">The same idea makes "doubleton" classes (two objects) and pools. And a <code>private</code> constructor alone also stops a class from being extended, because a child must call it.</div>
+</section>
+
+<section class="card reveal jsec" id="coupling-cohesion" data-say="coupling-cohesion"><div class="sec-num">Part 15</div><h2><span class="sec-em">🧷</span><span>Coupling and cohesion</span></h2>
+<div class="grid2">
+<div class="box"><h4>Coupling: how much classes depend on each other</h4><p>Tight coupling means a change in one class breaks others. Aim for <b>loose coupling</b>: depend on interfaces, not on concrete details.</p></div>
+<div class="box"><h4>Cohesion: how focused one class is</h4><p>A class that does one clear job has <b>high cohesion</b>. One giant class that logs in, sends mail and prints reports has low cohesion.</p></div>
+</div>
+<span class="eq">Good design = loose coupling + high cohesion</span>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Loose coupling through an interface · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Notifier</span> { <span class="k">void</span> send(<span class="t">String</span> msg); }
+<span class="k">class</span> <span class="t">Sms</span> <span class="k">implements</span> <span class="t">Notifier</span> { <span class="k">public</span> <span class="k">void</span> send(<span class="t">String</span> m) { <span class="t">System</span>.out.println(<span class="s">"SMS: "</span> + m); } }
+<span class="k">class</span> <span class="t">Email</span> <span class="k">implements</span> <span class="t">Notifier</span> { <span class="k">public</span> <span class="k">void</span> send(<span class="t">String</span> m) { <span class="t">System</span>.out.println(<span class="s">"Email: "</span> + m); } }
+<span class="k">class</span> <span class="t">OrderService</span> {
+    <span class="k">private</span> <span class="k">final</span> <span class="t">Notifier</span> notifier;                    <span class="c">// depends on the interface only</span>
+    <span class="t">OrderService</span>(<span class="t">Notifier</span> n) { notifier = n; }
+    <span class="k">void</span> placeOrder() { notifier.send(<span class="s">"Order placed"</span>); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">new</span> <span class="t">OrderService</span>(<span class="k">new</span> <span class="t">Sms</span>()).placeOrder();
+        <span class="k">new</span> <span class="t">OrderService</span>(<span class="k">new</span> <span class="t">Email</span>()).placeOrder();     <span class="c">// no change inside OrderService</span>
+    }
+}</pre><div class="out"><span>Output</span><pre>SMS: Order placed
+Email: Order placed</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="type-casting" data-say="type-casting"><div class="sec-num">Part 16</div><h2><span class="sec-em">🎭</span><span>Object type casting</span></h2>
+<p>Casting an object reference changes the <b>type of the reference</b>, never the object itself.</p>
+<span class="eq">A b = (C) d;</span>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Check</th><th>When</th><th>Rule</th><th>If broken</th></tr>
+<tr><td>1</td><td>compile time</td><td>the type of <code>d</code> and <code>C</code> must be related (one is a parent of the other)</td><td>compile error: incompatible types</td></tr>
+<tr><td>2</td><td>compile time</td><td><code>C</code> must be the same as <code>A</code> or a child of <code>A</code></td><td>compile error: incompatible types</td></tr>
+<tr><td>3</td><td>run time</td><td>the real object in <code>d</code> must be a <code>C</code> or a child of <code>C</code></td><td>ClassCastException</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">All three checks pass · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Object</span> o = <span class="k">new</span> <span class="t">String</span>(<span class="s">"cast me"</span>);
+<span class="t">String</span> s = (<span class="t">String</span>) o;
+<span class="t">System</span>.out.println(s.toUpperCase());</pre><div class="out"><span>Output</span><pre>CAST ME</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Rule 1: unrelated types · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">String</span> s = <span class="s">"hello"</span>;
+<span class="t">StringBuilder</span> sb = (<span class="t">StringBuilder</span>) s;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: String cannot be converted to StringBuilder</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Rule 2: result does not fit the variable · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Object</span> o = <span class="k">new</span> <span class="t">String</span>(<span class="s">"x"</span>);
+<span class="t">StringBuilder</span> sb = (<span class="t">String</span>) o;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: String cannot be converted to StringBuilder</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Rule 3: wrong object at run time · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Object</span> o = <span class="k">new</span> <span class="t">String</span>(<span class="s">"x"</span>);
+<span class="t">StringBuilder</span> sb = (<span class="t">StringBuilder</span>) o;</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.ClassCastException: class java.lang.String cannot be cast to class java.lang.StringBuilder (java.lang.String and java.lang.StringBuilder are in module java.base of loader 'bootstrap')</pre></div></div>
+<div class="tip">Check with <code>instanceof</code> (or pattern matching) before a down cast, and the ClassCastException can never happen.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./declarations-access-modifiers.html" data-topic="declarations-access-modifiers"><small>← Previous chapter</small><b>🔐 Declarations and Access Modifiers</b></a><a class="next" href="./inner-classes.html" data-topic="inner-classes"><small>Next chapter →</small><b>🪆 Inner Classes</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "Life of an object", "panels": [{"s": [["e", "🧊"], ["t", "static blocks run once", {"b": 1}]], "h": "The class wakes up", "t": "Loading the class runs static assignments and static blocks, parent first.", "more": "Static variables start at their default values. Until their line runs, they are \"read indirectly, write only\"."}, {"s": [["e", "🏗️"], ["c", ["blk", "blk", "ctor"], {"ix": false, "hl": {"2": "hl"}}]], "h": "An object is born", "t": "Instance blocks and assignments run in order, then the constructor.", "more": "With a parent, the whole parent part (blocks, then constructor) finishes before the child part starts."}, {"s": [["e", "🦎"], ["t", "Parent p = new Child();", {"b": 1, "size": 12}]], "h": "It wears a parent badge", "t": "A parent reference can hold any child object.", "more": "The compiler only lets you call parent methods, but the JVM runs the child's overriding version."}, {"s": [["e", "🎭"], ["t", "(Child) p  ✓   (Other) p  💥", {"b": 1, "size": 12}]], "h": "Casting changes the badge", "t": "A cast changes the reference type, never the object.", "more": "The compiler checks that the types are related. The JVM checks the real object and throws ClassCastException if it lied."}], "remember": "Overloading is chosen by the compiler from reference types. Overriding is chosen by the JVM from the real object. Fields always follow the reference."}, "real": [["🏧", "The ATM (abstraction)", "You press \"Withdraw 2000\" and cash appears. The network calls, the database update and the note counting are all hidden. That is abstraction, and the PIN check is data hiding."], ["📺", "One remote, many TVs (polymorphism)", "The same \"power\" button switches on a Sony, an LG or a Samsung. Each one overrides what \"power on\" means, and the button never needs to know which brand it is talking to."], ["👑", "The one and only Prime Minister (singleton)", "A country has exactly one Prime Minister at a time. Ask for \"the PM\" twice and you get the same person, never a new one. <code>Runtime.getRuntime()<\/code> works the same way."]], "quiz": [{"lv": "e", "q": "Which keyword creates an IS-A relationship between two classes?", "o": ["implements", "extends", "instanceof", "super"], "a": 1, "hint": "A class inherits from another class with this word.", "why": "<code>extends<\/code> makes a class a child of another class. <code>implements<\/code> is for interfaces."}, {"lv": "e", "q": "Encapsulation is best described as…", "o": ["Inheritance + polymorphism", "Data hiding + abstraction", "Overloading + overriding", "Interfaces + packages"], "a": 1, "hint": "Private data plus a clean set of services.", "why": "Wrapping data with its methods, hiding the data and exposing services is encapsulation: data hiding plus abstraction."}, {"lv": "e", "q": "Which of these is <b>not<\/b> part of a method signature?", "o": ["Method name", "Number of parameters", "Parameter types", "Return type"], "a": 3, "hint": "Can two methods differ only in what they return?", "why": "The signature is the name plus the parameter types in order. The return type is not included."}, {"lv": "m", "q": "What does this print?", "code": "class P { int x = 1; void show() { System.out.println(\"P\"); } }\nclass C extends P { int x = 2; void show() { System.out.println(\"C\"); } }\nclass Main {\n    public static void main(String[] args) {\n        P p = new C();\n        System.out.println(p.x);\n        p.show();\n    }\n}", "o": ["1 C", "2 C", "1 P", "2 P"], "a": 0, "run": 1, "hint": "Fields follow the reference, methods follow the object.", "why": "The field is resolved at compile time from the reference type P, so x is 1. The overridden method is chosen at run time from the object, a C."}, {"lv": "m", "q": "What does this print?", "code": "class Main {\n    static void m(Object o) { System.out.println(\"Object\"); }\n    static void m(String s) { System.out.println(\"String\"); }\n    public static void main(String[] args) { m(null); }\n}", "o": ["Object", "String", "Compile error", "NullPointerException"], "a": 1, "run": 1, "hint": "null fits both. Which type is more specific?", "why": "String is a child of Object, so <code>m(String)<\/code> is more specific and wins."}, {"lv": "m", "q": "Which statement about constructors is true?", "o": ["They can return void", "They are inherited by child classes", "The compiler adds a default one only when you write none", "They can be declared static"], "a": 2, "hint": "Think about when the compiler is generous.", "why": "A default no-arg constructor is generated only when the class has no constructor at all. Constructors have no return type, are not inherited and cannot be static."}, {"lv": "h", "q": "What does this print?", "code": "class Main {\n    static { System.out.print(\"A\"); }\n    public static void main(String[] args) { System.out.print(\"B\"); }\n    static { System.out.print(\"C\"); }\n}", "o": ["ABC", "ACB", "BAC", "CAB"], "a": 1, "run": 1, "hint": "All static blocks run when the class loads, before main.", "why": "Static blocks run top to bottom during class loading: A, then C. Only then does main print B."}, {"lv": "h", "q": "The parent has <code>protected Number get() throws IOException<\/code>. Which child version compiles?", "o": ["<code>public Integer get() throws FileNotFoundException<\/code>", "<code>private Number get()<\/code>", "<code>protected Object get()<\/code>", "<code>protected Number get() throws Exception<\/code>"], "a": 0, "hint": "Check access, return type and checked exceptions.", "why": "Public widens access, Integer is a child of Number (covariant return) and FileNotFoundException is a child of IOException. The others narrow access, widen the return type or widen the exception."}, {"lv": "h", "q": "What does this print?", "code": "class P {\n    P() { System.out.print(\"P\"); }\n    { System.out.print(\"p\"); }\n}\nclass C extends P {\n    C() { System.out.print(\"C\"); }\n    { System.out.print(\"c\"); }\n}\nclass Main {\n    public static void main(String[] args) { new C(); }\n}", "o": ["PpCc", "pPcC", "cCpP", "pcPC"], "a": 1, "run": 1, "hint": "Instance blocks run before the constructor body, and the parent part finishes first.", "why": "Parent part: instance block p, then constructor P. Child part: instance block c, then constructor C. So pPcC."}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    static void m(long x)    { System.out.println(\"long\"); }\n    static void m(Integer x) { System.out.println(\"Integer\"); }\n    static void m(int... x)  { System.out.println(\"int...\"); }\n    public static void main(String[] args) { m(5); }\n}", "o": ["long", "Integer", "int...", "Compile error: ambiguous"], "a": 0, "run": 1, "hint": "Widening is older than boxing, and var-args come last.", "why": "The compiler first tries matches without boxing or var-args. int widens to long, so <code>m(long)<\/code> wins before boxing to Integer is even considered."}, {"lv": "x", "q": "What happens?", "code": "Object o = Integer.valueOf(5);\nNumber n = (Number) o;\nLong l = (Long) n;\nSystem.out.println(l);", "o": ["Prints 5", "Compile error at line 2", "Compile error at line 3", "ClassCastException at run time"], "a": 3, "re": "ClassCastException", "hint": "The compiler checks types are related. The JVM checks the real object.", "why": "Both casts compile, because Number and Long are related to the declared types. At run time the object is an Integer, which is not a Long, so the second cast throws ClassCastException."}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    static int x = m();\n    static int y = 10;\n    static int m() { return y * 2; }\n    public static void main(String[] args) { System.out.println(x); }\n}", "o": ["20", "0", "10", "Compile error"], "a": 1, "run": 1, "hint": "When m() runs, has y been assigned yet?", "why": "x is assigned first, while y still holds its default 0. Reading y inside a method is an allowed indirect read, so x = 0 × 2 = 0."}], "calc": [{"lv": "e", "q": "<code>Child<\/code> extends <code>Parent<\/code>, which extends <code>Object<\/code>. How many constructors run when you write <code>new Child()<\/code>?", "ans": "3", "py": "3", "hint": "Every constructor starts by calling its parent constructor.", "steps": ["<code>Child()<\/code> calls <code>super()<\/code>, which is <code>Parent()<\/code>.", "<code>Parent()<\/code> calls <code>super()<\/code>, which is <code>Object()<\/code>.", "So Object, Parent and Child constructors run: 3 constructors, but only 1 object."]}, {"lv": "e", "q": "A singleton's <code>get()<\/code> method is called 5 times. How many objects of the class exist?", "ans": "1", "py": "1", "hint": "That is the whole point of a singleton.", "steps": ["The constructor is private and the single instance is stored in a static field.", "Every call returns that same object, so only 1 object exists."]}, {"lv": "m", "q": "What does this print?", "code": "abstract class Shape { abstract int area(); }\nclass Rect extends Shape { int w, h; Rect(int w, int h) { this.w = w; this.h = h; } int area() { return w * h; } }\nclass Square extends Rect { Square(int s) { super(s, s); } }\nclass Main {\n    public static void main(String[] args) {\n        Shape[] all = { new Rect(2, 3), new Square(4), new Rect(5, 1) };\n        int total = 0;\n        for (Shape s : all) total += s.area();\n        System.out.println(total);\n    }\n}", "ans": "27", "run": 1, "hint": "Each object uses its own area. Square reuses Rect's area.", "steps": ["<span class=\"eq\">Rect(2, 3): 2 × 3 = 6<\/span>", "<span class=\"eq\">Square(4) = Rect(4, 4): 4 × 4 = 16<\/span>", "<span class=\"eq\">Rect(5, 1): 5 × 1 = 5<\/span>", "<span class=\"eq\">6 + 16 + 5 = 27<\/span>"]}, {"lv": "m", "q": "In the \"Everything together\" example, how many lines are printed in total (two objects are created)?", "ans": "11", "py": "2 + 4*2 + 1", "hint": "Static lines print once. Instance lines print for every object. Count the separator line too.", "steps": ["Static blocks: 2 lines, printed once.", "Each object prints 4 lines (two instance blocks and two constructors).", "The separator prints 1 line.", "<span class=\"eq\">2 + 4 × 2 + 1 = 11<\/span>"]}, {"lv": "h", "q": "What does this print?", "code": "class Main {\n    static int a = 5;\n    static { a = a * 2; }\n    static int b = a + 1;\n    static { b = b * a; }\n    public static void main(String[] args) { System.out.println(a + b); }\n}", "ans": "120", "run": 1, "hint": "Run the static lines strictly from top to bottom.", "steps": ["a = 5", "Static block: <span class=\"eq\">a = 5 × 2 = 10<\/span>", "<span class=\"eq\">b = a + 1 = 11<\/span>", "Static block: <span class=\"eq\">b = 11 × 10 = 110<\/span>", "<span class=\"eq\">a + b = 10 + 110 = 120<\/span>"]}, {"lv": "h", "q": "What does this print?", "code": "class P { static int n; P() { n++; } }\nclass C extends P {\n    C() { this(1); n++; }\n    C(int x) { n++; }\n}\nclass Main {\n    public static void main(String[] args) {\n        new C(); new C();\n        System.out.println(P.n);\n    }\n}", "ans": "6", "run": 1, "hint": "C() calls C(int), which calls P() first.", "steps": ["<code>new C()<\/code>: C() → this(1) → C(int) → super() → P() adds 1.", "Back in C(int): adds 1. Back in C(): adds 1. So 3 per object.", "<span class=\"eq\">2 objects × 3 = 6<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    static int m(int x) { return 1; }\n    static int m(long x) { return 10; }\n    static int m(double x) { return 100; }\n    static int m(Object x) { return 1000; }\n    public static void main(String[] args) {\n        System.out.println(m('a') + m(5L) + m(5f) + m(\"s\"));\n    }\n}", "ans": "1111", "run": 1, "hint": "Find the closest widening match for each argument.", "steps": ["<code>'a'<\/code> is a char, which widens to int: 1.", "<code>5L<\/code> is a long, exact match: 10.", "<code>5f<\/code> is a float, which widens to double: 100.", "<code>\"s\"<\/code> is a String, which fits Object: 1000.", "<span class=\"eq\">1 + 10 + 100 + 1000 = 1111<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    static int x = y() + 1;\n    static int z = 5;\n    static int y() { return z * 3; }\n    public static void main(String[] args) { System.out.println(x + z); }\n}", "ans": "6", "run": 1, "hint": "When x is assigned, z has not been assigned yet.", "steps": ["x is assigned first. Inside y(), z still has its default 0.", "<span class=\"eq\">x = 0 × 3 + 1 = 1<\/span>", "Then z = 5.", "<span class=\"eq\">x + z = 1 + 5 = 6<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to OOP Concepts, the heart of Java. You will learn how objects hide their data, how classes inherit and override, how objects are born step by step, and how casting works.", "hi": "OOP Concepts में आपका स्वागत है, यह Java का दिल है। आप सीखेंगे कि objects अपना data कैसे छुपाते हैं, classes कैसे inherit और override करती हैं, objects कदम दर कदम कैसे बनते हैं, और casting कैसे काम करती है।", "kn": "OOP Concepts ಗೆ ಸ್ವಾಗತ, ಇದು Java ದ ಹೃದಯ. Objects ತಮ್ಮ data ಅನ್ನು ಹೇಗೆ ಮುಚ್ಚಿಡುತ್ತವೆ, classes ಹೇಗೆ inherit ಮತ್ತು override ಮಾಡುತ್ತವೆ, objects ಹಂತ ಹಂತವಾಗಿ ಹೇಗೆ ಹುಟ್ಟುತ್ತವೆ, ಮತ್ತು casting ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ ಎಂದು ಕಲಿಯುತ್ತೀರಿ.", "or": "OOP Concepts କୁ ସ୍ୱାଗତ, ଏହା Java ର ହୃଦୟ। ଆପଣ ଶିଖିବେ ଯେ objects ନିଜ data କିପରି ଲୁଚାନ୍ତି, classes କିପରି inherit ଏବଂ override କରନ୍ତି, objects ପଦକ୍ଷେପ ଅନୁସାରେ କିପରି ଜନ୍ମ ନିଅନ୍ତି, ଏବଂ casting କିପରି କାମ କରେ।", "ar": "مرحبًا بك في مفاهيم البرمجة الكائنية، قلب لغة Java. ستتعلم كيف تخفي الكائنات بياناتها، وكيف ترث الأصناف وتتجاوز الدوال، وكيف يولد الكائن خطوة بخطوة، وكيف يعمل التحويل بين الأنواع.", "de": "Willkommen bei den OOP-Konzepten, dem Herzstück von Java. Du lernst, wie Objekte ihre Daten verbergen, wie Klassen erben und überschreiben, wie ein Objekt Schritt für Schritt entsteht und wie Casting funktioniert."}, {"id": "data-hiding", "h": "Data hiding", "en": "Data hiding keeps fields private, so outsiders must go through methods. Those methods can validate every request, which makes the object secure.", "hi": "Data hiding में fields private रखे जाते हैं, ताकि बाहर वाले methods के ज़रिए ही आएँ। वे methods हर अनुरोध की जाँच कर सकते हैं, जिससे object सुरक्षित रहता है।", "kn": "Data hiding ನಲ್ಲಿ fields private ಆಗಿರುತ್ತವೆ, ಆದ್ದರಿಂದ ಹೊರಗಿನವರು methods ಮೂಲಕವೇ ಬರಬೇಕು. ಆ methods ಪ್ರತಿಯೊಂದು ವಿನಂತಿಯನ್ನು ಪರಿಶೀಲಿಸಬಹುದು, ಇದರಿಂದ object ಸುರಕ್ಷಿತವಾಗಿರುತ್ತದೆ.", "or": "Data hiding ରେ fields private ରଖାଯାଏ, ଯାହାଦ୍ୱାରା ବାହାର ଲୋକ methods ମାଧ୍ୟମରେ ହିଁ ଆସନ୍ତି। ସେହି methods ପ୍ରତ୍ୟେକ ଅନୁରୋଧ ଯାଞ୍ଚ କରିପାରେ, ଯାହା object କୁ ସୁରକ୍ଷିତ ରଖେ।", "ar": "إخفاء البيانات يجعل الحقول private، فيضطر الآخرون إلى المرور عبر الدوال. وتستطيع هذه الدوال التحقق من كل طلب، وهذا يجعل الكائن آمنًا.", "de": "Beim Datenverbergen sind Felder private, sodass Außenstehende über Methoden gehen müssen. Diese Methoden können jede Anfrage prüfen, das macht das Objekt sicher."}, {"id": "abstraction", "h": "Abstraction", "en": "Abstraction shows what something does and hides how it does it, like an ATM screen. In Java you use interfaces and abstract classes for it.", "hi": "Abstraction बताता है कि कोई चीज़ क्या करती है और छुपाता है कि कैसे करती है, जैसे ATM की स्क्रीन। Java में इसके लिए interfaces और abstract classes इस्तेमाल होते हैं।", "kn": "Abstraction ಒಂದು ವಸ್ತು ಏನು ಮಾಡುತ್ತದೆ ಎಂದು ತೋರಿಸಿ, ಅದನ್ನು ಹೇಗೆ ಮಾಡುತ್ತದೆ ಎಂಬುದನ್ನು ಮರೆಮಾಡುತ್ತದೆ, ATM ಪರದೆಯಂತೆ. Java ದಲ್ಲಿ ಇದಕ್ಕಾಗಿ interfaces ಮತ್ತು abstract classes ಬಳಸುತ್ತೇವೆ.", "or": "Abstraction ଦେଖାଏ ଯେ କିଛି କ'ଣ କରେ ଏବଂ ଲୁଚାଏ ଯେ କିପରି କରେ, ATM ସ୍କ୍ରିନ ଭଳି। Java ରେ ଏଥିପାଇଁ interfaces ଏବଂ abstract classes ବ୍ୟବହାର ହୁଏ।", "ar": "التجريد يُظهر ما يفعله الشيء ويخفي كيف يفعله، مثل شاشة الصراف الآلي. وفي Java نستخدم لذلك الواجهات والأصناف المجردة.", "de": "Abstraktion zeigt, was etwas tut, und verbirgt, wie es das tut, wie der Bildschirm eines Geldautomaten. In Java nutzt man dafür Interfaces und abstrakte Klassen."}, {"id": "encapsulation", "h": "Encapsulation", "en": "Encapsulation wraps data and the methods that use it into one class. Data hiding plus abstraction gives encapsulation. A class is tightly encapsulated when every field, including inherited ones, is private.", "hi": "Encapsulation data और उसे इस्तेमाल करने वाले methods को एक class में लपेटता है। Data hiding और abstraction मिलकर encapsulation बनते हैं। जब हर field, inherited वाले भी, private हो तो class tightly encapsulated कहलाती है।", "kn": "Encapsulation data ಮತ್ತು ಅದನ್ನು ಬಳಸುವ methods ಅನ್ನು ಒಂದೇ class ನಲ್ಲಿ ಸುತ್ತುತ್ತದೆ. Data hiding ಮತ್ತು abstraction ಸೇರಿದರೆ encapsulation. inherited ಸೇರಿ ಪ್ರತಿಯೊಂದು field private ಆಗಿದ್ದರೆ class tightly encapsulated.", "or": "Encapsulation data ଏବଂ ତାକୁ ବ୍ୟବହାର କରୁଥିବା methods କୁ ଗୋଟିଏ class ରେ ଗୁଡ଼ାଏ। Data hiding ଏବଂ abstraction ମିଶି encapsulation ହୁଏ। inherited ସହିତ ପ୍ରତ୍ୟେକ field private ଥିଲେ class tightly encapsulated।", "ar": "التغليف يضم البيانات والدوال التي تستخدمها في صنف واحد. إخفاء البيانات مع التجريد يساوي التغليف. ويكون الصنف مغلفًا بإحكام عندما تكون كل حقوله private، بما فيها الموروثة.", "de": "Kapselung packt Daten und die Methoden, die sie benutzen, in eine Klasse. Datenverbergen plus Abstraktion ergibt Kapselung. Eine Klasse ist streng gekapselt, wenn jedes Feld, auch geerbte, private ist."}, {"id": "is-a", "h": "IS-A relationship", "en": "IS-A is inheritance, written with extends. A child gets the parent's members, and a parent reference can hold a child object, but then only parent methods can be called. A class extends only one class.", "hi": "IS-A का मतलब inheritance है, जो extends से लिखा जाता है। Child को parent के members मिलते हैं, और parent reference child object रख सकता है, लेकिन तब सिर्फ़ parent के methods बुलाए जा सकते हैं। एक class सिर्फ़ एक class को extend करती है।", "kn": "IS-A ಎಂದರೆ inheritance, ಇದನ್ನು extends ಮೂಲಕ ಬರೆಯುತ್ತೇವೆ. Child ಗೆ parent ನ members ಸಿಗುತ್ತವೆ, ಮತ್ತು parent reference child object ಅನ್ನು ಹಿಡಿಯಬಹುದು, ಆದರೆ ಆಗ parent methods ಮಾತ್ರ ಕರೆಯಬಹುದು. ಒಂದು class ಒಂದೇ class ಅನ್ನು extend ಮಾಡುತ್ತದೆ.", "or": "IS-A ହେଉଛି inheritance, ଯାହା extends ଦ୍ୱାରା ଲେଖାଯାଏ। Child parent ର members ପାଏ, ଏବଂ parent reference child object ରଖିପାରେ, କିନ୍ତୁ ସେତେବେଳେ କେବଳ parent methods ଡାକିହେବ। ଗୋଟିଏ class କେବଳ ଗୋଟିଏ class କୁ extend କରେ।", "ar": "علاقة IS-A هي الوراثة وتُكتب باستخدام extends. يحصل الابن على أعضاء الأب، ويمكن لمرجع الأب أن يحمل كائن الابن، لكن عندها لا يمكن استدعاء إلا دوال الأب. ويرث الصنف من صنف واحد فقط.", "de": "IS-A ist Vererbung und wird mit extends geschrieben. Das Kind erhält die Member des Elternteils, und eine Eltern-Referenz kann ein Kind-Objekt halten, dann sind aber nur Elternmethoden aufrufbar. Eine Klasse erweitert nur eine Klasse."}, {"id": "has-a", "h": "HAS-A relationship", "en": "HAS-A means one object holds another as a field, like a car that has an engine. Composition is a strong bond and aggregation is a weak one. Prefer HAS-A when the child is not truly a kind of the parent.", "hi": "HAS-A का मतलब है कि एक object दूसरे को field की तरह रखता है, जैसे car के पास engine। Composition मज़बूत रिश्ता है और aggregation कमज़ोर। जब child सच में parent का एक प्रकार न हो, तब HAS-A चुनिए।", "kn": "HAS-A ಎಂದರೆ ಒಂದು object ಇನ್ನೊಂದನ್ನು field ಆಗಿ ಹೊಂದಿರುತ್ತದೆ, engine ಇರುವ car ನಂತೆ. Composition ಬಲವಾದ ಬಂಧ, aggregation ದುರ್ಬಲ ಬಂಧ. Child ನಿಜವಾಗಿ parent ನ ಒಂದು ಪ್ರಕಾರವಲ್ಲದಿದ್ದಾಗ HAS-A ಆಯ್ಕೆ ಮಾಡಿ.", "or": "HAS-A ର ଅର୍ଥ ଗୋଟିଏ object ଅନ୍ୟକୁ field ଭାବେ ରଖେ, ଯେପରି engine ଥିବା car। Composition ଦୃଢ଼ ବନ୍ଧନ ଏବଂ aggregation ଦୁର୍ବଳ। Child ପ୍ରକୃତରେ parent ର ଏକ ପ୍ରକାର ନ ହେଲେ HAS-A ବାଛନ୍ତୁ।", "ar": "علاقة HAS-A تعني أن كائنًا يحمل كائنًا آخر كحقل، مثل سيارة لها محرك. التركيب رابطة قوية والتجميع رابطة ضعيفة. فضّل HAS-A عندما لا يكون الابن نوعًا حقيقيًا من الأب.", "de": "HAS-A bedeutet, dass ein Objekt ein anderes als Feld hält, wie ein Auto mit einem Motor. Komposition ist eine starke, Aggregation eine schwache Bindung. Bevorzuge HAS-A, wenn das Kind nicht wirklich eine Art des Elternteils ist."}, {"id": "method-signature", "h": "Method signature", "en": "A method signature is the name plus the parameter types. The return type is not part of it, so two methods with the same signature cannot live in one class.", "hi": "Method signature का मतलब है नाम और parameter types। Return type इसका हिस्सा नहीं है, इसलिए एक ही signature वाले दो methods एक class में नहीं रह सकते।", "kn": "Method signature ಎಂದರೆ ಹೆಸರು ಮತ್ತು parameter types. Return type ಅದರ ಭಾಗವಲ್ಲ, ಆದ್ದರಿಂದ ಒಂದೇ signature ಇರುವ ಎರಡು methods ಒಂದು class ನಲ್ಲಿ ಇರಲು ಸಾಧ್ಯವಿಲ್ಲ.", "or": "Method signature ହେଉଛି ନାମ ଏବଂ parameter types। Return type ଏହାର ଅଂଶ ନୁହେଁ, ତେଣୁ ସମାନ signature ଥିବା ଦୁଇଟି methods ଗୋଟିଏ class ରେ ରହିପାରିବ ନାହିଁ।", "ar": "توقيع الدالة هو الاسم مع أنواع المعاملات. نوع الإرجاع ليس جزءًا منه، لذلك لا يمكن أن توجد دالتان بالتوقيع نفسه في صنف واحد.", "de": "Die Signatur einer Methode besteht aus dem Namen und den Parametertypen. Der Rückgabetyp gehört nicht dazu, deshalb können zwei Methoden mit gleicher Signatur nicht in einer Klasse stehen."}, {"id": "overloading", "h": "Overloading", "en": "Overloaded methods share a name but take different parameters. The compiler picks one from the argument types: exact match first, then widening, then boxing, then var-args. If two choices are equally good, the call is ambiguous.", "hi": "Overloaded methods का नाम एक होता है पर parameters अलग। Compiler argument types से एक चुनता है: पहले exact match, फिर widening, फिर boxing, फिर var-args। अगर दो विकल्प बराबर अच्छे हों तो call ambiguous होता है।", "kn": "Overloaded methods ಗೆ ಒಂದೇ ಹೆಸರು, ಆದರೆ ಬೇರೆ parameters. Compiler argument types ನೋಡಿ ಒಂದನ್ನು ಆಯ್ಕೆ ಮಾಡುತ್ತದೆ: ಮೊದಲು exact match, ನಂತರ widening, ನಂತರ boxing, ನಂತರ var-args. ಎರಡು ಆಯ್ಕೆಗಳು ಸಮಾನವಾಗಿದ್ದರೆ call ambiguous.", "or": "Overloaded methods ର ନାମ ସମାନ କିନ୍ତୁ parameters ଅଲଗା। Compiler argument types ରୁ ଗୋଟିଏ ବାଛେ: ପ୍ରଥମେ exact match, ତା ପରେ widening, ତା ପରେ boxing, ତା ପରେ var-args। ଦୁଇଟି ବିକଳ୍ପ ସମାନ ଭଲ ହେଲେ call ambiguous।", "ar": "الدوال المحمّلة تتشارك الاسم وتختلف في المعاملات. يختار المترجم إحداها حسب أنواع الوسائط: المطابقة التامة أولًا، ثم التوسيع، ثم التغليف، ثم الوسائط المتغيرة. وإذا تساوى خياران كان الاستدعاء غامضًا.", "de": "Überladene Methoden teilen sich einen Namen, haben aber andere Parameter. Der Compiler wählt anhand der Argumenttypen: zuerst exakte Treffer, dann Erweiterung, dann Boxing, dann Var-Args. Sind zwei Möglichkeiten gleich gut, ist der Aufruf mehrdeutig."}, {"id": "overriding", "h": "Overriding", "en": "Overriding gives a child its own version of a parent method with the same signature. The real object decides at run time which version runs. The return type may be a child type, access cannot get narrower, and no broader checked exceptions are allowed. Static methods are hidden, not overridden, and fields always follow the reference.", "hi": "Overriding में child को उसी signature वाले parent method का अपना संस्करण मिलता है। Run time पर असली object तय करता है कि कौन सा संस्करण चलेगा। Return type child type हो सकता है, access संकरा नहीं हो सकता, और बड़े checked exceptions की अनुमति नहीं है। Static methods hide होते हैं, override नहीं, और fields हमेशा reference के हिसाब से चलते हैं।", "kn": "Overriding ನಲ್ಲಿ child ಗೆ ಅದೇ signature ಇರುವ parent method ನ ತನ್ನದೇ ಆವೃತ್ತಿ ಇರುತ್ತದೆ. Run time ನಲ್ಲಿ ನಿಜವಾದ object ಯಾವ ಆವೃತ್ತಿ ಓಡಬೇಕು ಎಂದು ನಿರ್ಧರಿಸುತ್ತದೆ. Return type child type ಆಗಿರಬಹುದು, access ಕಿರಿದಾಗಬಾರದು, ಮತ್ತು ದೊಡ್ಡ checked exceptions ಗೆ ಅನುಮತಿ ಇಲ್ಲ. Static methods hide ಆಗುತ್ತವೆ, override ಅಲ್ಲ, ಮತ್ತು fields ಯಾವಾಗಲೂ reference ಅನುಸರಿಸುತ್ತವೆ.", "or": "Overriding ରେ child ସମାନ signature ଥିବା parent method ର ନିଜ ସଂସ୍କରଣ ପାଏ। Run time ରେ ପ୍ରକୃତ object ସ୍ଥିର କରେ କେଉଁ ସଂସ୍କରଣ ଚାଲିବ। Return type child type ହୋଇପାରେ, access ସଂକୀର୍ଣ୍ଣ ହୋଇପାରିବ ନାହିଁ, ଏବଂ ବଡ଼ checked exceptions ଅନୁମତି ନାହିଁ। Static methods hide ହୁଅନ୍ତି, override ନୁହେଁ, ଏବଂ fields ସର୍ବଦା reference ଅନୁସରଣ କରନ୍ତି।", "ar": "التجاوز يعطي الابن نسخته الخاصة من دالة الأب بالتوقيع نفسه، ويحدد الكائن الحقيقي وقت التشغيل أي نسخة تُنفذ. يمكن أن يكون نوع الإرجاع نوعًا ابنًا، ولا يجوز تضييق الوصول، ولا يُسمح باستثناءات مفحوصة أوسع. الدوال الساكنة تُخفى ولا تُتجاوز، والحقول تتبع المرجع دائمًا.", "de": "Beim Überschreiben bekommt das Kind eine eigene Version einer Elternmethode mit gleicher Signatur. Zur Laufzeit entscheidet das echte Objekt, welche Version läuft. Der Rückgabetyp darf ein Kindtyp sein, der Zugriff darf nicht enger werden, und breitere geprüfte Ausnahmen sind verboten. Statische Methoden werden verdeckt, nicht überschrieben, und Felder folgen immer der Referenz."}, {"id": "overload-vs-override", "h": "Overloading versus overriding", "en": "Overloading needs different parameters and is decided by the compiler. Overriding needs the same parameters and is decided by the JVM at run time.", "hi": "Overloading में अलग parameters चाहिए और फ़ैसला compiler करता है। Overriding में वही parameters चाहिए और फ़ैसला run time पर JVM करता है।", "kn": "Overloading ಗೆ ಬೇರೆ parameters ಬೇಕು ಮತ್ತು compiler ನಿರ್ಧರಿಸುತ್ತದೆ. Overriding ಗೆ ಅದೇ parameters ಬೇಕು ಮತ್ತು run time ನಲ್ಲಿ JVM ನಿರ್ಧರಿಸುತ್ತದೆ.", "or": "Overloading ପାଇଁ ଅଲଗା parameters ଦରକାର ଏବଂ compiler ସ୍ଥିର କରେ। Overriding ପାଇଁ ସମାନ parameters ଦରକାର ଏବଂ run time ରେ JVM ସ୍ଥିର କରେ।", "ar": "التحميل الزائد يحتاج إلى معاملات مختلفة ويقرره المترجم. أما التجاوز فيحتاج إلى المعاملات نفسها ويقرره JVM وقت التشغيل.", "de": "Überladen braucht unterschiedliche Parameter und wird vom Compiler entschieden. Überschreiben braucht dieselben Parameter und wird von der JVM zur Laufzeit entschieden."}, {"id": "polymorphism", "h": "Polymorphism", "en": "Polymorphism means many forms. Overloading gives compile time polymorphism and overriding gives runtime polymorphism. Code written for a parent type keeps working for every child.", "hi": "Polymorphism का मतलब है कई रूप। Overloading से compile time polymorphism और overriding से runtime polymorphism मिलता है। Parent type के लिए लिखा code हर child के लिए काम करता रहता है।", "kn": "Polymorphism ಎಂದರೆ ಹಲವು ರೂಪಗಳು. Overloading compile time polymorphism, overriding runtime polymorphism ಕೊಡುತ್ತದೆ. Parent type ಗಾಗಿ ಬರೆದ code ಪ್ರತಿಯೊಂದು child ಗೂ ಕೆಲಸ ಮಾಡುತ್ತಲೇ ಇರುತ್ತದೆ.", "or": "Polymorphism ର ଅର୍ଥ ଅନେକ ରୂପ। Overloading compile time polymorphism ଦିଏ ଏବଂ overriding runtime polymorphism ଦିଏ। Parent type ପାଇଁ ଲେଖାଯାଇଥିବା code ପ୍ରତ୍ୟେକ child ପାଇଁ କାମ କରିଚାଲେ।", "ar": "تعدد الأشكال يعني أشكالًا كثيرة. التحميل الزائد يعطي تعددًا وقت الترجمة، والتجاوز يعطي تعددًا وقت التشغيل. والشيفرة المكتوبة لنوع الأب تبقى صالحة لكل ابن.", "de": "Polymorphie bedeutet viele Formen. Überladen ergibt Polymorphie zur Übersetzungszeit, Überschreiben ergibt Polymorphie zur Laufzeit. Code, der für einen Elterntyp geschrieben ist, funktioniert für jedes Kind weiter."}, {"id": "static-control-flow", "h": "Static control flow", "en": "When a class loads, Java identifies the static members, then runs static assignments and static blocks from top to bottom, then main. A static variable read before its line gives the default value, and a direct read by name there is an illegal forward reference.", "hi": "Class load होने पर Java पहले static members पहचानता है, फिर ऊपर से नीचे static assignments और static blocks चलाता है, फिर main। अपनी line से पहले पढ़ा गया static variable default मान देता है, और वहाँ नाम से सीधे पढ़ना illegal forward reference है।", "kn": "Class load ಆದಾಗ Java ಮೊದಲು static members ಗುರುತಿಸುತ್ತದೆ, ನಂತರ ಮೇಲಿನಿಂದ ಕೆಳಗೆ static assignments ಮತ್ತು static blocks ಓಡಿಸುತ್ತದೆ, ನಂತರ main. ತನ್ನ ಸಾಲಿನ ಮೊದಲು ಓದಿದ static variable default ಮೌಲ್ಯ ಕೊಡುತ್ತದೆ, ಮತ್ತು ಅಲ್ಲಿ ಹೆಸರಿನಿಂದ ನೇರವಾಗಿ ಓದುವುದು illegal forward reference.", "or": "Class load ହେଲେ Java ପ୍ରଥମେ static members ଚିହ୍ନଟ କରେ, ତା ପରେ ଉପରୁ ତଳକୁ static assignments ଏବଂ static blocks ଚଲାଏ, ତା ପରେ main। ନିଜ ଧାଡ଼ି ପୂର୍ବରୁ ପଢ଼ାଯାଇଥିବା static variable default ମୂଲ୍ୟ ଦିଏ, ଏବଂ ସେଠାରେ ନାମରେ ସିଧା ପଢ଼ିବା illegal forward reference।", "ar": "عند تحميل الصنف تتعرف Java أولًا على الأعضاء الساكنة، ثم تنفذ الإسنادات والكتل الساكنة من الأعلى إلى الأسفل، ثم main. والمتغير الساكن الذي يُقرأ قبل سطره يعطي القيمة الافتراضية، أما قراءته مباشرة باسمه هناك فهي إشارة أمامية غير مسموحة.", "de": "Beim Laden einer Klasse erkennt Java zuerst die statischen Member, führt dann statische Zuweisungen und statische Blöcke von oben nach unten aus und danach main. Eine statische Variable, die vor ihrer Zeile gelesen wird, liefert den Standardwert, und ein direkter Zugriff per Namen ist dort eine unerlaubte Vorwärtsreferenz."}, {"id": "instance-control-flow", "h": "Instance control flow", "en": "For every new object, Java runs instance assignments and instance blocks from top to bottom, then the constructor. With a parent class, the whole parent part runs first. Static parts run only once per class.", "hi": "हर नए object के लिए Java ऊपर से नीचे instance assignments और instance blocks चलाता है, फिर constructor। Parent class हो तो पूरा parent हिस्सा पहले चलता है। Static हिस्से हर class के लिए सिर्फ़ एक बार चलते हैं।", "kn": "ಪ್ರತಿಯೊಂದು ಹೊಸ object ಗೆ Java ಮೇಲಿನಿಂದ ಕೆಳಗೆ instance assignments ಮತ್ತು instance blocks ಓಡಿಸುತ್ತದೆ, ನಂತರ constructor. Parent class ಇದ್ದರೆ ಇಡೀ parent ಭಾಗ ಮೊದಲು ಓಡುತ್ತದೆ. Static ಭಾಗಗಳು ಪ್ರತಿ class ಗೆ ಒಮ್ಮೆ ಮಾತ್ರ ಓಡುತ್ತವೆ.", "or": "ପ୍ରତ୍ୟେକ ନୂଆ object ପାଇଁ Java ଉପରୁ ତଳକୁ instance assignments ଏବଂ instance blocks ଚଲାଏ, ତା ପରେ constructor। Parent class ଥିଲେ ସମଗ୍ର parent ଅଂଶ ପ୍ରଥମେ ଚାଲେ। Static ଅଂଶ ପ୍ରତ୍ୟେକ class ପାଇଁ କେବଳ ଥରେ ଚାଲେ।", "ar": "لكل كائن جديد تنفذ Java إسنادات الكائن وكتله من الأعلى إلى الأسفل، ثم المُنشئ. وإذا كان هناك صنف أب فإن جزء الأب كاملًا يُنفذ أولًا. أما الأجزاء الساكنة فتُنفذ مرة واحدة لكل صنف.", "de": "Für jedes neue Objekt führt Java Instanzzuweisungen und Instanzblöcke von oben nach unten aus, danach den Konstruktor. Bei einer Elternklasse läuft zuerst der ganze Elternteil. Statische Teile laufen pro Klasse nur einmal."}, {"id": "constructors", "h": "Constructors", "en": "A constructor has the class name and no return type. If you write none, the compiler adds a default one. Its first line is always super or this, and the compiler inserts super if you write neither. Constructors are not inherited.", "hi": "Constructor का नाम class जैसा होता है और कोई return type नहीं होता। अगर आप कोई न लिखें तो compiler एक default जोड़ देता है। इसकी पहली line हमेशा super या this होती है, और दोनों न लिखें तो compiler super जोड़ता है। Constructors inherit नहीं होते।", "kn": "Constructor ಗೆ class ನ ಹೆಸರೇ ಇರುತ್ತದೆ ಮತ್ತು return type ಇರುವುದಿಲ್ಲ. ನೀವು ಯಾವುದೂ ಬರೆಯದಿದ್ದರೆ compiler ಒಂದು default ಸೇರಿಸುತ್ತದೆ. ಅದರ ಮೊದಲ ಸಾಲು ಯಾವಾಗಲೂ super ಅಥವಾ this, ಎರಡೂ ಬರೆಯದಿದ್ದರೆ compiler super ಸೇರಿಸುತ್ತದೆ. Constructors inherit ಆಗುವುದಿಲ್ಲ.", "or": "Constructor ର ନାମ class ପରି ଏବଂ କୌଣସି return type ନାହିଁ। ଆପଣ କୌଣସି ନ ଲେଖିଲେ compiler ଗୋଟିଏ default ଯୋଡ଼େ। ଏହାର ପ୍ରଥମ ଧାଡ଼ି ସର୍ବଦା super କିମ୍ବା this, ଏବଂ ଦୁଇଟି ନ ଲେଖିଲେ compiler super ଯୋଡ଼େ। Constructors inherit ହୁଅନ୍ତି ନାହିଁ।", "ar": "المُنشئ يحمل اسم الصنف وليس له نوع إرجاع. إذا لم تكتب أي مُنشئ يضيف المترجم مُنشئًا افتراضيًا. سطره الأول دائمًا super أو this، وإن لم تكتب أيًا منهما يضيف المترجم super. ولا تُورَّث المُنشئات.", "de": "Ein Konstruktor trägt den Klassennamen und hat keinen Rückgabetyp. Schreibst du keinen, fügt der Compiler einen Standardkonstruktor ein. Seine erste Zeile ist immer super oder this, und schreibst du keines davon, setzt der Compiler super ein. Konstruktoren werden nicht vererbt."}, {"id": "singleton", "h": "Singleton classes", "en": "A singleton allows only one object. Make the constructor private, keep one static instance, and return it from a static method. Runtime dot getRuntime is a famous example.", "hi": "Singleton सिर्फ़ एक object की अनुमति देता है। Constructor को private बनाइए, एक static instance रखिए, और उसे static method से लौटाइए। Runtime dot getRuntime इसका मशहूर उदाहरण है।", "kn": "Singleton ಒಂದೇ object ಗೆ ಅನುಮತಿ ಕೊಡುತ್ತದೆ. Constructor ಅನ್ನು private ಮಾಡಿ, ಒಂದು static instance ಇಟ್ಟುಕೊಳ್ಳಿ, ಮತ್ತು ಅದನ್ನು static method ನಿಂದ ಹಿಂತಿರುಗಿಸಿ. Runtime dot getRuntime ಇದಕ್ಕೆ ಪ್ರಸಿದ್ಧ ಉದಾಹರಣೆ.", "or": "Singleton କେବଳ ଗୋଟିଏ object ଅନୁମତି ଦିଏ। Constructor କୁ private କରନ୍ତୁ, ଗୋଟିଏ static instance ରଖନ୍ତୁ, ଏବଂ ଏହାକୁ static method ରୁ ଫେରାନ୍ତୁ। Runtime dot getRuntime ଏହାର ପ୍ରସିଦ୍ଧ ଉଦାହରଣ।", "ar": "الصنف المفرد يسمح بكائن واحد فقط. اجعل المُنشئ private، واحتفظ بنسخة ساكنة واحدة، وأعدها من دالة ساكنة. ومن أشهر الأمثلة Runtime.getRuntime.", "de": "Ein Singleton erlaubt nur ein Objekt. Mach den Konstruktor private, halte eine statische Instanz und gib sie über eine statische Methode zurück. Runtime.getRuntime ist ein bekanntes Beispiel."}, {"id": "coupling-cohesion", "h": "Coupling and cohesion", "en": "Coupling is how much classes depend on each other, and cohesion is how focused one class is. Good design has loose coupling and high cohesion, for example by depending on interfaces.", "hi": "Coupling बताता है कि classes एक दूसरे पर कितनी निर्भर हैं, और cohesion बताता है कि एक class कितनी केंद्रित है। अच्छे design में loose coupling और high cohesion होता है, जैसे interfaces पर निर्भर रहना।", "kn": "Coupling ಎಂದರೆ classes ಒಂದರ ಮೇಲೊಂದು ಎಷ್ಟು ಅವಲಂಬಿತವಾಗಿವೆ, cohesion ಎಂದರೆ ಒಂದು class ಎಷ್ಟು ಕೇಂದ್ರೀಕೃತವಾಗಿದೆ. ಉತ್ತಮ design ನಲ್ಲಿ loose coupling ಮತ್ತು high cohesion ಇರುತ್ತದೆ, ಉದಾಹರಣೆಗೆ interfaces ಮೇಲೆ ಅವಲಂಬಿಸುವುದು.", "or": "Coupling ହେଉଛି classes ପରସ୍ପର ଉପରେ କେତେ ନିର୍ଭରଶୀଳ, ଏବଂ cohesion ହେଉଛି ଗୋଟିଏ class କେତେ କେନ୍ଦ୍ରିତ। ଭଲ design ରେ loose coupling ଏବଂ high cohesion ଥାଏ, ଯେପରି interfaces ଉପରେ ନିର୍ଭର କରିବା।", "ar": "الاقتران هو مدى اعتماد الأصناف بعضها على بعض، والتماسك هو مدى تركيز الصنف الواحد على مهمته. التصميم الجيد اقترانه ضعيف وتماسكه عالٍ، مثل الاعتماد على الواجهات.", "de": "Kopplung beschreibt, wie stark Klassen voneinander abhängen, Kohäsion, wie fokussiert eine Klasse ist. Gutes Design hat lose Kopplung und hohe Kohäsion, zum Beispiel durch Abhängigkeit von Interfaces."}, {"id": "type-casting", "h": "Object type casting", "en": "A cast changes the type of the reference, never the object. The compiler checks that the types are related, and the JVM checks the real object at run time. If the object does not fit, you get a ClassCastException.", "hi": "Cast reference का type बदलता है, object को कभी नहीं। Compiler जाँचता है कि types संबंधित हैं, और JVM run time पर असली object जाँचता है। अगर object फिट न हो तो ClassCastException मिलता है।", "kn": "Cast reference ನ type ಅನ್ನು ಬದಲಿಸುತ್ತದೆ, object ಅನ್ನು ಎಂದಿಗೂ ಅಲ್ಲ. Types ಸಂಬಂಧಿತವಾಗಿವೆಯೇ ಎಂದು compiler ಪರಿಶೀಲಿಸುತ್ತದೆ, ಮತ್ತು run time ನಲ್ಲಿ JVM ನಿಜವಾದ object ಪರಿಶೀಲಿಸುತ್ತದೆ. Object ಹೊಂದದಿದ್ದರೆ ClassCastException ಬರುತ್ತದೆ.", "or": "Cast reference ର type ବଦଳାଏ, object କୁ କେବେ ନୁହେଁ। Types ସମ୍ବନ୍ଧିତ କି ନାହିଁ compiler ଯାଞ୍ଚ କରେ, ଏବଂ run time ରେ JVM ପ୍ରକୃତ object ଯାଞ୍ଚ କରେ। Object ମେଳ ନ ଖାଇଲେ ClassCastException ମିଳେ।", "ar": "التحويل يغيّر نوع المرجع ولا يغيّر الكائن أبدًا. يتحقق المترجم من أن الأنواع مترابطة، ويتحقق JVM من الكائن الحقيقي وقت التشغيل. وإذا لم يناسب الكائن تحصل على ClassCastException.", "de": "Ein Cast ändert den Typ der Referenz, niemals das Objekt. Der Compiler prüft, ob die Typen verwandt sind, und die JVM prüft zur Laufzeit das echte Objekt. Passt es nicht, gibt es eine ClassCastException."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "OOP Concepts", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

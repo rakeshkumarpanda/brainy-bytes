@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exception Handling · Java</title>
+<meta name="description" content="What exceptions are, the runtime stack, the Throwable hierarchy, checked versus unchecked, try catch finally, throw and throws, custom exceptions, the top ten exceptions and modern try-with-resources.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🧰 Core Java APIs</span><span>›</span><span>Chapter 8 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🚨</span><div><h1>Exception Handling</h1><p class="lead">Things go wrong: files vanish, networks drop, users type letters where numbers belong. Exception handling lets a program stop gracefully, or carry on with plan B, instead of crashing in a heap.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 14 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#introduction"><span>🌧️</span>What is an exception</a><a href="#runtime-stack"><span>📚</span>The runtime stack and default handling</a><a href="#hierarchy"><span>🌳</span>The exception hierarchy</a><a href="#checked-unchecked"><span>✅</span>Checked and unchecked exceptions</a><a href="#try-catch"><span>🧤</span>try and catch</a><a href="#printing"><span>🖨️</span>Printing exception information</a><a href="#finally"><span>🧹</span>finally</a><a href="#final-finally-finalize"><span>🔤</span>final, finally and finalize</a><a href="#nested"><span>🪆</span>Nested try catch finally</a><a href="#throw"><span>🎯</span>throw</a><a href="#throws"><span>📤</span>throws</a><a href="#custom-exceptions"><span>🧑‍🎨</span>Custom exceptions</a><a href="#top-exceptions"><span>🔟</span>The top ten exceptions</a><a href="#modern"><span>🆕</span>Modern exception handling</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="introduction" data-say="introduction"><div class="sec-num">Part 1</div><h2><span class="sec-em">🌧️</span><span>What is an exception</span></h2>
+<p>An <b>exception</b> is an unwanted, unexpected event that disturbs the normal flow of a program: a file that is missing, a division by zero, a number typed as text.</p>
+<p>Exception handling does <b>not</b> repair the problem. It gives the program an alternative path, so it can recover, or at least end gracefully and release what it was holding.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Plan B when the file is missing · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">try</span> {
+            <span class="k">new</span> <span class="t">FileReader</span>(<span class="s">"london-office.txt"</span>);          <span class="c">// plan A</span>
+            <span class="t">System</span>.out.println(<span class="s">"Reading the London file"</span>);
+        } <span class="k">catch</span> (<span class="t">FileNotFoundException</span> e) {
+            <span class="t">System</span>.out.println(<span class="s">"London file missing, using the local copy"</span>);   <span class="c">// plan B</span>
+        }
+        <span class="t">System</span>.out.println(<span class="s">"Program ends normally"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>London file missing, using the local copy
+Program ends normally</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="runtime-stack" data-say="runtime-stack"><div class="sec-num">Part 2</div><h2><span class="sec-em">📚</span><span>The runtime stack and default handling</span></h2>
+<p>The JVM gives every thread its own <b>runtime stack</b>. Each method call pushes a <b>stack frame</b>, and each return pops it.</p>
+<p>When an exception happens:</p>
+<ol>
+<li>The method creates an exception object with three things: the <b>name</b>, a <b>description</b> and the <b>stack trace</b> (where it happened).</li>
+<li>It hands the object to the JVM, which looks for a matching <code>catch</code> in that method.</li>
+<li>If there is none, the method ends abnormally, its frame is removed, and the JVM checks the caller. This is <b>propagation</b>.</li>
+<li>If nobody catches it, even <code>main</code> ends, and the <b>default exception handler</b> prints the details and stops the thread.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">See the propagation path · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> doMoreStuff() { <span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">0</span>); }
+    <span class="k">static</span> <span class="k">void</span> doStuff() { doMoreStuff(); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">try</span> {
+            doStuff();
+        } <span class="k">catch</span> (<span class="t">ArithmeticException</span> e) {
+            <span class="t">System</span>.out.println(<span class="s">"Caught: "</span> + e);
+            <span class="k">for</span> (<span class="t">StackTraceElement</span> f : e.getStackTrace())
+                <span class="t">System</span>.out.println(<span class="s">"  at "</span> + f.getMethodName());
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>Caught: java.lang.ArithmeticException: / by zero
+  at doMoreStuff
+  at doStuff
+  at main</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Nobody catches it: the default handler takes over · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> doMoreStuff() { <span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">0</span>); }
+    <span class="k">static</span> <span class="k">void</span> doStuff() { doMoreStuff(); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { doStuff(); }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.ArithmeticException: / by zero
+	at Main.doMoreStuff(Main.java:2)
+	at Main.doStuff(Main.java:3)
+	at Main.main(Main.java:4)</pre></div></div>
+<div class="tip">When a program has several threads, only the thread that failed stops. The others keep running.</div>
+</section>
+
+<section class="card reveal jsec" id="hierarchy" data-say="hierarchy"><div class="sec-num">Part 3</div><h2><span class="sec-em">🌳</span><span>The exception hierarchy</span></h2>
+<p><code>Throwable</code> is the root of everything that can be thrown. It has two children.</p>
+<div class="grid2">
+<div class="box"><h4>Exception</h4><p>Usually caused by the program or its inputs, and usually <b>recoverable</b>. Example: a missing file, so use another file.</p></div>
+<div class="box"><h4>Error</h4><p>Usually caused by a lack of system resources, and usually <b>not recoverable</b> by your code. Example: the JVM runs out of memory.</p></div>
+</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Java snippet</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Throwable</span>
+├── <span class="t">Exception</span>
+│   ├── <span class="t">RuntimeException</span>                  (unchecked)
+│   │   ├── <span class="t">ArithmeticException</span>
+│   │   ├── <span class="t">NullPointerException</span>
+│   │   ├── <span class="t">ClassCastException</span>
+│   │   ├── <span class="t">IndexOutOfBoundsException</span>
+│   │   │   ├── <span class="t">ArrayIndexOutOfBoundsException</span>
+│   │   │   └── <span class="t">StringIndexOutOfBoundsException</span>
+│   │   ├── <span class="t">IllegalArgumentException</span>
+│   │   │   └── <span class="t">NumberFormatException</span>
+│   │   └── <span class="t">IllegalStateException</span>
+│   ├── <span class="t">IOException</span>                       (checked)
+│   │   ├── <span class="t">FileNotFoundException</span>
+│   │   └── <span class="t">EOFException</span>
+│   ├── <span class="t">InterruptedException</span>              (checked)
+│   └── <span class="t">ClassNotFoundException</span>            (checked)
+└── <span class="t">Error</span>                                 (unchecked)
+    ├── <span class="t">VirtualMachineError</span>
+    │   ├── <span class="t">StackOverflowError</span>
+    │   └── <span class="t">OutOfMemoryError</span>
+    ├── <span class="t">AssertionError</span>
+    ├── <span class="t">ExceptionInInitializerError</span>
+    └── <span class="t">LinkageError</span>
+        └── <span class="t">NoClassDefFoundError</span></pre></div>
+</section>
+
+<section class="card reveal jsec" id="checked-unchecked" data-say="checked-unchecked"><div class="sec-num">Part 4</div><h2><span class="sec-em">✅</span><span>Checked and unchecked exceptions</span></h2>
+<p>The compiler checks some exceptions to make sure you handle them. These are <b>checked</b> exceptions. The rest are <b>unchecked</b>.</p>
+<div class="rule"><code>RuntimeException</code>, <code>Error</code> and all their children are unchecked. Everything else is checked.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A checked exception must be handled or declared · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">PrintWriter</span> pw = <span class="k">new</span> <span class="t">PrintWriter</span>(<span class="s">"notes.txt"</span>);
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>unreported exception FileNotFoundException; must be caught or declared to be thrown</pre></div></div>
+<div class="exam">Whether an exception is checked or unchecked is decided by the compiler, but <b>every</b> exception happens at run time. "Checked" never means "happens at compile time".</div>
+<h3>Fully and partially checked</h3>
+<p>A checked exception is <b>fully checked</b> if all its children are checked too, like <code>IOException</code>. It is <b>partially checked</b> if some children are unchecked. Only two exist: <code>Exception</code> and <code>Throwable</code>.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Exception</th><th>Kind</th></tr>
+<tr><td>IOException</td><td>fully checked</td></tr>
+<tr><td>RuntimeException</td><td>unchecked</td></tr>
+<tr><td>InterruptedException</td><td>fully checked</td></tr>
+<tr><td>Error</td><td>unchecked</td></tr>
+<tr><td>Throwable</td><td>partially checked</td></tr>
+<tr><td>ArithmeticException</td><td>unchecked</td></tr>
+<tr><td>Exception</td><td>partially checked</td></tr>
+<tr><td>FileNotFoundException</td><td>fully checked</td></tr>
+</table></div></div>
+</section>
+
+<section class="card reveal jsec" id="try-catch" data-say="try-catch"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧤</span><span>try and catch</span></h2>
+<p>Put the <b>risky code</b> in <code>try</code> and the <b>handling code</b> in <code>catch</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Without and with try catch · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="s">"statement 1"</span>);
+        <span class="k">try</span> {
+            <span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">0</span>);
+            <span class="t">System</span>.out.println(<span class="s">"never printed"</span>);
+        } <span class="k">catch</span> (<span class="t">ArithmeticException</span> e) {
+            <span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">2</span>);
+        }
+        <span class="t">System</span>.out.println(<span class="s">"statement 3"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>statement 1
+5
+statement 3</pre></div></div>
+<h3>Control flow</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Java snippet</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">try</span> { stmt1; stmt2; stmt3; } <span class="k">catch</span> (<span class="t">X</span> e) { stmt4; } stmt5;</pre></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Case</th><th>Runs</th><th>Ending</th></tr>
+<tr><td>No exception</td><td>1, 2, 3, 5</td><td>normal</td></tr>
+<tr><td>Exception at stmt2, catch matches</td><td>1, 4, 5</td><td>normal</td></tr>
+<tr><td>Exception at stmt2, catch does not match</td><td>1</td><td>abnormal</td></tr>
+<tr><td>Exception at stmt4 or stmt5</td><td>whatever ran before it</td><td>always abnormal</td></tr>
+</table></div></div>
+<ul>
+<li>After an exception inside <code>try</code>, the rest of the try block is skipped, even if the catch matches. So keep only the risky lines inside try.</li>
+<li>An exception inside a catch block or after the try statement is not protected by that try.</li>
+</ul>
+<h3>Several catch blocks</h3>
+<p>Different problems deserve different handling, so one try can have many catch blocks. The order matters: <b>children first, parents last</b>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The most specific catch wins · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">String</span>[] inputs = {<span class="s">"10"</span>, <span class="s">"ten"</span>, <span class="k">null</span>};
+        <span class="k">for</span> (<span class="t">String</span> in : inputs) {
+            <span class="k">try</span> {
+                <span class="t">System</span>.out.println(<span class="n">100</span> / <span class="t">Integer</span>.parseInt(in.trim()));
+            } <span class="k">catch</span> (<span class="t">NumberFormatException</span> e) {
+                <span class="t">System</span>.out.println(<span class="s">"not a number: "</span> + in);
+            } <span class="k">catch</span> (<span class="t">NullPointerException</span> e) {
+                <span class="t">System</span>.out.println(<span class="s">"no input at all"</span>);
+            } <span class="k">catch</span> (<span class="t">Exception</span> e) {
+                <span class="t">System</span>.out.println(<span class="s">"something else: "</span> + e);
+            }
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>10
+not a number: ten
+no input at all</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Parent before child · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">try</span> { <span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">0</span>); }
+        <span class="k">catch</span> (<span class="t">Exception</span> e) { }
+        <span class="k">catch</span> (<span class="t">ArithmeticException</span> e) { }
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>exception ArithmeticException has already been caught</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="printing" data-say="printing"><div class="sec-num">Part 6</div><h2><span class="sec-em">🖨️</span><span>Printing exception information</span></h2>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Method</th><th>Prints</th></tr>
+<tr><td><code>e.printStackTrace()</code></td><td>name: description, then the stack trace (this is what the default handler uses)</td></tr>
+<tr><td><code>e.toString()</code> or <code>println(e)</code></td><td>name: description</td></tr>
+<tr><td><code>e.getMessage()</code></td><td>description only</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Three levels of detail · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">try</span> {
+    <span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">0</span>);
+} <span class="k">catch</span> (<span class="t">ArithmeticException</span> e) {
+    <span class="t">System</span>.out.println(e);
+    <span class="t">System</span>.out.println(e.getMessage());
+    <span class="t">System</span>.out.println(e.getStackTrace().length &gt; <span class="n">0</span>);
+}</pre><div class="out"><span>Output</span><pre>java.lang.ArithmeticException: / by zero
+/ by zero
+true</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="finally" data-say="finally"><div class="sec-num">Part 7</div><h2><span class="sec-em">🧹</span><span>finally</span></h2>
+<p>Clean-up code, such as closing a file or a database connection, must run whether things went well or not. Put it in <code>finally</code>. It runs after the try, with or without an exception, caught or not.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">finally runs in every case · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> attempt(<span class="t">String</span> in) {
+        <span class="k">try</span> {
+            <span class="t">System</span>.out.println(<span class="s">"result "</span> + <span class="n">100</span> / <span class="t">Integer</span>.parseInt(in));
+        } <span class="k">catch</span> (<span class="t">ArithmeticException</span> e) {
+            <span class="t">System</span>.out.println(<span class="s">"caught "</span> + e.getMessage());
+        } <span class="k">finally</span> {
+            <span class="t">System</span>.out.println(<span class="s">"finally for "</span> + in);
+        }
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        attempt(<span class="s">"5"</span>);
+        attempt(<span class="s">"0"</span>);
+        <span class="k">try</span> { attempt(<span class="s">"x"</span>); } <span class="k">catch</span> (<span class="t">NumberFormatException</span> e) { <span class="t">System</span>.out.println(<span class="s">"outer caught it"</span>); }
+    }
+}</pre><div class="out"><span>Output</span><pre>result 20
+finally for 5
+caught / by zero
+finally for 0
+finally for x
+outer caught it</pre></div></div>
+<h3>return and finally</h3>
+<p>Even a <code>return</code> inside try or catch waits for finally. If finally itself returns, its value <b>wins</b>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">finally overrides the return · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> m() {
+        <span class="k">try</span> {
+            <span class="t">System</span>.out.println(<span class="s">"try"</span>);
+            <span class="k">return</span> <span class="n">777</span>;
+        } <span class="k">finally</span> {
+            <span class="t">System</span>.out.println(<span class="s">"finally"</span>);
+            <span class="k">return</span> <span class="n">999</span>;
+        }
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">System</span>.out.println(m()); }
+}</pre><div class="out"><span>Output</span><pre>try
+finally
+999</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A primitive return value is already decided · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> m() {
+        <span class="k">int</span> x = <span class="n">10</span>;
+        <span class="k">try</span> {
+            <span class="k">return</span> x;          <span class="c">// 10 is saved as the return value here</span>
+        } <span class="k">finally</span> {
+            x = <span class="n">20</span>;            <span class="c">// too late to change what is returned</span>
+        }
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">System</span>.out.println(m()); }
+}</pre><div class="out"><span>Output</span><pre>10</pre></div></div>
+<div class="exam">The only thing that stops finally is the JVM itself shutting down, for example <code>System.exit(0)</code>.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">System.exit skips finally · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">try</span> {
+    <span class="t">System</span>.out.println(<span class="s">"try"</span>);
+    <span class="t">System</span>.exit(<span class="n">0</span>);
+} <span class="k">finally</span> {
+    <span class="t">System</span>.out.println(<span class="s">"finally"</span>);
+}</pre><div class="out"><span>Output</span><pre>try</pre></div></div>
+<div class="warn">Returning from finally hides exceptions and confuses readers. Use finally for clean-up only.</div>
+</section>
+
+<section class="card reveal jsec" id="final-finally-finalize" data-say="final-finally-finalize"><div class="sec-num">Part 8</div><h2><span class="sec-em">🔤</span><span>final, finally and finalize</span></h2>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Word</th><th>What it is</th><th>Purpose</th></tr>
+<tr><td><code>final</code></td><td>a modifier</td><td>no extending, no overriding, no reassigning</td></tr>
+<tr><td><code>finally</code></td><td>a block after try</td><td>clean-up related to a try</td></tr>
+<tr><td><code>finalize()</code></td><td>a method of Object</td><td>clean-up the garbage collector once called before destroying an object. Deprecated since Java 9, do not use it</td></tr>
+</table></div></div>
+<div class="tip">finally is preferred over finalize because you know exactly when it runs. Nobody can predict when, or even whether, the garbage collector calls finalize.</div>
+</section>
+
+<section class="card reveal jsec" id="nested" data-say="nested"><div class="sec-num">Part 9</div><h2><span class="sec-em">🪆</span><span>Nested try catch finally</span></h2>
+<p>A try block can contain another try. The inner catch handles what it can, and anything else bubbles to the outer catch. Both finally blocks always run, inner first.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Which catch handles what · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> run(<span class="t">String</span> label, <span class="k">int</span> divisor, <span class="t">String</span> text) {
+        <span class="t">System</span>.out.println(<span class="s">"-- "</span> + label);
+        <span class="k">try</span> {
+            <span class="k">try</span> {
+                <span class="t">System</span>.out.println(<span class="n">10</span> / divisor);
+                <span class="t">System</span>.out.println(<span class="t">Integer</span>.parseInt(text));
+            } <span class="k">catch</span> (<span class="t">ArithmeticException</span> e) {
+                <span class="t">System</span>.out.println(<span class="s">"inner catch: "</span> + e.getMessage());
+            } <span class="k">finally</span> {
+                <span class="t">System</span>.out.println(<span class="s">"inner finally"</span>);
+            }
+        } <span class="k">catch</span> (<span class="t">NumberFormatException</span> e) {
+            <span class="t">System</span>.out.println(<span class="s">"outer catch: not a number"</span>);
+        } <span class="k">finally</span> {
+            <span class="t">System</span>.out.println(<span class="s">"outer finally"</span>);
+        }
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        run(<span class="s">"all good"</span>, <span class="n">2</span>, <span class="s">"7"</span>);
+        run(<span class="s">"divide by zero"</span>, <span class="n">0</span>, <span class="s">"7"</span>);
+        run(<span class="s">"bad number"</span>, <span class="n">2</span>, <span class="s">"seven"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>-- all good
+5
+7
+inner finally
+outer finally
+-- divide by zero
+inner catch: / by zero
+inner finally
+outer finally
+-- bad number
+5
+inner finally
+outer catch: not a number
+outer finally</pre></div></div>
+<div class="rule">try must be followed by catch or finally (or both). catch and finally cannot appear without a try. A try with resources may stand alone.</div>
+</section>
+
+<section class="card reveal jsec" id="throw" data-say="throw"><div class="sec-num">Part 10</div><h2><span class="sec-em">🎯</span><span>throw</span></h2>
+<p>Sometimes you create an exception object yourself and hand it to the JVM. That is what <code>throw</code> does.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Throwing your own exception · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> withdraw(<span class="k">int</span> balance, <span class="k">int</span> amount) {
+        <span class="k">if</span> (amount &gt; balance) <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalArgumentException</span>(<span class="s">"Insufficient funds: need "</span> + amount + <span class="s">", have "</span> + balance);
+        <span class="t">System</span>.out.println(<span class="s">"Withdrew "</span> + amount);
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        withdraw(<span class="n">500</span>, <span class="n">200</span>);
+        <span class="k">try</span> { withdraw(<span class="n">500</span>, <span class="n">900</span>); } <span class="k">catch</span> (<span class="t">IllegalArgumentException</span> e) { <span class="t">System</span>.out.println(e.getMessage()); }
+    }
+}</pre><div class="out"><span>Output</span><pre>Withdrew 200
+Insufficient funds: need 900, have 500</pre></div></div>
+<ul>
+<li>Statements right after a <code>throw</code> are unreachable and do not compile.</li>
+<li>You can only throw <code>Throwable</code> types.</li>
+<li><code>throw null</code> compiles but throws a <code>NullPointerException</code>.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Nothing can follow a throw · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">throw</span> <span class="k">new</span> <span class="t">ArithmeticException</span>(<span class="s">"bye"</span>);
+<span class="t">System</span>.out.println(<span class="s">"hello"</span>);</pre><div class="err"><span>❌ Compile error</span><pre>unreachable statement</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">throw null · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">throw</span> <span class="k">null</span>;</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.NullPointerException: Cannot throw exception because "null" is null</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="throws" data-say="throws"><div class="sec-num">Part 11</div><h2><span class="sec-em">📤</span><span>throws</span></h2>
+<p>If a method can raise a checked exception and does not want to handle it, it must say so with <code>throws</code>. The responsibility moves to the caller.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Delegating to the caller · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> nap() <span class="k">throws</span> <span class="t">InterruptedException</span> {
+        <span class="t">Thread</span>.sleep(<span class="n">10</span>);
+        <span class="t">System</span>.out.println(<span class="s">"woke up"</span>);
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">InterruptedException</span> {
+        nap();
+    }
+}</pre><div class="out"><span>Output</span><pre>woke up</pre></div></div>
+<ul>
+<li><code>throws</code> is only needed for checked exceptions. For unchecked ones it is optional.</li>
+<li>It only convinces the compiler. It does not prevent the exception from ending the program.</li>
+<li>It works for methods and constructors, and only with Throwable types.</li>
+</ul>
+<div class="rule">If a try block can never throw a <b>fully checked</b> exception, a catch for it does not compile. Catching <code>Exception</code>, <code>Throwable</code> or any unchecked exception is always allowed.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Catching something that cannot happen · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">try</span> { <span class="t">System</span>.out.println(<span class="s">"hello"</span>); }
+        <span class="k">catch</span> (<span class="t">IOException</span> e) { }
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>exception IOException is never thrown in body of corresponding try statement</pre></div></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Keyword</th><th>Meaning</th></tr>
+<tr><td><code>try</code></td><td>the risky code</td></tr>
+<tr><td><code>catch</code></td><td>the handling code</td></tr>
+<tr><td><code>finally</code></td><td>the clean-up code</td></tr>
+<tr><td><code>throw</code></td><td>hand an exception object to the JVM yourself</td></tr>
+<tr><td><code>throws</code></td><td>pass the responsibility to the caller</td></tr>
+</table></div></div>
+</section>
+
+<section class="card reveal jsec" id="custom-exceptions" data-say="custom-exceptions"><div class="sec-num">Part 12</div><h2><span class="sec-em">🧑‍🎨</span><span>Custom exceptions</span></h2>
+<p>Your own problems deserve their own names, like <code>InsufficientFundsException</code> or <code>TooYoungException</code>. Create them by extending an existing exception class.</p>
+<ul>
+<li>Extend <code>RuntimeException</code> for an unchecked exception (the usual choice today).</li>
+<li>Extend <code>Exception</code> for a checked one, when the caller really must decide what to do.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A marriage bureau with rules · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">TooYoungException</span> <span class="k">extends</span> <span class="t">RuntimeException</span> {
+    <span class="t">TooYoungException</span>(<span class="t">String</span> msg) { <span class="k">super</span>(msg); }
+}
+<span class="k">class</span> <span class="t">TooOldException</span> <span class="k">extends</span> <span class="t">RuntimeException</span> {
+    <span class="t">TooOldException</span>(<span class="t">String</span> msg) { <span class="k">super</span>(msg); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> register(<span class="k">int</span> age) {
+        <span class="k">if</span> (age &lt; <span class="n">21</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">TooYoungException</span>(<span class="s">"Please wait a few more years"</span>);
+        <span class="k">if</span> (age &gt; <span class="n">60</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">TooOldException</span>(<span class="s">"The age limit has passed"</span>);
+        <span class="t">System</span>.out.println(<span class="s">"Registered at age "</span> + age);
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">for</span> (<span class="k">int</span> age : <span class="k">new</span> <span class="k">int</span>[]{<span class="n">25</span>, <span class="n">18</span>, <span class="n">70</span>}) {
+            <span class="k">try</span> { register(age); }
+            <span class="k">catch</span> (<span class="t">TooYoungException</span> | <span class="t">TooOldException</span> e) {
+                <span class="t">System</span>.out.println(e.getClass().getSimpleName() + <span class="s">": "</span> + e.getMessage());
+            }
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>Registered at age 25
+TooYoungException: Please wait a few more years
+TooOldException: The age limit has passed</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="top-exceptions" data-say="top-exceptions"><div class="sec-num">Part 13</div><h2><span class="sec-em">🔟</span><span>The top ten exceptions</span></h2>
+<p>Exceptions are raised either by the <b>JVM</b> automatically, or by a <b>programmer or API</b> on purpose.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Exception</th><th>Raised by</th><th>When</th></tr>
+<tr><td>ArrayIndexOutOfBoundsException</td><td>JVM</td><td>an array index outside 0 to length − 1</td></tr>
+<tr><td>NullPointerException</td><td>JVM</td><td>calling something on null</td></tr>
+<tr><td>ClassCastException</td><td>JVM</td><td>casting an object to a type it is not</td></tr>
+<tr><td>StackOverflowError</td><td>JVM</td><td>recursion that never stops</td></tr>
+<tr><td>NoClassDefFoundError</td><td>JVM</td><td>a .class file that was there at compile time is missing at run time</td></tr>
+<tr><td>ExceptionInInitializerError</td><td>JVM</td><td>a crash inside a static block or static initialiser</td></tr>
+<tr><td>IllegalArgumentException</td><td>programmer or API</td><td>a method receives an argument it cannot accept</td></tr>
+<tr><td>NumberFormatException</td><td>programmer or API</td><td>text that is not a number is parsed (a child of IllegalArgumentException)</td></tr>
+<tr><td>IllegalStateException</td><td>programmer or API</td><td>a method is called at the wrong time</td></tr>
+<tr><td>AssertionError</td><td>programmer</td><td>an assert statement fails</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">StackOverflowError · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> forever() { forever(); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { forever(); }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.StackOverflowError</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">ExceptionInInitializerError · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> x = <span class="n">10</span> / <span class="n">0</span>;
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">System</span>.out.println(x); }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.ExceptionInInitializerError
+Caused by: java.lang.ArithmeticException: / by zero
+	at Main.&lt;clinit&gt;(Main.java:2)</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">IllegalStateException from an API · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Iterator</span>&lt;<span class="t">String</span>&gt; it = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;(<span class="t">List</span>.of(<span class="s">"a"</span>)).iterator();
+it.remove();              <span class="c">// remove before next() is not allowed</span></pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.IllegalStateException</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="modern" data-say="modern"><div class="sec-num">Part 14</div><h2><span class="sec-em">🆕</span><span>Modern exception handling</span></h2>
+<h3>try-with-resources (Java 7)</h3>
+<p>Resources declared in the brackets after <code>try</code> are closed automatically, in reverse order, even if an exception happens. No finally needed. Any class that implements <code>AutoCloseable</code> works.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Automatic closing, last opened first closed · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Res</span> <span class="k">implements</span> <span class="t">AutoCloseable</span> {
+    <span class="k">private</span> <span class="k">final</span> <span class="t">String</span> name;
+    <span class="t">Res</span>(<span class="t">String</span> name) { <span class="k">this</span>.name = name; <span class="t">System</span>.out.println(<span class="s">"open "</span> + name); }
+    <span class="k">public</span> <span class="k">void</span> close() { <span class="t">System</span>.out.println(<span class="s">"close "</span> + name); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">try</span> (<span class="t">Res</span> db = <span class="k">new</span> <span class="t">Res</span>(<span class="s">"database"</span>); <span class="t">Res</span> file = <span class="k">new</span> <span class="t">Res</span>(<span class="s">"file"</span>)) {
+            <span class="t">System</span>.out.println(<span class="s">"working"</span>);
+            <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalStateException</span>(<span class="s">"oops"</span>);
+        } <span class="k">catch</span> (<span class="t">IllegalStateException</span> e) {
+            <span class="t">System</span>.out.println(<span class="s">"caught "</span> + e.getMessage());
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>open database
+open file
+working
+close file
+close database
+caught oops</pre></div></div>
+<p>The resources are closed before the catch block runs. Resource variables are effectively final, and if close() also throws, that exception is attached as a <b>suppressed</b> exception instead of being lost.</p>
+<h3>Multi-catch (Java 7)</h3>
+<p>One catch can handle several unrelated exceptions with <code>|</code>. The types must not be parent and child of each other.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Parent and child in one multi-catch · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">try</span> { <span class="t">System</span>.out.println(<span class="n">10</span> / <span class="n">0</span>); }
+<span class="k">catch</span> (<span class="t">ArithmeticException</span> | <span class="t">RuntimeException</span> e) { }</pre><div class="err"><span>❌ Compile error</span><pre>Alternatives in a multi-catch statement cannot be related by subclassing
+Alternative ArithmeticException is a subclass of alternative RuntimeException</pre></div></div>
+<h3>Helpful NullPointerException messages (Java 14)</h3>
+<p>Modern JVMs say exactly what was null, which saves a lot of guessing.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">It names the culprit · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">String</span>[] names = <span class="k">new</span> <span class="t">String</span>[<span class="n">2</span>];
+<span class="t">System</span>.out.println(names[<span class="n">1</span>].length());</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.NullPointerException: Cannot invoke "String.length()" because "names[1]" is null</pre></div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./java-lang.html" data-topic="java-lang"><small>← Previous chapter</small><b>🧵 java.lang: Object, String and Wrappers</b></a><a class="next" href="./enum.html" data-topic="enum"><small>Next chapter →</small><b>🎨 Enum</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "The life of an exception", "panels": [{"s": [["e", "💥"], ["t", "10 / 0", {"b": 1}]], "h": "Something breaks", "t": "The method builds an exception object: name, message and stack trace.", "more": "The object is handed to the JVM, which starts looking for a matching catch block."}, {"s": [["e", "📚"], ["c", ["main", "doStuff", "more"], {"ix": false, "hl": {"2": "bad"}}]], "h": "It climbs the stack", "t": "No catch here? The frame is removed and the caller gets a turn.", "more": "This is propagation. If even main has no catch, the default handler prints the stack trace and the thread stops."}, {"s": [["e", "🧤"], ["t", "catch (ArithmeticException e)", {"b": 1, "size": 11}]], "h": "Someone catches it", "t": "The first matching catch runs, children before parents.", "more": "After a catch, the program continues normally after the try statement."}, {"s": [["e", "🧹"], ["t", "finally { close(); }", {"b": 1}]], "h": "finally cleans up", "t": "Runs whether or not anything went wrong.", "more": "Only a JVM shutdown such as System.exit stops it. Try-with-resources closes things for you automatically."}], "remember": "Checked exceptions must be caught or declared. RuntimeException, Error and their children are unchecked. All of them happen at run time."}, "real": [["✈️", "A cancelled flight", "Your flight is cancelled (an exception). The airline does not repair the plane in front of you. It books you on the next flight (the catch block) so your trip still ends well. That is graceful handling, not repair."], ["🧾", "Escalating a complaint", "The counter clerk cannot fix your problem, so it goes to the supervisor, then the manager. Each level either handles it or passes it up, exactly like an exception climbing the call stack until someone catches it."], ["🍽️", "Washing up after dinner", "Whether the dinner was a success or the cake burned, the dishes still need washing. That is <code>finally<\/code>: clean-up that happens no matter what."]], "quiz": [{"lv": "e", "q": "Which class is the root of all exceptions and errors?", "o": ["Exception", "Error", "Throwable", "RuntimeException"], "a": 2, "hint": "Anything you can throw must be one of these.", "why": "<code>Throwable<\/code> is the parent of both Exception and Error."}, {"lv": "e", "q": "Which block runs whether or not an exception occurs (barring System.exit)?", "o": ["try", "catch", "finally", "throws"], "a": 2, "hint": "It is the clean-up block.", "why": "<code>finally<\/code> always runs after the try and any catch, unless the JVM itself shuts down."}, {"lv": "e", "q": "Which of these is a checked exception?", "o": ["ArithmeticException", "NullPointerException", "IOException", "ArrayIndexOutOfBoundsException"], "a": 2, "hint": "The other three are children of RuntimeException.", "why": "IOException is checked. ArithmeticException, NullPointerException and ArrayIndexOutOfBoundsException all extend RuntimeException, so they are unchecked."}, {"lv": "m", "q": "What does this print?", "code": "try {\n    System.out.print(\"A\");\n    int x = 10 / 0;\n    System.out.print(\"B\");\n} catch (ArithmeticException e) {\n    System.out.print(\"C\");\n} finally {\n    System.out.print(\"D\");\n}\nSystem.out.print(\"E\");", "o": ["ABCDE", "ACDE", "ACE", "ADE"], "a": 1, "run": 1, "hint": "B is skipped once the exception happens.", "why": "A prints, the division fails so B is skipped, the catch prints C, finally prints D, and the program continues with E."}, {"lv": "m", "q": "Which of these compiles?", "o": ["<code>try { } catch (IOException e) { }<\/code>", "<code>try { } catch (Exception e) { }<\/code>", "<code>catch (Exception e) { }<\/code> with no try", "<code>try { } catch (Exception e) { } catch (ArithmeticException e) { }<\/code>"], "a": 1, "hint": "Exception is partially checked. IOException is fully checked.", "why": "Catching Exception is always allowed. An empty try can never throw IOException, a catch needs a try, and a child catch after its parent is unreachable."}, {"lv": "m", "q": "What does this print?", "code": "try {\n    System.out.println(10 / 0);\n} catch (ArithmeticException e) {\n    System.out.println(e.getMessage());\n}", "o": ["ArithmeticException", "java.lang.ArithmeticException: / by zero", "/ by zero", "null"], "a": 2, "run": 1, "hint": "getMessage gives only the description.", "why": "<code>getMessage()<\/code> returns just the description, \"/ by zero\". <code>toString()<\/code> would add the class name in front."}, {"lv": "h", "q": "What does this print?", "code": "class Main {\n    static int m() {\n        try { return 1; }\n        finally { return 2; }\n    }\n    public static void main(String[] args) { System.out.println(m()); }\n}", "o": ["1", "2", "Compile error", "12"], "a": 1, "run": 1, "hint": "A return in finally wins.", "why": "The try prepares to return 1, but finally runs before the method actually leaves and its own return replaces the value with 2."}, {"lv": "h", "q": "What does this print?", "code": "class Main {\n    static int m() {\n        int x = 10;\n        try { return x; }\n        finally { x = 20; }\n    }\n    public static void main(String[] args) { System.out.println(m()); }\n}", "o": ["10", "20", "30", "Compile error"], "a": 0, "run": 1, "hint": "When is the return value of a primitive decided?", "why": "The value 10 is copied as the return value when <code>return x<\/code> runs. Changing x in finally does not change that saved copy."}, {"lv": "h", "q": "Which exception class is <b>partially<\/b> checked?", "o": ["IOException", "Exception", "RuntimeException", "InterruptedException"], "a": 1, "hint": "It has both checked and unchecked children.", "why": "Exception is checked, but its child RuntimeException is unchecked. Only Exception and Throwable are partially checked."}, {"lv": "x", "q": "What does this print?", "code": "try {\n    try {\n        throw new IllegalStateException(\"x\");\n    } finally {\n        System.out.print(\"1\");\n    }\n} catch (RuntimeException e) {\n    System.out.print(\"2\");\n} finally {\n    System.out.print(\"3\");\n}", "o": ["123", "213", "13", "23"], "a": 0, "run": 1, "hint": "The inner finally runs before the exception reaches the outer catch.", "why": "The inner try has no catch, so its finally prints 1 first. The exception then reaches the outer catch (2), and the outer finally prints 3."}, {"lv": "x", "q": "What does this print?", "code": "class R implements AutoCloseable {\n    String n; R(String n) { this.n = n; System.out.print(\"o\" + n); }\n    public void close() { System.out.print(\"c\" + n); }\n}\nclass Main {\n    public static void main(String[] args) {\n        try (R a = new R(\"A\"); R b = new R(\"B\")) {\n            System.out.print(\"X\");\n        }\n    }\n}", "o": ["oAoBXcAcB", "oAoBXcBcA", "oAXcAoBcB", "XoAoBcBcA"], "a": 1, "run": 1, "hint": "Resources close in reverse order of opening.", "why": "A opens, then B, then the body runs. Closing happens last-opened-first: B, then A."}, {"lv": "x", "q": "What does this print?", "code": "try {\n    try {\n        throw new RuntimeException(\"first\");\n    } finally {\n        throw new IllegalStateException(\"second\");\n    }\n} catch (RuntimeException e) {\n    System.out.println(e.getMessage());\n}", "o": ["first", "second", "first second", "Compile error"], "a": 1, "run": 1, "hint": "An exception thrown from finally replaces the one in flight.", "why": "The first exception is on its way out when finally throws a new one. The new exception replaces it, and the original \"first\" is lost. This is why finally should never throw or return."}], "calc": [{"lv": "e", "q": "How many of these are unchecked: ArithmeticException, IOException, NullPointerException, InterruptedException, StackOverflowError?", "ans": "3", "py": "3", "hint": "Children of RuntimeException or Error are unchecked.", "steps": ["ArithmeticException: RuntimeException child, unchecked.", "IOException: checked.", "NullPointerException: RuntimeException child, unchecked.", "InterruptedException: checked.", "StackOverflowError: Error child, unchecked.", "Total unchecked: 3"]}, {"lv": "e", "q": "main calls a, a calls b, b calls c. An exception in c is never caught. How many methods end abnormally?", "ans": "4", "py": "4", "hint": "Count every frame the exception passes through.", "steps": ["c ends abnormally, then b, then a, then main.", "That is 4 methods. The default handler then prints the trace."]}, {"lv": "m", "q": "What does this print?", "code": "int count = 0;\nfor (int i = 0; i < 5; i++) {\n    try {\n        if (i % 2 == 0) continue;\n    } finally {\n        count++;\n    }\n}\nSystem.out.println(count);", "ans": "5", "run": 1, "hint": "Does continue skip finally?", "steps": ["Even when continue leaves the try, finally still runs.", "So finally runs once per pass: 5 times."]}, {"lv": "m", "q": "What does this print?", "code": "int total = 0;\nfor (String s : new String[]{\"4\", \"x\", \"0\", \"5\"}) {\n    try { total += 20 / Integer.parseInt(s); }\n    catch (NumberFormatException e) { total += 100; }\n    catch (ArithmeticException e) { total += 1000; }\n}\nSystem.out.println(total);", "ans": "1109", "run": 1, "hint": "Work out which branch each input takes.", "steps": ["\"4\": <span class=\"eq\">20 / 4 = 5<\/span>", "\"x\": NumberFormatException, add 100.", "\"0\": ArithmeticException, add 1000.", "\"5\": <span class=\"eq\">20 / 5 = 4<\/span>", "<span class=\"eq\">5 + 100 + 1000 + 4 = 1109<\/span>"]}, {"lv": "h", "q": "What does this print?", "code": "class Main {\n    static StringBuilder m() {\n        StringBuilder sb = new StringBuilder(\"a\");\n        try { return sb; }\n        finally { sb.append(\"b\"); }\n    }\n    public static void main(String[] args) { System.out.println(m()); }\n}", "ans": "ab", "run": 1, "hint": "The saved return value is a reference to an object, and the object can still change.", "steps": ["<code>return sb<\/code> saves the reference, not a copy of the text.", "finally appends \"b\" to that same object.", "So the caller prints <code>ab<\/code>. Compare this with the int example, where the value was copied."]}, {"lv": "h", "q": "How many lines does the \"Which catch handles what\" program print?", "ans": "14", "py": "5+4+5", "hint": "Trace each of the three runs separately and count every println.", "steps": ["All good: label, 5, 7, inner finally, outer finally: 5 lines.", "Divide by zero: label, inner catch, inner finally, outer finally: 4 lines.", "Bad number: label, 5, inner finally, outer catch, outer finally: 5 lines.", "<span class=\"eq\">5 + 4 + 5 = 14<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    static int depth(int n) { return n == 0 ? 0 : 1 + depth(n / 2); }\n    public static void main(String[] args) { System.out.println(depth(1000)); }\n}", "ans": "10", "run": 1, "hint": "Count how many halvings it takes to reach 0.", "steps": ["n goes 1000, 500, 250, 125, 62, 31, 15, 7, 3, 1, then 0.", "Each non-zero value adds 1: 10 values.", "<span class=\"eq\">depth(n) = ⌊log<sub>2<\/sub> n⌋ + 1 = 9 + 1 = 10<\/span>", "A depth this small is safe. Unbounded recursion would end with StackOverflowError."]}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    static int c = 0;\n    static int f(int n) {\n        try {\n            if (n == 0) return 0;\n            return n + f(n - 1);\n        } finally {\n            c++;\n        }\n    }\n    public static void main(String[] args) { System.out.println(f(4) + \" \" + c); }\n}", "ans": "10 5", "run": 1, "hint": "Count the calls: f(4), f(3), f(2), f(1), f(0).", "steps": ["<span class=\"eq\">f(4) = 4 + 3 + 2 + 1 + 0 = 10<\/span>", "Every call runs its finally once, and there are 5 calls.", "Output: <code>10 5<\/code>"]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to Exception Handling. Things go wrong in every program. Here you will learn how Java reports problems, and how to catch them so your program can recover or end gracefully.", "hi": "Exception Handling में आपका स्वागत है। हर प्रोग्राम में कुछ न कुछ गड़बड़ होती है। यहाँ आप सीखेंगे कि Java समस्याओं की सूचना कैसे देता है, और उन्हें कैसे पकड़ें ताकि प्रोग्राम सँभल जाए या सम्मान से खत्म हो।", "kn": "Exception Handling ಗೆ ಸ್ವಾಗತ. ಪ್ರತಿಯೊಂದು ಪ್ರೋಗ್ರಾಮ್ ನಲ್ಲಿ ಏನಾದರೂ ತಪ್ಪಾಗುತ್ತದೆ. Java ಸಮಸ್ಯೆಗಳನ್ನು ಹೇಗೆ ತಿಳಿಸುತ್ತದೆ, ಮತ್ತು ಪ್ರೋಗ್ರಾಮ್ ಚೇತರಿಸಿಕೊಳ್ಳಲು ಅಥವಾ ಗೌರವದಿಂದ ಮುಗಿಯಲು ಅವುಗಳನ್ನು ಹೇಗೆ ಹಿಡಿಯಬೇಕು ಎಂದು ಇಲ್ಲಿ ಕಲಿಯುತ್ತೀರಿ.", "or": "Exception Handling କୁ ସ୍ୱାଗତ। ପ୍ରତ୍ୟେକ ପ୍ରୋଗ୍ରାମରେ କିଛି ନା କିଛି ଭୁଲ ହୁଏ। ଏଠାରେ ଆପଣ ଶିଖିବେ Java କିପରି ସମସ୍ୟା ଜଣାଏ, ଏବଂ ପ୍ରୋଗ୍ରାମ ସମ୍ଭାଳି ନେବା କିମ୍ବା ସମ୍ମାନର ସହ ଶେଷ ହେବା ପାଇଁ ସେଗୁଡ଼ିକୁ କିପରି ଧରିବେ।", "ar": "مرحبًا بك في معالجة الاستثناءات. في كل برنامج يحدث خطأ ما. ستتعلم هنا كيف تبلغ Java عن المشكلات، وكيف تلتقطها ليتعافى برنامجك أو ينتهي بشكل لائق.", "de": "Willkommen bei der Ausnahmebehandlung. In jedem Programm geht etwas schief. Hier lernst du, wie Java Probleme meldet und wie du sie abfängst, damit dein Programm sich erholt oder sauber endet."}, {"id": "introduction", "h": "What is an exception", "en": "An exception is an unexpected event that disturbs the normal flow of a program. Handling it does not repair the problem. It gives the program a plan B, so it can continue or end gracefully.", "hi": "Exception एक अनचाही घटना है जो प्रोग्राम के सामान्य प्रवाह को बिगाड़ती है। इसे handle करने से समस्या ठीक नहीं होती। यह प्रोग्राम को एक दूसरा रास्ता देता है, ताकि वह चलता रहे या सम्मान से खत्म हो।", "kn": "Exception ಎಂದರೆ ಪ್ರೋಗ್ರಾಮ್ ನ ಸಾಮಾನ್ಯ ಹರಿವನ್ನು ಕೆಡಿಸುವ ಅನಿರೀಕ್ಷಿತ ಘಟನೆ. ಅದನ್ನು handle ಮಾಡುವುದು ಸಮಸ್ಯೆಯನ್ನು ಸರಿಪಡಿಸುವುದಿಲ್ಲ. ಅದು ಪ್ರೋಗ್ರಾಮ್ ಗೆ ಪರ್ಯಾಯ ಯೋಜನೆ ಕೊಡುತ್ತದೆ, ಆದ್ದರಿಂದ ಅದು ಮುಂದುವರಿಯಬಹುದು ಅಥವಾ ಸರಿಯಾಗಿ ಮುಗಿಯಬಹುದು.", "or": "Exception ହେଉଛି ଏକ ଅପ୍ରତ୍ୟାଶିତ ଘଟଣା ଯାହା ପ୍ରୋଗ୍ରାମର ସାଧାରଣ ପ୍ରବାହକୁ ବାଧା ଦିଏ। ଏହାକୁ handle କରିବା ସମସ୍ୟାକୁ ସଜାଡ଼େ ନାହିଁ। ଏହା ପ୍ରୋଗ୍ରାମକୁ ଏକ ବିକଳ୍ପ ଯୋଜନା ଦିଏ, ଯାହାଦ୍ୱାରା ଏହା ଚାଲିପାରିବ କିମ୍ବା ଭଲରେ ଶେଷ ହେବ।", "ar": "الاستثناء حدث غير متوقع يعطل التدفق الطبيعي للبرنامج. ومعالجته لا تصلح المشكلة، بل تعطي البرنامج خطة بديلة ليواصل العمل أو ينتهي بشكل لائق.", "de": "Eine Ausnahme ist ein unerwartetes Ereignis, das den normalen Ablauf stört. Ihre Behandlung repariert das Problem nicht, sie gibt dem Programm einen Plan B, damit es weiterläuft oder sauber endet."}, {"id": "runtime-stack", "h": "The runtime stack", "en": "Every thread has a runtime stack of method frames. When an exception is not caught in a method, that method ends and the exception moves to the caller. If nobody catches it, the default exception handler prints the stack trace and the thread stops.", "hi": "हर thread का method frames वाला एक runtime stack होता है। जब किसी method में exception पकड़ा नहीं जाता, तो वह method खत्म हो जाता है और exception caller के पास चला जाता है। अगर कोई नहीं पकड़ता, तो default exception handler stack trace छापता है और thread रुक जाता है।", "kn": "ಪ್ರತಿಯೊಂದು thread ಗೆ method frames ಇರುವ runtime stack ಇದೆ. ಒಂದು method ನಲ್ಲಿ exception ಹಿಡಿಯದಿದ್ದರೆ, ಆ method ಮುಗಿಯುತ್ತದೆ ಮತ್ತು exception caller ಗೆ ಹೋಗುತ್ತದೆ. ಯಾರೂ ಹಿಡಿಯದಿದ್ದರೆ default exception handler stack trace ಮುದ್ರಿಸುತ್ತದೆ ಮತ್ತು thread ನಿಲ್ಲುತ್ತದೆ.", "or": "ପ୍ରତ୍ୟେକ thread ର method frames ଥିବା ଏକ runtime stack ଅଛି। କୌଣସି method ରେ exception ଧରାନଗଲେ, ସେହି method ଶେଷ ହୁଏ ଏବଂ exception caller ପାଖକୁ ଯାଏ। କେହି ନ ଧରିଲେ default exception handler stack trace ଛାପେ ଏବଂ thread ବନ୍ଦ ହୁଏ।", "ar": "لكل خيط مكدس تشغيل من إطارات الدوال. عندما لا يُلتقط الاستثناء داخل دالة، تنتهي تلك الدالة وينتقل الاستثناء إلى المستدعي. وإذا لم يلتقطه أحد، يطبع معالج الاستثناءات الافتراضي أثر المكدس ويتوقف الخيط.", "de": "Jeder Thread hat einen Laufzeitstapel aus Methodenrahmen. Wird eine Ausnahme in einer Methode nicht gefangen, endet diese Methode und die Ausnahme wandert zum Aufrufer. Fängt sie niemand, druckt der Standardhandler den Stacktrace und der Thread stoppt."}, {"id": "hierarchy", "h": "The hierarchy", "en": "Throwable is the root. Exceptions are usually caused by the program and are recoverable. Errors come from a lack of system resources, like running out of memory, and are usually not recoverable.", "hi": "Throwable जड़ है। Exceptions आमतौर पर प्रोग्राम की वजह से होते हैं और सँभाले जा सकते हैं। Errors system resources की कमी से आते हैं, जैसे memory खत्म होना, और आमतौर पर सँभाले नहीं जा सकते।", "kn": "Throwable ಮೂಲ. Exceptions ಸಾಮಾನ್ಯವಾಗಿ ಪ್ರೋಗ್ರಾಮ್ ನಿಂದ ಉಂಟಾಗುತ್ತವೆ ಮತ್ತು ಚೇತರಿಸಿಕೊಳ್ಳಬಹುದು. Errors system resources ಕೊರತೆಯಿಂದ ಬರುತ್ತವೆ, memory ಮುಗಿಯುವಂತೆ, ಮತ್ತು ಸಾಮಾನ್ಯವಾಗಿ ಚೇತರಿಸಿಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ.", "or": "Throwable ମୂଳ। Exceptions ସାଧାରଣତଃ ପ୍ରୋଗ୍ରାମ ଯୋଗୁଁ ହୁଏ ଏବଂ ସମ୍ଭାଳିହୁଏ। Errors system resources ର ଅଭାବରୁ ଆସେ, ଯେପରି memory ଶେଷ ହେବା, ଏବଂ ସାଧାରଣତଃ ସମ୍ଭାଳିହୁଏ ନାହିଁ।", "ar": "الجذر هو Throwable. الاستثناءات تنتج عادة عن البرنامج نفسه ويمكن التعافي منها. أما الأخطاء Error فتأتي من نقص موارد النظام، مثل نفاد الذاكرة، ولا يمكن التعافي منها عادة.", "de": "Throwable ist die Wurzel. Exceptions entstehen meist durch das Programm und sind behebbar. Errors kommen von fehlenden Systemressourcen, etwa wenn der Speicher ausgeht, und sind meist nicht behebbar."}, {"id": "checked-unchecked", "h": "Checked and unchecked", "en": "The compiler forces you to handle checked exceptions. RuntimeException, Error and all their children are unchecked, and everything else is checked. Exception and Throwable are the only partially checked classes.", "hi": "Compiler आपको checked exceptions handle करने के लिए मजबूर करता है। RuntimeException, Error और उनके सभी children unchecked हैं, बाकी सब checked हैं। Exception और Throwable ही partially checked classes हैं।", "kn": "Checked exceptions ಅನ್ನು handle ಮಾಡಲು compiler ಒತ್ತಾಯಿಸುತ್ತದೆ. RuntimeException, Error ಮತ್ತು ಅವುಗಳ ಎಲ್ಲಾ children unchecked, ಉಳಿದದ್ದೆಲ್ಲ checked. Exception ಮತ್ತು Throwable ಮಾತ್ರ partially checked classes.", "or": "Compiler ଆପଣଙ୍କୁ checked exceptions handle କରିବାକୁ ବାଧ୍ୟ କରେ। RuntimeException, Error ଏବଂ ସେମାନଙ୍କ ସମସ୍ତ children unchecked, ବାକି ସବୁ checked। Exception ଏବଂ Throwable ହିଁ partially checked classes।", "ar": "يجبرك المترجم على معالجة الاستثناءات المفحوصة. أما RuntimeException و Error وكل أبنائهما فغير مفحوصة، وكل ما عداها مفحوص. والصنفان Exception و Throwable هما الوحيدان المفحوصان جزئيًا.", "de": "Der Compiler zwingt dich, geprüfte Ausnahmen zu behandeln. RuntimeException, Error und alle ihre Kinder sind ungeprüft, alles andere ist geprüft. Exception und Throwable sind die einzigen teilweise geprüften Klassen."}, {"id": "try-catch", "h": "try and catch", "en": "Put risky code in try and handling code in catch. After an exception the rest of the try block is skipped, so keep only risky lines there. With several catch blocks, put children before parents.", "hi": "जोखिम वाला code try में और handle करने वाला code catch में रखिए। Exception के बाद try block का बाकी हिस्सा छूट जाता है, इसलिए वहाँ सिर्फ़ जोखिम वाली lines रखिए। कई catch blocks हों तो children को parents से पहले रखिए।", "kn": "ಅಪಾಯದ code ಅನ್ನು try ನಲ್ಲಿ, handle ಮಾಡುವ code ಅನ್ನು catch ನಲ್ಲಿ ಇಡಿ. Exception ಬಂದ ನಂತರ try block ನ ಉಳಿದ ಭಾಗ ಬಿಟ್ಟುಹೋಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಅಲ್ಲಿ ಅಪಾಯದ ಸಾಲುಗಳನ್ನು ಮಾತ್ರ ಇಡಿ. ಹಲವು catch blocks ಇದ್ದರೆ children ಅನ್ನು parents ಗಿಂತ ಮೊದಲು ಇಡಿ.", "or": "ବିପଦଜନକ code try ରେ ଏବଂ handle କରୁଥିବା code catch ରେ ରଖନ୍ତୁ। Exception ପରେ try block ର ବାକି ଅଂଶ ଛାଡ଼ିଯାଏ, ତେଣୁ ସେଠାରେ କେବଳ ବିପଦଜନକ ଧାଡ଼ି ରଖନ୍ତୁ। ଅନେକ catch blocks ଥିଲେ children କୁ parents ପୂର୍ବରୁ ରଖନ୍ତୁ।", "ar": "ضع الشيفرة الخطرة في try وشيفرة المعالجة في catch. بعد حدوث الاستثناء يُتجاوز باقي كتلة try، فلا تضع فيها إلا الأسطر الخطرة. ومع عدة كتل catch ضع الأبناء قبل الآباء.", "de": "Riskanter Code gehört in try, Behandlungscode in catch. Nach einer Ausnahme wird der Rest des try-Blocks übersprungen, also lass dort nur riskante Zeilen. Bei mehreren catch-Blöcken kommen Kinder vor Eltern."}, {"id": "printing", "h": "Printing exception information", "en": "printStackTrace prints the name, the message and the stack trace. toString prints the name and message, and getMessage prints only the message.", "hi": "printStackTrace नाम, संदेश और stack trace छापता है। toString नाम और संदेश छापता है, और getMessage सिर्फ़ संदेश।", "kn": "printStackTrace ಹೆಸರು, ಸಂದೇಶ ಮತ್ತು stack trace ಮುದ್ರಿಸುತ್ತದೆ. toString ಹೆಸರು ಮತ್ತು ಸಂದೇಶ, getMessage ಸಂದೇಶ ಮಾತ್ರ ಮುದ್ರಿಸುತ್ತದೆ.", "or": "printStackTrace ନାମ, ବାର୍ତ୍ତା ଏବଂ stack trace ଛାପେ। toString ନାମ ଓ ବାର୍ତ୍ତା ଛାପେ, ଏବଂ getMessage କେବଳ ବାର୍ତ୍ତା।", "ar": "تطبع printStackTrace الاسم والرسالة وأثر المكدس. وتطبع toString الاسم والرسالة، أما getMessage فتطبع الرسالة فقط.", "de": "printStackTrace druckt Name, Nachricht und Stacktrace. toString druckt Name und Nachricht, getMessage nur die Nachricht."}, {"id": "finally", "h": "finally", "en": "finally holds clean-up code and runs after try whether or not an exception happened. Even a return waits for finally, and a return inside finally wins. Only a JVM shutdown such as System dot exit stops it.", "hi": "finally में clean-up code होता है और यह try के बाद चलता है, exception हुआ हो या नहीं। return भी finally का इंतज़ार करता है, और finally के अंदर का return जीत जाता है। सिर्फ़ JVM का बंद होना, जैसे System dot exit, इसे रोकता है।", "kn": "finally ನಲ್ಲಿ clean-up code ಇರುತ್ತದೆ, exception ಬಂದರೂ ಬರದಿದ್ದರೂ try ನಂತರ ಓಡುತ್ತದೆ. return ಕೂಡ finally ಗಾಗಿ ಕಾಯುತ್ತದೆ, ಮತ್ತು finally ಒಳಗಿನ return ಗೆಲ್ಲುತ್ತದೆ. System dot exit ನಂತಹ JVM ನಿಲುಗಡೆ ಮಾತ್ರ ಅದನ್ನು ತಡೆಯುತ್ತದೆ.", "or": "finally ରେ clean-up code ଥାଏ ଏବଂ exception ହେଉ ବା ନ ହେଉ try ପରେ ଚାଲେ। return ମଧ୍ୟ finally ପାଇଁ ଅପେକ୍ଷା କରେ, ଏବଂ finally ଭିତରର return ଜିତେ। କେବଳ System dot exit ଭଳି JVM ବନ୍ଦ ଏହାକୁ ରୋକେ।", "ar": "تحتوي finally على شيفرة التنظيف وتُنفذ بعد try سواء حدث استثناء أم لا. حتى return تنتظر finally، و return داخل finally هي التي تفوز. ولا يوقفها إلا إيقاف JVM مثل System.exit.", "de": "finally enthält Aufräumcode und läuft nach try, egal ob eine Ausnahme auftrat. Selbst ein return wartet auf finally, und ein return in finally gewinnt. Nur das Beenden der JVM wie System.exit hält es auf."}, {"id": "final-finally-finalize", "h": "final, finally, finalize", "en": "final is a modifier, finally is a clean-up block after try, and finalize is an old, deprecated method the garbage collector used to call. Prefer finally, because you know exactly when it runs.", "hi": "final एक modifier है, finally try के बाद का clean-up block है, और finalize एक पुराना deprecated method है जिसे garbage collector बुलाता था। finally को प्राथमिकता दीजिए, क्योंकि आपको ठीक पता होता है कि यह कब चलेगा।", "kn": "final ಒಂದು modifier, finally try ನಂತರದ clean-up block, ಮತ್ತು finalize garbage collector ಕರೆಯುತ್ತಿದ್ದ ಹಳೆಯ deprecated method. finally ಆಯ್ಕೆ ಮಾಡಿ, ಏಕೆಂದರೆ ಅದು ಯಾವಾಗ ಓಡುತ್ತದೆ ಎಂದು ನಿಮಗೆ ನಿಖರವಾಗಿ ಗೊತ್ತು.", "or": "final ଏକ modifier, finally try ପରର clean-up block, ଏବଂ finalize ଏକ ପୁରୁଣା deprecated method ଯାହାକୁ garbage collector ଡାକୁଥିଲା। finally କୁ ପସନ୍ଦ କରନ୍ତୁ, କାରଣ ଏହା କେବେ ଚାଲିବ ଆପଣ ଠିକ ଜାଣନ୍ତି।", "ar": "الكلمة final معدّل، و finally كتلة تنظيف بعد try، و finalize دالة قديمة مهملة كان جامع النفايات يستدعيها. فضّل finally لأنك تعرف بالضبط متى تُنفذ.", "de": "final ist ein Modifizierer, finally ein Aufräumblock nach try, und finalize eine alte, veraltete Methode, die der Garbage Collector aufrief. Bevorzuge finally, weil du genau weißt, wann es läuft."}, {"id": "nested", "h": "Nested try catch finally", "en": "A try can contain another try. The inner catch handles what it can, and anything else moves to the outer catch. Both finally blocks run, the inner one first.", "hi": "एक try के अंदर दूसरा try हो सकता है। अंदर वाला catch जो संभाल सके संभालता है, और बाकी बाहर वाले catch तक जाता है। दोनों finally blocks चलते हैं, पहले अंदर वाला।", "kn": "ಒಂದು try ಒಳಗೆ ಇನ್ನೊಂದು try ಇರಬಹುದು. ಒಳಗಿನ catch ತನಗೆ ಸಾಧ್ಯವಾದುದನ್ನು handle ಮಾಡುತ್ತದೆ, ಉಳಿದದ್ದು ಹೊರಗಿನ catch ಗೆ ಹೋಗುತ್ತದೆ. ಎರಡೂ finally blocks ಓಡುತ್ತವೆ, ಮೊದಲು ಒಳಗಿನದು.", "or": "ଗୋଟିଏ try ଭିତରେ ଆଉ ଗୋଟିଏ try ରହିପାରେ। ଭିତର catch ଯାହା ପାରେ ସମ୍ଭାଳେ, ଏବଂ ବାକି ବାହାର catch ପାଖକୁ ଯାଏ। ଦୁଇଟି finally blocks ଚାଲନ୍ତି, ପ୍ରଥମେ ଭିତରଟି।", "ar": "يمكن أن تحتوي try على try أخرى. تعالج catch الداخلية ما تستطيع، وما سواه ينتقل إلى catch الخارجية. وتُنفذ كتلتا finally كلتاهما، الداخلية أولًا.", "de": "Ein try kann ein weiteres try enthalten. Das innere catch behandelt, was es kann, alles andere geht zum äußeren catch. Beide finally-Blöcke laufen, der innere zuerst."}, {"id": "throw", "h": "throw", "en": "throw hands an exception object that you created to the JVM. Nothing can follow a throw in the same block, and throw null gives a NullPointerException.", "hi": "throw आपके बनाए exception object को JVM को सौंपता है। उसी block में throw के बाद कुछ नहीं आ सकता, और throw null से NullPointerException मिलता है।", "kn": "throw ನೀವು ರಚಿಸಿದ exception object ಅನ್ನು JVM ಗೆ ಒಪ್ಪಿಸುತ್ತದೆ. ಅದೇ block ನಲ್ಲಿ throw ನಂತರ ಏನೂ ಬರಲು ಆಗದು, ಮತ್ತು throw null ನಿಂದ NullPointerException ಬರುತ್ತದೆ.", "or": "throw ଆପଣ ତିଆରି କରିଥିବା exception object କୁ JVM କୁ ଦିଏ। ସେହି block ରେ throw ପରେ କିଛି ଆସିପାରିବ ନାହିଁ, ଏବଂ throw null ରୁ NullPointerException ମିଳେ।", "ar": "تسلّم throw كائن الاستثناء الذي أنشأته إلى JVM. لا يمكن أن يأتي شيء بعد throw في الكتلة نفسها، و throw null تعطي NullPointerException.", "de": "throw übergibt ein selbst erzeugtes Ausnahmeobjekt an die JVM. Nach einem throw darf im selben Block nichts mehr stehen, und throw null ergibt eine NullPointerException."}, {"id": "throws", "h": "throws", "en": "throws passes the responsibility for a checked exception to the caller. It is required only for checked exceptions. A catch for a fully checked exception that the try can never throw does not compile.", "hi": "throws checked exception की ज़िम्मेदारी caller को सौंपता है। यह सिर्फ़ checked exceptions के लिए ज़रूरी है। किसी fully checked exception का catch, जिसे try कभी throw नहीं कर सकता, compile नहीं होता।", "kn": "throws checked exception ನ ಜವಾಬ್ದಾರಿಯನ್ನು caller ಗೆ ವರ್ಗಾಯಿಸುತ್ತದೆ. ಅದು checked exceptions ಗೆ ಮಾತ್ರ ಅಗತ್ಯ. try ಎಂದಿಗೂ throw ಮಾಡಲಾಗದ fully checked exception ಗೆ catch compile ಆಗುವುದಿಲ್ಲ.", "or": "throws checked exception ର ଦାୟିତ୍ୱ caller କୁ ଦିଏ। ଏହା କେବଳ checked exceptions ପାଇଁ ଜରୁରୀ। Try କେବେ throw କରିପାରିବ ନାହିଁ ଏପରି fully checked exception ର catch compile ହୁଏ ନାହିଁ।", "ar": "تنقل throws مسؤولية الاستثناء المفحوص إلى المستدعي، وهي مطلوبة فقط للاستثناءات المفحوصة. وكتلة catch لاستثناء مفحوص بالكامل لا يمكن أن ترميه try لا تُترجم.", "de": "throws gibt die Verantwortung für eine geprüfte Ausnahme an den Aufrufer weiter. Es ist nur für geprüfte Ausnahmen nötig. Ein catch für eine vollständig geprüfte Ausnahme, die der try-Block nie werfen kann, kompiliert nicht."}, {"id": "custom-exceptions", "h": "Custom exceptions", "en": "Create your own exceptions by extending RuntimeException for unchecked ones, or Exception for checked ones. Good names like TooYoungException make problems easy to understand.", "hi": "अपने exceptions बनाने के लिए unchecked के लिए RuntimeException और checked के लिए Exception को extend कीजिए। TooYoungException जैसे अच्छे नाम समस्याओं को समझना आसान बनाते हैं।", "kn": "ನಿಮ್ಮದೇ exceptions ರಚಿಸಲು unchecked ಗಾಗಿ RuntimeException ಅನ್ನು, checked ಗಾಗಿ Exception ಅನ್ನು extend ಮಾಡಿ. TooYoungException ನಂತಹ ಒಳ್ಳೆಯ ಹೆಸರುಗಳು ಸಮಸ್ಯೆಗಳನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಸುಲಭ ಮಾಡುತ್ತವೆ.", "or": "ନିଜ exceptions ତିଆରି କରିବାକୁ unchecked ପାଇଁ RuntimeException ଏବଂ checked ପାଇଁ Exception କୁ extend କରନ୍ତୁ। TooYoungException ଭଳି ଭଲ ନାମ ସମସ୍ୟା ବୁଝିବା ସହଜ କରେ।", "ar": "أنشئ استثناءاتك الخاصة بوراثة RuntimeException للاستثناءات غير المفحوصة، أو Exception للمفحوصة. والأسماء الواضحة مثل TooYoungException تجعل المشكلات سهلة الفهم.", "de": "Eigene Ausnahmen entstehen durch Erweitern von RuntimeException für ungeprüfte oder Exception für geprüfte. Gute Namen wie TooYoungException machen Probleme leicht verständlich."}, {"id": "top-exceptions", "h": "The top ten exceptions", "en": "Some exceptions are raised by the JVM automatically, like ArrayIndexOutOfBounds, NullPointer, ClassCast and StackOverflow. Others are raised by programmers or APIs on purpose, like IllegalArgument, NumberFormat and IllegalState.", "hi": "कुछ exceptions JVM अपने आप उठाता है, जैसे ArrayIndexOutOfBounds, NullPointer, ClassCast और StackOverflow। दूसरे programmers या APIs जानबूझकर उठाते हैं, जैसे IllegalArgument, NumberFormat और IllegalState।", "kn": "ಕೆಲವು exceptions ಅನ್ನು JVM ತಾನಾಗಿಯೇ ಎಬ್ಬಿಸುತ್ತದೆ, ArrayIndexOutOfBounds, NullPointer, ClassCast ಮತ್ತು StackOverflow ನಂತೆ. ಉಳಿದವನ್ನು programmers ಅಥವಾ APIs ಉದ್ದೇಶಪೂರ್ವಕವಾಗಿ ಎಬ್ಬಿಸುತ್ತವೆ, IllegalArgument, NumberFormat ಮತ್ತು IllegalState ನಂತೆ.", "or": "କିଛି exceptions JVM ନିଜେ ଉଠାଏ, ଯେପରି ArrayIndexOutOfBounds, NullPointer, ClassCast ଏବଂ StackOverflow। ଅନ୍ୟଗୁଡ଼ିକ programmers କିମ୍ବା APIs ଜାଣିଶୁଣି ଉଠାନ୍ତି, ଯେପରି IllegalArgument, NumberFormat ଏବଂ IllegalState।", "ar": "بعض الاستثناءات يرميها JVM تلقائيًا، مثل ArrayIndexOutOfBounds و NullPointer و ClassCast و StackOverflow. وبعضها يرميه المبرمجون أو الواجهات البرمجية عمدًا، مثل IllegalArgument و NumberFormat و IllegalState.", "de": "Manche Ausnahmen wirft die JVM automatisch, etwa ArrayIndexOutOfBounds, NullPointer, ClassCast und StackOverflow. Andere werfen Programmierer oder APIs absichtlich, etwa IllegalArgument, NumberFormat und IllegalState."}, {"id": "modern", "h": "Modern exception handling", "en": "Try with resources closes resources automatically, in reverse order, even when something fails. Multi-catch handles several unrelated exceptions in one block. And modern JVMs explain exactly what was null in a NullPointerException.", "hi": "Try with resources चीज़ों को अपने आप उल्टे क्रम में बंद करता है, कुछ गड़बड़ हो तब भी। Multi-catch एक ही block में कई असंबंधित exceptions संभालता है। और modern JVMs NullPointerException में ठीक बताते हैं कि क्या null था।", "kn": "Try with resources ಏನಾದರೂ ವಿಫಲವಾದರೂ resources ಅನ್ನು ತಾನಾಗಿಯೇ ಹಿಮ್ಮುಖ ಕ್ರಮದಲ್ಲಿ ಮುಚ್ಚುತ್ತದೆ. Multi-catch ಒಂದೇ block ನಲ್ಲಿ ಹಲವು ಸಂಬಂಧವಿಲ್ಲದ exceptions handle ಮಾಡುತ್ತದೆ. ಮತ್ತು modern JVMs NullPointerException ನಲ್ಲಿ ನಿಖರವಾಗಿ ಏನು null ಆಗಿತ್ತು ಎಂದು ಹೇಳುತ್ತವೆ.", "or": "Try with resources କିଛି ବିଫଳ ହେଲେ ମଧ୍ୟ resources କୁ ନିଜେ ଓଲଟା କ୍ରମରେ ବନ୍ଦ କରେ। Multi-catch ଗୋଟିଏ block ରେ ଅନେକ ଅସମ୍ବନ୍ଧିତ exceptions ସମ୍ଭାଳେ। ଏବଂ modern JVMs NullPointerException ରେ କ'ଣ null ଥିଲା ଠିକ କହନ୍ତି।", "ar": "تغلق try with resources الموارد تلقائيًا بترتيب معكوس حتى عند الفشل. وتعالج multi-catch عدة استثناءات غير مترابطة في كتلة واحدة. وتشرح JVM الحديثة بدقة ما الذي كان null في NullPointerException.", "de": "Try-with-resources schließt Ressourcen automatisch in umgekehrter Reihenfolge, auch wenn etwas schiefgeht. Multi-catch behandelt mehrere unabhängige Ausnahmen in einem Block. Und moderne JVMs sagen in einer NullPointerException genau, was null war."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Exception Handling", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

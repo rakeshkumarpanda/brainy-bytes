@@ -1,0 +1,83 @@
+/* ===== Layout for long lesson pages (Java chapters and the topic template) ===== */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); font-size:16.5px; line-height:1.65}
+[hidden]{display:none !important}
+.wrap{max-width:1000px; margin:0 auto; padding:22px 20px 110px}
+h1,h2,h3,h4{font-family:var(--font-head); line-height:1.15; margin:0}
+h1{font-size:clamp(30px,5vw,44px)}
+h2{font-size:clamp(22px,3.2vw,27px); margin-bottom:8px; display:flex; align-items:center; flex-wrap:wrap; gap:4px}
+h3{font-size:19px; margin:16px 0 6px}
+h4{font-size:16.5px; margin:12px 0 4px}
+a{color:var(--accent-deep)}
+p{margin:.55em 0}
+ul,ol{margin:.5em 0; padding-left:1.35em}
+li{margin:.2em 0}
+.crumb{display:flex; flex-wrap:wrap; gap:6px; align-items:center; color:var(--ink2); font-weight:800; font-size:13.5px}
+.crumb a{color:var(--ink2); text-decoration:none} .crumb a:hover{color:var(--accent)}
+.hero{position:relative; margin:10px 0 16px; padding:22px 22px 20px; border-radius:26px; background:radial-gradient(circle at 92% 10%, color-mix(in srgb, var(--accent2) 30%, transparent), transparent 45%), linear-gradient(135deg, var(--accent-soft), var(--surface)); border:1px solid var(--line); box-shadow:var(--shadow); overflow:hidden}
+.hero-row{display:flex; gap:16px; align-items:center}
+.hero .em{font-size:62px; line-height:1; animation:fun-float 3.6s ease-in-out infinite; flex:none}
+.hero p.lead{margin:6px 0 0; color:var(--ink2); font-weight:700; font-size:16.5px; max-width:720px}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
+.chip{display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; background:var(--surface); border:1.5px solid var(--line); font-weight:800; font-size:13px; color:var(--ink2)}
+.listen-btn{border:0; border-radius:999px; padding:9px 16px; font:inherit; font-weight:800; font-size:14.5px; cursor:pointer; color:#fff; background:linear-gradient(135deg,var(--pink),var(--purple)); box-shadow:var(--shadow); transition:transform .2s}
+.listen-btn:hover{transform:translateY(-2px) rotate(-1deg)}
+.toc{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px}
+.toc a{display:inline-flex; gap:6px; align-items:center; padding:6px 12px; border-radius:999px; background:var(--surface); border:1.5px solid var(--line); text-decoration:none; color:var(--accent-deep); font-weight:800; font-size:13.5px; transition:transform .2s, border-color .2s}
+.toc a:hover{border-color:var(--accent); transform:translateY(-2px)}
+.toc a.spec{background:var(--accent-soft)}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:20px 22px; margin-top:18px; box-shadow:var(--shadow); transition:box-shadow .3s}
+.card:hover{box-shadow:var(--shadow-pop)}
+section{scroll-margin-top:16px}
+.sec-em{display:inline-grid; place-items:center; width:42px; height:42px; margin-right:6px; border-radius:14px; background:var(--accent-soft); font-size:24px; flex:none}
+.sec-num{font-size:12px; font-weight:800; color:var(--ink2); letter-spacing:.06em; text-transform:uppercase}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin:10px 0}
+.box{padding:12px 14px; border-radius:16px; background:var(--surface2); border:1px solid var(--line)}
+.box h4{margin-top:0}
+.tip,.warn,.modern,.fun,.exam,.rule{position:relative; margin:12px 0; padding:10px 14px 10px 14px; border-radius:14px; font-size:15px; border:1.5px solid var(--line); background:var(--surface2)}
+.tip::before,.warn::before,.modern::before,.fun::before,.exam::before,.rule::before{display:block; font-family:var(--font-head); font-weight:800; font-size:14px; margin-bottom:2px}
+.tip{background:color-mix(in srgb, var(--accent2) 12%, var(--surface)); border-color:color-mix(in srgb, var(--accent2) 45%, var(--line))} .tip::before{content:"💡 Tip"}
+.warn{background:color-mix(in srgb, var(--orange) 12%, var(--surface)); border-color:color-mix(in srgb, var(--orange) 50%, var(--line))} .warn::before{content:"⚠️ Watch out"}
+.modern{background:color-mix(in srgb, var(--purple) 10%, var(--surface)); border-color:color-mix(in srgb, var(--purple) 45%, var(--line))} .modern::before{content:"🆕 Modern Java"}
+.fun{background:color-mix(in srgb, var(--yellow) 18%, var(--surface)); border-color:color-mix(in srgb, var(--yellow) 60%, var(--line)); transform:rotate(-.3deg)} .fun::before{content:"😄 Fun fact"}
+.exam{background:color-mix(in srgb, var(--red) 8%, var(--surface)); border-color:color-mix(in srgb, var(--red) 40%, var(--line))} .exam::before{content:"🎯 Exam trap"}
+.rule{background:color-mix(in srgb, var(--green) 9%, var(--surface)); border-color:color-mix(in srgb, var(--green) 45%, var(--line))} .rule::before{content:"📏 Rule to remember"}
+code{font-family:var(--font-mono); font-size:.88em; background:var(--surface2); border-radius:5px; padding:0 4px}
+.codewrap{margin:12px 0; border-radius:16px; overflow:hidden; border:1px solid color-mix(in srgb, var(--code-bg) 60%, var(--line)); box-shadow:var(--shadow)}
+.codebar{display:flex; align-items:center; gap:8px; padding:7px 12px; background:color-mix(in srgb, var(--code-bg) 92%, #fff); color:#c6d4ea; font-size:12.5px; font-weight:800}
+.codebar .dots{display:flex; gap:5px} .codebar .dots i{width:10px; height:10px; border-radius:50%; background:#ff6b6b} .codebar .dots i:nth-child(2){background:#ffd166} .codebar .dots i:nth-child(3){background:#5ee6a0}
+.codebar .lbl{flex:1} .codebar button{border:0; background:rgba(255,255,255,.1); color:#e6eef9; border-radius:8px; padding:3px 9px; font:inherit; font-size:12px; cursor:pointer}
+.codebar button:hover{background:rgba(255,255,255,.2)}
+pre.src{margin:0; background:var(--code-bg); color:var(--code-ink); padding:14px 16px; overflow:auto; font-family:var(--font-mono); font-size:13.5px; line-height:1.6; tab-size:4}
+pre.src .k{color:#ff8fb1} pre.src .s{color:#a5e8a0} pre.src .n{color:#ffcf70} pre.src .c{color:#8aa0c2; font-style:italic} pre.src .t{color:#7fd3ff} pre.src .a{color:#d4b2ff}
+.out{padding:9px 14px 11px; background:color-mix(in srgb, var(--green) 10%, var(--surface)); border-top:2px dashed color-mix(in srgb, var(--green) 45%, var(--line))}
+.out>span,.err>span{display:block; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--easy)}
+.out pre,.err pre{margin:2px 0 0; font-family:var(--font-mono); font-size:13.5px; white-space:pre-wrap; color:var(--ink)}
+.err{padding:9px 14px 11px; background:color-mix(in srgb, var(--red) 9%, var(--surface)); border-top:2px dashed color-mix(in srgb, var(--red) 45%, var(--line))}
+.err>span{color:var(--hard)}
+pre.cmdline{margin:12px 0; background:#0b1322; color:#b9f5c9; padding:12px 16px; border-radius:14px; overflow:auto; font-family:var(--font-mono); font-size:13.5px; line-height:1.6}
+table.jt{width:100%; border-collapse:collapse; margin:10px 0; font-size:14.5px}
+.tw{overflow-x:auto; border-radius:14px; border:1px solid var(--line); margin:10px 0}
+.tw table.jt{margin:0}
+table.jt th{background:var(--accent-soft); color:var(--accent-deep); text-align:left; padding:8px 10px; font-size:13px; text-transform:uppercase; letter-spacing:.04em}
+table.jt td{padding:8px 10px; border-top:1px solid var(--line); vertical-align:top}
+table.jt tr:hover td{background:var(--surface2)}
+.yes{color:var(--easy); font-weight:800} .no{color:var(--hard); font-weight:800}
+.pager{display:flex; justify-content:space-between; gap:12px; margin-top:24px; flex-wrap:wrap}
+.pager a{flex:1; min-width:220px; display:flex; flex-direction:column; padding:14px 18px; border-radius:18px; background:var(--surface); border:1.5px solid var(--line); text-decoration:none; color:var(--ink); box-shadow:var(--shadow); transition:transform .2s, border-color .2s}
+.pager a:hover{transform:translateY(-3px); border-color:var(--accent)}
+.pager a small{color:var(--ink2); font-weight:800; font-size:12.5px}
+.pager a b{font-family:var(--font-head); font-size:18px}
+.pager a.next{text-align:right}
+.mem{display:flex; gap:6px; flex-wrap:wrap; margin:8px 0}
+.mem span{padding:6px 10px; border-radius:10px; background:var(--box); border:1.5px solid var(--box-line); font-family:var(--font-mono); font-weight:700; font-size:13.5px}
+.mem span.hl{background:var(--hl); border-color:var(--hl-line)} .mem span.ok{background:var(--ok); border-color:var(--ok-line)} .mem span.bad{background:var(--bad); border-color:var(--bad-line)}
+html.embedded .wrap{padding-top:14px}
+@media (max-width:640px){
+  .wrap{padding:14px 12px 110px}
+  .hero{padding:16px}
+  .hero .em{font-size:46px}
+  .card{padding:16px 14px; border-radius:18px}
+  .sec-em{width:36px; height:36px; font-size:20px}
+}

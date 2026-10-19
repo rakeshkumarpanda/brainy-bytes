@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assertions · Java</title>
+<meta name="description" content="Checking your own assumptions while developing: assert as a keyword, the simple and augmented forms, enabling and disabling with -ea and -da at class and package level, system assertions, AssertionError, and where assertions belong and where they do not.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>⚙️ JVM and Tooling</span><span>›</span><span>Chapter 18 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">✅</span><div><h1>Assertions</h1><p class="lead">An assertion is a check you leave in the code to catch your own mistakes during development and testing. It costs nothing in production, because assertions are switched off unless you turn them on.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 9 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#intro"><span>🔍</span>Why assertions</a><a href="#keyword"><span>🔑</span>assert as a keyword</a><a href="#forms"><span>✌️</span>The two forms</a><a href="#flags"><span>🎚️</span>Enabling and disabling</a><a href="#usage"><span>📍</span>Where to use them and where not</a><a href="#assertion-error"><span>💥</span>AssertionError</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="intro" data-say="intro"><div class="sec-num">Part 1</div><h2><span class="sec-em">🔍</span><span>Why assertions</span></h2>
+<p>A quick way to debug is to add <code>System.out.println</code> lines and remove them later. Forget one, and it prints in front of real users. <b>Assertions</b> solve this. You write a check once and leave it in the code. During development you run with assertions <b>enabled</b>. In production they stay <b>disabled</b> by default, so they do nothing and cost almost nothing.</p>
+<div class="grid2">
+<div class="box"><h4>Purpose</h4><p>Catch programmer mistakes: situations that should be impossible if the code is correct.</p></div>
+<div class="box"><h4>Not for</h4><p>Checking user input or anything outside your control. Those need real <code>if</code> checks and exceptions.</p></div>
+</div>
+<div class="fun">Assertions arrived in Java 1.4 (2002), and <code>assert</code> became a keyword at the same time.</div>
+</section>
+
+<section class="card reveal jsec" id="keyword" data-say="keyword"><div class="sec-num">Part 2</div><h2><span class="sec-em">🔑</span><span>assert as a keyword</span></h2>
+<p>Before Java 1.4, <code>assert</code> was an ordinary identifier, so old code could name a variable or method <code>assert</code>. Since 1.4 it is a reserved keyword, and such code no longer compiles.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">assert cannot be a variable name · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> <span class="k">assert</span> = <span class="n">10</span>;
+        <span class="t">System</span>.out.println(<span class="k">assert</span>);
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>as of release 1.4, 'assert' is a keyword, and may not be used as an identifier</pre></div></div>
+<div class="exam">Old exam questions ask what happens when you compile this with very old <code>-source</code> settings. Modern compilers no longer accept source levels that old, so in practice <code>assert</code> is always a keyword.</div>
+</section>
+
+<section class="card reveal jsec" id="forms" data-say="forms"><div class="sec-num">Part 3</div><h2><span class="sec-em">✌️</span><span>The two forms</span></h2>
+<h3>Simple form</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Syntax</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">assert</span> condition;</pre></div>
+<p>If assertions are enabled and the condition is false, the JVM throws <code>AssertionError</code>. If the condition is true, nothing happens.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Run with java -ea Main · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> marks = <span class="n">120</span>;
+        <span class="k">assert</span> marks &lt;= <span class="n">100</span>;
+        <span class="t">System</span>.out.println(<span class="s">"marks: "</span> + marks);
+    }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.AssertionError</pre></div></div>
+<p>The same program without <code>-ea</code> skips the check completely:</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Run with java Main · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> marks = <span class="n">120</span>;
+        <span class="k">assert</span> marks &lt;= <span class="n">100</span>;
+        <span class="t">System</span>.out.println(<span class="s">"marks: "</span> + marks);
+    }
+}</pre><div class="out"><span>Output</span><pre>marks: 120</pre></div></div>
+<h3>Augmented form</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Syntax</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">assert</span> condition : expression;</pre></div>
+<p>The second expression becomes the error's message, which makes the failure easier to understand. It can be any expression that produces a value. Java converts it to a String.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A message explains what went wrong · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> marks = <span class="n">120</span>;
+        <span class="k">assert</span> marks &lt;= <span class="n">100</span> : <span class="s">"marks must be at most 100, got "</span> + marks;
+        <span class="t">System</span>.out.println(<span class="s">"marks: "</span> + marks);
+    }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.AssertionError: marks must be at most 100, got 120</pre></div></div>
+<div class="rule">The second expression is evaluated <b>only</b> when the condition is false.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The message is not built when the check passes · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="t">String</span> expensive() {
+        <span class="t">System</span>.out.println(<span class="s">"building message"</span>);
+        <span class="k">return</span> <span class="s">"details"</span>;
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> x = <span class="n">5</span>;
+        <span class="k">assert</span> x &gt; <span class="n">0</span> : expensive();
+        <span class="t">System</span>.out.println(<span class="s">"check passed"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>check passed</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The second part must produce a value · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> log() { }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> x = <span class="n">5</span>;
+        <span class="k">assert</span> x &gt; <span class="n">10</span> : log();
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>'void' type not allowed here</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="flags" data-say="flags"><div class="sec-num">Part 4</div><h2><span class="sec-em">🎚️</span><span>Enabling and disabling</span></h2>
+<p>Assertions are controlled when you <b>start</b> the program, not when you compile it.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Flag</th><th>Long form</th><th>Effect</th></tr>
+<tr><td><code>-ea</code></td><td><code>-enableassertions</code></td><td>enable in all your classes</td></tr>
+<tr><td><code>-da</code></td><td><code>-disableassertions</code></td><td>disable in all your classes (the default)</td></tr>
+<tr><td><code>-esa</code></td><td><code>-enablesystemassertions</code></td><td>enable inside Java's own library classes</td></tr>
+<tr><td><code>-dsa</code></td><td><code>-disablesystemassertions</code></td><td>disable inside Java's library classes</td></tr>
+</table></div></div>
+<p>Each flag can target one class or one package. Three dots after a package name mean "this package and all its sub-packages".</p>
+<pre class="cmdline">java -ea Main                          enable everywhere in your code
+java -ea:Payment Main                  enable only in class Payment
+java -ea:com.shop... Main              enable in com.shop and all its sub-packages
+java -ea:com.shop... -da:com.shop.ui... Main
+                                       enable in com.shop except com.shop.ui
+java -ea -da:Main Main                 enable everywhere except class Main</pre>
+<div class="rule">Flags are applied from left to right, and a more specific flag wins over a general one.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">java -ea -da:Main Main · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="c">// File: Main.java</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">assert</span> <span class="k">false</span> : <span class="s">"in Main"</span>;
+        <span class="t">System</span>.out.println(<span class="s">"Main skipped its assertion"</span>);
+        <span class="t">Checker</span>.run();
+    }
+}
+<span class="c">// File: Checker.java</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">Checker</span> {
+    <span class="k">static</span> <span class="k">void</span> run() {
+        <span class="k">try</span> {
+            <span class="k">assert</span> <span class="k">false</span> : <span class="s">"in Checker"</span>;
+            <span class="t">System</span>.out.println(<span class="s">"Checker skipped its assertion"</span>);
+        } <span class="k">catch</span> (<span class="t">AssertionError</span> e) {
+            <span class="t">System</span>.out.println(<span class="s">"Checker caught: "</span> + e.getMessage());
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>Main skipped its assertion
+Checker caught: in Checker</pre></div></div>
+<h3>Are assertions on right now</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A neat trick with a side effect inside assert · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">boolean</span> enabled = <span class="k">false</span>;
+        <span class="k">assert</span> enabled = <span class="k">true</span>;                        <span class="c">// assignment, runs only when enabled</span>
+        <span class="t">System</span>.out.println(<span class="s">"assertions enabled: "</span> + enabled);
+    }
+}</pre><div class="out"><span>Output</span><pre>assertions enabled: true</pre></div></div>
+<div class="tip">This is the only common case where a side effect inside <code>assert</code> is acceptable, because its purpose is to detect the setting itself.</div>
+</section>
+
+<section class="card reveal jsec" id="usage" data-say="usage"><div class="sec-num">Part 5</div><h2><span class="sec-em">📍</span><span>Where to use them and where not</span></h2>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Situation</th><th>Use assert</th><th>Why</th></tr>
+<tr><td>Arguments of a <b>public</b> method</td><td class="no">No</td><td>Callers outside your control can pass anything. Validation must always run, so throw <code>IllegalArgumentException</code>.</td></tr>
+<tr><td>Arguments of a <b>private</b> method</td><td class="yes">Yes</td><td>Only your own code calls it, so a bad value means your bug.</td></tr>
+<tr><td>Command line arguments</td><td class="no">No</td><td>They come from the user, so they need real checks.</td></tr>
+<tr><td>A <code>default</code> case that should never happen</td><td class="yes">Yes</td><td><code>assert false</code> documents and checks the impossible case.</td></tr>
+<tr><td>Code with side effects in the condition</td><td class="no">No</td><td>The program would behave differently when assertions are off.</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Public: always validate. Private: assert. · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">double</span> average(<span class="k">int</span>[] marks) {
+        <span class="k">if</span> (marks == <span class="k">null</span> || marks.length == <span class="n">0</span>)
+            <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalArgumentException</span>(<span class="s">"need at least one mark"</span>);
+        <span class="k">return</span> sum(marks) / (<span class="k">double</span>) marks.length;
+    }
+    <span class="k">private</span> <span class="k">static</span> <span class="k">int</span> sum(<span class="k">int</span>[] marks) {
+        <span class="k">assert</span> marks != <span class="k">null</span>;                          <span class="c">// our own code guarantees this</span>
+        <span class="k">int</span> s = <span class="n">0</span>;
+        <span class="k">for</span> (<span class="k">int</span> m : marks) s += m;
+        <span class="k">return</span> s;
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(average(<span class="k">new</span> <span class="k">int</span>[]{<span class="n">80</span>, <span class="n">90</span>, <span class="n">70</span>}));
+    }
+}</pre><div class="out"><span>Output</span><pre>80.0</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The impossible default case finds a real bug · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="t">String</span> direction(<span class="k">int</span> turns) {
+        <span class="k">switch</span> (turns % <span class="n">4</span>) {
+            <span class="k">case</span> <span class="n">0</span>: <span class="k">return</span> <span class="s">"north"</span>;
+            <span class="k">case</span> <span class="n">1</span>: <span class="k">return</span> <span class="s">"east"</span>;
+            <span class="k">case</span> <span class="n">2</span>: <span class="k">return</span> <span class="s">"south"</span>;
+            <span class="k">case</span> <span class="n">3</span>: <span class="k">return</span> <span class="s">"west"</span>;
+            <span class="k">default</span>:
+                <span class="k">assert</span> <span class="k">false</span> : <span class="s">"impossible remainder: "</span> + turns % <span class="n">4</span>;
+                <span class="k">return</span> <span class="s">"?"</span>;
+        }
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(direction(<span class="n">5</span>));
+        <span class="t">System</span>.out.println(direction(-<span class="n">3</span>));
+    }
+}</pre><div class="out"><span>Output before the crash</span><pre>east</pre></div><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.AssertionError: impossible remainder: -3</pre></div></div>
+<p>The author believed <code>turns % 4</code> is always 0 to 3. The assertion proves otherwise: in Java, the remainder of a negative number is negative. <code>Math.floorMod(turns, 4)</code> is the fix.</p>
+<h3>A side effect that disappears</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Without -ea the list never shrinks · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.util.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">List</span>&lt;<span class="t">String</span>&gt; queue = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;(<span class="t">List</span>.of(<span class="s">"a"</span>, <span class="s">"b"</span>));
+        <span class="k">assert</span> queue.remove(<span class="s">"a"</span>);                      <span class="c">// wrong: real work inside assert</span>
+        <span class="t">System</span>.out.println(queue);
+    }
+}</pre><div class="out"><span>Output</span><pre>[a, b]</pre></div></div>
+<div class="warn">With <code>-ea</code> this prints <code>[b]</code>. Without it, <code>[a, b]</code>. Never put work the program needs inside an assertion.</div>
+</section>
+
+<section class="card reveal jsec" id="assertion-error" data-say="assertion-error"><div class="sec-num">Part 6</div><h2><span class="sec-em">💥</span><span>AssertionError</span></h2>
+<p><code>AssertionError</code> is a child of <code>Error</code>, so it is unchecked. Catching it is legal, but it is bad practice: an assertion failure means the program is in a state its author believed impossible.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Legal to catch, but rarely wise · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">try</span> {
+            <span class="k">assert</span> <span class="n">2</span> + <span class="n">2</span> == <span class="n">5</span> : <span class="s">"maths is broken"</span>;
+        } <span class="k">catch</span> (<span class="t">AssertionError</span> e) {
+            <span class="t">System</span>.out.println(<span class="s">"caught "</span> + e.getClass().getSimpleName() + <span class="s">": "</span> + e.getMessage());
+            <span class="t">System</span>.out.println(<span class="s">"is an Error? "</span> + (e <span class="k">instanceof</span> <span class="t">Error</span>));
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>caught AssertionError: maths is broken
+is an Error? true</pre></div></div>
+<div class="modern">Test libraries such as JUnit have their own methods, for example <code>assertEquals(expected, actual)</code>. They always run and report failures through the test runner. They are not the same as the Java <code>assert</code> keyword, though they share the idea.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./garbage-collection.html" data-topic="garbage-collection"><small>← Previous chapter</small><b>♻️ Garbage Collection</b></a><a class="next" href="./development.html" data-topic="development"><small>Next chapter →</small><b>🛠️ Development Tools</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "A check you leave behind", "panels": [{"s": [["e", "📝"], ["t", "assert marks <= 100;", {"b": 1}]], "h": "Write the belief", "t": "State what must be true at this point.", "more": "If your code is correct, the condition is always true."}, {"s": [["e", "🔛"], ["t", "java -ea Main", {"b": 1}]], "h": "Switch it on", "t": "Assertions run only with -ea.", "more": "Without it, the JVM skips them. That is the default in production."}, {"s": [["e", "💥"], ["t", "AssertionError: got 120", {"b": 1, "size": 12}]], "h": "Belief broken", "t": "A false condition throws AssertionError.", "more": "Add \": message\" to explain what went wrong."}, {"s": [["e", "🚫"], ["t", "public args → if + throw", {"b": 1, "size": 12}]], "h": "Not for input", "t": "User data needs real checks.", "more": "Assertions can be off, so they must never be the only guard."}], "remember": "assert condition : message. Enabled with -ea, off by default. For your own bugs, never for user input."}, "real": [["🧑‍🍳", "A chef tasting the sauce", "A chef tastes during cooking to catch mistakes early. Guests never see this step. Assertions are tastings during development that customers never pay for."], ["✈️", "A pilot checklist in the simulator", "Extra checks during training reveal crew mistakes. Passenger safety checks, like seat belts, always stay on. Those are your public method validations."], ["🏗️", "Scaffolding on a building", "Scaffolding helps while you build and is not part of the finished house. Assertions are switched off when the program goes live."]], "quiz": [{"lv": "e", "q": "Since which Java version is <code>assert<\/code> a keyword?", "o": ["1.2", "1.4", "5", "8"], "a": 1, "hint": "It arrived together with assertions themselves.", "why": "Assertions and the assert keyword were both added in Java 1.4."}, {"lv": "e", "q": "Are assertions enabled by default when you run <code>java Main<\/code>?", "o": ["Yes", "No", "Only in the main method", "Only for system classes"], "a": 1, "hint": "Think about production.", "why": "They are disabled by default. Use -ea to enable them."}, {"lv": "e", "q": "Which exception or error does a failed assertion throw?", "o": ["AssertionException", "AssertionError", "IllegalStateException", "RuntimeException"], "a": 1, "hint": "It is not an Exception subclass.", "why": "A failed assertion throws java.lang.AssertionError, a child of Error."}, {"lv": "m", "q": "What does this print when run with <code>java Main<\/code> (no flags)?", "code": "class Main {\n    public static void main(String[] args) {\n        int x = 3;\n        assert x > 5 : \"too small\";\n        System.out.println(\"x = \" + x);\n    }\n}", "o": ["x = 3", "AssertionError: too small", "Compile error", "Nothing"], "a": 0, "run": 1, "hint": "Assertions are off unless enabled.", "why": "Without -ea the assert statement is skipped, so the program prints x = 3."}, {"lv": "m", "q": "What is the result when run with <code>java -ea Main<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        int x = 3;\n        assert x > 5 : \"too small\";\n        System.out.println(\"x = \" + x);\n    }\n}", "o": ["x = 3", "AssertionError: too small", "Compile error", "AssertionError with no message"], "a": 1, "re": "AssertionError: too small", "flags": "-ea", "hint": "The condition is false and assertions are on.", "why": "3 > 5 is false, so AssertionError is thrown with the message \"too small\"."}, {"lv": "m", "q": "Which use of assert is considered inappropriate?", "o": ["Checking a private method argument", "assert false in an impossible default case", "Validating a public method argument", "Checking an internal invariant in a loop"], "a": 2, "hint": "Who calls a public method?", "why": "Public method arguments come from callers you do not control, and the check must always run. Use IllegalArgumentException instead."}, {"lv": "h", "q": "Why does this not compile?", "code": "class Main {\n    static void note() { }\n    public static void main(String[] args) {\n        assert args.length > 0 : note();\n    }\n}", "o": ["assert needs parentheses", "The message part cannot be a void method call", "args.length is not boolean", "note must be public"], "a": 1, "ce": 1, "hint": "The part after the colon becomes the message.", "why": "The second expression must produce a value. A void method call produces none, so the compiler says \"'void' type not allowed here\"."}, {"lv": "h", "q": "What does this print with <code>java -ea Main<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        int count = 0;\n        assert ++count > 0;\n        assert ++count > 0;\n        System.out.println(count);\n    }\n}", "o": ["0", "1", "2", "AssertionError"], "a": 2, "run": 1, "flags": "-ea", "hint": "With -ea both conditions run, including their side effects.", "why": "Each enabled assert increments count, and both conditions are true. The result is 2. Without -ea it would be 0, which is why side effects in assertions are a bad idea."}, {"lv": "h", "q": "With <code>java -ea:com.shop... -da:com.shop.ui... App<\/code>, are assertions enabled in <code>com.shop.ui.cart.Basket<\/code>?", "o": ["Yes", "No", "Only in public methods", "It is a compile error"], "a": 1, "hint": "Which flag is more specific to this class?", "why": "com.shop.ui.cart is a sub-package of com.shop.ui, which is disabled by the more specific second flag."}, {"lv": "x", "q": "What does this print with <code>java -ea Main<\/code>?", "code": "class Main {\n    static int calls = 0;\n    static String msg() { calls++; return \"m\"; }\n    public static void main(String[] args) {\n        for (int i = 0; i < 5; i++) {\n            try { assert i % 2 == 0 : msg(); }\n            catch (AssertionError e) { }\n        }\n        System.out.println(calls);\n    }\n}", "o": ["0", "2", "3", "5"], "a": 1, "run": 1, "flags": "-ea", "hint": "The message expression runs only when the check fails.", "why": "The condition fails for i = 1 and i = 3, so msg() runs twice."}, {"lv": "x", "q": "What does this print with <code>java -ea Main<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        boolean on = false;\n        assert on = true;\n        int x = -7 % 3;\n        System.out.println(on + \" \" + x);\n    }\n}", "o": ["false -1", "true -1", "true 2", "false 2"], "a": 1, "run": 1, "flags": "-ea", "hint": "The assignment runs only when assertions are enabled. For the remainder, the sign follows the left operand.", "why": "With -ea, \"on = true\" runs and its value true passes the check. In Java, −7 % 3 is −1 because the remainder takes the sign of the dividend."}, {"lv": "x", "q": "What does this print with <code>java -ea Main<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        try {\n            assert args.length == 1 : args.length;\n        } catch (Error e) {\n            System.out.println(e.getClass().getSimpleName() + \" \" + e.getMessage());\n        }\n    }\n}", "o": ["AssertionError 0", "AssertionError null", "Nothing", "Error 0"], "a": 0, "run": 1, "flags": "-ea", "hint": "Any value can be the message. It is converted to a String.", "why": "No arguments are given, so the check fails. The int 0 becomes the message \"0\", and catch (Error e) catches AssertionError."}], "calc": [{"lv": "e", "q": "An assertion checks <code>marks &lt;= 100<\/code>. Of the marks 45, 100, 101 and 120, how many make the assertion fail?", "ans": "2", "py": "sum(1 for m in [45,100,101,120] if not m <= 100)", "hint": "Fail means the condition is false.", "steps": ["45 ≤ 100 true, 100 ≤ 100 true.", "101 ≤ 100 false, 120 ≤ 100 false.", "<span class=\"eq\">2<\/span> failures"]}, {"lv": "e", "q": "What does <code>Math.floorMod(-3, 4)<\/code> return, the fix suggested in the direction example?", "code": "System.out.println(Math.floorMod(-3, 4));", "ans": "1", "run": 1, "hint": "floorMod always returns a result between 0 and 3 for divisor 4.", "steps": ["<span class=\"eq\">−3 = 4 × (−1) + 1<\/span>", "The remainder is <span class=\"eq\">1<\/span>, which means \"east\"."]}, {"lv": "m", "q": "What is <code>-3 % 4<\/code> in Java, the value that broke the direction example?", "code": "System.out.println(-3 % 4);", "ans": "-3", "run": 1, "hint": "The remainder takes the sign of the left operand.", "steps": ["Java truncates the division toward zero: <span class=\"eq\">−3 ÷ 4 = 0<\/span>", "<span class=\"eq\">−3 − 4 × 0 = −3<\/span>"]}, {"lv": "m", "q": "A loop runs 10 times and contains <code>assert ++n &gt; 0;<\/code>. n starts at 0. What is n after the loop with -ea, plus n without -ea?", "ans": "10", "py": "10+0", "hint": "Without -ea the increment never runs.", "steps": ["With -ea: <span class=\"eq\">n = 10<\/span>", "Without -ea: <span class=\"eq\">n = 0<\/span>", "<span class=\"eq\">10 + 0 = 10<\/span>"]}, {"lv": "h", "q": "What does this print with <code>java -ea Main<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        int fails = 0;\n        for (int m = 1; m <= 20; m++) {\n            try { assert m % 3 != 0 && m % 5 != 0; }\n            catch (AssertionError e) { fails++; }\n        }\n        System.out.println(fails);\n    }\n}", "ans": "9", "run": 1, "flags": "-ea", "hint": "The assertion fails for numbers divisible by 3 or by 5.", "steps": ["Multiples of 3 up to 20: <span class=\"eq\">⌊20 ÷ 3⌋ = 6<\/span>", "Multiples of 5: <span class=\"eq\">⌊20 ÷ 5⌋ = 4<\/span>", "Multiples of 15, counted twice: <span class=\"eq\">1<\/span>", "<span class=\"eq\">6 + 4 − 1 = 9<\/span>"]}, {"lv": "h", "q": "What does this print with <code>java -ea Main<\/code>?", "code": "class Main {\n    static int built = 0;\n    static String msg(int i) { built++; return \"bad \" + i; }\n    public static void main(String[] args) {\n        int caught = 0;\n        for (int i = 1; i <= 12; i++) {\n            try { assert i % 4 != 0 : msg(i); }\n            catch (AssertionError e) { caught++; }\n        }\n        System.out.println(caught * 10 + built);\n    }\n}", "ans": "33", "run": 1, "flags": "-ea", "hint": "Messages are built only for failing checks.", "steps": ["Failures at i = 4, 8, 12: <span class=\"eq\">caught = 3<\/span>", "msg runs only for failures: <span class=\"eq\">built = 3<\/span>", "<span class=\"eq\">3 × 10 + 3 = 33<\/span>"]}, {"lv": "x", "q": "What does this print with <code>java -ea Main<\/code>?", "code": "import java.util.*;\nclass Main {\n    public static void main(String[] args) {\n        List<Integer> q = new ArrayList<>(List.of(5, 6, 7, 8));\n        for (int i = 0; i < 3; i++) assert q.remove(0) > 0;\n        int sum = 0;\n        for (int v : q) sum += v;\n        System.out.println(q.size() + \" \" + sum);\n    }\n}", "ans": "1 8", "run": 1, "flags": "-ea", "hint": "Each enabled assertion removes the first element.", "steps": ["Three removals take away 5, 6 and 7.", "Left: [8], so size 1 and sum 8.", "Without -ea it would print \"4 26\". The behaviour changes with a flag, which is the bug."]}, {"lv": "x", "q": "Run the same program without <code>-ea<\/code>. What does it print?", "code": "import java.util.*;\nclass Main {\n    public static void main(String[] args) {\n        List<Integer> q = new ArrayList<>(List.of(5, 6, 7, 8));\n        for (int i = 0; i < 3; i++) assert q.remove(0) > 0;\n        int sum = 0;\n        for (int v : q) sum += v;\n        System.out.println(q.size() + \" \" + sum);\n    }\n}", "ans": "4 26", "run": 1, "hint": "Nothing inside the assert runs.", "steps": ["No element is removed.", "<span class=\"eq\">5 + 6 + 7 + 8 = 26<\/span>", "Size 4, sum 26."]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to assertions. An assertion is a check you leave in your code to catch your own mistakes. It runs while you develop and test, and stays switched off in production by default.", "hi": "Assertions में आपका स्वागत है। Assertion एक जाँच है जो आप अपनी गलतियाँ पकड़ने के लिए code में छोड़ते हैं। यह development और testing के समय चलती है, और production में default रूप से बंद रहती है।", "kn": "Assertions ಗೆ ಸ್ವಾಗತ. Assertion ಎಂಬುದು ನಿಮ್ಮದೇ ತಪ್ಪುಗಳನ್ನು ಹಿಡಿಯಲು code ನಲ್ಲಿ ಬಿಡುವ ಪರಿಶೀಲನೆ. ಅದು development ಮತ್ತು testing ವೇಳೆ ಓಡುತ್ತದೆ, production ನಲ್ಲಿ default ಆಗಿ ಆಫ್ ಆಗಿರುತ್ತದೆ.", "or": "Assertions କୁ ସ୍ୱାଗତ। Assertion ହେଉଛି ନିଜ ଭୁଲ ଧରିବା ପାଇଁ code ରେ ଛାଡ଼ିଥିବା ଯାଞ୍ଚ। ଏହା development ଓ testing ସମୟରେ ଚାଲେ, ଏବଂ production ରେ default ଭାବେ ବନ୍ଦ ରହେ।", "ar": "مرحبًا بك في التوكيدات. التوكيد فحص تتركه في الكود لتكتشف أخطاءك أنت. يعمل أثناء التطوير والاختبار، ويبقى معطلًا افتراضيًا في بيئة الإنتاج.", "de": "Willkommen bei den Assertions. Eine Assertion ist eine Prüfung, die du im Code lässt, um eigene Fehler zu finden. Sie läuft beim Entwickeln und Testen und bleibt im Betrieb standardmäßig ausgeschaltet."}, {"id": "intro", "h": "Why assertions", "en": "Print statements used for debugging are easy to forget and may reach real users. Assertions stay in the code but cost nothing unless enabled. Use them for situations that should be impossible if your code is correct.", "hi": "Debugging के लिए लगाए print statements भूलना आसान है और वे असली users तक पहुँच सकते हैं। Assertions code में रहते हैं पर enable किए बिना कुछ खर्च नहीं करते। इन्हें उन स्थितियों के लिए इस्तेमाल कीजिए जो सही code में असंभव होनी चाहिए।", "kn": "Debugging ಗಾಗಿ ಹಾಕಿದ print statements ಮರೆಯುವುದು ಸುಲಭ ಮತ್ತು ನಿಜವಾದ users ತಲುಪಬಹುದು. Assertions code ನಲ್ಲಿ ಉಳಿಯುತ್ತವೆ ಆದರೆ enable ಮಾಡದ ಹೊರತು ಏನೂ ವೆಚ್ಚವಿಲ್ಲ. ಸರಿಯಾದ code ನಲ್ಲಿ ಅಸಾಧ್ಯವಾಗಿರಬೇಕಾದ ಸಂದರ್ಭಗಳಿಗೆ ಅವುಗಳನ್ನು ಬಳಸಿ.", "or": "Debugging ପାଇଁ ରଖାଯାଇଥିବା print statements ଭୁଲିଯିବା ସହଜ ଏବଂ ପ୍ରକୃତ users ପାଖରେ ପହଞ୍ଚିପାରେ। Assertions code ରେ ରହେ କିନ୍ତୁ enable ନ କଲେ କିଛି ଖର୍ଚ୍ଚ ହୁଏ ନାହିଁ। ସଠିକ code ରେ ଅସମ୍ଭବ ହେବା ଉଚିତ ପରିସ୍ଥିତି ପାଇଁ ଏଗୁଡ଼ିକ ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "من السهل نسيان أوامر الطباعة المستخدمة في التصحيح، وقد تصل إلى المستخدمين الحقيقيين. أما التوكيدات فتبقى في الكود ولا تكلف شيئًا ما لم تُفعّل. استخدمها للحالات التي يجب أن تكون مستحيلة إذا كان الكود صحيحًا.", "de": "Print-Anweisungen zum Debuggen vergisst man leicht, und sie erreichen dann echte Nutzer. Assertions bleiben im Code, kosten aber nichts, solange sie nicht aktiviert sind. Nutze sie für Situationen, die bei korrektem Code unmöglich sein sollten."}, {"id": "keyword", "h": "assert as a keyword", "en": "Since Java 1.4, assert is a reserved keyword. You cannot use it as a variable or method name any more.", "hi": "Java 1.4 से assert एक आरक्षित keyword है। अब इसे variable या method के नाम के रूप में इस्तेमाल नहीं कर सकते।", "kn": "Java 1.4 ರಿಂದ assert ಮೀಸಲಿಟ್ಟ keyword. ಇನ್ನು ಅದನ್ನು variable ಅಥವಾ method ಹೆಸರಾಗಿ ಬಳಸಲಾಗದು.", "or": "Java 1.4 ରୁ assert ଏକ ସଂରକ୍ଷିତ keyword। ଏହାକୁ ଆଉ variable କିମ୍ବା method ନାମ ଭାବେ ବ୍ୟବହାର କରିହେବ ନାହିଁ।", "ar": "منذ الإصدار 1.4 أصبحت assert كلمة محجوزة، ولم يعد ممكنًا استخدامها اسمًا لمتغير أو دالة.", "de": "Seit Java 1.4 ist assert ein reserviertes Schlüsselwort. Du kannst es nicht mehr als Variablen- oder Methodenname verwenden."}, {"id": "forms", "h": "The two forms", "en": "The simple form is assert condition. The augmented form adds a colon and an expression, which becomes the error message. That expression is evaluated only when the condition is false, and it must produce a value, so a void method call is not allowed.", "hi": "Simple form है assert condition। Augmented form में colon और एक expression जुड़ता है, जो error message बनता है। वह expression केवल तब evaluate होता है जब condition false हो, और उसे कोई value देनी चाहिए, इसलिए void method call की अनुमति नहीं है।", "kn": "Simple form ಎಂದರೆ assert condition. Augmented form ನಲ್ಲಿ colon ಮತ್ತು expression ಸೇರುತ್ತದೆ, ಅದು error message ಆಗುತ್ತದೆ. Condition false ಆದಾಗ ಮಾತ್ರ ಆ expression evaluate ಆಗುತ್ತದೆ, ಮತ್ತು ಅದು value ಕೊಡಬೇಕು, ಆದ್ದರಿಂದ void method call ಅನುಮತಿಯಿಲ್ಲ.", "or": "Simple form ହେଉଛି assert condition। Augmented form ରେ colon ଓ ଏକ expression ଯୋଡ଼ାଯାଏ, ଯାହା error message ହୁଏ। Condition false ହେଲେ ହିଁ ସେହି expression evaluate ହୁଏ, ଏବଂ ଏହା value ଦେବା ଉଚିତ, ତେଣୁ void method call ଅନୁମତି ନାହିଁ।", "ar": "الصيغة البسيطة هي assert ثم الشرط. وتضيف الصيغة الموسعة نقطتين وتعبيرًا يصبح رسالة الخطأ. لا يُقيّم هذا التعبير إلا عندما يكون الشرط خاطئًا، ويجب أن ينتج قيمة، لذلك لا يُسمح باستدعاء دالة void.", "de": "Die einfache Form ist assert Bedingung. Die erweiterte Form ergänzt einen Doppelpunkt und einen Ausdruck, der zur Fehlermeldung wird. Dieser Ausdruck wird nur ausgewertet, wenn die Bedingung falsch ist, und er muss einen Wert liefern, ein void-Aufruf ist also verboten."}, {"id": "flags", "h": "Enabling and disabling", "en": "Assertions are switched at launch time. Minus ea enables them and minus da disables them. You can target one class, or a package with three dots for its sub packages. Flags apply from left to right and the more specific one wins.", "hi": "Assertions program शुरू करते समय चालू या बंद होते हैं। माइनस ea चालू करता है और माइनस da बंद करता है। आप एक class चुन सकते हैं, या sub packages सहित package के लिए तीन बिंदु लगा सकते हैं। Flags बाएँ से दाएँ लागू होते हैं और ज़्यादा विशिष्ट flag जीतता है।", "kn": "Assertions ಪ್ರೋಗ್ರಾಮ್ ಆರಂಭಿಸುವಾಗ ಆನ್ ಅಥವಾ ಆಫ್ ಆಗುತ್ತವೆ. ಮೈನಸ್ ea ಆನ್ ಮಾಡುತ್ತದೆ, ಮೈನಸ್ da ಆಫ್ ಮಾಡುತ್ತದೆ. ಒಂದು class ಆಯ್ಕೆ ಮಾಡಬಹುದು, ಅಥವಾ sub packages ಸಹಿತ package ಗೆ ಮೂರು ಚುಕ್ಕೆ ಹಾಕಬಹುದು. Flags ಎಡದಿಂದ ಬಲಕ್ಕೆ ಅನ್ವಯಿಸುತ್ತವೆ ಮತ್ತು ಹೆಚ್ಚು ನಿರ್ದಿಷ್ಟವಾದದ್ದು ಗೆಲ್ಲುತ್ತದೆ.", "or": "Assertions program ଆରମ୍ଭ ସମୟରେ ଚାଲୁ କିମ୍ବା ବନ୍ଦ ହୁଏ। ମାଇନସ ea ଚାଲୁ କରେ ଏବଂ ମାଇନସ da ବନ୍ଦ କରେ। ଆପଣ ଗୋଟିଏ class ବାଛିପାରିବେ, କିମ୍ବା sub packages ସହ package ପାଇଁ ତିନି ବିନ୍ଦୁ ଦେଇପାରିବେ। Flags ବାମରୁ ଡାହାଣକୁ ଲାଗୁ ହୁଏ ଏବଂ ଅଧିକ ନିର୍ଦ୍ଦିଷ୍ଟଟି ଜିତେ।", "ar": "تُشغّل التوكيدات أو تُعطّل عند بدء التشغيل. الخيار ea يفعّلها و da يعطّلها. يمكنك استهداف صنف واحد، أو حزمة مع ثلاث نقاط لتشمل حزمها الفرعية. تُطبق الخيارات من اليسار إلى اليمين ويغلب الأكثر تحديدًا.", "de": "Assertions werden beim Start geschaltet. Minus ea aktiviert sie, minus da deaktiviert sie. Du kannst eine Klasse auswählen oder ein Paket mit drei Punkten für seine Unterpakete. Die Schalter gelten von links nach rechts, und der genauere gewinnt."}, {"id": "usage", "h": "Where to use them", "en": "Do not use assertions to check public method arguments or command line input, because those checks must always run. Do use them for private method arguments and for default cases that should never happen. Never put needed work inside an assertion.", "hi": "Public method arguments या command line input जाँचने के लिए assertions मत लगाइए, क्योंकि ये जाँच हमेशा चलनी चाहिए। Private method arguments और कभी न होने वाले default cases के लिए इन्हें ज़रूर लगाइए। ज़रूरी काम कभी assertion के अंदर मत रखिए।", "kn": "Public method arguments ಅಥವಾ command line input ಪರಿಶೀಲಿಸಲು assertions ಬಳಸಬೇಡಿ, ಏಕೆಂದರೆ ಆ ಪರಿಶೀಲನೆಗಳು ಯಾವಾಗಲೂ ಓಡಬೇಕು. Private method arguments ಮತ್ತು ಎಂದಿಗೂ ಆಗಬಾರದ default cases ಗೆ ಬಳಸಿ. ಅಗತ್ಯ ಕೆಲಸವನ್ನು ಎಂದಿಗೂ assertion ಒಳಗೆ ಇಡಬೇಡಿ.", "or": "Public method arguments କିମ୍ବା command line input ଯାଞ୍ଚ ପାଇଁ assertions ବ୍ୟବହାର କରନ୍ତୁ ନାହିଁ, କାରଣ ସେହି ଯାଞ୍ଚ ସବୁବେଳେ ଚାଲିବା ଉଚିତ। Private method arguments ଓ କେବେ ନ ହେବା ଉଚିତ default cases ପାଇଁ ବ୍ୟବହାର କରନ୍ତୁ। ଦରକାରୀ କାମ କେବେ assertion ଭିତରେ ରଖନ୍ତୁ ନାହିଁ।", "ar": "لا تستخدم التوكيدات للتحقق من وسائط الدوال العامة أو مدخلات سطر الأوامر، لأن هذه الفحوص يجب أن تعمل دائمًا. واستخدمها لوسائط الدوال الخاصة وللحالات الافتراضية التي يجب ألا تحدث. ولا تضع عملًا ضروريًا داخل توكيد أبدًا.", "de": "Prüfe Argumente öffentlicher Methoden oder Eingaben von der Kommandozeile nicht mit Assertions, denn diese Prüfungen müssen immer laufen. Nutze sie für Argumente privater Methoden und für default-Fälle, die nie eintreten dürften. Lege nie nötige Arbeit in eine Assertion."}, {"id": "assertion-error", "h": "AssertionError", "en": "AssertionError is a child of Error, so it is unchecked. Catching it is legal but usually a bad idea, because it signals a state the author believed impossible. Test libraries like JUnit have their own assert methods that always run.", "hi": "AssertionError, Error का child है, इसलिए unchecked है। इसे catch करना कानूनी है पर आमतौर पर गलत विचार है, क्योंकि यह ऐसी स्थिति बताता है जिसे लेखक असंभव मानता था। JUnit जैसी test libraries के अपने assert methods होते हैं जो हमेशा चलते हैं।", "kn": "AssertionError ಎಂಬುದು Error ನ child, ಆದ್ದರಿಂದ unchecked. ಅದನ್ನು catch ಮಾಡುವುದು ಕಾನೂನುಬದ್ಧ ಆದರೆ ಸಾಮಾನ್ಯವಾಗಿ ಕೆಟ್ಟ ಆಲೋಚನೆ, ಏಕೆಂದರೆ ಲೇಖಕ ಅಸಾಧ್ಯ ಎಂದು ನಂಬಿದ ಸ್ಥಿತಿಯನ್ನು ಅದು ಸೂಚಿಸುತ್ತದೆ. JUnit ನಂತಹ test libraries ಗೆ ಯಾವಾಗಲೂ ಓಡುವ ತಮ್ಮದೇ assert methods ಇವೆ.", "or": "AssertionError ହେଉଛି Error ର child, ତେଣୁ unchecked। ଏହାକୁ catch କରିବା ଆଇନସମ୍ମତ କିନ୍ତୁ ସାଧାରଣତଃ ଖରାପ ଚିନ୍ତା, କାରଣ ଏହା ଲେଖକ ଅସମ୍ଭବ ଭାବିଥିବା ଅବସ୍ଥା ସୂଚାଏ। JUnit ପରି test libraries ର ନିଜସ୍ୱ assert methods ଅଛି ଯାହା ସବୁବେଳେ ଚାଲେ।", "ar": "الصنف AssertionError ابن للصنف Error، لذلك هو غير مفحوص. التقاطه مسموح لكنه فكرة سيئة غالبًا، لأنه يدل على حالة اعتقد الكاتب أنها مستحيلة. ولمكتبات الاختبار مثل JUnit دوال توكيد خاصة بها تعمل دائمًا.", "de": "AssertionError ist ein Kind von Error und damit ungeprüft. Ihn zu fangen ist erlaubt, aber meist eine schlechte Idee, denn er meldet einen Zustand, den der Autor für unmöglich hielt. Testbibliotheken wie JUnit haben eigene assert-Methoden, die immer laufen."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Assertions", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

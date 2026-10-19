@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serialization · Java</title>
+<meta name="description" content="Saving whole objects to a file and reading them back: Serializable, ObjectOutputStream and ObjectInputStream, transient, object graphs, customised serialization, inheritance rules, Externalizable, serialVersionUID and modern advice.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>📁 Files and Serialization</span><span>›</span><span>Chapter 16 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">📦</span><div><h1>Serialization</h1><p class="lead">Serialization turns a live Java object into a stream of bytes that can go to a file or across a network. Deserialization rebuilds the object from those bytes. One interface and two streams do the work, and a handful of rules decide what survives the trip.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 17 min read</span><span class="chip">📚 9 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#intro"><span>📦</span>What serialization means</a><a href="#write-read"><span>💾</span>Writing and reading an object</a><a href="#transient"><span>🙈</span>The transient keyword</a><a href="#object-graph"><span>🕸️</span>Object graphs</a><a href="#custom"><span>🛠️</span>Customised serialization</a><a href="#inheritance"><span>👪</span>Serialization and inheritance</a><a href="#externalizable"><span>🎛️</span>Externalizable</a><a href="#version-uid"><span>🔖</span>serialVersionUID</a><a href="#modern"><span>🆕</span>Modern advice</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="intro" data-say="intro"><div class="sec-num">Part 1</div><h2><span class="sec-em">📦</span><span>What serialization means</span></h2>
+<p>An object lives in memory. When the program ends, it is gone. <b>Serialization</b> is the process of writing an object's state as bytes, so it can be stored in a file or sent over a network. <b>Deserialization</b> is the reverse: reading those bytes and building an equal object again.</p>
+<div class="grid2">
+<div class="box"><h4>Serialization</h4><p>Java object ➜ bytes. Done by <code>ObjectOutputStream.writeObject</code>.</p></div>
+<div class="box"><h4>Deserialization</h4><p>bytes ➜ Java object. Done by <code>ObjectInputStream.readObject</code>.</p></div>
+</div>
+<p>A class opts in by implementing <code>java.io.Serializable</code>. This is a <b>marker interface</b>: it has no methods at all. It simply tells the JVM that saving objects of this class is allowed.</p>
+<div class="rule">Only objects of classes that implement <code>Serializable</code> (directly or through a parent) can be serialized. Anything else throws <code>NotSerializableException</code> at run time.</div>
+</section>
+
+<section class="card reveal jsec" id="write-read" data-say="write-read"><div class="sec-num">Part 2</div><h2><span class="sec-em">💾</span><span>Writing and reading an object</span></h2>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Save a game, load it back · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Player</span> <span class="k">implements</span> <span class="t">Serializable</span> {
+    <span class="t">String</span> name = <span class="s">"Asha"</span>;
+    <span class="k">int</span> level = <span class="n">7</span>;
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Player</span> p = <span class="k">new</span> <span class="t">Player</span>();
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"game.ser"</span>))) {
+            out.writeObject(p);                                  <span class="c">// serialization</span>
+        }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"game.ser"</span>))) {
+            <span class="t">Player</span> q = (<span class="t">Player</span>) in.readObject();                 <span class="c">// deserialization</span>
+            <span class="t">System</span>.out.println(q.name + <span class="s">" is on level "</span> + q.level);
+            <span class="t">System</span>.out.println(<span class="s">"same object? "</span> + (p == q));
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>Asha is on level 7
+same object? false</pre></div></div>
+<p>The loaded object has the same <b>state</b>, but it is a brand new object, so <code>p == q</code> is false.</p>
+<p><code>readObject()</code> returns <code>Object</code>, so a cast is needed. It also declares <code>ClassNotFoundException</code>, because the bytes name a class that must be found when the object is rebuilt.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Forgot implements Serializable · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Player</span> {
+    <span class="t">String</span> name = <span class="s">"Asha"</span>;
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"game.ser"</span>))) {
+            out.writeObject(<span class="k">new</span> <span class="t">Player</span>());
+        }
+    }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.io.NotSerializableException: Player</pre></div></div>
+<h3>Several objects in one file</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Read them in the same order you wrote them · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"many.ser"</span>))) {
+            out.writeObject(<span class="s">"hello"</span>);
+            out.writeObject(<span class="n">42</span>);
+            out.writeObject(<span class="k">new</span> <span class="k">int</span>[]{<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>});
+        }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"many.ser"</span>))) {
+            <span class="t">String</span> s = (<span class="t">String</span>) in.readObject();
+            <span class="t">Integer</span> n = (<span class="t">Integer</span>) in.readObject();
+            <span class="k">int</span>[] a = (<span class="k">int</span>[]) in.readObject();
+            <span class="t">System</span>.out.println(s + <span class="s">" "</span> + n + <span class="s">" "</span> + java.util.<span class="t">Arrays</span>.toString(a));
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>hello 42 [1, 2, 3]</pre></div></div>
+<div class="tip">String, the wrapper classes, arrays and the collection classes are all Serializable already. Objects come back in exactly the order they were written.</div>
+</section>
+
+<section class="card reveal jsec" id="transient" data-say="transient"><div class="sec-num">Part 3</div><h2><span class="sec-em">🙈</span><span>The transient keyword</span></h2>
+<p>Some fields should never be saved, such as a password or a value that only makes sense in this run. Mark them <code>transient</code>. The JVM skips them while serializing and gives them their <b>default value</b> (0, false or null) after deserialization.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The password does not travel · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Account</span> <span class="k">implements</span> <span class="t">Serializable</span> {
+    <span class="t">String</span> user = <span class="s">"ravi"</span>;
+    <span class="k">transient</span> <span class="t">String</span> password = <span class="s">"secret123"</span>;
+    <span class="k">transient</span> <span class="k">int</span> loginCount = <span class="n">5</span>;
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"acc.ser"</span>))) {
+            out.writeObject(<span class="k">new</span> <span class="t">Account</span>());
+        }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"acc.ser"</span>))) {
+            <span class="t">Account</span> a = (<span class="t">Account</span>) in.readObject();
+            <span class="t">System</span>.out.println(a.user + <span class="s">" "</span> + a.password + <span class="s">" "</span> + a.loginCount);
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>ravi null 0</pre></div></div>
+<h3>transient with static and final</h3>
+<p>Static variables belong to the class, not to the object, so they are never part of an object's serialized state. A <code>final</code> variable with a constant value is replaced by its value when the class compiles. In both cases <code>transient</code> changes nothing.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">transient has no effect on static and final constants · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Box</span> <span class="k">implements</span> <span class="t">Serializable</span> {
+    <span class="k">int</span> a = <span class="n">10</span>;
+    <span class="k">transient</span> <span class="k">int</span> b = <span class="n">20</span>;
+    <span class="k">transient</span> <span class="k">static</span> <span class="k">int</span> c = <span class="n">30</span>;
+    <span class="k">transient</span> <span class="k">final</span> <span class="k">int</span> d = <span class="n">40</span>;
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"box.ser"</span>))) {
+            out.writeObject(<span class="k">new</span> <span class="t">Box</span>());
+        }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"box.ser"</span>))) {
+            <span class="t">Box</span> x = (<span class="t">Box</span>) in.readObject();
+            <span class="t">System</span>.out.println(x.a + <span class="s">" "</span> + x.b + <span class="s">" "</span> + <span class="t">Box</span>.c + <span class="s">" "</span> + x.d);
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>10 0 30 40</pre></div></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Declaration</th><th>Value after deserialization</th></tr>
+<tr><td><code>int a = 10</code></td><td>10 (saved and restored)</td></tr>
+<tr><td><code>transient int b = 20</code></td><td>0 (skipped, default value)</td></tr>
+<tr><td><code>transient static int c = 30</code></td><td>30 (static, comes from the class)</td></tr>
+<tr><td><code>transient final int d = 40</code></td><td>40 (constant, compiled into the class)</td></tr>
+</table></div></div>
+<div class="exam">The exam favourite: <code>transient static</code> and <code>transient final</code> both compile, and in both cases <code>transient</code> has no effect.</div>
+</section>
+
+<section class="card reveal jsec" id="object-graph" data-say="object-graph"><div class="sec-num">Part 4</div><h2><span class="sec-em">🕸️</span><span>Object graphs</span></h2>
+<p>When an object is serialized, every object it refers to is serialized too, and every object those refer to, and so on. This set of objects is called the <b>object graph</b>. Every object in the graph must be Serializable.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Three objects saved with one call · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Engine</span> <span class="k">implements</span> <span class="t">Serializable</span> { <span class="k">int</span> hp = <span class="n">120</span>; }
+<span class="k">class</span> <span class="t">Car</span> <span class="k">implements</span> <span class="t">Serializable</span> { <span class="t">Engine</span> engine = <span class="k">new</span> <span class="t">Engine</span>(); <span class="t">String</span> model = <span class="s">"Hatch"</span>; }
+<span class="k">class</span> <span class="t">Garage</span> <span class="k">implements</span> <span class="t">Serializable</span> { <span class="t">Car</span> car = <span class="k">new</span> <span class="t">Car</span>(); }
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"g.ser"</span>))) {
+            out.writeObject(<span class="k">new</span> <span class="t">Garage</span>());
+        }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"g.ser"</span>))) {
+            <span class="t">Garage</span> g = (<span class="t">Garage</span>) in.readObject();
+            <span class="t">System</span>.out.println(g.car.model + <span class="s">" with "</span> + g.car.engine.hp + <span class="s">" hp"</span>);
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>Hatch with 120 hp</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One member in the graph is not Serializable · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Engine</span> { <span class="k">int</span> hp = <span class="n">120</span>; }
+<span class="k">class</span> <span class="t">Car</span> <span class="k">implements</span> <span class="t">Serializable</span> { <span class="t">Engine</span> engine = <span class="k">new</span> <span class="t">Engine</span>(); }
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"g.ser"</span>))) {
+            out.writeObject(<span class="k">new</span> <span class="t">Car</span>());
+        }
+    }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.io.NotSerializableException: Engine</pre></div></div>
+<p>The same object reached twice is written only once. After loading, both references point to one shared object again, so the shape of the graph is kept.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Shared references stay shared · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">import</span> java.util.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">List</span>&lt;<span class="t">String</span>&gt; shared = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;(<span class="t">List</span>.of(<span class="s">"x"</span>));
+        <span class="t">List</span>&lt;<span class="t">List</span>&lt;<span class="t">String</span>&gt;&gt; pair = <span class="t">List</span>.of(shared, shared);
+        <span class="t">ByteArrayOutputStream</span> bytes = <span class="k">new</span> <span class="t">ByteArrayOutputStream</span>();
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(bytes)) { out.writeObject(pair); }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">ByteArrayInputStream</span>(bytes.toByteArray()))) {
+            <span class="a">@SuppressWarnings</span>(<span class="s">"unchecked"</span>)
+            <span class="t">List</span>&lt;<span class="t">List</span>&lt;<span class="t">String</span>&gt;&gt; back = (<span class="t">List</span>&lt;<span class="t">List</span>&lt;<span class="t">String</span>&gt;&gt;) in.readObject();
+            back.get(<span class="n">0</span>).add(<span class="s">"y"</span>);
+            <span class="t">System</span>.out.println(back.get(<span class="n">1</span>) + <span class="s">" "</span> + (back.get(<span class="n">0</span>) == back.get(<span class="n">1</span>)));
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>[x, y] true</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="custom" data-say="custom"><div class="sec-num">Part 5</div><h2><span class="sec-em">🛠️</span><span>Customised serialization</span></h2>
+<p>Marking a password <code>transient</code> loses it completely. If you want to save it in a protected form, add two <b>private</b> methods with these exact signatures. The JVM calls them automatically during serialization and deserialization.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The two callback methods</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">private</span> <span class="k">void</span> writeObject(<span class="t">ObjectOutputStream</span> out) <span class="k">throws</span> <span class="t">IOException</span>
+<span class="k">private</span> <span class="k">void</span> readObject(<span class="t">ObjectInputStream</span> in) <span class="k">throws</span> <span class="t">IOException</span>, <span class="t">ClassNotFoundException</span></pre></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Save an encoded password · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Account</span> <span class="k">implements</span> <span class="t">Serializable</span> {
+    <span class="t">String</span> user = <span class="s">"ravi"</span>;
+    <span class="k">transient</span> <span class="t">String</span> password = <span class="s">"secret123"</span>;
+
+    <span class="k">private</span> <span class="k">void</span> writeObject(<span class="t">ObjectOutputStream</span> out) <span class="k">throws</span> <span class="t">IOException</span> {
+        out.defaultWriteObject();                               <span class="c">// normal fields first</span>
+        out.writeObject(<span class="k">new</span> <span class="t">StringBuilder</span>(password).reverse().toString() + <span class="s">"#"</span>);
+    }
+    <span class="k">private</span> <span class="k">void</span> readObject(<span class="t">ObjectInputStream</span> in) <span class="k">throws</span> <span class="t">IOException</span>, <span class="t">ClassNotFoundException</span> {
+        in.defaultReadObject();
+        <span class="t">String</span> stored = (<span class="t">String</span>) in.readObject();
+        <span class="t">System</span>.out.println(<span class="s">"stored on disk: "</span> + stored);
+        password = <span class="k">new</span> <span class="t">StringBuilder</span>(stored.substring(<span class="n">0</span>, stored.length() - <span class="n">1</span>)).reverse().toString();
+    }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"acc.ser"</span>))) {
+            out.writeObject(<span class="k">new</span> <span class="t">Account</span>());
+        }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"acc.ser"</span>))) {
+            <span class="t">Account</span> a = (<span class="t">Account</span>) in.readObject();
+            <span class="t">System</span>.out.println(a.user + <span class="s">" "</span> + a.password);
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>stored on disk: 321terces#
+ravi secret123</pre></div></div>
+<div class="warn">Reversing a string is only a teaching example, not real protection. Real systems never store passwords in a serialized file. They store a salted hash in a secure place.</div>
+<div class="rule">Whatever <code>writeObject</code> writes, <code>readObject</code> must read back in the same order and with the same types.</div>
+</section>
+
+<section class="card reveal jsec" id="inheritance" data-say="inheritance"><div class="sec-num">Part 6</div><h2><span class="sec-em">👪</span><span>Serialization and inheritance</span></h2>
+<h3>Case 1: the parent is Serializable</h3>
+<p>Then every child is Serializable automatically, even without writing <code>implements Serializable</code>. This is why many library classes are Serializable: a parent such as <code>Number</code> already is.</p>
+<h3>Case 2: only the child is Serializable</h3>
+<p>The fields that come from the non-serializable parent are <b>not saved</b>. During deserialization, the JVM runs the parent's <b>no-argument constructor</b> to give them values. The child's own constructor is not run.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The parent&#x27;s fields come from its constructor · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Animal</span> {
+    <span class="k">int</span> legs = <span class="n">10</span>;
+    <span class="t">Animal</span>() { <span class="t">System</span>.out.println(<span class="s">"Animal() runs"</span>); }
+}
+<span class="k">class</span> <span class="t">Dog</span> <span class="k">extends</span> <span class="t">Animal</span> <span class="k">implements</span> <span class="t">Serializable</span> {
+    <span class="k">int</span> age = <span class="n">20</span>;
+    <span class="t">Dog</span>() { <span class="t">System</span>.out.println(<span class="s">"Dog() runs"</span>); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Dog</span> d = <span class="k">new</span> <span class="t">Dog</span>();
+        d.legs = <span class="n">4</span>;
+        d.age = <span class="n">3</span>;
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"dog.ser"</span>))) {
+            out.writeObject(d);
+        }
+        <span class="t">System</span>.out.println(<span class="s">"--- loading ---"</span>);
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"dog.ser"</span>))) {
+            <span class="t">Dog</span> e = (<span class="t">Dog</span>) in.readObject();
+            <span class="t">System</span>.out.println(<span class="s">"legs "</span> + e.legs + <span class="s">", age "</span> + e.age);
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>Animal() runs
+Dog() runs
+--- loading ---
+Animal() runs
+legs 10, age 3</pre></div></div>
+<p><code>age</code> was saved, so it comes back as 3. <code>legs</code> belongs to the non-serializable parent, so it was not saved. <code>Animal()</code> ran again and set it to 10.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">No no-arg constructor in the non-serializable parent · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Animal</span> {
+    <span class="k">int</span> legs;
+    <span class="t">Animal</span>(<span class="k">int</span> legs) { <span class="k">this</span>.legs = legs; }
+}
+<span class="k">class</span> <span class="t">Dog</span> <span class="k">extends</span> <span class="t">Animal</span> <span class="k">implements</span> <span class="t">Serializable</span> {
+    <span class="t">Dog</span>() { <span class="k">super</span>(<span class="n">4</span>); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"dog.ser"</span>))) {
+            out.writeObject(<span class="k">new</span> <span class="t">Dog</span>());
+        }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"dog.ser"</span>))) {
+            in.readObject();
+        }
+    }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.io.InvalidClassException: Dog; no valid constructor</pre></div></div>
+<div class="exam">Writing succeeds, reading fails with <code>InvalidClassException</code>. Every non-serializable parent must have an accessible no-argument constructor.</div>
+</section>
+
+<section class="card reveal jsec" id="externalizable" data-say="externalizable"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎛️</span><span>Externalizable</span></h2>
+<p><code>Serializable</code> saves the whole object automatically. <code>Externalizable</code> hands complete control to you: you decide which fields to save and how. It extends Serializable and adds two methods.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Save only what you choose · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Student</span> <span class="k">implements</span> <span class="t">Externalizable</span> {
+    <span class="t">String</span> name;
+    <span class="k">int</span> marks;
+    <span class="t">String</span> notes;
+    <span class="k">public</span> <span class="t">Student</span>() { <span class="t">System</span>.out.println(<span class="s">"public no-arg constructor"</span>); }
+    <span class="t">Student</span>(<span class="t">String</span> name, <span class="k">int</span> marks, <span class="t">String</span> notes) { <span class="k">this</span>.name = name; <span class="k">this</span>.marks = marks; <span class="k">this</span>.notes = notes; }
+
+    <span class="k">public</span> <span class="k">void</span> writeExternal(<span class="t">ObjectOutput</span> out) <span class="k">throws</span> <span class="t">IOException</span> {
+        out.writeUTF(name);
+        out.writeInt(marks);                                    <span class="c">// notes are not written</span>
+    }
+    <span class="k">public</span> <span class="k">void</span> readExternal(<span class="t">ObjectInput</span> in) <span class="k">throws</span> <span class="t">IOException</span> {
+        name = in.readUTF();
+        marks = in.readInt();
+    }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"st.ser"</span>))) {
+            out.writeObject(<span class="k">new</span> <span class="t">Student</span>(<span class="s">"Meera"</span>, <span class="n">88</span>, <span class="s">"likes chess"</span>));
+        }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"st.ser"</span>))) {
+            <span class="t">Student</span> s = (<span class="t">Student</span>) in.readObject();
+            <span class="t">System</span>.out.println(s.name + <span class="s">" "</span> + s.marks + <span class="s">" "</span> + s.notes);
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>public no-arg constructor
+Meera 88 null</pre></div></div>
+<p>During deserialization the JVM first creates the object with its <b>public no-argument constructor</b>, then calls <code>readExternal</code> to fill it in.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Externalizable without a public no-arg constructor · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Student</span> <span class="k">implements</span> <span class="t">Externalizable</span> {
+    <span class="t">String</span> name = <span class="s">"Meera"</span>;
+    <span class="t">Student</span>() { }
+    <span class="k">public</span> <span class="k">void</span> writeExternal(<span class="t">ObjectOutput</span> out) <span class="k">throws</span> <span class="t">IOException</span> { out.writeUTF(name); }
+    <span class="k">public</span> <span class="k">void</span> readExternal(<span class="t">ObjectInput</span> in) <span class="k">throws</span> <span class="t">IOException</span> { name = in.readUTF(); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(<span class="k">new</span> <span class="t">FileOutputStream</span>(<span class="s">"st.ser"</span>))) {
+            out.writeObject(<span class="k">new</span> <span class="t">Student</span>());
+        }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">FileInputStream</span>(<span class="s">"st.ser"</span>))) {
+            in.readObject();
+        }
+    }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.io.InvalidClassException: Student; no valid constructor</pre></div></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Serializable</th><th>Externalizable</th></tr>
+<tr><td>JVM saves everything automatically</td><td>you write and read each field yourself</td></tr>
+<tr><td>marker interface, no methods</td><td>two methods: <code>writeExternal</code>, <code>readExternal</code></td></tr>
+<tr><td>no constructor needed in the class</td><td>public no-arg constructor is required</td></tr>
+<tr><td><code>transient</code> is meaningful</td><td><code>transient</code> does nothing, you choose fields anyway</td></tr>
+<tr><td>simple, good default</td><td>more work, best when only part of a large object matters</td></tr>
+</table></div></div>
+</section>
+
+<section class="card reveal jsec" id="version-uid" data-say="version-uid"><div class="sec-num">Part 8</div><h2><span class="sec-em">🔖</span><span>serialVersionUID</span></h2>
+<p>Every Serializable class has a version number called <code>serialVersionUID</code>. It is written into the bytes with each object. When the bytes are read, the JVM compares that number with the one in the class it has now. If they differ, reading fails with <code>InvalidClassException: local class incompatible</code>.</p>
+<p>If you do not declare one, the compiler and JVM calculate it from the class's details: its name, fields, methods and so on. Adding even one method changes it. Different compilers can also produce different values. So a file saved yesterday may refuse to load today.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Declare it yourself · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">class</span> <span class="t">Order</span> <span class="k">implements</span> <span class="t">Serializable</span> {
+    <span class="k">private</span> <span class="k">static</span> <span class="k">final</span> <span class="k">long</span> serialVersionUID = <span class="n">1L</span>;
+    <span class="k">int</span> id = <span class="n">501</span>;
+}
+<span class="k">class</span> <span class="t">Plain</span> <span class="k">implements</span> <span class="t">Serializable</span> {
+    <span class="k">int</span> id = <span class="n">502</span>;
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="t">ObjectStreamClass</span>.lookup(<span class="t">Order</span>.<span class="k">class</span>).getSerialVersionUID());
+        <span class="k">long</span> computed = <span class="t">ObjectStreamClass</span>.lookup(<span class="t">Plain</span>.<span class="k">class</span>).getSerialVersionUID();
+        <span class="t">System</span>.out.println(computed != <span class="n">0</span> ? <span class="s">"Plain gets a computed number"</span> : <span class="s">"zero"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>1
+Plain gets a computed number</pre></div></div>
+<div class="rule">Always declare <code>private static final long serialVersionUID = 1L;</code> in a Serializable class. Change the number only when you deliberately break compatibility with old saved data.</div>
+<div class="tip">The javac warning <code>-Xlint:serial</code> reports Serializable classes that forget to declare it.</div>
+</section>
+
+<section class="card reveal jsec" id="modern" data-say="modern"><div class="sec-num">Part 9</div><h2><span class="sec-em">🆕</span><span>Modern advice</span></h2>
+<div class="modern">Records (Java 16) serialize in a simpler and safer way. Only the record's components are saved, and during loading the <b>canonical constructor</b> is always called, so any checks in it run again.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A record checks its data on the way back in · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">record</span> <span class="t">Point</span>(<span class="k">int</span> x, <span class="k">int</span> y) <span class="k">implements</span> <span class="t">Serializable</span> {
+    <span class="t">Point</span> {
+        <span class="t">System</span>.out.println(<span class="s">"constructor checks "</span> + x + <span class="s">","</span> + y);
+        <span class="k">if</span> (x &lt; <span class="n">0</span> || y &lt; <span class="n">0</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalArgumentException</span>(<span class="s">"negative"</span>);
+    }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">ByteArrayOutputStream</span> bytes = <span class="k">new</span> <span class="t">ByteArrayOutputStream</span>();
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(bytes)) { out.writeObject(<span class="k">new</span> <span class="t">Point</span>(<span class="n">3</span>, <span class="n">4</span>)); }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">ByteArrayInputStream</span>(bytes.toByteArray()))) {
+            <span class="t">System</span>.out.println(in.readObject());
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>constructor checks 3,4
+constructor checks 3,4
+Point[x=3, y=4]</pre></div></div>
+<div class="warn">Never deserialize bytes from a source you do not trust. Crafted input can run unexpected code during loading. Since Java 9, an <code>ObjectInputFilter</code> can limit which classes are accepted.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A filter that accepts only one class · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.io.*;
+<span class="k">import</span> java.util.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">ByteArrayOutputStream</span> bytes = <span class="k">new</span> <span class="t">ByteArrayOutputStream</span>();
+        <span class="k">try</span> (<span class="t">ObjectOutputStream</span> out = <span class="k">new</span> <span class="t">ObjectOutputStream</span>(bytes)) { out.writeObject(<span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;(<span class="t">List</span>.of(<span class="n">1</span>))); }
+        <span class="k">try</span> (<span class="t">ObjectInputStream</span> in = <span class="k">new</span> <span class="t">ObjectInputStream</span>(<span class="k">new</span> <span class="t">ByteArrayInputStream</span>(bytes.toByteArray()))) {
+            in.setObjectInputFilter(<span class="t">ObjectInputFilter</span>.<span class="t">Config</span>.createFilter(<span class="s">"java.lang.String;!*"</span>));
+            in.readObject();
+        }
+    }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.io.InvalidClassException: filter status: REJECTED</pre></div></div>
+<p>For data shared with other programs or other languages, most teams prefer text formats such as JSON or compact formats such as Protocol Buffers. Java serialization is still important to understand: it appears in exams, in older systems, and inside frameworks for caching and remote calls.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./file-io.html" data-topic="file-io"><small>← Previous chapter</small><b>📄 File I/O</b></a><a class="next" href="./garbage-collection.html" data-topic="garbage-collection"><small>Next chapter →</small><b>♻️ Garbage Collection</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "Packing an object for a journey", "panels": [{"s": [["e", "🧸"], ["t", "Player{name, level}", {"b": 1}]], "h": "A live object", "t": "It exists only while the program runs.", "more": "Its class must implement Serializable, a marker interface with no methods."}, {"s": [["e", "📦"], ["c", ["AC", "ED", "00", "05"], {"ix": false}]], "h": "Packed as bytes", "t": "writeObject turns it into bytes.", "more": "Every Java serialization stream starts with the bytes AC ED, followed by the version 00 05."}, {"s": [["e", "🙈"], ["t", "transient password", {"b": 1}]], "h": "Leave some things out", "t": "transient fields are skipped.", "more": "They come back with default values: 0, false or null."}, {"s": [["e", "🧸"], ["t", "readObject()", {"b": 1}]], "h": "Unpacked again", "t": "A new object with the same state.", "more": "p == q is false. The state is equal, the identity is new."}], "remember": "implements Serializable to save. transient to skip. Declare serialVersionUID so old files still load."}, "real": [["🧳", "Packing a suitcase", "You pack clothes into a suitcase to travel and unpack them at the other end. They are the same clothes, now in a new room. Serialization packs an object for the trip to a file or across a network."], ["🔐", "Leaving the house key behind", "When you post a parcel you do not put your house key inside. transient fields are the things you deliberately leave out of the parcel."], ["📋", "Flat-pack furniture with instructions", "Externalizable is like flat-pack furniture: you decide exactly which parts go in the box, and you must follow the same steps in the same order to rebuild it."]], "quiz": [{"lv": "e", "q": "How many methods does the <code>Serializable<\/code> interface declare?", "o": ["0", "1", "2", "3"], "a": 0, "hint": "It is called a marker interface.", "why": "Serializable has no methods. Implementing it only marks the class as allowed to be serialized."}, {"lv": "e", "q": "Which method saves an object?", "o": ["<code>ObjectInputStream.readObject<\/code>", "<code>ObjectOutputStream.writeObject<\/code>", "<code>FileWriter.write<\/code>", "<code>Object.save<\/code>"], "a": 1, "hint": "Saving means output.", "why": "ObjectOutputStream.writeObject serializes an object. ObjectInputStream.readObject is the reverse."}, {"lv": "e", "q": "After deserialization, a <code>transient int<\/code> field has which value?", "o": ["Its original value", "0", "-1", "It throws an exception"], "a": 1, "hint": "Think of default values.", "why": "transient fields are not saved, so they come back with the default value for their type. For int that is 0."}, {"lv": "m", "q": "What happens when you serialize an object whose class does not implement Serializable?", "o": ["Compile error", "<code>NotSerializableException<\/code> at run time", "The object is saved as null", "Only public fields are saved"], "a": 1, "hint": "writeObject accepts any Object, so the compiler cannot know.", "why": "writeObject takes Object, so the code compiles. At run time the stream checks the class and throws NotSerializableException."}, {"lv": "m", "q": "What does this print?", "code": "import java.io.*;\nclass Box implements Serializable {\n    transient static int c = 30;\n    transient final int d = 40;\n}\nclass Main {\n    public static void main(String[] args) throws Exception {\n        ByteArrayOutputStream b = new ByteArrayOutputStream();\n        try (ObjectOutputStream o = new ObjectOutputStream(b)) { o.writeObject(new Box()); }\n        try (ObjectInputStream i = new ObjectInputStream(new ByteArrayInputStream(b.toByteArray()))) {\n            Box x = (Box) i.readObject();\n            System.out.println(Box.c + \" \" + x.d);\n        }\n    }\n}", "o": ["0 0", "30 0", "0 40", "30 40"], "a": 3, "run": 1, "hint": "Does transient do anything for static and final constants?", "why": "Static values come from the class and a final constant is compiled in. transient has no effect on either."}, {"lv": "m", "q": "Which one requires a public no-argument constructor?", "o": ["Serializable", "Externalizable", "Both", "Neither"], "a": 1, "hint": "Which one creates the object first and then fills it?", "why": "For Externalizable the JVM creates the object with its public no-arg constructor and then calls readExternal."}, {"lv": "h", "q": "What does this print?", "code": "import java.io.*;\nclass A { int x = 1; A() { x = 5; } }\nclass B extends A implements Serializable { int y = 2; }\nclass Main {\n    public static void main(String[] args) throws Exception {\n        B b = new B(); b.x = 8; b.y = 9;\n        ByteArrayOutputStream bytes = new ByteArrayOutputStream();\n        try (ObjectOutputStream o = new ObjectOutputStream(bytes)) { o.writeObject(b); }\n        try (ObjectInputStream i = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {\n            B c = (B) i.readObject();\n            System.out.println(c.x + \" \" + c.y);\n        }\n    }\n}", "o": ["8 9", "5 9", "1 9", "5 2"], "a": 1, "run": 1, "hint": "A is not Serializable. Which constructor runs during loading?", "why": "y belongs to the Serializable class, so 9 is restored. x belongs to A, which is not Serializable, so A() runs and sets x to 5."}, {"lv": "h", "q": "What is the result?", "code": "import java.io.*;\nclass Wheel { }\nclass Bike implements Serializable { Wheel w = new Wheel(); }\nclass Main {\n    public static void main(String[] args) throws Exception {\n        new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(new Bike());\n        System.out.println(\"saved\");\n    }\n}", "o": ["saved", "Compile error", "NotSerializableException", "InvalidClassException"], "a": 2, "re": "NotSerializableException", "hint": "Every object in the graph must be Serializable.", "why": "Bike is Serializable but its Wheel is not. Serializing Bike tries to save Wheel too and throws NotSerializableException."}, {"lv": "h", "q": "Which exception is thrown when the saved serialVersionUID differs from the class's current one?", "o": ["ClassNotFoundException", "NotSerializableException", "InvalidClassException", "StreamCorruptedException"], "a": 2, "hint": "The class is found, but it is incompatible.", "why": "The JVM reports \"local class incompatible\" through InvalidClassException."}, {"lv": "x", "q": "What does this print?", "code": "import java.io.*;\nimport java.util.*;\nclass Main {\n    public static void main(String[] args) throws Exception {\n        int[] a = {1, 2};\n        Object[] pair = {a, a};\n        ByteArrayOutputStream b = new ByteArrayOutputStream();\n        try (ObjectOutputStream o = new ObjectOutputStream(b)) { o.writeObject(pair); }\n        try (ObjectInputStream i = new ObjectInputStream(new ByteArrayInputStream(b.toByteArray()))) {\n            Object[] back = (Object[]) i.readObject();\n            ((int[]) back[0])[0] = 99;\n            System.out.println(((int[]) back[1])[0] + \" \" + a[0]);\n        }\n    }\n}", "o": ["1 1", "99 1", "99 99", "1 99"], "a": 1, "run": 1, "hint": "Two things to decide: is back[0] the same array as back[1], and is it the same as a?", "why": "The array was referenced twice, so it is written once and both slots share it after loading: 99. The loaded array is a new object, so the original a still holds 1."}, {"lv": "x", "q": "What does this print?", "code": "import java.io.*;\nclass Counter implements Serializable {\n    transient int n = 7;\n    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n        in.defaultReadObject();\n        n = n + 3;\n    }\n}\nclass Main {\n    public static void main(String[] args) throws Exception {\n        ByteArrayOutputStream b = new ByteArrayOutputStream();\n        try (ObjectOutputStream o = new ObjectOutputStream(b)) { o.writeObject(new Counter()); }\n        try (ObjectInputStream i = new ObjectInputStream(new ByteArrayInputStream(b.toByteArray()))) {\n            System.out.println(((Counter) i.readObject()).n);\n        }\n    }\n}", "o": ["10", "3", "7", "0"], "a": 1, "run": 1, "hint": "Field initialisers of a Serializable class do not run during loading.", "why": "n is transient, so it is 0 after defaultReadObject. The initialiser \"= 7\" does not run during deserialization. Then n = 0 + 3 = 3."}, {"lv": "x", "q": "What does this print?", "code": "import java.io.*;\nclass P implements Externalizable {\n    int v = 1;\n    public P() { v = 2; }\n    public void writeExternal(ObjectOutput o) throws IOException { o.writeInt(v * 10); }\n    public void readExternal(ObjectInput i) throws IOException { v = v + i.readInt(); }\n}\nclass Main {\n    public static void main(String[] args) throws Exception {\n        P p = new P(); p.v = 5;\n        ByteArrayOutputStream b = new ByteArrayOutputStream();\n        try (ObjectOutputStream o = new ObjectOutputStream(b)) { o.writeObject(p); }\n        try (ObjectInputStream i = new ObjectInputStream(new ByteArrayInputStream(b.toByteArray()))) {\n            System.out.println(((P) i.readObject()).v);\n        }\n    }\n}", "o": ["50", "52", "55", "51"], "a": 1, "run": 1, "hint": "The constructor runs first, then readExternal.", "why": "writeExternal stores 5 × 10 = 50. Loading calls P(), which sets v to 2, then readExternal adds 50, giving 52."}], "calc": [{"lv": "e", "q": "A class has 5 instance fields. 2 of them are transient. How many field values are saved by default serialization?", "ans": "3", "py": "5-2", "hint": "transient fields are skipped.", "steps": ["<span class=\"eq\">5 − 2 = 3<\/span> fields are saved."]}, {"lv": "e", "q": "In the \"transient has no effect on static and final constants\" example, what is the sum of the four printed numbers?", "ans": "80", "py": "10+0+30+40", "hint": "The output is 10 0 30 40.", "steps": ["The four values are 10, 0, 30 and 40.", "<span class=\"eq\">10 + 0 + 30 + 40 = 80<\/span>"]}, {"lv": "m", "q": "A Garage holds 2 Cars and each Car holds 1 Engine. How many objects are written when the Garage is serialized?", "ans": "5", "py": "1+2+2", "hint": "Count the Garage itself too.", "steps": ["Garage: 1", "Cars: 2", "Engines: <span class=\"eq\">2 × 1 = 2<\/span>", "<span class=\"eq\">1 + 2 + 2 = 5<\/span> objects"]}, {"lv": "m", "q": "What is the first byte of every Java serialization stream, as an unsigned decimal number?", "code": "var b = new java.io.ByteArrayOutputStream();\nnew java.io.ObjectOutputStream(b).close();\nSystem.out.println(b.toByteArray()[0] & 0xFF);", "ans": "172", "run": 1, "hint": "The stream starts with the hexadecimal bytes AC ED.", "steps": ["The first byte is <span class=\"eq\">0xAC<\/span>.", "<span class=\"eq\">A × 16 + C = 10 × 16 + 12 = 172<\/span>"]}, {"lv": "h", "q": "A Dog object has legs = 4 (from a non-Serializable parent whose constructor sets legs = 10) and age = 3 (Dog is Serializable). After loading, what is legs + age?", "ans": "13", "py": "10+3", "hint": "The parent field is reset by the parent constructor.", "steps": ["age is saved: 3.", "legs is not saved. The parent constructor sets it to 10.", "<span class=\"eq\">10 + 3 = 13<\/span>"]}, {"lv": "h", "q": "An Externalizable class writes an int and a String with writeUTF. The String \"Java\" uses 2 length bytes plus 1 byte per letter. How many data bytes are written?", "ans": "10", "py": "4+2+4", "hint": "An int is 4 bytes.", "steps": ["int: 4 bytes", "writeUTF(\"Java\"): <span class=\"eq\">2 + 4 = 6<\/span> bytes", "<span class=\"eq\">4 + 6 = 10<\/span> bytes"]}, {"lv": "x", "q": "What does this print?", "code": "import java.io.*;\nclass Acc implements Serializable {\n    int bal = 100;\n    transient int pin = 1234;\n    private void writeObject(ObjectOutputStream o) throws IOException { o.defaultWriteObject(); o.writeInt(pin + 1111); }\n    private void readObject(ObjectInputStream i) throws IOException, ClassNotFoundException { i.defaultReadObject(); pin = i.readInt() - 1111; }\n}\nclass Main {\n    public static void main(String[] args) throws Exception {\n        Acc a = new Acc(); a.bal = 250; a.pin = 4321;\n        ByteArrayOutputStream b = new ByteArrayOutputStream();\n        try (ObjectOutputStream o = new ObjectOutputStream(b)) { o.writeObject(a); }\n        try (ObjectInputStream i = new ObjectInputStream(new ByteArrayInputStream(b.toByteArray()))) {\n            Acc c = (Acc) i.readObject();\n            System.out.println(c.bal + c.pin);\n        }\n    }\n}", "ans": "4571", "run": 1, "hint": "The pin is encoded on the way out and decoded on the way in.", "steps": ["bal is saved normally: 250.", "Written for pin: <span class=\"eq\">4321 + 1111 = 5432<\/span>", "Read back: <span class=\"eq\">5432 − 1111 = 4321<\/span>", "<span class=\"eq\">250 + 4321 = 4571<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "import java.io.*;\nclass Base { int a = 1; Base() { a += 10; } }\nclass Mid extends Base implements Serializable { int b = 2; Mid() { b += 20; } }\nclass Leaf extends Mid { int c = 3; Leaf() { c += 30; } }\nclass Main {\n    public static void main(String[] args) throws Exception {\n        Leaf x = new Leaf(); x.a = 0; x.b = 0; x.c = 0;\n        ByteArrayOutputStream bytes = new ByteArrayOutputStream();\n        try (ObjectOutputStream o = new ObjectOutputStream(bytes)) { o.writeObject(x); }\n        try (ObjectInputStream i = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {\n            Leaf y = (Leaf) i.readObject();\n            System.out.println(y.a + y.b + y.c);\n        }\n    }\n}", "ans": "11", "run": 1, "hint": "Only Base is not Serializable. Leaf is Serializable through Mid.", "steps": ["Mid and Leaf are Serializable, so b = 0 and c = 0 are restored as saved.", "Base is not Serializable, so Base() runs: <span class=\"eq\">a = 1 + 10 = 11<\/span>", "<span class=\"eq\">11 + 0 + 0 = 11<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to serialization. You will learn how to save a whole Java object as bytes, store it in a file, and bring it back later as a new object with the same state.", "hi": "Serialization में आपका स्वागत है। आप सीखेंगे कि पूरे Java object को bytes के रूप में कैसे save करें, file में रखें, और बाद में उसी state वाले नए object के रूप में वापस लाएँ।", "kn": "Serialization ಗೆ ಸ್ವಾಗತ. ಸಂಪೂರ್ಣ Java object ಅನ್ನು bytes ಆಗಿ save ಮಾಡುವುದು, file ನಲ್ಲಿ ಇಡುವುದು, ಮತ್ತು ನಂತರ ಅದೇ state ಇರುವ ಹೊಸ object ಆಗಿ ಮರಳಿ ತರುವುದನ್ನು ಕಲಿಯುತ್ತೀರಿ.", "or": "Serialization କୁ ସ୍ୱାଗତ। ଆପଣ ଶିଖିବେ କିପରି ଗୋଟିଏ ପୂରା Java object କୁ bytes ଭାବେ save କରିବେ, file ରେ ରଖିବେ, ଏବଂ ପରେ ସେହି state ଥିବା ନୂଆ object ଭାବେ ଫେରାଇ ଆଣିବେ।", "ar": "مرحبًا بك في التسلسل. ستتعلم كيف تحفظ كائن جافا كاملًا على شكل بايتات، وتخزنه في ملف، ثم تعيده لاحقًا ككائن جديد بالحالة نفسها.", "de": "Willkommen bei der Serialisierung. Du lernst, ein ganzes Java-Objekt als Bytes zu speichern, in einer Datei abzulegen und später als neues Objekt mit demselben Zustand zurückzuholen."}, {"id": "intro", "h": "What serialization means", "en": "Serialization turns an object into bytes. Deserialization rebuilds an object from those bytes. A class allows this by implementing Serializable, a marker interface with no methods. Without it, Java throws NotSerializableException.", "hi": "Serialization एक object को bytes में बदलता है। Deserialization उन bytes से object फिर से बनाता है। Class इसकी अनुमति Serializable implement करके देती है, जो बिना methods का marker interface है। इसके बिना Java NotSerializableException फेंकता है।", "kn": "Serialization object ಅನ್ನು bytes ಆಗಿ ಬದಲಿಸುತ್ತದೆ. Deserialization ಆ bytes ನಿಂದ object ಅನ್ನು ಮರುನಿರ್ಮಿಸುತ್ತದೆ. Class ಇದನ್ನು Serializable implement ಮಾಡಿ ಅನುಮತಿಸುತ್ತದೆ, ಅದು methods ಇಲ್ಲದ marker interface. ಅದಿಲ್ಲದೆ Java NotSerializableException ಎಸೆಯುತ್ತದೆ.", "or": "Serialization ଏକ object କୁ bytes ରେ ବଦଳାଏ। Deserialization ସେହି bytes ରୁ object ପୁଣି ତିଆରି କରେ। Class ଏହାକୁ Serializable implement କରି ଅନୁମତି ଦିଏ, ଯାହା method ବିନା marker interface। ଏହା ବିନା Java NotSerializableException ଦିଏ।", "ar": "يحوّل التسلسل الكائن إلى بايتات، ويعيد فك التسلسل بناء الكائن منها. يسمح الصنف بذلك عندما ينفّذ الواجهة Serializable، وهي واجهة علامة بلا دوال. وبدونها ترمي جافا الاستثناء NotSerializableException.", "de": "Serialisierung macht aus einem Objekt Bytes. Deserialisierung baut daraus wieder ein Objekt. Eine Klasse erlaubt das, indem sie Serializable implementiert, ein Marker-Interface ohne Methoden. Ohne es wirft Java eine NotSerializableException."}, {"id": "write-read", "h": "Writing and reading", "en": "ObjectOutputStream writeObject saves the object. ObjectInputStream readObject loads it, returns Object so you cast it, and may throw ClassNotFoundException. The loaded object is new, so double equals gives false. Several objects come back in the order they were written.", "hi": "ObjectOutputStream का writeObject object save करता है। ObjectInputStream का readObject उसे load करता है, Object लौटाता है इसलिए cast करना पड़ता है, और ClassNotFoundException फेंक सकता है। Load हुआ object नया है, इसलिए double equals false देता है। कई objects उसी क्रम में लौटते हैं जिसमें लिखे गए।", "kn": "ObjectOutputStream ನ writeObject object ಅನ್ನು save ಮಾಡುತ್ತದೆ. ObjectInputStream ನ readObject ಅದನ್ನು load ಮಾಡುತ್ತದೆ, Object ಹಿಂತಿರುಗಿಸುವುದರಿಂದ cast ಬೇಕು, ಮತ್ತು ClassNotFoundException ಎಸೆಯಬಹುದು. Load ಆದ object ಹೊಸದು, ಆದ್ದರಿಂದ double equals false. ಹಲವು objects ಬರೆದ ಕ್ರಮದಲ್ಲೇ ಮರಳುತ್ತವೆ.", "or": "ObjectOutputStream ର writeObject object save କରେ। ObjectInputStream ର readObject ଏହାକୁ load କରେ, Object ଫେରାଏ ତେଣୁ cast କରିବାକୁ ପଡ଼େ, ଏବଂ ClassNotFoundException ଦେଇପାରେ। Load ହୋଇଥିବା object ନୂଆ, ତେଣୁ double equals false ଦିଏ। ଅନେକ objects ଲେଖାଯାଇଥିବା କ୍ରମରେ ଫେରନ୍ତି।", "ar": "تحفظ writeObject في ObjectOutputStream الكائن، وتحمّله readObject في ObjectInputStream وتعيد Object لذلك تحتاج إلى تحويل النوع، وقد ترمي ClassNotFoundException. الكائن المحمّل جديد، لذلك تعطي المقارنة بعلامتي يساوي false. وتعود الكائنات المتعددة بالترتيب الذي كُتبت به.", "de": "writeObject von ObjectOutputStream speichert das Objekt. readObject von ObjectInputStream lädt es, liefert Object, also brauchst du einen Cast, und kann ClassNotFoundException werfen. Das geladene Objekt ist neu, daher ergibt doppeltes Gleichheitszeichen false. Mehrere Objekte kommen in der Schreibreihenfolge zurück."}, {"id": "transient", "h": "The transient keyword", "en": "A transient field is skipped and comes back with its default value, such as null or zero. With static or final constants, transient has no effect. Static values come from the class and constants are compiled in.", "hi": "Transient field छोड़ दिया जाता है और अपने default value जैसे null या शून्य के साथ लौटता है। Static या final constants पर transient का कोई असर नहीं होता। Static values class से आती हैं और constants compile में ही जुड़ जाते हैं।", "kn": "Transient field ಬಿಟ್ಟುಬಿಡಲಾಗುತ್ತದೆ ಮತ್ತು null ಅಥವಾ ಸೊನ್ನೆಯಂತಹ default value ನೊಂದಿಗೆ ಮರಳುತ್ತದೆ. Static ಅಥವಾ final constants ಮೇಲೆ transient ಗೆ ಯಾವ ಪರಿಣಾಮವೂ ಇಲ್ಲ. Static values class ನಿಂದ ಬರುತ್ತವೆ ಮತ್ತು constants compile ವೇಳೆಯೇ ಸೇರುತ್ತವೆ.", "or": "Transient field ଛାଡ଼ିଦିଆଯାଏ ଏବଂ null କିମ୍ବା ଶୂନ ପରି default value ସହ ଫେରେ। Static କିମ୍ବା final constants ଉପରେ transient ର କୌଣସି ପ୍ରଭାବ ନାହିଁ। Static values class ରୁ ଆସେ ଏବଂ constants compile ସମୟରେ ଯୋଡ଼ି ହୋଇଯାଏ।", "ar": "يُتخطى الحقل transient ويعود بقيمته الافتراضية مثل null أو صفر. ولا أثر للكلمة transient مع الثوابت static أو final، فالقيم الساكنة تأتي من الصنف والثوابت تُدمج عند الترجمة.", "de": "Ein transient-Feld wird übersprungen und kommt mit seinem Standardwert zurück, etwa null oder null als Zahl. Bei static oder final Konstanten bewirkt transient nichts. Statische Werte kommen aus der Klasse, Konstanten werden einkompiliert."}, {"id": "object-graph", "h": "Object graphs", "en": "Saving one object also saves every object it refers to. This whole set is the object graph, and every object in it must be Serializable. An object reached twice is stored once, so shared references stay shared.", "hi": "एक object save करने पर उससे जुड़े हर object भी save होते हैं। यह पूरा समूह object graph है, और इसका हर object Serializable होना चाहिए। दो बार मिलने वाला object एक बार ही रखा जाता है, इसलिए shared references shared ही रहते हैं।", "kn": "ಒಂದು object save ಮಾಡಿದರೆ ಅದು ಸೂಚಿಸುವ ಪ್ರತಿಯೊಂದು object ಸಹ save ಆಗುತ್ತದೆ. ಈ ಇಡೀ ಗುಂಪು object graph, ಅದರ ಪ್ರತಿಯೊಂದು object Serializable ಆಗಿರಬೇಕು. ಎರಡು ಬಾರಿ ತಲುಪಿದ object ಒಮ್ಮೆ ಮಾತ್ರ ಸಂಗ್ರಹವಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಹಂಚಿದ references ಹಂಚಿದಂತೆಯೇ ಉಳಿಯುತ್ತವೆ.", "or": "ଗୋଟିଏ object save କଲେ ଏହା ସହ ଯୋଡ଼ା ସବୁ objects ମଧ୍ୟ save ହୁଏ। ଏହି ପୂରା ସମୂହ object graph, ଏବଂ ଏହାର ପ୍ରତ୍ୟେକ object Serializable ହେବା ଆବଶ୍ୟକ। ଦୁଇଥର ମିଳୁଥିବା object ଥରେ ରଖାଯାଏ, ତେଣୁ shared references shared ହିଁ ରହେ।", "ar": "حفظ كائن واحد يحفظ أيضًا كل كائن يشير إليه، وتسمى هذه المجموعة كلها رسم الكائنات، ويجب أن يكون كل كائن فيها Serializable. والكائن الذي يُصل إليه مرتين يُخزن مرة واحدة، فتبقى المراجع المشتركة مشتركة.", "de": "Wer ein Objekt speichert, speichert auch jedes Objekt, auf das es verweist. Diese Gesamtmenge heißt Objektgraph, und jedes Objekt darin muss Serializable sein. Ein zweimal erreichtes Objekt wird nur einmal abgelegt, geteilte Referenzen bleiben also geteilt."}, {"id": "custom", "h": "Customised serialization", "en": "To save a transient field in your own way, add private writeObject and readObject methods. Call defaultWriteObject and defaultReadObject first, then write and read your extra data in the same order.", "hi": "Transient field को अपने तरीके से save करने के लिए private writeObject और readObject methods जोड़िए। पहले defaultWriteObject और defaultReadObject call कीजिए, फिर अपना अतिरिक्त data उसी क्रम में लिखिए और पढ़िए।", "kn": "Transient field ಅನ್ನು ನಿಮ್ಮದೇ ರೀತಿಯಲ್ಲಿ save ಮಾಡಲು private writeObject ಮತ್ತು readObject methods ಸೇರಿಸಿ. ಮೊದಲು defaultWriteObject ಮತ್ತು defaultReadObject call ಮಾಡಿ, ನಂತರ ಹೆಚ್ಚುವರಿ data ಅನ್ನು ಅದೇ ಕ್ರಮದಲ್ಲಿ ಬರೆಯಿರಿ ಮತ್ತು ಓದಿ.", "or": "Transient field କୁ ନିଜ ଢଙ୍ଗରେ save କରିବାକୁ private writeObject ଓ readObject methods ଯୋଡ଼ନ୍ତୁ। ପ୍ରଥମେ defaultWriteObject ଓ defaultReadObject call କରନ୍ତୁ, ତାପରେ ଅତିରିକ୍ତ data ସେହି କ୍ରମରେ ଲେଖନ୍ତୁ ଓ ପଢ଼ନ୍ତୁ।", "ar": "لحفظ حقل transient بطريقتك، أضف الدالتين الخاصتين writeObject و readObject. استدعِ defaultWriteObject و defaultReadObject أولًا، ثم اكتب بياناتك الإضافية واقرأها بالترتيب نفسه.", "de": "Um ein transient-Feld auf eigene Art zu speichern, füge private Methoden writeObject und readObject hinzu. Rufe zuerst defaultWriteObject und defaultReadObject auf, dann schreibe und lies deine Zusatzdaten in derselben Reihenfolge."}, {"id": "inheritance", "h": "Serialization and inheritance", "en": "If the parent is Serializable, every child is too. If only the child is Serializable, the parent fields are not saved. While loading, Java runs the parent no argument constructor to set them, so that constructor must exist.", "hi": "अगर parent Serializable है तो हर child भी है। अगर केवल child Serializable है, तो parent के fields save नहीं होते। Load करते समय Java उन्हें set करने के लिए parent का no argument constructor चलाता है, इसलिए वह constructor होना ज़रूरी है।", "kn": "Parent Serializable ಆಗಿದ್ದರೆ ಪ್ರತಿಯೊಂದು child ಕೂಡ. Child ಮಾತ್ರ Serializable ಆಗಿದ್ದರೆ, parent fields save ಆಗುವುದಿಲ್ಲ. Load ಮಾಡುವಾಗ Java ಅವುಗಳನ್ನು set ಮಾಡಲು parent ನ no argument constructor ಓಡಿಸುತ್ತದೆ, ಆದ್ದರಿಂದ ಆ constructor ಇರಲೇಬೇಕು.", "or": "Parent Serializable ହେଲେ ପ୍ରତ୍ୟେକ child ମଧ୍ୟ। କେବଳ child Serializable ହେଲେ parent fields save ହୁଏ ନାହିଁ। Load ସମୟରେ Java ସେଗୁଡ଼ିକ set କରିବାକୁ parent ର no argument constructor ଚଳାଏ, ତେଣୁ ସେହି constructor ରହିବା ଜରୁରୀ।", "ar": "إذا كان الصنف الأب Serializable فكل صنف ابن كذلك. وإذا كان الابن وحده Serializable فلا تُحفظ حقول الأب، وعند التحميل تشغّل جافا منشئ الأب بلا وسائط لضبطها، لذلك يجب أن يوجد هذا المنشئ.", "de": "Ist die Elternklasse Serializable, ist es jede Kindklasse auch. Ist nur das Kind Serializable, werden die Felder der Elternklasse nicht gespeichert. Beim Laden ruft Java den parameterlosen Konstruktor der Elternklasse auf, also muss er existieren."}, {"id": "externalizable", "h": "Externalizable", "en": "Externalizable gives you full control. You write writeExternal and readExternal and save only the fields you choose. Loading first calls the public no argument constructor, so the class must have one.", "hi": "Externalizable आपको पूरा नियंत्रण देता है। आप writeExternal और readExternal लिखते हैं और केवल चुने हुए fields save करते हैं। Load करते समय पहले public no argument constructor चलता है, इसलिए class में वह होना ज़रूरी है।", "kn": "Externalizable ನಿಮಗೆ ಸಂಪೂರ್ಣ ನಿಯಂತ್ರಣ ಕೊಡುತ್ತದೆ. ನೀವು writeExternal ಮತ್ತು readExternal ಬರೆಯುತ್ತೀರಿ ಮತ್ತು ಆಯ್ದ fields ಮಾತ್ರ save ಮಾಡುತ್ತೀರಿ. Load ಮಾಡುವಾಗ ಮೊದಲು public no argument constructor ಓಡುತ್ತದೆ, ಆದ್ದರಿಂದ class ನಲ್ಲಿ ಅದು ಇರಬೇಕು.", "or": "Externalizable ଆପଣଙ୍କୁ ପୂରା ନିୟନ୍ତ୍ରଣ ଦିଏ। ଆପଣ writeExternal ଓ readExternal ଲେଖନ୍ତି ଏବଂ କେବଳ ବଛା fields save କରନ୍ତି। Load ସମୟରେ ପ୍ରଥମେ public no argument constructor ଚାଲେ, ତେଣୁ class ରେ ତାହା ରହିବା ଜରୁରୀ।", "ar": "تمنحك Externalizable تحكمًا كاملًا، فتكتب writeExternal و readExternal وتحفظ الحقول التي تختارها فقط. وعند التحميل يُستدعى أولًا المنشئ العام بلا وسائط، لذلك يجب أن يكون في الصنف.", "de": "Externalizable gibt dir volle Kontrolle. Du schreibst writeExternal und readExternal und speicherst nur die Felder deiner Wahl. Beim Laden wird zuerst der öffentliche parameterlose Konstruktor aufgerufen, die Klasse braucht also einen."}, {"id": "version-uid", "h": "serialVersionUID", "en": "serialVersionUID is the version number of a Serializable class. If the saved number and the current class number differ, loading fails with InvalidClassException. Declare it yourself as one L so small class changes do not break old files.", "hi": "serialVersionUID किसी Serializable class का version number है। अगर save किया गया number और वर्तमान class का number अलग हैं, तो load InvalidClassException से fail होता है। इसे खुद one L के रूप में घोषित कीजिए ताकि छोटे बदलाव पुरानी files को न तोड़ें।", "kn": "serialVersionUID ಒಂದು Serializable class ನ version number. Save ಮಾಡಿದ number ಮತ್ತು ಈಗಿನ class number ಬೇರೆಯಾದರೆ, load InvalidClassException ನಿಂದ ವಿಫಲವಾಗುತ್ತದೆ. ಸಣ್ಣ ಬದಲಾವಣೆಗಳು ಹಳೆಯ files ಮುರಿಯದಂತೆ ಅದನ್ನು ನೀವೇ one L ಎಂದು ಘೋಷಿಸಿ.", "or": "serialVersionUID ଏକ Serializable class ର version number। Save ହୋଇଥିବା number ଓ ବର୍ତ୍ତମାନ class number ଭିନ୍ନ ହେଲେ load InvalidClassException ରେ ବିଫଳ ହୁଏ। ଛୋଟ ପରିବର୍ତ୍ତନ ପୁରୁଣା files ଭାଙ୍ଗିବ ନାହିଁ ବୋଲି ଏହାକୁ ନିଜେ one L ଭାବେ ଘୋଷଣା କରନ୍ତୁ।", "ar": "serialVersionUID هو رقم إصدار الصنف القابل للتسلسل. إذا اختلف الرقم المحفوظ عن رقم الصنف الحالي يفشل التحميل بالاستثناء InvalidClassException. صرّح به بنفسك بالقيمة واحد L حتى لا تكسر التغييرات الصغيرة الملفات القديمة.", "de": "serialVersionUID ist die Versionsnummer einer Serializable-Klasse. Weichen gespeicherte und aktuelle Nummer ab, scheitert das Laden mit InvalidClassException. Deklariere sie selbst als eins L, damit kleine Änderungen alte Dateien nicht unbrauchbar machen."}, {"id": "modern", "h": "Modern advice", "en": "Records serialize safely because loading always calls the canonical constructor. Never deserialize data you do not trust, and use an ObjectInputFilter to limit accepted classes. For sharing data, JSON is often a better choice.", "hi": "Records सुरक्षित रूप से serialize होते हैं क्योंकि load करते समय हमेशा canonical constructor चलता है। जिस data पर भरोसा न हो उसे कभी deserialize मत कीजिए, और स्वीकार्य classes सीमित करने के लिए ObjectInputFilter लगाइए। Data साझा करने के लिए JSON अक्सर बेहतर विकल्प है।", "kn": "Load ಮಾಡುವಾಗ ಯಾವಾಗಲೂ canonical constructor ಓಡುವುದರಿಂದ records ಸುರಕ್ಷಿತವಾಗಿ serialize ಆಗುತ್ತವೆ. ನಂಬಿಕೆಯಿಲ್ಲದ data ಅನ್ನು ಎಂದಿಗೂ deserialize ಮಾಡಬೇಡಿ, ಮತ್ತು ಸ್ವೀಕೃತ classes ಮಿತಿಗೊಳಿಸಲು ObjectInputFilter ಬಳಸಿ. Data ಹಂಚಿಕೊಳ್ಳಲು JSON ಹೆಚ್ಚಾಗಿ ಉತ್ತಮ ಆಯ್ಕೆ.", "or": "Load ସମୟରେ ସବୁବେଳେ canonical constructor ଚାଲୁଥିବାରୁ records ସୁରକ୍ଷିତ ଭାବେ serialize ହୁଏ। ଭରସା ନଥିବା data କୁ କେବେ deserialize କରନ୍ତୁ ନାହିଁ, ଏବଂ ଗ୍ରହଣୀୟ classes ସୀମିତ କରିବାକୁ ObjectInputFilter ବ୍ୟବହାର କରନ୍ତୁ। Data ବାଣ୍ଟିବାକୁ JSON ପ୍ରାୟତଃ ଭଲ ବିକଳ୍ପ।", "ar": "تتسلسل السجلات بأمان لأن التحميل يستدعي المنشئ القانوني دائمًا. لا تفك تسلسل بيانات لا تثق بها أبدًا، واستخدم ObjectInputFilter لتقييد الأصناف المقبولة. ولمشاركة البيانات يكون JSON غالبًا خيارًا أفضل.", "de": "Records werden sicher serialisiert, weil beim Laden immer der kanonische Konstruktor läuft. Deserialisiere niemals Daten, denen du nicht traust, und begrenze die erlaubten Klassen mit einem ObjectInputFilter. Für den Datenaustausch ist JSON oft die bessere Wahl."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Serialization", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

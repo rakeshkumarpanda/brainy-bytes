@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Development Tools · Java</title>
+<meta name="description" content="The tools around your code: javac and its -d option, the java launcher and command line arguments, the classpath, building and running JAR files, executable JARs with a manifest, system properties with -D, JDK versus JRE versus JVM, PATH versus CLASSPATH, and modern shortcuts like single-file programs and jshell.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>⚙️ JVM and Tooling</span><span>›</span><span>Chapter 19 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🛠️</span><div><h1>Development Tools</h1><p class="lead">Writing Java is only half the job. You also need to compile it, organise the class files, package them, and run them with the right settings. This chapter walks through every command with real output.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 10 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#javac"><span>🧱</span>Compiling with javac</a><a href="#java-launcher"><span>🚀</span>Running with java</a><a href="#classpath"><span>🧭</span>The classpath</a><a href="#jar"><span>🫙</span>JAR files</a><a href="#properties"><span>🏷️</span>System properties</a><a href="#jdk-jre-jvm"><span>🪆</span>JDK, JRE and JVM</a><a href="#modern"><span>🆕</span>Modern shortcuts</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="javac" data-say="javac"><div class="sec-num">Part 1</div><h2><span class="sec-em">🧱</span><span>Compiling with javac</span></h2>
+<p><code>javac</code> is the Java compiler. It reads <code>.java</code> source files and writes <code>.class</code> files containing bytecode, which any JVM can run.</p>
+<p>Here is a tiny project with two classes in the package <code>com.shop</code>:</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two classes in one package · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="c">// File: com/shop/Price.java</span>
+<span class="k">package</span> com.shop;
+<span class="k">public</span> <span class="k">class</span> <span class="t">Price</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">double</span> withTax(<span class="k">double</span> amount) { <span class="k">return</span> amount * <span class="n">1.18</span>; }
+}
+<span class="c">// File: com/shop/App.java</span>
+<span class="k">package</span> com.shop;
+<span class="k">public</span> <span class="k">class</span> <span class="t">App</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="s">"Total: "</span> + <span class="t">Price</span>.withTax(<span class="n">100</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>Total: 118.0</pre></div></div>
+<p>The <code>-d</code> option tells javac where to put the class files. It creates folders that match the package names automatically.</p>
+<pre class="cmdline">$ javac -d out src/com/shop/*.java
+$ find out -type f
+out/com/shop/App.class
+out/com/shop/Price.class</pre>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Command</th><th>Meaning</th></tr>
+<tr><td><code>javac A.java</code></td><td>compile one file, class file goes next to it</td></tr>
+<tr><td><code>javac A.java B.java</code></td><td>compile several files</td></tr>
+<tr><td><code>javac *.java</code></td><td>compile every .java file in the folder</td></tr>
+<tr><td><code>javac -d out A.java</code></td><td>put class files under <code>out</code>, in package folders</td></tr>
+<tr><td><code>javac -cp lib.jar A.java</code></td><td>compile against classes found in lib.jar</td></tr>
+<tr><td><code>javac --release 17 A.java</code></td><td>produce class files that run on Java 17 and later</td></tr>
+</table></div></div>
+<div class="rule">javac works with <b>file names</b>, so you write <code>App.java</code>. The java launcher works with <b>class names</b>, so you write <code>com.shop.App</code>.</div>
+</section>
+
+<section class="card reveal jsec" id="java-launcher" data-say="java-launcher"><div class="sec-num">Part 2</div><h2><span class="sec-em">🚀</span><span>Running with java</span></h2>
+<p>The <code>java</code> command starts a JVM, loads the class you name, and calls its <code>main</code> method. A class in a package must be given by its <b>fully qualified name</b>.</p>
+<pre class="cmdline">$ java -cp out com.shop.App
+Total: 118.0</pre>
+<h3>Command line arguments</h3>
+<p>Words after the class name arrive in <code>main</code> as the <code>String[] args</code> array. They are always Strings, so numbers must be converted.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">java Main Asha 3 4 · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="s">"arguments: "</span> + args.length);
+        <span class="t">System</span>.out.println(<span class="s">"hello "</span> + args[<span class="n">0</span>]);
+        <span class="k">int</span> sum = <span class="t">Integer</span>.parseInt(args[<span class="n">1</span>]) + <span class="t">Integer</span>.parseInt(args[<span class="n">2</span>]);
+        <span class="t">System</span>.out.println(<span class="s">"3 + 4 as numbers = "</span> + sum + <span class="s">", as text = "</span> + args[<span class="n">1</span>] + args[<span class="n">2</span>]);
+    }
+}</pre><div class="out"><span>Output</span><pre>arguments: 3
+hello Asha
+3 + 4 as numbers = 7, as text = 34</pre></div></div>
+<div class="tip">An argument containing spaces needs quotes: <code>java Main "New Delhi"</code> passes one argument, not two.</div>
+<h3>Common launch errors</h3>
+<pre class="cmdline">$ java Test
+Error: Main method not found in class Test, please define the main method as:
+   public static void main(String[] args)
+or a JavaFX application class must extend javafx.application.Application</pre>
+<p>The class compiled fine, but it has no <code>main</code> method. That is a run time problem, not a compile time one.</p>
+<pre class="cmdline">$ java com.shop.App
+Error: Could not find or load main class com.shop.App
+Caused by: java.lang.ClassNotFoundException: com.shop.App</pre>
+<p>The class files are in <code>out</code>, but the JVM searched only the current folder. The next section fixes this with the classpath.</p>
+</section>
+
+<section class="card reveal jsec" id="classpath" data-say="classpath"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧭</span><span>The classpath</span></h2>
+<p>The <b>classpath</b> is the list of places where javac and java look for classes: folders and JAR files. It can be set in three ways.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Way</th><th>Example</th><th>Scope</th></tr>
+<tr><td>Command line option</td><td><code>java -cp out com.shop.App</code></td><td>this one command only (recommended)</td></tr>
+<tr><td>Environment variable</td><td><code>export CLASSPATH=out</code></td><td>every command in that terminal</td></tr>
+<tr><td>Nothing set</td><td><code>java App</code></td><td>the current folder only</td></tr>
+</table></div></div>
+<div class="rule">Entries are separated by <code>:</code> on Linux and macOS, and by <code>;</code> on Windows. A single dot <code>.</code> means the current folder. Once you give <code>-cp</code>, the current folder is no longer included unless you add the dot.</div>
+<h3>A worked example</h3>
+<p><code>Bill.java</code> uses <code>com.shop.Price</code>, which lives inside <code>shop.jar</code>.</p>
+<pre class="cmdline">$ javac Bill.java
+Bill.java:1: error: package com.shop does not exist
+import com.shop.Price;
+               ^
+Bill.java:4: error: cannot find symbol
+        System.out.println("Bill: " + Price.withTax(250));
+                                      ^
+  symbol:   variable Price
+  location: class Bill
+2 errors
+
+$ javac -cp ../lib/shop.jar Bill.java          compiles now
+
+$ java -cp ../lib/shop.jar Bill
+Error: Could not find or load main class Bill
+Caused by: java.lang.ClassNotFoundException: Bill
+
+$ java -cp .:../lib/shop.jar Bill
+Bill: 295.0
+
+$ java Bill
+Exception in thread "main" java.lang.NoClassDefFoundError: com/shop/Price
+	at Bill.main(Bill.java:4)
+Caused by: java.lang.ClassNotFoundException: com.shop.Price</pre>
+<div class="grid2">
+<div class="box"><h4>ClassNotFoundException</h4><p>The class you asked for by name, such as the main class, is not on the classpath.</p></div>
+<div class="box"><h4>NoClassDefFoundError</h4><p>A class was present when the code was compiled, but is missing now that it runs.</p></div>
+</div>
+<div class="exam">The four cases above are a favourite exam pattern: which command compiles, which runs, and which error each mistake produces.</div>
+</section>
+
+<section class="card reveal jsec" id="jar" data-say="jar"><div class="sec-num">Part 4</div><h2><span class="sec-em">🫙</span><span>JAR files</span></h2>
+<p>A <b>JAR</b> (Java ARchive) packs many class files and resources into one file. It uses the zip format. Libraries are shared as JARs, and a whole application can be one JAR.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Command</th><th>Letters mean</th><th>Does</th></tr>
+<tr><td><code>jar -cvf shop.jar -C out .</code></td><td>create, verbose, file</td><td>creates shop.jar from everything inside out</td></tr>
+<tr><td><code>jar -tf shop.jar</code></td><td>table of contents, file</td><td>lists the entries</td></tr>
+<tr><td><code>jar -xvf shop.jar</code></td><td>extract, verbose, file</td><td>unpacks into the current folder</td></tr>
+<tr><td><code>jar -cvfm app.jar manifest.txt -C out .</code></td><td>create with a manifest</td><td>adds your manifest lines</td></tr>
+</table></div></div>
+<pre class="cmdline">$ jar -cvf lib/shop.jar -C out .
+added manifest
+adding: com/(in = 0) (out= 0)(stored 0%)
+adding: com/shop/(in = 0) (out= 0)(stored 0%)
+adding: com/shop/App.class(in = 905) (out= 511)(deflated 43%)
+adding: com/shop/Price.class(in = 263) (out= 213)(deflated 19%)
+
+$ jar -tf lib/shop.jar
+META-INF/
+META-INF/MANIFEST.MF
+com/
+com/shop/
+com/shop/App.class
+com/shop/Price.class
+
+$ java -cp lib/shop.jar com.shop.App
+Total: 118.0</pre>
+<h3>An executable JAR</h3>
+<p>Add a <b>manifest</b> line that names the main class. Then <code>java -jar</code> can start it without any class name or classpath.</p>
+<pre class="cmdline">$ cat manifest.txt
+Main-Class: com.shop.App
+
+$ jar -cvfm app.jar manifest.txt -C out .
+added manifest
+adding: com/(in = 0) (out= 0)(stored 0%)
+adding: com/shop/(in = 0) (out= 0)(stored 0%)
+adding: com/shop/App.class(in = 905) (out= 511)(deflated 43%)
+adding: com/shop/Price.class(in = 263) (out= 213)(deflated 19%)
+
+$ java -jar app.jar
+Total: 118.0
+
+$ jar -xvf ../app.jar
+  created: META-INF/
+ inflated: META-INF/MANIFEST.MF
+  created: com/
+  created: com/shop/
+ inflated: com/shop/App.class
+ inflated: com/shop/Price.class</pre>
+<div class="warn">The manifest file must end with a newline. Without it, the last line, often the Main-Class line, is silently ignored.</div>
+<div class="tip">When you use <code>java -jar</code>, the <code>-cp</code> option and the CLASSPATH variable are ignored. Extra libraries must be listed in the manifest's <code>Class-Path</code> line.</div>
+</section>
+
+<section class="card reveal jsec" id="properties" data-say="properties"><div class="sec-num">Part 5</div><h2><span class="sec-em">🏷️</span><span>System properties</span></h2>
+<p>A <b>system property</b> is a name and value pair available to the whole program. The JVM sets many of them, and you can add your own with <code>-D</code> on the command line, before the class name.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">java -Dcourse=Java -Dseats=60 Main · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="t">System</span>.getProperty(<span class="s">"course"</span>));
+        <span class="t">System</span>.out.println(<span class="t">System</span>.getProperty(<span class="s">"level"</span>, <span class="s">"beginner"</span>));   <span class="c">// default when missing</span>
+        <span class="t">System</span>.out.println(<span class="t">Integer</span>.getInteger(<span class="s">"seats"</span>, <span class="n">30</span>));
+        <span class="t">System</span>.out.println(<span class="t">System</span>.getProperty(<span class="s">"missing"</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>Java
+beginner
+60
+null</pre></div></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Property</th><th>Holds</th></tr>
+<tr><td><code>java.version</code></td><td>the running Java version</td></tr>
+<tr><td><code>os.name</code></td><td>the operating system</td></tr>
+<tr><td><code>user.home</code></td><td>the user's home folder</td></tr>
+<tr><td><code>user.dir</code></td><td>the folder the program was started from</td></tr>
+<tr><td><code>file.separator</code></td><td><code>/</code> or <code>\</code></td></tr>
+<tr><td><code>line.separator</code></td><td>the line break for this system</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Some properties the JVM sets · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="s">"Java "</span> + <span class="t">System</span>.getProperty(<span class="s">"java.version"</span>).split(<span class="s">"\\."</span>)[<span class="n">0</span>]);
+        <span class="t">System</span>.out.println(<span class="s">"OS "</span> + <span class="t">System</span>.getProperty(<span class="s">"os.name"</span>));
+        <span class="t">System</span>.out.println(<span class="s">"separator "</span> + <span class="t">System</span>.getProperty(<span class="s">"file.separator"</span>));
+    }
+}</pre><div class="out"><span>One possible output (values depend on the machine)</span><pre>Java 21
+OS Linux
+separator /</pre></div></div>
+<div class="exam"><code>-D</code> options go <b>before</b> the class name. Anything after the class name becomes a command line argument in <code>args</code> instead.</div>
+</section>
+
+<section class="card reveal jsec" id="jdk-jre-jvm" data-say="jdk-jre-jvm"><div class="sec-num">Part 6</div><h2><span class="sec-em">🪆</span><span>JDK, JRE and JVM</span></h2>
+<div class="grid2">
+<div class="box"><h4>JVM</h4><p>The <b>Java Virtual Machine</b> runs bytecode. There is a different JVM for each operating system and processor, which is what makes the same class file run everywhere.</p></div>
+<div class="box"><h4>JRE</h4><p>The <b>Java Runtime Environment</b> is the JVM plus the standard library classes. Enough to run programs.</p></div>
+<div class="box"><h4>JDK</h4><p>The <b>Java Development Kit</b> is the JRE plus the developer tools: javac, jar, javadoc, jshell, jdb and more.</p></div>
+</div>
+<div class="rule"><span class="eq">JDK = JRE + development tools</span> and <span class="eq">JRE = JVM + library classes</span></div>
+<div class="modern">Since Java 11, Oracle and most vendors ship only the JDK. To deliver a small runtime with an application, developers build one with the <code>jlink</code> tool instead of installing a separate JRE.</div>
+<h3>PATH versus CLASSPATH</h3>
+<div class="tw"><div class="tw"><table class="jt"><tr><th></th><th>PATH</th><th>CLASSPATH</th></tr>
+<tr><td>Used by</td><td>the operating system</td><td>javac and the JVM</td></tr>
+<tr><td>Finds</td><td>programs such as <code>javac</code> and <code>java</code></td><td>class files and JAR files</td></tr>
+<tr><td>Typical value</td><td>the JDK's <code>bin</code> folder</td><td>folders and JARs with your classes</td></tr>
+<tr><td>Wrong value gives</td><td>"javac: command not found"</td><td>ClassNotFoundException or "package does not exist"</td></tr>
+</table></div></div>
+<pre class="cmdline">$ javac -version
+javac 21.0.12.1
+$ java -version
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1-1-24.04.4-Ubuntu)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1-1-24.04.4-Ubuntu, mixed mode, sharing)</pre>
+<div class="tip"><code>JAVA_HOME</code> is a third variable that many tools such as Maven and Gradle read. It points to the JDK folder itself, not to its bin folder.</div>
+</section>
+
+<section class="card reveal jsec" id="modern" data-say="modern"><div class="sec-num">Part 7</div><h2><span class="sec-em">🆕</span><span>Modern shortcuts</span></h2>
+<h3>Run a source file directly (Java 11)</h3>
+<p>For a small program you can skip javac. The launcher compiles the file in memory and runs it.</p>
+<pre class="cmdline">$ java Hello.java Asha
+Hello, Asha
+
+$ java -Dcourse=Java -Dseats=60 Props.java
+Java
+beginner
+60</pre>
+<div class="modern">Java 22 extended this to programs made of several source files in the same folder tree.</div>
+<h3>jshell (Java 9)</h3>
+<p>An interactive prompt for trying code one line at a time. No class and no main method are needed.</p>
+<pre class="cmdline">$ jshell
+jshell> int marks = 88
+marks ==> 88
+jshell> marks >= 35 ? "pass" : "fail"
+$2 ==> "pass"
+jshell> /exit</pre>
+<h3>Look inside class files</h3>
+<pre class="cmdline">$ javap -cp out com.shop.Price
+Compiled from "Price.java"
+public class com.shop.Price {
+  public com.shop.Price();
+  public static double withTax(double);
+}</pre>
+<p><code>javap</code> shows the members of a compiled class. It also reveals what the compiler added, such as the default constructor above.</p>
+<div class="tip">Real projects use a <b>build tool</b> such as Maven or Gradle. It downloads libraries, sets the classpath, compiles, tests and builds the JAR with one command. The commands on this page are what those tools run underneath.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./assertions.html" data-topic="assertions"><small>← Previous chapter</small><b>✅ Assertions</b></a><span></span></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "From source file to running app", "panels": [{"s": [["e", "📄"], ["t", "javac -d out App.java", {"b": 1, "size": 12}]], "h": "Compile", "t": "javac turns .java into .class.", "more": "-d out builds package folders for you, such as out/com/shop/App.class."}, {"s": [["e", "🧭"], ["t", "java -cp out com.shop.App", {"b": 1, "size": 11}]], "h": "Find and run", "t": "The classpath tells java where to look.", "more": "Give the fully qualified class name, not the file name."}, {"s": [["e", "🫙"], ["t", "jar -cvf shop.jar -C out .", {"b": 1, "size": 11}]], "h": "Package", "t": "A JAR bundles classes into one file.", "more": "With a Main-Class line in the manifest, java -jar app.jar runs it directly."}, {"s": [["e", "🏷️"], ["t", "-Dseats=60", {"b": 1}]], "h": "Configure", "t": "System properties pass settings in.", "more": "Read them with System.getProperty. They go before the class name."}], "remember": "javac takes file names, java takes class names. -cp tells both where classes live. JDK = JRE + tools, JRE = JVM + library."}, "real": [["🍳", "Cooking and serving", "javac is the kitchen that turns raw ingredients into a dish. java is the waiter who serves it. The classpath is the list of shelves the waiter checks for the plate."], ["📦", "A courier box", "A JAR is one sealed box holding many items. The manifest is the label on top saying which item to open first."], ["🎛️", "Settings on a washing machine", "System properties are dials you set before pressing start. The program reads them but the code inside does not change."]], "quiz": [{"lv": "e", "q": "Which tool turns <code>.java<\/code> files into <code>.class<\/code> files?", "o": ["java", "javac", "jar", "javap"], "a": 1, "hint": "The c stands for compiler.", "why": "javac is the Java compiler."}, {"lv": "e", "q": "Which is correct for running class <code>App<\/code> in package <code>com.shop<\/code>, with classes under <code>out<\/code>?", "o": ["<code>java out/com/shop/App.class<\/code>", "<code>java -cp out com.shop.App<\/code>", "<code>java com/shop/App.java<\/code>", "<code>javac -cp out com.shop.App<\/code>"], "a": 1, "hint": "java takes a class name, and -cp says where to look.", "why": "The launcher needs the fully qualified class name and a classpath that contains the package root folder."}, {"lv": "e", "q": "What does <code>JDK<\/code> contain that <code>JRE<\/code> does not?", "o": ["The JVM", "The library classes", "Development tools such as javac", "Nothing"], "a": 2, "hint": "JDK = JRE + ?", "why": "The JDK adds developer tools like javac, jar and jshell on top of the JRE."}, {"lv": "m", "q": "What does this print for <code>java Main 7 5<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        System.out.println(args[0] + args[1]);\n    }\n}", "o": ["12", "75", "7 5", "Compile error"], "a": 1, "run": 1, "args": "7 5", "hint": "Command line arguments are Strings.", "why": "Both arguments are Strings, so + joins them: \"75\"."}, {"lv": "m", "q": "Which jar command lists the entries of a JAR without extracting it?", "o": ["<code>jar -cvf x.jar<\/code>", "<code>jar -tf x.jar<\/code>", "<code>jar -xvf x.jar<\/code>", "<code>jar -lf x.jar<\/code>"], "a": 1, "hint": "t is for table of contents.", "why": "jar -tf prints the table of contents. -c creates and -x extracts."}, {"lv": "m", "q": "Which manifest line makes <code>java -jar app.jar<\/code> work?", "o": ["<code>Main: com.shop.App<\/code>", "<code>Main-Class: com.shop.App<\/code>", "<code>Start-Class: App.class<\/code>", "<code>Class-Path: com.shop.App<\/code>"], "a": 1, "hint": "It names the class whose main method runs.", "why": "Main-Class tells java -jar which class to start. Class-Path lists extra libraries."}, {"lv": "h", "q": "What does this print for <code>java -Dmode=fast Main<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        System.out.println(System.getProperty(\"mode\", \"safe\") + \" \" + System.getProperty(\"speed\", \"normal\"));\n    }\n}", "o": ["fast normal", "safe normal", "fast null", "null null"], "a": 0, "run": 1, "flags": "-Dmode=fast", "hint": "The default is used only when the property is missing.", "why": "mode was set to fast, so the default is ignored. speed was not set, so \"normal\" is used."}, {"lv": "h", "q": "Bill.class is in the current folder and uses a class from lib.jar. Which command runs it on Linux?", "o": ["<code>java -cp lib.jar Bill<\/code>", "<code>java -cp .:lib.jar Bill<\/code>", "<code>java -cp .;lib.jar Bill<\/code>", "<code>java Bill lib.jar<\/code>"], "a": 1, "hint": "Both locations are needed, and Linux uses colons.", "why": "The classpath needs the current folder for Bill and lib.jar for its helper. On Linux the separator is a colon."}, {"lv": "h", "q": "A class compiled against lib.jar is run without lib.jar on the classpath. What is thrown when the missing class is first used?", "o": ["ClassNotFoundException for the main class", "NoClassDefFoundError", "Compile error", "ClassCastException"], "a": 1, "hint": "The class existed at compile time.", "why": "The main class loads fine, but a class it depends on is missing at run time, which gives NoClassDefFoundError."}, {"lv": "x", "q": "What does this print for <code>java -Dlimit=5 Main -Dlimit=9 8<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        System.out.println(Integer.getInteger(\"limit\", 0) + \" \" + args.length + \" \" + args[0]);\n    }\n}", "o": ["9 1 8", "5 2 -Dlimit=9", "5 1 8", "14 2 8"], "a": 1, "run": 1, "flags": "-Dlimit=5", "args": "-Dlimit=9 8", "hint": "Only options before the class name go to the JVM.", "why": "The property is 5. Everything after Main is a program argument, so args holds \"-Dlimit=9\" and \"8\"."}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    public static void main(String[] args) {\n        String path = \"out:lib/a.jar:lib/b.jar:.\";\n        String[] parts = path.split(\":\");\n        System.out.println(parts.length + \" \" + parts[parts.length - 1]);\n    }\n}", "o": ["3 b.jar", "4 .", "4 lib/b.jar", "5 ."], "a": 1, "run": 1, "hint": "Count the entries between the colons.", "why": "out, lib/a.jar, lib/b.jar and . are 4 entries. The last one is the dot for the current folder."}, {"lv": "x", "q": "Which statement about <code>java -jar app.jar<\/code> is true?", "o": ["It adds the CLASSPATH variable to the manifest's Class-Path", "It ignores -cp and the CLASSPATH variable", "It needs the class name after the jar name", "It compiles the classes first"], "a": 1, "hint": "Where does an executable JAR list its libraries?", "why": "With -jar, the JAR and its manifest's Class-Path define the classpath. -cp and CLASSPATH are ignored."}], "calc": [{"lv": "e", "q": "In the JAR example, <code>App.class<\/code> is 905 bytes before compression and 511 bytes after. How many bytes were saved?", "ans": "394", "py": "905-511", "hint": "Subtract the compressed size.", "steps": ["<span class=\"eq\">905 − 511 = 394 bytes<\/span>"]}, {"lv": "e", "q": "What does <code>Price.withTax(250)<\/code> return in the classpath example? (The tax factor is 1.18.)", "code": "System.out.println(250 * 1.18);", "ans": "295.0", "alt": ["295"], "run": 1, "hint": "Multiply by 1.18.", "steps": ["<span class=\"eq\">250 × 1.18 = 295.0<\/span>"]}, {"lv": "m", "q": "jar reports App.class as \"deflated 43%\" from 905 bytes. Check it: what percentage was saved, rounded to a whole number?", "ans": "44", "alt": ["43"], "py": "round((905-511)/905*100)", "unit": "%", "hint": "Saved ÷ original × 100.", "steps": ["<span class=\"eq\">905 − 511 = 394<\/span> bytes saved", "<span class=\"eq\"><span class=\"fr\"><i>394<\/i><i>905<\/i><\/span> × 100 ≈ 43.5%<\/span>", "Rounded: 44. The jar tool truncates and shows 43, so both are accepted."]}, {"lv": "m", "q": "How many entries does <code>jar -tf lib/shop.jar<\/code> list on this page?", "ans": "6", "py": "6", "hint": "Count folders and files, including META-INF.", "steps": ["META-INF/, META-INF/MANIFEST.MF, com/, com/shop/, App.class, Price.class.", "<span class=\"eq\">6<\/span> entries"]}, {"lv": "h", "q": "What does this print for <code>java Main 3 4 5<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        int total = 0;\n        String joined = \"\";\n        for (String a : args) { total += Integer.parseInt(a); joined += a; }\n        System.out.println(total + Integer.parseInt(joined));\n    }\n}", "ans": "357", "args": "3 4 5", "run": 1, "hint": "Two results: the numeric sum and the joined text as a number.", "steps": ["<span class=\"eq\">3 + 4 + 5 = 12<\/span>", "Joined text \"345\" as a number is 345.", "<span class=\"eq\">12 + 345 = 357<\/span>"]}, {"lv": "h", "q": "What does this print for <code>java -Dseats=60 -Dbooked=45 Main<\/code>?", "code": "class Main {\n    public static void main(String[] args) {\n        int seats = Integer.getInteger(\"seats\", 30);\n        int booked = Integer.getInteger(\"booked\", 0);\n        int waiting = Integer.getInteger(\"waiting\", 5);\n        System.out.println(seats - booked + waiting);\n    }\n}", "ans": "20", "run": 1, "flags": "-Dseats=60 -Dbooked=45", "hint": "waiting was not set, so its default is used.", "steps": ["seats = 60, booked = 45, waiting = 5 (default).", "<span class=\"eq\">60 − 45 + 5 = 20<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    public static void main(String[] args) {\n        String cls = \"com.shop.billing.Invoice\";\n        String file = cls.replace('.', '/') + \".class\";\n        System.out.println(file.length() + \" \" + file.split(\"/\").length);\n    }\n}", "ans": "30 4", "run": 1, "hint": "Dots become slashes and \".class\" is added.", "steps": ["The path is \"com/shop/billing/Invoice.class\".", "Length: <span class=\"eq\">24 + 6 = 30<\/span> characters.", "Parts: com, shop, billing, Invoice.class: <span class=\"eq\">4<\/span>."]}, {"lv": "x", "q": "A folder holds 40 class files of 2,000 bytes each. Compression saves 45% on average. How many bytes is the JAR content, ignoring headers?", "ans": "44000", "py": "40*2000*(1-0.45)", "unit": "bytes", "hint": "Keep 55% of the total.", "steps": ["<span class=\"eq\">40 × 2,000 = 80,000<\/span> bytes", "<span class=\"eq\">80,000 × (1 − 0.45) = 80,000 × 0.55 = 44,000<\/span> bytes"]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to development tools. You will compile with javac, run with java, set the classpath, build and run JAR files, pass settings with system properties, and learn the difference between the JDK, the JRE and the JVM.", "hi": "Development tools में आपका स्वागत है। आप javac से compile करेंगे, java से चलाएँगे, classpath सेट करेंगे, JAR files बनाएँगे और चलाएँगे, system properties से settings देंगे, और JDK, JRE और JVM का अंतर सीखेंगे।", "kn": "Development tools ಗೆ ಸ್ವಾಗತ. javac ನಿಂದ compile ಮಾಡುವುದು, java ನಿಂದ ಓಡಿಸುವುದು, classpath ಹೊಂದಿಸುವುದು, JAR files ರಚಿಸಿ ಓಡಿಸುವುದು, system properties ಮೂಲಕ settings ಕೊಡುವುದು, ಮತ್ತು JDK, JRE ಹಾಗೂ JVM ವ್ಯತ್ಯಾಸವನ್ನು ಕಲಿಯುತ್ತೀರಿ.", "or": "Development tools କୁ ସ୍ୱାଗତ। ଆପଣ javac ରେ compile କରିବେ, java ରେ ଚଳାଇବେ, classpath ସେଟ କରିବେ, JAR files ତିଆରି କରି ଚଳାଇବେ, system properties ରେ settings ଦେବେ, ଏବଂ JDK, JRE ଓ JVM ର ପାର୍ଥକ୍ୟ ଶିଖିବେ।", "ar": "مرحبًا بك في أدوات التطوير. ستترجم باستخدام javac، وتشغّل باستخدام java، وتضبط مسار الأصناف، وتبني ملفات JAR وتشغلها، وتمرر الإعدادات عبر خصائص النظام، وتتعلم الفرق بين JDK و JRE و JVM.", "de": "Willkommen bei den Entwicklungswerkzeugen. Du kompilierst mit javac, startest mit java, setzt den Klassenpfad, baust und startest JAR-Dateien, übergibst Einstellungen als Systemeigenschaften und lernst den Unterschied zwischen JDK, JRE und JVM."}, {"id": "javac", "h": "Compiling with javac", "en": "javac reads source files and writes class files. The minus d option chooses an output folder and creates package folders automatically. javac takes file names, while java takes class names.", "hi": "javac source files पढ़ता है और class files लिखता है। माइनस d option output folder चुनता है और package folders अपने आप बनाता है। javac file के नाम लेता है, जबकि java class के नाम लेता है।", "kn": "javac source files ಓದಿ class files ಬರೆಯುತ್ತದೆ. ಮೈನಸ್ d option output folder ಆಯ್ಕೆ ಮಾಡಿ package folders ಅನ್ನು ತಾನಾಗಿ ರಚಿಸುತ್ತದೆ. javac file ಹೆಸರುಗಳನ್ನು ತೆಗೆದುಕೊಳ್ಳುತ್ತದೆ, java class ಹೆಸರುಗಳನ್ನು ತೆಗೆದುಕೊಳ್ಳುತ್ತದೆ.", "or": "javac source files ପଢ଼େ ଏବଂ class files ଲେଖେ। ମାଇନସ d option output folder ବାଛେ ଏବଂ package folders ନିଜେ ତିଆରି କରେ। javac file ନାମ ନିଏ, କିନ୍ତୁ java class ନାମ ନିଏ।", "ar": "يقرأ javac ملفات المصدر ويكتب ملفات الأصناف. يختار الخيار d مجلد الإخراج وينشئ مجلدات الحزم تلقائيًا. يأخذ javac أسماء الملفات، بينما يأخذ java أسماء الأصناف.", "de": "javac liest Quelldateien und schreibt Klassendateien. Die Option minus d wählt einen Ausgabeordner und legt Paketordner automatisch an. javac nimmt Dateinamen, java nimmt Klassennamen."}, {"id": "java-launcher", "h": "Running with java", "en": "The java command loads the named class and calls its main method. Use the fully qualified name for classes in packages. Words after the class name arrive as Strings in args. Main method not found and could not find or load main class are the two common launch errors.", "hi": "java command नाम दी गई class load करके उसका main method चलाता है। Package वाली classes के लिए पूरा नाम दीजिए। Class नाम के बाद के शब्द args में Strings के रूप में आते हैं। Main method not found और could not find or load main class दो आम launch errors हैं।", "kn": "java command ಹೆಸರಿಸಿದ class ಅನ್ನು load ಮಾಡಿ ಅದರ main method ಕರೆಯುತ್ತದೆ. Package ನಲ್ಲಿರುವ classes ಗೆ ಪೂರ್ಣ ಹೆಸರು ಕೊಡಿ. Class ಹೆಸರಿನ ನಂತರದ ಪದಗಳು args ನಲ್ಲಿ Strings ಆಗಿ ಬರುತ್ತವೆ. Main method not found ಮತ್ತು could not find or load main class ಎರಡು ಸಾಮಾನ್ಯ launch errors.", "or": "java command ନାମ ଦିଆଯାଇଥିବା class load କରି ଏହାର main method ଡାକେ। Package ରେ ଥିବା classes ପାଇଁ ପୂରା ନାମ ଦିଅନ୍ତୁ। Class ନାମ ପରର ଶବ୍ଦ args ରେ Strings ଭାବେ ଆସେ। Main method not found ଏବଂ could not find or load main class ଦୁଇଟି ସାଧାରଣ launch errors।", "ar": "يحمّل الأمر java الصنف المسمى ويستدعي دالته main. استخدم الاسم الكامل للأصناف داخل الحزم. والكلمات بعد اسم الصنف تصل إلى args كنصوص. ومن أشهر أخطاء التشغيل عدم العثور على الدالة main وتعذر العثور على الصنف الرئيسي.", "de": "Der Befehl java lädt die genannte Klasse und ruft ihre main-Methode auf. Für Klassen in Paketen gib den voll qualifizierten Namen an. Wörter nach dem Klassennamen kommen als Strings in args an. Main method not found und could not find or load main class sind die zwei häufigen Startfehler."}, {"id": "classpath", "h": "The classpath", "en": "The classpath lists the folders and JAR files where Java looks for classes. Set it with minus cp for one command. Entries are separated by a colon on Linux and Mac and a semicolon on Windows. Once you give minus cp, add a dot if you also need the current folder.", "hi": "Classpath उन folders और JAR files की सूची है जहाँ Java classes ढूँढता है। एक command के लिए इसे माइनस cp से सेट कीजिए। Entries Linux और Mac पर colon से और Windows पर semicolon से अलग होती हैं। माइनस cp देने के बाद current folder भी चाहिए तो एक dot जोड़िए।", "kn": "Classpath ಎಂದರೆ Java classes ಹುಡುಕುವ folders ಮತ್ತು JAR files ಪಟ್ಟಿ. ಒಂದು command ಗೆ ಮೈನಸ್ cp ಮೂಲಕ ಹೊಂದಿಸಿ. Entries ಅನ್ನು Linux ಮತ್ತು Mac ನಲ್ಲಿ colon ಮತ್ತು Windows ನಲ್ಲಿ semicolon ಬೇರ್ಪಡಿಸುತ್ತದೆ. ಮೈನಸ್ cp ಕೊಟ್ಟ ನಂತರ current folder ಕೂಡ ಬೇಕಾದರೆ dot ಸೇರಿಸಿ.", "or": "Classpath ହେଉଛି ସେହି folders ଓ JAR files ର ତାଲିକା ଯେଉଁଠି Java classes ଖୋଜେ। ଗୋଟିଏ command ପାଇଁ ମାଇନସ cp ରେ ସେଟ କରନ୍ତୁ। Entries Linux ଓ Mac ରେ colon ଏବଂ Windows ରେ semicolon ରେ ଅଲଗା ହୁଏ। ମାଇନସ cp ଦେଲା ପରେ current folder ମଧ୍ୟ ଦରକାର ହେଲେ ଏକ dot ଯୋଡ଼ନ୍ତୁ।", "ar": "مسار الأصناف قائمة بالمجلدات وملفات JAR التي تبحث فيها جافا عن الأصناف. اضبطه بالخيار cp لأمر واحد. تُفصل العناصر بنقطتين في لينكس وماك وبفاصلة منقوطة في ويندوز. وبعد استخدام cp أضف نقطة إذا احتجت المجلد الحالي أيضًا.", "de": "Der Klassenpfad listet die Ordner und JAR-Dateien, in denen Java nach Klassen sucht. Setze ihn mit minus cp für einen Befehl. Einträge trennt unter Linux und Mac ein Doppelpunkt, unter Windows ein Strichpunkt. Mit minus cp fehlt der aktuelle Ordner, außer du fügst einen Punkt hinzu."}, {"id": "jar", "h": "JAR files", "en": "A JAR packs many classes into one zip file. jar c v f creates one, jar t f lists it and jar x v f extracts it. Add a manifest with a Main Class line, and java minus jar runs the application directly.", "hi": "JAR कई classes को एक zip file में बाँधता है। jar c v f इसे बनाता है, jar t f सूची दिखाता है और jar x v f इसे खोलता है। Main Class line वाला manifest जोड़िए, तो java माइनस jar application को सीधे चलाता है।", "kn": "JAR ಹಲವು classes ಅನ್ನು ಒಂದು zip file ನಲ್ಲಿ ಪ್ಯಾಕ್ ಮಾಡುತ್ತದೆ. jar c v f ರಚಿಸುತ್ತದೆ, jar t f ಪಟ್ಟಿ ತೋರಿಸುತ್ತದೆ ಮತ್ತು jar x v f ಹೊರತೆಗೆಯುತ್ತದೆ. Main Class ಸಾಲಿನ manifest ಸೇರಿಸಿದರೆ java ಮೈನಸ್ jar application ಅನ್ನು ನೇರವಾಗಿ ಓಡಿಸುತ್ತದೆ.", "or": "JAR ଅନେକ classes କୁ ଗୋଟିଏ zip file ରେ ପ୍ୟାକ କରେ। jar c v f ତିଆରି କରେ, jar t f ତାଲିକା ଦେଖାଏ ଏବଂ jar x v f ବାହାର କରେ। Main Class ଧାଡ଼ି ଥିବା manifest ଯୋଡ଼ିଲେ java ମାଇନସ jar application କୁ ସିଧା ଚଳାଏ।", "ar": "يحزم ملف JAR أصنافًا كثيرة في ملف zip واحد. الأمر jar c v f ينشئه، و jar t f يعرض محتواه، و jar x v f يستخرجه. أضف ملف بيان فيه سطر Main Class، فيشغّل الأمر java مع jar التطبيق مباشرة.", "de": "Eine JAR packt viele Klassen in eine Zip-Datei. jar c v f erstellt sie, jar t f listet sie und jar x v f entpackt sie. Mit einem Manifest samt Main-Class-Zeile startet java minus jar die Anwendung direkt."}, {"id": "properties", "h": "System properties", "en": "System properties are name and value pairs. Pass your own with minus D before the class name, and read them with System dot getProperty, which can take a default. The JVM also sets many, such as java dot version and os dot name.", "hi": "System properties नाम और value के जोड़े हैं। अपनी properties class नाम से पहले माइनस D से दीजिए, और System dot getProperty से पढ़िए, जो default भी ले सकता है। JVM भी कई सेट करता है, जैसे java dot version और os dot name।", "kn": "System properties ಹೆಸರು ಮತ್ತು value ಜೋಡಿಗಳು. ನಿಮ್ಮದನ್ನು class ಹೆಸರಿನ ಮೊದಲು ಮೈನಸ್ D ಮೂಲಕ ಕೊಡಿ, ಮತ್ತು default ಕೂಡ ತೆಗೆದುಕೊಳ್ಳಬಲ್ಲ System dot getProperty ಮೂಲಕ ಓದಿ. JVM ಕೂಡ java dot version ಮತ್ತು os dot name ನಂತಹ ಹಲವನ್ನು ಹೊಂದಿಸುತ್ತದೆ.", "or": "System properties ନାମ ଓ value ଯୋଡ଼ି। ନିଜର properties class ନାମ ପୂର୍ବରୁ ମାଇନସ D ରେ ଦିଅନ୍ତୁ, ଏବଂ default ମଧ୍ୟ ନେଇପାରୁଥିବା System dot getProperty ରେ ପଢ଼ନ୍ତୁ। JVM ମଧ୍ୟ java dot version ଓ os dot name ପରି ଅନେକ ସେଟ କରେ।", "ar": "خصائص النظام أزواج من الأسماء والقيم. مرر خصائصك بالخيار D قبل اسم الصنف، واقرأها بالدالة System.getProperty التي تقبل قيمة افتراضية. وتضبط JVM أيضًا خصائص كثيرة مثل java.version و os.name.", "de": "Systemeigenschaften sind Paare aus Name und Wert. Eigene übergibst du mit minus D vor dem Klassennamen und liest sie mit System punkt getProperty, das auch einen Standardwert annimmt. Die JVM setzt selbst viele, etwa java punkt version und os punkt name."}, {"id": "jdk-jre-jvm", "h": "JDK, JRE and JVM", "en": "The JVM runs bytecode. The JRE is the JVM plus the library classes. The JDK is the JRE plus tools like javac and jar. PATH helps the operating system find these programs, while CLASSPATH helps Java find your classes.", "hi": "JVM bytecode चलाता है। JRE यानी JVM और library classes। JDK यानी JRE और javac तथा jar जैसे tools। PATH operating system को ये programs ढूँढने में मदद करता है, जबकि CLASSPATH Java को आपकी classes ढूँढने में मदद करता है।", "kn": "JVM bytecode ಓಡಿಸುತ್ತದೆ. JRE ಎಂದರೆ JVM ಜೊತೆಗೆ library classes. JDK ಎಂದರೆ JRE ಜೊತೆಗೆ javac ಮತ್ತು jar ನಂತಹ tools. PATH operating system ಗೆ ಈ programs ಹುಡುಕಲು ನೆರವಾಗುತ್ತದೆ, CLASSPATH Java ಗೆ ನಿಮ್ಮ classes ಹುಡುಕಲು ನೆರವಾಗುತ್ತದೆ.", "or": "JVM bytecode ଚଳାଏ। JRE ହେଉଛି JVM ସହ library classes। JDK ହେଉଛି JRE ସହ javac ଓ jar ପରି tools। PATH operating system କୁ ଏହି programs ଖୋଜିବାରେ ସାହାଯ୍ୟ କରେ, ଏବଂ CLASSPATH Java କୁ ଆପଣଙ୍କ classes ଖୋଜିବାରେ ସାହାଯ୍ୟ କରେ।", "ar": "تشغّل JVM الشيفرة الوسيطة. و JRE هي JVM مع أصناف المكتبة. و JDK هي JRE مع أدوات مثل javac و jar. يساعد PATH نظام التشغيل على إيجاد هذه البرامج، بينما يساعد CLASSPATH جافا على إيجاد أصنافك.", "de": "Die JVM führt Bytecode aus. Die JRE ist die JVM plus Bibliotheksklassen. Das JDK ist die JRE plus Werkzeuge wie javac und jar. PATH hilft dem Betriebssystem, diese Programme zu finden, CLASSPATH hilft Java, deine Klassen zu finden."}, {"id": "modern", "h": "Modern shortcuts", "en": "Since Java 11 you can run a single source file directly with java Hello dot java. jshell lets you try code line by line, and javap shows what is inside a class file. Real projects use build tools such as Maven or Gradle.", "hi": "Java 11 से आप एक source file को सीधे java Hello dot java से चला सकते हैं। jshell से code एक एक line आज़मा सकते हैं, और javap दिखाता है कि class file में क्या है। असली projects Maven या Gradle जैसे build tools इस्तेमाल करते हैं।", "kn": "Java 11 ರಿಂದ ಒಂದು source file ಅನ್ನು java Hello dot java ಮೂಲಕ ನೇರವಾಗಿ ಓಡಿಸಬಹುದು. jshell ನಲ್ಲಿ code ಅನ್ನು ಸಾಲು ಸಾಲಾಗಿ ಪ್ರಯತ್ನಿಸಬಹುದು, ಮತ್ತು javap class file ಒಳಗೆ ಏನಿದೆ ಎಂದು ತೋರಿಸುತ್ತದೆ. ನಿಜವಾದ projects Maven ಅಥವಾ Gradle ನಂತಹ build tools ಬಳಸುತ್ತವೆ.", "or": "Java 11 ରୁ ଗୋଟିଏ source file କୁ java Hello dot java ରେ ସିଧା ଚଳାଇପାରିବେ। jshell ରେ code ଧାଡ଼ି ଧାଡ଼ି ଚେଷ୍ଟା କରିପାରିବେ, ଏବଂ javap class file ଭିତରେ କ’ଣ ଅଛି ଦେଖାଏ। ପ୍ରକୃତ projects Maven କିମ୍ବା Gradle ପରି build tools ବ୍ୟବହାର କରନ୍ତି।", "ar": "منذ الإصدار 11 يمكنك تشغيل ملف مصدر واحد مباشرة بالأمر java Hello.java. وتتيح jshell تجربة الكود سطرًا سطرًا، وتعرض javap محتوى ملف الصنف. أما المشاريع الحقيقية فتستخدم أدوات بناء مثل Maven أو Gradle.", "de": "Seit Java 11 startest du eine einzelne Quelldatei direkt mit java Hello punkt java. Mit jshell probierst du Code Zeile für Zeile, und javap zeigt, was in einer Klassendatei steckt. Echte Projekte nutzen Build-Werkzeuge wie Maven oder Gradle."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Development Tools", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

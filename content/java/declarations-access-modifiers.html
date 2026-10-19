@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Declarations and Access Modifiers · Java</title>
+<meta name="description" content="Source file structure, import and static import, packages, class and member modifiers, final, abstract, static and friends, interfaces, marker and adapter classes.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🧩 Object Oriented Java</span><span>›</span><span>Chapter 4 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔐</span><div><h1>Declarations and Access Modifiers</h1><p class="lead">Modifiers are the small words in front of a class or member that decide who may see it, who may change it and how it behaves. Get them right and your code explains itself.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 23 min read</span><span class="chip">📚 13 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#source-file"><span>📄</span>Java source file structure</a><a href="#import"><span>📥</span>The import statement</a><a href="#static-import"><span>⚡</span>Static import</a><a href="#packages"><span>📦</span>Packages</a><a href="#class-modifiers"><span>🏛️</span>Class level modifiers</a><a href="#final"><span>🔒</span>final</a><a href="#abstract"><span>🧩</span>abstract</a><a href="#member-modifiers"><span>👀</span>public, protected, default and private</a><a href="#other-modifiers"><span>🧰</span>static, native, synchronized, transient, volatile, strictfp</a><a href="#interfaces"><span>🔌</span>Interfaces</a><a href="#interface-conflicts"><span>⚔️</span>Naming conflicts in interfaces</a><a href="#marker-adapter"><span>🏷️</span>Marker interfaces and adapter classes</a><a href="#abstract-vs-interface"><span>🤔</span>Abstract class or interface</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="source-file" data-say="source-file"><div class="sec-num">Part 1</div><h2><span class="sec-em">📄</span><span>Java source file structure</span></h2>
+<ul>
+<li>One source file can hold any number of classes.</li>
+<li>At most <b>one</b> of them may be <code>public</code>, and the file must then be named after that class.</li>
+<li>If no class is public, the file can have any name.</li>
+<li>The compiler creates one <code>.class</code> file for every class, interface and enum in the file.</li>
+<li>You can run any class that has a proper <code>main</code>.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Three classes, one file, three .class files · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">A</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">System</span>.out.println(<span class="s">"A's main"</span>); }
+}
+<span class="k">class</span> <span class="t">B</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">System</span>.out.println(<span class="s">"B's main"</span>); }
+}
+<span class="k">class</span> <span class="t">C</span> { }</pre><div class="out"><span>Output</span><pre>A's main</pre></div></div>
+<pre class="cmdline">javac Test.java     → creates A.class, B.class and C.class
+java A              → A's main
+java B              → B's main
+java C              → Error: Main method not found in class C
+java D              → Error: Could not find or load main class D</pre>
+<div class="tip">Keep one class per file and name the file after it. It makes code much easier to find, and every team expects it.</div>
+</section>
+
+<section class="card reveal jsec" id="import" data-say="import"><div class="sec-num">Part 2</div><h2><span class="sec-em">📥</span><span>The import statement</span></h2>
+<p>Without an import you must write the full name of a class every time: <code>java.util.ArrayList&lt;String&gt; list = new java.util.ArrayList&lt;&gt;();</code>. An import lets you use the short name.</p>
+<div class="grid2">
+<div class="box"><h4>Explicit import</h4><code>import java.util.ArrayList;</code><p>Names one class. Recommended, because a reader sees exactly where each class comes from.</p></div>
+<div class="box"><h4>Wildcard import</h4><code>import java.util.*;</code><p>Brings every class of one package. Shorter, but can cause ambiguity.</p></div>
+</div>
+<h3>Rules worth remembering</h3>
+<ol>
+<li><code>java.lang</code> and the current package are imported automatically. That is why <code>String</code> and <code>System</code> need no import.</li>
+<li>A wildcard does not reach into sub-packages. <code>import java.util.*;</code> does not import <code>java.util.regex.Pattern</code>.</li>
+<li>When two wildcards offer the same class name, using that name is an error. An explicit import wins over a wildcard.</li>
+<li>Imports exist only at compile time. They do not load anything or slow your program at run time. Java loads classes only when they are first used, which is called <b>dynamic loading</b>, unlike C's <code>#include</code> which copies headers in.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Date lives in two packages · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.util.*;
+<span class="k">import</span> java.sql.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Date</span> d = <span class="k">new</span> <span class="t">Date</span>();
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>reference to Date is ambiguous
+both class java.sql.Date in java.sql and class java.util.Date in java.util match</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An explicit import settles it · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.util.*;
+<span class="k">import</span> java.sql.*;
+<span class="k">import</span> java.util.<span class="t">Date</span>;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Date</span> d = <span class="k">new</span> <span class="t">Date</span>(<span class="n">0</span>);
+        <span class="t">System</span>.out.println(d.getClass().getName());
+    }
+}</pre><div class="out"><span>Output</span><pre>java.util.Date</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Wildcards skip sub-packages · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.util.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Pattern</span> p = <span class="t">Pattern</span>.compile(<span class="s">"a+"</span>);
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>cannot find symbol
+symbol:   class Pattern</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="static-import" data-say="static-import"><div class="sec-num">Part 3</div><h2><span class="sec-em">⚡</span><span>Static import</span></h2>
+<p>Java 5 added <b>static import</b>, which lets you use static members without writing the class name.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Math and System without their class names · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> <span class="k">static</span> java.lang.<span class="t">Math</span>.*;
+<span class="k">import</span> <span class="k">static</span> java.lang.<span class="t">System</span>.out;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        out.println(sqrt(<span class="n">16</span>) + <span class="s">" "</span> + max(<span class="n">10</span>, <span class="n">20</span>) + <span class="s">" "</span> + <span class="t">PI</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>4.0 20 3.141592653589793</pre></div></div>
+<ul>
+<li>Normal import: <code>import pack.Class;</code> or <code>import pack.*;</code></li>
+<li>Static import: <code>import static pack.Class.member;</code> or <code>import static pack.Class.*;</code></li>
+</ul>
+<div class="rule">When the same static name is available from several places, Java picks in this order: a member of the current class first, then an explicit static import, then a wildcard static import.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The current class wins · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> <span class="k">static</span> java.lang.<span class="t">Integer</span>.<span class="t">MAX_VALUE</span>;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> <span class="t">MAX_VALUE</span> = <span class="n">999</span>;
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="t">MAX_VALUE</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>999</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two wildcards with the same name · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> <span class="k">static</span> java.lang.<span class="t">Integer</span>.*;
+<span class="k">import</span> <span class="k">static</span> java.lang.<span class="t">Byte</span>.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="t">MAX_VALUE</span>);
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>reference to MAX_VALUE is ambiguous
+both variable MAX_VALUE in Byte and variable MAX_VALUE in Integer match</pre></div></div>
+<div class="warn">Static imports save typing but can hide where a name comes from. Use them sparingly, for things like <code>Math</code> functions or test assertions.</div>
+</section>
+
+<section class="card reveal jsec" id="packages" data-say="packages"><div class="sec-num">Part 4</div><h2><span class="sec-em">📦</span><span>Packages</span></h2>
+<p>A <b>package</b> groups related classes and interfaces, the way folders group files. It solves name clashes, improves modularity and adds a layer of access control.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A class inside a package · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">package</span> com.brainybytes.demo;
+<span class="k">public</span> <span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="s">"Hello from "</span> + <span class="t">Main</span>.<span class="k">class</span>.getName());
+    }
+}</pre><div class="out"><span>Output</span><pre>Hello from com.brainybytes.demo.Main</pre></div></div>
+<pre class="cmdline">javac -d . Main.java                   → creates com/brainybytes/demo/Main.class
+java com.brainybytes.demo.Main         → run it with its fully qualified name</pre>
+<ul>
+<li>Package names are lowercase reversed internet domains, such as <code>com.icicibank.loans</code>, so they never clash between companies.</li>
+<li><code>-d</code> tells the compiler where to put the package folders. <code>.</code> means the current folder.</li>
+<li>A file may have at most <b>one</b> package statement, and it must be the very first statement (comments may come before it).</li>
+</ul>
+<div class="rule">The order of a source file is fixed: at most one <code>package</code>, then any number of <code>import</code> lines, then the classes, interfaces and enums. An empty file is also a valid Java file.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Import before package · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.util.*;
+<span class="k">package</span> demo;
+<span class="k">class</span> <span class="t">Main</span> { }</pre><div class="err"><span>❌ Compile error</span><pre>class, interface, enum, or record expected</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="class-modifiers" data-say="class-modifiers"><div class="sec-num">Part 5</div><h2><span class="sec-em">🏛️</span><span>Class level modifiers</span></h2>
+<p>A top level class may use only these modifiers: <code>public</code>, default (no word), <code>final</code>, <code>abstract</code> and <code>strictfp</code>. Inner classes may also be <code>private</code>, <code>protected</code> and <code>static</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A top level class cannot be private · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">private</span> <span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { }
+}</pre><div class="err"><span>❌ Compile error</span><pre>modifier private not allowed here</pre></div></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Class modifier</th><th>Meaning</th></tr>
+<tr><td><code>public</code></td><td>usable from any package</td></tr>
+<tr><td>default</td><td>usable only inside its own package (package-private)</td></tr>
+<tr><td><code>final</code></td><td>nobody can extend it. <code>String</code> and every wrapper class are final</td></tr>
+<tr><td><code>abstract</code></td><td>nobody can create objects of it directly. It exists to be extended</td></tr>
+<tr><td><code>strictfp</code></td><td>historic: forced strict IEEE floating point (see below)</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A default class is invisible outside its package · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="c">// File: pack1/A.java</span>
+<span class="k">package</span> pack1;
+<span class="k">class</span> <span class="t">A</span> {
+    <span class="k">public</span> <span class="k">void</span> m() { <span class="t">System</span>.out.println(<span class="s">"A.m"</span>); }
+}
+<span class="c">// File: pack2/B.java</span>
+<span class="k">package</span> pack2;
+<span class="k">import</span> pack1.<span class="t">A</span>;
+<span class="k">public</span> <span class="k">class</span> <span class="t">B</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="k">new</span> <span class="t">A</span>().m(); }
+}</pre><div class="err"><span>❌ Compile error</span><pre>A is not public in pack1; cannot be accessed from outside package</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Make it public and it works · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="c">// File: pack1/A.java</span>
+<span class="k">package</span> pack1;
+<span class="k">public</span> <span class="k">class</span> <span class="t">A</span> {
+    <span class="k">public</span> <span class="k">void</span> m() { <span class="t">System</span>.out.println(<span class="s">"A.m from another package"</span>); }
+}
+<span class="c">// File: pack2/B.java</span>
+<span class="k">package</span> pack2;
+<span class="k">import</span> pack1.<span class="t">A</span>;
+<span class="k">public</span> <span class="k">class</span> <span class="t">B</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="k">new</span> <span class="t">A</span>().m(); }
+}</pre><div class="out"><span>Output</span><pre>A.m from another package</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="final" data-say="final"><div class="sec-num">Part 6</div><h2><span class="sec-em">🔒</span><span>final</span></h2>
+<div class="grid2">
+<div class="box"><h4>final class</h4><p>Cannot be extended. Every method inside is effectively final too, but its variables need not be.</p></div>
+<div class="box"><h4>final method</h4><p>Cannot be overridden by a child class.</p></div>
+<div class="box"><h4>final variable</h4><p>Cannot be reassigned once it has a value. For a reference, the reference is fixed, but the object can still change.</p></div>
+</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Extending a final class · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">final</span> <span class="k">class</span> <span class="t">P</span> { }
+<span class="k">class</span> <span class="t">C</span> <span class="k">extends</span> <span class="t">P</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { }
+}</pre><div class="err"><span>❌ Compile error</span><pre>cannot inherit from final P</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Overriding a final method · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">P</span> {
+    <span class="k">public</span> <span class="k">final</span> <span class="k">void</span> marry() { <span class="t">System</span>.out.println(<span class="s">"arranged"</span>); }
+}
+<span class="k">class</span> <span class="t">C</span> <span class="k">extends</span> <span class="t">P</span> {
+    <span class="k">public</span> <span class="k">void</span> marry() { <span class="t">System</span>.out.println(<span class="s">"love"</span>); }
+}</pre><div class="err"><span>❌ Compile error</span><pre>marry() in C cannot override marry() in P
+overridden method is final</pre></div></div>
+<h3>final instance and static variables</h3>
+<p>JVM does not give final fields a default value. You must assign them yourself, exactly once, at one of these places:</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>final instance variable</th><th>final static variable</th></tr>
+<tr><td>at the declaration</td><td>at the declaration</td></tr>
+<tr><td>inside an instance block <code>{ }</code></td><td>inside a static block <code>static { }</code></td></tr>
+<tr><td>inside every constructor</td><td></td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A final field nobody assigns · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">final</span> <span class="k">int</span> x;
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { }
+}</pre><div class="err"><span>❌ Compile error</span><pre>variable x not initialized in the default constructor</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Assigned in the constructor · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">final</span> <span class="k">int</span> x;
+    <span class="t">Main</span>() { x = <span class="n">42</span>; }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="k">new</span> <span class="t">Main</span>().x);
+    }
+}</pre><div class="out"><span>Output</span><pre>42</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A final reference, a changing object · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">final</span> <span class="t">List</span>&lt;<span class="t">String</span>&gt; bag = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();
+bag.add(<span class="s">"apple"</span>);          <span class="c">// fine: the object changes</span>
+bag.add(<span class="s">"mango"</span>);
+<span class="t">System</span>.out.println(bag);
+<span class="c">// bag = new ArrayList&lt;&gt;(); would not compile: the reference is fixed</span></pre><div class="out"><span>Output</span><pre>[apple, mango]</pre></div></div>
+<div class="tip">A <code>final</code> method parameter cannot be reassigned inside the method. Local variables that are final behave like constants once set.</div>
+</section>
+
+<section class="card reveal jsec" id="abstract" data-say="abstract"><div class="sec-num">Part 7</div><h2><span class="sec-em">🧩</span><span>abstract</span></h2>
+<p>An <b>abstract method</b> says what a child must do, without saying how. It has no body and ends with a semicolon. An <b>abstract class</b> is a class that may contain such methods and cannot be instantiated.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A partial plan, completed by children · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">abstract</span> <span class="k">class</span> <span class="t">Vehicle</span> {
+    <span class="k">abstract</span> <span class="k">int</span> wheels();                         <span class="c">// what, not how</span>
+    <span class="k">void</span> describe() { <span class="t">System</span>.out.println(getClass().getSimpleName() + <span class="s">" has "</span> + wheels() + <span class="s">" wheels"</span>); }
+}
+<span class="k">class</span> <span class="t">Bus</span> <span class="k">extends</span> <span class="t">Vehicle</span> { <span class="k">int</span> wheels() { <span class="k">return</span> <span class="n">6</span>; } }
+<span class="k">class</span> <span class="t">Auto</span> <span class="k">extends</span> <span class="t">Vehicle</span> { <span class="k">int</span> wheels() { <span class="k">return</span> <span class="n">3</span>; } }
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">new</span> <span class="t">Bus</span>().describe();
+        <span class="k">new</span> <span class="t">Auto</span>().describe();
+    }
+}</pre><div class="out"><span>Output</span><pre>Bus has 6 wheels
+Auto has 3 wheels</pre></div></div>
+<h3>Rules</h3>
+<ol>
+<li>A class with at least one abstract method must be declared abstract.</li>
+<li>An abstract class may have zero abstract methods. <code>HttpServlet</code> is a famous example, abstract only so nobody creates it directly.</li>
+<li>A child class must implement every abstract method, or be abstract itself.</li>
+<li>Abstract classes can still have constructors, fields and normal methods. The constructor runs when a child object is created.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Cannot create an abstract class · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">abstract</span> <span class="k">class</span> <span class="t">Shape</span> { }
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">Shape</span> s = <span class="k">new</span> <span class="t">Shape</span>(); }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Shape is abstract; cannot be instantiated</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Forgot to implement · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">abstract</span> <span class="k">class</span> <span class="t">Shape</span> { <span class="k">abstract</span> <span class="k">double</span> area(); }
+<span class="k">class</span> <span class="t">Circle</span> <span class="k">extends</span> <span class="t">Shape</span> { }</pre><div class="err"><span>❌ Compile error</span><pre>Circle is not abstract and does not override abstract method area() in Shape</pre></div></div>
+<div class="exam"><code>abstract</code> never talks about implementation, so it clashes with modifiers that do: <code>final</code>, <code>static</code>, <code>private</code>, <code>synchronized</code>, <code>native</code> and <code>strictfp</code> (in older Java). <code>abstract final</code> is the most common trap: one says "must be overridden", the other says "can never be overridden".</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">abstract and final together · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">abstract</span> <span class="k">class</span> <span class="t">Shape</span> {
+    <span class="k">abstract</span> <span class="k">final</span> <span class="k">void</span> draw();
+}</pre><div class="err"><span>❌ Compile error</span><pre>illegal combination of modifiers: abstract and final</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="member-modifiers" data-say="member-modifiers"><div class="sec-num">Part 8</div><h2><span class="sec-em">👀</span><span>public, protected, default and private</span></h2>
+<p>These four control who can see a field, method or constructor. From most restricted to most open:</p>
+<span class="eq">private &lt; default &lt; protected &lt; public</span>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Accessed from</th><th>private</th><th>default</th><th>protected</th><th>public</th></tr>
+<tr><td>the same class</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+<tr><td>another class, same package</td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+<tr><td>a child class, other package</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓ (through the child reference only)</td><td class="yes">✓</td></tr>
+<tr><td>a non-child class, other package</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td></tr>
+</table></div></div>
+<div class="rule">The class itself must be visible first. A public method inside a default class is still unreachable from another package.</div>
+<h3>The protected twist</h3>
+<p>Outside the package, a child class can reach a protected member only through its own type (or its own children), never through a parent reference.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Through the child reference: allowed · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="c">// File: pack1/A.java</span>
+<span class="k">package</span> pack1;
+<span class="k">public</span> <span class="k">class</span> <span class="t">A</span> {
+    <span class="k">protected</span> <span class="k">void</span> m() { <span class="t">System</span>.out.println(<span class="s">"protected m"</span>); }
+}
+<span class="c">// File: pack2/B.java</span>
+<span class="k">package</span> pack2;
+<span class="k">import</span> pack1.<span class="t">A</span>;
+<span class="k">public</span> <span class="k">class</span> <span class="t">B</span> <span class="k">extends</span> <span class="t">A</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">B</span> b = <span class="k">new</span> <span class="t">B</span>();
+        b.m();
+    }
+}</pre><div class="out"><span>Output</span><pre>protected m</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Through a parent reference: refused · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="c">// File: pack1/A.java</span>
+<span class="k">package</span> pack1;
+<span class="k">public</span> <span class="k">class</span> <span class="t">A</span> {
+    <span class="k">protected</span> <span class="k">void</span> m() { <span class="t">System</span>.out.println(<span class="s">"protected m"</span>); }
+}
+<span class="c">// File: pack2/B.java</span>
+<span class="k">package</span> pack2;
+<span class="k">import</span> pack1.<span class="t">A</span>;
+<span class="k">public</span> <span class="k">class</span> <span class="t">B</span> <span class="k">extends</span> <span class="t">A</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">A</span> a = <span class="k">new</span> <span class="t">A</span>();
+        a.m();
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>m() has protected access in A</pre></div></div>
+<div class="tip">Common practice: fields <code>private</code>, the methods others need <code>public</code>, and <code>protected</code> only for hooks meant for subclasses.</div>
+</section>
+
+<section class="card reveal jsec" id="other-modifiers" data-say="other-modifiers"><div class="sec-num">Part 9</div><h2><span class="sec-em">🧰</span><span>static, native, synchronized, transient, volatile, strictfp</span></h2>
+<h3>static</h3>
+<p>A <code>static</code> member belongs to the class, not to any object. It can be used through the class name without creating an object. Static code cannot touch instance members directly, because there may be no object at all.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Instance field from a static method · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">int</span> x = <span class="n">10</span>;
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(x);
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>non-static variable x cannot be referenced from a static context</pre></div></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Can I use</th><th>from an instance method</th><th>from a static method</th></tr>
+<tr><td>an instance member</td><td class="yes">yes</td><td class="no">no (needs an object)</td></tr>
+<tr><td>a static member</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+</table></div></div>
+<p>Static methods can be overloaded and are inherited, but they cannot be overridden. A child with the same static method <b>hides</b> the parent's version (covered in the OOP chapter).</p>
+<h3>native</h3>
+<p>A <code>native</code> method is written in another language such as C, and connected through the Java Native Interface. Its declaration ends with a semicolon, like <code>public native int hashCode();</code> in <code>Object</code>.</p>
+<h3>synchronized</h3>
+<p>Only one thread at a time may run a <code>synchronized</code> method or block on the same object. It prevents data from getting mixed up, at the cost of waiting threads. See the Multithreading chapter.</p>
+<h3>transient</h3>
+<p>A <code>transient</code> field is skipped during serialization. Passwords are the usual example. See the Serialization chapter.</p>
+<h3>volatile</h3>
+<p>A <code>volatile</code> field is always read from and written to main memory, so every thread sees the latest value. It does not make compound actions like <code>count++</code> safe.</p>
+<h3>strictfp</h3>
+<p><code>strictfp</code> used to force strict IEEE floating point on every platform. Since Java 17 all floating point is strict anyway, so the keyword is obsolete and gives a warning.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Modifier</th><th>Class</th><th>Method</th><th>Variable</th><th>Block</th></tr>
+<tr><td>static</td><td>inner only</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+<tr><td>native</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+<tr><td>synchronized</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td><td class="yes">✓</td></tr>
+<tr><td>transient</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td></tr>
+<tr><td>volatile</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td></tr>
+<tr><td>strictfp</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+</table></div></div>
+<div class="fun">The only modifier allowed on a local variable is <code>final</code>. The only modifiers that work for constructors are the four access levels.</div>
+</section>
+
+<section class="card reveal jsec" id="interfaces" data-say="interfaces"><div class="sec-num">Part 10</div><h2><span class="sec-em">🔌</span><span>Interfaces</span></h2>
+<p>An <b>interface</b> is a contract: a list of services a class promises to provide. The person using it only needs the contract, not the implementation. JDBC is a classic example: Java defines interfaces like <code>Connection</code>, and each database vendor writes the classes.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One contract, two implementations · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Payment</span> {
+    <span class="k">void</span> pay(<span class="k">int</span> amount);
+}
+<span class="k">class</span> <span class="t">Upi</span> <span class="k">implements</span> <span class="t">Payment</span> {
+    <span class="k">public</span> <span class="k">void</span> pay(<span class="k">int</span> amount) { <span class="t">System</span>.out.println(<span class="s">"UPI paid "</span> + amount); }
+}
+<span class="k">class</span> <span class="t">Card</span> <span class="k">implements</span> <span class="t">Payment</span> {
+    <span class="k">public</span> <span class="k">void</span> pay(<span class="k">int</span> amount) { <span class="t">System</span>.out.println(<span class="s">"Card paid "</span> + amount); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Payment</span>[] options = { <span class="k">new</span> <span class="t">Upi</span>(), <span class="k">new</span> <span class="t">Card</span>() };
+        <span class="k">for</span> (<span class="t">Payment</span> p : options) p.pay(<span class="n">250</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>UPI paid 250
+Card paid 250</pre></div></div>
+<h3>Rules for interface members</h3>
+<ul>
+<li>Every method without a body is automatically <code>public abstract</code>.</li>
+<li>Every variable is automatically <code>public static final</code>, so it must be initialized and can never change.</li>
+<li>A class that implements an interface must make the methods <code>public</code>, or be abstract.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Implementing without public · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Greeter</span> { <span class="k">void</span> greet(); }
+<span class="k">class</span> <span class="t">Main</span> <span class="k">implements</span> <span class="t">Greeter</span> {
+    <span class="k">void</span> greet() { <span class="t">System</span>.out.println(<span class="s">"hi"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { }
+}</pre><div class="err"><span>❌ Compile error</span><pre>greet() in Main cannot implement greet() in Greeter
+attempting to assign weaker access privileges; was public</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Interface variables are constants · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Limits</span> { <span class="k">int</span> <span class="t">MAX</span> = <span class="n">10</span>; }
+<span class="k">class</span> <span class="t">Main</span> <span class="k">implements</span> <span class="t">Limits</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">MAX</span> = <span class="n">20</span>; }
+}</pre><div class="err"><span>❌ Compile error</span><pre>cannot assign a value to static final variable MAX</pre></div></div>
+<h3>extends and implements</h3>
+<ul>
+<li>A class extends one class only.</li>
+<li>A class can implement any number of interfaces, and extend a class at the same time (extends comes first).</li>
+<li>An interface can extend any number of interfaces, but never implements anything.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Java snippet</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Phone</span> <span class="k">extends</span> <span class="t">Device</span> <span class="k">implements</span> <span class="t">Camera</span>, <span class="t">MusicPlayer</span> { }
+<span class="k">interface</span> <span class="t">SmartTv</span> <span class="k">extends</span> <span class="t">Display</span>, <span class="t">Speaker</span> { }</pre></div>
+<div class="modern">Java 8 lets interfaces contain <b>default</b> methods (with a body that implementing classes inherit) and <b>static</b> methods. Java 9 added <b>private</b> methods to share code between defaults. Interfaces still cannot hold instance fields or constructors.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Default and static methods in an interface · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Greeter</span> {
+    <span class="t">String</span> name();
+    <span class="k">default</span> <span class="t">String</span> greet() { <span class="k">return</span> <span class="s">"Hello, "</span> + name() + emoji(); }
+    <span class="k">static</span> <span class="t">Greeter</span> of(<span class="t">String</span> n) { <span class="k">return</span> () -&gt; n; }
+    <span class="k">private</span> <span class="t">String</span> emoji() { <span class="k">return</span> <span class="s">" 👋"</span>; }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="t">Greeter</span>.of(<span class="s">"Asha"</span>).greet());
+    }
+}</pre><div class="out"><span>Output</span><pre>Hello, Asha 👋</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="interface-conflicts" data-say="interface-conflicts"><div class="sec-num">Part 11</div><h2><span class="sec-em">⚔️</span><span>Naming conflicts in interfaces</span></h2>
+<h3>Methods</h3>
+<p>If two interfaces declare the same method with the same signature and return type, one implementation in the class satisfies both. If they have the same signature but different return types, no class can implement both.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One method satisfies two interfaces · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Left</span> { <span class="k">void</span> m(); }
+<span class="k">interface</span> <span class="t">Right</span> { <span class="k">void</span> m(); }
+<span class="k">class</span> <span class="t">Main</span> <span class="k">implements</span> <span class="t">Left</span>, <span class="t">Right</span> {
+    <span class="k">public</span> <span class="k">void</span> m() { <span class="t">System</span>.out.println(<span class="s">"one m for both"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="k">new</span> <span class="t">Main</span>().m(); }
+}</pre><div class="out"><span>Output</span><pre>one m for both</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Same name, different return types · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Left</span> { <span class="k">void</span> m(); }
+<span class="k">interface</span> <span class="t">Right</span> { <span class="k">int</span> m(); }
+<span class="k">class</span> <span class="t">Main</span> <span class="k">implements</span> <span class="t">Left</span>, <span class="t">Right</span> {
+    <span class="k">public</span> <span class="k">void</span> m() { }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Main is not abstract and does not override abstract method m() in Right</pre></div></div>
+<h3>Variables</h3>
+<p>If two interfaces define a constant with the same name, using the plain name is ambiguous. Use the interface name to say which one you mean.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Ambiguous constant · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Left</span> { <span class="k">int</span> x = <span class="n">777</span>; }
+<span class="k">interface</span> <span class="t">Right</span> { <span class="k">int</span> x = <span class="n">888</span>; }
+<span class="k">class</span> <span class="t">Main</span> <span class="k">implements</span> <span class="t">Left</span>, <span class="t">Right</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">System</span>.out.println(x); }
+}</pre><div class="err"><span>❌ Compile error</span><pre>reference to x is ambiguous
+both variable x in Left and variable x in Right match</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Qualify it · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Left</span> { <span class="k">int</span> x = <span class="n">777</span>; }
+<span class="k">interface</span> <span class="t">Right</span> { <span class="k">int</span> x = <span class="n">888</span>; }
+<span class="k">class</span> <span class="t">Main</span> <span class="k">implements</span> <span class="t">Left</span>, <span class="t">Right</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="t">System</span>.out.println(<span class="t">Left</span>.x + <span class="s">" "</span> + <span class="t">Right</span>.x); }
+}</pre><div class="out"><span>Output</span><pre>777 888</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="marker-adapter" data-say="marker-adapter"><div class="sec-num">Part 12</div><h2><span class="sec-em">🏷️</span><span>Marker interfaces and adapter classes</span></h2>
+<h3>Marker interfaces</h3>
+<p>A <b>marker</b> interface has no methods at all. Implementing it simply tags your class with an ability that the JVM or a library checks for.</p>
+<ul>
+<li><code>Serializable</code>: objects may be saved to a file or sent over a network.</li>
+<li><code>Cloneable</code>: <code>Object.clone()</code> may copy the object.</li>
+<li><code>RandomAccess</code>: the list supports fast access by index.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">clone without Cloneable · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Sheep</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Sheep</span> dolly = <span class="k">new</span> <span class="t">Sheep</span>();
+        <span class="t">Object</span> copy = dolly.clone();
+    }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.CloneNotSupportedException: Sheep</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Add the marker and it works · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Sheep</span> <span class="k">implements</span> <span class="t">Cloneable</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Sheep</span> dolly = <span class="k">new</span> <span class="t">Sheep</span>();
+        <span class="t">Object</span> copy = dolly.clone();
+        <span class="t">System</span>.out.println(copy != dolly);
+    }
+}</pre><div class="out"><span>Output</span><pre>true</pre></div></div>
+<h3>Adapter classes</h3>
+<p>An interface with many methods forces you to write all of them, even the ones you do not need. An <b>adapter</b> is an abstract class that implements the interface with empty bodies, so you override only what you care about. <code>GenericServlet</code> and the Swing <code>WindowAdapter</code> are well known adapters.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Override only what you need · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Remote</span> {
+    <span class="k">void</span> powerOn(); <span class="k">void</span> powerOff(); <span class="k">void</span> volumeUp(); <span class="k">void</span> volumeDown(); <span class="k">void</span> mute();
+}
+<span class="k">abstract</span> <span class="k">class</span> <span class="t">RemoteAdapter</span> <span class="k">implements</span> <span class="t">Remote</span> {
+    <span class="k">public</span> <span class="k">void</span> powerOn() { } <span class="k">public</span> <span class="k">void</span> powerOff() { } <span class="k">public</span> <span class="k">void</span> volumeUp() { }
+    <span class="k">public</span> <span class="k">void</span> volumeDown() { } <span class="k">public</span> <span class="k">void</span> mute() { }
+}
+<span class="k">class</span> <span class="t">KidsRemote</span> <span class="k">extends</span> <span class="t">RemoteAdapter</span> {
+    <span class="k">public</span> <span class="k">void</span> volumeUp() { <span class="t">System</span>.out.println(<span class="s">"LOUDER!"</span>); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="k">new</span> <span class="t">KidsRemote</span>().volumeUp(); }
+}</pre><div class="out"><span>Output</span><pre>LOUDER!</pre></div></div>
+<div class="modern">With default methods, many adapters are no longer needed, because an interface can supply empty defaults itself. An interface with exactly one abstract method is a <b>functional interface</b> and can be written as a lambda.</div>
+</section>
+
+<section class="card reveal jsec" id="abstract-vs-interface" data-say="abstract-vs-interface"><div class="sec-num">Part 13</div><h2><span class="sec-em">🤔</span><span>Abstract class or interface</span></h2>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Question</th><th>Interface</th><th>Abstract class</th></tr>
+<tr><td>Use it when you know</td><td>only the requirements (what)</td><td>part of the implementation (how)</td></tr>
+<tr><td>Methods</td><td>abstract, plus default, static and private since Java 8 and 9</td><td>abstract and concrete</td></tr>
+<tr><td>Fields</td><td>always <code>public static final</code> constants</td><td>any kind, including instance fields</td></tr>
+<tr><td>Constructors</td><td>not allowed</td><td>allowed, run when a child object is created</td></tr>
+<tr><td>Instance or static blocks</td><td>not allowed</td><td>allowed</td></tr>
+<tr><td>Multiple inheritance</td><td>a class can implement many</td><td>a class can extend only one</td></tr>
+<tr><td>Method modifiers</td><td>public (or private for helpers)</td><td>any access level</td></tr>
+</table></div></div>
+<div class="exam">"An abstract class cannot be instantiated, so why does it have a constructor?" Because creating a child object runs the parent constructor too, which initializes the fields the abstract class defines.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An abstract class constructor runs for the child · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">abstract</span> <span class="k">class</span> <span class="t">Person</span> {
+    <span class="t">String</span> name;
+    <span class="t">Person</span>(<span class="t">String</span> name) { <span class="k">this</span>.name = name; <span class="t">System</span>.out.println(<span class="s">"Person constructor ran"</span>); }
+}
+<span class="k">class</span> <span class="t">Student</span> <span class="k">extends</span> <span class="t">Person</span> {
+    <span class="k">int</span> roll;
+    <span class="t">Student</span>(<span class="t">String</span> name, <span class="k">int</span> roll) { <span class="k">super</span>(name); <span class="k">this</span>.roll = roll; }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Student</span> s = <span class="k">new</span> <span class="t">Student</span>(<span class="s">"Kiran"</span>, <span class="n">7</span>);
+        <span class="t">System</span>.out.println(s.name + <span class="s">" "</span> + s.roll);
+    }
+}</pre><div class="out"><span>Output</span><pre>Person constructor ran
+Kiran 7</pre></div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./flow-control.html" data-topic="flow-control"><small>← Previous chapter</small><b>🔀 Flow Control</b></a><a class="next" href="./oops-concepts.html" data-topic="oops-concepts"><small>Next chapter →</small><b>🧬 OOP Concepts</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "A building with security levels", "panels": [{"s": [["e", "🏢"], ["c", ["pub", "prot", "def", "priv"], {"ix": false, "hl": {"0": "ok", "3": "bad"}}]], "h": "Four doors", "t": "public is the lobby, private is your own locker.", "more": "Visibility grows: private, then default (same package), then protected (plus children), then public (everyone)."}, {"s": [["e", "🔒"], ["t", "final = sealed with wax", {"b": 1}]], "h": "final seals things", "t": "A final class cannot be extended, a final method cannot be overridden, a final variable cannot be reassigned.", "more": "A final reference is fixed, but the object it points to can still change, like a locked address with a busy house."}, {"s": [["e", "📐"], ["t", "abstract = blueprint only", {"b": 1}]], "h": "abstract is a blueprint", "t": "You cannot live in a blueprint. A child class builds the real house.", "more": "abstract clashes with final, static, private, synchronized and native, because all of those talk about implementation."}, {"s": [["e", "🔌"], ["t", "interface = the socket shape", {"b": 1}]], "h": "interface is a contract", "t": "Any plug that fits the socket works. Callers only know the shape.", "more": "Methods are public abstract by default, fields are public static final, and a class can implement many interfaces."}], "remember": "Pick the smallest visibility that works. Use final to forbid change, abstract to demand completion, and interfaces to promise services."}, "real": [["🪪", "Office access cards", "The reception (public) is open to visitors, the floor (default) to staff of one company, the lab (protected) to staff and trusted interns, and your drawer (private) only to you."], ["🔌", "Plug sockets", "A socket is an interface: it only fixes the shape. A kettle, a phone charger and a lamp each implement it differently, and the wall never needs to know which one is plugged in."], ["📜", "A wedding invitation", "Once printed, a final invitation cannot be changed. You can still change what happens at the party (the object), just not which party the card points to (the reference)."]], "quiz": [{"lv": "e", "q": "How many public top level classes can one source file contain?", "o": ["None", "At most one", "At most two", "Any number"], "a": 1, "hint": "The file name is tied to the public class.", "why": "A file may contain at most one public top level class, and the file must be named after it. Other classes in the file must be default."}, {"lv": "e", "q": "Which package is imported into every Java file automatically?", "o": ["java.util", "java.io", "java.lang", "java.net"], "a": 2, "hint": "It holds String, System and Math.", "why": "<code>java.lang<\/code> (and the current package) are always available without an import."}, {"lv": "e", "q": "Every variable declared in an interface is automatically…", "o": ["private static", "public static final", "protected final", "public only"], "a": 1, "hint": "Interface fields are shared constants.", "why": "Interface variables are always <code>public static final<\/code>, so they are constants that must be initialized."}, {"lv": "m", "q": "Which modifier can <b>not<\/b> be used on a top level class?", "o": ["final", "abstract", "private", "strictfp"], "a": 2, "hint": "A top level class can only be public or package-private for access.", "why": "<code>private<\/code>, <code>protected<\/code> and <code>static<\/code> are only allowed on inner classes."}, {"lv": "m", "q": "Which combination is legal for a method?", "o": ["abstract final", "abstract static", "abstract public", "abstract private"], "a": 2, "hint": "abstract needs the method to be overridable and visible to children.", "why": "<code>public abstract<\/code> is the normal form. abstract clashes with final, static and private because each of them prevents overriding."}, {"lv": "m", "q": "What does this print?", "code": "import static java.lang.Integer.MAX_VALUE;\nclass Main {\n    static int MAX_VALUE = 999;\n    public static void main(String[] args) {\n        System.out.println(MAX_VALUE);\n    }\n}", "o": ["2147483647", "999", "Compile error: ambiguous", "0"], "a": 1, "run": 1, "hint": "Who wins: the current class or a static import?", "why": "A member of the current class beats any static import, so <code>MAX_VALUE<\/code> refers to the field with 999."}, {"lv": "h", "q": "A class in <code>pack2<\/code> extends <code>pack1.A<\/code>, which has <code>protected void m()<\/code>. Inside the child, which call compiles?", "o": ["<code>new A().m();<\/code>", "<code>A a = new B(); a.m();<\/code>", "<code>new B().m();<\/code>", "None of them"], "a": 2, "hint": "Across packages, protected members are reached only through the child type.", "why": "From another package, a child class can use a protected member only through a reference of its own type (or below). Calling through an A reference is refused, even if the object is a B."}, {"lv": "h", "q": "Where can a <code>final<\/code> instance variable get its value?", "o": ["Only at the declaration", "At the declaration, an instance block or every constructor", "Anywhere, but only once", "Only in a static block"], "a": 1, "hint": "It must be set before the object is fully built.", "why": "A final instance field must be assigned exactly once before construction finishes: at its declaration, in an instance initializer block, or in each constructor."}, {"lv": "h", "q": "What happens when you run this?", "code": "class Sheep {\n    public static void main(String[] args) throws Exception {\n        Object copy = new Sheep().clone();\n        System.out.println(\"cloned\");\n    }\n}", "o": ["Prints cloned", "Compile error", "CloneNotSupportedException", "NullPointerException"], "a": 2, "re": "CloneNotSupportedException", "hint": "Cloneable is a marker interface that Object.clone() checks for.", "why": "The code compiles because Sheep calls the protected clone() on itself. At run time Object.clone() sees that Sheep does not implement Cloneable and throws CloneNotSupportedException."}, {"lv": "x", "q": "Why does this not compile?", "code": "interface Left { void m(); }\ninterface Right { int m(); }\nclass Main implements Left, Right {\n    public void m() { }\n    public static void main(String[] args) { }\n}", "o": ["Interfaces cannot share method names", "One class cannot implement two interfaces", "No single method can return both void and int", "m() must be static"], "a": 2, "ce": 1, "hint": "Two methods with the same name and parameters must have compatible return types.", "why": "Same name and same parameters means one signature. A single method cannot have both return types, so the class cannot satisfy both interfaces."}, {"lv": "x", "q": "Which statement about interfaces in modern Java is <b>false<\/b>?", "o": ["They can have default methods", "They can have static methods", "They can have private methods", "They can have instance fields"], "a": 3, "hint": "Interfaces still cannot hold per-object state.", "why": "Since Java 8 and 9, interfaces can contain default, static and private methods. Fields are still always public static final, so there are no instance fields."}, {"lv": "x", "q": "What does this print?", "code": "import java.util.*;\nclass Main {\n    public static void main(String[] args) {\n        final List<Integer> nums = new ArrayList<>();\n        nums.add(1);\n        nums.add(2);\n        nums.remove(0);\n        System.out.println(nums);\n    }\n}", "o": ["[1, 2]", "[2]", "[1]", "Compile error: nums is final"], "a": 1, "run": 1, "hint": "final freezes the reference, not the object.", "why": "The list object can still change. <code>remove(0)<\/code> removes the element at index 0, so [2] is left. Only <code>nums = ...<\/code> would fail."}], "calc": [{"lv": "e", "q": "A source file holds 3 classes, 2 interfaces and 1 enum. How many <code>.class<\/code> files does <code>javac<\/code> create?", "ans": "6", "py": "3+2+1", "hint": "Each type gets its own .class file.", "steps": ["The compiler writes one .class file per top level type.", "<span class=\"eq\">3 + 2 + 1 = 6<\/span>"]}, {"lv": "e", "q": "How many access levels does Java have for members (count default too)?", "ans": "4", "py": "4", "hint": "Three keywords plus one without a keyword.", "steps": ["private, default (no keyword), protected and public.", "That makes 4 access levels."]}, {"lv": "m", "q": "What does this print?", "code": "interface Left { int x = 777; }\ninterface Right { int x = 888; }\nclass Main implements Left, Right {\n    public static void main(String[] args) {\n        System.out.println(Left.x + Right.x);\n    }\n}", "ans": "1665", "run": 1, "hint": "Both are ints, so + adds them.", "steps": ["<code>Left.x<\/code> is 777 and <code>Right.x<\/code> is 888.", "Both operands are int, so + is addition.", "<span class=\"eq\">777 + 888 = 1665<\/span>"]}, {"lv": "m", "q": "What does this print?", "code": "import static java.lang.Math.*;\nclass Main {\n    public static void main(String[] args) {\n        System.out.println((int) (sqrt(81) + pow(2, 5)));\n    }\n}", "ans": "41", "run": 1, "hint": "sqrt and pow both return doubles.", "steps": ["<span class=\"eq\">√81 = 9.0<\/span>", "<span class=\"eq\">2<sup>5<\/sup> = 32.0<\/span>", "<span class=\"eq\">(int)(9.0 + 32.0) = 41<\/span>"]}, {"lv": "h", "q": "What does this print?", "code": "abstract class Shape {\n    static int count = 0;\n    Shape() { count++; }\n    abstract double area();\n}\nclass Sq extends Shape {\n    double s;\n    Sq(double s) { this.s = s; }\n    double area() { return s * s; }\n}\nclass Main {\n    public static void main(String[] args) {\n        double total = 0;\n        for (int i = 1; i <= 3; i++) total += new Sq(i).area();\n        System.out.println(Shape.count + \" \" + total);\n    }\n}", "ans": "3 14.0", "run": 1, "hint": "The abstract constructor runs for every child object.", "steps": ["Each <code>new Sq(i)<\/code> runs the Shape constructor, so count becomes 3.", "<span class=\"eq\">1<sup>2<\/sup> + 2<sup>2<\/sup> + 3<sup>2<\/sup> = 1 + 4 + 9 = 14.0<\/span>", "Output: <code>3 14.0<\/code>"]}, {"lv": "h", "q": "A class implements 3 interfaces with 4, 2 and 3 abstract methods. One method appears with the same signature in two of them. How many methods must the class write?", "ans": "8", "py": "4+2+3-1", "hint": "A shared signature is satisfied once.", "steps": ["Total declarations: <span class=\"eq\">4 + 2 + 3 = 9<\/span>", "One signature is shared by two interfaces, so it is counted twice.", "<span class=\"eq\">9 − 1 = 8 methods<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "class Counter {\n    static int s = 0;\n    int i = 0;\n    Counter() { s++; i++; }\n}\nclass Main {\n    public static void main(String[] args) {\n        Counter a = new Counter(), b = new Counter(), c = new Counter();\n        System.out.println(a.s + b.s + c.s + a.i + b.i + c.i);\n    }\n}", "ans": "12", "run": 1, "hint": "There is one shared s, but each object has its own i.", "steps": ["Three objects were created, so the single static s ends at 3. Reading it through a, b or c gives 3 each time.", "Each object's own i is 1.", "<span class=\"eq\">3 + 3 + 3 + 1 + 1 + 1 = 12<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    static final int A;\n    final int b;\n    static { A = 5; }\n    { b = A * 2; }\n    Main() { System.out.print(b + A + \" \"); }\n    public static void main(String[] args) {\n        new Main(); new Main();\n        System.out.println(A);\n    }\n}", "ans": "15 15 5", "run": 1, "hint": "The static block runs once when the class loads. The instance block runs before each constructor.", "steps": ["Class loading runs the static block once: A = 5.", "For each object the instance block runs first: b = 5 × 2 = 10.", "The constructor prints <span class=\"eq\">b + A = 10 + 5 = 15<\/span>", "Two objects print \"15 15 \", then the last line prints A = 5.", "Output: <code>15 15 5<\/code>"]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to Declarations and Access Modifiers. Modifiers are the small words in front of classes and members. They decide who can see something, who can change it, and how it behaves.", "hi": "Declarations and Access Modifiers में आपका स्वागत है। Modifiers classes और members के आगे लिखे छोटे शब्द हैं। ये तय करते हैं कि कौन किसे देख सकता है, कौन बदल सकता है, और वह कैसे व्यवहार करता है।", "kn": "Declarations and Access Modifiers ಗೆ ಸ್ವಾಗತ. Modifiers ಎಂದರೆ classes ಮತ್ತು members ಮುಂದೆ ಬರೆಯುವ ಚಿಕ್ಕ ಪದಗಳು. ಯಾರು ನೋಡಬಹುದು, ಯಾರು ಬದಲಿಸಬಹುದು ಮತ್ತು ಅದು ಹೇಗೆ ವರ್ತಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ಅವು ನಿರ್ಧರಿಸುತ್ತವೆ.", "or": "Declarations and Access Modifiers କୁ ସ୍ୱାଗତ। Modifiers ହେଉଛି classes ଏବଂ members ଆଗରେ ଲେଖାଯାଉଥିବା ଛୋଟ ଶବ୍ଦ। ଏଗୁଡ଼ିକ ସ୍ଥିର କରେ ଯେ କିଏ ଦେଖିପାରିବ, କିଏ ବଦଳାଇପାରିବ, ଏବଂ ଏହା କିପରି ବ୍ୟବହାର କରିବ।", "ar": "مرحبًا بك في فصل التصريحات ومعدّلات الوصول. المعدّلات كلمات صغيرة توضع قبل الأصناف والأعضاء، وهي تحدد من يستطيع رؤية الشيء ومن يستطيع تغييره وكيف يتصرف.", "de": "Willkommen bei Deklarationen und Zugriffsmodifizierern. Modifizierer sind die kleinen Wörter vor Klassen und Membern. Sie bestimmen, wer etwas sehen darf, wer es ändern darf und wie es sich verhält."}, {"id": "source-file", "h": "Source file structure", "en": "One file can hold many classes, but at most one can be public, and then the file must carry its name. The compiler makes one dot class file per class.", "hi": "एक file में कई classes हो सकती हैं, लेकिन ज़्यादा से ज़्यादा एक public हो सकती है, और तब file का नाम उसी class का होना चाहिए। Compiler हर class के लिए एक dot class file बनाता है।", "kn": "ಒಂದು file ನಲ್ಲಿ ಹಲವು classes ಇರಬಹುದು, ಆದರೆ ಗರಿಷ್ಠ ಒಂದು ಮಾತ್ರ public ಆಗಿರಬಹುದು, ಆಗ file ಗೆ ಅದರ ಹೆಸರೇ ಇರಬೇಕು. Compiler ಪ್ರತಿ class ಗೆ ಒಂದು dot class file ತಯಾರಿಸುತ್ತದೆ.", "or": "ଗୋଟିଏ file ରେ ଅନେକ classes ରହିପାରେ, କିନ୍ତୁ ଅଧିକରୁ ଅଧିକ ଗୋଟିଏ public ହୋଇପାରେ, ଏବଂ ସେତେବେଳେ file ର ନାମ ସେହି class ର ହେବା ଉଚିତ। Compiler ପ୍ରତ୍ୟେକ class ପାଇଁ ଗୋଟିଏ dot class file ତିଆରି କରେ।", "ar": "يمكن أن يحتوي الملف الواحد على أصناف كثيرة، لكن صنفًا واحدًا على الأكثر يكون public، وعندها يجب أن يحمل الملف اسمه. وينشئ المترجم ملف class واحدًا لكل صنف.", "de": "Eine Datei kann viele Klassen enthalten, aber höchstens eine darf public sein, und dann muss die Datei ihren Namen tragen. Der Compiler erzeugt für jede Klasse eine eigene class-Datei."}, {"id": "import", "h": "Import", "en": "An import lets you use a short class name. java dot lang and the current package are imported automatically. A wildcard does not include sub packages, and an explicit import beats a wildcard when names clash.", "hi": "Import से आप class का छोटा नाम इस्तेमाल कर सकते हैं। java dot lang और मौजूदा package अपने आप import होते हैं। Wildcard sub packages को शामिल नहीं करता, और नाम टकराने पर explicit import wildcard से जीतता है।", "kn": "Import ಮೂಲಕ class ನ ಚಿಕ್ಕ ಹೆಸರು ಬಳಸಬಹುದು. java dot lang ಮತ್ತು ಈಗಿನ package ತಾನಾಗಿಯೇ import ಆಗುತ್ತವೆ. Wildcard sub packages ಅನ್ನು ಒಳಗೊಳ್ಳುವುದಿಲ್ಲ, ಮತ್ತು ಹೆಸರುಗಳು ಘರ್ಷಿಸಿದಾಗ explicit import wildcard ಗಿಂತ ಮೇಲು.", "or": "Import ଦ୍ୱାରା ଆପଣ class ର ଛୋଟ ନାମ ବ୍ୟବହାର କରିପାରିବେ। java dot lang ଏବଂ ବର୍ତ୍ତମାନର package ନିଜେ import ହୁଏ। Wildcard sub packages କୁ ସାମିଲ କରେ ନାହିଁ, ଏବଂ ନାମ ଟକରାଇଲେ explicit import wildcard ଠାରୁ ଜିତେ।", "ar": "يتيح لك import استخدام الاسم القصير للصنف. تُستورد الحزمة java.lang والحزمة الحالية تلقائيًا. الاستيراد الشامل لا يشمل الحزم الفرعية، والاستيراد الصريح يتغلب على الشامل عند تشابه الأسماء.", "de": "Ein Import erlaubt den kurzen Klassennamen. java.lang und das aktuelle Paket werden automatisch importiert. Ein Wildcard-Import umfasst keine Unterpakete, und bei Namenskonflikten gewinnt der explizite Import."}, {"id": "static-import", "h": "Static import", "en": "Static import lets you call static members like sqrt or out without the class name. If names clash, a member of the current class wins, then an explicit static import, then a wildcard. Use it sparingly.", "hi": "Static import से आप sqrt या out जैसे static members को class के नाम के बिना बुला सकते हैं। नाम टकराएँ तो पहले मौजूदा class का member जीतता है, फिर explicit static import, फिर wildcard। इसका इस्तेमाल कम कीजिए।", "kn": "Static import ಮೂಲಕ sqrt ಅಥವಾ out ನಂತಹ static members ಅನ್ನು class ಹೆಸರಿಲ್ಲದೆ ಕರೆಯಬಹುದು. ಹೆಸರುಗಳು ಘರ್ಷಿಸಿದರೆ ಮೊದಲು ಈಗಿನ class ನ member, ನಂತರ explicit static import, ನಂತರ wildcard ಗೆಲ್ಲುತ್ತದೆ. ಇದನ್ನು ಮಿತವಾಗಿ ಬಳಸಿ.", "or": "Static import ଦ୍ୱାରା sqrt କିମ୍ବା out ଭଳି static members କୁ class ନାମ ବିନା ଡାକିପାରିବେ। ନାମ ଟକରାଇଲେ ପ୍ରଥମେ ବର୍ତ୍ତମାନ class ର member ଜିତେ, ତା ପରେ explicit static import, ତା ପରେ wildcard। ଏହାକୁ କମ ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "الاستيراد الساكن يتيح لك استدعاء الأعضاء الساكنة مثل sqrt أو out دون اسم الصنف. عند تشابه الأسماء يفوز عضو الصنف الحالي، ثم الاستيراد الساكن الصريح، ثم الشامل. استخدمه باعتدال.", "de": "Mit statischem Import rufst du statische Member wie sqrt oder out ohne Klassennamen auf. Bei Namenskonflikten gewinnt zuerst ein Member der eigenen Klasse, dann ein expliziter statischer Import, dann ein Wildcard. Setze ihn sparsam ein."}, {"id": "packages", "h": "Packages", "en": "A package groups related classes like a folder. Names use the reversed company domain. The package statement must be the first statement, followed by imports and then classes.", "hi": "Package संबंधित classes को folder की तरह समूहित करता है। नाम कंपनी के उल्टे domain से बनते हैं। Package statement सबसे पहला statement होना चाहिए, उसके बाद imports और फिर classes।", "kn": "Package ಸಂಬಂಧಿತ classes ಅನ್ನು folder ನಂತೆ ಗುಂಪು ಮಾಡುತ್ತದೆ. ಹೆಸರುಗಳು ಕಂಪನಿಯ ತಿರುಗಿಸಿದ domain ಬಳಸುತ್ತವೆ. Package statement ಮೊದಲ statement ಆಗಿರಬೇಕು, ನಂತರ imports, ನಂತರ classes.", "or": "Package ସମ୍ବନ୍ଧିତ classes କୁ folder ଭଳି ଗୋଷ୍ଠୀବଦ୍ଧ କରେ। ନାମରେ କମ୍ପାନୀର ଓଲଟା domain ବ୍ୟବହାର ହୁଏ। Package statement ପ୍ରଥମ statement ହେବା ଉଚିତ, ତା ପରେ imports ଏବଂ ତା ପରେ classes।", "ar": "الحزمة تجمع الأصناف المترابطة كما يجمع المجلد الملفات. تُكتب الأسماء بنطاق الشركة معكوسًا. يجب أن تكون جملة package هي الأولى، ثم جمل import، ثم الأصناف.", "de": "Ein Paket gruppiert zusammengehörige Klassen wie ein Ordner. Die Namen verwenden die umgedrehte Firmendomain. Die package-Anweisung muss die erste sein, danach folgen die Imports und dann die Klassen."}, {"id": "class-modifiers", "h": "Class modifiers", "en": "A top level class can only be public, default, final, abstract or strictfp. A default class is invisible outside its own package. Inner classes may also be private, protected or static.", "hi": "Top level class सिर्फ़ public, default, final, abstract या strictfp हो सकती है। Default class अपने package के बाहर दिखाई नहीं देती। Inner classes private, protected या static भी हो सकती हैं।", "kn": "Top level class ಕೇವಲ public, default, final, abstract ಅಥವಾ strictfp ಆಗಿರಬಹುದು. Default class ತನ್ನ package ಹೊರಗೆ ಕಾಣಿಸುವುದಿಲ್ಲ. Inner classes private, protected ಅಥವಾ static ಕೂಡ ಆಗಿರಬಹುದು.", "or": "Top level class କେବଳ public, default, final, abstract କିମ୍ବା strictfp ହୋଇପାରେ। Default class ନିଜ package ବାହାରେ ଦେଖାଯାଏ ନାହିଁ। Inner classes private, protected କିମ୍ବା static ମଧ୍ୟ ହୋଇପାରେ।", "ar": "الصنف في المستوى الأعلى يمكن أن يكون فقط public أو افتراضيًا أو final أو abstract أو strictfp. الصنف الافتراضي غير مرئي خارج حزمته. أما الأصناف الداخلية فيمكن أن تكون أيضًا private أو protected أو static.", "de": "Eine Top-Level-Klasse kann nur public, default, final, abstract oder strictfp sein. Eine default-Klasse ist außerhalb ihres Pakets unsichtbar. Innere Klassen dürfen zusätzlich private, protected oder static sein."}, {"id": "final", "h": "final", "en": "A final class cannot be extended, a final method cannot be overridden, and a final variable cannot be reassigned. Final fields get no default value, so you must assign them once, at the declaration, in a block, or in every constructor.", "hi": "Final class को extend नहीं किया जा सकता, final method को override नहीं किया जा सकता, और final variable को दोबारा मान नहीं दिया जा सकता। Final fields को default मान नहीं मिलता, इसलिए उन्हें एक बार declaration पर, किसी block में, या हर constructor में मान देना ज़रूरी है।", "kn": "Final class ಅನ್ನು extend ಮಾಡಲು ಆಗದು, final method ಅನ್ನು override ಮಾಡಲು ಆಗದು, ಮತ್ತು final variable ಗೆ ಮತ್ತೆ ಮೌಲ್ಯ ಕೊಡಲು ಆಗದು. Final fields ಗೆ default ಮೌಲ್ಯ ಸಿಗುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ declaration ನಲ್ಲಿ, ಒಂದು block ನಲ್ಲಿ, ಅಥವಾ ಪ್ರತಿ constructor ನಲ್ಲಿ ಒಮ್ಮೆ ಮೌಲ್ಯ ಕೊಡಬೇಕು.", "or": "Final class କୁ extend କରିହେବ ନାହିଁ, final method କୁ override କରିହେବ ନାହିଁ, ଏବଂ final variable କୁ ପୁଣି ମୂଲ୍ୟ ଦିଆଯାଇପାରିବ ନାହିଁ। Final fields default ମୂଲ୍ୟ ପାଆନ୍ତି ନାହିଁ, ତେଣୁ declaration ରେ, ଏକ block ରେ, କିମ୍ବା ପ୍ରତ୍ୟେକ constructor ରେ ଥରେ ମୂଲ୍ୟ ଦେବା ଜରୁରୀ।", "ar": "الصنف final لا يمكن توريثه، والدالة final لا يمكن تجاوزها، والمتغير final لا يمكن إعادة إسناده. الحقول final لا تحصل على قيمة افتراضية، لذلك يجب إسنادها مرة واحدة عند التعريف أو في كتلة أو في كل مُنشئ.", "de": "Eine final-Klasse kann nicht erweitert, eine final-Methode nicht überschrieben und eine final-Variable nicht neu zugewiesen werden. final-Felder bekommen keinen Standardwert, du musst sie genau einmal setzen: bei der Deklaration, in einem Block oder in jedem Konstruktor."}, {"id": "abstract", "h": "abstract", "en": "An abstract method has no body and says what a child must do. A class with an abstract method must be abstract, and you cannot create its objects. abstract cannot be combined with final, static, private, synchronized or native.", "hi": "Abstract method का कोई body नहीं होता और यह बताता है कि child को क्या करना है। जिस class में abstract method हो, उसे abstract होना चाहिए, और उसके objects नहीं बना सकते। abstract को final, static, private, synchronized या native के साथ नहीं जोड़ सकते।", "kn": "Abstract method ಗೆ body ಇಲ್ಲ, ಅದು child ಏನು ಮಾಡಬೇಕು ಎಂದು ಹೇಳುತ್ತದೆ. Abstract method ಇರುವ class abstract ಆಗಿರಬೇಕು, ಮತ್ತು ಅದರ objects ರಚಿಸಲು ಆಗದು. abstract ಅನ್ನು final, static, private, synchronized ಅಥವಾ native ಜೊತೆ ಸೇರಿಸಲು ಆಗದು.", "or": "Abstract method ର କୌଣସି body ନାହିଁ ଏବଂ ଏହା କହେ ଯେ child କ'ଣ କରିବ। ଯେଉଁ class ରେ abstract method ଅଛି ତାହା abstract ହେବା ଉଚିତ, ଏବଂ ତାର objects ତିଆରି କରିହେବ ନାହିଁ। abstract କୁ final, static, private, synchronized କିମ୍ବା native ସହିତ ମିଶାଇହେବ ନାହିଁ।", "ar": "الدالة المجردة ليس لها جسم، وهي تحدد ما يجب على الصنف الابن فعله. الصنف الذي يحتوي على دالة مجردة يجب أن يكون مجردًا، ولا يمكن إنشاء كائنات منه. ولا يجتمع abstract مع final أو static أو private أو synchronized أو native.", "de": "Eine abstrakte Methode hat keinen Rumpf und sagt, was ein Kind tun muss. Eine Klasse mit einer abstrakten Methode muss abstrakt sein, und man kann keine Objekte von ihr erzeugen. abstract lässt sich nicht mit final, static, private, synchronized oder native kombinieren."}, {"id": "member-modifiers", "h": "Access levels", "en": "From most closed to most open: private, default, protected and public. Protected members reach child classes in other packages, but only through the child reference, never through a parent reference.", "hi": "सबसे बंद से सबसे खुले तक: private, default, protected और public। Protected members दूसरे package की child classes तक पहुँचते हैं, लेकिन सिर्फ़ child reference के ज़रिए, parent reference से कभी नहीं।", "kn": "ಅತ್ಯಂತ ಮುಚ್ಚಿದ್ದರಿಂದ ಅತ್ಯಂತ ತೆರೆದದ್ದಕ್ಕೆ: private, default, protected ಮತ್ತು public. Protected members ಬೇರೆ package ನ child classes ಗೆ ತಲುಪುತ್ತವೆ, ಆದರೆ child reference ಮೂಲಕ ಮಾತ್ರ, parent reference ಮೂಲಕ ಎಂದಿಗೂ ಇಲ್ಲ.", "or": "ସବୁଠାରୁ ବନ୍ଦରୁ ସବୁଠାରୁ ଖୋଲା ପର୍ଯ୍ୟନ୍ତ: private, default, protected ଏବଂ public। Protected members ଅନ୍ୟ package ର child classes ପର୍ଯ୍ୟନ୍ତ ପହଞ୍ଚନ୍ତି, କିନ୍ତୁ କେବଳ child reference ମାଧ୍ୟମରେ, parent reference ରୁ କେବେ ନୁହେଁ।", "ar": "من الأكثر انغلاقًا إلى الأكثر انفتاحًا: private ثم الافتراضي ثم protected ثم public. الأعضاء protected تصل إلى الأصناف الأبناء في الحزم الأخرى، لكن عبر مرجع الابن فقط، وليس عبر مرجع الأب أبدًا.", "de": "Vom geschlossensten zum offensten: private, default, protected und public. Protected-Member erreichen Kindklassen in anderen Paketen, aber nur über die Kind-Referenz, niemals über eine Eltern-Referenz."}, {"id": "other-modifiers", "h": "Other modifiers", "en": "static members belong to the class, so static code cannot use instance members directly. native methods are written in another language, synchronized lets one thread in at a time, transient skips a field during serialization, and volatile keeps a field fresh for every thread.", "hi": "Static members class के होते हैं, इसलिए static code सीधे instance members इस्तेमाल नहीं कर सकता। Native methods किसी दूसरी भाषा में लिखे होते हैं, synchronized एक समय में एक thread को अंदर आने देता है, transient serialization में field को छोड़ देता है, और volatile हर thread के लिए field को ताज़ा रखता है।", "kn": "Static members class ಗೆ ಸೇರಿವೆ, ಆದ್ದರಿಂದ static code ನೇರವಾಗಿ instance members ಬಳಸಲು ಆಗದು. Native methods ಬೇರೆ ಭಾಷೆಯಲ್ಲಿ ಬರೆದಿರುತ್ತವೆ, synchronized ಒಮ್ಮೆಗೆ ಒಂದು thread ಅನ್ನು ಒಳಗೆ ಬಿಡುತ್ತದೆ, transient serialization ನಲ್ಲಿ field ಅನ್ನು ಬಿಡುತ್ತದೆ, ಮತ್ತು volatile ಪ್ರತಿಯೊಂದು thread ಗೆ field ಅನ್ನು ಹೊಸದಾಗಿ ಇಡುತ್ತದೆ.", "or": "Static members class ର, ତେଣୁ static code ସିଧାସଳଖ instance members ବ୍ୟବହାର କରିପାରିବ ନାହିଁ। Native methods ଅନ୍ୟ ଭାଷାରେ ଲେଖାଯାଏ, synchronized ଥରକେ ଗୋଟିଏ thread କୁ ଭିତରକୁ ଦିଏ, transient serialization ରେ field କୁ ଛାଡ଼ିଦିଏ, ଏବଂ volatile ପ୍ରତ୍ୟେକ thread ପାଇଁ field କୁ ସତେଜ ରଖେ।", "ar": "الأعضاء الساكنة تخص الصنف، لذلك لا تستطيع الشيفرة الساكنة استخدام أعضاء الكائن مباشرة. الدوال native مكتوبة بلغة أخرى، و synchronized تسمح بدخول خيط واحد في كل مرة، و transient تتجاهل الحقل أثناء التسلسل، و volatile تُبقي الحقل محدثًا لكل خيط.", "de": "Statische Member gehören zur Klasse, deshalb kann statischer Code Instanz-Member nicht direkt benutzen. native-Methoden sind in einer anderen Sprache geschrieben, synchronized lässt immer nur einen Thread hinein, transient überspringt ein Feld bei der Serialisierung, und volatile hält ein Feld für jeden Thread aktuell."}, {"id": "interfaces", "h": "Interfaces", "en": "An interface is a contract of services. Its methods are public and abstract by default, and its variables are public static final constants. A class can implement many interfaces. Since Java eight, interfaces can also have default and static methods.", "hi": "Interface सेवाओं का एक अनुबंध है। इसके methods default रूप से public और abstract होते हैं, और इसके variables public static final constants होते हैं। एक class कई interfaces implement कर सकती है। Java आठ से interfaces में default और static methods भी हो सकते हैं।", "kn": "Interface ಸೇವೆಗಳ ಒಪ್ಪಂದ. ಅದರ methods default ಆಗಿ public ಮತ್ತು abstract, ಮತ್ತು ಅದರ variables public static final constants. ಒಂದು class ಹಲವು interfaces implement ಮಾಡಬಹುದು. Java ಎಂಟರಿಂದ interfaces ನಲ್ಲಿ default ಮತ್ತು static methods ಕೂಡ ಇರಬಹುದು.", "or": "Interface ହେଉଛି ସେବାଗୁଡ଼ିକର ଏକ ଚୁକ୍ତି। ଏହାର methods default ଭାବେ public ଏବଂ abstract, ଏବଂ ଏହାର variables public static final constants। ଗୋଟିଏ class ଅନେକ interfaces implement କରିପାରେ। Java ଆଠରୁ interfaces ରେ default ଏବଂ static methods ମଧ୍ୟ ରହିପାରେ।", "ar": "الواجهة عقد خدمات. دوالها public و abstract افتراضيًا، ومتغيراتها ثوابت public static final. يمكن للصنف أن ينفذ واجهات كثيرة. ومنذ Java ثمانية يمكن أن تحتوي الواجهات أيضًا على دوال default و static.", "de": "Ein Interface ist ein Vertrag über Dienste. Seine Methoden sind standardmäßig public und abstract, seine Variablen sind public static final Konstanten. Eine Klasse kann viele Interfaces implementieren. Seit Java acht können Interfaces auch default- und static-Methoden haben."}, {"id": "interface-conflicts", "h": "Naming conflicts", "en": "If two interfaces declare the same method with the same return type, one implementation covers both. Different return types make it impossible. For constants with the same name, write the interface name in front.", "hi": "अगर दो interfaces एक ही method एक ही return type के साथ घोषित करें, तो एक implementation दोनों के लिए काफ़ी है। अलग return types होने पर यह असंभव है। एक ही नाम वाले constants के लिए आगे interface का नाम लिखिए।", "kn": "ಎರಡು interfaces ಒಂದೇ method ಅನ್ನು ಒಂದೇ return type ಜೊತೆ ಘೋಷಿಸಿದರೆ, ಒಂದು implementation ಎರಡಕ್ಕೂ ಸಾಕು. ಬೇರೆ return types ಇದ್ದರೆ ಅದು ಅಸಾಧ್ಯ. ಒಂದೇ ಹೆಸರಿನ constants ಗೆ ಮುಂದೆ interface ಹೆಸರು ಬರೆಯಿರಿ.", "or": "ଯଦି ଦୁଇଟି interfaces ସମାନ return type ସହ ସମାନ method ଘୋଷଣା କରନ୍ତି, ଗୋଟିଏ implementation ଦୁଇଟି ପାଇଁ ଯଥେଷ୍ଟ। ଅଲଗା return types ଥିଲେ ଏହା ଅସମ୍ଭବ। ସମାନ ନାମର constants ପାଇଁ ଆଗରେ interface ନାମ ଲେଖନ୍ତୁ।", "ar": "إذا صرّحت واجهتان بالدالة نفسها ونوع الإرجاع نفسه، فإن تنفيذًا واحدًا يكفي للاثنتين. أما اختلاف نوع الإرجاع فيجعل ذلك مستحيلًا. وللثوابت ذات الاسم نفسه اكتب اسم الواجهة قبلها.", "de": "Deklarieren zwei Interfaces dieselbe Methode mit demselben Rückgabetyp, deckt eine Implementierung beide ab. Unterschiedliche Rückgabetypen machen es unmöglich. Bei gleichnamigen Konstanten schreibst du den Interfacenamen davor."}, {"id": "marker-adapter", "h": "Marker interfaces and adapters", "en": "A marker interface has no methods. It only tags a class with an ability, like Serializable or Cloneable. An adapter class implements an interface with empty methods, so you override only the ones you need.", "hi": "Marker interface में कोई method नहीं होता। यह बस class पर एक क्षमता का निशान लगाता है, जैसे Serializable या Cloneable। Adapter class किसी interface को खाली methods के साथ implement करती है, ताकि आप सिर्फ़ ज़रूरी methods override करें।", "kn": "Marker interface ನಲ್ಲಿ ಯಾವುದೇ method ಇಲ್ಲ. ಅದು class ಗೆ ಒಂದು ಸಾಮರ್ಥ್ಯದ ಗುರುತು ಹಾಕುತ್ತದೆ, ಉದಾಹರಣೆಗೆ Serializable ಅಥವಾ Cloneable. Adapter class ಒಂದು interface ಅನ್ನು ಖಾಲಿ methods ಜೊತೆ implement ಮಾಡುತ್ತದೆ, ಆದ್ದರಿಂದ ನಿಮಗೆ ಬೇಕಾದವನ್ನು ಮಾತ್ರ override ಮಾಡುತ್ತೀರಿ.", "or": "Marker interface ରେ କୌଣସି method ନାହିଁ। ଏହା କେବଳ class ଉପରେ ଏକ କ୍ଷମତାର ଚିହ୍ନ ଲଗାଏ, ଯେପରି Serializable କିମ୍ବା Cloneable। Adapter class ଏକ interface କୁ ଖାଲି methods ସହିତ implement କରେ, ଯାହାଦ୍ୱାରା ଆପଣ କେବଳ ଦରକାରୀ methods override କରନ୍ତି।", "ar": "الواجهة الواسمة لا تحتوي على دوال، بل تضع على الصنف علامة قدرة معينة مثل Serializable أو Cloneable. وصنف المحوّل ينفذ واجهة بدوال فارغة، فتتجاوز أنت فقط الدوال التي تحتاجها.", "de": "Ein Marker-Interface hat keine Methoden. Es kennzeichnet eine Klasse nur mit einer Fähigkeit, etwa Serializable oder Cloneable. Eine Adapterklasse implementiert ein Interface mit leeren Methoden, sodass du nur die nötigen überschreibst."}, {"id": "abstract-vs-interface", "h": "Abstract class or interface", "en": "Choose an interface when you know only the requirements, and an abstract class when you can share part of the implementation. Abstract classes can have instance fields and constructors, interfaces cannot.", "hi": "जब सिर्फ़ ज़रूरतें पता हों तब interface चुनिए, और जब implementation का कुछ हिस्सा साझा कर सकें तब abstract class। Abstract classes में instance fields और constructors हो सकते हैं, interfaces में नहीं।", "kn": "ಅಗತ್ಯಗಳು ಮಾತ್ರ ಗೊತ್ತಿದ್ದಾಗ interface ಆಯ್ಕೆ ಮಾಡಿ, ಮತ್ತು implementation ನ ಒಂದು ಭಾಗ ಹಂಚಿಕೊಳ್ಳಬಹುದಾದಾಗ abstract class. Abstract classes ನಲ್ಲಿ instance fields ಮತ್ತು constructors ಇರಬಹುದು, interfaces ನಲ್ಲಿ ಇಲ್ಲ.", "or": "କେବଳ ଆବଶ୍ୟକତା ଜଣା ଥିଲେ interface ବାଛନ୍ତୁ, ଏବଂ implementation ର କିଛି ଅଂଶ ବାଣ୍ଟିପାରିଲେ abstract class। Abstract classes ରେ instance fields ଏବଂ constructors ରହିପାରେ, interfaces ରେ ନୁହେଁ।", "ar": "اختر الواجهة عندما تعرف المتطلبات فقط، واختر الصنف المجرد عندما تستطيع مشاركة جزء من التنفيذ. الأصناف المجردة يمكن أن تحتوي على حقول كائن ومُنشئات، أما الواجهات فلا.", "de": "Wähle ein Interface, wenn du nur die Anforderungen kennst, und eine abstrakte Klasse, wenn du einen Teil der Implementierung teilen kannst. Abstrakte Klassen können Instanzfelder und Konstruktoren haben, Interfaces nicht."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Declarations and Access Modifiers", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

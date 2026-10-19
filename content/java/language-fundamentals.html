@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Language Fundamentals · Java</title>
+<meta name="description" content="Identifiers, reserved words, the 8 primitive types, literals, arrays, variables, var-args, main() and command line arguments.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🌱 Java Basics</span><span>›</span><span>Chapter 1 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧱</span><div><h1>Language Fundamentals</h1><p class="lead">Every Java program is built from the same small bricks: names, types, values and arrays. Learn the bricks well and the big buildings get easy.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 29 min read</span><span class="chip">📚 11 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#identifiers"><span>🏷️</span>Identifiers</a><a href="#reserved-words"><span>🚫</span>Reserved words</a><a href="#data-types"><span>🔢</span>The 8 primitive data types</a><a href="#literals"><span>✍️</span>Literals</a><a href="#conversions"><span>↔️</span>Widening and narrowing</a><a href="#arrays"><span>📦</span>Arrays</a><a href="#variables"><span>🗃️</span>Types of variables</a><a href="#var-args"><span>🎒</span>Var-arg methods</a><a href="#main-method"><span>🚪</span>The main() method</a><a href="#command-line"><span>⌨️</span>Command line arguments</a><a href="#coding-standards"><span>📏</span>Java coding standards</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="identifiers" data-say="identifiers"><div class="sec-num">Part 1</div><h2><span class="sec-em">🏷️</span><span>Identifiers</span></h2>
+<p>An <b>identifier</b> is any name you invent in a program. It can name a class, a method, a variable or a label.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Spot the identifiers</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Test</span> {                       <span class="c">// Test is an identifier</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {   <span class="c">// main, String, args are identifiers</span>
+        <span class="k">int</span> x = <span class="n">10</span>;                    <span class="c">// x is an identifier</span>
+    }
+}</pre></div>
+<h3>The rules</h3>
+<ol>
+<li>Allowed characters are letters, digits, the dollar sign <code>$</code> and the underscore <code>_</code>. Letters from other alphabets also work, but stick to plain English letters so everyone can type your names.</li>
+<li>An identifier cannot start with a digit. <code>total123</code> is fine and <code>123total</code> is not.</li>
+<li>Java is case sensitive. <code>number</code>, <code>Number</code> and <code>NUMBER</code> are three different names.</li>
+<li>There is no length limit, but names longer than about 15 characters get tiring to read.</li>
+<li>Reserved words such as <code>int</code> or <code>if</code> cannot be used as names.</li>
+<li>Names of built-in classes such as <code>String</code> or <code>Runnable</code> are legal names, but using them confuses every reader.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Case matters · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> number = <span class="n">10</span>;
+<span class="k">int</span> <span class="t">Number</span> = <span class="n">20</span>;
+<span class="k">int</span> <span class="t">NUMBER</span> = <span class="n">30</span>;
+<span class="t">System</span>.out.println(number + <span class="s">" "</span> + <span class="t">Number</span> + <span class="s">" "</span> + <span class="t">NUMBER</span>);</pre><div class="out"><span>Output</span><pre>10 20 30</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Legal but confusing · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> <span class="t">String</span> = <span class="n">888</span>;          <span class="c">// String is a class name, still a legal identifier</span>
+<span class="k">int</span> <span class="t">Runnable</span> = <span class="n">999</span>;
+<span class="t">System</span>.out.println(<span class="t">String</span> + <span class="t">Runnable</span>);</pre><div class="out"><span>Output</span><pre>1887</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Cannot start with a digit · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> 4shares = <span class="n">10</span>;</pre><div class="err"><span>❌ Compile error</span><pre>not a statement</pre></div></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Name</th><th>Valid</th><th>Why</th></tr>
+<tr><td><code>java2share</code></td><td class="yes">Yes</td><td>Digits are fine after the first character</td></tr>
+<tr><td><code>4shares</code></td><td class="no">No</td><td>Starts with a digit</td></tr>
+<tr><td><code>all@hands</code></td><td class="no">No</td><td><code>@</code> is not allowed</td></tr>
+<tr><td><code>total_number_of_students</code></td><td class="yes">Yes</td><td>Underscores are allowed</td></tr>
+<tr><td><code>_$_</code></td><td class="yes">Yes</td><td>Only allowed characters, and it is not the lone <code>_</code></td></tr>
+<tr><td><code>total#</code></td><td class="no">No</td><td><code>#</code> is not allowed</td></tr>
+<tr><td><code>int</code></td><td class="no">No</td><td>Reserved word</td></tr>
+<tr><td><code>Integer</code></td><td class="yes">Yes</td><td>A class name, legal but a bad idea</td></tr>
+</table></div></div>
+<div class="modern">From Java 9 to Java 21 a single underscore <code>_</code> on its own was not allowed as a name. Since Java 22 it has a new job: it marks an <b>unnamed variable</b>, a placeholder you promise never to read, as in <code>catch (Exception _)</code>. Names that merely contain an underscore, like <code>max_value</code>, have always been fine.</div>
+</section>
+
+<section class="card reveal jsec" id="reserved-words" data-say="reserved-words"><div class="sec-num">Part 2</div><h2><span class="sec-em">🚫</span><span>Reserved words</span></h2>
+<p>Some words already have a fixed meaning in Java, so you cannot use them as names. Classic Java has <b>53 reserved words</b>: 50 keywords plus 3 reserved literals.</p>
+<div class="grid2">
+<div class="box"><h4>Data types (8)</h4><code>byte short int long float double boolean char</code></div>
+<div class="box"><h4>Flow control (11)</h4><code>if else switch case default while do for break continue return</code></div>
+<div class="box"><h4>Modifiers (11)</h4><code>public private protected static final abstract synchronized native strictfp transient volatile</code></div>
+<div class="box"><h4>Exception handling (6)</h4><code>try catch finally throw throws assert</code></div>
+<div class="box"><h4>Class related (6)</h4><code>class interface extends implements package import</code></div>
+<div class="box"><h4>Object related (4)</h4><code>new instanceof super this</code></div>
+<div class="box"><h4>Return type (1)</h4><code>void</code> says a method returns nothing.</div>
+<div class="box"><h4>Unused (2)</h4><code>goto const</code> are reserved but do nothing, so nobody can bring their messy C habits back.</div>
+<div class="box"><h4>Newer keyword (1)</h4><code>enum</code> arrived in Java 1.5. (<code>assert</code> arrived in 1.4 and <code>strictfp</code> in 1.2.)</div>
+<div class="box"><h4>Reserved literals (3)</h4><code>true false null</code> are values, not keywords, but you still cannot use them as names.</div>
+</div>
+<div class="rule">Every reserved word is written in lowercase. <code>NULL</code>, <code>True</code> and <code>String</code> are not reserved words.</div>
+<div class="exam">Words that sound like keywords but are not: <code>main</code>, <code>String</code>, <code>length</code>, <code>delete</code>, <code>include</code>, <code>sizeof</code>, <code>then</code>, <code>exit</code>. In Java the keyword is <code>extends</code>, never <code>extend</code>, and <code>implements</code>, never <code>implement</code>.</div>
+<div class="modern">Newer Java added <b>contextual keywords</b> such as <code>var</code> (Java 10), <code>record</code> and <code>yield</code> (Java 14 to 16), and <code>sealed</code>, <code>permits</code> (Java 17). They act like keywords only in special positions, so old code that used them as variable names keeps compiling.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">var is still a legal variable name · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">var</span> <span class="k">var</span> = <span class="s">"contextual keyword"</span>;
+<span class="t">System</span>.out.println(<span class="k">var</span>);</pre><div class="out"><span>Output</span><pre>contextual keyword</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="data-types" data-say="data-types"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔢</span><span>The 8 primitive data types</span></h2>
+<p>Java is <b>strongly typed</b>. Every variable and every expression has a type, and the compiler checks every assignment. Apart from the 8 primitive types everything is an object.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Type</th><th>Size</th><th>Range</th><th>Default</th><th>Wrapper class</th></tr>
+<tr><td><code>byte</code></td><td>1 byte</td><td>−128 to 127</td><td>0</td><td>Byte</td></tr>
+<tr><td><code>short</code></td><td>2 bytes</td><td>−32,768 to 32,767</td><td>0</td><td>Short</td></tr>
+<tr><td><code>int</code></td><td>4 bytes</td><td>−2,147,483,648 to 2,147,483,647</td><td>0</td><td>Integer</td></tr>
+<tr><td><code>long</code></td><td>8 bytes</td><td>−2<sup>63</sup> to 2<sup>63</sup> − 1</td><td>0</td><td>Long</td></tr>
+<tr><td><code>float</code></td><td>4 bytes</td><td>about ±3.4 × 10<sup>38</sup>, 6 to 7 digits of precision</td><td>0.0</td><td>Float</td></tr>
+<tr><td><code>double</code></td><td>8 bytes</td><td>about ±1.7 × 10<sup>308</sup>, 15 to 16 digits of precision</td><td>0.0</td><td>Double</td></tr>
+<tr><td><code>char</code></td><td>2 bytes</td><td>0 to 65,535 (Unicode)</td><td>'\u0000'</td><td>Character</td></tr>
+<tr><td><code>boolean</code></td><td>not fixed (JVM decides)</td><td><code>true</code> or <code>false</code></td><td>false</td><td>Boolean</td></tr>
+</table></div></div>
+<h3>Where does −128 to 127 come from</h3>
+<p>A byte has 8 bits. The leftmost bit is the <b>sign bit</b>: 0 means positive and 1 means negative. Positive numbers are stored directly, and negative numbers are stored in <b>two's complement</b> form. That leaves 7 bits for the size of the number.</p>
+<span class="eq">range of an n-bit signed type = −2<sup>n−1</sup> to 2<sup>n−1</sup> − 1</span>
+<span class="eq">byte: n = 8 → −2<sup>7</sup> to 2<sup>7</sup> − 1 = −128 to 127</span>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Ask Java for the limits · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="t">Byte</span>.<span class="t">MIN_VALUE</span> + <span class="s">" to "</span> + <span class="t">Byte</span>.<span class="t">MAX_VALUE</span>);
+<span class="t">System</span>.out.println(<span class="t">Short</span>.<span class="t">MIN_VALUE</span> + <span class="s">" to "</span> + <span class="t">Short</span>.<span class="t">MAX_VALUE</span>);
+<span class="t">System</span>.out.println(<span class="t">Integer</span>.<span class="t">MIN_VALUE</span> + <span class="s">" to "</span> + <span class="t">Integer</span>.<span class="t">MAX_VALUE</span>);
+<span class="t">System</span>.out.println(<span class="t">Long</span>.<span class="t">MAX_VALUE</span>);
+<span class="t">System</span>.out.println((<span class="k">int</span>) <span class="t">Character</span>.<span class="t">MAX_VALUE</span>);</pre><div class="out"><span>Output</span><pre>-128 to 127
+-32768 to 32767
+-2147483648 to 2147483647
+9223372036854775807
+65535</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Too big for a byte · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">byte</span> b = <span class="n">130</span>;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: possible lossy conversion from int to byte</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A boolean is not a number · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">boolean</span> b = <span class="n">0</span>;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: int cannot be converted to boolean</pre></div></div>
+<h3>Which type when</h3>
+<ul>
+<li><b>byte</b>: raw data from files or the network, where memory matters.</li>
+<li><b>short</b>: rarely used today. It was popular on old 16-bit machines.</li>
+<li><b>int</b>: the everyday whole number. Integer literals are <code>int</code> by default.</li>
+<li><b>long</b>: when int is too small, such as file sizes in bytes or milliseconds since 1970.</li>
+<li><b>float or double</b>: numbers with a decimal point. <code>double</code> is the default and is more precise.</li>
+<li><b>char</b>: one Unicode character. Java uses 2 bytes because it supports far more than the 128 ASCII characters.</li>
+<li><b>boolean</b>: yes or no answers.</li>
+</ul>
+<div class="fun">Because the size of every type is fixed on every computer, a Java program behaves the same on Windows, Linux and a phone. In C, the size of <code>int</code> can change from machine to machine. That is one reason Java is called <b>robust</b>.</div>
+<div class="warn">Money and float do not mix. <code>0.1 + 0.2</code> is not exactly <code>0.3</code> in binary floating point. Use <code>BigDecimal</code> for money.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Floating point surprise · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(<span class="n">0.1</span> + <span class="n">0.2</span>);
+<span class="t">System</span>.out.println(<span class="n">0.1f</span> + <span class="n">0.2f</span>);</pre><div class="out"><span>Output</span><pre>0.30000000000000004
+0.3</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="literals" data-say="literals"><div class="sec-num">Part 4</div><h2><span class="sec-em">✍️</span><span>Literals</span></h2>
+<p>A <b>literal</b> is a fixed value written straight into the code. In <code>int x = 10;</code> the literal is <code>10</code>.</p>
+<h3>Integral literals</h3>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Form</th><th>Prefix</th><th>Digits allowed</th><th>Example</th><th>Value</th></tr>
+<tr><td>Decimal</td><td>none</td><td>0 to 9</td><td><code>10</code></td><td>10</td></tr>
+<tr><td>Octal</td><td><code>0</code></td><td>0 to 7</td><td><code>010</code></td><td>8</td></tr>
+<tr><td>Hexadecimal</td><td><code>0x</code> or <code>0X</code></td><td>0 to 9, a to f (any case)</td><td><code>0x10</code></td><td>16</td></tr>
+<tr><td>Binary (Java 7)</td><td><code>0b</code> or <code>0B</code></td><td>0 and 1</td><td><code>0b10</code></td><td>2</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Same digits, different bases · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> a = <span class="n">10</span>, b = <span class="n">010</span>, c = <span class="n">0x10</span>, d = <span class="n">0b10</span>;
+<span class="t">System</span>.out.println(a + <span class="s">" "</span> + b + <span class="s">" "</span> + c + <span class="s">" "</span> + d);
+<span class="t">System</span>.out.println(<span class="n">0xFace</span> + <span class="s">" "</span> + <span class="n">0XBeef</span>);</pre><div class="out"><span>Output</span><pre>10 8 16 2
+64206 48879</pre></div></div>
+<span class="eq">010<sub>8</sub> = 1 × 8<sup>1</sup> + 0 × 8<sup>0</sup> = 8</span>
+<span class="eq">0x10<sub>16</sub> = 1 × 16<sup>1</sup> + 0 × 16<sup>0</sup> = 16</span>
+<p>Whatever form you write, <code>println</code> always prints the decimal value.</p>
+<p>Octal digits only go from 0 to 7, so <code>int x = 0786;</code> does not compile.</p>
+<p>Integral literals are <code>int</code> by default. Add <code>L</code> (or <code>l</code>, which looks too much like 1) to make a <code>long</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A long does not fit in an int · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> i = <span class="n">10L</span>;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: possible lossy conversion from long to int</pre></div></div>
+<p>Java 7 also lets you put underscores between digits to make big numbers readable. The compiler simply removes them.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Readable numbers · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">long</span> population = <span class="n">1_42_86_27_663L</span>;
+<span class="k">double</span> price = <span class="n">1_234.50</span>;
+<span class="t">System</span>.out.println(population + <span class="s">" "</span> + price);</pre><div class="out"><span>Output</span><pre>1428627663 1234.5</pre></div></div>
+<div class="tip">There is no way to write a byte or short literal directly. When an int literal fits in the range, Java quietly lets you store it in a <code>byte</code> or <code>short</code>.</div>
+<h3>Floating point literals</h3>
+<p>Decimal point literals are <code>double</code> by default. Add <code>f</code> or <code>F</code> for a <code>float</code>, and you may add <code>d</code> or <code>D</code> to make the <code>double</code> obvious.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">double does not fit in float · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">float</span> f = <span class="n">123.456</span>;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: possible lossy conversion from double to float</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Exponent form and suffixes · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">float</span> f = <span class="n">123.456f</span>;
+<span class="k">double</span> d = <span class="n">1.2e3</span>;        <span class="c">// 1.2 × 10³</span>
+<span class="k">double</span> e = <span class="n">123.456D</span>;
+<span class="k">int</span> i = <span class="s">'A'</span>;            <span class="c">// a char fits into an int</span>
+<span class="k">double</span> g = <span class="n">10</span>;          <span class="c">// an int literal fits into a double</span>
+<span class="t">System</span>.out.println(f + <span class="s">" "</span> + d + <span class="s">" "</span> + e + <span class="s">" "</span> + i + <span class="s">" "</span> + g);</pre><div class="out"><span>Output</span><pre>123.456 1200.0 123.456 65 10.0</pre></div></div>
+<div class="exam">Floating point literals can only be written in decimal. <code>double d = 0x123.4;</code> is not allowed, but <code>double d = 0x123;</code> is fine because <code>0x123</code> is an int that gets widened.</div>
+<h3>char literals</h3>
+<ul>
+<li>One character in single quotes: <code>'a'</code></li>
+<li>An integer code from 0 to 65,535: <code>char ch = 97;</code> gives <code>'a'</code></li>
+<li>A Unicode escape: <code>'\u0061'</code> is also <code>'a'</code> (4 hex digits)</li>
+<li>An escape sequence: <code>'\n'</code> new line, <code>'\t'</code> tab, <code>'\''</code> quote, <code>'\\'</code> backslash, plus <code>\r \b \f \"</code></li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Four ways to write a char · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">char</span> a = <span class="s">'a'</span>;
+<span class="k">char</span> b = <span class="n">98</span>;
+<span class="k">char</span> c = <span class="s">'\u0063'</span>;
+<span class="k">char</span> d = <span class="n">0x64</span>;
+<span class="t">System</span>.out.println(<span class="s">""</span> + a + b + c + d);
+<span class="t">System</span>.out.println(<span class="s">"Tab:\tdone\nNew line too"</span>);</pre><div class="out"><span>Output</span><pre>abcd
+Tab:	done
+New line too</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two characters do not fit in a char · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">char</span> ch = <span class="s">'ab'</span>;</pre><div class="err"><span>❌ Compile error</span><pre>unclosed character literal</pre></div></div>
+<h3>Boolean and String literals</h3>
+<p>The only boolean literals are <code>true</code> and <code>false</code>. Unlike C, <code>0</code> and <code>1</code> are not booleans. A String literal is any text in double quotes, like <code>"Java"</code>.</p>
+<div class="modern">Java 15 added <b>text blocks</b> for multi-line strings. They start and end with three double quotes.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Text block · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">String</span> poem = <span class="s">""</span>"
+        <span class="t">Roses</span> are red,
+        <span class="t">Bytes</span> are eight,
+        <span class="t">Java</span> is typed,
+        <span class="t">And</span> never late.<span class="s">""</span>";
+<span class="t">System</span>.out.println(poem);</pre><div class="out"><span>Output</span><pre>Roses are red,
+Bytes are eight,
+Java is typed,
+And never late.</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="conversions" data-say="conversions"><div class="sec-num">Part 5</div><h2><span class="sec-em">↔️</span><span>Widening and narrowing</span></h2>
+<p>Java converts a smaller type into a bigger one automatically. This is called <b>widening</b> or implicit type casting, and it never loses information about the size of the number.</p>
+<span class="eq">byte → short → int → long → float → double</span>
+<span class="eq">char → int → long → float → double</span>
+<p>Going the other way is <b>narrowing</b>. It can lose data, so you must ask for it with a cast, like <code>(byte) 130</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Narrowing with a cast · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> big = <span class="n">130</span>;
+<span class="k">byte</span> b = (<span class="k">byte</span>) big;           <span class="c">// keeps only the lowest 8 bits</span>
+<span class="t">System</span>.out.println(b);
+<span class="k">double</span> d = <span class="n">9.99</span>;
+<span class="k">int</span> whole = (<span class="k">int</span>) d;           <span class="c">// the decimal part is cut off, not rounded</span>
+<span class="t">System</span>.out.println(whole);</pre><div class="out"><span>Output</span><pre>-126
+9</pre></div></div>
+<span class="eq">130 = 1000 0010<sub>2</sub> → as a signed byte = −128 + 2 = −126</span>
+<div class="rule">An int <b>constant</b> may be stored in a byte, short or char without a cast if its value fits. A plain int <b>variable</b> may not, because the compiler cannot be sure what value it holds. Mark the variable <code>final</code> and it becomes a constant again.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A variable needs a cast · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> i = <span class="n">10</span>;
+<span class="k">byte</span> b = i;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: possible lossy conversion from int to byte</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A final constant does not · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">final</span> <span class="k">int</span> i = <span class="n">10</span>;
+<span class="k">byte</span> b = i;
+<span class="t">System</span>.out.println(b);</pre><div class="out"><span>Output</span><pre>10</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="arrays" data-say="arrays"><div class="sec-num">Part 6</div><h2><span class="sec-em">📦</span><span>Arrays</span></h2>
+<p>An <b>array</b> is an indexed group of a fixed number of values of the same type. Its biggest strength is reading or writing any slot instantly by index. Its biggest weakness is that the size can never change after creation.</p>
+<h3>1. Declaring</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Java snippet</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] a;     <span class="c">// recommended: the type int[] is clearly separate from the name</span>
+<span class="k">int</span> a[];
+<span class="k">int</span> []a;</pre></div>
+<p>You cannot give the size while declaring. <code>int[6] a;</code> is a compile error. For two dimensions all of these work: <code>int[][] a;</code> <code>int a[][];</code> <code>int [][]a;</code> <code>int[] a[];</code> <code>int[] []a;</code> <code>int []a[];</code></p>
+<div class="exam"><code>int[] a, b;</code> makes both arrays one dimensional. <code>int[] a[], b;</code> makes <code>a</code> two dimensional and <code>b</code> one dimensional. A dimension written before a name only works for the first name, so <code>int[] []a, []b;</code> does not compile.</div>
+<h3>2. Creating</h3>
+<p>Every array is an object, so it is created with <code>new</code>. The size is required at this point.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Arrays are objects with odd class names · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] a = <span class="k">new</span> <span class="k">int</span>[<span class="n">3</span>];
+<span class="t">System</span>.out.println(a.getClass().getName());
+<span class="t">System</span>.out.println(<span class="k">new</span> <span class="k">double</span>[<span class="n">2</span>].getClass().getName());
+<span class="t">System</span>.out.println(<span class="k">new</span> <span class="t">String</span>[<span class="n">2</span>].getClass().getName());
+<span class="t">System</span>.out.println(<span class="k">new</span> <span class="k">int</span>[<span class="n">2</span>][<span class="n">3</span>].getClass().getName());</pre><div class="out"><span>Output</span><pre>[I
+[D
+[Ljava.lang.String;
+[[I</pre></div></div>
+<ul>
+<li>Size 0 is allowed: <code>new int[0]</code>.</li>
+<li>A negative size compiles but fails at run time with <code>NegativeArraySizeException</code>.</li>
+<li>The size may be a <code>byte</code>, <code>short</code>, <code>char</code> or <code>int</code>. A <code>long</code> size is a compile error.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Negative size · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] a = <span class="k">new</span> <span class="k">int</span>[-<span class="n">3</span>];</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.NegativeArraySizeException: -3</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">long size · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] a = <span class="k">new</span> <span class="k">int</span>[<span class="n">10L</span>];</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: possible lossy conversion from long to int</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A char works as a size · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] a = <span class="k">new</span> <span class="k">int</span>[<span class="s">'a'</span>];
+<span class="t">System</span>.out.println(a.length);</pre><div class="out"><span>Output</span><pre>97</pre></div></div>
+<h3>3. Default values</h3>
+<p>The moment an array is created, every slot gets the default value for its type: 0 for numbers, <code>false</code> for boolean, <code>'\u0000'</code> for char and <code>null</code> for objects.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Defaults · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] n = <span class="k">new</span> <span class="k">int</span>[<span class="n">3</span>];
+<span class="k">boolean</span>[] f = <span class="k">new</span> <span class="k">boolean</span>[<span class="n">2</span>];
+<span class="t">String</span>[] s = <span class="k">new</span> <span class="t">String</span>[<span class="n">2</span>];
+<span class="t">System</span>.out.println(n[<span class="n">0</span>] + <span class="s">" "</span> + f[<span class="n">1</span>] + <span class="s">" "</span> + s[<span class="n">0</span>]);</pre><div class="out"><span>Output</span><pre>0 false null</pre></div></div>
+<h3>4. Two dimensional and jagged arrays</h3>
+<p>Java has no true matrix. A two dimensional array is an array of arrays, so each row can have its own length. Such arrays are called <b>jagged</b> arrays, and they save memory.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Rows of different lengths · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[][] a = <span class="k">new</span> <span class="k">int</span>[<span class="n">3</span>][];
+a[<span class="n">0</span>] = <span class="k">new</span> <span class="k">int</span>[<span class="n">2</span>];
+a[<span class="n">1</span>] = <span class="k">new</span> <span class="k">int</span>[<span class="n">4</span>];
+a[<span class="n">2</span>] = <span class="k">new</span> <span class="k">int</span>[<span class="n">1</span>];
+<span class="k">for</span> (<span class="k">int</span>[] row : a) <span class="t">System</span>.out.print(row.length + <span class="s">" "</span>);</pre><div class="out"><span>Output</span><pre>2 4 1 </pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A missing row is null · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[][] a = <span class="k">new</span> <span class="k">int</span>[<span class="n">2</span>][];
+<span class="t">System</span>.out.println(a[<span class="n">0</span>]);
+<span class="t">System</span>.out.println(a[<span class="n">0</span>][<span class="n">0</span>]);</pre><div class="out"><span>Output before the crash</span><pre>null</pre></div><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.NullPointerException: Cannot load from int array because "a[0]" is null</pre></div></div>
+<h3>5. Declare, create and fill in one line</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Array initializers · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] marks = {<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>, <span class="n">40</span>};
+<span class="k">char</span>[] vowels = {<span class="s">'a'</span>, <span class="s">'e'</span>, <span class="s">'i'</span>, <span class="s">'o'</span>, <span class="s">'u'</span>};
+<span class="t">String</span>[] names = {<span class="s">"Asha"</span>, <span class="s">"Ravi"</span>};
+<span class="k">int</span>[][] grid = {{<span class="n">10</span>, <span class="n">20</span>}, {<span class="n">30</span>, <span class="n">40</span>, <span class="n">50</span>}};
+<span class="t">System</span>.out.println(marks[<span class="n">3</span>] + <span class="s">" "</span> + vowels.length + <span class="s">" "</span> + names[<span class="n">1</span>] + <span class="s">" "</span> + grid[<span class="n">1</span>][<span class="n">2</span>]);</pre><div class="out"><span>Output</span><pre>40 5 Ravi 50</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The short form only works with a declaration · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] x;
+x = {<span class="n">10</span>, <span class="n">20</span>};</pre><div class="err"><span>❌ Compile error</span><pre>illegal start of expression</pre></div></div>
+<h3>6. length versus length()</h3>
+<p><code>length</code> is a final <b>variable</b> that every array has. <code>length()</code> is a <b>method</b> of <code>String</code>. For a two dimensional array, <code>length</code> gives the number of rows only.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Counting · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[][] a = <span class="k">new</span> <span class="k">int</span>[<span class="n">6</span>][<span class="n">3</span>];
+<span class="t">String</span> s = <span class="s">"brainy"</span>;
+<span class="t">System</span>.out.println(a.length + <span class="s">" "</span> + a[<span class="n">0</span>].length + <span class="s">" "</span> + s.length());</pre><div class="out"><span>Output</span><pre>6 3 6</pre></div></div>
+<h3>7. Anonymous arrays</h3>
+<p>An array created without a name, used once and thrown away. The size must not be written because Java counts the values for you.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Pass an array without naming it · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> sum(<span class="k">int</span>[] x) {
+        <span class="k">int</span> total = <span class="n">0</span>;
+        <span class="k">for</span> (<span class="k">int</span> v : x) total += v;
+        <span class="k">return</span> total;
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(sum(<span class="k">new</span> <span class="k">int</span>[]{<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>, <span class="n">40</span>}));
+    }
+}</pre><div class="out"><span>Output</span><pre>100</pre></div></div>
+<h3>8. What can go inside</h3>
+<ul>
+<li>Primitive arrays accept anything that can be widened to their type. An <code>int[]</code> accepts byte, short, char and int values, and a <code>double[]</code> accepts every numeric type and char.</li>
+<li>Object arrays accept their own type or any child type. A <code>Number[]</code> can hold an <code>Integer</code> or a <code>Double</code>, but not a <code>String</code>.</li>
+<li>Interface arrays accept objects of classes that implement the interface. A <code>Runnable[]</code> can hold a <code>Thread</code>.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Child objects in a parent array · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Number</span>[] n = <span class="k">new</span> <span class="t">Number</span>[<span class="n">3</span>];
+n[<span class="n">0</span>] = <span class="n">10</span>;          <span class="c">// autoboxed Integer</span>
+n[<span class="n">1</span>] = <span class="n">10.5</span>;        <span class="c">// autoboxed Double</span>
+n[<span class="n">2</span>] = <span class="n">7L</span>;          <span class="c">// autoboxed Long</span>
+<span class="t">System</span>.out.println(<span class="t">Arrays</span>.toString(n));</pre><div class="out"><span>Output</span><pre>[10, 10.5, 7]</pre></div></div>
+<h3>9. Assigning one array variable to another</h3>
+<p>Element level promotions do not apply to whole arrays. A <code>char</code> can become an <code>int</code>, but a <code>char[]</code> can never become an <code>int[]</code>. A child type array can be assigned to a parent type variable, so a <code>String[]</code> fits in an <code>Object[]</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">No promotion for whole arrays · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">char</span>[] ch = {<span class="s">'a'</span>, <span class="s">'b'</span>};
+<span class="k">int</span>[] a = ch;</pre><div class="err"><span>❌ Compile error</span><pre>incompatible types: char[] cannot be converted to int[]</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Only the reference moves · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] a = {<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>};
+<span class="k">int</span>[] b = {<span class="n">1</span>, <span class="n">2</span>};
+a = b;                       <span class="c">// a now points at the same object as b</span>
+b[<span class="n">0</span>] = <span class="n">99</span>;
+<span class="t">System</span>.out.println(a[<span class="n">0</span>] + <span class="s">" "</span> + a.length);</pre><div class="out"><span>Output</span><pre>99 2</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Index out of range · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span>[] a = <span class="k">new</span> <span class="k">int</span>[<span class="n">3</span>];
+a[<span class="n">3</span>] = <span class="n">10</span>;</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="variables" data-say="variables"><div class="sec-num">Part 7</div><h2><span class="sec-em">🗃️</span><span>Types of variables</span></h2>
+<p>Variables can be grouped in two ways.</p>
+<div class="grid2">
+<div class="box"><h4>By the value they hold</h4><p><b>Primitive variables</b> hold a value directly, like <code>int x = 10;</code></p><p><b>Reference variables</b> hold a link to an object, like <code>Student s = new Student();</code></p></div>
+<div class="box"><h4>By where they are declared</h4><p><b>Instance</b> variables belong to each object. <b>Static</b> variables belong to the class. <b>Local</b> variables live inside a method, block or constructor.</p></div>
+</div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th></th><th>Instance</th><th>Static</th><th>Local</th></tr>
+<tr><td>Declared</td><td>inside the class, outside methods</td><td>same, with <code>static</code></td><td>inside a method, block or constructor</td></tr>
+<tr><td>Copies</td><td>one per object</td><td>one per class, shared by all objects</td><td>one per method call</td></tr>
+<tr><td>Created</td><td>when the object is created</td><td>when the class is loaded</td><td>when the block starts</td></tr>
+<tr><td>Destroyed</td><td>when the object is garbage collected</td><td>when the class is unloaded</td><td>when the block ends</td></tr>
+<tr><td>Stored</td><td>inside the object on the heap</td><td>with the class data</td><td>on the thread's stack</td></tr>
+<tr><td>Default value</td><td>yes</td><td>yes</td><td>no, you must set it</td></tr>
+<tr><td>Modifiers allowed</td><td>all field modifiers</td><td>all field modifiers</td><td>only <code>final</code></td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Shared versus personal · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Student</span> {
+    <span class="t">String</span> name;                      <span class="c">// instance: every student has their own</span>
+    <span class="k">static</span> <span class="t">String</span> college = <span class="s">"IIT"</span>;    <span class="c">// static: one copy for everybody</span>
+    <span class="t">Student</span>(<span class="t">String</span> name) { <span class="k">this</span>.name = name; }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Student</span> a = <span class="k">new</span> <span class="t">Student</span>(<span class="s">"Asha"</span>);
+        <span class="t">Student</span> b = <span class="k">new</span> <span class="t">Student</span>(<span class="s">"Ravi"</span>);
+        b.college = <span class="s">"NIT"</span>;            <span class="c">// changes the one shared copy</span>
+        <span class="t">System</span>.out.println(a.name + <span class="s">" studies at "</span> + a.college);
+        <span class="t">System</span>.out.println(b.name + <span class="s">" studies at "</span> + b.college);
+    }
+}</pre><div class="out"><span>Output</span><pre>Asha studies at NIT
+Ravi studies at NIT</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Static code cannot see instance variables directly · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Test</span> {
+    <span class="k">int</span> x = <span class="n">10</span>;
+    <span class="k">static</span> <span class="k">int</span> y = <span class="n">20</span>;
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Test</span> t = <span class="k">new</span> <span class="t">Test</span>();
+        <span class="t">System</span>.out.println(t.x + <span class="s">" "</span> + y);   <span class="c">// x needs an object, y does not</span>
+    }
+}</pre><div class="out"><span>Output</span><pre>10 20</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Using a local before setting it · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">int</span> x;
+<span class="t">System</span>.out.println(x);</pre><div class="err"><span>❌ Compile error</span><pre>variable x might not have been initialized</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Locals only accept final · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">private</span> <span class="k">int</span> x = <span class="n">10</span>;</pre><div class="err"><span>❌ Compile error</span><pre>illegal start of expression</pre></div></div>
+<div class="tip">When you run <code>java Test</code>, the JVM starts, creates the main thread, finds <code>Test.class</code>, loads it (static variables are born here), runs <code>main()</code>, then unloads the class and shuts down.</div>
+<div class="exam">An array's elements always get default values, even when the array is a local variable. <code>int[] a = new int[3];</code> inside a method gives three zeros. Only the variable <code>a</code> itself needs to be initialized.</div>
+</section>
+
+<section class="card reveal jsec" id="var-args" data-say="var-args"><div class="sec-num">Part 8</div><h2><span class="sec-em">🎒</span><span>Var-arg methods</span></h2>
+<p>Before Java 1.5, a method had a fixed number of parameters. Need to add 2, 3 or 10 numbers and you wrote several methods. <b>Var-arg methods</b> accept any number of arguments, including zero.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One method, any number of values · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> sum(<span class="k">int</span>... x) {           <span class="c">// x is really an int[]</span>
+        <span class="k">int</span> total = <span class="n">0</span>;
+        <span class="k">for</span> (<span class="k">int</span> v : x) total += v;
+        <span class="k">return</span> total;
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(sum());
+        <span class="t">System</span>.out.println(sum(<span class="n">10</span>, <span class="n">20</span>));
+        <span class="t">System</span>.out.println(sum(<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>, <span class="n">40</span>));
+        <span class="t">System</span>.out.println(sum(<span class="k">new</span> <span class="k">int</span>[]{<span class="n">5</span>, <span class="n">5</span>}));
+    }
+}</pre><div class="out"><span>Output</span><pre>0
+30
+100
+10</pre></div></div>
+<h3>Rules</h3>
+<ol>
+<li>Write the three dots after the type: <code>int... x</code>, <code>int ...x</code> and <code>int...x</code> all work. <code>int x...</code> and <code>int. ..x</code> do not.</li>
+<li>Normal parameters may come first: <code>m(char ch, String... s)</code>.</li>
+<li>The var-arg must be the <b>last</b> parameter, and there can be only <b>one</b> of them.</li>
+<li>Inside the method a var-arg is an array, so <code>m(int... x)</code> and <code>m(int[] x)</code> cannot exist together in one class.</li>
+<li>A var-arg method has the <b>lowest priority</b>. It is chosen only when no other method matches, much like <code>default</code> in a switch.</li>
+</ol>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Var-arg must be last · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> m(<span class="k">int</span>... x, <span class="t">String</span> s) { }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { }
+}</pre><div class="err"><span>❌ Compile error</span><pre>varargs parameter must be the last parameter</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Var-arg loses when an exact match exists · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> m(<span class="k">int</span> x) { <span class="t">System</span>.out.println(<span class="s">"int version"</span>); }
+    <span class="k">static</span> <span class="k">void</span> m(<span class="k">int</span>... x) { <span class="t">System</span>.out.println(<span class="s">"var-arg version"</span>); }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        m();
+        m(<span class="n">10</span>);
+        m(<span class="n">10</span>, <span class="n">20</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>var-arg version
+int version
+var-arg version</pre></div></div>
+<div class="tip"><code>main(String[] args)</code> can be written as <code>main(String... args)</code>. And <code>int[]... x</code> is the same as <code>int[][] x</code>.</div>
+</section>
+
+<section class="card reveal jsec" id="main-method" data-say="main-method"><div class="sec-num">Part 9</div><h2><span class="sec-em">🚪</span><span>The main() method</span></h2>
+<p>The compiler does not care whether a class has a <code>main()</code> method. The <b>JVM</b> checks it at run time, and if it cannot find the exact form it stops with an error.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Java snippet</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args)</pre></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Word</th><th>Why it is there</th></tr>
+<tr><td><code>public</code></td><td>so the JVM can call it from outside the class</td></tr>
+<tr><td><code>static</code></td><td>so the JVM can call it without creating an object first</td></tr>
+<tr><td><code>void</code></td><td>main returns nothing to the JVM</td></tr>
+<tr><td><code>main</code></td><td>the name the JVM is programmed to look for</td></tr>
+<tr><td><code>String[] args</code></td><td>the command line arguments</td></tr>
+</table></div></div>
+<h3>Changes the JVM still accepts</h3>
+<ul>
+<li>Swap modifier order: <code>static public void main</code></li>
+<li>Write the array any legal way: <code>String args[]</code>, <code>String []args</code>, or as a var-arg <code>String... args</code></li>
+<li>Rename the parameter: <code>String[] hello</code></li>
+<li>Add <code>final</code>, <code>synchronized</code> or <code>strictfp</code></li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A dressed up but valid main · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">final</span> <span class="k">static</span> <span class="k">synchronized</span> <span class="k">strictfp</span> <span class="k">public</span> <span class="k">void</span> main(<span class="k">final</span> <span class="t">String</span>... hi) {
+        <span class="t">System</span>.out.println(<span class="s">"Still runs"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>Still runs</pre></div></div>
+<h3>Overloading and inheritance</h3>
+<p>You may overload <code>main</code>, but the JVM only calls the <code>String[]</code> version. Others run only when you call them yourself. A child class also inherits a parent's static <code>main</code>, so running the child class runs the parent's main unless the child declares its own, which <b>hides</b> the parent version.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Overloaded main · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="s">"String[] main"</span>);
+        main(<span class="n">5</span>);
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="k">int</span> x) {
+        <span class="t">System</span>.out.println(<span class="s">"int main: "</span> + x);
+    }
+}</pre><div class="out"><span>Output</span><pre>String[] main
+int main: 5</pre></div></div>
+<div class="exam"><code>public static int main(String[] args)</code> compiles fine, but the JVM refuses to start it, because the return type must be <code>void</code>. Since Java 7, a class with only a static block and no main also refuses to run.</div>
+<div class="modern">Java 25 added a shorter starter form for small programs, where a simple <code>void main()</code> can be the entry point. Interviews, exams and most real projects still use the classic signature above.</div>
+</section>
+
+<section class="card reveal jsec" id="command-line" data-say="command-line"><div class="sec-num">Part 10</div><h2><span class="sec-em">⌨️</span><span>Command line arguments</span></h2>
+<p>Arguments typed after the class name are passed to <code>main</code> as a <code>String[]</code>. They let you change a program's behaviour without changing its code.</p>
+<pre class="cmdline">java Main 10 20</pre>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Main.java run as: java Main 10 20 · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(args.length);
+<span class="t">System</span>.out.println(args[<span class="n">0</span>] + args[<span class="n">1</span>]);                                        <span class="c">// joined as text</span>
+<span class="t">System</span>.out.println(<span class="t">Integer</span>.parseInt(args[<span class="n">0</span>]) + <span class="t">Integer</span>.parseInt(args[<span class="n">1</span>]));    <span class="c">// added as numbers</span></pre><div class="out"><span>Output</span><pre>2
+1020
+30</pre></div></div>
+<ul>
+<li>Every argument arrives as a <code>String</code>. Convert with <code>Integer.parseInt</code>, <code>Double.parseDouble</code> and similar methods.</li>
+<li>Spaces separate arguments. Use quotes to keep words together: <code>java Main "Note Book"</code> passes one argument.</li>
+<li>With no arguments, <code>args</code> is an empty array, never <code>null</code>.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">run as: java Main A B · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.out.println(args[<span class="n">0</span>]);
+<span class="t">System</span>.out.println(args[<span class="n">1</span>]);
+<span class="t">System</span>.out.println(args[<span class="n">2</span>]);</pre><div class="out"><span>Output before the crash</span><pre>A
+B</pre></div><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 2 out of bounds for length 2</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="coding-standards" data-say="coding-standards"><div class="sec-num">Part 11</div><h2><span class="sec-em">📏</span><span>Java coding standards</span></h2>
+<p>Good names make code read like a story. Java has well known naming habits that every team expects.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>What</th><th>Style</th><th>Usually</th><th>Examples</th></tr>
+<tr><td>Class</td><td>PascalCase</td><td>a noun</td><td><code>Student</code>, <code>StringBuilder</code></td></tr>
+<tr><td>Interface</td><td>PascalCase</td><td>an adjective</td><td><code>Runnable</code>, <code>Serializable</code>, <code>Comparable</code></td></tr>
+<tr><td>Method</td><td>camelCase</td><td>a verb or verb plus noun</td><td><code>print()</code>, <code>getName()</code>, <code>setSalary()</code></td></tr>
+<tr><td>Variable</td><td>camelCase</td><td>a noun</td><td><code>name</code>, <code>rollNo</code>, <code>mobileNumber</code></td></tr>
+<tr><td>Constant</td><td>UPPER_CASE with <code>_</code></td><td>a noun</td><td><code>MAX_VALUE</code>, <code>PI</code></td></tr>
+<tr><td>Package</td><td>all lowercase, reversed domain</td><td></td><td><code>com.brainybytes.util</code></td></tr>
+</table></div></div>
+<h3>JavaBean conventions</h3>
+<p>A JavaBean is a simple class with <code>private</code> fields and <code>public</code> getter and setter methods. Many tools find your data by these method names, so the names matter.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A tiny JavaBean · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">StudentBean</span> s = <span class="k">new</span> <span class="t">StudentBean</span>();
+        s.setName(<span class="s">"Meera"</span>);
+        s.setTopper(<span class="k">true</span>);
+        <span class="t">System</span>.out.println(s.getName() + <span class="s">" topper? "</span> + s.isTopper());
+    }
+}
+<span class="k">class</span> <span class="t">StudentBean</span> {
+    <span class="k">private</span> <span class="t">String</span> name;
+    <span class="k">private</span> <span class="k">boolean</span> topper;
+    <span class="k">public</span> <span class="t">String</span> getName() { <span class="k">return</span> name; }                  <span class="c">// getter: get + Name, no arguments</span>
+    <span class="k">public</span> <span class="k">void</span> setName(<span class="t">String</span> name) { <span class="k">this</span>.name = name; }    <span class="c">// setter: set + Name, one argument, void</span>
+    <span class="k">public</span> <span class="k">boolean</span> isTopper() { <span class="k">return</span> topper; }              <span class="c">// boolean getter may use is</span>
+    <span class="k">public</span> <span class="k">void</span> setTopper(<span class="k">boolean</span> topper) { <span class="k">this</span>.topper = topper; }
+}</pre><div class="out"><span>Output</span><pre>Meera topper? true</pre></div></div>
+<p>Listener methods follow the same idea. To register a listener named <code>MyActionListener</code>, the method is <code>addMyActionListener(MyActionListener l)</code>, and to remove it, <code>removeMyActionListener(MyActionListener l)</code>. Names like <code>registerMyActionListener</code> break the convention.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><span></span><a class="next" href="./operators.html" data-topic="operators"><small>Next chapter →</small><b>➗ Operators and Assignments</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "From a name to a value", "panels": [{"s": [["e", "🏷️"], ["t", "int age = 21;", {"b": 1}]], "h": "Pick a name", "t": "An identifier such as <code>age<\/code> is a label stuck on a box.", "more": "Letters, digits, <code>$<\/code> and <code>_<\/code> only, never starting with a digit, never a keyword, and <code>Age<\/code> is a different label."}, {"s": [["e", "📦"], ["c", ["byte", "short", "int", "long"], {"ix": false, "hl": {"2": "hl"}}]], "h": "Pick a box size", "t": "The type fixes the size. An <code>int<\/code> is 4 bytes on every machine.", "more": "byte 1, short 2, int 4, long 8 bytes. Bigger boxes hold bigger numbers but cost more memory."}, {"s": [["e", "✍️"], ["t", "21 = 0x15 = 025 = 0b10101", {"b": 1, "size": 12}]], "h": "Write the value", "t": "One number, four spellings: decimal, hex, octal and binary.", "more": "0x15 is 1×16 + 5. 025 is 2×8 + 5. 0b10101 is 16 + 4 + 1. All of them equal 21."}, {"s": [["e", "🚃"], ["c", [21, 19, 23, 20], {"hl": {"0": "ok"}}]], "h": "Line them up", "t": "An array is a train of same sized boxes, numbered from 0.", "more": "Its <code>length<\/code> is fixed at creation. Index 4 in a 4 box array crashes with ArrayIndexOutOfBoundsException."}], "remember": "A name plus a type plus a value makes a variable. Many same-type values in a fixed row make an array."}, "real": [["🏷️", "Name tags at a party", "You can write almost anything on a name tag, but the host bans tags that start with a number and tags that say \"Host\". Java treats identifiers the same way: no leading digits and no reserved words."], ["🧳", "Airline baggage limits", "A cabin bag (a byte) has a strict size limit. Try to squeeze in a 130 kg suitcase and the airline stops you at the gate, just like the compiler stops <code>byte b = 130;<\/code>."], ["🚂", "Train coaches", "A train has a fixed number of coaches. You can swap the passengers inside, but you cannot add a coach while it is running. And in Java the first coach is number 0, which confuses passengers and beginners alike."]], "quiz": [{"lv": "e", "q": "Which of these is a valid identifier?", "o": ["<code>4shares<\/code>", "<code>all@hands<\/code>", "<code>total_number<\/code>", "<code>int<\/code>"], "a": 2, "hint": "Only letters, digits, <code>$<\/code> and <code>_<\/code> are allowed, and a digit cannot come first.", "why": "<code>4shares<\/code> starts with a digit, <code>@<\/code> is not an allowed character, and <code>int<\/code> is a reserved word. Underscores are fine anywhere."}, {"lv": "e", "q": "How many bytes does an <code>int<\/code> use in Java?", "o": ["2", "4", "8", "It depends on the operating system"], "a": 1, "hint": "Java fixes the size of every primitive type so programs behave the same everywhere.", "why": "An <code>int<\/code> is always 4 bytes (32 bits) in Java, on every platform. That fixed size is part of what makes Java portable."}, {"lv": "e", "q": "What is the type of the literal <code>10.5<\/code>?", "o": ["float", "double", "int", "long"], "a": 1, "hint": "Think about what you must add to a decimal number to make it a float.", "why": "Floating point literals are <code>double<\/code> by default. You need the suffix <code>f<\/code>, as in <code>10.5f<\/code>, to make a <code>float<\/code>."}, {"lv": "m", "q": "What does this print?", "code": "int[] a = new int[3];\nSystem.out.println(a[1]);", "o": ["0", "null", "Compile error", "A random garbage value"], "a": 0, "run": 1, "hint": "Array elements always get default values, even inside a method.", "why": "Creating an array fills every slot with the default value of its type. For <code>int<\/code> that is 0. Only the local variable <code>a<\/code> itself has to be initialized, which it is."}, {"lv": "m", "q": "Which line does <b>not<\/b> compile?", "o": ["<code>byte b = 127;<\/code>", "<code>byte b = 128;<\/code>", "<code>short s = 128;<\/code>", "<code>char c = 65;<\/code>"], "a": 1, "hint": "Check each value against the range of its type.", "why": "A byte holds −128 to 127, so 128 does not fit and needs a cast. 128 fits in a short, and 65 is a valid char code (the letter A)."}, {"lv": "m", "q": "After <code>int[] a, b[];<\/code> what are the types of <code>a<\/code> and <code>b<\/code>?", "o": ["Both are <code>int[]<\/code>", "<code>a<\/code> is <code>int[]<\/code>, <code>b<\/code> is <code>int[][]<\/code>", "Both are <code>int[][]<\/code>", "It does not compile"], "a": 1, "hint": "Brackets after the type apply to every name. Brackets after a name apply only to that name.", "why": "The <code>[]<\/code> after <code>int<\/code> applies to both names. <code>b<\/code> gets one extra <code>[]<\/code> of its own, so it becomes two dimensional."}, {"lv": "h", "q": "What does this print?", "code": "System.out.println(010 + 0x10 + 0b10);", "o": ["26", "36", "30", "Compile error"], "a": 0, "run": 1, "hint": "Convert each literal to decimal first: octal, hexadecimal, binary.", "why": "<code>010<\/code> is octal 8, <code>0x10<\/code> is hex 16, and <code>0b10<\/code> is binary 2. The sum is 8 + 16 + 2 = 26."}, {"lv": "h", "q": "Which of these can the JVM use to start a program?", "o": ["<code>public static int main(String[] args)<\/code>", "<code>static public void main(String... x)<\/code>", "<code>public void main(String[] args)<\/code>", "<code>public static void Main(String[] args)<\/code>"], "a": 1, "hint": "Modifier order and the var-arg form are flexible. The return type, static and the exact name are not.", "why": "The JVM needs a <code>public static void main<\/code> taking a String array. The order of modifiers can change and <code>String...<\/code> counts as an array. A non static main, an int return type or a capital M all fail at run time."}, {"lv": "h", "q": "What does this program print?", "code": "class Main {\n    static void m(long x) { System.out.println(\"long\"); }\n    static void m(int... x) { System.out.println(\"var-arg\"); }\n    public static void main(String[] args) {\n        m(5);\n    }\n}", "o": ["long", "var-arg", "Compile error: ambiguous", "int"], "a": 0, "run": 1, "hint": "Widening an int to a long is an older, preferred rule. Var-args are the last resort.", "why": "The compiler first looks for exact or widening matches. <code>int<\/code> widens to <code>long<\/code>, so <code>m(long)<\/code> wins. The var-arg method is only considered when nothing else fits."}, {"lv": "x", "q": "What does this print?", "code": "byte b = (byte) 200;\nSystem.out.println(b);", "o": ["200", "-56", "56", "-200"], "a": 1, "run": 1, "hint": "A byte keeps only the lowest 8 bits. Values above 127 wrap around by 256.", "why": "200 does not fit in a byte. Its 8 bits are 1100 1000, and as a signed byte that means 200 − 256 = −56."}, {"lv": "x", "q": "What does this print?", "code": "char c = 'A';\nc += 1;\nSystem.out.println(c);", "o": ["66", "B", "Compile error", "A1"], "a": 1, "run": 1, "hint": "Compound operators like <code>+=<\/code> hide a cast back to the left side type.", "why": "<code>c += 1<\/code> means <code>c = (char)(c + 1)<\/code>. The int 66 is cast back to char, which is <code>B<\/code>. Writing <code>c = c + 1;<\/code> would not compile."}, {"lv": "x", "q": "Which assignment compiles?", "o": ["<code>Object[] o = new int[3];<\/code>", "<code>int[] a = new char[2];<\/code>", "<code>Object o = new int[3];<\/code>", "<code>String[] s = new Object[2];<\/code>"], "a": 2, "hint": "Every array is an object, but an array of primitives is not an array of objects.", "why": "Any array, including <code>int[]<\/code>, is an <code>Object<\/code>. But <code>int[]<\/code> is not an <code>Object[]<\/code>, element promotions never apply to whole arrays, and a parent array cannot be stored in a child array variable."}], "calc": [{"lv": "e", "q": "How many different values can a <code>short<\/code> hold?", "ans": "65536", "py": "2**16", "hint": "A short has 2 bytes. How many bits is that, and how many patterns do that many bits make?", "steps": ["A short uses 2 bytes, which is 16 bits.", "Each bit has 2 choices, so the number of patterns is <span class=\"eq\">2<sup>16<\/sup> = 65,536<\/span>", "Half go to negatives: the range is −32,768 to 32,767, which is 32,768 + 32,767 + 1 (for zero) = 65,536 values."]}, {"lv": "e", "q": "What does <code>System.out.println(017);<\/code> print?", "code": "System.out.println(017);", "ans": "15", "run": 1, "hint": "A leading 0 means the number is written in base 8.", "steps": ["<code>017<\/code> starts with 0, so it is octal (base 8).", "<span class=\"eq\">017<sub>8<\/sub> = 1 × 8<sup>1<\/sup> + 7 × 8<sup>0<\/sup> = 8 + 7 = 15<\/span>", "println always shows the decimal value, so it prints 15."]}, {"lv": "m", "q": "What does this print?", "code": "System.out.println(0x2F + 0b101);", "ans": "52", "run": 1, "hint": "Convert the hex value and the binary value to decimal, then add.", "steps": ["<span class=\"eq\">0x2F = 2 × 16 + 15 = 47<\/span>", "<span class=\"eq\">0b101 = 1 × 4 + 0 × 2 + 1 × 1 = 5<\/span>", "<span class=\"eq\">47 + 5 = 52<\/span>"]}, {"lv": "m", "q": "Ignoring the array object header, how many bytes do the elements of <code>new long[250]<\/code> take?", "ans": "2000", "unit": "bytes", "py": "250*8", "hint": "Multiply the number of elements by the size of one long.", "steps": ["One <code>long<\/code> is 8 bytes.", "<span class=\"eq\">250 × 8 = 2,000 bytes<\/span>", "The real object is a little bigger because every array also stores a header and its length."]}, {"lv": "h", "q": "What does this print?", "code": "System.out.println((byte) 300);", "ans": "44", "run": 1, "hint": "A byte keeps the value modulo 256, then reads it as signed.", "steps": ["A byte keeps only the lowest 8 bits, which is the value modulo 256.", "<span class=\"eq\">300 − 256 = 44<\/span>", "44 is between −128 and 127, so it stays 44."]}, {"lv": "h", "q": "What does this print?", "code": "System.out.println('z' - 'a' + 1);", "ans": "26", "run": 1, "hint": "In arithmetic, a char turns into its Unicode number. <code>'a'<\/code> is 97.", "steps": ["Arithmetic on chars promotes them to int.", "<span class=\"eq\">'z' = 122, 'a' = 97<\/span>", "<span class=\"eq\">122 − 97 + 1 = 26<\/span>", "That is the number of letters from a to z."]}, {"lv": "x", "q": "What does this print?", "code": "System.out.println((short) 40000);", "ans": "-25536", "run": 1, "hint": "A short holds −32,768 to 32,767. Values above that wrap around by 2<sup>16<\/sup>.", "steps": ["A short keeps the lowest 16 bits, so it wraps around every 65,536.", "40,000 is above 32,767, so subtract 65,536:", "<span class=\"eq\">40,000 − 65,536 = −25,536<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "int x = Integer.MAX_VALUE;\nx = x + 1;\nSystem.out.println(x);", "ans": "-2147483648", "run": 1, "hint": "int arithmetic never throws on overflow. It wraps around like a car odometer.", "steps": ["<span class=\"eq\">Integer.MAX_VALUE = 2<sup>31<\/sup> − 1 = 2,147,483,647<\/span>", "Adding 1 overflows the 32 bit int, and the result wraps to the smallest value.", "<span class=\"eq\">2<sup>31<\/sup> − 1 + 1 − 2<sup>32<\/sup> = −2<sup>31<\/sup> = −2,147,483,648<\/span>", "Java gives no error. Use <code>Math.addExact<\/code> when you want an exception instead."]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to Language Fundamentals. In this chapter you will meet the basic bricks of Java: names, reserved words, data types, literals, arrays and variables. Take your time and try every example.", "hi": "Language Fundamentals में आपका स्वागत है। इस अध्याय में आप Java की बुनियादी ईंटों से मिलेंगे: नाम, reserved words, data types, literals, arrays और variables। आराम से पढ़िए और हर उदाहरण खुद चलाकर देखिए।", "kn": "Language Fundamentals ಗೆ ಸ್ವಾಗತ. ಈ ಅಧ್ಯಾಯದಲ್ಲಿ ನೀವು Java ದ ಮೂಲ ಇಟ್ಟಿಗೆಗಳನ್ನು ಭೇಟಿಯಾಗುತ್ತೀರಿ: ಹೆಸರುಗಳು, reserved words, data types, literals, arrays ಮತ್ತು variables. ನಿಧಾನವಾಗಿ ಓದಿ, ಪ್ರತಿಯೊಂದು ಉದಾಹರಣೆಯನ್ನು ಪ್ರಯತ್ನಿಸಿ.", "or": "Language Fundamentals କୁ ସ୍ୱାଗତ। ଏହି ଅଧ୍ୟାୟରେ ଆପଣ Java ର ମୂଳ ଇଟାଗୁଡ଼ିକୁ ଦେଖିବେ: ନାମ, reserved words, data types, literals, arrays ଏବଂ variables। ଧୀରେ ପଢ଼ନ୍ତୁ ଏବଂ ପ୍ରତ୍ୟେକ ଉଦାହରଣ ଚେଷ୍ଟା କରନ୍ତୁ।", "ar": "مرحبًا بك في أساسيات لغة Java. في هذا الفصل ستتعرف على اللبنات الأساسية: الأسماء والكلمات المحجوزة وأنواع البيانات والقيم الحرفية والمصفوفات والمتغيرات. اقرأ على مهل وجرّب كل مثال بنفسك.", "de": "Willkommen bei den Java-Grundlagen. In diesem Kapitel lernst du die Bausteine von Java kennen: Namen, reservierte Wörter, Datentypen, Literale, Arrays und Variablen. Lies in Ruhe und probiere jedes Beispiel aus."}, {"id": "identifiers", "h": "Identifiers", "en": "An identifier is a name you give to a class, method or variable. It can use letters, digits, dollar and underscore, but it can never start with a digit. Java is case sensitive, so number and Number are different names.", "hi": "Identifier वह नाम है जो आप class, method या variable को देते हैं। इसमें अक्षर, अंक, डॉलर और underscore हो सकते हैं, लेकिन यह कभी अंक से शुरू नहीं हो सकता। Java case sensitive है, इसलिए number और Number अलग-अलग नाम हैं।", "kn": "Identifier ಎಂದರೆ class, method ಅಥವಾ variable ಗೆ ನೀವು ಕೊಡುವ ಹೆಸರು. ಇದರಲ್ಲಿ ಅಕ್ಷರಗಳು, ಅಂಕೆಗಳು, ಡಾಲರ್ ಮತ್ತು underscore ಇರಬಹುದು, ಆದರೆ ಇದು ಎಂದಿಗೂ ಅಂಕೆಯಿಂದ ಶುರುವಾಗಬಾರದು. Java case sensitive ಆಗಿರುವುದರಿಂದ number ಮತ್ತು Number ಬೇರೆ ಬೇರೆ ಹೆಸರುಗಳು.", "or": "Identifier ହେଉଛି class, method କିମ୍ବା variable କୁ ଆପଣ ଦେଉଥିବା ନାମ। ଏଥିରେ ଅକ୍ଷର, ଅଙ୍କ, ଡଲାର ଏବଂ underscore ରହିପାରେ, କିନ୍ତୁ ଏହା କେବେ ଅଙ୍କରୁ ଆରମ୍ଭ ହୋଇପାରିବ ନାହିଁ। Java case sensitive, ତେଣୁ number ଏବଂ Number ଅଲଗା ନାମ।", "ar": "المعرّف هو الاسم الذي تعطيه لصنف أو دالة أو متغير. يمكن أن يحتوي على حروف وأرقام وعلامة الدولار والشرطة السفلية، لكنه لا يبدأ أبدًا برقم. لغة Java تميّز بين الأحرف الكبيرة والصغيرة، لذلك number و Number اسمان مختلفان.", "de": "Ein Bezeichner ist der Name, den du einer Klasse, Methode oder Variablen gibst. Er darf Buchstaben, Ziffern, das Dollarzeichen und den Unterstrich enthalten, aber niemals mit einer Ziffer beginnen. Java unterscheidet Groß- und Kleinschreibung, deshalb sind number und Number verschiedene Namen."}, {"id": "reserved-words", "h": "Reserved words", "en": "Java keeps fifty three words for itself, like int, class and if, so you cannot use them as names. All of them are lowercase. The words goto and const are reserved but never used.", "hi": "Java ने तिरेपन शब्द अपने लिए रखे हैं, जैसे int, class और if, इसलिए इन्हें नाम की तरह इस्तेमाल नहीं कर सकते। ये सभी छोटे अक्षरों में लिखे जाते हैं। goto और const reserved हैं, पर कभी इस्तेमाल नहीं होते।", "kn": "Java ಐವತ್ತಮೂರು ಪದಗಳನ್ನು ತನಗಾಗಿ ಇಟ್ಟುಕೊಂಡಿದೆ, ಉದಾಹರಣೆಗೆ int, class ಮತ್ತು if, ಆದ್ದರಿಂದ ಅವನ್ನು ಹೆಸರುಗಳಾಗಿ ಬಳಸಲು ಸಾಧ್ಯವಿಲ್ಲ. ಇವೆಲ್ಲವೂ ಸಣ್ಣ ಅಕ್ಷರಗಳಲ್ಲಿವೆ. goto ಮತ್ತು const ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ, ಆದರೆ ಎಂದಿಗೂ ಬಳಸುವುದಿಲ್ಲ.", "or": "Java ତେପନଟି ଶବ୍ଦ ନିଜ ପାଇଁ ରଖିଛି, ଯେପରି int, class ଏବଂ if, ତେଣୁ ସେଗୁଡ଼ିକୁ ନାମ ଭାବେ ବ୍ୟବହାର କରିହେବ ନାହିଁ। ସବୁ ଛୋଟ ଅକ୍ଷରରେ ଲେଖାଯାଏ। goto ଏବଂ const ସଂରକ୍ଷିତ, କିନ୍ତୁ କେବେ ବ୍ୟବହୃତ ହୁଏ ନାହିଁ।", "ar": "تحتفظ Java بثلاث وخمسين كلمة لنفسها مثل int و class و if، لذلك لا يمكنك استخدامها أسماءً. كلها مكتوبة بأحرف صغيرة. الكلمتان goto و const محجوزتان لكنهما لا تُستخدمان أبدًا.", "de": "Java reserviert dreiundfünfzig Wörter für sich, zum Beispiel int, class und if, deshalb kannst du sie nicht als Namen verwenden. Alle werden kleingeschrieben. goto und const sind reserviert, werden aber nie benutzt."}, {"id": "data-types", "h": "Primitive data types", "en": "Java has eight primitive types: byte, short, int, long, float, double, char and boolean. Each type has a fixed size on every computer, so a byte always goes from minus one hundred twenty eight to one hundred twenty seven.", "hi": "Java में आठ primitive types हैं: byte, short, int, long, float, double, char और boolean। हर type का आकार हर कंप्यूटर पर एक जैसा रहता है, इसलिए byte हमेशा माइनस एक सौ अट्ठाईस से एक सौ सत्ताईस तक जाता है।", "kn": "Java ದಲ್ಲಿ ಎಂಟು primitive types ಇವೆ: byte, short, int, long, float, double, char ಮತ್ತು boolean. ಪ್ರತಿಯೊಂದು type ನ ಗಾತ್ರ ಎಲ್ಲ ಕಂಪ್ಯೂಟರ್‌ಗಳಲ್ಲೂ ಒಂದೇ, ಆದ್ದರಿಂದ byte ಯಾವಾಗಲೂ ಮೈನಸ್ ನೂರ ಇಪ್ಪತ್ತೆಂಟರಿಂದ ನೂರ ಇಪ್ಪತ್ತೇಳರವರೆಗೆ ಇರುತ್ತದೆ.", "or": "Java ରେ ଆଠଟି primitive types ଅଛି: byte, short, int, long, float, double, char ଏବଂ boolean। ପ୍ରତ୍ୟେକ type ର ଆକାର ସବୁ କମ୍ପ୍ୟୁଟରରେ ସମାନ, ତେଣୁ byte ସର୍ବଦା ମାଇନସ ଏକ ଶହ ଅଠେଇଶରୁ ଏକ ଶହ ସତେଇଶ ପର୍ଯ୍ୟନ୍ତ ଯାଏ।", "ar": "في Java ثمانية أنواع أولية: byte و short و int و long و float و double و char و boolean. حجم كل نوع ثابت على كل جهاز، لذلك يمتد byte دائمًا من سالب مئة وثمانية وعشرين إلى مئة وسبعة وعشرين.", "de": "Java hat acht primitive Typen: byte, short, int, long, float, double, char und boolean. Jeder Typ hat auf jedem Rechner dieselbe Größe, deshalb reicht ein byte immer von minus hundertachtundzwanzig bis hundertsiebenundzwanzig."}, {"id": "literals", "h": "Literals", "en": "A literal is a value written directly in code. Whole numbers can be written in decimal, octal, hexadecimal or binary, and they are int by default. Decimal point numbers are double by default, so add f for a float.", "hi": "Literal वह मान है जो सीधे कोड में लिखा जाता है। पूर्ण संख्याएँ decimal, octal, hexadecimal या binary में लिखी जा सकती हैं, और वे default रूप से int होती हैं। दशमलव वाली संख्याएँ default रूप से double होती हैं, इसलिए float के लिए f जोड़िए।", "kn": "Literal ಎಂದರೆ ಕೋಡ್‌ನಲ್ಲಿ ನೇರವಾಗಿ ಬರೆದ ಮೌಲ್ಯ. ಪೂರ್ಣ ಸಂಖ್ಯೆಗಳನ್ನು decimal, octal, hexadecimal ಅಥವಾ binary ರೂಪದಲ್ಲಿ ಬರೆಯಬಹುದು, ಮತ್ತು ಅವು default ಆಗಿ int. ದಶಮಾಂಶ ಸಂಖ್ಯೆಗಳು default ಆಗಿ double, ಆದ್ದರಿಂದ float ಗಾಗಿ f ಸೇರಿಸಿ.", "or": "Literal ହେଉଛି କୋଡରେ ସିଧାସଳଖ ଲେଖାଯାଇଥିବା ମୂଲ୍ୟ। ପୂର୍ଣ୍ଣ ସଂଖ୍ୟାକୁ decimal, octal, hexadecimal କିମ୍ବା binary ରେ ଲେଖିହେବ, ଏବଂ ସେଗୁଡ଼ିକ default ଭାବେ int। ଦଶମିକ ସଂଖ୍ୟା default ଭାବେ double, ତେଣୁ float ପାଇଁ f ଯୋଡ଼ନ୍ତୁ।", "ar": "القيمة الحرفية هي قيمة مكتوبة مباشرة في الشيفرة. يمكن كتابة الأعداد الصحيحة بالنظام العشري أو الثماني أو الست عشري أو الثنائي، وهي من النوع int افتراضيًا. الأعداد ذات الفاصلة من النوع double افتراضيًا، لذلك أضف الحرف f للنوع float.", "de": "Ein Literal ist ein Wert, der direkt im Code steht. Ganze Zahlen kann man dezimal, oktal, hexadezimal oder binär schreiben, und sie sind standardmäßig vom Typ int. Kommazahlen sind standardmäßig double, also hänge für float ein f an."}, {"id": "conversions", "h": "Widening and narrowing", "en": "Java widens small types into bigger ones automatically. Going from big to small needs a cast, and the cast may lose information. A final constant that fits in the range can go into a byte without a cast.", "hi": "Java छोटे type को बड़े type में अपने आप बदल देता है। बड़े से छोटे में जाने के लिए cast चाहिए, और cast से जानकारी खो सकती है। जो final constant range में फिट हो, वह बिना cast के byte में जा सकता है।", "kn": "Java ಸಣ್ಣ type ಅನ್ನು ದೊಡ್ಡ type ಗೆ ತಾನಾಗಿಯೇ ಬದಲಿಸುತ್ತದೆ. ದೊಡ್ಡದರಿಂದ ಸಣ್ಣದಕ್ಕೆ ಹೋಗಲು cast ಬೇಕು, ಮತ್ತು cast ನಿಂದ ಮಾಹಿತಿ ಕಳೆದುಹೋಗಬಹುದು. ವ್ಯಾಪ್ತಿಯಲ್ಲಿ ಹೊಂದುವ final constant ಅನ್ನು cast ಇಲ್ಲದೆ byte ಗೆ ಇಡಬಹುದು.", "or": "Java ଛୋଟ type କୁ ବଡ଼ type କୁ ନିଜେ ବଦଳାଇଦିଏ। ବଡ଼ରୁ ଛୋଟକୁ ଯିବାକୁ cast ଦରକାର, ଏବଂ cast ଦ୍ୱାରା ତଥ୍ୟ ହଜିପାରେ। ସୀମା ଭିତରେ ଥିବା final constant କୁ cast ବିନା byte ରେ ରଖିହେବ।", "ar": "تحوّل Java الأنواع الصغيرة إلى الأكبر تلقائيًا. أما التحويل من الكبير إلى الصغير فيحتاج إلى تحويل صريح، وقد يضيع جزء من المعلومات. الثابت final الذي يقع ضمن المدى يمكن وضعه في byte دون تحويل.", "de": "Java wandelt kleine Typen automatisch in größere um. Von groß nach klein brauchst du einen Cast, und dabei können Informationen verloren gehen. Eine final-Konstante, die in den Bereich passt, darf ohne Cast in ein byte."}, {"id": "arrays", "h": "Arrays", "en": "An array is a fixed size group of values of the same type. It is created with new, every slot gets a default value, and length tells you the size. A two dimensional array is really an array of arrays, so rows can have different lengths.", "hi": "Array एक ही type के मानों का तय आकार वाला समूह है। इसे new से बनाते हैं, हर खाने को default मान मिलता है, और length से आकार पता चलता है। दो आयामी array असल में arrays का array है, इसलिए हर पंक्ति की लंबाई अलग हो सकती है।", "kn": "Array ಎಂದರೆ ಒಂದೇ type ನ ಮೌಲ್ಯಗಳ ನಿಗದಿತ ಗಾತ್ರದ ಗುಂಪು. ಇದನ್ನು new ಮೂಲಕ ರಚಿಸುತ್ತೇವೆ, ಪ್ರತಿಯೊಂದು ಸ್ಥಾನಕ್ಕೂ default ಮೌಲ್ಯ ಸಿಗುತ್ತದೆ, ಮತ್ತು length ಗಾತ್ರವನ್ನು ಹೇಳುತ್ತದೆ. ಎರಡು ಆಯಾಮದ array ನಿಜವಾಗಿ arrays ನ array, ಆದ್ದರಿಂದ ಸಾಲುಗಳ ಉದ್ದ ಬೇರೆ ಬೇರೆ ಇರಬಹುದು.", "or": "Array ହେଉଛି ସମାନ type ର ମୂଲ୍ୟଗୁଡ଼ିକର ନିର୍ଦ୍ଦିଷ୍ଟ ଆକାରର ଗୋଷ୍ଠୀ। ଏହାକୁ new ଦ୍ୱାରା ତିଆରି କରାଯାଏ, ପ୍ରତ୍ୟେକ ସ୍ଥାନ default ମୂଲ୍ୟ ପାଏ, ଏବଂ length ଆକାର କହେ। ଦୁଇ ଆୟାମୀ array ପ୍ରକୃତରେ arrays ର array, ତେଣୁ ଧାଡ଼ିଗୁଡ଼ିକର ଲମ୍ବ ଅଲଗା ହୋଇପାରେ।", "ar": "المصفوفة مجموعة ثابتة الحجم من قيم من النوع نفسه. تُنشأ باستخدام new، وتحصل كل خانة على قيمة افتراضية، ويخبرك length بحجمها. المصفوفة ثنائية الأبعاد هي في الحقيقة مصفوفة من المصفوفات، لذلك قد تختلف أطوال الصفوف.", "de": "Ein Array ist eine Gruppe fester Größe mit Werten desselben Typs. Es wird mit new erzeugt, jedes Feld bekommt einen Standardwert, und length verrät die Größe. Ein zweidimensionales Array ist eigentlich ein Array von Arrays, deshalb können Zeilen unterschiedlich lang sein."}, {"id": "variables", "h": "Types of variables", "en": "Instance variables belong to each object, static variables are shared by the whole class, and local variables live inside a method. Instance and static variables get default values, but local variables must be set before you use them.", "hi": "Instance variables हर object के अपने होते हैं, static variables पूरी class साझा करती है, और local variables method के अंदर रहते हैं। Instance और static variables को default मान मिलते हैं, पर local variables को इस्तेमाल से पहले मान देना ज़रूरी है।", "kn": "Instance variables ಪ್ರತಿಯೊಂದು object ಗೆ ಸೇರಿವೆ, static variables ಇಡೀ class ಹಂಚಿಕೊಳ್ಳುತ್ತದೆ, ಮತ್ತು local variables method ಒಳಗೆ ಇರುತ್ತವೆ. Instance ಮತ್ತು static variables ಗೆ default ಮೌಲ್ಯಗಳು ಸಿಗುತ್ತವೆ, ಆದರೆ local variables ಅನ್ನು ಬಳಸುವ ಮೊದಲು ಮೌಲ್ಯ ಕೊಡಲೇಬೇಕು.", "or": "Instance variables ପ୍ରତ୍ୟେକ object ର ନିଜସ୍ୱ, static variables ସମଗ୍ର class ବାଣ୍ଟେ, ଏବଂ local variables method ଭିତରେ ରହେ। Instance ଏବଂ static variables default ମୂଲ୍ୟ ପାଆନ୍ତି, କିନ୍ତୁ local variables କୁ ବ୍ୟବହାର ପୂର୍ବରୁ ମୂଲ୍ୟ ଦେବା ଜରୁରୀ।", "ar": "متغيرات الكائن تخص كل كائن على حدة، والمتغيرات الساكنة static يتشاركها الصنف كله، والمتغيرات المحلية تعيش داخل الدالة. تحصل متغيرات الكائن والمتغيرات الساكنة على قيم افتراضية، أما المحلية فيجب إعطاؤها قيمة قبل استخدامها.", "de": "Instanzvariablen gehören zu jedem einzelnen Objekt, statische Variablen teilt sich die ganze Klasse, und lokale Variablen leben in einer Methode. Instanz- und statische Variablen bekommen Standardwerte, lokale Variablen musst du vor der Benutzung setzen."}, {"id": "var-args", "h": "Var-arg methods", "en": "A var-arg method, written with three dots, accepts any number of arguments. Inside the method it is just an array. It must be the last parameter, and it is chosen only when no other method matches.", "hi": "तीन बिंदुओं वाला var-arg method कितने भी arguments ले सकता है। Method के अंदर यह बस एक array है। यह आख़िरी parameter होना चाहिए, और इसे तभी चुना जाता है जब कोई दूसरा method मेल न खाए।", "kn": "ಮೂರು ಚುಕ್ಕೆಗಳಿರುವ var-arg method ಎಷ್ಟು ಬೇಕಾದರೂ arguments ಸ್ವೀಕರಿಸುತ್ತದೆ. Method ಒಳಗೆ ಅದು ಕೇವಲ ಒಂದು array. ಅದು ಕೊನೆಯ parameter ಆಗಿರಬೇಕು, ಮತ್ತು ಬೇರೆ ಯಾವ method ಹೊಂದದಿದ್ದಾಗ ಮಾತ್ರ ಅದನ್ನು ಆಯ್ಕೆ ಮಾಡಲಾಗುತ್ತದೆ.", "or": "ତିନୋଟି ବିନ୍ଦୁ ଥିବା var-arg method ଯେତେ ଇଚ୍ଛା arguments ନେଇପାରେ। Method ଭିତରେ ଏହା କେବଳ ଏକ array। ଏହା ଶେଷ parameter ହେବା ଉଚିତ, ଏବଂ ଅନ୍ୟ କୌଣସି method ମେଳ ନ ଖାଇଲେ ହିଁ ଏହାକୁ ବଛାଯାଏ।", "ar": "الدالة ذات الوسائط المتغيرة، المكتوبة بثلاث نقاط، تقبل أي عدد من الوسائط. داخل الدالة هي مجرد مصفوفة. يجب أن تكون آخر معامل، ولا تُختار إلا إذا لم تطابق أي دالة أخرى.", "de": "Eine Var-Arg-Methode mit drei Punkten nimmt beliebig viele Argumente an. In der Methode ist sie einfach ein Array. Sie muss der letzte Parameter sein und wird nur gewählt, wenn keine andere Methode passt."}, {"id": "main-method", "h": "The main method", "en": "The JVM starts your program by calling public static void main with a String array. The compiler does not check for main, the JVM does at run time. You can reorder the modifiers or use three dots, but the return type must stay void.", "hi": "JVM आपका प्रोग्राम public static void main को String array के साथ बुलाकर शुरू करता है। Compiler main की जाँच नहीं करता, JVM run time पर करता है। आप modifiers का क्रम बदल सकते हैं या तीन बिंदु लिख सकते हैं, पर return type void ही रहना चाहिए।", "kn": "JVM ನಿಮ್ಮ ಪ್ರೋಗ್ರಾಮ್ ಅನ್ನು String array ಜೊತೆಗೆ public static void main ಕರೆಯುವ ಮೂಲಕ ಪ್ರಾರಂಭಿಸುತ್ತದೆ. Compiler main ಅನ್ನು ಪರಿಶೀಲಿಸುವುದಿಲ್ಲ, JVM run time ನಲ್ಲಿ ಪರಿಶೀಲಿಸುತ್ತದೆ. Modifiers ಕ್ರಮ ಬದಲಿಸಬಹುದು ಅಥವಾ ಮೂರು ಚುಕ್ಕೆ ಬಳಸಬಹುದು, ಆದರೆ return type void ಆಗಿಯೇ ಇರಬೇಕು.", "or": "JVM String array ସହିତ public static void main କୁ ଡାକି ଆପଣଙ୍କ ପ୍ରୋଗ୍ରାମ ଆରମ୍ଭ କରେ। Compiler main ଯାଞ୍ଚ କରେ ନାହିଁ, JVM run time ରେ କରେ। Modifiers ର କ୍ରମ ବଦଳାଇପାରିବେ କିମ୍ବା ତିନି ବିନ୍ଦୁ ଲେଖିପାରିବେ, କିନ୍ତୁ return type void ହିଁ ରହିବା ଉଚିତ।", "ar": "يبدأ JVM برنامجك باستدعاء public static void main مع مصفوفة String. المترجم لا يتحقق من وجود main، بل يتحقق JVM وقت التشغيل. يمكنك تغيير ترتيب المعدّلات أو استخدام النقاط الثلاث، لكن نوع الإرجاع يجب أن يبقى void.", "de": "Die JVM startet dein Programm, indem sie public static void main mit einem String-Array aufruft. Der Compiler prüft main nicht, das macht die JVM zur Laufzeit. Du darfst die Reihenfolge der Modifizierer ändern oder drei Punkte schreiben, aber der Rückgabetyp muss void bleiben."}, {"id": "command-line", "h": "Command line arguments", "en": "Words typed after the class name arrive in main as the args array. They are always Strings, so convert them with Integer dot parseInt when you need numbers.", "hi": "Class के नाम के बाद लिखे शब्द main में args array बनकर आते हैं। ये हमेशा String होते हैं, इसलिए संख्या चाहिए तो Integer dot parseInt से बदलिए।", "kn": "Class ಹೆಸರಿನ ನಂತರ ಟೈಪ್ ಮಾಡಿದ ಪದಗಳು main ಗೆ args array ಆಗಿ ಬರುತ್ತವೆ. ಅವು ಯಾವಾಗಲೂ String ಗಳು, ಆದ್ದರಿಂದ ಸಂಖ್ಯೆಗಳು ಬೇಕಾದಾಗ Integer dot parseInt ಮೂಲಕ ಬದಲಿಸಿ.", "or": "Class ନାମ ପରେ ଟାଇପ କରାଯାଇଥିବା ଶବ୍ଦଗୁଡ଼ିକ main କୁ args array ଭାବେ ଆସେ। ସେଗୁଡ଼ିକ ସର୍ବଦା String, ତେଣୁ ସଂଖ୍ୟା ଦରକାର ହେଲେ Integer dot parseInt ଦ୍ୱାରା ବଦଳାନ୍ତୁ।", "ar": "الكلمات التي تكتبها بعد اسم الصنف تصل إلى main داخل المصفوفة args. وهي دائمًا من النوع String، لذلك حوّلها باستخدام Integer.parseInt عندما تحتاج إلى أرقام.", "de": "Wörter, die du nach dem Klassennamen eingibst, kommen in main als Array args an. Sie sind immer Strings, also wandle sie mit Integer.parseInt um, wenn du Zahlen brauchst."}, {"id": "coding-standards", "h": "Coding standards", "en": "Class names are nouns in PascalCase, methods are verbs in camelCase, and constants use capital letters with underscores. Getters start with get or is, and setters start with set.", "hi": "Class के नाम PascalCase में संज्ञा होते हैं, methods camelCase में क्रिया होते हैं, और constants बड़े अक्षरों और underscore से लिखे जाते हैं। Getter get या is से शुरू होता है, और setter set से।", "kn": "Class ಹೆಸರುಗಳು PascalCase ನಲ್ಲಿ ನಾಮಪದಗಳು, methods camelCase ನಲ್ಲಿ ಕ್ರಿಯಾಪದಗಳು, ಮತ್ತು constants ದೊಡ್ಡ ಅಕ್ಷರಗಳು ಹಾಗೂ underscore ಬಳಸುತ್ತವೆ. Getter get ಅಥವಾ is ನಿಂದ, setter set ನಿಂದ ಶುರುವಾಗುತ್ತದೆ.", "or": "Class ନାମ PascalCase ରେ ବିଶେଷ୍ୟ, methods camelCase ରେ କ୍ରିୟା, ଏବଂ constants ବଡ଼ ଅକ୍ଷର ଓ underscore ବ୍ୟବହାର କରନ୍ତି। Getter get କିମ୍ବା is ରୁ, setter set ରୁ ଆରମ୍ଭ ହୁଏ।", "ar": "أسماء الأصناف أسماء بأسلوب PascalCase، والدوال أفعال بأسلوب camelCase، والثوابت بأحرف كبيرة مع شرطة سفلية. تبدأ دوال القراءة بـ get أو is، وتبدأ دوال التعيين بـ set.", "de": "Klassennamen sind Substantive in PascalCase, Methoden sind Verben in camelCase, und Konstanten schreibt man in Großbuchstaben mit Unterstrichen. Getter beginnen mit get oder is, Setter mit set."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Language Fundamentals", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

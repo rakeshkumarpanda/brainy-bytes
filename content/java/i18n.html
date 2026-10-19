@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Internationalization (I18N) · Java</title>
+<meta name="description" content="Locale, NumberFormat for numbers, currency and percentages, lakh and crore grouping, DateFormat styles, modern java.time formatting and ResourceBundle for translated messages.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🧰 Core Java APIs</span><span>›</span><span>Chapter 11 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🌍</span><div><h1>Internationalization (I18N)</h1><p class="lead">India writes 12,34,567.89, America writes 1,234,567.89 and Germany writes 1.234.567,89. Internationalization lets one program speak to all of them correctly, without rewriting a line of logic.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 8 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#intro"><span>🗺️</span>What is I18N</a><a href="#locale"><span>📍</span>Locale</a><a href="#numberformat"><span>💰</span>NumberFormat</a><a href="#digits"><span>🔢</span>Controlling digits</a><a href="#dateformat"><span>📅</span>DateFormat</a><a href="#java-time"><span>⏰</span>Modern dates with java.time</a><a href="#resource-bundle"><span>💬</span>ResourceBundle: translated messages</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="intro" data-say="intro"><div class="sec-num">Part 1</div><h2><span class="sec-em">🗺️</span><span>What is I18N</span></h2>
+<p><b>Internationalization</b> (shortened to I18N, because there are 18 letters between the I and the N) means designing a program so it can adapt to many countries: their number formats, currencies, dates and languages.</p>
+<p><b>Localization</b> (L10N) is the second step: actually supplying the formats and translations for one country.</p>
+<div class="grid2">
+<div class="box"><h4>Locale</h4><p>Who is the user: a language plus a country.</p></div>
+<div class="box"><h4>NumberFormat</h4><p>Numbers, currencies and percentages in that locale's style.</p></div>
+<div class="box"><h4>DateFormat and DateTimeFormatter</h4><p>Dates and times in that locale's style.</p></div>
+<div class="box"><h4>ResourceBundle</h4><p>Translated messages chosen by locale.</p></div>
+</div>
+</section>
+
+<section class="card reveal jsec" id="locale" data-say="locale"><div class="sec-num">Part 2</div><h2><span class="sec-em">📍</span><span>Locale</span></h2>
+<p>A <code>java.util.Locale</code> object describes a language and, optionally, a country. It is <code>final</code>, <code>Cloneable</code> and <code>Serializable</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Making and inspecting locales · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Locale</span> india = <span class="t">Locale</span>.of(<span class="s">"hi"</span>, <span class="s">"IN"</span>);           <span class="c">// Java 19 and later</span>
+<span class="t">Locale</span> us = <span class="t">Locale</span>.<span class="t">US</span>;                           <span class="c">// ready-made constant</span>
+<span class="t">Locale</span> de = <span class="t">Locale</span>.<span class="t">GERMANY</span>;
+<span class="k">for</span> (<span class="t">Locale</span> l : <span class="k">new</span> <span class="t">Locale</span>[]{india, us, de})
+    <span class="t">System</span>.out.println(l + <span class="s">" → "</span> + l.getDisplayLanguage(<span class="t">Locale</span>.<span class="t">ENGLISH</span>) + <span class="s">", "</span> + l.getDisplayCountry(<span class="t">Locale</span>.<span class="t">ENGLISH</span>));
+<span class="t">System</span>.out.println(india.getDisplayLanguage(india));</pre><div class="out"><span>Output</span><pre>hi_IN → Hindi, India
+en_US → English, United States
+de_DE → German, Germany
+हिन्दी</pre></div></div>
+<div class="modern">The constructors <code>new Locale("hi", "IN")</code> are deprecated since Java 19. Use <code>Locale.of(...)</code>, a constant such as <code>Locale.UK</code>, or <code>Locale.forLanguageTag("hi-IN")</code>.</div>
+<div class="tip"><code>Locale.getDefault()</code> returns the locale of the machine, and <code>Locale.getAvailableLocales()</code> lists every locale the JVM supports.</div>
+</section>
+
+<section class="card reveal jsec" id="numberformat" data-say="numberformat"><div class="sec-num">Part 3</div><h2><span class="sec-em">💰</span><span>NumberFormat</span></h2>
+<p><code>java.text.NumberFormat</code> is abstract. Ask its factory methods for an object, then call <code>format</code> to turn a number into text, or <code>parse</code> to go the other way.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Factory method</th><th>For</th></tr>
+<tr><td><code>getInstance(locale)</code> or <code>getNumberInstance(locale)</code></td><td>plain numbers</td></tr>
+<tr><td><code>getCurrencyInstance(locale)</code></td><td>money</td></tr>
+<tr><td><code>getPercentInstance(locale)</code></td><td>percentages</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One number, four countries · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">double</span> amount = <span class="n">1234567.891</span>;
+<span class="t">Locale</span>[] places = { <span class="t">Locale</span>.of(<span class="s">"en"</span>, <span class="s">"IN"</span>), <span class="t">Locale</span>.<span class="t">US</span>, <span class="t">Locale</span>.<span class="t">UK</span>, <span class="t">Locale</span>.<span class="t">GERMANY</span> };
+<span class="k">for</span> (<span class="t">Locale</span> l : places) {
+    <span class="t">NumberFormat</span> num = <span class="t">NumberFormat</span>.getInstance(l);
+    <span class="t">NumberFormat</span> cur = <span class="t">NumberFormat</span>.getCurrencyInstance(l);
+    <span class="t">System</span>.out.println(l + <span class="s">"\t"</span> + num.format(amount) + <span class="s">"\t"</span> + cur.format(amount));
+}</pre><div class="out"><span>Output</span><pre>en_IN	1,234,567.891	₹1,234,567.89
+en_US	1,234,567.891	$1,234,567.89
+en_GB	1,234,567.891	£1,234,567.89
+de_DE	1.234.567,891	1.234.567,89 €</pre></div></div>
+<p>Look closely at the Indian line: Java picks the rupee sign, but still groups by thousands (1,234,567). The classic <code>java.text</code> formatter supports only one grouping size, so it cannot write the lakh and crore style 12,34,567 on its own. Libraries such as ICU4J can, or you can write a tiny helper.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lakh and crore grouping with a small helper · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="t">String</span> indian(<span class="k">long</span> n) {
+        <span class="t">String</span> s = <span class="t">Long</span>.toString(n);
+        <span class="k">if</span> (s.length() &lt;= <span class="n">3</span>) <span class="k">return</span> s;
+        <span class="t">String</span> last3 = s.substring(s.length() - <span class="n">3</span>), rest = s.substring(<span class="n">0</span>, s.length() - <span class="n">3</span>);
+        <span class="k">return</span> rest.replaceAll(<span class="s">"\\B(?=(\\d{2})+$)"</span>, <span class="s">","</span>) + <span class="s">","</span> + last3;   <span class="c">// commas every 2 digits, then the last 3</span>
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">for</span> (<span class="k">long</span> n : <span class="k">new</span> <span class="k">long</span>[]{<span class="n">999</span>, <span class="n">1234567</span>, <span class="n">123456789</span>, <span class="n">10000000</span>})
+            <span class="t">System</span>.out.println(n + <span class="s">" → "</span> + indian(n));
+    }
+}</pre><div class="out"><span>Output</span><pre>999 → 999
+1234567 → 12,34,567
+123456789 → 12,34,56,789
+10000000 → 1,00,00,000</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Percentages and parsing · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">NumberFormat</span> pct = <span class="t">NumberFormat</span>.getPercentInstance(<span class="t">Locale</span>.<span class="t">US</span>);
+<span class="t">System</span>.out.println(pct.format(<span class="n">0.875</span>));
+<span class="t">NumberFormat</span> de = <span class="t">NumberFormat</span>.getInstance(<span class="t">Locale</span>.<span class="t">GERMANY</span>);
+<span class="t">Number</span> n = de.parse(<span class="s">"1.234,5"</span>);             <span class="c">// German style text back to a number</span>
+<span class="t">System</span>.out.println(n.doubleValue() * <span class="n">2</span>);</pre><div class="out"><span>Output</span><pre>88%
+2469.0</pre></div></div>
+<div class="warn"><code>parse</code> throws the checked <code>ParseException</code> when the text does not fit the format, so it must be handled or declared.</div>
+</section>
+
+<section class="card reveal jsec" id="digits" data-say="digits"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔢</span><span>Controlling digits</span></h2>
+<p>A NumberFormat can be told how many digits to show before and after the decimal point.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Method</th><th>Effect</th></tr>
+<tr><td><code>setMaximumFractionDigits(n)</code></td><td>round to at most n decimals</td></tr>
+<tr><td><code>setMinimumFractionDigits(n)</code></td><td>pad with zeros to at least n decimals</td></tr>
+<tr><td><code>setMaximumIntegerDigits(n)</code></td><td>keep only the last n digits before the point</td></tr>
+<tr><td><code>setMinimumIntegerDigits(n)</code></td><td>pad with zeros in front</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Four settings, four results · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">NumberFormat</span> a = <span class="t">NumberFormat</span>.getInstance(<span class="t">Locale</span>.<span class="t">US</span>);
+a.setMaximumFractionDigits(<span class="n">2</span>);
+<span class="t">System</span>.out.println(a.format(<span class="n">123.4567</span>));
+<span class="t">NumberFormat</span> b = <span class="t">NumberFormat</span>.getInstance(<span class="t">Locale</span>.<span class="t">US</span>);
+b.setMinimumFractionDigits(<span class="n">3</span>);
+<span class="t">System</span>.out.println(b.format(<span class="n">123.4</span>));
+<span class="t">NumberFormat</span> c = <span class="t">NumberFormat</span>.getInstance(<span class="t">Locale</span>.<span class="t">US</span>);
+c.setMaximumIntegerDigits(<span class="n">2</span>);
+<span class="t">System</span>.out.println(c.format(<span class="n">1234.5</span>));
+<span class="t">NumberFormat</span> d = <span class="t">NumberFormat</span>.getInstance(<span class="t">Locale</span>.<span class="t">US</span>);
+d.setMinimumIntegerDigits(<span class="n">5</span>);
+d.setGroupingUsed(<span class="k">false</span>);
+<span class="t">System</span>.out.println(d.format(<span class="n">42</span>));</pre><div class="out"><span>Output</span><pre>123.46
+123.400
+34.5
+00042</pre></div></div>
+<div class="exam">NumberFormat rounds with <b>HALF_EVEN</b> (banker's rounding) by default. So with 0 decimals, 2.5 becomes 2 and 3.5 becomes 4.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Banker&#x27;s rounding · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">NumberFormat</span> f = <span class="t">NumberFormat</span>.getInstance(<span class="t">Locale</span>.<span class="t">US</span>);
+f.setMaximumFractionDigits(<span class="n">0</span>);
+<span class="t">System</span>.out.println(f.format(<span class="n">2.5</span>) + <span class="s">" "</span> + f.format(<span class="n">3.5</span>) + <span class="s">" "</span> + f.format(<span class="n">2.51</span>));</pre><div class="out"><span>Output</span><pre>2 4 3</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="dateformat" data-say="dateformat"><div class="sec-num">Part 5</div><h2><span class="sec-em">📅</span><span>DateFormat</span></h2>
+<p><code>java.text.DateFormat</code> formats an old style <code>java.util.Date</code>. Pick a style and a locale.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Style</th><th>Constant value</th></tr>
+<tr><td><code>DateFormat.FULL</code></td><td>0</td></tr>
+<tr><td><code>DateFormat.LONG</code></td><td>1</td></tr>
+<tr><td><code>DateFormat.MEDIUM</code></td><td>2 (the default)</td></tr>
+<tr><td><code>DateFormat.SHORT</code></td><td>3</td></tr>
+</table></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same moment in four styles and three countries · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">TimeZone</span>.setDefault(<span class="t">TimeZone</span>.getTimeZone(<span class="s">"UTC"</span>));
+<span class="t">Date</span> d = <span class="k">new</span> <span class="t">Date</span>(<span class="n">1792368000000L</span>);               <span class="c">// a fixed moment, so the output never changes</span>
+<span class="k">for</span> (<span class="k">int</span> style : <span class="k">new</span> <span class="k">int</span>[]{<span class="t">DateFormat</span>.<span class="t">FULL</span>, <span class="t">DateFormat</span>.<span class="t">LONG</span>, <span class="t">DateFormat</span>.<span class="t">MEDIUM</span>, <span class="t">DateFormat</span>.<span class="t">SHORT</span>})
+    <span class="t">System</span>.out.println(<span class="t">DateFormat</span>.getDateInstance(style, <span class="t">Locale</span>.<span class="t">US</span>).format(d));
+<span class="t">System</span>.out.println(<span class="t">DateFormat</span>.getDateInstance(<span class="t">DateFormat</span>.<span class="t">LONG</span>, <span class="t">Locale</span>.<span class="t">UK</span>).format(d));
+<span class="t">System</span>.out.println(<span class="t">DateFormat</span>.getDateInstance(<span class="t">DateFormat</span>.<span class="t">LONG</span>, <span class="t">Locale</span>.<span class="t">ITALY</span>).format(d));</pre><div class="out"><span>Output</span><pre>Monday, October 19, 2026
+October 19, 2026
+Oct 19, 2026
+10/19/26
+19 October 2026
+19 ottobre 2026</pre></div></div>
+<div class="tip"><code>DateFormat</code> objects are not thread safe. Do not share one between threads, or switch to the modern <code>java.time</code> classes below, which are.</div>
+</section>
+
+<section class="card reveal jsec" id="java-time" data-say="java-time"><div class="sec-num">Part 6</div><h2><span class="sec-em">⏰</span><span>Modern dates with java.time</span></h2>
+<div class="modern">Java 8 introduced <code>java.time</code>. Its classes are immutable and thread safe, and <code>DateTimeFormatter</code> replaces DateFormat for new code.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Localised dates with java.time · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.time.*;
+<span class="k">import</span> java.time.format.*;
+<span class="k">import</span> java.util.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">LocalDate</span> diwali = <span class="t">LocalDate</span>.of(<span class="n">2026</span>, <span class="n">11</span>, <span class="n">8</span>);
+        <span class="k">for</span> (<span class="t">Locale</span> l : <span class="k">new</span> <span class="t">Locale</span>[]{<span class="t">Locale</span>.<span class="t">US</span>, <span class="t">Locale</span>.of(<span class="s">"hi"</span>, <span class="s">"IN"</span>), <span class="t">Locale</span>.<span class="t">GERMANY</span>, <span class="t">Locale</span>.of(<span class="s">"ar"</span>, <span class="s">"SA"</span>)}) {
+            <span class="t">DateTimeFormatter</span> f = <span class="t">DateTimeFormatter</span>.ofLocalizedDate(<span class="t">FormatStyle</span>.<span class="t">LONG</span>).withLocale(l);
+            <span class="t">System</span>.out.println(l + <span class="s">"\t"</span> + diwali.format(f));
+        }
+        <span class="t">System</span>.out.println(diwali.getDayOfWeek() + <span class="s">", "</span> + diwali.plusDays(<span class="n">30</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>en_US	November 8, 2026
+hi_IN	8 नवंबर 2026
+de_DE	8. November 2026
+ar_SA	8 نوفمبر 2026
+SUNDAY, 2026-12-08</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="resource-bundle" data-say="resource-bundle"><div class="sec-num">Part 7</div><h2><span class="sec-em">💬</span><span>ResourceBundle: translated messages</span></h2>
+<p>Text shown to users should never be hard coded. Put each language's messages in its own <b>resource bundle</b> and let Java pick the right one for the locale. Bundles are usually <code>.properties</code> files, such as <code>Messages_hi.properties</code>. Here they are written as small classes so the example runs on its own.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Greeting in the user&#x27;s language · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="c">// File: Messages.java</span>
+<span class="k">import</span> java.util.*;
+<span class="k">public</span> <span class="k">class</span> <span class="t">Messages</span> <span class="k">extends</span> <span class="t">ListResourceBundle</span> {
+    <span class="k">protected</span> <span class="t">Object</span>[][] getContents() { <span class="k">return</span> <span class="k">new</span> <span class="t">Object</span>[][]{ {<span class="s">"hello"</span>, <span class="s">"Hello"</span>}, {<span class="s">"bye"</span>, <span class="s">"Goodbye"</span>} }; }
+}
+<span class="c">// File: Messages_hi.java</span>
+<span class="k">import</span> java.util.*;
+<span class="k">public</span> <span class="k">class</span> <span class="t">Messages_hi</span> <span class="k">extends</span> <span class="t">ListResourceBundle</span> {
+    <span class="k">protected</span> <span class="t">Object</span>[][] getContents() { <span class="k">return</span> <span class="k">new</span> <span class="t">Object</span>[][]{ {<span class="s">"hello"</span>, <span class="s">"नमस्ते"</span>} }; }
+}
+<span class="c">// File: Messages_de.java</span>
+<span class="k">import</span> java.util.*;
+<span class="k">public</span> <span class="k">class</span> <span class="t">Messages_de</span> <span class="k">extends</span> <span class="t">ListResourceBundle</span> {
+    <span class="k">protected</span> <span class="t">Object</span>[][] getContents() { <span class="k">return</span> <span class="k">new</span> <span class="t">Object</span>[][]{ {<span class="s">"hello"</span>, <span class="s">"Hallo"</span>}, {<span class="s">"bye"</span>, <span class="s">"Tschüss"</span>} }; }
+}
+<span class="c">// File: Main.java</span>
+<span class="k">import</span> java.util.*;
+<span class="k">public</span> <span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Locale</span>.setDefault(<span class="t">Locale</span>.<span class="t">ENGLISH</span>);
+        <span class="k">for</span> (<span class="t">Locale</span> l : <span class="k">new</span> <span class="t">Locale</span>[]{<span class="t">Locale</span>.<span class="t">ENGLISH</span>, <span class="t">Locale</span>.of(<span class="s">"hi"</span>), <span class="t">Locale</span>.<span class="t">GERMAN</span>, <span class="t">Locale</span>.<span class="t">FRENCH</span>}) {
+            <span class="t">ResourceBundle</span> rb = <span class="t">ResourceBundle</span>.getBundle(<span class="s">"Messages"</span>, l);
+            <span class="t">System</span>.out.println(l + <span class="s">": "</span> + rb.getString(<span class="s">"hello"</span>) + <span class="s">" / "</span> + rb.getString(<span class="s">"bye"</span>));
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>en: Hello / Goodbye
+hi: नमस्ते / Goodbye
+de: Hallo / Tschüss
+fr: Hello / Goodbye</pre></div></div>
+<p>Hindi has no "bye" message, so Java falls back to the base bundle for it. French has no bundle at all, so it uses the base bundle completely.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./regex.html" data-topic="regex"><small>← Previous chapter</small><b>🔍 Regular Expressions</b></a><a class="next" href="./collections.html" data-topic="collections"><small>Next chapter →</small><b>🧺 Collections Framework</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "One number, many countries", "panels": [{"s": [["e", "📍"], ["t", "Locale.of(\"hi\", \"IN\")", {"b": 1}]], "h": "Who is the user", "t": "A Locale is a language plus a country.", "more": "Use Locale.of, a constant like Locale.UK, or Locale.forLanguageTag(\"de-DE\"). The old constructors are deprecated."}, {"s": [["e", "💰"], ["t", "$1,234,567.89   1.234.567,89 €", {"b": 1, "size": 11}]], "h": "Format numbers and money", "t": "NumberFormat picks commas, dots and currency symbols for each locale.", "more": "Germany swaps commas and dots. For India Java picks the rupee sign, but lakh and crore grouping (12,34,567) needs a small helper or a library such as ICU4J."}, {"s": [["e", "📅"], ["t", "November 8, 2026   8. November 2026", {"b": 1, "size": 10}]], "h": "Format dates", "t": "DateFormat and DateTimeFormatter write dates the local way.", "more": "FULL, LONG, MEDIUM and SHORT control how much detail is shown. java.time is the modern, thread safe choice."}, {"s": [["e", "💬"], ["t", "Hello · नमस्ते · Hallo", {"b": 1}]], "h": "Translate the words", "t": "ResourceBundle picks the message file for the locale.", "more": "Missing keys fall back to the base bundle, so the screen never shows a blank."}], "remember": "Never hard code number formats, date formats or user-facing text. Let the Locale decide."}, "real": [["🏧", "An ATM abroad", "The same ATM network shows \"Withdraw ₹2,000\" in Pune and \"Retirer 20,00 €\" in Paris. The logic is identical. Only the locale changed."], ["📆", "Is 03/04 March or April", "An American reads 03/04 as March 4th, an Indian reads it as 3rd April. Formatting dates by locale avoids birthday parties on the wrong day."], ["🛒", "A shopping app in six languages", "The \"Add to cart\" button text comes from a resource bundle, so adding Kannada or Arabic means adding one file, not editing every screen."]], "quiz": [{"lv": "e", "q": "Why is internationalization shortened to I18N?", "o": ["It started in 2018", "There are 18 letters between the I and the N", "It covers 18 countries", "It was Java Specification 18"], "a": 1, "hint": "Count the letters in the middle of the word.", "why": "i-nternationalizatio-n: 18 letters sit between the first i and the last n. Localization becomes L10N the same way."}, {"lv": "e", "q": "Which class describes a language plus a country?", "o": ["Locale", "Language", "Country", "Region"], "a": 0, "hint": "It lives in java.util.", "why": "<code>java.util.Locale<\/code> holds a language code and an optional country code, such as hi and IN."}, {"lv": "e", "q": "Which factory method gives a currency formatter?", "o": ["getInstance", "getCurrencyInstance", "getPercentInstance", "getMoneyInstance"], "a": 1, "hint": "The name says what it formats.", "why": "<code>NumberFormat.getCurrencyInstance(locale)<\/code> formats money with the locale's symbol and grouping."}, {"lv": "m", "q": "What does this print?", "code": "System.out.println(NumberFormat.getPercentInstance(Locale.US).format(0.25));", "o": ["0.25", "25%", "25.0%", "0.25%"], "a": 1, "run": 1, "hint": "A percent formatter multiplies by 100.", "why": "0.25 × 100 = 25, and the US percent style shows it as 25% with no decimals by default."}, {"lv": "m", "q": "Which DateFormat style is used when you do not choose one?", "o": ["FULL", "LONG", "MEDIUM", "SHORT"], "a": 2, "hint": "It is the middle option.", "why": "<code>DateFormat.getDateInstance()<\/code> with no style uses MEDIUM."}, {"lv": "m", "q": "What is the modern replacement for <code>new Locale(\"hi\", \"IN\")<\/code>?", "o": ["<code>Locale.of(\"hi\", \"IN\")<\/code>", "<code>Locale.create(\"hi\", \"IN\")<\/code>", "<code>new Region(\"hi\", \"IN\")<\/code>", "<code>Locale.parse(\"hi\", \"IN\")<\/code>"], "a": 0, "hint": "A static factory added in Java 19.", "why": "The Locale constructors are deprecated since Java 19. <code>Locale.of<\/code> is the replacement."}, {"lv": "h", "q": "What does this print?", "code": "System.out.println(NumberFormat.getInstance(Locale.of(\"en\", \"IN\")).format(1234567));", "o": ["1,234,567", "12,34,567", "1.234.567", "12.34.567"], "a": 0, "run": 1, "hint": "java.text.DecimalFormat supports only one grouping size.", "why": "Even for en-IN, the classic java.text formatter groups every three digits, giving 1,234,567. Lakh and crore grouping (12,34,567) needs ICU4J or a small helper like the one in this chapter."}, {"lv": "h", "q": "What does this print?", "code": "NumberFormat f = NumberFormat.getInstance(Locale.US);\nf.setMaximumFractionDigits(1);\nSystem.out.println(f.format(2.25));", "o": ["2.3", "2.2", "2.25", "2"], "a": 1, "run": 1, "hint": "Default rounding is HALF_EVEN.", "why": "With HALF_EVEN, a value exactly halfway rounds to the even neighbour. 2.25 is halfway between 2.2 and 2.3, and 2 is even, so it gives 2.2."}, {"lv": "h", "q": "Which checked exception can <code>NumberFormat.parse<\/code> throw?", "o": ["NumberFormatException", "ParseException", "IOException", "IllegalArgumentException"], "a": 1, "hint": "It lives in java.text.", "why": "<code>parse<\/code> declares <code>java.text.ParseException<\/code>, a checked exception. NumberFormatException belongs to Integer.parseInt and friends."}, {"lv": "x", "q": "A Hindi bundle defines only \"hello\". The base bundle defines \"hello\" and \"bye\". What does <code>getString(\"bye\")<\/code> return for the Hindi locale?", "o": ["null", "MissingResourceException", "The base value \"Goodbye\"", "The Hindi value for hello"], "a": 2, "hint": "Bundles form a parent chain.", "why": "A locale specific bundle has the base bundle as its parent. Missing keys are looked up in the parent, so \"Goodbye\" comes back."}, {"lv": "x", "q": "What does this print?", "code": "NumberFormat f = NumberFormat.getInstance(Locale.US);\nf.setMinimumIntegerDigits(3);\nf.setGroupingUsed(false);\nSystem.out.println(f.format(7));", "o": ["7", "007", "7.000", "0007"], "a": 1, "run": 1, "hint": "Minimum integer digits pads with zeros on the left.", "why": "At least 3 integer digits are required, so 7 is padded to 007."}, {"lv": "x", "q": "What does this print?", "code": "import java.time.*;\nclass Main {\n    public static void main(String[] args) {\n        System.out.println(LocalDate.of(2026, 2, 28).plusDays(1));\n    }\n}", "o": ["2026-02-29", "2026-03-01", "2026-02-28", "DateTimeException"], "a": 1, "run": 1, "hint": "Is 2026 a leap year?", "why": "2026 is not divisible by 4, so February has 28 days. The next day is 1 March 2026. LocalDate handles calendars correctly for you."}], "calc": [{"lv": "e", "q": "Using the <code>indian()<\/code> helper from this chapter, how many commas does 123456789 get?", "code": "class Main {\n    static String indian(long n) {\n        String s = Long.toString(n);\n        if (s.length() <= 3) return s;\n        String last3 = s.substring(s.length() - 3), rest = s.substring(0, s.length() - 3);\n        return rest.replaceAll(\"\\\\B(?=(\\\\d{2})+$)\", \",\") + \",\" + last3;\n    }\n    public static void main(String[] args) {\n        System.out.println(indian(123456789).chars().filter(c -> c == ',').count());\n    }\n}", "ans": "3", "run": 1, "hint": "Lakh and crore grouping: the last three digits, then pairs.", "steps": ["123456789 becomes 12,34,56,789 (twelve crore, thirty four lakh, fifty six thousand, seven hundred eighty nine).", "That has 3 commas."]}, {"lv": "e", "q": "How many commas appear when 123456789 is formatted for <code>Locale.US<\/code>?", "code": "String s = NumberFormat.getInstance(Locale.US).format(123456789);\nSystem.out.println(s.chars().filter(c -> c == ',').count());", "ans": "2", "run": 1, "hint": "US grouping is every three digits.", "steps": ["123456789 becomes 123,456,789.", "That has 2 commas."]}, {"lv": "m", "q": "What does this print?", "code": "NumberFormat p = NumberFormat.getPercentInstance(Locale.US);\np.setMaximumFractionDigits(1);\nSystem.out.println(p.format(0.0875));", "ans": "8.8%", "run": 1, "hint": "Multiply by 100, then round to one decimal with HALF_EVEN.", "steps": ["<span class=\"eq\">0.0875 × 100 = 8.75<\/span>", "8.75 is halfway between 8.7 and 8.8. HALF_EVEN picks the even last digit, 8.", "So it prints <code>8.8%<\/code>."]}, {"lv": "m", "q": "What does this print?", "code": "NumberFormat f = NumberFormat.getInstance(Locale.US);\nf.setMaximumFractionDigits(0);\nint sum = 0;\nfor (double d : new double[]{0.5, 1.5, 2.5, 3.5}) sum += Integer.parseInt(f.format(d));\nSystem.out.println(sum);", "ans": "8", "run": 1, "hint": "Round each halfway value to the nearest even number.", "steps": ["0.5 → 0, 1.5 → 2, 2.5 → 2, 3.5 → 4", "<span class=\"eq\">0 + 2 + 2 + 4 = 8<\/span>", "Normal school rounding (half up) would give 1 + 2 + 3 + 4 = 10."]}, {"lv": "h", "q": "How many days are there from 1 January 2026 to 31 December 2026 (counting the gap, not both ends)?", "code": "import java.time.*;\nimport java.time.temporal.*;\nclass Main {\n    public static void main(String[] args) {\n        System.out.println(ChronoUnit.DAYS.between(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31)));\n    }\n}", "ans": "364", "run": 1, "hint": "2026 has 365 days.", "steps": ["A non leap year has 365 days.", "between() counts the gap from the first date to the last date: one less than the number of days covered.", "<span class=\"eq\">365 − 1 = 364<\/span>"]}, {"lv": "h", "q": "What does this print?", "code": "Number n = NumberFormat.getInstance(Locale.GERMANY).parse(\"1.234,5\");\nSystem.out.println(n.doubleValue() * 2);", "ans": "2469.0", "run": 1, "hint": "In German, the dot groups thousands and the comma is the decimal point.", "steps": ["\"1.234,5\" in German style means 1234.5.", "<span class=\"eq\">1234.5 × 2 = 2469.0<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "double total = 19.99 * 3;\nSystem.out.println(NumberFormat.getCurrencyInstance(Locale.US).format(total));", "ans": "$59.97", "run": 1, "hint": "The formatter rounds to two decimals for dollars.", "steps": ["<span class=\"eq\">19.99 × 3 = 59.97<\/span> (in binary floating point it is 59.97000000000000…, very close).", "The US currency format adds the dollar sign and two decimals: <code>$59.97<\/code>.", "For real money, keep amounts in BigDecimal or in paise or cents as long integers."]}, {"lv": "x", "q": "How many leap years are there from 2001 to 2100, inclusive?", "code": "import java.time.*;\nclass Main {\n    public static void main(String[] args) {\n        int c = 0;\n        for (int y = 2001; y <= 2100; y++) if (Year.isLeap(y)) c++;\n        System.out.println(c);\n    }\n}", "ans": "24", "run": 1, "hint": "Every 4th year is a leap year, except century years not divisible by 400.", "steps": ["Multiples of 4 from 2004 to 2100: <span class=\"eq\">(2100 − 2004) / 4 + 1 = 25<\/span>", "2100 is a century year and 2100 is not divisible by 400, so it is not a leap year.", "<span class=\"eq\">25 − 1 = 24<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to Internationalization. India, America and Germany all write numbers, money and dates differently. Here you will learn how one Java program can speak to all of them correctly.", "hi": "Internationalization में आपका स्वागत है। भारत, अमेरिका और जर्मनी संख्याएँ, पैसे और तारीखें अलग-अलग तरह से लिखते हैं। यहाँ आप सीखेंगे कि एक ही Java प्रोग्राम सबसे सही तरह कैसे बात कर सकता है।", "kn": "Internationalization ಗೆ ಸ್ವಾಗತ. ಭಾರತ, ಅಮೆರಿಕ ಮತ್ತು ಜರ್ಮನಿ ಸಂಖ್ಯೆಗಳು, ಹಣ ಮತ್ತು ದಿನಾಂಕಗಳನ್ನು ಬೇರೆ ಬೇರೆ ರೀತಿ ಬರೆಯುತ್ತವೆ. ಒಂದೇ Java ಪ್ರೋಗ್ರಾಮ್ ಎಲ್ಲರೊಂದಿಗೆ ಸರಿಯಾಗಿ ಹೇಗೆ ಮಾತನಾಡಬಹುದು ಎಂದು ಇಲ್ಲಿ ಕಲಿಯುತ್ತೀರಿ.", "or": "Internationalization କୁ ସ୍ୱାଗତ। ଭାରତ, ଆମେରିକା ଏବଂ ଜର୍ମାନୀ ସଂଖ୍ୟା, ଟଙ୍କା ଏବଂ ତାରିଖ ଅଲଗା ଭାବେ ଲେଖନ୍ତି। ଏଠାରେ ଆପଣ ଶିଖିବେ ଯେ ଗୋଟିଏ Java ପ୍ରୋଗ୍ରାମ ସମସ୍ତଙ୍କ ସହ କିପରି ସଠିକ ଭାବେ କଥା ହୋଇପାରେ।", "ar": "مرحبًا بك في التدويل. الهند وأمريكا وألمانيا تكتب الأرقام والنقود والتواريخ بطرق مختلفة. ستتعلم هنا كيف يخاطب برنامج Java واحد الجميع بالشكل الصحيح.", "de": "Willkommen bei der Internationalisierung. Indien, Amerika und Deutschland schreiben Zahlen, Geld und Daten unterschiedlich. Hier lernst du, wie ein einziges Java-Programm alle richtig anspricht."}, {"id": "intro", "h": "What is I18N", "en": "I eighteen N is short for internationalization, because there are eighteen letters between the I and the N. It means building a program that can adapt to many countries. Localization supplies the formats and translations for one country.", "hi": "I अठारह N internationalization का छोटा रूप है, क्योंकि I और N के बीच अठारह अक्षर हैं। इसका मतलब है ऐसा प्रोग्राम बनाना जो कई देशों के हिसाब से ढल सके। Localization किसी एक देश के formats और अनुवाद देता है।", "kn": "I ಹದಿನೆಂಟು N ಎಂಬುದು internationalization ನ ಚಿಕ್ಕ ರೂಪ, ಏಕೆಂದರೆ I ಮತ್ತು N ನಡುವೆ ಹದಿನೆಂಟು ಅಕ್ಷರಗಳಿವೆ. ಅಂದರೆ ಹಲವು ದೇಶಗಳಿಗೆ ಹೊಂದಿಕೊಳ್ಳುವ ಪ್ರೋಗ್ರಾಮ್ ನಿರ್ಮಿಸುವುದು. Localization ಒಂದು ದೇಶದ formats ಮತ್ತು ಅನುವಾದಗಳನ್ನು ಒದಗಿಸುತ್ತದೆ.", "or": "I ଅଠର N ହେଉଛି internationalization ର ଛୋଟ ରୂପ, କାରଣ I ଏବଂ N ମଧ୍ୟରେ ଅଠରଟି ଅକ୍ଷର ଅଛି। ଏହାର ଅର୍ଥ ଅନେକ ଦେଶ ଅନୁସାରେ ଖାପ ଖାଉଥିବା ପ୍ରୋଗ୍ରାମ ତିଆରି କରିବା। Localization ଗୋଟିଏ ଦେଶର formats ଏବଂ ଅନୁବାଦ ଦିଏ।", "ar": "الاختصار I ثمانية عشر N يعني التدويل، لأن بين الحرفين I و N ثمانية عشر حرفًا. ويعني بناء برنامج يتكيف مع دول كثيرة. أما التوطين فيقدم الصيغ والترجمات لدولة واحدة.", "de": "I achtzehn N steht für Internationalisierung, weil zwischen I und N achtzehn Buchstaben stehen. Gemeint ist ein Programm, das sich an viele Länder anpasst. Lokalisierung liefert dann Formate und Übersetzungen für ein Land."}, {"id": "locale", "h": "Locale", "en": "A Locale describes a language and a country. Create one with Locale dot of, or use constants like Locale dot US. It can also tell you the display name of its language and country.", "hi": "Locale एक भाषा और एक देश का वर्णन करता है। इसे Locale dot of से बनाइए, या Locale dot US जैसे constants इस्तेमाल कीजिए। यह अपनी भाषा और देश का नाम भी बता सकता है।", "kn": "Locale ಒಂದು ಭಾಷೆ ಮತ್ತು ಒಂದು ದೇಶವನ್ನು ವಿವರಿಸುತ್ತದೆ. ಅದನ್ನು Locale dot of ಮೂಲಕ ರಚಿಸಿ, ಅಥವಾ Locale dot US ನಂತಹ constants ಬಳಸಿ. ಅದು ತನ್ನ ಭಾಷೆ ಮತ್ತು ದೇಶದ ಹೆಸರನ್ನೂ ಹೇಳಬಲ್ಲದು.", "or": "Locale ଏକ ଭାଷା ଏବଂ ଏକ ଦେଶକୁ ବର୍ଣ୍ଣନା କରେ। ଏହାକୁ Locale dot of ଦ୍ୱାରା ତିଆରି କରନ୍ତୁ, କିମ୍ବା Locale dot US ଭଳି constants ବ୍ୟବହାର କରନ୍ତୁ। ଏହା ନିଜ ଭାଷା ଓ ଦେଶର ନାମ ମଧ୍ୟ କହିପାରେ।", "ar": "يصف الكائن Locale لغة ودولة. أنشئه باستخدام Locale.of أو استخدم ثوابت مثل Locale.US. ويستطيع أيضًا أن يخبرك باسم لغته ودولته.", "de": "Ein Locale beschreibt eine Sprache und ein Land. Erzeuge es mit Locale.of oder nutze Konstanten wie Locale.US. Es kann dir auch den Anzeigenamen seiner Sprache und seines Landes nennen."}, {"id": "numberformat", "h": "NumberFormat", "en": "NumberFormat formats plain numbers, currencies and percentages for a locale, and can parse text back into numbers. For India it uses the rupee sign, but it still groups by thousands, so lakh and crore grouping needs a small helper.", "hi": "NumberFormat किसी locale के लिए सादी संख्याएँ, मुद्रा और प्रतिशत format करता है, और text को वापस संख्या में parse कर सकता है। भारत के लिए यह रुपये का चिह्न लगाता है, पर फिर भी हज़ार के हिसाब से समूह बनाता है, इसलिए लाख और करोड़ वाले समूह के लिए एक छोटा helper चाहिए।", "kn": "NumberFormat ಒಂದು locale ಗೆ ಸಾಮಾನ್ಯ ಸಂಖ್ಯೆಗಳು, ಹಣ ಮತ್ತು ಶೇಕಡಾವಾರು format ಮಾಡುತ್ತದೆ, ಮತ್ತು text ಅನ್ನು ಮತ್ತೆ ಸಂಖ್ಯೆಗೆ parse ಮಾಡಬಲ್ಲದು. ಭಾರತಕ್ಕೆ ಅದು ರೂಪಾಯಿ ಚಿಹ್ನೆ ಬಳಸುತ್ತದೆ, ಆದರೆ ಸಾವಿರಗಳಂತೆಯೇ ಗುಂಪು ಮಾಡುತ್ತದೆ, ಆದ್ದರಿಂದ ಲಕ್ಷ ಮತ್ತು ಕೋಟಿ ಗುಂಪಿಗೆ ಚಿಕ್ಕ helper ಬೇಕು.", "or": "NumberFormat ଏକ locale ପାଇଁ ସାଧାରଣ ସଂଖ୍ୟା, ମୁଦ୍ରା ଏବଂ ପ୍ରତିଶତ format କରେ, ଏବଂ text କୁ ପୁଣି ସଂଖ୍ୟାରେ parse କରିପାରେ। ଭାରତ ପାଇଁ ଏହା ଟଙ୍କା ଚିହ୍ନ ବ୍ୟବହାର କରେ, କିନ୍ତୁ ତଥାପି ହଜାର ଅନୁସାରେ ଗୋଷ୍ଠୀ କରେ, ତେଣୁ ଲକ୍ଷ ଓ କୋଟି ଗୋଷ୍ଠୀ ପାଇଁ ଏକ ଛୋଟ helper ଦରକାର।", "ar": "ينسق NumberFormat الأرقام العادية والعملات والنسب المئوية حسب المنطقة، ويستطيع تحويل النص إلى رقم. وللهند يستخدم رمز الروبية، لكنه يبقى يجمع الأرقام بالآلاف، لذلك يحتاج التجميع الهندي بالـ lakh و crore إلى دالة مساعدة صغيرة.", "de": "NumberFormat formatiert normale Zahlen, Währungen und Prozente für ein Locale und kann Text zurück in Zahlen umwandeln. Für Indien nutzt es das Rupienzeichen, gruppiert aber weiter in Tausendern, für Lakh und Crore braucht man daher eine kleine Hilfsmethode."}, {"id": "digits", "h": "Controlling digits", "en": "You can set the minimum and maximum number of digits before and after the decimal point. Rounding uses half even, so two point five becomes two and three point five becomes four.", "hi": "आप दशमलव से पहले और बाद के अंकों की न्यूनतम और अधिकतम संख्या तय कर सकते हैं। Rounding half even से होती है, इसलिए दो दशमलव पाँच दो बनता है और तीन दशमलव पाँच चार।", "kn": "ದಶಮಾಂಶದ ಮೊದಲು ಮತ್ತು ನಂತರದ ಅಂಕೆಗಳ ಕನಿಷ್ಠ ಮತ್ತು ಗರಿಷ್ಠ ಸಂಖ್ಯೆಯನ್ನು ನೀವು ಹೊಂದಿಸಬಹುದು. Rounding half even ಬಳಸುತ್ತದೆ, ಆದ್ದರಿಂದ ಎರಡು ದಶಮಾಂಶ ಐದು ಎರಡು ಆಗುತ್ತದೆ ಮತ್ತು ಮೂರು ದಶಮಾಂಶ ಐದು ನಾಲ್ಕು ಆಗುತ್ತದೆ.", "or": "ଆପଣ ଦଶମିକ ପୂର୍ବରୁ ଏବଂ ପରେ ଅଙ୍କର ସର୍ବନିମ୍ନ ଓ ସର୍ବାଧିକ ସଂଖ୍ୟା ସ୍ଥିର କରିପାରିବେ। Rounding half even ବ୍ୟବହାର କରେ, ତେଣୁ ଦୁଇ ଦଶମିକ ପାଞ୍ଚ ଦୁଇ ହୁଏ ଏବଂ ତିନି ଦଶମିକ ପାଞ୍ଚ ଚାରି ହୁଏ।", "ar": "يمكنك تحديد أقل وأكبر عدد من الأرقام قبل الفاصلة العشرية وبعدها. ويستخدم التقريب طريقة النصف الزوجي، فيصبح اثنان فاصلة خمسة اثنين، وثلاثة فاصلة خمسة أربعة.", "de": "Du kannst die minimale und maximale Anzahl Ziffern vor und nach dem Komma festlegen. Gerundet wird kaufmännisch zur geraden Zahl, also wird zwei Komma fünf zu zwei und drei Komma fünf zu vier."}, {"id": "dateformat", "h": "DateFormat", "en": "DateFormat formats an old style Date in four styles: full, long, medium and short. Each locale writes the same moment in its own way. DateFormat objects are not thread safe.", "hi": "DateFormat पुराने तरह की Date को चार styles में format करता है: full, long, medium और short। हर locale एक ही पल को अपने तरीके से लिखता है। DateFormat objects thread safe नहीं होते।", "kn": "DateFormat ಹಳೆಯ ರೀತಿಯ Date ಅನ್ನು ನಾಲ್ಕು styles ನಲ್ಲಿ format ಮಾಡುತ್ತದೆ: full, long, medium ಮತ್ತು short. ಪ್ರತಿಯೊಂದು locale ಒಂದೇ ಕ್ಷಣವನ್ನು ತನ್ನದೇ ರೀತಿಯಲ್ಲಿ ಬರೆಯುತ್ತದೆ. DateFormat objects thread safe ಅಲ್ಲ.", "or": "DateFormat ପୁରୁଣା ଶୈଳୀର Date କୁ ଚାରି styles ରେ format କରେ: full, long, medium ଏବଂ short। ପ୍ରତ୍ୟେକ locale ସମାନ ମୁହୂର୍ତ୍ତକୁ ନିଜ ଢଙ୍ଗରେ ଲେଖେ। DateFormat objects thread safe ନୁହେଁ।", "ar": "ينسق DateFormat كائن Date القديم بأربعة أنماط: كامل وطويل ومتوسط وقصير. وكل منطقة تكتب اللحظة نفسها بطريقتها. وكائنات DateFormat ليست آمنة مع الخيوط.", "de": "DateFormat formatiert ein altes Date in vier Stilen: full, long, medium und short. Jedes Locale schreibt denselben Moment auf seine Art. DateFormat-Objekte sind nicht threadsicher."}, {"id": "java-time", "h": "Modern dates with java.time", "en": "Since Java eight, use LocalDate and DateTimeFormatter. They are immutable and thread safe, and ofLocalizedDate with a locale gives the right style for every country.", "hi": "Java आठ से LocalDate और DateTimeFormatter इस्तेमाल कीजिए। ये immutable और thread safe हैं, और locale के साथ ofLocalizedDate हर देश के लिए सही style देता है।", "kn": "Java ಎಂಟರಿಂದ LocalDate ಮತ್ತು DateTimeFormatter ಬಳಸಿ. ಅವು immutable ಮತ್ತು thread safe, ಮತ್ತು locale ಜೊತೆ ofLocalizedDate ಪ್ರತಿಯೊಂದು ದೇಶಕ್ಕೂ ಸರಿಯಾದ style ಕೊಡುತ್ತದೆ.", "or": "Java ଆଠରୁ LocalDate ଏବଂ DateTimeFormatter ବ୍ୟବହାର କରନ୍ତୁ। ଏଗୁଡ଼ିକ immutable ଏବଂ thread safe, ଏବଂ locale ସହିତ ofLocalizedDate ପ୍ରତ୍ୟେକ ଦେଶ ପାଇଁ ସଠିକ style ଦିଏ।", "ar": "منذ Java ثمانية استخدم LocalDate و DateTimeFormatter. فهما غير قابلين للتغيير وآمنان مع الخيوط، و ofLocalizedDate مع المنطقة تعطي النمط الصحيح لكل دولة.", "de": "Seit Java acht nimmst du LocalDate und DateTimeFormatter. Sie sind unveränderlich und threadsicher, und ofLocalizedDate mit einem Locale liefert für jedes Land den richtigen Stil."}, {"id": "resource-bundle", "h": "ResourceBundle", "en": "A ResourceBundle keeps the messages for each language separate from the code. Java picks the bundle that fits the locale, and any missing message falls back to the base bundle.", "hi": "ResourceBundle हर भाषा के संदेशों को code से अलग रखता है। Java locale के अनुसार bundle चुनता है, और कोई संदेश न मिले तो base bundle से लेता है।", "kn": "ResourceBundle ಪ್ರತಿಯೊಂದು ಭಾಷೆಯ ಸಂದೇಶಗಳನ್ನು code ನಿಂದ ಪ್ರತ್ಯೇಕವಾಗಿ ಇಡುತ್ತದೆ. Java locale ಗೆ ಹೊಂದುವ bundle ಆಯ್ಕೆ ಮಾಡುತ್ತದೆ, ಮತ್ತು ಇಲ್ಲದ ಸಂದೇಶ base bundle ಗೆ ಹಿಂದಿರುಗುತ್ತದೆ.", "or": "ResourceBundle ପ୍ରତ୍ୟେକ ଭାଷାର ବାର୍ତ୍ତାକୁ code ଠାରୁ ଅଲଗା ରଖେ। Java locale ଅନୁସାରେ bundle ବାଛେ, ଏବଂ କୌଣସି ବାର୍ତ୍ତା ନଥିଲେ base bundle ରୁ ନିଏ।", "ar": "يحفظ ResourceBundle رسائل كل لغة بعيدًا عن الشيفرة. تختار Java الحزمة المناسبة للمنطقة، وأي رسالة ناقصة تُؤخذ من الحزمة الأساسية.", "de": "Ein ResourceBundle hält die Texte jeder Sprache getrennt vom Code. Java wählt das passende Bundle für das Locale, und fehlende Texte kommen aus dem Basis-Bundle."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Internationalization (I18N)", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

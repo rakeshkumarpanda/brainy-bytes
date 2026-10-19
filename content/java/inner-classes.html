@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inner Classes · Java</title>
+<meta name="description" content="Normal inner classes, method local inner classes, anonymous inner classes and static nested classes, with Outer.this, effectively final locals and the .class files they create.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🧩 Object Oriented Java</span><span>›</span><span>Chapter 6 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🪆</span><div><h1>Inner Classes</h1><p class="lead">Some objects only make sense inside another object: a heart inside a body, an entry inside a map. Inner classes let Java say exactly that.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 11 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#why-inner"><span>🫀</span>Why inner classes exist</a><a href="#normal-inner"><span>📥</span>Normal inner classes</a><a href="#method-local"><span>🧪</span>Method local inner classes</a><a href="#anonymous"><span>🎭</span>Anonymous inner classes</a><a href="#general-vs-anonymous"><span>🆚</span>Normal class versus anonymous class</a><a href="#static-nested"><span>🧊</span>Static nested classes</a><a href="#comparison"><span>📊</span>Normal inner versus static nested</a><a href="#combinations"><span>🧱</span>Classes and interfaces inside each other</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="why-inner" data-say="why-inner"><div class="sec-num">Part 1</div><h2><span class="sec-em">🫀</span><span>Why inner classes exist</span></h2>
+<p>Declare a class inside another class when the inner thing <b>cannot exist without</b> the outer thing. A university has departments, and a map has entries. Without a <code>Map</code> object there is no <code>Map.Entry</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Java snippet</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">University</span> {          <span class="c">// outer</span>
+    <span class="k">class</span> <span class="t">Department</span> { }    <span class="c">// inner: lives inside a university</span>
+}</pre></div>
+<div class="grid2">
+<div class="box"><h4>1. Normal (regular) inner class</h4><p>Declared directly inside a class, without <code>static</code>.</p></div>
+<div class="box"><h4>2. Method local inner class</h4><p>Declared inside a method, visible only there.</p></div>
+<div class="box"><h4>3. Anonymous inner class</h4><p>A class without a name, declared and used in one expression.</p></div>
+<div class="box"><h4>4. Static nested class</h4><p>Declared inside a class with <code>static</code>. Not tied to an outer object.</p></div>
+</div>
+<div class="tip">Strictly speaking, Java calls all four "nested classes" and only the non-static ones "inner classes". Most people use "inner class" loosely for all of them.</div>
+</section>
+
+<section class="card reveal jsec" id="normal-inner" data-say="normal-inner"><div class="sec-num">Part 2</div><h2><span class="sec-em">📥</span><span>Normal inner classes</span></h2>
+<p>A normal inner class is declared directly inside the outer class body. Compiling produces two files: <code>Outer.class</code> and <code>Outer$Inner.class</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Three ways to reach the inner class · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Outer</span> {
+    <span class="k">class</span> <span class="t">Inner</span> {
+        <span class="k">void</span> hello() { <span class="t">System</span>.out.println(<span class="s">"Hello from Inner"</span>); }
+    }
+    <span class="k">void</span> fromInstanceMethod() {
+        <span class="t">Inner</span> i = <span class="k">new</span> <span class="t">Inner</span>();                 <span class="c">// an outer object already exists (this)</span>
+        i.hello();
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Outer</span> o = <span class="k">new</span> <span class="t">Outer</span>();
+        <span class="t">Outer</span>.<span class="t">Inner</span> i = o.<span class="k">new</span> <span class="t">Inner</span>();         <span class="c">// from static code: build on an outer object</span>
+        i.hello();
+        <span class="k">new</span> <span class="t">Outer</span>().<span class="k">new</span> <span class="t">Inner</span>().hello();       <span class="c">// the one line version</span>
+        o.fromInstanceMethod();
+    }
+}</pre><div class="out"><span>Output</span><pre>Hello from Inner
+Hello from Inner
+Hello from Inner</pre></div></div>
+<h3>The inner class sees everything outside</h3>
+<p>Inner code can use every member of the outer class, static or not, even <code>private</code> ones.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Private outer members are visible · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Outer</span> {
+    <span class="k">private</span> <span class="k">int</span> x = <span class="n">10</span>;
+    <span class="k">static</span> <span class="k">int</span> y = <span class="n">20</span>;
+    <span class="k">class</span> <span class="t">Inner</span> {
+        <span class="k">void</span> show() { <span class="t">System</span>.out.println(x + <span class="s">" "</span> + y); }
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="k">new</span> <span class="t">Outer</span>().<span class="k">new</span> <span class="t">Inner</span>().show(); }
+}</pre><div class="out"><span>Output</span><pre>10 20</pre></div></div>
+<h3>Which this</h3>
+<p>Inside the inner class, <code>this</code> means the inner object. To reach the outer object, write <code>Outer.this</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Three x variables, three ways to reach them · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Outer</span> {
+    <span class="k">int</span> x = <span class="n">10</span>;
+    <span class="k">class</span> <span class="t">Inner</span> {
+        <span class="k">int</span> x = <span class="n">100</span>;
+        <span class="k">void</span> show() {
+            <span class="k">int</span> x = <span class="n">1000</span>;
+            <span class="t">System</span>.out.println(x);               <span class="c">// local</span>
+            <span class="t">System</span>.out.println(<span class="k">this</span>.x);          <span class="c">// inner field</span>
+            <span class="t">System</span>.out.println(<span class="t">Outer</span>.<span class="k">this</span>.x);    <span class="c">// outer field</span>
+        }
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="k">new</span> <span class="t">Outer</span>().<span class="k">new</span> <span class="t">Inner</span>().show(); }
+}</pre><div class="out"><span>Output</span><pre>1000
+100
+10</pre></div></div>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Modifiers on a normal inner class</th></tr>
+<tr><td><code>public</code>, default, <code>private</code>, <code>protected</code>, <code>final</code>, <code>abstract</code>, <code>strictfp</code>, and <code>static</code> (which turns it into a static nested class)</td></tr></table></div></div>
+<div class="modern">Before Java 16 an inner class could not declare static members, so it could not have its own <code>main</code>. Since Java 16 static members are allowed in inner classes too. Older notes and exam books still describe the old rule.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Static member inside an inner class (Java 16 and later) · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Outer</span> {
+    <span class="k">class</span> <span class="t">Inner</span> {
+        <span class="k">static</span> <span class="k">int</span> created = <span class="n">0</span>;
+        <span class="t">Inner</span>() { created++; }
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Outer</span> o = <span class="k">new</span> <span class="t">Outer</span>();
+        o.<span class="k">new</span> <span class="t">Inner</span>(); o.<span class="k">new</span> <span class="t">Inner</span>();
+        <span class="t">System</span>.out.println(<span class="t">Inner</span>.created);
+    }
+}</pre><div class="out"><span>Output</span><pre>2</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="method-local" data-say="method-local"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧪</span><span>Method local inner classes</span></h2>
+<p>A class declared inside a method exists only inside that method. Use it for a helper that is needed again and again inside one method and nowhere else.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A helper that lives in one method · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">void</span> report() {
+        <span class="k">class</span> <span class="t">Adder</span> {
+            <span class="k">int</span> sum(<span class="k">int</span> a, <span class="k">int</span> b) { <span class="k">return</span> a + b; }
+        }
+        <span class="t">Adder</span> ad = <span class="k">new</span> <span class="t">Adder</span>();
+        <span class="t">System</span>.out.println(ad.sum(<span class="n">10</span>, <span class="n">20</span>));
+        <span class="t">System</span>.out.println(ad.sum(<span class="n">100</span>, <span class="n">200</span>));
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { <span class="k">new</span> <span class="t">Main</span>().report(); }
+}</pre><div class="out"><span>Output</span><pre>30
+300</pre></div></div>
+<ul>
+<li>It can be used only inside the method, after its declaration.</li>
+<li>Declared in an instance method, it can use every outer member. Declared in a static method, only static outer members.</li>
+<li>The only modifiers allowed are <code>final</code>, <code>abstract</code> and <code>strictfp</code>.</li>
+<li>It can read the method's local variables only if they are <code>final</code> or <b>effectively final</b> (never changed after being set, since Java 8).</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Effectively final locals are allowed · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> bonus = <span class="n">50</span>;                        <span class="c">// never changed: effectively final</span>
+        <span class="k">class</span> <span class="t">Salary</span> {
+            <span class="k">int</span> total(<span class="k">int</span> base) { <span class="k">return</span> base + bonus; }
+        }
+        <span class="t">System</span>.out.println(<span class="k">new</span> <span class="t">Salary</span>().total(<span class="n">1000</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>1050</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Changing the local breaks it · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> bonus = <span class="n">50</span>;
+        bonus++;
+        <span class="k">class</span> <span class="t">Salary</span> {
+            <span class="k">int</span> total(<span class="k">int</span> base) { <span class="k">return</span> base + bonus; }
+        }
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>local variables referenced from an inner class must be final or effectively final</pre></div></div>
+<p>Why the rule: the local variable dies when the method returns, but the inner object may live longer. Java gives the object its own copy, and copies only stay honest if the value never changes.</p>
+</section>
+
+<section class="card reveal jsec" id="anonymous" data-say="anonymous"><div class="sec-num">Part 4</div><h2><span class="sec-em">🎭</span><span>Anonymous inner classes</span></h2>
+<p>An <b>anonymous</b> class has no name. You declare it and create its one object in the same expression. It is perfect for a quick, one time change of behaviour.</p>
+<h3>1. Extending a class</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One special popcorn · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Popcorn</span> {
+    <span class="k">void</span> taste() { <span class="t">System</span>.out.println(<span class="s">"salty"</span>); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Popcorn</span> p = <span class="k">new</span> <span class="t">Popcorn</span>() {            <span class="c">// a child of Popcorn with no name</span>
+            <span class="k">void</span> taste() { <span class="t">System</span>.out.println(<span class="s">"spicy"</span>); }
+        };
+        p.taste();
+        <span class="k">new</span> <span class="t">Popcorn</span>().taste();
+        <span class="t">System</span>.out.println(p.getClass().getName());
+    }
+}</pre><div class="out"><span>Output</span><pre>spicy
+salty
+Main$1</pre></div></div>
+<p>The compiler names the hidden class <code>Main$1</code>. It is a child of Popcorn that overrides <code>taste()</code>.</p>
+<h3>2. Implementing an interface</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A Runnable on the spot · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Runnable</span> job = <span class="k">new</span> <span class="t">Runnable</span>() {
+            <span class="k">public</span> <span class="k">void</span> run() { <span class="t">System</span>.out.println(<span class="s">"child thread working"</span>); }
+        };
+        <span class="t">Thread</span> t = <span class="k">new</span> <span class="t">Thread</span>(job);
+        t.start();
+        t.join();
+        <span class="t">System</span>.out.println(<span class="s">"main thread done"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>child thread working
+main thread done</pre></div></div>
+<h3>3. Inside a method argument</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Passed directly as an argument · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Thread</span> t = <span class="k">new</span> <span class="t">Thread</span>(<span class="k">new</span> <span class="t">Runnable</span>() {
+            <span class="k">public</span> <span class="k">void</span> run() { <span class="t">System</span>.out.println(<span class="s">"defined inside the argument"</span>); }
+        });
+        t.start();
+        t.join();
+    }
+}</pre><div class="out"><span>Output</span><pre>defined inside the argument</pre></div></div>
+<div class="modern">When the interface has exactly one abstract method, a <b>lambda</b> does the same job with far less code: <code>new Thread(() -&gt; System.out.println("hi")).start();</code></div>
+<div class="exam">A method added only in the anonymous class cannot be called through the parent reference, because the compiler only knows the parent type.</div>
+</section>
+
+<section class="card reveal jsec" id="general-vs-anonymous" data-say="general-vs-anonymous"><div class="sec-num">Part 5</div><h2><span class="sec-em">🆚</span><span>Normal class versus anonymous class</span></h2>
+<div class="tw"><div class="tw"><table class="jt"><tr><th></th><th>Normal class</th><th>Anonymous class</th></tr>
+<tr><td>Extends a class</td><td>one</td><td>one</td></tr>
+<tr><td>Implements interfaces</td><td>any number</td><td>exactly one</td></tr>
+<tr><td>Extend and implement at once</td><td class="yes">yes</td><td class="no">no, one or the other</td></tr>
+<tr><td>Own constructors</td><td class="yes">yes</td><td class="no">no, it has no name to give one</td></tr>
+<tr><td>Can be reused</td><td class="yes">yes</td><td class="no">no, one object only</td></tr>
+</table></div></div>
+<div class="tip">An anonymous class can still use an instance initializer block <code>{ ... }</code> where a constructor would normally go.</div>
+</section>
+
+<section class="card reveal jsec" id="static-nested" data-say="static-nested"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧊</span><span>Static nested classes</span></h2>
+<p>A nested class declared <code>static</code> is not tied to any outer object. Create it with <code>new Outer.Nested()</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">No outer object needed · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Outer</span> {
+    <span class="k">static</span> <span class="k">int</span> count = <span class="n">3</span>;
+    <span class="k">int</span> x = <span class="n">10</span>;
+    <span class="k">static</span> <span class="k">class</span> <span class="t">Nested</span> {
+        <span class="k">void</span> show() {
+            <span class="t">System</span>.out.println(<span class="s">"count = "</span> + count);       <span class="c">// static outer member: fine</span>
+            <span class="c">// System.out.println(x);                      // instance member: not allowed</span>
+        }
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Outer</span>.<span class="t">Nested</span> n = <span class="k">new</span> <span class="t">Outer</span>.<span class="t">Nested</span>();
+        n.show();
+    }
+}</pre><div class="out"><span>Output</span><pre>count = 3</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">No instance members from a static nested class · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Outer</span> {
+    <span class="k">int</span> x = <span class="n">10</span>;
+    <span class="k">static</span> <span class="k">class</span> <span class="t">Nested</span> {
+        <span class="k">void</span> show() { <span class="t">System</span>.out.println(x); }
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>non-static variable x cannot be referenced from a static context</pre></div></div>
+<p>A static nested class can have its own <code>main</code>, and you can run it directly with <code>java Outer$Nested</code>. <code>Map.Entry</code> is a nested interface, and many builders are static nested classes.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A builder as a static nested class · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Pizza</span> {
+    <span class="k">private</span> <span class="k">final</span> <span class="t">String</span> size; <span class="k">private</span> <span class="k">final</span> <span class="k">boolean</span> cheese;
+    <span class="k">private</span> <span class="t">Pizza</span>(<span class="t">Builder</span> b) { size = b.size; cheese = b.cheese; }
+    <span class="k">public</span> <span class="t">String</span> toString() { <span class="k">return</span> size + (cheese ? <span class="s">" with extra cheese"</span> : <span class="s">""</span>); }
+    <span class="k">static</span> <span class="k">class</span> <span class="t">Builder</span> {
+        <span class="k">private</span> <span class="t">String</span> size = <span class="s">"medium"</span>; <span class="k">private</span> <span class="k">boolean</span> cheese;
+        <span class="t">Builder</span> size(<span class="t">String</span> s) { size = s; <span class="k">return</span> <span class="k">this</span>; }
+        <span class="t">Builder</span> cheese() { cheese = <span class="k">true</span>; <span class="k">return</span> <span class="k">this</span>; }
+        <span class="t">Pizza</span> build() { <span class="k">return</span> <span class="k">new</span> <span class="t">Pizza</span>(<span class="k">this</span>); }
+    }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="k">new</span> <span class="t">Pizza</span>.<span class="t">Builder</span>().size(<span class="s">"large"</span>).cheese().build());
+    }
+}</pre><div class="out"><span>Output</span><pre>large with extra cheese</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="comparison" data-say="comparison"><div class="sec-num">Part 7</div><h2><span class="sec-em">📊</span><span>Normal inner versus static nested</span></h2>
+<div class="tw"><div class="tw"><table class="jt"><tr><th></th><th>Normal inner class</th><th>Static nested class</th></tr>
+<tr><td>Needs an outer object</td><td class="yes">yes</td><td class="no">no</td></tr>
+<tr><td>Can use outer instance members</td><td class="yes">yes</td><td class="no">no, only static ones</td></tr>
+<tr><td>Created with</td><td><code>outer.new Inner()</code></td><td><code>new Outer.Nested()</code></td></tr>
+<tr><td>Static members inside</td><td>only since Java 16</td><td class="yes">always</td></tr>
+<tr><td>Own <code>main</code> you can run</td><td>only since Java 16</td><td class="yes">always</td></tr>
+</table></div></div>
+</section>
+
+<section class="card reveal jsec" id="combinations" data-say="combinations"><div class="sec-num">Part 8</div><h2><span class="sec-em">🧱</span><span>Classes and interfaces inside each other</span></h2>
+<ul>
+<li><b>Interface inside a class</b>: useful when the interface only makes sense together with that class. Every nested interface is automatically static.</li>
+<li><b>Interface inside an interface</b>: <code>Map.Entry</code> lives inside <code>Map</code>. It is automatically public and static.</li>
+<li><b>Class inside an interface</b>: gives the interface a default implementation it can hand out. It is automatically public and static.</li>
+</ul>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Map.Entry in action · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">Map</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; marks = <span class="k">new</span> <span class="t">TreeMap</span>&lt;&gt;(<span class="t">Map</span>.of(<span class="s">"Asha"</span>, <span class="n">91</span>, <span class="s">"Ravi"</span>, <span class="n">78</span>));
+<span class="k">for</span> (<span class="t">Map</span>.<span class="t">Entry</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; e : marks.entrySet())
+    <span class="t">System</span>.out.println(e.getKey() + <span class="s">" → "</span> + e.getValue());</pre><div class="out"><span>Output</span><pre>Asha → 91
+Ravi → 78</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A class inside an interface · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">interface</span> <span class="t">Shape</span> {
+    <span class="k">double</span> area();
+    <span class="k">class</span> <span class="t">Unit</span> <span class="k">implements</span> <span class="t">Shape</span> {                <span class="c">// implicitly public static</span>
+        <span class="k">public</span> <span class="k">double</span> area() { <span class="k">return</span> <span class="n">1.0</span>; }
+    }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Shape</span> s = <span class="k">new</span> <span class="t">Shape</span>.<span class="t">Unit</span>();
+        <span class="t">System</span>.out.println(s.area());
+    }
+}</pre><div class="out"><span>Output</span><pre>1.0</pre></div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./oops-concepts.html" data-topic="oops-concepts"><small>← Previous chapter</small><b>🧬 OOP Concepts</b></a><a class="next" href="./java-lang.html" data-topic="java-lang"><small>Next chapter →</small><b>🧵 java.lang: Object, String and Wrappers</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "Four ways to put a class inside a class", "panels": [{"s": [["e", "🫀"], ["t", "outer.new Inner()", {"b": 1}]], "h": "Normal inner", "t": "Lives inside one outer object and sees all its members.", "more": "Inside it, <code>this<\/code> is the inner object and <code>Outer.this<\/code> is the outer one."}, {"s": [["e", "🧪"], ["t", "void m() { class Helper {} }", {"b": 1, "size": 11}]], "h": "Method local", "t": "Exists only inside one method.", "more": "It may read local variables only if they are final or effectively final."}, {"s": [["e", "🎭"], ["t", "new Popcorn() { ... }", {"b": 1, "size": 12}]], "h": "Anonymous", "t": "No name, one object, made on the spot.", "more": "It extends one class or implements one interface, never both, and it cannot have a constructor. Lambdas replace many of them."}, {"s": [["e", "🧊"], ["t", "new Outer.Nested()", {"b": 1}]], "h": "Static nested", "t": "Needs no outer object, sees only static outer members.", "more": "Builders and Map.Entry are classic examples. It can even have its own main."}], "remember": "Normal inner needs an outer object. Static nested does not. Method local stays in its method. Anonymous is used once."}, "real": [["🫀", "Heart and body", "A heart has no meaning without a body, and each body has its own heart. That is a normal inner class: every <code>Body<\/code> object owns its own <code>Heart<\/code>."], ["🍿", "One special popcorn", "The cinema sells salty popcorn. For your birthday they make one spicy bucket just for you, with no name on the menu. That is an anonymous class: a one-off child of Popcorn."], ["🗂️", "The office stationery cupboard", "A static nested class is like the shared cupboard of a company: it belongs to the company as a whole, not to any one employee, so you can open it without asking a particular person."]], "quiz": [{"lv": "e", "q": "What do you need before you can create a normal inner class object?", "o": ["Nothing", "An outer class object", "A static nested object", "A running thread"], "a": 1, "hint": "A normal inner object always belongs to one outer object.", "why": "A normal inner object is tied to an outer object, so you write <code>outer.new Inner()<\/code>, or just <code>new Inner()<\/code> inside an instance method where <code>this<\/code> already exists."}, {"lv": "e", "q": "Which file does the compiler create for <code>Outer.Inner<\/code>?", "o": ["Outer.Inner.class", "Outer$Inner.class", "Inner.class", "Outer_Inner.class"], "a": 1, "hint": "A dollar sign joins the names.", "why": "Nested classes are written to <code>Outer$Inner.class<\/code>. Anonymous classes become <code>Outer$1.class<\/code>, <code>Outer$2.class<\/code> and so on."}, {"lv": "e", "q": "Which kind of nested class needs no outer object?", "o": ["Normal inner", "Method local", "Static nested", "Anonymous inside an instance method"], "a": 2, "hint": "The keyword static means \"belongs to the class\".", "why": "A static nested class is tied to the outer class, not to an outer object, so <code>new Outer.Nested()<\/code> works anywhere."}, {"lv": "m", "q": "What does this print?", "code": "class Outer {\n    int x = 1;\n    class Inner {\n        int x = 2;\n        void show() { System.out.println(Outer.this.x + \" \" + this.x); }\n    }\n    public static void main(String[] args) { new Outer().new Inner().show(); }\n}", "o": ["1 2", "2 1", "2 2", "1 1"], "a": 0, "run": 1, "hint": "<code>Outer.this<\/code> is the outer object.", "why": "<code>Outer.this.x<\/code> reads the outer field (1) and <code>this.x<\/code> reads the inner field (2)."}, {"lv": "m", "q": "Which modifier is allowed on a method local inner class?", "o": ["private", "static", "final", "protected"], "a": 2, "hint": "It behaves like a local variable.", "why": "Like local variables, a method local class cannot have access modifiers or static. Only final, abstract and strictfp are allowed."}, {"lv": "m", "q": "What does this print?", "code": "class Popcorn { void taste() { } }\nclass Main {\n    public static void main(String[] args) {\n        Popcorn p = new Popcorn() { };\n        System.out.println(p.getClass().getName());\n    }\n}", "o": ["Popcorn", "Main$1", "Popcorn$1", "Main.Popcorn"], "a": 1, "run": 1, "hint": "Anonymous classes are numbered after the class that contains them.", "why": "The first anonymous class inside Main is compiled as <code>Main$1<\/code>."}, {"lv": "h", "q": "What happens?", "code": "class Main {\n    public static void main(String[] args) {\n        int bonus = 50;\n        class Salary { int total(int b) { return b + bonus; } }\n        bonus = 51;\n        System.out.println(new Salary().total(1000));\n    }\n}", "o": ["Prints 1050", "Prints 1051", "Compile error", "Runtime error"], "a": 2, "ce": 1, "hint": "Is bonus effectively final?", "why": "bonus is changed after its declaration, so it is not effectively final, and the inner class may not use it. The compiler refuses."}, {"lv": "h", "q": "How many interfaces can an anonymous class implement?", "o": ["None", "Exactly one", "Two", "Any number"], "a": 1, "hint": "The syntax is <code>new Something() { ... }<\/code>.", "why": "An anonymous class is written as <code>new X() { }<\/code>, so it either extends one class X or implements one interface X. Nothing more."}, {"lv": "h", "q": "What does this print?", "code": "class Outer {\n    static int n = 1;\n    static class N { int get() { return n * 10; } }\n    public static void main(String[] args) {\n        Outer.n = 5;\n        System.out.println(new Outer.N().get());\n    }\n}", "o": ["10", "50", "5", "Compile error"], "a": 1, "run": 1, "hint": "A static nested class reads static outer fields at the time of the call.", "why": "n is changed to 5 before <code>get()<\/code> runs, so it returns 5 × 10 = 50."}, {"lv": "x", "q": "What does this print?", "code": "class A {\n    int v() { return 1; }\n    int twice() { return v() * 2; }\n}\nclass Main {\n    public static void main(String[] args) {\n        A a = new A() { int v() { return 5; } };\n        System.out.println(a.twice());\n    }\n}", "o": ["2", "10", "5", "Compile error"], "a": 1, "run": 1, "hint": "<code>twice()<\/code> calls <code>v()<\/code>, and the object decides which v runs.", "why": "The anonymous child overrides <code>v()<\/code>. When the inherited <code>twice()<\/code> calls <code>v()<\/code>, the override runs, giving 5 × 2 = 10."}, {"lv": "x", "q": "What does this print?", "code": "class Outer {\n    int c = 0;\n    class In { In() { c++; } }\n    public static void main(String[] args) {\n        Outer o1 = new Outer(), o2 = new Outer();\n        o1.new In(); o1.new In(); o2.new In();\n        System.out.println(o1.c + \" \" + o2.c);\n    }\n}", "o": ["3 3", "2 1", "1 2", "3 0"], "a": 1, "run": 1, "hint": "Each inner object increments the field of its own outer object.", "why": "Two inner objects were built on o1 and one on o2, so o1.c is 2 and o2.c is 1."}, {"lv": "x", "q": "Since which Java version may a normal inner class declare static members such as its own <code>main<\/code>?", "o": ["Java 5", "Java 8", "Java 16", "Never"], "a": 2, "hint": "It arrived together with records.", "why": "Java 16 relaxed the rule so inner classes can declare static members. Older books, written before that, say it is impossible."}], "calc": [{"lv": "e", "q": "A file holds class <code>Outer<\/code> with two normal inner classes and one static nested class. How many <code>.class<\/code> files are created?", "ans": "4", "py": "1+2+1", "hint": "Every class, nested or not, gets its own file.", "steps": ["Outer.class, plus one file for each nested class.", "<span class=\"eq\">1 + 2 + 1 = 4<\/span>"]}, {"lv": "e", "q": "<code>Main<\/code> contains two anonymous classes. How many .class files does compiling Main.java create?", "ans": "3", "py": "1+2", "hint": "They are named Main$1 and Main$2.", "steps": ["Main.class, Main$1.class and Main$2.class.", "<span class=\"eq\">1 + 2 = 3<\/span>"]}, {"lv": "m", "q": "What does this print?", "code": "class Outer {\n    int x = 10;\n    class Inner {\n        int x = 100;\n        int sum() { int x = 1000; return x + this.x + Outer.this.x; }\n    }\n    public static void main(String[] args) {\n        System.out.println(new Outer().new Inner().sum());\n    }\n}", "ans": "1110", "run": 1, "hint": "Local, inner field and outer field.", "steps": ["<code>x<\/code> is the local 1000.", "<code>this.x<\/code> is the inner field 100.", "<code>Outer.this.x<\/code> is the outer field 10.", "<span class=\"eq\">1000 + 100 + 10 = 1110<\/span>"]}, {"lv": "m", "q": "What does this print?", "code": "class Main {\n    public static void main(String[] args) {\n        class Adder { int add(int a, int b) { return a + b; } }\n        Adder ad = new Adder();\n        int total = 0;\n        for (int i = 1; i <= 10; i++) total = ad.add(total, i);\n        System.out.println(total);\n    }\n}", "ans": "55", "run": 1, "hint": "It adds 1 to 10.", "steps": ["<span class=\"eq\">1 + 2 + … + 10 = <span class=\"fr\"><i>10 × 11<\/i><i>2<\/i><\/span> = 55<\/span>"]}, {"lv": "h", "q": "What does this print?", "code": "class Counter {\n    static int total;\n    int mine;\n    void add(int k) { mine += k; total += k; }\n}\nclass Main {\n    public static void main(String[] args) {\n        Counter c1 = new Counter(), c2 = new Counter();\n        c1.add(3); c2.add(4); c1.add(5);\n        System.out.println(Counter.total + \" \" + c1.mine + \" \" + c2.mine);\n    }\n}", "ans": "12 8 4", "run": 1, "hint": "total is shared, mine belongs to each object.", "steps": ["<span class=\"eq\">total = 3 + 4 + 5 = 12<\/span>", "<span class=\"eq\">c1.mine = 3 + 5 = 8<\/span>", "<span class=\"eq\">c2.mine = 4<\/span>", "Output: <code>12 8 4<\/code>"]}, {"lv": "h", "q": "What does this print?", "code": "abstract class Base {\n    int value;\n    Base() { value = 1; }\n    abstract int calc();\n}\nclass Main {\n    public static void main(String[] args) {\n        Base b = new Base() {\n            { value += 10; }\n            int calc() { return value * 3; }\n        };\n        System.out.println(b.calc());\n    }\n}", "ans": "33", "run": 1, "hint": "The parent constructor runs first, then the anonymous class's instance block.", "steps": ["Base() sets value = 1.", "The anonymous instance block adds 10: value = 11.", "<span class=\"eq\">calc() = 11 × 3 = 33<\/span>"]}, {"lv": "x", "q": "What does this print?", "code": "class Outer {\n    class Inner {\n        static int made = 0;\n        Inner() { made++; }\n    }\n    Outer() { for (int i = 0; i < 3; i++) new Inner(); }\n    public static void main(String[] args) {\n        for (int k = 0; k < 4; k++) new Outer();\n        System.out.println(Inner.made);\n    }\n}", "ans": "12", "run": 1, "hint": "Every Outer constructor creates 3 Inner objects.", "steps": ["Each Outer object creates 3 Inner objects in its constructor.", "<span class=\"eq\">4 outers × 3 inners = 12<\/span>", "The static counter inside Inner (allowed since Java 16) is shared, so it reaches 12."]}, {"lv": "x", "q": "What does this print?", "code": "import java.util.*;\nimport java.util.function.*;\nclass Main {\n    public static void main(String[] args) {\n        List<IntSupplier> fs = new ArrayList<>();\n        for (int i = 1; i <= 4; i++) {\n            int k = i * i;                // a fresh effectively final k each time\n            fs.add(() -> k);\n        }\n        int sum = 0;\n        for (IntSupplier f : fs) sum += f.getAsInt();\n        System.out.println(sum);\n    }\n}", "ans": "30", "run": 1, "hint": "Each lambda captures its own copy of k.", "steps": ["The captured values are 1, 4, 9 and 16.", "<span class=\"eq\">1 + 4 + 9 + 16 = 30<\/span>", "Capturing i itself would not compile, because i changes in the loop."]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to Inner Classes. Some objects only make sense inside another object, like a heart inside a body. Java has four kinds of inner classes for these situations.", "hi": "Inner Classes में आपका स्वागत है। कुछ objects सिर्फ़ किसी दूसरे object के अंदर ही मायने रखते हैं, जैसे शरीर के अंदर दिल। ऐसी स्थितियों के लिए Java में चार तरह की inner classes हैं।", "kn": "Inner Classes ಗೆ ಸ್ವಾಗತ. ಕೆಲವು objects ಇನ್ನೊಂದು object ಒಳಗೆ ಮಾತ್ರ ಅರ್ಥ ಪಡೆಯುತ್ತವೆ, ದೇಹದೊಳಗಿನ ಹೃದಯದಂತೆ. ಇಂತಹ ಸಂದರ್ಭಗಳಿಗೆ Java ದಲ್ಲಿ ನಾಲ್ಕು ರೀತಿಯ inner classes ಇವೆ.", "or": "Inner Classes କୁ ସ୍ୱାଗତ। କିଛି objects କେବଳ ଅନ୍ୟ object ଭିତରେ ହିଁ ଅର୍ଥ ରଖନ୍ତି, ଯେପରି ଶରୀର ଭିତରେ ହୃଦୟ। ଏପରି ପରିସ୍ଥିତି ପାଇଁ Java ରେ ଚାରି ପ୍ରକାର inner classes ଅଛି।", "ar": "مرحبًا بك في الأصناف الداخلية. بعض الكائنات لا معنى لها إلا داخل كائن آخر، مثل القلب داخل الجسم. ولهذه الحالات توفر Java أربعة أنواع من الأصناف الداخلية.", "de": "Willkommen bei den inneren Klassen. Manche Objekte ergeben nur innerhalb eines anderen Objekts Sinn, wie ein Herz in einem Körper. Für solche Fälle hat Java vier Arten innerer Klassen."}, {"id": "why-inner", "h": "Why inner classes", "en": "Use an inner class when the inner thing cannot exist without the outer thing, like an entry without a map. The four kinds are normal inner, method local, anonymous and static nested classes.", "hi": "Inner class तब इस्तेमाल कीजिए जब अंदर वाली चीज़ बाहर वाली के बिना न रह सके, जैसे map के बिना entry। चार प्रकार हैं: normal inner, method local, anonymous और static nested classes।", "kn": "ಒಳಗಿನ ವಸ್ತು ಹೊರಗಿನ ವಸ್ತು ಇಲ್ಲದೆ ಇರಲು ಸಾಧ್ಯವಿಲ್ಲದಾಗ inner class ಬಳಸಿ, map ಇಲ್ಲದ entry ಯಂತೆ. ನಾಲ್ಕು ಪ್ರಕಾರಗಳು: normal inner, method local, anonymous ಮತ್ತು static nested classes.", "or": "ଭିତରର ଜିନିଷ ବାହାର ଜିନିଷ ବିନା ରହିପାରିବ ନାହିଁ ତେବେ inner class ବ୍ୟବହାର କରନ୍ତୁ, ଯେପରି map ବିନା entry। ଚାରି ପ୍ରକାର ହେଲା: normal inner, method local, anonymous ଏବଂ static nested classes।", "ar": "استخدم الصنف الداخلي عندما لا يستطيع الشيء الداخلي أن يوجد من دون الخارجي، مثل مدخل من دون خريطة. والأنواع الأربعة هي الداخلي العادي، والمحلي داخل دالة، والمجهول، والمتداخل الساكن.", "de": "Nimm eine innere Klasse, wenn das Innere ohne das Äußere nicht existieren kann, wie ein Eintrag ohne Map. Die vier Arten sind normale innere, methodenlokale, anonyme und statisch verschachtelte Klassen."}, {"id": "normal-inner", "h": "Normal inner classes", "en": "A normal inner class needs an outer object, so from static code you write outer dot new Inner. It can use every outer member, even private ones. Inside it, this is the inner object and Outer dot this is the outer one.", "hi": "Normal inner class को outer object चाहिए, इसलिए static code से outer dot new Inner लिखते हैं। यह outer के हर member को इस्तेमाल कर सकती है, private वालों को भी। इसके अंदर this inner object है और Outer dot this outer object है।", "kn": "Normal inner class ಗೆ outer object ಬೇಕು, ಆದ್ದರಿಂದ static code ನಿಂದ outer dot new Inner ಎಂದು ಬರೆಯುತ್ತೇವೆ. ಅದು outer ನ ಪ್ರತಿಯೊಂದು member ಅನ್ನು ಬಳಸಬಹುದು, private ಗಳನ್ನೂ ಕೂಡ. ಅದರೊಳಗೆ this ಎಂದರೆ inner object, Outer dot this ಎಂದರೆ outer object.", "or": "Normal inner class ପାଇଁ outer object ଦରକାର, ତେଣୁ static code ରୁ outer dot new Inner ଲେଖାଯାଏ। ଏହା outer ର ପ୍ରତ୍ୟେକ member ବ୍ୟବହାର କରିପାରେ, private ମଧ୍ୟ। ଏହା ଭିତରେ this ହେଉଛି inner object ଏବଂ Outer dot this ହେଉଛି outer object।", "ar": "الصنف الداخلي العادي يحتاج إلى كائن خارجي، لذلك تكتب من الشيفرة الساكنة outer.new Inner. ويستطيع استخدام كل أعضاء الصنف الخارجي حتى الخاصة منها. وداخله تشير this إلى الكائن الداخلي، و Outer.this إلى الكائن الخارجي.", "de": "Eine normale innere Klasse braucht ein äußeres Objekt, deshalb schreibt man aus statischem Code outer.new Inner. Sie kann jedes Member der äußeren Klasse benutzen, auch private. Darin ist this das innere Objekt und Outer.this das äußere."}, {"id": "method-local", "h": "Method local inner classes", "en": "A method local class lives only inside one method. It can read local variables only if they are final or effectively final, because the object may outlive the method.", "hi": "Method local class सिर्फ़ एक method के अंदर रहती है। यह local variables तभी पढ़ सकती है जब वे final या effectively final हों, क्योंकि object method से ज़्यादा देर तक जी सकता है।", "kn": "Method local class ಒಂದೇ method ಒಳಗೆ ಮಾತ್ರ ಇರುತ್ತದೆ. Local variables final ಅಥವಾ effectively final ಆಗಿದ್ದರೆ ಮಾತ್ರ ಅದು ಓದಬಹುದು, ಏಕೆಂದರೆ object method ಗಿಂತ ಹೆಚ್ಚು ಕಾಲ ಬದುಕಬಹುದು.", "or": "Method local class କେବଳ ଗୋଟିଏ method ଭିତରେ ରହେ। Local variables final କିମ୍ବା effectively final ହେଲେ ହିଁ ଏହା ପଢ଼ିପାରେ, କାରଣ object method ଠାରୁ ଅଧିକ ସମୟ ବଞ୍ଚିପାରେ।", "ar": "الصنف المحلي داخل الدالة يعيش داخل دالة واحدة فقط. ولا يستطيع قراءة المتغيرات المحلية إلا إذا كانت final أو نهائية فعليًا، لأن الكائن قد يعيش بعد انتهاء الدالة.", "de": "Eine methodenlokale Klasse lebt nur in einer Methode. Sie darf lokale Variablen nur lesen, wenn sie final oder effektiv final sind, weil das Objekt länger leben kann als die Methode."}, {"id": "anonymous", "h": "Anonymous inner classes", "en": "An anonymous class has no name and is created in the same expression where it is declared. It can extend a class or implement an interface, and it can even be written inside a method argument. A lambda is a shorter option for one method interfaces.", "hi": "Anonymous class का कोई नाम नहीं होता और यह उसी expression में बनती है जहाँ घोषित होती है। यह किसी class को extend या किसी interface को implement कर सकती है, और method argument के अंदर भी लिखी जा सकती है। एक method वाले interfaces के लिए lambda छोटा विकल्प है।", "kn": "Anonymous class ಗೆ ಹೆಸರಿಲ್ಲ, ಅದನ್ನು ಘೋಷಿಸಿದ ಅದೇ expression ನಲ್ಲಿ ರಚಿಸಲಾಗುತ್ತದೆ. ಅದು ಒಂದು class ಅನ್ನು extend ಅಥವಾ ಒಂದು interface ಅನ್ನು implement ಮಾಡಬಹುದು, ಮತ್ತು method argument ಒಳಗೂ ಬರೆಯಬಹುದು. ಒಂದೇ method ಇರುವ interfaces ಗೆ lambda ಚಿಕ್ಕ ಆಯ್ಕೆ.", "or": "Anonymous class ର କୌଣସି ନାମ ନାହିଁ ଏବଂ ଏହା ଘୋଷଣା ହେଉଥିବା ସେହି expression ରେ ତିଆରି ହୁଏ। ଏହା ଏକ class କୁ extend କିମ୍ବା ଏକ interface କୁ implement କରିପାରେ, ଏବଂ method argument ଭିତରେ ମଧ୍ୟ ଲେଖାଯାଇପାରେ। ଗୋଟିଏ method ଥିବା interfaces ପାଇଁ lambda ଛୋଟ ବିକଳ୍ପ।", "ar": "الصنف المجهول ليس له اسم ويُنشأ في التعبير نفسه الذي يُعرَّف فيه. يمكنه أن يرث صنفًا أو ينفذ واجهة، ويمكن كتابته حتى داخل وسيط دالة. وتعبير lambda خيار أقصر للواجهات ذات الدالة الواحدة.", "de": "Eine anonyme Klasse hat keinen Namen und wird im selben Ausdruck erzeugt, in dem sie deklariert wird. Sie kann eine Klasse erweitern oder ein Interface implementieren und sogar in einem Methodenargument stehen. Für Interfaces mit einer Methode ist ein Lambda kürzer."}, {"id": "general-vs-anonymous", "h": "Normal versus anonymous", "en": "A normal class can extend a class and implement many interfaces at once and can have constructors. An anonymous class does exactly one of extend or implement, and has no constructor.", "hi": "Normal class एक साथ class extend कर सकती है और कई interfaces implement कर सकती है, और उसके constructors हो सकते हैं। Anonymous class extend या implement में से ठीक एक ही करती है, और उसका constructor नहीं होता।", "kn": "Normal class ಒಂದೇ ಸಮಯದಲ್ಲಿ class extend ಮಾಡಬಹುದು ಮತ್ತು ಹಲವು interfaces implement ಮಾಡಬಹುದು, ಮತ್ತು constructors ಹೊಂದಬಹುದು. Anonymous class extend ಅಥವಾ implement ನಲ್ಲಿ ನಿಖರವಾಗಿ ಒಂದನ್ನು ಮಾತ್ರ ಮಾಡುತ್ತದೆ, ಮತ್ತು constructor ಇಲ್ಲ.", "or": "Normal class ଏକାସାଙ୍ଗରେ class extend ଏବଂ ଅନେକ interfaces implement କରିପାରେ, ଏବଂ ତାର constructors ରହିପାରେ। Anonymous class extend କିମ୍ବା implement ମଧ୍ୟରୁ ଠିକ ଗୋଟିଏ କରେ, ଏବଂ ତାର constructor ନାହିଁ।", "ar": "الصنف العادي يستطيع أن يرث صنفًا وينفذ واجهات كثيرة في الوقت نفسه، ويمكن أن يملك مُنشئات. أما الصنف المجهول فيفعل واحدًا فقط من الوراثة أو التنفيذ، وليس له مُنشئ.", "de": "Eine normale Klasse kann gleichzeitig eine Klasse erweitern und viele Interfaces implementieren und Konstruktoren haben. Eine anonyme Klasse tut genau eines von beidem und hat keinen Konstruktor."}, {"id": "static-nested", "h": "Static nested classes", "en": "A static nested class needs no outer object and is created with new Outer dot Nested. It can use only the static members of the outer class directly. Builders are a popular use.", "hi": "Static nested class को outer object की ज़रूरत नहीं होती और यह new Outer dot Nested से बनती है। यह outer class के सिर्फ़ static members को सीधे इस्तेमाल कर सकती है। Builders इसका लोकप्रिय उपयोग हैं।", "kn": "Static nested class ಗೆ outer object ಬೇಕಿಲ್ಲ, ಅದನ್ನು new Outer dot Nested ಮೂಲಕ ರಚಿಸುತ್ತೇವೆ. ಅದು outer class ನ static members ಅನ್ನು ಮಾತ್ರ ನೇರವಾಗಿ ಬಳಸಬಹುದು. Builders ಇದರ ಜನಪ್ರಿಯ ಬಳಕೆ.", "or": "Static nested class ପାଇଁ outer object ଦରକାର ନାହିଁ ଏବଂ ଏହା new Outer dot Nested ଦ୍ୱାରା ତିଆରି ହୁଏ। ଏହା outer class ର କେବଳ static members କୁ ସିଧାସଳଖ ବ୍ୟବହାର କରିପାରେ। Builders ଏହାର ଲୋକପ୍ରିୟ ବ୍ୟବହାର।", "ar": "الصنف المتداخل الساكن لا يحتاج إلى كائن خارجي ويُنشأ بكتابة new Outer.Nested. ولا يستطيع استخدام إلا الأعضاء الساكنة للصنف الخارجي مباشرة. ومن استخداماته الشائعة أنماط البناء.", "de": "Eine statisch verschachtelte Klasse braucht kein äußeres Objekt und wird mit new Outer.Nested erzeugt. Sie kann direkt nur die statischen Member der äußeren Klasse benutzen. Builder sind ein beliebter Einsatz."}, {"id": "comparison", "h": "Inner versus static nested", "en": "A normal inner class needs an outer object and can use its instance members. A static nested class needs no outer object and sees only static members.", "hi": "Normal inner class को outer object चाहिए और वह उसके instance members इस्तेमाल कर सकती है। Static nested class को outer object नहीं चाहिए और वह सिर्फ़ static members देखती है।", "kn": "Normal inner class ಗೆ outer object ಬೇಕು ಮತ್ತು ಅದರ instance members ಬಳಸಬಹುದು. Static nested class ಗೆ outer object ಬೇಕಿಲ್ಲ, ಅದು static members ಮಾತ್ರ ನೋಡುತ್ತದೆ.", "or": "Normal inner class ପାଇଁ outer object ଦରକାର ଏବଂ ଏହା ତାର instance members ବ୍ୟବହାର କରିପାରେ। Static nested class ପାଇଁ outer object ଦରକାର ନାହିଁ ଏବଂ ଏହା କେବଳ static members ଦେଖେ।", "ar": "الصنف الداخلي العادي يحتاج إلى كائن خارجي ويستطيع استخدام أعضاء ذلك الكائن. أما المتداخل الساكن فلا يحتاج إليه ولا يرى إلا الأعضاء الساكنة.", "de": "Eine normale innere Klasse braucht ein äußeres Objekt und kann dessen Instanzmember benutzen. Eine statisch verschachtelte Klasse braucht keins und sieht nur statische Member."}, {"id": "combinations", "h": "Nesting combinations", "en": "Interfaces can be nested inside classes or other interfaces, like Map dot Entry, and classes can be nested inside interfaces. Nested interfaces and classes inside interfaces are automatically static.", "hi": "Interfaces classes के अंदर या दूसरे interfaces के अंदर nest हो सकते हैं, जैसे Map dot Entry, और classes interfaces के अंदर nest हो सकती हैं। Nested interfaces और interfaces के अंदर की classes अपने आप static होती हैं।", "kn": "Interfaces ಅನ್ನು classes ಒಳಗೆ ಅಥವಾ ಬೇರೆ interfaces ಒಳಗೆ nest ಮಾಡಬಹುದು, Map dot Entry ಯಂತೆ, ಮತ್ತು classes ಅನ್ನು interfaces ಒಳಗೆ nest ಮಾಡಬಹುದು. Nested interfaces ಮತ್ತು interfaces ಒಳಗಿನ classes ತಾನಾಗಿಯೇ static.", "or": "Interfaces classes ଭିତରେ କିମ୍ବା ଅନ୍ୟ interfaces ଭିତରେ nest ହୋଇପାରେ, ଯେପରି Map dot Entry, ଏବଂ classes interfaces ଭିତରେ nest ହୋଇପାରେ। Nested interfaces ଏବଂ interfaces ଭିତରର classes ନିଜେ static।", "ar": "يمكن تداخل الواجهات داخل الأصناف أو داخل واجهات أخرى مثل Map.Entry، ويمكن تداخل الأصناف داخل الواجهات. والواجهات المتداخلة والأصناف داخل الواجهات ساكنة تلقائيًا.", "de": "Interfaces können in Klassen oder anderen Interfaces verschachtelt sein, wie Map.Entry, und Klassen können in Interfaces stehen. Verschachtelte Interfaces und Klassen in Interfaces sind automatisch statisch."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Inner Classes", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>

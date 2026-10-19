@@ -77,3 +77,5 @@
   .xi-panel.poke .xi-cell,.xi-panel.poke .xi-bar,.xi-panel.poke .xi-emo,.xi-arrow{animation:none}
 }
 .xi-head h3,.xr h3{font-family:var(--font-head); font-weight:800; font-size:20px; line-height:1.2}
+.xi-inner{grid-template-columns:minmax(0,1fr)}
+.xi-cap{overflow-wrap:anywhere}

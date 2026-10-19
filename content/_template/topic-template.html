@@ -9,6 +9,8 @@
 <!-- Shared theme. These paths work when this file sits in content/<subject>/ -->
 <link rel="stylesheet" href="../../assets/theme.css">
 <link rel="stylesheet" href="../../assets/extras.css">
+<!-- Quiz, number practice and the narrator -->
+<link rel="stylesheet" href="../../assets/learn.css">
 <style>
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -27,6 +29,7 @@ h2{font-size:26px; margin-bottom:8px}
 .toc{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
 .toc a{padding:5px 12px; border-radius:999px; background:var(--surface); border:1.5px solid var(--line); text-decoration:none; color:var(--accent-deep); font-weight:800; font-size:14px}
 .toc a:hover{border-color:var(--accent)}
+.listen-btn{border:0; border-radius:999px; padding:8px 16px; font-weight:800; font-family:inherit; cursor:pointer; color:#fff; background:linear-gradient(135deg,#f25da0,#8b5cf6)}
 .eq{display:block; margin:10px 0; padding:10px 14px; border-radius:12px; background:var(--surface2); border:1px dashed var(--box-line); font-family:var(--font-mono); text-align:center; overflow-x:auto}
 pre{background:var(--code-bg); color:var(--code-ink); border-radius:14px; padding:14px 16px; overflow:auto; font-family:var(--font-mono); font-size:13.5px; line-height:1.55}
 code{font-family:var(--font-mono); font-size:.9em}
@@ -38,7 +41,8 @@ html.embedded .wrap{padding-top:16px}
 <div class="wrap">
   <!-- 2. Change the breadcrumb, emoji and heading -->
   <div class="crumb">Subject name · Module name</div>
-  <div class="hero"><span class="em">🔤</span><h1>My New Topic</h1></div>
+  <div class="hero" data-say="top"><span class="em">🔤</span><h1>My New Topic</h1></div>
+  <button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button>
 
   <!-- Quick links. Each href="#id" matches a section id below. Use the same ids in data/catalog.js sections so search can jump here. -->
   <nav class="toc">
@@ -48,7 +52,7 @@ html.embedded .wrap{padding-top:16px}
   </nav>
 
   <div class="grid2">
-    <section class="card kid reveal" id="idea">
+    <section class="card kid reveal" id="idea" data-say="idea">
       <h2>Story time</h2>
       <p>Explain the idea as if to a curious 10 year old. One short paragraph is plenty.</p>
       <span class="eq">answer = something + clever</span>
@@ -72,16 +76,22 @@ html.embedded .wrap{padding-top:16px}
     <p>Walk through one small input step by step.</p>
   </section>
 
-  <section class="card reveal" id="code">
+  <section class="card reveal" id="code" data-say="code">
     <h2>Code</h2>
 <pre><code>def solve(a):
     # your solution here
     return a</code></pre>
   </section>
+
+  <!-- The quiz and the number practice are drawn from PAGE.quiz and PAGE.calc below -->
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
 </div>
 
 <script src="../../assets/fun.js"></script>
 <script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
 <script>
 /* 3. Edit this data. Scene rows: ['e', 'emoji text'], ['t', 'formula'], ['c', [values], {hl: {index: 'hl'|'ok'|'bad'|'sel'|'mv'|'piv'|'win'|'dim'}, p: {index: 'label'}}],
       ['b', [bar heights]], ['g', [[row], [row]]], ['tree', [['root'], ['a', 'b']]] */
@@ -99,11 +109,38 @@ const PAGE = {
     ['🍕', 'Everyday example', 'Where this idea hides in normal life.'],
     ['🚌', 'Another example', 'Keep it short and a little funny.'],
     ['📱', 'One more', 'Three examples fit nicely in a row.']
+  ],
+  /* Narration. One entry per element that has data-say. Give all six languages: en, hi, kn, or, ar, de.
+     A missing language falls back to English text. */
+  say: [
+    { id: 'top', h: 'Welcome', en: 'Welcome to my new topic.', hi: 'मेरे नए विषय में स्वागत है।', kn: 'ನನ್ನ ಹೊಸ ವಿಷಯಕ್ಕೆ ಸ್ವಾಗತ.', or: 'ମୋ ନୂଆ ବିଷୟକୁ ସ୍ୱାଗତ।', ar: 'مرحبًا بك في موضوعي الجديد.', de: 'Willkommen zu meinem neuen Thema.' },
+    { id: 'idea', h: 'The idea', en: 'Here is the idea in one or two sentences.', hi: 'यह रहा विचार, एक दो वाक्यों में।', kn: 'ಇಲ್ಲಿದೆ ಆಲೋಚನೆ, ಒಂದೆರಡು ವಾಕ್ಯಗಳಲ್ಲಿ.', or: 'ଏଠାରେ ଧାରଣା, ଗୋଟିଏ ଦୁଇଟି ବାକ୍ୟରେ।', ar: 'هذه هي الفكرة في جملة أو جملتين.', de: 'Hier ist die Idee in ein bis zwei Sätzen.' },
+    { id: 'code', h: 'Code', en: 'The code below solves it.', hi: 'नीचे का code इसे हल करता है।', kn: 'ಕೆಳಗಿನ code ಇದನ್ನು ಪರಿಹರಿಸುತ್ತದೆ.', or: 'ତଳ code ଏହାକୁ ସମାଧାନ କରେ।', ar: 'الكود أدناه يحل المسألة.', de: 'Der Code unten löst es.' }
+  ],
+  /* Quiz. lv is 'e' (easy), 'm' (medium), 'h' (hard) or 'x' (expert). a is the index of the right option, starting at 0. */
+  quiz: [
+    { lv: 'e', q: 'What is 2 + 3?', o: ['4', '5', '6', '23'], a: 1, hint: 'Count on your fingers.', why: '<span class="eq">2 + 3 = 5</span>' },
+    { lv: 'm', q: 'What does this print?', code: 'print(len([1, 2, 3]))', o: ['2', '3', '6', 'Error'], a: 1, hint: 'Count the items.', why: 'The list has 3 items.' },
+    { lv: 'h', q: 'A hard question.', o: ['A', 'B', 'C', 'D'], a: 2, hint: 'A gentle nudge.', why: 'Why C is right.' },
+    { lv: 'x', q: 'An expert question.', o: ['A', 'B', 'C', 'D'], a: 3, hint: 'A gentle nudge.', why: 'Why D is right.' }
+  ],
+  /* Number practice. ans is the expected answer, alt lists other accepted forms, unit is shown after the box.
+     Wrap an equation in <span class="eq">...</span> inside steps to show it on its own line. */
+  calc: [
+    { lv: 'e', q: 'What is 12 × 3?', ans: '36', hint: '12 + 12 + 12', steps: ['<span class="eq">12 × 3 = 36</span>'] },
+    { lv: 'm', q: 'What is half of 3/4?', ans: '3/8', alt: ['0.375'], hint: 'Multiply by 1/2.', steps: ['<span class="eq">3/4 × 1/2 = 3/8</span>'] },
+    { lv: 'h', q: 'A hard calculation.', ans: '10', hint: 'A gentle nudge.', steps: ['Step one', 'Step two'] },
+    { lv: 'x', q: 'An expert calculation.', ans: '42', hint: 'A gentle nudge.', steps: ['Step one', 'Step two'] }
   ]
 };
 document.getElementById('infoCard').innerHTML = XTRA.infoHtml(PAGE.info);
 document.getElementById('realCard').innerHTML = XTRA.realHtml(PAGE.real);
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz, { lang: 'py' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc, { lang: 'py' });
 XTRA.wire(document);
+LEARN.wire();
+VOICE.setup({ title: 'My New Topic', segments: PAGE.say });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
 FUN.initScroll();
 FUN.observe();
 </script>

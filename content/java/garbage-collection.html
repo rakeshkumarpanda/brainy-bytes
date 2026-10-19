@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garbage Collection · Java</title>
+<meta name="description" content="How the JVM frees memory: reachability, the four ways an object becomes eligible, island of isolation, requesting a collection with System.gc and Runtime, reading heap figures, finalize and its replacement Cleaner, OutOfMemoryError and modern collectors.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>⚙️ JVM and Tooling</span><span>›</span><span>Chapter 17 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">♻️</span><div><h1>Garbage Collection</h1><p class="lead">In C you must free every block of memory yourself. In Java the garbage collector does it for you. Your job is smaller but still important: stop pointing at objects you no longer need, so the collector is allowed to reclaim them.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 12 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#intro"><span>♻️</span>Why a garbage collector</a><a href="#eligible"><span>🎯</span>Four ways to make an object eligible</a><a href="#request-gc"><span>🙋</span>Requesting a collection</a><a href="#runtime-memory"><span>📊</span>Looking at memory with Runtime</a><a href="#finalization"><span>🧹</span>finalize and Cleaner</a><a href="#modern"><span>🆕</span>Modern collectors and good habits</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="intro" data-say="intro"><div class="sec-num">Part 1</div><h2><span class="sec-em">♻️</span><span>Why a garbage collector</span></h2>
+<p>Every object you create with <code>new</code> lives in an area of memory called the <b>heap</b>. Memory is limited, so space taken by objects nobody uses any more must be given back. In older languages the programmer did this by hand, and forgetting caused <b>memory leaks</b> that slowly filled the memory.</p>
+<p>Java runs a <b>garbage collector</b> (GC) inside the JVM. It finds objects that can no longer be reached from your running code and frees their memory.</p>
+<div class="grid2">
+<div class="box"><h4>Reachable</h4><p>Some chain of references from a live variable, a static field or a running thread leads to the object. It stays.</p></div>
+<div class="box"><h4>Unreachable</h4><p>No such chain exists. The object is <b>eligible for garbage collection</b> and may be removed at any time.</p></div>
+</div>
+<div class="rule">An object is eligible for GC when it has no reachable reference. Being eligible does not mean it is removed at once. The JVM decides when to collect.</div>
+</section>
+
+<section class="card reveal jsec" id="eligible" data-say="eligible"><div class="sec-num">Part 2</div><h2><span class="sec-em">🎯</span><span>Four ways to make an object eligible</span></h2>
+<p>To watch an object without keeping it alive, these examples use a <code>WeakReference</code>. Its <code>get()</code> method returns the object while it exists, and null after the collector has removed it.</p>
+<h3>1. Set the reference to null</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Nullifying the only reference · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.lang.ref.<span class="t">WeakReference</span>;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Object</span> report = <span class="k">new</span> <span class="k">byte</span>[<span class="n">1_000_000</span>];
+        <span class="t">WeakReference</span>&lt;<span class="t">Object</span>&gt; watch = <span class="k">new</span> <span class="t">WeakReference</span>&lt;&gt;(report);
+        <span class="t">System</span>.gc();
+        <span class="t">System</span>.out.println(<span class="s">"while referenced, alive: "</span> + (watch.get() != <span class="k">null</span>));
+        report = <span class="k">null</span>;                                  <span class="c">// no reference left</span>
+        <span class="t">System</span>.gc();
+        <span class="t">Thread</span>.sleep(<span class="n">100</span>);
+        <span class="t">System</span>.out.println(<span class="s">"after report = null, alive: "</span> + (watch.get() != <span class="k">null</span>));
+    }
+}</pre><div class="out"><span>One possible output (the collector decides the timing)</span><pre>while referenced, alive: true
+after report = null, alive: false</pre></div></div>
+<h3>2. Point the reference somewhere else</h3>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Reassigning the reference · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.lang.ref.<span class="t">WeakReference</span>;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">StringBuilder</span> s1 = <span class="k">new</span> <span class="t">StringBuilder</span>(<span class="s">"first"</span>);
+        <span class="t">WeakReference</span>&lt;<span class="t">Object</span>&gt; watch = <span class="k">new</span> <span class="t">WeakReference</span>&lt;&gt;(s1);
+        s1 = <span class="k">new</span> <span class="t">StringBuilder</span>(<span class="s">"second"</span>);               <span class="c">// "first" has no reference now</span>
+        <span class="t">System</span>.gc();
+        <span class="t">Thread</span>.sleep(<span class="n">100</span>);
+        <span class="t">System</span>.out.println(s1 + <span class="s">", old object alive: "</span> + (watch.get() != <span class="k">null</span>));
+    }
+}</pre><div class="out"><span>One possible output (the collector decides the timing)</span><pre>second, old object alive: false</pre></div></div>
+<h3>3. Objects created inside a method</h3>
+<p>Local variables disappear when the method returns. Objects referred to only by those locals become eligible. If the method <b>returns</b> a reference and the caller keeps it, that object stays.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Which objects survive the method call · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Box</span> {
+    <span class="t">String</span> name;
+    <span class="t">Box</span>(<span class="t">String</span> name) { <span class="k">this</span>.name = name; }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="t">Box</span> make() {
+        <span class="t">Box</span> a = <span class="k">new</span> <span class="t">Box</span>(<span class="s">"a"</span>);
+        <span class="t">Box</span> b = <span class="k">new</span> <span class="t">Box</span>(<span class="s">"b"</span>);
+        <span class="k">return</span> b;                                       <span class="c">// only b escapes</span>
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Box</span> kept = make();
+        <span class="t">System</span>.out.println(<span class="s">"kept "</span> + kept.name + <span class="s">", a is eligible now"</span>);
+        make();                                         <span class="c">// result ignored</span>
+        <span class="t">System</span>.out.println(<span class="s">"second call: both objects are eligible"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>kept b, a is eligible now
+second call: both objects are eligible</pre></div></div>
+<h3>4. Island of isolation</h3>
+<p>Objects may still refer to <b>each other</b> and yet be unreachable from outside. Such a group is called an <b>island of isolation</b>. Java's collector traces reachability from live roots, so the whole island is eligible.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two objects pointing at each other · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.lang.ref.<span class="t">WeakReference</span>;
+<span class="k">class</span> <span class="t">Node</span> {
+    <span class="t">Node</span> partner;
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Node</span> x = <span class="k">new</span> <span class="t">Node</span>(), y = <span class="k">new</span> <span class="t">Node</span>();
+        x.partner = y;
+        y.partner = x;                                  <span class="c">// a cycle</span>
+        <span class="t">WeakReference</span>&lt;<span class="t">Node</span>&gt; wx = <span class="k">new</span> <span class="t">WeakReference</span>&lt;&gt;(x), wy = <span class="k">new</span> <span class="t">WeakReference</span>&lt;&gt;(y);
+        x = <span class="k">null</span>;
+        y = <span class="k">null</span>;                                       <span class="c">// nothing outside points in</span>
+        <span class="t">System</span>.gc();
+        <span class="t">Thread</span>.sleep(<span class="n">100</span>);
+        <span class="t">System</span>.out.println(<span class="s">"x alive: "</span> + (wx.get() != <span class="k">null</span>) + <span class="s">", y alive: "</span> + (wy.get() != <span class="k">null</span>));
+    }
+}</pre><div class="out"><span>One possible output (the collector decides the timing)</span><pre>x alive: false, y alive: false</pre></div></div>
+<div class="exam">A cycle of references does not keep objects alive. If none of them is reachable from outside, all of them are eligible.</div>
+<div class="fun">Java's collector does not count references at all. It starts from the live roots and marks everything it can reach. Anything left unmarked is garbage, cycles included.</div>
+</section>
+
+<section class="card reveal jsec" id="request-gc" data-say="request-gc"><div class="sec-num">Part 3</div><h2><span class="sec-em">🙋</span><span>Requesting a collection</span></h2>
+<p>You can <b>ask</b> the JVM to run the garbage collector in two ways. Both do the same thing.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two ways to ask</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="t">System</span>.gc();                    <span class="c">// static method, the usual way</span>
+<span class="t">Runtime</span>.getRuntime().gc();      <span class="c">// through the Runtime object</span></pre></div>
+<div class="warn">It is only a request. The JVM may run a collection, delay it or ignore it. A JVM started with <code>-XX:+DisableExplicitGC</code> ignores every such call.</div>
+<p><code>Runtime</code> is a <b>singleton</b>: there is exactly one Runtime object for the running JVM. You cannot create one with <code>new</code>. You get it with the factory method <code>Runtime.getRuntime()</code>.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Runtime has a private constructor · ❌ Does not compile</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Runtime</span> r = <span class="k">new</span> <span class="t">Runtime</span>();
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Runtime() has private access in Runtime</pre></div></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Always the same object · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Runtime</span> r1 = <span class="t">Runtime</span>.getRuntime();
+        <span class="t">Runtime</span> r2 = <span class="t">Runtime</span>.getRuntime();
+        <span class="t">System</span>.out.println(r1 == r2);
+    }
+}</pre><div class="out"><span>Output</span><pre>true</pre></div></div>
+<div class="tip">Well written programs almost never call <code>System.gc()</code>. The JVM usually knows better when to collect. It is useful in small experiments like the ones on this page.</div>
+</section>
+
+<section class="card reveal jsec" id="runtime-memory" data-say="runtime-memory"><div class="sec-num">Part 4</div><h2><span class="sec-em">📊</span><span>Looking at memory with Runtime</span></h2>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Method</th><th>Returns</th></tr>
+<tr><td><code>maxMemory()</code></td><td>the most heap the JVM will ever try to use, in bytes (set by <code>-Xmx</code>)</td></tr>
+<tr><td><code>totalMemory()</code></td><td>heap currently reserved from the operating system</td></tr>
+<tr><td><code>freeMemory()</code></td><td>the part of totalMemory not used by objects right now</td></tr>
+<tr><td><code>availableProcessors()</code></td><td>number of processors the JVM may use</td></tr>
+</table></div></div>
+<div class="rule"><span class="eq">used memory = totalMemory − freeMemory</span></div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Measure the heap before and after · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Runtime</span> r = <span class="t">Runtime</span>.getRuntime();
+        <span class="k">long</span> mb = <span class="n">1024</span> * <span class="n">1024</span>;
+        <span class="t">System</span>.out.println(<span class="s">"max heap: "</span> + r.maxMemory() / mb + <span class="s">" MB"</span>);
+        <span class="t">System</span>.gc();
+        <span class="k">long</span> before = r.totalMemory() - r.freeMemory();
+        <span class="k">int</span>[][] grid = <span class="k">new</span> <span class="k">int</span>[<span class="n">1000</span>][<span class="n">1000</span>];               <span class="c">// about 4 MB of ints</span>
+        <span class="k">long</span> after = r.totalMemory() - r.freeMemory();
+        <span class="t">System</span>.out.println(<span class="s">"grid uses about "</span> + <span class="t">Math</span>.round((after - before) / (<span class="k">double</span>) mb) + <span class="s">" MB"</span>);
+        <span class="t">System</span>.out.println(<span class="s">"rows: "</span> + grid.length);
+    }
+}</pre><div class="out"><span>One possible output (exact numbers depend on the machine)</span><pre>max heap: 64 MB
+grid uses about 4 MB
+rows: 1000</pre></div></div>
+<p>This program was started with <code>java -Xmx64m Main</code>, so the maximum heap is 64 MB. One million <code>int</code> values take <span class="eq">1,000,000 × 4 bytes ≈ 4 MB</span>.</p>
+<h3>When the heap is full</h3>
+<p>If the collector cannot free enough space for a new object, the JVM throws <code>OutOfMemoryError</code>. It is an Error, not an Exception: programs normally do not catch it.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Asking for 800 MB inside a 32 MB heap · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">long</span>[] huge = <span class="k">new</span> <span class="k">long</span>[<span class="n">100_000_000</span>];              <span class="c">// 100 million × 8 bytes</span>
+        <span class="t">System</span>.out.println(huge.length);
+    }
+}</pre><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.OutOfMemoryError: Java heap space</pre></div></div>
+</section>
+
+<section class="card reveal jsec" id="finalization" data-say="finalization"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧹</span><span>finalize and Cleaner</span></h2>
+<p>Early Java let a class override <code>finalize()</code>, a method the collector would call once before removing an object. It is now <b>deprecated for removal</b> (since Java 18), because it is slow, unpredictable and can bring dead objects back to life.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The old way, do not use in new code</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="a">@Override</span>
+<span class="k">protected</span> <span class="k">void</span> finalize() <span class="k">throws</span> <span class="t">Throwable</span> {
+    <span class="t">System</span>.out.println(<span class="s">"cleaning up"</span>);
+}</pre></div>
+<div class="exam">Classic facts that still appear in exams: the collector calls finalize at most once per object, any exception thrown by finalize during collection is ignored, and calling <code>obj.finalize()</code> yourself is just a normal method call that does not free memory.</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An explicit finalize() call is an ordinary call · 💥 Crashes at run time</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Job</span> {
+    <span class="a">@SuppressWarnings</span>(<span class="s">"removal"</span>)
+    <span class="a">@Override</span>
+    <span class="k">protected</span> <span class="k">void</span> finalize() {
+        <span class="t">System</span>.out.println(<span class="s">"finalize called by hand"</span>);
+        <span class="k">int</span> x = <span class="n">10</span> / <span class="n">0</span>;
+    }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="a">@SuppressWarnings</span>(<span class="s">"removal"</span>)
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">new</span> <span class="t">Job</span>().finalize();                            <span class="c">// the exception is not ignored here</span>
+    }
+}</pre><div class="out"><span>Output before the crash</span><pre>finalize called by hand</pre></div><div class="err"><span>💥 Runtime error</span><pre>Exception in thread "main" java.lang.ArithmeticException: / by zero</pre></div></div>
+<h3>The modern way: close it yourself</h3>
+<p>For files, sockets and database connections, do not wait for the collector at all. Implement <code>AutoCloseable</code> and use <b>try-with-resources</b>, so cleanup happens at a known moment.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Cleanup at a predictable time · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Connection</span> <span class="k">implements</span> <span class="t">AutoCloseable</span> {
+    <span class="t">Connection</span>() { <span class="t">System</span>.out.println(<span class="s">"open"</span>); }
+    <span class="k">void</span> send(<span class="t">String</span> m) { <span class="t">System</span>.out.println(<span class="s">"send "</span> + m); }
+    <span class="k">public</span> <span class="k">void</span> close() { <span class="t">System</span>.out.println(<span class="s">"closed"</span>); }
+}
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">try</span> (<span class="t">Connection</span> c = <span class="k">new</span> <span class="t">Connection</span>()) {
+            c.send(<span class="s">"hello"</span>);
+        }
+        <span class="t">System</span>.out.println(<span class="s">"after the block"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>open
+send hello
+closed
+after the block</pre></div></div>
+<p>As a safety net for code that forgets to close, Java 9 added <code>java.lang.ref.Cleaner</code>. It runs a cleanup action after the object becomes unreachable, without the problems of finalize.</p>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A Cleaner action runs after collection · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.lang.ref.<span class="t">Cleaner</span>;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">final</span> <span class="t">Cleaner</span> <span class="t">CLEANER</span> = <span class="t">Cleaner</span>.create();
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Object</span> buffer = <span class="k">new</span> <span class="k">byte</span>[<span class="n">1_000_000</span>];
+        <span class="t">CLEANER</span>.register(buffer, () -&gt; <span class="t">System</span>.out.println(<span class="s">"buffer cleaned"</span>));
+        buffer = <span class="k">null</span>;
+        <span class="t">System</span>.gc();
+        <span class="t">Thread</span>.sleep(<span class="n">200</span>);
+        <span class="t">System</span>.out.println(<span class="s">"done"</span>);
+    }
+}</pre><div class="out"><span>One possible output (the collector decides the timing)</span><pre>buffer cleaned
+done</pre></div></div>
+<div class="warn">The cleanup action must not refer to the object it watches. If it did, the object would stay reachable and never be cleaned.</div>
+</section>
+
+<section class="card reveal jsec" id="modern" data-say="modern"><div class="sec-num">Part 6</div><h2><span class="sec-em">🆕</span><span>Modern collectors and good habits</span></h2>
+<p>The JVM ships with several collectors. You choose one with a command line flag. Their behaviour depends on the JVM vendor and version, which is why the language rules only promise <b>when an object becomes eligible</b>, not when it is collected.</p>
+<div class="tw"><div class="tw"><table class="jt"><tr><th>Collector</th><th>Flag</th><th>Good for</th></tr>
+<tr><td>G1 (default since Java 9)</td><td><code>-XX:+UseG1GC</code></td><td>most applications, balanced pauses</td></tr>
+<tr><td>ZGC</td><td><code>-XX:+UseZGC</code></td><td>very large heaps with pauses of about a millisecond</td></tr>
+<tr><td>Parallel</td><td><code>-XX:+UseParallelGC</code></td><td>batch jobs that care about total throughput</td></tr>
+<tr><td>Serial</td><td><code>-XX:+UseSerialGC</code></td><td>small heaps and single processor machines</td></tr>
+</table></div></div>
+<p>Most collectors are <b>generational</b>. New objects start in the young generation, which is collected often because most objects die young. Objects that survive several collections move to the old generation, which is collected less often.</p>
+<h3>Memory leaks still happen in Java</h3>
+<p>The collector frees only unreachable objects. If your code keeps references it no longer needs, those objects stay forever. The usual causes:</p>
+<div class="grid2">
+<div class="box"><h4>Growing static collections</h4><p>A static List or Map that only ever gets new entries.</p></div>
+<div class="box"><h4>Forgotten listeners</h4><p>Objects registered for events and never removed.</p></div>
+<div class="box"><h4>Unbounded caches</h4><p>Caches with no size limit or expiry.</p></div>
+<div class="box"><h4>Unclosed resources</h4><p>Streams and connections that are never closed.</p></div>
+</div>
+<div class="codewrap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A leak in a few lines · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">import</span> java.util.*;
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="t">List</span>&lt;<span class="k">byte</span>[]&gt; history = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();      <span class="c">// lives as long as the program</span>
+    <span class="k">static</span> <span class="k">void</span> handle(<span class="k">int</span> request) {
+        history.add(<span class="k">new</span> <span class="k">byte</span>[<span class="n">10_000</span>]);                     <span class="c">// kept forever by mistake</span>
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">for</span> (<span class="k">int</span> i = <span class="n">0</span>; i &lt; <span class="n">1000</span>; i++) handle(i);
+        <span class="t">System</span>.out.println(history.size() + <span class="s">" buffers still reachable, about "</span>
+            + history.size() * <span class="n">10_000</span> / <span class="n">1_000_000</span> + <span class="s">" MB that can never be freed"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>1000 buffers still reachable, about 10 MB that can never be freed</pre></div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./serialization.html" data-topic="serialization"><small>← Previous chapter</small><b>📦 Serialization</b></a><a class="next" href="./assertions.html" data-topic="assertions"><small>Next chapter →</small><b>✅ Assertions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script>
+const PAGE = {"info": {"title": "Who still needs this object", "panels": [{"s": [["e", "🌱"], ["t", "new Box()", {"b": 1}]], "h": "Born on the heap", "t": "Every new object takes heap memory.", "more": "Local variables on the stack point to it. Static fields and running threads can point to it too."}, {"s": [["e", "✂️"], ["t", "box = null;", {"b": 1}]], "h": "Last link cut", "t": "No reachable reference is left.", "more": "Setting to null, reassigning, or returning from the method all cut links."}, {"s": [["e", "🏝️"], ["c", ["A", "⇄", "B"], {"ix": false, "hl": {"1": "hl"}}]], "h": "Island of isolation", "t": "A cycle with no way in is still garbage.", "more": "The collector traces from live roots, so references inside the island do not count."}, {"s": [["e", "♻️"], ["t", "System.gc()", {"b": 1}]], "h": "Collector decides", "t": "You may ask. The JVM chooses when.", "more": "Eligible does not mean collected. Never write code that depends on the exact moment."}], "remember": "Unreachable means eligible. Eligible does not mean collected yet. Close resources yourself with try-with-resources."}, "real": [["🧹", "A cleaner in a library", "Books that nobody has borrowed or placed on a reading table are returned to storage. The cleaner does not ask whether the book is useful, only whether anyone is holding it."], ["🎈", "Balloons on strings", "A balloon tied to a child stays. Cut the last string and it floats away. Two balloons tied only to each other float away together: that is the island of isolation."], ["🧾", "Checking out of a hotel", "try-with-resources is like handing back the room key at checkout. Waiting for the hotel to notice you have left (finalize) is slow and unreliable."]], "quiz": [{"lv": "e", "q": "Where do objects created with <code>new<\/code> live?", "o": ["On the stack", "On the heap", "In the class file", "In the CPU cache only"], "a": 1, "hint": "The garbage collector cleans this area.", "why": "Objects live on the heap. Local variables that point to them live on the stack."}, {"lv": "e", "q": "What does <code>System.gc()<\/code> do?", "o": ["Immediately frees all memory", "Requests a garbage collection", "Deletes the current object", "Stops the program"], "a": 1, "hint": "The JVM has the final say.", "why": "It is only a request. The JVM may collect, delay or ignore it."}, {"lv": "e", "q": "Which is the correct way to get the Runtime object?", "o": ["<code>new Runtime()<\/code>", "<code>Runtime.getRuntime()<\/code>", "<code>Runtime.instance<\/code>", "<code>System.runtime()<\/code>"], "a": 1, "hint": "Runtime is a singleton with a factory method.", "why": "The constructor is private. <code>Runtime.getRuntime()<\/code> returns the single Runtime object."}, {"lv": "m", "q": "Two objects refer only to each other and nothing else refers to either of them. Are they eligible for GC?", "o": ["No, each keeps the other alive", "Yes, both are eligible", "Only the first one created", "Only if System.gc() is called"], "a": 1, "hint": "Reachability is traced from live roots.", "why": "This is an island of isolation. Neither is reachable from outside, so both are eligible."}, {"lv": "m", "q": "What is the result?", "code": "class Main {\n    public static void main(String[] args) {\n        long[] big = new long[100_000_000];\n        System.out.println(\"ok\");\n    }\n}", "o": ["ok", "Compile error", "OutOfMemoryError", "StackOverflowError"], "a": 2, "re": "OutOfMemoryError", "flags": "-Xmx32m", "hint": "The JVM here runs with -Xmx32m. How many bytes does the array need?", "why": "100 million longs need about 800 MB, far more than the 32 MB heap. The JVM throws OutOfMemoryError: Java heap space."}, {"lv": "m", "q": "Which statement about <code>finalize()<\/code> in modern Java is true?", "o": ["It is the recommended way to close files", "It is deprecated for removal", "It runs immediately when a reference becomes null", "It is called once per reference"], "a": 1, "hint": "Java 18 changed its status.", "why": "finalize is deprecated for removal. Use try-with-resources and, if needed, Cleaner instead."}, {"lv": "h", "q": "What does this print?", "code": "class Main {\n    public static void main(String[] args) {\n        Runtime a = Runtime.getRuntime(), b = Runtime.getRuntime();\n        System.out.println((a == b) + \" \" + (a.availableProcessors() > 0));\n    }\n}", "o": ["true true", "false true", "true false", "false false"], "a": 0, "run": 1, "hint": "How many Runtime objects exist?", "why": "Runtime is a singleton, so both calls return the same object. There is always at least one processor."}, {"lv": "h", "q": "What is the result?", "code": "class Job {\n    @SuppressWarnings(\"removal\")\n    protected void finalize() { System.out.println(\"fin\"); throw new RuntimeException(\"boom\"); }\n}\nclass Main {\n    @SuppressWarnings(\"removal\")\n    public static void main(String[] args) {\n        new Job().finalize();\n        System.out.println(\"end\");\n    }\n}", "o": ["fin then end", "fin then RuntimeException: boom", "end only", "Nothing, finalize is ignored"], "a": 1, "re": "RuntimeException: boom", "out": "fin", "hint": "Calling finalize yourself is an ordinary method call.", "why": "An explicit call runs like any method, so the exception propagates and \"end\" is never printed. Only the collector ignores exceptions from finalize."}, {"lv": "h", "q": "After <code>make()<\/code> returns and its result is ignored, how many of its objects are eligible?", "code": "static Box make() {\n    Box a = new Box();\n    Box b = new Box();\n    a.next = b;\n    return a;\n}", "o": ["0", "1", "2", "It depends on System.gc()"], "a": 2, "hint": "The caller ignores the returned reference.", "why": "The returned reference is discarded, so nothing outside reaches a, and b is reachable only through a. Both are eligible."}, {"lv": "x", "q": "How many objects are eligible after line 4?", "code": "StringBuilder s1 = new StringBuilder(\"A\");   // object A\nStringBuilder s2 = new StringBuilder(\"B\");   // object B\ns1 = s2;                                      // line 3\ns2 = null;                                    // line 4", "o": ["0", "1", "2", "3"], "a": 1, "hint": "Track which object each variable points to after every line.", "why": "After line 3 both variables point to B, so A is eligible. After line 4, s1 still points to B. Only A is eligible."}, {"lv": "x", "q": "What does this print?", "code": "import java.util.*;\nclass Main {\n    static List<int[]> cache = new ArrayList<>();\n    public static void main(String[] args) {\n        for (int i = 0; i < 5; i++) {\n            int[] tmp = new int[10];\n            if (i % 2 == 0) cache.add(tmp);\n        }\n        System.out.println(cache.size());\n    }\n}", "o": ["5", "3", "2", "0"], "a": 1, "run": 1, "hint": "Which arrays stay reachable through the static list?", "why": "Arrays from i = 0, 2 and 4 are kept in the static list. The other 2 become eligible. The list size is 3."}, {"lv": "x", "q": "Which change fixes a leak where a static <code>Map&lt;Integer, byte[]&gt;<\/code> keeps every session forever?", "o": ["Call System.gc() more often", "Remove entries when sessions end, or use a size-limited cache", "Make the map final", "Override finalize in byte[]"], "a": 1, "hint": "The collector only frees unreachable objects.", "why": "As long as the map holds them, the arrays are reachable and cannot be collected. Removing entries or bounding the cache makes them unreachable."}], "calc": [{"lv": "e", "q": "totalMemory is 64 MB and freeMemory is 40 MB. How much memory is used, in MB?", "ans": "24", "py": "64-40", "unit": "MB", "hint": "Used memory = total − free.", "steps": ["<span class=\"eq\">used = totalMemory − freeMemory<\/span>", "<span class=\"eq\">64 − 40 = 24 MB<\/span>"]}, {"lv": "e", "q": "How many bytes is 1 MB as the examples on this page count it?", "code": "System.out.println(1024 * 1024);", "ans": "1048576", "run": 1, "hint": "The examples divide by 1024 × 1024.", "steps": ["<span class=\"eq\">1024 × 1024 = 1,048,576 bytes<\/span>"]}, {"lv": "m", "q": "An <code>int[1000][1000]<\/code> holds how many MB of int data? (Use 1 MB = 1,000,000 bytes.)", "ans": "4", "py": "1000*1000*4/1_000_000", "unit": "MB", "hint": "An int is 4 bytes.", "steps": ["<span class=\"eq\">1000 × 1000 = 1,000,000<\/span> ints", "<span class=\"eq\">1,000,000 × 4 = 4,000,000<\/span> bytes", "<span class=\"eq\">4,000,000 ÷ 1,000,000 = 4 MB<\/span>"]}, {"lv": "m", "q": "How many MB does <code>new long[100_000_000]<\/code> need? (Use 1 MB = 1,000,000 bytes.)", "ans": "800", "py": "100_000_000*8/1_000_000", "unit": "MB", "hint": "A long is 8 bytes.", "steps": ["<span class=\"eq\">100,000,000 × 8 = 800,000,000<\/span> bytes", "<span class=\"eq\">800,000,000 ÷ 1,000,000 = 800 MB<\/span>", "That is why a 32 MB heap throws OutOfMemoryError."]}, {"lv": "h", "q": "The leak example keeps 1000 buffers of 10,000 bytes each. After 7,500 requests, how many MB are stuck? (1 MB = 1,000,000 bytes.)", "ans": "75", "py": "7500*10_000/1_000_000", "unit": "MB", "hint": "One buffer is added per request.", "steps": ["<span class=\"eq\">7,500 × 10,000 = 75,000,000<\/span> bytes", "<span class=\"eq\">75,000,000 ÷ 1,000,000 = 75 MB<\/span>"]}, {"lv": "h", "q": "Ten objects form a chain: o1 → o2 → … → o10. Only a local variable points to o1. After that variable is set to null, how many objects are eligible?", "ans": "10", "py": "10", "hint": "If the head is unreachable, what about everything after it?", "steps": ["Nothing outside reaches o1.", "o2 to o10 are reachable only through o1.", "All <span class=\"eq\">10<\/span> objects are eligible."]}, {"lv": "x", "q": "What does this print?", "code": "class N { N next; }\nclass Main {\n    public static void main(String[] args) {\n        N[] arr = new N[6];\n        for (int i = 0; i < 6; i++) arr[i] = new N();\n        for (int i = 0; i < 5; i++) arr[i].next = arr[i + 1];\n        N head = arr[2];\n        arr = null;\n        int reachable = 0;\n        for (N n = head; n != null; n = n.next) reachable++;\n        System.out.println(reachable + \" reachable, \" + (6 - reachable) + \" eligible\");\n    }\n}", "ans": "4 reachable, 2 eligible", "run": 1, "hint": "Once arr is null, only head remains. Walk forward from arr[2].", "steps": ["The chain is 0 → 1 → 2 → 3 → 4 → 5.", "head points to node 2, so 2, 3, 4, 5 stay reachable: 4 nodes.", "Nodes 0 and 1 cannot be reached by going forward: <span class=\"eq\">6 − 4 = 2<\/span> eligible."]}, {"lv": "x", "q": "What does this print?", "code": "class Main {\n    public static void main(String[] args) {\n        long mb = 1024 * 1024;\n        long total = 256 * mb, free = 100 * mb, max = 1024 * mb;\n        long used = total - free;\n        System.out.println(used / mb + \" MB used, \" + (max - used) / mb + \" MB more possible\");\n    }\n}", "ans": "156 MB used, 868 MB more possible", "run": 1, "hint": "The heap can still grow up to max.", "steps": ["<span class=\"eq\">used = 256 − 100 = 156 MB<\/span>", "<span class=\"eq\">max − used = 1024 − 156 = 868 MB<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to garbage collection. Java frees unused memory for you. You will learn when an object becomes eligible, how to ask for a collection, how to read memory figures, and how to clean up resources the modern way.", "hi": "Garbage collection में आपका स्वागत है। Java आपके लिए बेकार memory मुक्त करता है। आप सीखेंगे कि object कब eligible होता है, collection कैसे माँगें, memory के आंकड़े कैसे पढ़ें, और resources को आधुनिक तरीके से कैसे साफ करें।", "kn": "Garbage collection ಗೆ ಸ್ವಾಗತ. Java ಬಳಕೆಯಾಗದ memory ಅನ್ನು ನಿಮಗಾಗಿ ಬಿಡುಗಡೆ ಮಾಡುತ್ತದೆ. Object ಯಾವಾಗ eligible ಆಗುತ್ತದೆ, collection ಹೇಗೆ ಕೇಳುವುದು, memory ಅಂಕಿಗಳನ್ನು ಹೇಗೆ ಓದುವುದು, ಮತ್ತು resources ಅನ್ನು ಆಧುನಿಕ ರೀತಿಯಲ್ಲಿ ಹೇಗೆ ಸ್ವಚ್ಛಗೊಳಿಸುವುದು ಎಂದು ಕಲಿಯುತ್ತೀರಿ.", "or": "Garbage collection କୁ ସ୍ୱାଗତ। Java ଆପଣଙ୍କ ପାଇଁ ଅବ୍ୟବହୃତ memory ମୁକ୍ତ କରେ। Object କେବେ eligible ହୁଏ, collection କିପରି ମାଗିବେ, memory ସଂଖ୍ୟା କିପରି ପଢ଼ିବେ, ଏବଂ resources କୁ ଆଧୁନିକ ଢଙ୍ଗରେ କିପରି ସଫା କରିବେ ଶିଖିବେ।", "ar": "مرحبًا بك في جمع المهملات. تحرر جافا الذاكرة غير المستخدمة نيابة عنك. ستتعلم متى يصبح الكائن مؤهلًا للجمع، وكيف تطلب الجمع، وكيف تقرأ أرقام الذاكرة، وكيف تنظف الموارد بالطريقة الحديثة.", "de": "Willkommen bei der Garbage Collection. Java gibt ungenutzten Speicher für dich frei. Du lernst, wann ein Objekt freigegeben werden darf, wie man eine Sammlung anfordert, wie man Speicherwerte liest und wie man Ressourcen modern aufräumt."}, {"id": "intro", "h": "Why a garbage collector", "en": "Objects live on the heap. The garbage collector frees objects that can no longer be reached from live variables, static fields or running threads. Such objects are called eligible, but the JVM decides when to actually remove them.", "hi": "Objects heap पर रहते हैं। Garbage collector उन objects को मुक्त करता है जिन तक live variables, static fields या चल रहे threads से अब पहुँचा नहीं जा सकता। ऐसे objects eligible कहलाते हैं, पर उन्हें असल में कब हटाना है यह JVM तय करता है।", "kn": "Objects heap ನಲ್ಲಿ ಇರುತ್ತವೆ. Live variables, static fields ಅಥವಾ ಓಡುತ್ತಿರುವ threads ನಿಂದ ಇನ್ನು ತಲುಪಲಾಗದ objects ಅನ್ನು garbage collector ಬಿಡುಗಡೆ ಮಾಡುತ್ತದೆ. ಅಂತಹ objects eligible ಎನ್ನಲಾಗುತ್ತದೆ, ಆದರೆ ಯಾವಾಗ ತೆಗೆಯಬೇಕು ಎಂದು JVM ನಿರ್ಧರಿಸುತ್ತದೆ.", "or": "Objects heap ରେ ରହନ୍ତି। Live variables, static fields କିମ୍ବା ଚାଲୁଥିବା threads ରୁ ଆଉ ପହଞ୍ଚି ହେଉନଥିବା objects କୁ garbage collector ମୁକ୍ତ କରେ। ଏପରି objects କୁ eligible କୁହାଯାଏ, କିନ୍ତୁ କେବେ ହଟାଇବ ତାହା JVM ସ୍ଥିର କରେ।", "ar": "تعيش الكائنات في الكومة. يحرر جامع المهملات الكائنات التي لم يعد ممكنًا الوصول إليها من المتغيرات الحية أو الحقول الساكنة أو الخيوط العاملة. تسمى هذه الكائنات مؤهلة، لكن JVM تقرر متى تزيلها فعلًا.", "de": "Objekte leben auf dem Heap. Der Garbage Collector gibt Objekte frei, die von lebenden Variablen, statischen Feldern oder laufenden Threads nicht mehr erreichbar sind. Solche Objekte heißen freigabefähig, aber die JVM entscheidet, wann sie wirklich entfernt werden."}, {"id": "eligible", "h": "Four ways to make an object eligible", "en": "An object becomes eligible when you set its last reference to null, when you point that reference at another object, when the method that created it returns without handing it back, or when it is part of an island of objects that only refer to each other.", "hi": "Object तब eligible होता है जब आप उसका आखिरी reference null कर दें, जब वह reference किसी दूसरे object की ओर कर दें, जब उसे बनाने वाला method उसे लौटाए बिना खत्म हो जाए, या जब वह ऐसे objects के द्वीप का हिस्सा हो जो केवल एक दूसरे को refer करते हैं।", "kn": "ಕೊನೆಯ reference ಅನ್ನು null ಮಾಡಿದಾಗ, ಆ reference ಅನ್ನು ಬೇರೆ object ಕಡೆಗೆ ತಿರುಗಿಸಿದಾಗ, ಅದನ್ನು ರಚಿಸಿದ method ಅದನ್ನು ಹಿಂತಿರುಗಿಸದೆ ಮುಗಿದಾಗ, ಅಥವಾ ಪರಸ್ಪರ ಮಾತ್ರ refer ಮಾಡುವ objects ದ್ವೀಪದ ಭಾಗವಾದಾಗ object eligible ಆಗುತ್ತದೆ.", "or": "ଶେଷ reference କୁ null କଲେ, ସେହି reference କୁ ଅନ୍ୟ object ଆଡ଼କୁ କଲେ, ଏହାକୁ ତିଆରି କରିଥିବା method ଫେରାଇ ନ ଦେଇ ଶେଷ ହେଲେ, କିମ୍ବା କେବଳ ପରସ୍ପରକୁ refer କରୁଥିବା objects ଦ୍ୱୀପର ଅଂଶ ହେଲେ object eligible ହୁଏ।", "ar": "يصبح الكائن مؤهلًا عندما تجعل آخر مرجع له null، أو توجه ذلك المرجع إلى كائن آخر، أو عندما تنتهي الدالة التي أنشأته دون إعادته، أو عندما يكون جزءًا من جزيرة كائنات يشير بعضها إلى بعض فقط.", "de": "Ein Objekt wird freigabefähig, wenn du seine letzte Referenz auf null setzt, diese Referenz auf ein anderes Objekt richtest, die erzeugende Methode endet, ohne es zurückzugeben, oder wenn es Teil einer Insel von Objekten ist, die nur aufeinander verweisen."}, {"id": "request-gc", "h": "Requesting a collection", "en": "System dot gc and Runtime dot getRuntime dot gc both ask the JVM to collect. It is only a request. Runtime is a singleton, so you get it from getRuntime and cannot create it with new.", "hi": "System dot gc और Runtime dot getRuntime dot gc दोनों JVM से collection माँगते हैं। यह केवल एक अनुरोध है। Runtime एक singleton है, इसलिए इसे getRuntime से लेते हैं और new से नहीं बना सकते।", "kn": "System dot gc ಮತ್ತು Runtime dot getRuntime dot gc ಎರಡೂ JVM ಗೆ collection ಕೇಳುತ್ತವೆ. ಇದು ಕೇವಲ ವಿನಂತಿ. Runtime ಒಂದು singleton, ಆದ್ದರಿಂದ ಅದನ್ನು getRuntime ನಿಂದ ಪಡೆಯುತ್ತೇವೆ, new ನಿಂದ ರಚಿಸಲಾಗದು.", "or": "System dot gc ଏବଂ Runtime dot getRuntime dot gc ଉଭୟ JVM କୁ collection ପାଇଁ ଅନୁରୋଧ କରନ୍ତି। ଏହା କେବଳ ଏକ ଅନୁରୋଧ। Runtime ଏକ singleton, ତେଣୁ ଏହାକୁ getRuntime ରୁ ନିଆଯାଏ ଏବଂ new ରେ ତିଆରି କରିହୁଏ ନାହିଁ।", "ar": "يطلب كل من System.gc و Runtime.getRuntime().gc من JVM أن تجمع المهملات، وهو مجرد طلب. والصنف Runtime مفرد، لذلك تحصل عليه من getRuntime ولا يمكنك إنشاؤه باستخدام new.", "de": "System punkt gc und Runtime punkt getRuntime punkt gc bitten beide die JVM um eine Sammlung. Es ist nur eine Bitte. Runtime ist ein Singleton, du bekommst es über getRuntime und kannst es nicht mit new erzeugen."}, {"id": "runtime-memory", "h": "Looking at memory", "en": "maxMemory is the heap limit set by Xmx. totalMemory is what is reserved now and freeMemory is the unused part of it. Used memory is total minus free. When nothing more can be freed, Java throws OutOfMemoryError.", "hi": "maxMemory, Xmx से तय heap सीमा है। totalMemory अभी आरक्षित memory है और freeMemory उसका खाली हिस्सा है। Used memory, total घटा free है। जब और कुछ मुक्त न हो सके, Java OutOfMemoryError फेंकता है।", "kn": "maxMemory ಎಂಬುದು Xmx ನಿಂದ ನಿಗದಿಯಾದ heap ಮಿತಿ. totalMemory ಈಗ ಕಾಯ್ದಿರಿಸಿದ್ದು ಮತ್ತು freeMemory ಅದರ ಬಳಸದ ಭಾಗ. Used memory ಎಂದರೆ total ಮೈನಸ್ free. ಇನ್ನೇನೂ ಬಿಡುಗಡೆಯಾಗದಿದ್ದಾಗ Java OutOfMemoryError ಎಸೆಯುತ್ತದೆ.", "or": "maxMemory ହେଉଛି Xmx ଦ୍ୱାରା ସ୍ଥିର heap ସୀମା। totalMemory ଏବେ ସଂରକ୍ଷିତ ଏବଂ freeMemory ତାହାର ଖାଲି ଅଂଶ। Used memory ହେଉଛି total ମାଇନସ free। ଆଉ କିଛି ମୁକ୍ତ ହୋଇନପାରିଲେ Java OutOfMemoryError ଦିଏ।", "ar": "maxMemory هي حد الكومة الذي يضبطه Xmx، و totalMemory هي المحجوزة الآن، و freeMemory هي الجزء غير المستخدم منها. الذاكرة المستخدمة هي الكلية ناقص الحرة. وعندما لا يمكن تحرير المزيد ترمي جافا OutOfMemoryError.", "de": "maxMemory ist die mit Xmx gesetzte Heap-Grenze. totalMemory ist der jetzt reservierte Speicher, freeMemory der unbenutzte Teil davon. Belegter Speicher ist total minus frei. Lässt sich nichts mehr freigeben, wirft Java OutOfMemoryError."}, {"id": "finalization", "h": "finalize and Cleaner", "en": "finalize is deprecated for removal because it is slow and unpredictable. Close resources yourself with try with resources. For a safety net, use a Cleaner, whose action runs after the object becomes unreachable.", "hi": "finalize हटाने के लिए deprecated है क्योंकि यह धीमा और अनिश्चित है। Resources खुद try with resources से बंद कीजिए। सुरक्षा के लिए Cleaner इस्तेमाल कीजिए, जिसका action object के unreachable होने के बाद चलता है।", "kn": "finalize ನಿಧಾನ ಮತ್ತು ಅನಿರೀಕ್ಷಿತವಾದ್ದರಿಂದ ತೆಗೆದುಹಾಕಲು deprecated ಆಗಿದೆ. Resources ಅನ್ನು try with resources ನಿಂದ ನೀವೇ ಮುಚ್ಚಿ. ಸುರಕ್ಷತೆಗೆ Cleaner ಬಳಸಿ, ಅದರ action object unreachable ಆದ ನಂತರ ಓಡುತ್ತದೆ.", "or": "finalize ଧୀର ଓ ଅନିଶ୍ଚିତ ହୋଇଥିବାରୁ ହଟାଇବା ପାଇଁ deprecated। Resources କୁ try with resources ରେ ନିଜେ ବନ୍ଦ କରନ୍ତୁ। ସୁରକ୍ଷା ପାଇଁ Cleaner ବ୍ୟବହାର କରନ୍ତୁ, ଯାହାର action object unreachable ହେବା ପରେ ଚାଲେ।", "ar": "الدالة finalize مهجورة ومقررة للإزالة لأنها بطيئة وغير متوقعة. أغلق الموارد بنفسك باستخدام try مع الموارد. وكشبكة أمان استخدم Cleaner الذي يعمل إجراؤه بعد أن يصبح الكائن غير قابل للوصول.", "de": "finalize ist zur Entfernung vorgesehen, weil es langsam und unvorhersehbar ist. Schließe Ressourcen selbst mit try-with-resources. Als Sicherheitsnetz dient ein Cleaner, dessen Aktion läuft, nachdem das Objekt unerreichbar wurde."}, {"id": "modern", "h": "Modern collectors", "en": "G1 is the default collector. ZGC keeps pauses tiny on huge heaps. Most collectors are generational because most objects die young. Leaks still happen when code keeps references it no longer needs, such as growing static lists.", "hi": "G1 default collector है। ZGC बहुत बड़े heaps पर भी रुकावट बहुत छोटी रखता है। ज़्यादातर collectors generational हैं क्योंकि अधिकतर objects जल्दी खत्म हो जाते हैं। Leaks तब भी होते हैं जब code बेकार references रखे रहता है, जैसे बढ़ती static lists।", "kn": "G1 default collector. ZGC ಬೃಹತ್ heaps ನಲ್ಲೂ ವಿರಾಮಗಳನ್ನು ತುಂಬಾ ಚಿಕ್ಕದಾಗಿಡುತ್ತದೆ. ಹೆಚ್ಚಿನ objects ಬೇಗ ಸಾಯುವುದರಿಂದ ಹೆಚ್ಚಿನ collectors generational. ಬೆಳೆಯುವ static lists ನಂತೆ ಬೇಡದ references ಇಟ್ಟುಕೊಂಡರೆ leaks ಈಗಲೂ ಆಗುತ್ತವೆ.", "or": "G1 default collector। ZGC ବହୁତ ବଡ଼ heaps ରେ ମଧ୍ୟ ବିରତି ଅତି ଛୋଟ ରଖେ। ଅଧିକାଂଶ objects ଶୀଘ୍ର ଶେଷ ହେଉଥିବାରୁ ଅଧିକାଂଶ collectors generational। ବଢ଼ୁଥିବା static lists ପରି ଅଦରକାରୀ references ରଖିଲେ leaks ଏବେ ବି ହୁଏ।", "ar": "G1 هو الجامع الافتراضي، و ZGC يبقي التوقفات قصيرة جدًا حتى مع الأكوام الضخمة. معظم الجامعات تعتمد الأجيال لأن معظم الكائنات تموت مبكرًا. ولا تزال التسريبات تحدث عندما يحتفظ الكود بمراجع لم يعد يحتاجها، مثل القوائم الساكنة المتنامية.", "de": "G1 ist der Standard-Collector. ZGC hält Pausen auch bei riesigen Heaps winzig. Die meisten Collectors arbeiten mit Generationen, weil die meisten Objekte jung sterben. Lecks entstehen trotzdem, wenn Code nicht mehr benötigte Referenzen behält, etwa in wachsenden statischen Listen."}]};
+document.getElementById('comic').innerHTML = PAGE.info ? XTRA.infoHtml(PAGE.info) : '';
+document.getElementById('real-life').innerHTML = PAGE.real ? XTRA.realHtml(PAGE.real) : '';
+document.getElementById('quiz').innerHTML = LEARN.quizHtml(PAGE.quiz || [], { lang: 'java' });
+document.getElementById('numbers').innerHTML = LEARN.calcHtml(PAGE.calc || [], { lang: 'java' });
+XTRA.wire(document);
+LEARN.wire();
+FUN.initScroll();
+FUN.observe();
+VOICE.setup({ title: "Garbage Collection", segments: PAGE.say || [] });
+document.getElementById('listenAll').onclick = () => VOICE.playAll();
+document.addEventListener('click', e => {
+  const b = e.target.closest('.codebar .copy');
+  if (!b) return;
+  const txt = b.closest('.codewrap').querySelector('pre.src').textContent;
+  const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+});
+/* inside the portal, chapter links open in the portal so the contents list stays in sync */
+if (FUN.inFrame) document.querySelectorAll('.pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=java&t=' + a.dataset.topic; a.target = '_top'; });
+else document.querySelector('.home-link').removeAttribute('target');
+</script>
+</body>
+</html>
