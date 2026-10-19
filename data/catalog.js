@@ -83,8 +83,22 @@ window.CATALOG = {
           id: 'getting-started', title: 'Getting started', emoji: '🚀',
           blurb: 'What DSA is and how we measure speed.',
           topics: [
-            { id: 'introduction', title: 'Introduction', emoji: '👋', summary: 'What data structures and algorithms are, and why they matter.', soon: true },
-            { id: 'runtime-analysis', title: 'Run time analysis', emoji: '⏱️', summary: 'Big O, best and worst cases, and how to count steps.', keywords: ['big o', 'complexity', 'asymptotic'], soon: true }
+            {
+              id: 'introduction', title: 'Introduction to DSA', emoji: '👋',
+              page: 'content/dsa/dsa-introduction.html',
+              summary: 'What data structures and algorithms are, the five properties of an algorithm, linear and non linear structures, abstract data types, paradigms and a method for any problem. Code in Python, JavaScript and Java.',
+              keywords: ['data structure', 'algorithm', 'abstract data type', 'adt', 'linear', 'non linear', 'paradigm', 'greedy', 'dynamic programming', 'divide and conquer'],
+              added: '2026-10-19',
+              sections: introSections()
+            },
+            {
+              id: 'runtime-analysis', title: 'Run time analysis', emoji: '⏱️',
+              page: 'content/dsa/runtime-analysis.html',
+              summary: 'Time complexity, space complexity, auxiliary space and recursion depth: Big O, Omega and Theta, loop patterns, best, worst and amortized cases, recurrences, the master theorem and recursion trees.',
+              keywords: ['big o', 'complexity', 'asymptotic', 'time complexity', 'space complexity', 'auxiliary space', 'recursion depth', 'recursion tree', 'master theorem', 'call stack'],
+              added: '2026-10-19',
+              sections: runtimeSections()
+            }
           ]
         },
         {
@@ -370,6 +384,55 @@ function arraySections() {
         { id: "Trees/practice-3", title: "Count inversions with a Fenwick tree", kind: 'Practice', level: "Hard" },
         { id: "Trees/practice-4", title: "Segment tree with lazy propagation", kind: 'Practice', level: "Expert" }
       ] }
+  ];
+}
+
+function introSections() {
+  return [
+    { id: "what-is", title: "What data structures and algorithms are", emoji: "🧭", group: 'Lesson', keywords: ["definition", "data structure", "algorithm", "program", "organise data", "recipe", "phone book"] },
+    { id: "why", title: "Why DSA matters", emoji: "🚀", group: 'Lesson', keywords: ["scalability", "efficiency", "performance", "real world systems", "interviews", "steps per second"] },
+    { id: "algorithm", title: "What makes something an algorithm", emoji: "🧾", group: 'Lesson', keywords: ["properties of algorithm", "finiteness", "definiteness", "input", "output", "effectiveness", "correctness", "pseudocode", "flowchart", "loop invariant"] },
+    { id: "classify", title: "Kinds of data structures", emoji: "🗂️", group: 'Lesson', keywords: ["primitive", "non-primitive", "linear", "non-linear", "static", "dynamic", "contiguous", "linked", "array", "linked list", "stack", "queue", "tree", "graph", "hash table", "heap"] },
+    { id: "adt", title: "Abstract data types", emoji: "🎭", group: 'Lesson', keywords: ["abstract data type", "ADT", "interface", "implementation", "stack ADT", "queue ADT", "list ADT", "map ADT", "priority queue", "encapsulation"] },
+    { id: "operations", title: "Core operations and what they cost", emoji: "⚖️", group: 'Lesson', keywords: ["traversal", "insertion", "deletion", "searching", "sorting", "merging", "access", "time complexity table", "array vs linked list"] },
+    { id: "paradigms", title: "Algorithm design paradigms", emoji: "🧠", group: 'Lesson', keywords: ["brute force", "greedy", "divide and conquer", "dynamic programming", "backtracking", "two pointers", "sliding window", "graph traversal", "randomized", "coin change"] },
+    { id: "choose", title: "Choosing the right structure", emoji: "🧩", group: 'Lesson', keywords: ["choose data structure", "decision guide", "when to use stack", "queue", "hash map", "heap", "tree", "graph", "array"] },
+    { id: "method", title: "A method for solving any problem", emoji: "🛠️", group: 'Lesson', keywords: ["problem solving method", "understand", "examples", "brute force first", "optimise", "edge cases", "test", "roadmap", "learning path"] },
+    { id: "second-largest", title: "Second largest element", emoji: '🏋️', group: "Easy practice" },
+    { id: "reverse-in-place", title: "Reverse an array in place", emoji: '🏋️', group: "Easy practice" },
+    { id: "balanced-brackets", title: "Balanced brackets", emoji: '🏋️', group: "Medium practice" },
+    { id: "first-unique", title: "First non-repeating character", emoji: '🏋️', group: "Medium practice" },
+    { id: "two-sum", title: "Two sum", emoji: '🏋️', group: "Hard practice" },
+    { id: "queue-two-stacks", title: "Queue from two stacks", emoji: '🏋️', group: "Hard practice" },
+    { id: "min-coins", title: "Fewest coins for an amount", emoji: '🏋️', group: "Expert practice" },
+    { id: "cycle-start", title: "Where does the linked list loop?", emoji: '🏋️', group: "Expert practice" },
+    { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+    { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+  ];
+}
+
+function runtimeSections() {
+  return [
+    { id: "why-analyse", title: "Why count steps instead of timing", emoji: "🧮", group: 'Lesson', keywords: ["RAM model", "basic operation", "step count", "machine independent", "stopwatch", "input size n"] },
+    { id: "growth", title: "Orders of growth", emoji: "📈", group: 'Lesson', keywords: ["constant", "logarithmic", "linear", "linearithmic", "n log n", "quadratic", "cubic", "exponential", "factorial", "growth rate comparison"] },
+    { id: "notations", title: "Big O, Big Omega and Big Theta", emoji: "🔣", group: 'Lesson', keywords: ["big o definition", "upper bound", "big omega lower bound", "big theta tight bound", "little o", "little omega", "c and n0", "formal proof"] },
+    { id: "rules", title: "Rules for finding the complexity", emoji: "📏", group: 'Lesson', keywords: ["drop constants", "drop lower order terms", "sum rule", "product rule", "sequential statements", "nested loops", "if else", "loop patterns", "logarithmic loop", "square root loop"] },
+    { id: "cases", title: "Best, worst, average and amortized", emoji: "🎲", group: 'Lesson', keywords: ["best case", "worst case", "average case", "expected case", "amortized analysis", "dynamic array", "aggregate method", "linear search cases"] },
+    { id: "space", title: "Space complexity", emoji: "💾", group: 'Lesson', keywords: ["space complexity", "memory", "fixed part", "variable part", "input space", "auxiliary space", "time space trade off", "hash set", "memory growth"] },
+    { id: "auxiliary", title: "Auxiliary space in depth", emoji: "🧰", group: 'Lesson', keywords: ["auxiliary space", "in place algorithm", "extra memory", "merge sort buffer", "quick sort stack", "heap sort", "recursion stack counts", "sorting algorithms space table"] },
+    { id: "recurrences", title: "Recurrences and the recursion tree", emoji: "🌳", group: 'Lesson', keywords: ["recurrence relation", "recursion tree method", "master theorem", "substitution", "T(n) = 2T(n/2) + n", "divide and conquer cost", "Fibonacci calls", "binary search recurrence"] },
+    { id: "recursion-depth", title: "Recursion depth and the call stack", emoji: "🥞", group: 'Lesson', keywords: ["call stack", "stack frame", "recursion depth", "maximum depth", "stack overflow", "RecursionError", "StackOverflowError", "RangeError", "tail recursion", "iterative conversion", "memoization space"] },
+    { id: "practical", title: "From constraints to complexity", emoji: "🎯", group: 'Lesson', keywords: ["input constraints", "time limit", "10^8 operations per second", "doubling experiment", "empirical analysis", "common mistakes", "hidden loops", "string concatenation", "slicing cost"] },
+    { id: "sum-array", title: "Sum of an array, with its cost", emoji: '🏋️', group: "Easy practice" },
+    { id: "power-of-two", title: "Is it a power of two?", emoji: '🏋️', group: "Easy practice" },
+    { id: "pair-count", title: "Count pairs with a given sum, two ways", emoji: '🏋️', group: "Medium practice" },
+    { id: "nested-analysis", title: "Analyse a nested loop", emoji: '🏋️', group: "Medium practice" },
+    { id: "fast-power", title: "Fast exponentiation", emoji: '🏋️', group: "Hard practice" },
+    { id: "merge-work", title: "Measure the work of merge sort", emoji: '🏋️', group: "Hard practice" },
+    { id: "memo-fib", title: "Memoization: from exponential to linear", emoji: '🏋️', group: "Expert practice" },
+    { id: "subsets", title: "All subsets and their recursion tree", emoji: '🏋️', group: "Expert practice" },
+    { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+    { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
   ];
 }
 
