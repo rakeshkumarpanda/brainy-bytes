@@ -172,7 +172,9 @@ const vc = new VirtualConsole();
 vc.forwardTo(console, { jsdomErrors: 'none' });
 vc.on('jsdomError', e => console.error(String(e.detail || e.message)));
 const dom = new JSDOM(fs.readFileSync('page.html', 'utf8'), { runScripts: 'dangerously', virtualConsole: vc, url: 'https://shop.example/' });
-dom.window.eval(fs.readFileSync('code.js', 'utf8'));
+// Wrapped like the in-browser runner does, so top level await works the same in both.
+dom.window.__fail = e => { console.error(e && e.stack ? String(e.stack).split('\n').slice(0, 2).join('\n') : String(e)); process.exitCode = 1; };
+dom.window.eval('(async () => {\n' + fs.readFileSync('code.js', 'utf8') + '\n})().catch(window.__fail);');
 setTimeout(() => dom.window.close(), 1500);
 '''
 

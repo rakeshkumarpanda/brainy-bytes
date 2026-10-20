@@ -1790,6 +1790,47 @@ function jsModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "js-platform", title: "Async and the platform", emoji: "⏳", blurb: "Promises and the event loop, the browser DOM, and HTTP from both sides: everything a UI or API test waits for.", topics: [
+      { id: "js-async", title: "Asynchronous JavaScript: Promises, async and await", emoji: "⏳", page: "content/javascript/js-async.html",
+        summary: "The single thread and the event loop with microtasks and tasks, error first callbacks, promises and chaining, Promise.withResolvers, async and await, sequential against parallel awaits, the missing await that makes a test pass by mistake, all, allSettled, race and any, AbortController and AbortSignal.timeout, polling and retry with exponential backoff, waiting in Playwright, and a link checker with a concurrency limit.",
+        keywords: ["event loop", "microtask", "callback", "Promise", "then", "catch", "async", "await", "Promise.all", "Promise.allSettled", "Promise.race", "Promise.any", "AbortController", "timeout", "retry", "backoff", "polling", "flaky tests"],
+        added: "2026-10-20",
+        sections: [
+        { id: "event-loop", title: "One thread and the event loop", emoji: "🔄", group: "Lesson", keywords: ["event loop", "single thread", "call stack", "microtask", "macrotask", "task queue", "setTimeout", "queueMicrotask", "blocking", "non-blocking"] },
+        { id: "callbacks", title: "Callbacks", emoji: "📞", group: "Lesson", keywords: ["callback", "error-first callback", "callback hell", "promisify", "fs/promises"] },
+        { id: "promises", title: "Promises", emoji: "🤝", group: "QA essential", keywords: ["Promise", "pending", "fulfilled", "rejected", "then", "catch", "finally", "chaining", "unhandled rejection", "Promise.withResolvers", "resolve", "reject"] },
+        { id: "async-await", title: "async and await", emoji: "⏸️", group: "QA essential", keywords: ["async", "await", "try catch", "Promise.all", "sequential", "parallel", "forgot await", "floating promise", "false positive", "flaky test", "top level await"] },
+        { id: "combinators", title: "Running many promises: all, allSettled, race, any", emoji: "🧮", group: "QA essential", keywords: ["Promise.all", "Promise.allSettled", "Promise.race", "Promise.any", "AggregateError", "AbortController", "AbortSignal", "AbortSignal.timeout", "AbortSignal.any", "cancel", "timeout"] },
+        { id: "waiting", title: "Retries, polling and waiting the right way", emoji: "⏱️", group: "QA essential", keywords: ["wait", "polling", "waitFor", "sleep", "fixed sleep", "retry", "exponential backoff", "auto-waiting", "expect.poll", "waitForResponse", "flaky"] },
+        { id: "scenario", title: "Real world scenario: a link checker", emoji: "🎬", group: "QA essential", keywords: ["link checker", "concurrency limit", "mapLimit", "timeout", "smoke test", "AbortSignal.timeout", "report"] },
+        { id: "sleep", title: "A sleep helper", emoji: "🏋️", group: "Easy practice" },
+        { id: "timeout", title: "Give up after a timeout", emoji: "🏋️", group: "Medium practice" },
+        { id: "retry", title: "Retry a flaky call", emoji: "🏋️", group: "Hard practice" },
+        { id: "limit", title: "Run with a concurrency limit", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "js-dom-browser", title: "The DOM and the Browser", emoji: "🌐", page: "content/javascript/js-dom-browser.html",
+        summary: "The DOM tree and how to move around it, CSS selectors including :has and attribute selectors, XPath by text and ancestor, which locators stay stable, textContent against innerHTML and XSS, events with capture and bubble, delegation and trusted events, form values and validation, shadow DOM and iframes in each test tool, waiting with MutationObserver, localStorage, sessionStorage and cookies, and checking every row of an order table.",
+        keywords: ["DOM", "querySelector", "CSS selector", "XPath", "locator", "getByRole", "data-test", "textContent", "innerHTML", "XSS", "event", "bubbling", "delegation", "form validation", "shadow DOM", "iframe", "MutationObserver", "localStorage", "cookie"],
+        added: "2026-10-20",
+        sections: [
+        { id: "dom", title: "The DOM tree", emoji: "🌳", group: "QA essential", keywords: ["DOM", "document", "element", "node", "tree", "getElementById", "querySelector", "querySelectorAll", "closest", "NodeList", "parentElement"] },
+        { id: "selectors", title: "Selectors and locators", emoji: "🎯", group: "QA essential", keywords: ["CSS selector", "locator", "XPath", "attribute selector", ":has", ":not", "nth-of-type", "data-test", "data-testid", "getByRole", "getByText", "stable locators", "ancestor"] },
+        { id: "change", title: "Changing the page", emoji: "✏️", group: "Lesson", keywords: ["textContent", "innerText", "innerHTML", "classList", "setAttribute", "dataset", "createElement", "append", "remove", "XSS", "cross site scripting"] },
+        { id: "events", title: "Events", emoji: "🖱️", group: "QA essential", keywords: ["event", "addEventListener", "click", "capture", "bubble", "event delegation", "target", "currentTarget", "preventDefault", "stopPropagation", "CustomEvent", "dispatchEvent", "isTrusted", "force click"] },
+        { id: "forms", title: "Forms and validation", emoji: "📝", group: "QA essential", keywords: ["form", "input", "value", "checked", "select", "validation", "checkValidity", "validity", "required", "FormData", "submit", "requestSubmit", "boundary values"] },
+        { id: "advanced", title: "Shadow DOM, iframes and observers", emoji: "🧱", group: "QA essential", keywords: ["shadow DOM", "shadowRoot", "web components", "custom elements", "iframe", "contentDocument", "frameLocator", "switchTo frame", "MutationObserver", "wait for element"] },
+        { id: "storage", title: "Storage and cookies", emoji: "🍪", group: "QA essential", keywords: ["localStorage", "sessionStorage", "cookie", "document.cookie", "HttpOnly", "SameSite", "storageState", "session", "login state"] },
+        { id: "scenario", title: "Real world scenario: check an order table", emoji: "🎬", group: "QA essential", keywords: ["table", "rows", "cells", "scrape", "data validation", "totals", "price parsing", "UI data check"] },
+        { id: "selector", title: "Build a CSS selector", emoji: "🏋️", group: "Easy practice" },
+        { id: "cookies", title: "Parse document.cookie", emoji: "🏋️", group: "Medium practice" },
+        { id: "path", title: "The path of an event", emoji: "🏋️", group: "Hard practice" },
+        { id: "sorted", title: "Is the price list sorted?", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
