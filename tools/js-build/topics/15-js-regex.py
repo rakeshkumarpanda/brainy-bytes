@@ -318,7 +318,7 @@ SAY = [
 ]
 
 QUIZ = [
-    quiz('e', 'What does /<b>.*?<\\/b>/ match in "<b>A</b><b>B</b>"?', ['<b>A</b>', '<b>A</b><b>B</b>', 'A', 'Nothing'], 0, 'Lazy.', 'The ? after * stops at the first closing tag.'),
+    quiz('e', 'What does the lazy pattern match?', ['&lt;b&gt;A&lt;/b&gt;', '&lt;b&gt;A&lt;/b&gt;&lt;b&gt;B&lt;/b&gt;', 'A', 'Nothing'], 0, 'Lazy.', 'The ? after * stops at the first closing tag.', code='"<b>A</b><b>B</b>".match(/<b>.*?<\\/b>/)[0];'),
     quiz('e', 'Which flag makes ^ and $ work on every line?', ['m', 's', 'g', 'y'], 0, 'Multiline.', 's is for the dot, g for all matches.'),
     quiz('e', 'Which pattern matches a letter in any language?', ['/\\p{L}/u', '/[a-z]/i', '/\\w/', '/./'], 0, 'Unicode property.', '\\w only covers A to Z, digits and underscore.'),
     quiz('m', 'What does (?<=₹)\\d+ return from "₹40"?', ['40', '₹40', '₹', 'Nothing'], 0, 'Lookbehind does not consume.', 'The ₹ is checked but left out of the match.'),

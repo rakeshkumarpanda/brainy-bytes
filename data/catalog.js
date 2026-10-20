@@ -2112,6 +2112,49 @@ function jsModules() {
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] },
+    { id: "ts", title: "TypeScript", emoji: "🔷", blurb: "TypeScript from the first type to generics, advanced types, typed projects and test automation written in TypeScript.", topics: [
+      { id: "ts-basics", title: "TypeScript fundamentals", emoji: "🔷", page: "content/javascript/ts-basics.html",
+        summary: "What TypeScript is and how Node.js runs it, a modern tsconfig, everyday types, inference, readonly and unknown, typed functions, callbacks and overloads, interface against type, unions and narrowing, enum against as const, what strict mode catches, and reading untyped JSON safely with a type predicate.",
+        keywords: ["TypeScript", "tsc", "tsconfig", "types", "inference", "unknown", "any", "interface", "type alias", "union", "narrowing", "enum", "as const", "strict", "type predicate", "interview"],
+        added: "2026-10-20",
+        sections: [
+        { id: "why", title: "What TypeScript is and how it runs", emoji: "🔷", group: "QA essential", keywords: ["TypeScript", "tsc", "type annotation", "type erasure", "type stripping", "tsconfig.json", "strict", "noEmit", "erasableSyntaxOnly", "@types/node", "tsx"] },
+        { id: "everyday", title: "Everyday types", emoji: "🧱", group: "QA essential", keywords: ["type inference", "string", "number", "boolean", "array type", "tuple", "object type", "optional property", "readonly", "literal type", "unknown", "any", "never", "const inference"] },
+        { id: "functions", title: "Functions", emoji: "🧩", group: "Lesson", keywords: ["function types", "parameter types", "return type", "optional parameter", "default parameter", "rest parameter", "overloads", "void", "never", "callback type", "type assertion", "as"] },
+        { id: "shapes", title: "interface and type", emoji: "📐", group: "QA essential", keywords: ["interface", "type alias", "extends", "intersection", "&", "Record", "index signature", "declaration merging", "object shape"] },
+        { id: "narrowing", title: "Unions and narrowing", emoji: "🔍", group: "QA essential", keywords: ["union type", "narrowing", "typeof", "instanceof", "in operator", "equality narrowing", "discriminated union", "control flow analysis", "type guard"] },
+        { id: "enums", title: "Enums and their modern alternative", emoji: "🏷️", group: "Lesson", keywords: ["enum", "const enum", "as const", "keyof typeof", "erasableSyntaxOnly", "literal union", "string enum"] },
+        { id: "strict", title: "Strict options", emoji: "🛡️", group: "QA essential", keywords: ["strict", "strictNullChecks", "noImplicitAny", "noUncheckedIndexedAccess", "exactOptionalPropertyTypes", "tsconfig options", "undefined", "null"] },
+        { id: "scenario", title: "Real world scenario: typed results from untyped JSON", emoji: "🎬", group: "QA essential", keywords: ["unknown", "JSON.parse", "type predicate", "is", "runtime validation", "type guard", "filter", "test results"] },
+        { id: "isorder", title: "A type guard", emoji: "🏋️", group: "Easy practice" },
+        { id: "describe", title: "Handle a union", emoji: "🏋️", group: "Medium practice" },
+        { id: "browsers", title: "An as const lookup", emoji: "🏋️", group: "Hard practice" },
+        { id: "safeget", title: "Safe reads with defaults", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "ts-advanced", title: "Advanced TypeScript types", emoji: "🧬", page: "content/javascript/ts-advanced.html",
+        summary: "Generic functions and types, typeof, keyof and indexed access, the utility types and what they cannot prove, mapped and conditional types with infer, template literal types for routes and test ids, satisfies for config objects, exhaustive switches with never, assertion functions and branded ids, and typed API routes with inferred path parameters.",
+        keywords: ["generics", "keyof", "indexed access", "utility types", "Partial", "Omit", "Record", "mapped types", "conditional types", "infer", "template literal types", "satisfies", "never", "exhaustive", "assertion functions", "branded types", "interview"],
+        added: "2026-10-20",
+        sections: [
+        { id: "generics", title: "Generics", emoji: "🧬", group: "QA essential", keywords: ["generics", "type parameter", "<T>", "generic constraint", "extends", "default type parameter", "generic type", "inference"] },
+        { id: "keyof", title: "typeof, keyof and indexed access", emoji: "🔑", group: "Lesson", keywords: ["typeof type", "keyof", "indexed access type", "T[K]", "lookup type", "K extends keyof T", "Partial"] },
+        { id: "utility", title: "Utility types", emoji: "🧰", group: "QA essential", keywords: ["utility types", "Partial", "Required", "Pick", "Omit", "Record", "Readonly", "ReturnType", "Parameters", "Awaited", "NonNullable", "Exclude", "Extract", "excess property check"] },
+        { id: "mapped", title: "Mapped and conditional types", emoji: "🗺️", group: "Lesson", keywords: ["mapped types", "key remapping", "as", "Capitalize", "-readonly", "conditional types", "infer", "distributive conditional types", "never"] },
+        { id: "template", title: "Template literal types", emoji: "🧵", group: "QA essential", keywords: ["template literal types", "string patterns", "Capitalize", "Uppercase", "route types", "event names", "data-testid"] },
+        { id: "satisfies", title: "satisfies", emoji: "✔️", group: "QA essential", keywords: ["satisfies", "type annotation", "widening", "config object", "as const satisfies", "precise types"] },
+        { id: "exhaustive", title: "Exhaustive checks with never", emoji: "🧱", group: "QA essential", keywords: ["discriminated union", "exhaustive check", "never", "assertNever", "switch", "keyword driven", "state machine"] },
+        { id: "assertions", title: "Assertion functions and branded types", emoji: "🛂", group: "QA essential", keywords: ["assertion function", "asserts", "asserts value is", "branded type", "nominal typing", "opaque type", "type safety", "environment variables"] },
+        { id: "scenario", title: "Real world scenario: typed API routes", emoji: "🎬", group: "QA essential", keywords: ["typed API client", "route types", "path parameters", "infer", "OpenAPI", "openapi-typescript", "response types"] },
+        { id: "pick", title: "A typed pick at run time", emoji: "🏋️", group: "Easy practice" },
+        { id: "groupkey", title: "Group by a key name", emoji: "🏋️", group: "Medium practice" },
+        { id: "steps", title: "An exhaustive step runner", emoji: "🏋️", group: "Hard practice" },
+        { id: "orderid", title: "Parse a branded id", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
+    ] },
     { id: "js-expert", title: "Expert and latest", emoji: "🧠", blurb: "The newest language features, performance, patterns, security and the habits of expert JavaScript developers and testers.", topics: [
       { id: "js-modern", title: "Modern JavaScript: ES2020 to 2026", emoji: "🆕", page: "content/javascript/js-modern.html",
         summary: "The yearly release process and a table of editions, ES2020 to ES2023 features for safer access and copies, ES2024 and ES2025 grouping, iterator helpers, Set methods and safer regular expressions, the newest features such as using and await using, Error.isError and base64, Temporal for dates, ages, time zones and durations, and modernising an old helper with a check that its results did not change.",

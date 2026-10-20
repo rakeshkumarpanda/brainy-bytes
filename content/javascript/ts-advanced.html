@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Advanced TypeScript types · JavaScript</title>
+<meta name="description" content="Advanced TypeScript: generics, constraints, keyof, typeof, indexed access, Partial, Pick, Omit, Record, ReturnType, Awaited, mapped types, conditional types, infer, template literal types, satisfies, never, assertion functions and branded types.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔷 TypeScript</span><span>›</span><span>Chapter 23 of 25</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧬</span><div><h1>Advanced TypeScript types</h1><p class="lead">The type tools experts use: generics and constraints, typeof, keyof and indexed access, the utility types, mapped and conditional types with infer, template literal types, satisfies, exhaustive checks with never, assertion functions, branded types, and API routes whose types follow the path.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 9 parts</span><span class="chip">🎬 0 animations</span><span class="chip">🔷 9 type checked examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 7 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Advanced types turn whole classes of test bugs into compile errors: wrong routes, missing parameters, typos in response fields and forgotten step types.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#generics" class="qa"><span>🧬</span>Generics</a><a href="#keyof"><span>🔑</span>typeof, keyof and indexed access</a><a href="#utility" class="qa"><span>🧰</span>Utility types</a><a href="#mapped"><span>🗺️</span>Mapped and conditional types</a><a href="#template" class="qa"><span>🧵</span>Template literal types</a><a href="#satisfies" class="qa"><span>✔️</span>satisfies</a><a href="#exhaustive" class="qa"><span>🧱</span>Exhaustive checks with never</a><a href="#assertions" class="qa"><span>🛂</span>Assertion functions and branded types</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: typed API routes</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="generics" data-say="generics"><div class="sec-num">Part 1</div><h2><span class="sec-em">🧬</span><span>Generics</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-why">Typed fixtures, typed API clients and test data builders are all built with generics.</span></div>
+<p>A <b>generic</b> is a type parameter, written <code>&lt;T&gt;</code>, that is filled in when the function or type is used. It keeps the connection between inputs and outputs: <code>first</code> of a number list is a number. A <b>constraint</b> with <code>extends</code> says what <code>T</code> must at least have.</p>
+<div class="codewrap tests" data-k="generics"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Generic functions, constraints and generic types · 🔷 tsc finds 1 error, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// A generic function keeps the link between input and output types</span>
+<span class="k">function</span> first&lt;<span class="t">T</span>&gt;(items: <span class="k">readonly</span> <span class="t">T</span>[]): <span class="t">T</span> | <span class="k">undefined</span> {
+  <span class="k">return</span> items[<span class="n">0</span>];
+}
+<span class="k">const</span> id = first([<span class="n">101</span>, <span class="n">102</span>]);            <span class="c">// number | undefined</span>
+<span class="k">const</span> tag = first([<span class="s">"smoke"</span>, <span class="s">"cart"</span>]);    <span class="c">// string | undefined</span>
+
+<span class="c">// Constraints: T must have at least these fields</span>
+<span class="k">function</span> slowest&lt;<span class="t">T</span> <span class="k">extends</span> { ms: <span class="k">number</span> }&gt;(results: <span class="t">T</span>[]): <span class="t">T</span> {
+  <span class="k">return</span> results.reduce((a, b) =&gt; (b.ms &gt; a.ms ? b : a));
+}
+<span class="k">const</span> top = slowest([{ name: <span class="s">"login"</span>, ms: <span class="n">840</span> }, { name: <span class="s">"checkout"</span>, ms: <span class="n">2310</span> }]);
+console.log(id, tag, top.name);                 <span class="c">// top keeps its name field</span>
+
+<span class="c">// A generic type with a default</span>
+<span class="k">type</span> <span class="t">ApiResponse</span>&lt;<span class="t">T</span>, <span class="t">E</span> = { message: <span class="k">string</span> }&gt; = { status: <span class="k">number</span>; data?: <span class="t">T</span>; error?: <span class="t">E</span> };
+<span class="k">const</span> res: <span class="t">ApiResponse</span>&lt;{ id: <span class="k">number</span> }&gt; = { status: <span class="n">201</span>, data: { id: <span class="n">7</span> } };
+console.log(res.data?.id);
+
+slowest([{ name: <span class="s">"x"</span> }]);                       <span class="c">// missing ms</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(20,12): error TS2353: Object literal may only specify known properties, and &#x27;name&#x27; does not exist in type &#x27;{ ms: number; }&#x27;.
+
+$ node src/main.ts
+101 smoke checkout
+7</pre></div></div>
+<div class="tip">Generics are why Playwright's <code>test.extend&lt;{ cart: CartPage }&gt;()</code> knows the type of every fixture, and why <code>response.json()</code> in a typed client can return your response type (chapter 25).</div>
+</section>
+<section class="card reveal jsec" id="keyof" data-say="keyof"><div class="sec-num">Part 2</div><h2><span class="sec-em">🔑</span><span>typeof, keyof and indexed access</span></h2>
+
+<p><code>typeof value</code> turns a value into a type, <code>keyof T</code> gives the union of its keys, and <code>T[K]</code> reads the type of one property. Together they let a function accept only real keys and return the right type for each one.</p>
+<div class="codewrap tests" data-k="keyof"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">typeof, keyof and indexed access types · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">const</span> defaults = { baseURL: <span class="s">"http://localhost:3000"</span>, timeout: <span class="n">5000</span>, headless: <span class="k">true</span> };
+
+<span class="k">type</span> <span class="t">Config</span> = <span class="k">typeof</span> defaults;                 <span class="c">// the type of a value</span>
+<span class="k">type</span> <span class="t">ConfigKey</span> = <span class="k">keyof</span> <span class="t">Config</span>;                 <span class="c">// "baseURL" | "timeout" | "headless"</span>
+<span class="k">type</span> <span class="t">Timeout</span> = <span class="t">Config</span>[<span class="s">"timeout"</span>];              <span class="c">// indexed access: number</span>
+
+<span class="c">// K is one of the keys, and the return type follows it</span>
+<span class="k">function</span> setting&lt;<span class="t">K</span> <span class="k">extends</span> <span class="t">ConfigKey</span>&gt;(key: <span class="t">K</span>, overrides: <span class="t">Partial</span>&lt;<span class="t">Config</span>&gt; = {}): <span class="t">Config</span>[<span class="t">K</span>] {
+  <span class="k">return</span> overrides[key] ?? defaults[key];
+}
+<span class="k">const</span> t: <span class="t">Timeout</span> = setting(<span class="s">"timeout"</span>, { timeout: <span class="n">10_000</span> });
+<span class="k">const</span> h = setting(<span class="s">"headless"</span>);                 <span class="c">// boolean</span>
+console.log(t, h, setting(<span class="s">"baseURL"</span>));
+
+setting(<span class="s">"timout"</span>);                             <span class="c">// typo caught</span>
+<span class="k">const</span> n: <span class="k">number</span> = setting(<span class="s">"baseURL"</span>);          <span class="c">// wrong type caught</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(15,9): error TS2345: Argument of type &#x27;&quot;timout&quot;&#x27; is not assignable to parameter of type &#x27;&quot;baseURL&quot; | &quot;headless&quot; | &quot;timeout&quot;&#x27;.
+src/main.ts(16,7): error TS2322: Type &#x27;string&#x27; is not assignable to type &#x27;number&#x27;.
+
+$ node src/main.ts
+10000 true http://localhost:3000</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="utility" data-say="utility"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧰</span><span>Utility types</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Omit and Pick model create requests and public responses, and the leaked password shows what types alone cannot prove.</span></div>
+<p>TypeScript ships with type helpers that change existing types instead of writing new ones by hand.</p>
+<div class="tw"><table class="jt"><tr><th>Helper</th><th>Gives</th></tr>
+<tr><td><code>Partial&lt;T&gt;</code> <code>Required&lt;T&gt;</code></td><td>every property optional, or every property required</td></tr>
+<tr><td><code>Pick&lt;T, K&gt;</code> <code>Omit&lt;T, K&gt;</code></td><td>only some keys, or all but some keys</td></tr>
+<tr><td><code>Record&lt;K, V&gt;</code></td><td>an object with keys K and values V</td></tr>
+<tr><td><code>Readonly&lt;T&gt;</code></td><td>every property readonly</td></tr>
+<tr><td><code>ReturnType</code> <code>Parameters</code> <code>Awaited</code></td><td>the return, the arguments, the value inside a promise</td></tr>
+<tr><td><code>NonNullable</code> <code>Exclude</code> <code>Extract</code></td><td>remove null and undefined, remove or keep union members</td></tr>
+</table></div>
+<div class="codewrap tests" data-k="utility"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Utility types: Partial, Pick, Omit, Record, ReturnType and Awaited · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">interface</span> <span class="t">User</span> { id: <span class="k">number</span>; email: <span class="k">string</span>; name: <span class="k">string</span>; role: <span class="s">"admin"</span> | <span class="s">"customer"</span>; password: <span class="k">string</span> }
+
+<span class="k">type</span> <span class="t">NewUser</span> = <span class="t">Omit</span>&lt;<span class="t">User</span>, <span class="s">"id"</span>&gt;;                      <span class="c">// what a create request sends</span>
+<span class="k">type</span> <span class="t">PublicUser</span> = <span class="t">Omit</span>&lt;<span class="t">User</span>, <span class="s">"password"</span>&gt;;             <span class="c">// what the API may return</span>
+<span class="k">type</span> <span class="t">UserPatch</span> = <span class="t">Partial</span>&lt;<span class="t">Pick</span>&lt;<span class="t">User</span>, <span class="s">"name"</span> | <span class="s">"email"</span>&gt;&gt;;
+<span class="k">type</span> <span class="t">Lookup</span> = <span class="t">Record</span>&lt;<span class="t">User</span>[<span class="s">"role"</span>], <span class="t">User</span>[]&gt;;
+<span class="k">type</span> <span class="t">Frozen</span> = <span class="t">Readonly</span>&lt;<span class="t">User</span>&gt;;
+
+<span class="k">async</span> <span class="k">function</span> fetchUser(): <span class="t">Promise</span>&lt;<span class="t">PublicUser</span>&gt; { <span class="k">return</span> { id: <span class="n">1</span>, email: <span class="s">"a@shop.test"</span>, name: <span class="s">"Asha"</span>, role: <span class="s">"admin"</span> }; }
+<span class="k">type</span> <span class="t">Fetched</span> = <span class="t">Awaited</span>&lt;<span class="t">ReturnType</span>&lt;<span class="k">typeof</span> fetchUser&gt;&gt;;
+<span class="k">type</span> <span class="t">Args</span> = <span class="t">Parameters</span>&lt;<span class="k">typeof</span> setting&gt;;
+<span class="k">function</span> setting(name: <span class="k">string</span>, fallback?: <span class="k">number</span>) { <span class="k">return</span> fallback ?? <span class="n">0</span>; }
+
+<span class="k">const</span> draft: <span class="t">NewUser</span> = { email: <span class="s">"r@shop.test"</span>, name: <span class="s">"Ravi"</span>, role: <span class="s">"customer"</span>, password: <span class="s">"s3cret!"</span> };
+<span class="k">const</span> patch: <span class="t">UserPatch</span> = { name: <span class="s">"Ravi K"</span> };
+<span class="k">const</span> leaked: <span class="t">PublicUser</span> = { ...draft, id: <span class="n">2</span> };      <span class="c">// extra password field in an object literal is allowed via spread</span>
+<span class="k">const</span> byRole: <span class="t">Lookup</span> = { admin: [], customer: [] };
+<span class="k">const</span> args: <span class="t">Args</span> = [<span class="s">"timeout"</span>, <span class="n">5000</span>];
+<span class="k">const</span> u: <span class="t">Fetched</span> = <span class="k">await</span> fetchUser();
+console.log(<span class="t">Object</span>.keys(draft).length, patch, <span class="t">Object</span>.keys(byRole), args, u.name, <span class="s">"password"</span> <span class="k">in</span> leaked);
+
+<span class="k">const</span> bad: <span class="t">PublicUser</span> = { id: <span class="n">3</span>, email: <span class="s">"x"</span>, name: <span class="s">"X"</span>, role: <span class="s">"customer"</span>, password: <span class="s">"oops"</span> };
+<span class="k">const</span> frozen: <span class="t">Frozen</span> = u <span class="k">as</span> <span class="t">User</span>;
+frozen.name = <span class="s">"changed"</span>;</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(22,75): error TS2353: Object literal may only specify known properties, and &#x27;password&#x27; does not exist in type &#x27;PublicUser&#x27;.
+src/main.ts(24,8): error TS2540: Cannot assign to &#x27;name&#x27; because it is a read-only property.
+
+$ node src/main.ts
+4 { name: &#x27;Ravi K&#x27; } [ &#x27;admin&#x27;, &#x27;customer&#x27; ] [ &#x27;timeout&#x27;, 5000 ] Asha true</pre></div></div>
+<div class="warn">Look at the <code>leaked</code> line: spreading an object with extra fields into a typed variable is allowed, so a password can slip into a "public" object. Types describe what must be there, not what must be absent. API tests must still check that secret fields are not in the response.</div>
+</section>
+<section class="card reveal jsec" id="mapped" data-say="mapped"><div class="sec-num">Part 4</div><h2><span class="sec-em">🗺️</span><span>Mapped and conditional types</span></h2>
+
+<p>A <b>mapped type</b> loops over keys: <code>{ [K in keyof T]: … }</code>. It can rename keys with <code>as</code> and add or remove <code>readonly</code> and <code>?</code>. A <b>conditional type</b>, <code>T extends U ? X : Y</code>, chooses a type, and <code>infer</code> captures part of a type, such as the element of an array or the value inside a promise.</p>
+<div class="codewrap tests" data-k="mapped"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Mapped and conditional types with infer · 🔷 tsc finds 1 error, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// Mapped types build a new type from every key of another</span>
+<span class="k">type</span> <span class="t">Flags</span>&lt;<span class="t">T</span>&gt; = { [<span class="t">K</span> <span class="k">in</span> <span class="k">keyof</span> <span class="t">T</span>]: <span class="k">boolean</span> };
+<span class="k">type</span> <span class="t">Getters</span>&lt;<span class="t">T</span>&gt; = { [<span class="t">K</span> <span class="k">in</span> <span class="k">keyof</span> <span class="t">T</span> <span class="k">as</span> <span class="s">`get${Capitalize&lt;string &amp; K&gt;}`</span>]: () =&gt; <span class="t">T</span>[<span class="t">K</span>] };
+<span class="k">type</span> <span class="t">Mutable</span>&lt;<span class="t">T</span>&gt; = { -<span class="k">readonly</span> [<span class="t">K</span> <span class="k">in</span> <span class="k">keyof</span> <span class="t">T</span>]: <span class="t">T</span>[<span class="t">K</span>] };
+
+<span class="k">interface</span> <span class="t">Settings</span> { <span class="k">readonly</span> retries: <span class="k">number</span>; <span class="k">readonly</span> browser: <span class="k">string</span> }
+<span class="k">const</span> changed: <span class="t">Flags</span>&lt;<span class="t">Settings</span>&gt; = { retries: <span class="k">true</span>, browser: <span class="k">false</span> };
+<span class="k">const</span> getters: <span class="t">Getters</span>&lt;<span class="t">Settings</span>&gt; = { getRetries: () =&gt; <span class="n">2</span>, getBrowser: () =&gt; <span class="s">"firefox"</span> };
+<span class="k">const</span> m: <span class="t">Mutable</span>&lt;<span class="t">Settings</span>&gt; = { retries: <span class="n">1</span>, browser: <span class="s">"webkit"</span> };
+m.retries = <span class="n">3</span>;
+
+<span class="c">// Conditional types choose a type, and infer pulls a type out of another</span>
+<span class="k">type</span> <span class="t">ElementOf</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> <span class="k">extends</span> <span class="k">readonly</span> (infer <span class="t">E</span>)[] ? <span class="t">E</span> : <span class="k">never</span>;
+<span class="k">type</span> <span class="t">Unwrap</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> <span class="k">extends</span> <span class="t">Promise</span>&lt;infer <span class="t">V</span>&gt; ? <span class="t">V</span> : <span class="t">T</span>;
+<span class="k">type</span> <span class="t">NonEmpty</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> <span class="k">extends</span> <span class="s">""</span> | <span class="k">null</span> | <span class="k">undefined</span> ? <span class="k">never</span> : <span class="t">T</span>;
+
+<span class="k">const</span> e: <span class="t">ElementOf</span>&lt;<span class="k">string</span>[]&gt; = <span class="s">"ok"</span>;
+<span class="k">const</span> v: <span class="t">Unwrap</span>&lt;<span class="t">Promise</span>&lt;<span class="k">number</span>&gt;&gt; = <span class="n">42</span>;
+<span class="k">type</span> <span class="t">Clean</span> = <span class="t">NonEmpty</span>&lt;<span class="s">"a"</span> | <span class="s">""</span> | <span class="k">null</span> | <span class="s">"b"</span>&gt;;          <span class="c">// "a" | "b"</span>
+<span class="k">const</span> c: <span class="t">Clean</span> = <span class="s">"b"</span>;
+console.log(changed, getters.getBrowser(), m.retries, e, v, c);
+
+<span class="k">const</span> wrong: <span class="t">Clean</span> = <span class="s">""</span>;</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(23,7): error TS2322: Type &#x27;&quot;&quot;&#x27; is not assignable to type &#x27;Clean&#x27;.
+
+$ node src/main.ts
+{ retries: true, browser: false } firefox 3 ok 42 b</pre></div></div>
+<div class="note">Conditional types are <b>distributive</b> over unions: <code>NonEmpty&lt;"a" | ""&gt;</code> is checked one member at a time, which is how <code>Exclude</code> and <code>NonNullable</code> are written.</div>
+</section>
+<section class="card reveal jsec qa-part" id="template" data-say="template"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧵</span><span>Template literal types</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Typed routes and test id patterns stop typos in endpoints and locators.</span></div>
+<p>Template literal types describe patterns of strings, built from other string types. They type routes, CSS values, event names and test ids, and the compiler checks every literal you write.</p>
+<div class="codewrap tests" data-k="template"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Template literal types · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// Template literal types describe string patterns</span>
+<span class="k">type</span> <span class="t">Method</span> = <span class="s">"GET"</span> | <span class="s">"POST"</span> | <span class="s">"DELETE"</span>;
+<span class="k">type</span> <span class="t">Version</span> = <span class="s">"v1"</span> | <span class="s">"v2"</span>;
+<span class="k">type</span> <span class="t">Route</span> = <span class="s">`/${Version}/${"users" | "orders"}`</span>;
+<span class="k">type</span> <span class="t">Endpoint</span> = <span class="s">`${Method} ${Route}`</span>;                 <span class="c">// 3 × 2 × 2 = 12 strings</span>
+
+<span class="k">type</span> <span class="t">TestId</span> = <span class="s">`${"btn" | "input" | "link"}-${string}`</span>;
+<span class="k">type</span> <span class="t">CssSize</span> = <span class="s">`${number}px`</span> | <span class="s">`${number}%`</span>;
+
+<span class="k">const</span> call: <span class="t">Endpoint</span> = <span class="s">"POST /v1/orders"</span>;
+<span class="k">const</span> loc: <span class="t">TestId</span> = <span class="s">"btn-checkout"</span>;
+<span class="k">const</span> width: <span class="t">CssSize</span> = <span class="s">"50%"</span>;
+
+<span class="c">// Event names from a type, as typed event emitters do</span>
+<span class="k">type</span> <span class="t">Events</span> = { pass: { name: <span class="k">string</span> }; fail: { name: <span class="k">string</span>; error: <span class="k">string</span> } };
+<span class="k">type</span> <span class="t">Handler</span> = { [<span class="t">E</span> <span class="k">in</span> <span class="k">keyof</span> <span class="t">Events</span> <span class="k">as</span> <span class="s">`on${Capitalize&lt;E&gt;}`</span>]: (e: <span class="t">Events</span>[<span class="t">E</span>]) =&gt; <span class="k">void</span> };
+<span class="k">const</span> reporter: <span class="t">Handler</span> = { onPass: e =&gt; console.log(<span class="s">"✔"</span>, e.name), onFail: e =&gt; console.log(<span class="s">"✖"</span>, e.name, e.error) };
+reporter.onFail({ name: <span class="s">"cart"</span>, error: <span class="s">"expected 2"</span> });
+console.log(call, loc, width);
+
+<span class="k">const</span> typo: <span class="t">Endpoint</span> = <span class="s">"PUT /v1/orders"</span>;
+<span class="k">const</span> badId: <span class="t">TestId</span> = <span class="s">"button-checkout"</span>;</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(21,7): error TS2820: Type &#x27;&quot;PUT /v1/orders&quot;&#x27; is not assignable to type &#x27;&quot;DELETE /v1/orders&quot; | &quot;DELETE /v1/users&quot; | &quot;DELETE /v2/orders&quot; | &quot;DELETE /v2/users&quot; | &quot;GET /v1/orders&quot; | &quot;GET /v1/users&quot; | &quot;GET /v2/orders&quot; | &quot;GET /v2/users&quot; | &quot;POST /v1/orders&quot; | &quot;POST /v1/users&quot; | &quot;POST /v2/orders&quot; | &quot;POST /v2/users&quot;&#x27;. Did you mean &#x27;&quot;POST /v1/orders&quot;&#x27;?
+src/main.ts(22,7): error TS2322: Type &#x27;&quot;button-checkout&quot;&#x27; is not assignable to type &#x27;`btn-${string}` | `input-${string}` | `link-${string}`&#x27;.
+
+$ node src/main.ts
+✖ cart expected 2
+POST /v1/orders btn-checkout 50%</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="satisfies" data-say="satisfies"><div class="sec-num">Part 6</div><h2><span class="sec-em">✔️</span><span>satisfies</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-why">Test configuration objects get both type checking and precise auto complete.</span></div>
+<p>An annotation such as <code>const x: Record&lt;string, Project&gt;</code> replaces the type of the value with the wider annotation, so the exact keys are lost. <code>satisfies</code> checks the value against the type but keeps the precise type that was inferred. It is ideal for configuration objects.</p>
+<div class="codewrap tests" data-k="satisfies"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">satisfies: check without widening · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">type</span> <span class="t">Browser</span> = <span class="s">"chromium"</span> | <span class="s">"firefox"</span> | <span class="s">"webkit"</span>;
+<span class="k">type</span> <span class="t">Project</span> = { browser: <span class="t">Browser</span>; retries?: <span class="k">number</span>; baseURL?: <span class="k">string</span> };
+
+<span class="c">// A type annotation widens: the exact keys and values are lost</span>
+<span class="k">const</span> annotated: <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="t">Project</span>&gt; = { desktop: { browser: <span class="s">"chromium"</span> }, mobile: { browser: <span class="s">"webkit"</span>, retries: <span class="n">2</span> } };
+annotated.tablet;                              <span class="c">// allowed, but undefined at run time</span>
+
+<span class="c">// satisfies checks the shape and keeps the precise type</span>
+<span class="k">const</span> projects = {
+  desktop: { browser: <span class="s">"chromium"</span> },
+  mobile: { browser: <span class="s">"webkit"</span>, retries: <span class="n">2</span> },
+} <span class="k">satisfies</span> <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="t">Project</span>&gt;;
+
+projects.mobile.retries.toFixed(<span class="n">0</span>);            <span class="c">// known to exist, no undefined check needed</span>
+console.log(<span class="t">Object</span>.keys(projects), projects.mobile.retries);
+projects.tablet;                               <span class="c">// now a typo is caught</span>
+
+<span class="k">const</span> broken = { desktop: { browser: <span class="s">"edge"</span> } } <span class="k">satisfies</span> <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="t">Project</span>&gt;;</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(16,10): error TS2339: Property &#x27;tablet&#x27; does not exist on type &#x27;{ desktop: { browser: &quot;chromium&quot;; }; mobile: { browser: &quot;webkit&quot;; retries: number; }; }&#x27;.
+src/main.ts(18,29): error TS2322: Type &#x27;&quot;edge&quot;&#x27; is not assignable to type &#x27;Browser&#x27;.
+
+$ node src/main.ts
+[ &#x27;desktop&#x27;, &#x27;mobile&#x27; ] 2</pre></div></div>
+<div class="tip"><code>playwright.config.ts</code> uses <code>defineConfig</code> for the same reason. With your own config objects, <code>satisfies</code> gives typo checking and auto complete at the same time.</div>
+</section>
+<section class="card reveal jsec qa-part" id="exhaustive" data-say="exhaustive"><div class="sec-num">Part 7</div><h2><span class="sec-em">🧱</span><span>Exhaustive checks with never</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Keyword driven and data driven frameworks model their steps as unions, and exhaustive checks keep every runner up to date.</span></div>
+<p>With a discriminated union, a <code>switch</code> on the shared field narrows each case. Passing the leftover value to a function that takes <code>never</code> makes the check <b>exhaustive</b>: add a new kind to the union and every switch that forgot it becomes a compile error.</p>
+<div class="codewrap tests" data-k="exhaustive"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Discriminated unions with an exhaustive check · 🔷 tsc finds 1 error, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">type</span> <span class="t">Step</span> =
+  | { kind: <span class="s">"goto"</span>; url: <span class="k">string</span> }
+  | { kind: <span class="s">"click"</span>; selector: <span class="k">string</span> }
+  | { kind: <span class="s">"fill"</span>; selector: <span class="k">string</span>; value: <span class="k">string</span> }
+  | { kind: <span class="s">"expectText"</span>; selector: <span class="k">string</span>; text: <span class="k">string</span> };
+
+<span class="k">function</span> assertNever(x: <span class="k">never</span>): <span class="k">never</span> { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`unhandled step ${JSON.stringify(x)}`</span>); }
+
+<span class="k">function</span> describe(step: <span class="t">Step</span>): <span class="k">string</span> {
+  <span class="k">switch</span> (step.kind) {
+    <span class="k">case</span> <span class="s">"goto"</span>: <span class="k">return</span> <span class="s">`open ${step.url}`</span>;
+    <span class="k">case</span> <span class="s">"click"</span>: <span class="k">return</span> <span class="s">`click ${step.selector}`</span>;
+    <span class="k">case</span> <span class="s">"fill"</span>: <span class="k">return</span> <span class="s">`type "${step.value}" into ${step.selector}`</span>;
+    <span class="k">case</span> <span class="s">"expectText"</span>: <span class="k">return</span> <span class="s">`check ${step.selector} shows "${step.text}"`</span>;
+    <span class="k">default</span>: <span class="k">return</span> assertNever(step);           <span class="c">// a new kind of step without a case is a compile error</span>
+  }
+}
+
+<span class="k">const</span> script: <span class="t">Step</span>[] = [
+  { kind: <span class="s">"goto"</span>, url: <span class="s">"/login"</span> },
+  { kind: <span class="s">"fill"</span>, selector: <span class="s">"#email"</span>, value: <span class="s">"asha@shop.test"</span> },
+  { kind: <span class="s">"click"</span>, selector: <span class="s">"button[type=submit]"</span> },
+  { kind: <span class="s">"expectText"</span>, selector: <span class="s">"h1"</span>, text: <span class="s">"Welcome"</span> },
+];
+console.log(script.map(describe));
+
+<span class="k">function</span> describeOld(step: <span class="t">Step</span>): <span class="k">string</span> {
+  <span class="k">switch</span> (step.kind) {
+    <span class="k">case</span> <span class="s">"goto"</span>: <span class="k">return</span> <span class="s">"open"</span>;
+    <span class="k">case</span> <span class="s">"click"</span>: <span class="k">return</span> <span class="s">"click"</span>;
+    <span class="k">default</span>: <span class="k">return</span> assertNever(step);           <span class="c">// fill and expectText are missing</span>
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(31,33): error TS2345: Argument of type &#x27;{ kind: &quot;fill&quot;; selector: string; value: string; } | { kind: &quot;expectText&quot;; selector: string; text: string; }&#x27; is not assignable to parameter of type &#x27;never&#x27;.
+  Type &#x27;{ kind: &quot;fill&quot;; selector: string; value: string; }&#x27; is not assignable to type &#x27;never&#x27;.
+
+$ node src/main.ts
+[
+  &#x27;open /login&#x27;,
+  &#x27;type &quot;asha@shop.test&quot; into #email&#x27;,
+  &#x27;click button[type=submit]&#x27;,
+  &#x27;check h1 shows &quot;Welcome&quot;&#x27;
+]</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="assertions" data-say="assertions"><div class="sec-num">Part 8</div><h2><span class="sec-em">🛂</span><span>Assertion functions and branded types</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Required environment variables and typed ids are checked once, and the rest of the test can rely on them.</span></div>
+<p>An <b>assertion function</b> with <code>asserts value is T</code> narrows the type after the call, or throws. Test helpers such as <code>expect(x).toBeDefined()</code> cannot narrow types, but your own assertion functions can. A <b>branded type</b> adds an invisible tag to a primitive so two kinds of string id cannot be mixed up.</p>
+<div class="codewrap tests" data-k="assertions"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Assertion functions and branded types · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// An assertion function narrows the type for the rest of the scope, or throws</span>
+<span class="k">function</span> assertDefined&lt;<span class="t">T</span>&gt;(value: <span class="t">T</span>, label: <span class="k">string</span>): asserts value is <span class="t">NonNullable</span>&lt;<span class="t">T</span>&gt; {
+  <span class="k">if</span> (value === <span class="k">undefined</span> || value === <span class="k">null</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`${label} is missing`</span>);
+}
+
+<span class="c">// Branded types: same run time value, different compile time type</span>
+<span class="k">type</span> <span class="t">OrderId</span> = <span class="k">string</span> &amp; { <span class="k">readonly</span> __brand: <span class="s">"OrderId"</span> };
+<span class="k">type</span> <span class="t">UserId</span> = <span class="k">string</span> &amp; { <span class="k">readonly</span> __brand: <span class="s">"UserId"</span> };
+<span class="k">const</span> asOrderId = (s: <span class="k">string</span>): <span class="t">OrderId</span> =&gt; {
+  <span class="k">if</span> (!/^<span class="t">ORD</span>-\d{<span class="n">6</span>}$/.test(s)) <span class="k">throw</span> <span class="k">new</span> <span class="t">RangeError</span>(<span class="s">`bad order id ${s}`</span>);
+  <span class="k">return</span> s <span class="k">as</span> <span class="t">OrderId</span>;
+};
+
+<span class="k">function</span> cancelOrder(id: <span class="t">OrderId</span>) { <span class="k">return</span> <span class="s">`cancelled ${id}`</span>; }
+
+<span class="k">const</span> env = { <span class="t">BASE_URL</span>: <span class="s">"http://localhost:3000"</span> } <span class="k">as</span> <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="k">string</span> | <span class="k">undefined</span>&gt;;
+<span class="k">const</span> base = env.<span class="t">BASE_URL</span>;
+assertDefined(base, <span class="s">"BASE_URL"</span>);
+console.log(base.toUpperCase());              <span class="c">// string from here on</span>
+
+<span class="k">const</span> order = asOrderId(<span class="s">"ORD-104233"</span>);
+console.log(cancelOrder(order));
+<span class="k">const</span> user = <span class="s">"USR-7"</span> <span class="k">as</span> <span class="t">UserId</span>;
+cancelOrder(user);                            <span class="c">// a user id where an order id is needed</span>
+cancelOrder(<span class="s">"ORD-000001"</span>);                    <span class="c">// a plain string is not an OrderId either</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(24,13): error TS2345: Argument of type &#x27;UserId&#x27; is not assignable to parameter of type &#x27;OrderId&#x27;.
+  Type &#x27;UserId&#x27; is not assignable to type &#x27;{ readonly __brand: &quot;OrderId&quot;; }&#x27;.
+    Types of property &#x27;__brand&#x27; are incompatible.
+      Type &#x27;&quot;UserId&quot;&#x27; is not assignable to type &#x27;&quot;OrderId&quot;&#x27;.
+src/main.ts(25,13): error TS2345: Argument of type &#x27;string&#x27; is not assignable to parameter of type &#x27;OrderId&#x27;.
+  Type &#x27;string&#x27; is not assignable to type &#x27;{ readonly __brand: &quot;OrderId&quot;; }&#x27;.
+
+$ node src/main.ts
+HTTP://LOCALHOST:3000
+cancelled ORD-104233</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 9</div><h2><span class="sec-em">🎬</span><span>Real world scenario: typed API routes</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>API tests often read the wrong field or forget a path parameter. The team wants the route string itself to decide the parameters and the response type.</div>
+<div class="codewrap tests" data-k="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Typed API routes with inferred parameters · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// Typed routes: the path decides the response type, so tests cannot misread a body</span>
+<span class="k">interface</span> <span class="t">Routes</span> {
+  <span class="s">"GET /products"</span>: { id: <span class="k">string</span>; price: <span class="k">number</span> }[];
+  <span class="s">"GET /products/:id"</span>: { id: <span class="k">string</span>; price: <span class="k">number</span>; stock: <span class="k">number</span> };
+  <span class="s">"POST /orders"</span>: { orderId: <span class="k">string</span>; total: <span class="k">number</span> };
+}
+
+<span class="k">type</span> <span class="t">Params</span>&lt;<span class="t">P</span> <span class="k">extends</span> <span class="k">string</span>&gt; = <span class="t">P</span> <span class="k">extends</span> <span class="s">`${string}:${infer Name}/${infer Rest}`</span>
+  ? { [<span class="t">K</span> <span class="k">in</span> <span class="t">Name</span>]: <span class="k">string</span> } &amp; <span class="t">Params</span>&lt;<span class="s">`/${Rest}`</span>&gt;
+  : <span class="t">P</span> <span class="k">extends</span> <span class="s">`${string}:${infer Name}`</span> ? { [<span class="t">K</span> <span class="k">in</span> <span class="t">Name</span>]: <span class="k">string</span> } : {};
+
+<span class="k">async</span> <span class="k">function</span> call&lt;<span class="t">R</span> <span class="k">extends</span> <span class="k">keyof</span> <span class="t">Routes</span>&gt;(route: <span class="t">R</span>, params: <span class="t">Params</span>&lt;<span class="t">R</span> &amp; <span class="k">string</span>&gt;): <span class="t">Promise</span>&lt;<span class="t">Routes</span>[<span class="t">R</span>]&gt; {
+  <span class="k">const</span> [method, path] = (route <span class="k">as</span> <span class="k">string</span>).split(<span class="s">" "</span>);
+  <span class="k">const</span> url = path.replace(/:(\w+)/g, (_, k) =&gt; (params <span class="k">as</span> <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="k">string</span>&gt;)[k]);
+  console.log(method, url);
+  <span class="k">const</span> fake: <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="k">unknown</span>&gt; = {
+    <span class="s">"/products"</span>: [{ id: <span class="s">"p1"</span>, price: <span class="n">40</span> }], <span class="s">"/products/p1"</span>: { id: <span class="s">"p1"</span>, price: <span class="n">40</span>, stock: <span class="n">3</span> }, <span class="s">"/orders"</span>: { orderId: <span class="s">"ORD-104233"</span>, total: <span class="n">80</span> },
+  };
+  <span class="k">return</span> fake[url] <span class="k">as</span> <span class="t">Routes</span>[<span class="t">R</span>];
+}
+
+<span class="k">const</span> list = <span class="k">await</span> call(<span class="s">"GET /products"</span>, {});
+<span class="k">const</span> one = <span class="k">await</span> call(<span class="s">"GET /products/:id"</span>, { id: <span class="s">"p1"</span> });
+<span class="k">const</span> order = <span class="k">await</span> call(<span class="s">"POST /orders"</span>, {});
+console.log(list.length, one.stock, order.orderId);
+
+<span class="k">await</span> call(<span class="s">"GET /products/:id"</span>, {});           <span class="c">// the id parameter is required</span>
+console.log(one.stok);                         <span class="c">// typo in a response field</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(27,33): error TS2741: Property &#x27;id&#x27; is missing in type &#x27;{}&#x27; but required in type &#x27;{ id: string; }&#x27;.
+src/main.ts(28,17): error TS2551: Property &#x27;stok&#x27; does not exist on type &#x27;{ id: string; price: number; stock: number; }&#x27;. Did you mean &#x27;stock&#x27;?
+
+$ node src/main.ts
+GET /products
+GET /products/p1
+POST /orders
+1 3 ORD-104233
+GET /products/undefined
+undefined</pre></div></div>
+<p>A conditional type with <code>infer</code> pulls <code>:id</code> out of the route string, and the <code>Routes</code> map gives the response type. A missing parameter or a typo such as <code>stok</code> is now a compile error. Tools such as openapi-typescript generate a map like <code>Routes</code> from the API's OpenAPI file, so the types follow the real API.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./ts-basics.html" data-topic="ts-basics"><small>← Previous chapter</small><b>🔷 TypeScript basics</b></a><a class="next" href="./js-modern.html" data-topic="js-modern"><small>Next chapter →</small><b>🆕 Modern JavaScript</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Types that think", "panels": [{"s": [["e", "🧬"], ["t", "first<T>(xs: T[]): T", {"b": 1, "size": 11}]], "h": "Generics", "t": "Keep input and output linked.", "more": "Constrain with extends."}, {"s": [["e", "🧰"], ["t", "Omit<User, \"password\">", {"b": 1, "size": 11}]], "h": "Utility types", "t": "Reshape what you have.", "more": "Pick, Omit, Partial, Record."}, {"s": [["e", "🧵"], ["t", "`${Method} /${string}`", {"b": 1, "size": 11}]], "h": "Patterns", "t": "Strings with structure.", "more": "Typos become errors."}, {"s": [["e", "🧱"], ["t", "assertNever(step)", {"b": 1}]], "h": "Exhaustive", "t": "Every case handled.", "more": "New cases cannot be forgotten."}], "remember": "Use generics to keep types connected, utility and mapped types to reshape them, satisfies for configs, and never to make switches exhaustive."}, "real": [["🧭", "An API test suite", "Generates its route types from the OpenAPI file in CI. When the backend renamed a field, 37 tests failed to compile before a single request was sent."], ["🎹", "A keyword driven framework", "Models every step as a union member. Adding a \"hover\" step showed the three runners that still needed to support it."], ["🆔", "A marketplace", "Branded its UserId and OrderId types after a bug sent a refund to an order id that happened to look like a user id."]], "quiz": [{"lv": "e", "q": "What does &lt;T> in function first&lt;T>(xs: T[]): T mean?", "o": ["A type parameter filled in when the function is called", "A JSX tag", "A comparison", "A tuple"], "a": 0, "hint": "Generic.", "why": "first([1, 2]) makes T number."}, {"lv": "e", "q": "Which utility type makes every property optional?", "o": ["Partial", "Required", "Readonly", "Pick"], "a": 0, "hint": "Partly filled.", "why": "Great for PATCH request bodies and overrides."}, {"lv": "e", "q": "What is keyof { a: 1, b: 2 }?", "o": ["\"a\" | \"b\"", "1 | 2", "string", "number"], "a": 0, "hint": "The keys.", "why": "Indexed access T[\"a\"] gives the value type."}, {"lv": "m", "q": "Omit&lt;User, \"password\"> gives?", "o": ["User without the password property", "Only the password", "A string", "User with password optional"], "a": 0, "hint": "Leave out.", "why": "Pick is the opposite."}, {"lv": "m", "q": "What does satisfies keep that a type annotation loses?", "o": ["The precise inferred type of the value", "Run time checks", "Comments", "Default values"], "a": 0, "hint": "No widening.", "why": "Exact keys and literal values stay known."}, {"lv": "m", "q": "What does T extends Promise&lt;infer V> ? V : T give for Promise&lt;number>?", "o": ["number", "Promise&lt;number>", "never", "unknown"], "a": 0, "hint": "infer captures.", "why": "This is how Awaited works."}, {"lv": "m", "q": "How many strings does `${\"GET\" | \"POST\"} /${\"a\" | \"b\" | \"c\"}` allow?", "o": ["6", "5", "2", "Any string"], "a": 0, "hint": "Every combination.", "why": "2 × 3."}, {"lv": "h", "q": "Why pass the default case of a switch to a function taking never?", "o": ["So forgetting a case becomes a compile error", "To speed up the switch", "To silence errors", "It is required syntax"], "a": 0, "hint": "Exhaustiveness.", "why": "If a case is missing, the value is not never and tsc complains."}, {"lv": "h", "q": "What does asserts value is NonNullable&lt;T> do after the call?", "o": ["TypeScript treats value as not null or undefined", "It converts the value", "It logs the value", "It returns a boolean"], "a": 0, "hint": "Narrowing by assertion.", "why": "If the check fails, the function throws instead."}, {"lv": "h", "q": "Why can a password still end up in a PublicUser object?", "o": ["Spreading an object with extra fields is allowed, types do not forbid extra properties", "TypeScript is broken", "Omit does not work", "Passwords are strings"], "a": 0, "hint": "Structural typing.", "why": "Only fresh object literals get the excess property check."}, {"lv": "x", "q": "What is the point of a branded type such as string & { __brand: \"OrderId\" }?", "o": ["Two kinds of id stay apart at compile time with no run time cost", "It encrypts the id", "It validates the format at run time", "It makes ids unique"], "a": 0, "hint": "Nominal typing.", "why": "Combine it with a parse function that checks the format once."}, {"lv": "x", "q": "Conditional types distribute over unions. What is Exclude&lt;\"a\" | \"b\" | \"c\", \"b\">?", "o": ["\"a\" | \"c\"", "\"b\"", "never", "\"a\" | \"b\" | \"c\""], "a": 0, "hint": "One member at a time.", "why": "Exclude&lt;T, U> is T extends U ? never : T."}], "calc": [{"lv": "e", "q": "The Endpoint type combines 3 methods, 2 versions and 2 resources. How many strings does it allow?", "ans": "12", "hint": "Multiply.", "steps": ["<span class=\"eq\">3 × 2 × 2 = 12<\/span>"]}, {"lv": "e", "q": "User has 5 properties. How many does Omit&lt;User, \"id\" | \"password\"> keep?", "ans": "3", "hint": "Remove two.", "steps": ["<span class=\"eq\">5 − 2 = 3<\/span>"]}, {"lv": "m", "q": "Pick&lt;User, \"name\" | \"email\"> then Partial. How many properties are required?", "ans": "0", "hint": "Partial makes all optional.", "steps": ["Both picked properties become optional."]}, {"lv": "m", "q": "The step union has 4 kinds and describeOld handles 2. How many kinds reach assertNever?", "ans": "2", "hint": "The rest.", "steps": ["fill and expectText are left, which is why tsc reports an error."]}, {"lv": "m", "q": "keyof of an object with 3 keys combined with Capitalize in a mapped type gives how many getter names?", "ans": "3", "hint": "One per key.", "steps": ["getRetries, getBrowser and one more for a third key."]}, {"lv": "h", "q": "Exclude&lt;\"a\" | \"b\" | \"c\" | \"d\", \"b\" | \"d\"> has how many members?", "ans": "2", "hint": "Remove two.", "steps": ["\"a\" | \"c\" remain."]}, {"lv": "h", "q": "A Record&lt;\"admin\" | \"customer\" | \"guest\", User[]> needs how many keys?", "ans": "3", "hint": "One per role.", "steps": ["Every key in the union is required."]}, {"lv": "x", "q": "A route \"GET /users/:userId/orders/:orderId\" needs how many parameters?", "ans": "2", "hint": "Count the colon parts.", "steps": ["userId and orderId."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers advanced TypeScript: generics, keyof, utility types, mapped and conditional types, template literal types, satisfies, exhaustive checks and branded types.", "hi": "यह अध्याय advanced TypeScript सिखाता है: generics, keyof, utility types, mapped और conditional types, template literal types, satisfies और branded types।", "kn": "ಈ ಅಧ್ಯಾಯ advanced TypeScript: generics, keyof, utility types, mapped, conditional, template literal types ಮತ್ತು satisfies.", "or": "ଏହି ଅଧ୍ୟାୟ advanced TypeScript: generics, keyof, utility types, mapped, conditional, template literal types ଓ satisfies।", "ar": "يتناول هذا الفصل TypeScript المتقدمة: الأنواع العامة وkeyof والأنواع المساعدة والمحولة والشرطية وأنواع القوالب وsatisfies والفحوص الشاملة.", "de": "Dieses Kapitel behandelt fortgeschrittenes TypeScript: Generics, keyof, Utility-, Mapped- und Conditional Types, satisfies und Brands."}, {"id": "generics", "h": "Generics", "en": "A generic is a type parameter filled in at use. It keeps input and output types linked, and extends sets what the type must have.", "hi": "Generic एक type parameter है जो इस्तेमाल पर भरता है। यह input और output types को जोड़े रखता है।", "kn": "Generic ಎಂಬುದು ಬಳಕೆಯಲ್ಲಿ ತುಂಬುವ type parameter. Input ಮತ್ತು output ಜೋಡಿಸುತ್ತದೆ.", "or": "Generic ବ୍ୟବହାରରେ ଭରାଯାଉଥିବା type parameter। Input ଓ output ଯୋଡ଼େ।", "ar": "النوع العام معامل نوع يُملأ عند الاستخدام، ويربط نوع المدخل بنوع المخرج، وتحدد extends ما يجب أن يحتويه.", "de": "Ein Generic ist ein Typparameter, der beim Aufruf gefüllt wird. Er verbindet Ein- und Ausgabetypen."}, {"id": "keyof", "h": "keyof", "en": "typeof makes a type from a value, keyof lists its keys, and T of K reads the type of one property.", "hi": "typeof value से type बनाता है, keyof उसकी keys देता है, और T of K एक property का type पढ़ता है।", "kn": "typeof value ನಿಂದ type, keyof keys, T of K ಒಂದು property type.", "or": "typeof value ରୁ type, keyof keys, T of K ଗୋଟିଏ property type।", "ar": "يصنع typeof نوعًا من قيمة، ويسرد keyof مفاتيحه، ويقرأ T[K] نوع خاصية واحدة.", "de": "typeof macht aus einem Wert einen Typ, keyof liefert die Schlüssel, T[K] den Typ einer Eigenschaft."}, {"id": "utility", "h": "Utility types", "en": "Partial, Pick, Omit, Record, ReturnType and Awaited reshape existing types. Types say what must be there, not what must be absent.", "hi": "Partial, Pick, Omit, Record, ReturnType और Awaited मौजूद types को बदलते हैं। Types बताते हैं क्या होना चाहिए, क्या नहीं होना चाहिए यह नहीं।", "kn": "Partial, Pick, Omit, Record ಮುಂತಾದವು types ಮರುರೂಪಿಸುತ್ತವೆ.", "or": "Partial, Pick, Omit, Record ଆଦି types ପୁନଃ ଆକାର ଦିଅନ୍ତି।", "ar": "تعيد Partial وPick وOmit وRecord وReturnType وAwaited تشكيل الأنواع. الأنواع تقول ما يجب وجوده لا ما يجب غيابه.", "de": "Partial, Pick, Omit, Record und Awaited formen Typen um. Typen sagen, was da sein muss, nicht was fehlen muss."}, {"id": "mapped", "h": "Mapped and conditional", "en": "Mapped types loop over keys. Conditional types choose a type, and infer captures part of another type.", "hi": "Mapped types keys पर चलते हैं। Conditional types type चुनते हैं, और infer दूसरे type का हिस्सा पकड़ता है।", "kn": "Mapped types keys ಮೇಲೆ, conditional types ಆಯ್ಕೆ, infer ಭಾಗ ಹಿಡಿಯುತ್ತದೆ.", "or": "Mapped types keys ଉପରେ, conditional types ବାଛେ, infer ଅଂଶ ଧରେ।", "ar": "تمر الأنواع المحولة على المفاتيح، وتختار الأنواع الشرطية نوعًا، ويلتقط infer جزءًا من نوع آخر.", "de": "Mapped Types laufen über Schlüssel, Conditional Types wählen einen Typ, infer fängt einen Teil ein."}, {"id": "template", "h": "Template literal types", "en": "Template literal types describe string patterns, such as routes and test ids, and every literal is checked.", "hi": "Template literal types string patterns जैसे routes और test ids बताते हैं, और हर literal जांचा जाता है।", "kn": "Template literal types routes ಮತ್ತು test ids ನಂತಹ patterns ವಿವರಿಸುತ್ತವೆ.", "or": "Template literal types routes ଓ test ids ପରି patterns ବର୍ଣ୍ଣନା କରନ୍ତି।", "ar": "تصف أنواع القوالب أنماط النصوص مثل المسارات ومعرفات الاختبار، ويُفحص كل نص حرفي.", "de": "Template-Literal-Typen beschreiben Muster wie Routen und Test-IDs, jedes Literal wird geprüft."}, {"id": "satisfies", "h": "satisfies", "en": "satisfies checks a value against a type but keeps the precise inferred type, which suits configuration objects.", "hi": "satisfies value को type से जांचता है पर सटीक inferred type रखता है, config objects के लिए अच्छा।", "kn": "satisfies type ಪರಿಶೀಲಿಸಿ ನಿಖರ type ಇಡುತ್ತದೆ.", "or": "satisfies type ଯାଞ୍ଚ କରି ସଠିକ type ରଖେ।", "ar": "يتحقق satisfies من القيمة مقابل النوع لكنه يحتفظ بالنوع الدقيق المستنتج، وهذا يناسب كائنات الإعداد.", "de": "satisfies prüft gegen einen Typ und behält den genauen Typ, ideal für Konfigurationen."}, {"id": "exhaustive", "h": "Exhaustive checks", "en": "Pass the leftover case of a switch to a function that takes never. A new union member without a case becomes a compile error.", "hi": "Switch का बचा case never लेने वाले function को दें। बिना case वाला नया union member compile error बनता है।", "kn": "Switch ನ ಉಳಿದ case never function ಗೆ ಕೊಡಿ.", "or": "Switch ର ବାକି case never function କୁ ଦିଅନ୍ତୁ।", "ar": "مرر الحالة المتبقية من switch إلى دالة تأخذ never، فيصبح عضو الاتحاد الجديد بلا حالة خطأ ترجمة.", "de": "Gib den Restfall eines switch an eine Funktion mit never. Ein neuer Fall ohne case wird zum Fehler."}, {"id": "assertions", "h": "Assertions and brands", "en": "Assertion functions narrow a type or throw. Branded types stop two kinds of string id from being mixed up.", "hi": "Assertion functions type को narrow करते हैं या throw करते हैं। Branded types दो तरह के string id मिलने से रोकते हैं।", "kn": "Assertion functions narrow ಅಥವಾ throw. Branded types ids ಬೆರೆಯದಂತೆ ತಡೆಯುತ್ತವೆ.", "or": "Assertion functions narrow କିମ୍ବା throw। Branded types ids ମିଶିବାକୁ ଅଟକାନ୍ତି।", "ar": "تضيق دوال التأكيد النوع أو ترمي خطأ، وتمنع الأنواع الموسومة خلط نوعين من معرفات النصوص.", "de": "Assertion-Funktionen grenzen ein oder werfen. Branded Types verhindern das Vertauschen von IDs."}, {"id": "scenario", "h": "Scenario", "en": "The route string decides the parameters and the response type, so a missing id or a typo in a field is a compile error.", "hi": "Route string parameters और response type तय करता है, इसलिए missing id या field typo compile error है।", "kn": "Route string parameters ಮತ್ತು response type ನಿರ್ಧರಿಸುತ್ತದೆ.", "or": "Route string parameters ଓ response type ସ୍ଥିର କରେ।", "ar": "يحدد نص المسار المعاملات ونوع الاستجابة، فيصبح المعرف المفقود أو الخطأ الإملائي في حقل خطأ ترجمة.", "de": "Der Routen-String bestimmt Parameter und Antworttyp, ein fehlender Parameter wird zum Fehler."}, {"id": "practice", "h": "Hands-on", "en": "Practise a pick helper, grouping with a typed key, an exhaustive step runner and a branded id parser.", "hi": "Pick helper, typed key से grouping, exhaustive step runner और branded id parser का अभ्यास करें।", "kn": "Pick helper, grouping, step runner ಮತ್ತು branded id parser ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Pick helper, grouping, step runner ଓ branded id parser ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على دالة pick والتجميع بمفتاح محدد النوع ومشغل خطوات شامل ومحلل معرفات موسومة.", "de": "Übe einen pick-Helfer, Gruppieren mit typisiertem Schlüssel, einen Schritt-Runner und einen ID-Parser."}], "ex": [{"id": "pick", "lv": "e", "title": "A typed pick at run time", "task": "<p>Write <code>pick(obj, keys)<\/code> that returns a new object with only the listed keys that exist on <code>obj<\/code>. In TypeScript its type is <code>&lt;T, K extends keyof T&gt;(obj: T, keys: K[]) =&gt; Pick&lt;T, K&gt;<\/code>.<\/p>", "starter": "function pick(obj, keys) {\n  \n}", "tests": [{"call": "pick({ id: 1, email: \"a@x\", password: \"s\" }, [\"id\", \"email\"])", "want": {"id": 1, "email": "a@x"}}, {"call": "pick({ a: 1 }, [])", "want": {}}, {"call": "pick({ a: 0, b: null }, [\"a\", \"b\"])", "want": {"a": 0, "b": null}}], "solution": "function pick(obj, keys) {\n  return Object.fromEntries(keys.filter(k => k in obj).map(k => [k, obj[k]]));\n}", "hint": "<code>Object.fromEntries<\/code> over the filtered keys.", "why": "Real values such as 0 and null must be kept, so check with in, not truthiness."}, {"id": "groupkey", "lv": "m", "title": "Group by a key name", "task": "<p>Write <code>groupByKey(list, key)<\/code> that groups objects by the value of the named property. In TypeScript, <code>key<\/code> would be <code>keyof T<\/code>, so only real fields are allowed.<\/p>", "starter": "function groupByKey(list, key) {\n  \n}", "tests": [{"call": "groupByKey([{ s: \"pass\", n: 1 }, { s: \"fail\", n: 2 }, { s: \"pass\", n: 3 }], \"s\")", "want": {"pass": [{"s": "pass", "n": 1}, {"s": "pass", "n": 3}], "fail": [{"s": "fail", "n": 2}]}}, {"call": "groupByKey([], \"s\")", "want": {}}], "solution": "function groupByKey(list, key) {\n  const out = {};\n  for (const item of list) (out[item[key]] ??= []).push(item);\n  return out;\n}", "hint": "Read <code>item[key]<\/code> and push into an array for that value.", "why": "With keyof T, a typo such as \"staus\" is caught by tsc before the test runs."}, {"id": "steps", "lv": "h", "title": "An exhaustive step runner", "task": "<p>Write <code>runSteps(steps)<\/code> for steps of kind <code>goto<\/code> (url), <code>click<\/code> (selector) and <code>fill<\/code> (selector, value). Return lines such as <code>\"open /login\"<\/code>, <code>\"click #go\"<\/code>, <code>\"fill #email with asha\"<\/code>. Throw an Error with the message <code>\"unknown step: KIND\"<\/code> for any other kind, like assertNever does.<\/p>", "starter": "function runSteps(steps) {\n  \n}", "tests": [{"call": "runSteps([{ kind: \"goto\", url: \"/login\" }, { kind: \"fill\", selector: \"#email\", value: \"asha\" }, { kind: \"click\", selector: \"#go\" }])", "want": ["open /login", "fill #email with asha", "click #go"]}, {"call": "(() => { try { runSteps([{ kind: \"hover\", selector: \"x\" }]); } catch (e) { return e.message; } })()", "want": "unknown step: hover"}], "solution": "function runSteps(steps) {\n  return steps.map(step => {\n    switch (step.kind) {\n      case \"goto\": return `open ${step.url}`;\n      case \"click\": return `click ${step.selector}`;\n      case \"fill\": return `fill ${step.selector} with ${step.value}`;\n      default: throw new Error(`unknown step: ${step.kind}`);\n    }\n  });\n}", "hint": "A switch on <code>step.kind<\/code> with a default that throws.", "why": "At run time the default catches bad data from files. At compile time the never check catches missing cases in code."}, {"id": "orderid", "lv": "x", "title": "Parse a branded id", "task": "<p>Write <code>parseOrderId(text)<\/code> that trims the text, upper cases it, and returns it if it looks like <code>ORD-<\/code> followed by exactly 6 digits. Otherwise throw a <code>RangeError<\/code> with the message <code>bad order id: TEXT<\/code> using the original text. In TypeScript the return type would be <code>OrderId<\/code>.<\/p>", "starter": "function parseOrderId(text) {\n  \n}", "tests": [{"call": "parseOrderId(\" ord-104233 \")", "want": "ORD-104233"}, {"call": "(() => { try { parseOrderId(\"ORD-12\"); } catch (e) { return [e.name, e.message]; } })()", "want": ["RangeError", "bad order id: ORD-12"]}, {"call": "parseOrderId(\"ORD-000001\")", "want": "ORD-000001"}], "solution": "function parseOrderId(text) {\n  const id = text.trim().toUpperCase();\n  if (!/^ORD-\\d{6}$/.test(id)) throw new RangeError(`bad order id: ${text}`);\n  return id;\n}", "hint": "Normalise first, then test with <code>/^ORD-\\d{6}$/<\/code>.", "why": "Parse once at the edge and the brand guarantees every OrderId inside the code is valid."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Advanced TypeScript types", subject: "javascript" });
+</script>
+</body>
+</html>
