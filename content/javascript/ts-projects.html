@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeScript classes and real projects · JavaScript</title>
+<meta name="description" content="TypeScript classes and projects: public, private, protected, readonly, abstract, implements, override, parameter properties, decorators, .d.ts, declare module, augmentation, JSDoc checkJs, migration, tsc --noEmit, tsx and typed page objects.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔷 TypeScript</span><span>›</span><span>Chapter 24 of 26</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🏛️</span><div><h1>TypeScript classes and real projects</h1><p class="lead">TypeScript at the scale of a real project: access modifiers, abstract classes and interfaces, TypeScript private against #private, standard decorators for steps and retries, declaration files and module augmentation, checking JavaScript with JSDoc, moving a project to TypeScript, and a typed page object hierarchy.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 0 animations</span><span class="chip">🔷 5 type checked examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Large automation frameworks are TypeScript projects. Abstract base pages, step decorators, typed custom commands and a safe migration plan are what keep them maintainable.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#classes" class="qa"><span>🏛️</span>Classes in TypeScript</a><a href="#decorators" class="qa"><span>🎀</span>Decorators</a><a href="#dts" class="qa"><span>📜</span>Declaration files and augmentation</a><a href="#jsdoc" class="qa"><span>📝</span>Checking JavaScript with JSDoc</a><a href="#migrate" class="qa"><span>🚚</span>Moving a project to TypeScript, and the tools around it</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: a typed page object hierarchy</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="classes" data-say="classes"><div class="sec-num">Part 1</div><h2><span class="sec-em">🏛️</span><span>Classes in TypeScript</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Selenium</span><span class="qa-why">Typed base pages with abstract methods and protected helpers are the backbone of large page object frameworks.</span></div>
+<p>TypeScript adds <b>access modifiers</b> to classes. <code>public</code> is the default, <code>protected</code> allows subclasses, and <code>private</code> allows only the class itself. <code>readonly</code> blocks changes after the constructor, <code>abstract</code> marks a class or method that subclasses must complete, <code>implements</code> checks a class against an interface, and <code>override</code> confirms that a method replaces one from the parent.</p>
+<div class="codewrap tests" data-k="classes"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Access modifiers, abstract classes and interfaces · 🔷 tsc finds 4 errors</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts">abstract <span class="k">class</span> <span class="t">BasePage</span> {
+  <span class="k">protected</span> <span class="k">readonly</span> baseURL: <span class="k">string</span>;
+  #visits = <span class="n">0</span>;                                     <span class="c">// JavaScript private: hidden at run time too</span>
+  constructor(baseURL: <span class="k">string</span>, <span class="k">private</span> <span class="k">readonly</span> path: <span class="k">string</span>) {
+    <span class="k">this</span>.baseURL = baseURL;
+  }
+  <span class="k">get</span> url(): <span class="k">string</span> { <span class="k">return</span> <span class="k">this</span>.baseURL + <span class="k">this</span>.path; }
+  open(): <span class="k">string</span> { <span class="k">this</span>.#visits++; <span class="k">return</span> <span class="s">`open ${this.url} (visit ${this.#visits})`</span>; }
+  abstract isLoaded(): <span class="k">boolean</span>;                   <span class="c">// every page must say how to know it is ready</span>
+}
+
+<span class="k">interface</span> <span class="t">Searchable</span> { search(term: <span class="k">string</span>): <span class="k">string</span>[] }
+
+<span class="k">class</span> <span class="t">ProductsPage</span> <span class="k">extends</span> <span class="t">BasePage</span> <span class="k">implements</span> <span class="t">Searchable</span> {
+  constructor(baseURL: <span class="k">string</span>) { <span class="k">super</span>(baseURL, <span class="s">"/products"</span>); }
+  override isLoaded() { <span class="k">return</span> <span class="k">true</span>; }
+  search(term: <span class="k">string</span>) { <span class="k">return</span> [<span class="s">`${term} pen`</span>, <span class="s">`${term} ink`</span>]; }
+}
+
+<span class="k">const</span> page = <span class="k">new</span> <span class="t">ProductsPage</span>(<span class="s">"http://localhost:3000"</span>);
+console.log(page.open(), page.open(), page.isLoaded(), page.search(<span class="s">"blue"</span>));
+
+page.baseURL;                                      <span class="c">// protected: only inside the class family</span>
+page.path;                                         <span class="c">// private: only inside BasePage</span>
+<span class="k">new</span> <span class="t">BasePage</span>(<span class="s">"x"</span>, <span class="s">"/"</span>);                            <span class="c">// abstract classes cannot be created</span>
+<span class="k">class</span> <span class="t">Broken</span> <span class="k">extends</span> <span class="t">BasePage</span> {}                   <span class="c">// forgot isLoaded</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc</pre></div><div class="err"><span>Terminal output</span><pre>src/main.ts(23,6): error TS2445: Property &#x27;baseURL&#x27; is protected and only accessible within class &#x27;BasePage&#x27; and its subclasses.
+src/main.ts(24,6): error TS2341: Property &#x27;path&#x27; is private and only accessible within class &#x27;BasePage&#x27;.
+src/main.ts(25,1): error TS2511: Cannot create an instance of an abstract class.
+src/main.ts(26,7): error TS2515: Non-abstract class &#x27;Broken&#x27; does not implement inherited abstract member isLoaded from class &#x27;BasePage&#x27;.</pre></div></div>
+<p>TypeScript's <code>private</code> is a compile time check only. The value is still on the object at run time. JavaScript's <code>#private</code> is enforced by the engine, so prefer it for real secrets.</p>
+<div class="codewrap tests" data-k="private"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">TypeScript private against JavaScript #private · 🔷 tsc passes, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">class</span> <span class="t">Session</span> {
+  <span class="k">private</span> token = <span class="s">"secret-123"</span>;                   <span class="c">// TypeScript private: a compile time check only</span>
+  #pin = <span class="s">"4321"</span>;                                  <span class="c">// JavaScript private: truly hidden</span>
+
+  check(pin: <span class="k">string</span>) { <span class="k">return</span> pin === <span class="k">this</span>.#pin; }
+}
+<span class="k">const</span> s = <span class="k">new</span> <span class="t">Session</span>();
+console.log(<span class="t">Object</span>.keys(s), <span class="t">JSON</span>.stringify(s));
+console.log((s <span class="k">as</span> <span class="k">any</span>).token, (s <span class="k">as</span> <span class="k">any</span>)[<span class="s">"#pin"</span>], s.check(<span class="s">"4321"</span>));</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc &amp;&amp; node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>tsc: no type errors
+
+$ node src/main.ts
+[ &#x27;token&#x27; ] {&quot;token&quot;:&quot;secret-123&quot;}
+secret-123 undefined true</pre></div></div>
+<div class="note"><code>constructor(private readonly path: string)</code> is a <b>parameter property</b>: it declares and assigns the field in one go. Like enum, it creates run time code, so <code>erasableSyntaxOnly</code> and Node.js type stripping do not allow it. Write the field and the assignment out if you run .ts files directly.</div>
+</section>
+<section class="card reveal jsec qa-part" id="decorators" data-say="decorators"><div class="sec-num">Part 2</div><h2><span class="sec-em">🎀</span><span>Decorators</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-why">Step decorators put every page object action into the test report without extra code in each method.</span></div>
+<p>TypeScript 5 supports the standard decorators proposal. A method decorator is a function that receives the original method and a context object, and returns a replacement. Decorators stack: the one closest to the method wraps first.</p>
+<div class="codewrap tests" data-k="decorators"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Decorators for steps and retries · 🔷 Compiled with tsc, then run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/steps.ts</div><pre class="src" data-file="src/steps.ts"><span class="c">// Standard decorators (TypeScript 5 and later): a method decorator receives the method and a context</span>
+<span class="k">export</span> <span class="k">function</span> step(title: <span class="k">string</span>) {
+  <span class="k">return</span> <span class="k">function</span> &lt;<span class="t">This</span>, <span class="t">Args</span> <span class="k">extends</span> <span class="k">unknown</span>[], <span class="t">R</span>&gt;(
+    method: (<span class="k">this</span>: <span class="t">This</span>, ...args: <span class="t">Args</span>) =&gt; <span class="t">Promise</span>&lt;<span class="t">R</span>&gt;,
+    context: <span class="t">ClassMethodDecoratorContext</span>&lt;<span class="t">This</span>&gt;,
+  ) {
+    <span class="k">return</span> <span class="k">async</span> <span class="k">function</span> (<span class="k">this</span>: <span class="t">This</span>, ...args: <span class="t">Args</span>): <span class="t">Promise</span>&lt;<span class="t">R</span>&gt; {
+      <span class="k">const</span> started = <span class="t">Date</span>.now();
+      <span class="k">try</span> {
+        <span class="k">const</span> result = <span class="k">await</span> method.apply(<span class="k">this</span>, args);
+        console.log(<span class="s">`✔ ${title}`</span>);
+        <span class="k">return</span> result;
+      } <span class="k">catch</span> (e) {
+        console.log(<span class="s">`✖ ${title} (${String(context.name)}): ${(e as Error).message}`</span>);
+        <span class="k">throw</span> e;
+      } <span class="k">finally</span> {
+        <span class="k">void</span> (<span class="t">Date</span>.now() - started);
+      }
+    };
+  };
+}
+
+<span class="k">export</span> <span class="k">function</span> retry(times: <span class="k">number</span>) {
+  <span class="k">return</span> <span class="k">function</span> &lt;<span class="t">This</span>, <span class="t">Args</span> <span class="k">extends</span> <span class="k">unknown</span>[], <span class="t">R</span>&gt;(method: (<span class="k">this</span>: <span class="t">This</span>, ...args: <span class="t">Args</span>) =&gt; <span class="t">Promise</span>&lt;<span class="t">R</span>&gt;, _ctx: <span class="t">ClassMethodDecoratorContext</span>&lt;<span class="t">This</span>&gt;) {
+    <span class="k">return</span> <span class="k">async</span> <span class="k">function</span> (<span class="k">this</span>: <span class="t">This</span>, ...args: <span class="t">Args</span>): <span class="t">Promise</span>&lt;<span class="t">R</span>&gt; {
+      <span class="k">for</span> (<span class="k">let</span> i = <span class="n">1</span>; ; i++) {
+        <span class="k">try</span> { <span class="k">return</span> <span class="k">await</span> method.apply(<span class="k">this</span>, args); }
+        <span class="k">catch</span> (e) { <span class="k">if</span> (i &gt;= times) <span class="k">throw</span> e; }
+      }
+    };
+  };
+}</pre><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">import</span> { step, retry } <span class="k">from</span> <span class="s">"./steps.js"</span>;
+
+<span class="k">class</span> <span class="t">CheckoutPage</span> {
+  attempts = <span class="n">0</span>;
+
+  <span class="a">@step</span>(<span class="s">"Fill the address"</span>)
+  <span class="k">async</span> fillAddress(city: <span class="k">string</span>) { <span class="k">return</span> <span class="s">`address in ${city}`</span>; }
+
+  <span class="a">@step</span>(<span class="s">"Pay with card"</span>)
+  <span class="a">@retry</span>(<span class="n">3</span>)
+  <span class="k">async</span> pay() {
+    <span class="k">if</span> (++<span class="k">this</span>.attempts &lt; <span class="n">3</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"payment frame not ready"</span>);
+    <span class="k">return</span> <span class="s">"paid"</span>;
+  }
+
+  <span class="a">@step</span>(<span class="s">"Apply coupon"</span>)
+  <span class="k">async</span> applyCoupon(code: <span class="k">string</span>) { <span class="k">if</span> (code !== <span class="s">"SAVE10"</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`coupon ${code} rejected`</span>); }
+}
+
+<span class="k">const</span> page = <span class="k">new</span> <span class="t">CheckoutPage</span>();
+<span class="k">await</span> page.fillAddress(<span class="s">"Pune"</span>);
+console.log(<span class="k">await</span> page.pay(), <span class="s">"after"</span>, page.attempts, <span class="s">"attempts"</span>);
+<span class="k">await</span> page.applyCoupon(<span class="s">"FREE"</span>).<span class="k">catch</span>(() =&gt; {});</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc &amp;&amp; node dist/main.js</pre></div><div class="out"><span>Terminal output</span><pre>✔ Fill the address
+✔ Pay with card
+paid after 3 attempts
+✖ Apply coupon (applyCoupon): coupon FREE rejected</pre></div></div>
+<div class="tip">This is how some frameworks add steps to reports. In Playwright the built in way is <code>await test.step("Pay with card", async () => …)</code>, and a decorator like <code>@step</code> can call it for you so every page object method shows up as a step in the HTML report and the trace viewer.</div>
+</section>
+<section class="card reveal jsec qa-part" id="dts" data-say="dts"><div class="sec-num">Part 3</div><h2><span class="sec-em">📜</span><span>Declaration files and augmentation</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-why">Custom commands, custom matchers and app globals in tests all need declaration files or augmentation.</span></div>
+<p>A <b>declaration file</b> (<code>.d.ts</code>) contains only types. It describes JavaScript code that has no types of its own. Most npm packages ship one, and others have one in <code>@types/…</code>. <b>Module augmentation</b> adds to existing types, such as a field on <code>Window</code> or a custom matcher on <code>expect</code>.</p>
+<div class="codewrap tests" data-k="dts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Declaration files and module augmentation · 🔷 tsc finds 1 error</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 vendor/legacy-report.js</div><pre class="src" data-file="vendor/legacy-report.js"><span class="c">// An old plain JavaScript helper with no types</span>
+<span class="k">export</span> <span class="k">function</span> summarise(results) {
+  <span class="k">const</span> failed = results.filter(r =&gt; !r.ok).map(r =&gt; r.name);
+  <span class="k">return</span> { total: results.length, failed };
+}</pre><div class="fname">📄 types/legacy-report.d.ts</div><pre class="src" data-file="types/legacy-report.d.ts"><span class="c">// A declaration file describes JavaScript that has no types of its own</span>
+declare module <span class="s">"legacy-report"</span> {
+  <span class="k">export</span> <span class="k">interface</span> <span class="t">Result</span> { name: <span class="k">string</span>; ok: <span class="k">boolean</span> }
+  <span class="k">export</span> <span class="k">function</span> summarise(results: <span class="t">Result</span>[]): { total: <span class="k">number</span>; failed: <span class="k">string</span>[] };
+}</pre><div class="fname">📄 types/globals.d.ts</div><pre class="src" data-file="types/globals.d.ts"><span class="c">// Module augmentation: add a field to a global type.</span>
+<span class="c">// The empty export makes this file a module, which declare global needs.</span>
+declare global {
+  <span class="k">interface</span> <span class="t">Window</span> { __TEST_USER__?: { id: <span class="k">number</span>; role: <span class="s">"admin"</span> | <span class="s">"customer"</span> } }
+}
+<span class="k">export</span> {};</pre><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">import</span> { summarise } <span class="k">from</span> <span class="s">"legacy-report"</span>;
+
+<span class="k">const</span> report = summarise([{ name: <span class="s">"login"</span>, ok: <span class="k">true</span> }, { name: <span class="s">"cart"</span>, ok: <span class="k">false</span> }]);
+console.log(report.failed.join(<span class="s">", "</span>));
+
+summarise([{ name: <span class="s">"x"</span>, passed: <span class="k">true</span> }]);          <span class="c">// wrong field name, caught by the .d.ts</span>
+
+<span class="c">// In browser test code: typed access to a value the app puts on window</span>
+<span class="k">function</span> testUser(win: <span class="t">Window</span>) { <span class="k">return</span> win.__TEST_USER__?.role ?? <span class="s">"anonymous"</span>; }
+<span class="k">void</span> testUser;</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc -p . --pretty false</pre></div><div class="err"><span>Terminal output</span><pre>src/main.ts(6,25): error TS2353: Object literal may only specify known properties, and &#x27;passed&#x27; does not exist in type &#x27;Result&#x27;.</pre></div></div>
+<div class="tip">Custom Playwright matchers are typed by augmenting <code>PlaywrightTest.Matchers</code>, and custom Cypress commands by augmenting <code>Cypress.Chainable</code> in a <code>.d.ts</code> file.</div>
+</section>
+<section class="card reveal jsec qa-part" id="jsdoc" data-say="jsdoc"><div class="sec-num">Part 4</div><h2><span class="sec-em">📝</span><span>Checking JavaScript with JSDoc</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Many existing JavaScript test suites can get type checking today with JSDoc and checkJs.</span></div>
+<p>You can get most of the safety of TypeScript without renaming a single file. With <code>checkJs</code>, or <code>// @ts-check</code> at the top of a file, TypeScript reads types from <b>JSDoc</b> comments and reports the same errors.</p>
+<div class="codewrap tests" data-k="jsdoc"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Type checking plain JavaScript with JSDoc · 🔷 tsc finds 2 errors</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/cart.js</div><pre class="src" data-file="src/cart.js"><span class="c">// Plain JavaScript, checked by TypeScript through JSDoc comments</span>
+
+<span class="c">/**
+ * @typedef {{ sku: string, price: number, qty: number }} Line
+ */</span>
+
+<span class="c">/**
+ * @param {Line[]} lines
+ * @param {{ coupon?: "SAVE10" | "SAVE20" }} [options]
+ * @returns {number}
+ */</span>
+<span class="k">export</span> <span class="k">function</span> cartTotal(lines, options = {}) {
+  <span class="k">const</span> sum = lines.reduce((s, l) =&gt; s + l.price * l.qty, <span class="n">0</span>);
+  <span class="k">const</span> off = { <span class="t">SAVE10</span>: <span class="n">0.1</span>, <span class="t">SAVE20</span>: <span class="n">0.2</span> }[options.coupon ?? <span class="s">"SAVE10"</span>] ?? <span class="n">0</span>;
+  <span class="k">return</span> options.coupon ? sum * (<span class="n">1</span> - off) : sum;
+}
+
+cartTotal([{ sku: <span class="s">"PEN"</span>, price: <span class="s">"40"</span>, qty: <span class="n">1</span> }]);
+cartTotal([], { coupon: <span class="s">"FREE"</span> });</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc -p . --pretty false</pre></div><div class="err"><span>Terminal output</span><pre>src/cart.js(18,26): error TS2322: Type &#x27;string&#x27; is not assignable to type &#x27;number&#x27;.
+src/cart.js(19,17): error TS2322: Type &#x27;&quot;FREE&quot;&#x27; is not assignable to type &#x27;&quot;SAVE10&quot; | &quot;SAVE20&quot; | undefined&#x27;.</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="migrate" data-say="migrate"><div class="sec-num">Part 5</div><h2><span class="sec-em">🚚</span><span>Moving a project to TypeScript, and the tools around it</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Moving a test suite to TypeScript step by step is a common project for senior testers.</span></div>
+<p>Move in small, safe steps. Every step keeps the project working, and CI keeps you from going backwards.</p>
+<div class="codewrap" data-k="migrate"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A safe path from JavaScript to TypeScript · A plan, not a single command</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># Step 1: check JavaScript without changing it</span>
+<span class="c">#   tsconfig.json: "allowJs": true, "checkJs": false, "strict": false</span>
+<span class="c"># Step 2: turn on checkJs for one folder at a time with // @ts-check at the top of files</span>
+<span class="c"># Step 3: rename files to .ts, starting with leaf modules (utils, test data builders)</span>
+<span class="c"># Step 4: add types to public functions, page objects and API clients</span>
+<span class="c"># Step 5: turn on "strict": true, fix errors folder by folder</span>
+<span class="c"># Step 6: add tsc --noEmit to CI so new code cannot add type errors</span>
+
+<span class="k">npx</span> tsc --noEmit                      <span class="c"># fails the CI job on any type error</span>
+<span class="k">npx</span> tsc --noEmit --watch              <span class="c"># keep checking while you edit</span></pre></div>
+<div class="codewrap" data-k="tools"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Running and building TypeScript · Tool choices</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># Type check only (the source of truth)</span>
+<span class="k">npx</span> tsc --noEmit
+
+<span class="c"># Run TypeScript directly</span>
+<span class="k">node</span> src/main.ts                      <span class="c"># Node.js 23.6+, strips erasable types, no checking</span>
+<span class="k">npx</span> tsx src/main.ts                   <span class="c"># also handles enums, decorators and path aliases</span>
+
+<span class="c"># Build for publishing a library</span>
+<span class="k">npx</span> tsc                               <span class="c"># emits .js and .d.ts files into outDir</span>
+
+<span class="c"># Bundle for the browser</span>
+<span class="k">npx</span> esbuild src/app.ts --bundle --outfile=dist/app.js
+<span class="k">npx</span> vite build</pre></div>
+<div class="warn">Path aliases such as <code>@pages/login</code> in <code>paths</code> are only understood by tsc and by tools that read tsconfig. Plain Node.js does not resolve them. Use <code>package.json</code> <code>"imports"</code> with <code>#pages/*</code> instead, which works everywhere.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 6</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a typed page object hierarchy</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span></div>
+<div class="scenario"><b>The situation</b>The UI suite has 60 page objects. New pages often forget the path, and helpers return untyped values.</div>
+<div class="codewrap tests" data-k="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A typed page object hierarchy · 🔷 tsc passes</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// A typed page object base with a generic "wait for" helper and typed test data</span>
+<span class="k">type</span> <span class="t">Role</span> = <span class="s">"admin"</span> | <span class="s">"customer"</span>;
+<span class="k">interface</span> <span class="t">TestUser</span> { email: <span class="k">string</span>; password: <span class="k">string</span>; role: <span class="t">Role</span> }
+
+<span class="k">interface</span> <span class="t">Locator</span> { textContent(): <span class="t">Promise</span>&lt;<span class="k">string</span>&gt;; click(): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt;; fill(v: <span class="k">string</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; }
+<span class="k">interface</span> <span class="t">PageLike</span> { locator(selector: <span class="k">string</span>): <span class="t">Locator</span>; goto(url: <span class="k">string</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; }
+
+abstract <span class="k">class</span> <span class="t">Page</span>&lt;<span class="t">TReady</span> <span class="k">extends</span> <span class="k">string</span> = <span class="k">string</span>&gt; {
+  constructor(<span class="k">protected</span> <span class="k">readonly</span> page: <span class="t">PageLike</span>) {}
+  abstract <span class="k">readonly</span> path: <span class="k">string</span>;
+  <span class="k">async</span> open(): <span class="t">Promise</span>&lt;<span class="k">this</span>&gt; { <span class="k">await</span> <span class="k">this</span>.page.goto(<span class="k">this</span>.path); <span class="k">return</span> <span class="k">this</span>; }
+  <span class="k">protected</span> el(selector: <span class="k">string</span>) { <span class="k">return</span> <span class="k">this</span>.page.locator(selector); }
+}
+
+<span class="k">class</span> <span class="t">LoginPage</span> <span class="k">extends</span> <span class="t">Page</span> {
+  <span class="k">readonly</span> path = <span class="s">"/login"</span>;
+  <span class="k">async</span> loginAs(user: <span class="t">TestUser</span>): <span class="t">Promise</span>&lt;<span class="t">DashboardPage</span>&gt; {
+    <span class="k">await</span> <span class="k">this</span>.el(<span class="s">"#email"</span>).fill(user.email);
+    <span class="k">await</span> <span class="k">this</span>.el(<span class="s">"#password"</span>).fill(user.password);
+    <span class="k">await</span> <span class="k">this</span>.el(<span class="s">"button[type=submit]"</span>).click();
+    <span class="k">return</span> <span class="k">new</span> <span class="t">DashboardPage</span>(<span class="k">this</span>.page);
+  }
+}
+<span class="k">class</span> <span class="t">DashboardPage</span> <span class="k">extends</span> <span class="t">Page</span> {
+  <span class="k">readonly</span> path = <span class="s">"/dashboard"</span>;
+  greeting() { <span class="k">return</span> <span class="k">this</span>.el(<span class="s">"h1"</span>).textContent(); }
+}
+
+<span class="c">// A fake page so the example runs without a browser</span>
+<span class="k">const</span> log: <span class="k">string</span>[] = [];
+<span class="k">const</span> fake: <span class="t">PageLike</span> = {
+  <span class="k">async</span> goto(url) { log.push(<span class="s">`goto ${url}`</span>); },
+  locator: sel =&gt; ({ <span class="k">async</span> fill(v) { log.push(<span class="s">`fill ${sel}`</span>); }, <span class="k">async</span> click() { log.push(<span class="s">`click ${sel}`</span>); }, <span class="k">async</span> textContent() { <span class="k">return</span> <span class="s">"Welcome, Asha"</span>; } }),
+};
+
+<span class="k">const</span> admin: <span class="t">TestUser</span> = { email: <span class="s">"asha@shop.test"</span>, password: <span class="s">"s3cret!"</span>, role: <span class="s">"admin"</span> };
+<span class="k">const</span> dash = <span class="k">await</span> (<span class="k">await</span> <span class="k">new</span> <span class="t">LoginPage</span>(fake).open()).loginAs(admin);
+console.log(<span class="k">await</span> dash.greeting(), log);</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc</pre></div><div class="out"><span>Terminal output</span><pre>tsc: no type errors</pre></div></div>
+<p>An abstract <code>path</code> forces every page to declare its URL, <code>protected el()</code> keeps raw locators inside page objects, and returning <code>DashboardPage</code> from <code>loginAs</code> makes the next step in a test auto complete. In a real project, <code>PageLike</code> is Playwright's <code>Page</code> type.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./ts-advanced.html" data-topic="ts-advanced"><small>← Previous chapter</small><b>🧬 Advanced types</b></a><a class="next" href="./js-modern.html" data-topic="js-modern"><small>Next chapter →</small><b>🆕 Modern JavaScript</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "TypeScript at project scale", "panels": [{"s": [["e", "🏛️"], ["t", "abstract isLoaded()", {"b": 1}]], "h": "Classes", "t": "Modifiers, abstract, implements.", "more": "#private for real secrets."}, {"s": [["e", "🎀"], ["t", "@step(\"Pay\")", {"b": 1}]], "h": "Decorators", "t": "Wrap methods once.", "more": "Steps and retries everywhere."}, {"s": [["e", "📜"], ["t", "declare module \"x\"", {"b": 1}]], "h": "Declarations", "t": "Types for untyped code.", "more": "Augment globals and matchers."}, {"s": [["e", "🚚"], ["t", "tsc --noEmit in CI", {"b": 1}]], "h": "Migrate safely", "t": "JSDoc first, then .ts.", "more": "Strict at the end."}], "remember": "Use abstract bases and protected helpers for page objects, #private for secrets, declaration files for untyped code, and move to TypeScript in small checked steps."}, "real": [["🧱", "A UI test framework", "Made its BasePage abstract with an abstract path. Thirteen pages that had silently opened the home page were fixed on the first compile."], ["📜", "An old in house library", "Got a hand written .d.ts file. The test team used it for months before the library itself was rewritten."], ["🚚", "A 900 file test suite", "Moved to TypeScript over six weeks with checkJs first, then one folder per week, without a single red build."]], "quiz": [{"lv": "e", "q": "Which modifier lets subclasses use a member but hides it from outside code?", "o": ["protected", "private", "public", "readonly"], "a": 0, "hint": "Family only.", "why": "private allows only the class itself."}, {"lv": "e", "q": "What does abstract on a method mean?", "o": ["Subclasses must implement it", "It runs first", "It is private", "It is static"], "a": 0, "hint": "To be completed.", "why": "A class with abstract members cannot be created directly."}, {"lv": "e", "q": "What is a .d.ts file?", "o": ["A file with only type declarations", "A compiled JavaScript file", "A test file", "A config file"], "a": 0, "hint": "Declarations.", "why": "It describes code that lives elsewhere."}, {"lv": "m", "q": "Is a TypeScript private field visible at run time?", "o": ["Yes, private is a compile time check only", "No, it is removed", "It throws when read", "Only in strict mode"], "a": 0, "hint": "Erased checks.", "why": "Use #private for real run time privacy."}, {"lv": "m", "q": "What does implements Searchable check?", "o": ["That the class has every member of the interface", "That it extends a class", "It adds the methods", "It runs the methods"], "a": 0, "hint": "A contract.", "why": "It adds no code."}, {"lv": "m", "q": "Why do parameter properties fail with erasableSyntaxOnly?", "o": ["They create assignment code in the constructor", "They are deprecated", "They are slow", "They need decorators"], "a": 0, "hint": "Not erasable.", "why": "Stripping the types would remove the assignment."}, {"lv": "m", "q": "Which tsconfig option lets TypeScript check plain .js files?", "o": ["checkJs", "strict", "noEmit", "isolatedModules"], "a": 0, "hint": "Check JavaScript.", "why": "allowJs includes them, checkJs reports errors in them."}, {"lv": "h", "q": "Two decorators @step and @retry are stacked above a method, step on top. Which wraps the original method first?", "o": ["@retry, the one closest to the method", "@step", "Both at once", "Neither"], "a": 0, "hint": "Bottom up.", "why": "Decorators are applied from the closest one outwards."}, {"lv": "h", "q": "How do you add a custom matcher type to Playwright expect?", "o": ["Augment the Matchers interface in a declaration", "Edit node_modules", "Use any", "It is not possible"], "a": 0, "hint": "Module augmentation.", "why": "declare global or declare module merges into the existing interface."}, {"lv": "h", "q": "Why might @pages/login imports fail when running node src/main.ts?", "o": ["Node.js does not read tsconfig paths", "The file is missing", "TypeScript forbids it", "Imports must be relative"], "a": 0, "hint": "tsc only.", "why": "Use package.json imports with #pages/* instead."}, {"lv": "x", "q": "What does returning Promise&lt;this> from open() give subclasses?", "o": ["open() returns the subclass type, so chained calls stay typed", "A copy of the page", "A base page type", "Nothing special"], "a": 0, "hint": "Polymorphic this.", "why": "new LoginPage(page).open() is typed as LoginPage."}, {"lv": "x", "q": "What does tsc --noEmit do in CI?", "o": ["Type checks the project and fails on errors without writing files", "Builds the project", "Runs the tests", "Formats the code"], "a": 0, "hint": "Check only.", "why": "It is the gate that keeps type errors out of main."}], "calc": [{"lv": "e", "q": "The classes example has four mistakes after the console.log. How many errors does tsc report?", "ans": "4", "hint": "One per line.", "steps": ["protected, private, abstract creation and a missing abstract method."]}, {"lv": "e", "q": "ProductsPage.open() is called twice. What visit number does the second call print?", "ans": "2", "hint": "The #visits counter.", "steps": ["It starts at 0 and goes up once per call."]}, {"lv": "m", "q": "The pay method fails until attempt 3, and @retry(3) allows 3 tries. On which attempt does it succeed?", "ans": "3", "hint": "Count tries.", "steps": ["Attempts 1 and 2 throw, attempt 3 returns \"paid\"."]}, {"lv": "m", "q": "A suite of 900 files moves 150 files a week to TypeScript. How many weeks?", "ans": "6", "hint": "Divide.", "steps": ["<span class=\"eq\">900 ÷ 150 = 6<\/span>"]}, {"lv": "m", "q": "The JSDoc example has a wrong price type and a wrong coupon. How many errors?", "ans": "2", "hint": "One each.", "steps": ["\"40\" is not a number, and \"FREE\" is not one of the coupons."]}, {"lv": "h", "q": "A base page has 3 abstract members. A subclass implements 2. How many errors on that class?", "ans": "1", "hint": "One error listing the missing member.", "steps": ["tsc reports the class once for the missing member."], "alt": ["1"]}, {"lv": "h", "q": "Decorators wrap from the closest one out. With @a @b @c above a method, which runs first when the method is called?", "ans": "a", "hint": "The outermost wrapper runs first.", "steps": ["c wraps the method, b wraps c, a wraps b.", "Calling enters a first."]}, {"lv": "x", "q": "In the scenario, how many log lines does loginAs add, not counting open()?", "ans": "3", "hint": "Two fills and a click.", "steps": ["fill #email, fill #password, click the button."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers TypeScript at project scale: classes with access modifiers, decorators, declaration files, JSDoc checking and moving a project to TypeScript.", "hi": "यह अध्याय project स्तर पर TypeScript सिखाता है: access modifiers वाली classes, decorators, declaration files, JSDoc checking और migration।", "kn": "ಈ ಅಧ್ಯಾಯ project ಮಟ್ಟದ TypeScript: classes, decorators, declaration files, JSDoc ಮತ್ತು migration.", "or": "ଏହି ଅଧ୍ୟାୟ project ସ୍ତର TypeScript: classes, decorators, declaration files, JSDoc ଓ migration।", "ar": "يتناول هذا الفصل TypeScript على مستوى المشروع: الأصناف ومعدلات الوصول والمزخرفات وملفات التصريح وفحص JSDoc والانتقال إلى TypeScript.", "de": "Dieses Kapitel behandelt TypeScript im Projekt: Klassen mit Modifikatoren, Dekoratoren, Deklarationsdateien, JSDoc und Migration."}, {"id": "classes", "h": "Classes", "en": "public, protected and private control access. abstract forces subclasses to complete a method, and JavaScript hash private hides a field at run time.", "hi": "public, protected और private access तय करते हैं। abstract subclasses से method पूरा करवाता है, और hash private run time पर छिपाता है।", "kn": "public, protected, private access ನಿಯಂತ್ರಿಸುತ್ತವೆ. abstract subclass ನಿಂದ method ಪೂರ್ಣಗೊಳಿಸುತ್ತದೆ.", "or": "public, protected, private access ନିୟନ୍ତ୍ରଣ କରେ। abstract subclass ରୁ method ପୂରଣ କରାଏ।", "ar": "تتحكم public وprotected وprivate في الوصول، وتجبر abstract الأصناف الفرعية على إكمال الدالة، ويخفي private بعلامة # الحقل وقت التشغيل.", "de": "public, protected und private steuern den Zugriff. abstract erzwingt Methoden in Unterklassen, #private versteckt Felder wirklich."}, {"id": "decorators", "h": "Decorators", "en": "A method decorator receives the method and a context and returns a replacement, which can log a step or retry.", "hi": "Method decorator method और context पाता है और बदला हुआ method लौटाता है, जो step log या retry कर सकता है।", "kn": "Method decorator method ಮತ್ತು context ಪಡೆದು ಬದಲಿ method ಕೊಡುತ್ತದೆ.", "or": "Method decorator method ଓ context ପାଇ ବଦଳ method ଦିଏ।", "ar": "يستقبل مزخرف الدالة الدالة وسياقها ويعيد بديلًا يمكنه تسجيل خطوة أو إعادة المحاولة.", "de": "Ein Methodendekorator erhält Methode und Kontext und liefert einen Ersatz, der loggt oder wiederholt."}, {"id": "dts", "h": "Declaration files", "en": "A d ts file holds only types for JavaScript that has none. Module augmentation adds to existing types, such as Window or expect.", "hi": "d ts file में केवल types होते हैं। Module augmentation मौजूद types में जोड़ता है, जैसे Window या expect।", "kn": "d ts file ನಲ್ಲಿ types ಮಾತ್ರ. Augmentation ಇರುವ types ಗೆ ಸೇರಿಸುತ್ತದೆ.", "or": "d ts file ରେ କେବଳ types। Augmentation ଥିବା types ରେ ଯୋଡ଼େ।", "ar": "يحوي ملف d.ts أنواعًا فقط لشيفرة JavaScript بلا أنواع، ويضيف تعزيز الوحدات إلى الأنواع الموجودة مثل Window أو expect.", "de": "Eine d.ts-Datei enthält nur Typen. Augmentation erweitert bestehende Typen wie Window oder expect."}, {"id": "jsdoc", "h": "JSDoc", "en": "With checkJs, TypeScript reads types from JSDoc comments and checks plain JavaScript files without renaming them.", "hi": "checkJs के साथ TypeScript JSDoc comments से types पढ़ता है और JavaScript files बिना नाम बदले जांचता है।", "kn": "checkJs ಜೊತೆ TypeScript JSDoc ನಿಂದ types ಓದಿ JavaScript ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "checkJs ସହ TypeScript JSDoc ରୁ types ପଢ଼ି JavaScript ଯାଞ୍ଚ କରେ।", "ar": "مع checkJs تقرأ TypeScript الأنواع من تعليقات JSDoc وتفحص ملفات JavaScript دون إعادة تسميتها.", "de": "Mit checkJs liest TypeScript Typen aus JSDoc und prüft JavaScript ohne Umbenennen."}, {"id": "migrate", "h": "Migration", "en": "Move in small steps: allow JavaScript, check it, rename leaf files, add types, turn on strict, and run tsc in CI.", "hi": "छोटे कदमों में बढ़ें: JavaScript allow करें, जांचें, leaf files rename करें, types जोड़ें, strict चालू करें और CI में tsc चलाएं।", "kn": "ಸಣ್ಣ ಹೆಜ್ಜೆಗಳಲ್ಲಿ: allowJs, checkJs, rename, types, strict, CI ನಲ್ಲಿ tsc.", "or": "ଛୋଟ ପଦକ୍ଷେପ: allowJs, checkJs, rename, types, strict, CI ରେ tsc।", "ar": "انتقل بخطوات صغيرة: اسمح بـ JavaScript وافحصها وأعد تسمية الملفات الطرفية وأضف الأنواع وشغل strict وشغل tsc في CI.", "de": "Gehe in kleinen Schritten: JavaScript erlauben, prüfen, umbenennen, typisieren, strict, tsc in CI."}, {"id": "scenario", "h": "Scenario", "en": "An abstract path forces every page to declare its URL, and returning the next page type makes test steps auto complete.", "hi": "Abstract path हर page से URL बताने को कहता है, और अगला page type लौटाने से test steps auto complete होते हैं।", "kn": "Abstract path ಪ್ರತಿ page URL ಘೋಷಿಸುವಂತೆ ಮಾಡುತ್ತದೆ.", "or": "Abstract path ପ୍ରତି page URL ଘୋଷଣା କରାଏ।", "ar": "يجبر المسار المجرد كل صفحة على تعريف عنوانها، وإرجاع نوع الصفحة التالية يجعل خطوات الاختبار تكمل تلقائيًا.", "de": "Ein abstrakter Pfad zwingt jede Seite zur URL, und der nächste Seitentyp macht Testschritte vervollständigbar."}, {"id": "practice", "h": "Hands-on", "en": "Practise a class with a private field, an abstract style check, a method wrapper like a decorator, and a step log.", "hi": "Private field वाली class, abstract जैसा check, decorator जैसा method wrapper और step log का अभ्यास करें।", "kn": "Private field class, abstract check, decorator wrapper ಮತ್ತು step log ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Private field class, abstract check, decorator wrapper ଓ step log ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على صنف بحقل خاص وفحص يشبه abstract وغلاف دالة يشبه المزخرف وسجل خطوات.", "de": "Übe eine Klasse mit privatem Feld, eine abstrakte Prüfung, einen Methoden-Wrapper und ein Schrittprotokoll."}], "ex": [{"id": "account", "lv": "e", "title": "A class with a private field", "task": "<p>Write a class <code>Account<\/code> with a JavaScript private <code>#balance<\/code> that starts at 0, a <code>deposit(n)<\/code> that rejects amounts that are not positive by throwing a <code>RangeError<\/code>, and a <code>balance<\/code> getter.<\/p>", "starter": "class Account {\n  \n}", "tests": [{"call": "(() => { const a = new Account(); a.deposit(50); a.deposit(25); return [a.balance, Object.keys(a).length, JSON.stringify(a)]; })()", "want": [75, 0, "{}"]}, {"call": "(() => { try { new Account().deposit(-5); } catch (e) { return e.name; } })()", "want": "RangeError"}], "solution": "class Account {\n  #balance = 0;\n  deposit(n) {\n    if (!(n > 0)) throw new RangeError(\"amount must be positive\");\n    this.#balance += n;\n  }\n  get balance() {\n    return this.#balance;\n  }\n}", "hint": "<code>#balance = 0;<\/code> as a class field, and <code>get balance()<\/code> to read it.", "why": "#private fields never appear in Object.keys or JSON, unlike TypeScript private."}, {"id": "abstract", "lv": "m", "title": "Enforce an abstract method at run time", "task": "<p>JavaScript has no <code>abstract<\/code>. Write a class <code>BasePage<\/code> whose constructor throws a <code>TypeError<\/code> when called with <code>new BasePage()<\/code> directly, and whose <code>isLoaded()<\/code> throws <code>\"isLoaded is not implemented\"<\/code> unless a subclass overrides it.<\/p>", "starter": "class BasePage {\n  \n}", "tests": [{"call": "(() => { try { new BasePage(); } catch (e) { return e.name; } })()", "want": "TypeError"}, {"call": "(() => { class A extends BasePage {} try { new A().isLoaded(); } catch (e) { return e.message; } })()", "want": "isLoaded is not implemented"}, {"call": "(() => { class B extends BasePage { isLoaded() { return true; } } return new B().isLoaded(); })()", "want": true}], "solution": "class BasePage {\n  constructor() {\n    if (new.target === BasePage) throw new TypeError(\"BasePage is abstract\");\n  }\n  isLoaded() {\n    throw new Error(\"isLoaded is not implemented\");\n  }\n}", "hint": "<code>new.target<\/code> tells you which class was used with new.", "why": "TypeScript catches both mistakes at compile time, and this pattern catches them in plain JavaScript."}, {"id": "wrap", "lv": "h", "title": "A decorator by hand", "task": "<p>Write <code>withStep(obj, name, title, log)<\/code> that replaces the method <code>obj[name]<\/code> with a wrapper. The wrapper calls the original with the same <code>this<\/code> and arguments, then pushes <code>\"✔ \" + title<\/code> to the <code>log<\/code> array, or <code>\"✖ \" + title<\/code> if it threw, and rethrows.<\/p>", "starter": "function withStep(obj, name, title, log) {\n  \n}", "tests": [{"call": "(async () => { const log = []; const page = { n: 2, async double() { return this.n * 2; }, async boom() { throw new Error(\"x\"); } }; withStep(page, \"double\", \"Double\", log); withStep(page, \"boom\", \"Boom\", log); const r = await page.double(); await page.boom().catch(() => {}); return [r, log]; })()", "want": [4, ["✔ Double", "✖ Boom"]]}], "solution": "function withStep(obj, name, title, log) {\n  const original = obj[name];\n  obj[name] = async function (...args) {\n    try {\n      const result = await original.apply(this, args);\n      log.push(\"✔ \" + title);\n      return result;\n    } catch (e) {\n      log.push(\"✖ \" + title);\n      throw e;\n    }\n  };\n}", "hint": "Keep the original, then assign a regular <code>async function<\/code> so <code>this<\/code> still works.", "why": "A method decorator does exactly this, at class definition time."}, {"id": "steplog", "lv": "x", "title": "A typed step log", "task": "<p>Write <code>createSteps()<\/code> that returns <code>{ step, report }<\/code>. <code>await step(title, fn)<\/code> runs <code>fn<\/code>, records <code>{ title, ok, ms }<\/code> where ms is a whole number of milliseconds, and returns or rethrows. <code>report()<\/code> returns titles with a tick or a cross, such as <code>\"✔ Login\"<\/code>.<\/p>", "starter": "function createSteps() {\n  \n}", "tests": [{"call": "(async () => { const { step, report } = createSteps(); await step(\"Login\", async () => 1); await step(\"Pay\", async () => { throw new Error(\"no\"); }).catch(() => {}); return report(); })()", "want": ["✔ Login", "✖ Pay"]}, {"call": "(async () => { const { step } = createSteps(); return await step(\"x\", async () => 42); })()", "want": 42}], "solution": "function createSteps() {\n  const steps = [];\n  async function step(title, fn) {\n    const start = Date.now();\n    try {\n      const value = await fn();\n      steps.push({ title, ok: true, ms: Math.round(Date.now() - start) });\n      return value;\n    } catch (e) {\n      steps.push({ title, ok: false, ms: Math.round(Date.now() - start) });\n      throw e;\n    }\n  }\n  return { step, report: () => steps.map(s => (s.ok ? \"✔ \" : \"✖ \") + s.title) };\n}", "hint": "Record the result in both the try and the catch branch, then rethrow.", "why": "This is a small copy of Playwright test.step, which records the same data for its HTML report."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "TypeScript classes and real projects", subject: "javascript" });
+</script>
+</body>
+</html>

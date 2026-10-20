@@ -2153,6 +2153,24 @@ function jsModules() {
         { id: "orderid", title: "Parse a branded id", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "ts-projects", title: "TypeScript classes and real projects", emoji: "🏛️", page: "content/javascript/ts-projects.html",
+        summary: "Classes with access modifiers, abstract members and interfaces, TypeScript private compared with #private, standard decorators that log steps and retry, declaration files and module augmentation, type checking JavaScript with JSDoc, a safe migration plan and the tools to run TypeScript, and a typed page object hierarchy.",
+        keywords: ["TypeScript classes", "abstract class", "access modifiers", "private", "#private", "decorators", ".d.ts", "declaration files", "module augmentation", "JSDoc", "checkJs", "migration", "tsc --noEmit", "page object", "interview"],
+        added: "2026-10-20",
+        sections: [
+        { id: "classes", title: "Classes in TypeScript", emoji: "🏛️", group: "QA essential", keywords: ["class", "public", "private", "protected", "readonly", "abstract class", "abstract method", "implements", "override", "parameter properties", "#private", "access modifiers"] },
+        { id: "decorators", title: "Decorators", emoji: "🎀", group: "QA essential", keywords: ["decorators", "method decorator", "ClassMethodDecoratorContext", "stage 3 decorators", "experimentalDecorators", "test.step", "retry decorator"] },
+        { id: "dts", title: "Declaration files and augmentation", emoji: "📜", group: "QA essential", keywords: ["declaration file", ".d.ts", "declare module", "declare global", "module augmentation", "@types", "DefinitelyTyped", "custom matchers", "Cypress.Chainable"] },
+        { id: "jsdoc", title: "Checking JavaScript with JSDoc", emoji: "📝", group: "QA essential", keywords: ["JSDoc", "checkJs", "@ts-check", "allowJs", "@param", "@returns", "@typedef", "type checking JavaScript"] },
+        { id: "migrate", title: "Moving a project to TypeScript, and the tools around it", emoji: "🚚", group: "QA essential", keywords: ["migration", "JavaScript to TypeScript", "allowJs", "tsc --noEmit", "tsx", "esbuild", "vite", "path aliases", "package imports", "CI type check"] },
+        { id: "scenario", title: "Real world scenario: a typed page object hierarchy", emoji: "🎬", group: "QA essential", keywords: ["page object model", "abstract class", "typed page object", "fluent page objects", "protected", "test data types"] },
+        { id: "account", title: "A class with a private field", emoji: "🏋️", group: "Easy practice" },
+        { id: "abstract", title: "Enforce an abstract method at run time", emoji: "🏋️", group: "Medium practice" },
+        { id: "wrap", title: "A decorator by hand", emoji: "🏋️", group: "Hard practice" },
+        { id: "steplog", title: "A typed step log", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] },
     { id: "js-expert", title: "Expert and latest", emoji: "🧠", blurb: "The newest language features, performance, patterns, security and the habits of expert JavaScript developers and testers.", topics: [
