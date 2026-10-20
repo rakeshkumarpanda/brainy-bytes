@@ -44,7 +44,7 @@ window.CATALOG = {
     name: 'Brainy Bytes',
     tagline: 'Deep concepts, served with a smile',
     headline: ['Learn it deep.', 'Laugh along the way.'],
-    hello: 'New: Manual Testing, the Complete Java Session track and TestNG, with programs in Java, Python and JavaScript',
+    hello: 'New: JavaScript from basics to expert with test automation, Manual Testing, the Complete Java Session track and TestNG, with programs in Java, Python and JavaScript',
     intro: 'Free notes that move, joke and run. Every topic comes with animations you can control, everyday examples, step by step code in Java, JavaScript and Python, and practice from easy to expert.',
     footer: 'Brainy Bytes. Free to learn, free to share.',
     searchExamples: ['binary search', 'heap sort', 'two pointers', 'Kadane', 'boundary value analysis', 'bug life cycle', 'constructor chaining', 'HashMap', 'DataProvider', 'listeners'],
@@ -204,6 +204,16 @@ window.CATALOG = {
       intro: 'Three chapters that take you from a first @Test to a Page Object framework with listeners, retries and parallel runs. Every Java example runs on real TestNG with its testng.xml, and the same idea is shown with pytest and Mocha.',
       tags: ['Annotations', 'testng.xml', 'DataProvider', 'Listeners', 'Parallel'],
       modules: [tngModule()]
+    },
+    {
+      id: 'javascript',
+      title: 'JavaScript',
+      emoji: '🟨',
+      color: '#ca8a04',
+      blurb: 'JavaScript from your first variable to the latest features, with unit, API and UI test automation for QA.',
+      intro: 'Seventeen chapters in six modules take you from values and functions to async code, the DOM, Node.js, modern ES2026 features and expert topics. Parts marked QA are the ones testers need for Selenium, Playwright and Cypress. The testing module runs unit tests for web and API code in node:test, Jest, Vitest and Mocha, then API tests and full browser tests. Every example was run with Node.js 26 and the real output is shown under it. You can edit and run most examples in the page, and each chapter has quizzes, number practice, coding exercises and a narrator in six languages.',
+      tags: ['ES2026', 'Async', 'DOM', 'Jest and Vitest', 'Playwright'],
+      modules: jsModules()
     }
   ]
 };
