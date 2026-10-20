@@ -224,7 +224,7 @@ Running 2 tests using 1 worker
     <span class="k">if</span> (!res.ok) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`GET /products answered ${res.status}`</span>);
     <span class="k">return</span> z.array(<span class="t">Product</span>).parse(<span class="k">await</span> res.json());   <span class="c">// unknown JSON in, typed data out</span>
   }
-}</pre><div class="fname">📄 test/products.test.ts</div><pre class="src" data-file="test/products.test.ts"><span class="k">import</span> { test, before, after } <span class="k">from</span> <span class="s">"node:test"</span>;
+}</pre><div class="fname">📄 test/products.test.ts</div><pre class="src" data-file="test/products.test.ts"><span class="k">import</span> { test, after } <span class="k">from</span> <span class="s">"node:test"</span>;
 <span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
 <span class="k">import</span> <span class="k">type</span> { <span class="t">AddressInfo</span> } <span class="k">from</span> <span class="s">"node:net"</span>;
 <span class="k">import</span> { z } <span class="k">from</span> <span class="s">"zod"</span>;

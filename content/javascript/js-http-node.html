@@ -15,11 +15,11 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>⏳ Async and the platform</span><span>›</span><span>Chapter 12 of 14</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>⏳ Async and the platform</span><span>›</span><span>Chapter 12 of 27</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">📡</span><div><h1>HTTP, fetch and Node.js Servers</h1><p class="lead">What a request and a response look like, fetch and URLs, logging in with tokens and the difference between 401 and 403, writing a REST API with Express, the Node.js core modules, and a mock API that UI tests can control.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 8 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
-    <div class="qa-intro"><b>🧪 For QA engineers</b><p>API testing is HTTP. Methods, status codes, headers, auth and a server you control are the foundations for chapter 14.</p></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>API testing is HTTP. Methods, status codes, headers, auth and a server you control are the foundations for chapter 20.</p></div>
   </header>
   <nav class="toc" aria-label="Parts of this chapter"><a href="#http" class="qa"><span>📨</span>How HTTP works</a><a href="#fetch" class="qa"><span>📡</span>fetch and URLs</a><a href="#auth" class="qa"><span>🔑</span>Authentication: 401 against 403</a><a href="#server" class="qa"><span>🖥️</span>Writing a server with Express</a><a href="#node" class="qa"><span>🧰</span>Node.js core modules</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: a mock API for UI tests</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
   <section class="card reveal" id="comic"></section>
@@ -200,7 +200,7 @@ admin:          200 200</pre></div></div>
 <div class="qa-box">Every protected endpoint deserves at least four tests: no token (401), a broken or expired token (401), a valid token without permission (403) and a valid token with permission (2xx). Checking that a customer cannot read another customer's order by changing an id is one of the most valuable security tests you can write.</div>
 </section>
 <section class="card reveal jsec qa-part" id="server" data-say="server"><div class="sec-num">Part 4</div><h2><span class="sec-em">🖥️</span><span>Writing a server with Express</span></h2>
-<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">supertest</span><span class="qa-why">API test suites start a server like this one, and chapter 14 tests this exact app with supertest.</span></div>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">supertest</span><span class="qa-why">API test suites start a server like this one, and chapter 20 tests this exact app with supertest.</span></div>
 <p>On the server side, Node.js answers requests. <b>Express</b> is the most used library for it: you declare <b>routes</b> (a method plus a path) and a handler that receives the request and builds the response. <b>Middleware</b> runs before the routes, for example to parse JSON or check a token.</p>
 <div class="codewrap" data-k="express"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A REST API with Express · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> express <span class="k">from</span> <span class="s">"express"</span>;
 
@@ -309,7 +309,7 @@ exit code: 1 | stderr: 2 tests failed</pre></div></div>
 <tr><td><code>node:path</code></td><td>join and split file paths the same way on Windows, macOS and Linux</td></tr>
 <tr><td><code>node:child_process</code></td><td>run other programs</td></tr>
 <tr><td><code>node:crypto</code></td><td>random ids (<code>randomUUID</code>) and hashes</td></tr>
-<tr><td><code>node:test</code>, <code>node:assert</code></td><td>the built in test runner (chapter 13)</td></tr>
+<tr><td><code>node:test</code>, <code>node:assert</code></td><td>the built in test runner (chapter 19)</td></tr>
 </table></div>
 </section>
 <section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 6</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a mock API for UI tests</span></h2>
@@ -370,7 +370,7 @@ took about 300 ms</pre></div></div>
   <section class="card reveal" id="practice" data-say="practice"></section>
   <section class="card reveal" id="quiz"></section>
   <section class="card reveal" id="numbers"></section>
-  <nav class="pager"><a class="prev" href="./js-dom-browser.html" data-topic="js-dom-browser"><small>← Previous chapter</small><b>🌐 DOM and browser</b></a><a class="next" href="./js-unit-testing.html" data-topic="js-unit-testing"><small>Next chapter →</small><b>🧪 Unit testing</b></a></nav>
+  <nav class="pager"><a class="prev" href="./js-dom-browser.html" data-topic="js-dom-browser"><small>← Previous chapter</small><b>🌐 DOM and browser</b></a><a class="next" href="./js-engine.html" data-topic="js-engine"><small>Next chapter →</small><b>🔬 Engine internals</b></a></nav>
 </div>
 <script src="../../assets/fun.js"></script>
 <script src="../../assets/extras.js"></script>

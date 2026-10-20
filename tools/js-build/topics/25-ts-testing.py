@@ -238,7 +238,7 @@ export class ProductsClient {
 }
 ''',
         'test/products.test.ts': '''
-import { test, before, after } from "node:test";
+import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import { z } from "zod";

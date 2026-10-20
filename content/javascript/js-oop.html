@@ -15,11 +15,11 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🏗️ Structure and tooling</span><span>›</span><span>Chapter 8 of 14</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🏗️ Structure and tooling</span><span>›</span><span>Chapter 8 of 27</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🏛️</span><div><h1>Prototypes, Classes and the Page Object Model</h1><p class="lead">How objects borrow from prototypes, classes with fields, getters, static and private members, inheritance with extends and super, custom errors, composition, and the Page Object Model that most UI test frameworks are built on.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 17 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 12 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 4 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
-    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Page objects, API clients, test data builders and custom errors are all classes. This chapter is the base for the framework design in chapter 15.</p></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Page objects, API clients, test data builders and custom errors are all classes. This chapter is the base for the framework design in chapter 21.</p></div>
   </header>
   <nav class="toc" aria-label="Parts of this chapter"><a href="#prototypes"><span>🧬</span>Objects and prototypes</a><a href="#classes" class="qa"><span>🏛️</span>Classes</a><a href="#private"><span>🔒</span>Private fields and encapsulation</a><a href="#inheritance" class="qa"><span>🌳</span>Inheritance with extends and super</a><a href="#composition"><span>🧩</span>Composition over inheritance</a><a href="#pom" class="qa"><span>📄</span>The Page Object Model</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: test data and an API client</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
   <section class="card reveal" id="comic"></section>
@@ -360,7 +360,7 @@ page.loginAs(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret
 console.log(<span class="s">"error shown:"</span>, !page.error.hidden, <span class="s">"| welcome:"</span>, page.welcome.textContent);</pre><div class="out"><span>Output</span><pre>error shown: true | Wrong email or password
 error shown: false | welcome: Hello, asha</pre></div></div>
 <p>The idea is identical in every tool. Only the way you find and click elements changes.</p>
-<div class="codewrap" data-k="pom-pw"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same page object in Playwright · Runs for real in chapter 15</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// pages/login.page.js (Playwright)</span>
+<div class="codewrap" data-k="pom-pw"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same page object in Playwright · Runs for real in chapter 21</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// pages/login.page.js (Playwright)</span>
 <span class="k">export</span> <span class="k">class</span> <span class="t">LoginPage</span> {
   constructor(page) {
     <span class="k">this</span>.page = page;
@@ -389,7 +389,7 @@ test(<span class="s">"wrong password shows an error"</span>, <span class="k">asy
   <span class="k">await</span> login.loginAs(<span class="s">"asha@shop.example"</span>, <span class="s">"wrong"</span>);
   <span class="k">await</span> expect(login.error).toHaveText(<span class="s">"Wrong email or password"</span>);
 });</pre><div class="note-out"><span>What happens</span><p>The test reads like the steps a manual tester writes. When the button text changes, only the page object changes.</p></div></div>
-<div class="codewrap" data-k="pom-selenium"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same page object in Selenium · Runs for real in chapter 15</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// pages/LoginPage.js (Selenium WebDriver)</span>
+<div class="codewrap" data-k="pom-selenium"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same page object in Selenium · Runs for real in chapter 21</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// pages/LoginPage.js (Selenium WebDriver)</span>
 <span class="k">const</span> { <span class="t">By</span>, until } = require(<span class="s">"selenium-webdriver"</span>);
 
 <span class="k">class</span> <span class="t">LoginPage</span> {

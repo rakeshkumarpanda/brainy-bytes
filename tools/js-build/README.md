@@ -1,10 +1,14 @@
 # JavaScript subject builder
 
-This folder builds the 17 JavaScript chapters in `content/javascript/` and the `jsModules()` block in `data/catalog.js`.
+This folder builds the 27 JavaScript and TypeScript chapters in `content/javascript/` and the `jsModules()` block in `data/catalog.js`.
 
 Each chapter is a Python file in `topics/`. It lists its parts, code examples, quiz, number practice, exercises and narration with the helpers in `kit.py`.
 
-The build runs every example with Node.js and stores the real output in the page. Unit, API and browser test examples run as small projects inside `box/`, which holds the pinned test tools (Jest, Vitest, Mocha, Playwright, Selenium WebDriver and others).
+The build runs every example with Node.js and stores the real output in the page. Unit, API and browser test examples run as small projects inside `box/`, which holds the pinned test tools (Jest, Vitest, Mocha, Playwright, Selenium WebDriver, TypeScript, zod and others).
+
+TypeScript examples are made with `ts()` in `kit.py`. Each one is checked by `tsc` with strict settings and then run by Node.js. The example states how many type errors tsc must report, and the build fails if the count is different.
+
+The Interview Questions chapter is not built here. Its questions live in `tools/interview-build/sets/javascript.py` and `tools/interview-build/build.py --run javascript` builds the page and runs every output question with Node.js.
 
 ## Requirements
 
