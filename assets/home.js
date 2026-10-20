@@ -93,13 +93,14 @@
     const total = s.topics.length, ready = s.liveTopics.length;
     const pct = s.page ? 100 : total ? Math.round(ready / total * 100) : 0;
     const status = s.page ? 'Ready to read' : ready ? `${ready} of ${total} topics ready` : 'Cooking right now';
+    const prog = PROGRESS.stats(s.topics);
     return `<a class="scard reveal ${s.soon ? 'soonc' : ''}" href="${LH.subjectUrl(s)}" target="_blank" rel="noopener" style="--c:${esc(s.color || 'var(--accent)')}">
       <span class="em">${esc(s.emoji)}</span>
       <h3>${esc(s.title)}</h3>
       <p>${esc(s.blurb || '')}</p>
       ${s.tags && s.tags.length ? `<div class="tags">${s.tags.slice(0, 5).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
       <div class="meter"><i data-w="${pct}"></i></div>
-      <div class="foot">${s.soon ? '<span class="soon">Coming soon</span>' : `<span>${status}</span>`}<span class="go">Open ↗</span></div>
+      <div class="foot">${s.soon ? '<span class="soon">Coming soon</span>' : `<span>${status}</span>`}${prog.done ? `<span class="donechip">✅ ${prog.done} done</span>` : ''}<span class="go">Open ↗</span></div>
     </a>`;
   }
   function renderGrid() {
@@ -128,6 +129,16 @@
     FUN.confetti(e.clientX, e.clientY, 40);
     setTimeout(() => window.open(LH.topicUrl(t), '_blank', 'noopener'), 250);
   };
+
+  /* pick up where you left off */
+  const last = PROGRESS.lastTopic(cat);
+  if (last) {
+    const t = last.topic, p = PROGRESS.stats(t.subject.topics);
+    document.getElementById('resume').innerHTML = `<a class="resume" href="${LH.topicUrl(t)}${last.hash ? '#' + esc(last.hash) : ''}" target="_blank" rel="noopener" style="--c:${esc(t.subject.color || 'var(--accent)')}">
+      <span class="em">${esc(t.emoji)}</span>
+      <span class="rt"><small>Pick up where you left off</small><b>${esc(t.title)}</b><small>${esc(t.subject.title)} · ${p.done} of ${p.total} topics complete</small></span>
+      <span class="go">Continue ▶</span></a>`;
+  }
 
   /* newest topics */
   const fresh = live.filter(t => t.added).sort((a, b) => String(b.added).localeCompare(String(a.added))).slice(0, 6);

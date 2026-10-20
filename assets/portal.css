@@ -225,3 +225,22 @@ body.subj{height:100vh; overflow:hidden; display:flex; flex-direction:column}
   .toolbar .lbl{display:none}
 }
 .eyewhite,.pupil{transform-box:fill-box; transform-origin:center}
+
+/* ===== learner progress ===== */
+.donechip,.quizchip{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:800; padding:1px 8px; border-radius:999px; white-space:nowrap}
+.donechip{color:var(--easy); background:var(--easy-soft)}
+.quizchip{color:var(--exp); background:var(--exp-soft)}
+.tcard .tprog{display:flex; flex-wrap:wrap; gap:6px; margin-top:2px}
+.tcard.is-done{border-color:color-mix(in srgb, var(--green) 55%, var(--line))}
+.titem .tick{font-size:13px; flex:none}
+.prog{display:flex; flex-direction:column; gap:6px; margin-top:12px; font-size:13px; font-weight:800; color:var(--ink2)}
+.prog .meter i{transition:width .6s cubic-bezier(.2,1,.3,1)}
+.prog.big{max-width:520px; font-size:14px}
+.donebtn.on{background:var(--easy-soft); color:var(--easy); border-color:color-mix(in srgb, var(--green) 50%, transparent)}
+.resume{display:flex; align-items:center; gap:14px; margin-top:18px; max-width:560px; padding:14px 18px; border-radius:20px; background:var(--surface); border:2px solid var(--c,var(--accent)); box-shadow:var(--shadow); text-decoration:none; color:var(--ink); transition:transform .2s cubic-bezier(.2,1.6,.4,1), box-shadow .2s}
+.resume:hover{transform:translateY(-3px); box-shadow:var(--shadow-pop)}
+.resume .em{font-size:34px; flex:none}
+.resume .rt{display:flex; flex-direction:column; min-width:0; flex:1}
+.resume .rt b{font-size:18px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.resume .rt small{font-size:12.5px; font-weight:700; color:var(--ink2)}
+.resume .go{flex:none; font-weight:800; color:var(--c,var(--accent))}
