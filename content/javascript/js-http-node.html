@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTTP, fetch and Node.js Servers · JavaScript</title>
+<meta name="description" content="HTTP methods and status codes, fetch, URL and URLSearchParams, Bearer tokens, 401 against 403, Express routes and middleware, fs, path, child_process and a mock API server.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>⏳ Async and the platform</span><span>›</span><span>Chapter 12 of 12</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">📡</span><div><h1>HTTP, fetch and Node.js Servers</h1><p class="lead">What a request and a response look like, fetch and URLs, logging in with tokens and the difference between 401 and 403, writing a REST API with Express, the Node.js core modules, and a mock API that UI tests can control.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 8 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>API testing is HTTP. Methods, status codes, headers, auth and a server you control are the foundations for chapter 14.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#http" class="qa"><span>📨</span>How HTTP works</a><a href="#fetch" class="qa"><span>📡</span>fetch and URLs</a><a href="#auth" class="qa"><span>🔑</span>Authentication: 401 against 403</a><a href="#server" class="qa"><span>🖥️</span>Writing a server with Express</a><a href="#node" class="qa"><span>🧰</span>Node.js core modules</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: a mock API for UI tests</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="http" data-say="http"><div class="sec-num">Part 1</div><h2><span class="sec-em">📨</span><span>How HTTP works</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Every API test checks a method, a status code, headers and a body.</span></div>
+<p>Browsers, apps and test tools talk to servers with <b>HTTP</b>. The client sends a <b>request</b>: a method, a path, headers and sometimes a body. The server sends back a <b>response</b>: a status code, headers and usually a body. Both are plain text you can read.</p>
+<div class="codewrap" data-k="raw"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">What a request and a response really look like · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> http <span class="k">from</span> <span class="s">"node:http"</span>;
+<span class="k">import</span> net <span class="k">from</span> <span class="s">"node:net"</span>;
+
+<span class="c">// A tiny server, so we can see a real request and response</span>
+<span class="k">const</span> server = http.createServer((req, res) =&gt; {
+  <span class="k">const</span> body = <span class="t">JSON</span>.stringify({ id: <span class="n">7</span>, name: <span class="s">"Gel pen"</span> });
+  res.writeHead(<span class="n">201</span>, { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span>, <span class="s">"Content-Length"</span>: body.length, <span class="s">"X-Request-Id"</span>: <span class="s">"abc-123"</span> });
+  res.end(body);
+});
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; server.listen(<span class="n">0</span>, <span class="s">"127.0.0.1"</span>, r));
+<span class="k">const</span> { port } = server.address();
+
+<span class="c">// Send a request by hand over a raw socket and print the exact text that comes back</span>
+<span class="k">const</span> socket = net.connect(port, <span class="s">"127.0.0.1"</span>);
+socket.write(
+  <span class="s">"POST /api/products HTTP/1.1\r\n"</span> +
+  <span class="s">`Host: 127.0.0.1:${port}\r\n`</span> +
+  <span class="s">"Content-Type: application/json\r\n"</span> +
+  <span class="s">"Content-Length: 18\r\n"</span> +
+  <span class="s">"Connection: close\r\n\r\n"</span> +
+  <span class="s">'{"name":"Gel pen"}'</span>
+);
+<span class="k">let</span> text = <span class="s">""</span>;
+<span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> chunk <span class="k">of</span> socket) text += chunk;
+console.log(text.replaceAll(<span class="s">"\r\n"</span>, <span class="s">"\n"</span>));
+server.close();</pre><div class="out"><span>Output</span><pre>HTTP/1.1 201 Created
+Content-Type: application/json
+Content-Length: 25
+X-Request-Id: abc-123
+Date: Tue, 20 Oct 2026 09:00:00 GMT
+Connection: close
+
+{&quot;id&quot;:7,&quot;name&quot;:&quot;Gel pen&quot;}</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Method</th><th>Meaning</th><th>Safe to repeat</th></tr>
+<tr><td>GET</td><td>read</td><td>yes</td></tr>
+<tr><td>POST</td><td>create, or run an action</td><td>no</td></tr>
+<tr><td>PUT</td><td>replace completely</td><td>yes</td></tr>
+<tr><td>PATCH</td><td>change some fields</td><td>usually not</td></tr>
+<tr><td>DELETE</td><td>remove</td><td>yes</td></tr>
+</table></div>
+<div class="tw"><table class="jt"><tr><th>Status</th><th>Group</th><th>Ones you see every day</th></tr>
+<tr><td>1xx</td><td>information</td><td>101 Switching Protocols (WebSockets)</td></tr>
+<tr><td>2xx</td><td>success</td><td>200 OK, 201 Created, 204 No Content</td></tr>
+<tr><td>3xx</td><td>redirect</td><td>301 Moved Permanently, 302 Found, 304 Not Modified</td></tr>
+<tr><td>4xx</td><td>the client got it wrong</td><td>400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 409 Conflict, 422 Unprocessable, 429 Too Many Requests</td></tr>
+<tr><td>5xx</td><td>the server failed</td><td>500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout</td></tr>
+</table></div>
+</section>
+<section class="card reveal jsec qa-part" id="fetch" data-say="fetch"><div class="sec-num">Part 2</div><h2><span class="sec-em">📡</span><span>fetch and URLs</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Jest</span><span class="qa-tool">Cypress</span><span class="qa-why">API tests send requests and read responses with fetch or a wrapper around it, such as Playwright request or Cypress cy.request.</span></div>
+<p><code>fetch(url, options)</code> sends a request and returns a promise for the response. It is built into browsers and Node.js. Read the body once with <code>res.json()</code>, <code>res.text()</code> or <code>res.blob()</code>.</p>
+<div class="codewrap" data-k="fetch"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">fetch: GET, POST and errors · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> http <span class="k">from</span> <span class="s">"node:http"</span>;
+
+<span class="c">// A small fake API to talk to</span>
+<span class="k">const</span> products = [{ id: <span class="n">1</span>, name: <span class="s">"Gel pen"</span>, price: <span class="n">20</span> }];
+<span class="k">const</span> server = http.createServer(<span class="k">async</span> (req, res) =&gt; {
+  <span class="k">const</span> send = (status, body) =&gt; {
+    res.writeHead(status, { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> });
+    res.end(<span class="t">JSON</span>.stringify(body));
+  };
+  <span class="k">if</span> (req.method === <span class="s">"GET"</span> &amp;&amp; req.url === <span class="s">"/api/products"</span>) <span class="k">return</span> send(<span class="n">200</span>, products);
+  <span class="k">if</span> (req.method === <span class="s">"POST"</span> &amp;&amp; req.url === <span class="s">"/api/products"</span>) {
+    <span class="k">let</span> raw = <span class="s">""</span>;
+    <span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> chunk <span class="k">of</span> req) raw += chunk;
+    <span class="k">const</span> item = { id: products.length + <span class="n">1</span>, ...<span class="t">JSON</span>.parse(raw) };
+    products.push(item);
+    <span class="k">return</span> send(<span class="n">201</span>, item);
+  }
+  send(<span class="n">404</span>, { error: <span class="s">"Not found"</span> });
+});
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; server.listen(<span class="n">0</span>, r));
+<span class="k">const</span> base = <span class="s">`http://localhost:${server.address().port}`</span>;
+
+<span class="c">// GET and read JSON</span>
+<span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">`${base}/api/products`</span>);
+console.log(res.status, res.ok, res.headers.<span class="k">get</span>(<span class="s">"content-type"</span>));
+console.log(<span class="k">await</span> res.json());
+
+<span class="c">// POST with a JSON body</span>
+<span class="k">const</span> created = <span class="k">await</span> fetch(<span class="s">`${base}/api/products`</span>, {
+  method: <span class="s">"POST"</span>,
+  headers: { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> },
+  body: <span class="t">JSON</span>.stringify({ name: <span class="s">"Coffee mug"</span>, price: <span class="n">199</span> }),
+});
+console.log(created.status, <span class="k">await</span> created.json());
+
+<span class="c">// fetch does NOT reject on 404 or 500. Only network failures reject.</span>
+<span class="k">const</span> missing = <span class="k">await</span> fetch(<span class="s">`${base}/api/nothing`</span>);
+console.log(missing.status, missing.ok, <span class="k">await</span> missing.json());
+
+server.close();
+
+<span class="c">// Only a missing response rejects, for example when nothing listens on the port</span>
+<span class="k">const</span> gone = http.createServer();
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; gone.listen(<span class="n">0</span>, r));
+<span class="k">const</span> deadUrl = <span class="s">`http://localhost:${gone.address().port}/`</span>;
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; gone.close(r));
+<span class="k">try</span> {
+  <span class="k">await</span> fetch(deadUrl);
+} <span class="k">catch</span> (e) {
+  console.log(<span class="s">"rejected:"</span>, e.name, e.message, e.cause?.code);
+}</pre><div class="out"><span>Output</span><pre>200 true application/json
+[ { id: 1, name: &#x27;Gel pen&#x27;, price: 20 } ]
+201 { id: 2, name: &#x27;Coffee mug&#x27;, price: 199 }
+404 false { error: &#x27;Not found&#x27; }
+rejected: TypeError fetch failed ECONNREFUSED</pre></div></div>
+<div class="warn"><code>fetch</code> only rejects when there is no response at all: a refused connection, a DNS error or an abort. A 404 or 500 still fulfils, so always check <code>res.ok</code> or <code>res.status</code>.</div>
+<p>Build URLs with the <code>URL</code> class instead of joining strings. It encodes spaces and symbols correctly, which hand built URLs often get wrong.</p>
+<div class="codewrap" data-k="url" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Building and reading URLs · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> url = <span class="k">new</span> <span class="t">URL</span>(<span class="s">"https://shop.example:8443/api/products?q=gel+pen&amp;page=2#reviews"</span>);
+console.log(url.protocol, url.hostname, url.port, url.pathname);
+console.log(url.searchParams.<span class="k">get</span>(<span class="s">"q"</span>), url.searchParams.<span class="k">get</span>(<span class="s">"page"</span>), url.hash);
+
+<span class="k">const</span> search = <span class="k">new</span> <span class="t">URL</span>(<span class="s">"/api/search"</span>, <span class="s">"https://shop.example"</span>);
+search.searchParams.<span class="k">set</span>(<span class="s">"q"</span>, <span class="s">"pens &amp; pencils"</span>);
+search.searchParams.append(<span class="s">"tag"</span>, <span class="s">"office"</span>);
+search.searchParams.append(<span class="s">"tag"</span>, <span class="s">"school"</span>);
+console.log(search.href);
+console.log(search.searchParams.getAll(<span class="s">"tag"</span>));
+
+console.log(encodeURIComponent(<span class="s">"a/b c&amp;d"</span>), decodeURIComponent(<span class="s">"a%2Fb%20c%26d"</span>));
+console.log(<span class="t">URL</span>.canParse(<span class="s">"not a url"</span>), <span class="t">URL</span>.parse(<span class="s">"https://x.example/a"</span>)?.pathname);</pre><div class="out"><span>Output</span><pre>https: shop.example 8443 /api/products
+gel pen 2 #reviews
+https://shop.example/api/search?q=pens+%26+pencils&amp;tag=office&amp;tag=school
+[ &#x27;office&#x27;, &#x27;school&#x27; ]
+a%2Fb%20c%26d a/b c&amp;d
+false /a</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="auth" data-say="auth"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔑</span><span>Authentication: 401 against 403</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Authorisation bugs are among the most serious and the easiest to test at the API level.</span></div>
+<p>Most APIs need you to prove who you are. A common pattern: log in once, receive a <b>token</b>, then send it on every request in the <code>Authorization: Bearer ...</code> header. Browsers usually keep the session in a cookie instead.</p>
+<div class="codewrap" data-k="auth"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Logging in and sending a Bearer token · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> http <span class="k">from</span> <span class="s">"node:http"</span>;
+
+<span class="k">const</span> <span class="t">USERS</span> = { <span class="s">"asha@shop.example"</span>: { password: <span class="s">"s3cret"</span>, role: <span class="s">"customer"</span> }, <span class="s">"admin@shop.example"</span>: { password: <span class="s">"adm1n"</span>, role: <span class="s">"admin"</span> } };
+<span class="k">const</span> tokens = <span class="k">new</span> <span class="t">Map</span>();
+
+<span class="k">const</span> server = http.createServer(<span class="k">async</span> (req, res) =&gt; {
+  <span class="k">const</span> send = (status, body) =&gt; { res.writeHead(status, { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> }); res.end(<span class="t">JSON</span>.stringify(body)); };
+  <span class="k">if</span> (req.url === <span class="s">"/login"</span> &amp;&amp; req.method === <span class="s">"POST"</span>) {
+    <span class="k">let</span> raw = <span class="s">""</span>; <span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> c <span class="k">of</span> req) raw += c;
+    <span class="k">const</span> { email, password } = <span class="t">JSON</span>.parse(raw);
+    <span class="k">if</span> (<span class="t">USERS</span>[email]?.password !== password) <span class="k">return</span> send(<span class="n">401</span>, { error: <span class="s">"Invalid credentials"</span> });
+    <span class="k">const</span> token = <span class="s">"tok_"</span> + tokens.size;
+    tokens.<span class="k">set</span>(token, { email, role: <span class="t">USERS</span>[email].role });
+    <span class="k">return</span> send(<span class="n">200</span>, { token });
+  }
+  <span class="k">const</span> user = tokens.<span class="k">get</span>(req.headers.authorization?.replace(/^<span class="t">Bearer</span> /, <span class="s">""</span>));
+  <span class="k">if</span> (!user) <span class="k">return</span> send(<span class="n">401</span>, { error: <span class="s">"Log in first"</span> });                 <span class="c">// who are you?</span>
+  <span class="k">if</span> (req.url === <span class="s">"/admin/reports"</span> &amp;&amp; user.role !== <span class="s">"admin"</span>) <span class="k">return</span> send(<span class="n">403</span>, { error: <span class="s">"Admins only"</span> });  <span class="c">// not allowed</span>
+  send(<span class="n">200</span>, { ok: <span class="k">true</span>, user: user.email });
+});
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; server.listen(<span class="n">0</span>, r));
+<span class="k">const</span> base = <span class="s">`http://localhost:${server.address().port}`</span>;
+
+<span class="k">async</span> <span class="k">function</span> login(email, password) {
+  <span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">`${base}/login`</span>, { method: <span class="s">"POST"</span>, body: <span class="t">JSON</span>.stringify({ email, password }) });
+  <span class="k">return</span> (<span class="k">await</span> res.json()).token;
+}
+<span class="k">const</span> <span class="k">get</span> = (path, token) =&gt; fetch(base + path, { headers: token ? { <span class="t">Authorization</span>: <span class="s">`Bearer ${token}`</span> } : {} }).then(r =&gt; r.status);
+
+<span class="k">const</span> customer = <span class="k">await</span> login(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>);
+<span class="k">const</span> admin = <span class="k">await</span> login(<span class="s">"admin@shop.example"</span>, <span class="s">"adm1n"</span>);
+console.log(<span class="s">"wrong password:"</span>, <span class="k">await</span> fetch(<span class="s">`${base}/login`</span>, { method: <span class="s">"POST"</span>, body: <span class="s">'{"email":"asha@shop.example","password":"x"}'</span> }).then(r =&gt; r.status));
+console.log(<span class="s">"no token:      "</span>, <span class="k">await</span> <span class="k">get</span>(<span class="s">"/orders"</span>));
+console.log(<span class="s">"customer:      "</span>, <span class="k">await</span> <span class="k">get</span>(<span class="s">"/orders"</span>, customer), <span class="k">await</span> <span class="k">get</span>(<span class="s">"/admin/reports"</span>, customer));
+console.log(<span class="s">"admin:         "</span>, <span class="k">await</span> <span class="k">get</span>(<span class="s">"/orders"</span>, admin), <span class="k">await</span> <span class="k">get</span>(<span class="s">"/admin/reports"</span>, admin));
+server.close();</pre><div class="out"><span>Output</span><pre>wrong password: 401
+no token:       401
+customer:       200 403
+admin:          200 200</pre></div></div>
+<div class="vs"><div><b>401 Unauthorized</b>The server does not know who you are: no token, a wrong one or an expired one. Log in again.</div><div><b>403 Forbidden</b>The server knows exactly who you are, and you are not allowed to do this. Logging in again will not help.</div></div>
+<div class="qa-box">Every protected endpoint deserves at least four tests: no token (401), a broken or expired token (401), a valid token without permission (403) and a valid token with permission (2xx). Checking that a customer cannot read another customer's order by changing an id is one of the most valuable security tests you can write.</div>
+</section>
+<section class="card reveal jsec qa-part" id="server" data-say="server"><div class="sec-num">Part 4</div><h2><span class="sec-em">🖥️</span><span>Writing a server with Express</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">supertest</span><span class="qa-why">API test suites start a server like this one, and chapter 14 tests this exact app with supertest.</span></div>
+<p>On the server side, Node.js answers requests. <b>Express</b> is the most used library for it: you declare <b>routes</b> (a method plus a path) and a handler that receives the request and builds the response. <b>Middleware</b> runs before the routes, for example to parse JSON or check a token.</p>
+<div class="codewrap" data-k="express"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A REST API with Express · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> express <span class="k">from</span> <span class="s">"express"</span>;
+
+<span class="k">const</span> app = express();
+app.use(express.json());                         <span class="c">// parse JSON bodies</span>
+
+<span class="k">const</span> db = <span class="k">new</span> <span class="t">Map</span>([[<span class="n">1</span>, { id: <span class="n">1</span>, name: <span class="s">"Gel pen"</span>, price: <span class="n">20</span> }]]);
+<span class="k">let</span> nextId = <span class="n">2</span>;
+
+app.<span class="k">get</span>(<span class="s">"/api/products"</span>, (req, res) =&gt; {
+  <span class="k">const</span> max = <span class="t">Number</span>(req.query.maxPrice ?? <span class="t">Infinity</span>);
+  res.json([...db.values()].filter(p =&gt; p.price &lt;= max));
+});
+app.<span class="k">get</span>(<span class="s">"/api/products/:id"</span>, (req, res) =&gt; {
+  <span class="k">const</span> p = db.<span class="k">get</span>(<span class="t">Number</span>(req.params.id));
+  p ? res.json(p) : res.status(<span class="n">404</span>).json({ error: <span class="s">"Product not found"</span> });
+});
+app.post(<span class="s">"/api/products"</span>, (req, res) =&gt; {
+  <span class="k">const</span> { name, price } = req.body ?? {};
+  <span class="k">if</span> (!name || !(price &gt; <span class="n">0</span>)) <span class="k">return</span> res.status(<span class="n">400</span>).json({ error: <span class="s">"name and a positive price are required"</span> });
+  <span class="k">const</span> p = { id: nextId++, name, price };
+  db.<span class="k">set</span>(p.id, p);
+  res.status(<span class="n">201</span>).location(<span class="s">`/api/products/${p.id}`</span>).json(p);
+});
+app.<span class="k">delete</span>(<span class="s">"/api/products/:id"</span>, (req, res) =&gt; {
+  db.<span class="k">delete</span>(<span class="t">Number</span>(req.params.id)) ? res.status(<span class="n">204</span>).end() : res.status(<span class="n">404</span>).json({ error: <span class="s">"Product not found"</span> });
+});
+
+<span class="k">const</span> server = app.listen(<span class="n">0</span>);
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; server.once(<span class="s">"listening"</span>, r));
+<span class="k">const</span> base = <span class="s">`http://localhost:${server.address().port}/api/products`</span>;
+<span class="k">const</span> call = <span class="k">async</span> (method, path = <span class="s">""</span>, body) =&gt; {
+  <span class="k">const</span> res = <span class="k">await</span> fetch(base + path, { method, headers: { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> }, body: body &amp;&amp; <span class="t">JSON</span>.stringify(body) });
+  <span class="k">const</span> text = <span class="k">await</span> res.text();
+  console.log(method.padEnd(<span class="n">6</span>), (<span class="s">"/api/products"</span> + path).padEnd(<span class="n">28</span>), res.status, text);
+};
+
+<span class="k">await</span> call(<span class="s">"GET"</span>);
+<span class="k">await</span> call(<span class="s">"POST"</span>, <span class="s">""</span>, { name: <span class="s">"Coffee mug"</span>, price: <span class="n">199</span> });
+<span class="k">await</span> call(<span class="s">"POST"</span>, <span class="s">""</span>, { name: <span class="s">"Free thing"</span>, price: <span class="n">0</span> });
+<span class="k">await</span> call(<span class="s">"GET"</span>, <span class="s">"?maxPrice=100"</span>);
+<span class="k">await</span> call(<span class="s">"GET"</span>, <span class="s">"/2"</span>);
+<span class="k">await</span> call(<span class="s">"DELETE"</span>, <span class="s">"/2"</span>);
+<span class="k">await</span> call(<span class="s">"GET"</span>, <span class="s">"/2"</span>);
+server.close();</pre><div class="out"><span>Output</span><pre>GET    /api/products                200 [{&quot;id&quot;:1,&quot;name&quot;:&quot;Gel pen&quot;,&quot;price&quot;:20}]
+POST   /api/products                201 {&quot;id&quot;:2,&quot;name&quot;:&quot;Coffee mug&quot;,&quot;price&quot;:199}
+POST   /api/products                400 {&quot;error&quot;:&quot;name and a positive price are required&quot;}
+GET    /api/products?maxPrice=100   200 [{&quot;id&quot;:1,&quot;name&quot;:&quot;Gel pen&quot;,&quot;price&quot;:20}]
+GET    /api/products/2              200 {&quot;id&quot;:2,&quot;name&quot;:&quot;Coffee mug&quot;,&quot;price&quot;:199}
+DELETE /api/products/2              204 
+GET    /api/products/2              404 {&quot;error&quot;:&quot;Product not found&quot;}</pre></div></div>
+<div class="dev-box">Return the right status code and a helpful error body. Clients and tests rely on 201 with a <code>Location</code> header for created items, 204 with no body for deletes, 400 for bad input and 404 for missing items.</div>
+<div class="qa-box">Knowing how routes and status codes are written makes API bugs easier to explain: "POST with price 0 returns 400, as it should, but PUT with price 0 returns 200 and saves it" points straight at the missing check.</div>
+</section>
+<section class="card reveal jsec qa-part" id="node" data-say="node"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧰</span><span>Node.js core modules</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Data driven tests read CSV and JSON files, and custom reports are written with fs and path.</span></div>
+<p>Node.js comes with modules for files, paths, processes and more. Test suites use them to read test data, write reports and run other tools.</p>
+<div class="codewrap" data-k="node-core"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Files, folders and paths in Node.js · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { readFile, writeFile, mkdir, readdir } <span class="k">from</span> <span class="s">"node:fs/promises"</span>;
+<span class="k">import</span> path <span class="k">from</span> <span class="s">"node:path"</span>;
+<span class="k">import</span> os <span class="k">from</span> <span class="s">"node:os"</span>;
+
+<span class="c">// Test data in a CSV file</span>
+<span class="k">await</span> writeFile(<span class="s">"users.csv"</span>, <span class="s">"email,role,active\nasha@shop.example,admin,true\nravi@shop.example,customer,false\n"</span>);
+
+<span class="k">const</span> [header, ...lines] = (<span class="k">await</span> readFile(<span class="s">"users.csv"</span>, <span class="s">"utf8"</span>)).trim().split(<span class="s">"\n"</span>);
+<span class="k">const</span> keys = header.split(<span class="s">","</span>);
+<span class="k">const</span> users = lines.map(l =&gt; <span class="t">Object</span>.fromEntries(l.split(<span class="s">","</span>).map((v, i) =&gt; [keys[i], v])));
+console.log(users);
+
+<span class="c">// Write a JSON report into a folder, creating it if needed</span>
+<span class="k">const</span> outDir = path.join(<span class="s">"reports"</span>, <span class="s">"2026-10-20"</span>);
+<span class="k">await</span> mkdir(outDir, { recursive: <span class="k">true</span> });
+<span class="k">const</span> file = path.join(outDir, <span class="s">"summary.json"</span>);
+<span class="k">await</span> writeFile(file, <span class="t">JSON</span>.stringify({ total: users.length, active: users.filter(u =&gt; u.active === <span class="s">"true"</span>).length }, <span class="k">null</span>, <span class="n">2</span>));
+console.log(file, <span class="s">"-&gt;"</span>, <span class="k">await</span> readFile(file, <span class="s">"utf8"</span>));
+console.log(<span class="k">await</span> readdir(<span class="s">"reports"</span>, { recursive: <span class="k">true</span> }));
+
+console.log(path.extname(file), path.basename(file, <span class="s">".json"</span>), <span class="k">typeof</span> os.cpus().length);
+console.log(process.argv.length &gt;= <span class="n">2</span>, process.platform.length &gt; <span class="n">0</span>);</pre><div class="out"><span>Output</span><pre>[
+  { email: &#x27;asha@shop.example&#x27;, role: &#x27;admin&#x27;, active: &#x27;true&#x27; },
+  { email: &#x27;ravi@shop.example&#x27;, role: &#x27;customer&#x27;, active: &#x27;false&#x27; }
+]
+reports/2026-10-20/summary.json -&gt; {
+  &quot;total&quot;: 2,
+  &quot;active&quot;: 1
+}
+[ &#x27;2026-10-20&#x27;, &#x27;2026-10-20/summary.json&#x27; ]
+.json summary number
+true true</pre></div></div>
+<div class="codewrap" data-k="child"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Running other programs · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { execFile } <span class="k">from</span> <span class="s">"node:child_process"</span>;
+<span class="k">import</span> { promisify } <span class="k">from</span> <span class="s">"node:util"</span>;
+<span class="k">const</span> run = promisify(execFile);
+
+<span class="c">// Run another program and read its output, like a CI script would</span>
+<span class="k">const</span> { stdout } = <span class="k">await</span> run(process.execPath, [<span class="s">"-e"</span>, <span class="s">"console.log(JSON.stringify({ node: process.versions.node.split('.')[0] }))"</span>]);
+console.log(<span class="s">"child said:"</span>, <span class="t">JSON</span>.parse(stdout));
+
+<span class="k">try</span> {
+  <span class="k">await</span> run(process.execPath, [<span class="s">"-e"</span>, <span class="s">"console.error('2 tests failed'); process.exit(1)"</span>]);
+} <span class="k">catch</span> (e) {
+  console.log(<span class="s">"exit code:"</span>, e.code, <span class="s">"| stderr:"</span>, e.stderr.trim());
+}</pre><div class="out"><span>Output</span><pre>child said: { node: &#x27;26&#x27; }
+exit code: 1 | stderr: 2 tests failed</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Module</th><th>Used for</th></tr>
+<tr><td><code>node:fs/promises</code></td><td>read and write files and folders</td></tr>
+<tr><td><code>node:path</code></td><td>join and split file paths the same way on Windows, macOS and Linux</td></tr>
+<tr><td><code>node:child_process</code></td><td>run other programs</td></tr>
+<tr><td><code>node:crypto</code></td><td>random ids (<code>randomUUID</code>) and hashes</td></tr>
+<tr><td><code>node:test</code>, <code>node:assert</code></td><td>the built in test runner (chapter 13)</td></tr>
+</table></div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 6</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a mock API for UI tests</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span></div>
+<div class="scenario"><b>The situation</b>The real backend is shared, slow and its data changes all the time, so UI tests fail for reasons that have nothing to do with the UI. You need an API that each test can reset, fill with data, slow down and make fail on purpose.</div>
+<div class="codewrap" data-k="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A controllable mock API for UI tests · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> express <span class="k">from</span> <span class="s">"express"</span>;
+
+<span class="c">// A mock API that UI tests can start in a second, with data each test controls</span>
+<span class="k">export</span> <span class="k">function</span> createMockApi() {
+  <span class="k">const</span> app = express();
+  app.use(express.json());
+  <span class="k">let</span> state = { products: [], failNext: <span class="k">null</span>, delayMs: <span class="n">0</span> };
+
+  app.use(<span class="k">async</span> (req, res, next) =&gt; {                       <span class="c">// slow network, on demand</span>
+    <span class="k">if</span> (state.delayMs) <span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; setTimeout(r, state.delayMs));
+    next();
+  });
+  app.post(<span class="s">"/__test/reset"</span>, (req, res) =&gt; { state = { products: [], failNext: <span class="k">null</span>, delayMs: <span class="n">0</span>, ...req.body }; res.sendStatus(<span class="n">204</span>); });
+  app.post(<span class="s">"/__test/fail-next"</span>, (req, res) =&gt; { state.failNext = req.body.status; res.sendStatus(<span class="n">204</span>); });
+  app.<span class="k">get</span>(<span class="s">"/health"</span>, (req, res) =&gt; res.json({ status: <span class="s">"up"</span> }));
+  app.<span class="k">get</span>(<span class="s">"/api/products"</span>, (req, res) =&gt; {
+    <span class="k">if</span> (state.failNext) { <span class="k">const</span> s = state.failNext; state.failNext = <span class="k">null</span>; <span class="k">return</span> res.status(s).json({ error: <span class="s">"Injected failure"</span> }); }
+    res.json(state.products);
+  });
+  <span class="k">return</span> app;
+}
+
+<span class="k">const</span> server = createMockApi().listen(<span class="n">0</span>);
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; server.once(<span class="s">"listening"</span>, r));
+<span class="k">const</span> base = <span class="s">`http://localhost:${server.address().port}`</span>;
+<span class="k">const</span> post = (p, body) =&gt; fetch(base + p, { method: <span class="s">"POST"</span>, headers: { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> }, body: <span class="t">JSON</span>.stringify(body) });
+<span class="k">const</span> show = <span class="k">async</span> label =&gt; { <span class="k">const</span> r = <span class="k">await</span> fetch(<span class="s">`${base}/api/products`</span>); console.log(label.padEnd(<span class="n">24</span>), r.status, <span class="k">await</span> r.text()); };
+
+console.log(<span class="s">"health:"</span>, <span class="k">await</span> (<span class="k">await</span> fetch(<span class="s">`${base}/health`</span>)).json());
+<span class="k">await</span> show(<span class="s">"empty catalogue:"</span>);
+<span class="k">await</span> post(<span class="s">"/__test/reset"</span>, { products: [{ id: <span class="n">1</span>, name: <span class="s">"Gel pen"</span> }] });
+<span class="k">await</span> show(<span class="s">"one product:"</span>);
+<span class="k">await</span> post(<span class="s">"/__test/fail-next"</span>, { status: <span class="n">503</span> });
+<span class="k">await</span> show(<span class="s">"server error injected:"</span>);
+<span class="k">await</span> show(<span class="s">"next call recovers:"</span>);
+
+<span class="k">await</span> post(<span class="s">"/__test/reset"</span>, { delayMs: <span class="n">300</span> });
+<span class="k">const</span> t = performance.now();
+<span class="k">await</span> show(<span class="s">"slow network:"</span>);
+console.log(<span class="s">"took about"</span>, <span class="t">Math</span>.round((performance.now() - t) / <span class="n">100</span>) * <span class="n">100</span>, <span class="s">"ms"</span>);
+server.close();</pre><div class="out"><span>Output</span><pre>health: { status: &#x27;up&#x27; }
+empty catalogue:         200 []
+one product:             200 [{&quot;id&quot;:1,&quot;name&quot;:&quot;Gel pen&quot;}]
+server error injected:   503 {&quot;error&quot;:&quot;Injected failure&quot;}
+next call recovers:      200 [{&quot;id&quot;:1,&quot;name&quot;:&quot;Gel pen&quot;}]
+slow network:            200 []
+took about 300 ms</pre></div></div>
+<p>The <code>/__test</code> routes exist only in the mock. A test resets the state, sets up exactly the products it needs and can inject a 503 to check that the page shows a friendly error and a retry button. A delay shows whether loading spinners appear.</p>
+<div class="tip">Playwright can do the same without a server by intercepting requests with <code>page.route()</code>, and Cypress with <code>cy.intercept()</code>. A mock server is still useful when mobile apps or several services need the same fake.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-dom-browser.html" data-topic="js-dom-browser"><small>← Previous chapter</small><b>🌐 DOM and browser</b></a><span></span></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "A request goes out, a response comes back", "panels": [{"s": [["e", "📨"], ["t", "POST /api/products", {"b": 1}]], "h": "Request", "t": "A method, a path, headers and a body.", "more": "GET reads, POST creates, PUT and PATCH change, DELETE removes."}, {"s": [["e", "🔢"], ["t", "201 Created", {"b": 1}]], "h": "Status", "t": "Three digits that say how it went.", "more": "2xx good, 4xx your mistake, 5xx the server failed."}, {"s": [["e", "🔑"], ["t", "Authorization: Bearer …", {"b": 1, "size": 11}]], "h": "Auth", "t": "Prove who you are on every call.", "more": "401: who are you. 403: not allowed."}, {"s": [["e", "🖥️"], ["t", "app.get(\"/api/…\")", {"b": 1}]], "h": "Server", "t": "Routes turn requests into responses.", "more": "Mock servers give tests full control."}], "remember": "Check the status, the headers and the body. fetch does not throw on a 404."}, "real": [["📱", "One API, many clients", "The same REST API serves the website, the Android app and the iPhone app, so one API test suite protects all three."], ["🔐", "A broken access check", "An API test changed the order id in /orders/1042 to another customer's order and got 200. The bug was fixed before release."], ["🧪", "A mock payment provider", "The checkout tests point at a small Express server that pretends to be the bank, including declined cards and timeouts."]], "quiz": [{"lv": "e", "q": "Which status code means a new item was created?", "o": ["201", "200", "204", "301"], "a": 0, "hint": "Created.", "why": "201 Created, usually with a Location header pointing at the new item."}, {"lv": "e", "q": "Which method should only read data?", "o": ["GET", "POST", "DELETE", "PATCH"], "a": 0, "hint": "Safe and repeatable.", "why": "GET must not change anything on the server."}, {"lv": "e", "q": "What group is status 503 in?", "o": ["Server error", "Client error", "Success", "Redirect"], "a": 0, "hint": "First digit 5.", "why": "5xx means the server failed. 503 says it is unavailable right now."}, {"lv": "m", "q": "fetch gets a 404 response. What happens?", "o": ["The promise fulfils with res.ok false", "The promise rejects", "It retries", "It throws a TypeError"], "a": 0, "hint": "fetch only rejects without a response.", "why": "Any HTTP response fulfils. Check res.ok or res.status yourself."}, {"lv": "m", "q": "A logged in customer calls an admin only endpoint. Which status is right?", "o": ["403", "401", "404", "500"], "a": 0, "hint": "The server knows who it is.", "why": "403 Forbidden: authenticated, but not allowed."}, {"lv": "m", "q": "Which builds a correctly encoded query string for q = \"pens & pencils\"?", "o": ["url.searchParams.set(\"q\", \"pens & pencils\")", "\"?q=\" + \"pens & pencils\"", "url.query = \"pens & pencils\"", "JSON.stringify"], "a": 0, "hint": "Let the URL class encode.", "why": "searchParams encodes the & and spaces, which plain joining would break."}, {"lv": "h", "q": "Which status should DELETE return when it succeeds with nothing to send back?", "o": ["204 No Content", "200 with an empty object", "201", "202"], "a": 0, "hint": "No body.", "why": "204 says it worked and there is no body to read."}, {"lv": "h", "q": "What does express.json() middleware do?", "o": ["Parses JSON request bodies into req.body", "Sends JSON responses", "Validates JSON Schema", "Logs requests"], "a": 0, "hint": "It runs before the routes.", "why": "Without it, req.body would be undefined for JSON posts."}, {"lv": "h", "q": "Why join paths with path.join instead of \"+\"?", "o": ["It uses the right separator and removes doubled slashes on every system", "It is faster", "It checks the file exists", "It encodes spaces"], "a": 0, "hint": "Windows uses backslashes.", "why": "path.join builds correct paths on Windows, macOS and Linux."}, {"lv": "x", "q": "Which test is most likely to find an access control bug?", "o": ["Request another user's order id with your own token", "Request your own order twice", "Send a GET without a body", "Check the Content-Type header"], "a": 0, "hint": "Change the id, keep the token.", "why": "This is the classic insecure direct object reference check."}, {"lv": "x", "q": "Which method is not idempotent, so repeating it can create duplicates?", "o": ["POST", "PUT", "DELETE", "GET"], "a": 0, "hint": "Think of a double click on Pay.", "why": "Two identical POSTs can create two orders. That is why payment APIs use idempotency keys."}, {"lv": "x", "q": "In the mock API, why are the /__test routes useful?", "o": ["Each test can set the exact data and failures it needs", "They make the API faster", "They replace HTTPS", "Browsers need them"], "a": 0, "hint": "Control.", "why": "Tests become independent of shared, changing backend data."}], "calc": [{"lv": "e", "q": "A response has status 404. What is the first digit that tells you its group?", "ans": "4", "hint": "Look at the first digit.", "steps": ["4xx is a client error."]}, {"lv": "e", "q": "An API allows 100 requests per minute. How many requests per second is that on average? Give one decimal.", "ans": "1.7", "hint": "Divide by 60.", "steps": ["<span class=\"eq\">100 ÷ 60 ≈ 1.67<\/span>", "Rounded to one decimal: 1.7."], "alt": ["1.67"]}, {"lv": "m", "q": "A protected endpoint gets 4 auth tests per role, and there are 3 roles. How many tests?", "ans": "12", "hint": "Multiply.", "steps": ["<span class=\"eq\">4 × 3 = 12<\/span>"]}, {"lv": "m", "q": "An endpoint takes 120 ms. A test makes 25 calls one after another. How many seconds is that?", "ans": "3", "hint": "Total ms, then divide by 1000.", "steps": ["<span class=\"eq\">25 × 120 = 3000<\/span> ms", "<span class=\"eq\">3000 ÷ 1000 = 3<\/span> s"]}, {"lv": "h", "q": "Content-Length for the body {\"name\":\"Gel pen\"} is how many bytes?", "ans": "18", "hint": "Count every character.", "steps": ["{\"name\":\"Gel pen\"} has 18 characters, all of them one byte."]}, {"lv": "h", "q": "The products list has 230 items, 25 per page. How many pages?", "ans": "10", "hint": "Round up.", "steps": ["<span class=\"eq\">230 ÷ 25 = 9.2<\/span>", "The last page holds 5 items, so 10 pages."]}, {"lv": "x", "q": "An API returns 429 with Retry-After: 30. A test retries 3 times, waiting as told. At least how many seconds pass?", "ans": "90", "hint": "Three waits.", "steps": ["<span class=\"eq\">3 × 30 = 90<\/span>"]}, {"lv": "x", "q": "Out of 400 API calls in a run, 6 return 5xx. What percentage is that?", "ans": "1.5", "hint": "Part over total, times 100.", "steps": ["<span class=\"eq\">6 ÷ 400 × 100 = 1.5<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers HTTP, fetch, URLs, logging in with tokens, an Express server, the Node core modules and a mock API for tests.", "hi": "यह अध्याय HTTP, fetch, URLs, tokens से login, Express server, Node core modules और tests के लिए mock API सिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ HTTP, fetch, URLs, tokens ಮೂಲಕ login, Express server, Node core modules ಮತ್ತು tests ಗಾಗಿ mock API ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ HTTP, fetch, URLs, tokens ରେ login, Express server, Node core modules ଓ tests ପାଇଁ mock API ଶିଖାଏ।", "ar": "يتناول هذا الفصل HTTP وfetch والروابط وتسجيل الدخول بالرموز وخادم Express ووحدات Node الأساسية وواجهة وهمية للاختبارات.", "de": "Dieses Kapitel behandelt HTTP, fetch, URLs, Login mit Tokens, einen Express-Server, Node-Kernmodule und eine Mock-API für Tests."}, {"id": "http", "h": "HTTP", "en": "A request has a method, a path, headers and a body. A response has a status code, headers and a body. The first digit of the status tells you the group.", "hi": "Request में method, path, headers और body होते हैं। Response में status code, headers और body। Status का पहला अंक group बताता है।", "kn": "Request ನಲ್ಲಿ method, path, headers ಮತ್ತು body. Response ನಲ್ಲಿ status code, headers ಮತ್ತು body. Status ನ ಮೊದಲ ಅಂಕಿ group ಹೇಳುತ್ತದೆ.", "or": "Request ରେ method, path, headers ଓ body। Response ରେ status code, headers ଓ body। Status ର ପ୍ରଥମ ଅଙ୍କ group କହେ।", "ar": "للطلب طريقة ومسار وترويسات وجسم. وللاستجابة رمز حالة وترويسات وجسم. يخبرك الرقم الأول من الحالة بالمجموعة.", "de": "Eine Anfrage hat Methode, Pfad, Header und Body. Eine Antwort hat Statuscode, Header und Body. Die erste Ziffer nennt die Gruppe."}, {"id": "fetch", "h": "fetch", "en": "fetch returns a promise for the response. It does not reject on 404 or 500, so always check res ok. Build URLs with the URL class.", "hi": "fetch response का promise लौटाता है। यह 404 या 500 पर reject नहीं करता, इसलिए हमेशा res.ok जांचें।", "kn": "fetch response ನ promise ಕೊಡುತ್ತದೆ. 404 ಅಥವಾ 500 ಗೆ reject ಆಗುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಯಾವಾಗಲೂ res.ok ನೋಡಿ.", "or": "fetch response ର promise ଫେରାଏ। 404 କିମ୍ବା 500 ରେ reject କରେ ନାହିଁ, ତେଣୁ ସର୍ବଦା res.ok ଯାଞ୍ଚ କରନ୍ତୁ।", "ar": "تعيد fetch وعدًا بالاستجابة. لا ترفض عند 404 أو 500، لذا افحص res.ok دائمًا. وابن الروابط بصنف URL.", "de": "fetch liefert ein Promise für die Antwort. Bei 404 oder 500 wird nicht abgelehnt, prüfe also immer res.ok."}, {"id": "auth", "h": "Auth", "en": "Send the token in the Authorization header. 401 means the server does not know you. 403 means it knows you and says no.", "hi": "Token को Authorization header में भेजें। 401 का मतलब server आपको नहीं जानता। 403 का मतलब वह जानता है और मना करता है।", "kn": "Token ಅನ್ನು Authorization header ನಲ್ಲಿ ಕಳುಹಿಸಿ. 401 ಎಂದರೆ server ನಿಮ್ಮನ್ನು ಅರಿಯದು. 403 ಎಂದರೆ ಅರಿತು ನಿರಾಕರಿಸುತ್ತದೆ.", "or": "Token କୁ Authorization header ରେ ପଠାନ୍ତୁ। 401 ମାନେ server ଆପଣଙ୍କୁ ଜାଣେ ନାହିଁ। 403 ମାନେ ଜାଣେ ଏବଂ ମନା କରେ।", "ar": "أرسل الرمز في ترويسة Authorization. يعني 401 أن الخادم لا يعرفك، ويعني 403 أنه يعرفك ويرفض.", "de": "Sende das Token im Authorization-Header. 401 heißt, der Server kennt dich nicht. 403 heißt, er kennt dich und sagt nein."}, {"id": "server", "h": "Express", "en": "Express maps a method and a path to a handler. Middleware runs first. Good APIs return precise status codes and clear error bodies.", "hi": "Express method और path को handler से जोड़ता है। Middleware पहले चलता है। अच्छी APIs सही status codes और साफ error देती हैं।", "kn": "Express method ಮತ್ತು path ಅನ್ನು handler ಗೆ ಜೋಡಿಸುತ್ತದೆ. Middleware ಮೊದಲು ಓಡುತ್ತದೆ. ಒಳ್ಳೆಯ APIs ಸರಿಯಾದ status codes ಕೊಡುತ್ತವೆ.", "or": "Express method ଓ path କୁ handler ସହ ଯୋଡ଼େ। Middleware ପ୍ରଥମେ ଚାଲେ। ଭଲ APIs ଠିକ୍ status codes ଦିଅନ୍ତି।", "ar": "يربط Express الطريقة والمسار بمعالج. تعمل الوسائط أولًا. وتعيد الواجهات الجيدة رموز حالة دقيقة ورسائل خطأ واضحة.", "de": "Express ordnet Methode und Pfad einem Handler zu. Middleware läuft zuerst. Gute APIs liefern genaue Statuscodes und klare Fehler."}, {"id": "node", "h": "Node core", "en": "fs reads and writes files, path joins paths safely, and child process runs other programs. Tests use them for data and reports.", "hi": "fs files पढ़ता और लिखता है, path paths सुरक्षित जोड़ता है, और child_process दूसरे programs चलाता है।", "kn": "fs files ಓದಿ ಬರೆಯುತ್ತದೆ, path paths ಸುರಕ್ಷಿತವಾಗಿ ಜೋಡಿಸುತ್ತದೆ, child_process ಬೇರೆ programs ಓಡಿಸುತ್ತದೆ.", "or": "fs files ପଢ଼େ ଓ ଲେଖେ, path paths ସୁରକ୍ଷିତ ଭାବେ ଯୋଡ଼େ, ଏବଂ child_process ଅନ୍ୟ programs ଚଲାଏ।", "ar": "تقرأ fs الملفات وتكتبها، وتجمع path المسارات بأمان، وتشغل child_process برامج أخرى.", "de": "fs liest und schreibt Dateien, path verbindet Pfade sicher, child_process startet andere Programme."}, {"id": "scenario", "h": "Scenario", "en": "A mock API lets each test reset data, slow the network down and inject failures, so UI tests stop failing for backend reasons.", "hi": "Mock API हर test को data reset करने, network धीमा करने और failures डालने देता है।", "kn": "Mock API ಪ್ರತಿ test ಗೆ data reset, network ನಿಧಾನ ಮತ್ತು failures ಸೇರಿಸಲು ಅವಕಾಶ ಕೊಡುತ್ತದೆ.", "or": "Mock API ପ୍ରତ୍ୟେକ test କୁ data reset, network ଧୀର ଓ failures ଯୋଡ଼ିବାକୁ ଦିଏ।", "ar": "تتيح الواجهة الوهمية لكل اختبار إعادة البيانات وإبطاء الشبكة وحقن الأعطال، فتتوقف اختبارات الواجهة عن الفشل لأسباب خلفية.", "de": "Eine Mock-API lässt jeden Test Daten zurücksetzen, das Netz bremsen und Fehler einspielen."}, {"id": "practice", "h": "Hands-on", "en": "Practise grouping status codes, building URLs, reading a Link header and matching routes with parameters.", "hi": "Status codes को group करना, URLs बनाना, Link header पढ़ना और parameters वाले routes match करने का अभ्यास करें।", "kn": "Status codes group, URLs ರಚನೆ, Link header ಓದುವುದು ಮತ್ತು parameters ಇರುವ routes match ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Status codes group, URLs ତିଆରି, Link header ପଢ଼ିବା ଓ parameters ଥିବା routes match ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على تصنيف رموز الحالة وبناء الروابط وقراءة ترويسة Link ومطابقة المسارات ذات المعاملات.", "de": "Übe Statuscodes gruppieren, URLs bauen, einen Link-Header lesen und Routen mit Parametern abgleichen."}], "ex": [{"id": "status", "lv": "e", "title": "Group a status code", "task": "<p>Write <code>statusGroup(code)<\/code> that returns <code>\"info\"<\/code>, <code>\"success\"<\/code>, <code>\"redirect\"<\/code>, <code>\"client error\"<\/code> or <code>\"server error\"<\/code> for codes from 100 to 599, and <code>\"unknown\"<\/code> for anything else.<\/p>", "starter": "function statusGroup(code) {\n  \n}", "tests": [{"call": "statusGroup(201)", "want": "success"}, {"call": "statusGroup(404)", "want": "client error"}, {"call": "statusGroup(503)", "want": "server error"}, {"call": "statusGroup(302)", "want": "redirect"}, {"call": "statusGroup(101)", "want": "info"}, {"call": "statusGroup(700)", "want": "unknown"}], "solution": "function statusGroup(code) {\n  const groups = [\"info\", \"success\", \"redirect\", \"client error\", \"server error\"];\n  const first = Math.floor(code / 100);\n  return groups[first - 1] ?? \"unknown\";\n}", "hint": "<code>Math.floor(code / 100)<\/code> gives the first digit.", "why": "Grouping by the first digit is how API dashboards count errors."}, {"id": "build-url", "lv": "m", "title": "Build a request URL", "task": "<p>Write <code>buildUrl(base, path, query)<\/code> using the <code>URL<\/code> class. Skip query values that are <code>null<\/code> or <code>undefined<\/code>. Arrays become repeated keys.<\/p>", "starter": "function buildUrl(base, path, query = {}) {\n  \n}", "tests": [{"call": "buildUrl(\"https://shop.example\", \"/api/search\", { q: \"pens & pencils\", page: 2, sort: null })", "want": "https://shop.example/api/search?q=pens+%26+pencils&page=2"}, {"call": "buildUrl(\"https://shop.example\", \"/api/items\", { tag: [\"a\", \"b\"] })", "want": "https://shop.example/api/items?tag=a&tag=b"}, {"call": "buildUrl(\"https://shop.example/v2/\", \"orders\")", "want": "https://shop.example/v2/orders"}], "solution": "function buildUrl(base, path, query = {}) {\n  const url = new URL(path, base);\n  for (const [key, value] of Object.entries(query)) {\n    if (value == null) continue;\n    for (const v of [value].flat()) url.searchParams.append(key, v);\n  }\n  return url.href;\n}", "hint": "<code>new URL(path, base)<\/code>, then <code>searchParams.append<\/code> for each value.", "why": "Note the last test: a relative path is resolved against the base folder, the same rule as links in HTML."}, {"id": "link", "lv": "h", "title": "Read a Link header", "task": "<p>Paginated APIs often send <code>Link: &lt;url&gt;; rel=\"next\", &lt;url&gt;; rel=\"last\"<\/code>. Write <code>parseLink(header)<\/code> that returns an object from each rel to its URL. An empty header gives <code>{}<\/code>.<\/p>", "starter": "function parseLink(header) {\n  \n}", "tests": [{"call": "parseLink('<https://api.example/items?page=2>; rel=\"next\", <https://api.example/items?page=9>; rel=\"last\"')", "want": {"next": "https://api.example/items?page=2", "last": "https://api.example/items?page=9"}}, {"call": "parseLink(\"\")", "want": {}}], "solution": "function parseLink(header) {\n  const out = {};\n  for (const m of header.matchAll(/<([^>]+)>;\\s*rel=\"([^\"]+)\"/g)) {\n    out[m[2]] = m[1];\n  }\n  return out;\n}", "hint": "A regular expression with two groups and <code>matchAll<\/code>.", "why": "The GitHub API paginates this way, and a test that walks every page follows <code>next<\/code> until it is missing."}, {"id": "route", "lv": "x", "title": "Match a route with parameters", "task": "<p>Write <code>matchRoute(pattern, path)<\/code>. Patterns look like <code>\"/users/:id/orders/:orderId\"<\/code>. Return an object of the parameters when the path matches, or <code>null<\/code> when it does not. Both must have the same number of segments.<\/p>", "starter": "function matchRoute(pattern, path) {\n  \n}", "tests": [{"call": "matchRoute(\"/users/:id/orders/:orderId\", \"/users/7/orders/1042\")", "want": {"id": "7", "orderId": "1042"}}, {"call": "matchRoute(\"/users/:id\", \"/products/7\")", "want": null}, {"call": "matchRoute(\"/users/:id\", \"/users/7/extra\")", "want": null}, {"call": "matchRoute(\"/health\", \"/health\")", "want": {}}], "solution": "function matchRoute(pattern, path) {\n  const a = pattern.split(\"/\"), b = path.split(\"/\");\n  if (a.length !== b.length) return null;\n  const params = {};\n  for (let i = 0; i < a.length; i++) {\n    if (a[i].startsWith(\":\")) params[a[i].slice(1)] = b[i];\n    else if (a[i] !== b[i]) return null;\n  }\n  return params;\n}", "hint": "Split both on <code>/<\/code> and compare piece by piece.", "why": "This is what Express does for <code>req.params<\/code>, and what Playwright and Cypress do when you intercept <code>/api/users/*<\/code>."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "HTTP, fetch and Node.js Servers", subject: "javascript" });
+</script>
+</body>
+</html>

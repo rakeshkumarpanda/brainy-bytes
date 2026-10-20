@@ -1830,6 +1830,24 @@ function jsModules() {
         { id: "sorted", title: "Is the price list sorted?", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "js-http-node", title: "HTTP, fetch and Node.js Servers", emoji: "📡", page: "content/javascript/js-http-node.html",
+        summary: "A raw HTTP exchange, methods and status codes, fetch with GET and POST and why it does not reject on 404, building URLs with the URL class, token login and access checks, an Express REST API with proper status codes, reading CSV test data and writing reports, running other programs, and a mock API with reset, fault injection and delays.",
+        keywords: ["HTTP", "status code", "fetch", "URL", "URLSearchParams", "Bearer token", "401", "403", "Express", "REST", "middleware", "fs", "path", "child_process", "mock server", "fault injection"],
+        added: "2026-10-20",
+        sections: [
+        { id: "http", title: "How HTTP works", emoji: "📨", group: "QA essential", keywords: ["HTTP", "request", "response", "method", "GET", "POST", "PUT", "PATCH", "DELETE", "status code", "headers", "body", "idempotent", "200", "201", "404", "500"] },
+        { id: "fetch", title: "fetch and URLs", emoji: "📡", group: "QA essential", keywords: ["fetch", "Response", "res.ok", "res.status", "res.json", "headers", "POST body", "Content-Type", "URL", "URLSearchParams", "encodeURIComponent", "query string"] },
+        { id: "auth", title: "Authentication: 401 against 403", emoji: "🔑", group: "QA essential", keywords: ["authentication", "authorization", "token", "Bearer", "Authorization header", "401", "403", "JWT", "session", "roles", "access control"] },
+        { id: "server", title: "Writing a server with Express", emoji: "🖥️", group: "QA essential", keywords: ["Express", "server", "route", "middleware", "req.params", "req.query", "req.body", "res.status", "res.json", "REST", "CRUD", "201", "204", "400"] },
+        { id: "node", title: "Node.js core modules", emoji: "🧰", group: "QA essential", keywords: ["fs", "fs/promises", "readFile", "writeFile", "mkdir", "path", "path.join", "os", "process.argv", "child_process", "execFile", "CSV", "test data"] },
+        { id: "scenario", title: "Real world scenario: a mock API for UI tests", emoji: "🎬", group: "QA essential", keywords: ["mock API", "mock server", "test double", "fault injection", "reset state", "health check", "page.route", "cy.intercept", "Express"] },
+        { id: "status", title: "Group a status code", emoji: "🏋️", group: "Easy practice" },
+        { id: "build-url", title: "Build a request URL", emoji: "🏋️", group: "Medium practice" },
+        { id: "link", title: "Read a Link header", emoji: "🏋️", group: "Hard practice" },
+        { id: "route", title: "Match a route with parameters", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
