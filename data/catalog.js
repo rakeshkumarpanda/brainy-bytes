@@ -44,10 +44,10 @@ window.CATALOG = {
     name: 'Brainy Bytes',
     tagline: 'Deep concepts, served with a smile',
     headline: ['Learn it deep.', 'Laugh along the way.'],
-    hello: 'New: the full Java course, plus quizzes and a narrator in 6 languages',
+    hello: 'New: Manual Testing, the Complete Java Session track and TestNG, with programs in Java, Python and JavaScript',
     intro: 'Free notes that move, joke and run. Every topic comes with animations you can control, everyday examples, step by step code in Java, JavaScript and Python, and practice from easy to expert.',
     footer: 'Brainy Bytes. Free to learn, free to share.',
-    searchExamples: ['binary search', 'sieve', 'two pointers', 'GCD', 'Kadane', 'HashMap', 'transient', 'synchronized', 'serialization', 'try with resources'],
+    searchExamples: ['binary search', 'heap sort', 'two pointers', 'Kadane', 'boundary value analysis', 'bug life cycle', 'constructor chaining', 'HashMap', 'DataProvider', 'listeners'],
     jokes: [
       ['Why did the array go to therapy', 'It had too many unresolved indexes.'],
       ['Why do programmers mix up Halloween and Christmas', 'Because Oct 31 equals Dec 25.'],
@@ -116,8 +116,8 @@ window.CATALOG = {
             {
               id: 'arrays', title: 'Arrays', emoji: '📦',
               page: 'content/dsa/array-adventure.html',
-              summary: '26 lessons from memory layout to segment trees, 104 practice problems, quizzes, number practice and a six language narrator.',
-              keywords: ['array', 'list', 'two pointers', 'sliding window', 'prefix sum', 'sorting', 'searching'],
+              summary: '32 lessons from memory layout to segment trees, including heap sort, Tim sort, shell, counting, radix, bucket and cycle sort, 128 practice problems, quizzes, number practice and a six language narrator.',
+              keywords: ['array', 'list', 'two pointers', 'sliding window', 'prefix sum', 'sorting', 'searching', 'heap sort', 'tim sort', 'shell sort', 'counting sort', 'radix sort', 'bucket sort', 'cycle sort', 'pancake sort'],
               added: '2026-10-18',
               sections: arraySections()
             },
@@ -145,18 +145,10 @@ window.CATALOG = {
       title: 'Manual Testing',
       emoji: '🐞',
       color: '#f25da0',
-      blurb: 'Find bugs before your users do: test design, life cycles and bug reports.',
-      tags: ['STLC', 'Test cases', 'Bug life cycle'],
-      modules: [
-        {
-          id: 'fundamentals', title: 'Fundamentals', emoji: '🧪',
-          topics: [
-            { id: 'sdlc-stlc', title: 'SDLC and STLC', emoji: '🔄', summary: 'Where testing fits in building software.', soon: true },
-            { id: 'test-design', title: 'Test case design', emoji: '📝', summary: 'Boundary values, equivalence classes and decision tables.', keywords: ['boundary value analysis', 'equivalence partitioning'], soon: true },
-            { id: 'bug-life-cycle', title: 'Bug life cycle', emoji: '🐛', summary: 'From new to closed, and every stop between.', soon: true }
-          ]
-        }
-      ]
+      blurb: 'Find bugs before your users do: test design, life cycles, bug reports and test plans.',
+      intro: 'Ten chapters that follow the manual testing notes in order, from what testing is to the test plan. Every diagram is redrawn as an animation, every idea has an everyday example, and each chapter ends with practice programs in Java, Python and JavaScript, quizzes from easy to expert and a narrator in six languages.',
+      tags: ['STLC', 'Test cases', 'Bug life cycle', 'Regression', 'Test plan'],
+      modules: mtModules()
     },
     {
       id: 'java',
@@ -164,9 +156,19 @@ window.CATALOG = {
       emoji: '☕',
       color: '#ff9238',
       blurb: 'Core Java from your first identifier to the JVM, with every example compiled and run.',
-      intro: 'Nineteen chapters in seven modules. Every code block was compiled and run with JDK 21, and the real output, compile error or exception is shown under it. Each chapter has a comic strip, everyday examples, quizzes from easy to expert, number practice with full working, and a narrator who reads it aloud in six languages.',
+      intro: 'Start with the Complete Java Session track: seven chapters that follow the session programs from the first class to reading Excel files, ending with all 66 practice programs. Then go deeper with nineteen reference chapters in seven modules. Every code block was compiled and run with JDK 21, and the real output, compile error or exception is shown under it. Each chapter has a comic strip, everyday examples, quizzes from easy to expert, number practice with full working, and a narrator who reads it aloud in six languages.',
       tags: ['OOP', 'Exceptions', 'Collections', 'Threads', 'JVM'],
-      modules: javaModules()
+      modules: [cjsModule()].concat(javaModules())
+    },
+    {
+      id: 'testng',
+      title: 'TestNG',
+      emoji: '🧪',
+      color: '#16a34a',
+      blurb: 'Annotations, suites, data providers, listeners and framework design, run on real TestNG.',
+      intro: 'Three chapters that take you from a first @Test to a Page Object framework with listeners, retries and parallel runs. Every Java example runs on real TestNG with its testng.xml, and the same idea is shown with pytest and Mocha.',
+      tags: ['Annotations', 'testng.xml', 'DataProvider', 'Listeners', 'Parallel'],
+      modules: [tngModule()]
     }
   ]
 };
@@ -292,6 +294,48 @@ function arraySections() {
         { id: "AdvancedSorts/practice-2", title: "k-th largest element with Quickselect", kind: 'Practice', level: "Medium" },
         { id: "AdvancedSorts/practice-3", title: "Count inversions with merge sort", kind: 'Practice', level: "Hard" },
         { id: "AdvancedSorts/practice-4", title: "Count of smaller numbers after each element", kind: 'Practice', level: "Expert" }
+      ] },
+    { id: "HeapSort", title: "Heap Sort", emoji: "⛰️", group: "Phase 3: Classical Searching and Sorting", keywords: ["heap sort", "binary heap", "max heap", "min heap", "heapify", "sift down", "priority queue", "top k", "in place", "not stable"],
+      items: [
+        { id: "HeapSort/practice-1", title: "Is it a max heap?", kind: 'Practice', level: "Easy" },
+        { id: "HeapSort/practice-2", title: "The k largest values with a min heap", kind: 'Practice', level: "Medium" },
+        { id: "HeapSort/practice-3", title: "Merge k sorted arrays", kind: 'Practice', level: "Hard" },
+        { id: "HeapSort/practice-4", title: "Running median with two heaps", kind: 'Practice', level: "Expert" }
+      ] },
+    { id: "HybridSorts", title: "TimSort and Introsort (Hybrid Sorts)", emoji: "🧬", group: "Phase 3: Classical Searching and Sorting", keywords: ["timsort", "introsort", "hybrid sort", "runs", "minrun", "galloping", "binary insertion sort", "std::sort", "python sorted", "java arrays.sort", "depth limit"],
+      items: [
+        { id: "HybridSorts/practice-1", title: "Count the natural runs", kind: 'Practice', level: "Easy" },
+        { id: "HybridSorts/practice-2", title: "Binary insertion sort", kind: 'Practice', level: "Medium" },
+        { id: "HybridSorts/practice-3", title: "Compute TimSort's minrun", kind: 'Practice', level: "Hard" },
+        { id: "HybridSorts/practice-4", title: "Introsort's safety net in action", kind: 'Practice', level: "Expert" }
+      ] },
+    { id: "GapSorts", title: "Shell, Comb, Cocktail, Gnome and Odd-Even Sort", emoji: "🪮", group: "Phase 3: Classical Searching and Sorting", keywords: ["shell sort", "comb sort", "cocktail shaker sort", "gnome sort", "odd even sort", "gap sequence", "knuth gaps", "ciura", "turtles", "parallel sorting"],
+      items: [
+        { id: "GapSorts/practice-1", title: "Knuth's gap sequence", kind: 'Practice', level: "Easy" },
+        { id: "GapSorts/practice-2", title: "Is the array h-sorted?", kind: 'Practice', level: "Medium" },
+        { id: "GapSorts/practice-3", title: "Comb sort versus bubble sort", kind: 'Practice', level: "Hard" },
+        { id: "GapSorts/practice-4", title: "Which gap sequence is best?", kind: 'Practice', level: "Expert" }
+      ] },
+    { id: "NonComparisonSorts", title: "Counting, Radix and Bucket Sort", emoji: "🪣", group: "Phase 3: Classical Searching and Sorting", keywords: ["counting sort", "radix sort", "bucket sort", "LSD", "MSD", "linear time sort", "prefix sums", "stable", "pigeonhole", "maximum gap"],
+      items: [
+        { id: "NonComparisonSorts/practice-1", title: "Sort exam marks with counting sort", kind: 'Practice', level: "Easy" },
+        { id: "NonComparisonSorts/practice-2", title: "Sort words by length, stably", kind: 'Practice', level: "Medium" },
+        { id: "NonComparisonSorts/practice-3", title: "Radix sort with negative numbers", kind: 'Practice', level: "Hard" },
+        { id: "NonComparisonSorts/practice-4", title: "Maximum gap in linear time", kind: 'Practice', level: "Expert" }
+      ] },
+    { id: "CycleSorts", title: "Cycle Sort and Pancake Sort", emoji: "🥞", group: "Phase 3: Classical Searching and Sorting", keywords: ["cycle sort", "pancake sort", "minimum writes", "prefix reversal", "permutation cycles", "minimum swaps", "cyclic sort", "first missing positive"],
+      items: [
+        { id: "CycleSorts/practice-1", title: "Minimum swaps to sort a permutation", kind: 'Practice', level: "Easy" },
+        { id: "CycleSorts/practice-2", title: "Find all duplicates with cyclic placement", kind: 'Practice', level: "Medium" },
+        { id: "CycleSorts/practice-3", title: "First missing positive", kind: 'Practice', level: "Hard" },
+        { id: "CycleSorts/practice-4", title: "Pancake flips for a stack", kind: 'Practice', level: "Expert" }
+      ] },
+    { id: "SortCompare", title: "Choosing a Sorting Algorithm", emoji: "🏁", group: "Phase 3: Classical Searching and Sorting", keywords: ["choosing a sort", "stability", "in place", "comparison count", "nearly sorted", "few unique", "inversions", "k sorted", "cache", "which sort"],
+      items: [
+        { id: "SortCompare/practice-1", title: "Is the result stable?", kind: 'Practice', level: "Easy" },
+        { id: "SortCompare/practice-2", title: "Sort by two keys with a stable sort", kind: 'Practice', level: "Medium" },
+        { id: "SortCompare/practice-3", title: "Count inversions with merge sort", kind: 'Practice', level: "Hard" },
+        { id: "SortCompare/practice-4", title: "Sort a k-sorted array with a heap", kind: 'Practice', level: "Expert" }
       ] },
     { id: "TwoPointers", title: "Two Pointers Technique", emoji: "👉", group: "Phase 4: Foundational Techniques and Patterns", keywords: ["opposite ends", "fast and slow", "pair sum", "palindrome", "remove duplicates", "container with most water", "3sum"],
       items: [
@@ -838,4 +882,584 @@ function javaModules() {
       ]
     }
   ];
+}
+
+function mtModules() {
+  return [
+    {
+      id: "mt-foundations", title: "Foundations", emoji: "🧪", blurb: "What testing is, how software is built, and the levels and types of testing.",
+      topics: [
+      {
+        id: "fundamentals", title: "Software Testing Fundamentals", emoji: "🧪",
+        page: "content/manual-testing/testing-fundamentals.html",
+        summary: "What software is, what testing means, manual and automation testing, tools, programming and scripting languages, white, black and gray box testing, the seven testing principles and the cost of a late bug.",
+        keywords: ["software testing", "manual testing", "automation testing", "test engineer", "requirement", "bug", "QTP", "UFT", "Selenium", "LoadRunner", "JMeter", "scripting language", "programming language", "white box", "black box", "gray box", "testing principles", "exhaustive testing", "defect clustering", "pesticide paradox", "cost of a bug", "record and playback"],
+        added: "2026-10-20",
+        sections: [
+          { id: "software", title: "What software is and who builds it", emoji: "🏦", group: 'Lesson', keywords: ["software", "business need", "customer", "client", "modules", "developer", "test engineer", "bug", "ICICI example", "requirement"] },
+          { id: "testing", title: "What testing means", emoji: "🔍", group: 'Lesson', keywords: ["definition of testing", "verify against requirement", "intention to find bugs", "validation", "prerequisites", "test URL", "assigned modules", "DB schema"] },
+          { id: "manual", title: "Manual testing", emoji: "🙋", group: 'Lesson', keywords: ["manual testing definition", "done first", "depends on understanding", "requirement clarity", "human judgement", "exploratory", "usability"] },
+          { id: "automation", title: "Automation testing", emoji: "🤖", group: 'Lesson', keywords: ["automation testing", "tool", "test script", "record and playback", "monotony", "accuracy", "time saving", "reuse", "QTP", "UFT", "Selenium", "LoadRunner", "JMeter"] },
+          { id: "languages", title: "Programming and scripting languages", emoji: "⌨️", group: 'Lesson', keywords: ["programming language", "scripting language", "compiled", "interpreted", "browser", "server", "VB Script", "JavaScript", "Python", "Shell", "Perl"] },
+          { id: "boxes", title: "White box, black box and gray box", emoji: "📦", group: 'Lesson', keywords: ["white box testing", "glass box", "unit testing", "black box testing", "gray box testing", "code visible", "code invisible", "developer", "test engineer"] },
+          { id: "principles", title: "The seven principles of testing", emoji: "📜", group: 'Lesson', keywords: ["seven testing principles", "ISTQB", "presence of defects", "exhaustive testing impossible", "early testing", "defect clustering", "pesticide paradox", "context dependent", "absence of errors fallacy"] },
+          { id: "cost", title: "Why a late bug costs more", emoji: "💸", group: 'Lesson', keywords: ["cost of a bug", "shift left", "early testing", "requirement review", "rework", "phase", "production defect"] },
+          { id: "roles", title: "Who does what in a software company", emoji: "👥", group: 'Lesson', keywords: ["business analyst", "product analyst", "architect", "development manager", "developer", "test engineer", "test lead", "test manager", "build team", "customer"] },
+          { id: "valid-username", title: "Check the username rule", emoji: '🏋️', group: "Easy practice" },
+          { id: "pass-rate", title: "Summarise a test run", emoji: '🏋️', group: "Easy practice" },
+          { id: "break-even", title: "When does automation pay off?", emoji: '🏋️', group: "Medium practice" },
+          { id: "pareto-modules", title: "Which modules hold most bugs?", emoji: '🏋️', group: "Medium practice" },
+          { id: "record-playback", title: "Replay a recorded script on a new build", emoji: '🏋️', group: "Hard practice" },
+          { id: "one-field-at-a-time", title: "Every combination or one field at a time?", emoji: '🏋️', group: "Hard practice" },
+          { id: "data-driven-test", title: "A data driven test with a bug report", emoji: '🏋️', group: "Expert practice" },
+          { id: "shift-left", title: "How many review rounds?", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "sdlc", title: "SDLC and its Models", emoji: "🔄",
+        page: "content/manual-testing/sdlc-models.html",
+        summary: "The software development life cycle phase by phase, service and product companies, CRS and SRS, HLD and LLD, and every model: waterfall, spiral, prototype, V and V, hybrid, Agile and Scrum, with when to choose each.",
+        keywords: ["SDLC", "software development life cycle", "requirement collection", "feasibility study", "design", "HLD", "LLD", "coding", "testing", "installation", "maintenance", "waterfall model", "spiral model", "prototype model", "V model", "verification and validation", "hybrid model", "agile", "scrum", "sprint", "user story", "product backlog", "sprint backlog", "scrum master", "product owner", "daily stand up", "retrospective", "CRS", "SRS", "BRS", "FRS", "service based company", "product based company", "business analyst", "product analyst"],
+        added: "2026-10-20",
+        sections: [
+          { id: "what-sdlc", title: "What SDLC is: build it like a house", emoji: "🏠", group: 'Lesson', keywords: ["SDLC definition", "house building analogy", "phases", "life cycle", "procedure"] },
+          { id: "companies", title: "Service based and product based companies", emoji: "🏢", group: 'Lesson', keywords: ["service based company", "product based company", "business analyst", "product analyst", "Wipro", "Infosys", "TCS", "Oracle", "Microsoft", "ownership"] },
+          { id: "phases", title: "The seven phases, one by one", emoji: "🪜", group: 'Lesson', keywords: ["requirement collection", "feasibility study", "high level design", "low level design", "coding", "testing", "installation", "deployment", "rollout", "maintenance", "roles per phase"] },
+          { id: "requirements", title: "CRS, SRS and what makes a good requirement", emoji: "📄", group: 'Lesson', keywords: ["CRS", "customer requirement specification", "BRS", "business requirement specification", "SRS", "system requirement specification", "FRS", "functional specification", "high level", "low level", "good requirement characteristics"] },
+          { id: "waterfall", title: "The waterfall model", emoji: "🌊", group: 'Lesson', keywords: ["waterfall model", "sequential", "linear", "no back tracking", "requirement change not allowed", "life critical", "machine critical", "advantages", "disadvantages"] },
+          { id: "spiral", title: "The spiral model", emoji: "🌀", group: 'Lesson', keywords: ["spiral model", "iterative", "cyclic", "module by module", "dependent modules", "minor change", "major change", "regression", "Excel example"] },
+          { id: "prototype", title: "The prototype model", emoji: "🧩", group: 'Lesson', keywords: ["prototype model", "dummy", "customer approval", "prototype testing", "look and feel", "web developer", "UI", "customer new to application"] },
+          { id: "vmodel", title: "The V and V model (V model)", emoji: "✌️", group: 'Lesson', keywords: ["V model", "verification and validation", "review", "CRS", "SRS", "HLD", "LLD", "acceptance test document", "system test document", "integration test document", "functional test document", "UAT", "system testing", "integration testing", "functional testing", "white box testing"] },
+          { id: "agile", title: "Agile and Scrum", emoji: "🏃", group: 'Lesson', keywords: ["agile", "scrum", "iterative incremental", "user story", "sprint", "release", "scrum team", "scrum master", "product owner", "pigs and chickens", "product backlog", "sprint backlog", "carry forward", "sprint planning", "daily stand up", "retrospective", "kick off"] },
+          { id: "choose", title: "Hybrid models and choosing a model", emoji: "🧭", group: 'Lesson', keywords: ["hybrid model", "spiral plus prototype", "prototype plus V", "choosing SDLC model", "comparison of models"] },
+          { id: "phase-order", title: "Is this SDLC plan in the right order?", emoji: '🏋️', group: "Easy practice" },
+          { id: "count-sprints", title: "How many sprints?", emoji: '🏋️', group: "Easy practice" },
+          { id: "waterfall-rework", title: "The price of a late change in waterfall", emoji: '🏋️', group: "Medium practice" },
+          { id: "velocity-forecast", title: "Forecast with velocity", emoji: '🏋️', group: "Medium practice" },
+          { id: "v-model-trace", title: "Which review should have caught it?", emoji: '🏋️', group: "Hard practice" },
+          { id: "spiral-changes", title: "A spiral with a major change", emoji: '🏋️', group: "Hard practice" },
+          { id: "burndown", title: "Read a sprint burndown", emoji: '🏋️', group: "Expert practice" },
+          { id: "sprints-with-dependencies", title: "Plan sprints that respect dependencies", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "white-box", title: "White Box Testing", emoji: "🔬",
+        page: "content/manual-testing/white-box-testing.html",
+        summary: "Testing the code itself: unit test programs, JUnit and friends, path testing, condition testing, loop testing, statement and branch coverage, cyclomatic complexity, memory testing and response time testing.",
+        keywords: ["white box testing", "glass box testing", "unit testing", "unit test program", "UTP", "JUnit", "NUnit", "pytest", "Jest", "path testing", "independent paths", "cyclomatic complexity", "condition testing", "branch coverage", "decision coverage", "statement coverage", "loop testing", "memory testing", "memory leak", "unused variables", "Rational Purify", "response time testing", "profiler", "Rational Quantify", "static analysis"],
+        added: "2026-10-20",
+        sections: [
+          { id: "what-wbt", title: "What white box testing is", emoji: "🔬", group: 'Lesson', keywords: ["white box testing definition", "glass box", "unit testing", "developer", "code visible", "variables", "functions"] },
+          { id: "utp", title: "Unit test programs", emoji: "🧾", group: 'Lesson', keywords: ["unit test program", "UTP", "JUnit", "NUnit", "pytest", "Jest", "assert", "pass", "fail", "review", "requirement change"] },
+          { id: "paths", title: "Path testing", emoji: "🛤️", group: 'Lesson', keywords: ["path testing", "independent paths", "call tree", "main function calls sub function", "Yahoo example", "cyclomatic complexity", "control flow graph"] },
+          { id: "conditions", title: "Condition testing", emoji: "🔀", group: 'Lesson', keywords: ["condition testing", "true and false", "branch coverage", "decision coverage", "condition coverage", "MC/DC", "if else"] },
+          { id: "loops", title: "Loop testing", emoji: "🔁", group: 'Lesson', keywords: ["loop testing", "number of iterations", "skip loop", "one pass", "n minus 1", "n", "n plus 1", "break", "infinite loop"] },
+          { id: "coverage", title: "Statement and branch coverage", emoji: "📊", group: 'Lesson', keywords: ["statement coverage", "line coverage", "branch coverage", "coverage percentage", "coverage tools", "JaCoCo", "coverage.py", "Istanbul"] },
+          { id: "memory", title: "Memory testing", emoji: "🧠", group: 'Lesson', keywords: ["memory testing", "unused variables", "unused functions", "memory leak", "Rational Purify", "static analysis", "Nokia game example"] },
+          { id: "response", title: "Response time testing", emoji: "⏱️", group: 'Lesson', keywords: ["response time testing", "profiler", "Rational Quantify", "slow functions", "order of checks", "performance at code level"] },
+          { id: "compare", title: "White box versus black box", emoji: "⚖️", group: 'Lesson', keywords: ["white box vs black box", "developer vs tester", "code vs application", "interview questions"] },
+          { id: "unit-test-leap", title: "Write a unit test program", emoji: '🏋️', group: "Easy practice" },
+          { id: "cover-grades", title: "Cover every branch of a grading function", emoji: '🏋️', group: "Easy practice" },
+          { id: "count-paths", title: "Count paths without listing them", emoji: '🏋️', group: "Medium practice" },
+          { id: "loop-counts", title: "Choose loop test counts", emoji: '🏋️', group: "Medium practice" },
+          { id: "cyclomatic", title: "Cyclomatic complexity from edges", emoji: '🏋️', group: "Hard practice" },
+          { id: "statement-vs-branch", title: "Full statements, half the branches", emoji: '🏋️', group: "Hard practice" },
+          { id: "dead-stores", title: "Find dead stores in a tiny program", emoji: '🏋️', group: "Expert practice" },
+          { id: "cheapest-check-order", title: "Order checks for the lowest expected cost", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "testing-levels", title: "Functional, Integration and System Testing", emoji: "🪜",
+        page: "content/manual-testing/testing-levels.html",
+        summary: "Black box testing level by level: functional testing with real values, integration testing and its types (top down, bottom up, sandwich, big bang, stubs and drivers), system testing end to end, smoke testing, ad hoc testing, UAT, alpha and beta testing, and exploratory testing.",
+        keywords: ["black box testing", "functional testing", "component testing", "integration testing", "top down", "bottom up", "sandwich testing", "big bang", "incremental integration", "stub", "driver", "system testing", "end to end testing", "smoke testing", "sanity testing", "build verification test", "BVT", "dry run", "ad hoc testing", "monkey testing", "UAT", "user acceptance testing", "alpha testing", "beta testing", "exploratory testing", "domain expert", "amount transfer", "overdraft"],
+        added: "2026-10-20",
+        sections: [
+          { id: "black-box", title: "Black box testing and the amount transfer example", emoji: "⬛", group: 'Lesson', keywords: ["black box testing", "requirement", "test URL", "objects", "components", "FAN", "TAN", "amount transfer requirement"] },
+          { id: "functional", title: "Functional testing", emoji: "🧩", group: 'Lesson', keywords: ["functional testing", "component testing", "unit testing in black box", "each component independently", "positive testing", "negative testing", "over testing", "test coverage", "Gmail compose"] },
+          { id: "integration", title: "Integration testing", emoji: "🔗", group: 'Lesson', keywords: ["integration testing", "data flow", "interface between modules", "amount transfer balance", "Gmail integration scenarios", "sent items", "inbox", "trash"] },
+          { id: "it-types", title: "Types of integration testing, stubs and drivers", emoji: "🌲", group: 'Lesson', keywords: ["incremental integration", "top down", "bottom up", "sandwich", "hybrid", "non incremental", "big bang", "stub", "driver", "IRCTC", "HRMS"] },
+          { id: "system", title: "System testing", emoji: "🌐", group: 'Lesson', keywords: ["system testing", "end to end", "whole system", "overdraft example", "production like environment", "end to end scenario"] },
+          { id: "smoke", title: "Smoke testing", emoji: "💨", group: 'Lesson', keywords: ["smoke testing", "sanity testing", "build verification test", "BVT", "dry run", "skim testing", "basic and critical features", "blocker", "formal smoke", "informal smoke"] },
+          { id: "adhoc", title: "Ad hoc and exploratory testing", emoji: "🐒", group: 'Lesson', keywords: ["ad hoc testing", "monkey testing", "random testing", "negative scenarios", "exploratory testing", "requirement missing", "domain expert"] },
+          { id: "uat", title: "User acceptance testing, alpha and beta", emoji: "🤝", group: 'Lesson', keywords: ["UAT", "user acceptance testing", "customer", "business scenarios", "domain expert", "alpha testing", "beta testing", "service based", "product based", "trial version"] },
+          { id: "levels", title: "The levels of testing at a glance", emoji: "📶", group: 'Lesson', keywords: ["levels of testing", "unit", "integration", "system", "acceptance", "functional vs non functional"] },
+          { id: "classify-level", title: "Which level of testing is this?", emoji: '🏋️', group: "Easy practice" },
+          { id: "subject-length", title: "Test the subject length", emoji: '🏋️', group: "Easy practice" },
+          { id: "to-field", title: "Validate the To field", emoji: '🏋️', group: "Medium practice" },
+          { id: "plan-stubs", title: "Plan stubs for top down integration", emoji: '🏋️', group: "Medium practice" },
+          { id: "gmail-data-flow", title: "Check Gmail's data flow", emoji: '🏋️', group: "Hard practice" },
+          { id: "smoke-first-days", title: "Smoke first or deep first?", emoji: '🏋️', group: "Hard practice" },
+          { id: "od-rules", title: "Overdraft rules over time", emoji: '🏋️', group: "Expert practice" },
+          { id: "big-bang-suspects", title: "Why big bang hides the culprit", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "environments", title: "Applications, Environments and Builds", emoji: "🖥️",
+        page: "content/manual-testing/apps-environments.html",
+        summary: "The parts of an application, standalone, client server and web applications, web, application and database servers, development, test, staging and production environments, SQL for testers, the build process, test cycles, respin, patch and release.",
+        keywords: ["user interface", "business logic", "database", "front end", "back end", "GUI", "CLI", "standalone application", "client server application", "web application", "web server", "application server", "database server", "Apache", "Tomcat", "IIS", "Oracle", "MySQL", "production environment", "development environment", "test environment", "staging environment", "test URL", "SQL for testers", "build", "version control", "build tool", "WAR", "JAR", "test cycle", "respin", "patch", "blocker", "release", "version"],
+        added: "2026-10-20",
+        sections: [
+          { id: "parts", title: "The three parts of an application", emoji: "🧱", group: 'Lesson', keywords: ["user interface", "UI", "business logic", "BL", "database", "DB", "front end", "back end", "GUI", "CLI"] },
+          { id: "app-types", title: "Standalone, client server and web applications", emoji: "🗂️", group: 'Lesson', keywords: ["standalone application", "exe", "client server application", "web application", "URL", "advantages", "disadvantages", "data sharing"] },
+          { id: "web-arch", title: "Web application architecture", emoji: "🕸️", group: 'Lesson', keywords: ["web server", "application server", "database server", "request flow", "Gmail architecture", "pages", "business logic", "tables"] },
+          { id: "environments", title: "Development, test, staging and production environments", emoji: "🏗️", group: 'Lesson', keywords: ["production environment", "live server", "development server", "test server", "QA server", "staging server", "test URL", "reproduce bug", "fix", "configuration"] },
+          { id: "sql", title: "SQL for testers, and skipping a 30 day wait", emoji: "🗄️", group: 'Lesson', keywords: ["SQL", "database testing", "update query", "select", "join", "waiting cases", "DB schema", "cross check UI and database"] },
+          { id: "builds", title: "The build process", emoji: "📦", group: 'Lesson', keywords: ["build", "version control", "build tool", "compile", "compress", "zip", "war", "jar", "build number", "install on test server", "test cycle"] },
+          { id: "respin", title: "Respin, patch and blocker", emoji: "🩹", group: 'Lesson', keywords: ["respin", "patch", "blocker bug", "hot fix", "test cycle", "temporary fix", "permanent fix", "tube puncture analogy"] },
+          { id: "release", title: "Release, version and the road to production", emoji: "🚀", group: 'Lesson', keywords: ["release", "version", "release vs version", "final product", "UAT", "production", "Cheeta", "Tiger", "Lion"] },
+          { id: "ui-bl-db", title: "UI, business logic or database?", emoji: '🏋️', group: "Easy practice" },
+          { id: "build-ids", title: "Build numbers", emoji: '🏋️', group: "Easy practice" },
+          { id: "server-hits", title: "Count server hits in a session", emoji: '🏋️', group: "Medium practice" },
+          { id: "environment-urls", title: "Environment URLs", emoji: '🏋️', group: "Medium practice" },
+          { id: "sql-cross-check", title: "Cross check the screen with SQL", emoji: '🏋️', group: "Hard practice" },
+          { id: "build-schedule", title: "Schedule the builds", emoji: '🏋️', group: "Hard practice" },
+          { id: "credit-dates", title: "Real calendar dates for the 30 day rule", emoji: '🏋️', group: "Expert practice" },
+          { id: "patch-or-respin", title: "Patch or respin?", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      }
+      ]
+    },
+    {
+      id: "mt-design-defects", title: "Test design and defects", emoji: "📝", blurb: "Writing test cases with design techniques and managing bugs from report to closure.",
+      topics: [
+      {
+        id: "test-design", title: "Test Case Design and Documents", emoji: "📝",
+        page: "content/manual-testing/test-design.html",
+        summary: "Test documents end to end: scenarios, the test case template, error guessing, equivalence partitioning, boundary value analysis, decision tables and state transitions, functional, integration and system test cases, review, the repository, RTM, the test execution report and STLC.",
+        keywords: ["test documents", "test scenario", "test case", "test case template", "header body footer", "pre condition", "test data", "severity", "error guessing", "equivalence partitioning", "boundary value analysis", "BVA", "EP", "decision table", "state transition", "pairwise testing", "general practice method", "functional test case", "integration test case", "system test case", "test case review", "test case repository", "baseline", "RTM", "requirement traceability matrix", "TER", "test execution report", "STLC", "software testing life cycle", "requirement acceptance meeting"],
+        added: "2026-10-20",
+        sections: [
+          { id: "why-docs", title: "Why test documents, and how they are made", emoji: "📚", group: 'Lesson', keywords: ["test documents", "without documents", "consistency", "requirement repository", "assign modules", "requirement acceptance meeting", "walk through"] },
+          { id: "scenarios", title: "Test scenarios", emoji: "🗺️", group: 'Lesson', keywords: ["test scenario", "high level", "do and check", "module by module", "product based", "service based"] },
+          { id: "test-case", title: "The test case template", emoji: "📋", group: 'Lesson', keywords: ["test case", "template", "header", "body", "footer", "test case name", "type", "requirement number", "module", "status", "severity", "pre condition", "test data", "release", "version", "steps", "expected result", "actual result", "author", "reviewer", "approver"] },
+          { id: "techniques", title: "Error guessing, equivalence partitioning and boundary values", emoji: "🎯", group: 'Lesson', keywords: ["test case design techniques", "error guessing", "equivalence partitioning", "range", "set", "boolean", "boundary value analysis", "general practice method", "criteria", "maximum test coverage"] },
+          { id: "more-techniques", title: "Decision tables, state transitions and pairwise testing", emoji: "🧮", group: 'Lesson', keywords: ["decision table testing", "state transition testing", "pairwise testing", "all pairs", "combinatorial testing", "rules", "conditions", "actions"] },
+          { id: "cases", title: "Functional, integration and system test cases", emoji: "🧾", group: 'Lesson', keywords: ["functional test case", "integration test case", "system test case", "amount transfer", "overdraft", "login", "steps", "expected result"] },
+          { id: "review", title: "Test case review", emoji: "🔎", group: 'Lesson', keywords: ["test case review", "author", "reviewer", "review comments", "review template", "approval", "review ethics"] },
+          { id: "rtm", title: "The repository and the RTM", emoji: "🧭", group: 'Lesson', keywords: ["test case repository", "baseline", "centralised", "smoke test cases", "requirement traceability matrix", "RTM", "CRM", "missing test case", "drawback"] },
+          { id: "ter", title: "The test execution report", emoji: "📊", group: 'Lesson', keywords: ["test execution report", "TER", "pass percentage", "fail percentage", "modules", "exit criteria", "stability"] },
+          { id: "stlc", title: "STLC: the software testing life cycle", emoji: "🔁", group: 'Lesson', keywords: ["STLC", "software testing life cycle", "system study", "test plan", "test documents", "RTM", "test execution", "defect tracking", "TER", "retrospect", "post mortem"] },
+          { id: "ep-values", title: "Equivalence partitioning values", emoji: '🏋️', group: "Easy practice" },
+          { id: "case-names", title: "Build and parse test case names", emoji: '🏋️', group: "Easy practice" },
+          { id: "bva-list", title: "Boundary values for a whole form", emoji: '🏋️', group: "Medium practice" },
+          { id: "case-status", title: "Pass, fail or partial", emoji: '🏋️', group: "Medium practice" },
+          { id: "rtm-matrix", title: "An RTM with orphans", emoji: '🏋️', group: "Hard practice" },
+          { id: "review-rounds", title: "Review rounds", emoji: '🏋️', group: "Hard practice" },
+          { id: "loan-bug", title: "Catch the interest band bug", emoji: '🏋️', group: "Expert practice" },
+          { id: "pairwise", title: "Generate pairwise tests", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "defects", title: "Defect Management", emoji: "🐞",
+        page: "content/manual-testing/defect-management.html",
+        summary: "Defect, bug, error, issue and failure, the defect life cycle, who a bug is assigned to, invalid, duplicate, not reproducible, can't fix, deferred and RFE, severity and priority with examples, the bug report template, bug tracking tools and querying the bug repository.",
+        keywords: ["defect", "bug", "error", "issue", "failure", "wrong implementation", "missing implementation", "extra implementation", "defect life cycle", "bug life cycle", "new", "open", "assigned", "fixed", "retest", "closed", "reopen", "invalid", "duplicate", "bug repository", "not reproducible", "can't fix", "deferred", "RFE", "request for enhancement", "severity", "priority", "blocker", "critical", "major", "minor", "P1", "bug report", "steps to reproduce", "Jira", "Bugzilla", "Mantis", "Quality Center", "query a bug", "defect clustering", "latent bug", "golden bug", "hot fix"],
+        added: "2026-10-20",
+        sections: [
+          { id: "terms", title: "Defect, bug, error, issue and failure", emoji: "🔤", group: 'Lesson', keywords: ["defect", "bug", "error", "issue", "failure", "deviation from requirement", "wrong implementation", "missing implementation", "extra implementation"] },
+          { id: "life-cycle", title: "The defect life cycle", emoji: "🔄", group: 'Lesson', keywords: ["defect life cycle", "bug life cycle", "new", "open", "assigned", "fixed", "retest", "closed", "reopen", "status"] },
+          { id: "assign", title: "Who gets the bug", emoji: "📨", group: 'Lesson', keywords: ["assign bug", "developer", "development lead", "test lead", "bug review", "freshers"] },
+          { id: "statuses", title: "Invalid and duplicate", emoji: "🚫", group: 'Lesson', keywords: ["invalid bug", "tester misunderstood", "developer misunderstood", "duplicate bug", "bug repository", "search before logging", "common modules"] },
+          { id: "not-repro", title: "Not reproducible", emoji: "🔍", group: 'Lesson', keywords: ["not reproducible", "incomplete steps", "server mismatch", "platform mismatch", "data mismatch", "build mismatch", "inconsistent bug", "screenshot"] },
+          { id: "other-statuses", title: "Can't fix, deferred and RFE", emoji: "🗂️", group: 'Lesson', keywords: ["can't fix", "deferred", "postponed", "next release", "RFE", "request for enhancement", "suggestion", "full life cycle"] },
+          { id: "severity", title: "Severity and priority", emoji: "🚦", group: 'Lesson', keywords: ["severity", "priority", "blocker", "critical", "major", "minor", "urgent", "P1", "P2", "P3", "P4", "impact", "which bug first", "examples"] },
+          { id: "report", title: "Writing the bug report", emoji: "📝", group: 'Lesson', keywords: ["bug report template", "bug id", "test case name", "module", "status", "reporter", "assigned to", "CC", "release", "version", "severity", "priority", "test data", "server", "OS and browser", "build", "screenshot", "brief description", "steps to reproduce", "observation", "expected result"] },
+          { id: "tools", title: "Bug tracking tools and queries", emoji: "🛠️", group: 'Lesson', keywords: ["bug tracking tool", "Jira", "Bugzilla", "Mantis", "Quality Center", "ALM", "manual bug report drawbacks", "logging a bug", "query", "search", "comments"] },
+          { id: "wrong-missing-extra", title: "Wrong, missing or extra", emoji: '🏋️', group: "Easy practice" },
+          { id: "status-history", title: "Validate a status history", emoji: '🏋️', group: "Easy practice" },
+          { id: "severity-table", title: "Bugs by module and severity", emoji: '🏋️', group: "Medium practice" },
+          { id: "merge-duplicates", title: "Merge duplicate reports", emoji: '🏋️', group: "Medium practice" },
+          { id: "bug-aging", title: "How long do bugs stay open", emoji: '🏋️', group: "Hard practice" },
+          { id: "reopen-roles", title: "Who may change the status", emoji: '🏋️', group: "Hard practice" },
+          { id: "defer-plan", title: "Fix or defer before release", emoji: '🏋️', group: "Expert practice" },
+          { id: "retest-plan", title: "Which fixed bugs to retest now", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      }
+      ]
+    },
+    {
+      id: "mt-beyond", title: "Regression and non functional testing", emoji: "🚀", blurb: "Retesting, regression, automation decisions, performance, compatibility and more.",
+      topics: [
+      {
+        id: "regression", title: "Regression, Retesting and Automation", emoji: "🔁",
+        page: "content/manual-testing/regression-automation.html",
+        summary: "Regression testing across releases and builds, unit, regional and full regression, impact analysis, retesting versus regression, why and when to automate, the automation life cycle, what cannot be automated, and the classic comparisons: smoke and sanity, static and dynamic, QA and QC.",
+        keywords: ["regression testing", "regression test cases", "regression test suite", "unit regression", "regional regression", "full regression", "impact analysis", "impact area", "retesting", "build level regression", "release level regression", "automation testing", "automation life cycle", "test script", "QTP", "UFT", "Selenium", "LoadRunner", "JMeter", "break even", "cannot be automated", "captcha", "smoke vs sanity", "static testing", "dynamic testing", "verification", "validation", "QA vs QC", "functional vs non-functional"],
+        added: "2026-10-20",
+        sections: [
+          { id: "what-regression", title: "What regression testing is", emoji: "🔁", group: 'Lesson', keywords: ["regression testing", "regression test cases", "releases", "new features", "deleted features", "modified features", "re-execute old test cases", "existing functionality"] },
+          { id: "types", title: "Unit, regional and full regression", emoji: "🎚️", group: 'Lesson', keywords: ["unit regression", "regional regression", "full regression", "impact area", "critical application", "how much to retest"] },
+          { id: "impact", title: "Impact analysis and the regression suite", emoji: "🧩", group: 'Lesson', keywords: ["impact analysis", "customer", "developer", "tester", "business knowledge", "coding knowledge", "product knowledge", "test lead consolidates", "regression test suite", "packet"] },
+          { id: "retest", title: "Retesting versus regression", emoji: "↩️", group: 'Lesson', keywords: ["retesting", "regression", "build level regression", "bug fix", "impact area", "release level regression"] },
+          { id: "automation", title: "Why regression moves to automation", emoji: "🤖", group: 'Lesson', keywords: ["automation testing", "test script", "tool", "time saving", "accuracy", "reuse", "break even", "functional testing tools", "performance testing tools", "QTP", "UFT", "Selenium", "LoadRunner", "JMeter"] },
+          { id: "auto-lc", title: "The automation life cycle", emoji: "⚙️", group: 'Lesson', keywords: ["automation life cycle", "manual team", "automation team", "test cases", "stable application", "tool", "script execution", "failed scripts", "manual retest"] },
+          { id: "cant-automate", title: "What cannot be automated", emoji: "🚧", group: 'Lesson', keywords: ["cannot automate", "unstable features", "captcha", "virtual keyboard", "OTP", "complex", "human judgement", "usability"] },
+          { id: "compare", title: "The classic comparisons", emoji: "⚖️", group: 'Lesson', keywords: ["smoke vs sanity", "static vs dynamic", "verification", "validation", "QA vs QC", "quality assurance", "quality control", "functional vs non-functional", "preventive", "detective"] },
+          { id: "repo-growth", title: "Repository growth", emoji: '🏋️', group: "Easy practice" },
+          { id: "classify-activity", title: "Name the testing activity", emoji: '🏋️', group: "Easy practice" },
+          { id: "regression-type", title: "Choose the regression type", emoji: '🏋️', group: "Medium practice" },
+          { id: "pick-cases", title: "Pick the affected test cases", emoji: '🏋️', group: "Medium practice" },
+          { id: "ripple", title: "Ripple effect with a depth limit", emoji: '🏋️', group: "Hard practice" },
+          { id: "payback", title: "Automation payback by release", emoji: '🏋️', group: "Hard practice" },
+          { id: "risk-knapsack", title: "Riskiest cases in 120 minutes", emoji: '🏋️', group: "Expert practice" },
+          { id: "flaky-scripts", title: "Spot flaky scripts", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "non-functional", title: "Non-functional Testing", emoji: "⚡",
+        page: "content/manual-testing/non-functional-testing.html",
+        summary: "Compatibility testing across operating systems, browsers and hardware with virtual machines, forward and backward compatibility, usability checklists, and performance testing: response time, load, stability, the LoadRunner process, bottlenecks and tuning, and load, stress, scalability, volume and soak testing.",
+        keywords: ["non-functional testing", "compatibility testing", "software compatibility", "hardware compatibility", "operating system", "browser", "base platform", "virtual machine", "VMware", "remote desktop", "compatibility issues", "alignment", "overlapping", "broken links", "forward compatibility", "backward compatibility", "usability testing", "usability checklist", "breadcrumb", "performance testing", "response time", "load", "stability", "LoadRunner", "JMeter", "virtual users", "bottleneck", "tuning", "load testing", "stress testing", "scalability testing", "volume testing", "soak testing", "endurance testing", "percentile", "Little's law"],
+        added: "2026-10-20",
+        sections: [
+          { id: "what-nft", title: "What non-functional testing covers", emoji: "⚡", group: 'Lesson', keywords: ["non-functional testing", "functional testing", "how well", "compatibility", "usability", "performance", "security", "when", "functionally stable"] },
+          { id: "compat", title: "Compatibility testing", emoji: "🖥️", group: 'Lesson', keywords: ["compatibility testing", "software compatibility", "hardware compatibility", "operating systems", "browsers", "RAM", "processor", "graphics card", "most used platforms", "compatibility issues", "alignment", "overlapped objects", "scattered objects", "font", "colour", "broken links"] },
+          { id: "vm", title: "Virtual machines and the compatibility process", emoji: "🧰", group: 'Lesson', keywords: ["virtual machine", "VMware", "VirtualBox", "remote desktop", "base platform", "end to end", "multi boot", "forward compatibility", "backward compatibility", "internal application", "public application"] },
+          { id: "usability", title: "Usability testing", emoji: "🙂", group: 'Lesson', keywords: ["usability testing", "user friendliness", "easy to access", "easy to understand", "look and feel", "navigation", "checklist", "breadcrumb", "home and logout links", "alt text", "usability report"] },
+          { id: "performance", title: "Performance testing", emoji: "🚀", group: 'Lesson', keywords: ["performance testing", "response time", "load", "stability", "virtual users", "LoadRunner", "JMeter", "script", "scenario", "distribute load", "result graph", "average", "maximum", "minimum", "percentile"] },
+          { id: "bottleneck", title: "Bottlenecks and tuning", emoji: "🧪", group: 'Lesson', keywords: ["bottleneck", "tuning", "analyse results", "architect", "DBA", "network admin", "code", "database", "server", "hardware", "network", "re-execute"] },
+          { id: "types", title: "Load, stress, scalability, volume and soak", emoji: "📈", group: 'Lesson', keywords: ["load testing", "stress testing", "scalability testing", "stability testing", "volume testing", "soak testing", "endurance testing", "desired load", "upward", "downward", "crash"] },
+          { id: "platform-combos", title: "Sensible platform combinations", emoji: '🏋️', group: "Easy practice" },
+          { id: "breadcrumbs", title: "Breadcrumbs and required links", emoji: '🏋️', group: "Easy practice" },
+          { id: "forward-backward", title: "Forward and backward gaps", emoji: '🏋️', group: "Medium practice" },
+          { id: "split-users", title: "Split virtual users exactly", emoji: '🏋️', group: "Medium practice" },
+          { id: "littles-law", title: "Little's law", emoji: '🏋️', group: "Hard practice" },
+          { id: "sla-streak", title: "Longest breach in a stability test", emoji: '🏋️', group: "Hard practice" },
+          { id: "capacity-knee", title: "Estimate capacity from measurements", emoji: '🏋️', group: "Expert practice" },
+          { id: "soak-leak", title: "Project a memory leak", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      }
+      ]
+    },
+    {
+      id: "mt-planning", title: "Planning and closure", emoji: "🗺️", blurb: "The test plan, entry and exit criteria, risks and the end of a test cycle.",
+      topics: [
+      {
+        id: "test-plan", title: "The Test Plan", emoji: "🗓️",
+        page: "content/manual-testing/test-plan.html",
+        summary: "The test plan and its thirteen sections: objective, scope, approach, schedule, methodology, roles, environment, deliverables, assumptions, risks, mitigation, tools, and entry and exit criteria, with estimation, a risk matrix, parallel testing and the whole testing journey in one view.",
+        keywords: ["test plan", "objective", "scope", "in scope", "out of scope", "approach", "schedule", "test methodology", "roles and responsibilities", "test manager", "test lead", "test engineer", "test environment", "test deliverables", "assumptions", "risks", "mitigation", "contingency", "backup plan", "tools", "entry criteria", "exit criteria", "estimation", "risk matrix", "parallel testing", "hot fix", "latent bug", "golden bug"],
+        added: "2026-10-20",
+        sections: [
+          { id: "what-plan", title: "What a test plan is", emoji: "🗓️", group: 'Lesson', keywords: ["test plan", "leads and managers", "dynamic document", "before testing starts", "future testing activities"] },
+          { id: "scope", title: "Objective, scope and approach", emoji: "🎯", group: 'Lesson', keywords: ["objective", "scope", "in scope", "out of scope", "features to be tested", "features not to be tested", "approach", "flow chart", "technical writer"] },
+          { id: "schedule", title: "Schedule and methodology", emoji: "📅", group: 'Lesson', keywords: ["schedule", "time duration", "milestones", "test scenarios date", "test cases date", "test execution date", "release date", "test methodology", "types of testing", "estimation"] },
+          { id: "roles", title: "Roles and responsibilities", emoji: "👥", group: 'Lesson', keywords: ["roles and responsibilities", "test manager", "test lead", "test engineer", "escalation", "daily status meeting", "assigning modules", "primary contact", "secondary contact"] },
+          { id: "env", title: "Test environment and deliverables", emoji: "📦", group: 'Lesson', keywords: ["test environment", "main server", "backup server", "staging", "test engineer machine", "hardware", "software", "deliverables", "test cases", "scripts", "RTM", "TER", "list of bugs", "user manual", "platforms tested"] },
+          { id: "risks", title: "Assumptions, risks and mitigation", emoji: "⚠️", group: 'Lesson', keywords: ["assumptions", "risks", "mitigation", "contingency", "backup plan", "tester leaves", "server down", "primary and secondary contact", "backup server", "risk matrix", "probability", "impact"] },
+          { id: "tools", title: "Tools", emoji: "🛠️", group: 'Lesson', keywords: ["tools", "functional testing tool", "performance testing tool", "test management tool", "licences", "UFT", "QTP", "Selenium", "LoadRunner", "JMeter", "Quality Center", "ALM", "Jira", "virtual users"] },
+          { id: "criteria", title: "Entry and exit criteria", emoji: "🚦", group: 'Lesson', keywords: ["entry criteria", "exit criteria", "coding completed", "build installed", "test documents prepared", "resources ready", "executed percentage", "pass percentage", "blocker", "critical", "major", "minor", "release decision"] },
+          { id: "more", title: "Parallel testing and the whole journey", emoji: "🧭", group: 'Lesson', keywords: ["parallel testing", "old and new version", "same inputs", "anomalies", "hot fix", "latent bug", "golden bug", "the testing journey", "STLC"] },
+          { id: "scope-split", title: "In scope and out of scope", emoji: '🏋️', group: "Easy practice" },
+          { id: "contacts", title: "Primary and secondary contacts", emoji: '🏋️', group: "Easy practice" },
+          { id: "working-days", title: "Schedule around weekends and holidays", emoji: '🏋️', group: "Medium practice" },
+          { id: "entry-check", title: "Check the entry criteria", emoji: '🏋️', group: "Medium practice" },
+          { id: "progress", title: "Track execution and forecast the finish", emoji: '🏋️', group: "Hard practice" },
+          { id: "tool-cost", title: "Licensed or open source", emoji: '🏋️', group: "Hard practice" },
+          { id: "critical-path", title: "Critical path of the test schedule", emoji: '🏋️', group: "Expert practice" },
+          { id: "balance", title: "Balance modules across testers", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      }
+      ]
+    }
+  ];
+}
+
+function cjsModule() {
+  return {
+      id: "complete-java-session", title: "Complete Java Session", emoji: "🎓", blurb: "The session course in order: from how Java runs to reading test data files, ending with all 66 practice programs.",
+      topics: [
+      {
+        id: "cjs-basics", title: "How Java Runs: Classes, Variables and Data Types", emoji: "🚀",
+        page: "content/java/cjs-java-basics.html",
+        summary: "How a Java program is compiled and run by the JVM, JDK, JRE and JVM, classes and objects, the eight primitive types with sizes, ranges and defaults, local and global variables, identifier rules, widening and narrowing, static and non-static members, the main method and access modifiers.",
+        keywords: ["javac", "java", "bytecode", "JVM", "JRE", "JDK", "JIT", "platform independent", "class", "object", "new keyword", "reference variable", "primitive data types", "byte", "short", "int", "long", "float", "double", "char", "boolean", "default values", "non-primitive", "local variable", "instance variable", "static variable", "identifier rules", "keywords", "widening", "narrowing", "type casting", "overflow", "static", "non-static", "main method", "public static void main", "access modifiers", "public", "private", "protected", "default"],
+        added: "2026-10-20",
+        sections: [
+          { id: "execution", title: "From source code to output", emoji: "⚙️", group: 'Lesson', keywords: ["javac", "bytecode", ".class file", "JVM", "class loader", "bytecode verifier", "interpreter", "JIT compiler", "JDK", "JRE", "platform independent", "write once run anywhere"] },
+          { id: "class-object", title: "Classes and objects", emoji: "🏗️", group: 'Lesson', keywords: ["class", "blueprint", "members", "variables", "methods", "object", "state", "behaviour", "new keyword", "constructor", "reference variable", "instantiation"] },
+          { id: "datatypes", title: "Data types, sizes and default values", emoji: "🔢", group: 'Lesson', keywords: ["primitive", "non-primitive", "boolean", "char", "byte", "short", "int", "long", "float", "double", "size", "range", "default value", "null", "String", "wrapper"] },
+          { id: "variables", title: "Variables and identifiers", emoji: "🏷️", group: 'Lesson', keywords: ["local variable", "global variable", "instance variable", "static variable", "declaration", "initialisation", "identifier rules", "keywords", "lower case", "compilation error"] },
+          { id: "casting", title: "Widening, narrowing and overflow", emoji: "🔀", group: 'Lesson', keywords: ["widening", "narrowing", "implicit", "explicit", "cast", "byte + byte", "int arithmetic", "compilation error", "loss of data", "overflow", "wrap around"] },
+          { id: "static", title: "Static and non-static members", emoji: "📌", group: 'Lesson', keywords: ["static", "non-static", "instance", "class level", "object level", "static block", "cannot access non-static from static", "object reference", "shared counter"] },
+          { id: "main", title: "The main method", emoji: "🚪", group: 'Lesson', keywords: ["public static void main", "String[] args", "entry point", "why static", "why public", "why void", "command line arguments"] },
+          { id: "access", title: "Access modifiers", emoji: "🔐", group: 'Lesson', keywords: ["access modifiers", "public", "private", "protected", "default", "package private", "visibility", "same class", "same package", "subclass", "other package"] },
+          { id: "exact-division", title: "Exact division and averages", emoji: '🏋️', group: "Easy practice" },
+          { id: "swap-two", title: "Swap two numbers three ways", emoji: '🏋️', group: "Easy practice" },
+          { id: "smallest-type", title: "Smallest type that fits", emoji: '🏋️', group: "Medium practice" },
+          { id: "int-overflow", title: "Find the overflow", emoji: '🏋️', group: "Medium practice" },
+          { id: "ascii-shift", title: "ASCII arithmetic and a Caesar shift", emoji: '🏋️', group: "Hard practice" },
+          { id: "twos-complement", title: "Read two's complement", emoji: '🏋️', group: "Hard practice" },
+          { id: "float-vs-double", title: "float and double precision", emoji: '🏋️', group: "Expert practice" },
+          { id: "numeric-promotion", title: "Predict the result type", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "cjs-control-flow", title: "Operators, Conditions, Loops and Patterns", emoji: "🔁",
+        page: "content/java/cjs-control-flow.html",
+        summary: "Java operators and precedence, pre and post increment, short circuit logic, the modulo trap with negative numbers, if, else if, nested if and switch, while, do while, for and for each loops, break and continue with labels, classic loop programs such as prime checks and number reversal, and star pattern programs with nested loops.",
+        keywords: ["arithmetic operators", "relational operators", "logical operators", "short circuit", "assignment operators", "compound assignment", "increment", "decrement", "pre increment", "post increment", "ternary operator", "bitwise operators", "operator precedence", "modulo", "if", "else if", "nested if", "switch", "switch expression", "while loop", "do while loop", "for loop", "for each loop", "break", "continue", "labelled break", "infinite loop", "prime number", "reverse number", "palindrome number", "pattern programs", "nested loops", "Scanner"],
+        added: "2026-10-20",
+        sections: [
+          { id: "operators", title: "Operators and precedence", emoji: "➗", group: 'Lesson', keywords: ["arithmetic", "relational", "logical", "assignment", "compound assignment", "unary", "increment", "decrement", "ternary", "bitwise", "shift", "precedence", "modulo", "integer division"] },
+          { id: "conditions", title: "if, else if, nested if and switch", emoji: "🔀", group: 'Lesson', keywords: ["if", "if else", "else if ladder", "nested if", "switch", "case", "break", "default", "fall through", "switch expression", "arrow", "ternary", "Scanner input"] },
+          { id: "loops", title: "while, do while, for and for each", emoji: "🔁", group: 'Lesson', keywords: ["while loop", "do while loop", "for loop", "for each loop", "enhanced for", "initialisation", "condition", "update", "infinite loop", "iteration"] },
+          { id: "break-continue", title: "break, continue and labelled loops", emoji: "⏭️", group: 'Lesson', keywords: ["break", "continue", "labelled break", "nested loop", "exit early", "skip iteration", "search"] },
+          { id: "loop-programs", title: "Classic loop programs, and a prime bug", emoji: "🔢", group: 'Lesson', keywords: ["prime number", "factors", "counter", "flag", "square root", "reverse number", "palindrome", "sum of digits", "even numbers", "boundary value", "dry run"] },
+          { id: "patterns", title: "Pattern programs with nested loops", emoji: "✳️", group: 'Lesson', keywords: ["pattern programs", "nested loops", "rows", "columns", "square", "right triangle", "inverted triangle", "pyramid", "number pattern", "Floyd triangle", "O(n²)"] },
+          { id: "even-odd", title: "Even or odd, three ways", emoji: '🏋️', group: "Easy practice" },
+          { id: "largest-smallest", title: "Largest and smallest of three", emoji: '🏋️', group: "Easy practice" },
+          { id: "fizzbuzz", title: "FizzBuzz", emoji: '🏋️', group: "Medium practice" },
+          { id: "leap-year", title: "Leap years", emoji: '🏋️', group: "Medium practice" },
+          { id: "armstrong", title: "Armstrong numbers", emoji: '🏋️', group: "Hard practice" },
+          { id: "digital-root", title: "Digital root and neon numbers", emoji: '🏋️', group: "Hard practice" },
+          { id: "reverse-int", title: "Reverse an integer safely", emoji: '🏋️', group: "Expert practice" },
+          { id: "more-patterns", title: "Floyd's triangle, number pyramid and diamond", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "cjs-methods", title: "Methods and Constructors", emoji: "🧰",
+        page: "content/java/cjs-methods-constructors.html",
+        summary: "Why methods exist, method signature and body, concrete and abstract methods, calling static and instance methods, parameters, arguments and return values, pass by value with primitives and references, method overloading, the call stack and recursion, constructors, the default constructor the compiler adds, parameterised constructors, the this keyword and constructor chaining with this().",
+        keywords: ["method", "function", "method signature", "method body", "concrete method", "abstract method", "static method", "instance method", "invoke", "class name dot method", "parameter", "argument", "return type", "void", "pass by value", "reference", "method overloading", "call stack", "stack frame", "recursion", "StackOverflowError", "constructor", "default constructor", "parameterised constructor", "no return type", "this keyword", "this()", "constructor chaining", "constructor overloading", "toString", "object address", "=="],
+        added: "2026-10-20",
+        sections: [
+          { id: "why-methods", title: "Why methods", emoji: "📦", group: 'Lesson', keywords: ["method", "block of code", "specific task", "code reuse", "redundancy", "readability", "maintainability", "signature", "body", "concrete", "abstract"] },
+          { id: "calling", title: "Calling static and instance methods", emoji: "📞", group: 'Lesson', keywords: ["static method", "instance method", "direct call", "ClassName.method()", "object reference", "recommended", "not recommended", "another class"] },
+          { id: "params", title: "Parameters, return values and pass by value", emoji: "↩️", group: 'Lesson', keywords: ["parameter", "argument", "return", "return type", "void", "pass by value", "primitive copy", "reference copy", "mutate object", "reassign reference"] },
+          { id: "overloading", title: "Method overloading", emoji: "🎛️", group: 'Lesson', keywords: ["method overloading", "same name", "different parameters", "number of parameters", "types of parameters", "order", "compile time polymorphism", "return type not enough", "default arguments"] },
+          { id: "call-stack", title: "The call stack and recursion", emoji: "🥞", group: 'Lesson', keywords: ["call stack", "stack frame", "local variables", "return address", "recursion", "base case", "factorial", "StackOverflowError", "depth"] },
+          { id: "constructors", title: "Constructors", emoji: "🏗️", group: 'Lesson', keywords: ["constructor", "same name as class", "no return type", "initialise fields", "default constructor", "compiler adds", "parameterised constructor", "compilation error", "private constructor"] },
+          { id: "this", title: "this and constructor chaining", emoji: "🔗", group: 'Lesson', keywords: ["this keyword", "current object", "this.field", "shadowing", "this.method()", "this()", "constructor chaining", "first statement", "order of initialisation"] },
+          { id: "area-overload", title: "Overloaded area and perimeter", emoji: '🏋️', group: "Easy practice" },
+          { id: "simple-interest", title: "Simple and compound interest", emoji: '🏋️', group: "Easy practice" },
+          { id: "factorial", title: "Factorial three ways, and where it overflows", emoji: '🏋️', group: "Medium practice" },
+          { id: "fast-power", title: "Power with a loop and by halving", emoji: '🏋️', group: "Medium practice" },
+          { id: "fibonacci", title: "Fibonacci: counting the calls", emoji: '🏋️', group: "Hard practice" },
+          { id: "bank-account", title: "Bank account with chained constructors", emoji: '🏋️', group: "Hard practice" },
+          { id: "employee-raise", title: "Raise for employees older than 25", emoji: '🏋️', group: "Expert practice" },
+          { id: "electric-bill", title: "Slab based electricity bill", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "cjs-oop", title: "OOP in Practice", emoji: "🧬",
+        page: "content/java/cjs-oop.html",
+        summary: "The four pillars of object oriented programming as the session teaches them: compile time polymorphism with overloading and method mapping, inheritance in its single, multilevel and hierarchical forms, why multiple inheritance of classes is blocked, runtime polymorphism with overriding, super and constructor order, upcasting, downcasting and ClassCastException, abstract classes, interfaces with default and static methods, and encapsulation with getters and setters.",
+        keywords: ["object oriented programming", "OOP", "four pillars", "polymorphism", "compile time polymorphism", "runtime polymorphism", "method overloading", "method mapping", "widening", "inheritance", "extends", "single inheritance", "multilevel inheritance", "hierarchical inheritance", "multiple inheritance", "diamond problem", "hybrid inheritance", "method overriding", "@Override", "super", "super()", "constructor order", "upcasting", "downcasting", "ClassCastException", "instanceof", "abstraction", "abstract class", "abstract method", "interface", "implements", "default method", "static method in interface", "public static final", "encapsulation", "private", "getter", "setter", "data hiding"],
+        added: "2026-10-20",
+        sections: [
+          { id: "pillars", title: "The four pillars", emoji: "🏛️", group: 'Lesson', keywords: ["OOP", "four pillars", "polymorphism", "inheritance", "abstraction", "encapsulation", "class", "object", "reuse", "hide details"] },
+          { id: "mapping", title: "Overloading and method mapping", emoji: "🎯", group: 'Lesson', keywords: ["method overloading", "compile time polymorphism", "static binding", "method mapping", "widening", "byte to short", "char to int", "most specific method", "unboxing", "ambiguity"] },
+          { id: "inheritance", title: "Inheritance and its types", emoji: "🌳", group: 'Lesson', keywords: ["inheritance", "extends", "parent class", "child class", "superclass", "subclass", "single level", "multilevel", "hierarchical", "multiple", "hybrid", "diamond problem", "Object class", "is-a", "instanceof"] },
+          { id: "overriding", title: "Method overriding", emoji: "🔄", group: 'Lesson', keywords: ["method overriding", "runtime polymorphism", "dynamic binding", "same signature", "@Override", "cannot reduce visibility", "static methods", "final methods", "private methods", "super.method()"] },
+          { id: "super", title: "super and the order of construction", emoji: "⬆️", group: 'Lesson', keywords: ["super keyword", "super()", "super.method()", "super.field", "constructor chaining", "parent constructor first", "implicit super()", "field hiding"] },
+          { id: "casting", title: "Upcasting, downcasting and instanceof", emoji: "🔃", group: 'Lesson', keywords: ["upcasting", "downcasting", "implicit", "explicit", "parent reference", "child object", "ClassCastException", "instanceof", "pattern matching", "common members", "reference type", "object type"] },
+          { id: "abstraction", title: "Abstraction with abstract classes", emoji: "🎭", group: 'Lesson', keywords: ["abstraction", "abstract class", "abstract method", "no object", "concrete method", "constructor in abstract class", "child must override", "partial abstraction"] },
+          { id: "interfaces", title: "Interfaces", emoji: "🔌", group: 'Lesson', keywords: ["interface", "implements", "public abstract", "public static final", "default method", "static method", "JDK 8", "multiple inheritance", "diamond", "Interface.super.method()", "combination inheritance", "contract"] },
+          { id: "encapsulation", title: "Encapsulation with getters and setters", emoji: "💊", group: 'Lesson', keywords: ["encapsulation", "data hiding", "private fields", "getter", "setter", "validation", "read only", "write once", "final field", "JavaBean", "Python property", "JavaScript private field"] },
+          { id: "shapes", title: "Polymorphic shapes", emoji: '🏋️', group: "Easy practice" },
+          { id: "animals", title: "Animal sounds with super", emoji: '🏋️', group: "Easy practice" },
+          { id: "payroll", title: "Payroll with four kinds of staff", emoji: '🏋️', group: "Medium practice" },
+          { id: "product", title: "An encapsulated product", emoji: '🏋️', group: "Medium practice" },
+          { id: "payments", title: "Payment methods on interfaces", emoji: '🏋️', group: "Hard practice" },
+          { id: "safe-cast", title: "Safe casting with instanceof", emoji: '🏋️', group: "Hard practice" },
+          { id: "init-order", title: "Static blocks, instance blocks and constructors", emoji: '🏋️', group: "Expert practice" },
+          { id: "toll-booth", title: "Toll booth for a vehicle family", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "cjs-apis", title: "Strings, Arrays, Collections and Exceptions", emoji: "🧺",
+        page: "content/java/cjs-core-apis.html",
+        summary: "The everyday Java library a tester uses: the String pool, == versus equals and immutability, the common String methods, classic string programs, arrays and their limits, wrapper classes with boxing, parsing and the Integer cache, the Collection framework with List, Set and Map, and exception handling with try, catch, finally, throw, throws and checked versus unchecked exceptions.",
+        keywords: ["String", "String pool", "string constant pool", "immutable", "==", "equals", "equalsIgnoreCase", "compareTo", "intern", "length", "charAt", "substring", "indexOf", "lastIndexOf", "contains", "startsWith", "endsWith", "replace", "replaceAll", "split", "trim", "isEmpty", "isBlank", "String.format", "StringBuilder", "reverse a string", "palindrome", "camel case", "remove duplicates", "array", "ArrayIndexOutOfBoundsException", "Arrays.sort", "Arrays.toString", "wrapper class", "autoboxing", "unboxing", "Integer.parseInt", "Double.parseDouble", "Integer cache", "NumberFormatException", "Collection framework", "List", "ArrayList", "LinkedList", "ListIterator", "generics", "Set", "HashSet", "LinkedHashSet", "TreeSet", "Map", "HashMap", "LinkedHashMap", "TreeMap", "stream", "filter", "map", "exception", "try", "catch", "finally", "multiple catch", "throw", "throws", "checked exception", "unchecked exception", "RuntimeException", "custom exception", "try with resources"],
+        added: "2026-10-20",
+        sections: [
+          { id: "string-pool", title: "Strings, the pool and equals", emoji: "🧵", group: 'Lesson', keywords: ["String", "String pool", "string constant pool", "literal", "new String", "heap", "==", "equals", "equalsIgnoreCase", "intern", "immutable", "compareTo"] },
+          { id: "string-methods", title: "String methods", emoji: "🔤", group: 'Lesson', keywords: ["length", "concat", "toLowerCase", "toUpperCase", "charAt", "substring", "contains", "startsWith", "endsWith", "indexOf", "lastIndexOf", "replace", "replaceAll", "String.format", "isEmpty", "isBlank", "trim", "strip", "split", "toCharArray", "join"] },
+          { id: "string-programs", title: "Classic string programs", emoji: "🔁", group: 'Lesson', keywords: ["reverse a string", "StringBuilder reverse", "palindrome", "camel case", "regex split", "first letter lower rest upper", "remove duplicate characters", "LinkedHashSet"] },
+          { id: "arrays", title: "Arrays", emoji: "📏", group: 'Lesson', keywords: ["array", "fixed size", "index", "default values", "length", "for loop", "for each", "O(1) access", "Arrays.toString", "Arrays.sort", "clone", "two dimensional array", "ArrayIndexOutOfBoundsException"] },
+          { id: "wrappers", title: "Wrapper classes", emoji: "🎁", group: 'Lesson', keywords: ["wrapper class", "Integer", "Double", "Boolean", "Character", "autoboxing", "unboxing", "parseInt", "parseDouble", "parseBoolean", "valueOf", "Integer cache", "-128 to 127", "NumberFormatException", "NullPointerException"] },
+          { id: "collections", title: "The Collection framework", emoji: "🗂️", group: 'Lesson', keywords: ["Collection framework", "Collection", "List", "Set", "Queue", "Map", "ArrayList", "LinkedList", "HashSet", "LinkedHashSet", "TreeSet", "HashMap", "LinkedHashMap", "TreeMap", "generics", "ListIterator", "stream", "filter", "map", "duplicates", "order"] },
+          { id: "exceptions", title: "Exception handling", emoji: "🧯", group: 'Lesson', keywords: ["exception", "try", "catch", "finally", "multiple catch", "order of catch blocks", "ArithmeticException", "NullPointerException", "Exception", "Throwable", "Error", "program flow", "finally with return"] },
+          { id: "throw-throws", title: "Checked and unchecked, throw and throws", emoji: "🎯", group: 'Lesson', keywords: ["checked exception", "unchecked exception", "RuntimeException", "IOException", "FileNotFoundException", "throw", "throws", "custom exception", "extends Exception", "try with resources", "exception hierarchy"] },
+          { id: "char-count", title: "Count vowels, consonants, digits and symbols", emoji: '🏋️', group: "Easy practice" },
+          { id: "anagram", title: "Anagram check, two ways", emoji: '🏋️', group: "Easy practice" },
+          { id: "word-frequency", title: "Word frequency with a map", emoji: '🏋️', group: "Medium practice" },
+          { id: "first-unique", title: "First unique character and remove duplicates", emoji: '🏋️', group: "Medium practice" },
+          { id: "second-largest", title: "Second largest distinct value", emoji: '🏋️', group: "Hard practice" },
+          { id: "price-parser", title: "Parse prices safely with BigDecimal", emoji: '🏋️', group: "Hard practice" },
+          { id: "brackets", title: "Balanced brackets with a stack", emoji: '🏋️', group: "Expert practice" },
+          { id: "retry", title: "Retry runner with a custom checked exception", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "cjs-files", title: "Reading Test Data Files", emoji: "📂",
+        page: "content/java/cjs-read-files.html",
+        summary: "Data driven testing with external files: project paths and user.dir, text files with Files.readAllLines and BufferedReader, properties files for configuration, CSV rows for test data, JSON with Jackson and JsonPath expressions, Excel sheets with Apache POI and the Fillo style queries the session uses, and turning rows into the Object[][] shape a TestNG data provider expects.",
+        keywords: ["data driven testing", "test data", "src/test/resources", "user.dir", "System.getProperty", "Path", "Paths.get", "Files.readAllLines", "BufferedReader", "FileReader", "Files.write", "try with resources", "Properties", "properties file", "getProperty", "config reader", "CSV", "split with -1", "JSON", "Jackson", "ObjectMapper", "JsonNode", "readTree", "path", "at", "JSON Pointer", "JsonPath", "$.firstName", "Excel", "xlsx", "xls", "Apache POI", "Workbook", "Sheet", "Row", "Cell", "DataFormatter", "WorkbookFactory", "Fillo", "select query", "Object[][]", "DataProvider", "IOException", "FileNotFoundException"],
+        added: "2026-10-20",
+        sections: [
+          { id: "data-driven", title: "Why test data lives in files", emoji: "🗄️", group: 'Lesson', keywords: ["data driven testing", "separate data from code", "src/test/resources", "user.dir", "project root", "relative path", "absolute path", "Path", "Paths.get", "Maven layout"] },
+          { id: "text", title: "Text files", emoji: "📄", group: 'Lesson', keywords: ["text file", "Files.readAllLines", "List of String", "BufferedReader", "readLine", "null at end", "try with resources", "Files.write", "createDirectories", "large files", "memory"] },
+          { id: "properties", title: "Properties files for configuration", emoji: "⚙️", group: 'Lesson', keywords: ["properties file", "key=value", "comments", "Properties.load", "getProperty", "default value", "System.getProperty override", "-D", "ConfigReader", "environment"] },
+          { id: "csv", title: "CSV rows", emoji: "🧾", group: 'Lesson', keywords: ["CSV", "comma separated values", "header row", "split", "limit -1", "empty field", "trailing empty strings", "quoted commas", "test rows", "positive and negative data"] },
+          { id: "json", title: "JSON with Jackson and JsonPath", emoji: "🧩", group: 'Lesson', keywords: ["JSON", "object", "array", "key", "value", "nested", "Jackson", "ObjectMapper", "readTree", "JsonNode", "get", "path", "at", "JSON Pointer", "asText", "asInt", "isNull", "JsonPath", "DocumentContext", "parse", "read", "$", "wildcard", "filter"] },
+          { id: "excel", title: "Excel with Apache POI and Fillo", emoji: "📊", group: 'Lesson', keywords: ["Excel", "xlsx", "xls", "Apache POI", "Workbook", "WorkbookFactory", "XSSFWorkbook", "HSSFWorkbook", "Sheet", "Row", "Cell", "getLastRowNum", "getLastCellNum", "DataFormatter", "Fillo", "select query", "update query", "where clause", "write back"] },
+          { id: "data-provider", title: "From rows to a data driven test", emoji: "🔁", group: 'Lesson', keywords: ["Object[][]", "DataProvider", "TestNG", "parametrize", "pytest", "one test many rows", "expected result column", "positive and negative data"] },
+          { id: "log-levels", title: "Count log levels in a test log", emoji: '🏋️', group: "Easy practice" },
+          { id: "env-switch", title: "One config per environment", emoji: '🏋️', group: "Easy practice" },
+          { id: "validate-json", title: "Validate an API response", emoji: '🏋️', group: "Medium practice" },
+          { id: "csv-report", title: "CSV test report with a pass rate", emoji: '🏋️', group: "Medium practice" },
+          { id: "update-json", title: "Update and save JSON", emoji: '🏋️', group: "Hard practice" },
+          { id: "select-cases", title: "Pick test cases from an Excel sheet", emoji: '🏋️', group: "Hard practice" },
+          { id: "compare-csv", title: "Compare expected and actual data", emoji: '🏋️', group: "Expert practice" },
+          { id: "flatten-json", title: "Flatten JSON into JsonPath addresses", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "cjs-programs", title: "Practice Program Bank", emoji: "🏋️",
+        page: "content/java/cjs-program-bank.html",
+        summary: "All 66 programs from the session's assignment list, each linked to a solution in Java, Python and JavaScript: number programs such as swaps, primes, factors, reversing with overflow, Armstrong and neon numbers, string programs such as word reversal, run length counts, overlapping patterns and repeated characters, array programs such as missing digits and moving zeros, and arithmetic beyond long with BigInteger.",
+        keywords: ["Java programs", "interview programs", "swap two numbers", "XOR swap", "ASCII", "A to Z", "is alphabet", "prime numbers 1 to n", "factors", "count digits", "multiplication table", "power", "closed paths", "reverse a number", "integer overflow", "palindrome number", "Armstrong number", "neon number", "digit root", "remove spaces", "character occurrence", "reverse words", "run length", "overlapping pattern count", "upper case letters", "capitalise words", "duplicate characters", "first repeating character", "first repeated word", "average", "sort", "missing numbers", "largest", "smallest", "move zeros", "unique values", "running total", "BigInteger", "BigDecimal"],
+        added: "2026-10-20",
+        sections: [
+          { id: "bank", title: "The whole list in one place", emoji: "🗂️", group: 'Lesson', keywords: ["program list", "assignment list", "checklist", "interview preparation", "solved where", "progress"] },
+          { id: "basics", title: "Arithmetic, swaps and characters", emoji: "🔢", group: 'Lesson', keywords: ["multiply", "decimal output", "integer division", "exact division", "cast to double", "swap with temp", "swap without temp", "XOR swap", "overflow", "ASCII", "char to int", "A to Z", "Character.isLetter"] },
+          { id: "numbers", title: "Number programs", emoji: "🧮", group: 'Lesson', keywords: ["prime numbers 1 to n", "even numbers", "factors", "count digits", "do while", "multiplication table", "power", "Math.pow returns double", "closed paths in digits"] },
+          { id: "reverse", title: "Reverse, palindrome, Armstrong and neon", emoji: "🔄", group: 'Lesson', keywords: ["reverse a number", "n % 10", "n / 10", "negative numbers", "trailing zero", "integer overflow", "1534236469", "palindrome number", "Armstrong number", "153", "neon number", "9", "digit root"] },
+          { id: "strings", title: "String programs", emoji: "🔤", group: 'Lesson', keywords: ["remove spaces", "replace", "occurrence of a character", "reverse words", "split", "run length", "aabbbccccdddda", "overlapping pattern", "indexOf from index", "upper case letters", "Character.isUpperCase", "capitalise first letter", "capitalise each word"] },
+          { id: "repeats", title: "Repeated characters and words", emoji: "🔁", group: 'Lesson', keywords: ["occurrence of every character", "LinkedHashMap", "duplicate characters", "first repeating character", "4th repeating character", "last repeating character", "first repeated word", "HashSet add returns false"] },
+          { id: "arrays", title: "Array programs", emoji: "📊", group: 'Lesson', keywords: ["average", "sort", "Arrays.sort", "missing numbers 0 to 9", "boolean array", "largest", "smallest", "divisible by 4 or 6", "move zeros to end", "move zeros to front", "stable order", "unique values", "LinkedHashSet", "TreeSet"] },
+          { id: "big-numbers", title: "Running totals and numbers beyond long", emoji: "🐘", group: 'Lesson', keywords: ["running total", "prefix sums", "BigInteger", "add", "subtract", "multiply", "divide", "mod", "pow", "overflow", "Long.MAX_VALUE", "BigDecimal", "money"] },
+          { id: "missing-number", title: "The missing number from 1 to n", emoji: '🏋️', group: "Easy practice" },
+          { id: "rotate-array", title: "Rotate an array by k", emoji: '🏋️', group: "Easy practice" },
+          { id: "two-sum", title: "Pairs that add up to a target", emoji: '🏋️', group: "Medium practice" },
+          { id: "word-stats", title: "Word statistics", emoji: '🏋️', group: "Medium practice" },
+          { id: "compress", title: "String compression", emoji: '🏋️', group: "Hard practice" },
+          { id: "merge-sorted", title: "Merge two sorted arrays", emoji: '🏋️', group: "Hard practice" },
+          { id: "spiral", title: "Read a matrix in a spiral", emoji: '🏋️', group: "Expert practice" },
+          { id: "big-factorial", title: "The digits of 100!", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      }
+      ]
+    };
+}
+
+function tngModule() {
+  return {
+      id: "testng-framework", title: "TestNG Framework", emoji: "🧪", blurb: "Annotations, suites, data providers, listeners and framework design.",
+      topics: [
+      {
+        id: "tng-basics", title: "TestNG Foundations: Annotations, Assertions and Test Control", emoji: "🧪",
+        page: "content/testng/testng-foundations.html",
+        summary: "What TestNG adds to plain Java, setting it up with Maven, writing a first test class, the full annotation lifecycle from @BeforeSuite to @AfterSuite, hard and soft assertions, test attributes such as priority, enabled, description, timeOut, invocationCount and expectedExceptions, the default run order, and dependencies with dependsOnMethods and alwaysRun.",
+        keywords: ["TestNG", "test framework", "Maven dependency", "pom.xml", "@Test", "@BeforeSuite", "@AfterSuite", "@BeforeTest", "@AfterTest", "@BeforeClass", "@AfterClass", "@BeforeMethod", "@AfterMethod", "annotations", "lifecycle", "Assert", "assertEquals", "assertTrue", "assertFalse", "assertNotNull", "SoftAssert", "assertAll", "hard assert", "soft assert", "priority", "enabled", "description", "timeOut", "invocationCount", "expectedExceptions", "expectedExceptionsMessageRegExp", "dependsOnMethods", "alwaysRun", "skipped tests", "run order", "pytest", "fixtures", "Mocha", "hooks"],
+        added: "2026-10-20",
+        sections: [
+          { id: "why-testng", title: "Why a test framework", emoji: "🎯", group: 'Lesson', keywords: ["TestNG", "JUnit", "main method", "test runner", "report", "pass", "fail", "skip", "annotations", "Maven", "pom.xml", "dependency", "Surefire", "test-output"] },
+          { id: "first-test", title: "A first test class", emoji: "✅", group: 'Lesson', keywords: ["@Test", "Assert.assertEquals", "actual expected order", "message", "assertTrue", "assertFalse", "PASSED", "FAILED", "test report", "code under test"] },
+          { id: "lifecycle", title: "The annotation lifecycle", emoji: "🔄", group: 'Lesson', keywords: ["@BeforeSuite", "@BeforeTest", "@BeforeClass", "@BeforeMethod", "@Test", "@AfterMethod", "@AfterClass", "@AfterTest", "@AfterSuite", "order", "setup", "teardown", "browser per class", "page per method"] },
+          { id: "assertions", title: "Hard and soft assertions", emoji: "⚖️", group: 'Lesson', keywords: ["Assert", "hard assert", "SoftAssert", "assertAll", "assertEquals", "assertNotEquals", "assertTrue", "assertNull", "assertNotNull", "assertEqualsNoOrder", "collect failures", "message"] },
+          { id: "attributes", title: "Test attributes", emoji: "🏷️", group: 'Lesson', keywords: ["priority", "enabled", "description", "timeOut", "invocationCount", "threadPoolSize", "expectedExceptions", "expectedExceptionsMessageRegExp", "alphabetical order", "ThreadTimeoutException"] },
+          { id: "dependencies", title: "Dependencies between tests", emoji: "🔗", group: 'Lesson', keywords: ["dependsOnMethods", "dependsOnGroups", "alwaysRun", "skipped", "cascade", "hard dependency", "soft dependency", "independent tests"] },
+          { id: "text-utils", title: "Tests for a text utility", emoji: '🏋️', group: "Easy practice" },
+          { id: "hook-counter", title: "Count how often each hook runs", emoji: '🏋️', group: "Easy practice" },
+          { id: "cart-tests", title: "Shopping cart tests that find a bug", emoji: '🏋️', group: "Medium practice" },
+          { id: "form-soft", title: "Validate a form with soft asserts", emoji: '🏋️', group: "Medium practice" },
+          { id: "account-exceptions", title: "Expected exceptions on a bank account", emoji: '🏋️', group: "Hard practice" },
+          { id: "run-order", title: "Predict the run order", emoji: '🏋️', group: "Hard practice" },
+          { id: "password-boundaries", title: "Find a boundary bug in a password rule", emoji: '🏋️', group: "Expert practice" },
+          { id: "lifecycle-table", title: "A table driven multiplication test", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "tng-suites", title: "Suites, Groups, Parameters and Data Providers", emoji: "🧾",
+        page: "content/testng/testng-suites-data.html",
+        summary: "Organising and feeding tests with TestNG: the structure of testng.xml with suite, test, classes, methods, include and exclude, groups for smoke and regression runs, @Parameters with suite and test level values and @Optional, data providers with Object[][], named providers, Iterator providers that read files, indices, and parallel execution with thread-count and thread safe code.",
+        keywords: ["testng.xml", "suite", "test tag", "classes", "class", "methods", "include", "exclude", "packages", "groups", "smoke", "regression", "sanity", "@BeforeGroups", "dependsOnGroups", "@Parameters", "parameter", "@Optional", "suite level parameter", "test level parameter", "cross browser", "@DataProvider", "Object[][]", "dataProvider name", "Iterator<Object[]>", "indices", "data driven", "CSV data provider", "JSON data provider", "parallel", "thread-count", "parallel methods", "parallel classes", "parallel tests", "ThreadLocal", "AtomicInteger", "pytest markers", "pytest -m", "pytest -k", "parametrize", "mocha --grep"],
+        added: "2026-10-20",
+        sections: [
+          { id: "suite-xml", title: "The testng.xml suite file", emoji: "🧾", group: 'Lesson', keywords: ["testng.xml", "suite", "test", "classes", "class", "methods", "include", "exclude", "packages", "verbose", "DOCTYPE", "run from file", "mvn test", "suiteXmlFile"] },
+          { id: "groups", title: "Groups for smoke and regression runs", emoji: "🏷️", group: 'Lesson', keywords: ["groups", "include group", "exclude group", "smoke", "regression", "sanity", "@BeforeGroups", "alwaysRun", "dependsOnGroups", "pytest markers", "pytest -m", "mocha grep tags"] },
+          { id: "parameters", title: "Parameters from testng.xml", emoji: "⚙️", group: 'Lesson', keywords: ["@Parameters", "parameter", "suite level", "test level", "override", "@Optional", "default value", "cross browser", "browser parameter", "baseUrl", "String only"] },
+          { id: "data-provider", title: "Data providers", emoji: "📋", group: 'Lesson', keywords: ["@DataProvider", "Object[][]", "dataProvider attribute", "name", "one row per run", "arguments", "test report with arguments", "parametrize", "positive and negative data"] },
+          { id: "provider-files", title: "Data providers that read files", emoji: "📂", group: 'Lesson', keywords: [] },
+          { id: "parallel", title: "Parallel execution", emoji: "⚡", group: 'Lesson', keywords: ["parallel", "methods", "classes", "tests", "instances", "thread-count", "threadPoolSize", "data-provider-thread-count", "ThreadLocal", "AtomicInteger", "ConcurrentHashMap", "thread safety", "Selenium Grid"] },
+          { id: "email-rule", title: "Valid and invalid email providers", emoji: '🏋️', group: "Easy practice" },
+          { id: "group-run", title: "Regression without slow tests", emoji: '🏋️', group: "Easy practice" },
+          { id: "cross-browser", title: "Layout on three browsers", emoji: '🏋️', group: "Medium practice" },
+          { id: "rerun-rows", title: "Rerun selected rows with indices", emoji: '🏋️', group: "Medium practice" },
+          { id: "json-provider", title: "Shipping rules from a JSON file", emoji: '🏋️', group: "Hard practice" },
+          { id: "shared-provider", title: "A provider class shared by two tests", emoji: '🏋️', group: "Hard practice" },
+          { id: "pairwise", title: "Pairwise browser combinations", emoji: '🏋️', group: "Expert practice" },
+          { id: "thread-local", title: "A ThreadLocal driver in parallel", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      },
+      {
+        id: "tng-advanced", title: "Listeners, Retries, Factories and Framework Design", emoji: "🛠️",
+        page: "content/testng/testng-advanced.html",
+        summary: "The parts of TestNG that turn tests into a framework: ITestListener for screenshots and logs on failure, IRetryAnalyzer for flaky infrastructure, @Factory for running a class once per data set, SkipException for conditional skips, the Page Object Model with a BaseTest, reports and testng-failed.xml, and how it all fits into Maven and a CI pipeline.",
+        keywords: ["ITestListener", "listener", "@Listeners", "onTestFailure", "screenshot on failure", "ITestResult", "ITestContext", "ISuiteListener", "IReporter", "IRetryAnalyzer", "retryAnalyzer", "flaky test", "@Factory", "factory with data provider", "SkipException", "conditional skip", "Page Object Model", "page object", "BaseTest", "WebDriver", "driver factory", "locators", "testng-failed.xml", "emailable-report.html", "test-output", "Maven Surefire", "CI pipeline", "Jenkins", "GitHub Actions", "pytest hooks", "conftest.py", "pytest-rerunfailures", "mocha retries"],
+        added: "2026-10-20",
+        sections: [
+          { id: "listeners", title: "Listeners", emoji: "👂", group: 'Lesson', keywords: ["ITestListener", "@Listeners", "onTestStart", "onTestSuccess", "onTestFailure", "onTestSkipped", "onStart", "onFinish", "ITestResult", "ITestContext", "screenshot", "logging", "listeners in testng.xml"] },
+          { id: "retry", title: "Retrying flaky tests", emoji: "🔁", group: 'Lesson', keywords: ["IRetryAnalyzer", "retryAnalyzer", "retry count", "flaky", "intermittent", "infrastructure", "timeout", "retry hides bugs", "IAnnotationTransformer", "pytest-rerunfailures", "mocha this.retries"] },
+          { id: "factory", title: "@Factory: one class, many instances", emoji: "🏭", group: 'Lesson', keywords: ["@Factory", "constructor with data", "Object[]", "factory with dataProvider", "instances", "per language", "per role", "parallel instances", "parametrised class"] },
+          { id: "skip", title: "Conditional skips", emoji: "⏭️", group: 'Lesson', keywords: ["SkipException", "skip at runtime", "environment check", "health check", "destructive test", "pytest.skip", "skipif", "mocha this.skip", "skipped not failed"] },
+          { id: "framework", title: "A framework: Page Objects and a BaseTest", emoji: "🏗️", group: 'Lesson', keywords: ["Page Object Model", "page class", "locators", "actions", "no assertions in pages", "BaseTest", "@BeforeMethod driver", "driver factory", "ThreadLocal", "config reader", "utilities", "test layer", "project structure"] },
+          { id: "reports-ci", title: "Reports, reruns and CI", emoji: "📊", group: 'Lesson', keywords: ["test-output", "emailable-report.html", "index.html", "testng-results.xml", "testng-failed.xml", "rerun failures", "Maven Surefire", "suiteXmlFiles", "mvn test", "-Dbrowser", "Jenkins", "GitHub Actions", "Extent Reports", "Allure"] },
+          { id: "result-counter", title: "A listener that sets the build colour", emoji: '🏋️', group: "Easy practice" },
+          { id: "search-page", title: "A search page object", emoji: '🏋️', group: "Easy practice" },
+          { id: "slowest-tests", title: "Find the slowest tests", emoji: '🏋️', group: "Medium practice" },
+          { id: "role-factory", title: "A factory fed by a data provider", emoji: '🏋️', group: "Medium practice" },
+          { id: "rerun-file", title: "Build a rerun file for failures", emoji: '🏋️', group: "Hard practice" },
+          { id: "explicit-wait", title: "An explicit wait with a fake clock", emoji: '🏋️', group: "Hard practice" },
+          { id: "product-page", title: "Check a product page with soft asserts", emoji: '🏋️', group: "Expert practice" },
+          { id: "retry-config", title: "A retry limit from configuration", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      }
+      ]
+    };
 }
