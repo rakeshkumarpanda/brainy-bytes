@@ -1,0 +1,62 @@
+/* ===== Interview questions (assets/interview.js). Builds on the lq-* styles in learn.css ===== */
+.iq-must{margin:0 0 14px; border:1.5px solid var(--line); border-radius:16px; background:var(--surface2); padding:10px 14px}
+.iq-must summary{cursor:pointer; font-family:var(--font-head); font-weight:800; font-size:17px}
+.iq-mgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; margin-top:10px}
+.iq-mcard{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; background:var(--surface); border:1px solid var(--line)}
+.iq-mem{font-size:24px; line-height:1}
+.iq-mcard b{display:block; font-size:15px}
+.iq-mcard p{margin:2px 0 0; font-size:13.5px; color:var(--ink2); line-height:1.5}
+.iq-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px}
+.iq-prog{flex:1; min-width:160px; height:10px; border-radius:999px; background:var(--surface2); border:1px solid var(--line); overflow:hidden}
+.iq-prog i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .4s}
+.iq-stat{font-size:13px; font-weight:700; color:var(--ink2)}
+.iq-chips{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px}
+.iq-chip{padding:5px 12px; border-radius:999px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink2); font:inherit; font-size:13.5px; font-weight:800; cursor:pointer}
+.iq-chip:hover{border-color:var(--accent)}
+.iq-chip.on{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.iq-row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
+.iq-search,.iq-show{padding:8px 12px; border-radius:12px; border:2px solid var(--line); background:var(--surface2); color:var(--ink); font:inherit; font-size:14px; font-weight:700}
+.iq-search{flex:1; min-width:180px}
+.iq-search:focus,.iq-show:focus,.iq-in:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.iq-th{margin:18px 0 8px; font-family:var(--font-head); font-size:19px; color:var(--accent-deep)}
+.iq-item{padding:14px 16px; border-radius:16px; border:2px solid var(--line); background:var(--surface); margin-bottom:12px; transition:border-color .3s, box-shadow .3s}
+.iq-item.rk{border-color:color-mix(in srgb, var(--green) 60%, var(--line)); box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 12%, transparent)}
+.iq-item.rp{border-color:color-mix(in srgb, var(--yellow) 70%, var(--line))}
+.iq-item.rr{border-color:color-mix(in srgb, var(--red) 45%, var(--line))}
+.iq-tags{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px}
+.iq-tag{font-size:12px; font-weight:800; padding:1px 9px; border-radius:999px; background:var(--surface2); color:var(--ink2); border:1px solid var(--line)}
+.iq-tag.lv-easy{color:var(--easy); background:var(--easy-soft)} .iq-tag.lv-med{color:var(--med); background:var(--med-soft)}
+.iq-tag.lv-hard{color:var(--hard); background:var(--hard-soft)} .iq-tag.lv-exp{color:var(--exp); background:var(--exp-soft)}
+.iq-mark{font-size:12px; font-weight:800; color:var(--accent-deep)}
+.iq-qt{font-size:16px}
+.iq-qt code,.iq-ans code,.iq-hint code,.iq-mcard code{font-family:var(--font-mono); font-size:.88em; background:var(--surface2); border-radius:5px; padding:0 4px}
+.iq-lbl{display:block; margin:12px 0 4px; font-size:13.5px; font-weight:800; color:var(--ink2)}
+.iq-in{display:block; width:100%; min-height:72px; resize:vertical; padding:10px 12px; border-radius:12px; border:2px solid var(--line); background:var(--surface2); color:var(--ink); font:inherit; font-size:14.5px; line-height:1.55}
+.iq-ab{border:0; border-radius:999px; padding:6px 14px; font:inherit; font-size:13.5px; font-weight:800; cursor:pointer; background:linear-gradient(90deg,var(--green),var(--teal)); color:#fff}
+.iq-ab:disabled{opacity:.45; cursor:not-allowed}
+.iq-ab.on{background:var(--surface2); color:var(--ink2); border:1.5px solid var(--line)}
+.iq-ans{margin-top:10px; display:grid; gap:10px; animation:fun-pop .4s ease}
+.iq-ans>div>b{display:block; font-size:12.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink2); margin-bottom:4px}
+.iq-mine{padding:10px 14px; border-radius:12px; border:1.5px dashed var(--box-line); background:var(--surface)}
+.iq-mtext{white-space:pre-wrap; font-size:14.5px}
+.iq-model{padding:10px 14px; border-radius:12px; background:color-mix(in srgb, var(--green) 10%, var(--surface)); border-left:5px solid var(--green); font-size:15px; font-weight:600; line-height:1.6}
+.iq-pts{margin:6px 0 0; padding-left:1.3em; font-weight:600}
+.iq-pts li{margin:2px 0}
+.iq-explain{padding:10px 14px; border-radius:12px; background:var(--surface2); border-left:5px solid var(--accent); font-size:14.5px; line-height:1.65}
+.iq-explain p{margin:6px 0}
+.iq-explain table{border-collapse:collapse; margin:8px 0; font-size:13.5px; display:block; overflow-x:auto}
+.iq-explain th,.iq-explain td{border:1px solid var(--line); padding:5px 8px; text-align:left; vertical-align:top}
+.iq-explain th{background:var(--surface)}
+.iq-follow{padding:10px 14px; border-radius:12px; background:color-mix(in srgb, var(--purple) 9%, var(--surface)); border-left:5px solid var(--purple); font-size:14.5px}
+.iq-follow ul{margin:4px 0 0; padding-left:1.3em}
+.iq-rate{display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-weight:800; font-size:14px}
+.iq-rb{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; font-size:13.5px; font-weight:800; padding:5px 12px; border-radius:999px; cursor:pointer; transition:transform .15s}
+.iq-rb:hover{transform:translateY(-2px); border-color:var(--accent)}
+.iq-rb.on[data-r="k"]{background:var(--ok); border-color:var(--ok-line)}
+.iq-rb.on[data-r="p"]{background:color-mix(in srgb, var(--yellow) 35%, var(--surface)); border-color:var(--hl-line)}
+.iq-rb.on[data-r="r"]{background:var(--bad); border-color:var(--bad-line)}
+.iq-empty{text-align:center; color:var(--ink2); font-weight:700}
+@media (max-width:560px){
+  .iq-item{padding:12px}
+  .iq-row{flex-direction:column; align-items:stretch}
+}
