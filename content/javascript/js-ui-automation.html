@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI Automation: Playwright, Selenium, Cypress and WebdriverIO · JavaScript</title>
+<meta name="description" content="Playwright, Selenium WebDriver, Cypress and WebdriverIO: locators, waits, strict mode, network mocking, page objects, fixtures, retries, flaky tests, traces and CI.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🧪 Testing with JavaScript</span><span>›</span><span>Chapter 15 of 15</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🎭</span><div><h1>UI Automation: Playwright, Selenium, Cypress and WebdriverIO</h1><p class="lead">Drive a real browser against a small demo shop. Playwright locators, auto-waiting assertions, strict mode, network mocking, page objects, fixtures and retries, all run for real, Selenium WebDriver with explicit waits and a page object, run for real in Chrome, plus the same tests in Cypress and WebdriverIO and a sharded CI set up.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 26 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 0 runnable examples</span><span class="chip">🧪 6 real test runs</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 7 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>The Playwright and Selenium tests on this page ran in a real Chromium against the demo shop when the page was built. Cypress is shown with the same tests so you can compare.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#tools" class="qa"><span>🧭</span>The tools and how they drive a browser</a><a href="#playwright" class="qa"><span>🎭</span>Playwright: locators and web first assertions</a><a href="#network" class="qa"><span>🛰️</span>Controlling the network</a><a href="#framework" class="qa"><span>🏗️</span>Page objects, fixtures and retries</a><a href="#selenium" class="qa"><span>🚗</span>Selenium WebDriver</a><a href="#cypress" class="qa"><span>🌲</span>Cypress and WebdriverIO</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: a UI suite in CI</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="tools" data-say="tools"><div class="sec-num">Part 1</div><h2><span class="sec-em">🧭</span><span>The tools and how they drive a browser</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Selenium</span><span class="qa-tool">Cypress</span><span class="qa-tool">WebdriverIO</span><span class="qa-why">Picking a tool and understanding how it reaches the browser is the first decision in every UI automation project.</span></div>
+<p>A UI automation tool starts a real browser and acts like a user: it opens pages, types, clicks and reads what is shown. The four big JavaScript tools differ in how they talk to the browser, and that explains most of their strengths and limits.</p>
+<div class="viz" data-viz="flow" data-k="drivers"></div>
+<div class="tw"><table class="jt"><tr><th></th><th>Playwright</th><th>Selenium WebDriver</th><th>Cypress</th><th>WebdriverIO</th></tr>
+<tr><td>Talks to the browser</td><td>its own protocol (CDP for Chromium, patched Firefox and WebKit)</td><td>W3C WebDriver through a driver program, BiDi coming</td><td>runs inside the browser next to your app</td><td>WebDriver or BiDi</td></tr>
+<tr><td>Browsers</td><td>Chromium, Firefox, WebKit</td><td>every major browser, also real Safari and mobile through Appium</td><td>Chromium family, Firefox, WebKit (experimental)</td><td>all, plus mobile through Appium</td></tr>
+<tr><td>Waiting</td><td>auto-waits for every action and assertion</td><td>explicit waits you write</td><td>retries commands and assertions</td><td>auto-waits on actions</td></tr>
+<tr><td>Languages</td><td>JS, TS, Python, Java, .NET</td><td>JS, Java, Python, C#, Ruby</td><td>JS, TS</td><td>JS, TS</td></tr>
+<tr><td>Async style</td><td><code>await</code> everything</td><td><code>await</code> everything</td><td>chained commands, no await</td><td><code>await</code> everything</td></tr>
+<tr><td>Extras</td><td>API testing, traces, network mocking, parallel by default</td><td>Grid for many machines, the longest history</td><td>time travel debugger, network stubs</td><td>huge plugin set, mobile and desktop apps</td></tr>
+</table></div>
+<p>Every example below runs against the same small shop: a login form, a product list that arrives after 600 ms, a cart and an order button.</p>
+<div class="codewrap" data-k="shop-app"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The demo shop page (site/index.html) · The app under test</span><button type="button" class="copy">Copy</button></div><pre class="src main">&lt;!doctype html&gt;
+&lt;<span class="k">html</span> <span class="a">lang</span>=<span class="s">"en"</span>&gt;
+&lt;<span class="k">head</span>&gt;&lt;<span class="k">meta</span> <span class="a">charset</span>=<span class="s">"utf-8"</span>&gt;&lt;<span class="k">title</span>&gt;Demo Shop&lt;/<span class="k">title</span>&gt;&lt;/<span class="k">head</span>&gt;
+&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">header</span>&gt;
+    &lt;<span class="k">h1</span>&gt;Demo Shop&lt;/<span class="k">h1</span>&gt;
+    &lt;<span class="k">span</span> <span class="a">id</span>=<span class="s">"hello"</span>&gt;&lt;/<span class="k">span</span>&gt;
+    &lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"#cart"</span> <span class="a">aria-label</span>=<span class="s">"Cart"</span>&gt;🛒 &lt;<span class="k">span</span> <span class="a">data-testid</span>=<span class="s">"cart-count"</span>&gt;0&lt;/<span class="k">span</span>&gt;&lt;/<span class="k">a</span>&gt;
+  &lt;/<span class="k">header</span>&gt;
+
+  &lt;<span class="k">form</span> <span class="a">id</span>=<span class="s">"login"</span> <span class="a">aria-label</span>=<span class="s">"Sign in"</span>&gt;
+    &lt;<span class="k">label</span>&gt;Email &lt;<span class="k">input</span> <span class="a">name</span>=<span class="s">"email"</span> <span class="a">type</span>=<span class="s">"email"</span> <span class="a">required</span>&gt;&lt;/<span class="k">label</span>&gt;
+    &lt;<span class="k">label</span>&gt;Password &lt;<span class="k">input</span> <span class="a">name</span>=<span class="s">"password"</span> <span class="a">type</span>=<span class="s">"password"</span> <span class="a">required</span>&gt;&lt;/<span class="k">label</span>&gt;
+    &lt;<span class="k">button</span>&gt;Sign in&lt;/<span class="k">button</span>&gt;
+    &lt;<span class="k">p</span> <span class="a">role</span>=<span class="s">"alert"</span> <span class="a">hidden</span>&gt;&lt;/<span class="k">p</span>&gt;
+  &lt;/<span class="k">form</span>&gt;
+
+  &lt;<span class="k">main</span> <span class="a">id</span>=<span class="s">"shop"</span> <span class="a">hidden</span>&gt;
+    &lt;<span class="k">p</span> <span class="a">class</span>=<span class="s">"loading"</span>&gt;Loading products…&lt;/<span class="k">p</span>&gt;
+    &lt;<span class="k">ul</span> <span class="a">aria-label</span>=<span class="s">"Products"</span>&gt;&lt;/<span class="k">ul</span>&gt;
+    &lt;<span class="k">section</span> <span class="a">aria-label</span>=<span class="s">"Cart summary"</span>&gt;
+      &lt;<span class="k">p</span>&gt;Total: &lt;<span class="k">output</span> <span class="a">id</span>=<span class="s">"total"</span>&gt;₹0&lt;/<span class="k">output</span>&gt;&lt;/<span class="k">p</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">id</span>=<span class="s">"checkout"</span> <span class="a">disabled</span>&gt;Place order&lt;/<span class="k">button</span>&gt;
+      &lt;<span class="k">p</span> <span class="a">role</span>=<span class="s">"status"</span>&gt;&lt;/<span class="k">p</span>&gt;
+    &lt;/<span class="k">section</span>&gt;
+  &lt;/<span class="k">main</span>&gt;
+  &lt;<span class="k">script</span> <span class="a">src</span>=<span class="s">"app.js"</span>&gt;&lt;/<span class="k">script</span>&gt;
+&lt;/<span class="k">body</span>&gt;
+&lt;/<span class="k">html</span>&gt;</pre><div class="note-out"><span>What happens</span><p>A login form, a product list that loads after 600 ms, a cart and a Place order button. server.js serves it with Express and a small API.</p></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="playwright" data-say="playwright"><div class="sec-num">Part 2</div><h2><span class="sec-em">🎭</span><span>Playwright: locators and web first assertions</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-why">Locators and auto-waiting assertions are the core of every Playwright test.</span></div>
+<p>A Playwright test receives a <code>page</code>, finds elements with <b>locators</b> and checks them with <b>web first assertions</b>. A locator is a recipe, not an element: it is looked up again on every use, so it never goes stale. Every action waits until the element is visible, enabled and not moving, and every <code>expect(locator)</code> retries until it passes or times out.</p>
+<div class="codewrap tests" data-k="pw-first"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A first Playwright suite · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">"tests"</span>,
+  reporter: <span class="s">"list"</span>,
+  workers: <span class="n">1</span>,                       <span class="c">// one worker keeps the output in the same order on this page</span>
+  use: { baseURL: <span class="s">"http://localhost:4301"</span> },
+  projects: [{ name: <span class="s">"chromium"</span>, use: { ...devices[<span class="s">"Desktop Chrome"</span>] } }],
+  webServer: {
+    command: <span class="s">"node server.js"</span>,
+    url: <span class="s">"http://localhost:4301"</span>,
+    env: { <span class="t">PORT</span>: <span class="s">"4301"</span> },
+    reuseExistingServer: !process.env.<span class="t">CI</span>,
+  },
+});</pre><div class="fname">📄 tests/shop.spec.js</div><pre class="src" data-file="tests/shop.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+test.beforeEach(<span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">"/"</span>);
+});
+
+test(<span class="s">"wrong password shows an error"</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"wrong"</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Sign in"</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">"alert"</span>)).toHaveText(<span class="s">"Wrong email or password"</span>);
+});
+
+test(<span class="s">"log in, add two products and place an order"</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Sign in"</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">"Hello, asha"</span>)).toBeVisible();
+
+  <span class="c">// The list arrives 600 ms later. No sleep: the assertion keeps retrying.</span>
+  <span class="k">const</span> products = page.getByTestId(<span class="s">"product"</span>);
+  <span class="k">await</span> expect(products).toHaveCount(<span class="n">3</span>);
+  <span class="k">await</span> products.filter({ hasText: <span class="s">"Coffee mug"</span> }).getByRole(<span class="s">"button"</span>, { name: <span class="s">"Add to cart"</span> }).click();
+  <span class="k">await</span> products.filter({ hasText: <span class="s">"Gel pen"</span> }).getByRole(<span class="s">"button"</span>).click();
+
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">"cart-count"</span>)).toHaveText(<span class="s">"2"</span>);
+  <span class="k">await</span> expect(page.locator(<span class="s">"#total"</span>)).toHaveText(<span class="s">"₹219"</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Place order"</span> }).click();
+  <span class="k">await</span> expect(page.getByText(/^<span class="t">Order</span> \d+ placed$/)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/shop.spec.js:7:1 › wrong password shows an error
+  ✓  2 [chromium] › tests/shop.spec.js:17:1 › log in, add two products and place an order
+
+  2 passed</pre></div></div>
+<p>The product list arrives after 600 ms, yet there is no sleep anywhere. <code>toHaveCount(3)</code> simply keeps checking. <code>filter({ hasText })</code> narrows a list to one card, and the button is found inside that card, which is far steadier than "the second button on the page".</p>
+<div class="viz" data-viz="wait"></div>
+<h3>Strict mode</h3>
+<p>If a locator matches more than one element, an action or assertion fails instead of guessing. Here an <code>&lt;output&gt;</code> element also has the role <code>status</code>, which is easy to miss.</p>
+<div class="codewrap tests" data-k="pw-strict"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Strict mode stops an ambiguous locator · 🧪 Tests run, one fails on purpose</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 tests/strict.spec.js</div><pre class="src" data-file="tests/strict.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+test(<span class="s">"a locator that matches two elements"</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">"/"</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Sign in"</span> }).click();
+  <span class="k">await</span> page.getByTestId(<span class="s">"product"</span>).first().getByRole(<span class="s">"button"</span>).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">"status"</span>)).toHaveText(<span class="s">""</span>);   <span class="c">// which status?</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › tests/strict.spec.js:2:1 › a locator that matches two elements
+
+
+  1) [chromium] › tests/strict.spec.js:2:1 › a locator that matches two elements ───────────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByRole(&#x27;status&#x27;)
+    Expected: &quot;&quot;
+    Error: strict mode violation: getByRole(&#x27;status&#x27;) resolved to 2 elements:
+        1) &lt;output id=&quot;total&quot;&gt;₹20&lt;/output&gt; aka getByLabel(&#x27;Cart summary&#x27;).getByText(&#x27;₹&#x27;)
+        2) &lt;p role=&quot;status&quot;&gt;&lt;/p&gt; aka getByRole(&#x27;status&#x27;).filter({ hasText: /^$/ })
+
+  1 failed</pre></div></div>
+<div class="tip">The error lists both matches and suggests a precise locator. Fix it by narrowing: <code>getByText(/^Order \d+ placed$/)</code>, <code>getByRole("status").filter({ hasText: "Order" })</code> or a test id.</div>
+</section>
+<section class="card reveal jsec qa-part" id="network" data-say="network"><div class="sec-num">Part 3</div><h2><span class="sec-em">🛰️</span><span>Controlling the network</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-why">Network mocking makes error states testable and UI tests independent of backend data.</span></div>
+<p>Playwright sees every request the page makes. <code>page.route</code> can answer a request with fake data or an error, so you can test states that are hard to produce for real: a broken API, an empty list, a very long name. <code>waitForRequest</code> and <code>waitForResponse</code> check what the page sends.</p>
+<div class="codewrap tests" data-k="pw-network"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Mock, break and spy on the network · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 tests/network.spec.js</div><pre class="src" data-file="tests/network.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+<span class="k">async</span> <span class="k">function</span> logIn(page) {
+  <span class="k">await</span> page.goto(<span class="s">"/"</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Sign in"</span> }).click();
+}
+
+test(<span class="s">"shows a friendly message when the products API fails"</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">"**/api/products"</span>, route =&gt; route.fulfill({ status: <span class="n">503</span>, body: <span class="s">"down"</span> }));
+  <span class="k">await</span> logIn(page);
+  <span class="k">await</span> expect(page.getByText(<span class="s">"Could not load products. Try again later."</span>)).toBeVisible();
+});
+
+test(<span class="s">"renders whatever the API returns, even a huge price"</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">"**/api/products"</span>, route =&gt;
+    route.fulfill({ json: [{ id: <span class="n">9</span>, name: <span class="s">"Gold watch"</span>, price: <span class="n">1234567</span> }] }));
+  <span class="k">await</span> logIn(page);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">"product"</span>)).toHaveText(/<span class="t">Gold</span> watch\s*₹<span class="n">12</span>,<span class="n">34</span>,<span class="n">567</span>/);
+});
+
+test(<span class="s">"sends the right order to the server"</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> logIn(page);
+  <span class="k">await</span> page.getByTestId(<span class="s">"product"</span>).filter({ hasText: <span class="s">"Desk lamp"</span> }).getByRole(<span class="s">"button"</span>).click();
+  <span class="k">const</span> [request] = <span class="k">await</span> <span class="t">Promise</span>.all([
+    page.waitForRequest(<span class="s">"**/api/orders"</span>),
+    page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Place order"</span> }).click(),
+  ]);
+  expect(request.postDataJSON()).toEqual({ items: [<span class="n">3</span>] });
+  <span class="k">await</span> expect(page.getByText(<span class="s">"Order 1042 placed"</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › tests/network.spec.js:10:1 › shows a friendly message when the products API fails
+  ✓  2 [chromium] › tests/network.spec.js:20:1 › renders whatever the API returns, even a huge price
+  ✓  3 [chromium] › tests/network.spec.js:33:1 › sends the right order to the server
+
+  3 passed</pre></div></div>
+<div class="qa-box">Mocked tests check how the UI behaves, not whether the backend works. Keep a few tests that use the real API end to end, and use mocks for the error and edge cases. Cypress does the same with <code>cy.intercept</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="framework" data-say="framework"><div class="sec-num">Part 4</div><h2><span class="sec-em">🏗️</span><span>Page objects, fixtures and retries</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-why">Fixtures, page objects and honest flaky reporting are what keep large UI suites maintainable.</span></div>
+<p>As a suite grows, repeated steps move into <b>page objects</b> (chapter 8) and <b>fixtures</b>. A Playwright fixture prepares something a test needs, here a logged in shop, and passes it in as a parameter. Tests become short and read like a test case.</p>
+<div class="codewrap tests" data-k="pw-pom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Page objects and fixtures · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 pages/shop.page.js</div><pre class="src" data-file="pages/shop.page.js"><span class="k">import</span> { expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+<span class="k">export</span> <span class="k">class</span> <span class="t">ShopPage</span> {
+  constructor(page) {
+    <span class="k">this</span>.page = page;
+    <span class="k">this</span>.products = page.getByTestId(<span class="s">"product"</span>);
+    <span class="k">this</span>.cartCount = page.getByTestId(<span class="s">"cart-count"</span>);
+    <span class="k">this</span>.total = page.locator(<span class="s">"#total"</span>);
+    <span class="k">this</span>.placeOrder = page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Place order"</span> });
+  }
+  <span class="k">async</span> open() {
+    <span class="k">await</span> <span class="k">this</span>.page.goto(<span class="s">"/"</span>);
+  }
+  <span class="k">async</span> logIn(email, password) {
+    <span class="k">await</span> <span class="k">this</span>.page.getByLabel(<span class="s">"Email"</span>).fill(email);
+    <span class="k">await</span> <span class="k">this</span>.page.getByLabel(<span class="s">"Password"</span>).fill(password);
+    <span class="k">await</span> <span class="k">this</span>.page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Sign in"</span> }).click();
+    <span class="k">await</span> expect(<span class="k">this</span>.products.first()).toBeVisible();   <span class="c">// wait until the shop is ready</span>
+  }
+  <span class="k">async</span> add(name) {
+    <span class="k">await</span> <span class="k">this</span>.products.filter({ hasText: name }).getByRole(<span class="s">"button"</span>, { name: <span class="s">"Add to cart"</span> }).click();
+  }
+}</pre><div class="fname">📄 fixtures.js</div><pre class="src" data-file="fixtures.js"><span class="k">import</span> { test <span class="k">as</span> base } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+<span class="k">import</span> { <span class="t">ShopPage</span> } <span class="k">from</span> <span class="s">"./pages/shop.page.js"</span>;
+
+<span class="c">// A fixture builds what a test needs and hands it over as a parameter</span>
+<span class="k">export</span> <span class="k">const</span> test = base.extend({
+  shop: <span class="k">async</span> ({ page }, use) =&gt; {
+    <span class="k">const</span> shop = <span class="k">new</span> <span class="t">ShopPage</span>(page);
+    <span class="k">await</span> shop.open();
+    <span class="k">await</span> shop.logIn(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>);
+    <span class="k">await</span> use(shop);                       <span class="c">// the test runs here</span>
+    <span class="c">// anything after use() is clean up</span>
+  },
+});
+<span class="k">export</span> { expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;</pre><div class="fname">📄 tests/cart.spec.js</div><pre class="src" data-file="tests/cart.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">"../fixtures.js"</span>;
+
+test(<span class="s">"one item"</span>, <span class="k">async</span> ({ shop }) =&gt; {
+  <span class="k">await</span> shop.add(<span class="s">"Gel pen"</span>);
+  <span class="k">await</span> expect(shop.total).toHaveText(<span class="s">"₹20"</span>);
+});
+
+test(<span class="s">"totals use Indian digit grouping"</span>, <span class="k">async</span> ({ shop }) =&gt; {
+  <span class="k">await</span> shop.add(<span class="s">"Desk lamp"</span>);
+  <span class="k">await</span> shop.add(<span class="s">"Desk lamp"</span>);
+  <span class="k">await</span> expect(shop.cartCount).toHaveText(<span class="s">"2"</span>);
+  <span class="k">await</span> expect(shop.total).toHaveText(<span class="s">"₹2,598"</span>);
+});
+
+<span class="k">for</span> (<span class="k">const</span> [name, price] <span class="k">of</span> [[<span class="s">"Gel pen"</span>, <span class="s">"₹20"</span>], [<span class="s">"Coffee mug"</span>, <span class="s">"₹199"</span>], [<span class="s">"Desk lamp"</span>, <span class="s">"₹1,299"</span>]]) {
+  test(<span class="s">`price of ${name}`</span>, <span class="k">async</span> ({ shop }) =&gt; {
+    <span class="k">await</span> expect(shop.products.filter({ hasText: name }).locator(<span class="s">".price"</span>)).toHaveText(price);
+  });
+}</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>
+Running 5 tests using 1 worker
+
+  ✓  1 [chromium] › tests/cart.spec.js:2:1 › one item
+  ✓  2 [chromium] › tests/cart.spec.js:8:1 › totals use Indian digit grouping
+  ✓  3 [chromium] › tests/cart.spec.js:17:3 › price of Gel pen
+  ✓  4 [chromium] › tests/cart.spec.js:17:3 › price of Coffee mug
+  ✓  5 [chromium] › tests/cart.spec.js:17:3 › price of Desk lamp
+
+  5 passed</pre></div></div>
+<h3>Flaky tests and retries</h3>
+<p>A <b>flaky</b> test passes and fails without any code change. Playwright can retry a failed test, and a test that fails and then passes is reported as <b>flaky</b>, not hidden as passed.</p>
+<div class="codewrap tests" data-k="pw-flaky"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Retries and flaky tests · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 tests/retry.spec.js</div><pre class="src" data-file="tests/retry.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+test(<span class="s">"fails on the first try, passes on the retry"</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">"/"</span>);
+  <span class="c">// Simulate a hiccup: the first attempt sees a different heading</span>
+  <span class="k">const</span> expected = testInfo.retry === <span class="n">0</span> ? <span class="s">"Demo Shop!"</span> : <span class="s">"Demo Shop"</span>;
+  <span class="k">await</span> expect(page.getByRole(<span class="s">"heading"</span>, { level: <span class="n">1</span> })).toHaveText(expected, { timeout: <span class="n">1000</span> });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › tests/retry.spec.js:2:1 › fails on the first try, passes on the retry
+  ✓  2 [chromium] › tests/retry.spec.js:2:1 › fails on the first try, passes on the retry (retry #1)
+
+
+  1) [chromium] › tests/retry.spec.js:2:1 › fails on the first try, passes on the retry ────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;heading&#x27;, { level: 1 })
+    Expected: &quot;Demo Shop!&quot;
+    Received: &quot;Demo Shop&quot;
+    Timeout:  1000ms
+
+  1 flaky
+    [chromium] › tests/retry.spec.js:2:1 › fails on the first try, passes on the retry ─────────────</pre></div></div>
+<div class="warn">Retries keep a pipeline green while you investigate, they are not a fix. With <code>trace: "on-first-retry"</code>, Playwright records a trace of the retry: every action, DOM snapshot, network call and console message, which usually shows the cause in minutes.</div>
+<div class="codewrap" data-k="pw-cli"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Running Playwright in different ways · Reference</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">npx</span> playwright test                          <span class="c"># everything, headless</span>
+<span class="k">npx</span> playwright test tests/cart.spec.js       <span class="c"># one file</span>
+<span class="k">npx</span> playwright test -g <span class="s">"Indian digit"</span>        <span class="c"># tests whose title matches</span>
+<span class="k">npx</span> playwright test --grep @smoke            <span class="c"># tags in titles or { tag: "@smoke" }</span>
+<span class="k">npx</span> playwright test --project=firefox        <span class="c"># one browser from the config</span>
+<span class="k">npx</span> playwright test --headed --workers=<span class="n">1</span>     <span class="c"># watch it in a real window</span>
+<span class="k">npx</span> playwright test --debug                  <span class="c"># step through with the inspector</span>
+<span class="k">npx</span> playwright test --ui                     <span class="c"># UI mode: time travel through each step</span>
+<span class="k">npx</span> playwright test --last-failed            <span class="c"># only what failed last time</span>
+<span class="k">npx</span> playwright test --repeat-each=<span class="n">20</span>         <span class="c"># hunt for flakiness</span>
+<span class="k">npx</span> playwright test --shard=<span class="n">2</span>/<span class="n">4</span>              <span class="c"># one quarter of the suite, for CI</span>
+<span class="k">npx</span> playwright show-report                   <span class="c"># open the HTML report</span>
+<span class="k">npx</span> playwright show-trace trace.zip          <span class="c"># open a recorded trace</span>
+<span class="k">npx</span> playwright codegen http://localhost:<span class="n">4173</span> <span class="c"># record actions into code</span></pre></div>
+</section>
+<section class="card reveal jsec qa-part" id="selenium" data-say="selenium"><div class="sec-num">Part 5</div><h2><span class="sec-em">🚗</span><span>Selenium WebDriver</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Selenium</span><span class="qa-why">Many enterprise suites are Selenium, and its explicit waits and locators are the base of every WebDriver tool.</span></div>
+<p><b>Selenium WebDriver</b> sends each command to a driver program (chromedriver, geckodriver, safaridriver), which controls the browser. Every call is a network round trip and returns a promise, so every line is awaited. Selenium does not wait for you: use <b>explicit waits</b> with <code>driver.wait(until...)</code> for anything that appears later.</p>
+<div class="codewrap tests" data-k="selenium"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Selenium WebDriver with Mocha, explicit waits and a page object · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 selenium/driver.js</div><pre class="src" data-file="selenium/driver.js"><span class="c">// One place that knows how to start Chrome for every Selenium test.</span>
+<span class="c">// Selenium Manager downloads a matching chromedriver by itself. CI machines</span>
+<span class="c">// can point CHROMEDRIVER and CHROME_BIN at fixed copies instead.</span>
+<span class="k">import</span> { <span class="t">Builder</span> } <span class="k">from</span> <span class="s">"selenium-webdriver"</span>;
+<span class="k">import</span> chrome <span class="k">from</span> <span class="s">"selenium-webdriver/chrome.js"</span>;
+
+<span class="k">export</span> <span class="k">async</span> <span class="k">function</span> buildDriver() {
+  <span class="k">const</span> options = <span class="k">new</span> chrome.<span class="t">Options</span>().addArguments(<span class="s">"--headless=new"</span>, <span class="s">"--no-sandbox"</span>, <span class="s">"--window-size=1280,800"</span>);
+  <span class="k">if</span> (process.env.<span class="t">CHROME_BIN</span>) options.setChromeBinaryPath(process.env.<span class="t">CHROME_BIN</span>);
+  <span class="k">const</span> builder = <span class="k">new</span> <span class="t">Builder</span>().forBrowser(<span class="s">"chrome"</span>).setChromeOptions(options);
+  <span class="k">if</span> (process.env.<span class="t">CHROMEDRIVER</span>) builder.setChromeService(<span class="k">new</span> chrome.<span class="t">ServiceBuilder</span>(process.env.<span class="t">CHROMEDRIVER</span>));
+  <span class="k">return</span> builder.build();
+}</pre><div class="fname">📄 selenium/pages/ShopPage.js</div><pre class="src" data-file="selenium/pages/ShopPage.js"><span class="k">import</span> { <span class="t">By</span>, until } <span class="k">from</span> <span class="s">"selenium-webdriver"</span>;
+
+<span class="k">export</span> <span class="k">class</span> <span class="t">ShopPage</span> {
+  <span class="k">static</span> <span class="t">EMAIL</span> = <span class="t">By</span>.name(<span class="s">"email"</span>);
+  <span class="k">static</span> <span class="t">PASSWORD</span> = <span class="t">By</span>.name(<span class="s">"password"</span>);
+  <span class="k">static</span> <span class="t">SIGN_IN</span> = <span class="t">By</span>.css(<span class="s">"#login button"</span>);
+  <span class="k">static</span> <span class="t">ALERT</span> = <span class="t">By</span>.css(<span class="s">"[role=alert]"</span>);
+  <span class="k">static</span> <span class="t">CART_COUNT</span> = <span class="t">By</span>.css(<span class="s">"[data-testid=cart-count]"</span>);
+  <span class="k">static</span> <span class="t">TOTAL</span> = <span class="t">By</span>.id(<span class="s">"total"</span>);
+  <span class="k">static</span> addButtonFor = name =&gt; <span class="t">By</span>.xpath(<span class="s">`//li[h2='${name}']//button`</span>);
+
+  constructor(driver, baseUrl) {
+    <span class="k">this</span>.driver = driver;
+    <span class="k">this</span>.baseUrl = baseUrl;
+  }
+  <span class="k">async</span> open() {
+    <span class="k">await</span> <span class="k">this</span>.driver.<span class="k">get</span>(<span class="k">this</span>.baseUrl);
+  }
+  <span class="k">async</span> logIn(email, password) {
+    <span class="k">await</span> <span class="k">this</span>.driver.findElement(<span class="t">ShopPage</span>.<span class="t">EMAIL</span>).sendKeys(email);
+    <span class="k">await</span> <span class="k">this</span>.driver.findElement(<span class="t">ShopPage</span>.<span class="t">PASSWORD</span>).sendKeys(password);
+    <span class="k">await</span> <span class="k">this</span>.driver.findElement(<span class="t">ShopPage</span>.<span class="t">SIGN_IN</span>).click();
+  }
+  <span class="k">async</span> add(name) {
+    <span class="c">// Explicit wait: the products arrive after a delay</span>
+    <span class="k">const</span> button = <span class="k">await</span> <span class="k">this</span>.driver.wait(until.elementLocated(<span class="t">ShopPage</span>.addButtonFor(name)), <span class="n">5000</span>);
+    <span class="k">await</span> <span class="k">this</span>.driver.wait(until.elementIsVisible(button), <span class="n">5000</span>);
+    <span class="k">await</span> button.click();
+  }
+  <span class="k">async</span> cartCount(expected) {
+    <span class="k">const</span> el = <span class="k">await</span> <span class="k">this</span>.driver.findElement(<span class="t">ShopPage</span>.<span class="t">CART_COUNT</span>);
+    <span class="k">await</span> <span class="k">this</span>.driver.wait(until.elementTextIs(el, expected), <span class="n">5000</span>);
+    <span class="k">return</span> el.getText();
+  }
+  <span class="k">async</span> alertText() {
+    <span class="k">const</span> el = <span class="k">await</span> <span class="k">this</span>.driver.wait(until.elementLocated(<span class="t">ShopPage</span>.<span class="t">ALERT</span>), <span class="n">5000</span>);
+    <span class="k">await</span> <span class="k">this</span>.driver.wait(until.elementIsVisible(el), <span class="n">5000</span>);
+    <span class="k">return</span> el.getText();
+  }
+}</pre><div class="fname">📄 selenium/shop.spec.js</div><pre class="src" data-file="selenium/shop.spec.js"><span class="k">import</span> { expect } <span class="k">from</span> <span class="s">"chai"</span>;
+<span class="k">import</span> { buildDriver } <span class="k">from</span> <span class="s">"./driver.js"</span>;
+<span class="k">import</span> { <span class="t">ShopPage</span> } <span class="k">from</span> <span class="s">"./pages/ShopPage.js"</span>;
+<span class="k">import</span> { startShop } <span class="k">from</span> <span class="s">"../server.js"</span>;
+
+describe(<span class="s">"demo shop with Selenium WebDriver"</span>, <span class="k">function</span> () {
+  <span class="k">let</span> driver, server, shop;
+
+  before(<span class="k">async</span> () =&gt; {
+    server = <span class="k">await</span> startShop();                       <span class="c">// any free port</span>
+    driver = <span class="k">await</span> buildDriver();
+  });
+  beforeEach(<span class="k">async</span> () =&gt; {
+    shop = <span class="k">new</span> <span class="t">ShopPage</span>(driver, <span class="s">`http://localhost:${server.address().port}`</span>);
+    <span class="k">await</span> shop.open();
+  });
+  after(<span class="k">async</span> () =&gt; {
+    <span class="k">await</span> driver?.quit();                             <span class="c">// always close the browser</span>
+    server?.close();
+  });
+
+  it(<span class="s">"shows an error for a wrong password"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> shop.logIn(<span class="s">"asha@shop.example"</span>, <span class="s">"wrong"</span>);
+    expect(<span class="k">await</span> shop.alertText()).to.equal(<span class="s">"Wrong email or password"</span>);
+  });
+
+  it(<span class="s">"adds two products to the cart"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> shop.logIn(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>);
+    <span class="k">await</span> shop.add(<span class="s">"Coffee mug"</span>);
+    <span class="k">await</span> shop.add(<span class="s">"Desk lamp"</span>);
+    expect(<span class="k">await</span> shop.cartCount(<span class="s">"2"</span>)).to.equal(<span class="s">"2"</span>);
+    expect(<span class="k">await</span> driver.findElement(<span class="t">ShopPage</span>.<span class="t">TOTAL</span>).getText()).to.equal(<span class="s">"₹1,498"</span>);
+  });
+
+  it(<span class="s">"can read the page title and take a screenshot"</span>, <span class="k">async</span> () =&gt; {
+    expect(<span class="k">await</span> driver.getTitle()).to.equal(<span class="s">"Demo Shop"</span>);
+    <span class="k">const</span> png = <span class="k">await</span> driver.takeScreenshot();         <span class="c">// base64 text of a PNG image</span>
+    expect(<span class="t">Buffer</span>.<span class="k">from</span>(png, <span class="s">"base64"</span>).subarray(<span class="n">1</span>, <span class="n">4</span>).toString()).to.equal(<span class="s">"PNG"</span>);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npm test</pre></div><div class="out"><span>Terminal output</span><pre>
+&gt; shop-selenium@1.0.0 test
+&gt; mocha --timeout 30000 &quot;selenium/**/*.spec.js&quot;
+
+
+
+  demo shop with Selenium WebDriver
+    ✔ shows an error for a wrong password
+    ✔ adds two products to the cart
+    ✔ can read the page title and take a screenshot
+
+
+  3 passing (4s)</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Need</th><th>Selenium</th></tr>
+<tr><td>Find</td><td><code>By.id</code>, <code>By.css</code>, <code>By.xpath</code>, <code>By.name</code>, <code>By.linkText</code></td></tr>
+<tr><td>Wait</td><td><code>until.elementLocated</code>, <code>elementIsVisible</code>, <code>elementTextIs</code>, <code>titleIs</code>, <code>urlContains</code></td></tr>
+<tr><td>Act</td><td><code>click()</code>, <code>sendKeys()</code>, <code>clear()</code>, <code>driver.actions()</code> for hover and drag</td></tr>
+<tr><td>Frames and windows</td><td><code>switchTo().frame()</code>, <code>switchTo().window()</code>, <code>switchTo().alert()</code></td></tr>
+<tr><td>Many machines</td><td>Selenium Grid: <code>new Builder().usingServer(gridUrl)</code></td></tr>
+</table></div>
+<div class="warn">Avoid <code>driver.manage().setTimeouts({ implicit })</code> together with explicit waits. Mixing the two makes waits add up in surprising ways. Pick explicit waits.</div>
+</section>
+<section class="card reveal jsec qa-part" id="cypress" data-say="cypress"><div class="sec-num">Part 6</div><h2><span class="sec-em">🌲</span><span>Cypress and WebdriverIO</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Cypress</span><span class="qa-tool">WebdriverIO</span><span class="qa-why">Cypress is widely used by front end teams and its command queue works differently from every other tool.</span></div>
+<p><b>Cypress</b> runs inside the browser, in the same loop as your app. Commands such as <code>cy.get</code> are not promises: Cypress queues them and runs them in order, retrying each query and assertion until it passes. That is why you never write <code>await</code> in Cypress, and why plain variables do not hold element values (use <code>.then</code> or aliases).</p>
+<div class="codewrap" data-k="cypress"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same tests in Cypress · Shown only: Cypress needs its own app download, which this page build cannot fetch</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// cypress/e2e/shop.cy.js</span>
+describe(<span class="s">"demo shop"</span>, () =&gt; {
+  beforeEach(() =&gt; {
+    cy.intercept(<span class="s">"GET"</span>, <span class="s">"/api/products"</span>).<span class="k">as</span>(<span class="s">"products"</span>);   <span class="c">// watch the request</span>
+    cy.visit(<span class="s">"/"</span>);
+  });
+
+  it(<span class="s">"logs in and orders"</span>, () =&gt; {
+    cy.<span class="k">get</span>(<span class="s">"input[name=email]"</span>).type(<span class="s">"asha@shop.example"</span>);
+    cy.<span class="k">get</span>(<span class="s">"input[name=password]"</span>).type(<span class="s">"s3cret"</span>);
+    cy.contains(<span class="s">"button"</span>, <span class="s">"Sign in"</span>).click();
+    cy.wait(<span class="s">"@products"</span>).its(<span class="s">"response.statusCode"</span>).should(<span class="s">"eq"</span>, <span class="n">200</span>);
+
+    cy.contains(<span class="s">"[data-testid=product]"</span>, <span class="s">"Coffee mug"</span>).find(<span class="s">"button"</span>).click();
+    cy.<span class="k">get</span>(<span class="s">"[data-testid=cart-count]"</span>).should(<span class="s">"have.text"</span>, <span class="s">"1"</span>);    <span class="c">// retries until true</span>
+    cy.contains(<span class="s">"button"</span>, <span class="s">"Place order"</span>).click();
+    cy.contains(/^<span class="t">Order</span> \d+ placed$/).should(<span class="s">"be.visible"</span>);
+  });
+
+  it(<span class="s">"shows a message when the API fails"</span>, () =&gt; {
+    cy.intercept(<span class="s">"GET"</span>, <span class="s">"/api/products"</span>, { statusCode: <span class="n">503</span> });
+    cy.login(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>);                       <span class="c">// a custom command, see below</span>
+    cy.contains(<span class="s">"Could not load products"</span>).should(<span class="s">"be.visible"</span>);
+  });
+});
+
+<span class="c">// cypress/support/commands.js</span>
+<span class="t">Cypress</span>.<span class="t">Commands</span>.add(<span class="s">"login"</span>, (email, password) =&gt; {
+  cy.<span class="k">get</span>(<span class="s">"input[name=email]"</span>).type(email);
+  cy.<span class="k">get</span>(<span class="s">"input[name=password]"</span>).type(password);
+  cy.contains(<span class="s">"button"</span>, <span class="s">"Sign in"</span>).click();
+});</pre><div class="note-out"><span>What happens</span><p>Run with npx cypress open (interactive) or npx cypress run (headless, for CI). Commands are queued and retried automatically, and are never awaited.</p></div></div>
+<p><b>WebdriverIO</b> is a WebDriver based framework with a friendlier API than raw Selenium, built in waiting, and support for mobile apps through Appium.</p>
+<div class="codewrap" data-k="wdio"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same test in WebdriverIO · Reference</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// test/specs/shop.e2e.js (WebdriverIO with Mocha)</span>
+<span class="k">import</span> { browser, $, $$, expect } <span class="k">from</span> <span class="s">"@wdio/globals"</span>;
+
+describe(<span class="s">"demo shop"</span>, () =&gt; {
+  it(<span class="s">"adds a product"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> browser.url(<span class="s">"/"</span>);
+    <span class="k">await</span> $(<span class="s">"input[name=email]"</span>).setValue(<span class="s">"asha@shop.example"</span>);
+    <span class="k">await</span> $(<span class="s">"input[name=password]"</span>).setValue(<span class="s">"s3cret"</span>);
+    <span class="k">await</span> $(<span class="s">"button=Sign in"</span>).click();                          <span class="c">// button with this text</span>
+    <span class="k">await</span> expect($$(<span class="s">"[data-testid=product]"</span>)).toBeElementsArrayOfSize(<span class="n">3</span>);
+    <span class="k">await</span> $(<span class="s">"//li[h2='Gel pen']//button"</span>).click();
+    <span class="k">await</span> expect($(<span class="s">"[data-testid=cart-count]"</span>)).toHaveText(<span class="s">"1"</span>);
+  });
+});
+<span class="c">// npx wdio run wdio.conf.js --spec test/specs/shop.e2e.js</span></pre></div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a UI suite in CI</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>The team wants every pull request checked by the browser suite in under ten minutes, with a report anyone can open when something fails.</div>
+<div class="codewrap" data-k="ci"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Browser tests in CI · Reference</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># .github/workflows/e2e.yml</span>
+name: e2e
+on: [pull_request]
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: <span class="k">false</span>
+      matrix:
+        shard: [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: <span class="n">24</span>, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --shard=${{ matrix.shard }}/<span class="n">4</span>
+        env: { BASE_URL: <span class="s">"${{ vars.STAGING_URL }}"</span> }
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with: { name: <span class="s">"report-${{ matrix.shard }}"</span>, path: playwright-report/ }</pre><div class="note-out"><span>What happens</span><p>Four machines each run a quarter of the suite. The HTML report, with traces of failed tests, is kept for every run.</p></div></div>
+<p>Sharding splits the tests across four machines. <code>fail-fast: false</code> lets every shard finish, so one failure does not hide others. The report is uploaded even when tests fail, and the traces inside it show exactly what the browser saw.</p>
+<div class="qa-box">A healthy UI suite: tests independent of each other, data created through the API rather than the UI, stable locators, no fixed sleeps, network mocks only for edge cases, flaky tests tracked and fixed within days, and the slowest tests reviewed every sprint.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-api-testing.html" data-topic="js-api-testing"><small>← Previous chapter</small><b>🔌 API testing</b></a><span></span></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "A robot user with a checklist", "panels": [{"s": [["e", "🎯"], ["t", "getByRole(\"button\", { name })", {"b": 1, "size": 11}]], "h": "Find", "t": "Locate elements like a user would.", "more": "Roles, labels and test ids, filtered to one card."}, {"s": [["e", "⏳"], ["t", "await expect(...).toHaveText()", {"b": 1, "size": 11}]], "h": "Wait", "t": "Retry until true, never sleep.", "more": "Selenium needs explicit waits, Playwright and Cypress retry for you."}, {"s": [["e", "🛰️"], ["t", "page.route(...)", {"b": 1}]], "h": "Control", "t": "Mock the network for edge cases.", "more": "Errors, empty lists and huge values on demand."}, {"s": [["e", "📊"], ["t", "trace + report", {"b": 1}]], "h": "Explain", "t": "Failures come with evidence.", "more": "Traces, screenshots and flaky reports in CI."}], "remember": "Stable locators, assertions that wait, independent tests and evidence for every failure."}, "real": [["🛒", "Checkout guard", "An online store runs 30 Playwright journeys on every pull request. A broken coupon field was caught before it cost a weekend of sales."], ["🏦", "A bank on Selenium", "A bank keeps 2,000 Selenium tests on a Grid of Chrome, Firefox, Edge and Safari machines because its customers use all four."], ["⚛️", "A front end team", "A React team writes Cypress tests next to its components and stubs every API with cy.intercept to test each state of the UI."]], "quiz": [{"lv": "e", "q": "Which Playwright locator is preferred for a button labelled \"Sign in\"?", "o": ["page.getByRole(\"button\", { name: \"Sign in\" })", "page.locator(\"form > button:nth-child(3)\")", "page.locator(\"//html/body/form/button\")", "page.locator(\".btn\")"], "a": 0, "hint": "What does a user see?", "why": "Role and accessible name survive layout and style changes."}, {"lv": "e", "q": "Which tool runs its test code inside the browser?", "o": ["Cypress", "Selenium", "Playwright", "WebdriverIO"], "a": 0, "hint": "Same loop as the app.", "why": "Cypress loads the test into the browser next to the application."}, {"lv": "e", "q": "What does await expect(locator).toHaveText(\"2\") do when the text is still \"1\"?", "o": ["Keeps retrying until it becomes \"2\" or times out", "Fails at once", "Waits a fixed 5 seconds", "Throws a syntax error"], "a": 0, "hint": "Web first assertions.", "why": "It polls the page until the condition is met, up to the timeout."}, {"lv": "m", "q": "In Selenium, the product list appears after 600 ms. What should you use?", "o": ["driver.wait(until.elementLocated(...))", "A fixed sleep of 1 second", "Nothing, Selenium waits by itself", "driver.refresh()"], "a": 0, "hint": "Explicit waits.", "why": "Selenium does not auto-wait, so wait for the exact condition you need."}, {"lv": "m", "q": "What does strict mode in Playwright do?", "o": ["Fails when a locator matches more than one element", "Makes tests run slower", "Turns on JavaScript strict mode", "Blocks network calls"], "a": 0, "hint": "Ambiguity.", "why": "It refuses to guess which element you meant."}, {"lv": "m", "q": "Why use page.route in a UI test?", "o": ["To return fake data or errors for edge cases", "To change the page URL", "To speed up the browser", "To log in"], "a": 0, "hint": "Control the network.", "why": "It lets you test error and empty states without breaking the real backend."}, {"lv": "h", "q": "A Playwright test failed once, then passed on retry. How is it reported?", "o": ["As flaky", "As passed, with no trace", "As failed", "It is hidden"], "a": 0, "hint": "Honest reporting.", "why": "Playwright marks it flaky so the team can investigate."}, {"lv": "h", "q": "Why do you never write await before cy.get in Cypress?", "o": ["Commands are queued, not promises", "Cypress has no async code", "await is slower", "It is not allowed in JavaScript"], "a": 0, "hint": "Command queue.", "why": "Cypress schedules commands and runs them in order itself."}, {"lv": "h", "q": "What does a Playwright fixture defined with test.extend give a test?", "o": ["A ready made object, such as a logged in page object, with clean up after", "A faster browser", "A mock server", "Retries"], "a": 0, "hint": "Set up and tear down.", "why": "Code before use() prepares, code after use() cleans up."}, {"lv": "x", "q": "Why mix implicit and explicit waits in Selenium carefully?", "o": ["Their timeouts can stack and make waits unpredictable", "Implicit waits are deprecated", "Explicit waits only work in Chrome", "They cannot be mixed in JavaScript"], "a": 0, "hint": "Two waiting mechanisms.", "why": "The Selenium docs advise not to mix them because of unpredictable wait times."}, {"lv": "x", "q": "Which statement about locators in Playwright is true?", "o": ["A locator is resolved again on every use, so it never goes stale", "A locator holds one element forever", "Locators only work with CSS", "A locator throws if the element is not there yet"], "a": 0, "hint": "Recipe, not element.", "why": "This is why Playwright avoids the stale element errors common in Selenium."}, {"lv": "x", "q": "fail-fast: false in a CI matrix means?", "o": ["Every shard runs to the end even if one fails", "Tests never fail", "The job retries forever", "Shards share one machine"], "a": 0, "hint": "See all failures.", "why": "Otherwise one failing shard cancels the others and hides their results."}], "calc": [{"lv": "e", "q": "A suite has 240 UI tests of 30 seconds each. How many minutes does it take on one worker?", "ans": "120", "hint": "Seconds to minutes.", "steps": ["<span class=\"eq\">240 × 30 = 7200<\/span> s", "<span class=\"eq\">7200 ÷ 60 = 120<\/span> min"]}, {"lv": "e", "q": "The same suite split over 4 shards. How many minutes?", "ans": "30", "hint": "Divide.", "steps": ["<span class=\"eq\">120 ÷ 4 = 30<\/span>"]}, {"lv": "m", "q": "Two Desk lamps at ₹1,299. What total should the cart show, without the symbol and commas?", "ans": "2598", "hint": "Multiply.", "steps": ["<span class=\"eq\">2 × 1299 = 2598<\/span>, shown as ₹2,598."]}, {"lv": "m", "q": "A fixed sleep of 3 s is used 50 times, but the page is ready after 0.8 s on average. How many seconds are wasted per run?", "ans": "110", "hint": "Waste per sleep times count.", "steps": ["<span class=\"eq\">3 − 0.8 = 2.2<\/span>", "<span class=\"eq\">2.2 × 50 = 110<\/span>"]}, {"lv": "h", "q": "A test passes 47 times out of 50 runs with --repeat-each=50. What is its failure rate in percent?", "ans": "6", "hint": "3 failures out of 50.", "steps": ["<span class=\"eq\">3 ÷ 50 × 100 = 6<\/span>"]}, {"lv": "h", "q": "With a failure rate of 6% per test and retries: 1, what is the chance a run still fails? Give the percent with one decimal.", "ans": "0.4", "hint": "Both attempts must fail.", "steps": ["<span class=\"eq\">0.06 × 0.06 = 0.0036<\/span>", "That is 0.36%, about 0.4%."], "alt": ["0.36"]}, {"lv": "x", "q": "A suite has 200 tests, each with a 1% chance of a random failure. What is the chance, in percent rounded to a whole number, that at least one fails?", "ans": "87", "hint": "One minus the chance that all pass.", "steps": ["<span class=\"eq\">0.99<sup>200<\/sup> ≈ 0.134<\/span>", "<span class=\"eq\">1 − 0.134 = 0.866<\/span>, about 87%."]}, {"lv": "x", "q": "Three projects (chromium, firefox, webkit) times 4 shards. How many CI jobs?", "ans": "12", "hint": "Multiply.", "steps": ["<span class=\"eq\">3 × 4 = 12<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter automates a small shop with Playwright and Selenium, shows the same tests in Cypress and WebdriverIO, and covers locators, waits, network control, fixtures, retries and CI.", "hi": "यह अध्याय एक छोटी shop को Playwright और Selenium से automate करता है, वही tests Cypress और WebdriverIO में दिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ ಒಂದು ಚಿಕ್ಕ shop ಅನ್ನು Playwright ಮತ್ತು Selenium ಮೂಲಕ automate ಮಾಡುತ್ತದೆ, ಅದೇ tests Cypress ಮತ್ತು WebdriverIO ನಲ್ಲಿ ತೋರಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ ଏକ ଛୋଟ shop କୁ Playwright ଓ Selenium ରେ automate କରେ, ସେହି tests Cypress ଓ WebdriverIO ରେ ଦେଖାଏ।", "ar": "يؤتمت هذا الفصل متجرًا صغيرًا باستخدام Playwright وSelenium، ويعرض الاختبارات نفسها في Cypress وWebdriverIO.", "de": "Dieses Kapitel automatisiert einen kleinen Shop mit Playwright und Selenium und zeigt dieselben Tests in Cypress und WebdriverIO."}, {"id": "tools", "h": "The tools", "en": "Playwright talks to the browser over one fast connection, Selenium through a driver program, and Cypress runs inside the browser.", "hi": "Playwright एक तेज connection से browser से बात करता है, Selenium driver program से, और Cypress browser के अंदर चलता है।", "kn": "Playwright ಒಂದು ವೇಗದ connection ಮೂಲಕ, Selenium driver program ಮೂಲಕ browser ಜೊತೆ ಮಾತನಾಡುತ್ತವೆ, Cypress browser ಒಳಗೆ ಓಡುತ್ತದೆ.", "or": "Playwright ଏକ ଦ୍ରୁତ connection ରେ, Selenium driver program ରେ browser ସହ କଥା ହୁଏ, ଏବଂ Cypress browser ଭିତରେ ଚାଲେ।", "ar": "يتصل Playwright بالمتصفح عبر اتصال سريع واحد، وSelenium عبر برنامج تشغيل، ويعمل Cypress داخل المتصفح.", "de": "Playwright spricht über eine schnelle Verbindung mit dem Browser, Selenium über ein Treiberprogramm, Cypress läuft im Browser."}, {"id": "playwright", "h": "Playwright", "en": "Locators are looked up again on every use, actions wait for the element, and assertions retry until they pass. Strict mode refuses ambiguous locators.", "hi": "Locators हर बार फिर से खोजे जाते हैं, actions element का इंतज़ार करते हैं, और assertions pass होने तक retry करते हैं।", "kn": "Locators ಪ್ರತಿ ಬಾರಿ ಮತ್ತೆ ಹುಡುಕಲ್ಪಡುತ್ತವೆ, actions element ಗಾಗಿ ಕಾಯುತ್ತವೆ, assertions pass ಆಗುವವರೆಗೆ retry ಮಾಡುತ್ತವೆ.", "or": "Locators ପ୍ରତ୍ୟେକ ଥର ପୁଣି ଖୋଜାଯାଏ, actions element ପାଇଁ ଅପେକ୍ଷା କରନ୍ତି, assertions pass ପର୍ଯ୍ୟନ୍ତ retry କରନ୍ତି।", "ar": "يبحث عن المحددات من جديد في كل استخدام، وتنتظر الأفعال العنصر، وتعيد التأكيدات المحاولة حتى تنجح.", "de": "Locators werden bei jeder Nutzung neu gesucht, Aktionen warten auf das Element, Assertions wiederholen bis zum Erfolg."}, {"id": "network", "h": "Network", "en": "page route answers requests with fake data or errors, and wait for request checks what the page sends.", "hi": "page.route requests का जवाब नकली data या errors से देता है, और waitForRequest जांचता है कि page क्या भेजता है।", "kn": "page.route requests ಗೆ ನಕಲಿ data ಅಥವಾ errors ಉತ್ತರಿಸುತ್ತದೆ, waitForRequest page ಕಳುಹಿಸುವುದನ್ನು ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "page.route requests କୁ ନକଲି data କିମ୍ବା errors ରେ ଉତ୍ତର ଦିଏ, waitForRequest page ଯାହା ପଠାଏ ତାହା ଯାଞ୍ଚ କରେ।", "ar": "يجيب page.route الطلبات ببيانات مزيفة أو أخطاء، ويفحص waitForRequest ما ترسله الصفحة.", "de": "page.route beantwortet Anfragen mit Schein-Daten oder Fehlern, waitForRequest prüft, was die Seite sendet."}, {"id": "framework", "h": "Framework", "en": "Page objects hold the steps, fixtures prepare what a test needs, and retries report flaky tests honestly. Traces show the cause.", "hi": "Page objects steps रखते हैं, fixtures test की ज़रूरत तैयार करते हैं, और retries flaky tests को ईमानदारी से बताते हैं।", "kn": "Page objects steps ಇಡುತ್ತವೆ, fixtures test ಗೆ ಬೇಕಾದದ್ದನ್ನು ಸಿದ್ಧಪಡಿಸುತ್ತವೆ, retries flaky tests ಅನ್ನು ಪ್ರಾಮಾಣಿಕವಾಗಿ ತಿಳಿಸುತ್ತವೆ.", "or": "Page objects steps ରଖନ୍ତି, fixtures test ର ଆବଶ୍ୟକତା ପ୍ରସ୍ତୁତ କରନ୍ତି, retries flaky tests କୁ ସଚ୍ଚୋଟ ଭାବେ ଜଣାନ୍ତି।", "ar": "تحفظ كائنات الصفحات الخطوات، وتجهز التجهيزات ما يحتاجه الاختبار، وتبلغ إعادة المحاولة عن الاختبارات المتقلبة بصدق.", "de": "Page Objects halten die Schritte, Fixtures bereiten vor, Wiederholungen melden wackelige Tests ehrlich."}, {"id": "selenium", "h": "Selenium", "en": "Selenium sends each command to a driver program. Await every call and use explicit waits for anything that appears later.", "hi": "Selenium हर command driver program को भेजता है। हर call को await करें और बाद में आने वाली चीज़ों के लिए explicit waits इस्तेमाल करें।", "kn": "Selenium ಪ್ರತಿ command ಅನ್ನು driver program ಗೆ ಕಳುಹಿಸುತ್ತದೆ. ಪ್ರತಿ call await ಮಾಡಿ, explicit waits ಬಳಸಿ.", "or": "Selenium ପ୍ରତ୍ୟେକ command driver program କୁ ପଠାଏ। ପ୍ରତ୍ୟେକ call await କରନ୍ତୁ ଏବଂ explicit waits ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "يرسل Selenium كل أمر إلى برنامج تشغيل. انتظر كل استدعاء واستخدم الانتظار الصريح لكل ما يظهر لاحقًا.", "de": "Selenium schickt jeden Befehl an ein Treiberprogramm. Jeden Aufruf awaiten und explizite Wartezeiten nutzen."}, {"id": "cypress", "h": "Cypress", "en": "Cypress queues commands and retries them inside the browser, so you never await them. WebdriverIO wraps WebDriver with built in waiting.", "hi": "Cypress commands को queue करता है और browser के अंदर retry करता है, इसलिए उन्हें कभी await न करें।", "kn": "Cypress commands ಅನ್ನು queue ಮಾಡಿ browser ಒಳಗೆ retry ಮಾಡುತ್ತದೆ, ಆದ್ದರಿಂದ ಅವನ್ನು await ಮಾಡಬೇಡಿ.", "or": "Cypress commands କୁ queue କରି browser ଭିତରେ retry କରେ, ତେଣୁ ସେଗୁଡ଼ିକୁ await କରନ୍ତୁ ନାହିଁ।", "ar": "يضع Cypress الأوامر في طابور ويعيد محاولتها داخل المتصفح، فلا تنتظرها أبدًا. ويغلف WebdriverIO بروتوكول WebDriver مع انتظار مدمج.", "de": "Cypress reiht Befehle ein und wiederholt sie im Browser, daher nie await. WebdriverIO umhüllt WebDriver mit eingebautem Warten."}, {"id": "scenario", "h": "Scenario", "en": "Split the suite into shards across machines, let every shard finish, and keep the report and traces for every run.", "hi": "Suite को machines में shards में बांटें, हर shard पूरा होने दें, और हर run की report और traces रखें।", "kn": "Suite ಅನ್ನು machines ನಲ್ಲಿ shards ಆಗಿ ವಿಭಜಿಸಿ, ಪ್ರತಿ shard ಮುಗಿಯಲಿ, report ಮತ್ತು traces ಇಡಿ.", "or": "Suite କୁ machines ରେ shards ରେ ବାଣ୍ଟନ୍ତୁ, ପ୍ରତ୍ୟେକ shard ଶେଷ ହେବାକୁ ଦିଅନ୍ତୁ, report ଓ traces ରଖନ୍ତୁ।", "ar": "قسّم المجموعة على الأجهزة، ودع كل جزء ينتهي، واحتفظ بالتقرير والآثار لكل تشغيل.", "de": "Teile die Suite auf Maschinen auf, lass jeden Teil fertig laufen und behalte Bericht und Traces."}, {"id": "practice", "h": "Hands-on", "en": "Practise choosing a locator, writing a wait helper, a locator filter and a flaky test detector.", "hi": "Locator चुनना, wait helper लिखना, locator filter और flaky test detector का अभ्यास करें।", "kn": "Locator ಆಯ್ಕೆ, wait helper, locator filter ಮತ್ತು flaky test detector ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Locator ବାଛିବା, wait helper, locator filter ଓ flaky test detector ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على اختيار المحدد وكتابة دالة انتظار ومرشح محددات وكاشف للاختبارات المتقلبة.", "de": "Übe Locator-Wahl, einen Warte-Helfer, einen Locator-Filter und einen Erkenner für wackelige Tests."}], "ex": [{"id": "pick", "lv": "e", "title": "Pick the best locator", "task": "<p>Write <code>bestLocator(el)<\/code> for an element description like <code>{ role, name, testId, id, css }<\/code> (any may be missing). Return a Playwright locator string in this order of preference: <code>getByRole(\"role\", { name: \"name\" })<\/code> when both role and name exist, then <code>getByTestId(\"x\")<\/code>, then <code>locator(\"#id\")<\/code>, then <code>locator(\"css\")<\/code>.<\/p>", "starter": "function bestLocator(el) {\n  \n}", "tests": [{"call": "bestLocator({ role: \"button\", name: \"Sign in\", id: \"go\" })", "want": "getByRole(\"button\", { name: \"Sign in\" })"}, {"call": "bestLocator({ role: \"button\", testId: \"buy\" })", "want": "getByTestId(\"buy\")"}, {"call": "bestLocator({ id: \"total\", css: \"output\" })", "want": "locator(\"#total\")"}, {"call": "bestLocator({ css: \".card .price\" })", "want": "locator(\".card .price\")"}], "solution": "function bestLocator(el) {\n  if (el.role && el.name) return `getByRole(\"${el.role}\", { name: \"${el.name}\" })`;\n  if (el.testId) return `getByTestId(\"${el.testId}\")`;\n  if (el.id) return `locator(\"#${el.id}\")`;\n  return `locator(\"${el.css}\")`;\n}", "hint": "A chain of <code>if<\/code> checks with early returns, most preferred first.", "why": "This is the order Playwright and Testing Library recommend, because it follows what users see."}, {"id": "wait", "lv": "m", "title": "A waitFor helper", "task": "<p>Write <code>async waitFor(check, { timeout = 1000, interval = 20 } = {})<\/code>. Call <code>check()<\/code> (it may be async) until it returns a truthy value, and return that value. If the timeout passes first, throw an Error with the message <code>\"Timed out after 1000 ms\"<\/code> (with the real timeout).<\/p>", "starter": "async function waitFor(check, { timeout = 1000, interval = 20 } = {}) {\n  \n}", "tests": [{"call": "(async () => { const start = Date.now(); return await waitFor(() => Date.now() - start > 100 && \"ready\"); })()", "want": "ready"}, {"call": "waitFor(() => false, { timeout: 100 }).catch(e => e.message)", "want": "Timed out after 100 ms"}], "solution": "async function waitFor(check, { timeout = 1000, interval = 20 } = {}) {\n  const deadline = Date.now() + timeout;\n  while (Date.now() < deadline) {\n    const value = await check();\n    if (value) return value;\n    await new Promise(r => setTimeout(r, interval));\n  }\n  throw new Error(`Timed out after ${timeout} ms`);\n}", "hint": "A loop with a deadline, an <code>await<\/code> on the check and a short sleep between tries.", "why": "This is what <code>expect.poll<\/code>, Selenium waits and Cypress retries all do inside."}, {"id": "filter", "lv": "h", "title": "filter({ hasText }) for cards", "task": "<p>A page has product cards as objects <code>{ text, buttons }<\/code>. Write <code>filterCards(cards, hasText)<\/code> returning the cards whose text contains <code>hasText<\/code> (a string, case sensitive, or a RegExp). Then write <code>strictOne(list)<\/code> that returns the only item, or throws <code>\"strict mode violation: N elements\"<\/code> when the list does not have exactly one.<\/p>", "starter": "function filterCards(cards, hasText) {\n  \n}\n\nfunction strictOne(list) {\n  \n}", "tests": [{"call": "filterCards([{ text: \"Gel pen ₹20\" }, { text: \"Coffee mug ₹199\" }], \"mug\").length", "want": 1}, {"call": "filterCards([{ text: \"Gel pen\" }, { text: \"Fountain pen\" }], /pen$/).length", "want": 2}, {"call": "strictOne([{ text: \"a\" }]).text", "want": "a"}, {"call": "(() => { try { strictOne([1, 2]); } catch (e) { return e.message; } })()", "want": "strict mode violation: 2 elements"}], "solution": "function filterCards(cards, hasText) {\n  return cards.filter(c => (hasText instanceof RegExp ? hasText.test(c.text) : c.text.includes(hasText)));\n}\n\nfunction strictOne(list) {\n  if (list.length !== 1) throw new Error(`strict mode violation: ${list.length} elements`);\n  return list[0];\n}", "hint": "<code>instanceof RegExp<\/code> tells the two kinds of filter apart.", "why": "Filtering, then insisting on exactly one match, is how Playwright keeps a test from clicking the wrong card."}, {"id": "flaky", "lv": "x", "title": "Find the flaky tests", "task": "<p>Write <code>flakyReport(runs)<\/code>. <code>runs<\/code> is a list of runs, each an object from test name to <code>\"passed\"<\/code> or <code>\"failed\"<\/code>. Return the names of tests that both passed and failed at least once, sorted, each with its failure rate in percent rounded to a whole number, like <code>\"checkout (33%)\"<\/code>.<\/p>", "starter": "function flakyReport(runs) {\n  \n}", "tests": [{"call": "flakyReport([{ login: \"passed\", checkout: \"failed\", search: \"failed\" }, { login: \"passed\", checkout: \"passed\", search: \"failed\" }, { login: \"passed\", checkout: \"passed\", search: \"failed\" }])", "want": ["checkout (33%)"]}, {"call": "flakyReport([{ a: \"failed\", b: \"passed\" }, { a: \"passed\", b: \"failed\" }])", "want": ["a (50%)", "b (50%)"]}, {"call": "flakyReport([])", "want": []}], "solution": "function flakyReport(runs) {\n  const stats = {};\n  for (const run of runs) {\n    for (const [name, status] of Object.entries(run)) {\n      stats[name] ??= { passed: 0, failed: 0 };\n      stats[name][status]++;\n    }\n  }\n  return Object.entries(stats)\n    .filter(([, s]) => s.passed > 0 && s.failed > 0)\n    .map(([name, s]) => `${name} (${Math.round((s.failed / (s.passed + s.failed)) * 100)}%)`)\n    .sort();\n}", "hint": "Count passes and failures per test first, then keep the ones with some of each.", "why": "A test that always fails is broken, not flaky. Only mixed results point at timing, data or environment problems."}], "dg": {"drivers": {"t": "How each tool reaches the browser", "w": 900, "h": 320, "n": [["pw", 20, 20, 190, 56, "Playwright test", {"c": 2}], ["se", 20, 130, 190, 56, "Selenium test", {"c": 1}], ["cy", 20, 240, 190, 56, "Cypress test", {"c": 3}], ["cdp", 300, 20, 220, 56, "CDP or Playwright protocol", {"c": 0, "sh": "pill", "i": "One fast, two way connection. Events such as network calls flow back to the test."}], ["drv", 300, 130, 220, 56, "chromedriver", {"c": 0, "sub": "W3C WebDriver over HTTP", "i": "Each command is an HTTP request to the driver, which then controls the browser."}], ["inb", 300, 240, 220, 56, "runs inside the page", {"c": 0, "sh": "pill", "i": "The test code is loaded into the browser next to the app."}], ["br", 640, 110, 230, 100, "Browser", {"c": 4, "sh": "screen", "sub": "your web app"}]], "e": [["pw", "cdp"], ["cdp", "br"], ["se", "drv"], ["drv", "br"], ["cy", "inb"], ["inb", "br"]], "st": [[["pw", "cdp", "br", "pw>cdp", "cdp>br"], "Playwright keeps one connection open and hears every event, which makes auto-waiting and network control cheap."], [["se", "drv", "br", "se>drv", "drv>br"], "Selenium sends standard WebDriver commands to a driver program. It works with every browser vendor, and each command is a round trip."], [["cy", "inb", "br", "cy>inb", "inb>br"], "Cypress runs inside the browser itself, so it sees the app directly but lives within the browser's rules, for example one tab at a time."]]}}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "UI Automation: Playwright, Selenium, Cypress and WebdriverIO", subject: "javascript" });
+</script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting Started with JavaScript · JavaScript</title>
+<meta name="description" content="What JavaScript is, engines and runtimes, installing Node.js, the console, scripts in a page, strict mode and reading error messages.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 1 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🚀</span><div><h1>Getting Started with JavaScript</h1><p class="lead">What JavaScript is, where it runs, how to set up Node.js, how to print with the console, how a page loads scripts and how to read the errors you will meet every day.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 14 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 11 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Parts marked 🧪 QA essential are what you need before writing Playwright, Cypress, WebdriverIO or Selenium tests in JavaScript. Press "Show the QA path only" to hide the rest.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#what-is-js" class="qa"><span>🌍</span>What JavaScript is and where it runs</a><a href="#setup" class="qa"><span>🧰</span>Setting up Node.js and an editor</a><a href="#first-program"><span>👋</span>Your first program</a><a href="#console" class="qa"><span>🖨️</span>The console toolbox</a><a href="#browser" class="qa"><span>🌐</span>JavaScript in a web page</a><a href="#how-it-runs"><span>⚙️</span>How the engine runs your code</a><a href="#errors" class="qa"><span>🚨</span>Reading error messages</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: summarise a test run</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="what-is-js" data-say="what-is-js"><div class="sec-num">Part 1</div><h2><span class="sec-em">🌍</span><span>What JavaScript is and where it runs</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">Selenium</span><span class="qa-tool">WebdriverIO</span><span class="qa-why">Most modern UI and API automation tools are written in JavaScript or TypeScript, and their tests are too.</span></div>
+<p><b>JavaScript</b> is the programming language of the web. Every modern browser has a JavaScript <b>engine</b> built in, so the same code runs on a phone, a laptop and a smart TV. Outside the browser, <b>Node.js</b>, <b>Deno</b> and <b>Bun</b> run JavaScript on servers, laptops and CI machines.</p>
+<div class="viz" data-viz="flow" data-k="where"></div>
+<div class="tw"><table class="jt"><tr><th>Name</th><th>What it is</th></tr>
+<tr><td>ECMAScript</td><td>The official standard. JavaScript is the language that follows it. A new edition comes out every June: ES2015 (also called ES6), ES2016 and so on up to ES2026.</td></tr>
+<tr><td>TC39</td><td>The committee that decides new features. A proposal moves through stages 0 to 4 and joins the standard at stage 4.</td></tr>
+<tr><td>Engine</td><td>The program that runs the code: V8 (Chrome, Edge, Node.js, Deno), SpiderMonkey (Firefox) and JavaScriptCore (Safari, Bun).</td></tr>
+<tr><td>Runtime</td><td>An engine plus extra tools. A browser adds the page (DOM), fetch and storage. Node.js adds files, network servers and processes.</td></tr>
+</table></div>
+<div class="vs"><div><b>🛠️ Developers use it for</b>web pages, React or Angular apps, servers and APIs with Node.js, mobile apps with React Native and desktop apps with Electron.</div><div><b>🧪 QA engineers use it for</b>UI automation with Playwright, Cypress, WebdriverIO and Selenium WebDriver, API tests, unit tests with Jest or Vitest, and small scripts that create test data or read reports.</div></div>
+<div class="fun">JavaScript has nothing to do with Java. The name was picked in 1995 for marketing, and the language was written in about ten days by Brendan Eich.</div>
+</section>
+<section class="card reveal jsec qa-part" id="setup" data-say="setup"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧰</span><span>Setting up Node.js and an editor</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<p>To follow along on your own machine you need two things: <b>Node.js</b> and a code editor. Every example on this page also runs inside your browser with the <b>✏️ Edit and run</b> button, so you can start right now.</p>
+<ol class="steps">
+<li>Install Node.js from <code>nodejs.org</code>. Pick the <b>LTS</b> (long term support) release for work projects. The <b>Current</b> release has the newest features.</li>
+<li>Install <b>Visual Studio Code</b>, the editor most JavaScript teams use. Its built in terminal opens with <span class="kbd">Ctrl</span> + <span class="kbd">`</span>.</li>
+<li>Open a terminal and check that both <code>node</code> and <code>npm</code> answer.</li>
+</ol>
+<div class="codewrap" data-k="node-version"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Check your setup in a terminal · Terminal commands</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">node</span> -v          <span class="c"># which Node.js is installed</span>
+<span class="k">npm</span> -v           <span class="c"># npm comes with Node.js</span>
+<span class="k">node</span>             <span class="c"># opens the REPL, type .exit to leave</span>
+<span class="k">node</span> hello.js    <span class="c"># runs a file</span></pre><div class="note-out"><span>What happens</span><p><code>node -v</code> prints a version such as <code>v26.12.0</code>. Every example on this page was run with that version.</p></div></div>
+<p>Teams that work on several projects often need several Node.js versions. A version manager such as <b>nvm</b> switches between them.</p>
+<div class="codewrap" data-k="nvm"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Several Node.js versions side by side · Terminal commands</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># macOS and Linux: install nvm once, then any Node.js version you need</span>
+nvm install --lts       <span class="c"># the long term support release, the safe choice for projects</span>
+nvm install <span class="n">26</span>          <span class="c"># the newest release line, used on this page</span>
+nvm use <span class="n">26</span>
+<span class="k">node</span> -v
+
+<span class="c"># Windows: use the installer from nodejs.org or "nvm-windows"</span></pre></div>
+<div class="tip">A project can pin its Node.js version in a file called <code>.nvmrc</code> or in the <code>engines</code> field of <code>package.json</code>, so every developer and every CI machine uses the same one.</div>
+<div class="qa-box">Playwright, Cypress and WebdriverIO all need Node.js. Before you install any of them, check <code>node -v</code> against the version the tool supports. A test that passes on your laptop and fails in CI is often just a different Node.js version.</div>
+</section>
+<section class="card reveal jsec" id="first-program" data-say="first-program"><div class="sec-num">Part 3</div><h2><span class="sec-em">👋</span><span>Your first program</span></h2>
+
+<p>A JavaScript program is a list of <b>statements</b> that run from top to bottom. <code>console.log</code> prints whatever you give it. Several values are printed with a space between them.</p>
+<div class="codewrap" data-k="hello" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Your first program · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">console.log(<span class="s">"Hello, Brainy Bytes!"</span>);
+console.log(<span class="s">"2 + 3 ="</span>, <span class="n">2</span> + <span class="n">3</span>);
+console.log(<span class="s">`Today we learn ${"JavaScript"}`</span>);</pre><div class="out"><span>Output</span><pre>Hello, Brainy Bytes!
+2 + 3 = 5
+Today we learn JavaScript</pre></div></div>
+<p>The text inside backticks is a <b>template literal</b>. Anything inside <code>${ }</code> is worked out and placed into the text. You will use it constantly for messages and test names.</p>
+<h3>Comments and semicolons</h3>
+<div class="codewrap" data-k="comments" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Statements, comments and semicolons · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// A single line comment explains the next line</span>
+<span class="k">let</span> price = <span class="n">250</span>; <span class="c">// a comment can also sit at the end of a line</span>
+
+<span class="c">/* A block comment
+   can span many lines */</span>
+<span class="k">let</span> qty = <span class="n">3</span>;
+
+console.log(price * qty)   <span class="c">// no semicolon here, JavaScript adds one for us</span>
+console.log(<span class="s">"done"</span>);</pre><div class="out"><span>Output</span><pre>750
+done</pre></div></div>
+<p>Semicolons end statements. JavaScript has <b>automatic semicolon insertion</b> (ASI), so leaving them out usually works. Most teams pick one style and let a formatter such as Prettier enforce it.</p>
+<div class="codewrap" data-k="asi-trap" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The one place automatic semicolons bite · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> getUser() {
+  <span class="k">return</span>
+  {
+    name: <span class="s">"Asha"</span>
+  };
+}
+console.log(getUser());</pre><div class="out"><span>Output</span><pre>undefined</pre></div></div>
+<div class="exam">A line break right after <code>return</code> makes JavaScript insert a semicolon there. The function returns <code>undefined</code> and the object below is never reached. Always start the returned value on the same line as <code>return</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="console" data-say="console"><div class="sec-num">Part 4</div><h2><span class="sec-em">🖨️</span><span>The console toolbox</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">Jest</span></div>
+<p>The console is your first debugging tool and the place where test runners print what they find. It can do far more than <code>log</code>.</p>
+<div class="codewrap" data-k="console-tour" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The console toolbox · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">console.log(<span class="s">"log is for normal messages"</span>);
+console.info(<span class="s">"info looks the same in Node"</span>);
+console.warn(<span class="s">"warn goes to the error stream"</span>);
+console.error(<span class="s">"error also goes to the error stream"</span>);
+
+console.log(<span class="s">"%s scored %d points"</span>, <span class="s">"Ravi"</span>, <span class="n">42</span>);
+
+console.table([
+  { test: <span class="s">"login"</span>, status: <span class="s">"passed"</span>, ms: <span class="n">812</span> },
+  { test: <span class="s">"checkout"</span>, status: <span class="s">"failed"</span>, ms: <span class="n">2310</span> },
+]);
+
+console.group(<span class="s">"Suite: cart"</span>);
+console.log(<span class="s">"adds an item"</span>);
+console.log(<span class="s">"removes an item"</span>);
+console.groupEnd();
+
+console.count(<span class="s">"retry"</span>);
+console.count(<span class="s">"retry"</span>);
+console.assert(<span class="n">1</span> + <span class="n">1</span> === <span class="n">3</span>, <span class="s">"maths is broken"</span>);</pre><div class="out"><span>Output</span><pre>log is for normal messages
+info looks the same in Node
+warn goes to the error stream
+error also goes to the error stream
+Ravi scored 42 points
+┌─────────┬────────────┬──────────┬──────┐
+│ (index) │ test       │ status   │ ms   │
+├─────────┼────────────┼──────────┼──────┤
+│ 0       │ &#x27;login&#x27;    │ &#x27;passed&#x27; │ 812  │
+│ 1       │ &#x27;checkout&#x27; │ &#x27;failed&#x27; │ 2310 │
+└─────────┴────────────┴──────────┴──────┘
+Suite: cart
+  adds an item
+  removes an item
+retry: 1
+retry: 2
+Assertion failed: maths is broken</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Method</th><th>Use it for</th></tr>
+<tr><td><code>log</code>, <code>info</code></td><td>normal messages, written to standard output</td></tr>
+<tr><td><code>warn</code>, <code>error</code></td><td>problems, written to the error stream, shown in yellow and red in the browser</td></tr>
+<tr><td><code>table</code></td><td>arrays of objects shown as a table, perfect for test data</td></tr>
+<tr><td><code>group</code>, <code>groupEnd</code></td><td>indenting related lines, like a suite and its tests</td></tr>
+<tr><td><code>count</code></td><td>how many times a line ran, for example retries</td></tr>
+<tr><td><code>assert</code></td><td>prints an error only when the condition is false</td></tr>
+<tr><td><code>time</code>, <code>timeEnd</code></td><td>how long a piece of code took</td></tr>
+</table></div>
+<div class="codewrap" data-k="timing" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Measuring how long something takes · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">console.time(<span class="s">"build list"</span>);
+<span class="k">const</span> items = [];
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; <span class="n">100000</span>; i++) items.push(i * <span class="n">2</span>);
+console.timeEnd(<span class="s">"build list"</span>);
+console.log(<span class="s">"items:"</span>, items.length);</pre><div class="out"><span>Output</span><pre>build list: 2.481ms
+items: 100000</pre></div></div>
+<div class="qa-box">When a Playwright or Cypress test fails, add a <code>console.log</code> of the value you expected and the value you got. Playwright shows test output in its report, and in Cypress the browser console shows it. For timings, prefer the runner's own reports over <code>console.time</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="browser" data-say="browser"><div class="sec-num">Part 5</div><h2><span class="sec-em">🌐</span><span>JavaScript in a web page</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Selenium</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-why">Locators are CSS or XPath selectors, and executeScript or evaluate send JavaScript into the page.</span></div>
+<p>In a browser, JavaScript can read and change the page. The page is a tree of objects called the <b>DOM</b> (Document Object Model). <code>document.querySelector</code> finds an element with a CSS selector, the same kind of selector a test tool uses to find a button.</p>
+<div class="codewrap" data-k="page-script" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">JavaScript changes the page · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;
+&lt;<span class="k">head</span>&gt;&lt;<span class="k">title</span>&gt;Shop&lt;/<span class="k">title</span>&gt;&lt;/<span class="k">head</span>&gt;
+&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">h1</span> <span class="a">id</span>=<span class="s">"title"</span>&gt;Welcome&lt;/<span class="k">h1</span>&gt;
+  &lt;<span class="k">button</span> <span class="a">id</span>=<span class="s">"buy"</span>&gt;Buy now&lt;/<span class="k">button</span>&gt;
+  &lt;<span class="k">p</span> <span class="a">id</span>=<span class="s">"msg"</span>&gt;&lt;/<span class="k">p</span>&gt;
+&lt;/<span class="k">body</span>&gt;
+&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="k">const</span> title = document.querySelector(<span class="s">"#title"</span>);
+console.log(<span class="s">"Before:"</span>, title.textContent);
+title.textContent = <span class="s">"Welcome back, Asha"</span>;
+console.log(<span class="s">"After:"</span>, title.textContent);
+
+document.querySelector(<span class="s">"#buy"</span>).addEventListener(<span class="s">"click"</span>, () =&gt; {
+  document.querySelector(<span class="s">"#msg"</span>).textContent = <span class="s">"Added to cart"</span>;
+  console.log(<span class="s">"Clicked!"</span>);
+});
+document.querySelector(<span class="s">"#buy"</span>).click();
+console.log(<span class="s">"Message:"</span>, document.querySelector(<span class="s">"#msg"</span>).textContent);</pre><div class="out"><span>Output</span><pre>Before: Welcome
+After: Welcome back, Asha
+Clicked!
+Message: Added to cart</pre></div></div>
+<p>A page loads JavaScript with a <code>&lt;script&gt;</code> tag. Where and how the tag is written decides when the code runs.</p>
+<div class="codewrap" data-k="script-tags"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Four ways to load a script · HTML</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">&lt;!-- Classic script: blocks the HTML parser while it downloads and runs --&gt;</span>
+&lt;<span class="k">script</span> <span class="a">src</span>=<span class="s">"app.js"</span>&gt;&lt;/<span class="k">script</span>&gt;
+
+<span class="c">&lt;!-- defer: downloads in parallel, runs in order after the HTML is parsed --&gt;</span>
+&lt;<span class="k">script</span> <span class="a">defer</span> <span class="a">src</span>=<span class="s">"app.js"</span>&gt;&lt;/<span class="k">script</span>&gt;
+
+<span class="c">&lt;!-- async: downloads in parallel, runs as soon as it arrives, in any order --&gt;</span>
+&lt;<span class="k">script</span> <span class="a">async</span> <span class="a">src</span>=<span class="s">"analytics.js"</span>&gt;&lt;/<span class="k">script</span>&gt;
+
+<span class="c">&lt;!-- module: deferred by default, strict mode, can use import and export --&gt;</span>
+&lt;<span class="k">script</span> <span class="a">type</span>=<span class="s">"module"</span> <span class="a">src</span>=<span class="s">"main.js"</span>&gt;&lt;/<span class="k">script</span>&gt;</pre></div>
+<div class="viz" data-viz="flow" data-k="loading"></div>
+<p>Every browser has <b>DevTools</b> (<span class="kbd">F12</span>). Its Console tab runs any JavaScript you type against the open page. Testers use it to try a selector before putting it in a test: <code>document.querySelectorAll("button.buy").length</code> tells you at once whether the selector is unique.</p>
+<div class="codewrap" data-k="qa-execute"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Test tools send JavaScript into the page · Snippets, full runs come in chapter 15</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Selenium WebDriver for JavaScript</span>
+<span class="k">const</span> title = <span class="k">await</span> driver.executeScript(<span class="s">"return document.title"</span>);
+
+<span class="c">// Playwright</span>
+<span class="k">const</span> count = <span class="k">await</span> page.evaluate(() =&gt; document.querySelectorAll(<span class="s">".product"</span>).length);
+
+<span class="c">// Cypress</span>
+cy.window().then(win =&gt; win.localStorage.setItem(<span class="s">"token"</span>, <span class="s">"abc"</span>));</pre></div>
+<div class="qa-box">All three tools let you run your own JavaScript inside the page under test. That is how you read values the UI does not show, set up storage or check something a locator cannot reach. The code you send runs in the browser, so it can use <code>document</code> and <code>window</code>, but it cannot see the variables in your test file.</div>
+</section>
+<section class="card reveal jsec" id="how-it-runs" data-say="how-it-runs"><div class="sec-num">Part 6</div><h2><span class="sec-em">⚙️</span><span>How the engine runs your code</span></h2>
+
+<p>Running a script happens in a few steps, and knowing them explains several surprises you will meet later.</p>
+<div class="viz" data-viz="flow" data-k="engine"></div>
+<ul>
+<li><b>Parse</b>: the engine reads the whole file first. A typo anywhere is a <code>SyntaxError</code> and nothing runs at all.</li>
+<li><b>Compile</b>: V8 turns the code into bytecode, then a JIT (just in time) compiler turns busy functions into fast machine code while the program runs.</li>
+<li><b>Execute</b>: one line at a time on a <b>single thread</b>. JavaScript does one thing at a time. Waiting for a server or a timer is handed to the runtime, which is how one thread stays responsive. Chapter 10 explains this event loop.</li>
+</ul>
+<h3>Strict mode</h3>
+<p>Strict mode turns silent mistakes into errors. Modules (<code>type="module"</code> or <code>.mjs</code> files) and classes are always strict. Older scripts opt in with <code>"use strict"</code> on the first line.</p>
+<div class="codewrap" data-k="sloppy"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same typo without strict mode · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">let</span> total = <span class="n">0</span>;
+totl = <span class="n">10</span>;          <span class="c">// sloppy mode silently creates a global variable</span>
+console.log(total, totl);</pre><div class="out"><span>Output</span><pre>0 10</pre></div></div>
+<div class="codewrap" data-k="strict" data-play="worker"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Strict mode catches a typo · 💥 Throws</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="s">"use strict"</span>;
+<span class="k">let</span> total = <span class="n">0</span>;
+totl = <span class="n">10</span>;          <span class="c">// a typo creates a new global in sloppy mode, strict mode stops it</span>
+console.log(total);</pre><div class="err"><span>Output</span><pre>strict.cjs:3
+totl = 10;          // a typo creates a new global in sloppy mode, strict mode stops it
+     ^
+
+ReferenceError: totl is not defined
+    at Object.&lt;anonymous&gt; (strict.cjs:3:6)
+
+Node.js v26.12.0</pre></div></div>
+<div class="rule">Write new code as modules and you get strict mode for free. Every <code>.mjs</code> example on this page is strict.</div>
+</section>
+<section class="card reveal jsec qa-part" id="errors" data-say="errors"><div class="sec-num">Part 7</div><h2><span class="sec-em">🚨</span><span>Reading error messages</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-why">Every failed test hands you an error message and a stack trace to read.</span></div>
+<p>Errors are not a failure on your part. They are the fastest way to learn what the program really did. Every error has a <b>name</b>, a <b>message</b> and a <b>stack trace</b> that lists where it happened.</p>
+<div class="codewrap" data-k="type-error" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Reading an error message · 💥 Throws</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> user = { name: <span class="s">"Asha"</span> };
+console.log(user.name.toUpperCase());
+console.log(user.address.city);</pre><div class="err"><span>Output</span><pre>ASHA
+main.mjs:3
+console.log(user.address.city);
+                         ^
+
+TypeError: Cannot read properties of undefined (reading &#x27;city&#x27;)
+    at main.mjs:3:26
+
+Node.js v26.12.0</pre></div></div>
+<ol class="steps">
+<li>Read the <b>name</b>: <code>TypeError</code> means a value was the wrong type for what you did with it. Here <code>user.address</code> is <code>undefined</code>, and you cannot read <code>city</code> from it.</li>
+<li>Read the <b>first stack line</b> that points into your own file. <code>main.mjs:3</code> is file, line and column.</li>
+<li>Look at that line and ask which value was missing. Then print it.</li>
+</ol>
+<div class="tw"><table class="jt"><tr><th>Error</th><th>Usual cause</th></tr>
+<tr><td><code>SyntaxError</code></td><td>The code is not valid JavaScript: a missing bracket or quote. Nothing in the file runs.</td></tr>
+<tr><td><code>ReferenceError</code></td><td>A name that does not exist, often a typo, or a variable used before <code>let</code> declared it.</td></tr>
+<tr><td><code>TypeError</code></td><td>Reading a property of <code>undefined</code> or <code>null</code>, or calling something that is not a function.</td></tr>
+<tr><td><code>RangeError</code></td><td>A number out of range, such as <code>new Array(-1)</code>, or endless recursion.</td></tr>
+</table></div>
+<p>A <code>try</code> and <code>catch</code> block lets the program handle the error and carry on. Chapter 3 goes much deeper.</p>
+<div class="codewrap" data-k="try-it" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Catching the error instead of crashing · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> cart = [];
+<span class="k">try</span> {
+  cart.push({ id: <span class="n">1</span>, price: <span class="n">99</span> });
+  console.log(cart[<span class="n">0</span>].price.toFixed(<span class="n">2</span>));
+  console.log(cart[<span class="n">1</span>].price);
+} <span class="k">catch</span> (err) {
+  console.log(<span class="s">"Caught:"</span>, err.name);
+  console.log(<span class="s">"Message:"</span>, err.message);
+}
+console.log(<span class="s">"The program keeps going"</span>);</pre><div class="out"><span>Output</span><pre>99.00
+Caught: TypeError
+Message: Cannot read properties of undefined (reading &#x27;price&#x27;)
+The program keeps going</pre></div></div>
+<div class="qa-box">A failing test prints exactly this kind of stack. "Cannot read properties of undefined" inside a test usually means a locator found nothing or an API response did not have the field you expected. Read the line number, then log the value.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 8</div><h2><span class="sec-em">🎬</span><span>Real world scenario: summarise a test run</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">node:test</span><span class="qa-why">Reading results and reporting them is daily QA work, and node:test is the simplest way to start testing.</span></div>
+<div class="scenario"><b>The situation</b>Your team's nightly run produces a list of results. The lead wants a short summary in the chat every morning: how many passed, how many failed, the total time and the names of the failures.</div>
+<p>The script below does exactly that with only what this chapter covered: an array of objects, a loop, a template literal and the console.</p>
+<div class="codewrap" data-k="report" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Summarise a test run · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> results = [
+  { name: <span class="s">"login works"</span>, status: <span class="s">"passed"</span>, ms: <span class="n">812</span> },
+  { name: <span class="s">"wrong password shows error"</span>, status: <span class="s">"passed"</span>, ms: <span class="n">640</span> },
+  { name: <span class="s">"checkout total"</span>, status: <span class="s">"failed"</span>, ms: <span class="n">2310</span> },
+  { name: <span class="s">"coupon applies"</span>, status: <span class="s">"skipped"</span>, ms: <span class="n">0</span> },
+  { name: <span class="s">"logout"</span>, status: <span class="s">"passed"</span>, ms: <span class="n">301</span> },
+];
+
+<span class="k">const</span> summary = { passed: <span class="n">0</span>, failed: <span class="n">0</span>, skipped: <span class="n">0</span> };
+<span class="k">let</span> totalMs = <span class="n">0</span>;
+<span class="k">for</span> (<span class="k">const</span> r <span class="k">of</span> results) {
+  summary[r.status]++;
+  totalMs += r.ms;
+}
+
+console.table(summary);
+console.log(<span class="s">`Total time: ${(totalMs / 1000).toFixed(2)} s`</span>);
+<span class="k">const</span> failed = results.filter(r =&gt; r.status === <span class="s">"failed"</span>).map(r =&gt; r.name);
+console.log(<span class="s">"Failed:"</span>, failed);</pre><div class="out"><span>Output</span><pre>┌─────────┬────────┐
+│ (index) │ Values │
+├─────────┼────────┤
+│ passed  │ 3      │
+│ failed  │ 1      │
+│ skipped │ 1      │
+└─────────┴────────┘
+Total time: 4.06 s
+Failed: [ &#x27;checkout total&#x27; ]</pre></div></div>
+<p>Real teams turn helpers like this into tested code. Node.js ships with a test runner, so a first automated check needs no extra installs. Run it with <code>npm test</code>.</p>
+<div class="codewrap tests" data-k="report-test"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A first automated check with the built in test runner · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 summary.js</div><pre class="src" data-file="summary.js"><span class="k">export</span> <span class="k">function</span> summarize(results) {
+  <span class="k">const</span> summary = { passed: <span class="n">0</span>, failed: <span class="n">0</span>, skipped: <span class="n">0</span> };
+  <span class="k">for</span> (<span class="k">const</span> r <span class="k">of</span> results) summary[r.status]++;
+  <span class="k">return</span> summary;
+}</pre><div class="fname">📄 summary.test.js</div><pre class="src" data-file="summary.test.js"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> { summarize } <span class="k">from</span> <span class="s">"./summary.js"</span>;
+
+test(<span class="s">"counts each status"</span>, () =&gt; {
+  <span class="k">const</span> got = summarize([{ status: <span class="s">"passed"</span> }, { status: <span class="s">"failed"</span> }, { status: <span class="s">"passed"</span> }]);
+  assert.deepEqual(got, { passed: <span class="n">2</span>, failed: <span class="n">1</span>, skipped: <span class="n">0</span> });
+});
+
+test(<span class="s">"an empty run has zero of everything"</span>, () =&gt; {
+  assert.deepEqual(summarize([]), { passed: <span class="n">0</span>, failed: <span class="n">0</span>, skipped: <span class="n">0</span> });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npm test</pre></div><div class="out"><span>Terminal output</span><pre>
+&gt; report@1.0.0 test
+&gt; node --test
+
+✔ counts each status (0.5ms)
+✔ an empty run has zero of everything (0.5ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 0.5</pre></div></div>
+<div class="dev-box">Splitting the logic (<code>summarize</code>) from the printing makes it easy to test. The same idea, pure functions with the input and output kept separate, comes back in every chapter.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><span></span><a class="next" href="./js-values-types.html" data-topic="js-values-types"><small>Next chapter →</small><b>🔢 Variables and types</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "From a text file to a working page", "panels": [{"s": [["e", "📝"], ["t", "console.log(\"Hi\")", {"b": 1}]], "h": "You write text", "t": "JavaScript starts as plain text in a .js file.", "more": "Any editor works. VS Code adds colours, hints and a terminal."}, {"s": [["e", "⚙️"], ["t", "parse, compile, run", {"b": 1}]], "h": "The engine runs it", "t": "V8 or another engine reads the text and runs it.", "more": "A syntax error stops everything before the first line runs."}, {"s": [["e", "🖥️"], ["t", "Hi", {"b": 1}]], "h": "Something happens", "t": "A line is printed, a page changes, or a server answers.", "more": "Where it runs decides what it can do: pages in a browser, files and servers in Node.js."}, {"s": [["e", "🧪"], ["t", "✓ 5 passed", {"b": 1}]], "h": "Tests check it", "t": "Testers use the same language to check that it all works.", "more": "Playwright, Cypress, Jest and node:test are written in JavaScript too."}], "remember": "Same language in the page, on the server and in the tests."}, "real": [["🛒", "An online shop", "When you change the quantity in a cart, JavaScript in the page recalculates the total without reloading."], ["🔧", "A build pipeline", "Node.js scripts run linters, bundle the code and start the test suite on every pull request."], ["🤖", "Nightly regression", "A Playwright suite written in TypeScript logs in, buys a product and checks the receipt in three browsers."]], "quiz": [{"lv": "e", "q": "Which program runs JavaScript outside the browser on servers and CI machines?", "o": ["Node.js", "Java Virtual Machine", "Python", "The DOM"], "a": 0, "hint": "It is built on the V8 engine.", "why": "Node.js puts the V8 engine outside the browser and adds files, servers and processes. Deno and Bun do the same job."}, {"lv": "e", "q": "What does this print?", "o": ["5 1", "\"5\" \"1\"", "51", "An error"], "a": 0, "hint": "console.log separates its values with a space.", "why": "console.log prints each value with one space between them, so you see <code>5 1<\/code>.", "code": "console.log(2 + 3, 1);"}, {"lv": "e", "q": "Which console method shows an array of objects as rows and columns?", "o": ["console.table", "console.group", "console.dir", "console.count"], "a": 0, "hint": "Think of a spreadsheet.", "why": "<code>console.table<\/code> draws a table with one row per item and one column per property."}, {"lv": "m", "q": "What does this function return?", "o": ["{ name: \"Asha\" }", "undefined", "null", "A SyntaxError"], "a": 1, "hint": "Look at what follows return on the same line.", "why": "Automatic semicolon insertion puts a semicolon right after <code>return<\/code>, so the function returns <code>undefined<\/code>.", "code": "function f() {\n  return\n  { name: \"Asha\" };\n}\nconsole.log(f());"}, {"lv": "m", "q": "Which script tag downloads in parallel and runs after the HTML is parsed, in document order?", "o": ["&lt;script defer&gt;", "&lt;script async&gt;", "A classic &lt;script&gt;", "&lt;script nomodule&gt;"], "a": 0, "hint": "async runs in whatever order the files arrive.", "why": "<code>defer<\/code> keeps the order and waits for parsing. Module scripts behave the same way by default."}, {"lv": "m", "q": "A test fails with \"TypeError: Cannot read properties of undefined (reading 'total')\". What is the most likely cause?", "o": ["The object you read total from is undefined", "total is spelled wrong in the HTML", "The test runner is broken", "The number is too large"], "a": 0, "hint": "Read the error name and the word after \"of\".", "why": "The value before <code>.total<\/code> was <code>undefined<\/code>, for example an API response without the field you expected."}, {"lv": "h", "q": "In which kind of file is strict mode switched on without writing \"use strict\"?", "o": ["An ES module such as a .mjs file", "Any .js file", "Only files in node_modules", "Only files run by npm"], "a": 0, "hint": "Modules were added in ES2015 with stricter rules.", "why": "ES modules and class bodies are always strict. Classic scripts and CommonJS files need the directive."}, {"lv": "h", "q": "A file has a missing closing bracket on line 40. What happens to the console.log on line 1?", "o": ["It never runs", "It runs, then the error appears", "It runs twice", "It depends on the browser"], "a": 0, "hint": "When is the whole file read?", "why": "The engine parses the entire file before running anything. A <code>SyntaxError<\/code> stops the file before line 1 runs."}, {"lv": "h", "q": "Inside page.evaluate in Playwright, which of these can the code use?", "o": ["document and window of the page", "Variables declared in the test file around it", "The Node.js fs module", "The test runner's expect function"], "a": 0, "hint": "The function is sent to the browser and run there.", "why": "The callback is serialised and run inside the page, so it sees the page's globals. Values from the test must be passed as an argument."}, {"lv": "x", "q": "Which engine runs JavaScript in Node.js, Chrome and Deno?", "o": ["V8", "SpiderMonkey", "JavaScriptCore", "Chakra"], "a": 0, "hint": "Google started it in 2008.", "why": "V8 powers Chrome, Edge, Node.js and Deno. Firefox uses SpiderMonkey and Safari and Bun use JavaScriptCore."}, {"lv": "x", "q": "A proposal is at TC39 stage 3. What does that usually mean?", "o": ["The design is done and engines are implementing it", "It is already in every browser", "It was rejected", "Only Node.js supports it"], "a": 0, "hint": "Stage 4 means it is in the standard.", "why": "Stage 3 means the design is final and implementations are under way. Stage 4 needs two shipping implementations and joins the next edition."}, {"lv": "x", "q": "Why do teams pin the Node.js version in .nvmrc or engines?", "o": ["So every laptop and CI machine runs the same version", "To make npm install faster", "Because Node.js only allows one version per computer", "To turn on strict mode"], "a": 0, "hint": "Think about \"passes locally, fails in CI\".", "why": "Different Node.js versions can behave differently or lack features. Pinning removes one source of tests that pass on one machine and fail on another."}], "calc": [{"lv": "e", "q": "How many lines does this program print?", "ans": "3", "hint": "Count the console.log calls that run.", "steps": ["Each <code>console.log<\/code> call prints one line.", "There are three calls, so three lines."], "code": "console.log(\"a\");\nconsole.log(\"b\", \"c\");\nconsole.log(`d ${1 + 1}`);"}, {"lv": "e", "q": "What is the last line printed?", "ans": "retry: 3", "hint": "console.count prints the label and how many times it has been called.", "steps": ["Calls one, two and three print <code>retry: 1<\/code>, <code>retry: 2<\/code> and <code>retry: 3<\/code>."], "code": "for (let i = 0; i < 3; i++) {\n  console.count(\"retry\");\n}", "alt": ["3"]}, {"lv": "m", "q": "ES2015 is the 6th edition of ECMAScript (ES6). Which edition number is ES2026?", "ans": "17", "hint": "One edition per year.", "steps": ["<span class=\"eq\">2026 - 2015 = 11<\/span>", "<span class=\"eq\">6 + 11 = 17<\/span>"]}, {"lv": "m", "q": "What does this print?", "ans": "Total: 6 items", "hint": "Work out the template literal.", "steps": ["<code>a.length<\/code> is 3 and <code>a.length * 2<\/code> is 6.", "The text becomes <code>Total: 6 items<\/code>."], "code": "const a = [1, 2, 3];\nconsole.log(`Total: ${a.length * 2} items`);"}, {"lv": "h", "q": "A test suite has 40 tests that take 1.5 s each. They run one after another. How many seconds does the run take?", "ans": "60", "hint": "Multiply.", "steps": ["<span class=\"eq\">40 × 1.5 = 60<\/span>"], "alt": ["60 s", "60s"]}, {"lv": "h", "q": "The same 40 tests are split over 4 parallel workers evenly. How many seconds now?", "ans": "15", "hint": "Each worker gets a quarter of the tests.", "steps": ["<span class=\"eq\">40 ÷ 4 = 10 tests per worker<\/span>", "<span class=\"eq\">10 × 1.5 = 15 s<\/span>"], "alt": ["15 s", "15s"]}, {"lv": "x", "q": "A suite replaces 25 fixed waits of 2000 ms with auto-waits that take 300 ms on average. How many seconds does one run save?", "ans": "42.5", "hint": "Work out the saving per wait first.", "steps": ["<span class=\"eq\">2000 - 300 = 1700 ms saved per wait<\/span>", "<span class=\"eq\">25 × 1700 = 42500 ms<\/span>", "<span class=\"eq\">42500 ms = 42.5 s<\/span>"], "alt": ["42.5 s"]}, {"lv": "x", "q": "What does this print?", "ans": "3", "hint": "Only one line prints. Which value does it print?", "steps": ["<code>console.assert<\/code> prints only when its condition is false. <code>2 > 1<\/code> is true, so nothing prints.", "The last line prints <code>x.length<\/code>, which is 3."], "code": "const x = [\"a\", \"b\", \"c\"];\nconsole.assert(2 > 1, \"never shown\");\nconsole.log(x.length);"}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to JavaScript. This chapter shows where it runs, how to set it up, how to print and how to read errors.", "hi": "JavaScript में आपका स्वागत है। यह अध्याय बताता है कि यह कहाँ चलता है, इसे कैसे set up करें, कैसे print करें और errors कैसे पढ़ें।", "kn": "JavaScript ಗೆ ಸ್ವಾಗತ. ಇದು ಎಲ್ಲಿ ಓಡುತ್ತದೆ, ಹೇಗೆ set up ಮಾಡುವುದು, ಹೇಗೆ print ಮಾಡುವುದು ಮತ್ತು errors ಹೇಗೆ ಓದುವುದು ಎಂದು ಈ ಅಧ್ಯಾಯ ತೋರಿಸುತ್ತದೆ.", "or": "JavaScript କୁ ସ୍ୱାଗତ। ଏହା କେଉଁଠି ଚାଲେ, କିପରି set up କରିବେ, କିପରି print କରିବେ ଏବଂ errors କିପରି ପଢ଼ିବେ, ଏହି ଅଧ୍ୟାୟ ଦେଖାଏ।", "ar": "مرحبًا بك في JavaScript. يوضح هذا الفصل أين تعمل، وكيف تجهزها، وكيف تطبع النتائج، وكيف تقرأ الأخطاء.", "de": "Willkommen bei JavaScript. Dieses Kapitel zeigt, wo es läuft, wie man es einrichtet, wie man ausgibt und wie man Fehler liest."}, {"id": "what-is-js", "h": "What JavaScript is", "en": "JavaScript is the language of the web. Engines such as V8 run it in browsers, and Node.js runs it on servers and in test tools.", "hi": "JavaScript web की भाषा है। V8 जैसे engines इसे browser में चलाते हैं, और Node.js इसे servers और test tools में चलाता है।", "kn": "JavaScript ವೆಬ್‌ನ ಭಾಷೆ. V8 ನಂತಹ engines ಇದನ್ನು browser ನಲ್ಲಿ ಓಡಿಸುತ್ತವೆ, Node.js ಇದನ್ನು servers ಮತ್ತು test tools ನಲ್ಲಿ ಓಡಿಸುತ್ತದೆ.", "or": "JavaScript ହେଉଛି web ର ଭାଷା। V8 ପରି engines ଏହାକୁ browser ରେ ଚଲାନ୍ତି, ଏବଂ Node.js ଏହାକୁ servers ଓ test tools ରେ ଚଲାଏ।", "ar": "JavaScript هي لغة الويب. محركات مثل V8 تشغلها في المتصفح، وNode.js يشغلها على الخوادم وفي أدوات الاختبار.", "de": "JavaScript ist die Sprache des Webs. Engines wie V8 führen es im Browser aus, und Node.js führt es auf Servern und in Testwerkzeugen aus."}, {"id": "setup", "h": "Setting up", "en": "Install Node.js, pick the LTS release for projects, and check it with node minus v. A version manager such as nvm switches versions.", "hi": "Node.js install करें, projects के लिए LTS release चुनें, और node -v से जाँचें। nvm जैसा version manager versions बदलता है।", "kn": "Node.js install ಮಾಡಿ, projects ಗಾಗಿ LTS release ಆಯ್ಕೆ ಮಾಡಿ, node -v ಮೂಲಕ ಪರಿಶೀಲಿಸಿ. nvm ನಂತಹ version manager versions ಬದಲಾಯಿಸುತ್ತದೆ.", "or": "Node.js install କରନ୍ତୁ, projects ପାଇଁ LTS release ବାଛନ୍ତୁ, ଏବଂ node -v ରେ ଯାଞ୍ଚ କରନ୍ତୁ। nvm ପରି version manager versions ବଦଳାଏ।", "ar": "ثبّت Node.js، واختر إصدار LTS للمشاريع، وتحقق منه بالأمر node -v. مدير الإصدارات مثل nvm ينقلك بين الإصدارات.", "de": "Installiere Node.js, nimm für Projekte die LTS-Version und prüfe sie mit node -v. Ein Versionsmanager wie nvm wechselt zwischen Versionen."}, {"id": "first-program", "h": "First program", "en": "A program is a list of statements that run from top to bottom. console dot log prints values, and a return value must start on the same line as return.", "hi": "Program statements की list है जो ऊपर से नीचे चलती है। console.log values print करता है, और return value return वाली line पर ही शुरू होनी चाहिए।", "kn": "Program ಮೇಲಿನಿಂದ ಕೆಳಗೆ ಓಡುವ statements ಪಟ್ಟಿ. console.log values print ಮಾಡುತ್ತದೆ, return value return ಇರುವ ಸಾಲಿನಲ್ಲೇ ಶುರುವಾಗಬೇಕು.", "or": "Program ହେଉଛି ଉପରୁ ତଳକୁ ଚାଲୁଥିବା statements ର ତାଲିକା। console.log values print କରେ, ଏବଂ return value return ଥିବା ଧାଡ଼ିରେ ହିଁ ଆରମ୍ଭ ହେବା ଉଚିତ।", "ar": "البرنامج قائمة من التعليمات تعمل من الأعلى إلى الأسفل. console.log يطبع القيم، ويجب أن تبدأ القيمة المرجعة على نفس سطر return.", "de": "Ein Programm ist eine Liste von Anweisungen, die von oben nach unten laufen. console.log gibt Werte aus, und ein Rückgabewert muss in der Zeile von return beginnen."}, {"id": "console", "h": "The console", "en": "The console can log, warn, show tables, group lines, count and time code. Test runners print their findings there too.", "hi": "Console log, warn, tables, groups, count और time कर सकता है। Test runners भी अपने नतीजे वहीं print करते हैं।", "kn": "Console log, warn, tables, groups, count ಮತ್ತು time ಮಾಡಬಹುದು. Test runners ಕೂಡ ತಮ್ಮ ಫಲಿತಾಂಶಗಳನ್ನು ಅಲ್ಲಿ print ಮಾಡುತ್ತವೆ.", "or": "Console log, warn, tables, groups, count ଏବଂ time କରିପାରେ। Test runners ମଧ୍ୟ ସେଠାରେ ଫଳାଫଳ print କରନ୍ତି।", "ar": "يمكن لـ console أن يسجل ويحذر ويعرض جداول ويجمع الأسطر ويعد ويقيس الوقت. وأدوات الاختبار تطبع نتائجها هناك أيضًا.", "de": "Die Konsole kann loggen, warnen, Tabellen zeigen, Zeilen gruppieren, zählen und Zeit messen. Testrunner geben dort auch ihre Ergebnisse aus."}, {"id": "browser", "h": "In the page", "en": "In a browser, JavaScript reads and changes the page through the DOM. Test tools use the same selectors and can send JavaScript into the page.", "hi": "Browser में JavaScript DOM के ज़रिए page पढ़ता और बदलता है। Test tools वही selectors इस्तेमाल करते हैं और page में JavaScript भेज सकते हैं।", "kn": "Browser ನಲ್ಲಿ JavaScript DOM ಮೂಲಕ page ಓದುತ್ತದೆ ಮತ್ತು ಬದಲಾಯಿಸುತ್ತದೆ. Test tools ಅದೇ selectors ಬಳಸುತ್ತವೆ ಮತ್ತು page ಗೆ JavaScript ಕಳುಹಿಸಬಹುದು.", "or": "Browser ରେ JavaScript DOM ମାଧ୍ୟମରେ page ପଢ଼େ ଓ ବଦଳାଏ। Test tools ସେହି selectors ବ୍ୟବହାର କରନ୍ତି ଏବଂ page କୁ JavaScript ପଠାଇପାରନ୍ତି।", "ar": "في المتصفح، تقرأ JavaScript الصفحة وتغيرها عبر DOM. أدوات الاختبار تستخدم نفس المحددات ويمكنها إرسال JavaScript إلى الصفحة.", "de": "Im Browser liest und ändert JavaScript die Seite über das DOM. Testwerkzeuge nutzen dieselben Selektoren und können JavaScript in die Seite schicken."}, {"id": "how-it-runs", "h": "How it runs", "en": "The engine parses the whole file, compiles it and runs it on one thread. Strict mode turns silent mistakes into errors.", "hi": "Engine पूरी file parse करता है, compile करता है और एक thread पर चलाता है। Strict mode चुपचाप होने वाली गलतियों को errors बना देता है।", "kn": "Engine ಸಂಪೂರ್ಣ file parse ಮಾಡಿ, compile ಮಾಡಿ ಒಂದೇ thread ನಲ್ಲಿ ಓಡಿಸುತ್ತದೆ. Strict mode ಮೌನ ತಪ್ಪುಗಳನ್ನು errors ಆಗಿ ಮಾಡುತ್ತದೆ.", "or": "Engine ପୂରା file parse କରେ, compile କରେ ଏବଂ ଗୋଟିଏ thread ରେ ଚଲାଏ। Strict mode ନୀରବ ଭୁଲକୁ errors କରିଦିଏ।", "ar": "يحلل المحرك الملف كله ويترجمه ويشغله على خيط واحد. الوضع الصارم يحول الأخطاء الصامتة إلى أخطاء ظاهرة.", "de": "Die Engine parst die ganze Datei, kompiliert sie und führt sie auf einem Thread aus. Der Strict Mode macht stille Fehler sichtbar."}, {"id": "errors", "h": "Reading errors", "en": "Every error has a name, a message and a stack trace. Read the name, find the first line in your own file, then print the value that was missing.", "hi": "हर error का name, message और stack trace होता है। Name पढ़ें, अपनी file की पहली line ढूँढें, फिर जो value नहीं थी उसे print करें।", "kn": "ಪ್ರತಿ error ಗೆ name, message ಮತ್ತು stack trace ಇರುತ್ತದೆ. Name ಓದಿ, ನಿಮ್ಮ file ನ ಮೊದಲ ಸಾಲು ಹುಡುಕಿ, ಇಲ್ಲದ value ಯನ್ನು print ಮಾಡಿ.", "or": "ପ୍ରତ୍ୟେକ error ର name, message ଓ stack trace ଥାଏ। Name ପଢ଼ନ୍ତୁ, ନିଜ file ର ପ୍ରଥମ ଧାଡ଼ି ଖୋଜନ୍ତୁ, ତାପରେ ନଥିବା value print କରନ୍ତୁ।", "ar": "لكل خطأ اسم ورسالة وتتبع للمكدس. اقرأ الاسم، وابحث عن أول سطر في ملفك، ثم اطبع القيمة التي كانت مفقودة.", "de": "Jeder Fehler hat einen Namen, eine Nachricht und einen Stacktrace. Lies den Namen, finde die erste Zeile in deiner Datei und gib den fehlenden Wert aus."}, {"id": "scenario", "h": "Scenario", "en": "A short script turns a list of test results into a morning summary, and the built in node test runner checks that the summary is right.", "hi": "एक छोटा script test results की list को सुबह की summary में बदलता है, और built in node test runner जाँचता है कि summary सही है।", "kn": "ಒಂದು ಚಿಕ್ಕ script test results ಪಟ್ಟಿಯನ್ನು ಬೆಳಗಿನ summary ಆಗಿ ಮಾಡುತ್ತದೆ, built in node test runner summary ಸರಿಯೇ ಎಂದು ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "ଏକ ଛୋଟ script test results ତାଲିକାକୁ ସକାଳର summary କରେ, ଏବଂ built in node test runner summary ଠିକ୍ କି ନାହିଁ ଯାଞ୍ଚ କରେ।", "ar": "سكربت قصير يحول قائمة نتائج الاختبارات إلى ملخص صباحي، ومشغل الاختبارات المدمج في Node يتحقق من صحة الملخص.", "de": "Ein kurzes Skript macht aus einer Liste von Testergebnissen eine Morgenübersicht, und der eingebaute Node-Testrunner prüft, ob sie stimmt."}, {"id": "practice", "h": "Hands-on", "en": "Now write code yourself. Each exercise runs real tests in your browser and tells you which cases pass.", "hi": "अब खुद code लिखें। हर exercise आपके browser में असली tests चलाती है और बताती है कि कौन से cases pass हुए।", "kn": "ಈಗ ನೀವೇ code ಬರೆಯಿರಿ. ಪ್ರತಿ exercise ನಿಮ್ಮ browser ನಲ್ಲಿ ನಿಜವಾದ tests ಓಡಿಸಿ ಯಾವ cases pass ಆಗಿವೆ ಎಂದು ಹೇಳುತ್ತದೆ.", "or": "ଏବେ ନିଜେ code ଲେଖନ୍ତୁ। ପ୍ରତ୍ୟେକ exercise ଆପଣଙ୍କ browser ରେ ପ୍ରକୃତ tests ଚଲାଏ ଏବଂ କେଉଁ cases pass ହେଲା କହେ।", "ar": "الآن اكتب الكود بنفسك. كل تمرين يشغل اختبارات حقيقية في متصفحك ويخبرك بالحالات التي نجحت.", "de": "Jetzt schreibst du selbst Code. Jede Übung führt echte Tests in deinem Browser aus und zeigt, welche Fälle bestehen."}], "ex": [{"id": "greet", "lv": "e", "title": "Say hello", "task": "<p>Write <code>greet(name)<\/code> that returns the text <code>Hello, NAME!<\/code> using a template literal.<\/p>", "starter": "function greet(name) {\n  // return the greeting\n}", "tests": [{"call": "greet(\"Asha\")", "want": "Hello, Asha!"}, {"call": "greet(\"QA team\")", "want": "Hello, QA team!"}, {"call": "greet(\"\")", "want": "Hello, !"}], "solution": "function greet(name) {\n  return `Hello, ${name}!`;\n}", "hint": "Backticks and <code>${name}<\/code>.", "why": "A template literal places the value of <code>name<\/code> straight into the text."}, {"id": "seconds", "lv": "m", "title": "Milliseconds to seconds", "task": "<p>Test runners report time in milliseconds. Write <code>toSeconds(ms)<\/code> that returns a string with two decimals and an <code>s<\/code>, such as <code>\"2.31 s\"<\/code>.<\/p>", "starter": "function toSeconds(ms) {\n  \n}", "tests": [{"call": "toSeconds(2310)", "want": "2.31 s"}, {"call": "toSeconds(0)", "want": "0.00 s"}, {"call": "toSeconds(1005)", "want": "1.00 s"}, {"call": "toSeconds(61500)", "want": "61.50 s"}], "solution": "function toSeconds(ms) {\n  return `${(ms / 1000).toFixed(2)} s`;\n}", "hint": "<code>toFixed(2)<\/code> gives exactly two decimals.", "why": "Divide by 1000 to get seconds, then <code>toFixed(2)<\/code> rounds and pads to two decimals."}, {"id": "summary", "lv": "h", "title": "Count the results", "task": "<p>Write <code>summarize(results)<\/code>. Each result has a <code>status<\/code> of <code>\"passed\"<\/code>, <code>\"failed\"<\/code> or <code>\"skipped\"<\/code>. Return an object with all three counts, even when a count is zero.<\/p>", "starter": "function summarize(results) {\n  \n}", "tests": [{"call": "summarize([{status:\"passed\"},{status:\"failed\"},{status:\"passed\"}])", "want": {"passed": 2, "failed": 1, "skipped": 0}}, {"call": "summarize([])", "want": {"passed": 0, "failed": 0, "skipped": 0}}, {"call": "summarize([{status:\"skipped\"}])", "want": {"passed": 0, "failed": 0, "skipped": 1}}], "solution": "function summarize(results) {\n  const out = { passed: 0, failed: 0, skipped: 0 };\n  for (const r of results) out[r.status]++;\n  return out;\n}", "hint": "Start with an object that already has all three keys set to 0.", "why": "Starting with every key at zero means an empty run still reports all three counts."}, {"id": "stack-line", "lv": "x", "title": "Find the line in a stack trace", "task": "<p>Write <code>firstLine(stack, file)<\/code>. It gets the text of a stack trace and a file name, and returns the line number (a number) of the first frame in that file, or <code>null<\/code> when the file is not in the trace.<\/p><p>A frame looks like <code>    at login (tests/login.spec.js:12:5)<\/code>.<\/p>", "starter": "function firstLine(stack, file) {\n  \n}", "tests": [{"call": "firstLine(\"Error: x\\n    at a (node:internal/x:1:1)\\n    at login (tests/login.spec.js:12:5)\\n    at run (tests/login.spec.js:40:3)\", \"login.spec.js\")", "want": 12}, {"call": "firstLine(\"TypeError: y\\n    at file:///app/cart.js:7:19\", \"cart.js\")", "want": 7}, {"call": "firstLine(\"Error\\n    at x (a.js:1:1)\", \"b.js\")", "want": null}], "solution": "function firstLine(stack, file) {\n  for (const line of stack.split(\"\\n\")) {\n    const at = line.indexOf(file + \":\");\n    if (at !== -1) {\n      return Number(line.slice(at + file.length + 1).split(\":\")[0]);\n    }\n  }\n  return null;\n}", "hint": "Split the text on <code>\"\\n\"<\/code>, find the line that contains <code>file + \":\"<\/code>, then take the number after it.", "why": "Each stack frame ends with file, line and column separated by colons. The first match is the frame closest to where the error was thrown."}], "dg": {"where": {"t": "One language, many places to run", "w": 900, "h": 300, "n": [["code", 20, 120, 160, 60, "your .js code", {"c": 5, "sh": "doc"}], ["br", 270, 20, 180, 70, "Browser", {"c": 2, "sub": "V8, SpiderMonkey, JSC", "i": "Adds the DOM, events, fetch, storage and timers."}], ["nd", 270, 115, 180, 70, "Node.js", {"c": 1, "sub": "V8", "i": "Adds files, servers, processes and npm packages."}], ["dn", 270, 210, 180, 70, "Deno and Bun", {"c": 3, "sub": "V8 and JSC", "i": "Newer runtimes with TypeScript and testing built in."}], ["ui", 560, 20, 300, 70, "web pages and apps", {"c": 0, "sub": "React, Angular, Vue"}], ["qa", 560, 115, 300, 70, "servers, APIs, CLIs and test tools", {"c": 4, "sub": "Express, Playwright, Jest, Cypress"}], ["sc", 560, 210, 300, 70, "scripts and edge functions", {"c": 0, "sub": "build tools, CI tasks"}]], "e": [["code", "br"], ["code", "nd"], ["code", "dn"], ["br", "ui"], ["nd", "qa"], ["dn", "sc"]]}, "loading": {"t": "When each kind of script runs", "w": 900, "h": 260, "n": [["p1", 20, 30, 230, 44, "HTML parsing", {"c": 2}], ["n1", 270, 30, 130, 44, "download", {"c": 0}], ["x1", 410, 30, 110, 44, "run", {"c": 4}], ["p1b", 530, 30, 300, 44, "parsing continues", {"c": 2}], ["p2", 20, 110, 560, 44, "HTML parsing never stops", {"c": 2}], ["n2", 270, 165, 160, 40, "download in parallel", {"c": 0}], ["x2", 600, 110, 120, 44, "run (defer)", {"c": 1}]], "tx": [[110, 16, "classic <script>", {"b": 1}], [110, 98, "<script defer> and type=\"module\"", {"b": 1}]], "e": [["p1", "n1", {"t": "pause"}], ["n1", "x1"], ["x1", "p1b"], ["n2", "x2", {"t": "after parsing"}]], "st": [[["p1", "n1", "x1", "p1>n1", "n1>x1", "x1>p1b", "p1b"], "A classic script stops the parser, downloads, runs, and only then does the page keep loading. Users see a blank page meanwhile."], [["p2", "n2", "x2", "n2>x2"], "defer and module scripts download while the HTML is parsed and run once parsing is done, in the order they appear."]]}, "engine": {"t": "From source text to running program", "w": 900, "h": 230, "n": [["src", 20, 80, 130, 60, "source code", {"c": 5, "sh": "doc"}], ["parse", 190, 80, 130, 60, "parser", {"c": 2, "i": "Reads the whole file. Any syntax error stops everything here."}], ["ast", 360, 80, 120, 60, "syntax tree", {"c": 3, "sh": "pill"}], ["bc", 520, 20, 160, 60, "bytecode", {"c": 0, "sub": "interpreter runs it", "i": "V8 calls this interpreter Ignition. It starts quickly."}], ["jit", 520, 140, 160, 60, "optimised machine code", {"c": 1, "sub": "JIT compiler", "i": "Hot functions are compiled again into fast code. V8 calls this TurboFan."}], ["out", 740, 80, 140, 60, "output", {"c": 4, "sh": "screen"}]], "e": [["src", "parse"], ["parse", "ast"], ["ast", "bc"], ["bc", "jit", {"t": "hot code"}], ["jit", "bc", {"t": "deoptimise", "d": 1, "cv": 30}], ["bc", "out"], ["jit", "out"]], "st": [[["src", "parse", "src>parse"], "The engine reads all the text first."], [["ast", "parse>ast"], "It builds a tree that describes the program."], [["bc", "ast>bc"], "The interpreter turns the tree into bytecode and starts running at once."], [["jit", "bc>jit"], "Functions that run many times are compiled into fast machine code."], [["jit>bc"], "If an assumption breaks, for example a number suddenly becomes a string, the fast code is thrown away."], [["out", "bc>out", "jit>out"], "Either way, the result is the same output. Only the speed changes."]]}}, "lanes": {}, "play": {"page-script": {"html": "\n<!doctype html>\n<html>\n<head><title>Shop<\/title><\/head>\n<body>\n  <h1 id=\"title\">Welcome<\/h1>\n  <button id=\"buy\">Buy now<\/button>\n  <p id=\"msg\"><\/p>\n<\/body>\n<\/html>\n"}}};
+JSPLAY.page({ title: "Getting Started with JavaScript", subject: "javascript" });
+</script>
+</body>
+</html>

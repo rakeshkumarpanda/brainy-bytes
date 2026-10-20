@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strings, Regex, Numbers, Dates and JSON · JavaScript</title>
+<meta name="description" content="String methods, Unicode, regular expressions, Math, Intl.NumberFormat, Date, time zones, Temporal, JSON.stringify, JSON.parse and validating an API response.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>📦 Working with data</span><span>›</span><span>Chapter 6 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔤</span><div><h1>Strings, Regex, Numbers, Dates and JSON</h1><p class="lead">String methods and Unicode, comparing text read from a page, regular expressions in code and in assertions, Math and Intl number formatting, Date traps and the new Temporal API, and JSON for APIs and fixture files.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 9 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Text, pattern, price and date checks make up most assertions. This chapter shows how to make them strict where it matters and stable everywhere else.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#strings" class="qa"><span>🔤</span>Working with strings</a><a href="#regex" class="qa"><span>🧷</span>Regular expressions</a><a href="#math" class="qa"><span>🧮</span>Math and number formatting</a><a href="#dates" class="qa"><span>📅</span>Dates, time zones and Temporal</a><a href="#json" class="qa"><span>📄</span>JSON</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: validate an order API response</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="strings" data-say="strings"><div class="sec-num">Part 1</div><h2><span class="sec-em">🔤</span><span>Working with strings</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">Selenium</span><span class="qa-why">Most UI assertions compare text, and whitespace or case differences cause false failures.</span></div>
+<p>A <b>string</b> is text. Strings are <b>immutable</b>: every method returns a new string and the original never changes. Indexes start at 0.</p>
+<div class="codewrap" data-k="strings" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The string methods you use daily · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> title = <span class="s">"  Wireless Mouse, Silent Click  "</span>;
+<span class="k">const</span> t = title.trim();
+console.log(<span class="s">`[${t}]`</span>, t.length);
+console.log(t.toUpperCase(), <span class="s">"|"</span>, t.toLowerCase());
+console.log(t.includes(<span class="s">"Mouse"</span>), t.startsWith(<span class="s">"Wire"</span>), t.endsWith(<span class="s">"Click"</span>));
+console.log(t.indexOf(<span class="s">"Silent"</span>), t.slice(<span class="n">0</span>, <span class="n">8</span>), t.slice(-<span class="n">5</span>), t.at(<span class="n">0</span>));
+console.log(t.split(<span class="s">", "</span>));
+console.log(t.replace(<span class="s">"Click"</span>, <span class="s">"Clicks"</span>), <span class="s">"|"</span>, <span class="s">"a-b-c"</span>.replaceAll(<span class="s">"-"</span>, <span class="s">"/"</span>));
+console.log(<span class="s">"7"</span>.padStart(<span class="n">3</span>, <span class="s">"0"</span>), <span class="s">"ab"</span>.repeat(<span class="n">3</span>), <span class="s">"Total"</span>.padEnd(<span class="n">8</span>, <span class="s">"."</span>) + <span class="s">"₹99"</span>);</pre><div class="out"><span>Output</span><pre>[Wireless Mouse, Silent Click] 28
+WIRELESS MOUSE, SILENT CLICK | wireless mouse, silent click
+true true true
+16 Wireless Click W
+[ &#x27;Wireless Mouse&#x27;, &#x27;Silent Click&#x27; ]
+Wireless Mouse, Silent Clicks | a/b/c
+007 ababab Total...₹99</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Need</th><th>Method</th></tr>
+<tr><td>remove spaces at the ends</td><td><code>trim</code>, <code>trimStart</code>, <code>trimEnd</code></td></tr>
+<tr><td>search</td><td><code>includes</code>, <code>startsWith</code>, <code>endsWith</code>, <code>indexOf</code>, <code>search</code></td></tr>
+<tr><td>cut out a part</td><td><code>slice(start, end)</code> (negative counts from the end), <code>at</code></td></tr>
+<tr><td>change</td><td><code>replace</code>, <code>replaceAll</code>, <code>toUpperCase</code>, <code>toLowerCase</code></td></tr>
+<tr><td>split and join</td><td><code>split(separator)</code> and the array's <code>join</code></td></tr>
+<tr><td>pad and repeat</td><td><code>padStart</code>, <code>padEnd</code>, <code>repeat</code></td></tr>
+</table></div>
+<h3>Unicode</h3>
+<div class="codewrap" data-k="unicode" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Unicode, normalising and sorting text · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> word = <span class="s">"café"</span>;
+<span class="k">const</span> composed = <span class="s">"cafe\u0301"</span>;            <span class="c">// e plus a combining accent looks the same</span>
+console.log(word === composed, word.length, composed.length);
+console.log(word === composed.normalize(<span class="s">"NFC"</span>));
+
+<span class="k">const</span> thumbs = <span class="s">"👍🏽"</span>;
+console.log(thumbs.length, [...thumbs].length);   <span class="c">// code units against characters</span>
+
+<span class="k">const</span> names = [<span class="s">"Zoë"</span>, <span class="s">"zara"</span>, <span class="s">"Émile"</span>, <span class="s">"adam"</span>];
+console.log(names.toSorted());
+console.log(names.toSorted((a, b) =&gt; a.localeCompare(b, <span class="s">"en"</span>, { sensitivity: <span class="s">"base"</span> })));</pre><div class="out"><span>Output</span><pre>false 4 5
+true
+4 2
+[ &#x27;Zoë&#x27;, &#x27;adam&#x27;, &#x27;zara&#x27;, &#x27;Émile&#x27; ]
+[ &#x27;adam&#x27;, &#x27;Émile&#x27;, &#x27;zara&#x27;, &#x27;Zoë&#x27; ]</pre></div></div>
+<div class="warn"><code>length</code> counts UTF-16 code units, not visible characters. Emoji and some accents count as 2 or more. Use <code>[...str].length</code> for characters, <code>normalize("NFC")</code> before comparing and <code>localeCompare</code> for human sorting.</div>
+<h3>Comparing text from the UI</h3>
+<div class="codewrap" data-k="compare-text" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Comparing text read from a page · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Text read from a page often has extra spaces, line breaks and non breaking spaces</span>
+<span class="k">const</span> fromPage = <span class="s">"  Order\u00a0#4521\n   confirmed  "</span>;
+<span class="k">const</span> expected = <span class="s">"Order #4521 confirmed"</span>;
+
+<span class="k">const</span> clean = s =&gt; s.replace(/\s+/g, <span class="s">" "</span>).trim();
+console.log(<span class="t">JSON</span>.stringify(fromPage));
+console.log(clean(fromPage) === expected);
+console.log(clean(fromPage).toLowerCase().includes(<span class="s">"confirmed"</span>));</pre><div class="out"><span>Output</span><pre>&quot;  Order #4521\n   confirmed  &quot;
+true
+true</pre></div></div>
+<div class="qa-box">Page text often contains non breaking spaces, line breaks from wrapped layout and extra spaces from templates. Normalise both sides before comparing, or use an assertion that already does: Playwright's <code>toHaveText</code> collapses whitespace, and <code>toContainText</code> matches a part.</div>
+</section>
+<section class="card reveal jsec qa-part" id="regex" data-say="regex"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧷</span><span>Regular expressions</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">Jest</span><span class="qa-why">Text assertions, locator names, URL checks and API field checks all accept regular expressions.</span></div>
+<p>A <b>regular expression</b> describes a pattern of text. It is written between slashes, followed by optional <b>flags</b>.</p>
+<div class="viz" data-viz="regex"></div>
+<div class="codewrap" data-k="regex" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Regular expressions in action · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> text = <span class="s">"Orders ORD-104233 and ORD-998120 shipped on 2026-10-18. Call +91 98450 12345."</span>;
+
+console.log(/<span class="t">ORD</span>-\d{<span class="n">6</span>}/.test(text));                    <span class="c">// is there a match</span>
+console.log(text.match(/<span class="t">ORD</span>-\d{<span class="n">6</span>}/)[<span class="n">0</span>]);                 <span class="c">// the first match</span>
+console.log(text.match(/<span class="t">ORD</span>-\d{<span class="n">6</span>}/g));                   <span class="c">// every match with the g flag</span>
+
+<span class="k">const</span> date = text.match(/(?&lt;year&gt;\d{<span class="n">4</span>})-(?&lt;month&gt;\d{<span class="n">2</span>})-(?&lt;day&gt;\d{<span class="n">2</span>})/);
+console.log(date.groups);                                  <span class="c">// named groups</span>
+
+<span class="k">for</span> (<span class="k">const</span> m <span class="k">of</span> text.matchAll(/<span class="t">ORD</span>-(\d+)/g)) {
+  console.log(<span class="s">"order number"</span>, m[<span class="n">1</span>], <span class="s">"at index"</span>, m.index);
+}
+
+<span class="k">const</span> phone = <span class="s">"+91 98450 12345"</span>;
+console.log(phone.replace(/\d(?=(?:\<span class="t">D</span>*\d){<span class="n">4</span>})/g, <span class="s">"*"</span>));   <span class="c">// mask every digit that has 4 more digits after it</span>
+console.log(<span class="s">"2026-10-18"</span>.replace(/(\d+)-(\d+)-(\d+)/, <span class="s">"$3/$2/$1"</span>));
+console.log(<span class="t">RegExp</span>.escape(<span class="s">"price (₹)?"</span>));                 <span class="c">// ES2025: escape user text for a regex</span></pre><div class="out"><span>Output</span><pre>true
+ORD-104233
+[ &#x27;ORD-104233&#x27;, &#x27;ORD-998120&#x27; ]
+[Object: null prototype] { year: &#x27;2026&#x27;, month: &#x27;10&#x27;, day: &#x27;18&#x27; }
+order number 104233 at index 7
+order number 998120 at index 22
++** ***** *2345
+18/10/2026
+\x70rice\x20\(₹\)\?</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Piece</th><th>Means</th></tr>
+<tr><td><code>\d \w \s</code></td><td>a digit, a word character, whitespace (capitals mean "not": <code>\D</code>)</td></tr>
+<tr><td><code>[abc] [^abc] [a-z]</code></td><td>one of, none of, a range</td></tr>
+<tr><td><code>* + ? {6} {2,4}</code></td><td>repeat: 0 or more, 1 or more, optional, exactly 6, 2 to 4</td></tr>
+<tr><td><code>^ $ \b</code></td><td>start, end, word boundary</td></tr>
+<tr><td><code>( ) (?&lt;name&gt; ) (?: )</code></td><td>capture group, named group, group without capturing</td></tr>
+<tr><td><code>a|b</code></td><td>a or b</td></tr>
+<tr><td><code>(?=x) (?!x)</code></td><td>followed by x, not followed by x (lookahead)</td></tr>
+<tr><td>flags <code>g i m s u v y</code></td><td>all matches, ignore case, multi line, dot matches new lines, unicode, unicode sets, sticky</td></tr>
+</table></div>
+<p>Test tools accept regular expressions almost everywhere text is expected.</p>
+<div class="codewrap" data-k="regex-qa"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Patterns in assertions and locators · Snippets</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Playwright: assert text with a pattern, find by a pattern</span>
+<span class="k">await</span> expect(page.getByTestId(<span class="s">"order-id"</span>)).toHaveText(/^<span class="t">ORD</span>-\d{<span class="n">6</span>}$/);
+<span class="k">await</span> page.getByRole(<span class="s">"button"</span>, { name: /add to (cart|basket)/i }).click();
+
+<span class="c">// Cypress</span>
+cy.contains(/order <span class="t">ORD</span>-\d{<span class="n">6</span>} confirmed/i).should(<span class="s">"be.visible"</span>);
+cy.url().should(<span class="s">"match"</span>, /\/orders\/\d+$/);
+
+<span class="c">// Jest, Vitest</span>
+expect(response.body.id).toMatch(/^<span class="t">ORD</span>-\d{<span class="n">6</span>}$/);
+expect(response.body).toEqual({ id: expect.stringMatching(/^<span class="t">ORD</span>-/), total: expect.any(<span class="t">Number</span>) });</pre></div>
+<div class="qa-box">Anchor patterns with <code>^</code> and <code>$</code> when the whole value must match. <code>/ORD-\d{6}/</code> also passes for <code>XORD-1234567</code>, while <code>/^ORD-\d{6}$/</code> does not.</div>
+</section>
+<section class="card reveal jsec qa-part" id="math" data-say="math"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧮</span><span>Math and number formatting</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<p>The <code>Math</code> object holds rounding, min and max, powers and random numbers. <code>Intl.NumberFormat</code> turns numbers into the exact text a user in each country expects.</p>
+<div class="codewrap" data-k="math" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Math, rounding and formatting numbers · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">console.log(<span class="t">Math</span>.round(<span class="n">2.5</span>), <span class="t">Math</span>.round(-<span class="n">2.5</span>), <span class="t">Math</span>.floor(-<span class="n">2.5</span>), <span class="t">Math</span>.ceil(<span class="n">2.1</span>), <span class="t">Math</span>.trunc(-<span class="n">2.9</span>));
+console.log(<span class="t">Math</span>.max(<span class="n">4</span>, <span class="n">9</span>, <span class="n">2</span>), <span class="t">Math</span>.min(...[<span class="n">4</span>, <span class="n">9</span>, <span class="n">2</span>]), <span class="t">Math</span>.abs(-<span class="n">7</span>), <span class="t">Math</span>.sqrt(<span class="n">81</span>), <span class="t">Math</span>.hypot(<span class="n">3</span>, <span class="n">4</span>));
+console.log((<span class="n">1.005</span>).toFixed(<span class="n">2</span>), <span class="t">Math</span>.round(<span class="n">1.005</span> * <span class="n">100</span>) / <span class="n">100</span>);    <span class="c">// both show a decimal rounding trap</span>
+
+<span class="k">const</span> randomInt = (min, max) =&gt; min + <span class="t">Math</span>.floor(<span class="t">Math</span>.random() * (max - min + <span class="n">1</span>));
+<span class="k">const</span> roll = randomInt(<span class="n">1</span>, <span class="n">6</span>);
+console.log(roll &gt;= <span class="n">1</span> &amp;&amp; roll &lt;= <span class="n">6</span> &amp;&amp; <span class="t">Number</span>.isInteger(roll));
+
+<span class="k">const</span> inr = <span class="k">new</span> <span class="t">Intl</span>.<span class="t">NumberFormat</span>(<span class="s">"en-IN"</span>, { style: <span class="s">"currency"</span>, currency: <span class="s">"INR"</span> });
+<span class="k">const</span> usd = <span class="k">new</span> <span class="t">Intl</span>.<span class="t">NumberFormat</span>(<span class="s">"en-US"</span>, { style: <span class="s">"currency"</span>, currency: <span class="s">"USD"</span> });
+<span class="k">const</span> eur = <span class="k">new</span> <span class="t">Intl</span>.<span class="t">NumberFormat</span>(<span class="s">"de-DE"</span>, { style: <span class="s">"currency"</span>, currency: <span class="s">"EUR"</span> });
+console.log(inr.format(<span class="n">1234567.5</span>), usd.format(<span class="n">1234567.5</span>), eur.format(<span class="n">1234567.5</span>));
+console.log(<span class="k">new</span> <span class="t">Intl</span>.<span class="t">NumberFormat</span>(<span class="s">"en"</span>, { style: <span class="s">"percent"</span>, maximumFractionDigits: <span class="n">1</span> }).format(<span class="n">0.4567</span>));
+console.log(<span class="k">new</span> <span class="t">Intl</span>.<span class="t">NumberFormat</span>(<span class="s">"en"</span>, { notation: <span class="s">"compact"</span> }).format(<span class="n">1520000</span>));</pre><div class="out"><span>Output</span><pre>3 -2 -3 3 -2
+9 2 7 9 5
+1.00 1
+true
+₹12,34,567.50 $1,234,567.50 1.234.567,50 €
+45.7%
+1.5M</pre></div></div>
+<ul>
+<li><code>Math.round</code> rounds .5 up towards positive infinity, so <code>-2.5</code> becomes <code>-2</code>.</li>
+<li><code>(1.005).toFixed(2)</code> gives <code>"1.00"</code> because 1.005 is really stored as 1.00499999. For money, work in whole paise or cents.</li>
+<li><code>Math.random()</code> is fine for test data, never for passwords or tokens. Use <code>crypto.randomUUID()</code> or <code>crypto.getRandomValues()</code> for those.</li>
+</ul>
+<div class="qa-box">To check a price on screen, format the expected number with the same <code>Intl.NumberFormat</code> settings the app uses and compare text with text. This catches the wrong currency sign, the wrong grouping (₹12,34,567 in India against $1,234,567 in the US) and wrong rounding.</div>
+</section>
+<section class="card reveal jsec qa-part" id="dates" data-say="dates"><div class="sec-num">Part 4</div><h2><span class="sec-em">📅</span><span>Dates, time zones and Temporal</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">Jest</span><span class="qa-why">Date pickers, expiry rules and "today" logic need a fixed clock and edge case dates.</span></div>
+<p>The <code>Date</code> object stores one moment as milliseconds since 1 January 1970 UTC. It has well known traps, which is why the new <b>Temporal</b> API was added in ES2026.</p>
+<div class="codewrap" data-k="dates" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The Date object · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> d = <span class="k">new</span> <span class="t">Date</span>(<span class="t">Date</span>.<span class="t">UTC</span>(<span class="n">2026</span>, <span class="n">9</span>, <span class="n">20</span>, <span class="n">14</span>, <span class="n">30</span>));   <span class="c">// months start at 0, so 9 is October</span>
+console.log(d.toISOString());
+console.log(d.getUTCFullYear(), d.getUTCMonth() + <span class="n">1</span>, d.getUTCDate(), d.getUTCDay());   <span class="c">// day 2 is Tuesday</span>
+console.log(d.getTime());                             <span class="c">// milliseconds since 1 January 1970 UTC</span>
+
+<span class="k">const</span> parsed = <span class="k">new</span> <span class="t">Date</span>(<span class="s">"2026-10-20T14:30:00Z"</span>);
+console.log(parsed.getTime() === d.getTime());
+
+<span class="k">const</span> inAWeek = <span class="k">new</span> <span class="t">Date</span>(d);
+inAWeek.setUTCDate(inAWeek.getUTCDate() + <span class="n">7</span>);         <span class="c">// rolls over into the next month for you</span>
+console.log(inAWeek.toISOString().slice(<span class="n">0</span>, <span class="n">10</span>));
+
+<span class="k">const</span> days = (<span class="k">new</span> <span class="t">Date</span>(<span class="s">"2026-12-25"</span>) - <span class="k">new</span> <span class="t">Date</span>(<span class="s">"2026-10-20"</span>)) / <span class="n">86_400_000</span>;
+console.log(days, <span class="s">"days until 25 December"</span>);
+
+<span class="k">const</span> fmt = <span class="k">new</span> <span class="t">Intl</span>.<span class="t">DateTimeFormat</span>(<span class="s">"en-IN"</span>, { dateStyle: <span class="s">"medium"</span>, timeStyle: <span class="s">"short"</span>, timeZone: <span class="s">"Asia/Kolkata"</span> });
+console.log(fmt.format(d));
+console.log(d.toLocaleDateString(<span class="s">"de-DE"</span>, { timeZone: <span class="s">"UTC"</span> }), d.toLocaleDateString(<span class="s">"en-US"</span>, { timeZone: <span class="s">"UTC"</span> }));
+console.log(<span class="k">new</span> <span class="t">Date</span>(<span class="s">"2026-02-30"</span>).toString(), <span class="k">new</span> <span class="t">Date</span>(<span class="s">"not a date"</span>).getTime());</pre><div class="out"><span>Output</span><pre>2026-10-20T14:30:00.000Z
+2026 10 20 2
+1792506600000
+true
+2026-10-27
+66 days until 25 December
+20 Oct 2026, 8:00 pm
+20.10.2026 10/20/2026
+Mon Mar 02 2026 00:00:00 GMT+0000 (Coordinated Universal Time) NaN</pre></div></div>
+<div class="warn"><code>Date</code> months start at 0 (January is 0, December is 11), invalid dates such as 30 February roll over silently, and methods without "UTC" use the computer's time zone, so the same test can pass in Bengaluru and fail on a CI server in Frankfurt.</div>
+<h3>Temporal</h3>
+<p>Temporal separates the different ideas a date can mean: a calendar date (<code>PlainDate</code>), a time on a wall clock (<code>PlainTime</code>), an exact moment (<code>Instant</code>) and a moment in a place (<code>ZonedDateTime</code>). Values are immutable, months start at 1 and invalid input can be rejected.</p>
+<div class="codewrap" data-k="temporal" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Temporal, the modern date API · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Temporal (ES2026): immutable, time zone aware, months start at 1.</span>
+<span class="k">const</span> today = <span class="t">Temporal</span>.<span class="t">PlainDate</span>.<span class="k">from</span>(<span class="s">"2026-10-20"</span>);
+console.log(today.toString(), today.dayOfWeek, today.month);
+
+<span class="k">const</span> due = today.add({ days: <span class="n">30</span> });
+console.log(due.toString());
+console.log(today.until(<span class="t">Temporal</span>.<span class="t">PlainDate</span>.<span class="k">from</span>(<span class="s">"2026-12-25"</span>)).days, <span class="s">"days"</span>);
+
+<span class="k">const</span> meeting = <span class="t">Temporal</span>.<span class="t">ZonedDateTime</span>.<span class="k">from</span>(<span class="s">"2026-10-20T09:00[Asia/Kolkata]"</span>);
+console.log(meeting.withTimeZone(<span class="s">"Europe/Berlin"</span>).toString());
+
+<span class="k">const</span> d = <span class="t">Temporal</span>.<span class="t">Duration</span>.<span class="k">from</span>({ hours: <span class="n">1</span>, minutes: <span class="n">95</span> });
+console.log(d.round({ largestUnit: <span class="s">"hours"</span> }).toString());
+
+console.log(<span class="t">Temporal</span>.<span class="t">PlainDate</span>.compare(today, due));   <span class="c">// -1, 0 or 1</span>
+<span class="k">try</span> {
+  <span class="t">Temporal</span>.<span class="t">PlainDate</span>.<span class="k">from</span>(<span class="s">"2026-02-30"</span>, { overflow: <span class="s">"reject"</span> });
+} <span class="k">catch</span> (err) {
+  console.log(err.name);
+}</pre><div class="out"><span>Output</span><pre>2026-10-20 2 10
+2026-11-19
+66 days
+2026-10-20T05:30:00+02:00[Europe/Berlin]
+PT2H35M
+-1
+RangeError</pre></div></div>
+<div class="modern">Temporal ships in Node.js 26, Firefox and Chrome. Where it is missing, the <code>@js-temporal/polyfill</code> package adds it. If "Edit and run" shows a ReferenceError for Temporal, your browser does not have it yet.</div>
+<div class="qa-box">Date logic is a top source of flaky tests: "today" changes, month ends differ and time zones shift dates. Fix the clock (Jest and Vitest fake timers with <code>setSystemTime</code>, Playwright's <code>page.clock</code>, Cypress's <code>cy.clock</code>), run CI in UTC and test the edges: 31 January plus one month, leap days and daylight saving changes.</div>
+</section>
+<section class="card reveal jsec qa-part" id="json" data-say="json"><div class="sec-num">Part 5</div><h2><span class="sec-em">📄</span><span>JSON</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Cypress</span><span class="qa-tool">Playwright</span><span class="qa-tool">Jest</span><span class="qa-why">Every API test sends and reads JSON, and fixture files hold the test data.</span></div>
+<p><b>JSON</b> (JavaScript Object Notation) is the text format of almost every API. <code>JSON.stringify</code> turns a value into JSON text and <code>JSON.parse</code> turns text back into a value.</p>
+<div class="codewrap" data-k="json" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">JSON.stringify and JSON.parse · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> order = {
+  id: <span class="s">"ORD-104233"</span>,
+  total: <span class="n">2695</span>,
+  items: [{ sku: <span class="s">"A1"</span>, qty: <span class="n">2</span> }],
+  placedAt: <span class="k">new</span> <span class="t">Date</span>(<span class="s">"2026-10-20T14:30:00Z"</span>),
+  note: <span class="k">undefined</span>,                 <span class="c">// dropped by JSON</span>
+  print() { <span class="k">return</span> <span class="s">"..."</span>; },       <span class="c">// dropped by JSON</span>
+};
+
+<span class="k">const</span> text = <span class="t">JSON</span>.stringify(order);
+console.log(text);
+console.log(<span class="t">JSON</span>.stringify(order, <span class="k">null</span>, <span class="n">2</span>).split(<span class="s">"\n"</span>).length, <span class="s">"lines when pretty printed"</span>);
+console.log(<span class="t">JSON</span>.stringify(order, [<span class="s">"id"</span>, <span class="s">"total"</span>]));   <span class="c">// keep only these keys</span>
+
+<span class="k">const</span> back = <span class="t">JSON</span>.parse(text);
+console.log(<span class="k">typeof</span> back.placedAt);                       <span class="c">// dates come back as strings</span>
+
+<span class="k">const</span> revived = <span class="t">JSON</span>.parse(text, (key, value) =&gt; key === <span class="s">"placedAt"</span> ? <span class="k">new</span> <span class="t">Date</span>(value) : value);
+console.log(revived.placedAt <span class="k">instanceof</span> <span class="t">Date</span>);
+
+<span class="k">try</span> {
+  <span class="t">JSON</span>.parse(<span class="s">"{ id: 1 }"</span>);                               <span class="c">// keys must use double quotes</span>
+} <span class="k">catch</span> (err) {
+  console.log(err.name);
+}
+<span class="k">try</span> {
+  <span class="t">JSON</span>.stringify({ big: <span class="n">10n</span> });
+} <span class="k">catch</span> (err) {
+  console.log(err.message);
+}</pre><div class="out"><span>Output</span><pre>{&quot;id&quot;:&quot;ORD-104233&quot;,&quot;total&quot;:2695,&quot;items&quot;:[{&quot;sku&quot;:&quot;A1&quot;,&quot;qty&quot;:2}],&quot;placedAt&quot;:&quot;2026-10-20T14:30:00.000Z&quot;}
+11 lines when pretty printed
+{&quot;id&quot;:&quot;ORD-104233&quot;,&quot;total&quot;:2695}
+string
+true
+SyntaxError
+Do not know how to serialize a BigInt</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>JavaScript value</th><th>What JSON does with it</th></tr>
+<tr><td>objects, arrays, strings, numbers, booleans, null</td><td>kept</td></tr>
+<tr><td><code>undefined</code>, functions, symbols</td><td>dropped from objects, turned into <code>null</code> in arrays</td></tr>
+<tr><td><code>Date</code></td><td>becomes an ISO string and comes back as a string</td></tr>
+<tr><td><code>NaN</code>, <code>Infinity</code></td><td>become <code>null</code></td></tr>
+<tr><td><code>BigInt</code></td><td>throws a TypeError</td></tr>
+<tr><td><code>Map</code>, <code>Set</code></td><td>become <code>{}</code></td></tr>
+</table></div>
+<h3>JSON files as test data</h3>
+<div class="codewrap" data-k="fixtures-json"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Reading and writing JSON test data files · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { readFile, writeFile, mkdir } <span class="k">from</span> <span class="s">"node:fs/promises"</span>;
+
+<span class="k">await</span> mkdir(<span class="s">"fixtures"</span>, { recursive: <span class="k">true</span> });
+<span class="k">const</span> users = [
+  { email: <span class="s">"asha@example.com"</span>, role: <span class="s">"admin"</span> },
+  { email: <span class="s">"ravi@example.com"</span>, role: <span class="s">"customer"</span> },
+];
+<span class="k">await</span> writeFile(<span class="s">"fixtures/users.json"</span>, <span class="t">JSON</span>.stringify(users, <span class="k">null</span>, <span class="n">2</span>));
+
+<span class="k">const</span> loaded = <span class="t">JSON</span>.parse(<span class="k">await</span> readFile(<span class="s">"fixtures/users.json"</span>, <span class="s">"utf8"</span>));
+console.log(loaded.length, loaded[<span class="n">0</span>].email);
+
+<span class="c">// Node can also import JSON directly with an import attribute</span>
+<span class="k">const</span> { <span class="k">default</span>: again } = <span class="k">await</span> <span class="k">import</span>(<span class="s">"./fixtures/users.json"</span>, { <span class="k">with</span>: { type: <span class="s">"json"</span> } });
+console.log(again[<span class="n">1</span>].role);</pre><div class="out"><span>Output</span><pre>2 asha@example.com
+customer</pre></div></div>
+<div class="qa-box">Keep test data in <code>.json</code> fixture files: Cypress loads them with <code>cy.fixture("users")</code>, Playwright and Jest tests can <code>import</code> them. Pretty print with <code>JSON.stringify(data, null, 2)</code> when writing files so reviews show clean diffs.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 6</div><h2><span class="sec-em">🎬</span><span>Real world scenario: validate an order API response</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">Vitest</span></div>
+<div class="scenario"><b>The situation</b>The order API returns JSON. You must check that the order id has the right format, the status is confirmed, the display amount matches the number, the timestamp is a valid ISO time from the last day and the contact details look sane.</div>
+<div class="codewrap tests" data-k="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Validate an order API response · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 package.json</div><pre class="src" data-file="package.json">{
+  <span class="s">"name"</span>: <span class="s">"order-api"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"scripts"</span>: {
+    <span class="s">"test"</span>: <span class="s">"jest"</span>
+  }
+}</pre><div class="fname">📄 order.test.js</div><pre class="src" data-file="order.test.js"><span class="c">// The body an order API returned, as a test would receive it</span>
+<span class="k">const</span> body = <span class="t">JSON</span>.parse(<span class="s">`{
+  "id": "ORD-104233",
+  "status": "CONFIRMED",
+  "total": { "amount": 2695, "currency": "INR", "display": "₹2,695.00" },
+  "placedAt": "2026-10-20T14:30:00.000Z",
+  "customer": { "email": "asha@example.com", "phone": "+91 98450 12345" },
+  "items": [{ "sku": "A1", "qty": 2 }, { "sku": "D4", "qty": 3 }]
+}`</span>);
+
+describe(<span class="s">"order response"</span>, () =&gt; {
+  test(<span class="s">"has the right shape"</span>, () =&gt; {
+    expect(body).toMatchObject({
+      id: expect.stringMatching(/^<span class="t">ORD</span>-\d{<span class="n">6</span>}$/),
+      status: <span class="s">"CONFIRMED"</span>,
+      total: { amount: expect.any(<span class="t">Number</span>), currency: <span class="s">"INR"</span> },
+      items: expect.arrayContaining([expect.objectContaining({ sku: <span class="s">"A1"</span> })]),
+    });
+  });
+
+  test(<span class="s">"shows the amount the way the page does"</span>, () =&gt; {
+    <span class="k">const</span> shown = <span class="k">new</span> <span class="t">Intl</span>.<span class="t">NumberFormat</span>(<span class="s">"en-IN"</span>, { style: <span class="s">"currency"</span>, currency: <span class="s">"INR"</span> }).format(body.total.amount);
+    expect(body.total.display).toBe(shown);
+  });
+
+  test(<span class="s">"placedAt is a valid ISO time within a day of the run"</span>, () =&gt; {
+    <span class="k">const</span> placed = <span class="k">new</span> <span class="t">Date</span>(body.placedAt);
+    <span class="k">const</span> now = <span class="k">new</span> <span class="t">Date</span>(<span class="s">"2026-10-21T09:00:00Z"</span>);     <span class="c">// a fixed clock keeps the test stable</span>
+    expect(placed.toISOString()).toBe(body.placedAt);
+    expect(now - placed).toBeLessThan(<span class="n">24</span> * <span class="n">60</span> * <span class="n">60</span> * <span class="n">1000</span>);
+  });
+
+  test(<span class="s">"contact details look valid"</span>, () =&gt; {
+    expect(body.customer.email).toMatch(/^[^@\s]+@[^@\s]+\.[a-z]{<span class="n">2</span>,}$/i);
+    expect(body.customer.phone.replace(/\<span class="t">D</span>/g, <span class="s">""</span>)).toHaveLength(<span class="n">12</span>);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx jest --verbose</pre></div><div class="out"><span>Terminal output</span><pre>PASS ./order.test.js
+  order response
+    ✓ has the right shape
+    ✓ shows the amount the way the page does
+    ✓ placedAt is a valid ISO time within a day of the run
+    ✓ contact details look valid
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        0.3 s
+Ran all test suites.</pre></div></div>
+<ul>
+<li><code>toMatchObject</code> checks only the keys you list, so new fields in the API do not break the test.</li>
+<li>Asymmetric matchers (<code>expect.stringMatching</code>, <code>expect.any</code>) check the <b>kind</b> of value when the exact value changes every run.</li>
+<li>The clock is fixed (<code>now</code> is a constant), so the time check passes on any day it runs.</li>
+</ul>
+<div class="dev-box">Chapter 14 turns this into a real API suite: starting a server, sending requests with fetch and supertest, and validating whole responses against a JSON Schema.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-objects-arrays.html" data-topic="js-objects-arrays"><small>← Previous chapter</small><b>📦 Objects and arrays</b></a><a class="next" href="./js-collections-iterators.html" data-topic="js-collections-iterators"><small>Next chapter →</small><b>🗂️ Collections and generators</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Text, patterns, numbers, dates and JSON", "panels": [{"s": [["e", "🔤"], ["t", "\"  Hi  \".trim() → \"Hi\"", {"b": 1}]], "h": "Strings", "t": "Immutable text with many helper methods.", "more": "Normalise spaces and case before you compare page text."}, {"s": [["e", "🧷"], ["t", "/^ORD-\\d{6}$/", {"b": 1}]], "h": "Patterns", "t": "Regular expressions describe the shape of text.", "more": "Anchor with ^ and $ when the whole value must match."}, {"s": [["e", "📅"], ["t", "month 9 = October", {"b": 1}]], "h": "Dates", "t": "Date counts months from 0, Temporal from 1.", "more": "Fix the clock in tests and run CI in UTC."}, {"s": [["e", "📄"], ["t", "JSON.parse(text)", {"b": 1}]], "h": "JSON", "t": "The text format of APIs and fixture files.", "more": "Dates come back as strings and undefined disappears."}], "remember": "Compare normalised text, anchor your patterns and freeze the clock."}, "real": [["🧾", "Invoice numbers", "A billing service generates INV-2026-000123 style ids and a regex in the tests checks every one."], ["🌍", "Prices around the world", "A shop shows ₹12,34,567.50 in India and $1,234,567.50 in the US from the same number with Intl.NumberFormat."], ["⏰", "A coupon that expires", "A coupon valid \"until the end of the month\" is tested with a fixed clock on 31 January, 28 February and 29 February."]], "quiz": [{"lv": "e", "q": "What does \"  hi  \".trim() return?", "o": ["\"hi\"", "\"  hi\"", "\"hi  \"", "\"  hi  \""], "a": 0, "hint": "trim removes both ends.", "why": "<code>trim<\/code> removes whitespace from both ends."}, {"lv": "e", "q": "Which flag makes a regex find every match instead of only the first?", "o": ["g", "i", "m", "s"], "a": 0, "hint": "g for global.", "why": "The <code>g<\/code> flag finds all matches. <code>i<\/code> ignores case."}, {"lv": "e", "q": "What month is new Date(2026, 0, 15)?", "o": ["January", "December", "February", "An invalid date"], "a": 0, "hint": "Date months start at 0.", "why": "Month 0 is January. Temporal uses 1 for January."}, {"lv": "m", "q": "What does JSON.stringify({ a: 1, b: undefined }) give?", "o": ["'{\"a\":1}'", "'{\"a\":1,\"b\":undefined}'", "'{\"a\":1,\"b\":null}'", "An error"], "a": 0, "hint": "undefined is not a JSON value.", "why": "Keys with <code>undefined<\/code> are dropped from objects."}, {"lv": "m", "q": "Which pattern matches the whole value ORD-123456 and nothing longer?", "o": ["/^ORD-\\d{6}$/", "/ORD-\\d{6}/", "/ORD-\\d+/", "/^ORD/"], "a": 0, "hint": "Anchors.", "why": "<code>^<\/code> and <code>$<\/code> make the pattern cover the whole string."}, {"lv": "m", "q": "What does \"👍🏽\".length return?", "o": ["4", "1", "2", "8"], "a": 0, "hint": "length counts UTF-16 code units.", "why": "The thumbs up and the skin tone are each two code units."}, {"lv": "h", "q": "After JSON.parse, what type is a value that was a Date before JSON.stringify?", "o": ["string", "Date", "number", "object"], "a": 0, "hint": "JSON has no date type.", "why": "It becomes an ISO string. Use a reviver to turn it back into a Date."}, {"lv": "h", "q": "A test checks \"Expires 31 Oct\" and passes in India but fails in CI in the US. What is the most likely cause?", "o": ["The Date code uses the machine's local time zone", "Regex flags differ by country", "JSON parsing is locale specific", "CI is slower"], "a": 0, "hint": "Which part of Date depends on the machine?", "why": "Local time methods use the machine's time zone. Use UTC methods, Temporal with a zone, or set TZ in CI."}, {"lv": "h", "q": "Which Jest matcher checks only the keys you list and ignores extra keys?", "o": ["toMatchObject", "toEqual", "toStrictEqual", "toBe"], "a": 0, "hint": "It matches a subset.", "why": "<code>toMatchObject<\/code> passes when the listed keys match, whatever else is present."}, {"lv": "x", "q": "What does (1.005).toFixed(2) return?", "o": ["\"1.00\"", "\"1.01\"", "1.01", "\"1.005\""], "a": 0, "hint": "How is 1.005 really stored?", "why": "It is stored as 1.00499999..., so it rounds down."}, {"lv": "x", "q": "What does \"2026-10-18\".replace(/(\\d+)-(\\d+)-(\\d+)/, \"$3/$2/$1\") return?", "o": ["\"18/10/2026\"", "\"2026/10/18\"", "\"$3/$2/$1\"", "\"10/18/2026\""], "a": 0, "hint": "$1 is the first group.", "why": "The groups are 2026, 10 and 18, placed in reverse."}, {"lv": "x", "q": "Which is true about Temporal.PlainDate?", "o": ["It is immutable and add() returns a new date", "Months start at 0", "It always uses the machine time zone", "It is mutable like Date"], "a": 0, "hint": "Temporal was designed to fix Date.", "why": "Temporal values never change. Methods such as <code>add<\/code> return new values."}], "calc": [{"lv": "e", "q": "What does \"Brainy Bytes\".slice(0, 6) return?", "ans": "Brainy", "hint": "Characters 0 to 5.", "steps": ["Indexes 0 to 5 are B, r, a, i, n, y."]}, {"lv": "e", "q": "What does \"7\".padStart(3, \"0\") return?", "ans": "007", "hint": "Pad the start until the length is 3.", "steps": ["Two zeros are added in front."]}, {"lv": "m", "q": "How many matches does \"a1b22c333\".match(/\\d+/g) return?", "ans": "3", "hint": "+ means one or more, so neighbours join.", "steps": ["The matches are \"1\", \"22\" and \"333\"."]}, {"lv": "m", "q": "How many days are there from 20 October 2026 to 25 December 2026?", "ans": "66", "hint": "Count the rest of October, November and December.", "steps": ["October: 31 - 20 = 11 days.", "November: 30 days.", "December: 25 days.", "<span class=\"eq\">11 + 30 + 25 = 66<\/span>"]}, {"lv": "h", "q": "What does Math.round(-2.5) return?", "ans": "-2", "hint": "Math.round goes towards positive infinity at .5.", "steps": ["-2.5 is halfway, so it rounds up to -2."]}, {"lv": "h", "q": "How many lines does JSON.stringify({ a: 1, b: [1, 2] }, null, 2) produce?", "ans": "7", "hint": "Each array item gets its own line.", "steps": ["Lines: {, \"a\": 1,, \"b\": [, 1,, 2, ], }", "That is 7 lines."]}, {"lv": "x", "q": "In milliseconds, how long is one day?", "ans": "86400000", "hint": "24 hours of 60 minutes of 60 seconds of 1000 ms.", "steps": ["<span class=\"eq\">24 × 60 × 60 × 1000 = 86,400,000<\/span>"], "alt": ["86,400,000", "86_400_000"]}, {"lv": "x", "q": "Temporal.PlainDate.from(\"2026-01-31\").add({ months: 1 }) gives which date (YYYY-MM-DD)?", "ans": "2026-02-28", "hint": "February 2026 has 28 days and the default overflow is \"constrain\".", "steps": ["31 February does not exist.", "With the default overflow it is constrained to the last day: 2026-02-28."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers strings, regular expressions, number formatting, dates with Temporal, and JSON.", "hi": "यह अध्याय strings, regular expressions, number formatting, Temporal के साथ dates और JSON सिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ strings, regular expressions, number formatting, Temporal ಜೊತೆ dates ಮತ್ತು JSON ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ strings, regular expressions, number formatting, Temporal ସହ dates ଓ JSON ଶିଖାଏ।", "ar": "يتناول هذا الفصل النصوص والتعابير النمطية وتنسيق الأرقام والتواريخ مع Temporal وJSON.", "de": "Dieses Kapitel behandelt Strings, reguläre Ausdrücke, Zahlenformatierung, Datumswerte mit Temporal und JSON."}, {"id": "strings", "h": "Strings", "en": "Strings never change, every method returns a new one. Trim, normalise and compare carefully, because page text has hidden spaces.", "hi": "Strings कभी नहीं बदलते, हर method नया string लौटाता है। Page text में छिपे spaces होते हैं, इसलिए trim और normalise करके compare करें।", "kn": "Strings ಬದಲಾಗುವುದಿಲ್ಲ, ಪ್ರತಿ method ಹೊಸ string ಕೊಡುತ್ತದೆ. Page text ನಲ್ಲಿ ಅಡಗಿದ spaces ಇರುತ್ತವೆ, trim ಮಾಡಿ compare ಮಾಡಿ.", "or": "Strings କେବେ ବଦଳେ ନାହିଁ, ପ୍ରତ୍ୟେକ method ନୂଆ string ଫେରାଏ। Page text ରେ ଲୁଚିଥିବା spaces ଥାଏ, trim କରି compare କରନ୍ତୁ।", "ar": "النصوص لا تتغير، وكل دالة تعيد نصًا جديدًا. نص الصفحة فيه مسافات مخفية، لذا قص وطبّع قبل المقارنة.", "de": "Strings ändern sich nie, jede Methode liefert einen neuen. Seitentext hat versteckte Leerzeichen, also trimmen und normalisieren vor dem Vergleich."}, {"id": "regex", "h": "Regular expressions", "en": "A regular expression describes a pattern of text. Test tools accept them for text checks, locator names and URLs. Anchor them when the whole value must match.", "hi": "Regular expression text के pattern को बताता है। Test tools इन्हें text checks, locator names और URLs में लेते हैं। पूरी value मिलानी हो तो anchor करें।", "kn": "Regular expression text ನ pattern ವಿವರಿಸುತ್ತದೆ. Test tools ಇವನ್ನು text checks, locator names ಮತ್ತು URLs ಗೆ ಸ್ವೀಕರಿಸುತ್ತವೆ.", "or": "Regular expression text ର pattern ବର୍ଣ୍ଣନା କରେ। Test tools ଏଗୁଡ଼ିକୁ text checks, locator names ଓ URLs ରେ ଗ୍ରହଣ କରନ୍ତି।", "ar": "التعبير النمطي يصف نمطًا من النص. تقبله أدوات الاختبار في فحص النصوص وأسماء المحددات والروابط. ثبته بالبداية والنهاية عند مطابقة القيمة كاملة.", "de": "Ein regulärer Ausdruck beschreibt ein Textmuster. Testwerkzeuge akzeptieren ihn für Textprüfungen, Locator-Namen und URLs. Verankere ihn, wenn der ganze Wert passen muss."}, {"id": "math", "h": "Math and formatting", "en": "Math handles rounding and random numbers. Intl number format produces the exact text a user sees, which is the best way to check prices.", "hi": "Math rounding और random numbers संभालता है। Intl.NumberFormat वही text बनाता है जो user देखता है, prices जाँचने का सबसे अच्छा तरीका।", "kn": "Math rounding ಮತ್ತು random numbers ನಿಭಾಯಿಸುತ್ತದೆ. Intl.NumberFormat user ನೋಡುವ text ರಚಿಸುತ್ತದೆ, prices ಪರಿಶೀಲನೆಗೆ ಉತ್ತಮ.", "or": "Math rounding ଓ random numbers ସମ୍ଭାଳେ। Intl.NumberFormat user ଦେଖୁଥିବା text ତିଆରି କରେ, prices ଯାଞ୍ଚ ପାଇଁ ସର୍ବୋତ୍ତମ।", "ar": "يتولى Math التقريب والأرقام العشوائية. Intl.NumberFormat ينتج النص الذي يراه المستخدم، وهو أفضل طريقة لفحص الأسعار.", "de": "Math erledigt Runden und Zufallszahlen. Intl.NumberFormat erzeugt genau den Text, den Nutzer sehen, ideal zum Prüfen von Preisen."}, {"id": "dates", "h": "Dates", "en": "Date months start at zero and use the local time zone. Temporal fixes these problems. In tests, fix the clock and test edge dates.", "hi": "Date के months zero से शुरू होते हैं और local time zone इस्तेमाल करते हैं। Temporal ये problems ठीक करता है। Tests में clock fix करें।", "kn": "Date months zero ಇಂದ ಶುರು, local time zone ಬಳಸುತ್ತದೆ. Temporal ಈ problems ಸರಿಪಡಿಸುತ್ತದೆ. Tests ನಲ್ಲಿ clock fix ಮಾಡಿ.", "or": "Date months zero ରୁ ଆରମ୍ଭ ଏବଂ local time zone ବ୍ୟବହାର କରେ। Temporal ଏହି problems ଠିକ୍ କରେ। Tests ରେ clock fix କରନ୍ତୁ।", "ar": "أشهر Date تبدأ من صفر وتستخدم المنطقة الزمنية المحلية. يصلح Temporal هذه المشكلات. في الاختبارات ثبت الساعة واختبر التواريخ الحدية.", "de": "Date-Monate beginnen bei null und nutzen die lokale Zeitzone. Temporal behebt das. In Tests die Uhr festsetzen und Randdaten prüfen."}, {"id": "json", "h": "JSON", "en": "JSON stringify turns values into text and JSON parse turns text back. Dates come back as strings, and undefined and functions are dropped.", "hi": "JSON.stringify values को text बनाता है और JSON.parse वापस। Dates strings बनकर लौटती हैं, undefined और functions हट जाते हैं।", "kn": "JSON.stringify values ಅನ್ನು text ಆಗಿಸುತ್ತದೆ, JSON.parse ಹಿಂದಕ್ಕೆ. Dates strings ಆಗಿ ಬರುತ್ತವೆ, undefined ಮತ್ತು functions ಬಿಡಲಾಗುತ್ತವೆ.", "or": "JSON.stringify values କୁ text କରେ ଏବଂ JSON.parse ଫେରାଏ। Dates strings ହୋଇ ଫେରେ, undefined ଓ functions ବାଦ ପଡ଼େ।", "ar": "يحول JSON.stringify القيم إلى نص ويعيدها JSON.parse. تعود التواريخ نصوصًا وتُحذف undefined والدوال.", "de": "JSON.stringify macht Werte zu Text, JSON.parse zurück. Datumswerte kommen als Strings zurück, undefined und Funktionen fallen weg."}, {"id": "scenario", "h": "Scenario", "en": "A Jest test checks an order response with toMatchObject, regex and type matchers, a formatted amount and a fixed clock.", "hi": "एक Jest test order response को toMatchObject, regex और type matchers, formatted amount और fixed clock से जाँचता है।", "kn": "ಒಂದು Jest test order response ಅನ್ನು toMatchObject, regex, type matchers, formatted amount ಮತ್ತು fixed clock ಮೂಲಕ ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "ଏକ Jest test order response କୁ toMatchObject, regex, type matchers, formatted amount ଓ fixed clock ରେ ଯାଞ୍ଚ କରେ।", "ar": "اختبار Jest يفحص استجابة طلب باستخدام toMatchObject والتعابير النمطية ومطابقات النوع ومبلغ منسق وساعة ثابتة.", "de": "Ein Jest-Test prüft eine Bestellantwort mit toMatchObject, Regex- und Typ-Matchern, einem formatierten Betrag und fester Uhr."}, {"id": "practice", "h": "Hands-on", "en": "Practise text clean up, masking, pattern extraction and date arithmetic.", "hi": "Text clean up, masking, pattern extraction और date arithmetic का अभ्यास करें।", "kn": "Text clean up, masking, pattern extraction ಮತ್ತು date arithmetic ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Text clean up, masking, pattern extraction ଓ date arithmetic ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على تنظيف النص والإخفاء واستخراج الأنماط وحساب التواريخ.", "de": "Übe Textbereinigung, Maskieren, Musterextraktion und Datumsrechnung."}], "ex": [{"id": "slugify", "lv": "e", "title": "Make a URL slug", "task": "<p>Write <code>slugify(title)<\/code>: lower case, trim, replace every run of characters that are not letters or digits with one dash, and remove dashes at the ends. <code>\"  Hello, World!  \"<\/code> becomes <code>\"hello-world\"<\/code>.<\/p>", "starter": "function slugify(title) {\n  \n}", "tests": [{"call": "slugify(\"  Hello, World!  \")", "want": "hello-world"}, {"call": "slugify(\"JavaScript for QA & Dev\")", "want": "javascript-for-qa-dev"}, {"call": "slugify(\"2026 -- Plans\")", "want": "2026-plans"}], "solution": "function slugify(title) {\n  return title.toLowerCase().trim().replace(/[^a-z0-9]+/g, \"-\").replace(/^-+|-+$/g, \"\");\n}", "hint": "Two <code>replace<\/code> calls: one for the runs of other characters, one for dashes at the start and end.", "why": "The <code>+<\/code> turns a run of spaces and punctuation into a single dash."}, {"id": "mask", "lv": "m", "title": "Mask an email", "task": "<p>Write <code>maskEmail(email)<\/code> that keeps the first character of the name and the whole domain and replaces the rest of the name with three stars: <code>\"asha.rao@example.com\"<\/code> becomes <code>\"a***@example.com\"<\/code>. Return <code>\"invalid\"<\/code> when there is no single @.<\/p>", "starter": "function maskEmail(email) {\n  \n}", "tests": [{"call": "maskEmail(\"asha.rao@example.com\")", "want": "a***@example.com"}, {"call": "maskEmail(\"r@x.io\")", "want": "r***@x.io"}, {"call": "maskEmail(\"no-at-sign\")", "want": "invalid"}, {"call": "maskEmail(\"a@b@c\")", "want": "invalid"}], "solution": "function maskEmail(email) {\n  const parts = email.split(\"@\");\n  if (parts.length !== 2 || !parts[0]) return \"invalid\";\n  return `${parts[0][0]}***@${parts[1]}`;\n}", "hint": "<code>split(\"@\")<\/code> must give exactly two parts.", "why": "Checking the number of parts handles both a missing @ and too many."}, {"id": "order-ids", "lv": "h", "title": "Extract order numbers", "task": "<p>Write <code>orderNumbers(text)<\/code> that returns every order number (the digits only, as numbers) from ids like <code>ORD-104233<\/code>. Only ids with exactly six digits count, and <code>XORD-<\/code> is not an id.<\/p>", "starter": "function orderNumbers(text) {\n  \n}", "tests": [{"call": "orderNumbers(\"ORD-104233 and ORD-998120 shipped\")", "want": [104233, 998120]}, {"call": "orderNumbers(\"ORD-12 and ORD-1234567\")", "want": []}, {"call": "orderNumbers(\"XORD-111111, ORD-222222.\")", "want": [222222]}, {"call": "orderNumbers(\"\")", "want": []}], "solution": "function orderNumbers(text) {\n  return [...text.matchAll(/\\bORD-(\\d{6})\\b/g)].map(m => Number(m[1]));\n}", "hint": "Use <code>matchAll<\/code> with a capture group and word boundaries <code>\\b<\/code> on both sides.", "why": "The boundaries stop <code>XORD-<\/code> and seven digit numbers from matching, and the group gives just the digits."}, {"id": "business-days", "lv": "x", "title": "Add business days", "task": "<p>Write <code>addBusinessDays(isoDate, n)<\/code>. It gets a date like <code>\"2026-10-23\"<\/code> and returns the date <code>n<\/code> working days later (skipping Saturdays and Sundays) in the same format. Work in UTC.<\/p>", "starter": "function addBusinessDays(isoDate, n) {\n  \n}", "tests": [{"call": "addBusinessDays(\"2026-10-23\", 1)", "want": "2026-10-26"}, {"call": "addBusinessDays(\"2026-10-20\", 3)", "want": "2026-10-23"}, {"call": "addBusinessDays(\"2026-10-30\", 5)", "want": "2026-11-06"}, {"call": "addBusinessDays(\"2026-10-24\", 1)", "want": "2026-10-26"}], "solution": "function addBusinessDays(isoDate, n) {\n  const d = new Date(isoDate + \"T00:00:00Z\");\n  let added = 0;\n  while (added < n) {\n    d.setUTCDate(d.getUTCDate() + 1);\n    const day = d.getUTCDay();\n    if (day !== 0 && day !== 6) added++;\n  }\n  return d.toISOString().slice(0, 10);\n}", "hint": "Step one day at a time with <code>setUTCDate<\/code> and count only days where <code>getUTCDay()<\/code> is 1 to 5.", "why": "Stepping day by day handles month ends and weekends without special cases. Using UTC keeps it independent of the machine's time zone."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Strings, Regex, Numbers, Dates and JSON", subject: "javascript" });
+</script>
+</body>
+</html>
