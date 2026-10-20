@@ -1,7 +1,6 @@
 """Build content/api-automation/api-automation.html from the track files in tracks/.
 
-The page asks for a programming language first. Java and JavaScript then ask for a tool, Python
-opens its track straight away. Every track lives in its own file in tracks/ as plain Python data,
+The page asks for a programming language first, then for a tool in that language. Every track lives in its own file in tracks/ as plain Python data,
 so code samples are written exactly as they run, with no HTML escaping by hand.
 
 The shared theme, the quiz engine and the fun layer are copied in from assets/, so the page works
@@ -9,18 +8,19 @@ on its own as well as inside the portal.
 
 Usage:   python3 tools/api-build/automation/build.py
 Export:  python3 tools/api-build/automation/build.py --export DIR   also writes every code block that has a
-         'save' path into DIR, so the samples can be compiled and run against mock_booker.py.
+         'save' path into DIR (an 'append' path adds the block to a file saved earlier), so the samples can be compiled and run against mock_booker.py.
 """
 import html
 import importlib.util
 import json
+import re
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 OUT = os.path.join(ROOT, 'content', 'api-automation', 'api-automation.html')
-ORDER = ['java-rest-assured', 'java-playwright', 'java-native', 'python', 'js-postman', 'js-playwright', 'js-native']
+ORDER = ['java-rest-assured', 'java-playwright', 'java-native', 'python', 'py-playwright', 'js-postman', 'js-playwright', 'js-native']
 LEVELS = ['Basic', 'Intermediate', 'Advanced', 'Expert']
 HL = {'java', 'py', 'js'}
 esc = html.escape
@@ -35,6 +35,20 @@ def load(name):
 
 def asset(name):
     return open(os.path.join(ROOT, 'assets', name), encoding='utf-8').read()
+
+
+def load_interview():
+    spec = importlib.util.spec_from_file_location('interview', os.path.join(HERE, 'interview.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    ids = [q['id'] for q in mod.ITEMS]
+    assert len(ids) == len(set(ids)), 'interview: duplicate question ids'
+    for q in mod.ITEMS:
+        assert q['lv'] in 'emhx' and len(q['lv']) == 1, q['id']
+        for k in ('q', 'hint', 'answer', 'explain'):
+            plain = re.sub(r'<code>.*?</code>', '', q[k])
+            assert ';' not in plain and '\u2014' not in plain and '\u2013' not in plain, f'interview {q["id"]}.{k}: semicolon or dash in prose'
+    return mod.ITEMS, mod.MUST
 
 
 def part(name):
@@ -101,7 +115,7 @@ def track_html(t):
   </div>
 </div>
 <div class="tbody">
-  <nav class="ttoc card" aria-label="Lessons in this track"><b>Lessons</b>{toc}<a href="#{tid}--quiz"><span>🎯</span>Quiz</a></nav>
+  <nav class="ttoc card" aria-label="Lessons in this track"><b>Lessons</b>{toc}<a href="#{tid}--quiz"><span>🎯</span>Quiz</a><a href="#interview"><span>🎤</span>Interview questions</a></nav>
   <div class="tmain">{secs}
     <section class="tsec reveal" id="{tid}--quiz" data-level="quiz"><div class="quizslot"></div></section>
   </div>
@@ -125,25 +139,27 @@ def main():
     meta = [{k: t[k] for k in ('id', 'lang', 'tool', 'title', 'emoji', 'tagline')} | {'sections': [[s['id'], s['title']] for s in t['sections']]} for t in tracks]
     quizzes = {t['id']: t['quiz'] for t in tracks}
     page = part('page.html')
-    page = page.replace('/*@THEME@*/', asset('theme.css') + '\n' + asset('learn.css'))
+    page = page.replace('/*@THEME@*/', asset('theme.css') + '\n' + asset('learn.css') + '\n' + asset('interview.css'))
     page = page.replace('/*@CSS@*/', part('page.css'))
     page = page.replace('<!--@TEMPLATES@-->', '\n'.join(track_html(t) for t in tracks))
-    page = page.replace('/*@SHARED@*/', asset('fun.js') + '\n' + asset('learn.js'))
+    page = page.replace('/*@SHARED@*/', asset('fun.js') + '\n' + asset('learn.js') + '\n' + asset('interview.js'))
     js = lambda v: json.dumps(v, ensure_ascii=False).replace('</', '<\\/')
-    page = page.replace('/*@DATA@*/', f'const TRACKS = {js(meta)};\nconst QUIZ = {js(quizzes)};')
+    iq_items, iq_must = load_interview()
+    page = page.replace('/*@DATA@*/', f'const TRACKS = {js(meta)};\nconst QUIZ = {js(quizzes)};\nconst IQ_ITEMS = {js(iq_items)};\nconst IQ_MUST = {js(iq_must)};')
     page = page.replace('/*@JS@*/', part('page.js'))
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     open(OUT, 'w', encoding='utf-8').write(page)
-    print(f'wrote {os.path.relpath(OUT, ROOT)} ({len(page) // 1024} KB, {sum(len(t["sections"]) for t in tracks)} lessons)')
+    print(f'wrote {os.path.relpath(OUT, ROOT)} ({len(page) // 1024} KB, {sum(len(t["sections"]) for t in tracks)} lessons, {len(iq_items)} interview questions)')
     if export:
         n = 0
         for t in tracks:
             for s in t['sections']:
                 for b in s['blocks']:
-                    if b[0] == 'code' and len(b) > 4 and b[4].get('save'):
-                        p = os.path.join(export, t['id'], b[4]['save'])
+                    if b[0] == 'code' and len(b) > 4 and (b[4].get('save') or b[4].get('append')):
+                        p = os.path.join(export, t['id'], b[4].get('save') or b[4]['append'])
                         os.makedirs(os.path.dirname(p), exist_ok=True)
-                        open(p, 'w', encoding='utf-8').write(b[3].strip('\n') + '\n')
+                        mode = 'w' if b[4].get('save') else 'a'
+                        open(p, mode, encoding='utf-8').write(('' if mode == 'w' else '\n\n') + b[3].strip('\n') + '\n')
                         n += 1
         print(f'exported {n} code files to {export}')
 

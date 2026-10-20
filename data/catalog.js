@@ -76,7 +76,7 @@ window.CATALOG = {
       emoji: '🧩',
       color: '#2b7de9',
       blurb: 'Arrays, strings, linked lists, stacks, queues, trees and graphs, animated step by step.',
-      intro: 'Start with the building blocks, then climb to expert patterns. Every ready topic has animations, everyday examples, line by line code runs and practice problems with brute force and optimized solutions.',
+      intro: 'Start with the building blocks, then climb to expert patterns. Every ready topic has animations, everyday examples, line by line code runs and practice problems with brute force and optimized solutions. The last chapter is a bank of coding interview questions with hints and full answers.',
       tags: ['Arrays', 'Strings', 'Linked lists', 'Trees', 'Graphs'],
       modules: [
         {
@@ -173,7 +173,7 @@ window.CATALOG = {
             }
           ]
         }
-      ]
+      ].concat(iqModule('dsa'))
     },
     {
       id: 'manual-testing',
@@ -181,9 +181,9 @@ window.CATALOG = {
       emoji: '🐞',
       color: '#f25da0',
       blurb: 'Find bugs before your users do: test design, life cycles, bug reports and test plans.',
-      intro: 'Ten chapters that follow the manual testing notes in order, from what testing is to the test plan. Every diagram is redrawn as an animation, every idea has an everyday example, and each chapter ends with practice programs in Java, Python and JavaScript, quizzes from easy to expert and a narrator in six languages.',
+      intro: 'Ten chapters that follow the manual testing notes in order, from what testing is to the test plan. Every diagram is redrawn as an animation, every idea has an everyday example, and each chapter ends with practice programs in Java, Python and JavaScript, quizzes from easy to expert and a narrator in six languages. The last chapter collects the interview questions asked most, with hints and full answers.',
       tags: ['STLC', 'Test cases', 'Bug life cycle', 'Regression', 'Test plan'],
-      modules: mtModules()
+      modules: mtModules().concat(iqModule('manual-testing'))
     },
     {
       id: 'java',
@@ -191,9 +191,9 @@ window.CATALOG = {
       emoji: '☕',
       color: '#ff9238',
       blurb: 'Core Java from your first identifier to the JVM, with every example compiled and run.',
-      intro: 'Start with the Complete Java Session track: seven chapters that follow the session programs from the first class to reading Excel files, ending with all 66 practice programs. Then go deeper with nineteen reference chapters in seven modules. Every code block was compiled and run with JDK 21, and the real output, compile error or exception is shown under it. Each chapter has a comic strip, everyday examples, quizzes from easy to expert, number practice with full working, and a narrator who reads it aloud in six languages.',
+      intro: 'Start with the Complete Java Session track: seven chapters that follow the session programs from the first class to reading Excel files, ending with all 66 practice programs. Then go deeper with nineteen reference chapters in seven modules. Every code block was compiled and run with JDK 21, and the real output, compile error or exception is shown under it. Each chapter has a comic strip, everyday examples, quizzes from easy to expert, number practice with full working, and a narrator who reads it aloud in six languages. Finish with the Interview Questions chapter, where you answer first, then use a hint, then see the full explanation.',
       tags: ['OOP', 'Exceptions', 'Collections', 'Threads', 'JVM'],
-      modules: [cjsModule()].concat(javaModules())
+      modules: [cjsModule()].concat(javaModules(), iqModule('java'))
     },
     {
       id: 'testng',
@@ -201,9 +201,9 @@ window.CATALOG = {
       emoji: '🧪',
       color: '#16a34a',
       blurb: 'Annotations, suites, data providers, listeners and framework design, run on real TestNG.',
-      intro: 'Three chapters that take you from a first @Test to a Page Object framework with listeners, retries and parallel runs. Every Java example runs on real TestNG with its testng.xml, and the same idea is shown with pytest and Mocha.',
+      intro: 'Three chapters that take you from a first @Test to a Page Object framework with listeners, retries and parallel runs. Every Java example runs on real TestNG with its testng.xml, and the same idea is shown with pytest and Mocha. The last chapter is a set of TestNG interview questions with hints and full answers.',
       tags: ['Annotations', 'testng.xml', 'DataProvider', 'Listeners', 'Parallel'],
-      modules: [tngModule()]
+      modules: [tngModule(), iqModule('testng')]
     },
     {
       id: 'javascript',
@@ -230,10 +230,223 @@ window.CATALOG = {
       title: 'API Automation Testing',
       emoji: '🤖',
       color: '#8467f0',
-      blurb: 'Pick a language, then a tool: Rest Assured, Playwright or HttpClient in Java, requests and pytest in Python, Postman, Playwright or fetch in JavaScript.',
-      intro: 'One page that asks for your programming language first. Java and JavaScript then ask for a tool, Python opens straight away. Every track runs from a first GET to schema checks, mocking, framework design, parallel runs and CI, with a real world scenario, a quiz, an animated request walkthrough and a hands on sandbox. Every code sample was run against a copy of the Restful Booker practice API.',
+      blurb: 'Pick a language, then a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript.',
+      intro: 'One page that asks for your programming language first, then for a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, and Postman, Playwright or fetch in JavaScript. Every track runs from a first GET to schema checks, mocking, framework design, parallel runs and CI, with a real world scenario, a quiz, an animated request walkthrough and a hands on sandbox. Every code sample was run against a copy of the Restful Booker practice API.',
       tags: ['Rest Assured', 'Playwright', 'pytest', 'Postman', 'Newman', 'fetch', 'HttpClient', 'JSON Schema'],
       page: 'content/api-automation/api-automation.html'
+    },
+
+    /* ===== Coming soon subjects. Each one shows a Coming soon card until its first topic gets a page. ===== */
+    {
+      id: 'security-testing',
+      title: 'Security Testing, Hands On',
+      emoji: '🛡️',
+      color: '#dc2626',
+      blurb: 'Find security holes by hand and with automation, from the OWASP Top 10 to scanners in CI.',
+      intro: 'A complete hands on course on security testing. You will learn to test web apps and APIs by hand, then automate the same checks with ZAP, Burp Suite and scripts that run in your pipeline.',
+      tags: ['OWASP Top 10', 'Manual', 'Automation', 'ZAP', 'Burp Suite'],
+      modules: [soonModule([
+        ['Security testing basics', '🔰', 'What security testing is, threats, vulnerabilities and risk.'],
+        ['OWASP Top 10 by hand', '🕵️', 'Test each common web weakness manually with real examples.'],
+        ['Authentication and session testing', '🔑', 'Logins, tokens, cookies and session handling.'],
+        ['API security testing', '🔌', 'The OWASP API Top 10 tested step by step.'],
+        ['Automated scanning with ZAP and Burp Suite', '🤖', 'Run scanners, read their reports and remove false alarms.'],
+        ['Security checks in CI', '🚦', 'Add scans and dependency checks to every build.']
+      ])]
+    },
+    {
+      id: 'selenium',
+      title: 'Selenium',
+      emoji: '🕸️',
+      color: '#43b02a',
+      blurb: 'Automate real browsers with Selenium WebDriver, from the first locator to a full framework.',
+      intro: 'Learn Selenium WebDriver from setup to a Page Object framework with waits, data driven tests, parallel runs on Selenium Grid and reports.',
+      tags: ['WebDriver', 'Locators', 'Waits', 'Page Object', 'Grid'],
+      modules: [soonModule([
+        ['Selenium setup and first test', '🚀', 'Install the driver and open your first page.'],
+        ['Locators and XPath', '🎯', 'Find any element with CSS selectors and XPath.'],
+        ['Waits and synchronisation', '⏳', 'Implicit, explicit and fluent waits without flaky tests.'],
+        ['Page Object Model', '🧱', 'Keep tests clean with page classes.'],
+        ['Selenium Grid and parallel runs', '🖧', 'Run tests on many browsers at once.']
+      ])]
+    },
+    {
+      id: 'playwright',
+      title: 'Playwright',
+      emoji: '🎭',
+      color: '#2ead33',
+      blurb: 'Fast and reliable browser tests with auto waiting, tracing and parallel runs.',
+      intro: 'Learn Playwright for UI testing from the first test to fixtures, network mocking, visual checks, traces and CI.',
+      tags: ['Locators', 'Auto wait', 'Fixtures', 'Tracing', 'CI'],
+      modules: [soonModule([
+        ['Playwright setup and first test', '🚀', 'Install Playwright and run your first browser test.'],
+        ['Locators and assertions', '🎯', 'Role based locators and web first assertions.'],
+        ['Fixtures and test hooks', '🧩', 'Share setup cleanly between tests.'],
+        ['Network mocking', '🛰️', 'Intercept and fake API calls in the browser.'],
+        ['Traces, reports and CI', '📊', 'Debug failures with the trace viewer and run in pipelines.']
+      ])]
+    },
+    {
+      id: 'python',
+      title: 'Python',
+      emoji: '🐍',
+      color: '#3776ab',
+      blurb: 'Python from your first variable to classes, files, testing and automation scripts.',
+      intro: 'A full Python course for beginners and testers. It covers the core language, data structures, object oriented code, files, error handling, pytest and scripts that automate everyday work.',
+      tags: ['Basics', 'Collections', 'OOP', 'pytest', 'Scripting'],
+      modules: [soonModule([
+        ['Python basics', '👋', 'Variables, types, input and output.'],
+        ['Control flow and functions', '🔁', 'Conditions, loops and reusable functions.'],
+        ['Lists, tuples, sets and dictionaries', '📦', 'The built in collections and when to use each.'],
+        ['Object oriented Python', '🧱', 'Classes, inheritance and dunder methods.'],
+        ['Files and error handling', '📁', 'Read and write files and handle exceptions.'],
+        ['Testing with pytest', '🧪', 'Fixtures, parametrize and plugins.']
+      ])]
+    },
+    {
+      id: 'ml-maths',
+      title: 'Maths for Machine Learning',
+      emoji: '📐',
+      color: '#0ea5e9',
+      blurb: 'The linear algebra, calculus, probability and statistics that machine learning is built on.',
+      intro: 'Every idea is shown as an animation and then written as code, so the maths behind machine learning feels practical instead of abstract.',
+      tags: ['Linear algebra', 'Calculus', 'Probability', 'Statistics'],
+      modules: [soonModule([
+        ['Vectors and matrices', '🧮', 'Dot products, matrix multiplication and transforms.'],
+        ['Eigenvalues and decompositions', '🌀', 'Eigenvectors, SVD and PCA.'],
+        ['Derivatives and gradients', '📉', 'Slopes, partial derivatives and the chain rule.'],
+        ['Probability', '🎲', 'Random variables, distributions and Bayes theorem.'],
+        ['Statistics', '📊', 'Mean, variance, hypothesis tests and confidence intervals.'],
+        ['Optimisation', '⛰️', 'Gradient descent and its variants.']
+      ])]
+    },
+    {
+      id: 'machine-learning',
+      title: 'Machine Learning',
+      emoji: '🤖',
+      color: '#7c3aed',
+      blurb: 'Teach computers to learn from data, from linear regression to model evaluation.',
+      intro: 'Learn supervised and unsupervised learning with animated explanations, real datasets and code you can run in Python with scikit-learn.',
+      tags: ['Regression', 'Classification', 'Clustering', 'scikit-learn'],
+      modules: [soonModule([
+        ['What machine learning is', '👋', 'Data, features, labels and the learning loop.'],
+        ['Linear and logistic regression', '📈', 'The first models every learner should know.'],
+        ['Decision trees and ensembles', '🌳', 'Random forests and gradient boosting.'],
+        ['Clustering', '🫧', 'K means and hierarchical clustering.'],
+        ['Model evaluation', '🎯', 'Train and test splits, cross validation and metrics.']
+      ])]
+    },
+    {
+      id: 'neural-networks',
+      title: 'Neural Networks',
+      emoji: '🧠',
+      color: '#db2777',
+      blurb: 'Neurons, layers, activation functions and backpropagation, built from scratch.',
+      intro: 'Build a neural network by hand first, then with a library. Each step of the forward pass and backpropagation is animated so you can see the numbers change.',
+      tags: ['Perceptron', 'Activation', 'Backpropagation', 'Loss'],
+      modules: [soonModule([
+        ['The perceptron', '⚪', 'One neuron, weights and bias.'],
+        ['Activation functions', '〰️', 'Sigmoid, tanh, ReLU and softmax.'],
+        ['Forward pass and loss', '➡️', 'How a network makes a guess and scores it.'],
+        ['Backpropagation', '⬅️', 'How gradients flow back and weights update.'],
+        ['Training tips', '🛠️', 'Learning rate, batches, overfitting and regularisation.']
+      ])]
+    },
+    {
+      id: 'deep-learning',
+      title: 'Deep Learning',
+      emoji: '🧬',
+      color: '#9333ea',
+      blurb: 'Deep networks with PyTorch: CNNs, RNNs, transformers and transfer learning.',
+      intro: 'Go from a simple network to the models used in industry today. You will train models in PyTorch and see what each layer learns.',
+      tags: ['PyTorch', 'CNN', 'RNN', 'Transformers'],
+      modules: [soonModule([
+        ['Deep learning with PyTorch', '🔥', 'Tensors, autograd and a first training loop.'],
+        ['Convolutional networks', '🖼️', 'Filters, pooling and image models.'],
+        ['Recurrent networks', '🔁', 'Sequences, LSTM and GRU.'],
+        ['Transformers and attention', '👀', 'Self attention and the transformer block.'],
+        ['Transfer learning', '🎁', 'Reuse pretrained models for new tasks.']
+      ])]
+    },
+    {
+      id: 'computer-vision',
+      title: 'Computer Vision',
+      emoji: '👁️',
+      color: '#0891b2',
+      blurb: 'Teach machines to see: images, filters, detection and segmentation.',
+      intro: 'Start with how images are stored as numbers, then work up to object detection and segmentation with OpenCV and deep learning.',
+      tags: ['OpenCV', 'Image processing', 'Detection', 'Segmentation'],
+      modules: [soonModule([
+        ['Images as numbers', '🔢', 'Pixels, channels and colour spaces.'],
+        ['Image processing with OpenCV', '🎛️', 'Filters, edges and transforms.'],
+        ['Image classification', '🏷️', 'Classify pictures with CNNs.'],
+        ['Object detection', '📦', 'Bounding boxes and YOLO style detectors.'],
+        ['Segmentation', '🧩', 'Label every pixel in an image.']
+      ])]
+    },
+    {
+      id: 'nlp',
+      title: 'Natural Language Processing',
+      emoji: '💬',
+      color: '#ea580c',
+      blurb: 'Work with text: tokens, embeddings, language models and real NLP tasks.',
+      intro: 'Learn how computers read and write text, from tokenisation and word embeddings to transformers and large language models.',
+      tags: ['Tokenisation', 'Embeddings', 'Transformers', 'LLMs'],
+      modules: [soonModule([
+        ['Text preprocessing', '🧹', 'Tokens, stemming and stop words.'],
+        ['Word embeddings', '🗺️', 'Word2Vec, GloVe and meaning as vectors.'],
+        ['Text classification', '🏷️', 'Sentiment analysis and spam detection.'],
+        ['Transformers for text', '🔤', 'BERT, GPT and how attention reads text.'],
+        ['Large language models', '🦾', 'Prompting, fine tuning and retrieval.']
+      ])]
+    },
+    {
+      id: 'cuda',
+      title: 'GPU Programming with CUDA',
+      emoji: '⚡',
+      color: '#76b900',
+      blurb: 'Write code that runs on thousands of GPU cores with CUDA C++.',
+      intro: 'Learn how a GPU runs work in parallel, then write CUDA kernels, manage memory and speed up real programs.',
+      tags: ['CUDA C++', 'Kernels', 'Threads', 'Memory', 'Performance'],
+      modules: [soonModule([
+        ['How a GPU works', '🖥️', 'Cores, warps and why GPUs are fast.'],
+        ['Your first CUDA kernel', '🚀', 'Threads, blocks and grids.'],
+        ['GPU memory', '💾', 'Global, shared and constant memory.'],
+        ['Parallel patterns', '🧵', 'Reduction, scan and matrix multiplication.'],
+        ['Profiling and tuning', '⏱️', 'Find and fix slow kernels.']
+      ])]
+    },
+    {
+      id: 'cyber-security',
+      title: 'Cyber Security',
+      emoji: '🔐',
+      color: '#475569',
+      blurb: 'Networks, cryptography, attacks and defences, explained with safe hands on labs.',
+      intro: 'Learn how systems are attacked and how they are defended. Each topic has an animation and a safe lab you can try in the browser.',
+      tags: ['Networking', 'Cryptography', 'Attacks', 'Defence'],
+      modules: [soonModule([
+        ['Security fundamentals', '🔰', 'Confidentiality, integrity and availability.'],
+        ['Networking for security', '🌐', 'TCP/IP, ports, firewalls and VPNs.'],
+        ['Cryptography', '🔏', 'Hashing, encryption and digital signatures.'],
+        ['Common attacks', '⚠️', 'Phishing, malware, injection and more.'],
+        ['Defence and incident response', '🚨', 'Monitoring, logging and responding to attacks.']
+      ])]
+    },
+    {
+      id: 'master-claude',
+      title: 'Master the Claude',
+      emoji: '✨',
+      color: '#d97757',
+      blurb: 'Get the most out of Claude: prompting, projects, Claude Code and the Claude API.',
+      intro: 'Learn to work with Claude well, from writing clear prompts to building apps and agents with the Claude API and automating coding work with Claude Code.',
+      tags: ['Prompting', 'Claude Code', 'Claude API', 'Agents', 'MCP'],
+      modules: [soonModule([
+        ['Getting started with Claude', '👋', 'What Claude can do and how to ask well.'],
+        ['Prompt engineering', '✍️', 'Clear instructions, examples and structure.'],
+        ['Claude Code', '💻', 'Let Claude read, write and test your code.'],
+        ['The Claude API', '🔌', 'Send messages, stream replies and use tools.'],
+        ['Agents and MCP', '🧠', 'Connect Claude to tools and data with the Model Context Protocol.']
+      ])]
     }
   ]
 };
@@ -1060,6 +1273,27 @@ function javaModules() {
   ];
 }
 
+/* Interview Questions: the last chapter of a subject. The page and its questions are built by
+   tools/interview-build/build.py from the question sets in tools/interview-build/sets/. */
+function iqModule(sid) {
+  const info = {
+    'dsa': ['content/dsa/interview-questions.html', 'Coding round questions on complexity, arrays, two pointers, binary search, linked lists, stacks, trees, graphs and dynamic programming, each with the pattern, the steps, the complexity and Python code.', ['two sum', 'kadane', 'sliding window', 'reverse linked list', 'cycle detection', 'LRU cache', 'valid parentheses', 'BFS', 'DFS', 'topological sort', 'dijkstra', 'coin change', 'big o']],
+    'java': ['content/java/interview-questions.html', 'Real Java interview questions on the JVM, OOP, strings, exceptions, collections, Java 8 streams, threads and framework design, with output questions run on the JDK.', ['JDK JRE JVM', 'string pool', 'equals and hashCode', 'HashMap internals', 'checked exception', 'final finally finalize', 'streams', 'functional interface', 'ThreadLocal', 'singleton', 'immutable class']],
+    'testng': ['content/testng/interview-questions.html', 'TestNG questions from automation interviews: annotation order, testng.xml, groups, dependencies, data providers, soft asserts, listeners, retries, parallel runs and Maven.', ['annotation order', 'testng.xml', 'groups', 'dependsOnMethods', 'DataProvider', 'SoftAssert', 'ITestListener', 'IRetryAnalyzer', 'parallel', 'surefire']],
+    'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']]
+  }[sid];
+  return {
+    id: 'interview', title: 'Interview Questions', emoji: '🎤',
+    blurb: 'Try each question yourself, open a hint if you are stuck, then compare with the full answer.',
+    topics: [{
+      id: 'interview-questions', title: 'Interview Questions', emoji: '🎤', page: info[0],
+      summary: info[1],
+      keywords: ['interview', 'interview questions', 'viva', 'FAQ', 'job preparation'].concat(info[2]),
+      added: '2026-10-20'
+    }]
+  };
+}
+
 function mtModules() {
   return [
     {
@@ -1550,7 +1784,8 @@ function cjsModule() {
           { id: "spiral", title: "Read a matrix in a spiral", emoji: '🏋️', group: "Expert practice" },
           { id: "big-factorial", title: "The digits of 100!", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
-          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' },
+          { id: 'interview', title: 'Interview Questions', emoji: '💼', group: 'Interview Questions', keywords: ['interview questions', 'API testing interview', 'REST interview', 'Postman interview', 'SOAP versus REST'] }
         ]
       }
       ]
@@ -1647,11 +1882,14 @@ function apiManualModule() {
       {
         id: 'manual-api-testing', title: 'Manual API Testing: Basics to Expert', emoji: '🔌',
         page: 'content/api-testing/manual-api-testing.html',
-        summary: 'HTTP, methods, status codes, headers, JSON, REST, SOAP, GraphQL and gRPC, Postman and curl, OpenAPI, JWT and OAuth 2.0 with PKCE, test design, validation, chaining, pagination, rate limits, caching, idempotency keys, Problem Details, the OWASP API Top 10, performance, async APIs, contract testing, mocking, CI, AI and MCP APIs, with a live mock API playground and seven hidden bugs.',
-        keywords: ['API testing', 'manual API testing', 'REST', 'HTTP', 'status codes', 'Postman', 'curl', 'Bruno', 'OpenAPI', 'Swagger', 'JWT', 'OAuth', 'PKCE', 'idempotency', 'ETag', '304', '429', 'rate limit', 'pagination', 'BOLA', 'OWASP API Top 10', 'mass assignment', 'Problem Details', 'RFC 9457', 'GraphQL', 'gRPC', 'WebSocket', 'webhook', 'contract testing', 'Pact', 'WireMock', 'Newman', 'percentile', 'p95', 'MCP', 'LLM API'],
+        summary: 'Web services, SOAP and REST, HTTP, methods, status codes, headers, JSON, REST, SOAP, GraphQL and gRPC, Postman and curl, OpenAPI, JWT and OAuth 2.0 with PKCE, test design, validation, chaining, pagination, rate limits, caching, idempotency keys, Problem Details, the OWASP API Top 10, performance, async APIs, contract testing, mocking, CI, AI and MCP APIs, with a live mock API playground, seven hidden bugs and 68 interview questions.',
+        keywords: ['API testing', 'manual API testing', 'REST', 'HTTP', 'status codes', 'Postman', 'curl', 'Bruno', 'OpenAPI', 'Swagger', 'JWT', 'OAuth', 'PKCE', 'idempotency', 'ETag', '304', '429', 'rate limit', 'pagination', 'BOLA', 'OWASP API Top 10', 'mass assignment', 'Problem Details', 'RFC 9457', 'GraphQL', 'gRPC', 'WebSocket', 'webhook', 'contract testing', 'Pact', 'WireMock', 'Newman', 'percentile', 'p95', 'MCP', 'LLM API', 'web service', 'SOAP', 'WSDL', 'Richardson Maturity Model', 'HATEOAS', 'interview questions'],
         added: '2026-10-20',
         sections: [
           { id: 'what-is-api', title: "What an API is and why we test it", emoji: '🔌', group: 'Level 1 · Foundations' },
+          { id: 'web-services', title: "What a web service is", emoji: '🌐', group: 'Level 1 · Foundations', keywords: ['web service', 'API versus web service', 'SOAP', 'REST', 'WSDL', 'XSD', 'SoapUI', 'SOAP fault', 'SOAPAction'] },
+          { id: 'rest', title: "REST in depth", emoji: '🏛️', group: 'Level 1 · Foundations', keywords: ['REST', 'RESTful', 'Roy Fielding', 'REST constraints', 'stateless', 'resource', 'representation', 'URI', 'URL', 'URN', 'Richardson Maturity Model', 'HATEOAS'] },
+          { id: 'api-types', title: "Kinds of APIs and where they sit in a system", emoji: '🗂️', group: 'Level 1 · Foundations', keywords: ['public API', 'partner API', 'internal API', 'composite API', 'microservices', 'monolith', 'API gateway', 'load balancer', 'endpoint', 'payload'] },
           { id: 'http-basics', title: "How HTTP carries a request", emoji: '📨', group: 'Level 1 · Foundations' },
           { id: 'methods', title: "HTTP methods, safety and idempotency", emoji: '🛠️', group: 'Level 1 · Foundations' },
           { id: 'status-codes', title: "Status codes", emoji: '🚦', group: 'Level 1 · Foundations' },
@@ -1680,7 +1918,6 @@ function apiManualModule() {
           { id: 'latest', title: "Latest standards and trends", emoji: '🆕', group: 'Level 4 · Expert and latest' },
           { id: 'strategy', title: "An API test strategy and great bug reports", emoji: '🗺️', group: 'Level 4 · Expert and latest' },
           { id: 'cheatsheet', title: "Cheat sheet", emoji: '📋', group: 'Hands on' },
-          { id: 'interview', title: "Interview questions", emoji: '💼', group: 'Hands on' },
           { id: 'p-get-product', title: "Test cases for GET /v1/products/{id}", emoji: '🏋️', group: 'Easy practice' },
           { id: 'p-read-response', title: "Spot the problems in a response", emoji: '🏋️', group: 'Easy practice' },
           { id: 'p-boundaries', title: "Boundary tests for a coupon API", emoji: '🏋️', group: 'Medium practice' },
@@ -1690,7 +1927,8 @@ function apiManualModule() {
           { id: 'p-contract', title: "Review a change for consumers", emoji: '🏋️', group: 'Expert practice' },
           { id: 'p-llm', title: "Test a support chatbot API", emoji: '🏋️', group: 'Expert practice' },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
-          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' },
+          { id: 'interview', title: 'Interview Questions', emoji: '💼', group: 'Interview Questions', keywords: ['interview questions', 'API testing interview', 'REST interview', 'Postman interview', 'SOAP versus REST'] }
         ]
       }
       ]
@@ -2234,3 +2472,18 @@ function jsModules() {
   ];
 }
 /* ===== end of js-build ===== */
+
+/* ===== Coming soon helper ===== */
+
+/* Builds a "Planned chapters" module from [title, emoji, summary] rows.
+   The topics have no page, so they show as Coming soon until one is added. */
+function soonModule(rows) {
+  return {
+    id: 'planned', title: 'Planned chapters', emoji: '🗓️',
+    blurb: 'These chapters are being written. Each one opens as soon as its page is ready.',
+    topics: rows.map(([title, emoji, summary]) => ({
+      id: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      title, emoji, summary, soon: true
+    }))
+  };
+}

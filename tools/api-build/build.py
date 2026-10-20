@@ -33,7 +33,9 @@ def build(name, out):
     page = page.replace('/*@SHARED_CSS@*/', css)
     page = page.replace('/*@PAGE_CSS@*/', (d / 'style.css').read_text(encoding='utf-8'))
     page = page.replace('/*@SHARED_JS@*/', js)
-    page = page.replace('/*@PAGE_JS@*/', '\n'.join((d / f).read_text(encoding='utf-8') for f in ('data.js', 'widgets.js', 'glue.js')))
+    page = page.replace('/*@IQ_CSS@*/', (ROOT / 'assets/interview.css').read_text(encoding='utf-8'))
+    page = page.replace('/*@IQ_JS@*/', (ROOT / 'assets/interview.js').read_text(encoding='utf-8'))
+    page = page.replace('/*@PAGE_JS@*/', '\n'.join((d / f).read_text(encoding='utf-8') for f in ('data.js', 'interview.js', 'widgets.js', 'glue.js')))
     target = ROOT / out
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(page, encoding='utf-8')

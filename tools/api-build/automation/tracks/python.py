@@ -1,5 +1,5 @@
 TRACK = {
-    'id': 'python', 'lang': 'py', 'tool': 'python',
+    'id': 'python', 'lang': 'py', 'tool': 'requests',
     'title': 'API testing with Python', 'emoji': '🐍',
     'tagline': 'requests and pytest for everyday tests, httpx for async, plus schemas, mocks, parallel runs and CI.',
     'intro': 'Python is one of the quickest languages for API testing. <b>requests</b> sends HTTP calls in one line, <b>pytest</b> finds and runs tests with plain <code>assert</code> statements, and <b>fixtures</b> handle setup such as tokens and test data. This track goes from a first GET to async tests with <b>httpx</b>, schema checks with <b>jsonschema</b> and <b>pydantic</b>, mocking with <b>responses</b> and <b>respx</b>, property based testing with <b>Schemathesis</b>, and parallel runs in CI.',
