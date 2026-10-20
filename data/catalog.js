@@ -75,9 +75,9 @@ window.CATALOG = {
       title: 'Data Structures & Algorithms',
       emoji: '🧩',
       color: '#2b7de9',
-      blurb: 'Arrays, maths, searching, sorting and clever patterns, animated step by step.',
+      blurb: 'Arrays, strings, linked lists, stacks, queues, trees and graphs, animated step by step.',
       intro: 'Start with the building blocks, then climb to expert patterns. Every ready topic has animations, everyday examples, line by line code runs and practice problems with brute force and optimized solutions.',
-      tags: ['Arrays', 'Math', 'Searching', 'Sorting', 'Patterns'],
+      tags: ['Arrays', 'Strings', 'Linked lists', 'Trees', 'Graphs'],
       modules: [
         {
           id: 'getting-started', title: 'Getting started', emoji: '🚀',
@@ -121,21 +121,56 @@ window.CATALOG = {
               added: '2026-10-18',
               sections: arraySections()
             },
-            { id: 'strings', title: 'Strings', emoji: '🔤', summary: 'Characters, patterns and clever matching.', keywords: ['string', 'substring', 'palindrome', 'kmp'], soon: true }
+            {
+              id: 'strings', title: 'Strings', emoji: '🔤',
+              page: 'content/dsa/strings.html',
+              summary: 'Characters and code points, immutable strings and fast building, everyday operations and their cost, two pointers, anagram counting, sliding windows, KMP and Rabin-Karp matching, with 8 practice problems in Python, JavaScript and Java.',
+              keywords: ['string', 'substring', 'palindrome', 'anagram', 'sliding window', 'kmp', 'rabin karp', 'rolling hash', 'string builder', 'unicode'],
+              added: '2026-10-20',
+              sections: stringsSections()
+            }
           ]
         },
         {
           id: 'linear', title: 'Linear structures', emoji: '🚃',
           topics: [
-            { id: 'linked-lists', title: 'Linked lists', emoji: '🔗', summary: 'Nodes holding hands in a line.', soon: true },
-            { id: 'stacks-queues', title: 'Stacks and queues', emoji: '🥞', summary: 'Last in first out, first in first out.', soon: true }
+            {
+              id: 'linked-lists', title: 'Linked lists', emoji: '🔗',
+              page: 'content/dsa/linked-lists.html',
+              summary: 'Nodes and pointers, insert and delete with a dummy node, doubly linked lists, reversing, fast and slow pointers with Floyd cycle detection, merging sorted lists and when to pick a list over an array.',
+              keywords: ['linked list', 'node', 'pointer', 'doubly linked list', 'reverse linked list', 'floyd cycle detection', 'fast and slow pointers', 'merge sorted lists', 'lru cache'],
+              added: '2026-10-20',
+              sections: linkedListSections()
+            },
+            {
+              id: 'stacks-queues', title: 'Stacks and queues', emoji: '🥞',
+              page: 'content/dsa/stacks-queues.html',
+              summary: 'LIFO and FIFO, balanced brackets, postfix evaluation and the shunting yard algorithm, ring buffers, deques and priority queues, monotonic stacks, and undo and redo with two stacks.',
+              keywords: ['stack', 'queue', 'deque', 'priority queue', 'balanced brackets', 'postfix', 'shunting yard', 'circular buffer', 'monotonic stack', 'next greater element'],
+              added: '2026-10-20',
+              sections: stackQueueSections()
+            }
           ]
         },
         {
           id: 'nonlinear', title: 'Trees and graphs', emoji: '🌳',
           topics: [
-            { id: 'trees', title: 'Trees', emoji: '🌲', summary: 'Family trees for data.', soon: true },
-            { id: 'graphs', title: 'Graphs', emoji: '🕸️', summary: 'Maps, friends and networks.', soon: true }
+            {
+              id: 'trees', title: 'Trees', emoji: '🌲',
+              page: 'content/dsa/trees.html',
+              summary: 'Binary trees and recursion, preorder, inorder, postorder and level order traversal, binary search trees with insert, search and delete, balance and height, heaps stored in arrays, and tries for words.',
+              keywords: ['tree', 'binary tree', 'traversal', 'inorder', 'binary search tree', 'bst', 'balanced tree', 'avl', 'heap', 'trie', 'lowest common ancestor'],
+              added: '2026-10-20',
+              sections: treeSections()
+            },
+            {
+              id: 'graphs', title: 'Graphs', emoji: '🕸️',
+              page: 'content/dsa/graphs.html',
+              summary: 'Adjacency lists and matrices, breadth first and depth first search, connected components, topological order, Dijkstra shortest paths, Kruskal minimum spanning trees with union find, and grids as graphs.',
+              keywords: ['graph', 'bfs', 'dfs', 'adjacency list', 'topological sort', 'dijkstra', 'shortest path', 'minimum spanning tree', 'kruskal', 'union find', 'number of islands'],
+              added: '2026-10-20',
+              sections: graphSections()
+            }
           ]
         }
       ]
@@ -475,6 +510,117 @@ function runtimeSections() {
     { id: "merge-work", title: "Measure the work of merge sort", emoji: '🏋️', group: "Hard practice" },
     { id: "memo-fib", title: "Memoization: from exponential to linear", emoji: '🏋️', group: "Expert practice" },
     { id: "subsets", title: "All subsets and their recursion tree", emoji: '🏋️', group: "Expert practice" },
+    { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+    { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+  ];
+}
+
+function stringsSections() {
+  return [
+    { id: "what-is", title: "What a string really is", emoji: "🔤", group: 'Lesson', keywords: ["character", "unicode", "ascii", "code point", "utf-8", "ord", "chr", "charAt"] },
+    { id: "immutable", title: "Immutable strings and building them fast", emoji: "🧊", group: 'Lesson', keywords: ["immutable string", "string builder", "join", "concatenation cost", "StringBuilder", "quadratic concatenation"] },
+    { id: "operations", title: "Everyday operations and what they cost", emoji: "🧰", group: 'Lesson', keywords: ["substring", "slice", "split", "find", "indexOf", "replace", "upper case", "trim", "string methods"] },
+    { id: "two-pointers", title: "Two pointers: reverse and palindromes", emoji: "👉", group: 'Lesson', keywords: ["palindrome", "reverse string", "two pointers", "valid palindrome"] },
+    { id: "counting", title: "Counting characters: anagrams and frequency", emoji: "🧮", group: 'Lesson', keywords: ["anagram", "frequency count", "character count", "hash map", "counter"] },
+    { id: "window", title: "Sliding window: the longest run without repeats", emoji: "🪟", group: 'Lesson', keywords: ["sliding window", "longest substring without repeating characters", "unique characters"] },
+    { id: "matching", title: "Pattern matching: naive search and KMP", emoji: "🔎", group: 'Lesson', keywords: ["pattern matching", "kmp", "prefix function", "lps array", "string search"] },
+    { id: "hashing", title: "Rolling hash: Rabin and Karp", emoji: "🧬", group: 'Lesson', keywords: ["rabin karp", "rolling hash", "polynomial hash", "hash collision"] },
+    { id: "reverse-words", title: "Reverse the words in a sentence", emoji: '🏋️', group: "Easy practice" },
+    { id: "rotation", title: "Is one string a rotation of another", emoji: '🏋️', group: "Easy practice" },
+    { id: "common-prefix", title: "Longest common prefix", emoji: '🏋️', group: "Medium practice" },
+    { id: "compress", title: "Run length compression", emoji: '🏋️', group: "Medium practice" },
+    { id: "longest-palindrome", title: "Longest palindromic substring", emoji: '🏋️', group: "Hard practice" },
+    { id: "group-anagrams", title: "Group anagrams together", emoji: '🏋️', group: "Hard practice" },
+    { id: "min-window", title: "Minimum window substring", emoji: '🏋️', group: "Expert practice" },
+    { id: "edit-distance", title: "Edit distance", emoji: '🏋️', group: "Expert practice" },
+    { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+    { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+  ];
+}
+
+function linkedListSections() {
+  return [
+    { id: "what-is", title: "Nodes holding hands", emoji: "🔗", group: 'Lesson', keywords: ["node", "next pointer", "head", "singly linked list", "traverse", "null"] },
+    { id: "insert-delete", title: "Inserting and deleting by rewiring", emoji: "✂️", group: 'Lesson', keywords: ["insert at head", "insert at tail", "delete node", "dummy node", "sentinel"] },
+    { id: "doubly", title: "Doubly linked and circular lists", emoji: "↔️", group: 'Lesson', keywords: ["doubly linked list", "prev pointer", "tail", "deque"] },
+    { id: "reverse", title: "Reversing a list in place", emoji: "🔁", group: 'Lesson', keywords: ["reverse linked list", "three pointers", "iterative reverse", "recursive reverse"] },
+    { id: "fast-slow", title: "Fast and slow pointers", emoji: "🐢", group: 'Lesson', keywords: ["floyd cycle detection", "tortoise and hare", "middle of list", "fast and slow pointers", "cycle start"] },
+    { id: "merge", title: "Merging two sorted lists", emoji: "🤝", group: 'Lesson', keywords: ["merge two sorted lists", "merge sort linked list", "dummy head"] },
+    { id: "when", title: "Lists versus arrays in real code", emoji: "⚖️", group: 'Lesson', keywords: ["array vs linked list", "cache locality", "when to use linked list", "LinkedList"] },
+    { id: "remove-value", title: "Remove every node with a given value", emoji: '🏋️', group: "Easy practice" },
+    { id: "dedup-sorted", title: "Remove duplicates from a sorted list", emoji: '🏋️', group: "Easy practice" },
+    { id: "nth-from-end", title: "Remove the n-th node from the end", emoji: '🏋️', group: "Medium practice" },
+    { id: "list-palindrome", title: "Is the linked list a palindrome", emoji: '🏋️', group: "Medium practice" },
+    { id: "add-two", title: "Add two numbers stored as lists", emoji: '🏋️', group: "Hard practice" },
+    { id: "intersection", title: "Where do two lists join", emoji: '🏋️', group: "Hard practice" },
+    { id: "reverse-k", title: "Reverse nodes in groups of k", emoji: '🏋️', group: "Expert practice" },
+    { id: "lru-cache", title: "Least recently used cache", emoji: '🏋️', group: "Expert practice" },
+    { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+    { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+  ];
+}
+
+function stackQueueSections() {
+  return [
+    { id: "stack", title: "The stack: last in, first out", emoji: "🥞", group: 'Lesson', keywords: ["stack", "push", "pop", "peek", "LIFO", "call stack", "ArrayDeque"] },
+    { id: "brackets", title: "Matching brackets with a stack", emoji: "🧷", group: 'Lesson', keywords: ["balanced parentheses", "valid brackets", "matching brackets"] },
+    { id: "expressions", title: "Evaluating expressions", emoji: "🧮", group: 'Lesson', keywords: ["postfix", "infix", "reverse polish notation", "shunting yard", "expression evaluation", "operator precedence"] },
+    { id: "queue", title: "The queue: first in, first out", emoji: "🚶", group: 'Lesson', keywords: ["queue", "enqueue", "dequeue", "FIFO", "circular buffer", "ring buffer"] },
+    { id: "deque-priority", title: "Deques and priority queues", emoji: "🎟️", group: 'Lesson', keywords: ["deque", "priority queue", "heap", "heapq", "PriorityQueue"] },
+    { id: "monotonic", title: "Monotonic stacks", emoji: "📈", group: 'Lesson', keywords: ["monotonic stack", "next greater element", "stock span", "daily temperatures"] },
+    { id: "real-world", title: "Undo, redo and other everyday uses", emoji: "↩️", group: 'Lesson', keywords: ["undo redo", "browser history", "scheduler", "two stacks"] },
+    { id: "remove-adjacent", title: "Remove adjacent duplicates", emoji: '🏋️', group: "Easy practice" },
+    { id: "josephus", title: "Hot potato: who is left", emoji: '🏋️', group: "Easy practice" },
+    { id: "min-stack", title: "A stack that knows its minimum", emoji: '🏋️', group: "Medium practice" },
+    { id: "simplify-path", title: "Simplify a file path", emoji: '🏋️', group: "Medium practice" },
+    { id: "decode-string", title: "Decode a repeated string", emoji: '🏋️', group: "Hard practice" },
+    { id: "largest-rectangle", title: "Largest rectangle in a histogram", emoji: '🏋️', group: "Hard practice" },
+    { id: "window-max", title: "Sliding window maximum", emoji: '🏋️', group: "Expert practice" },
+    { id: "calculator", title: "A calculator with precedence and parentheses", emoji: '🏋️', group: "Expert practice" },
+    { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+    { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+  ];
+}
+
+function treeSections() {
+  return [
+    { id: "what-is", title: "What a tree is", emoji: "🌲", group: 'Lesson', keywords: ["tree", "root", "leaf", "binary tree", "height", "depth", "subtree", "recursion"] },
+    { id: "traversals", title: "Traversals: visiting every node", emoji: "🚶", group: 'Lesson', keywords: ["preorder", "inorder", "postorder", "level order", "tree traversal", "bfs on tree"] },
+    { id: "bst", title: "Binary search trees", emoji: "🔍", group: 'Lesson', keywords: ["binary search tree", "bst", "bst insert", "bst search", "minimum", "maximum"] },
+    { id: "bst-delete", title: "Deleting from a search tree", emoji: "✂️", group: 'Lesson', keywords: ["bst delete", "inorder successor", "inorder predecessor", "remove node"] },
+    { id: "balance", title: "Balance: why shape matters", emoji: "⚖️", group: 'Lesson', keywords: ["balanced tree", "avl tree", "red black tree", "b tree", "tree height", "sorted array to bst"] },
+    { id: "heap", title: "Heaps: trees inside arrays", emoji: "⛰️", group: 'Lesson', keywords: ["binary heap", "min heap", "max heap", "sift up", "sift down", "heapify", "priority queue"] },
+    { id: "trie", title: "Tries: trees of letters", emoji: "🔤", group: 'Lesson', keywords: ["trie", "prefix tree", "autocomplete", "prefix search"] },
+    { id: "max-depth", title: "Maximum and minimum depth", emoji: '🏋️', group: "Easy practice" },
+    { id: "invert", title: "Mirror a tree", emoji: '🏋️', group: "Easy practice" },
+    { id: "validate-bst", title: "Is it a valid search tree", emoji: '🏋️', group: "Medium practice" },
+    { id: "path-sum", title: "Root to leaf paths with a given sum", emoji: '🏋️', group: "Medium practice" },
+    { id: "lca", title: "Lowest common ancestor", emoji: '🏋️', group: "Hard practice" },
+    { id: "serialize", title: "Save a tree to text and load it back", emoji: '🏋️', group: "Hard practice" },
+    { id: "diameter", title: "Diameter of a tree", emoji: '🏋️', group: "Expert practice" },
+    { id: "max-path-sum", title: "Maximum path sum", emoji: '🏋️', group: "Expert practice" },
+    { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+    { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+  ];
+}
+
+function graphSections() {
+  return [
+    { id: "what-is", title: "What a graph is", emoji: "🕸️", group: 'Lesson', keywords: ["graph", "vertex", "edge", "directed", "undirected", "weighted", "adjacency list", "adjacency matrix", "degree"] },
+    { id: "bfs", title: "Breadth first search", emoji: "🌊", group: 'Lesson', keywords: ["breadth first search", "bfs", "shortest path unweighted", "queue", "distance"] },
+    { id: "dfs", title: "Depth first search", emoji: "🧗", group: 'Lesson', keywords: ["depth first search", "dfs", "connected components", "recursion", "backtracking"] },
+    { id: "topo", title: "Topological order", emoji: "👕", group: 'Lesson', keywords: ["topological sort", "kahn algorithm", "dag", "in-degree", "dependencies", "cycle detection"] },
+    { id: "dijkstra", title: "Dijkstra's shortest paths", emoji: "🗺️", group: 'Lesson', keywords: ["dijkstra", "shortest path", "weighted graph", "relaxation", "priority queue", "bellman ford"] },
+    { id: "mst", title: "Minimum spanning trees and union find", emoji: "🔌", group: 'Lesson', keywords: ["minimum spanning tree", "kruskal", "union find", "disjoint set", "path compression"] },
+    { id: "grids", title: "Grids are graphs too", emoji: "🏝️", group: 'Lesson', keywords: ["grid graph", "number of islands", "flood fill", "matrix bfs", "four directions"] },
+    { id: "path-exists", title: "Is there a path", emoji: '🏋️', group: "Easy practice" },
+    { id: "town-judge", title: "Find the town judge", emoji: '🏋️', group: "Easy practice" },
+    { id: "bipartite", title: "Split into two teams", emoji: '🏋️', group: "Medium practice" },
+    { id: "rotting-oranges", title: "Rotting oranges", emoji: '🏋️', group: "Medium practice" },
+    { id: "word-ladder", title: "Word ladder", emoji: '🏋️', group: "Hard practice" },
+    { id: "redundant-connection", title: "The edge that makes a cycle", emoji: '🏋️', group: "Hard practice" },
+    { id: "cheapest-flights", title: "Cheapest flight with at most k stops", emoji: '🏋️', group: "Expert practice" },
+    { id: "bridges", title: "Critical connections", emoji: '🏋️', group: "Expert practice" },
     { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
     { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
   ];
