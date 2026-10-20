@@ -76,7 +76,7 @@ window.CATALOG = {
       emoji: '🧩',
       color: '#2b7de9',
       blurb: 'Arrays, strings, linked lists, stacks, queues, trees and graphs, animated step by step.',
-      intro: 'Start with the building blocks, then climb to expert patterns. Every ready topic has animations, everyday examples, line by line code runs and practice problems with brute force and optimized solutions.',
+      intro: 'Start with the building blocks, then climb to expert patterns. Every ready topic has animations, everyday examples, line by line code runs and practice problems with brute force and optimized solutions. The last chapter is a bank of coding interview questions with hints and full answers.',
       tags: ['Arrays', 'Strings', 'Linked lists', 'Trees', 'Graphs'],
       modules: [
         {
@@ -173,7 +173,7 @@ window.CATALOG = {
             }
           ]
         }
-      ]
+      ].concat(iqModule('dsa'))
     },
     {
       id: 'manual-testing',
@@ -181,9 +181,9 @@ window.CATALOG = {
       emoji: '🐞',
       color: '#f25da0',
       blurb: 'Find bugs before your users do: test design, life cycles, bug reports and test plans.',
-      intro: 'Ten chapters that follow the manual testing notes in order, from what testing is to the test plan. Every diagram is redrawn as an animation, every idea has an everyday example, and each chapter ends with practice programs in Java, Python and JavaScript, quizzes from easy to expert and a narrator in six languages.',
+      intro: 'Ten chapters that follow the manual testing notes in order, from what testing is to the test plan. Every diagram is redrawn as an animation, every idea has an everyday example, and each chapter ends with practice programs in Java, Python and JavaScript, quizzes from easy to expert and a narrator in six languages. The last chapter collects the interview questions asked most, with hints and full answers.',
       tags: ['STLC', 'Test cases', 'Bug life cycle', 'Regression', 'Test plan'],
-      modules: mtModules()
+      modules: mtModules().concat(iqModule('manual-testing'))
     },
     {
       id: 'java',
@@ -191,9 +191,9 @@ window.CATALOG = {
       emoji: '☕',
       color: '#ff9238',
       blurb: 'Core Java from your first identifier to the JVM, with every example compiled and run.',
-      intro: 'Start with the Complete Java Session track: seven chapters that follow the session programs from the first class to reading Excel files, ending with all 66 practice programs. Then go deeper with nineteen reference chapters in seven modules. Every code block was compiled and run with JDK 21, and the real output, compile error or exception is shown under it. Each chapter has a comic strip, everyday examples, quizzes from easy to expert, number practice with full working, and a narrator who reads it aloud in six languages.',
+      intro: 'Start with the Complete Java Session track: seven chapters that follow the session programs from the first class to reading Excel files, ending with all 66 practice programs. Then go deeper with nineteen reference chapters in seven modules. Every code block was compiled and run with JDK 21, and the real output, compile error or exception is shown under it. Each chapter has a comic strip, everyday examples, quizzes from easy to expert, number practice with full working, and a narrator who reads it aloud in six languages. Finish with the Interview Questions chapter, where you answer first, then use a hint, then see the full explanation.',
       tags: ['OOP', 'Exceptions', 'Collections', 'Threads', 'JVM'],
-      modules: [cjsModule()].concat(javaModules())
+      modules: [cjsModule()].concat(javaModules(), iqModule('java'))
     },
     {
       id: 'testng',
@@ -201,9 +201,9 @@ window.CATALOG = {
       emoji: '🧪',
       color: '#16a34a',
       blurb: 'Annotations, suites, data providers, listeners and framework design, run on real TestNG.',
-      intro: 'Three chapters that take you from a first @Test to a Page Object framework with listeners, retries and parallel runs. Every Java example runs on real TestNG with its testng.xml, and the same idea is shown with pytest and Mocha.',
+      intro: 'Three chapters that take you from a first @Test to a Page Object framework with listeners, retries and parallel runs. Every Java example runs on real TestNG with its testng.xml, and the same idea is shown with pytest and Mocha. The last chapter is a set of TestNG interview questions with hints and full answers.',
       tags: ['Annotations', 'testng.xml', 'DataProvider', 'Listeners', 'Parallel'],
-      modules: [tngModule()]
+      modules: [tngModule(), iqModule('testng')]
     },
     {
       id: 'javascript',
@@ -1058,6 +1058,27 @@ function javaModules() {
       ]
     }
   ];
+}
+
+/* Interview Questions: the last chapter of a subject. The page and its questions are built by
+   tools/interview-build/build.py from the question sets in tools/interview-build/sets/. */
+function iqModule(sid) {
+  const info = {
+    'dsa': ['content/dsa/interview-questions.html', 'Coding round questions on complexity, arrays, two pointers, binary search, linked lists, stacks, trees, graphs and dynamic programming, each with the pattern, the steps, the complexity and Python code.', ['two sum', 'kadane', 'sliding window', 'reverse linked list', 'cycle detection', 'LRU cache', 'valid parentheses', 'BFS', 'DFS', 'topological sort', 'dijkstra', 'coin change', 'big o']],
+    'java': ['content/java/interview-questions.html', 'Real Java interview questions on the JVM, OOP, strings, exceptions, collections, Java 8 streams, threads and framework design, with output questions run on the JDK.', ['JDK JRE JVM', 'string pool', 'equals and hashCode', 'HashMap internals', 'checked exception', 'final finally finalize', 'streams', 'functional interface', 'ThreadLocal', 'singleton', 'immutable class']],
+    'testng': ['content/testng/interview-questions.html', 'TestNG questions from automation interviews: annotation order, testng.xml, groups, dependencies, data providers, soft asserts, listeners, retries, parallel runs and Maven.', ['annotation order', 'testng.xml', 'groups', 'dependsOnMethods', 'DataProvider', 'SoftAssert', 'ITestListener', 'IRetryAnalyzer', 'parallel', 'surefire']],
+    'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']]
+  }[sid];
+  return {
+    id: 'interview', title: 'Interview Questions', emoji: '🎤',
+    blurb: 'Try each question yourself, open a hint if you are stuck, then compare with the full answer.',
+    topics: [{
+      id: 'interview-questions', title: 'Interview Questions', emoji: '🎤', page: info[0],
+      summary: info[1],
+      keywords: ['interview', 'interview questions', 'viva', 'FAQ', 'job preparation'].concat(info[2]),
+      added: '2026-10-20'
+    }]
+  };
 }
 
 function mtModules() {

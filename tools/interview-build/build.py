@@ -8,14 +8,19 @@ The build writes two files per set:
 It also checks the house style: no em dashes, en dashes or semicolons in prose fields.
 Code fields are not checked, since code needs its semicolons.
 
-Usage:  python3 tools/interview-build/build.py [name ...]   (no name builds every set)
+Usage:  python3 tools/interview-build/build.py [--run] [name ...]   (no name builds every set)
+        --run also runs every Output question (Java with the JDK, Python, JavaScript with Node.js)
+        and fails if the program does not print exactly the expected answer.
 """
 import html
 import importlib.util
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -131,6 +136,36 @@ if (!FUN.inFrame) document.querySelector('.home-link').removeAttribute('target')
 '''
 
 
+def run_outputs(name, items):
+    """Run every Output question that has a full Java program, Python script or JS file and compare with acode."""
+    bad = []
+    for it in items:
+        if it.get('kind') != 'Output' or not it.get('code') or 'acode' not in it:
+            continue
+        lang = it.get('lang', 'java')
+        with tempfile.TemporaryDirectory() as d:
+            if lang == 'java' and 'class Main' in it['code'] and shutil.which('java'):
+                f = os.path.join(d, 'Main.java')
+                cmd = ['java', f]
+            elif lang == 'py':
+                f = os.path.join(d, 'main.py')
+                cmd = [sys.executable, f]
+            elif lang == 'js' and shutil.which('node'):
+                f = os.path.join(d, 'main.js')
+                cmd = ['node', f]
+            else:
+                continue
+            with open(f, 'w', encoding='utf-8') as fh:
+                fh.write(it['code'])
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            got = r.stdout.strip()
+            if got != it['acode'].strip():
+                bad.append(f'{name}:{it["id"]}: expected {it["acode"]!r} but the program printed {got!r} {r.stderr[-300:]}')
+            else:
+                print(f'  ran {it["id"]}: ok')
+    return bad
+
+
 def load(path):
     spec = importlib.util.spec_from_file_location('set_' + os.path.basename(path)[:-3], path)
     mod = importlib.util.module_from_spec(spec)
@@ -144,6 +179,8 @@ def build(name):
     mod = load(os.path.join(SETS, name + '.py'))
     S, items = mod.SUBJECT, mod.ITEMS
     bad = check(name, S, items)
+    if RUN:
+        bad += run_outputs(name, items)
     if bad:
         print('\n'.join(bad))
         raise SystemExit(f'{name}: {len(bad)} style problems')
@@ -165,7 +202,13 @@ def build(name):
     print(f'{name}: {len(items)} questions {lv} -> {os.path.relpath(out, ROOT)}')
 
 
+RUN = False
+
 if __name__ == '__main__':
-    names = sys.argv[1:] or sorted(f[:-3] for f in os.listdir(SETS) if f.endswith('.py') and not f.startswith('_'))
+    args = sys.argv[1:]
+    if '--run' in args:
+        RUN = True
+        args.remove('--run')
+    names = args or sorted(f[:-3] for f in os.listdir(SETS) if f.endswith('.py') and not f.startswith('_'))
     for n in names:
         build(n)
