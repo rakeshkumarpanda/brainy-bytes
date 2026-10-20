@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test automation in TypeScript · JavaScript</title>
+<meta name="description" content="TypeScript test automation: node --test with .ts, Vitest, ts-jest, expectTypeOf type tests, Playwright test.extend typed fixtures, typed page objects, zod schemas and z.infer, tsc --noEmit and typescript-eslint in CI, test data builders.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔷 TypeScript</span><span>›</span><span>Chapter 25 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧪</span><div><h1>Test automation in TypeScript</h1><p class="lead">Test automation written in TypeScript: why typed tests fail faster, unit tests with node:test, Vitest and Jest, type tests with expectTypeOf, Playwright with typed page objects and fixtures, a typed API client that checks responses with zod, the type check in CI, and typed test data builders.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 0 animations</span><span class="chip">🔷 3 type checked examples</span><span class="chip">🧪 4 real test runs</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 7 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Most new automation frameworks are written in TypeScript. This chapter puts the earlier TypeScript chapters to work on unit, API and browser tests.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#why" class="qa"><span>🛡️</span>Why write tests in TypeScript</a><a href="#unit" class="qa"><span>🧪</span>Unit tests in TypeScript</a><a href="#typetests" class="qa"><span>🔬</span>Type tests</a><a href="#pw" class="qa"><span>🎭</span>Playwright in TypeScript</a><a href="#api" class="qa"><span>🔌</span>A typed API client with run time checks</a><a href="#ci" class="qa"><span>🚦</span>TypeScript in CI</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: typed test data builders</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="why" data-say="why"><div class="sec-num">Part 1</div><h2><span class="sec-em">🛡️</span><span>Why write tests in TypeScript</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Typed tests fail fast on mistakes in the test itself, so red builds point at real product bugs more often.</span></div>
+<p>Test code is code. It has typos, wrong arguments and missing <code>await</code>s, and in JavaScript you only find them when the test runs, often in CI, often after a slow browser start. TypeScript finds them while you type. Every Playwright, Vitest and Jest API ships its own types, so the editor knows every fixture, locator method and matcher.</p>
+<div class="codewrap tests" data-k="catch"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Three test mistakes caught before the browser starts · 🔷 tsc finds 3 errors</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/cart.spec.ts</div><pre class="src" data-file="src/cart.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+test(<span class="s">"add a pen to the cart"</span>, <span class="k">async</span> ({ page, shopp }) =&gt; {     <span class="c">// a typo in a fixture name</span>
+  <span class="k">await</span> page.goto(<span class="s">"/"</span>);
+  <span class="k">await</span> page.getByRol(<span class="s">"button"</span>, { name: <span class="s">"Add to cart"</span> }).click(); <span class="c">// a typo in a method name</span>
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">"cart-count"</span>)).toHaveText(<span class="n">1</span>);  <span class="c">// a number where text is expected</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc</pre></div><div class="err"><span>Terminal output</span><pre>src/cart.spec.ts(3,46): error TS2339: Property &#x27;shopp&#x27; does not exist on type &#x27;PlaywrightTestArgs &amp; PlaywrightTestOptions &amp; PlaywrightWorkerArgs &amp; PlaywrightWorkerOptions&#x27;.
+src/cart.spec.ts(5,14): error TS2551: Property &#x27;getByRol&#x27; does not exist on type &#x27;Page&#x27;. Did you mean &#x27;getByRole&#x27;?
+src/cart.spec.ts(6,59): error TS2345: Argument of type &#x27;number&#x27; is not assignable to parameter of type &#x27;string | readonly (string | RegExp)[] | RegExp&#x27;.</pre></div></div>
+<p>All three would have failed the run in JavaScript, one at a time, each with a stack trace. Here tsc lists them together in under a second, and the editor underlines them before you save.</p>
+</section>
+<section class="card reveal jsec qa-part" id="unit" data-say="unit"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧪</span><span>Unit tests in TypeScript</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Knowing which runners strip types and which check them avoids a green suite full of type errors.</span></div>
+<p>Node.js 24 and later remove the types and run <code>.ts</code> files directly, so <code>node --test</code> needs no build step. Vitest reads TypeScript too, without any set up. In both cases the runner only strips the types and does not check them, so run <code>tsc</code> as its own step.</p>
+<div class="codewrap tests" data-k="node-test"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">node:test runs .ts files directly · 🔷 tsc passes, then node:test runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/cart.ts</div><pre class="src" data-file="src/cart.ts"><span class="k">export</span> <span class="k">interface</span> <span class="t">Line</span> { sku: <span class="k">string</span>; price: <span class="k">number</span>; qty: <span class="k">number</span> }
+<span class="k">export</span> <span class="k">type</span> <span class="t">Coupon</span> = <span class="s">"SAVE10"</span> | <span class="s">"SAVE20"</span>;
+
+<span class="k">const</span> <span class="t">RATES</span>: <span class="t">Record</span>&lt;<span class="t">Coupon</span>, <span class="k">number</span>&gt; = { <span class="t">SAVE10</span>: <span class="n">0.1</span>, <span class="t">SAVE20</span>: <span class="n">0.2</span> };
+
+<span class="k">export</span> <span class="k">function</span> cartTotal(lines: <span class="t">Line</span>[], coupon?: <span class="t">Coupon</span>): <span class="k">number</span> {
+  <span class="k">const</span> sum = lines.reduce((total, l) =&gt; total + l.price * l.qty, <span class="n">0</span>);
+  <span class="k">return</span> <span class="t">Math</span>.round(sum * (<span class="n">1</span> - (coupon ? <span class="t">RATES</span>[coupon] : <span class="n">0</span>)));
+}</pre><div class="fname">📄 src/cart.test.ts</div><pre class="src" data-file="src/cart.test.ts"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> { cartTotal, <span class="k">type</span> <span class="t">Line</span> } <span class="k">from</span> <span class="s">"./cart.ts"</span>;
+
+<span class="k">const</span> lines: <span class="t">Line</span>[] = [{ sku: <span class="s">"pen"</span>, price: <span class="n">20</span>, qty: <span class="n">3</span> }, { sku: <span class="s">"mug"</span>, price: <span class="n">199</span>, qty: <span class="n">1</span> }];
+
+test(<span class="s">"total without a coupon"</span>, () =&gt; assert.equal(cartTotal(lines), <span class="n">259</span>));
+test(<span class="s">"SAVE10 takes 10 percent off"</span>, () =&gt; assert.equal(cartTotal(lines, <span class="s">"SAVE10"</span>), <span class="n">233</span>));
+test(<span class="s">"an empty cart costs nothing"</span>, () =&gt; assert.equal(cartTotal([]), <span class="n">0</span>));</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc &amp;&amp; node --test</pre></div><div class="out"><span>Terminal output</span><pre>tsc: no type errors
+
+✔ total without a coupon
+✔ SAVE10 takes 10 percent off
+✔ an empty cart costs nothing
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 88.4</pre></div></div>
+<div class="codewrap tests" data-k="vitest"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Vitest with TypeScript and no extra set up · 🔷 tsc passes, then Vitest runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/cart.test.ts</div><pre class="src" data-file="src/cart.test.ts"><span class="k">import</span> { describe, it, expect, expectTypeOf } <span class="k">from</span> <span class="s">"vitest"</span>;
+<span class="k">import</span> { cartTotal, <span class="k">type</span> <span class="t">Coupon</span>, <span class="k">type</span> <span class="t">Line</span> } <span class="k">from</span> <span class="s">"./cart.ts"</span>;
+
+describe(<span class="s">"cartTotal"</span>, () =&gt; {
+  <span class="k">const</span> pen: <span class="t">Line</span> = { sku: <span class="s">"pen"</span>, price: <span class="n">20</span>, qty: <span class="n">5</span> };
+
+  it.each&lt;[<span class="t">Coupon</span> | <span class="k">undefined</span>, <span class="k">number</span>]&gt;([
+    [<span class="k">undefined</span>, <span class="n">100</span>],
+    [<span class="s">"SAVE10"</span>, <span class="n">90</span>],
+    [<span class="s">"SAVE20"</span>, <span class="n">80</span>],
+  ])(<span class="s">"coupon %s gives %i"</span>, (coupon, want) =&gt; {
+    expect(cartTotal([pen], coupon)).toBe(want);
+  });
+
+  it(<span class="s">"has the types the rest of the suite relies on"</span>, () =&gt; {
+    expectTypeOf(cartTotal).returns.toEqualTypeOf&lt;<span class="k">number</span>&gt;();
+    expectTypeOf(cartTotal).parameter(<span class="n">1</span>).toEqualTypeOf&lt;<span class="t">Coupon</span> | <span class="k">undefined</span>&gt;();
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc &amp;&amp; npx vitest run</pre></div><div class="out"><span>Terminal output</span><pre>tsc: no type errors
+
+
+ RUN  v5.0.5 project
+
+ ✓ src/cart.test.ts &gt; cartTotal &gt; coupon undefined gives 100
+ ✓ src/cart.test.ts &gt; cartTotal &gt; coupon SAVE10 gives 90
+ ✓ src/cart.test.ts &gt; cartTotal &gt; coupon SAVE20 gives 80
+ ✓ src/cart.test.ts &gt; cartTotal &gt; has the types the rest of the suite relies on
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  09:00:00
+   Duration  398ms</pre></div></div>
+<div class="codewrap" data-k="jest"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Jest with TypeScript · Set up only. The test code itself is the same as above.</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Jest does not read TypeScript by itself. Pick one transformer:</span>
+<span class="c">//   ts-jest      type checks while it runs (slower, catches more)</span>
+<span class="c">//   @swc/jest    or babel-jest: removes the types only (fast, run tsc separately)</span>
+
+<span class="c">// jest.config.ts</span>
+<span class="k">import</span> type { <span class="t">Config</span> } <span class="k">from</span> <span class="s">"jest"</span>;
+
+<span class="k">const</span> config: <span class="t">Config</span> = {
+  preset: <span class="s">"ts-jest"</span>,                 <span class="c">// or: transform: { "^.+\\.tsx?$": "@swc/jest" }</span>
+  testEnvironment: <span class="s">"node"</span>,
+  testMatch: [<span class="s">"**/*.test.ts"</span>],
+};
+<span class="k">export</span> <span class="k">default</span> config;
+
+<span class="c">// tsconfig.json for the tests: "types": ["jest", "node"] gives describe, it and expect their types</span></pre></div>
+<div class="warn">Removing types is not checking types. A test file full of type errors still runs green under <code>node --test</code>, Vitest or <code>@swc/jest</code>. Only <code>tsc</code> (or ts-jest) reports them. That is why every example on this page runs <code>tsc</code> first.</div>
+</section>
+<section class="card reveal jsec qa-part" id="typetests" data-say="typetests"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔬</span><span>Type tests</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Type tests stop a helper change from quietly breaking the types that the rest of the suite depends on.</span></div>
+<p>Shared helpers, builders and API clients are used by hundreds of tests, so their types are part of their contract. <code>expectTypeOf</code> from Vitest (and the <code>expect-type</code> package it is built on) asserts on types instead of values. Nothing runs. The check happens when tsc reads the file.</p>
+<div class="codewrap tests" data-k="typetests"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Type tests: tests for the types themselves · 🔷 tsc finds 1 error</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/user.test-d.ts</div><pre class="src" data-file="src/user.test-d.ts"><span class="k">import</span> { expectTypeOf } <span class="k">from</span> <span class="s">"vitest"</span>;
+
+<span class="k">type</span> <span class="t">Role</span> = <span class="s">"admin"</span> | <span class="s">"customer"</span>;
+<span class="k">interface</span> <span class="t">User</span> { id: <span class="k">number</span>; email: <span class="k">string</span>; role: <span class="t">Role</span> }
+
+<span class="c">// A helper the whole suite uses. Its type is part of its contract.</span>
+<span class="k">function</span> makeUser(overrides: <span class="t">Partial</span>&lt;<span class="t">User</span>&gt; = {}): <span class="t">User</span> {
+  <span class="k">return</span> { id: <span class="n">1</span>, email: <span class="s">"asha@shop.test"</span>, role: <span class="s">"customer"</span>, ...overrides };
+}
+
+expectTypeOf(makeUser).returns.toEqualTypeOf&lt;<span class="t">User</span>&gt;();
+expectTypeOf(makeUser).parameter(<span class="n">0</span>).toEqualTypeOf&lt;<span class="t">Partial</span>&lt;<span class="t">User</span>&gt; | <span class="k">undefined</span>&gt;();
+expectTypeOf&lt;<span class="t">User</span>[<span class="s">"role"</span>]&gt;().toEqualTypeOf&lt;<span class="s">"admin"</span> | <span class="s">"customer"</span> | <span class="s">"guest"</span>&gt;();   <span class="c">// somebody expects a guest role</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc</pre></div><div class="err"><span>Terminal output</span><pre>src/user.test-d.ts(13,44): error TS2344: Type &#x27;&quot;admin&quot; | &quot;customer&quot; | &quot;guest&quot;&#x27; does not satisfy the constraint &#x27;&quot;Expected: literal string: admin, Actual: never&quot; | &quot;Expected: literal string: customer, Actual: never&quot; | &quot;Expected: literal string: guest, Actual: never&quot;&#x27;.
+  Type &#x27;&quot;admin&quot;&#x27; is not assignable to type &#x27;&quot;Expected: literal string: admin, Actual: never&quot; | &quot;Expected: literal string: customer, Actual: never&quot; | &quot;Expected: literal string: guest, Actual: never&quot;&#x27;.</pre></div></div>
+<p>Type test messages are long because the library builds them out of types. Read the line number first. It points at the assertion that no longer holds, here the role union that has no guest.</p>
+<p>Vitest can also collect these files with <code>vitest --typecheck</code>, which runs tsc for you on every <code>*.test-d.ts</code> file and shows type failures next to normal test failures.</p>
+</section>
+<section class="card reveal jsec qa-part" id="pw" data-say="pw"><div class="sec-num">Part 4</div><h2><span class="sec-em">🎭</span><span>Playwright in TypeScript</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-why">Typed page objects and typed fixtures are the standard way to write Playwright suites in teams.</span></div>
+<p>Playwright runs TypeScript without any set up, and most Playwright documentation is written in it. Two things become much better with types. Page objects can limit their inputs, for example to real product names. Fixtures declared with <code>test.extend&lt;{ shop: ShopPage }&gt;</code> are typed in every test, so <code>({ shop })</code> auto completes and a typo does not compile.</p>
+<div class="codewrap tests" data-k="pw-ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Typed page objects and typed fixtures in Playwright · 🔷 tsc passes, then Playwright runs in Chromium</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 pages/shop.page.ts</div><pre class="src" data-file="pages/shop.page.ts"><span class="k">import</span> { expect, <span class="k">type</span> <span class="t">Locator</span>, <span class="k">type</span> <span class="t">Page</span> } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+<span class="k">export</span> <span class="k">type</span> <span class="t">Product</span> = <span class="s">"Gel pen"</span> | <span class="s">"Coffee mug"</span> | <span class="s">"Desk lamp"</span>;
+
+<span class="k">export</span> <span class="k">class</span> <span class="t">ShopPage</span> {
+  <span class="k">readonly</span> products: <span class="t">Locator</span>;
+  <span class="k">readonly</span> cartCount: <span class="t">Locator</span>;
+  <span class="k">readonly</span> total: <span class="t">Locator</span>;
+
+  constructor(<span class="k">readonly</span> page: <span class="t">Page</span>) {
+    <span class="k">this</span>.products = page.getByTestId(<span class="s">"product"</span>);
+    <span class="k">this</span>.cartCount = page.getByTestId(<span class="s">"cart-count"</span>);
+    <span class="k">this</span>.total = page.locator(<span class="s">"#total"</span>);
+  }
+  <span class="k">async</span> open(): <span class="t">Promise</span>&lt;<span class="k">this</span>&gt; {
+    <span class="k">await</span> <span class="k">this</span>.page.goto(<span class="s">"/"</span>);
+    <span class="k">return</span> <span class="k">this</span>;
+  }
+  <span class="k">async</span> logIn(email: <span class="k">string</span>, password: <span class="k">string</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {
+    <span class="k">await</span> <span class="k">this</span>.page.getByLabel(<span class="s">"Email"</span>).fill(email);
+    <span class="k">await</span> <span class="k">this</span>.page.getByLabel(<span class="s">"Password"</span>).fill(password);
+    <span class="k">await</span> <span class="k">this</span>.page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Sign in"</span> }).click();
+    <span class="k">await</span> expect(<span class="k">this</span>.products.first()).toBeVisible();
+  }
+  <span class="k">async</span> add(name: <span class="t">Product</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt; {     <span class="c">// only real product names compile</span>
+    <span class="k">await</span> <span class="k">this</span>.products.filter({ hasText: name }).getByRole(<span class="s">"button"</span>, { name: <span class="s">"Add to cart"</span> }).click();
+  }
+}</pre><div class="fname">📄 fixtures.ts</div><pre class="src" data-file="fixtures.ts"><span class="k">import</span> { test <span class="k">as</span> base } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+<span class="k">import</span> { <span class="t">ShopPage</span> } <span class="k">from</span> <span class="s">"./pages/shop.page.ts"</span>;
+
+<span class="k">interface</span> <span class="t">TestUser</span> { email: <span class="k">string</span>; password: <span class="k">string</span> }
+
+<span class="c">// The type argument tells every test which fixtures exist and what they hold</span>
+<span class="k">export</span> <span class="k">const</span> test = base.extend&lt;{ user: <span class="t">TestUser</span>; shop: <span class="t">ShopPage</span> }&gt;({
+  user: [{ email: <span class="s">"asha@shop.example"</span>, password: <span class="s">"s3cret"</span> }, { option: <span class="k">true</span> }],
+  shop: <span class="k">async</span> ({ page, user }, use) =&gt; {
+    <span class="k">const</span> shop = <span class="k">await</span> <span class="k">new</span> <span class="t">ShopPage</span>(page).open();
+    <span class="k">await</span> shop.logIn(user.email, user.password);
+    <span class="k">await</span> use(shop);
+  },
+});
+<span class="k">export</span> { expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;</pre><div class="fname">📄 tests/cart.spec.ts</div><pre class="src" data-file="tests/cart.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">"../fixtures.ts"</span>;
+
+test(<span class="s">"one gel pen"</span>, <span class="k">async</span> ({ shop }) =&gt; {
+  <span class="k">await</span> shop.add(<span class="s">"Gel pen"</span>);
+  <span class="k">await</span> expect(shop.total).toHaveText(<span class="s">"₹20"</span>);
+});
+
+test(<span class="s">"two lamps use Indian digit grouping"</span>, <span class="k">async</span> ({ shop }) =&gt; {
+  <span class="k">await</span> shop.add(<span class="s">"Desk lamp"</span>);
+  <span class="k">await</span> shop.add(<span class="s">"Desk lamp"</span>);
+  <span class="k">await</span> expect(shop.cartCount).toHaveText(<span class="s">"2"</span>);
+  <span class="k">await</span> expect(shop.total).toHaveText(<span class="s">"₹2,598"</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc &amp;&amp; npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>tsc: no type errors
+
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/cart.spec.ts:2:1 › one gel pen
+  ✓  2 [chromium] › tests/cart.spec.ts:8:1 › two lamps use Indian digit grouping
+
+  2 passed</pre></div></div>
+<div class="tip"><code>user</code> is an <b>option fixture</b>. A project in <code>playwright.config.ts</code> can set <code>use: { user: adminUser }</code> and every test in that project logs in as the admin. TypeScript checks that the value has the right shape.</div>
+</section>
+<section class="card reveal jsec qa-part" id="api" data-say="api"><div class="sec-num">Part 5</div><h2><span class="sec-em">🔌</span><span>A typed API client with run time checks</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">API tests that parse every response with a schema catch contract changes on the first call.</span></div>
+<p>TypeScript types disappear at run time, so they cannot check JSON from a server. A schema library such as <b>zod</b> does both jobs at once. The schema checks the data at run time, and <code>z.infer</code> turns the same schema into a TypeScript type, so the two can never drift apart.</p>
+<div class="codewrap tests" data-k="api"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A typed API client that checks every response with zod · 🔷 tsc passes, then node:test runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/client.ts</div><pre class="src" data-file="src/client.ts"><span class="k">import</span> { z } <span class="k">from</span> <span class="s">"zod"</span>;
+
+<span class="c">// One schema gives both the run time check and the TypeScript type</span>
+<span class="k">export</span> <span class="k">const</span> <span class="t">Product</span> = z.object({ id: z.<span class="k">number</span>().int(), name: z.<span class="k">string</span>().min(<span class="n">1</span>), price: z.<span class="k">number</span>().nonnegative() });
+<span class="k">export</span> <span class="k">type</span> <span class="t">Product</span> = z.infer&lt;<span class="k">typeof</span> <span class="t">Product</span>&gt;;
+
+<span class="k">export</span> <span class="k">class</span> <span class="t">ProductsClient</span> {
+  <span class="k">private</span> <span class="k">readonly</span> baseURL: <span class="k">string</span>;
+  constructor(baseURL: <span class="k">string</span>) { <span class="k">this</span>.baseURL = baseURL; }
+
+  <span class="k">async</span> list(query = <span class="s">""</span>): <span class="t">Promise</span>&lt;<span class="t">Product</span>[]&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">`${this.baseURL}/products${query}`</span>);
+    <span class="k">if</span> (!res.ok) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`GET /products answered ${res.status}`</span>);
+    <span class="k">return</span> z.array(<span class="t">Product</span>).parse(<span class="k">await</span> res.json());   <span class="c">// unknown JSON in, typed data out</span>
+  }
+}</pre><div class="fname">📄 test/products.test.ts</div><pre class="src" data-file="test/products.test.ts"><span class="k">import</span> { test, before, after } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> <span class="k">type</span> { <span class="t">AddressInfo</span> } <span class="k">from</span> <span class="s">"node:net"</span>;
+<span class="k">import</span> { z } <span class="k">from</span> <span class="s">"zod"</span>;
+<span class="k">import</span> { startApi } <span class="k">from</span> <span class="s">"../src/server.ts"</span>;
+<span class="k">import</span> { <span class="t">ProductsClient</span> } <span class="k">from</span> <span class="s">"../src/client.ts"</span>;
+
+<span class="k">const</span> server = <span class="k">await</span> startApi();
+<span class="k">const</span> api = <span class="k">new</span> <span class="t">ProductsClient</span>(<span class="s">`http://localhost:${(server.address() as AddressInfo).port}`</span>);
+after(() =&gt; server.close());
+
+test(<span class="s">"products match the contract"</span>, <span class="k">async</span> () =&gt; {
+  <span class="k">const</span> products = <span class="k">await</span> api.list();
+  assert.equal(products.length, <span class="n">2</span>);
+  assert.equal(products[<span class="n">0</span>].price + products[<span class="n">1</span>].price, <span class="n">219</span>);   <span class="c">// price is a number here, the type says so</span>
+});
+
+test(<span class="s">"a changed field type is caught at the edge"</span>, <span class="k">async</span> () =&gt; {
+  <span class="k">await</span> assert.rejects(api.list(<span class="s">"?v=2"</span>), (e: <span class="k">unknown</span>) =&gt; {
+    assert.ok(e <span class="k">instanceof</span> z.<span class="t">ZodError</span>);
+    console.log(z.prettifyError(e));
+    <span class="k">return</span> <span class="k">true</span>;
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc &amp;&amp; node --test</pre></div><div class="out"><span>Terminal output</span><pre>tsc: no type errors
+
+✔ products match the contract
+✖ Invalid input: expected number, received string
+  → at [0].price
+✔ a changed field type is caught at the edge
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 88.4</pre></div></div>
+<p>Without the schema, the second test would have passed and a later assertion would have compared <code>"20" + 199</code>, which in JavaScript is the text <code>"20199"</code>. The schema stops the bad data at the edge, with a message that names the field and its position.</p>
+</section>
+<section class="card reveal jsec qa-part" id="ci" data-say="ci"><div class="sec-num">Part 6</div><h2><span class="sec-em">🚦</span><span>TypeScript in CI</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">A fast type gate keeps broken test code out of the expensive browser jobs.</span></div>
+<p>Put the type check in front of everything slow. It needs no browser and no server, and it fails in seconds. Type aware lint rules from typescript-eslint add checks that tsc does not do, such as a missing <code>await</code>, which is one of the most common causes of flaky tests.</p>
+<div class="codewrap" data-k="ci"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Type check first, browsers second · A CI pipeline, not run on this page</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># .github/workflows/tests.yml</span>
+name: tests
+on: [push, pull_request]
+
+jobs:
+  types:                                <span class="c"># fast gate: fails in about 30 seconds</span>
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: <span class="n">24</span>, cache: npm }
+      - run: npm ci
+      - run: npx tsc --noEmit           <span class="c"># type errors in tests or helpers stop here</span>
+      - run: npx eslint .               <span class="c"># with typescript-eslint: no floating promises, no any</span>
+
+  e2e:
+    needs: types                        <span class="c"># browsers start only when the types are clean</span>
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: <span class="n">24</span>, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test</pre></div>
+<div class="codewrap" data-k="lint"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">typescript-eslint rules that catch flaky tests · Lint set up, not run on this page</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// eslint.config.js: rules that only work with type information</span>
+<span class="k">import</span> tseslint <span class="k">from</span> <span class="s">"typescript-eslint"</span>;
+
+<span class="k">export</span> <span class="k">default</span> tseslint.config(
+  ...tseslint.configs.recommendedTypeChecked,
+  {
+    languageOptions: { parserOptions: { projectService: <span class="k">true</span> } },
+    rules: {
+      <span class="s">"@typescript-eslint/no-floating-promises"</span>: <span class="s">"error"</span>,   <span class="c">// a missing await before expect or click</span>
+      <span class="s">"@typescript-eslint/no-explicit-any"</span>: <span class="s">"error"</span>,
+      <span class="s">"@typescript-eslint/await-thenable"</span>: <span class="s">"error"</span>,          <span class="c">// await on something that is not a promise</span>
+    },
+  },
+);</pre></div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: typed test data builders</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>Test data is copied between tests as large object literals. When the User type gained an address field, 140 tests broke at run time.</div>
+<div class="codewrap tests" data-k="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Typed test data builders · 🔷 tsc passes, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// Typed test data builders: sensible defaults, typed overrides, unique ids</span>
+<span class="k">type</span> <span class="t">Role</span> = <span class="s">"admin"</span> | <span class="s">"customer"</span>;
+<span class="k">interface</span> <span class="t">Address</span> { city: <span class="k">string</span>; pin: <span class="k">string</span> }
+<span class="k">interface</span> <span class="t">User</span> { id: <span class="k">number</span>; email: <span class="k">string</span>; role: <span class="t">Role</span>; address: <span class="t">Address</span> }
+<span class="k">interface</span> <span class="t">Order</span> { id: <span class="k">number</span>; user: <span class="t">User</span>; items: { sku: <span class="k">string</span>; qty: <span class="k">number</span> }[]; status: <span class="s">"new"</span> | <span class="s">"paid"</span> | <span class="s">"shipped"</span> }
+
+<span class="k">let</span> next = <span class="n">1000</span>;
+<span class="k">const</span> id = () =&gt; ++next;
+
+<span class="k">function</span> builder&lt;<span class="t">T</span>&gt;(defaults: () =&gt; <span class="t">T</span>) {
+  <span class="k">return</span> (overrides: <span class="t">Partial</span>&lt;<span class="t">T</span>&gt; = {}): <span class="t">T</span> =&gt; ({ ...defaults(), ...overrides });
+}
+
+<span class="k">const</span> aUser = builder&lt;<span class="t">User</span>&gt;(() =&gt; ({ id: id(), email: <span class="s">`user${next}@shop.test`</span>, role: <span class="s">"customer"</span>, address: { city: <span class="s">"Pune"</span>, pin: <span class="s">"411001"</span> } }));
+<span class="k">const</span> anOrder = builder&lt;<span class="t">Order</span>&gt;(() =&gt; ({ id: id(), user: aUser(), items: [{ sku: <span class="s">"pen"</span>, qty: <span class="n">1</span> }], status: <span class="s">"new"</span> }));
+
+<span class="k">const</span> admin = aUser({ role: <span class="s">"admin"</span> });
+<span class="k">const</span> paid = anOrder({ user: admin, status: <span class="s">"paid"</span> });
+<span class="k">const</span> big = anOrder({ items: [{ sku: <span class="s">"lamp"</span>, qty: <span class="n">2</span> }, { sku: <span class="s">"mug"</span>, qty: <span class="n">4</span> }] });
+
+console.log(admin.email, admin.role, paid.status, paid.user.id === admin.id);
+console.log(big.items.length, big.user.role, big.id &gt; paid.id);</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc &amp;&amp; node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>tsc: no type errors
+
+$ node src/main.ts
+user1001@shop.test admin paid true
+2 customer true</pre></div></div>
+<p>Each builder holds the defaults in one place and gives every object a fresh id, so tests stay independent. Overrides are <code>Partial&lt;T&gt;</code>, so a test only writes the fields it cares about, and a misspelt field or a wrong role does not compile. When <code>User</code> gains a field, only the builder needs to change.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./ts-projects.html" data-topic="ts-projects"><small>← Previous chapter</small><b>🏛️ TypeScript projects</b></a><a class="next" href="./js-modern.html" data-topic="js-modern"><small>Next chapter →</small><b>🆕 Modern JavaScript</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Tests that check themselves", "panels": [{"s": [["e", "🛡️"], ["t", "tsc before the browser", {"b": 1}]], "h": "Fail fast", "t": "Typos in tests fail in a second.", "more": "Not after a slow browser start."}, {"s": [["e", "🎭"], ["t", "test.extend<{ shop }>", {"b": 1}]], "h": "Typed fixtures", "t": "Every test knows its fixtures.", "more": "Page objects limit their inputs."}, {"s": [["e", "🔌"], ["t", "z.infer<typeof Product>", {"b": 1}]], "h": "Checked data", "t": "One schema, two jobs.", "more": "Run time check and type."}, {"s": [["e", "🚦"], ["t", "tsc --noEmit then e2e", {"b": 1}]], "h": "CI gate", "t": "Types first, browsers second.", "more": "Lint for missing awaits."}], "remember": "Runners strip types and tsc checks them. Type your fixtures and page objects, check API responses with a schema, and run tsc first in CI."}, "real": [["🎭", "An e-commerce UI suite", "Moved its 400 Playwright tests to TypeScript. Failures caused by mistakes in the test code itself fell from about one a week to almost none."], ["🔌", "A payments API team", "Parsed every response with zod schemas. A field that silently changed from number to string was caught on the first CI run after the backend deploy."], ["🚦", "A QA platform team", "Added a 40 second tsc and lint job in front of the 25 minute browser job, and stopped spending browser minutes on test code that could not work."]], "quiz": [{"lv": "e", "q": "Does node --test check the types in a .ts test file?", "o": ["No, it only removes them", "Yes, always", "Only with strict", "Only in CI"], "a": 0, "hint": "Stripping is not checking.", "why": "Run tsc as its own step to check types."}, {"lv": "e", "q": "Which Playwright call adds your own typed fixtures?", "o": ["test.extend&lt;{ shop: ShopPage }>()", "test.use()", "test.fixture()", "expect.extend()"], "a": 0, "hint": "Extend the base test.", "why": "The type argument lists each fixture and its type."}, {"lv": "e", "q": "What does z.infer&lt;typeof Product> give you?", "o": ["The TypeScript type described by the schema", "A parsed object", "A JSON schema", "A test"], "a": 0, "hint": "Infer the type.", "why": "One schema then serves as both run time check and type."}, {"lv": "m", "q": "Why must API responses be checked at run time even in TypeScript?", "o": ["Types are erased, so JSON from a server is never checked by them", "TypeScript is slow", "fetch has no types", "It is required by Node.js"], "a": 0, "hint": "Erased at run time.", "why": "res.json() is effectively unknown data. A schema turns it into checked data."}, {"lv": "m", "q": "Which Jest set up type checks while the tests run?", "o": ["ts-jest", "@swc/jest", "babel-jest", "jest-environment-jsdom"], "a": 0, "hint": "The ts one.", "why": "SWC and Babel only remove types, which is faster but checks nothing."}, {"lv": "m", "q": "What does expectTypeOf(fn).returns.toEqualTypeOf&lt;number>() do at run time?", "o": ["Nothing useful, the check happens in tsc", "Calls fn", "Throws if fn returns a string", "Logs the type"], "a": 0, "hint": "Types only.", "why": "Type tests fail at compile time, never at run time."}, {"lv": "m", "q": "In the Playwright example, what happens with shop.add(\"Pencil\")?", "o": ["tsc reports an error because Pencil is not a Product", "The test fails at run time", "It adds nothing", "It adds a gel pen"], "a": 0, "hint": "A union of names.", "why": "The Product type allows only the three real names."}, {"lv": "h", "q": "Which typescript-eslint rule catches a missing await before expect(...).toHaveText()?", "o": ["no-floating-promises", "no-explicit-any", "no-unused-vars", "prefer-const"], "a": 0, "hint": "A promise left floating.", "why": "A missing await is a common cause of flaky and falsely green tests."}, {"lv": "h", "q": "Why put the tsc job before the browser job in CI?", "o": ["It fails in seconds and saves the slow job from running broken code", "Browsers need compiled code", "Playwright requires it", "It makes tests faster"], "a": 0, "hint": "Fail fast.", "why": "needs: types makes the e2e job wait for a clean type check."}, {"lv": "h", "q": "What is an option fixture in Playwright?", "o": ["A fixture with a default value that projects or test.use can override", "An optional test", "A skipped fixture", "A fixture that runs once"], "a": 0, "hint": "option: true.", "why": "For example a user that one project sets to an admin."}, {"lv": "x", "q": "Why does the builder take a function that returns defaults instead of a defaults object?", "o": ["So each call gets fresh objects and a new id", "It is faster", "TypeScript requires it", "To allow async"], "a": 0, "hint": "Shared objects leak between tests.", "why": "A shared nested object would be changed by one test and seen by the next."}, {"lv": "x", "q": "What does \"20\" + 199 give in JavaScript, the bug the zod schema prevents?", "o": ["\"20199\"", "219", "NaN", "A TypeError"], "a": 0, "hint": "Plus with a string.", "why": "Plus joins text when either side is a string."}], "calc": [{"lv": "e", "q": "The first example has three mistakes. How many type errors does tsc report?", "ans": "3", "hint": "One per mistake.", "steps": ["A wrong fixture name, a wrong method name and a number where text is expected."]}, {"lv": "e", "q": "In the node:test example, the cart has 3 pens at ₹20 and 1 mug at ₹199. What is the total?", "ans": "259", "hint": "Price times quantity.", "steps": ["<span class=\"eq\">3 × 20 + 1 × 199 = 60 + 199 = 259<\/span>"]}, {"lv": "m", "q": "With SAVE10 the same cart costs what, rounded?", "ans": "233", "hint": "Take off 10 percent.", "steps": ["<span class=\"eq\">259 × 0.9 = 233.1<\/span>", "Math.round gives 233."]}, {"lv": "m", "q": "Two desk lamps cost ₹1,299 each. What does the total show, as a plain number?", "ans": "2598", "hint": "Double it.", "steps": ["<span class=\"eq\">2 × 1299 = 2598<\/span>", "The page shows it as ₹2,598."], "alt": ["2,598", "₹2,598"]}, {"lv": "m", "q": "A tsc and lint job takes 40 seconds and a browser job 25 minutes. A broken commit is caught by tsc. How many seconds of browser time are saved?", "ans": "1500", "hint": "Minutes to seconds.", "steps": ["<span class=\"eq\">25 × 60 = 1500<\/span>"]}, {"lv": "h", "q": "The products API returns a gel pen at 20 and a mug at 199. What does the passing test add up to?", "ans": "219", "hint": "Two numbers.", "steps": ["<span class=\"eq\">20 + 199 = 219<\/span>"]}, {"lv": "h", "q": "In the scenario the id counter starts at 1000. aUser() is called for admin first. What is admin.id?", "ans": "1001", "hint": "Pre increment.", "steps": ["++next raises 1000 to 1001 and returns it."]}, {"lv": "x", "q": "In the scenario, how many ids are taken after admin, paid and big are built?", "ans": "4", "hint": "Count every builder call, including nested ones.", "steps": ["admin takes 1. paid takes 1 for the order (its user is given).", "big takes 1 for the order and 1 for its default user.", "<span class=\"eq\">1 + 1 + 2 = 4<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter shows test automation written in TypeScript: unit tests, type tests, Playwright with typed page objects and fixtures, a typed API client and the type check in CI.", "hi": "यह अध्याय TypeScript में test automation दिखाता है: unit tests, type tests, typed page objects वाला Playwright, typed API client और CI में type check।", "kn": "ಈ ಅಧ್ಯಾಯ TypeScript ನಲ್ಲಿ test automation ತೋರಿಸುತ್ತದೆ: unit tests, type tests, Playwright, typed API client ಮತ್ತು CI.", "or": "ଏହି ଅଧ୍ୟାୟ TypeScript ରେ test automation ଦେଖାଏ: unit tests, type tests, Playwright, typed API client ଓ CI।", "ar": "يعرض هذا الفصل أتمتة الاختبارات بلغة TypeScript: اختبارات الوحدات واختبارات الأنواع وPlaywright مع كائنات صفحات مكتوبة الأنواع وعميل API وفحص الأنواع في CI.", "de": "Dieses Kapitel zeigt Testautomatisierung in TypeScript: Unit-Tests, Typtests, Playwright mit typisierten Page Objects, einen typisierten API-Client und die Typprüfung in CI."}, {"id": "why", "h": "Why TypeScript", "en": "TypeScript finds typos, wrong arguments and wrong fixture names in test code before the test runs, all at once and in under a second.", "hi": "TypeScript test code की typos, गलत arguments और गलत fixture names test चलने से पहले, एक साथ, एक second में पकड़ लेता है।", "kn": "TypeScript test ಓಡುವ ಮೊದಲೇ typos ಮತ್ತು ತಪ್ಪು fixture ಹೆಸರುಗಳನ್ನು ಹಿಡಿಯುತ್ತದೆ.", "or": "TypeScript test ଚାଲିବା ପୂର୍ବରୁ typos ଓ ଭୁଲ fixture ନାମ ଧରେ।", "ar": "تكتشف TypeScript الأخطاء الإملائية والوسائط الخاطئة وأسماء التجهيزات الخاطئة قبل تشغيل الاختبار، كلها معًا وفي أقل من ثانية.", "de": "TypeScript findet Tippfehler, falsche Argumente und falsche Fixture-Namen vor dem Testlauf, alle auf einmal in unter einer Sekunde."}, {"id": "unit", "h": "Unit tests", "en": "Node test and Vitest run TypeScript files directly. They only remove the types, so run tsc as a separate step to check them.", "hi": "Node test और Vitest TypeScript files सीधे चलाते हैं। वे केवल types हटाते हैं, इसलिए जांच के लिए tsc अलग से चलाएं।", "kn": "Node test ಮತ್ತು Vitest TypeScript ನೇರವಾಗಿ ಓಡಿಸುತ್ತವೆ. Types ಪರಿಶೀಲನೆಗೆ tsc ಬೇರೆ ಓಡಿಸಿ.", "or": "Node test ଓ Vitest TypeScript ସିଧା ଚଲାନ୍ତି। Types ଯାଞ୍ଚ ପାଇଁ tsc ଅଲଗା ଚଲାନ୍ତୁ।", "ar": "يشغل Node test وVitest ملفات TypeScript مباشرة، لكنهما يحذفان الأنواع فقط، لذا شغل tsc خطوة مستقلة للفحص.", "de": "Node test und Vitest führen TypeScript direkt aus. Sie entfernen nur die Typen, also prüft tsc in einem eigenen Schritt."}, {"id": "typetests", "h": "Type tests", "en": "expectTypeOf asserts on types instead of values. Nothing runs, and tsc reports a failure when a helper type changes.", "hi": "expectTypeOf values की जगह types पर assert करता है। कुछ नहीं चलता, और helper type बदलने पर tsc failure बताता है।", "kn": "expectTypeOf values ಬದಲು types ಮೇಲೆ assert ಮಾಡುತ್ತದೆ.", "or": "expectTypeOf values ବଦଳରେ types ଉପରେ assert କରେ।", "ar": "تتحقق expectTypeOf من الأنواع بدل القيم، فلا يعمل شيء، وتبلغ tsc عن فشل عندما يتغير نوع دالة مساعدة.", "de": "expectTypeOf prüft Typen statt Werte. Nichts läuft, und tsc meldet einen Fehler, wenn sich ein Hilfstyp ändert."}, {"id": "pw", "h": "Playwright", "en": "Typed fixtures from test extend are known in every test, and page objects can limit inputs to real values such as product names.", "hi": "test extend से बने typed fixtures हर test में ज्ञात होते हैं, और page objects inputs को असली values तक सीमित कर सकते हैं।", "kn": "test extend ನ typed fixtures ಪ್ರತಿ test ನಲ್ಲಿ ತಿಳಿದಿರುತ್ತವೆ.", "or": "test extend ର typed fixtures ପ୍ରତି test ରେ ଜଣା।", "ar": "التجهيزات المكتوبة الأنواع من test.extend معروفة في كل اختبار، ويمكن لكائنات الصفحات حصر المدخلات في قيم حقيقية مثل أسماء المنتجات.", "de": "Typisierte Fixtures aus test.extend sind in jedem Test bekannt, und Page Objects erlauben nur echte Werte wie Produktnamen."}, {"id": "api", "h": "API client", "en": "Types vanish at run time, so a zod schema checks the JSON, and z infer turns the same schema into the TypeScript type.", "hi": "Types run time पर गायब हो जाते हैं, इसलिए zod schema JSON जांचता है, और z infer उसी schema से TypeScript type बनाता है।", "kn": "Run time ನಲ್ಲಿ types ಇರುವುದಿಲ್ಲ, zod schema JSON ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "Run time ରେ types ନଥାଏ, zod schema JSON ଯାଞ୍ଚ କରେ।", "ar": "تختفي الأنواع وقت التشغيل، لذا يفحص مخطط zod بيانات JSON، ويحول z.infer المخطط نفسه إلى نوع TypeScript.", "de": "Typen verschwinden zur Laufzeit, also prüft ein zod-Schema das JSON, und z.infer macht daraus den TypeScript-Typ."}, {"id": "ci", "h": "CI", "en": "Run tsc and type aware lint before any browser job. They fail in seconds and catch missing awaits that cause flaky tests.", "hi": "किसी browser job से पहले tsc और type aware lint चलाएं। वे seconds में fail होते हैं और missing await पकड़ते हैं।", "kn": "Browser job ಮೊದಲು tsc ಮತ್ತು lint ಓಡಿಸಿ.", "or": "Browser job ପୂର୍ବରୁ tsc ଓ lint ଚଲାନ୍ତୁ।", "ar": "شغل tsc والفحص المدرك للأنواع قبل أي مهمة متصفح، فهي تفشل في ثوان وتكتشف await المفقودة التي تسبب اختبارات متقلبة.", "de": "tsc und typbewusstes Linting laufen vor jedem Browser-Job. Sie scheitern in Sekunden und finden fehlende awaits."}, {"id": "scenario", "h": "Scenario", "en": "Typed builders keep test data defaults in one place, give fresh ids, and accept only valid partial overrides.", "hi": "Typed builders test data के defaults एक जगह रखते हैं, नए ids देते हैं और केवल सही partial overrides लेते हैं।", "kn": "Typed builders defaults ಒಂದೇ ಕಡೆ ಇಡುತ್ತವೆ ಮತ್ತು ಹೊಸ ids ಕೊಡುತ್ತವೆ.", "or": "Typed builders defaults ଏକ ଜାଗାରେ ରଖନ୍ତି ଓ ନୂଆ ids ଦିଅନ୍ତି।", "ar": "تحفظ المنشئات المكتوبة الأنواع القيم الافتراضية في مكان واحد وتعطي معرفات جديدة وتقبل تعديلات جزئية صحيحة فقط.", "de": "Typisierte Builder halten Standardwerte an einem Ort, vergeben neue IDs und erlauben nur gültige Teilwerte."}, {"id": "practice", "h": "Hands-on", "en": "Practise a test data builder, a response parser, a fixture runner with set up and clean up, and a polling assertion.", "hi": "Test data builder, response parser, set up और clean up वाला fixture runner और polling assertion का अभ्यास करें।", "kn": "Builder, parser, fixture runner ಮತ್ತು polling assertion ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Builder, parser, fixture runner ଓ polling assertion ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على منشئ بيانات اختبار ومحلل استجابات ومشغل تجهيزات مع الإعداد والتنظيف وتأكيد يعيد المحاولة.", "de": "Übe einen Testdaten-Builder, einen Antwort-Parser, einen Fixture-Runner mit Auf- und Abbau und eine wiederholende Prüfung."}], "ex": [{"id": "builder", "lv": "e", "title": "A test data builder", "task": "<p>Write <code>makeBuilder(defaults)<\/code>. <code>defaults<\/code> is a function that returns a fresh object. <code>makeBuilder<\/code> returns a function that takes optional overrides and returns the defaults merged with the overrides.<\/p>", "starter": "function makeBuilder(defaults) {\n  \n}", "tests": [{"call": "(() => { const aUser = makeBuilder(() => ({ role: \"customer\", city: \"Pune\" })); return [aUser(), aUser({ role: \"admin\" })]; })()", "want": [{"role": "customer", "city": "Pune"}, {"role": "admin", "city": "Pune"}]}, {"call": "(() => { const a = makeBuilder(() => ({ tags: [] })); const x = a(); x.tags.push(\"t\"); return a().tags.length; })()", "want": 0}], "solution": "function makeBuilder(defaults) {\n  return (overrides = {}) => ({ ...defaults(), ...overrides });\n}", "hint": "Call <code>defaults()<\/code> inside the returned function, then spread the overrides after it.", "why": "Calling defaults on every build keeps tests from sharing the same nested objects."}, {"id": "parse", "lv": "m", "title": "Check a response by hand", "task": "<p>Write <code>parseProduct(x)<\/code> that returns <code>x<\/code> when it has an integer <code>id<\/code>, a non-empty string <code>name<\/code> and a number <code>price<\/code> of 0 or more. Otherwise throw a <code>TypeError<\/code> whose message is the first bad field name followed by <code>\": invalid\"<\/code>, checking in the order id, name, price.<\/p>", "starter": "function parseProduct(x) {\n  \n}", "tests": [{"call": "parseProduct({ id: 1, name: \"Gel pen\", price: 20 })", "want": {"id": 1, "name": "Gel pen", "price": 20}}, {"call": "(() => { try { parseProduct({ id: 1, name: \"Gel pen\", price: \"20\" }); } catch (e) { return [e.name, e.message]; } })()", "want": ["TypeError", "price: invalid"]}, {"call": "(() => { try { parseProduct({ id: 1.5, name: \"\", price: -1 }); } catch (e) { return e.message; } })()", "want": "id: invalid"}], "solution": "function parseProduct(x) {\n  const rules = {\n    id: v => Number.isInteger(v),\n    name: v => typeof v === \"string\" && v.length > 0,\n    price: v => typeof v === \"number\" && v >= 0,\n  };\n  for (const [field, ok] of Object.entries(rules)) {\n    if (!ok(x?.[field])) throw new TypeError(`${field}: invalid`);\n  }\n  return x;\n}", "hint": "Keep one small check function per field and loop over them in order.", "why": "This is what a zod object schema does for you, plus it gives you the type."}, {"id": "fixtures", "lv": "h", "title": "A fixture runner", "task": "<p>Write <code>runWithFixtures(fixtures, testFn)<\/code>. Each fixture is <code>async (use) =&gt; { …set up…; await use(value); …clean up… }<\/code>, like in Playwright. Set fixtures up in object order, call <code>testFn<\/code> with an object of all values, then let them clean up in reverse order. Return what <code>testFn<\/code> returns.<\/p>", "starter": "async function runWithFixtures(fixtures, testFn) {\n  \n}", "tests": [{"call": "(async () => { const log = []; const r = await runWithFixtures({ db: async use => { log.push(\"db up\"); await use(\"DB\"); log.push(\"db down\"); }, page: async use => { log.push(\"page up\"); await use(\"PAGE\"); log.push(\"page down\"); } }, async f => { log.push(\"test \" + f.db + \" \" + f.page); return 7; }); return [r, log]; })()", "want": [7, ["db up", "page up", "test DB PAGE", "page down", "db down"]]}], "solution": "async function runWithFixtures(fixtures, testFn) {\n  const names = Object.keys(fixtures);\n  const values = {};\n  async function setUp(i) {\n    if (i === names.length) return testFn(values);\n    let result;\n    await fixtures[names[i]](async value => {\n      values[names[i]] = value;\n      result = await setUp(i + 1);\n    });\n    return result;\n  }\n  return setUp(0);\n}", "hint": "Set up one fixture at a time. Inside its <code>use<\/code> callback, set up the next one, and run the test when none are left.", "why": "Nesting each fixture inside the previous one gives the reverse clean up order for free."}, {"id": "poll", "lv": "x", "title": "A polling assertion", "task": "<p>Write <code>expectPoll(fn, expected, { interval, timeout })<\/code>. It calls <code>fn<\/code> until the result equals <code>expected<\/code> and then resolves to the number of calls. If <code>timeout<\/code> milliseconds pass first, it rejects with an Error whose message starts with <code>\"expected 2, last value 1\"<\/code> for those values.<\/p>", "starter": "async function expectPoll(fn, expected, { interval = 10, timeout = 1000 } = {}) {\n  \n}", "tests": [{"call": "(async () => { let n = 0; return await expectPoll(() => ++n, 3, { interval: 5, timeout: 500 }); })()", "want": 3}, {"call": "(async () => { try { await expectPoll(() => 1, 2, { interval: 5, timeout: 40 }); } catch (e) { return e.message.startsWith(\"expected 2, last value 1\"); } })()", "want": true}], "solution": "async function expectPoll(fn, expected, { interval = 10, timeout = 1000 } = {}) {\n  const end = Date.now() + timeout;\n  let calls = 0;\n  let last;\n  while (true) {\n    last = await fn();\n    calls++;\n    if (last === expected) return calls;\n    if (Date.now() >= end) throw new Error(`expected ${expected}, last value ${last} after ${calls} calls`);\n    await new Promise(r => setTimeout(r, interval));\n  }\n}", "hint": "Loop: call, compare, check the clock, then wait for the interval.", "why": "Playwright expect.poll and web first assertions retry like this instead of sleeping."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Test automation in TypeScript", subject: "javascript" });
+</script>
+</body>
+</html>

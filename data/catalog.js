@@ -2171,6 +2171,25 @@ function jsModules() {
         { id: "steplog", title: "A typed step log", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "ts-testing", title: "Test automation in TypeScript", emoji: "🧪", page: "content/javascript/ts-testing.html",
+        summary: "How TypeScript catches mistakes in test code, running unit tests in TypeScript with node:test, Vitest and Jest, testing types with expectTypeOf, typed Playwright page objects and fixtures, an API client that checks every response with zod, a CI pipeline that type checks first, and typed test data builders.",
+        keywords: ["TypeScript testing", "Playwright TypeScript", "Vitest", "node:test", "ts-jest", "expectTypeOf", "typed fixtures", "page object", "zod", "z.infer", "API client", "tsc --noEmit", "typescript-eslint", "test data builder", "interview"],
+        added: "2026-10-20",
+        sections: [
+        { id: "why", title: "Why write tests in TypeScript", emoji: "🛡️", group: "QA essential", keywords: ["TypeScript tests", "typed tests", "compile time errors", "test typos", "Playwright types", "fixture types", "editor auto complete"] },
+        { id: "unit", title: "Unit tests in TypeScript", emoji: "🧪", group: "QA essential", keywords: ["node --test", "type stripping", "Vitest TypeScript", "it.each", "ts-jest", "@swc/jest", "babel-jest", "jest.config.ts", "tsc --noEmit"] },
+        { id: "typetests", title: "Type tests", emoji: "🔬", group: "QA essential", keywords: ["expectTypeOf", "expect-type", "type tests", "test-d.ts", "vitest --typecheck", "toEqualTypeOf", "tsd"] },
+        { id: "pw", title: "Playwright in TypeScript", emoji: "🎭", group: "QA essential", keywords: ["Playwright TypeScript", "typed page object", "test.extend", "typed fixtures", "option fixture", "Locator type", "Page type", "playwright.config.ts"] },
+        { id: "api", title: "A typed API client with run time checks", emoji: "🔌", group: "QA essential", keywords: ["zod", "z.infer", "schema validation", "runtime validation", "API client", "contract testing", "ZodError", "unknown JSON"] },
+        { id: "ci", title: "TypeScript in CI", emoji: "🚦", group: "QA essential", keywords: ["CI", "GitHub Actions", "tsc --noEmit", "typescript-eslint", "no-floating-promises", "await-thenable", "projectService", "quality gate"] },
+        { id: "scenario", title: "Real world scenario: typed test data builders", emoji: "🎬", group: "QA essential", keywords: ["test data builder", "factory", "Partial", "generics", "test data", "unique ids", "fixtures", "object mother"] },
+        { id: "builder", title: "A test data builder", emoji: "🏋️", group: "Easy practice" },
+        { id: "parse", title: "Check a response by hand", emoji: "🏋️", group: "Medium practice" },
+        { id: "fixtures", title: "A fixture runner", emoji: "🏋️", group: "Hard practice" },
+        { id: "poll", title: "A polling assertion", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] },
     { id: "js-expert", title: "Expert and latest", emoji: "🧠", blurb: "The newest language features, performance, patterns, security and the habits of expert JavaScript developers and testers.", topics: [
