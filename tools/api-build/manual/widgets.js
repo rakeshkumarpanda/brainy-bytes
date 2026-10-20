@@ -419,7 +419,61 @@ const APIW = (() => {
     paint();
   }
 
-  const W = { pyramid, url, idem, status, json, jwt, bva, bucket, perc, diff, checklist };
+  /* ---------- API versus web service ---------- */
+  function venn(host) {
+    const items = DATA.venn;
+    host.innerHTML = `<div class="w-h"><b>🔵 API or web service</b><span class="w-sp"></span><small>Tap an example to place it</small></div>
+      <div class="vn-wrap"><svg class="vn-svg" viewBox="0 0 420 220" role="img" aria-label="Web services are a subset of APIs"><ellipse class="vn-api" cx="210" cy="110" rx="200" ry="102"/><ellipse class="vn-ws" cx="270" cy="118" rx="118" ry="72"/><text x="60" y="58">All APIs</text><text x="250" y="70">Web services</text><circle class="vn-dot" r="9" cx="-40" cy="-40"/></svg>
+      <div class="vn-chips">${items.map((it, k) => `<button type="button" class="wb" data-k="${k}">${esc(it.n)}</button>`).join('')}</div></div><div class="wmsg vn-say">Every web service sits inside the API circle. Pick an example.</div>`;
+    const dot = host.querySelector('.vn-dot'), say = host.querySelector('.vn-say');
+    host.addEventListener('click', e => {
+      const b = e.target.closest('[data-k]');
+      if (!b) return;
+      const it = items[+b.dataset.k];
+      host.querySelectorAll('[data-k]').forEach(x => x.classList.toggle('on', x === b));
+      dot.setAttribute('cx', it.ws ? 270 + (Math.random() * 60 - 30) : 70 + Math.random() * 40);
+      dot.setAttribute('cy', it.ws ? 130 + (Math.random() * 30 - 15) : 120 + Math.random() * 40);
+      dot.classList.toggle('in', it.ws);
+      say.innerHTML = `<b>${esc(it.n)}</b>: ${it.ws ? 'an API and also a web service.' : 'an API, but not a web service.'} ${it.why}`;
+    });
+  }
+
+  /* ---------- SOAP and REST side by side ---------- */
+  function soaprest(host) {
+    const V = DATA.soapRest;
+    let k = 'soap', c = 'ok';
+    host.innerHTML = `<div class="w-h"><b>🔀 Same operation, two styles</b><span class="w-sp"></span><button type="button" class="wb" data-s="soap">🧼 SOAP</button><button type="button" class="wb" data-s="rest">🏛️ REST</button><span style="width:8px"></span><button type="button" class="wb" data-c="ok">Order exists</button><button type="button" class="wb" data-c="missing">Order 99 missing</button></div>
+      <div class="wgrid"><div><span class="wl">Request</span><pre class="wout sr-req"></pre></div><div><span class="wl">Response</span><pre class="wout sr-res"></pre></div></div><div class="wmsg sr-note"></div>`;
+    function paint() {
+      const v = V[k][c];
+      host.querySelector('.sr-req').textContent = v.req;
+      host.querySelector('.sr-res').textContent = v.res;
+      host.querySelector('.sr-note').innerHTML = v.note;
+      host.querySelectorAll('[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === k));
+      host.querySelectorAll('[data-c]').forEach(b => b.classList.toggle('on', b.dataset.c === c));
+    }
+    host.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.s) k = b.dataset.s; if (b.dataset.c) c = b.dataset.c; paint(); });
+    paint();
+  }
+
+  /* ---------- Richardson maturity model ---------- */
+  function rmm(host) {
+    const L = DATA.rmm;
+    let k = 2;
+    host.innerHTML = `<div class="w-h"><b>🪜 Richardson Maturity Model</b></div>
+      <div class="rm-steps">${L.map((l, i) => `<button type="button" class="rm-step" data-k="${i}" style="--h:${40 + i * 22}px"><b>Level ${i}</b><span>${esc(l.name)}</span></button>`).join('')}</div>
+      <div class="wgrid" style="margin-top:10px"><div><span class="wl">What the calls look like</span><pre class="wout rm-ex"></pre></div><div><span class="wl">What it means</span><div class="rm-txt"></div></div></div>`;
+    function paint() {
+      const l = L[k];
+      host.querySelectorAll('.rm-step').forEach((b, i) => { b.classList.toggle('on', i === k); b.classList.toggle('below', i < k); });
+      host.querySelector('.rm-ex').textContent = l.ex;
+      host.querySelector('.rm-txt').innerHTML = `<p>${l.what}</p><div class="wmsg">🧪 <b>Testing note.</b> ${l.test}</div>`;
+    }
+    host.addEventListener('click', e => { const b = e.target.closest('.rm-step'); if (b) { k = +b.dataset.k; paint(); } });
+    paint();
+  }
+
+  const W = { pyramid, url, idem, status, json, jwt, bva, bucket, perc, diff, checklist, venn, soaprest, rmm };
   function mountAll(root = document) {
     root.querySelectorAll('[data-w]').forEach(el => { if (el._m) return; el._m = true; const f = el.dataset.w === 'lab' ? LAB.mount : W[el.dataset.w]; if (f) f(el); });
     root.querySelectorAll('[data-seq]').forEach(el => { if (el._m) return; el._m = true; if (DATA.seqs[el.dataset.seq]) seq(el, DATA.seqs[el.dataset.seq]); });

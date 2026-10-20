@@ -30,13 +30,15 @@
   /* ---------- language and tool picker ---------- */
   const TOOLS = {
     java: [['rest-assured', 'Rest Assured'], ['playwright', 'Playwright'], ['native', 'Native Java (HttpClient)']],
+    py: [['requests', 'requests and pytest'], ['playwright', 'Playwright']],
     js: [['postman', 'Postman'], ['playwright', 'Playwright'], ['native', 'Native JS (fetch and node:test)']]
   };
   const LANG_NAME = { java: 'Java', py: 'Python', js: 'JavaScript' };
   const byId = Object.fromEntries(TRACKS.map(t => [t.id, t]));
   const langSel = $('#langSel'), toolSel = $('#toolSel'), toolBox = $('#toolBox'), msg = $('#pickMsg'), trackEl = $('#track');
-  const trackId = (lang, tool) => lang === 'py' ? 'python' : lang && tool ? `${lang}-${tool}` : '';
-  const hashOf = id => { const t = byId[id]; return t ? (t.lang === 'py' ? '#python' : `#${t.lang}/${t.tool}`) : ''; };
+  // The requests track keeps its first id and #python link, so older bookmarks still open it
+  const trackId = (lang, tool) => lang === 'py' && tool === 'requests' ? 'python' : lang && tool ? `${lang}-${tool}` : '';
+  const hashOf = id => { const t = byId[id]; return t ? (id === 'python' ? '#python' : `#${t.lang}/${t.tool}`) : ''; };
   let current = '';
 
   function fillTools(lang, tool) {
@@ -62,7 +64,6 @@
     const lang = langSel.value;
     fillTools(lang, '');
     if (!lang) { clearTrack('Start by choosing the language you write tests in.'); setHash(''); return; }
-    if (lang === 'py') { go('python', true); return; }
     clearTrack(`Great. Now pick the ${LANG_NAME[lang]} tool you want to learn.`);
     setHash('');
     toolBox.classList.remove('pop'); void toolBox.offsetWidth; toolBox.classList.add('pop');
@@ -154,13 +155,13 @@
     const [a, b] = h.split('/');
     const id = a === 'python' ? 'python' : trackId(a, b);
     if (byId[id]) { render(id); return true; }
-    if (a === 'java' || a === 'js') { langSel.value = a; fillTools(a, ''); clearTrack(`Pick the ${LANG_NAME[a]} tool you want to learn.`); return true; }
+    if (TOOLS[a]) { langSel.value = a; fillTools(a, ''); clearTrack(`Pick the ${LANG_NAME[a]} tool you want to learn.`); return true; }
     return false;
   }
   window.addEventListener('hashchange', () => {
     const h = location.hash.slice(1);
     if (h && document.getElementById(h) && !/^[a-z-]+--/.test(h)) return;
-    if (fromHash() && /^(java|js|python)/.test(h)) trackEl.scrollIntoView({ block: 'start' });
+    if (fromHash() && /^(java|js|py|python)/.test(h)) trackEl.scrollIntoView({ block: 'start' });
   });
 
   /* ---------- the request animation ---------- */
@@ -473,7 +474,7 @@
   challenges();
 
   /* request as code */
-  const GEN_LANG = { 'java-rest-assured': 'java', 'java-playwright': 'java', 'java-native': 'java', python: 'py', 'js-postman': 'js', 'js-playwright': 'js', 'js-native': 'js' };
+  const GEN_LANG = { 'java-rest-assured': 'java', 'java-playwright': 'java', 'java-native': 'java', python: 'py', 'py-playwright': 'py', 'js-postman': 'js', 'js-playwright': 'js', 'js-native': 'js' };
   $('#sbGen').innerHTML = TRACKS.map(t => `<option value="${t.id}">${esc(t.title)}</option>`).join('');
   $('#sbGen').addEventListener('change', renderCode);
   $('#sbCopy').addEventListener('click', e => copyText($('#sbCodeOut').textContent, e.target));
@@ -573,6 +574,26 @@
       });
       return L.join('\n');
     },
+    'py-playwright': r => {
+      const args = [jstr(r.path)];
+      if (r.auth === 'cookie') args.push('headers={"Cookie": f"token={token}"}');
+      if (r.auth === 'basic') args.push('headers={"Authorization": "Basic " + base64.b64encode(b"admin:password123").decode()}');
+      if (r.body) args.push('data=' + indent(pyLit(r.body), 4));
+      const timed = r.checks.some(c => c.kind === 'time');
+      const L = ['# api is an APIRequestContext with base_url https://restful-booker.herokuapp.com'];
+      if (timed) L.push('start = time.perf_counter()');
+      L.push(args.length === 1 ? `res = api.${r.m.toLowerCase()}(${args[0]})` : `res = api.${r.m.toLowerCase()}(\n    ${args.join(',\n    ')},\n)`);
+      if (r.checks.some(c => ['json', 'has'].includes(c.kind))) L.push('body = res.json()');
+      r.checks.forEach(c => {
+        if (c.kind === 'status') L.push(`assert res.status == ${+c.b}`);
+        if (c.kind === 'json') L.push(`assert body${pyPath(c.a)} == ${pyLit(parseVal(c.b))}`);
+        if (c.kind === 'has') L.push(`assert ${jstr(c.a.split('.').pop())} in body${pyPath(c.a.split('.').slice(0, -1).join('.'))}`);
+        if (c.kind === 'header') L.push(`assert ${jstr(c.b)} in res.headers[${jstr(c.a.toLowerCase())}]`);
+        if (c.kind === 'text') L.push(`assert ${jstr(c.b)} in res.text()`);
+        if (c.kind === 'time') L.push(`assert (time.perf_counter() - start) * 1000 < ${+c.b}`);
+      });
+      return L.join('\n');
+    },
     'js-postman': r => {
       const L = [`// Request: ${r.m} {{baseUrl}}${r.path}`];
       if (r.auth === 'cookie') L.push('// Header:  Cookie: token={{token}}');
@@ -631,6 +652,15 @@
       return L.join('\n');
     }
   };
+
+  /* ---------- interview questions, drawn by the shared assets/interview.js ---------- */
+  IQ.mount('#iqSlot', IQ_ITEMS, {
+    key: 'api-automation',
+    title: 'Interview questions: API Automation Testing',
+    sub: 'Real questions from QA and SDET interviews, covering every track on this page. Write your answer first, open the hint if you are stuck, then compare with the model answer and rate yourself.',
+    lang: 'java',
+    must: IQ_MUST
+  });
 
   /* ---------- start ---------- */
   loadRequest(PRESETS[1][1]);
