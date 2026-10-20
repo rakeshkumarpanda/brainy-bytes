@@ -230,8 +230,8 @@ window.CATALOG = {
       title: 'API Automation Testing',
       emoji: '🤖',
       color: '#8467f0',
-      blurb: 'Pick a language, then a tool: Rest Assured, Playwright or HttpClient in Java, requests and pytest in Python, Postman, Playwright or fetch in JavaScript.',
-      intro: 'One page that asks for your programming language first. Java and JavaScript then ask for a tool, Python opens straight away. Every track runs from a first GET to schema checks, mocking, framework design, parallel runs and CI, with a real world scenario, a quiz, an animated request walkthrough and a hands on sandbox. Every code sample was run against a copy of the Restful Booker practice API.',
+      blurb: 'Pick a language, then a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript.',
+      intro: 'One page that asks for your programming language first, then for a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, and Postman, Playwright or fetch in JavaScript. Every track runs from a first GET to schema checks, mocking, framework design, parallel runs and CI, with a real world scenario, a quiz, an animated request walkthrough and a hands on sandbox. Every code sample was run against a copy of the Restful Booker practice API.',
       tags: ['Rest Assured', 'Playwright', 'pytest', 'Postman', 'Newman', 'fetch', 'HttpClient', 'JSON Schema'],
       page: 'content/api-automation/api-automation.html'
     }

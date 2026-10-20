@@ -193,3 +193,5 @@ pre .k{color:#ff8fb1} pre .s{color:#a5e8a0} pre .n{color:#ffcf70} pre .c{color:#
 }
 @media print{ .picker,#watch,#sandbox,.ttoc,.lvfilter{display:none} .tbody{display:block} }
 .eqn{display:block; margin:10px 0; padding:10px 14px; border-radius:12px; background:var(--surface2); border:1px dashed var(--box-line); font-family:var(--font-mono); font-size:16px; text-align:center; overflow-x:auto}
+.pick-more{margin:6px 0 0; font-size:14px; color:var(--ink2)}
+.pick-more a{font-weight:800}
