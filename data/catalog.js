@@ -1910,6 +1910,26 @@ function jsModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "js-expert", title: "Expert and latest", emoji: "🧠", blurb: "The newest language features, performance, patterns, security and the habits of expert JavaScript developers and testers.", topics: [
+      { id: "js-modern", title: "Modern JavaScript: ES2020 to 2026", emoji: "🆕", page: "content/javascript/js-modern.html",
+        summary: "The yearly release process and a table of editions, ES2020 to ES2023 features for safer access and copies, ES2024 and ES2025 grouping, iterator helpers, Set methods and safer regular expressions, the newest features such as using and await using, Error.isError and base64, Temporal for dates, ages, time zones and durations, and modernising an old helper with a check that its results did not change.",
+        keywords: ["ES2020", "ES2021", "ES2022", "ES2023", "ES2024", "ES2025", "ES2026", "optional chaining", "nullish coalescing", "toSorted", "groupBy", "iterator helpers", "RegExp.escape", "Promise.try", "using", "Symbol.dispose", "Temporal", "latest JavaScript"],
+        added: "2026-10-20",
+        sections: [
+        { id: "yearly", title: "How JavaScript grows every year", emoji: "📅", group: "Lesson", keywords: ["ECMAScript", "ES2015", "ES6", "ES2020", "ES2021", "ES2022", "ES2023", "ES2024", "ES2025", "ES2026", "TC39", "stage 4", "browser support"] },
+        { id: "es2020", title: "ES2020 to ES2023: safer access and copies", emoji: "❓", group: "QA essential", keywords: ["optional chaining", "?.", "nullish coalescing", "??", "BigInt", "logical assignment", "??=", "replaceAll", "at", "Object.hasOwn", "error cause", "findLast", "toSorted", "toReversed", "toSpliced", "with", "change by copy"] },
+        { id: "es2024", title: "ES2024 and ES2025: grouping, iterators, safer regexes", emoji: "🧰", group: "QA essential", keywords: ["Object.groupBy", "Map.groupBy", "Promise.withResolvers", "v flag", "isWellFormed", "iterator helpers", "Set methods", "RegExp.escape", "Promise.try", "duplicate named groups", "regex modifiers", "Float16Array", "import attributes"] },
+        { id: "es2026", title: "Arriving now: using, Error.isError and more", emoji: "🆕", group: "QA essential", keywords: ["using", "await using", "Symbol.dispose", "Symbol.asyncDispose", "explicit resource management", "Error.isError", "Array.fromAsync", "toBase64", "fromBase64", "getOrInsertComputed", "Iterator.concat", "JSON.parse source"] },
+        { id: "temporal", title: "Temporal: dates done right", emoji: "🕰️", group: "QA essential", keywords: ["Temporal", "PlainDate", "PlainDateTime", "ZonedDateTime", "Instant", "Duration", "time zone", "daylight saving", "leap year", "age check", "immutable dates"] },
+        { id: "scenario", title: "Real world scenario: modernise safely", emoji: "🎬", group: "QA essential", keywords: ["refactoring", "modernise", "legacy code", "characterisation test", "optional chaining", "groupBy", "toSorted"] },
+        { id: "safe", title: "Safe access with defaults", emoji: "🏋️", group: "Easy practice" },
+        { id: "copy", title: "Sort without side effects", emoji: "🏋️", group: "Medium practice" },
+        { id: "group", title: "Write groupBy yourself", emoji: "🏋️", group: "Hard practice" },
+        { id: "dispose", title: "Clean up like using", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

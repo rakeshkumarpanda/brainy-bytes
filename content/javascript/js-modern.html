@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modern JavaScript: ES2020 to 2026 · JavaScript</title>
+<meta name="description" content="ES2020 to ES2026: ?., ??, BigInt, at, toSorted, groupBy, withResolvers, iterator helpers, Set methods, RegExp.escape, Promise.try, using, Error.isError, Array.fromAsync, base64 and Temporal.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🧠 Expert and latest</span><span>›</span><span>Chapter 16 of 16</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🆕</span><div><h1>Modern JavaScript: ES2020 to 2026</h1><p class="lead">What every yearly edition added and why it matters: optional chaining and nullish coalescing, change by copy arrays, groupBy, iterator helpers and Set methods, RegExp.escape and Promise.try, the new using declarations for automatic clean up, and Temporal for dates and time zones.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 17 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 7 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 5 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Modern features make test code shorter and safer: defaults that respect 0, test data that is never changed by accident, and browsers and servers that always get closed.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#yearly"><span>📅</span>How JavaScript grows every year</a><a href="#es2020" class="qa"><span>❓</span>ES2020 to ES2023: safer access and copies</a><a href="#es2024" class="qa"><span>🧰</span>ES2024 and ES2025: grouping, iterators, safer regexes</a><a href="#es2026" class="qa"><span>🆕</span>Arriving now: using, Error.isError and more</a><a href="#temporal" class="qa"><span>🕰️</span>Temporal: dates done right</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: modernise safely</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="yearly" data-say="yearly"><div class="sec-num">Part 1</div><h2><span class="sec-em">📅</span><span>How JavaScript grows every year</span></h2>
+
+<p>Every June, Ecma publishes a new edition of the standard: ES2020, ES2021 and so on. A feature joins only after it reaches <b>stage 4</b> at TC39, which needs two shipping browser engines and a full test suite. Engines often ship features months before the edition that lists them, so "can I use it" depends on your browsers and Node.js version, not the year on the label.</p>
+<div class="tw"><table class="jt"><tr><th>Edition</th><th>Highlights you will meet in real code</th></tr>
+<tr><td>ES2015 (ES6)</td><td>let and const, arrow functions, classes, modules, promises, template literals, destructuring, Map and Set</td></tr>
+<tr><td>ES2017</td><td>async and await, Object.entries, padStart</td></tr>
+<tr><td>ES2020</td><td><code>?.</code>, <code>??</code>, BigInt, Promise.allSettled, globalThis, dynamic import</td></tr>
+<tr><td>ES2021</td><td><code>||=</code> <code>&amp;&amp;=</code> <code>??=</code>, replaceAll, Promise.any, numeric separators, WeakRef</td></tr>
+<tr><td>ES2022</td><td>class fields and <code>#private</code>, top level await, <code>.at()</code>, Object.hasOwn, error cause</td></tr>
+<tr><td>ES2023</td><td>findLast, toSorted, toReversed, toSpliced, with</td></tr>
+<tr><td>ES2024</td><td>Object.groupBy, Map.groupBy, Promise.withResolvers, the <code>v</code> regex flag</td></tr>
+<tr><td>ES2025</td><td>iterator helpers, Set methods, RegExp.escape, Promise.try, import attributes, Float16Array</td></tr>
+<tr><td>2026 and now</td><td><code>using</code> and <code>await using</code>, Error.isError, Array.fromAsync, Uint8Array base64, Map getOrInsert, Iterator.concat, Temporal</td></tr>
+</table></div>
+<div class="tip">Check support on <b>caniuse.com</b> or MDN's compatibility tables, and set your TypeScript <code>target</code> and lint rules to match the oldest browser or Node.js you support.</div>
+</section>
+<section class="card reveal jsec qa-part" id="es2020" data-say="es2020"><div class="sec-num">Part 2</div><h2><span class="sec-em">❓</span><span>ES2020 to ES2023: safer access and copies</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">These features appear in nearly every modern test file and page object.</span></div>
+<p>Optional chaining and nullish coalescing removed most of the "cannot read properties of undefined" crashes from everyday code. The ES2023 <b>change by copy</b> methods return a new array and leave the original alone, which makes test data safe to reuse.</p>
+<div class="codewrap" data-k="es2020" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">ES2020 and ES2021: ?., ??, BigInt and friends · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> order = { id: <span class="n">7</span>, customer: { name: <span class="s">"Asha"</span>, address: <span class="k">null</span> }, discount: <span class="n">0</span> };
+
+<span class="c">// Optional chaining: stop at null or undefined instead of throwing</span>
+console.log(order.customer?.address?.city);          <span class="c">// undefined, no crash</span>
+console.log(order.items?.[<span class="n">0</span>], order.notify?.());     <span class="c">// works for indexes and calls too</span>
+
+<span class="c">// Nullish coalescing: a default only for null and undefined, not for 0 or ""</span>
+console.log(order.discount || <span class="n">10</span>, order.discount ?? <span class="n">10</span>);
+
+<span class="c">// BigInt for whole numbers beyond 2^53</span>
+console.log(<span class="n">2</span> ** <span class="n">53</span> + <span class="n">1</span>, <span class="n">2n</span> ** <span class="n">53n</span> + <span class="n">1n</span>);
+
+<span class="c">// Logical assignment (ES2021)</span>
+<span class="k">const</span> settings = { retries: <span class="n">0</span>, browser: <span class="k">null</span> };
+settings.retries ||= <span class="n">3</span>;        <span class="c">// 0 is falsy, so it becomes 3</span>
+settings.browser ??= <span class="s">"chromium"</span>;
+console.log(settings);
+
+console.log(<span class="n">1_000_000</span> + <span class="n">0</span>.<span class="n">000_5</span>, <span class="s">"a-b-c"</span>.replaceAll(<span class="s">"-"</span>, <span class="s">"/"</span>));
+console.log(<span class="k">typeof</span> globalThis);</pre><div class="out"><span>Output</span><pre>undefined
+undefined undefined
+10 0
+9007199254740992 9007199254740993n
+{ retries: 3, browser: &#x27;chromium&#x27; }
+1000000.0005 a/b/c
+object</pre></div></div>
+<div class="codewrap" data-k="es2022" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">ES2022 and ES2023: at, hasOwn, error cause, change by copy · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> runs = [{ id: <span class="n">1</span>, ok: <span class="k">true</span> }, { id: <span class="n">2</span>, ok: <span class="k">false</span> }, { id: <span class="n">3</span>, ok: <span class="k">true</span> }, { id: <span class="n">4</span>, ok: <span class="k">false</span> }];
+
+console.log(runs.at(-<span class="n">1</span>).id);                               <span class="c">// ES2022: count from the end</span>
+console.log(<span class="t">Object</span>.hasOwn(runs[<span class="n">0</span>], <span class="s">"ok"</span>));                 <span class="c">// a safer hasOwnProperty</span>
+
+<span class="k">try</span> {
+  <span class="k">try</span> { <span class="t">JSON</span>.parse(<span class="s">"{bad"</span>); }
+  <span class="k">catch</span> (e) { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"Could not read the config"</span>, { cause: e }); }   <span class="c">// ES2022</span>
+} <span class="k">catch</span> (e) {
+  console.log(e.message, <span class="s">"&lt;-"</span>, e.cause.name);
+}
+
+<span class="c">// ES2023: find from the end, and "change by copy" methods that never touch the original</span>
+console.log(runs.findLast(r =&gt; !r.ok).id, runs.findLastIndex(r =&gt; r.ok));
+<span class="k">const</span> byIdDesc = runs.toSorted((a, b) =&gt; b.id - a.id);
+console.log(byIdDesc.map(r =&gt; r.id), runs.map(r =&gt; r.id));
+console.log(runs.toReversed()[<span class="n">0</span>].id, runs.<span class="k">with</span>(<span class="n">0</span>, { id: <span class="n">99</span> })[<span class="n">0</span>].id, runs.toSpliced(<span class="n">1</span>, <span class="n">2</span>).length, runs.length);</pre><div class="out"><span>Output</span><pre>4
+true
+Could not read the config &lt;- SyntaxError
+4 2
+[ 4, 3, 2, 1 ] [ 1, 2, 3, 4 ]
+4 99 2 4</pre></div></div>
+<div class="qa-box"><code>??</code> against <code>||</code> matters in tests: a retry count of 0 or an empty search string are real values, and <code>||</code> silently replaces them with the default.</div>
+</section>
+<section class="card reveal jsec qa-part" id="es2024" data-say="es2024"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧰</span><span>ES2024 and ES2025: grouping, iterators, safer regexes</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">groupBy summarises test results in one line, and RegExp.escape makes text matching in tests safe.</span></div>
+<p>Grouping a list, a promise you resolve from outside, lazy iterator helpers, real set operations and a safe way to put user text into a regular expression all arrived in the last two editions.</p>
+<div class="codewrap" data-k="es2024" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">ES2024: groupBy, withResolvers, the v flag · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> tests = [
+  { name: <span class="s">"login"</span>, status: <span class="s">"passed"</span>, ms: <span class="n">840</span> },
+  { name: <span class="s">"search"</span>, status: <span class="s">"failed"</span>, ms: <span class="n">120</span> },
+  { name: <span class="s">"checkout"</span>, status: <span class="s">"failed"</span>, ms: <span class="n">2310</span> },
+  { name: <span class="s">"profile"</span>, status: <span class="s">"skipped"</span>, ms: <span class="n">0</span> },
+];
+
+<span class="c">// Group a list into an object, or a Map, by any rule</span>
+<span class="k">const</span> byStatus = <span class="t">Object</span>.groupBy(tests, t =&gt; t.status);
+console.log(<span class="t">Object</span>.keys(byStatus), byStatus.failed.map(t =&gt; t.name));
+<span class="k">const</span> bySpeed = <span class="t">Map</span>.groupBy(tests, t =&gt; (t.ms &gt; <span class="n">1000</span> ? <span class="s">"slow"</span> : <span class="s">"fast"</span>));
+console.log(bySpeed.<span class="k">get</span>(<span class="s">"slow"</span>).map(t =&gt; t.name));
+
+<span class="c">// A promise you can resolve from the outside</span>
+<span class="k">const</span> { promise, resolve } = <span class="t">Promise</span>.withResolvers();
+setTimeout(() =&gt; resolve(<span class="s">"done"</span>), <span class="n">10</span>);
+console.log(<span class="k">await</span> promise);
+
+<span class="c">// Well formed strings and the v flag for set operations in character classes</span>
+console.log(<span class="s">"ok"</span>.isWellFormed(), <span class="s">"bad \uD800"</span>.isWellFormed());
+console.log(<span class="s">"Héllo Wörld"</span>.match(/[\p{<span class="t">L</span>}--[a-z]]/gv));    <span class="c">// letters that are not plain a to z</span></pre><div class="out"><span>Output</span><pre>[ &#x27;passed&#x27;, &#x27;failed&#x27;, &#x27;skipped&#x27; ] [ &#x27;search&#x27;, &#x27;checkout&#x27; ]
+[ &#x27;checkout&#x27; ]
+done
+true false
+[ &#x27;H&#x27;, &#x27;é&#x27;, &#x27;W&#x27;, &#x27;ö&#x27; ]</pre></div></div>
+<div class="codewrap" data-k="es2025" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">ES2025: iterator helpers, Set methods, RegExp.escape, Promise.try · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Iterator helpers: lazy map, filter, take on any iterator (chapter 7)</span>
+<span class="k">function</span>* ids() { <span class="k">let</span> n = <span class="n">1</span>; <span class="k">while</span> (<span class="k">true</span>) <span class="k">yield</span> <span class="s">`TC-${n++}`</span>; }
+console.log(ids().filter(id =&gt; id.endsWith(<span class="s">"7"</span>)).take(<span class="n">2</span>).toArray());
+
+<span class="c">// Set methods (chapter 7)</span>
+console.log([...<span class="k">new</span> <span class="t">Set</span>([<span class="s">"a"</span>, <span class="s">"b"</span>, <span class="s">"c"</span>]).difference(<span class="k">new</span> <span class="t">Set</span>([<span class="s">"b"</span>]))]);
+
+<span class="c">// RegExp.escape: put user text into a pattern safely</span>
+<span class="k">const</span> userText = <span class="s">"Price (incl. tax) $5.00?"</span>;
+console.log(<span class="t">RegExp</span>.escape(userText));
+console.log(<span class="k">new</span> <span class="t">RegExp</span>(<span class="t">RegExp</span>.escape(userText)).test(<span class="s">`Total: ${userText}`</span>));
+
+<span class="c">// Promise.try: run a function that may throw or return a promise, and always get a promise</span>
+<span class="k">const</span> readConfig = () =&gt; { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"missing file"</span>); };
+<span class="k">await</span> <span class="t">Promise</span>.<span class="k">try</span>(readConfig).<span class="k">catch</span>(e =&gt; console.log(<span class="s">"caught:"</span>, e.message));
+
+<span class="c">// Duplicate named groups and inline modifiers in regular expressions</span>
+<span class="k">const</span> date = /(?&lt;y&gt;\d{<span class="n">4</span>})-(?&lt;m&gt;\d\d)|(?&lt;m&gt;\d\d)\/(?&lt;y&gt;\d{<span class="n">4</span>})/;
+console.log(date.exec(<span class="s">"2026-10"</span>).groups.y, date.exec(<span class="s">"10/2026"</span>).groups.y);
+console.log(/^(?i:hello) <span class="t">World$</span>/.test(<span class="s">"HELLO World"</span>), /^(?i:hello) <span class="t">World$</span>/.test(<span class="s">"hello WORLD"</span>));
+
+<span class="c">// Float16Array and Math.f16round for compact numbers (machine learning, graphics)</span>
+console.log(<span class="t">Math</span>.f16round(<span class="n">1.337</span>), <span class="k">new</span> <span class="t">Float16Array</span>([<span class="n">1.337</span>])[<span class="n">0</span>]);</pre><div class="out"><span>Output</span><pre>[ &#x27;TC-7&#x27;, &#x27;TC-17&#x27; ]
+[ &#x27;a&#x27;, &#x27;c&#x27; ]
+\x50rice\x20\(incl\.\x20tax\)\x20\$5\.00\?
+true
+caught: missing file
+2026 2026
+true false
+1.3369140625 1.3369140625</pre></div></div>
+<div class="codewrap" data-k="import-attrs"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Import attributes for JSON · Runs in chapter 9</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// ES2025: import attributes and JSON modules</span>
+<span class="k">import</span> config <span class="k">from</span> <span class="s">"./playwright.settings.json"</span> <span class="k">with</span> { type: <span class="s">"json"</span> };
+<span class="k">const</span> { <span class="k">default</span>: users } = <span class="k">await</span> <span class="k">import</span>(<span class="s">"./users.json"</span>, { <span class="k">with</span>: { type: <span class="s">"json"</span> } });</pre></div>
+<div class="warn"><code>new RegExp(userText)</code> breaks or misbehaves when the text contains <code>( ) . ? $</code>. <code>RegExp.escape</code> fixes that, which matters for tests that search a page for product names or prices.</div>
+</section>
+<section class="card reveal jsec qa-part" id="es2026" data-say="es2026"><div class="sec-num">Part 4</div><h2><span class="sec-em">🆕</span><span>Arriving now: using, Error.isError and more</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Node.js</span><span class="qa-why">using makes sure browsers, servers and temp data are always cleaned up, even when a test fails.</span></div>
+<p>The headline feature is <b>explicit resource management</b>. A variable declared with <code>using</code> is cleaned up automatically when its block ends, in reverse order, even when an error is thrown. It replaces long <code>try</code> and <code>finally</code> blocks around browsers, servers, files and connections.</p>
+<div class="codewrap" data-k="es2026"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Arriving now: using, Error.isError, fromAsync, base64 and more · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Explicit resource management: "using" calls Symbol.dispose when the block ends,</span>
+<span class="c">// even if an error is thrown. Great for browsers, servers, temp files and DB connections.</span>
+<span class="k">function</span> openBrowser(name) {
+  console.log(<span class="s">`open ${name}`</span>);
+  <span class="k">return</span> { name, [<span class="t">Symbol</span>.dispose]() { console.log(<span class="s">`close ${name}`</span>); } };
+}
+<span class="k">function</span> runTest() {
+  <span class="k">using</span> browser = openBrowser(<span class="s">"chromium"</span>);
+  <span class="k">using</span> other = openBrowser(<span class="s">"firefox"</span>);
+  console.log(<span class="s">`testing with ${browser.name} and ${other.name}`</span>);
+  <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"assertion failed"</span>);
+}
+<span class="k">try</span> { runTest(); } <span class="k">catch</span> (e) { console.log(<span class="s">"test failed:"</span>, e.message); }
+
+<span class="c">// Async version: await using with Symbol.asyncDispose</span>
+<span class="k">async</span> <span class="k">function</span> startServer() {
+  <span class="k">return</span> { url: <span class="s">"http://localhost:4173"</span>, <span class="k">async</span> [<span class="t">Symbol</span>.asyncDispose]() { console.log(<span class="s">"server stopped"</span>); } };
+}
+{
+  <span class="k">await</span> <span class="k">using</span> server = <span class="k">await</span> startServer();
+  console.log(<span class="s">"server at"</span>, server.url);
+}
+
+<span class="c">// Error.isError works across frames and realms, unlike instanceof</span>
+console.log(<span class="t">Error</span>.isError(<span class="k">new</span> <span class="t">TypeError</span>(<span class="s">"x"</span>)), <span class="t">Error</span>.isError({ message: <span class="s">"fake"</span> }));
+
+<span class="c">// Array.fromAsync collects an async iterable</span>
+<span class="k">async</span> <span class="k">function</span>* pages() { <span class="k">yield</span> [<span class="n">1</span>, <span class="n">2</span>]; <span class="k">yield</span> [<span class="n">3</span>]; }
+console.log((<span class="k">await</span> <span class="t">Array</span>.fromAsync(pages())).flat());
+
+<span class="c">// Base64 and hex built into Uint8Array</span>
+<span class="k">const</span> bytes = <span class="k">new</span> <span class="t">TextEncoder</span>().encode(<span class="s">"QA rocks"</span>);
+console.log(bytes.toBase64(), bytes.toHex().slice(<span class="n">0</span>, <span class="n">8</span>), <span class="k">new</span> <span class="t">TextDecoder</span>().decode(<span class="t">Uint8Array</span>.fromBase64(<span class="s">"UUEgcm9ja3M="</span>)));
+
+<span class="c">// Map.getOrInsertComputed, Iterator.concat</span>
+<span class="k">const</span> cache = <span class="k">new</span> <span class="t">Map</span>();
+console.log(cache.getOrInsertComputed(<span class="s">"token"</span>, () =&gt; <span class="s">"t-123"</span>), cache.size);
+console.log(<span class="t">Iterator</span>.concat([<span class="n">1</span>, <span class="n">2</span>], <span class="k">new</span> <span class="t">Set</span>([<span class="n">3</span>])).toArray());
+
+<span class="c">// JSON.parse can read the original text of a number, so big ids survive</span>
+console.log(<span class="t">JSON</span>.parse(<span class="s">'{"orderId": 90071992547409931}'</span>, (k, v, ctx) =&gt; (k === <span class="s">"orderId"</span> ? <span class="t">BigInt</span>(ctx.source) : v)));</pre><div class="out"><span>Output</span><pre>open chromium
+open firefox
+testing with chromium and firefox
+close firefox
+close chromium
+test failed: assertion failed
+server at http://localhost:4173
+server stopped
+true false
+[ 1, 2, 3 ]
+UUEgcm9ja3M= 51412072 QA rocks
+t-123 1
+[ 1, 2, 3 ]
+{ orderId: 90071992547409931n }</pre></div></div>
+<div class="modern">These features ship in Node.js 24 and later and in current browsers, with TypeScript support for <code>using</code>. The page you are reading ran them on Node.js 26. If your users run older browsers, check support or use a transpiler.</div>
+</section>
+<section class="card reveal jsec qa-part" id="temporal" data-say="temporal"><div class="sec-num">Part 5</div><h2><span class="sec-em">🕰️</span><span>Temporal: dates done right</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Date and time zone edge cases are a classic source of bugs and of wrong expected values in tests.</span></div>
+<p>The old <code>Date</code> object mixes up time zones, months that start at 0 and objects that change in place. <b>Temporal</b> replaces it with clear types: <code>PlainDate</code> for a calendar date, <code>PlainDateTime</code> without a zone, <code>ZonedDateTime</code> with a zone, <code>Instant</code> for an exact moment and <code>Duration</code> for lengths of time. Every object is immutable.</p>
+<div class="codewrap" data-k="temporal"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Temporal: dates and times that behave · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> { <span class="t">PlainDate</span>, <span class="t">PlainDateTime</span>, <span class="t">ZonedDateTime</span>, <span class="t">Duration</span>, <span class="t">Instant</span> } = <span class="t">Temporal</span>;
+
+<span class="c">// Dates without times or time zones: perfect for test data such as birthdays and due dates</span>
+<span class="k">const</span> due = <span class="t">PlainDate</span>.<span class="k">from</span>(<span class="s">"2026-01-31"</span>);
+console.log(due.add({ months: <span class="n">1</span> }).toString());            <span class="c">// clamps to the end of February</span>
+console.log(due.dayOfWeek, due.daysInMonth, due.inLeapYear);
+
+<span class="c">// Exact age check, for an "18 or older" rule</span>
+<span class="k">const</span> birthday = <span class="t">PlainDate</span>.<span class="k">from</span>(<span class="s">"2008-10-21"</span>);
+<span class="k">const</span> today = <span class="t">PlainDate</span>.<span class="k">from</span>(<span class="s">"2026-10-20"</span>);
+console.log(<span class="s">"age:"</span>, birthday.until(today, { largestUnit: <span class="s">"years"</span> }).years);
+
+<span class="c">// Time zones done right: the same meeting in Kolkata and Berlin</span>
+<span class="k">const</span> meeting = <span class="t">ZonedDateTime</span>.<span class="k">from</span>(<span class="s">"2026-03-29T10:00[Asia/Kolkata]"</span>);
+console.log(meeting.withTimeZone(<span class="s">"Europe/Berlin"</span>).toString());
+
+<span class="c">// Durations you can add, compare and round</span>
+<span class="k">const</span> timeout = <span class="t">Duration</span>.<span class="k">from</span>({ minutes: <span class="n">1</span>, seconds: <span class="n">30</span> });
+console.log(timeout.total(<span class="s">"milliseconds"</span>), <span class="t">Duration</span>.compare(timeout, { seconds: <span class="n">60</span> }));
+
+<span class="c">// Objects are immutable and comparisons are explicit</span>
+<span class="k">const</span> a = <span class="t">PlainDateTime</span>.<span class="k">from</span>(<span class="s">"2026-10-20T09:00"</span>);
+console.log(<span class="t">PlainDateTime</span>.compare(a, a.add({ minutes: <span class="n">5</span> })), a.toString());
+console.log(<span class="t">Instant</span>.<span class="k">from</span>(<span class="s">"2026-10-20T09:00:00Z"</span>).epochMilliseconds);</pre><div class="out"><span>Output</span><pre>2026-02-28
+6 31 false
+age: 17
+2026-03-29T06:30:00+02:00[Europe/Berlin]
+90000 1
+-1 2026-10-20T09:00:00
+1792486800000</pre></div></div>
+<div class="qa-box">Date bugs are some of the most common bugs testers find: month ends (31 January plus one month), leap years, daylight saving changes, and users in other time zones. Temporal makes the expected values in your tests easy to compute correctly.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 6</div><h2><span class="sec-em">🎬</span><span>Real world scenario: modernise safely</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>An old test helper written in 2016 is hard to read. You want to rewrite it with modern features without changing what it returns.</div>
+<div class="codewrap" data-k="scenario" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Modernise an old helper and prove nothing changed · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Old style helper from a 2016 test suite</span>
+<span class="k">function</span> oldSummary(results) {
+  <span class="k">var</span> copy = results.slice();
+  copy.sort(<span class="k">function</span> (a, b) { <span class="k">return</span> b.ms - a.ms; });
+  <span class="k">var</span> groups = {};
+  <span class="k">for</span> (<span class="k">var</span> i = <span class="n">0</span>; i &lt; results.length; i++) {
+    <span class="k">var</span> s = results[i].status;
+    <span class="k">if</span> (!groups.hasOwnProperty(s)) groups[s] = [];
+    groups[s].push(results[i].name);
+  }
+  <span class="k">var</span> slowest = copy.length &gt; <span class="n">0</span> ? copy[<span class="n">0</span>].name : <span class="s">"none"</span>;
+  <span class="k">var</span> owner = results.length &amp;&amp; results[<span class="n">0</span>].meta &amp;&amp; results[<span class="n">0</span>].meta.owner ? results[<span class="n">0</span>].meta.owner : <span class="s">"unknown"</span>;
+  <span class="k">return</span> { failed: groups.failed || [], slowest: slowest, owner: owner };
+}
+
+<span class="c">// The same helper with modern features</span>
+<span class="k">const</span> newSummary = results =&gt; ({
+  failed: <span class="t">Object</span>.groupBy(results, r =&gt; r.status).failed?.map(r =&gt; r.name) ?? [],
+  slowest: results.toSorted((a, b) =&gt; b.ms - a.ms)[<span class="n">0</span>]?.name ?? <span class="s">"none"</span>,
+  owner: results[<span class="n">0</span>]?.meta?.owner ?? <span class="s">"unknown"</span>,
+});
+
+<span class="k">const</span> runs = [
+  { name: <span class="s">"login"</span>, status: <span class="s">"passed"</span>, ms: <span class="n">840</span>, meta: { owner: <span class="s">"team-auth"</span> } },
+  { name: <span class="s">"checkout"</span>, status: <span class="s">"failed"</span>, ms: <span class="n">2310</span> },
+  { name: <span class="s">"search"</span>, status: <span class="s">"failed"</span>, ms: <span class="n">120</span> },
+];
+<span class="k">for</span> (<span class="k">const</span> input <span class="k">of</span> [runs, []]) {
+  <span class="k">const</span> before = oldSummary(input), after = newSummary(input);
+  console.log(<span class="t">JSON</span>.stringify(after), <span class="s">"| same as old:"</span>, <span class="t">JSON</span>.stringify(before) === <span class="t">JSON</span>.stringify(after));
+}</pre><div class="out"><span>Output</span><pre>{&quot;failed&quot;:[&quot;checkout&quot;,&quot;search&quot;],&quot;slowest&quot;:&quot;checkout&quot;,&quot;owner&quot;:&quot;team-auth&quot;} | same as old: true
+{&quot;failed&quot;:[],&quot;slowest&quot;:&quot;none&quot;,&quot;owner&quot;:&quot;unknown&quot;} | same as old: true</pre></div></div>
+<p>The rewrite is a third of the size. Running both versions on the same inputs, including an empty list, and comparing the results is a simple form of <b>characterisation testing</b>: it proves the behaviour stayed the same before you delete the old code.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-ui-automation.html" data-topic="js-ui-automation"><small>← Previous chapter</small><b>🎭 UI automation</b></a><span></span></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "One small release every year", "panels": [{"s": [["e", "❓"], ["t", "a?.b ?? \"default\"", {"b": 1}]], "h": "Safer access", "t": "No more crashes on missing fields.", "more": "And defaults that respect 0 and empty strings."}, {"s": [["e", "📋"], ["t", "toSorted(), groupBy()", {"b": 1}]], "h": "Better data tools", "t": "Copies instead of changes, groups in one line.", "more": "Test data stays the same between tests."}, {"s": [["e", "🧹"], ["t", "using browser = …", {"b": 1}]], "h": "Automatic clean up", "t": "Resources close themselves.", "more": "Even when the test throws."}, {"s": [["e", "🕰️"], ["t", "Temporal.PlainDate", {"b": 1}]], "h": "Real dates", "t": "Clear types for dates, times and zones.", "more": "Month ends and time zones without surprises."}], "remember": "Know which edition a feature came from, check that your browsers and Node.js support it, and prefer the safer modern form."}, "real": [["🌍", "A travel site", "Moved its booking calendar to Temporal and fixed a long standing bug where flights shown in the user's time zone jumped a day around daylight saving changes."], ["🧪", "A test framework", "Wraps its browser, server and database fixtures with Symbol.asyncDispose so a failing test can never leave a browser running on a CI machine."], ["🧾", "A billing service", "Uses JSON.parse with source text access so 18 digit invoice ids no longer lose their last digits."]], "quiz": [{"lv": "e", "q": "What is 0 ?? 5?", "o": ["0", "5", "null", "undefined"], "a": 0, "hint": "Only null and undefined trigger the default.", "why": "0 is a real value, so ?? keeps it. 0 || 5 would give 5."}, {"lv": "e", "q": "What does user?.address?.city give when address is null?", "o": ["undefined", "null", "It throws", "\"\""], "a": 0, "hint": "It stops early.", "why": "Optional chaining returns undefined as soon as it meets null or undefined."}, {"lv": "e", "q": "Which method sorts without changing the original array?", "o": ["toSorted", "sort", "reverse", "splice"], "a": 0, "hint": "Change by copy.", "why": "toSorted returns a new sorted array."}, {"lv": "m", "q": "What does [10, 20, 30].at(-1) return?", "o": ["30", "10", "undefined", "-1"], "a": 0, "hint": "Negative counts from the end.", "why": ".at(-1) is the last element."}, {"lv": "m", "q": "What does Object.groupBy(list, fn) return?", "o": ["An object whose keys are fn results and values are arrays", "A Map", "A sorted array", "A Set"], "a": 0, "hint": "Map.groupBy returns a Map.", "why": "Each key holds the items that produced it."}, {"lv": "m", "q": "Why use RegExp.escape(text) before new RegExp(text)?", "o": ["So characters like ( . ? $ are matched literally", "To make it faster", "To ignore case", "To match emoji"], "a": 0, "hint": "Special characters.", "why": "Without escaping, user text can change the meaning of the pattern."}, {"lv": "h", "q": "Two resources are declared with using in the same block. In which order are they disposed?", "o": ["Reverse order: the last declared is closed first", "Declaration order", "Random", "Only the first one"], "a": 0, "hint": "Like a stack.", "why": "Later resources may depend on earlier ones, so they close first."}, {"lv": "h", "q": "PlainDate.from(\"2026-01-31\").add({ months: 1 }) gives?", "o": ["2026-02-28", "2026-03-03", "2026-02-31", "An error"], "a": 0, "hint": "February is short.", "why": "Temporal clamps to the last valid day by default."}, {"lv": "h", "q": "Which is true about Temporal objects?", "o": ["They are immutable: methods return new objects", "They change in place like Date", "They have no time zone support", "Months start at 0"], "a": 0, "hint": "No surprise changes.", "why": "Every Temporal method returns a new value."}, {"lv": "x", "q": "Why can JSON.parse lose digits of a large id like 90071992547409931?", "o": ["Numbers beyond 2^53 cannot be stored exactly as doubles", "JSON does not allow numbers", "The id is too short", "It is a bug in V8"], "a": 0, "hint": "Number.MAX_SAFE_INTEGER.", "why": "A reviver with the source text can turn it into a BigInt instead."}, {"lv": "x", "q": "Why is Error.isError(x) better than x instanceof Error in some cases?", "o": ["It works for errors created in other frames or realms", "It is faster", "It catches the error", "It creates an error"], "a": 0, "hint": "iframes and vm contexts.", "why": "Each realm has its own Error constructor, which breaks instanceof."}, {"lv": "x", "q": "What does settings.retries ||= 3 do when retries is 0?", "o": ["Sets it to 3, because 0 is falsy", "Keeps 0", "Throws", "Sets it to undefined"], "a": 0, "hint": "Logical OR assignment.", "why": "Use ??= if 0 is a valid value you want to keep."}], "calc": [{"lv": "e", "q": "What is [4, 8, 15, 16, 23, 42].at(-2)?", "ans": "23", "hint": "Second from the end.", "steps": ["The last is 42, the one before is 23."]}, {"lv": "e", "q": "How many groups does Object.groupBy([1, 2, 3, 4, 5], n => n % 3) create?", "ans": "3", "hint": "Remainders.", "steps": ["1 and 4 give 1, 2 and 5 give 2, 3 gives 0.", "Three keys: 0, 1 and 2."]}, {"lv": "m", "q": "What is Number.MAX_SAFE_INTEGER, written as a power of 2 minus 1? Give the exponent.", "ans": "53", "hint": "Doubles have 53 bits of precision.", "steps": ["<span class=\"eq\">2<sup>53<\/sup> − 1 = 9,007,199,254,740,991<\/span>"]}, {"lv": "m", "q": "Someone born on 2008-10-21. How old are they on 2026-10-20, in whole years?", "ans": "17", "hint": "One day short of the birthday.", "steps": ["On 2026-10-21 they turn 18.", "One day earlier they are still 17."]}, {"lv": "h", "q": "A Duration of 1 minute 30 seconds is how many milliseconds?", "ans": "90000", "hint": "Seconds times 1000.", "steps": ["<span class=\"eq\">90 × 1000 = 90000<\/span>"]}, {"lv": "h", "q": "10:00 in Kolkata (UTC+5:30) on 29 March 2026 is what hour in Berlin, which moves to UTC+2 that day?", "ans": "6:30", "hint": "Go through UTC.", "steps": ["10:00 minus 5:30 is 04:30 UTC.", "04:30 plus 2:00 is 06:30 in Berlin."], "alt": ["06:30", "6.30"]}, {"lv": "x", "q": "How many editions from ES2015 to ES2025, counting both?", "ans": "11", "hint": "One per year.", "steps": ["<span class=\"eq\">2025 − 2015 + 1 = 11<\/span>"]}, {"lv": "x", "q": "The modern summary helper has 5 lines of body, the old one 13. By what percent is it shorter, rounded?", "ans": "62", "hint": "(old minus new) over old.", "steps": ["<span class=\"eq\">(13 − 5) ÷ 13 × 100 ≈ 61.5<\/span>", "Rounded: 62."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter walks through what each edition from ES2020 added, the features arriving now such as using, and Temporal for dates.", "hi": "यह अध्याय ES2020 से हर edition में जोड़े गए features, अभी आ रहे features जैसे using, और dates के लिए Temporal दिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ ES2020 ರಿಂದ ಪ್ರತಿ edition ಸೇರಿಸಿದ features, ಈಗ ಬರುತ್ತಿರುವ using ಮತ್ತು dates ಗಾಗಿ Temporal ತೋರಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ ES2020 ରୁ ପ୍ରତ୍ୟେକ edition ର features, ଏବେ ଆସୁଥିବା using ଓ dates ପାଇଁ Temporal ଦେଖାଏ।", "ar": "يستعرض هذا الفصل ما أضافته كل نسخة منذ ES2020، والميزات الجديدة مثل using، وTemporal للتواريخ.", "de": "Dieses Kapitel zeigt, was jede Ausgabe seit ES2020 brachte, neue Funktionen wie using und Temporal für Datumswerte."}, {"id": "yearly", "h": "Yearly editions", "en": "A new edition comes every June. Features need stage 4 and two shipping engines, so check support in your browsers and Node.", "hi": "हर June नया edition आता है। Features को stage 4 और दो engines चाहिए, इसलिए अपने browsers और Node में support जांचें।", "kn": "ಪ್ರತಿ June ಹೊಸ edition ಬರುತ್ತದೆ. Features ಗೆ stage 4 ಮತ್ತು ಎರಡು engines ಬೇಕು, support ಪರಿಶೀಲಿಸಿ.", "or": "ପ୍ରତ୍ୟେକ June ନୂଆ edition ଆସେ। Features ପାଇଁ stage 4 ଓ ଦୁଇଟି engines ଦରକାର, support ଯାଞ୍ଚ କରନ୍ତୁ।", "ar": "تصدر نسخة جديدة كل يونيو. تحتاج الميزات المرحلة الرابعة ومحركين يدعمانها، فافحص الدعم في متصفحاتك وNode.", "de": "Jeden Juni erscheint eine Ausgabe. Funktionen brauchen Stufe 4 und zwei Engines, prüfe die Unterstützung."}, {"id": "es2020", "h": "Safer access", "en": "Optional chaining stops at missing values, nullish coalescing keeps zero and empty strings, and the copy methods leave the original array alone.", "hi": "Optional chaining missing values पर रुकता है, nullish coalescing शून्य और खाली strings रखता है, और copy methods original array नहीं बदलते।", "kn": "Optional chaining ಕಾಣೆಯಾದ values ನಲ್ಲಿ ನಿಲ್ಲುತ್ತದೆ, nullish coalescing ಶೂನ್ಯ ಮತ್ತು ಖಾಲಿ strings ಇಡುತ್ತದೆ.", "or": "Optional chaining ନଥିବା values ରେ ଅଟକେ, nullish coalescing ଶୂନ୍ୟ ଓ ଖାଲି strings ରଖେ।", "ar": "يتوقف التسلسل الاختياري عند القيم المفقودة، ويحتفظ دمج القيم الفارغة بالصفر والنص الفارغ، ولا تغير دوال النسخ المصفوفة الأصلية.", "de": "Optional Chaining stoppt bei fehlenden Werten, ?? behält null und leere Texte, Kopiermethoden lassen das Original unberührt."}, {"id": "es2024", "h": "Grouping and iterators", "en": "groupBy sorts a list into groups in one line, iterator helpers work lazily, and RegExp escape makes user text safe in patterns.", "hi": "groupBy एक line में list को groups में बांटता है, iterator helpers lazily काम करते हैं, और RegExp.escape user text को सुरक्षित बनाता है।", "kn": "groupBy ಒಂದು ಸಾಲಿನಲ್ಲಿ list ಅನ್ನು groups ಮಾಡುತ್ತದೆ, iterator helpers lazily ಕೆಲಸ ಮಾಡುತ್ತವೆ, RegExp.escape ಸುರಕ್ಷಿತಗೊಳಿಸುತ್ತದೆ.", "or": "groupBy ଗୋଟିଏ ଧାଡ଼ିରେ list କୁ groups କରେ, iterator helpers lazily କାମ କରନ୍ତି, RegExp.escape ସୁରକ୍ଷିତ କରେ।", "ar": "تقسم groupBy القائمة إلى مجموعات في سطر واحد، وتعمل مساعدات المكررات بكسل، وتجعل RegExp.escape نص المستخدم آمنًا.", "de": "groupBy teilt eine Liste in einer Zeile in Gruppen, Iterator-Helfer arbeiten verzögert, RegExp.escape macht Nutzertext sicher."}, {"id": "es2026", "h": "using", "en": "A variable declared with using is cleaned up when its block ends, in reverse order, even when an error is thrown.", "hi": "using से बना variable block खत्म होने पर उल्टे क्रम में साफ होता है, error आने पर भी।", "kn": "using ನಿಂದ ಘೋಷಿಸಿದ variable block ಮುಗಿದಾಗ ಹಿಮ್ಮುಖ ಕ್ರಮದಲ್ಲಿ ಸ್ವಚ್ಛವಾಗುತ್ತದೆ, error ಬಂದರೂ.", "or": "using ରେ ଘୋଷିତ variable block ଶେଷରେ ଓଲଟା କ୍ରମରେ ସଫା ହୁଏ, error ହେଲେ ମଧ୍ୟ।", "ar": "يُنظَّف المتغير المعرّف بـ using عند انتهاء كتلته بترتيب عكسي حتى لو وقع خطأ.", "de": "Eine mit using deklarierte Variable wird am Blockende in umgekehrter Reihenfolge aufgeräumt, auch bei Fehlern."}, {"id": "temporal", "h": "Temporal", "en": "Temporal has separate types for dates, date times, zoned times, instants and durations, and every object is immutable.", "hi": "Temporal में dates, date times, zoned times, instants और durations के अलग types हैं, और हर object immutable है।", "kn": "Temporal ನಲ್ಲಿ dates, date times, zoned times, instants ಮತ್ತು durations ಗೆ ಬೇರೆ types ಇವೆ, ಎಲ್ಲವೂ immutable.", "or": "Temporal ରେ dates, date times, zoned times, instants ଓ durations ପାଇଁ ଅଲଗା types ଅଛି, ସବୁ immutable।", "ar": "لدى Temporal أنواع منفصلة للتواريخ والأوقات والمناطق الزمنية واللحظات والمدد، وكل كائن غير قابل للتغيير.", "de": "Temporal hat eigene Typen für Datum, Datum mit Zeit, Zeitzonen, Zeitpunkte und Dauern, alle unveränderlich."}, {"id": "scenario", "h": "Scenario", "en": "Rewrite an old helper with modern features and run both versions on the same inputs to prove nothing changed.", "hi": "पुराने helper को modern features से फिर लिखें और दोनों versions को एक ही inputs पर चलाकर साबित करें कि कुछ नहीं बदला।", "kn": "ಹಳೆಯ helper ಅನ್ನು modern features ನಿಂದ ಮರುಬರೆಯಿರಿ, ಎರಡೂ versions ಒಂದೇ inputs ನಲ್ಲಿ ಓಡಿಸಿ.", "or": "ପୁରୁଣା helper କୁ modern features ରେ ପୁଣି ଲେଖନ୍ତୁ ଏବଂ ଦୁଇ versions କୁ ସମାନ inputs ରେ ଚଲାନ୍ତୁ।", "ar": "أعد كتابة دالة قديمة بميزات حديثة وشغّل النسختين على المدخلات نفسها لتثبت أن شيئًا لم يتغير.", "de": "Schreibe einen alten Helfer modern neu und lass beide Versionen mit denselben Eingaben laufen."}, {"id": "practice", "h": "Hands-on", "en": "Practise safe access with defaults, sorting without changing the input, writing groupBy, and a clean up helper like using.", "hi": "Defaults के साथ safe access, input बदले बिना sort, groupBy लिखना और using जैसा clean up helper का अभ्यास करें।", "kn": "Defaults ಜೊತೆ safe access, input ಬದಲಿಸದೆ sort, groupBy ಮತ್ತು using ನಂತಹ clean up helper ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Defaults ସହ safe access, input ନ ବଦଳାଇ sort, groupBy ଓ using ପରି clean up helper ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على الوصول الآمن بقيم افتراضية، والفرز دون تغيير المدخلات، وكتابة groupBy، ودالة تنظيف مثل using.", "de": "Übe sicheren Zugriff mit Standardwerten, Sortieren ohne Änderung, groupBy und einen Aufräum-Helfer wie using."}], "ex": [{"id": "safe", "lv": "e", "title": "Safe access with defaults", "task": "<p>Write <code>shippingCity(order)<\/code> that returns <code>order.customer.address.city<\/code>, or <code>\"unknown\"<\/code> if any part is missing. An empty string city should be kept as it is.<\/p>", "starter": "function shippingCity(order) {\n  \n}", "tests": [{"call": "shippingCity({ customer: { address: { city: \"Pune\" } } })", "want": "Pune"}, {"call": "shippingCity({ customer: { address: null } })", "want": "unknown"}, {"call": "shippingCity({})", "want": "unknown"}, {"call": "shippingCity(null)", "want": "unknown"}, {"call": "shippingCity({ customer: { address: { city: \"\" } } })", "want": ""}], "solution": "function shippingCity(order) {\n  return order?.customer?.address?.city ?? \"unknown\";\n}", "hint": "<code>?.<\/code> at every step and <code>??<\/code> for the default.", "why": "With <code>||<\/code>, the empty string would wrongly become \"unknown\"."}, {"id": "copy", "lv": "m", "title": "Sort without side effects", "task": "<p>Write <code>topSlow(results, n)<\/code> that returns the names of the <code>n<\/code> slowest results (largest <code>ms<\/code> first) without changing the <code>results<\/code> array.<\/p>", "starter": "function topSlow(results, n) {\n  \n}", "tests": [{"call": "(() => { const r = [{ name: \"a\", ms: 5 }, { name: \"b\", ms: 50 }, { name: \"c\", ms: 20 }]; const top = topSlow(r, 2); return [top, r.map(x => x.name)]; })()", "want": [["b", "c"], ["a", "b", "c"]]}], "solution": "function topSlow(results, n) {\n  return results.toSorted((a, b) => b.ms - a.ms).slice(0, n).map(r => r.name);\n}", "hint": "<code>toSorted<\/code> instead of <code>sort<\/code>.", "why": "The second half of the test checks the original order, which <code>sort<\/code> would have broken."}, {"id": "group", "lv": "h", "title": "Write groupBy yourself", "task": "<p>Write <code>groupBy(list, keyFn)<\/code> that works like <code>Object.groupBy<\/code>: return an object whose keys are the results of <code>keyFn(item, index)<\/code> and whose values are arrays of items in their original order.<\/p>", "starter": "function groupBy(list, keyFn) {\n  \n}", "tests": [{"call": "groupBy([1, 2, 3, 4], n => (n % 2 ? \"odd\" : \"even\"))", "want": {"odd": [1, 3], "even": [2, 4]}}, {"call": "groupBy([\"a\", \"b\"], (x, i) => i)", "want": {"0": ["a"], "1": ["b"]}}, {"call": "groupBy([], x => x)", "want": {}}], "solution": "function groupBy(list, keyFn) {\n  const out = {};\n  list.forEach((item, i) => {\n    (out[keyFn(item, i)] ??= []).push(item);\n  });\n  return out;\n}", "hint": "<code>(out[key] ??= []).push(item)<\/code> creates the array the first time.", "why": "The built in version returns an object with no prototype, so keys like \"constructor\" are safe too."}, {"id": "dispose", "lv": "x", "title": "Clean up like using", "task": "<p>Write <code>async withResources(openers, fn)<\/code>. <code>openers<\/code> is a list of async functions, each returning a resource with an async <code>close()<\/code>. Open them in order, call <code>fn(resources)<\/code>, and always close every opened resource in reverse order, even when <code>fn<\/code> or a later opener throws. Return what <code>fn<\/code> returns, or rethrow its error.<\/p>", "starter": "async function withResources(openers, fn) {\n  \n}", "tests": [{"call": "(async () => { const log = []; const make = n => async () => ({ n, close: async () => log.push(\"close \" + n) }); const r = await withResources([make(\"db\"), make(\"browser\")], async ([a, b]) => a.n + \"+\" + b.n); return [r, log]; })()", "want": ["db+browser", ["close browser", "close db"]]}, {"call": "(async () => { const log = []; const make = n => async () => ({ close: async () => log.push(\"close \" + n) }); try { await withResources([make(\"db\"), async () => { throw new Error(\"no browser\"); }], async () => \"never\"); } catch (e) { return [e.message, log]; } })()", "want": ["no browser", ["close db"]]}], "solution": "async function withResources(openers, fn) {\n  const opened = [];\n  try {\n    for (const open of openers) opened.push(await open());\n    return await fn(opened);\n  } finally {\n    for (const r of opened.toReversed()) await r.close();\n  }\n}", "hint": "Keep a list of what actually opened, and close it in a <code>finally<\/code> block.", "why": "This is exactly what <code>await using<\/code> does for you, and why it closes only resources that were successfully opened."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Modern JavaScript: ES2020 to 2026", subject: "javascript" });
+</script>
+</body>
+</html>
