@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Automated API Testing with JavaScript · JavaScript</title>
+<meta name="description" content="API testing with fetch, node:test, supertest, Jest, Vitest, Playwright request, Ajv JSON Schema, negative and boundary tests, auth, 409 conflicts, response times and cleanup.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🧪 Testing with JavaScript</span><span>›</span><span>Chapter 14 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔌</span><div><h1>Automated API Testing with JavaScript</h1><p class="lead">Test one real shop API with four tools: fetch and node:test for a CRUD flow, Ajv for JSON Schema checks, Vitest and supertest for negative and boundary tables, Jest for auth and stock, Playwright request with a web server, response time percentiles, and a full order flow that cleans up after itself.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 2 runnable examples</span><span class="chip">🧪 5 real test runs</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 8 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Every test on this page ran against a real Express server when the page was built. Pick the tool your team uses, the ideas are the same in all of them.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#what" class="qa"><span>🗺️</span>What an API test checks</a><a href="#live" class="qa"><span>🔁</span>Testing a running server: a CRUD flow</a><a href="#schema" class="qa"><span>📐</span>Checking the shape with JSON Schema</a><a href="#negative" class="qa"><span>🚫</span>Negative, boundary and data driven tests</a><a href="#auth" class="qa"><span>🔐</span>Authentication, state and conflicts</a><a href="#playwright" class="qa"><span>🎭</span>API testing with Playwright</a><a href="#performance" class="qa"><span>⏱️</span>Response times</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: buying the last two mugs</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="what" data-say="what"><div class="sec-num">Part 1</div><h2><span class="sec-em">🗺️</span><span>What an API test checks</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">API tests give the most coverage per minute of any automated test.</span></div>
+<p>An <b>API test</b> sends real HTTP requests to a running service and checks the answers. It sits in the middle of the test pyramid: much faster and steadier than a browser test, and it checks the real routes, validation, database and auth together, which unit tests cannot.</p>
+<div class="tw"><table class="jt"><tr><th>Check</th><th>Example</th></tr>
+<tr><td>Status code</td><td>201 after create, 404 for a missing id, 400 for bad input</td></tr>
+<tr><td>Headers</td><td><code>Content-Type: application/json</code>, <code>Location</code>, <code>Cache-Control</code></td></tr>
+<tr><td>Body values</td><td>the created product has the name that was sent, trimmed</td></tr>
+<tr><td>Body shape</td><td>every product has an integer id and a positive price (JSON Schema)</td></tr>
+<tr><td>Side effects</td><td>the stock really went down, the deleted item is really gone</td></tr>
+<tr><td>Negative cases</td><td>missing fields, wrong types, boundaries, broken JSON</td></tr>
+<tr><td>Security</td><td>401 without a token, 403 or 404 for someone else's data</td></tr>
+<tr><td>Speed</td><td>95% of requests under 200 ms</td></tr>
+</table></div>
+<div class="tip">This chapter tests one small shop API, written with Express in <code>shop-api.js</code>, with four different tools. It is the same app as in chapter 12, with login and orders added.</div>
+</section>
+<section class="card reveal jsec qa-part" id="live" data-say="live"><div class="sec-num">Part 2</div><h2><span class="sec-em">🔁</span><span>Testing a running server: a CRUD flow</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">node:test</span><span class="qa-tool">fetch</span><span class="qa-why">A CRUD flow against a real server is the first suite most API testers write.</span></div>
+<p>The most direct API test starts the server, sends requests with <code>fetch</code> and checks each answer. Listening on port <code>0</code> lets the system pick a free port, so many suites can run side by side.</p>
+<div class="codewrap tests" data-k="live"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A CRUD flow against a running server · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 test/products.test.js</div><pre class="src" data-file="test/products.test.js"><span class="k">import</span> { describe, it, before, after } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> { createShopApi } <span class="k">from</span> <span class="s">"../src/shop-api.js"</span>;
+
+<span class="k">let</span> server, base;
+before(<span class="k">async</span> () =&gt; {
+  server = createShopApi().listen(<span class="n">0</span>);              <span class="c">// port 0: any free port, so parallel runs never clash</span>
+  <span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; server.once(<span class="s">"listening"</span>, r));
+  base = <span class="s">`http://127.0.0.1:${server.address().port}/api`</span>;
+});
+after(() =&gt; server.close());
+
+<span class="k">const</span> json = (method, body) =&gt; ({ method, headers: { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> }, body: <span class="t">JSON</span>.stringify(body) });
+
+describe(<span class="s">"products CRUD"</span>, () =&gt; {
+  <span class="k">let</span> created;
+
+  it(<span class="s">"POST creates a product (201, Location, body)"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">`${base}/products`</span>, json(<span class="s">"POST"</span>, { name: <span class="s">"  Desk lamp "</span>, price: <span class="n">1299</span>, stock: <span class="n">5</span> }));
+    assert.equal(res.status, <span class="n">201</span>);
+    created = <span class="k">await</span> res.json();
+    assert.equal(res.headers.<span class="k">get</span>(<span class="s">"location"</span>), <span class="s">`/api/products/${created.id}`</span>);
+    assert.deepEqual(created, { id: created.id, name: <span class="s">"Desk lamp"</span>, price: <span class="n">1299</span>, stock: <span class="n">5</span> });
+  });
+
+  it(<span class="s">"GET returns what was created"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">`${base}/products/${created.id}`</span>);
+    assert.equal(res.status, <span class="n">200</span>);
+    assert.match(res.headers.<span class="k">get</span>(<span class="s">"content-type"</span>), /application\/json/);
+    assert.equal((<span class="k">await</span> res.json()).name, <span class="s">"Desk lamp"</span>);
+  });
+
+  it(<span class="s">"PATCH changes one field and keeps the rest"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">`${base}/products/${created.id}`</span>, json(<span class="s">"PATCH"</span>, { price: <span class="n">999</span> }));
+    assert.deepEqual(<span class="k">await</span> res.json(), { ...created, price: <span class="n">999</span> });
+  });
+
+  it(<span class="s">"search finds it, case insensitive"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> body = <span class="k">await</span> (<span class="k">await</span> fetch(<span class="s">`${base}/products?q=LAMP`</span>)).json();
+    assert.equal(body.total, <span class="n">1</span>);
+    assert.equal(body.items[<span class="n">0</span>].id, created.id);
+  });
+
+  it(<span class="s">"DELETE removes it, then GET is 404"</span>, <span class="k">async</span> () =&gt; {
+    assert.equal((<span class="k">await</span> fetch(<span class="s">`${base}/products/${created.id}`</span>, { method: <span class="s">"DELETE"</span> })).status, <span class="n">204</span>);
+    <span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">`${base}/products/${created.id}`</span>);
+    assert.equal(res.status, <span class="n">404</span>);
+    assert.deepEqual(<span class="k">await</span> res.json(), { error: <span class="s">"Product not found"</span> });
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npm test</pre></div><div class="out"><span>Terminal output</span><pre>
+&gt; api-live@1.0.0 test
+&gt; node --test --test-reporter=spec
+
+▶ products CRUD
+  ✔ POST creates a product (201, Location, body)
+  ✔ GET returns what was created
+  ✔ PATCH changes one field and keeps the rest
+  ✔ search finds it, case insensitive
+  ✔ DELETE removes it, then GET is 404
+✔ products CRUD
+ℹ tests 5
+ℹ suites 1
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 245.1</pre></div></div>
+<p>The tests run in order and share <code>created</code>, so together they cover the whole life of one product: Create, Read, Update and Delete, also called <b>CRUD</b>. Checking the GET after the DELETE proves the delete really happened, which the 204 alone does not.</p>
+<div class="warn">Tests that depend on each other stop at the first failure and cannot run alone. Use this style for one flow on purpose. For everything else, each test creates its own data.</div>
+</section>
+<section class="card reveal jsec qa-part" id="schema" data-say="schema"><div class="sec-num">Part 3</div><h2><span class="sec-em">📐</span><span>Checking the shape with JSON Schema</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Ajv</span><span class="qa-tool">Jest</span><span class="qa-tool">Playwright</span><span class="qa-why">Schema checks catch breaking API changes that value checks miss.</span></div>
+<p>Checking every field by hand gets long, and it misses fields you did not think of. A <b>JSON Schema</b> describes the allowed shape once: required fields, types, ranges and whether extra fields are allowed. <b>Ajv</b> checks a response against it in one call and lists every problem.</p>
+<div class="codewrap" data-k="schema"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Validate a response with JSON Schema · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> <span class="t">Ajv</span> <span class="k">from</span> <span class="s">"ajv"</span>;
+
+<span class="k">const</span> productSchema = {
+  type: <span class="s">"object"</span>,
+  required: [<span class="s">"id"</span>, <span class="s">"name"</span>, <span class="s">"price"</span>, <span class="s">"stock"</span>],
+  additionalProperties: <span class="k">false</span>,
+  properties: {
+    id: { type: <span class="s">"integer"</span>, minimum: <span class="n">1</span> },
+    name: { type: <span class="s">"string"</span>, minLength: <span class="n">1</span>, maxLength: <span class="n">120</span> },
+    price: { type: <span class="s">"number"</span>, exclusiveMinimum: <span class="n">0</span> },
+    stock: { type: <span class="s">"integer"</span>, minimum: <span class="n">0</span> },
+  },
+};
+<span class="k">const</span> listSchema = {
+  type: <span class="s">"object"</span>,
+  required: [<span class="s">"items"</span>, <span class="s">"total"</span>],
+  properties: { items: { type: <span class="s">"array"</span>, items: productSchema }, total: { type: <span class="s">"integer"</span> } },
+};
+
+<span class="k">const</span> ajv = <span class="k">new</span> <span class="t">Ajv</span>({ allErrors: <span class="k">true</span> });
+<span class="k">const</span> validateList = ajv.compile(listSchema);
+
+<span class="k">const</span> today = { items: [{ id: <span class="n">1</span>, name: <span class="s">"Gel pen"</span>, price: <span class="n">20</span>, stock: <span class="n">100</span> }], total: <span class="n">1</span> };
+console.log(<span class="s">"today:"</span>, validateList(today));
+
+<span class="c">// A backend change: price became a string, stock was renamed, and a field was added</span>
+<span class="k">const</span> afterRelease = { items: [{ id: <span class="n">1</span>, name: <span class="s">"Gel pen"</span>, price: <span class="s">"20.00"</span>, qty: <span class="n">100</span>, internalCost: <span class="n">7</span> }], total: <span class="n">1</span> };
+console.log(<span class="s">"after release:"</span>, validateList(afterRelease));
+<span class="k">for</span> (<span class="k">const</span> e <span class="k">of</span> validateList.errors) console.log(<span class="s">" "</span>, e.instancePath || <span class="s">"(root)"</span>, e.message, e.params.additionalProperty ?? e.params.missingProperty ?? <span class="s">""</span>);</pre><div class="out"><span>Output</span><pre>today: true
+after release: false
+  /items/0 must have required property &#x27;stock&#x27; stock
+  /items/0 must NOT have additional properties qty
+  /items/0 must NOT have additional properties internalCost
+  /items/0/price must be number</pre></div></div>
+<p>This kind of check, the response still matches what clients expect, is a simple <b>contract test</b>. It catches a renamed field or a number turned into a string before the mobile app crashes on it. OpenAPI files already contain these schemas, so many teams generate them instead of writing them by hand.</p>
+</section>
+<section class="card reveal jsec qa-part" id="negative" data-say="negative"><div class="sec-num">Part 4</div><h2><span class="sec-em">🚫</span><span>Negative, boundary and data driven tests</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Vitest</span><span class="qa-tool">supertest</span><span class="qa-why">Input validation is where APIs most often fail, and these tests are cheap to write as tables.</span></div>
+<p>Most API bugs hide in input the developer did not expect. <b>Negative tests</b> send wrong data on purpose and check that it is refused with a clear 400, not saved and not answered with a 500. A table of cases with <code>it.each</code> keeps dozens of them readable.</p>
+<div class="codewrap tests" data-k="negative"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Negative and boundary tests, data driven · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 test/validation.test.js</div><pre class="src" data-file="test/validation.test.js"><span class="k">import</span> { describe, it, expect } <span class="k">from</span> <span class="s">"vitest"</span>;
+<span class="k">import</span> request <span class="k">from</span> <span class="s">"supertest"</span>;
+<span class="k">import</span> { createShopApi } <span class="k">from</span> <span class="s">"../src/shop-api.js"</span>;
+
+<span class="k">const</span> app = createShopApi();
+
+describe(<span class="s">"POST /api/products rejects bad input with 400"</span>, () =&gt; {
+  it.each([
+    [<span class="s">"no body"</span>, <span class="k">undefined</span>, <span class="s">"name is required"</span>],
+    [<span class="s">"empty name"</span>, { name: <span class="s">" "</span>, price: <span class="n">10</span> }, <span class="s">"name is required"</span>],
+    [<span class="s">"price as text"</span>, { name: <span class="s">"Pen"</span>, price: <span class="s">"10"</span> }, <span class="s">"price must be a positive number"</span>],
+    [<span class="s">"zero price"</span>, { name: <span class="s">"Pen"</span>, price: <span class="n">0</span> }, <span class="s">"price must be a positive number"</span>],
+    [<span class="s">"negative stock"</span>, { name: <span class="s">"Pen"</span>, price: <span class="n">10</span>, stock: -<span class="n">1</span> }, <span class="s">"stock must be a whole number, 0 or more"</span>],
+    [<span class="s">"decimal stock"</span>, { name: <span class="s">"Pen"</span>, price: <span class="n">10</span>, stock: <span class="n">1.5</span> }, <span class="s">"stock must be a whole number, 0 or more"</span>],
+  ])(<span class="s">"%s"</span>, <span class="k">async</span> (_, body, problem) =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> request(app).post(<span class="s">"/api/products"</span>).send(body);
+    expect(res.status).toBe(<span class="n">400</span>);
+    expect(res.body.problems).toContain(problem);
+  });
+
+  it(<span class="s">"lists every problem at once"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> request(app).post(<span class="s">"/api/products"</span>).send({ price: -<span class="n">1</span>, stock: <span class="s">"a"</span> });
+    expect(res.body.problems).toHaveLength(<span class="n">3</span>);
+  });
+});
+
+describe(<span class="s">"boundaries and odd input"</span>, () =&gt; {
+  it(<span class="s">"accepts the smallest positive price"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> request(app).post(<span class="s">"/api/products"</span>).send({ name: <span class="s">"Sticker"</span>, price: <span class="n">0.01</span> }).expect(<span class="n">201</span>);
+  });
+
+  it(<span class="s">"ignores an id sent by the client"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> request(app).post(<span class="s">"/api/products"</span>).send({ id: <span class="n">1</span>, name: <span class="s">"Clip"</span>, price: <span class="n">2</span> }).expect(<span class="n">201</span>);
+    expect(res.body.id).not.toBe(<span class="n">1</span>);
+  });
+
+  it(<span class="s">"handles broken JSON with a 400, not a crash"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> request(app).post(<span class="s">"/api/products"</span>).<span class="k">set</span>(<span class="s">"Content-Type"</span>, <span class="s">"application/json"</span>).send(<span class="s">"{ name: "</span>).expect(<span class="n">400</span>);
+  });
+
+  it(<span class="s">"returns 404 JSON for an id that is not a number"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> request(app).<span class="k">get</span>(<span class="s">"/api/products/abc"</span>).expect(<span class="n">404</span>).expect(<span class="s">"Content-Type"</span>, /json/);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx vitest run --reporter=verbose</pre></div><div class="out"><span>Terminal output</span><pre>
+ RUN  v5.0.5 project
+
+ ✓ test/validation.test.js &gt; POST /api/products rejects bad input with 400 &gt; no body
+ ✓ test/validation.test.js &gt; POST /api/products rejects bad input with 400 &gt; empty name
+ ✓ test/validation.test.js &gt; POST /api/products rejects bad input with 400 &gt; price as text
+ ✓ test/validation.test.js &gt; POST /api/products rejects bad input with 400 &gt; zero price
+ ✓ test/validation.test.js &gt; POST /api/products rejects bad input with 400 &gt; negative stock
+ ✓ test/validation.test.js &gt; POST /api/products rejects bad input with 400 &gt; decimal stock
+ ✓ test/validation.test.js &gt; POST /api/products rejects bad input with 400 &gt; lists every problem at once
+ ✓ test/validation.test.js &gt; boundaries and odd input &gt; accepts the smallest positive price
+ ✓ test/validation.test.js &gt; boundaries and odd input &gt; ignores an id sent by the client
+ ✓ test/validation.test.js &gt; boundaries and odd input &gt; handles broken JSON with a 400, not a crash
+ ✓ test/validation.test.js &gt; boundaries and odd input &gt; returns 404 JSON for an id that is not a number
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  09:00:00
+   Duration  540ms</pre></div></div>
+<div class="qa-box">Ideas for every field: missing, null, empty, only spaces, wrong type ("10" for 10), zero, negative, decimals where whole numbers are expected, very long text, unicode and emoji, and the exact limits plus one each side. For the whole request: no body, broken JSON, an extra id the client should not control, and the wrong Content-Type.</div>
+</section>
+<section class="card reveal jsec qa-part" id="auth" data-say="auth"><div class="sec-num">Part 5</div><h2><span class="sec-em">🔐</span><span>Authentication, state and conflicts</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">supertest</span><span class="qa-why">Auth checks and state changes are where API bugs are most costly.</span></div>
+<p>Real APIs need a login and change data as they go. Log in once in <code>beforeAll</code>, keep the token, and send it with each request. Then check not only the answer but also its effect, such as the stock that went down, and the conflicts that follow, such as ordering more than is left.</p>
+<div class="codewrap tests" data-k="auth"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Auth, state changes and conflicts with Jest and supertest · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 jest.config.js</div><pre class="src" data-file="jest.config.js"><span class="k">export</span> <span class="k">default</span> { transform: {} };   <span class="c">// run ES modules as they are, no Babel</span></pre><div class="fname">📄 test/orders.test.js</div><pre class="src" data-file="test/orders.test.js"><span class="k">import</span> { describe, test, expect, beforeAll } <span class="k">from</span> <span class="s">"@jest/globals"</span>;
+<span class="k">import</span> request <span class="k">from</span> <span class="s">"supertest"</span>;
+<span class="k">import</span> { createShopApi } <span class="k">from</span> <span class="s">"../src/shop-api.js"</span>;
+
+<span class="k">const</span> app = createShopApi();
+<span class="k">let</span> token;
+
+beforeAll(<span class="k">async</span> () =&gt; {
+  <span class="k">const</span> res = <span class="k">await</span> request(app).post(<span class="s">"/api/login"</span>).send({ email: <span class="s">"asha@shop.example"</span>, password: <span class="s">"s3cret"</span> }).expect(<span class="n">200</span>);
+  token = res.body.token;
+});
+
+describe(<span class="s">"authentication"</span>, () =&gt; {
+  test(<span class="s">"wrong password is 401"</span>, () =&gt;
+    request(app).post(<span class="s">"/api/login"</span>).send({ email: <span class="s">"asha@shop.example"</span>, password: <span class="s">"nope"</span> }).expect(<span class="n">401</span>));
+
+  test(<span class="s">"no token is 401"</span>, () =&gt; request(app).post(<span class="s">"/api/orders"</span>).send({ items: [] }).expect(<span class="n">401</span>));
+
+  test(<span class="s">"a made up token is 401"</span>, () =&gt;
+    request(app).post(<span class="s">"/api/orders"</span>).<span class="k">set</span>(<span class="s">"Authorization"</span>, <span class="s">"Bearer not-a-real-token"</span>).send({ items: [] }).expect(<span class="n">401</span>));
+});
+
+describe(<span class="s">"orders"</span>, () =&gt; {
+  test(<span class="s">"placing an order lowers the stock"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> order = <span class="k">await</span> request(app).post(<span class="s">"/api/orders"</span>).auth(token, { type: <span class="s">"bearer"</span> })
+      .send({ items: [{ productId: <span class="n">2</span>, qty: <span class="n">2</span> }] }).expect(<span class="n">201</span>);
+    expect(order.body).toMatchObject({ total: <span class="n">398</span>, status: <span class="s">"placed"</span> });
+    <span class="k">const</span> mug = <span class="k">await</span> request(app).<span class="k">get</span>(<span class="s">"/api/products/2"</span>);
+    expect(mug.body.stock).toBe(<span class="n">1</span>);
+  });
+
+  test(<span class="s">"ordering more than the stock is 409"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> request(app).post(<span class="s">"/api/orders"</span>).auth(token, { type: <span class="s">"bearer"</span> })
+      .send({ items: [{ productId: <span class="n">2</span>, qty: <span class="n">5</span> }] }).expect(<span class="n">409</span>);
+    expect(res.body.error).toBe(<span class="s">"Only 1 left of Coffee mug"</span>);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ NODE_OPTIONS=--experimental-vm-modules npx jest --verbose</pre></div><div class="out"><span>Terminal output</span><pre>PASS test/orders.test.js
+  authentication
+    ✓ wrong password is 401
+    ✓ no token is 401
+    ✓ a made up token is 401
+  orders
+    ✓ placing an order lowers the stock
+    ✓ ordering more than the stock is 409
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        0.92 s
+Ran all test suites.</pre></div></div>
+<div class="tip">supertest's <code>.auth(token, { type: "bearer" })</code> sets the Authorization header for you. The same suite can point at a deployed server by passing a URL string instead of the app: <code>request("https://staging.shop.example")</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="playwright" data-say="playwright"><div class="sec-num">Part 6</div><h2><span class="sec-em">🎭</span><span>API testing with Playwright</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">Postman</span><span class="qa-why">Most Playwright suites mix API calls into UI tests for setup and checks, and some teams run their whole API suite in it.</span></div>
+<p>Playwright is known for browsers, but its <code>request</code> fixture is also a complete API client. It shares the base URL and config with UI tests, and its <b>webServer</b> option starts the app before the tests and stops it afterwards. UI tests often use it to create data through the API before opening the page.</p>
+<div class="codewrap tests" data-k="playwright-api"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">API tests with Playwright, which starts the server itself · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">"tests"</span>,
+  reporter: <span class="s">"list"</span>,
+  workers: <span class="n">1</span>,
+  use: { baseURL: <span class="s">"http://127.0.0.1:3917"</span>, extraHTTPHeaders: { <span class="t">Accept</span>: <span class="s">"application/json"</span> } },
+  webServer: {                                   <span class="c">// Playwright starts the API and waits for it</span>
+    command: <span class="s">"node src/server.js"</span>,
+    url: <span class="s">"http://127.0.0.1:3917/api/products"</span>,
+    env: { <span class="t">PORT</span>: <span class="s">"3917"</span> },
+    reuseExistingServer: !process.env.<span class="t">CI</span>,
+  },
+});</pre><div class="fname">📄 tests/shop.api.spec.js</div><pre class="src" data-file="tests/shop.api.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+
+test.describe(<span class="s">"shop API"</span>, () =&gt; {
+  <span class="k">let</span> token;
+
+  test.beforeAll(<span class="k">async</span> ({ request }) =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> request.post(<span class="s">"/api/login"</span>, { data: { email: <span class="s">"asha@shop.example"</span>, password: <span class="s">"s3cret"</span> } });
+    expect(res.ok()).toBeTruthy();
+    token = (<span class="k">await</span> res.json()).token;
+  });
+
+  test(<span class="s">"lists products with a cache header"</span>, <span class="k">async</span> ({ request }) =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> request.<span class="k">get</span>(<span class="s">"/api/products"</span>);
+    expect(res.status()).toBe(<span class="n">200</span>);
+    expect(res.headers()[<span class="s">"cache-control"</span>]).toBe(<span class="s">"max-age=60"</span>);
+    <span class="k">const</span> body = <span class="k">await</span> res.json();
+    expect(body.total).toBe(body.items.length);
+    expect(body.items).toContainEqual(expect.objectContaining({ name: <span class="s">"Gel pen"</span> }));
+  });
+
+  test(<span class="s">"a customer cannot read another customer's order"</span>, <span class="k">async</span> ({ request }) =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> request.<span class="k">get</span>(<span class="s">"/api/orders/9999"</span>, { headers: { <span class="t">Authorization</span>: <span class="s">`Bearer ${token}`</span> } });
+    expect(res.status()).toBe(<span class="n">404</span>);
+  });
+
+  test(<span class="s">"place an order and read it back"</span>, <span class="k">async</span> ({ request }) =&gt; {
+    <span class="k">const</span> headers = { <span class="t">Authorization</span>: <span class="s">`Bearer ${token}`</span> };
+    <span class="k">const</span> created = <span class="k">await</span> request.post(<span class="s">"/api/orders"</span>, { headers, data: { items: [{ productId: <span class="n">1</span>, qty: <span class="n">3</span> }] } });
+    expect(created.status()).toBe(<span class="n">201</span>);
+    <span class="k">const</span> order = <span class="k">await</span> created.json();
+    <span class="k">const</span> again = <span class="k">await</span> request.<span class="k">get</span>(<span class="s">`/api/orders/${order.id}`</span>, { headers });
+    <span class="k">await</span> expect(again).toBeOK();
+    expect(<span class="k">await</span> again.json()).toEqual(order);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>
+Running 3 tests using 1 worker
+
+  ✓  1 tests/shop.api.spec.js:16:3 › shop API › lists products with a cache header
+  ✓  2 tests/shop.api.spec.js:28:3 › shop API › a customer cannot read another customer&#x27;s order
+  ✓  3 tests/shop.api.spec.js:38:3 › shop API › place an order and read it back
+
+  3 passed</pre></div></div>
+<p>The second test checks access to another customer's order. This API answers 404 rather than 403, so it does not even admit the order exists, which is a common and good choice.</p>
+<div class="codewrap" data-k="other-tools"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same ideas in Cypress, Newman and k6 · Reference</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Cypress: cy.request in a spec file</span>
+it(<span class="s">"creates a product"</span>, () =&gt; {
+  cy.request(<span class="s">"POST"</span>, <span class="s">"/api/products"</span>, { name: <span class="s">"Pen"</span>, price: <span class="n">10</span> }).then(res =&gt; {
+    expect(res.status).to.eq(<span class="n">201</span>);
+    expect(res.body).to.have.property(<span class="s">"id"</span>);
+  });
+});
+
+<span class="c">// Postman collections from the command line, for example in CI</span>
+<span class="c">// npx newman run shop.postman_collection.json -e staging.postman_environment.json --reporters cli,junit</span>
+
+<span class="c">// k6 load tests are also written in JavaScript</span>
+<span class="c">// import http from "k6/http";</span>
+<span class="c">// export const options = { vus: 50, duration: "1m", thresholds: { http_req_duration: ["p(95)&lt;300"] } };</span>
+<span class="c">// export default () =&gt; http.get("https://staging.shop.example/api/products");</span></pre></div>
+</section>
+<section class="card reveal jsec qa-part" id="performance" data-say="performance"><div class="sec-num">Part 7</div><h2><span class="sec-em">⏱️</span><span>Response times</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">k6</span><span class="qa-why">Response time checks catch slow endpoints before users do.</span></div>
+<p>A correct answer that takes five seconds is still a bug. Measure each request and look at <b>percentiles</b>, not the average: p95 is the time under which 95% of requests finish. One very slow request barely moves the average but is exactly what a user notices.</p>
+<div class="codewrap" data-k="timing"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Response times and percentiles · ▶ Runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 shop-api.mjs</div><pre class="src" data-file="shop-api.mjs"><span class="k">import</span> express <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import</span> { randomUUID } <span class="k">from</span> <span class="s">"node:crypto"</span>;
+
+<span class="k">export</span> <span class="k">function</span> createShopApi() {
+  <span class="k">const</span> app = express();
+  app.use(express.json());
+  <span class="k">const</span> users = <span class="k">new</span> <span class="t">Map</span>([[<span class="s">"asha@shop.example"</span>, { id: <span class="n">1</span>, email: <span class="s">"asha@shop.example"</span>, password: <span class="s">"s3cret"</span>, role: <span class="s">"customer"</span> }]]);
+  <span class="k">const</span> sessions = <span class="k">new</span> <span class="t">Map</span>();
+  <span class="k">const</span> products = <span class="k">new</span> <span class="t">Map</span>([
+    [<span class="n">1</span>, { id: <span class="n">1</span>, name: <span class="s">"Gel pen"</span>, price: <span class="n">20</span>, stock: <span class="n">100</span> }],
+    [<span class="n">2</span>, { id: <span class="n">2</span>, name: <span class="s">"Coffee mug"</span>, price: <span class="n">199</span>, stock: <span class="n">3</span> }],
+  ]);
+  <span class="k">const</span> orders = <span class="k">new</span> <span class="t">Map</span>();
+  <span class="k">let</span> nextProduct = <span class="n">3</span>, nextOrder = <span class="n">1001</span>;
+
+  <span class="k">const</span> auth = (req, res, next) =&gt; {
+    <span class="k">const</span> user = sessions.<span class="k">get</span>(req.<span class="k">get</span>(<span class="s">"authorization"</span>)?.replace(/^<span class="t">Bearer</span> /, <span class="s">""</span>));
+    <span class="k">if</span> (!user) <span class="k">return</span> res.status(<span class="n">401</span>).json({ error: <span class="s">"Log in first"</span> });
+    req.user = user;
+    next();
+  };
+
+  app.post(<span class="s">"/api/login"</span>, (req, res) =&gt; {
+    <span class="k">const</span> user = users.<span class="k">get</span>(req.body?.email);
+    <span class="k">if</span> (!user || user.password !== req.body.password) <span class="k">return</span> res.status(<span class="n">401</span>).json({ error: <span class="s">"Invalid credentials"</span> });
+    <span class="k">const</span> token = randomUUID();
+    sessions.<span class="k">set</span>(token, user);
+    res.json({ token, user: { id: user.id, email: user.email } });
+  });
+
+  app.<span class="k">get</span>(<span class="s">"/api/products"</span>, (req, res) =&gt; {
+    <span class="k">let</span> list = [...products.values()];
+    <span class="k">if</span> (req.query.q) list = list.filter(p =&gt; p.name.toLowerCase().includes(<span class="t">String</span>(req.query.q).toLowerCase()));
+    res.<span class="k">set</span>(<span class="s">"Cache-Control"</span>, <span class="s">"max-age=60"</span>).json({ items: list, total: list.length });
+  });
+  app.<span class="k">get</span>(<span class="s">"/api/products/:id"</span>, (req, res) =&gt; {
+    <span class="k">const</span> p = products.<span class="k">get</span>(<span class="t">Number</span>(req.params.id));
+    p ? res.json(p) : res.status(<span class="n">404</span>).json({ error: <span class="s">"Product not found"</span> });
+  });
+  app.post(<span class="s">"/api/products"</span>, (req, res) =&gt; {
+    <span class="k">const</span> { name, price, stock = <span class="n">0</span> } = req.body ?? {};
+    <span class="k">const</span> problems = [];
+    <span class="k">if</span> (<span class="k">typeof</span> name !== <span class="s">"string"</span> || !name.trim()) problems.push(<span class="s">"name is required"</span>);
+    <span class="k">if</span> (<span class="k">typeof</span> price !== <span class="s">"number"</span> || !(price &gt; <span class="n">0</span>)) problems.push(<span class="s">"price must be a positive number"</span>);
+    <span class="k">if</span> (!<span class="t">Number</span>.isInteger(stock) || stock &lt; <span class="n">0</span>) problems.push(<span class="s">"stock must be a whole number, 0 or more"</span>);
+    <span class="k">if</span> (problems.length) <span class="k">return</span> res.status(<span class="n">400</span>).json({ error: <span class="s">"Validation failed"</span>, problems });
+    <span class="k">const</span> p = { id: nextProduct++, name: name.trim(), price, stock };
+    products.<span class="k">set</span>(p.id, p);
+    res.status(<span class="n">201</span>).location(<span class="s">`/api/products/${p.id}`</span>).json(p);
+  });
+  app.patch(<span class="s">"/api/products/:id"</span>, (req, res) =&gt; {
+    <span class="k">const</span> p = products.<span class="k">get</span>(<span class="t">Number</span>(req.params.id));
+    <span class="k">if</span> (!p) <span class="k">return</span> res.status(<span class="n">404</span>).json({ error: <span class="s">"Product not found"</span> });
+    <span class="k">if</span> (<span class="s">"price"</span> <span class="k">in</span> req.body &amp;&amp; !(req.body.price &gt; <span class="n">0</span>)) <span class="k">return</span> res.status(<span class="n">400</span>).json({ error: <span class="s">"Validation failed"</span>, problems: [<span class="s">"price must be a positive number"</span>] });
+    <span class="t">Object</span>.assign(p, req.body, { id: p.id });
+    res.json(p);
+  });
+  app.<span class="k">delete</span>(<span class="s">"/api/products/:id"</span>, (req, res) =&gt; {
+    products.<span class="k">delete</span>(<span class="t">Number</span>(req.params.id)) ? res.sendStatus(<span class="n">204</span>) : res.status(<span class="n">404</span>).json({ error: <span class="s">"Product not found"</span> });
+  });
+
+  app.post(<span class="s">"/api/orders"</span>, auth, (req, res) =&gt; {
+    <span class="k">const</span> lines = req.body?.items ?? [];
+    <span class="k">for</span> (<span class="k">const</span> { productId, qty } <span class="k">of</span> lines) {
+      <span class="k">const</span> p = products.<span class="k">get</span>(productId);
+      <span class="k">if</span> (!p) <span class="k">return</span> res.status(<span class="n">400</span>).json({ error: <span class="s">`Unknown product ${productId}`</span> });
+      <span class="k">if</span> (qty &gt; p.stock) <span class="k">return</span> res.status(<span class="n">409</span>).json({ error: <span class="s">`Only ${p.stock} left of ${p.name}`</span> });
+    }
+    <span class="k">for</span> (<span class="k">const</span> { productId, qty } <span class="k">of</span> lines) products.<span class="k">get</span>(productId).stock -= qty;
+    <span class="k">const</span> total = lines.reduce((s, l) =&gt; s + products.<span class="k">get</span>(l.productId).price * l.qty, <span class="n">0</span>);
+    <span class="k">const</span> order = { id: nextOrder++, userId: req.user.id, items: lines, total, status: <span class="s">"placed"</span> };
+    orders.<span class="k">set</span>(order.id, order);
+    res.status(<span class="n">201</span>).json(order);
+  });
+  app.<span class="k">get</span>(<span class="s">"/api/orders/:id"</span>, auth, (req, res) =&gt; {
+    <span class="k">const</span> o = orders.<span class="k">get</span>(<span class="t">Number</span>(req.params.id));
+    <span class="k">if</span> (!o) <span class="k">return</span> res.status(<span class="n">404</span>).json({ error: <span class="s">"Order not found"</span> });
+    <span class="k">if</span> (o.userId !== req.user.id) <span class="k">return</span> res.status(<span class="n">403</span>).json({ error: <span class="s">"Not your order"</span> });
+    res.json(o);
+  });
+  <span class="k">return</span> app;
+}</pre><div class="fname">📄 main.mjs</div><pre class="src main"><span class="k">import</span> { createShopApi } <span class="k">from</span> <span class="s">"./shop-api.mjs"</span>;
+
+<span class="k">const</span> server = createShopApi().listen(<span class="n">0</span>);
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; server.once(<span class="s">"listening"</span>, r));
+<span class="k">const</span> url = <span class="s">`http://127.0.0.1:${server.address().port}/api/products?q=pen`</span>;
+
+<span class="k">async</span> <span class="k">function</span> timed() {
+  <span class="k">const</span> t = performance.now();
+  <span class="k">const</span> res = <span class="k">await</span> fetch(url);
+  <span class="k">await</span> res.arrayBuffer();
+  <span class="k">return</span> { ms: performance.now() - t, status: res.status };
+}
+
+<span class="c">// 200 requests, 20 at a time</span>
+<span class="k">const</span> results = [];
+<span class="k">for</span> (<span class="k">let</span> batch = <span class="n">0</span>; batch &lt; <span class="n">10</span>; batch++) {
+  results.push(...<span class="k">await</span> <span class="t">Promise</span>.all(<span class="t">Array</span>.<span class="k">from</span>({ length: <span class="n">20</span> }, timed)));
+}
+<span class="k">const</span> times = results.map(r =&gt; r.ms).sort((a, b) =&gt; a - b);
+<span class="k">const</span> pct = p =&gt; times[<span class="t">Math</span>.ceil((p / <span class="n">100</span>) * times.length) - <span class="n">1</span>];
+
+console.log(<span class="s">"requests:"</span>, results.length, <span class="s">"| errors:"</span>, results.filter(r =&gt; r.status !== <span class="n">200</span>).length);
+console.log(<span class="s">"p50 under 50 ms:"</span>, pct(<span class="n">50</span>) &lt; <span class="n">50</span>, <span class="s">"| p95 under 200 ms:"</span>, pct(<span class="n">95</span>) &lt; <span class="n">200</span>);
+console.log(<span class="s">"slowest is the max:"</span>, <span class="t">Math</span>.max(...times) === times.at(-<span class="n">1</span>));
+server.close();</pre><div class="cmd"><span>Terminal</span><pre>$ node main.mjs</pre></div><div class="out"><span>Output</span><pre>requests: 200 | errors: 0
+p50 under 50 ms: true | p95 under 200 ms: true
+slowest is the max: true</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Number</th><th>Meaning</th></tr>
+<tr><td>p50 (median)</td><td>a typical request</td></tr>
+<tr><td>p95, p99</td><td>the slow tail that real users hit every day</td></tr>
+<tr><td>error rate</td><td>failed requests divided by all requests</td></tr>
+<tr><td>throughput</td><td>requests handled per second</td></tr>
+</table></div>
+<div class="warn">Times measured on a laptop or a shared CI machine vary a lot. Use generous limits in functional suites to catch big slowdowns, and leave real load testing to tools such as k6 against a production like environment.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 8</div><h2><span class="sec-em">🎬</span><span>Real world scenario: buying the last two mugs</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>Customers complain that sold out items can still be ordered. You must test the whole flow: add a product with two in stock, log in, order both, confirm the stock is 0, confirm a second order is refused, read the order back, and leave no test data behind.</div>
+<div class="codewrap tests" data-k="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An end to end API flow with steps · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 test/order-flow.test.js</div><pre class="src" data-file="test/order-flow.test.js"><span class="k">import</span> { test, before, after } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> { createShopApi } <span class="k">from</span> <span class="s">"../src/shop-api.js"</span>;
+
+<span class="k">let</span> server, api;
+before(<span class="k">async</span> () =&gt; {
+  server = createShopApi().listen(<span class="n">0</span>);
+  <span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; server.once(<span class="s">"listening"</span>, r));
+  <span class="k">const</span> base = <span class="s">`http://127.0.0.1:${server.address().port}/api`</span>;
+  <span class="c">// A tiny client: JSON in, JSON out, the token added when we have one</span>
+  <span class="k">let</span> token;
+  api = <span class="k">async</span> (method, path, body) =&gt; {
+    <span class="k">const</span> res = <span class="k">await</span> fetch(base + path, {
+      method,
+      headers: { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span>, ...(token &amp;&amp; { <span class="t">Authorization</span>: <span class="s">`Bearer ${token}`</span> }) },
+      body: body &amp;&amp; <span class="t">JSON</span>.stringify(body),
+    });
+    <span class="k">const</span> data = res.status === <span class="n">204</span> ? <span class="k">null</span> : <span class="k">await</span> res.json();
+    <span class="k">if</span> (path === <span class="s">"/login"</span> &amp;&amp; res.ok) token = data.token;
+    <span class="k">return</span> { status: res.status, data };
+  };
+});
+after(() =&gt; server.close());
+
+test(<span class="s">"a customer buys the last two mugs"</span>, <span class="k">async</span> t =&gt; {
+  <span class="k">let</span> productId, orderId;
+
+  <span class="k">await</span> t.test(<span class="s">"admin adds stock: a new mug with 2 left"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> r = <span class="k">await</span> api(<span class="s">"POST"</span>, <span class="s">"/products"</span>, { name: <span class="s">"Blue mug"</span>, price: <span class="n">249</span>, stock: <span class="n">2</span> });
+    assert.equal(r.status, <span class="n">201</span>);
+    productId = r.data.id;
+  });
+
+  <span class="k">await</span> t.test(<span class="s">"customer logs in"</span>, <span class="k">async</span> () =&gt; {
+    assert.equal((<span class="k">await</span> api(<span class="s">"POST"</span>, <span class="s">"/login"</span>, { email: <span class="s">"asha@shop.example"</span>, password: <span class="s">"s3cret"</span> })).status, <span class="n">200</span>);
+  });
+
+  <span class="k">await</span> t.test(<span class="s">"orders both mugs"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> r = <span class="k">await</span> api(<span class="s">"POST"</span>, <span class="s">"/orders"</span>, { items: [{ productId, qty: <span class="n">2</span> }] });
+    assert.equal(r.status, <span class="n">201</span>);
+    assert.equal(r.data.total, <span class="n">498</span>);
+    orderId = r.data.id;
+  });
+
+  <span class="k">await</span> t.test(<span class="s">"stock is now 0"</span>, <span class="k">async</span> () =&gt; {
+    assert.equal((<span class="k">await</span> api(<span class="s">"GET"</span>, <span class="s">`/products/${productId}`</span>)).data.stock, <span class="n">0</span>);
+  });
+
+  <span class="k">await</span> t.test(<span class="s">"a second order for the same mug is refused with 409"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> r = <span class="k">await</span> api(<span class="s">"POST"</span>, <span class="s">"/orders"</span>, { items: [{ productId, qty: <span class="n">1</span> }] });
+    assert.equal(r.status, <span class="n">409</span>);
+    assert.equal(r.data.error, <span class="s">"Only 0 left of Blue mug"</span>);
+  });
+
+  <span class="k">await</span> t.test(<span class="s">"the order can be read back"</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">const</span> r = <span class="k">await</span> api(<span class="s">"GET"</span>, <span class="s">`/orders/${orderId}`</span>);
+    assert.deepEqual([r.status, r.data.status, r.data.items], [<span class="n">200</span>, <span class="s">"placed"</span>, [{ productId, qty: <span class="n">2</span> }]]);
+  });
+
+  <span class="k">await</span> t.test(<span class="s">"clean up the test product"</span>, <span class="k">async</span> () =&gt; {
+    assert.equal((<span class="k">await</span> api(<span class="s">"DELETE"</span>, <span class="s">`/products/${productId}`</span>)).status, <span class="n">204</span>);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npm test</pre></div><div class="out"><span>Terminal output</span><pre>
+&gt; order-flow@1.0.0 test
+&gt; node --test --test-reporter=spec
+
+▶ a customer buys the last two mugs
+  ✔ admin adds stock: a new mug with 2 left
+  ✔ customer logs in
+  ✔ orders both mugs
+  ✔ stock is now 0
+  ✔ a second order for the same mug is refused with 409
+  ✔ the order can be read back
+  ✔ clean up the test product
+✔ a customer buys the last two mugs
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 245.1</pre></div></div>
+<p>Subtests with <code>t.test</code> name each step, so a failure says exactly where the flow broke. The last step deletes the product the test created, so the shared environment stays clean for everyone else.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-unit-testing.html" data-topic="js-unit-testing"><small>← Previous chapter</small><b>🧪 Unit testing</b></a><span></span></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Ask the API, check every part of the answer", "panels": [{"s": [["e", "📨"], ["t", "POST /api/products", {"b": 1}]], "h": "Send", "t": "A real request to a running service.", "more": "fetch, supertest or Playwright request."}, {"s": [["e", "🔍"], ["t", "201 + Location + body", {"b": 1}]], "h": "Check", "t": "Status, headers, body and shape.", "more": "JSON Schema checks the shape in one go."}, {"s": [["e", "🚫"], ["t", "price: \"10\" → 400", {"b": 1}]], "h": "Break it", "t": "Wrong input must be refused clearly.", "more": "Tables of bad cases find most bugs."}, {"s": [["e", "🧹"], ["t", "DELETE what you made", {"b": 1}]], "h": "Clean up", "t": "Leave the environment as you found it.", "more": "Other people and tests share it."}], "remember": "Status, headers, body, shape, side effects, the bad cases, and clean up after yourself."}, "real": [["📱", "A mobile release saved", "A schema check failed when price turned into a string. The Android app would have crashed for every user on the old version."], ["🛍️", "Overselling", "An order flow test found that two quick orders could both buy the last item. The team added a database lock and the test now guards it."], ["⚡", "Fast feedback", "A team runs 900 API tests in 2 minutes on every pull request and keeps only 40 browser journeys."]], "quiz": [{"lv": "e", "q": "After a successful DELETE, which status do you usually expect?", "o": ["204", "200 with the deleted item", "201", "404"], "a": 0, "hint": "Nothing to return.", "why": "204 No Content. Then a GET should be 404."}, {"lv": "e", "q": "Why listen on port 0 in tests?", "o": ["The system picks a free port, so suites never clash", "Port 0 is faster", "It disables the network", "It is required by Express"], "a": 0, "hint": "Parallel runs.", "why": "A fixed port fails when another test or app already uses it."}, {"lv": "e", "q": "Which tool validates a response against a JSON Schema?", "o": ["Ajv", "nock", "Prettier", "jsdom"], "a": 0, "hint": "Another JSON validator.", "why": "Ajv compiles a schema into a fast validate function."}, {"lv": "m", "q": "POST with price \"10\" (a string) should return?", "o": ["400 with a clear message", "201", "500", "200"], "a": 0, "hint": "Wrong type.", "why": "The API must refuse it clearly rather than save or crash."}, {"lv": "m", "q": "Why GET after DELETE?", "o": ["To prove the item is really gone", "To warm the cache", "Because DELETE has no status", "To get a new token"], "a": 0, "hint": "Check the side effect.", "why": "A 204 only says the server claims success. The GET checks it."}, {"lv": "m", "q": "In Playwright, what does the webServer option do?", "o": ["Starts the app before tests and stops it after", "Mocks every request", "Opens a browser", "Deploys the app"], "a": 0, "hint": "Set up for you.", "why": "It runs the command and waits for the URL to answer."}, {"lv": "h", "q": "What does additionalProperties: false catch?", "o": ["New fields that are not in the schema, such as leaked internal data", "Missing required fields", "Wrong types", "Slow responses"], "a": 0, "hint": "Extra keys.", "why": "It flags anything not listed, for example an internalCost field that should never reach clients."}, {"lv": "h", "q": "Ordering 5 when 1 is left should return?", "o": ["409 Conflict", "400", "404", "201"], "a": 0, "hint": "The request is valid but clashes with the current state.", "why": "409 says the request conflicts with the state of the resource."}, {"lv": "h", "q": "100 requests: 99 take 20 ms and one takes 3,000 ms. Which number shows the problem best?", "o": ["p99 or the max", "the average", "p50", "the minimum"], "a": 0, "hint": "The tail.", "why": "The average is about 50 ms and hides it. The slow tail is what p99 and the max reveal."}, {"lv": "x", "q": "Why might an API answer 404 instead of 403 for someone else's order?", "o": ["So it does not reveal that the order exists", "Because 403 is deprecated", "Because the order really does not exist", "It is a bug"], "a": 0, "hint": "Information leaks.", "why": "Hiding existence stops attackers from guessing valid ids."}, {"lv": "x", "q": "Which is the best way to make API tests independent?", "o": ["Each test creates and removes its own data", "Run them in a fixed order", "Share one product between all tests", "Never delete anything"], "a": 0, "hint": "No hidden coupling.", "why": "Own data means a test can run alone, in parallel and in any order."}, {"lv": "x", "q": "supertest is given a URL string instead of the app. What changes?", "o": ["It sends real HTTP to that deployed server", "Nothing", "It mocks the server", "It starts the app"], "a": 0, "hint": "Same tests, other target.", "why": "request(\"https://staging...\") runs the suite against a deployed environment."}], "calc": [{"lv": "e", "q": "Two mugs at ₹199 each. What total should the order show?", "ans": "398", "hint": "Multiply.", "steps": ["<span class=\"eq\">2 × 199 = 398<\/span>"]}, {"lv": "e", "q": "Stock is 3 and an order takes 2. What should GET show for stock?", "ans": "1", "hint": "Subtract.", "steps": ["<span class=\"eq\">3 − 2 = 1<\/span>"]}, {"lv": "m", "q": "A field needs tests for missing, null, empty, wrong type and two boundaries each side of one limit. How many cases?", "ans": "6", "hint": "Count them.", "steps": ["missing, null, empty, wrong type: 4.", "just below and on the limit: 2.", "<span class=\"eq\">4 + 2 = 6<\/span>"]}, {"lv": "m", "q": "200 requests, 3 failed. What is the error rate in percent?", "ans": "1.5", "hint": "Failed over total.", "steps": ["<span class=\"eq\">3 ÷ 200 × 100 = 1.5<\/span>"]}, {"lv": "h", "q": "20 sorted response times. Which position (from 1) is p95?", "ans": "19", "hint": "Ceiling of 0.95 times the count.", "steps": ["<span class=\"eq\">⌈0.95 × 20⌉ = ⌈19⌉ = 19<\/span>"]}, {"lv": "h", "q": "900 API tests of 120 ms each, run with 4 parallel workers. About how many seconds?", "ans": "27", "hint": "Total time, then divide by workers.", "steps": ["<span class=\"eq\">900 × 0.12 = 108<\/span> s", "<span class=\"eq\">108 ÷ 4 = 27<\/span> s"]}, {"lv": "x", "q": "The schema check after the release found how many errors?", "ans": "4", "hint": "Read the output.", "steps": ["price is a string, stock is missing.", "qty and internalCost are extra fields.", "That is 4."]}, {"lv": "x", "q": "An endpoint allows 100 requests per minute per user. A test suite makes 450 calls as one user. At least how many minutes does it need?", "ans": "5", "hint": "Round up.", "steps": ["<span class=\"eq\">450 ÷ 100 = 4.5<\/span>", "You cannot use half a minute window, so 5."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter tests one shop API with fetch, supertest, Jest, Vitest and Playwright, from CRUD flows to schemas, bad input, auth and response times.", "hi": "यह अध्याय एक shop API को fetch, supertest, Jest, Vitest और Playwright से test करता है, CRUD से लेकर schema, गलत input, auth और response time तक।", "kn": "ಈ ಅಧ್ಯಾಯ ಒಂದು shop API ಅನ್ನು fetch, supertest, Jest, Vitest ಮತ್ತು Playwright ಮೂಲಕ test ಮಾಡುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ ଗୋଟିଏ shop API କୁ fetch, supertest, Jest, Vitest ଓ Playwright ରେ test କରେ।", "ar": "يختبر هذا الفصل واجهة متجر واحدة باستخدام fetch وsupertest وJest وVitest وPlaywright، من عمليات CRUD إلى المخططات والمدخلات الخاطئة والمصادقة وزمن الاستجابة.", "de": "Dieses Kapitel testet eine Shop-API mit fetch, supertest, Jest, Vitest und Playwright, von CRUD über Schemas bis zu Auth und Antwortzeiten."}, {"id": "what", "h": "What to check", "en": "Check the status, headers, body values, body shape, side effects, bad input, security and speed.", "hi": "Status, headers, body values, body shape, side effects, गलत input, security और speed जांचें।", "kn": "Status, headers, body values, body shape, side effects, ತಪ್ಪು input, security ಮತ್ತು speed ಪರಿಶೀಲಿಸಿ.", "or": "Status, headers, body values, body shape, side effects, ଭୁଲ input, security ଓ speed ଯାଞ୍ଚ କରନ୍ତୁ।", "ar": "افحص الحالة والترويسات وقيم الجسم وشكله والآثار الجانبية والمدخلات الخاطئة والأمان والسرعة.", "de": "Prüfe Status, Header, Werte, Struktur, Nebenwirkungen, falsche Eingaben, Sicherheit und Tempo."}, {"id": "live", "h": "CRUD flow", "en": "Start the server on a free port, then create, read, update and delete one product, checking the effect of each step.", "hi": "Server को खाली port पर शुरू करें, फिर एक product create, read, update और delete करें।", "kn": "Server ಅನ್ನು ಖಾಲಿ port ನಲ್ಲಿ ಆರಂಭಿಸಿ, ನಂತರ ಒಂದು product create, read, update, delete ಮಾಡಿ.", "or": "Server କୁ ଖାଲି port ରେ ଆରମ୍ଭ କରନ୍ତୁ, ତାପରେ ଗୋଟିଏ product create, read, update ଓ delete କରନ୍ତୁ।", "ar": "شغّل الخادم على منفذ حر، ثم أنشئ منتجًا واقرأه وعدّله واحذفه، مع فحص أثر كل خطوة.", "de": "Starte den Server auf einem freien Port, dann ein Produkt anlegen, lesen, ändern und löschen."}, {"id": "schema", "h": "JSON Schema", "en": "A JSON Schema describes the allowed shape once. Ajv lists every field that breaks it, which catches breaking changes early.", "hi": "JSON Schema allowed shape को एक बार बताता है। Ajv हर टूटे field को बताता है।", "kn": "JSON Schema ಅನುಮತಿಸಿದ shape ಅನ್ನು ಒಮ್ಮೆ ವಿವರಿಸುತ್ತದೆ. Ajv ಮುರಿದ ಪ್ರತಿ field ಪಟ್ಟಿ ಮಾಡುತ್ತದೆ.", "or": "JSON Schema ଅନୁମତି ପ୍ରାପ୍ତ shape କୁ ଥରେ ବର୍ଣ୍ଣନା କରେ। Ajv ପ୍ରତ୍ୟେକ ଭଙ୍ଗା field ତାଲିକା କରେ।", "ar": "يصف مخطط JSON الشكل المسموح مرة واحدة. ويعدد Ajv كل حقل يخالفه، فيكشف التغييرات الكاسرة مبكرًا.", "de": "Ein JSON Schema beschreibt die erlaubte Struktur einmal. Ajv listet jedes Feld, das sie verletzt."}, {"id": "negative", "h": "Negative tests", "en": "Send wrong input on purpose and expect a clear 400. A table of cases keeps dozens of them short.", "hi": "जानबूझकर गलत input भेजें और साफ 400 की उम्मीद करें। Cases की table उन्हें छोटा रखती है।", "kn": "ಉದ್ದೇಶಪೂರ್ವಕವಾಗಿ ತಪ್ಪು input ಕಳುಹಿಸಿ, ಸ್ಪಷ್ಟ 400 ನಿರೀಕ್ಷಿಸಿ. Cases table ಅವನ್ನು ಚಿಕ್ಕದಾಗಿಡುತ್ತದೆ.", "or": "ଜାଣିଶୁଣି ଭୁଲ input ପଠାନ୍ତୁ ଏବଂ ସ୍ପଷ୍ଟ 400 ଆଶା କରନ୍ତୁ। Cases ର table ସେଗୁଡ଼ିକୁ ଛୋଟ ରଖେ।", "ar": "أرسل مدخلات خاطئة عمدًا وتوقع 400 واضحة. يبقي جدول الحالات العشرات منها قصيرة.", "de": "Sende absichtlich falsche Eingaben und erwarte ein klares 400. Eine Tabelle hält Dutzende Fälle kurz."}, {"id": "auth", "h": "Auth and state", "en": "Log in once, send the token, and check the effect of each change, such as stock going down and a 409 when it runs out.", "hi": "एक बार login करें, token भेजें, और हर बदलाव का असर जांचें, जैसे stock कम होना और खत्म होने पर 409।", "kn": "ಒಮ್ಮೆ login ಮಾಡಿ, token ಕಳುಹಿಸಿ, ಪ್ರತಿ ಬದಲಾವಣೆಯ ಪರಿಣಾಮ ಪರಿಶೀಲಿಸಿ.", "or": "ଥରେ login କରନ୍ତୁ, token ପଠାନ୍ତୁ, ଏବଂ ପ୍ରତ୍ୟେକ ବଦଳର ପ୍ରଭାବ ଯାଞ୍ଚ କରନ୍ତୁ।", "ar": "سجّل الدخول مرة وأرسل الرمز، وافحص أثر كل تغيير مثل نقص المخزون و409 عند نفاده.", "de": "Einmal einloggen, das Token senden und die Wirkung jeder Änderung prüfen, etwa sinkenden Bestand."}, {"id": "playwright", "h": "Playwright API", "en": "Playwright request is a full API client, and its web server option starts the app before the tests run.", "hi": "Playwright request एक पूरा API client है, और web server option tests से पहले app शुरू करता है।", "kn": "Playwright request ಪೂರ್ಣ API client, web server option tests ಮೊದಲು app ಆರಂಭಿಸುತ್ತದೆ.", "or": "Playwright request ଏକ ପୂର୍ଣ୍ଣ API client, ଏବଂ web server option tests ପୂର୍ବରୁ app ଆରମ୍ଭ କରେ।", "ar": "طلبات Playwright عميل API كامل، وخيار خادم الويب يشغّل التطبيق قبل الاختبارات.", "de": "Playwright request ist ein voller API-Client, und webServer startet die App vor den Tests."}, {"id": "performance", "h": "Response times", "en": "Look at percentiles such as p95, not the average. Use generous limits in functional tests and real load tools for load.", "hi": "Average नहीं, p95 जैसे percentiles देखें। Functional tests में ढीली limits और load के लिए असली load tools इस्तेमाल करें।", "kn": "Average ಅಲ್ಲ, p95 ನಂತಹ percentiles ನೋಡಿ. Load ಗೆ ನಿಜವಾದ load tools ಬಳಸಿ.", "or": "Average ନୁହେଁ, p95 ପରି percentiles ଦେଖନ୍ତୁ। Load ପାଇଁ ଅସଲ load tools ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "انظر إلى المئينات مثل p95 لا إلى المتوسط. استخدم حدودًا مرنة في الاختبارات الوظيفية وأدوات حمل حقيقية للحمل.", "de": "Achte auf Perzentile wie p95, nicht auf den Durchschnitt. Für Last echte Lastwerkzeuge nutzen."}, {"id": "scenario", "h": "Scenario", "en": "Walk the whole flow in named steps: add stock, log in, order, check stock, refuse a second order, read back and clean up.", "hi": "पूरे flow को नाम वाले steps में चलाएं: stock जोड़ें, login, order, stock जांचें, दूसरा order मना, वापस पढ़ें और साफ करें।", "kn": "ಸಂಪೂರ್ಣ flow ಅನ್ನು ಹೆಸರಿನ steps ನಲ್ಲಿ ನಡೆಸಿ: stock, login, order, ಪರಿಶೀಲನೆ, ನಿರಾಕರಣೆ, clean up.", "or": "ସମ୍ପୂର୍ଣ୍ଣ flow କୁ ନାମିତ steps ରେ ଚଲାନ୍ତୁ: stock, login, order, ଯାଞ୍ଚ, ମନା, clean up।", "ar": "نفذ المسار كاملًا بخطوات مسماة: أضف مخزونًا، سجّل الدخول، اطلب، افحص، ارفض طلبًا ثانيًا، اقرأ ونظّف.", "de": "Den ganzen Ablauf in benannten Schritten: Bestand, Login, Bestellung, Prüfung, Ablehnung, Aufräumen."}, {"id": "practice", "h": "Hands-on", "en": "Practise a status and body check, a tiny schema validator, percentiles and finding fields that changed between two responses.", "hi": "Status और body check, छोटा schema validator, percentiles और दो responses के बीच बदले fields ढूंढने का अभ्यास करें।", "kn": "Status ಮತ್ತು body check, ಚಿಕ್ಕ schema validator, percentiles ಮತ್ತು ಬದಲಾದ fields ಹುಡುಕುವುದನ್ನು ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Status ଓ body check, ଛୋଟ schema validator, percentiles ଓ ବଦଳିଥିବା fields ଖୋଜିବା ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على فحص الحالة والجسم ومدقق مخطط صغير والمئينات وإيجاد الحقول التي تغيرت بين استجابتين.", "de": "Übe Status- und Body-Prüfung, einen kleinen Schema-Validator, Perzentile und geänderte Felder finden."}], "ex": [{"id": "check", "lv": "e", "title": "Check a response", "task": "<p>Write <code>checkResponse(res, expected)<\/code>. <code>res<\/code> is <code>{ status, headers, body }<\/code>. <code>expected<\/code> may have <code>status<\/code>, <code>contentType<\/code> (a substring of the content-type header) and <code>body<\/code> (fields that must be equal). Return a list of problem strings, empty when all is well.<\/p>", "starter": "function checkResponse(res, expected) {\n  \n}", "tests": [{"call": "checkResponse({ status: 201, headers: { \"content-type\": \"application/json\" }, body: { id: 3, name: \"Pen\" } }, { status: 201, contentType: \"json\", body: { name: \"Pen\" } })", "want": []}, {"call": "checkResponse({ status: 500, headers: { \"content-type\": \"text/html\" }, body: {} }, { status: 201, contentType: \"json\", body: { name: \"Pen\" } })", "want": ["status 500, expected 201", "content-type text/html, expected json", "body.name is undefined, expected \"Pen\""]}], "solution": "function checkResponse(res, expected) {\n  const problems = [];\n  if (expected.status && res.status !== expected.status) problems.push(`status ${res.status}, expected ${expected.status}`);\n  const type = res.headers[\"content-type\"] ?? \"\";\n  if (expected.contentType && !type.includes(expected.contentType)) problems.push(`content-type ${type}, expected ${expected.contentType}`);\n  for (const [k, v] of Object.entries(expected.body ?? {})) {\n    if (res.body[k] !== v) problems.push(`body.${k} is ${JSON.stringify(res.body[k])}, expected ${JSON.stringify(v)}`);\n  }\n  return problems;\n}", "hint": "Collect messages in an array instead of stopping at the first problem.", "why": "Reporting every problem at once saves a fix, rerun, fix cycle when an API changes."}, {"id": "schema-mini", "lv": "m", "title": "A tiny schema validator", "task": "<p>Write <code>validate(schema, value)<\/code> for schemas like <code>{ id: \"integer\", name: \"string\", price: \"number\", tags: \"array\" }<\/code>. Every key is required. Return a list of errors such as <code>\"price should be number\"<\/code> or <code>\"name is missing\"<\/code>, in the order of the schema.<\/p>", "starter": "function validate(schema, value) {\n  \n}", "tests": [{"call": "validate({ id: \"integer\", name: \"string\", price: \"number\" }, { id: 1, name: \"Pen\", price: 20 })", "want": []}, {"call": "validate({ id: \"integer\", name: \"string\", price: \"number\", tags: \"array\" }, { id: 1.5, price: \"20\", tags: {} })", "want": ["id should be integer", "name is missing", "price should be number", "tags should be array"]}], "solution": "function validate(schema, value) {\n  const errors = [];\n  const is = {\n    integer: v => Number.isInteger(v),\n    number: v => typeof v === \"number\",\n    string: v => typeof v === \"string\",\n    array: v => Array.isArray(v),\n  };\n  for (const [key, type] of Object.entries(schema)) {\n    if (!(key in value)) errors.push(`${key} is missing`);\n    else if (!is[type](value[key])) errors.push(`${key} should be ${type}`);\n  }\n  return errors;\n}", "hint": "A small object of type checking functions, one per type name, keeps it short.", "why": "Ajv does the same thing, with many more keywords and much faster compiled checks."}, {"id": "pct", "lv": "h", "title": "Percentiles", "task": "<p>Write <code>percentile(times, p)<\/code> using the nearest rank method: sort a copy of the times, then take the value at position <code>⌈p ÷ 100 × n⌉<\/code> counted from 1. An empty list gives <code>null<\/code>.<\/p>", "starter": "function percentile(times, p) {\n  \n}", "tests": [{"call": "percentile([30, 10, 20, 40, 50], 50)", "want": 30}, {"call": "percentile([5, 1, 9, 3, 7, 2, 8, 4, 6, 3000], 95)", "want": 3000}, {"call": "percentile([5, 1, 9, 3, 7, 2, 8, 4, 6, 3000], 90)", "want": 9}, {"call": "percentile([], 95)", "want": null}], "solution": "function percentile(times, p) {\n  if (!times.length) return null;\n  const sorted = times.toSorted((a, b) => a - b);\n  return sorted[Math.ceil((p / 100) * sorted.length) - 1];\n}", "hint": "Sort numbers with <code>(a, b) =&gt; a - b<\/code>, and subtract 1 to turn the rank into an index.", "why": "Note how p90 is 9 ms but p95 is 3,000 ms: one slow request decides the tail."}, {"id": "diff", "lv": "x", "title": "What changed in the response?", "task": "<p>Write <code>diffKeys(before, after)<\/code> comparing two flat objects. Return <code>{ added, removed, typeChanged }<\/code>, each a sorted list of key names. A key is in <code>typeChanged<\/code> when it exists in both but <code>typeof<\/code> differs.<\/p>", "starter": "function diffKeys(before, after) {\n  \n}", "tests": [{"call": "diffKeys({ id: 1, name: \"Pen\", price: 20, stock: 100 }, { id: 1, name: \"Pen\", price: \"20.00\", qty: 100, internalCost: 7 })", "want": {"added": ["internalCost", "qty"], "removed": ["stock"], "typeChanged": ["price"]}}, {"call": "diffKeys({ a: 1 }, { a: 2 })", "want": {"added": [], "removed": [], "typeChanged": []}}], "solution": "function diffKeys(before, after) {\n  const a = Object.keys(before), b = Object.keys(after);\n  return {\n    added: b.filter(k => !(k in before)).sort(),\n    removed: a.filter(k => !(k in after)).sort(),\n    typeChanged: a.filter(k => k in after && typeof before[k] !== typeof after[k]).sort(),\n  };\n}", "hint": "Three filters over the key lists.", "why": "Comparing a saved response from the last release with today's is a quick way to spot breaking changes, the same idea as the schema check."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Automated API Testing with JavaScript", subject: "javascript" });
+</script>
+</body>
+</html>

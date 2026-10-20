@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototypes, Classes and the Page Object Model · JavaScript</title>
+<meta name="description" content="Prototypes, constructor functions, classes, getters, static members, private fields, extends, super, custom errors, mixins, composition and the Page Object Model.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🏗️ Structure and tooling</span><span>›</span><span>Chapter 8 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🏛️</span><div><h1>Prototypes, Classes and the Page Object Model</h1><p class="lead">How objects borrow from prototypes, classes with fields, getters, static and private members, inheritance with extends and super, custom errors, composition, and the Page Object Model that most UI test frameworks are built on.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 17 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 12 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 4 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Page objects, API clients, test data builders and custom errors are all classes. This chapter is the base for the framework design in chapter 15.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#prototypes"><span>🧬</span>Objects and prototypes</a><a href="#classes" class="qa"><span>🏛️</span>Classes</a><a href="#private"><span>🔒</span>Private fields and encapsulation</a><a href="#inheritance" class="qa"><span>🌳</span>Inheritance with extends and super</a><a href="#composition"><span>🧩</span>Composition over inheritance</a><a href="#pom" class="qa"><span>📄</span>The Page Object Model</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: test data and an API client</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="prototypes" data-say="prototypes"><div class="sec-num">Part 1</div><h2><span class="sec-em">🧬</span><span>Objects and prototypes</span></h2>
+
+<p>Every object in JavaScript has a hidden link to another object called its <b>prototype</b>. When you read a property the object does not have, JavaScript follows that link and looks there, then on that object's prototype, and so on. This list of links is the <b>prototype chain</b>. It ends at <code>Object.prototype</code>, whose prototype is <code>null</code>.</p>
+<div class="viz" data-viz="flow" data-k="chain"></div>
+<div class="codewrap" data-k="proto" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Looking up the prototype chain · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> animal = {
+  breathe() { <span class="k">return</span> <span class="s">`${this.name} breathes`</span>; },
+};
+<span class="k">const</span> dog = <span class="t">Object</span>.create(animal);        <span class="c">// dog's prototype is animal</span>
+dog.name = <span class="s">"Rex"</span>;
+dog.bark = <span class="k">function</span> () { <span class="k">return</span> <span class="s">"Woof"</span>; };
+
+console.log(dog.bark());                   <span class="c">// found on dog itself</span>
+console.log(dog.breathe());                <span class="c">// not on dog, found one step up</span>
+console.log(<span class="t">Object</span>.getPrototypeOf(dog) === animal);
+console.log(<span class="t">Object</span>.hasOwn(dog, <span class="s">"breathe"</span>), <span class="s">"breathe"</span> <span class="k">in</span> dog);
+
+<span class="k">const</span> arr = [<span class="n">1</span>, <span class="n">2</span>];
+console.log(<span class="t">Object</span>.getPrototypeOf(arr) === <span class="t">Array</span>.prototype);
+console.log(<span class="t">Object</span>.getPrototypeOf(<span class="t">Array</span>.prototype) === <span class="t">Object</span>.prototype);
+console.log(<span class="t">Object</span>.getPrototypeOf(<span class="t">Object</span>.prototype));   <span class="c">// the end of every chain</span></pre><div class="out"><span>Output</span><pre>Woof
+Rex breathes
+true
+false true
+true
+true
+null</pre></div></div>
+<p>Before the <code>class</code> keyword existed, shared methods were put on a constructor function's <code>prototype</code> object and objects were made with <code>new</code>. Classes still work exactly this way underneath.</p>
+<div class="codewrap" data-k="ctor-fn" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Constructor functions and new · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Before 2015 this is how "classes" were written. You still see it in older libraries.</span>
+<span class="k">function</span> <span class="t">User</span>(name) {
+  <span class="k">this</span>.name = name;
+}
+<span class="t">User</span>.prototype.greet = <span class="k">function</span> () {
+  <span class="k">return</span> <span class="s">`Hi, ${this.name}`</span>;
+};
+
+<span class="k">const</span> a = <span class="k">new</span> <span class="t">User</span>(<span class="s">"Asha"</span>);
+<span class="k">const</span> b = <span class="k">new</span> <span class="t">User</span>(<span class="s">"Ravi"</span>);
+console.log(a.greet(), b.greet());
+console.log(a.greet === b.greet);          <span class="c">// one shared copy on the prototype</span>
+console.log(a <span class="k">instanceof</span> <span class="t">User</span>, <span class="t">Object</span>.getPrototypeOf(a) === <span class="t">User</span>.prototype);</pre><div class="out"><span>Output</span><pre>Hi, Asha Hi, Ravi
+true
+true true</pre></div></div>
+<div class="tip"><code>new User("Asha")</code> does four things: it creates an empty object, links it to <code>User.prototype</code>, runs <code>User</code> with <code>this</code> set to the new object, and returns it.</div>
+</section>
+<section class="card reveal jsec qa-part" id="classes" data-say="classes"><div class="sec-num">Part 2</div><h2><span class="sec-em">🏛️</span><span>Classes</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Page objects, API clients, fixtures and custom reporters in every automation framework are classes.</span></div>
+<p>A <b>class</b> is a template for objects that share the same shape and methods. It has a <code>constructor</code> that sets up each new object, <b>methods</b> shared through the prototype, <b>fields</b> that every object gets, <b>getters and setters</b> that look like properties, and <b>static</b> members that belong to the class itself.</p>
+<div class="codewrap" data-k="class" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A class with fields, a getter and a static method · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Cart</span> {
+  <span class="k">static</span> currency = <span class="s">"INR"</span>;                 <span class="c">// belongs to the class, not each cart</span>
+  items = [];                              <span class="c">// a public field, set up for every new cart</span>
+
+  constructor(owner) {
+    <span class="k">this</span>.owner = owner;
+  }
+
+  add(name, price, qty = <span class="n">1</span>) {
+    <span class="k">this</span>.items.push({ name, price, qty });
+    <span class="k">return</span> <span class="k">this</span>;                           <span class="c">// returning this allows chaining</span>
+  }
+
+  <span class="k">get</span> total() {                            <span class="c">// read like a property, computed each time</span>
+    <span class="k">return</span> <span class="k">this</span>.items.reduce((sum, i) =&gt; sum + i.price * i.qty, <span class="n">0</span>);
+  }
+
+  <span class="k">static</span> fromJSON(json) {
+    <span class="k">const</span> data = <span class="t">JSON</span>.parse(json);
+    <span class="k">const</span> cart = <span class="k">new</span> <span class="t">Cart</span>(data.owner);
+    <span class="k">for</span> (<span class="k">const</span> i <span class="k">of</span> data.items) cart.add(i.name, i.price, i.qty);
+    <span class="k">return</span> cart;
+  }
+}
+
+<span class="k">const</span> cart = <span class="k">new</span> <span class="t">Cart</span>(<span class="s">"Asha"</span>).add(<span class="s">"Pen"</span>, <span class="n">20</span>, <span class="n">3</span>).add(<span class="s">"Book"</span>, <span class="n">250</span>);
+console.log(cart.total, <span class="t">Cart</span>.currency);
+console.log(<span class="k">typeof</span> <span class="t">Cart</span>, <span class="t">Object</span>.getOwnPropertyNames(<span class="t">Cart</span>.prototype));
+
+<span class="k">const</span> copy = <span class="t">Cart</span>.fromJSON(<span class="s">'{"owner":"Ravi","items":[{"name":"Mug","price":199,"qty":2}]}'</span>);
+console.log(copy.owner, copy.total);</pre><div class="out"><span>Output</span><pre>310 INR
+function [ &#x27;constructor&#x27;, &#x27;add&#x27;, &#x27;total&#x27; ]
+Ravi 398</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Member</th><th>Lives on</th><th>Example</th></tr>
+<tr><td>field</td><td>each object</td><td><code>items = []</code></td></tr>
+<tr><td>method</td><td>the prototype, shared</td><td><code>add(name, price)</code></td></tr>
+<tr><td>getter or setter</td><td>the prototype, used like a property</td><td><code>get total()</code></td></tr>
+<tr><td>static</td><td>the class itself</td><td><code>Cart.fromJSON(json)</code></td></tr>
+</table></div>
+<h3>Two traps</h3>
+<p>Class bodies are always in strict mode. A method pulled off its object and called on its own gets <code>this</code> as <code>undefined</code>. An arrow function stored in a field keeps its object. Classes are also not usable before the line that declares them.</p>
+<div class="codewrap" data-k="class-traps" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two class traps: lost this and no hoisting · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Counter</span> {
+  count = <span class="n">0</span>;
+  increment() { <span class="k">this</span>.count++; }
+  incrementArrow = () =&gt; { <span class="k">this</span>.count++; };   <span class="c">// a field holding an arrow, bound per object</span>
+}
+
+<span class="k">const</span> c = <span class="k">new</span> <span class="t">Counter</span>();
+<span class="k">const</span> { increment, incrementArrow } = c;
+incrementArrow();
+console.log(c.count);
+<span class="k">try</span> {
+  increment();                             <span class="c">// class bodies are strict, so this is undefined</span>
+} <span class="k">catch</span> (e) {
+  console.log(e.constructor.name + <span class="s">":"</span>, e.message);
+}
+
+<span class="k">try</span> {
+  <span class="k">new</span> <span class="t">Shape</span>();                             <span class="c">// classes are not hoisted like functions</span>
+} <span class="k">catch</span> (e) {
+  console.log(e.constructor.name + <span class="s">":"</span>, e.message);
+}
+<span class="k">class</span> <span class="t">Shape</span> {}</pre><div class="out"><span>Output</span><pre>1
+TypeError: Cannot read properties of undefined (reading &#x27;count&#x27;)
+ReferenceError: Cannot access &#x27;Shape&#x27; before initialization</pre></div></div>
+</section>
+<section class="card reveal jsec" id="private" data-say="private"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔒</span><span>Private fields and encapsulation</span></h2>
+
+<p>A field or method whose name starts with <code>#</code> is <b>private</b>. Only code inside the class body can read or change it. It does not show up in <code>Object.keys</code>, in JSON or in the console of other code, and any attempt to read it from outside is a syntax error. This is real privacy, not a naming habit like the old <code>_balance</code>.</p>
+<div class="codewrap" data-k="private" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Private fields and methods · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">BankAccount</span> {
+  #balance = <span class="n">0</span>;                            <span class="c">// private: only code inside the class can see it</span>
+  <span class="k">static</span> #count = <span class="n">0</span>;
+
+  constructor(owner) {
+    <span class="k">this</span>.owner = owner;
+    <span class="t">BankAccount</span>.#count++;
+  }
+
+  deposit(amount) {
+    <span class="k">this</span>.#check(amount);
+    <span class="k">this</span>.#balance += amount;
+    <span class="k">return</span> <span class="k">this</span>.#balance;
+  }
+
+  #check(amount) {                         <span class="c">// a private method</span>
+    <span class="k">if</span> (!(amount &gt; <span class="n">0</span>)) <span class="k">throw</span> <span class="k">new</span> <span class="t">RangeError</span>(<span class="s">`Invalid amount: ${amount}`</span>);
+  }
+
+  <span class="k">get</span> balance() { <span class="k">return</span> <span class="k">this</span>.#balance; }
+  <span class="k">static</span> <span class="k">get</span> count() { <span class="k">return</span> <span class="t">BankAccount</span>.#count; }
+  <span class="k">static</span> isAccount(obj) { <span class="k">return</span> #balance <span class="k">in</span> obj; }   <span class="c">// a safe brand check</span>
+}
+
+<span class="k">const</span> acc = <span class="k">new</span> <span class="t">BankAccount</span>(<span class="s">"Mei"</span>);
+acc.deposit(<span class="n">500</span>);
+console.log(acc.balance, <span class="t">BankAccount</span>.count);
+console.log(<span class="t">Object</span>.keys(acc), <span class="t">JSON</span>.stringify(acc));
+console.log(<span class="t">BankAccount</span>.isAccount(acc), <span class="t">BankAccount</span>.isAccount({ balance: <span class="n">1</span> }));
+<span class="k">for</span> (<span class="k">const</span> attempt <span class="k">of</span> [() =&gt; { acc.balance = <span class="n">1_000_000</span>; }, () =&gt; acc.deposit(-<span class="n">5</span>)]) {
+  <span class="k">try</span> {
+    attempt();
+  } <span class="k">catch</span> (e) {
+    console.log(e.name + <span class="s">":"</span>, e.message);
+  }
+}
+console.log(acc.balance);</pre><div class="out"><span>Output</span><pre>500 1
+[ &#x27;owner&#x27; ] {&quot;owner&quot;:&quot;Mei&quot;}
+true false
+TypeError: Cannot set property balance of #&lt;BankAccount&gt; which has only a getter
+RangeError: Invalid amount: -5
+500</pre></div></div>
+<p>A <b>static block</b> runs once when the class is defined. It is useful for set up that needs a few statements, such as picking a base URL from an environment variable.</p>
+<div class="codewrap" data-k="static-block"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Static initialisation blocks · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Config</span> {
+  <span class="k">static</span> env;
+  <span class="k">static</span> baseURL;
+  <span class="k">static</span> {                                 <span class="c">// runs once when the class is defined</span>
+    <span class="t">Config</span>.env = process.env.<span class="t">TEST_ENV</span> ?? <span class="s">"staging"</span>;
+    <span class="t">Config</span>.baseURL = { staging: <span class="s">"https://staging.shop.example"</span>, prod: <span class="s">"https://shop.example"</span> }[<span class="t">Config</span>.env];
+  }
+}
+console.log(<span class="t">Config</span>.env, <span class="t">Config</span>.baseURL);</pre><div class="out"><span>Output</span><pre>staging https://staging.shop.example</pre></div></div>
+<div class="modern">Public and private fields, private methods, <code>#x in obj</code> and static blocks arrived in ES2022. Every current browser and Node.js support them.</div>
+</section>
+<section class="card reveal jsec qa-part" id="inheritance" data-say="inheritance"><div class="sec-num">Part 4</div><h2><span class="sec-em">🌳</span><span>Inheritance with extends and super</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">A BasePage that every page object extends, and custom errors with a status and a cause, are standard in test frameworks.</span></div>
+<p><code>class Dog extends Animal</code> makes <code>Animal.prototype</code> the prototype of <code>Dog.prototype</code>. A <code>Dog</code> gets every <code>Animal</code> method and can <b>override</b> any of them. Inside the subclass, <code>super(...)</code> calls the parent constructor, and <code>super.method()</code> calls the parent version of a method.</p>
+<div class="codewrap" data-k="extends" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">extends and super · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Animal</span> {
+  constructor(name) { <span class="k">this</span>.name = name; }
+  speak() { <span class="k">return</span> <span class="s">`${this.name} makes a sound`</span>; }
+  toString() { <span class="k">return</span> <span class="s">`[${this.constructor.name} ${this.name}]`</span>; }
+}
+
+<span class="k">class</span> <span class="t">Dog</span> <span class="k">extends</span> <span class="t">Animal</span> {
+  constructor(name, breed) {
+    <span class="k">super</span>(name);                           <span class="c">// must run before this is used</span>
+    <span class="k">this</span>.breed = breed;
+  }
+  speak() {                                <span class="c">// overrides the parent method</span>
+    <span class="k">return</span> <span class="s">`${super.speak()}, then barks`</span>;  <span class="c">// and can still call it</span>
+  }
+}
+
+<span class="k">const</span> d = <span class="k">new</span> <span class="t">Dog</span>(<span class="s">"Rex"</span>, <span class="s">"beagle"</span>);
+console.log(d.speak());
+console.log(<span class="s">`${d}`</span>);
+console.log(d <span class="k">instanceof</span> <span class="t">Dog</span>, d <span class="k">instanceof</span> <span class="t">Animal</span>, d <span class="k">instanceof</span> <span class="t">Object</span>);
+console.log(<span class="t">Object</span>.getPrototypeOf(<span class="t">Dog</span>.prototype) === <span class="t">Animal</span>.prototype);</pre><div class="out"><span>Output</span><pre>Rex makes a sound, then barks
+[Dog Rex]
+true true true
+true</pre></div></div>
+<div class="warn">In a subclass constructor, <code>super()</code> must run before the first use of <code>this</code>. Forgetting it throws a <code>ReferenceError</code> as soon as the class is used.</div>
+<h3>Custom errors</h3>
+<p>Extending <code>Error</code> gives errors a clear type you can check with <code>instanceof</code>, extra data such as a status code, and a <code>cause</code> that keeps the original error. Test frameworks print the cause too, which makes failures much easier to read.</p>
+<div class="codewrap" data-k="errors" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Custom error classes · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">HttpError</span> <span class="k">extends</span> <span class="t">Error</span> {
+  constructor(status, url, options) {
+    <span class="k">super</span>(<span class="s">`Request to ${url} failed with ${status}`</span>, options);
+    <span class="k">this</span>.name = <span class="s">"HttpError"</span>;
+    <span class="k">this</span>.status = status;
+  }
+  <span class="k">get</span> retryable() { <span class="k">return</span> <span class="k">this</span>.status &gt;= <span class="n">500</span> || <span class="k">this</span>.status === <span class="n">429</span>; }
+}
+
+<span class="k">class</span> <span class="t">NotFoundError</span> <span class="k">extends</span> <span class="t">HttpError</span> {
+  constructor(url) {
+    <span class="k">super</span>(<span class="n">404</span>, url);
+    <span class="k">this</span>.name = <span class="s">"NotFoundError"</span>;
+  }
+}
+
+<span class="k">function</span> load(status) {
+  <span class="k">try</span> {
+    <span class="k">throw</span> <span class="k">new</span> <span class="t">TypeError</span>(<span class="s">"network down"</span>);
+  } <span class="k">catch</span> (low) {
+    <span class="k">if</span> (status === <span class="n">404</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">NotFoundError</span>(<span class="s">"/api/users/9"</span>);
+    <span class="k">throw</span> <span class="k">new</span> <span class="t">HttpError</span>(status, <span class="s">"/api/users"</span>, { cause: low });   <span class="c">// keep the original error</span>
+  }
+}
+
+<span class="k">for</span> (<span class="k">const</span> status <span class="k">of</span> [<span class="n">404</span>, <span class="n">503</span>]) {
+  <span class="k">try</span> {
+    load(status);
+  } <span class="k">catch</span> (e) {
+    console.log(e.name, <span class="s">"|"</span>, e.message, <span class="s">"| retry:"</span>, e.retryable);
+    console.log(<span class="s">"  instanceof HttpError:"</span>, e <span class="k">instanceof</span> <span class="t">HttpError</span>, <span class="s">"| cause:"</span>, e.cause?.message);
+  }
+}</pre><div class="out"><span>Output</span><pre>NotFoundError | Request to /api/users/9 failed with 404 | retry: false
+  instanceof HttpError: true | cause: undefined
+HttpError | Request to /api/users failed with 503 | retry: true
+  instanceof HttpError: true | cause: network down</pre></div></div>
+</section>
+<section class="card reveal jsec" id="composition" data-say="composition"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧩</span><span>Composition over inheritance</span></h2>
+
+<p>Deep class trees get hard to change: a fix in a parent class affects every child. Many teams prefer <b>composition</b>, where an object is built from small parts it holds or mixes in. A <b>mixin</b> is a function that takes a class and returns a new class with extra abilities. Passing a helper into the constructor, called <b>dependency injection</b>, lets tests replace it with a fake.</p>
+<div class="codewrap" data-k="composition" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Mixins and composition · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Instead of a deep tree of subclasses, build objects from small abilities.</span>
+<span class="k">const</span> canLog = base =&gt; <span class="k">class</span> <span class="k">extends</span> base {
+  log(msg) { (<span class="k">this</span>.logs ??= []).push(msg); <span class="k">return</span> <span class="k">this</span>; }
+};
+<span class="k">const</span> canRetry = base =&gt; <span class="k">class</span> <span class="k">extends</span> base {
+  <span class="k">async</span> retry(fn, times = <span class="n">3</span>) {
+    <span class="k">for</span> (<span class="k">let</span> i = <span class="n">1</span>; ; i++) {
+      <span class="k">try</span> { <span class="k">return</span> <span class="k">await</span> fn(i); } <span class="k">catch</span> (e) {
+        <span class="k">this</span>.log?.(<span class="s">`attempt ${i} failed: ${e.message}`</span>);
+        <span class="k">if</span> (i === times) <span class="k">throw</span> e;
+      }
+    }
+  }
+};
+
+<span class="k">class</span> <span class="t">Client</span> {}
+<span class="k">class</span> <span class="t">ApiClient</span> <span class="k">extends</span> canRetry(canLog(<span class="t">Client</span>)) {}
+
+<span class="k">const</span> api = <span class="k">new</span> <span class="t">ApiClient</span>();
+<span class="k">const</span> result = <span class="k">await</span> api.retry(n =&gt; {
+  <span class="k">if</span> (n &lt; <span class="n">3</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"timeout"</span>);
+  <span class="k">return</span> <span class="s">"200 OK"</span>;
+});
+console.log(result);
+console.log(api.logs);
+
+<span class="c">// Composition with plain objects: the client HAS a logger instead of BEING one</span>
+<span class="k">class</span> <span class="t">Uploader</span> {
+  constructor(logger = console) { <span class="k">this</span>.logger = logger; }
+  upload(file) { <span class="k">this</span>.logger.log(<span class="s">`uploading ${file}`</span>); <span class="k">return</span> <span class="k">true</span>; }
+}
+<span class="k">const</span> messages = [];
+<span class="k">new</span> <span class="t">Uploader</span>({ log: m =&gt; messages.push(m) }).upload(<span class="s">"report.pdf"</span>);
+console.log(messages);</pre><div class="out"><span>Output</span><pre>200 OK
+[ &#x27;attempt 1 failed: timeout&#x27;, &#x27;attempt 2 failed: timeout&#x27; ]
+[ &#x27;uploading report.pdf&#x27; ]</pre></div></div>
+<div class="vs"><div><b>Inheritance: "is a"</b>A <code>CheckoutPage</code> is a <code>BasePage</code>. Good for one shallow level of shared behaviour.</div><div><b>Composition: "has a"</b>A <code>CheckoutPage</code> has a <code>Header</code> and a <code>CartSummary</code> component. Good for parts that appear on many pages.</div></div>
+</section>
+<section class="card reveal jsec qa-part" id="pom" data-say="pom"><div class="sec-num">Part 6</div><h2><span class="sec-em">📄</span><span>The Page Object Model</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Selenium</span><span class="qa-tool">Cypress</span><span class="qa-tool">WebdriverIO</span><span class="qa-why">Almost every UI automation framework you join will be organised as page objects.</span></div>
+<p>The <b>Page Object Model</b> (POM) is the most common design pattern in UI automation. Each page or component of the app gets a class. The class holds the locators and offers methods with business names such as <code>loginAs</code> or <code>addToCart</code>. Tests then call those methods and never touch selectors directly.</p>
+<div class="codewrap" data-k="pom" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A page object for a login form · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;
+&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">form</span> <span class="a">id</span>=<span class="s">"login"</span>&gt;
+    &lt;<span class="k">label</span>&gt;Email &lt;<span class="k">input</span> <span class="a">id</span>=<span class="s">"email"</span> <span class="a">type</span>=<span class="s">"email"</span>&gt;&lt;/<span class="k">label</span>&gt;
+    &lt;<span class="k">label</span>&gt;Password &lt;<span class="k">input</span> <span class="a">id</span>=<span class="s">"password"</span> <span class="a">type</span>=<span class="s">"password"</span>&gt;&lt;/<span class="k">label</span>&gt;
+    &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"submit"</span> <span class="a">data-test</span>=<span class="s">"sign-in"</span>&gt;Sign in&lt;/<span class="k">button</span>&gt;
+    &lt;<span class="k">p</span> <span class="a">class</span>=<span class="s">"error"</span> <span class="a">hidden</span>&gt;&lt;/<span class="k">p</span>&gt;
+  &lt;/<span class="k">form</span>&gt;
+  &lt;<span class="k">h1</span> <span class="a">id</span>=<span class="s">"welcome"</span> <span class="a">hidden</span>&gt;&lt;/<span class="k">h1</span>&gt;
+  &lt;<span class="k">script</span>&gt;
+<span class="c">// The app under test: a tiny login form.</span>
+document.querySelector(<span class="s">"#login"</span>).addEventListener(<span class="s">"submit"</span>, e =&gt; {
+  e.preventDefault();
+  <span class="k">const</span> email = document.querySelector(<span class="s">"#email"</span>).value;
+  <span class="k">const</span> pass = document.querySelector(<span class="s">"#password"</span>).value;
+  <span class="k">const</span> error = document.querySelector(<span class="s">".error"</span>);
+  <span class="k">if</span> (pass !== <span class="s">"s3cret"</span>) {
+    error.textContent = <span class="s">"Wrong email or password"</span>;
+    error.hidden = <span class="k">false</span>;
+    <span class="k">return</span>;
+  }
+  error.hidden = <span class="k">true</span>;
+  <span class="k">const</span> welcome = document.querySelector(<span class="s">"#welcome"</span>);
+  welcome.textContent = <span class="s">`Hello, ${email.split("@")[0]}`</span>;
+  welcome.hidden = <span class="k">false</span>;
+});
+&lt;/<span class="k">script</span>&gt;
+&lt;/<span class="k">body</span>&gt;
+&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="c">// A page object hides the selectors behind methods with business names.</span>
+<span class="k">class</span> <span class="t">LoginPage</span> {
+  constructor(doc) { <span class="k">this</span>.doc = doc; }
+
+  <span class="k">get</span> email() { <span class="k">return</span> <span class="k">this</span>.doc.querySelector(<span class="s">"#email"</span>); }
+  <span class="k">get</span> password() { <span class="k">return</span> <span class="k">this</span>.doc.querySelector(<span class="s">"#password"</span>); }
+  <span class="k">get</span> submit() { <span class="k">return</span> <span class="k">this</span>.doc.querySelector(<span class="s">'[data-test="sign-in"]'</span>); }
+  <span class="k">get</span> error() { <span class="k">return</span> <span class="k">this</span>.doc.querySelector(<span class="s">".error"</span>); }
+  <span class="k">get</span> welcome() { <span class="k">return</span> <span class="k">this</span>.doc.querySelector(<span class="s">"#welcome"</span>); }
+
+  loginAs(email, password) {
+    <span class="k">this</span>.email.value = email;
+    <span class="k">this</span>.password.value = password;
+    <span class="k">this</span>.submit.click();
+    <span class="k">return</span> <span class="k">this</span>;
+  }
+}
+
+<span class="k">const</span> page = <span class="k">new</span> <span class="t">LoginPage</span>(document);
+page.loginAs(<span class="s">"asha@shop.example"</span>, <span class="s">"wrong"</span>);
+console.log(<span class="s">"error shown:"</span>, !page.error.hidden, <span class="s">"|"</span>, page.error.textContent);
+
+page.loginAs(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>);
+console.log(<span class="s">"error shown:"</span>, !page.error.hidden, <span class="s">"| welcome:"</span>, page.welcome.textContent);</pre><div class="out"><span>Output</span><pre>error shown: true | Wrong email or password
+error shown: false | welcome: Hello, asha</pre></div></div>
+<p>The idea is identical in every tool. Only the way you find and click elements changes.</p>
+<div class="codewrap" data-k="pom-pw"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same page object in Playwright · Runs for real in chapter 15</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// pages/login.page.js (Playwright)</span>
+<span class="k">export</span> <span class="k">class</span> <span class="t">LoginPage</span> {
+  constructor(page) {
+    <span class="k">this</span>.page = page;
+    <span class="k">this</span>.email = page.getByLabel(<span class="s">"Email"</span>);
+    <span class="k">this</span>.password = page.getByLabel(<span class="s">"Password"</span>);
+    <span class="k">this</span>.submit = page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Sign in"</span> });
+    <span class="k">this</span>.error = page.locator(<span class="s">".error"</span>);
+  }
+  <span class="k">async</span> goto() {
+    <span class="k">await</span> <span class="k">this</span>.page.goto(<span class="s">"/login"</span>);
+  }
+  <span class="k">async</span> loginAs(email, password) {
+    <span class="k">await</span> <span class="k">this</span>.email.fill(email);
+    <span class="k">await</span> <span class="k">this</span>.password.fill(password);
+    <span class="k">await</span> <span class="k">this</span>.submit.click();
+  }
+}
+
+<span class="c">// tests/login.spec.js</span>
+<span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+<span class="k">import</span> { <span class="t">LoginPage</span> } <span class="k">from</span> <span class="s">"../pages/login.page.js"</span>;
+
+test(<span class="s">"wrong password shows an error"</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> login = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+  <span class="k">await</span> login.goto();
+  <span class="k">await</span> login.loginAs(<span class="s">"asha@shop.example"</span>, <span class="s">"wrong"</span>);
+  <span class="k">await</span> expect(login.error).toHaveText(<span class="s">"Wrong email or password"</span>);
+});</pre><div class="note-out"><span>What happens</span><p>The test reads like the steps a manual tester writes. When the button text changes, only the page object changes.</p></div></div>
+<div class="codewrap" data-k="pom-selenium"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same page object in Selenium · Runs for real in chapter 15</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// pages/LoginPage.js (Selenium WebDriver)</span>
+<span class="k">const</span> { <span class="t">By</span>, until } = require(<span class="s">"selenium-webdriver"</span>);
+
+<span class="k">class</span> <span class="t">LoginPage</span> {
+  <span class="k">static</span> <span class="t">EMAIL</span> = <span class="t">By</span>.id(<span class="s">"email"</span>);
+  <span class="k">static</span> <span class="t">PASSWORD</span> = <span class="t">By</span>.id(<span class="s">"password"</span>);
+  <span class="k">static</span> <span class="t">SUBMIT</span> = <span class="t">By</span>.css(<span class="s">'[data-test="sign-in"]'</span>);
+  <span class="k">static</span> <span class="t">ERROR</span> = <span class="t">By</span>.css(<span class="s">".error"</span>);
+
+  constructor(driver) { <span class="k">this</span>.driver = driver; }
+
+  <span class="k">async</span> open(baseUrl) {
+    <span class="k">await</span> <span class="k">this</span>.driver.<span class="k">get</span>(<span class="s">`${baseUrl}/login`</span>);
+  }
+  <span class="k">async</span> loginAs(email, password) {
+    <span class="k">await</span> <span class="k">this</span>.driver.findElement(<span class="t">LoginPage</span>.<span class="t">EMAIL</span>).sendKeys(email);
+    <span class="k">await</span> <span class="k">this</span>.driver.findElement(<span class="t">LoginPage</span>.<span class="t">PASSWORD</span>).sendKeys(password);
+    <span class="k">await</span> <span class="k">this</span>.driver.findElement(<span class="t">LoginPage</span>.<span class="t">SUBMIT</span>).click();
+  }
+  <span class="k">async</span> errorText() {
+    <span class="k">const</span> el = <span class="k">await</span> <span class="k">this</span>.driver.wait(until.elementLocated(<span class="t">LoginPage</span>.<span class="t">ERROR</span>), <span class="n">5000</span>);
+    <span class="k">return</span> el.getText();
+  }
+}
+module.exports = { <span class="t">LoginPage</span> };</pre><div class="note-out"><span>What happens</span><p>Locators live in static fields, and every method is async because each WebDriver call talks to the browser.</p></div></div>
+<div class="qa-box">Rules that keep page objects healthy: one class per page or component, no assertions inside page objects (they belong in tests), methods return useful values or other page objects, and locators prefer roles, labels and <code>data-test</code> attributes over long CSS paths.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: test data and an API client</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>Your API tests create many users with small differences, and every test repeats the same HTTP code. You want readable test data and one place that knows how to call the API.</div>
+<p>A <b>builder</b> class starts from sensible defaults, and each test changes only what matters to it. Every built user gets a fresh email, so tests never clash.</p>
+<div class="codewrap" data-k="builder" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A test data builder · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">UserBuilder</span> {
+  #data = { name: <span class="s">"Test User"</span>, email: <span class="s">"user@test.example"</span>, role: <span class="s">"customer"</span>, verified: <span class="k">true</span>, address: { city: <span class="s">"Pune"</span> } };
+  <span class="k">static</span> #seq = <span class="n">0</span>;
+
+  withName(name) { <span class="k">this</span>.#data.name = name; <span class="k">return</span> <span class="k">this</span>; }
+  withRole(role) { <span class="k">this</span>.#data.role = role; <span class="k">return</span> <span class="k">this</span>; }
+  unverified() { <span class="k">this</span>.#data.verified = <span class="k">false</span>; <span class="k">return</span> <span class="k">this</span>; }
+  inCity(city) { <span class="k">this</span>.#data.address = { ...<span class="k">this</span>.#data.address, city }; <span class="k">return</span> <span class="k">this</span>; }
+
+  build() {
+    <span class="k">const</span> id = ++<span class="t">UserBuilder</span>.#seq;
+    <span class="k">return</span> structuredClone({ id, ...<span class="k">this</span>.#data, email: <span class="s">`user${id}@test.example`</span> });
+  }
+}
+
+<span class="k">const</span> admin = <span class="k">new</span> <span class="t">UserBuilder</span>().withName(<span class="s">"Asha"</span>).withRole(<span class="s">"admin"</span>).build();
+<span class="k">const</span> newbie = <span class="k">new</span> <span class="t">UserBuilder</span>().unverified().inCity(<span class="s">"Bhubaneswar"</span>).build();
+console.log(admin);
+console.log(newbie);
+console.log(admin.email !== newbie.email);</pre><div class="out"><span>Output</span><pre>{
+  id: 1,
+  name: &#x27;Asha&#x27;,
+  email: &#x27;user1@test.example&#x27;,
+  role: &#x27;admin&#x27;,
+  verified: true,
+  address: { city: &#x27;Pune&#x27; }
+}
+{
+  id: 2,
+  name: &#x27;Test User&#x27;,
+  email: &#x27;user2@test.example&#x27;,
+  role: &#x27;customer&#x27;,
+  verified: false,
+  address: { city: &#x27;Bhubaneswar&#x27; }
+}
+true</pre></div></div>
+<p>An <b>API client</b> base class owns the HTTP details and logging. Small subclasses add one method per endpoint. Because the transport is passed in, the same client works against a fake in unit tests and the real server in integration tests.</p>
+<div class="codewrap" data-k="api-client" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An API client with a base class and an injected transport · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// One base class knows HTTP. Each area of the API gets a small subclass.</span>
+<span class="k">class</span> <span class="t">ApiClient</span> {
+  #log = [];
+  constructor(baseURL, transport) {
+    <span class="k">this</span>.baseURL = baseURL;
+    <span class="k">this</span>.transport = transport;            <span class="c">// injected, so tests can pass a fake</span>
+  }
+  <span class="k">async</span> request(method, path, body) {
+    <span class="k">const</span> res = <span class="k">await</span> <span class="k">this</span>.transport({ method, url: <span class="k">this</span>.baseURL + path, body });
+    <span class="k">this</span>.#log.push(<span class="s">`${method} ${path} -&gt; ${res.status}`</span>);
+    <span class="k">if</span> (res.status &gt;= <span class="n">400</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`${method} ${path} failed with ${res.status}`</span>);
+    <span class="k">return</span> res.body;
+  }
+  <span class="k">get</span> history() { <span class="k">return</span> [...<span class="k">this</span>.#log]; }
+}
+
+<span class="k">class</span> <span class="t">UsersApi</span> <span class="k">extends</span> <span class="t">ApiClient</span> {
+  <span class="k">get</span>(id) { <span class="k">return</span> <span class="k">this</span>.request(<span class="s">"GET"</span>, <span class="s">`/users/${id}`</span>); }
+  create(user) { <span class="k">return</span> <span class="k">this</span>.request(<span class="s">"POST"</span>, <span class="s">"/users"</span>, user); }
+}
+
+<span class="c">// A fake transport stands in for the network</span>
+<span class="k">const</span> db = <span class="k">new</span> <span class="t">Map</span>([[<span class="n">1</span>, { id: <span class="n">1</span>, name: <span class="s">"Asha"</span> }]]);
+<span class="k">async</span> <span class="k">function</span> fakeTransport({ method, url, body }) {
+  <span class="k">const</span> id = <span class="t">Number</span>(url.split(<span class="s">"/"</span>).pop());
+  <span class="k">if</span> (method === <span class="s">"GET"</span>) <span class="k">return</span> db.has(id) ? { status: <span class="n">200</span>, body: db.<span class="k">get</span>(id) } : { status: <span class="n">404</span> };
+  <span class="k">const</span> user = { id: db.size + <span class="n">1</span>, ...body };
+  db.<span class="k">set</span>(user.id, user);
+  <span class="k">return</span> { status: <span class="n">201</span>, body: user };
+}
+
+<span class="k">const</span> users = <span class="k">new</span> <span class="t">UsersApi</span>(<span class="s">"https://api.shop.example"</span>, fakeTransport);
+console.log(<span class="k">await</span> users.<span class="k">get</span>(<span class="n">1</span>));
+console.log(<span class="k">await</span> users.create({ name: <span class="s">"Ravi"</span> }));
+<span class="k">await</span> users.<span class="k">get</span>(<span class="n">42</span>).<span class="k">catch</span>(e =&gt; console.log(<span class="s">"Error:"</span>, e.message));
+console.log(users.history);</pre><div class="out"><span>Output</span><pre>{ id: 1, name: &#x27;Asha&#x27; }
+{ id: 2, name: &#x27;Ravi&#x27; }
+Error: GET /users/42 failed with 404
+[ &#x27;GET /users/1 -&gt; 200&#x27;, &#x27;POST /users -&gt; 201&#x27;, &#x27;GET /users/42 -&gt; 404&#x27; ]</pre></div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-collections-iterators.html" data-topic="js-collections-iterators"><small>← Previous chapter</small><b>🗂️ Collections and generators</b></a><a class="next" href="./js-modules-tooling.html" data-topic="js-modules-tooling"><small>Next chapter →</small><b>📦 Modules and tooling</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Classes put data and behaviour together", "panels": [{"s": [["e", "🧬"], ["t", "dog → animal → Object.prototype", {"b": 1, "size": 11}]], "h": "Prototypes", "t": "Objects borrow from the object behind them.", "more": "Classes are a neater way to set these links up."}, {"s": [["e", "🏛️"], ["t", "class Cart { add() {} }", {"b": 1}]], "h": "Classes", "t": "One template, many objects.", "more": "Fields, methods, getters and static members."}, {"s": [["e", "🔒"], ["t", "#balance", {"b": 1}]], "h": "Private", "t": "Hidden from everything outside the class.", "more": "Change state only through methods you control."}, {"s": [["e", "📄"], ["t", "login.loginAs(user)", {"b": 1}]], "h": "Page objects", "t": "Selectors in one place, tests in plain words.", "more": "The pattern behind most UI automation frameworks."}], "remember": "A class bundles data and the methods that work on it. Page objects bundle a page and the actions you take on it."}, "real": [["🛒", "A shopping cart", "An e-commerce site models carts, products and orders as classes with getters for totals and private fields for prices that only the server may set."], ["🧪", "A UI test framework", "A team of five keeps 300 Playwright tests stable because a button rename touches one page object instead of 40 tests."], ["🚨", "Clear failures", "An API test suite throws HttpError with the status and the URL, so the CI report says \"GET /orders failed with 503\" instead of \"undefined is not a function\"."]], "quiz": [{"lv": "e", "q": "What does a getter like get total() let you write?", "o": ["cart.total, without brackets", "cart.total()", "cart.getTotal()", "Cart.total"], "a": 0, "hint": "It is read like a property.", "why": "A getter runs a function each time the property is read."}, {"lv": "e", "q": "Where does a static method live?", "o": ["On the class itself", "On every object", "On Object.prototype", "Only inside the constructor"], "a": 0, "hint": "Cart.fromJSON(json).", "why": "Static members are called on the class, not on objects made from it."}, {"lv": "e", "q": "In the Page Object Model, where do selectors belong?", "o": ["In the page object class", "In every test", "In the CI file", "In the HTML report"], "a": 0, "hint": "One place to change.", "why": "Tests call page object methods. Only the page object knows the selectors."}, {"lv": "m", "q": "What happens when code outside the class reads acc.#balance?", "o": ["A SyntaxError before anything runs", "It returns undefined", "It returns the balance", "A warning is printed"], "a": 0, "hint": "Private names are checked when the code is parsed.", "why": "Referring to a private name outside its class is a syntax error."}, {"lv": "m", "q": "What must a subclass constructor do before using this?", "o": ["Call super()", "Call new", "Return this", "Nothing special"], "a": 0, "hint": "The parent sets up the object first.", "why": "Until <code>super()<\/code> runs, <code>this<\/code> does not exist and using it throws a ReferenceError."}, {"lv": "m", "q": "Which assertion belongs in a test, not in a page object?", "o": ["expect(login.error).toHaveText(\"Wrong email or password\")", "this.submit = page.getByRole(\"button\")", "await this.email.fill(email)", "async goto() { await this.page.goto(\"/login\") }"], "a": 0, "hint": "Page objects act, tests judge.", "why": "Keeping assertions in tests lets page objects be reused by tests that expect different outcomes."}, {"lv": "h", "q": "increment is a normal class method that uses this. What happens here?", "o": ["TypeError, because this is undefined", "It increments counter", "It increments a global", "Nothing"], "a": 0, "hint": "Class bodies are strict.", "why": "Detached methods lose their object, and strict mode leaves <code>this<\/code> undefined.", "code": "const { increment } = counter;\nincrement();"}, {"lv": "h", "q": "What does #balance in obj check?", "o": ["Whether obj was created by the class that declares #balance", "Whether obj has a public balance", "Whether balance is zero", "Whether obj is frozen"], "a": 0, "hint": "A brand check.", "why": "It returns true only for objects that have the private field, without throwing for others."}, {"lv": "h", "q": "Why pass a transport into an ApiClient constructor instead of calling fetch inside?", "o": ["Tests can pass a fake transport", "fetch does not work in classes", "It makes the code faster", "It is required by JavaScript"], "a": 0, "hint": "Dependency injection.", "why": "Injected helpers can be swapped for fakes, so the client can be tested without a network."}, {"lv": "x", "q": "Object.getPrototypeOf(Dog.prototype) === Animal.prototype when Dog extends Animal. What else is true?", "o": ["Object.getPrototypeOf(Dog) === Animal", "Dog.prototype === Animal.prototype", "Animal instanceof Dog", "Dog has no prototype"], "a": 0, "hint": "Static members are inherited too.", "why": "extends links both the prototypes and the classes themselves, so static methods are inherited."}, {"lv": "x", "q": "Why are class methods placed on the prototype instead of on each object?", "o": ["One shared copy saves memory and can be changed in one place", "Objects cannot hold functions", "It makes them private", "It is needed for JSON"], "a": 0, "hint": "a.greet === b.greet.", "why": "Every object finds the same function through the prototype chain."}, {"lv": "x", "q": "What does new Error(\"x\", { cause: low }) add?", "o": ["A cause property holding the original error", "A stack of every error ever thrown", "An automatic retry", "A status code"], "a": 0, "hint": "ES2022 error cause.", "why": "The <code>cause<\/code> option keeps the lower level error, so reports show the full story."}], "calc": [{"lv": "e", "q": "A cart holds 3 pens at 20 and 1 book at 250. What does cart.total return?", "ans": "310", "hint": "Price times quantity, added up.", "steps": ["<span class=\"eq\">3 × 20 = 60<\/span>", "<span class=\"eq\">60 + 250 = 310<\/span>"]}, {"lv": "e", "q": "How many steps up the prototype chain is breathe from dog, if breathe is on animal and dog = Object.create(animal)?", "ans": "1", "hint": "Count the links.", "steps": ["dog has no breathe.", "Its prototype animal does, one step up."]}, {"lv": "m", "q": "Three BankAccount objects are created. What is BankAccount.count?", "ans": "3", "hint": "The static counter grows in the constructor.", "steps": ["Each constructor call adds 1 to the static #count."]}, {"lv": "m", "q": "A suite has 40 tests that click the Sign in button. The button label changes. How many files change with a page object?", "ans": "1", "hint": "Where does the locator live?", "steps": ["Only the page object holds the locator, so one file changes."]}, {"lv": "h", "q": "The builder created 2 users. What number is in the email of the next user it builds?", "ans": "3", "hint": "The static sequence goes up on every build.", "steps": ["Each build adds 1 to #seq.", "After 2 builds, the next build gives id 3 and user3@test.example."]}, {"lv": "h", "q": "What does this log?", "ans": "2", "hint": "The arrow keeps its object.", "steps": ["incrementArrow runs twice on c.", "The detached normal method is never called."], "code": "class Counter {\n  count = 0;\n  incrementArrow = () => { this.count++; };\n}\nconst c = new Counter();\nconst { incrementArrow } = c;\nincrementArrow();\nincrementArrow();\nconsole.log(c.count);"}, {"lv": "x", "q": "Which status codes make HttpError.retryable true among 404, 429, 500 and 503? Answer with how many.", "ans": "3", "hint": "status >= 500 or status === 429.", "steps": ["429 is true.", "500 and 503 are true.", "404 is false."]}, {"lv": "x", "q": "Dog extends Animal. How many prototype objects are checked to find hasOwnProperty on a Dog object, counting the one where it is found?", "ans": "3", "hint": "Dog.prototype, Animal.prototype, then Object.prototype.", "steps": ["The dog object itself does not have it.", "Dog.prototype and Animal.prototype do not have it either.", "Object.prototype does, so 3 prototype objects are checked."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers prototypes, classes, private fields, inheritance, composition and the Page Object Model used in UI automation.", "hi": "यह अध्याय prototypes, classes, private fields, inheritance, composition और UI automation में इस्तेमाल होने वाला Page Object Model सिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ prototypes, classes, private fields, inheritance, composition ಮತ್ತು UI automation ನ Page Object Model ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ prototypes, classes, private fields, inheritance, composition ଓ UI automation ର Page Object Model ଶିଖାଏ।", "ar": "يتناول هذا الفصل النماذج الأولية والأصناف والحقول الخاصة والوراثة والتركيب ونموذج كائن الصفحة في أتمتة الواجهات.", "de": "Dieses Kapitel behandelt Prototypen, Klassen, private Felder, Vererbung, Komposition und das Page Object Model der UI-Automatisierung."}, {"id": "prototypes", "h": "Prototypes", "en": "Every object links to a prototype. A missing property is looked up along this chain until it reaches null.", "hi": "हर object एक prototype से जुड़ा होता है। जो property नहीं मिलती, वह इस chain में null तक खोजी जाती है।", "kn": "ಪ್ರತಿ object ಒಂದು prototype ಗೆ ಜೋಡಣೆಯಾಗಿದೆ. ಸಿಗದ property ಈ chain ನಲ್ಲಿ null ವರೆಗೆ ಹುಡುಕಲಾಗುತ್ತದೆ.", "or": "ପ୍ରତ୍ୟେକ object ଏକ prototype ସହ ଯୋଡ଼ା। ନଥିବା property ଏହି chain ରେ null ପର୍ଯ୍ୟନ୍ତ ଖୋଜାଯାଏ।", "ar": "كل كائن مرتبط بنموذج أولي. يبحث عن الخاصية المفقودة على طول هذه السلسلة حتى تصل إلى null.", "de": "Jedes Objekt ist mit einem Prototyp verknüpft. Eine fehlende Eigenschaft wird entlang dieser Kette bis null gesucht."}, {"id": "classes", "h": "Classes", "en": "A class has a constructor, fields, shared methods, getters and static members. Methods pulled off an object lose this.", "hi": "Class में constructor, fields, shared methods, getters और static members होते हैं। Object से अलग की गई method का this खो जाता है।", "kn": "Class ನಲ್ಲಿ constructor, fields, shared methods, getters ಮತ್ತು static members ಇರುತ್ತವೆ. ಬೇರ್ಪಡಿಸಿದ method ತನ್ನ this ಕಳೆದುಕೊಳ್ಳುತ್ತದೆ.", "or": "Class ରେ constructor, fields, shared methods, getters ଓ static members ଥାଏ। ଅଲଗା କରାଯାଇଥିବା method ର this ହଜିଯାଏ।", "ar": "يحتوي الصنف على منشئ وحقول ودوال مشتركة ودوال جلب وأعضاء ثابتة. الدالة المفصولة عن كائنها تفقد this.", "de": "Eine Klasse hat einen Konstruktor, Felder, gemeinsame Methoden, Getter und statische Mitglieder. Abgelöste Methoden verlieren this."}, {"id": "private", "h": "Private fields", "en": "Names that start with a hash are private. Only code inside the class can use them, so outside code cannot break the state.", "hi": "# से शुरू होने वाले नाम private होते हैं। सिर्फ class के अंदर का code उन्हें इस्तेमाल कर सकता है।", "kn": "# ನಿಂದ ಆರಂಭವಾಗುವ ಹೆಸರುಗಳು private. Class ಒಳಗಿನ code ಮಾತ್ರ ಅವುಗಳನ್ನು ಬಳಸಬಹುದು.", "or": "# ରୁ ଆରମ୍ଭ ହେଉଥିବା ନାମ private। କେବଳ class ଭିତରର code ସେଗୁଡ଼ିକ ବ୍ୟବହାର କରିପାରେ।", "ar": "الأسماء التي تبدأ بعلامة # خاصة. لا يستخدمها إلا الكود داخل الصنف، فلا يستطيع الكود الخارجي إفساد الحالة.", "de": "Namen mit Raute sind privat. Nur Code in der Klasse kann sie nutzen, also kann fremder Code den Zustand nicht zerstören."}, {"id": "inheritance", "h": "Inheritance", "en": "extends builds a subclass, super calls the parent, and custom errors carry a status and a cause.", "hi": "extends subclass बनाता है, super parent को call करता है, और custom errors status और cause रखते हैं।", "kn": "extends subclass ಮಾಡುತ್ತದೆ, super parent ಅನ್ನು call ಮಾಡುತ್ತದೆ, custom errors status ಮತ್ತು cause ಹೊಂದಿರುತ್ತವೆ.", "or": "extends subclass ତିଆରି କରେ, super parent କୁ call କରେ, ଏବଂ custom errors status ଓ cause ରଖନ୍ତି।", "ar": "تنشئ extends صنفًا فرعيًا، وتستدعي super الأب، وتحمل الأخطاء المخصصة حالة وسببًا.", "de": "extends erzeugt eine Unterklasse, super ruft die Elternklasse auf, eigene Fehler tragen Status und Ursache."}, {"id": "composition", "h": "Composition", "en": "Build objects from small parts. Mixins add abilities, and passing helpers into the constructor lets tests use fakes.", "hi": "Objects को छोटे हिस्सों से बनाएं। Mixins abilities जोड़ते हैं, और constructor में helpers देने से tests fakes इस्तेमाल कर सकते हैं।", "kn": "Objects ಅನ್ನು ಚಿಕ್ಕ ಭಾಗಗಳಿಂದ ಕಟ್ಟಿ. Mixins abilities ಸೇರಿಸುತ್ತವೆ, constructor ಗೆ helpers ಕೊಟ್ಟರೆ tests fakes ಬಳಸಬಹುದು.", "or": "Objects କୁ ଛୋଟ ଅଂଶରୁ ଗଢ଼ନ୍ତୁ। Mixins abilities ଯୋଡ଼ନ୍ତି, constructor ରେ helpers ଦେଲେ tests fakes ବ୍ୟବହାର କରିପାରେ।", "ar": "ابن الكائنات من أجزاء صغيرة. تضيف الخلطات قدرات، وتمرير المساعدات إلى المنشئ يسمح للاختبارات باستخدام بدائل.", "de": "Baue Objekte aus kleinen Teilen. Mixins fügen Fähigkeiten hinzu, und Helfer im Konstruktor erlauben Tests mit Attrappen."}, {"id": "pom", "h": "Page objects", "en": "A page object keeps the locators of one page and offers methods with business names. Tests call the methods, never the selectors.", "hi": "Page object एक page के locators रखता है और business नामों वाली methods देता है। Tests methods call करते हैं, selectors नहीं।", "kn": "Page object ಒಂದು page ನ locators ಇಡುತ್ತದೆ ಮತ್ತು business ಹೆಸರಿನ methods ಕೊಡುತ್ತದೆ. Tests methods ಅನ್ನು ಕರೆಯುತ್ತವೆ.", "or": "Page object ଗୋଟିଏ page ର locators ରଖେ ଏବଂ business ନାମର methods ଦିଏ। Tests methods କୁ call କରନ୍ତି, selectors ନୁହେଁ।", "ar": "يحفظ كائن الصفحة محددات صفحة واحدة ويقدم دوال بأسماء من لغة العمل. تستدعي الاختبارات الدوال لا المحددات.", "de": "Ein Page Object hält die Locators einer Seite und bietet Methoden mit fachlichen Namen. Tests rufen Methoden auf, keine Selektoren."}, {"id": "scenario", "h": "Scenario", "en": "A builder makes test users from defaults, and an API client base class keeps the HTTP code in one place.", "hi": "Builder defaults से test users बनाता है, और API client base class HTTP code को एक जगह रखता है।", "kn": "Builder defaults ನಿಂದ test users ಮಾಡುತ್ತದೆ, API client base class HTTP code ಅನ್ನು ಒಂದೇ ಕಡೆ ಇಡುತ್ತದೆ.", "or": "Builder defaults ରୁ test users ତିଆରି କରେ, ଏବଂ API client base class HTTP code କୁ ଗୋଟିଏ ସ୍ଥାନରେ ରଖେ।", "ar": "ينشئ الباني مستخدمي اختبار من القيم الافتراضية، ويحفظ صنف عميل الواجهة الأساسي كود HTTP في مكان واحد.", "de": "Ein Builder erzeugt Testnutzer aus Standardwerten, und eine API-Client-Basisklasse hält den HTTP-Code an einer Stelle."}, {"id": "practice", "h": "Hands-on", "en": "Practise a class with a getter, private state, a subclass and a small page object.", "hi": "Getter वाली class, private state, subclass और एक छोटे page object का अभ्यास करें।", "kn": "Getter ಇರುವ class, private state, subclass ಮತ್ತು ಚಿಕ್ಕ page object ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Getter ଥିବା class, private state, subclass ଓ ଛୋଟ page object ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على صنف بدالة جلب وحالة خاصة وصنف فرعي وكائن صفحة صغير.", "de": "Übe eine Klasse mit Getter, privatem Zustand, einer Unterklasse und einem kleinen Page Object."}], "ex": [{"id": "rect", "lv": "e", "title": "A rectangle class", "task": "<p>Write a class <code>Rectangle<\/code> with a constructor <code>(width, height)<\/code>, a getter <code>area<\/code> and a method <code>scale(factor)<\/code> that multiplies both sides and returns <code>this<\/code>.<\/p>", "starter": "class Rectangle {\n  constructor(width, height) {\n    \n  }\n}", "tests": [{"call": "new Rectangle(3, 4).area", "want": 12}, {"call": "new Rectangle(2, 5).scale(2).area", "want": 40}, {"call": "(() => { const r = new Rectangle(1, 1); return r.scale(3) === r; })()", "want": true}], "solution": "class Rectangle {\n  constructor(width, height) {\n    this.width = width;\n    this.height = height;\n  }\n  get area() {\n    return this.width * this.height;\n  }\n  scale(factor) {\n    this.width *= factor;\n    this.height *= factor;\n    return this;\n  }\n}", "hint": "Store the sides on <code>this<\/code>. A getter is <code>get area() { ... }<\/code>.", "why": "Returning <code>this<\/code> from <code>scale<\/code> lets callers chain calls, the same trick builders use."}, {"id": "stack", "lv": "m", "title": "A stack with private storage", "task": "<p>Write a class <code>Stack<\/code> with a private array, methods <code>push(x)<\/code> and <code>pop()<\/code>, and a getter <code>size<\/code>. <code>pop()<\/code> on an empty stack returns <code>undefined<\/code>. The array must not be visible from outside, so <code>Object.keys(stack)<\/code> is empty.<\/p>", "starter": "class Stack {\n  \n}", "tests": [{"call": "(() => { const s = new Stack(); s.push(1); s.push(2); return [s.pop(), s.size]; })()", "want": [2, 1]}, {"call": "(() => { const s = new Stack(); return s.pop() === undefined && s.size === 0; })()", "want": true}, {"call": "(() => { const s = new Stack(); s.push(5); return Object.keys(s); })()", "want": []}], "solution": "class Stack {\n  #items = [];\n  push(x) {\n    this.#items.push(x);\n  }\n  pop() {\n    return this.#items.pop();\n  }\n  get size() {\n    return this.#items.length;\n  }\n}", "hint": "Declare <code>#items = [];<\/code> as a field.", "why": "Private fields never show up in <code>Object.keys<\/code>, so no outside code can reach in and break the stack."}, {"id": "errors", "lv": "h", "title": "A custom error class", "task": "<p>Write <code>class ValidationError extends Error<\/code> with a constructor <code>(field, message)<\/code>. It sets <code>name<\/code> to <code>\"ValidationError\"<\/code>, stores <code>field<\/code>, and its message is <code>\"field: message\"<\/code>. Then write <code>check(user)<\/code> that throws a ValidationError for field <code>\"email\"<\/code> with message <code>\"is required\"<\/code> when <code>user.email<\/code> is missing, and returns <code>true<\/code> otherwise.<\/p>", "starter": "class ValidationError extends Error {\n  \n}\n\nfunction check(user) {\n  \n}", "tests": [{"call": "(() => { try { check({}); } catch (e) { return [e instanceof ValidationError, e instanceof Error, e.name, e.field, e.message]; } })()", "want": [true, true, "ValidationError", "email", "email: is required"]}, {"call": "check({ email: \"a@b.c\" })", "want": true}], "solution": "class ValidationError extends Error {\n  constructor(field, message) {\n    super(`${field}: ${message}`);\n    this.name = \"ValidationError\";\n    this.field = field;\n  }\n}\n\nfunction check(user) {\n  if (!user.email) throw new ValidationError(\"email\", \"is required\");\n  return true;\n}", "hint": "Call <code>super(...)<\/code> with the full message first, then set the extra properties.", "why": "Tests can now check <code>instanceof ValidationError<\/code> and the field, which is much clearer than matching message text."}, {"id": "page-object", "lv": "x", "title": "A page object for a search box", "task": "<p>Write a class <code>SearchPage<\/code> whose constructor takes a <code>driver<\/code> object with two async methods: <code>fill(selector, text)<\/code> and <code>textOf(selector)<\/code>, plus <code>click(selector)<\/code>. Add <code>async search(term)<\/code> that fills <code>\"#q\"<\/code> with the term and clicks <code>\"#go\"<\/code>, and <code>async resultCount()<\/code> that reads <code>\".count\"<\/code> such as <code>\"12 results\"<\/code> and returns the number <code>12<\/code>.<\/p>", "starter": "class SearchPage {\n  constructor(driver) {\n    \n  }\n}", "tests": [{"call": "(async () => { const calls = []; const driver = { fill: async (s, t) => calls.push([\"fill\", s, t]), click: async s => calls.push([\"click\", s]), textOf: async s => \"12 results\" }; const p = new SearchPage(driver); await p.search(\"pens\"); return [calls, await p.resultCount()]; })()", "want": [[["fill", "#q", "pens"], ["click", "#go"]], 12]}, {"call": "(async () => { const p = new SearchPage({ textOf: async () => \"0 results\" }); return await p.resultCount(); })()", "want": 0}], "solution": "class SearchPage {\n  constructor(driver) {\n    this.driver = driver;\n  }\n  async search(term) {\n    await this.driver.fill(\"#q\", term);\n    await this.driver.click(\"#go\");\n  }\n  async resultCount() {\n    const text = await this.driver.textOf(\".count\");\n    return parseInt(text, 10);\n  }\n}", "hint": "Store the driver on <code>this<\/code>, and <code>await<\/code> each driver call in order. <code>parseInt(\"12 results\", 10)<\/code> gives 12.", "why": "The test passed a fake driver, which is exactly how page objects are unit tested. The same class would work with a real Playwright or Selenium wrapper."}], "dg": {"chain": {"t": "Where dog.breathe() is found", "w": 900, "h": 230, "n": [["dog", 20, 80, 180, 70, "dog", {"c": 2, "sub": "name, bark", "i": "The object itself. Own properties are checked first."}], ["animal", 250, 80, 180, 70, "animal", {"c": 1, "sub": "breathe", "i": "The prototype of dog, set by Object.create(animal)."}], ["op", 480, 80, 190, 70, "Object.prototype", {"c": 0, "sub": "toString, hasOwnProperty", "i": "Every plain object ends up here."}], ["nul", 730, 80, 140, 70, "null", {"c": 5, "sh": "pill", "i": "The chain stops. A missing property gives undefined."}]], "e": [["dog", "animal", {"t": "prototype"}], ["animal", "op", {"t": "prototype"}], ["op", "nul", {"t": "prototype"}]], "st": [[["dog"], "JavaScript looks for breathe on dog first. dog only has name and bark."], [["animal", "dog>animal"], "It follows the prototype link to animal, finds breathe there and calls it with this set to dog."], [["op", "animal>op"], "A name that is not on animal either, such as toString, is looked up on Object.prototype."], [["nul", "op>nul"], "If nothing on the chain has it, the lookup reaches null and the result is undefined."]]}}, "lanes": {}, "play": {"pom": {"html": "\n<!doctype html>\n<html>\n<body>\n  <form id=\"login\">\n    <label>Email <input id=\"email\" type=\"email\"><\/label>\n    <label>Password <input id=\"password\" type=\"password\"><\/label>\n    <button type=\"submit\" data-test=\"sign-in\">Sign in<\/button>\n    <p class=\"error\" hidden><\/p>\n  <\/form>\n  <h1 id=\"welcome\" hidden><\/h1>\n  <script>\n// The app under test: a tiny login form.\ndocument.querySelector(\"#login\").addEventListener(\"submit\", e => {\n  e.preventDefault();\n  const email = document.querySelector(\"#email\").value;\n  const pass = document.querySelector(\"#password\").value;\n  const error = document.querySelector(\".error\");\n  if (pass !== \"s3cret\") {\n    error.textContent = \"Wrong email or password\";\n    error.hidden = false;\n    return;\n  }\n  error.hidden = true;\n  const welcome = document.querySelector(\"#welcome\");\n  welcome.textContent = `Hello, ${email.split(\"@\")[0]}`;\n  welcome.hidden = false;\n});\n<\/script>\n<\/body>\n<\/html>\n"}}};
+JSPLAY.page({ title: "Prototypes, Classes and the Page Object Model", subject: "javascript" });
+</script>
+</body>
+</html>
