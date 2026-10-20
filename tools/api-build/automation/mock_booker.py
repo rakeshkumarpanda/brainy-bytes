@@ -12,7 +12,7 @@ documented behaviour so the examples can be run without internet access:
   PATCH  /booking/{id}               same auth, partial update
   DELETE /booking/{id}               same auth, 201 Created (the real API answers 201 here too)
 
-Usage:  python3 tools/api-build/mock_booker.py [port]      (default port 3001)
+Usage:  python3 tools/api-build/automation/mock_booker.py [port]      (default port 3001)
 """
 import base64
 import json
