@@ -1,0 +1,46 @@
+/* ===== Step animations (viz.js): the player and the diagram engine ===== */
+.viz{margin:16px 0}
+.vz{border:1.5px solid var(--line); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--accent2) 9%, var(--surface)), var(--surface) 140px); padding:14px 16px}
+.vz-head h3{margin:6px 0 2px; font-size:21px}
+.vz-head p{margin:0 0 10px; color:var(--ink2); font-size:15px}
+.vz-badge{display:inline-block; font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--accent-deep); background:var(--accent-soft); border-radius:999px; padding:3px 10px}
+.vz-row{display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:8px 0}
+.vz-seg{display:flex; flex-wrap:wrap; gap:4px}
+.vz-ctl{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px}
+.vz-ctl button{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:10px; min-width:38px; height:36px; font:inherit; font-weight:800; cursor:pointer}
+.vz-ctl button.vz-play{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); padding:0 14px}
+.vz-ctl input{flex:1; min-width:100px; accent-color:var(--accent)}
+.vz-ctl select{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:10px; height:36px; font:inherit; font-weight:700}
+.vz-cnt{font-family:var(--font-mono); font-size:12.5px; color:var(--ink2); min-width:64px; text-align:center}
+.vz-msg{margin-top:10px; padding:10px 14px; border-radius:12px; background:var(--surface2); border:1px solid var(--line); min-height:44px; font-size:15px}
+.vz-note{margin-top:6px; font-weight:700; color:var(--ink2); font-size:14px}
+.vz-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+@media (max-width:720px){.vz{padding:12px}}
+
+/* ===== Diagram engine ===== */
+.fg-wrap{border:1px solid var(--line); border-radius:14px; background:var(--surface); padding:6px}
+.fg-svg{display:block; width:100%; height:auto; margin:0 auto; font-family:var(--font)}
+.fg-svg text{fill:var(--ink)}
+.fg-svg .fg-l{font-weight:800}
+.fg-svg .fg-s{fill:var(--ink2); font-weight:700}
+.fg-svg .fg-t{font-weight:700; fill:var(--ink2)}
+.fg-svg .fg-t.b{font-weight:800; fill:var(--ink)}
+.fg-svg .fg-el{font-weight:800; fill:var(--ink)}
+.fg-svg .fg-gt{font-weight:800; letter-spacing:.03em}
+.fg-svg .fg-lb{fill:var(--surface); stroke:var(--line)}
+.fg-n rect,.fg-n ellipse,.fg-n polygon,.fg-n path,.fg-n circle{stroke-width:1.8}
+.fg-g rect{stroke-width:1.5; stroke-dasharray:6 5; fill-opacity:.35}
+.fg-e path{stroke-width:2}
+.fg-e.dash path{stroke-dasharray:6 5}
+.fg-n,.fg-e,.fg-g{transition:opacity .35s}
+.fg-svg .fd{opacity:.18}
+.fg-n.on rect,.fg-n.on ellipse,.fg-n.on polygon,.fg-n.on path,.fg-n.on circle{stroke-width:3.4; filter:drop-shadow(0 0 6px var(--accent))}
+.fg-e.on path{stroke-width:3.4; stroke-dasharray:9 6; animation:fg-flow .7s linear infinite}
+.fg-g.on rect{stroke-width:3; fill-opacity:.6}
+.fg-click{cursor:pointer}
+.fg-click rect,.fg-click ellipse,.fg-click polygon{stroke-dasharray:4 3}
+.fg-n.pick rect,.fg-n.pick ellipse,.fg-n.pick polygon{stroke-width:3.4; stroke-dasharray:none}
+@keyframes fg-flow{to{stroke-dashoffset:-15}}
+@media (prefers-reduced-motion:reduce){.fg-e.on path{animation:none}}
+.fg-hint{display:none; font-size:12.5px; font-weight:800; color:var(--ink2); margin:0 0 4px}
+@media (max-width:720px){.fg-hint{display:block}}
