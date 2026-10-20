@@ -1929,6 +1929,25 @@ function jsModules() {
         { id: "dispose", title: "Clean up like using", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "js-expert", title: "Expert JavaScript: performance, security and test quality", emoji: "🏆", page: "content/javascript/js-expert.html",
+        summary: "Counting steps and benchmarking with a warm up and median, listener leaks and weak references, memoize, pipe, strategy, observer, builder and factory patterns, worker threads and Web Workers, XSS and prototype pollution with a security checklist, property based testing, mutation testing and order dependent flaky tests, and balancing CI shards by duration.",
+        keywords: ["performance", "Big O", "benchmark", "memory leak", "WeakMap", "design patterns", "test data builder", "worker threads", "Web Workers", "XSS", "prototype pollution", "security testing", "property based testing", "mutation testing", "flaky tests", "CI sharding", "expert JavaScript"],
+        added: "2026-10-20",
+        sections: [
+        { id: "performance", title: "Performance: count first, then measure", emoji: "⚡", group: "QA essential", keywords: ["performance", "Big O", "O(n)", "O(n²)", "performance.now", "benchmark", "median", "warm up", "JIT", "Core Web Vitals", "LCP", "INP", "CLS", "Lighthouse"] },
+        { id: "memory", title: "Memory: leaks and weak references", emoji: "🧠", group: "QA essential", keywords: ["memory leak", "garbage collection", "event listener leak", "AbortController", "AbortSignal", "WeakMap", "WeakRef", "WeakSet", "FinalizationRegistry", "heap snapshot", "CDP"] },
+        { id: "patterns", title: "Patterns experts reach for", emoji: "🧩", group: "QA essential", keywords: ["design patterns", "memoize", "pipe", "compose", "strategy pattern", "observer pattern", "pub sub", "builder pattern", "test data builder", "factory", "page object"] },
+        { id: "workers", title: "Workers: real parallel work", emoji: "🧵", group: "QA essential", keywords: ["worker_threads", "Web Worker", "Worker", "postMessage", "workerData", "parallel", "CPU bound", "main thread", "test workers"] },
+        { id: "security", title: "Security every JavaScript developer should test", emoji: "🔐", group: "QA essential", keywords: ["security", "XSS", "cross site scripting", "innerHTML", "textContent", "Content Security Policy", "CSP", "prototype pollution", "__proto__", "eval", "npm audit", "secrets", "OWASP"] },
+        { id: "quality", title: "Test quality: properties, mutants and flaky tests", emoji: "🎯", group: "QA essential", keywords: ["property based testing", "fast-check", "seed", "shrinking", "mutation testing", "Stryker", "mutation score", "flaky test", "test isolation", "beforeEach", "test order"] },
+        { id: "scenario", title: "Real world scenario: a faster CI pipeline", emoji: "🎬", group: "QA essential", keywords: ["CI", "sharding", "test splitting", "parallel", "JUnit timings", "longest processing time", "pipeline speed"] },
+        { id: "memo", title: "Memoize a pure function", emoji: "🏋️", group: "Easy practice" },
+        { id: "debounce", title: "Debounce a search box", emoji: "🏋️", group: "Medium practice" },
+        { id: "escape", title: "Escape HTML", emoji: "🏋️", group: "Hard practice" },
+        { id: "shards", title: "Balance test shards", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
