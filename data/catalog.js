@@ -1550,7 +1550,8 @@ function cjsModule() {
           { id: "spiral", title: "Read a matrix in a spiral", emoji: '🏋️', group: "Expert practice" },
           { id: "big-factorial", title: "The digits of 100!", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
-          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' },
+          { id: 'interview', title: 'Interview Questions', emoji: '💼', group: 'Interview Questions', keywords: ['interview questions', 'API testing interview', 'REST interview', 'Postman interview', 'SOAP versus REST'] }
         ]
       }
       ]
@@ -1647,11 +1648,14 @@ function apiManualModule() {
       {
         id: 'manual-api-testing', title: 'Manual API Testing: Basics to Expert', emoji: '🔌',
         page: 'content/api-testing/manual-api-testing.html',
-        summary: 'HTTP, methods, status codes, headers, JSON, REST, SOAP, GraphQL and gRPC, Postman and curl, OpenAPI, JWT and OAuth 2.0 with PKCE, test design, validation, chaining, pagination, rate limits, caching, idempotency keys, Problem Details, the OWASP API Top 10, performance, async APIs, contract testing, mocking, CI, AI and MCP APIs, with a live mock API playground and seven hidden bugs.',
-        keywords: ['API testing', 'manual API testing', 'REST', 'HTTP', 'status codes', 'Postman', 'curl', 'Bruno', 'OpenAPI', 'Swagger', 'JWT', 'OAuth', 'PKCE', 'idempotency', 'ETag', '304', '429', 'rate limit', 'pagination', 'BOLA', 'OWASP API Top 10', 'mass assignment', 'Problem Details', 'RFC 9457', 'GraphQL', 'gRPC', 'WebSocket', 'webhook', 'contract testing', 'Pact', 'WireMock', 'Newman', 'percentile', 'p95', 'MCP', 'LLM API'],
+        summary: 'Web services, SOAP and REST, HTTP, methods, status codes, headers, JSON, REST, SOAP, GraphQL and gRPC, Postman and curl, OpenAPI, JWT and OAuth 2.0 with PKCE, test design, validation, chaining, pagination, rate limits, caching, idempotency keys, Problem Details, the OWASP API Top 10, performance, async APIs, contract testing, mocking, CI, AI and MCP APIs, with a live mock API playground, seven hidden bugs and 68 interview questions.',
+        keywords: ['API testing', 'manual API testing', 'REST', 'HTTP', 'status codes', 'Postman', 'curl', 'Bruno', 'OpenAPI', 'Swagger', 'JWT', 'OAuth', 'PKCE', 'idempotency', 'ETag', '304', '429', 'rate limit', 'pagination', 'BOLA', 'OWASP API Top 10', 'mass assignment', 'Problem Details', 'RFC 9457', 'GraphQL', 'gRPC', 'WebSocket', 'webhook', 'contract testing', 'Pact', 'WireMock', 'Newman', 'percentile', 'p95', 'MCP', 'LLM API', 'web service', 'SOAP', 'WSDL', 'Richardson Maturity Model', 'HATEOAS', 'interview questions'],
         added: '2026-10-20',
         sections: [
           { id: 'what-is-api', title: "What an API is and why we test it", emoji: '🔌', group: 'Level 1 · Foundations' },
+          { id: 'web-services', title: "What a web service is", emoji: '🌐', group: 'Level 1 · Foundations', keywords: ['web service', 'API versus web service', 'SOAP', 'REST', 'WSDL', 'XSD', 'SoapUI', 'SOAP fault', 'SOAPAction'] },
+          { id: 'rest', title: "REST in depth", emoji: '🏛️', group: 'Level 1 · Foundations', keywords: ['REST', 'RESTful', 'Roy Fielding', 'REST constraints', 'stateless', 'resource', 'representation', 'URI', 'URL', 'URN', 'Richardson Maturity Model', 'HATEOAS'] },
+          { id: 'api-types', title: "Kinds of APIs and where they sit in a system", emoji: '🗂️', group: 'Level 1 · Foundations', keywords: ['public API', 'partner API', 'internal API', 'composite API', 'microservices', 'monolith', 'API gateway', 'load balancer', 'endpoint', 'payload'] },
           { id: 'http-basics', title: "How HTTP carries a request", emoji: '📨', group: 'Level 1 · Foundations' },
           { id: 'methods', title: "HTTP methods, safety and idempotency", emoji: '🛠️', group: 'Level 1 · Foundations' },
           { id: 'status-codes', title: "Status codes", emoji: '🚦', group: 'Level 1 · Foundations' },
@@ -1680,7 +1684,6 @@ function apiManualModule() {
           { id: 'latest', title: "Latest standards and trends", emoji: '🆕', group: 'Level 4 · Expert and latest' },
           { id: 'strategy', title: "An API test strategy and great bug reports", emoji: '🗺️', group: 'Level 4 · Expert and latest' },
           { id: 'cheatsheet', title: "Cheat sheet", emoji: '📋', group: 'Hands on' },
-          { id: 'interview', title: "Interview questions", emoji: '💼', group: 'Hands on' },
           { id: 'p-get-product', title: "Test cases for GET /v1/products/{id}", emoji: '🏋️', group: 'Easy practice' },
           { id: 'p-read-response', title: "Spot the problems in a response", emoji: '🏋️', group: 'Easy practice' },
           { id: 'p-boundaries', title: "Boundary tests for a coupon API", emoji: '🏋️', group: 'Medium practice' },
@@ -1690,7 +1693,8 @@ function apiManualModule() {
           { id: 'p-contract', title: "Review a change for consumers", emoji: '🏋️', group: 'Expert practice' },
           { id: 'p-llm', title: "Test a support chatbot API", emoji: '🏋️', group: 'Expert practice' },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
-          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' },
+          { id: 'interview', title: 'Interview Questions', emoji: '💼', group: 'Interview Questions', keywords: ['interview questions', 'API testing interview', 'REST interview', 'Postman interview', 'SOAP versus REST'] }
         ]
       }
       ]
