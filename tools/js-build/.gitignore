@@ -1,0 +1,4 @@
+box/node_modules/
+.cache/
+box/runs/
+__pycache__/

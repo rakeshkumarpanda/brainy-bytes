@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Flow, Loops and Errors · JavaScript</title>
+<meta name="description" content="if, else and switch, for, while, for...of and for...in loops, async loops, try, catch and finally, custom errors, polling, retries and data driven checks.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 3 of 3</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔀</span><div><h1>Control Flow, Loops and Errors</h1><p class="lead">if and switch, every kind of loop, the forEach and await trap, throwing and catching errors with causes and cleanup, and the polling and retry loops that power auto-waiting in every test tool.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 14 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 5 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>The parts on async loops, errors and polling explain the three things behind most flaky UI tests: steps that are not awaited, cleanup that does not run, and fixed waits instead of polling.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#if-else" class="qa"><span>🔀</span>Making decisions with if and else</a><a href="#switch"><span>🎛️</span>switch and lookup tables</a><a href="#loops"><span>🔁</span>Loops</a><a href="#async-loops" class="qa"><span>⏱️</span>Loops with async steps</a><a href="#errors" class="qa"><span>🧯</span>Throwing and catching errors</a><a href="#polling" class="qa"><span>⏳</span>Polling and retry loops</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: data driven password checks</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="if-else" data-say="if-else"><div class="sec-num">Part 1</div><h2><span class="sec-em">🔀</span><span>Making decisions with if and else</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Each branch is a test case, and coverage tools measure how many branches your tests reach.</span></div>
+<p>An <code>if</code> statement runs a block only when a condition is truthy. <code>else if</code> adds more conditions, checked from the top, and the first one that matches wins.</p>
+<div class="codewrap" data-k="if-else" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">if, else if and else · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> shippingFee(total, isMember) {
+  <span class="k">if</span> (total &lt;= <span class="n">0</span>) {
+    <span class="k">return</span> <span class="s">"invalid"</span>;
+  } <span class="k">else</span> <span class="k">if</span> (isMember || total &gt;= <span class="n">999</span>) {
+    <span class="k">return</span> <span class="n">0</span>;
+  } <span class="k">else</span> <span class="k">if</span> (total &gt;= <span class="n">500</span>) {
+    <span class="k">return</span> <span class="n">40</span>;
+  } <span class="k">else</span> {
+    <span class="k">return</span> <span class="n">80</span>;
+  }
+}
+
+console.log(shippingFee(<span class="n">1200</span>, <span class="k">false</span>));
+console.log(shippingFee(<span class="n">600</span>, <span class="k">false</span>));
+console.log(shippingFee(<span class="n">300</span>, <span class="k">true</span>));
+console.log(shippingFee(<span class="n">300</span>, <span class="k">false</span>));
+console.log(shippingFee(-<span class="n">5</span>, <span class="k">false</span>));</pre><div class="out"><span>Output</span><pre>0
+40
+0
+80
+invalid</pre></div></div>
+<div class="tip">Order matters. Put the most specific condition first. If <code>total >= 500</code> came before <code>total >= 999</code>, a ₹1200 order would wrongly pay ₹40.</div>
+<h3>Guard clauses</h3>
+<p>Deep nesting is hard to read. Handle the bad cases first and return early, so the main logic stays at the left edge.</p>
+<div class="codewrap" data-k="guard" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Guard clauses keep code flat · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> applyCoupon(cart, code) {
+  <span class="k">if</span> (!cart) <span class="k">return</span> <span class="s">"no cart"</span>;
+  <span class="k">if</span> (cart.items.length === <span class="n">0</span>) <span class="k">return</span> <span class="s">"cart is empty"</span>;
+  <span class="k">if</span> (code !== <span class="s">"SAVE10"</span>) <span class="k">return</span> <span class="s">"unknown coupon"</span>;
+
+  <span class="c">// the happy path, no nesting needed</span>
+  <span class="k">return</span> <span class="s">`saved ${cart.total * 0.1}`</span>;
+}
+
+console.log(applyCoupon(<span class="k">null</span>, <span class="s">"SAVE10"</span>));
+console.log(applyCoupon({ items: [], total: <span class="n">0</span> }, <span class="s">"SAVE10"</span>));
+console.log(applyCoupon({ items: [<span class="n">1</span>], total: <span class="n">500</span> }, <span class="s">"OOPS"</span>));
+console.log(applyCoupon({ items: [<span class="n">1</span>], total: <span class="n">500</span> }, <span class="s">"SAVE10"</span>));</pre><div class="out"><span>Output</span><pre>no cart
+cart is empty
+unknown coupon
+saved 50</pre></div></div>
+<div class="qa-box">Every <code>if</code> and <code>else</code> is a path that needs a test. The shipping fee above has five paths, so it needs at least five test cases, plus the boundary values 499, 500, 998 and 999. Branch coverage reports count exactly these paths.</div>
+</section>
+<section class="card reveal jsec" id="switch" data-say="switch"><div class="sec-num">Part 2</div><h2><span class="sec-em">🎛️</span><span>switch and lookup tables</span></h2>
+
+<p><code>switch</code> compares one value against many cases with <code>===</code>. Cases without a <code>break</code> or <code>return</code> fall through into the next one, which is useful for shared results and a classic bug otherwise.</p>
+<div class="codewrap" data-k="switch" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">switch, shared cases and fall through · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> statusIcon(status) {
+  <span class="k">switch</span> (status) {
+    <span class="k">case</span> <span class="s">"passed"</span>:
+      <span class="k">return</span> <span class="s">"✅"</span>;
+    <span class="k">case</span> <span class="s">"failed"</span>:
+    <span class="k">case</span> <span class="s">"broken"</span>:           <span class="c">// two cases share one result</span>
+      <span class="k">return</span> <span class="s">"❌"</span>;
+    <span class="k">case</span> <span class="s">"skipped"</span>:
+      <span class="k">return</span> <span class="s">"⏭️"</span>;
+    <span class="k">default</span>:
+      <span class="k">return</span> <span class="s">"❓"</span>;
+  }
+}
+[<span class="s">"passed"</span>, <span class="s">"broken"</span>, <span class="s">"skipped"</span>, <span class="s">"flaky"</span>].forEach(s =&gt; console.log(s, statusIcon(s)));
+
+<span class="c">// forgetting break makes execution "fall through" into the next case</span>
+<span class="k">const</span> level = <span class="n">2</span>;
+<span class="k">switch</span> (level) {
+  <span class="k">case</span> <span class="n">1</span>: console.log(<span class="s">"one"</span>);
+  <span class="k">case</span> <span class="n">2</span>: console.log(<span class="s">"two"</span>);
+  <span class="k">case</span> <span class="n">3</span>: console.log(<span class="s">"three"</span>);
+  <span class="k">default</span>: console.log(<span class="s">"default"</span>);
+}</pre><div class="out"><span>Output</span><pre>passed ✅
+broken ❌
+skipped ⏭️
+flaky ❓
+two
+three
+default</pre></div></div>
+<p>When each case only picks a value, an object used as a lookup table is shorter and easier to extend.</p>
+<div class="codewrap" data-k="lookup" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An object lookup instead of a switch · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> <span class="t">ICONS</span> = { passed: <span class="s">"✅"</span>, failed: <span class="s">"❌"</span>, broken: <span class="s">"❌"</span>, skipped: <span class="s">"⏭️"</span> };
+<span class="k">const</span> icon = status =&gt; <span class="t">ICONS</span>[status] ?? <span class="s">"❓"</span>;
+console.log(icon(<span class="s">"passed"</span>), icon(<span class="s">"broken"</span>), icon(<span class="s">"flaky"</span>));</pre><div class="out"><span>Output</span><pre>✅ ❌ ❓</pre></div></div>
+</section>
+<section class="card reveal jsec" id="loops" data-say="loops"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔁</span><span>Loops</span></h2>
+
+<p>Loops repeat work. Pick the loop by what you are repeating over.</p>
+<div class="viz" data-viz="lanes" data-k="loop"></div>
+<div class="codewrap" data-k="loops" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Every kind of loop · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">for</span> (<span class="k">let</span> i = <span class="n">1</span>; i &lt;= <span class="n">3</span>; i++) {
+  console.log(<span class="s">"for"</span>, i);
+}
+
+<span class="k">let</span> tries = <span class="n">0</span>;
+<span class="k">while</span> (tries &lt; <span class="n">2</span>) {
+  tries++;
+  console.log(<span class="s">"while try"</span>, tries);
+}
+
+<span class="k">let</span> n = <span class="n">10</span>;
+<span class="k">do</span> {
+  console.log(<span class="s">"do runs at least once, n ="</span>, n);
+} <span class="k">while</span> (n &lt; <span class="n">5</span>);
+
+<span class="k">for</span> (<span class="k">const</span> browser <span class="k">of</span> [<span class="s">"chromium"</span>, <span class="s">"firefox"</span>, <span class="s">"webkit"</span>]) {
+  console.log(<span class="s">"for...of"</span>, browser);
+}
+
+<span class="k">const</span> user = { name: <span class="s">"Asha"</span>, role: <span class="s">"admin"</span> };
+<span class="k">for</span> (<span class="k">const</span> key <span class="k">in</span> user) {
+  console.log(<span class="s">"for...in"</span>, key, <span class="s">"="</span>, user[key]);
+}</pre><div class="out"><span>Output</span><pre>for 1
+for 2
+for 3
+while try 1
+while try 2
+do runs at least once, n = 10
+for...of chromium
+for...of firefox
+for...of webkit
+for...in name = Asha
+for...in role = admin</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Loop</th><th>Use it when</th></tr>
+<tr><td><code>for (let i = 0; i &lt; n; i++)</code></td><td>you need the counter, or a fixed number of repeats</td></tr>
+<tr><td><code>for (const x of list)</code></td><td>you want each value of an array, string, Map or Set. The usual choice.</td></tr>
+<tr><td><code>for (const key in obj)</code></td><td>you want the keys of a plain object. Avoid it on arrays.</td></tr>
+<tr><td><code>while (condition)</code></td><td>you do not know how many times, such as polling until something is ready</td></tr>
+<tr><td><code>do { } while (condition)</code></td><td>the body must run at least once</td></tr>
+</table></div>
+<h3>break, continue and labels</h3>
+<div class="codewrap" data-k="break-continue" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">break, continue and labels · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> results = [<span class="s">"pass"</span>, <span class="s">"pass"</span>, <span class="s">"skip"</span>, <span class="s">"fail"</span>, <span class="s">"pass"</span>];
+<span class="k">for</span> (<span class="k">const</span> r <span class="k">of</span> results) {
+  <span class="k">if</span> (r === <span class="s">"skip"</span>) <span class="k">continue</span>;      <span class="c">// jump to the next item</span>
+  <span class="k">if</span> (r === <span class="s">"fail"</span>) {
+    console.log(<span class="s">"stopping at the first failure"</span>);
+    <span class="k">break</span>;                         <span class="c">// leave the loop</span>
+  }
+  console.log(<span class="s">"checked"</span>, r);
+}
+
+outer: <span class="k">for</span> (<span class="k">const</span> row <span class="k">of</span> [[<span class="n">1</span>, <span class="n">2</span>], [<span class="n">3</span>, <span class="n">4</span>], [<span class="n">5</span>, <span class="n">6</span>]]) {
+  <span class="k">for</span> (<span class="k">const</span> cell <span class="k">of</span> row) {
+    <span class="k">if</span> (cell === <span class="n">4</span>) <span class="k">break</span> outer;   <span class="c">// a label breaks out of both loops</span>
+    console.log(cell);
+  }
+}</pre><div class="out"><span>Output</span><pre>checked pass
+checked pass
+stopping at the first failure
+1
+2
+3</pre></div></div>
+<div class="codewrap" data-k="entries" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Looping over objects and indexes · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> scores = { asha: <span class="n">82</span>, ravi: <span class="n">67</span>, mei: <span class="n">91</span> };
+<span class="k">for</span> (<span class="k">const</span> [name, score] <span class="k">of</span> <span class="t">Object</span>.entries(scores)) {
+  console.log(<span class="s">`${name}: ${score &gt;= 70 ? "pass" : "fail"}`</span>);
+}
+
+<span class="k">const</span> tests = [<span class="s">"login"</span>, <span class="s">"search"</span>, <span class="s">"checkout"</span>];
+<span class="k">for</span> (<span class="k">const</span> [index, name] <span class="k">of</span> tests.entries()) {
+  console.log(index + <span class="n">1</span>, name);
+}</pre><div class="out"><span>Output</span><pre>asha: pass
+ravi: fail
+mei: pass
+1 login
+2 search
+3 checkout</pre></div></div>
+<div class="warn">A <code>while</code> loop whose condition never becomes false runs forever and freezes the page or the test. Every polling loop needs a timeout, as shown later in this chapter.</div>
+</section>
+<section class="card reveal jsec qa-part" id="async-loops" data-say="async-loops"><div class="sec-num">Part 4</div><h2><span class="sec-em">⏱️</span><span>Loops with async steps</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">WebdriverIO</span><span class="qa-tool">Selenium</span><span class="qa-tool">Cypress</span><span class="qa-why">Awaiting inside forEach is one of the most common causes of flaky UI tests.</span></div>
+<p>Test code is full of steps that take time: open a page, click, wait for a response. These steps return promises and are written with <code>await</code> (chapter 10 explains how they work). Loops and <code>await</code> have one trap that breaks many first test suites.</p>
+<div class="codewrap" data-k="foreach-await" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">forEach does not wait for async steps · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> sleep = ms =&gt; <span class="k">new</span> <span class="t">Promise</span>(r =&gt; setTimeout(r, ms));
+<span class="k">const</span> steps = [<span class="s">"open page"</span>, <span class="s">"fill form"</span>, <span class="s">"submit"</span>];
+
+console.log(<span class="s">"forEach does not wait:"</span>);
+steps.forEach(<span class="k">async</span> step =&gt; {
+  <span class="k">await</span> sleep(<span class="n">10</span>);
+  console.log(<span class="s">"  done:"</span>, step);
+});
+console.log(<span class="s">"  forEach returned already"</span>);
+<span class="k">await</span> sleep(<span class="n">50</span>);
+
+console.log(<span class="s">"for...of waits for each step:"</span>);
+<span class="k">for</span> (<span class="k">const</span> step <span class="k">of</span> steps) {
+  <span class="k">await</span> sleep(<span class="n">10</span>);
+  console.log(<span class="s">"  done:"</span>, step);
+}
+console.log(<span class="s">"  every step finished"</span>);</pre><div class="out"><span>Output</span><pre>forEach does not wait:
+  forEach returned already
+  done: open page
+  done: fill form
+  done: submit
+for...of waits for each step:
+  done: open page
+  done: fill form
+  done: submit
+  every step finished</pre></div></div>
+<ul>
+<li><code>array.forEach</code> calls the function for every item and does not wait for any of them. The loop is "finished" while the steps are still running.</li>
+<li><code>for...of</code> with <code>await</code> inside runs the steps one after another, in order. Use it for UI steps.</li>
+<li>To start many independent requests at once and wait for all of them, use <code>await Promise.all(list.map(async x => ...))</code>.</li>
+</ul>
+<div class="qa-box">In Playwright and WebdriverIO, <code>items.forEach(async item => await page.click(item))</code> makes clicks race each other and the test may end before they finish. Write <code>for (const item of items) await page.click(item)</code>. Cypress queues its commands, so a plain <code>forEach</code> with <code>cy</code> commands inside works there, which is one of the main differences between the tools.</div>
+</section>
+<section class="card reveal jsec qa-part" id="errors" data-say="errors"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧯</span><span>Throwing and catching errors</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">Playwright</span><span class="qa-tool">Mocha</span><span class="qa-why">An assertion failure is a thrown error. Knowing how errors travel explains how runners report and clean up.</span></div>
+<p>Code signals a problem by <b>throwing</b> an error. The error travels up through the functions that called it until a <code>try</code> block catches it. If nothing catches it, the program stops.</p>
+<div class="viz" data-viz="flow" data-k="trycatch"></div>
+<div class="codewrap" data-k="throw" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">throw, try, catch and finally · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> withdraw(balance, amount) {
+  <span class="k">if</span> (<span class="k">typeof</span> amount !== <span class="s">"number"</span> || <span class="t">Number</span>.isNaN(amount)) {
+    <span class="k">throw</span> <span class="k">new</span> <span class="t">TypeError</span>(<span class="s">"amount must be a number"</span>);
+  }
+  <span class="k">if</span> (amount &gt; balance) {
+    <span class="k">throw</span> <span class="k">new</span> <span class="t">RangeError</span>(<span class="s">`cannot withdraw ${amount}, balance is ${balance}`</span>);
+  }
+  <span class="k">return</span> balance - amount;
+}
+
+<span class="k">for</span> (<span class="k">const</span> amount <span class="k">of</span> [<span class="n">30</span>, <span class="s">"ten"</span>, <span class="n">500</span>]) {
+  <span class="k">try</span> {
+    console.log(<span class="s">"new balance:"</span>, withdraw(<span class="n">100</span>, amount));
+  } <span class="k">catch</span> (err) {
+    console.log(<span class="s">`${err.name}: ${err.message}`</span>);
+  } <span class="k">finally</span> {
+    console.log(<span class="s">"finally always runs"</span>);
+  }
+}</pre><div class="out"><span>Output</span><pre>new balance: 70
+finally always runs
+TypeError: amount must be a number
+finally always runs
+RangeError: cannot withdraw 500, balance is 100
+finally always runs</pre></div></div>
+<ul>
+<li>Throw <code>Error</code> objects (or subclasses such as <code>TypeError</code>), never plain strings. Only <code>Error</code> objects carry a stack trace.</li>
+<li><code>finally</code> runs whether the block passed, threw or returned. It is the place for cleanup.</li>
+<li>Catch only what you can handle. Rethrow everything else with <code>throw err</code>.</li>
+</ul>
+<h3>Custom errors and causes</h3>
+<p>A subclass of <code>Error</code> lets callers tell your error apart from others with <code>instanceof</code>. The <code>cause</code> option (ES2022) wraps a low level error in a clearer one without losing it.</p>
+<div class="codewrap" data-k="custom-error" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A custom error with a cause · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">ValidationError</span> <span class="k">extends</span> <span class="t">Error</span> {
+  constructor(field, message, options) {
+    <span class="k">super</span>(message, options);
+    <span class="k">this</span>.name = <span class="s">"ValidationError"</span>;
+    <span class="k">this</span>.field = field;
+  }
+}
+
+<span class="k">function</span> parseAge(text) {
+  <span class="k">const</span> age = <span class="t">Number</span>(text);
+  <span class="k">if</span> (!<span class="t">Number</span>.isInteger(age)) {
+    <span class="k">throw</span> <span class="k">new</span> <span class="t">ValidationError</span>(<span class="s">"age"</span>, <span class="s">`"${text}" is not a whole number`</span>);
+  }
+  <span class="k">return</span> age;
+}
+
+<span class="k">function</span> signUp(form) {
+  <span class="k">try</span> {
+    <span class="k">return</span> { ok: <span class="k">true</span>, age: parseAge(form.age) };
+  } <span class="k">catch</span> (err) {
+    <span class="k">if</span> (err <span class="k">instanceof</span> <span class="t">ValidationError</span>) {
+      <span class="c">// wrap it with more context and keep the original as the cause</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`sign up failed for ${form.email}`</span>, { cause: err });
+    }
+    <span class="k">throw</span> err;   <span class="c">// anything else is unexpected, pass it on</span>
+  }
+}
+
+<span class="k">try</span> {
+  signUp({ email: <span class="s">"asha@example.com"</span>, age: <span class="s">"twenty"</span> });
+} <span class="k">catch</span> (err) {
+  console.log(err.message);
+  console.log(<span class="s">"cause:"</span>, err.cause.name, <span class="s">"on"</span>, err.cause.field, <span class="s">"-"</span>, err.cause.message);
+}</pre><div class="out"><span>Output</span><pre>sign up failed for asha@example.com
+cause: ValidationError on age - &quot;twenty&quot; is not a whole number</pre></div></div>
+<h3>finally for cleanup</h3>
+<div class="codewrap" data-k="finally-cleanup" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">finally for cleanup · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">async</span> <span class="k">function</span> runTest(name, body) {
+  <span class="k">const</span> browser = { open: <span class="k">true</span> };          <span class="c">// pretend we launched a browser</span>
+  console.log(<span class="s">`[${name}] browser launched`</span>);
+  <span class="k">try</span> {
+    <span class="k">await</span> body();
+    console.log(<span class="s">`[${name}] passed`</span>);
+  } <span class="k">catch</span> (err) {
+    console.log(<span class="s">`[${name}] failed: ${err.message}`</span>);
+  } <span class="k">finally</span> {
+    browser.open = <span class="k">false</span>;                    <span class="c">// cleanup runs on pass and on fail</span>
+    console.log(<span class="s">`[${name}] browser closed`</span>);
+  }
+}
+
+<span class="k">await</span> runTest(<span class="s">"login"</span>, <span class="k">async</span> () =&gt; {});
+<span class="k">await</span> runTest(<span class="s">"checkout"</span>, <span class="k">async</span> () =&gt; { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"button not found"</span>); });</pre><div class="out"><span>Output</span><pre>[login] browser launched
+[login] passed
+[login] browser closed
+[checkout] browser launched
+[checkout] failed: button not found
+[checkout] browser closed</pre></div></div>
+<div class="qa-box">A test runner is a giant <code>try</code>, <code>catch</code> and <code>finally</code>. Each test body runs inside <code>try</code>, a failed assertion is a thrown error, and <code>afterEach</code> hooks run like <code>finally</code>. That is why a failed assertion stops the rest of that test but not the suite.</div>
+</section>
+<section class="card reveal jsec qa-part" id="polling" data-say="polling"><div class="sec-num">Part 6</div><h2><span class="sec-em">⏳</span><span>Polling and retry loops</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">Selenium</span><span class="qa-tool">WebdriverIO</span><span class="qa-why">Auto-waiting and retries are loops like these, and their timeout options are the loop limits.</span></div>
+<p>Two loops sit at the centre of every test framework. You will rarely write them yourself, but knowing how they work explains timeouts, flaky tests and the options every tool offers.</p>
+<h3>Wait until something is true</h3>
+<div class="codewrap" data-k="wait-for" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A polling loop with a timeout · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> sleep = ms =&gt; <span class="k">new</span> <span class="t">Promise</span>(r =&gt; setTimeout(r, ms));
+
+<span class="c">// The heart of every "wait until" helper: check, wait a little, check again, give up after a timeout.</span>
+<span class="k">async</span> <span class="k">function</span> waitFor(check, { timeout = <span class="n">1000</span>, interval = <span class="n">100</span> } = {}) {
+  <span class="k">const</span> start = <span class="t">Date</span>.now();
+  <span class="k">let</span> attempt = <span class="n">0</span>;
+  <span class="k">while</span> (<span class="k">true</span>) {
+    attempt++;
+    <span class="k">const</span> value = <span class="k">await</span> check();
+    <span class="k">if</span> (value) <span class="k">return</span> { value, attempt };
+    <span class="k">if</span> (<span class="t">Date</span>.now() - start &gt;= timeout) {
+      <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`condition not met after ${attempt} attempts`</span>);
+    }
+    <span class="k">await</span> sleep(interval);
+  }
+}
+
+<span class="c">// A fake "order status" that becomes ready on the 4th check</span>
+<span class="k">let</span> calls = <span class="n">0</span>;
+<span class="k">const</span> orderStatus = <span class="k">async</span> () =&gt; (++calls &gt;= <span class="n">4</span> ? <span class="s">"SHIPPED"</span> : <span class="k">null</span>);
+
+<span class="k">const</span> result = <span class="k">await</span> waitFor(orderStatus, { timeout: <span class="n">2000</span>, interval: <span class="n">50</span> });
+console.log(result);
+
+<span class="k">try</span> {
+  <span class="k">await</span> waitFor(<span class="k">async</span> () =&gt; <span class="k">false</span>, { timeout: <span class="n">200</span>, interval: <span class="n">50</span> });
+} <span class="k">catch</span> (err) {
+  console.log(err.message);
+}</pre><div class="out"><span>Output</span><pre>{ value: &#x27;SHIPPED&#x27;, attempt: 4 }
+condition not met after 5 attempts</pre></div></div>
+<div class="viz" data-viz="wait"></div>
+<p>Playwright's auto-waiting, <code>expect.poll</code>, Cypress retry-ability, WebdriverIO's <code>waitUntil</code> and Selenium's <code>driver.wait</code> are all versions of this loop: check, wait a short interval, check again, fail with a clear message after the timeout.</p>
+<h3>Retry an action that sometimes fails</h3>
+<div class="codewrap" data-k="retry" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Retry with exponential backoff · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">async</span> <span class="k">function</span> retry(action, { attempts = <span class="n">3</span>, delay = <span class="n">50</span> } = {}) {
+  <span class="k">let</span> lastError;
+  <span class="k">for</span> (<span class="k">let</span> i = <span class="n">1</span>; i &lt;= attempts; i++) {
+    <span class="k">try</span> {
+      <span class="k">return</span> <span class="k">await</span> action(i);
+    } <span class="k">catch</span> (err) {
+      lastError = err;
+      console.log(<span class="s">`attempt ${i} failed: ${err.message}`</span>);
+      <span class="k">if</span> (i &lt; attempts) <span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; setTimeout(r, delay * <span class="n">2</span> ** (i - <span class="n">1</span>)));  <span class="c">// 50, 100, 200 ms</span>
+    }
+  }
+  <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`gave up after ${attempts} attempts`</span>, { cause: lastError });
+}
+
+<span class="k">const</span> flaky = <span class="k">async</span> attempt =&gt; {
+  <span class="k">if</span> (attempt &lt; <span class="n">3</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"503 Service Unavailable"</span>);
+  <span class="k">return</span> <span class="s">"200 OK"</span>;
+};
+console.log(<span class="k">await</span> retry(flaky));</pre><div class="out"><span>Output</span><pre>attempt 1 failed: 503 Service Unavailable
+attempt 2 failed: 503 Service Unavailable
+200 OK</pre></div></div>
+<div class="rule">Retry infrastructure problems (a 503 from a test server, a slow container). Never retry to hide a real bug. A test that only passes on the third try is reporting something.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: data driven password checks</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">Vitest</span><span class="qa-tool">Playwright</span></div>
+<div class="scenario"><b>The situation</b>A sign up form has a password rule: 8 to 64 characters, at least one capital letter and one digit. You need to check the rule on all the important inputs, including the boundaries, and show a readable report.</div>
+<div class="codewrap" data-k="scenario" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A table of test cases · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Data driven checks: one validation rule, a table of inputs and the result each should give.</span>
+<span class="k">function</span> isValidPassword(pw) {
+  <span class="k">if</span> (<span class="k">typeof</span> pw !== <span class="s">"string"</span>) <span class="k">return</span> <span class="k">false</span>;
+  <span class="k">if</span> (pw.length &lt; <span class="n">8</span> || pw.length &gt; <span class="n">64</span>) <span class="k">return</span> <span class="k">false</span>;
+  <span class="k">if</span> (!/[<span class="t">A</span>-<span class="t">Z</span>]/.test(pw)) <span class="k">return</span> <span class="k">false</span>;
+  <span class="k">if</span> (!/[<span class="n">0</span>-<span class="n">9</span>]/.test(pw)) <span class="k">return</span> <span class="k">false</span>;
+  <span class="k">return</span> <span class="k">true</span>;
+}
+
+<span class="k">const</span> cases = [
+  { input: <span class="s">"Secret12"</span>, expected: <span class="k">true</span>, why: <span class="s">"8 chars, upper, digit"</span> },
+  { input: <span class="s">"Secret1"</span>, expected: <span class="k">false</span>, why: <span class="s">"7 chars, one too short"</span> },
+  { input: <span class="s">"secret12"</span>, expected: <span class="k">false</span>, why: <span class="s">"no upper case"</span> },
+  { input: <span class="s">"SecretOK"</span>, expected: <span class="k">false</span>, why: <span class="s">"no digit"</span> },
+  { input: <span class="s">"A1"</span> + <span class="s">"x"</span>.repeat(<span class="n">62</span>), expected: <span class="k">true</span>, why: <span class="s">"64 chars, the maximum"</span> },
+  { input: <span class="s">"A1"</span> + <span class="s">"x"</span>.repeat(<span class="n">63</span>), expected: <span class="k">false</span>, why: <span class="s">"65 chars, one too long"</span> },
+  { input: <span class="k">null</span>, expected: <span class="k">false</span>, why: <span class="s">"not a string"</span> },
+];
+
+<span class="k">let</span> failures = <span class="n">0</span>;
+<span class="k">for</span> (<span class="k">const</span> c <span class="k">of</span> cases) {
+  <span class="k">const</span> actual = isValidPassword(c.input);
+  <span class="k">const</span> ok = actual === c.expected;
+  <span class="k">if</span> (!ok) failures++;
+  console.log(<span class="s">`${ok ? "PASS" : "FAIL"}  ${c.why.padEnd(24)} expected ${c.expected}, got ${actual}`</span>);
+}
+console.log(failures === <span class="n">0</span> ? <span class="s">"All cases pass"</span> : <span class="s">`${failures} case(s) failed`</span>);</pre><div class="out"><span>Output</span><pre>PASS  8 chars, upper, digit    expected true, got true
+PASS  7 chars, one too short   expected false, got false
+PASS  no upper case            expected false, got false
+PASS  no digit                 expected false, got false
+PASS  64 chars, the maximum    expected true, got true
+PASS  65 chars, one too long   expected false, got false
+PASS  not a string             expected false, got false
+All cases pass</pre></div></div>
+<p>This is <b>data driven testing</b>: the logic of the check is written once and the cases live in a table. Adding a case means adding one row. Every test runner has a built in version: <code>test.each</code> in Jest and Vitest, a loop over <code>test()</code> in Playwright, and data providers in TestNG.</p>
+<div class="qa-box">The rows were chosen with boundary value analysis: 7, 8, 64 and 65 characters, plus one row for each rule broken on its own. Each row has a short "why", which becomes the test name and tells the reader what failed.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-values-types.html" data-topic="js-values-types"><small>← Previous chapter</small><b>🔢 Variables and types</b></a><span></span></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Deciding, repeating and recovering", "panels": [{"s": [["e", "🔀"], ["t", "if (total >= 999) free", {"b": 1}]], "h": "Decide", "t": "if, else and switch pick a path.", "more": "Each path is a test case. Boundaries such as 998 and 999 deserve their own."}, {"s": [["e", "🔁"], ["c", [1, 2, 3], {"hl": {"0": "ok", "1": "ok", "2": "hl"}}]], "h": "Repeat", "t": "Loops run a block again and again.", "more": "for...of for values, a counter for fixed repeats, while for \"until it is ready\"."}, {"s": [["e", "🧯"], ["t", "try { } catch (e) { }", {"b": 1}]], "h": "Recover", "t": "try and catch handle errors.", "more": "finally always runs, which makes it the home of cleanup."}, {"s": [["e", "⏳"], ["t", "check, wait, check again", {"b": 1}]], "h": "Wait", "t": "A polling loop waits for a condition.", "more": "This loop is inside every auto-wait. Its timeout is the limit you configure."}], "remember": "Every branch is a test case, and every waiting loop needs a timeout."}, "real": [["🚚", "Delivery charges", "An if, else if chain decides free, reduced or full shipping. The tests check each band and the values on each edge."], ["📦", "Order tracking", "A tracking page polls the server every few seconds until the status says delivered, then stops."], ["🔁", "Flaky test server", "A CI job retries a request that fails with 503 three times with growing delays before reporting the server as down."]], "quiz": [{"lv": "e", "q": "Which loop is the usual choice to visit every value of an array?", "o": ["for...of", "for...in", "do...while", "switch"], "a": 0, "hint": "It gives values, not keys.", "why": "<code>for...of<\/code> gives each value. <code>for...in<\/code> gives keys and is meant for plain objects."}, {"lv": "e", "q": "When does a finally block run?", "o": ["Always, after try and any catch", "Only when there was an error", "Only when there was no error", "Only if catch rethrows"], "a": 0, "hint": "Think of cleanup.", "why": "finally runs whether the try block passed, threw or returned."}, {"lv": "e", "q": "What does continue do inside a loop?", "o": ["Skips to the next turn", "Leaves the loop", "Restarts the loop from the start", "Throws an error"], "a": 0, "hint": "break leaves, continue skips.", "why": "<code>continue<\/code> ends the current turn and moves to the next item."}, {"lv": "m", "q": "What does this print?", "o": ["two three", "two", "one two three", "three"], "a": 0, "hint": "There are no break statements.", "why": "Execution starts at case 2 and falls through into case 3.", "code": "switch (2) {\n  case 1: console.log(\"one\");\n  case 2: console.log(\"two\");\n  case 3: console.log(\"three\");\n}"}, {"lv": "m", "q": "Why should you throw new Error(\"x\") instead of throw \"x\"?", "o": ["Only Error objects carry a stack trace and a name", "Strings cannot be thrown", "It is faster", "catch only accepts objects"], "a": 0, "hint": "What helps you find where it happened?", "why": "A string can be thrown, but it has no stack, so the report cannot say where the problem started."}, {"lv": "m", "q": "A Playwright test does items.forEach(async i => await page.click(i)). What usually happens?", "o": ["The clicks race each other and the test can end before they finish", "Each click waits for the previous one", "It throws a SyntaxError", "forEach becomes synchronous"], "a": 0, "hint": "Does forEach look at the promises?", "why": "forEach ignores the returned promises. Use <code>for...of<\/code> with <code>await<\/code> for steps that must happen in order."}, {"lv": "h", "q": "What is err.cause here?", "o": ["The original ValidationError", "undefined", "The string \"bad age\"", "A new TypeError"], "a": 0, "hint": "The second argument of Error is an options object.", "why": "The <code>cause<\/code> option stores the original error on the new one.", "code": "try { parseAge(\"x\"); }\ncatch (e) { throw new Error(\"bad age\", { cause: e }); }"}, {"lv": "h", "q": "Which loop body runs at least once even when the condition starts false?", "o": ["do...while", "while", "for", "for...of"], "a": 0, "hint": "The check is at the end.", "why": "<code>do...while<\/code> checks its condition after the body."}, {"lv": "h", "q": "A retry waits 100 ms, then doubles the wait each time. How long is the wait before the 4th attempt?", "o": ["400 ms", "800 ms", "300 ms", "100 ms"], "a": 0, "hint": "100, 200, then...", "why": "Waits before attempts 2, 3 and 4 are 100, 200 and 400 ms."}, {"lv": "x", "q": "Which tool runs a plain forEach over cy commands correctly, and why?", "o": ["Cypress, because commands are queued and run later in order", "Playwright, because it awaits forEach", "Selenium, because it is synchronous", "None of them"], "a": 0, "hint": "One of them does not use await at all.", "why": "Cypress commands do not run when called. They are added to a queue that Cypress runs in order, so forEach only fills the queue."}, {"lv": "x", "q": "What does this print?", "o": ["1 2 3", "1 2 3 5 6", "1 2", "1 2 3 5"], "a": 0, "hint": "The label belongs to the outer loop.", "why": "<code>break outer<\/code> leaves both loops when the cell is 4, so only 1, 2 and 3 are printed.", "code": "outer: for (const row of [[1,2],[3,4],[5,6]]) {\n  for (const c of row) {\n    if (c === 4) break outer;\n    console.log(c);\n  }\n}"}, {"lv": "x", "q": "What does the function return?", "o": ["\"finally\"", "\"try\"", "undefined", "It throws"], "a": 0, "hint": "A return in finally wins.", "why": "A <code>return<\/code> inside <code>finally<\/code> replaces the value from <code>try<\/code>. This is why linters warn about it.", "code": "function f() {\n  try { return \"try\"; }\n  finally { return \"finally\"; }\n}"}], "calc": [{"lv": "e", "q": "How many times does the body run?", "ans": "5", "hint": "Count i from 0 up to 4.", "steps": ["i takes the values 0, 1, 2, 3 and 4.", "That is 5 turns."], "code": "for (let i = 0; i < 5; i++) {\n  console.log(i);\n}"}, {"lv": "e", "q": "What is the shipping fee for a total of 600 for a non member, with the rules from Part 1?", "ans": "40", "hint": "Check the conditions from the top.", "steps": ["600 is not ≤ 0 and not ≥ 999, but it is ≥ 500.", "So the fee is 40."]}, {"lv": "m", "q": "What is sum at the end?", "ans": "9", "hint": "Odd numbers only.", "steps": ["continue skips 2 and 4.", "<span class=\"eq\">1 + 3 + 5 = 9<\/span>"], "code": "let sum = 0;\nfor (let i = 1; i <= 5; i++) {\n  if (i % 2 === 0) continue;\n  sum += i;\n}"}, {"lv": "m", "q": "A polling loop has a timeout of 1000 ms and an interval of 200 ms. Each check is instant. At most how many checks run?", "ans": "6", "hint": "Checks at 0, 200, 400...", "steps": ["Checks happen at 0, 200, 400, 600, 800 and 1000 ms.", "The check at 1000 ms is the last one, so 6 checks."]}, {"lv": "h", "q": "A retry starts at 50 ms and doubles: 50, 100, 200... What is the total waiting time for 5 attempts?", "ans": "750", "hint": "There is no wait after the last attempt.", "steps": ["4 waits come between 5 attempts.", "<span class=\"eq\">50 + 100 + 200 + 400 = 750 ms<\/span>"], "alt": ["750 ms"]}, {"lv": "h", "q": "The password rule allows 8 to 64 characters. Using boundary value analysis with the values just below, on and just above each edge, how many length values do you test?", "ans": "6", "hint": "Three values around each edge.", "steps": ["Lower edge: 7, 8, 9.", "Upper edge: 63, 64, 65.", "That is 6 values."]}, {"lv": "x", "q": "What does this print?", "ans": "6", "hint": "The do body runs once before the check.", "steps": ["The body runs with n = 5 and makes n 6.", "Then <code>6 &lt; 5<\/code> is false, so the loop stops and prints 6."], "code": "let n = 5;\ndo {\n  n++;\n} while (n < 5);\nconsole.log(n);"}, {"lv": "x", "q": "How many lines does this print?", "ans": "4", "hint": "Follow the case where it starts.", "steps": ["\"start\" prints first.", "The switch jumps to case \"b\" and prints b, falls through into case \"c\" and prints c, then break leaves the switch.", "\"end\" prints last. That is 4 lines."], "code": "console.log(\"start\");\nswitch (\"b\") {\n  case \"a\": console.log(\"a\");\n  case \"b\": console.log(\"b\");\n  case \"c\": console.log(\"c\"); break;\n  default: console.log(\"default\");\n}\nconsole.log(\"end\");"}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers decisions, loops and errors, and ends with the polling and retry loops every test framework is built on.", "hi": "यह अध्याय decisions, loops और errors सिखाता है, और उन polling और retry loops पर खत्म होता है जिन पर हर test framework बना है।", "kn": "ಈ ಅಧ್ಯಾಯ decisions, loops ಮತ್ತು errors ಕಲಿಸುತ್ತದೆ, ಪ್ರತಿ test framework ಆಧರಿಸಿದ polling ಮತ್ತು retry loops ನೊಂದಿಗೆ ಮುಗಿಯುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ decisions, loops ଓ errors ଶିଖାଏ, ଏବଂ ପ୍ରତ୍ୟେକ test framework ର ମୂଳ polling ଓ retry loops ରେ ଶେଷ ହୁଏ।", "ar": "يتناول هذا الفصل القرارات والحلقات والأخطاء، وينتهي بحلقات الانتظار وإعادة المحاولة التي تقوم عليها كل أدوات الاختبار.", "de": "Dieses Kapitel behandelt Entscheidungen, Schleifen und Fehler und endet mit den Warte- und Wiederholungsschleifen, auf denen jedes Testframework aufbaut."}, {"id": "if-else", "h": "Decisions", "en": "if and else pick a path, and the first matching condition wins. Guard clauses return early so the main logic stays flat. Each path needs a test.", "hi": "if और else रास्ता चुनते हैं, और पहली matching condition जीतती है। Guard clauses जल्दी return करते हैं। हर रास्ते को एक test चाहिए।", "kn": "if ಮತ್ತು else ದಾರಿ ಆಯ್ಕೆ ಮಾಡುತ್ತವೆ, ಮೊದಲ matching condition ಗೆಲ್ಲುತ್ತದೆ. Guard clauses ಬೇಗ return ಮಾಡುತ್ತವೆ. ಪ್ರತಿ ದಾರಿಗೆ ಒಂದು test ಬೇಕು.", "or": "if ଓ else ରାସ୍ତା ବାଛନ୍ତି, ପ୍ରଥମ matching condition ଜିତେ। Guard clauses ଶୀଘ୍ର return କରନ୍ତି। ପ୍ରତ୍ୟେକ ରାସ୍ତା ପାଇଁ ଏକ test ଦରକାର।", "ar": "تختار if وelse المسار، والشرط الأول المطابق هو الذي يُنفذ. تعيد عبارات الحماية مبكرًا. كل مسار يحتاج إلى اختبار.", "de": "if und else wählen einen Weg, die erste passende Bedingung gewinnt. Guard Clauses kehren früh zurück. Jeder Weg braucht einen Test."}, {"id": "switch", "h": "switch", "en": "switch compares one value against many cases. Without break, execution falls through. An object lookup is often shorter.", "hi": "switch एक value को कई cases से मिलाता है। break के बिना execution आगे गिर जाता है। Object lookup अक्सर छोटा होता है।", "kn": "switch ಒಂದು value ಅನ್ನು ಹಲವು cases ಜೊತೆ ಹೋಲಿಸುತ್ತದೆ. break ಇಲ್ಲದಿದ್ದರೆ ಮುಂದಿನ case ಗೆ ಹೋಗುತ್ತದೆ. Object lookup ಹೆಚ್ಚಾಗಿ ಚಿಕ್ಕದು.", "or": "switch ଗୋଟିଏ value କୁ ଅନେକ cases ସହ ତୁଳନା କରେ। break ବିନା ପରବର୍ତ୍ତୀ case କୁ ଯାଏ। Object lookup ପ୍ରାୟ ଛୋଟ।", "ar": "تقارن switch قيمة واحدة بحالات كثيرة. بدون break يستمر التنفيذ إلى الحالة التالية. جدول البحث بكائن غالبًا أقصر.", "de": "switch vergleicht einen Wert mit vielen Fällen. Ohne break läuft die Ausführung weiter. Eine Objekttabelle ist oft kürzer."}, {"id": "loops", "h": "Loops", "en": "Use for of for values, a counter loop for fixed repeats, for in for object keys and while when you do not know how many times.", "hi": "Values के लिए for of, तय repeats के लिए counter loop, object keys के लिए for in और अनजानी गिनती के लिए while इस्तेमाल करें।", "kn": "Values ಗೆ for of, ನಿಗದಿತ repeats ಗೆ counter loop, object keys ಗೆ for in, ಎಷ್ಟು ಬಾರಿ ಎಂದು ಗೊತ್ತಿಲ್ಲದಾಗ while ಬಳಸಿ.", "or": "Values ପାଇଁ for of, ନିର୍ଦ୍ଦିଷ୍ଟ repeats ପାଇଁ counter loop, object keys ପାଇଁ for in ଏବଂ ଅଜଣା ସଂଖ୍ୟା ପାଇଁ while ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "استخدم for of للقيم، وحلقة العداد للتكرار المحدد، وfor in لمفاتيح الكائن، وwhile عندما لا تعرف عدد المرات.", "de": "Nimm for of für Werte, eine Zählschleife für feste Wiederholungen, for in für Objektschlüssel und while, wenn die Anzahl unbekannt ist."}, {"id": "async-loops", "h": "Async loops", "en": "forEach does not wait for async steps. Use for of with await to run steps in order, and Promise all to run independent ones together.", "hi": "forEach async steps का इंतज़ार नहीं करता। Steps क्रम से चलाने के लिए await के साथ for of, और अलग steps साथ चलाने के लिए Promise.all इस्तेमाल करें।", "kn": "forEach async steps ಗಾಗಿ ಕಾಯುವುದಿಲ್ಲ. ಕ್ರಮವಾಗಿ ಓಡಿಸಲು await ಜೊತೆ for of, ಒಟ್ಟಿಗೆ ಓಡಿಸಲು Promise.all ಬಳಸಿ.", "or": "forEach async steps ପାଇଁ ଅପେକ୍ଷା କରେ ନାହିଁ। କ୍ରମରେ ଚଲାଇବାକୁ await ସହ for of, ଏକାଠି ଚଲାଇବାକୁ Promise.all ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "لا تنتظر forEach الخطوات غير المتزامنة. استخدم for of مع await لتنفيذ الخطوات بالترتيب، وPromise.all لتنفيذ المستقلة معًا.", "de": "forEach wartet nicht auf asynchrone Schritte. Nutze for of mit await für die Reihenfolge und Promise.all für unabhängige Schritte."}, {"id": "errors", "h": "Errors", "en": "Throw Error objects, catch only what you can handle, and use finally for cleanup. A failed assertion is just a thrown error.", "hi": "Error objects throw करें, सिर्फ वही catch करें जो संभाल सकें, और cleanup के लिए finally इस्तेमाल करें। Failed assertion बस एक thrown error है।", "kn": "Error objects throw ಮಾಡಿ, ನಿಭಾಯಿಸಬಹುದಾದ್ದನ್ನು ಮಾತ್ರ catch ಮಾಡಿ, cleanup ಗೆ finally ಬಳಸಿ. Failed assertion ಒಂದು thrown error ಮಾತ್ರ.", "or": "Error objects throw କରନ୍ତୁ, ସମ୍ଭାଳିପାରୁଥିବା କେବଳ catch କରନ୍ତୁ, cleanup ପାଇଁ finally ବ୍ୟବହାର କରନ୍ତୁ। Failed assertion କେବଳ ଏକ thrown error।", "ar": "ارمِ كائنات Error، والتقط فقط ما تستطيع معالجته، واستخدم finally للتنظيف. التحقق الفاشل مجرد خطأ مرمي.", "de": "Wirf Error-Objekte, fange nur, was du behandeln kannst, und räume in finally auf. Eine fehlgeschlagene Assertion ist nur ein geworfener Fehler."}, {"id": "polling", "h": "Polling and retries", "en": "A polling loop checks, waits and checks again until a timeout. A retry loop repeats a failing action with growing delays. Auto waiting in test tools works the same way.", "hi": "Polling loop जाँचता है, रुकता है और timeout तक फिर जाँचता है। Retry loop असफल action को बढ़ती देरी के साथ दोहराता है। Test tools का auto waiting ऐसे ही काम करता है।", "kn": "Polling loop ಪರಿಶೀಲಿಸಿ, ಕಾಯ್ದು, timeout ವರೆಗೆ ಮತ್ತೆ ಪರಿಶೀಲಿಸುತ್ತದೆ. Retry loop ವಿಫಲ action ಅನ್ನು ಹೆಚ್ಚುವ ವಿಳಂಬದೊಂದಿಗೆ ಮರುಮಾಡುತ್ತದೆ.", "or": "Polling loop ଯାଞ୍ଚ କରେ, ଅପେକ୍ଷା କରେ ଏବଂ timeout ପର୍ଯ୍ୟନ୍ତ ପୁଣି ଯାଞ୍ଚ କରେ। Retry loop ବିଫଳ action କୁ ବଢ଼ୁଥିବା ବିଳମ୍ବ ସହ ଦୋହରାଏ।", "ar": "حلقة الانتظار تفحص وتنتظر وتفحص مجددًا حتى انتهاء المهلة. حلقة إعادة المحاولة تكرر الإجراء الفاشل مع تأخير متزايد.", "de": "Eine Warteschleife prüft, wartet und prüft erneut bis zum Timeout. Eine Wiederholungsschleife wiederholt eine fehlgeschlagene Aktion mit wachsenden Pausen."}, {"id": "scenario", "h": "Scenario", "en": "One password rule is checked against a table of cases chosen with boundary values. Adding a case means adding one row.", "hi": "एक password rule को boundary values से चुने cases की table पर जाँचा जाता है। नया case मतलब एक नई row।", "kn": "ಒಂದು password rule ಅನ್ನು boundary values ಮೂಲಕ ಆಯ್ದ cases table ವಿರುದ್ಧ ಪರಿಶೀಲಿಸಲಾಗುತ್ತದೆ. ಹೊಸ case ಎಂದರೆ ಒಂದು row.", "or": "ଗୋଟିଏ password rule କୁ boundary values ରୁ ବଛା cases table ରେ ଯାଞ୍ଚ କରାଯାଏ। ନୂଆ case ମାନେ ଗୋଟିଏ row।", "ar": "تُفحص قاعدة كلمة مرور واحدة مقابل جدول حالات مختارة بقيم الحدود. إضافة حالة تعني إضافة صف واحد.", "de": "Eine Passwortregel wird gegen eine Tabelle von Fällen mit Grenzwerten geprüft. Ein neuer Fall ist eine neue Zeile."}, {"id": "practice", "h": "Hands-on", "en": "Write decisions, loops and a real polling helper, then run the tests in your browser.", "hi": "Decisions, loops और एक असली polling helper लिखें, फिर tests अपने browser में चलाएँ।", "kn": "Decisions, loops ಮತ್ತು ನಿಜವಾದ polling helper ಬರೆಯಿರಿ, ನಂತರ tests ನಿಮ್ಮ browser ನಲ್ಲಿ ಓಡಿಸಿ.", "or": "Decisions, loops ଓ ଏକ ପ୍ରକୃତ polling helper ଲେଖନ୍ତୁ, ତାପରେ tests ଆପଣଙ୍କ browser ରେ ଚଲାନ୍ତୁ।", "ar": "اكتب قرارات وحلقات ومساعد انتظار حقيقي، ثم شغل الاختبارات في متصفحك.", "de": "Schreibe Entscheidungen, Schleifen und eine echte Wartehilfe und führe die Tests im Browser aus."}], "ex": [{"id": "grade", "lv": "e", "title": "Grade a score", "task": "<p>Write <code>grade(score)<\/code>: 90 and above is <code>\"A\"<\/code>, 75 to 89 is <code>\"B\"<\/code>, 50 to 74 is <code>\"C\"<\/code>, below 50 is <code>\"F\"<\/code>. Anything that is not a number from 0 to 100 returns <code>\"invalid\"<\/code>.<\/p>", "starter": "function grade(score) {\n  \n}", "tests": [{"call": "grade(95)", "want": "A"}, {"call": "grade(90)", "want": "A"}, {"call": "grade(89)", "want": "B"}, {"call": "grade(75)", "want": "B"}, {"call": "grade(50)", "want": "C"}, {"call": "grade(49)", "want": "F"}, {"call": "grade(0)", "want": "F"}, {"call": "grade(101)", "want": "invalid"}, {"call": "grade(\"80\")", "want": "invalid"}], "solution": "function grade(score) {\n  if (typeof score !== \"number\" || score < 0 || score > 100) return \"invalid\";\n  if (score >= 90) return \"A\";\n  if (score >= 75) return \"B\";\n  if (score >= 50) return \"C\";\n  return \"F\";\n}", "hint": "Start with a guard clause for invalid input, then check from the highest grade down.", "why": "Checking from the top band down means each condition only needs one comparison."}, {"id": "first-fail", "lv": "m", "title": "Stop at the first failure", "task": "<p>Write <code>firstFailure(results)<\/code>. It gets an array like <code>[\"pass\", \"pass\", \"fail\"]<\/code> and returns the <b>index<\/b> of the first <code>\"fail\"<\/code>, or <code>-1<\/code> when there is none. Use a loop with <code>break<\/code> or <code>return<\/code>.<\/p>", "starter": "function firstFailure(results) {\n  \n}", "tests": [{"call": "firstFailure([\"pass\", \"pass\", \"fail\", \"fail\"])", "want": 2}, {"call": "firstFailure([\"fail\"])", "want": 0}, {"call": "firstFailure([\"pass\", \"skip\"])", "want": -1}, {"call": "firstFailure([])", "want": -1}], "solution": "function firstFailure(results) {\n  for (let i = 0; i < results.length; i++) {\n    if (results[i] === \"fail\") return i;\n  }\n  return -1;\n}", "hint": "A counter loop gives you the index.", "why": "Returning inside the loop stops it at once. The built in <code>results.indexOf(\"fail\")<\/code> does the same thing."}, {"id": "retry-sync", "lv": "h", "title": "Retry a flaky function", "task": "<p>Write <code>retry(fn, attempts)<\/code>. Call <code>fn()<\/code>. If it throws, call it again, up to <code>attempts<\/code> calls in total. Return the first value it returns. If every call throws, throw the <b>last<\/b> error.<\/p>", "starter": "function retry(fn, attempts) {\n  return fn();\n}", "tests": [{"call": "(() => { let n = 0; return retry(() => { n++; if (n < 3) throw new Error(\"no\"); return \"ok on \" + n; }, 5); })()", "want": "ok on 3"}, {"call": "(() => { let n = 0; try { retry(() => { n++; throw new Error(\"fail \" + n); }, 3); } catch (e) { return e.message; } })()", "want": "fail 3"}, {"call": "(() => { let n = 0; retry(() => ++n, 4); return n; })()", "want": 1}], "solution": "function retry(fn, attempts) {\n  let last;\n  for (let i = 0; i < attempts; i++) {\n    try {\n      return fn();\n    } catch (err) {\n      last = err;\n    }\n  }\n  throw last;\n}", "hint": "Put <code>try<\/code> and <code>catch<\/code> inside a loop. Remember the error in a variable outside the loop.", "why": "A successful call returns straight out of the loop. Only when the loop runs out does the saved error get thrown."}, {"id": "wait-until", "lv": "x", "title": "Write waitUntil", "task": "<p>Write an <code>async<\/code> function <code>waitUntil(check, timeout, interval)<\/code>. It calls <code>check()<\/code> (which may return a promise) until the result is truthy and returns that result. If <code>timeout<\/code> milliseconds pass first, it throws an error with the message <code>\"timed out\"<\/code>.<\/p>", "starter": "async function waitUntil(check, timeout, interval) {\n  return check();\n}", "tests": [{"call": "(async () => { let n = 0; return await waitUntil(() => (++n >= 3 ? \"ready\" : false), 1000, 10); })()", "want": "ready"}, {"call": "(async () => { try { await waitUntil(() => false, 60, 10); return \"no error\"; } catch (e) { return e.message; } })()", "want": "timed out"}, {"call": "(async () => await waitUntil(async () => 42, 100, 10))()", "want": 42}], "solution": "async function waitUntil(check, timeout, interval) {\n  const start = Date.now();\n  while (true) {\n    const value = await check();\n    if (value) return value;\n    if (Date.now() - start >= timeout) throw new Error(\"timed out\");\n    await new Promise(r => setTimeout(r, interval));\n  }\n}", "hint": "Remember the start time with <code>Date.now()<\/code>. Wait with <code>await new Promise(r => setTimeout(r, interval))<\/code>.", "why": "This is the core of every auto-waiting helper. Awaiting <code>check()<\/code> lets it work with both normal and async checks."}], "dg": {"trycatch": {"t": "Where an error goes", "w": 900, "h": 260, "n": [["try", 30, 100, 160, 60, "try { ... }", {"c": 2}], ["ok", 260, 20, 170, 56, "no error", {"c": 1, "sub": "catch is skipped"}], ["bad", 260, 180, 170, 56, "throw new Error()", {"c": 6, "sub": "rest of try is skipped"}], ["catch", 490, 180, 160, 56, "catch (err)", {"c": 0}], ["fin", 710, 100, 160, 60, "finally", {"c": 3, "sub": "always runs"}], ["up", 490, 20, 160, 56, "not caught here?", {"c": 4, "sub": "travels to the caller"}]], "e": [["try", "ok"], ["try", "bad"], ["bad", "catch"], ["ok", "fin", {"via": [[790, 48]]}], ["catch", "fin"], ["catch", "up", {"t": "rethrow", "d": 1}]], "st": [[["try", "ok", "try>ok", "fin", "ok>fin"], "When nothing goes wrong, the try block finishes, catch is skipped and finally runs."], [["try", "bad", "try>bad"], "A throw stops the try block on that line."], [["catch", "bad>catch"], "Control jumps to catch with the error object."], [["fin", "catch>fin"], "finally runs next, so cleanup always happens."], [["up", "catch>up"], "If catch throws again, or there is no catch, the error travels up to whoever called this code."]]}}, "lanes": {"loop": {"t": "A loop, one turn at a time", "s": "Watch the counter, the condition and the running total.", "code": "let sum = 0;\nfor (let i = 1; i <= 3; i++) {\n  sum += i;\n}\nconsole.log(sum);", "lanes": ["Variables", "Condition", "Console"], "tone": [2, 5, 1], "steps": [{"l": 1, "v": [["sum = 0"], [], []], "m": "sum starts at 0."}, {"l": 2, "v": [["sum = 0", "i = 1"], ["1 <= 3 → true"], []], "m": "The loop creates i = 1 and checks the condition. It is true, so the body runs."}, {"l": 3, "v": [["sum = 1", "i = 1"], ["1 <= 3 → true"], []], "m": "sum += i adds 1."}, {"l": 2, "v": [["sum = 1", "i = 2"], ["2 <= 3 → true"], []], "m": "i++ makes i 2. The condition is checked again."}, {"l": 3, "v": [["sum = 3", "i = 2"], ["2 <= 3 → true"], []], "m": "sum becomes 3."}, {"l": 2, "v": [["sum = 3", "i = 3"], ["3 <= 3 → true"], []], "m": "i is 3. Still true, because the condition uses <=."}, {"l": 3, "v": [["sum = 6", "i = 3"], ["3 <= 3 → true"], []], "m": "sum becomes 6."}, {"l": 2, "v": [["sum = 6", "i = 4"], ["4 <= 3 → false"], []], "m": "i is 4 and the condition is false, so the loop ends. i only lived inside the loop."}, {"l": 5, "v": [["sum = 6"], [], ["6"]], "m": "The program continues after the loop and prints 6."}]}}, "play": {}};
+JSPLAY.page({ title: "Control Flow, Loops and Errors", subject: "javascript" });
+</script>
+</body>
+</html>
