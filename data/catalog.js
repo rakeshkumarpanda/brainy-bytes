@@ -1849,6 +1849,28 @@ function jsModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "js-testing", title: "Testing with JavaScript", emoji: "🧪", blurb: "Unit tests, API tests and browser automation with node:test, Jest, Vitest, Mocha, supertest, Playwright, Selenium and Cypress.", topics: [
+      { id: "js-unit-testing", title: "Unit Testing: node:test, Jest, Vitest and Mocha", emoji: "🧪", page: "content/javascript/js-unit-testing.html",
+        summary: "The test pyramid and Arrange Act Assert, node:test with mocks and a fake clock, Jest matchers, test.each, module mocks, spies and fake timers, Vitest and Mocha with Chai and Sinon, seven ways to run a node:test suite and five with Jest, a CI matrix with shards, UI component tests with jsdom, Testing Library and user-event, API route tests with supertest, outgoing HTTP faked with nock, and a bug turned into a regression test.",
+        keywords: ["unit testing", "node:test", "Jest", "Vitest", "Mocha", "Chai", "Sinon", "mock", "spy", "stub", "fake timers", "test.each", "filter", "tags", "shard", "coverage", "JUnit", "CI", "jsdom", "Testing Library", "supertest", "nock", "TDD", "regression test"],
+        added: "2026-10-20",
+        sections: [
+        { id: "basics", title: "What a unit test is", emoji: "🧱", group: "QA essential", keywords: ["unit test", "test pyramid", "Arrange Act Assert", "AAA", "node:test", "describe", "it", "assert", "assert.equal", "assert.throws", "deepEqual"] },
+        { id: "doubles", title: "Mocks, spies, stubs and fake timers", emoji: "🎭", group: "QA essential", keywords: ["mock", "spy", "stub", "fake", "test double", "mock.fn", "mock.timers", "fake timers", "dependency injection", "beforeEach", "callCount"] },
+        { id: "jest", title: "Jest", emoji: "🃏", group: "QA essential", keywords: ["Jest", "expect", "toBe", "toEqual", "toMatchObject", "toThrow", "test.each", "jest.fn", "jest.mock", "jest.spyOn", "mockResolvedValue", "useFakeTimers", "advanceTimersByTime"] },
+        { id: "vitest-mocha", title: "Vitest and Mocha", emoji: "⚡", group: "QA essential", keywords: ["Vitest", "vi.fn", "vi.useFakeTimers", "Mocha", "Chai", "Sinon", "expect", "spy", "stub", "mocharc", "debounce", "concurrent"] },
+        { id: "running", title: "Running tests in different ways", emoji: "🏃", group: "QA essential", keywords: ["run tests", "filter", "grep", "test-name-pattern", "-t", "tags", "only", "skip", "todo", "watch", "shard", "bail", "reporter", "junit", "coverage", "coverage threshold", "CI", "GitHub Actions", "matrix"] },
+        { id: "web", title: "Unit testing web (UI) code", emoji: "🖼️", group: "QA essential", keywords: ["jsdom", "Testing Library", "user-event", "screen", "getByRole", "getByLabelText", "findByText", "waitFor", "component test", "testEnvironment", "jest-environment-jsdom", "environment jsdom"] },
+        { id: "api", title: "Unit testing API code", emoji: "🔌", group: "QA essential", keywords: ["API unit test", "supertest", "nock", "Express", "route test", "status code", "mock HTTP", "outgoing request", "dependency injection", "503", "404"] },
+        { id: "scenario", title: "Real world scenario: turn a bug report into a test", emoji: "🎬", group: "QA essential", keywords: ["regression test", "bug report", "TDD", "test driven development", "red green refactor", "rounding", "money", "paise"] },
+        { id: "deep", title: "Deep equality", emoji: "🏋️", group: "Easy practice" },
+        { id: "spy", title: "A spy function", emoji: "🏋️", group: "Medium practice" },
+        { id: "runner", title: "A tiny test runner", emoji: "🏋️", group: "Hard practice" },
+        { id: "shard", title: "Split tests into shards", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

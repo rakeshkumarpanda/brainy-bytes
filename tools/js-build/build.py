@@ -369,10 +369,38 @@ def check(T):
     for k in list(T.get('dg', {})) + list(T.get('lanes', {})):
         if not any(f'data-k="{k}"' in p['html'] for p in T['parts']):
             errs.append(f'animation {k} is never shown')
-    text = json.dumps([T['lead'], T['parts'], T['quiz'], T['calc'], T['say'], T['ex'], T['info'], T['real']], ensure_ascii=False)
-    if '—' in text:
-        errs.append('an em dash slipped into the text')
+    # House style for reader facing text: no em or en dashes and no semicolons outside code.
+    for where, t in prose_pieces(T):
+        bare = re.sub(r'<pre[\s\S]*?</pre>|<code>[\s\S]*?</code>|<span class="eq">[\s\S]*?</span>|\[\[[\w-]+\]\]|&#?\w+;', ' ', t)
+        for bad, name in (('—', 'an em dash'), ('–', 'an en dash'), (';', 'a semicolon')):
+            if bad in bare:
+                i = bare.index(bad)
+                errs.append(f'{name} in {where}: ...{bare[max(0, i - 50):i + 20].strip()}...')
     return errs
+
+
+def prose_pieces(T):
+    yield 'lead', T['lead']
+    for k in ('summary', 'desc', 'qa_intro', 'title'):
+        yield k, T.get(k, '')
+    for p in T['parts']:
+        yield 'part ' + p['id'], p['html'] + ' ' + p['title'] + ' ' + (p.get('qa_why') or '')
+    for q in T['quiz']:
+        yield 'quiz', ' '.join([q['q'], q['hint'], q['why']])
+    for c in T['calc']:
+        yield 'calc', ' '.join([c['q'], c['hint'], *c['steps']])
+    for s in T['say']:
+        yield 'narration ' + s['id'], ' '.join(s[l] for l in LANGS)
+    for e in T['ex']:
+        yield 'exercise ' + e['id'], ' '.join([e['title'], e['task'], e['hint'], e['why']])
+    for pn in T['info']['panels']:
+        yield 'comic', ' '.join([pn['h'], pn['t'], pn['more']])
+    yield 'comic', T['info']['title'] + ' ' + T['info']['remember']
+    for r in T['real']:
+        yield 'real life', ' '.join(r[1:])
+    for spec in T['codes'].values():
+        if spec.get('result'):
+            yield 'result note', spec['result']
 
 
 def topic_files():
