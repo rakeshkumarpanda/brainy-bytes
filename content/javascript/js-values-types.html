@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Variables, Types and Operators · JavaScript</title>
+<meta name="description" content="Variables with let and const, primitive types, numbers and BigInt, type coercion, truthy and falsy, ==, === and Object.is, and all JavaScript operators.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 2 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔢</span><div><h1>Variables, Types and Operators</h1><p class="lead">let and const, the seven primitive types, why 0.1 + 0.2 is not 0.3, how JavaScript converts values by itself, the three kinds of equality and every operator, including ?. and ??.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 13 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 7 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Testers need this chapter for assertions: which equality a matcher uses, why text read from a page must be converted, and how to read optional fields from an API without crashes.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#variables" class="qa"><span>📦</span>Variables with let and const</a><a href="#types" class="qa"><span>🧬</span>The types of value</a><a href="#numbers" class="qa"><span>🔢</span>Numbers, NaN and BigInt</a><a href="#coercion" class="qa"><span>🔄</span>Type conversion and coercion</a><a href="#equality" class="qa"><span>⚖️</span>Equality: ==, === and Object.is</a><a href="#operators" class="qa"><span>➕</span>Operators</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: clean up data from an API</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="variables" data-say="variables"><div class="sec-num">Part 1</div><h2><span class="sec-em">📦</span><span>Variables with let and const</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<p>A <b>variable</b> is a name for a value. Modern JavaScript has two keywords for creating one.</p>
+<div class="vs"><div><b>const</b>The name always points at the same value. Use it by default, for URLs, selectors, test data and almost everything else.</div><div><b>let</b>The name can be pointed at a new value later. Use it for counters, totals and values that really change.</div></div>
+<div class="codewrap" data-k="let-const" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">let, const and what const really protects · 💥 Throws</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> baseUrl = <span class="s">"https://shop.example"</span>;   <span class="c">// never reassigned, so const</span>
+<span class="k">let</span> attempts = <span class="n">0</span>;                          <span class="c">// changes, so let</span>
+attempts = attempts + <span class="n">1</span>;
+attempts++;
+console.log(baseUrl, attempts);
+
+<span class="k">const</span> user = { name: <span class="s">"Asha"</span> };
+user.name = <span class="s">"Ravi"</span>;        <span class="c">// allowed: the object changes, the binding does not</span>
+console.log(user);
+user = {};                 <span class="c">// not allowed: const means this name always points at the same thing</span></pre><div class="err"><span>Output</span><pre>https://shop.example 2
+{ name: &#x27;Ravi&#x27; }
+main.mjs:10
+user = {};                 // not allowed: const means this name always points at the same thing
+     ^
+
+TypeError: Assignment to constant variable.
+    at main.mjs:10:6
+
+Node.js v26.12.0</pre></div></div>
+<div class="exam"><code>const</code> does not freeze an object. It only stops the name from being reassigned. Use <code>Object.freeze(obj)</code> when the contents must not change either.</div>
+<h3>And var</h3>
+<p><code>var</code> is the original keyword from 1995. It ignores blocks and can be used before its line runs, which causes bugs. You will still see it in old code and old tutorials. Do not use it in new code.</p>
+<div class="codewrap" data-k="var-scope" data-play="worker"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">var leaks out of blocks, let does not · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">for</span> (<span class="k">var</span> i = <span class="n">0</span>; i &lt; <span class="n">3</span>; i++) {}
+console.log(<span class="s">"var i after the loop:"</span>, i);    <span class="c">// var leaks out of the block</span>
+
+<span class="k">for</span> (<span class="k">let</span> j = <span class="n">0</span>; j &lt; <span class="n">3</span>; j++) {}
+console.log(<span class="k">typeof</span> j);                        <span class="c">// let stays inside the block</span></pre><div class="out"><span>Output</span><pre>var i after the loop: 3
+undefined</pre></div></div>
+<div class="tip">Names are case sensitive and use camelCase: <code>totalPrice</code>, <code>isLoggedIn</code>, <code>maxRetries</code>. Constants that never change across the whole project are often written as <code>MAX_RETRIES</code>.</div>
+<div class="qa-box">Keep test configuration in <code>const</code> values at the top of a file or in a config module: <code>const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000"</code>. Changing environments then means changing one line.</div>
+</section>
+<section class="card reveal jsec qa-part" id="types" data-say="types"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧬</span><span>The types of value</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">Playwright</span></div>
+<p>Every value in JavaScript is one of eight types. Seven are <b>primitives</b>, simple values that cannot be changed. Everything else is an <b>object</b>.</p>
+<div class="tw"><table class="jt"><tr><th>Type</th><th>Examples</th><th>typeof</th></tr>
+<tr><td>string</td><td><code>"Asha"</code>, <code>'ok'</code>, <code>`Hi ${name}`</code></td><td>"string"</td></tr>
+<tr><td>number</td><td><code>42</code>, <code>3.14</code>, <code>NaN</code>, <code>Infinity</code></td><td>"number"</td></tr>
+<tr><td>bigint</td><td><code>9007199254740993n</code></td><td>"bigint"</td></tr>
+<tr><td>boolean</td><td><code>true</code>, <code>false</code></td><td>"boolean"</td></tr>
+<tr><td>undefined</td><td>a variable with no value yet, a missing property</td><td>"undefined"</td></tr>
+<tr><td>null</td><td>an empty value put there on purpose</td><td>"object" (a famous old bug)</td></tr>
+<tr><td>symbol</td><td><code>Symbol("id")</code>, a unique key</td><td>"symbol"</td></tr>
+<tr><td>object</td><td><code>{}</code>, <code>[]</code>, functions, dates, maps</td><td>"object" or "function"</td></tr>
+</table></div>
+<div class="codewrap" data-k="typeof" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">typeof for every kind of value · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> values = [<span class="s">"hello"</span>, <span class="n">42</span>, <span class="n">3.14</span>, <span class="n">10n</span>, <span class="k">true</span>, <span class="k">undefined</span>, <span class="k">null</span>, <span class="t">Symbol</span>(<span class="s">"id"</span>), { a: <span class="n">1</span> }, [<span class="n">1</span>, <span class="n">2</span>], <span class="k">function</span> f() {}];
+<span class="k">for</span> (<span class="k">const</span> v <span class="k">of</span> values) {
+  console.log(<span class="t">String</span>(<span class="k">typeof</span> v).padEnd(<span class="n">10</span>), <span class="t">Array</span>.isArray(v) ? <span class="s">"(an array)"</span> : <span class="s">""</span>);
+}</pre><div class="out"><span>Output</span><pre>string
+number
+number
+bigint
+boolean
+undefined
+object
+symbol
+object
+object     (an array)
+function</pre></div></div>
+<div class="warn"><code>typeof null</code> is <code>"object"</code> and <code>typeof []</code> is <code>"object"</code> too. Check for null with <code>value === null</code> and for arrays with <code>Array.isArray(value)</code>.</div>
+<h3>Copied or shared</h3>
+<div class="viz" data-viz="lanes" data-k="copy"></div>
+<div class="codewrap" data-k="copy" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Primitives are copied, objects are shared · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">let</span> a = <span class="n">5</span>;
+<span class="k">let</span> b = a;       <span class="c">// the number is copied</span>
+b = <span class="n">10</span>;
+console.log(a, b);
+
+<span class="k">const</span> cart1 = { items: <span class="n">1</span> };
+<span class="k">const</span> cart2 = cart1;   <span class="c">// both names point at ONE object</span>
+cart2.items = <span class="n">99</span>;
+console.log(cart1.items, cart2.items);
+
+<span class="k">const</span> cart3 = { ...cart1 };  <span class="c">// a shallow copy is a second object</span>
+cart3.items = <span class="n">0</span>;
+console.log(cart1.items, cart3.items);</pre><div class="out"><span>Output</span><pre>5 10
+99 99
+99 0</pre></div></div>
+<div class="qa-box">This explains a common test bug. A shared object used as test data is changed by one test and the next test sees the change. Build fresh data in a <code>beforeEach</code> hook or copy it with <code>structuredClone(data)</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="numbers" data-say="numbers"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔢</span><span>Numbers, NaN and BigInt</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">Vitest</span><span class="qa-tool">Playwright</span></div>
+<p>JavaScript has one number type for whole numbers and decimals. It stores them in binary, so some decimals cannot be stored exactly.</p>
+<div class="codewrap" data-k="numbers" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Numbers, NaN, Infinity and BigInt · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">console.log(<span class="n">0.1</span> + <span class="n">0.2</span>);
+console.log(<span class="n">0.1</span> + <span class="n">0.2</span> === <span class="n">0.3</span>);
+console.log(<span class="t">Math</span>.abs(<span class="n">0.1</span> + <span class="n">0.2</span> - <span class="n">0.3</span>) &lt; <span class="t">Number</span>.<span class="t">EPSILON</span>);
+console.log((<span class="n">0.1</span> + <span class="n">0.2</span>).toFixed(<span class="n">2</span>));
+
+console.log(<span class="n">7</span> / <span class="n">2</span>, <span class="t">Math</span>.floor(<span class="n">7</span> / <span class="n">2</span>), <span class="n">7</span> % <span class="n">2</span>, <span class="n">2</span> ** <span class="n">10</span>);
+console.log(<span class="n">1</span> / <span class="n">0</span>, -<span class="n">1</span> / <span class="n">0</span>, <span class="n">0</span> / <span class="n">0</span>);
+console.log(<span class="t">Number</span>.isNaN(<span class="t">NaN</span>), <span class="t">NaN</span> === <span class="t">NaN</span>);
+console.log(<span class="t">Number</span>.<span class="t">MAX_SAFE_INTEGER</span>);
+console.log(<span class="n">9007199254740993</span>);             <span class="c">// too big, silently rounded</span>
+console.log(<span class="n">9007199254740993n</span> + <span class="n">1n</span>);       <span class="c">// BigInt keeps every digit</span></pre><div class="out"><span>Output</span><pre>0.30000000000000004
+false
+true
+0.30
+3.5 3 1 1024
+Infinity -Infinity NaN
+true false
+9007199254740991
+9007199254740992
+9007199254740994n</pre></div></div>
+<ul>
+<li><code>0.1 + 0.2</code> is not exactly <code>0.3</code>. Compare decimals with a small tolerance, or round them first.</li>
+<li><code>NaN</code> means "not a number", the result of a failed calculation. It is the only value not equal to itself, so test it with <code>Number.isNaN</code>.</li>
+<li>Whole numbers are exact up to <code>Number.MAX_SAFE_INTEGER</code> (about 9 quadrillion). Larger IDs, such as some database keys, need <b>BigInt</b> or must stay strings.</li>
+</ul>
+<div class="codewrap" data-k="money" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Money without rounding errors · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Work with money in the smallest unit (paise or cents) to avoid floating point errors</span>
+<span class="k">const</span> pricePaise = <span class="n">129950</span>;      <span class="c">// ₹1299.50</span>
+<span class="k">const</span> qty = <span class="n">3</span>;
+<span class="k">const</span> totalPaise = pricePaise * qty;
+console.log(totalPaise / <span class="n">100</span>);
+
+<span class="k">const</span> fmt = <span class="k">new</span> <span class="t">Intl</span>.<span class="t">NumberFormat</span>(<span class="s">"en-IN"</span>, { style: <span class="s">"currency"</span>, currency: <span class="s">"INR"</span> });
+console.log(fmt.format(totalPaise / <span class="n">100</span>));</pre><div class="out"><span>Output</span><pre>3898.5
+₹3,898.50</pre></div></div>
+<div class="rule">Store money in the smallest unit as a whole number and format it only for display. Never add up prices as decimals.</div>
+<div class="qa-box">Checking a cart total such as <code>expect(total).toBe(0.3)</code> can fail for the wrong reason. Use <code>toBeCloseTo</code> in Jest or Vitest, or compare the formatted text the user sees, such as <code>"₹3,898.50"</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="coercion" data-say="coercion"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔄</span><span>Type conversion and coercion</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Every value read from the page with textContent, inputValue or getAttribute is a string.</span></div>
+<p><b>Conversion</b> is when you change a type on purpose. <b>Coercion</b> is when JavaScript does it for you behind the scenes. Both follow fixed rules.</p>
+<div class="codewrap" data-k="parse" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Converting on purpose · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">console.log(<span class="t">Number</span>(<span class="s">"42"</span>), <span class="t">Number</span>(<span class="s">""</span>), <span class="t">Number</span>(<span class="s">"42px"</span>), <span class="t">Number</span>(<span class="s">" 7 "</span>));
+console.log(parseInt(<span class="s">"42px"</span>), parseFloat(<span class="s">"3.5kg"</span>), parseInt(<span class="s">"0x1F"</span>), parseInt(<span class="s">"101"</span>, <span class="n">2</span>));
+console.log(<span class="t">String</span>(<span class="n">42</span>), (<span class="n">42</span>).toString(<span class="n">2</span>), <span class="s">`${42}`</span>);
+console.log(<span class="t">Boolean</span>(<span class="s">""</span>), <span class="t">Boolean</span>(<span class="s">"0"</span>), <span class="t">Boolean</span>(<span class="n">0</span>), <span class="t">Boolean</span>([]));</pre><div class="out"><span>Output</span><pre>42 0 NaN 7
+42 3.5 31 5
+42 101010 42
+false true false true</pre></div></div>
+<p>When an operator gets the "wrong" type, JavaScript converts the value. The <code>+</code> operator prefers text: if either side is a string, it joins. The other maths operators convert to numbers.</p>
+<div class="codewrap" data-k="coercion" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Conversions JavaScript does by itself · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">console.log(<span class="s">"5"</span> + <span class="n">3</span>);        <span class="c">// + with a string joins text</span>
+console.log(<span class="s">"5"</span> - <span class="n">3</span>);        <span class="c">// - only works on numbers, so "5" becomes 5</span>
+console.log(<span class="s">"5"</span> * <span class="s">"2"</span>);
+console.log(<span class="k">true</span> + <span class="n">1</span>);
+console.log([] + []);
+console.log([] + {});
+console.log(<span class="k">null</span> + <span class="n">1</span>, <span class="k">undefined</span> + <span class="n">1</span>);
+console.log(<span class="s">"10"</span> &gt; <span class="s">"9"</span>, <span class="n">10</span> &gt; <span class="s">"9"</span>);</pre><div class="out"><span>Output</span><pre>53
+2
+10
+2
+
+[object Object]
+1 NaN
+false true</pre></div></div>
+<h3>Truthy and falsy</h3>
+<p>In an <code>if</code> or with <code>&amp;&amp;</code>, <code>||</code> and <code>!</code>, every value counts as true or false. Only eight values are <b>falsy</b>. Everything else, including <code>"0"</code>, <code>"false"</code>, <code>[]</code> and <code>{}</code>, is <b>truthy</b>.</p>
+<div class="codewrap" data-k="falsy" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The eight falsy values · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> values = [<span class="k">false</span>, <span class="n">0</span>, -<span class="n">0</span>, <span class="n">0n</span>, <span class="s">""</span>, <span class="k">null</span>, <span class="k">undefined</span>, <span class="t">NaN</span>, <span class="s">"0"</span>, <span class="s">"false"</span>, [], {}];
+<span class="k">const</span> labels = [<span class="s">"false"</span>, <span class="s">"0"</span>, <span class="s">"-0"</span>, <span class="s">"0n"</span>, <span class="s">'""'</span>, <span class="s">"null"</span>, <span class="s">"undefined"</span>, <span class="s">"NaN"</span>, <span class="s">'"0"'</span>, <span class="s">'"false"'</span>, <span class="s">"[]"</span>, <span class="s">"{}"</span>];
+values.forEach((v, i) =&gt; {
+  console.log(labels[i].padEnd(<span class="n">10</span>), v ? <span class="s">"truthy"</span> : <span class="s">"falsy"</span>);
+});</pre><div class="out"><span>Output</span><pre>false      falsy
+0          falsy
+-0         falsy
+0n         falsy
+&quot;&quot;         falsy
+null       falsy
+undefined  falsy
+NaN        falsy
+&quot;0&quot;        truthy
+&quot;false&quot;    truthy
+[]         truthy
+{}         truthy</pre></div></div>
+<div class="exam">Values read from an input field, a URL or an environment variable are always strings. <code>process.env.HEADLESS</code> set to <code>"false"</code> is truthy. Compare it with the text: <code>process.env.HEADLESS === "true"</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="equality" data-say="equality"><div class="sec-num">Part 5</div><h2><span class="sec-em">⚖️</span><span>Equality: ==, === and Object.is</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">Vitest</span><span class="qa-tool">Chai</span><span class="qa-tool">Playwright</span><span class="qa-why">Picking the wrong equality is the most common reason a correct assertion fails.</span></div>
+<p>JavaScript has three ways to ask "are these the same".</p>
+<div class="viz" data-viz="coerce"></div>
+<div class="codewrap" data-k="equality" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">==, === and Object.is · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">console.log(<span class="n">5</span> == <span class="s">"5"</span>, <span class="n">5</span> === <span class="s">"5"</span>);
+console.log(<span class="n">0</span> == <span class="k">false</span>, <span class="n">0</span> === <span class="k">false</span>);
+console.log(<span class="k">null</span> == <span class="k">undefined</span>, <span class="k">null</span> === <span class="k">undefined</span>);
+console.log(<span class="t">NaN</span> === <span class="t">NaN</span>, <span class="t">Object</span>.is(<span class="t">NaN</span>, <span class="t">NaN</span>));
+console.log(<span class="n">0</span> === -<span class="n">0</span>, <span class="t">Object</span>.is(<span class="n">0</span>, -<span class="n">0</span>));
+
+<span class="k">const</span> a = { id: <span class="n">1</span> }, b = { id: <span class="n">1</span> }, c = a;
+console.log(a === b, a === c);
+console.log(<span class="t">JSON</span>.stringify(a) === <span class="t">JSON</span>.stringify(b));</pre><div class="out"><span>Output</span><pre>true false
+true false
+true false
+false true
+true false
+false true
+true</pre></div></div>
+<ul>
+<li><code>===</code> (strict equality) compares without converting. Use it everywhere.</li>
+<li><code>==</code> (loose equality) converts first, which gives surprises such as <code>0 == ""</code>. The one useful case is <code>x == null</code>, which is true for both <code>null</code> and <code>undefined</code>.</li>
+<li><code>Object.is</code> is like <code>===</code> except that <code>NaN</code> equals <code>NaN</code> and <code>0</code> differs from <code>-0</code>.</li>
+<li>Objects and arrays are equal only when they are the <b>same object</b>. Two objects with the same contents are not <code>===</code>.</li>
+</ul>
+<p>Test runners have the same split. In Jest and Vitest, <code>toBe</code> uses <code>Object.is</code> and <code>toEqual</code> compares contents. The first test below fails on purpose so you can read the message.</p>
+<div class="codewrap tests" data-k="jest-eq"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same idea inside a test runner · 🧪 Tests run, one fails on purpose</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 package.json</div><pre class="src" data-file="package.json">{
+  <span class="s">"name"</span>: <span class="s">"eq"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"scripts"</span>: {
+    <span class="s">"test"</span>: <span class="s">"jest"</span>
+  }
+}</pre><div class="fname">📄 cart.test.js</div><pre class="src" data-file="cart.test.js">test(<span class="s">"toBe compares with Object.is, so two equal looking objects fail"</span>, () =&gt; {
+  expect({ id: <span class="n">1</span> }).toBe({ id: <span class="n">1</span> });
+});
+
+test(<span class="s">"toEqual compares the contents"</span>, () =&gt; {
+  expect({ id: <span class="n">1</span>, tags: [<span class="s">"new"</span>] }).toEqual({ id: <span class="n">1</span>, tags: [<span class="s">"new"</span>] });
+});
+
+test(<span class="s">"toBeCloseTo is the right check for decimals"</span>, () =&gt; {
+  expect(<span class="n">0.1</span> + <span class="n">0.2</span>).toBeCloseTo(<span class="n">0.3</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx jest --verbose</pre></div><div class="err"><span>Terminal output</span><pre>FAIL ./cart.test.js
+  ✕ toBe compares with Object.is, so two equal looking objects fail 
+  ✓ toEqual compares the contents
+  ✓ toBeCloseTo is the right check for decimals
+
+  ● toBe compares with Object.is, so two equal looking objects fail
+
+    expect(received).toBe(expected) // Object.is equality
+
+    If it should pass with deep equality, replace &quot;toBe&quot; with &quot;toStrictEqual&quot;
+
+    Expected: {&quot;id&quot;: 1}
+    Received: serializes to the same string
+
+      1 | test(&quot;toBe compares with Object.is, so two equal looking objects fail&quot;, () =&gt; {
+    &gt; 2 |   expect({ id: 1 }).toBe({ id: 1 });
+        |                     ^
+      3 | });
+      4 |
+      5 | test(&quot;toEqual compares the contents&quot;, () =&gt; {
+
+      at Object.toBe (cart.test.js:2:21)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 2 passed, 3 total
+Snapshots:   0 total
+Time:        0.4 s
+Ran all test suites.</pre></div></div>
+<div class="qa-box">Choose the matcher by what you compare: <code>toBe</code> for numbers, strings and booleans, <code>toEqual</code> or <code>toStrictEqual</code> for objects and arrays, <code>toBeCloseTo</code> for decimals. Chai uses <code>equal</code> and <code>deep.equal</code>, and Playwright's <code>expect</code> has the same <code>toBe</code> and <code>toEqual</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="operators" data-say="operators"><div class="sec-num">Part 6</div><h2><span class="sec-em">➕</span><span>Operators</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">Jest</span></div>
+<p>Operators combine values. Most of them you know from maths. A few are special to JavaScript and very handy.</p>
+<div class="codewrap" data-k="operators" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Arithmetic, comparison, logic and ?? · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">let</span> score = <span class="n">10</span>;
+score += <span class="n">5</span>;      <span class="c">// 15</span>
+score *= <span class="n">2</span>;      <span class="c">// 30</span>
+score -= <span class="n">4</span>;      <span class="c">// 26</span>
+score %= <span class="n">7</span>;      <span class="c">// 5</span>
+console.log(score);
+
+<span class="k">const</span> age = <span class="n">20</span>;
+console.log(age &gt;= <span class="n">18</span> ? <span class="s">"adult"</span> : <span class="s">"minor"</span>);
+console.log(age &gt; <span class="n">18</span> &amp;&amp; age &lt; <span class="n">60</span>, age &lt; <span class="n">18</span> || age &gt; <span class="n">60</span>, !<span class="k">true</span>);
+
+console.log(<span class="s">""</span> || <span class="s">"default"</span>, <span class="n">0</span> || <span class="n">10</span>, <span class="s">"set"</span> &amp;&amp; <span class="s">"both true"</span>);
+console.log(<span class="t">JSON</span>.stringify(<span class="s">""</span> ?? <span class="s">"default"</span>), <span class="n">0</span> ?? <span class="n">10</span>, <span class="k">null</span> ?? <span class="s">"fallback"</span>);</pre><div class="out"><span>Output</span><pre>5
+adult
+true false false
+default 10 both true
+&quot;&quot; 0 fallback</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Group</th><th>Operators</th></tr>
+<tr><td>Arithmetic</td><td><code>+ - * / % **</code>, and <code>++</code> and <code>--</code> to add or take away one</td></tr>
+<tr><td>Assignment</td><td><code>= += -= *= /= %= **=</code></td></tr>
+<tr><td>Comparison</td><td><code>=== !== &lt; &gt; &lt;= &gt;=</code></td></tr>
+<tr><td>Logical</td><td><code>&amp;&amp;</code> (and), <code>||</code> (or), <code>!</code> (not). They return one of their values, not just true or false.</td></tr>
+<tr><td>Nullish</td><td><code>??</code> uses the right side only when the left is <code>null</code> or <code>undefined</code></td></tr>
+<tr><td>Optional chaining</td><td><code>?.</code> stops and gives <code>undefined</code> instead of crashing on a missing value</td></tr>
+<tr><td>Logical assignment</td><td><code>||= &amp;&amp;= ??=</code> assign only when needed</td></tr>
+<tr><td>Conditional</td><td><code>condition ? a : b</code></td></tr>
+</table></div>
+<h3>?? against ||</h3>
+<p><code>||</code> replaces every falsy value, so a real <code>0</code> or an empty string is lost. <code>??</code> replaces only <code>null</code> and <code>undefined</code>. For defaults such as a timeout or a retry count, <code>??</code> is almost always what you want.</p>
+<div class="codewrap" data-k="optional" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Optional chaining and logical assignment · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> response = {
+  user: { name: <span class="s">"Asha"</span>, address: <span class="k">null</span>, orders: [{ id: <span class="n">7</span>, total: <span class="n">1299</span> }] },
+};
+
+console.log(response.user?.address?.city);           <span class="c">// undefined, no crash</span>
+console.log(response.user?.address?.city ?? <span class="s">"Unknown"</span>);
+console.log(response.user.orders?.[<span class="n">0</span>]?.total);
+console.log(response.user.orders?.[<span class="n">5</span>]?.total ?? <span class="n">0</span>);
+console.log(response.user.greet?.());                <span class="c">// call it only if it exists</span>
+
+<span class="k">const</span> settings = { retries: <span class="n">0</span>, timeout: <span class="k">null</span> };
+settings.retries ||= <span class="n">3</span>;     <span class="c">// 0 is falsy, so it becomes 3</span>
+settings.timeout ??= <span class="n">5000</span>;  <span class="c">// only null or undefined is replaced</span>
+console.log(settings);</pre><div class="out"><span>Output</span><pre>undefined
+Unknown
+1299
+0
+undefined
+{ retries: 3, timeout: 5000 }</pre></div></div>
+<div class="qa-box">API responses are full of optional fields. <code>body.data?.items?.[0]?.id</code> reads deep values without a crash, so the assertion that follows fails with a clear message instead of a TypeError.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: clean up data from an API</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>A product API returns prices as text with a currency sign, stock as text and a discount that is sometimes missing. Before you can check the numbers, you must turn them into real numbers without crashing on the gaps.</div>
+<div class="codewrap" data-k="scenario" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Normalise messy test data · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// An API returned product data in an awkward shape. Normalise it before checking it.</span>
+<span class="k">const</span> apiProducts = [
+  { sku: <span class="s">"A1"</span>, price: <span class="s">"₹1,299.50"</span>, stock: <span class="s">"12"</span>, discount: <span class="k">null</span> },
+  { sku: <span class="s">"B2"</span>, price: <span class="s">"₹499"</span>, stock: <span class="s">"0"</span>, discount: { percent: <span class="n">10</span> } },
+  { sku: <span class="s">"C3"</span>, price: <span class="s">""</span>, stock: <span class="k">undefined</span> },
+];
+
+<span class="k">function</span> toNumber(text) {
+  <span class="k">const</span> clean = <span class="t">String</span>(text ?? <span class="s">""</span>).replace(/[^<span class="n">0</span>-<span class="n">9</span>.]/g, <span class="s">""</span>);
+  <span class="k">return</span> clean === <span class="s">""</span> ? <span class="k">null</span> : <span class="t">Number</span>(clean);
+}
+
+<span class="k">const</span> products = apiProducts.map(p =&gt; ({
+  sku: p.sku,
+  price: toNumber(p.price),
+  inStock: <span class="t">Number</span>(p.stock ?? <span class="n">0</span>) &gt; <span class="n">0</span>,
+  discount: p.discount?.percent ?? <span class="n">0</span>,
+}));
+console.table(products);
+
+<span class="k">const</span> problems = products.filter(p =&gt; p.price === <span class="k">null</span> || <span class="t">Number</span>.isNaN(p.price));
+console.log(<span class="s">"Products with a missing price:"</span>, problems.map(p =&gt; p.sku));</pre><div class="out"><span>Output</span><pre>┌─────────┬──────┬────────┬─────────┬──────────┐
+│ (index) │ sku  │ price  │ inStock │ discount │
+├─────────┼──────┼────────┼─────────┼──────────┤
+│ 0       │ &#x27;A1&#x27; │ 1299.5 │ true    │ 0        │
+│ 1       │ &#x27;B2&#x27; │ 499    │ false   │ 10       │
+│ 2       │ &#x27;C3&#x27; │ null   │ false   │ 0        │
+└─────────┴──────┴────────┴─────────┴──────────┘
+Products with a missing price: [ &#x27;C3&#x27; ]</pre></div></div>
+<p>Every tool from this chapter is here: <code>??</code> for missing values, <code>?.</code> for the optional discount, explicit <code>Number</code> conversion, and a check with <code>Number.isNaN</code> for anything that went wrong.</p>
+<div class="dev-box">The same <code>toNumber</code> helper is useful in the app itself. Parsing input once, at the edge, keeps the rest of the code working with clean types.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-getting-started.html" data-topic="js-getting-started"><small>← Previous chapter</small><b>🚀 Getting started</b></a><a class="next" href="./js-control-flow.html" data-topic="js-control-flow"><small>Next chapter →</small><b>🔀 Control flow and errors</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Values, types and the comparisons between them", "panels": [{"s": [["e", "📦"], ["t", "const url = \"...\"", {"b": 1}]], "h": "Name a value", "t": "const and let give a value a name.", "more": "Use const unless the name really must point somewhere new."}, {"s": [["e", "🧬"], ["t", "typeof 42 → \"number\"", {"b": 1}]], "h": "Every value has a type", "t": "Seven primitive types plus objects.", "more": "typeof null says \"object\", an old mistake kept for compatibility."}, {"s": [["e", "🔄"], ["t", "\"5\" + 3 → \"53\"", {"b": 1}]], "h": "Types get converted", "t": "Operators convert values that do not match.", "more": "Plus joins text when one side is a string. The others turn text into numbers."}, {"s": [["e", "⚖️"], ["t", "5 === \"5\" → false", {"b": 1}]], "h": "Compare strictly", "t": "Use === so nothing is converted behind your back.", "more": "Objects are equal only when they are the very same object."}], "remember": "const by default, === always, ?? for defaults."}, "real": [["🧾", "An invoice total", "Billing code keeps amounts in paise or cents as whole numbers and formats them with Intl.NumberFormat only on screen."], ["🔐", "A feature flag", "A script reads FEATURE_NEW_CHECKOUT from the environment. It arrives as the string \"false\", which is truthy, so the code compares it with \"true\"."], ["📮", "An API response", "An order may have no delivery address yet. order.address?.city ?? \"Not set\" shows a label instead of crashing the page."]], "quiz": [{"lv": "e", "q": "Which keyword should you use for a base URL that never changes?", "o": ["const", "let", "var", "static"], "a": 0, "hint": "It is never reassigned.", "why": "<code>const<\/code> says the name will always point at this value."}, {"lv": "e", "q": "What does this print?", "o": ["\"53\"", "8", "53", "An error"], "a": 2, "hint": "+ with a string joins text.", "why": "One side is a string, so <code>+<\/code> joins: <code>53<\/code>. console.log prints a string without quotes.", "code": "console.log(\"5\" + 3);"}, {"lv": "e", "q": "Which of these is falsy?", "o": ["0", "\"0\"", "[]", "\"false\""], "a": 0, "hint": "Only eight values are falsy.", "why": "The number <code>0<\/code> is falsy. Any non empty string and every array are truthy."}, {"lv": "m", "q": "What does this print?", "o": ["0", "\"Unknown\"", "Unknown", "undefined"], "a": 0, "hint": "?? only replaces null and undefined.", "why": "<code>0<\/code> is neither null nor undefined, so <code>??<\/code> keeps it.", "code": "const qty = 0;\nconsole.log(qty ?? \"Unknown\");"}, {"lv": "m", "q": "What does this print?", "o": ["1", "99", "undefined", "An error"], "a": 1, "hint": "How many objects exist?", "why": "Both names point at one object, so the change made through <code>b<\/code> shows through <code>a<\/code>.", "code": "const a = { n: 1 };\nconst b = a;\nb.n = 99;\nconsole.log(a.n);"}, {"lv": "m", "q": "Which Jest matcher should check that an API returned { id: 1, name: \"Asha\" }?", "o": ["toEqual", "toBe", "toBeTruthy", "toBeCloseTo"], "a": 0, "hint": "You care about the contents.", "why": "<code>toEqual<\/code> compares contents recursively. <code>toBe<\/code> would need the very same object."}, {"lv": "h", "q": "What does typeof null return?", "o": ["\"object\"", "\"null\"", "\"undefined\"", "\"empty\""], "a": 0, "hint": "It is a famous bug.", "why": "A mistake from the first version of the language, kept so old pages keep working."}, {"lv": "h", "q": "process.env.HEADLESS is set to the text false. Which check correctly turns headless mode off?", "o": ["process.env.HEADLESS === \"true\"", "Boolean(process.env.HEADLESS)", "!!process.env.HEADLESS", "process.env.HEADLESS == true"], "a": 0, "hint": "Environment values are always strings.", "why": "The string \"false\" is truthy, so the Boolean based checks say true. Compare the text instead."}, {"lv": "h", "q": "What does this print?", "o": ["false true", "true true", "false false", "true false"], "a": 0, "hint": "=== never converts. Object.is has two special cases.", "why": "<code>NaN === NaN<\/code> is false. <code>Object.is(NaN, NaN)<\/code> is true.", "code": "console.log(NaN === NaN, Object.is(NaN, NaN));"}, {"lv": "x", "q": "What does this print?", "o": ["9007199254740992", "9007199254740993", "Infinity", "A RangeError"], "a": 0, "hint": "It is above MAX_SAFE_INTEGER.", "why": "The number cannot be stored exactly, so it is rounded to the nearest number a double can hold.", "code": "console.log(9007199254740993);"}, {"lv": "x", "q": "What does [] + {} give?", "o": ["\"[object Object]\"", "0", "NaN", "An error"], "a": 0, "hint": "Both sides are turned into strings first.", "why": "An empty array becomes \"\" and a plain object becomes \"[object Object]\". Joining them gives \"[object Object]\"."}, {"lv": "x", "q": "Which expression is true only when value is null or undefined?", "o": ["value == null", "value === null", "!value", "typeof value === \"undefined\""], "a": 0, "hint": "This is the one good use of loose equality.", "why": "<code>== null<\/code> matches null and undefined and nothing else. <code>!value<\/code> is also true for 0 and \"\"."}], "calc": [{"lv": "e", "q": "What does this print?", "ans": "2", "hint": "- converts the text to a number.", "steps": ["<span class=\"eq\">\"5\" - 3 = 5 - 3 = 2<\/span>"], "code": "console.log(\"5\" - 3);"}, {"lv": "e", "q": "What is the value of score at the end?", "ans": "26", "hint": "Work line by line.", "steps": ["10 + 5 = 15", "15 × 2 = 30", "30 - 4 = 26"], "code": "let score = 10;\nscore += 5;\nscore *= 2;\nscore -= 4;"}, {"lv": "m", "q": "What does 17 % 5 give?", "ans": "2", "hint": "% is the remainder after dividing.", "steps": ["<span class=\"eq\">17 = 5 × 3 + 2<\/span>", "The remainder is 2."]}, {"lv": "m", "q": "What does this print?", "ans": "3", "hint": "The empty retries value is falsy.", "steps": ["<code>0<\/code> is falsy, so <code>||=<\/code> assigns 3."], "code": "const s = { retries: 0 };\ns.retries ||= 3;\nconsole.log(s.retries);"}, {"lv": "h", "q": "A shirt costs ₹1299.50. Stored in paise, what is the total for 3 shirts in paise?", "ans": "389850", "hint": "Turn rupees into paise first.", "steps": ["<span class=\"eq\">1299.50 × 100 = 129950 paise<\/span>", "<span class=\"eq\">129950 × 3 = 389850<\/span>"]}, {"lv": "h", "q": "How many of these are truthy: 0, \"0\", \"\", [], null, \"false\", NaN, {}?", "ans": "4", "hint": "Check each one against the falsy list.", "steps": ["Falsy: 0, \"\", null, NaN.", "Truthy: \"0\", [], \"false\", {}. That is 4."]}, {"lv": "x", "q": "What does this print?", "ans": "1", "hint": "true becomes 1 and null becomes 0.", "steps": ["<span class=\"eq\">true + null = 1 + 0 = 1<\/span>"], "code": "console.log(true + null);"}, {"lv": "x", "q": "What is 2 ** 3 ** 2?", "ans": "512", "hint": "** groups from the right.", "steps": ["<span class=\"eq\">3 ** 2 = 9<\/span>", "<span class=\"eq\">2 ** 9 = 512<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers variables, the types of value, numbers, conversions, equality and every operator you will use.", "hi": "यह अध्याय variables, values के types, numbers, conversions, equality और सभी operators सिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ variables, values ನ types, numbers, conversions, equality ಮತ್ತು ಎಲ್ಲ operators ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ variables, values ର types, numbers, conversions, equality ଏବଂ ସମସ୍ତ operators ଶିଖାଏ।", "ar": "يتناول هذا الفصل المتغيرات وأنواع القيم والأرقام والتحويلات والمساواة وكل العوامل التي ستستخدمها.", "de": "Dieses Kapitel behandelt Variablen, Werttypen, Zahlen, Umwandlungen, Gleichheit und alle Operatoren."}, {"id": "variables", "h": "Variables", "en": "Use const by default and let when the value really changes. Avoid var in new code because it leaks out of blocks.", "hi": "Default रूप से const और जब value सच में बदले तब let इस्तेमाल करें। नए code में var से बचें, यह blocks से बाहर निकल जाता है।", "kn": "ಸಾಮಾನ್ಯವಾಗಿ const ಬಳಸಿ, value ನಿಜವಾಗಿ ಬದಲಾದರೆ let ಬಳಸಿ. ಹೊಸ code ನಲ್ಲಿ var ಬೇಡ, ಅದು blocks ಹೊರಗೆ ಹೋಗುತ್ತದೆ.", "or": "Default ଭାବେ const ଏବଂ value ପ୍ରକୃତରେ ବଦଳିଲେ let ବ୍ୟବହାର କରନ୍ତୁ। ନୂଆ code ରେ var ଏଡ଼ାନ୍ତୁ, ଏହା blocks ବାହାରକୁ ଯାଏ।", "ar": "استخدم const افتراضيًا وlet عندما تتغير القيمة فعلًا. تجنب var في الكود الجديد لأنها تخرج من الكتل.", "de": "Nimm standardmäßig const und let, wenn sich der Wert wirklich ändert. Vermeide var, weil es aus Blöcken heraussickert."}, {"id": "types", "h": "Types", "en": "There are seven primitive types and objects. Primitives are copied, while objects are shared between every name that points at them.", "hi": "सात primitive types और objects होते हैं। Primitives copy होते हैं, जबकि objects उन सभी names में shared रहते हैं जो उनकी ओर point करते हैं।", "kn": "ಏಳು primitive types ಮತ್ತು objects ಇವೆ. Primitives copy ಆಗುತ್ತವೆ, objects ಅವುಗಳನ್ನು ತೋರಿಸುವ ಎಲ್ಲ names ನಡುವೆ shared ಆಗಿರುತ್ತವೆ.", "or": "ସାତଟି primitive types ଏବଂ objects ଅଛି। Primitives copy ହୁଏ, objects ସେମାନଙ୍କୁ ଦେଖାଉଥିବା ସବୁ names ମଧ୍ୟରେ shared ରହେ।", "ar": "هناك سبعة أنواع أولية بالإضافة إلى الكائنات. الأنواع الأولية تُنسخ، أما الكائنات فتُشارك بين كل الأسماء التي تشير إليها.", "de": "Es gibt sieben primitive Typen und Objekte. Primitive werden kopiert, Objekte werden zwischen allen Namen geteilt, die auf sie zeigen."}, {"id": "numbers", "h": "Numbers", "en": "Decimals are stored in binary, so zero point one plus zero point two is not exactly zero point three. Keep money in whole cents and use BigInt for huge numbers.", "hi": "Decimals binary में store होते हैं, इसलिए 0.1 + 0.2 ठीक 0.3 नहीं होता। पैसे पूरे paise में रखें और बहुत बड़ी संख्याओं के लिए BigInt इस्तेमाल करें।", "kn": "Decimals binary ಯಲ್ಲಿ store ಆಗುತ್ತವೆ, ಆದ್ದರಿಂದ 0.1 + 0.2 ನಿಖರವಾಗಿ 0.3 ಅಲ್ಲ. ಹಣವನ್ನು ಪೂರ್ಣ paise ನಲ್ಲಿ ಇಡಿ, ದೊಡ್ಡ ಸಂಖ್ಯೆಗೆ BigInt ಬಳಸಿ.", "or": "Decimals binary ରେ store ହୁଏ, ତେଣୁ 0.1 + 0.2 ଠିକ୍ 0.3 ନୁହେଁ। ଟଙ୍କାକୁ ପୂର୍ଣ୍ଣ paise ରେ ରଖନ୍ତୁ ଏବଂ ବହୁତ ବଡ଼ ସଂଖ୍ୟା ପାଇଁ BigInt ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "تُخزن الكسور بالنظام الثنائي، لذا فإن 0.1 زائد 0.2 لا يساوي 0.3 بالضبط. احفظ المال بالوحدة الصغرى واستخدم BigInt للأعداد الضخمة.", "de": "Dezimalzahlen werden binär gespeichert, deshalb ist 0,1 plus 0,2 nicht genau 0,3. Speichere Geld in ganzen Cent und nutze BigInt für riesige Zahlen."}, {"id": "coercion", "h": "Coercion", "en": "Plus joins text when one side is a string, other operators turn text into numbers. Only eight values are falsy, and the string false is truthy.", "hi": "एक side string हो तो plus text जोड़ता है, बाकी operators text को numbers में बदलते हैं। सिर्फ आठ values falsy हैं, और string \"false\" truthy है।", "kn": "ಒಂದು ಬದಿ string ಆಗಿದ್ದರೆ plus text ಜೋಡಿಸುತ್ತದೆ, ಇತರ operators text ಅನ್ನು numbers ಆಗಿಸುತ್ತವೆ. ಎಂಟು values ಮಾತ್ರ falsy, string \"false\" truthy.", "or": "ଗୋଟିଏ ପାଖ string ହେଲେ plus text ଯୋଡ଼େ, ଅନ୍ୟ operators text କୁ numbers କରନ୍ତି। କେବଳ ଆଠଟି values falsy, ଏବଂ string \"false\" truthy।", "ar": "يجمع الزائد النصوص إذا كان أحد الطرفين نصًا، والعوامل الأخرى تحول النص إلى أرقام. ثماني قيم فقط زائفة، والنص false قيمته صحيحة.", "de": "Plus verbindet Text, wenn eine Seite ein String ist, andere Operatoren machen Text zu Zahlen. Nur acht Werte sind falsy, der String false ist truthy."}, {"id": "equality", "h": "Equality", "en": "Use triple equals everywhere. Objects are equal only when they are the same object, which is why tests use toEqual for contents.", "hi": "हर जगह === इस्तेमाल करें। Objects तभी बराबर हैं जब वे एक ही object हों, इसलिए tests contents के लिए toEqual इस्तेमाल करते हैं।", "kn": "ಎಲ್ಲೆಡೆ === ಬಳಸಿ. Objects ಒಂದೇ object ಆಗಿದ್ದರೆ ಮಾತ್ರ ಸಮಾನ, ಆದ್ದರಿಂದ tests contents ಗಾಗಿ toEqual ಬಳಸುತ್ತವೆ.", "or": "ସବୁଠି === ବ୍ୟବହାର କରନ୍ତୁ। Objects ସମାନ ହୁଏ କେବଳ ଯେତେବେଳେ ସେଗୁଡ଼ିକ ସେହି ଗୋଟିଏ object, ତେଣୁ tests contents ପାଇଁ toEqual ବ୍ୟବହାର କରନ୍ତି।", "ar": "استخدم المساواة الثلاثية في كل مكان. الكائنات متساوية فقط إذا كانت نفس الكائن، ولهذا تستخدم الاختبارات toEqual للمحتوى.", "de": "Nutze überall dreifaches Gleich. Objekte sind nur gleich, wenn es dasselbe Objekt ist, deshalb nutzen Tests toEqual für Inhalte."}, {"id": "operators", "h": "Operators", "en": "Logical operators return one of their values. Nullish coalescing replaces only null and undefined, and optional chaining stops safely at a missing value.", "hi": "Logical operators अपनी values में से एक लौटाते हैं। ?? सिर्फ null और undefined को बदलता है, और ?. missing value पर सुरक्षित रूप से रुक जाता है।", "kn": "Logical operators ತಮ್ಮ values ನಲ್ಲಿ ಒಂದನ್ನು ಹಿಂದಿರುಗಿಸುತ್ತವೆ. ?? null ಮತ್ತು undefined ಅನ್ನು ಮಾತ್ರ ಬದಲಿಸುತ್ತದೆ, ?. missing value ನಲ್ಲಿ ಸುರಕ್ಷಿತವಾಗಿ ನಿಲ್ಲುತ್ತದೆ.", "or": "Logical operators ନିଜ values ମଧ୍ୟରୁ ଗୋଟିଏ ଫେରାନ୍ତି। ?? କେବଳ null ଓ undefined ବଦଳାଏ, ଏବଂ ?. missing value ରେ ସୁରକ୍ଷିତ ଭାବେ ଅଟକେ।", "ar": "تعيد العوامل المنطقية إحدى قيمها. عامل ?? يستبدل null وundefined فقط، والتسلسل الاختياري يتوقف بأمان عند القيمة المفقودة.", "de": "Logische Operatoren geben einen ihrer Werte zurück. ?? ersetzt nur null und undefined, und optionales Verketten stoppt sicher bei einem fehlenden Wert."}, {"id": "scenario", "h": "Scenario", "en": "Messy API data is turned into clean numbers with explicit conversion, nullish defaults and optional chaining, then checked for gaps.", "hi": "गंदा API data explicit conversion, ?? defaults और ?. से साफ numbers में बदला जाता है, फिर gaps के लिए जाँचा जाता है।", "kn": "ಗೊಂದಲದ API data explicit conversion, ?? defaults ಮತ್ತು ?. ಮೂಲಕ ಸ್ವಚ್ಛ numbers ಆಗುತ್ತದೆ, ನಂತರ gaps ಗಾಗಿ ಪರಿಶೀಲಿಸಲಾಗುತ್ತದೆ.", "or": "ଅସଜଡ଼ା API data explicit conversion, ?? defaults ଓ ?. ଦ୍ୱାରା ସଫା numbers ହୁଏ, ତାପରେ gaps ପାଇଁ ଯାଞ୍ଚ ହୁଏ।", "ar": "تتحول بيانات API الفوضوية إلى أرقام نظيفة بالتحويل الصريح والقيم الافتراضية والتسلسل الاختياري، ثم تُفحص بحثًا عن الفجوات.", "de": "Unordentliche API-Daten werden mit expliziter Umwandlung, Standardwerten und optionalem Verketten zu sauberen Zahlen und dann auf Lücken geprüft."}, {"id": "practice", "h": "Hands-on", "en": "Practise conversions, safe reads and comparisons. Each exercise runs its tests in your browser.", "hi": "Conversions, safe reads और comparisons का अभ्यास करें। हर exercise अपने tests आपके browser में चलाती है।", "kn": "Conversions, safe reads ಮತ್ತು comparisons ಅಭ್ಯಾಸ ಮಾಡಿ. ಪ್ರತಿ exercise ನಿಮ್ಮ browser ನಲ್ಲಿ tests ಓಡಿಸುತ್ತದೆ.", "or": "Conversions, safe reads ଓ comparisons ଅଭ୍ୟାସ କରନ୍ତୁ। ପ୍ରତ୍ୟେକ exercise ଆପଣଙ୍କ browser ରେ tests ଚଲାଏ।", "ar": "تدرب على التحويلات والقراءة الآمنة والمقارنات. كل تمرين يشغل اختباراته في متصفحك.", "de": "Übe Umwandlungen, sicheres Lesen und Vergleiche. Jede Übung führt ihre Tests in deinem Browser aus."}], "ex": [{"id": "price", "lv": "e", "title": "Read a price", "task": "<p>Write <code>toPaise(text)<\/code>. It gets a price as shown on a page, such as <code>\"₹1,299.50\"<\/code>, and returns the amount in paise as a whole number (<code>129950<\/code>).<\/p>", "starter": "function toPaise(text) {\n  \n}", "tests": [{"call": "toPaise(\"₹1,299.50\")", "want": 129950}, {"call": "toPaise(\"₹499\")", "want": 49900}, {"call": "toPaise(\"₹0.99\")", "want": 99}], "solution": "function toPaise(text) {\n  const rupees = Number(text.replace(/[^0-9.]/g, \"\"));\n  return Math.round(rupees * 100);\n}", "hint": "Remove everything that is not a digit or a dot, convert with <code>Number<\/code>, then multiply by 100 and round.", "why": "<code>Math.round<\/code> removes tiny floating point errors such as 129949.99999."}, {"id": "city", "lv": "m", "title": "Read a value that may be missing", "task": "<p>Write <code>cityOf(user)<\/code> that returns <code>user.address.city<\/code>, or <code>\"Unknown\"<\/code> when the user, the address or the city is missing. An empty string city should stay an empty string.<\/p>", "starter": "function cityOf(user) {\n  return user.address.city;\n}", "tests": [{"call": "cityOf({ address: { city: \"Pune\" } })", "want": "Pune"}, {"call": "cityOf({ address: null })", "want": "Unknown"}, {"call": "cityOf(undefined)", "want": "Unknown"}, {"call": "cityOf({ address: { city: \"\" } })", "want": ""}], "solution": "function cityOf(user) {\n  return user?.address?.city ?? \"Unknown\";\n}", "hint": "Combine <code>?.<\/code> and <code>??<\/code>.", "why": "<code>??<\/code> keeps the empty string because it only replaces null and undefined. <code>||<\/code> would have turned it into \"Unknown\"."}, {"id": "close", "lv": "h", "title": "Compare decimals", "task": "<p>Write <code>closeTo(a, b, places = 2)<\/code> that returns true when <code>a<\/code> and <code>b<\/code> are equal to that many decimal places, the way Jest's <code>toBeCloseTo<\/code> works: the difference must be less than <code>10 ** -places / 2<\/code>.<\/p>", "starter": "function closeTo(a, b, places = 2) {\n  return a === b;\n}", "tests": [{"call": "closeTo(0.1 + 0.2, 0.3)", "want": true}, {"call": "closeTo(1.005, 1.0)", "want": true}, {"call": "closeTo(1.01, 1.0)", "want": false}, {"call": "closeTo(3.14159, 3.1416, 4)", "want": true}, {"call": "closeTo(3.14159, 3.15, 2)", "want": false}], "solution": "function closeTo(a, b, places = 2) {\n  return Math.abs(a - b) < 10 ** -places / 2;\n}", "hint": "Compare <code>Math.abs(a - b)<\/code> with the allowed difference.", "why": "This is exactly the rule Jest uses, which is why <code>toBeCloseTo(0.3)<\/code> passes for <code>0.1 + 0.2<\/code>."}, {"id": "same", "lv": "x", "title": "Write your own Object.is", "task": "<p>Write <code>same(a, b)<\/code> that behaves like <code>Object.is<\/code> without calling it: like <code>===<\/code>, except that <code>NaN<\/code> equals <code>NaN<\/code> and <code>0<\/code> and <code>-0<\/code> are different.<\/p>", "starter": "function same(a, b) {\n  return a === b;\n}", "tests": [{"call": "same(1, 1)", "want": true}, {"call": "same(NaN, NaN)", "want": true}, {"call": "same(0, -0)", "want": false}, {"call": "same(-0, -0)", "want": true}, {"call": "same(\"a\", \"a\")", "want": true}, {"call": "same({}, {})", "want": false}], "solution": "function same(a, b) {\n  if (a === b) {\n    return a !== 0 || 1 / a === 1 / b;\n  }\n  return a !== a && b !== b;\n}", "hint": "Only NaN is not equal to itself. And <code>1 / 0<\/code> is Infinity while <code>1 / -0<\/code> is -Infinity.", "why": "When <code>a === b<\/code> and both are zero, dividing 1 by each tells +0 from -0. When they are not equal, both must be NaN to count as the same."}], "dg": {}, "lanes": {"copy": {"t": "What a variable really holds", "s": "Step through to see a number copied and an object shared.", "code": "let a = 5;\nlet b = a;\nb = 10;\nconst cart1 = { items: 1 };\nconst cart2 = cart1;\ncart2.items = 99;", "lanes": ["Variables", "Objects in memory"], "tone": [2, 0], "steps": [{"l": 1, "v": [["a = 5"], []], "m": "a holds the number 5 itself."}, {"l": 2, "v": [["a = 5", "b = 5"], []], "m": "b gets its own copy of 5."}, {"l": 3, "v": [["a = 5", "b = 10"], []], "m": "Changing b does not touch a."}, {"l": 4, "v": [["a = 5", "b = 10", "cart1 → #1"], ["#1 { items: 1 }"]], "m": "The object lives in memory. cart1 holds only an arrow to it."}, {"l": 5, "v": [["a = 5", "b = 10", "cart1 → #1", "cart2 → #1"], ["#1 { items: 1 }"]], "m": "cart2 copies the arrow, not the object. Both point at #1."}, {"l": 6, "v": [["a = 5", "b = 10", "cart1 → #1", "cart2 → #1"], ["#1 { items: 99 }"]], "m": "Changing the object through cart2 is visible through cart1 too."}]}}, "play": {}};
+JSPLAY.page({ title: "Variables, Types and Operators", subject: "javascript" });
+</script>
+</body>
+</html>

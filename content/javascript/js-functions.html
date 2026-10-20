@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functions, Scope and Closures · JavaScript</title>
+<meta name="description" content="Functions, arrow functions, parameters, scope, hoisting, closures, this with call, apply and bind, higher order functions, memoize, debounce and recursion.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 4 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧩</span><div><h1>Functions, Scope and Closures</h1><p class="lead">Declarations and arrows, defaults, rest and options objects, scope and hoisting, closures, how this is decided, higher order functions such as memoize and debounce, and recursion on the call stack.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 12 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 5 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Closures and this explain how describe, beforeEach and test share variables, why Mocha and Cypress sometimes need function instead of arrows, and how to build clean test data factories.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#functions"><span>🧩</span>Declaring functions</a><a href="#arrows" class="qa"><span>🏹</span>Function expressions and arrow functions</a><a href="#scope"><span>🔭</span>Scope, hoisting and the temporal dead zone</a><a href="#closures" class="qa"><span>🎒</span>Closures</a><a href="#this" class="qa"><span>👉</span>this, call, apply and bind</a><a href="#higher-order" class="qa"><span>🧠</span>Higher order functions</a><a href="#recursion"><span>🪆</span>Recursion and the call stack</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: a test data factory</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="functions" data-say="functions"><div class="sec-num">Part 1</div><h2><span class="sec-em">🧩</span><span>Declaring functions</span></h2>
+
+<p>A <b>function</b> is a named, reusable piece of code. It takes <b>parameters</b>, does some work and <b>returns</b> a value. A function without a <code>return</code> returns <code>undefined</code>.</p>
+<div class="codewrap" data-k="declare" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Declaring and calling functions · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> add(a, b) {
+  <span class="k">return</span> a + b;
+}
+console.log(add(<span class="n">2</span>, <span class="n">3</span>));
+console.log(add(<span class="n">2</span>));          <span class="c">// missing arguments are undefined</span>
+console.log(add(<span class="n">2</span>, <span class="n">3</span>, <span class="n">99</span>));   <span class="c">// extra arguments are ignored</span>
+
+<span class="k">function</span> logIn(user, password = <span class="s">"Secret12"</span>, remember = <span class="k">false</span>) {
+  <span class="k">return</span> <span class="s">`${user} / ${password} / remember=${remember}`</span>;
+}
+console.log(logIn(<span class="s">"asha"</span>));
+console.log(logIn(<span class="s">"ravi"</span>, <span class="k">undefined</span>, <span class="k">true</span>));   <span class="c">// undefined uses the default</span>
+console.log(logIn(<span class="s">"mei"</span>, <span class="k">null</span>));               <span class="c">// null does not</span></pre><div class="out"><span>Output</span><pre>5
+NaN
+5
+asha / Secret12 / remember=false
+ravi / Secret12 / remember=true
+mei / null / remember=false</pre></div></div>
+<ul>
+<li>JavaScript does not check how many arguments you pass. Missing ones are <code>undefined</code> and extra ones are ignored.</li>
+<li><b>Default values</b> replace <code>undefined</code> only. Passing <code>null</code> keeps <code>null</code>.</li>
+</ul>
+<h3>Rest, spread and options objects</h3>
+<div class="codewrap" data-k="rest-spread" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Rest parameters, spread and options objects · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> total(label, ...prices) {     <span class="c">// rest: gathers the remaining arguments into an array</span>
+  <span class="k">const</span> sum = prices.reduce((s, p) =&gt; s + p, <span class="n">0</span>);
+  <span class="k">return</span> <span class="s">`${label}: ${sum}`</span>;
+}
+console.log(total(<span class="s">"cart"</span>, <span class="n">100</span>, <span class="n">250</span>, <span class="n">75</span>));
+
+<span class="k">const</span> prices = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>];
+console.log(<span class="t">Math</span>.max(...prices));       <span class="c">// spread: spreads an array into arguments</span>
+console.log(total(<span class="s">"again"</span>, ...prices, <span class="n">40</span>));
+
+<span class="k">function</span> createUser({ name, role = <span class="s">"viewer"</span>, active = <span class="k">true</span> } = {}) {   <span class="c">// destructured options</span>
+  <span class="k">return</span> { name, role, active };
+}
+console.log(createUser({ name: <span class="s">"Asha"</span>, role: <span class="s">"admin"</span> }));
+console.log(createUser());</pre><div class="out"><span>Output</span><pre>cart: 425
+30
+again: 100
+{ name: &#x27;Asha&#x27;, role: &#x27;admin&#x27;, active: true }
+{ name: undefined, role: &#x27;viewer&#x27;, active: true }</pre></div></div>
+<div class="tip">When a function has more than two or three parameters, take one <b>options object</b> and destructure it. Calls read like labels (<code>launch({ headless: true, slowMo: 50 })</code>) and the order stops mattering. Playwright, Cypress and Jest all configure this way.</div>
+</section>
+<section class="card reveal jsec qa-part" id="arrows" data-say="arrows"><div class="sec-num">Part 2</div><h2><span class="sec-em">🏹</span><span>Function expressions and arrow functions</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Jest</span><span class="qa-tool">Cypress</span></div>
+<p>A function can also be written as an <b>expression</b> and stored in a variable. The shorter <b>arrow function</b> syntax is the most common form in modern code and in test files.</p>
+<div class="codewrap" data-k="arrows" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Function expressions and arrow functions · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> square = <span class="k">function</span> (n) { <span class="k">return</span> n * n; };   <span class="c">// function expression</span>
+<span class="k">const</span> cube = n =&gt; n * n * n;                       <span class="c">// arrow, one parameter, implicit return</span>
+<span class="k">const</span> greet = (first, last) =&gt; <span class="s">`Hi ${first} ${last}`</span>;
+<span class="k">const</span> makeUser = name =&gt; ({ name, createdAt: <span class="s">"today"</span> });   <span class="c">// wrap an object in ( )</span>
+<span class="k">const</span> log = () =&gt; { console.log(<span class="s">"no parameters, a block body"</span>); };
+
+console.log(square(<span class="n">4</span>), cube(<span class="n">3</span>));
+console.log(greet(<span class="s">"Asha"</span>, <span class="s">"Rao"</span>));
+console.log(makeUser(<span class="s">"Ravi"</span>));
+log();</pre><div class="out"><span>Output</span><pre>16 27
+Hi Asha Rao
+{ name: &#x27;Ravi&#x27;, createdAt: &#x27;today&#x27; }
+no parameters, a block body</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Form</th><th>Notes</th></tr>
+<tr><td><code>function name() {}</code></td><td>Hoisted, so it can be called before its line. Has its own <code>this</code>.</td></tr>
+<tr><td><code>const f = function () {}</code></td><td>Not hoisted. Has its own <code>this</code>.</td></tr>
+<tr><td><code>const f = () =&gt; {}</code></td><td>Not hoisted. No own <code>this</code> or <code>arguments</code>: it uses the ones around it. Cannot be called with <code>new</code>.</td></tr>
+</table></div>
+<div class="qa-box">Test files are mostly arrow functions: <code>test("adds to cart", async ({ page }) =&gt; { ... })</code>. The exceptions are Mocha and Cypress code that uses <code>this</code>, covered below.</div>
+</section>
+<section class="card reveal jsec" id="scope" data-say="scope"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔭</span><span>Scope, hoisting and the temporal dead zone</span></h2>
+
+<p><b>Scope</b> decides where a name can be seen. JavaScript looks for a name in the current block, then in each enclosing block and function, out to the global scope. This chain is fixed by where the code is <b>written</b>, which is called lexical scope.</p>
+<div class="viz" data-viz="lanes" data-k="scope"></div>
+<div class="codewrap" data-k="scope" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Global, function and block scope · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> appName = <span class="s">"Shop"</span>;                 <span class="c">// global scope</span>
+
+<span class="k">function</span> checkout() {
+  <span class="k">const</span> total = <span class="n">499</span>;                    <span class="c">// function scope</span>
+  <span class="k">if</span> (total &gt; <span class="n">100</span>) {
+    <span class="k">const</span> message = <span class="s">"big order"</span>;        <span class="c">// block scope</span>
+    console.log(appName, total, message);
+  }
+  console.log(<span class="k">typeof</span> message);          <span class="c">// not visible outside its block</span>
+}
+checkout();
+console.log(<span class="k">typeof</span> total);              <span class="c">// not visible outside the function</span>
+
+<span class="k">let</span> level = <span class="s">"global"</span>;
+<span class="k">function</span> shadow() {
+  <span class="k">let</span> level = <span class="s">"inside"</span>;                 <span class="c">// a new variable that hides the outer one</span>
+  console.log(level);
+}
+shadow();
+console.log(level);</pre><div class="out"><span>Output</span><pre>Shop 499 big order
+undefined
+undefined
+inside
+global</pre></div></div>
+<h3>Hoisting</h3>
+<p>Before running a scope, the engine registers its declarations. Function declarations are ready at once. <code>var</code> exists but is <code>undefined</code>. <code>let</code> and <code>const</code> exist but cannot be touched until their line runs. That gap is the <b>temporal dead zone</b>.</p>
+<div class="codewrap" data-k="hoisting" data-play="worker"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Hoisting and the temporal dead zone · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">console.log(sayHi());               <span class="c">// function declarations are hoisted: this works</span>
+<span class="k">function</span> sayHi() { <span class="k">return</span> <span class="s">"hi"</span>; }
+
+console.log(<span class="k">typeof</span> oldStyle);       <span class="c">// var is hoisted but undefined</span>
+<span class="k">var</span> oldStyle = <span class="n">1</span>;
+
+<span class="k">try</span> {
+  console.log(modern);             <span class="c">// let and const are in the "temporal dead zone"</span>
+} <span class="k">catch</span> (err) {
+  console.log(err.name + <span class="s">": "</span> + err.message);
+}
+<span class="k">let</span> modern = <span class="n">2</span>;</pre><div class="out"><span>Output</span><pre>hi
+undefined
+ReferenceError: Cannot access &#x27;modern&#x27; before initialization</pre></div></div>
+<div class="rule">Declare variables at the top of the block where you need them, with <code>const</code> or <code>let</code>. Then hoisting never surprises you.</div>
+</section>
+<section class="card reveal jsec qa-part" id="closures" data-say="closures"><div class="sec-num">Part 4</div><h2><span class="sec-em">🎒</span><span>Closures</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">Mocha</span><span class="qa-tool">Playwright</span></div>
+<p>A <b>closure</b> is a function together with the variables it could see when it was created. Those variables stay alive as long as the function does, even after the outer function has returned. Closures give you private state without classes.</p>
+<div class="viz" data-viz="lanes" data-k="closure"></div>
+<div class="codewrap" data-k="closure" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A closure keeps its variables alive · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> makeCounter(start = <span class="n">0</span>) {
+  <span class="k">let</span> count = start;               <span class="c">// private: only the inner functions can see it</span>
+  <span class="k">return</span> {
+    next: () =&gt; ++count,
+    reset: () =&gt; { count = start; },
+    <span class="k">get</span> value() { <span class="k">return</span> count; },
+  };
+}
+
+<span class="k">const</span> visits = makeCounter();
+<span class="k">const</span> retries = makeCounter(<span class="n">10</span>);
+visits.next(); visits.next();
+retries.next();
+console.log(visits.value, retries.value);
+visits.reset();
+console.log(visits.value);
+console.log(visits.count);         <span class="c">// there is no way to reach the variable directly</span></pre><div class="out"><span>Output</span><pre>2 11
+0
+undefined</pre></div></div>
+<p>Each call to <code>makeCounter</code> creates a fresh <code>count</code>, so <code>visits</code> and <code>retries</code> never interfere.</p>
+<div class="codewrap" data-k="loop-closure" data-play="worker"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The classic loop closure bug · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> viaVar = [];
+<span class="k">for</span> (<span class="k">var</span> i = <span class="n">0</span>; i &lt; <span class="n">3</span>; i++) viaVar.push(() =&gt; i);
+console.log(viaVar.map(f =&gt; f()));    <span class="c">// one shared i, already 3</span>
+
+<span class="k">const</span> viaLet = [];
+<span class="k">for</span> (<span class="k">let</span> j = <span class="n">0</span>; j &lt; <span class="n">3</span>; j++) viaLet.push(() =&gt; j);
+console.log(viaLet.map(f =&gt; f()));    <span class="c">// let makes a new j for every turn</span></pre><div class="out"><span>Output</span><pre>[ 3, 3, 3 ]
+[ 0, 1, 2 ]</pre></div></div>
+<div class="exam">With <code>var</code>, every function created in the loop shares one variable, which has its final value by the time they run. <code>let</code> creates a new binding for each turn. This was a famous interview question before <code>let</code> existed.</div>
+<div class="qa-box">Closures are everywhere in test code: a <code>let page</code> declared in a <code>describe</code> block and set in <code>beforeEach</code> is captured by every test inside. Test data factories, custom wait helpers and Page Object methods all rely on them.</div>
+</section>
+<section class="card reveal jsec qa-part" id="this" data-say="this"><div class="sec-num">Part 5</div><h2><span class="sec-em">👉</span><span>this, call, apply and bind</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Mocha</span><span class="qa-tool">Cypress</span><span class="qa-why">Mocha this.timeout and Cypress aliases on this only work inside function, not arrow functions.</span></div>
+<p><code>this</code> is decided by <b>how</b> a function is called, not where it is written. Arrow functions are the exception: they never get their own <code>this</code> and use the one from the surrounding code.</p>
+<div class="tw"><table class="jt"><tr><th>Call</th><th>this is</th></tr>
+<tr><td><code>obj.method()</code></td><td><code>obj</code>, the object before the dot</td></tr>
+<tr><td><code>fn()</code></td><td><code>undefined</code> in strict code (the global object in old sloppy code)</td></tr>
+<tr><td><code>fn.call(x, a, b)</code>, <code>fn.apply(x, [a, b])</code></td><td><code>x</code>, chosen by you for this one call</td></tr>
+<tr><td><code>fn.bind(x)</code></td><td>a new function where this is always <code>x</code></td></tr>
+<tr><td><code>new Fn()</code></td><td>the new object being created</td></tr>
+<tr><td>arrow function</td><td>whatever this was where the arrow was written</td></tr>
+</table></div>
+<div class="codewrap" data-k="this" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">How this is decided · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> cart = {
+  owner: <span class="s">"Asha"</span>,
+  items: [<span class="s">"pen"</span>, <span class="s">"book"</span>],
+  describe() {
+    <span class="k">return</span> <span class="s">`${this.owner} has ${this.items.length} items`</span>;    <span class="c">// this is the object before the dot</span>
+  },
+  describeLater() {
+    <span class="k">return</span> <span class="k">this</span>.items.map(item =&gt; <span class="s">`${this.owner}: ${item}`</span>);  <span class="c">// arrows use the outer this</span>
+  },
+};
+console.log(cart.describe());
+console.log(cart.describeLater());
+
+<span class="k">const</span> loose = cart.describe;          <span class="c">// the method is taken off the object</span>
+<span class="k">try</span> {
+  console.log(loose());               <span class="c">// no object before the dot, so this is undefined</span>
+} <span class="k">catch</span> (err) {
+  console.log(err.message);
+}
+
+<span class="k">const</span> bound = cart.describe.bind(cart);
+console.log(bound());
+console.log(cart.describe.call({ owner: <span class="s">"Ravi"</span>, items: [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>] }));</pre><div class="out"><span>Output</span><pre>Asha has 2 items
+[ &#x27;Asha: pen&#x27;, &#x27;Asha: book&#x27; ]
+Cannot read properties of undefined (reading &#x27;owner&#x27;)
+Asha has 2 items
+Ravi has 3 items</pre></div></div>
+<h3>Why test runners care</h3>
+<p>Mocha puts helpers such as <code>this.timeout()</code> and <code>this.retries()</code> on the test's <code>this</code>. Cypress stores aliases on it too (<code>this.user</code> after <code>cy.wrap(user).as("user")</code>). Both only work when the test is a normal <code>function</code>. An arrow test borrows <code>this</code> from the code around it, and below, where <code>describe</code> is an arrow too, that is the module and not Mocha.</p>
+<div class="codewrap tests" data-k="mocha-this"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Mocha needs function, not arrows, to use this · 🧪 Tests run, one fails on purpose</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 package.json</div><pre class="src" data-file="package.json">{
+  <span class="s">"name"</span>: <span class="s">"mocha-this"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"scripts"</span>: {
+    <span class="s">"test"</span>: <span class="s">"mocha"</span>
+  }
+}</pre><div class="fname">📄 slow.test.js</div><pre class="src" data-file="slow.test.js"><span class="k">const</span> assert = require(<span class="s">"node:assert"</span>);
+
+describe(<span class="s">"report export"</span>, () =&gt; {
+  it(<span class="s">"can raise its own timeout with a normal function"</span>, <span class="k">function</span> () {
+    <span class="k">this</span>.timeout(<span class="n">5000</span>);          <span class="c">// Mocha passes its context as this</span>
+    assert.ok(<span class="k">true</span>);
+  });
+
+  it(<span class="s">"cannot do the same in an arrow function"</span>, () =&gt; {
+    <span class="k">this</span>.timeout(<span class="n">5000</span>);          <span class="c">// this comes from the arrow describe: the module, not Mocha</span>
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx mocha slow.test.js</pre></div><div class="err"><span>Terminal output</span><pre>
+
+  report export
+    ✔ can raise its own timeout with a normal function
+    1) cannot do the same in an arrow function
+
+
+  1 passing 
+  1 failing
+
+  1) report export
+       cannot do the same in an arrow function:
+     TypeError: this.timeout is not a function
+      at Context.&lt;anonymous&gt; (slow.test.js:10:10)</pre></div></div>
+<div class="rule">If a Mocha or Cypress test uses <code>this</code>, write both the <code>describe</code> and the test with <code>function</code>. Everywhere else, arrows are fine.</div>
+</section>
+<section class="card reveal jsec qa-part" id="higher-order" data-say="higher-order"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧠</span><span>Higher order functions</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span></div>
+<p>A <b>higher order function</b> takes a function as an argument or returns one. You already used one: <code>array.map(fn)</code>. They let you write the shape of a task once and plug in the details.</p>
+<div class="codewrap" data-k="hof" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Higher order functions · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Functions are values: store them, pass them, return them.</span>
+<span class="k">const</span> rules = {
+  required: v =&gt; v !== <span class="s">""</span> || <span class="s">"is required"</span>,
+  email: v =&gt; /^[^@\s]+@[^@\s]+\.\w+$/.test(v) || <span class="s">"must be an email"</span>,
+  min: n =&gt; v =&gt; v.length &gt;= n || <span class="s">`must be at least ${n} characters`</span>,   <span class="c">// returns a function</span>
+};
+
+<span class="k">function</span> validate(value, ...checks) {
+  <span class="k">const</span> errors = [];
+  <span class="k">for</span> (<span class="k">const</span> check <span class="k">of</span> checks) {
+    <span class="k">const</span> result = check(value);
+    <span class="k">if</span> (result !== <span class="k">true</span>) errors.push(result);
+  }
+  <span class="k">return</span> errors;
+}
+
+console.log(validate(<span class="s">"asha@example.com"</span>, rules.required, rules.email));
+console.log(validate(<span class="s">"ab"</span>, rules.required, rules.email, rules.min(<span class="n">3</span>)));
+console.log(validate(<span class="s">""</span>, rules.required));</pre><div class="out"><span>Output</span><pre>[]
+[ &#x27;must be an email&#x27;, &#x27;must be at least 3 characters&#x27; ]
+[ &#x27;is required&#x27; ]</pre></div></div>
+<p><code>rules.min(3)</code> returns a new function that remembers <code>3</code>. Returning configured functions like this is the basis of matchers, middleware and plugins.</p>
+<div class="codewrap" data-k="memo" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Memoize and debounce, two closures you will meet · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> memoize(fn) {
+  <span class="k">const</span> cache = <span class="k">new</span> <span class="t">Map</span>();
+  <span class="k">return</span> arg =&gt; {
+    <span class="k">if</span> (!cache.has(arg)) cache.<span class="k">set</span>(arg, fn(arg));
+    <span class="k">return</span> cache.<span class="k">get</span>(arg);
+  };
+}
+
+<span class="k">let</span> calls = <span class="n">0</span>;
+<span class="k">const</span> slowSquare = n =&gt; { calls++; <span class="k">return</span> n * n; };
+<span class="k">const</span> fastSquare = memoize(slowSquare);
+console.log(fastSquare(<span class="n">9</span>), fastSquare(<span class="n">9</span>), fastSquare(<span class="n">4</span>), fastSquare(<span class="n">9</span>));
+console.log(<span class="s">"real calls:"</span>, calls);
+
+<span class="k">function</span> debounce(fn, wait) {
+  <span class="k">let</span> timer;
+  <span class="k">return</span> (...args) =&gt; {
+    clearTimeout(timer);
+    timer = setTimeout(() =&gt; fn(...args), wait);
+  };
+}
+<span class="k">const</span> search = debounce(text =&gt; console.log(<span class="s">"searching for"</span>, text), <span class="n">30</span>);
+search(<span class="s">"p"</span>); search(<span class="s">"ph"</span>); search(<span class="s">"pho"</span>); search(<span class="s">"phone"</span>);   <span class="c">// typed quickly</span></pre><div class="out"><span>Output</span><pre>81 81 16 81
+real calls: 2
+searching for phone</pre></div></div>
+<ul>
+<li><b>memoize</b> remembers results so a slow, pure function runs once per input.</li>
+<li><b>debounce</b> waits until calls stop for a while, then runs once. Search boxes use it so the server gets one request instead of one per key press.</li>
+</ul>
+<div class="qa-box">Debounced inputs explain a classic test failure: the test types "phone" and checks the results at once, before the debounce timer fires. Assert on the results with an auto-waiting check (<code>await expect(list).toHaveCount(3)</code>) instead of reading them immediately.</div>
+</section>
+<section class="card reveal jsec" id="recursion" data-say="recursion"><div class="sec-num">Part 7</div><h2><span class="sec-em">🪆</span><span>Recursion and the call stack</span></h2>
+
+<p>A <b>recursive</b> function calls itself on a smaller piece of the problem. It needs a <b>base case</b> that stops the calls. Every call waits on the <b>call stack</b> until the one it made returns.</p>
+<div class="viz" data-viz="lanes" data-k="stack"></div>
+<div class="codewrap" data-k="recursion" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Recursion and the call stack · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> factorial(n) {
+  <span class="k">if</span> (n &lt;= <span class="n">1</span>) <span class="k">return</span> <span class="n">1</span>;          <span class="c">// base case: stops the recursion</span>
+  <span class="k">return</span> n * factorial(n - <span class="n">1</span>);   <span class="c">// recursive case: a smaller problem</span>
+}
+console.log(factorial(<span class="n">5</span>));
+
+<span class="c">// Recursion fits nested data, such as a site menu</span>
+<span class="k">const</span> menu = { label: <span class="s">"Home"</span>, children: [
+  { label: <span class="s">"Shop"</span>, children: [{ label: <span class="s">"Phones"</span> }, { label: <span class="s">"Laptops"</span>, children: [{ label: <span class="s">"Gaming"</span> }] }] },
+  { label: <span class="s">"Help"</span> },
+] };
+
+<span class="k">function</span> allLabels(node, depth = <span class="n">0</span>) {
+  <span class="k">const</span> lines = [<span class="s">"  "</span>.repeat(depth) + node.label];
+  <span class="k">for</span> (<span class="k">const</span> child <span class="k">of</span> node.children ?? []) lines.push(...allLabels(child, depth + <span class="n">1</span>));
+  <span class="k">return</span> lines;
+}
+console.log(allLabels(menu).join(<span class="s">"\n"</span>));
+
+<span class="k">function</span> forever(n) { <span class="k">return</span> forever(n + <span class="n">1</span>); }   <span class="c">// no base case</span>
+<span class="k">try</span> { forever(<span class="n">0</span>); } <span class="k">catch</span> (err) { console.log(err.name + <span class="s">": "</span> + err.message); }</pre><div class="out"><span>Output</span><pre>120
+Home
+  Shop
+    Phones
+    Laptops
+      Gaming
+  Help
+RangeError: Maximum call stack size exceeded</pre></div></div>
+<p>Recursion is natural for nested data: menus, folder trees, JSON with nested objects, the DOM itself. Without a base case, the stack fills up and you get <code>RangeError: Maximum call stack size exceeded</code>.</p>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 8</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a test data factory</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>Your sign up tests keep failing with "email already registered" because every test uses <code>test@example.com</code>. You need valid, unique users by default, and an easy way for one test to ask for an admin or an unverified user.</div>
+<div class="codewrap" data-k="scenario" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A test data factory built on a closure · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// A test data builder: unique, valid data by default, overridable when a test needs something special.</span>
+<span class="k">function</span> userFactory(prefix = <span class="s">"qa"</span>) {
+  <span class="k">let</span> seq = <span class="n">0</span>;                                  <span class="c">// private counter, kept by the closure</span>
+  <span class="k">return</span> <span class="k">function</span> build(overrides = {}) {
+    seq++;
+    <span class="k">return</span> {
+      id: seq,
+      name: <span class="s">`Test User ${seq}`</span>,
+      email: <span class="s">`${prefix}.user${seq}@example.com`</span>,
+      role: <span class="s">"customer"</span>,
+      verified: <span class="k">true</span>,
+      ...overrides,                             <span class="c">// the test's own values win</span>
+    };
+  };
+}
+
+<span class="k">const</span> buildUser = userFactory(<span class="s">"checkout"</span>);
+<span class="k">const</span> normal = buildUser();
+<span class="k">const</span> admin = buildUser({ role: <span class="s">"admin"</span> });
+<span class="k">const</span> unverified = buildUser({ verified: <span class="k">false</span>, email: <span class="s">"not-an-email"</span> });
+console.table([normal, admin, unverified]);
+
+<span class="k">const</span> other = userFactory(<span class="s">"search"</span>)();          <span class="c">// a separate counter for another suite</span>
+console.log(other.email);</pre><div class="out"><span>Output</span><pre>┌─────────┬────┬───────────────┬──────────────────────────────┬────────────┬──────────┐
+│ (index) │ id │ name          │ email                        │ role       │ verified │
+├─────────┼────┼───────────────┼──────────────────────────────┼────────────┼──────────┤
+│ 0       │ 1  │ &#x27;Test User 1&#x27; │ &#x27;checkout.user1@example.com&#x27; │ &#x27;customer&#x27; │ true     │
+│ 1       │ 2  │ &#x27;Test User 2&#x27; │ &#x27;checkout.user2@example.com&#x27; │ &#x27;admin&#x27;    │ true     │
+│ 2       │ 3  │ &#x27;Test User 3&#x27; │ &#x27;not-an-email&#x27;               │ &#x27;customer&#x27; │ false    │
+└─────────┴────┴───────────────┴──────────────────────────────┴────────────┴──────────┘
+search.user1@example.com</pre></div></div>
+<ul>
+<li>The closure keeps a private <code>seq</code> counter per factory, so emails never repeat within a run.</li>
+<li>The object spread <code>...overrides</code> lets each test change only what it cares about. The test reads as "a user, but unverified".</li>
+<li>Separate factories have separate counters, so suites do not depend on each other.</li>
+</ul>
+<div class="dev-box">The same pattern builds fixtures for unit tests of the app code itself. Libraries such as Fishery and @faker-js/faker grow it further with realistic random values.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-control-flow.html" data-topic="js-control-flow"><small>← Previous chapter</small><b>🔀 Control flow and errors</b></a><a class="next" href="./js-objects-arrays.html" data-topic="js-objects-arrays"><small>Next chapter →</small><b>📦 Objects and arrays</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Functions in four pictures", "panels": [{"s": [["e", "🧩"], ["t", "add(2, 3) → 5", {"b": 1}]], "h": "Input to output", "t": "A function takes arguments and returns a value.", "more": "Defaults fill in missing arguments. Rest collects extra ones into an array."}, {"s": [["e", "🔭"], ["t", "block → function → global", {"b": 1}]], "h": "Scope", "t": "Names are looked up from the inside out.", "more": "Where the code is written decides what it can see."}, {"s": [["e", "🎒"], ["t", "count stays alive", {"b": 1}]], "h": "Closures", "t": "An inner function keeps the variables it saw.", "more": "This gives private state and fresh counters per call."}, {"s": [["e", "👉"], ["t", "obj.method() → this = obj", {"b": 1}]], "h": "this", "t": "this depends on how the function is called.", "more": "Arrows borrow this from outside. Mocha needs function to use this.timeout."}], "remember": "Small pure functions are the easiest code in the world to test."}, "real": [["🔎", "Search as you type", "An online shop debounces the search box, so typing \"phone\" sends one request instead of five."], ["🧾", "Form validation", "A sign up page builds its rules from small functions such as required, email and min(8), and runs them as a list."], ["🗂️", "Nested categories", "A recursive function renders a category tree of any depth in an e-commerce menu."]], "quiz": [{"lv": "e", "q": "What does a function without a return statement return?", "o": ["undefined", "null", "0", "The last value it computed"], "a": 0, "hint": "Nothing was given back.", "why": "Without <code>return<\/code>, a call gives <code>undefined<\/code>."}, {"lv": "e", "q": "What does this arrow return?", "o": ["{ id: 1 }", "undefined", "A SyntaxError", "1"], "a": 0, "hint": "The object is wrapped in parentheses.", "why": "Parentheses make the braces an object, so it is returned.", "code": "const make = () => ({ id: 1 });\nconsole.log(make());"}, {"lv": "e", "q": "What does ...nums do in function sum(...nums)?", "o": ["Collects all arguments into an array", "Spreads an array into arguments", "Makes nums optional", "Copies nums"], "a": 0, "hint": "In a parameter list it gathers.", "why": "In a parameter list, <code>...<\/code> is a rest parameter and gathers the arguments into a real array."}, {"lv": "m", "q": "What does this print?", "o": ["3 3 3", "0 1 2", "undefined undefined undefined", "An error"], "a": 0, "hint": "How many i variables are there with var?", "why": "With <code>var<\/code> there is one shared <code>i<\/code>, which is 3 when the functions run.", "code": "const fs = [];\nfor (var i = 0; i < 3; i++) fs.push(() => i);\nconsole.log(...fs.map(f => f()));"}, {"lv": "m", "q": "What does logIn(\"asha\", null) use for the password?", "o": ["null", "The default \"Secret12\"", "undefined", "\"\""], "a": 0, "hint": "Defaults only replace one value.", "why": "Default values apply only when the argument is <code>undefined<\/code>.", "code": "function logIn(user, password = \"Secret12\") { return password; }"}, {"lv": "m", "q": "Why does this.timeout(5000) fail inside it(\"...\", () => {...}) in Mocha?", "o": ["Arrow functions do not get Mocha's context as this", "Mocha has no timeout method", "Timeouts must be set in the config", "this.timeout only works in beforeEach"], "a": 0, "hint": "Who decides this for an arrow?", "why": "An arrow uses the outer <code>this<\/code>, so Mocha cannot hand it the test context."}, {"lv": "h", "q": "What happens here?", "o": ["ReferenceError: cannot access before initialization", "It prints undefined", "It prints 2", "It prints null"], "a": 0, "hint": "let is hoisted differently from var.", "why": "The name exists but is in the temporal dead zone until its line runs.", "code": "console.log(x);\nlet x = 2;"}, {"lv": "h", "q": "In a module, what is this inside method when it is called like this?", "o": ["undefined", "obj", "The global object", "f"], "a": 0, "hint": "There is nothing before the dot.", "why": "Modules are strict, and a plain call gives <code>this<\/code> as <code>undefined<\/code>.", "code": "const f = obj.method;\nf();"}, {"lv": "h", "q": "What does fn.bind(x) return?", "o": ["A new function whose this is always x", "The result of calling fn with this as x", "fn itself, changed", "undefined"], "a": 0, "hint": "bind does not call.", "why": "<code>call<\/code> and <code>apply<\/code> call immediately. <code>bind<\/code> returns a new function for later."}, {"lv": "x", "q": "A search box is debounced by 300 ms. A test types and reads the result count straight away. What is the most likely outcome?", "o": ["It sees the old results because the request has not been sent yet", "It sees the new results", "The typing fails", "The debounce is skipped in tests"], "a": 0, "hint": "When does the debounced function run?", "why": "The request only fires 300 ms after the last key press. Use an auto-waiting assertion."}, {"lv": "x", "q": "Which function keeps state between calls without a global variable?", "o": ["One created inside another function that returns it", "Any arrow function", "A function declaration", "A function using var"], "a": 0, "hint": "Think closures.", "why": "A closure keeps the variables of the function that created it."}, {"lv": "x", "q": "What does this print?", "o": ["1 1", "1 2", "2 2", "0 1"], "a": 0, "hint": "Each factory call makes its own count.", "why": "<code>a<\/code> and <code>b<\/code> each have their own <code>count<\/code>, so both print 1.", "code": "const make = () => { let count = 0; return () => ++count; };\nconst a = make(), b = make();\nconsole.log(a(), b());"}], "calc": [{"lv": "e", "q": "What does add(2) return?", "ans": "NaN", "hint": "b is undefined.", "steps": ["<code>b<\/code> is <code>undefined<\/code>.", "<span class=\"eq\">2 + undefined = NaN<\/span>"], "code": "function add(a, b) { return a + b; }"}, {"lv": "e", "q": "What does total(1, 2, 3, 4) return?", "ans": "10", "hint": "Rest gathers all four numbers.", "steps": ["<span class=\"eq\">1 + 2 + 3 + 4 = 10<\/span>"], "code": "const total = (...n) => n.reduce((s, x) => s + x, 0);"}, {"lv": "m", "q": "What does the last line print?", "ans": "3", "hint": "Each call adds one.", "steps": ["The counter goes 1, 2, 3."], "code": "function makeCounter() { let c = 0; return () => ++c; }\nconst next = makeCounter();\nnext(); next();\nconsole.log(next());"}, {"lv": "m", "q": "What is factorial(5)?", "ans": "120", "hint": "Multiply 5 down to 1.", "steps": ["<span class=\"eq\">5 × 4 × 3 × 2 × 1 = 120<\/span>"]}, {"lv": "h", "q": "How many times does slowSquare really run?", "ans": "2", "hint": "The cache remembers each input once.", "steps": ["Inputs: 9, 9, 4, 9.", "Only 9 and 4 are new. That is 2 real calls."], "code": "const fast = memoize(slowSquare);\nfast(9); fast(9); fast(4); fast(9);"}, {"lv": "h", "q": "factorial(4) is called. How many frames are on the call stack at its deepest point?", "ans": "4", "hint": "factorial(4), (3), (2), (1).", "steps": ["Each call waits for the next one until n is 1.", "Frames: factorial(4), factorial(3), factorial(2), factorial(1). That is 4."]}, {"lv": "x", "q": "A debounced search waits 300 ms. A user types 5 letters 100 ms apart. How many ms after the first key press is the request sent?", "ans": "700", "hint": "The timer restarts on each key.", "steps": ["The last key is pressed at 400 ms.", "<span class=\"eq\">400 + 300 = 700 ms<\/span>"], "alt": ["700 ms"]}, {"lv": "x", "q": "What does this print?", "ans": "6", "hint": "bind fixes this but call cannot change it again.", "steps": ["<code>bound<\/code> always uses <code>{ n: 6 }<\/code>.", "Calling it with <code>call<\/code> on another object does not change a bound function."], "code": "function getN() { return this.n; }\nconst bound = getN.bind({ n: 6 });\nconsole.log(bound.call({ n: 9 }));"}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers functions, arrows, scope, closures, this, higher order functions and recursion.", "hi": "यह अध्याय functions, arrows, scope, closures, this, higher order functions और recursion सिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ functions, arrows, scope, closures, this, higher order functions ಮತ್ತು recursion ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ functions, arrows, scope, closures, this, higher order functions ଓ recursion ଶିଖାଏ।", "ar": "يتناول هذا الفصل الدوال والدوال السهمية والنطاق والإغلاقات وthis والدوال عالية الرتبة والاستدعاء الذاتي.", "de": "Dieses Kapitel behandelt Funktionen, Pfeilfunktionen, Gültigkeitsbereiche, Closures, this, Funktionen höherer Ordnung und Rekursion."}, {"id": "functions", "h": "Functions", "en": "A function takes parameters and returns a value. Defaults fill in undefined arguments, rest gathers extra ones, and an options object keeps calls readable.", "hi": "Function parameters लेता है और value लौटाता है। Defaults undefined arguments भरते हैं, rest बाकी इकट्ठा करता है, और options object calls को पढ़ने लायक रखता है।", "kn": "Function parameters ತೆಗೆದು value ಹಿಂದಿರುಗಿಸುತ್ತದೆ. Defaults undefined arguments ತುಂಬುತ್ತವೆ, rest ಹೆಚ್ಚುವರಿಗಳನ್ನು ಸಂಗ್ರಹಿಸುತ್ತದೆ.", "or": "Function parameters ନେଇ value ଫେରାଏ। Defaults undefined arguments ପୂରଣ କରେ, rest ଅତିରିକ୍ତ ଗୁଡ଼ିକ ସଂଗ୍ରହ କରେ।", "ar": "تأخذ الدالة معاملات وتعيد قيمة. القيم الافتراضية تملأ الوسائط غير المعرفة، وrest يجمع الزائد، وكائن الخيارات يجعل الاستدعاء واضحًا.", "de": "Eine Funktion nimmt Parameter und gibt einen Wert zurück. Standardwerte füllen fehlende Argumente, Rest sammelt zusätzliche, ein Optionsobjekt hält Aufrufe lesbar."}, {"id": "arrows", "h": "Arrows", "en": "Arrow functions are short and use the this of the code around them. They are the usual form in test files.", "hi": "Arrow functions छोटे होते हैं और आसपास के code का this इस्तेमाल करते हैं। Test files में यही आम रूप है।", "kn": "Arrow functions ಚಿಕ್ಕವು ಮತ್ತು ಸುತ್ತಲಿನ code ನ this ಬಳಸುತ್ತವೆ. Test files ನಲ್ಲಿ ಇದೇ ಸಾಮಾನ್ಯ ರೂಪ.", "or": "Arrow functions ଛୋଟ ଏବଂ ଚାରିପାଖ code ର this ବ୍ୟବହାର କରନ୍ତି। Test files ରେ ଏହା ସାଧାରଣ ରୂପ।", "ar": "الدوال السهمية قصيرة وتستخدم this الخاص بالكود المحيط. وهي الشكل المعتاد في ملفات الاختبار.", "de": "Pfeilfunktionen sind kurz und nutzen das this des umgebenden Codes. In Testdateien sind sie die übliche Form."}, {"id": "scope", "h": "Scope", "en": "Names are looked up from the current block outwards to the global scope. let and const cannot be used before their line, which is the temporal dead zone.", "hi": "Names current block से बाहर global scope तक खोजे जाते हैं। let और const अपनी line से पहले इस्तेमाल नहीं हो सकते, यही temporal dead zone है।", "kn": "Names ಈಗಿನ block ನಿಂದ ಹೊರಗೆ global scope ವರೆಗೆ ಹುಡುಕಲಾಗುತ್ತದೆ. let ಮತ್ತು const ತಮ್ಮ ಸಾಲಿಗೆ ಮೊದಲು ಬಳಸಲಾಗದು.", "or": "Names ବର୍ତ୍ତମାନ block ରୁ ବାହାରକୁ global scope ପର୍ଯ୍ୟନ୍ତ ଖୋଜାଯାଏ। let ଓ const ନିଜ ଧାଡ଼ି ପୂର୍ବରୁ ବ୍ୟବହାର ହୋଇପାରେ ନାହିଁ।", "ar": "يُبحث عن الأسماء من الكتلة الحالية إلى الخارج حتى النطاق العام. لا يمكن استخدام let وconst قبل سطرها، وهذه هي المنطقة الميتة المؤقتة.", "de": "Namen werden vom aktuellen Block nach außen bis zum globalen Bereich gesucht. let und const sind vor ihrer Zeile nicht nutzbar, das ist die Temporal Dead Zone."}, {"id": "closures", "h": "Closures", "en": "A closure is a function that keeps the variables it saw when it was created. Each call to a factory gets its own fresh copy.", "hi": "Closure वह function है जो बनते समय दिखे variables को साथ रखता है। Factory की हर call को अपनी नई copy मिलती है।", "kn": "Closure ಎಂದರೆ ತಾನು ರಚನೆಯಾದಾಗ ನೋಡಿದ variables ಅನ್ನು ಇಟ್ಟುಕೊಳ್ಳುವ function. Factory ಯ ಪ್ರತಿ call ಗೆ ಹೊಸ copy.", "or": "Closure ହେଉଛି ସେହି function ଯାହା ତିଆରି ବେଳେ ଦେଖିଥିବା variables ରଖେ। Factory ର ପ୍ରତ୍ୟେକ call ନୂଆ copy ପାଏ।", "ar": "الإغلاق دالة تحتفظ بالمتغيرات التي رأتها عند إنشائها. كل استدعاء للمصنع يحصل على نسخته الجديدة.", "de": "Eine Closure ist eine Funktion, die die Variablen behält, die sie bei ihrer Erstellung sah. Jeder Aufruf einer Fabrik bekommt eine frische Kopie."}, {"id": "this", "h": "this", "en": "this is decided by how a function is called. Arrow functions borrow it from outside, so Mocha this timeout only works in a normal function.", "hi": "this इस बात से तय होता है कि function कैसे call हुआ। Arrow functions इसे बाहर से लेते हैं, इसलिए Mocha का this.timeout सिर्फ normal function में चलता है।", "kn": "Function ಹೇಗೆ call ಆಯಿತು ಎಂಬುದರಿಂದ this ನಿರ್ಧಾರವಾಗುತ್ತದೆ. Arrow functions ಹೊರಗಿನಿಂದ ಪಡೆಯುತ್ತವೆ, ಹಾಗಾಗಿ Mocha this.timeout normal function ನಲ್ಲಿ ಮಾತ್ರ.", "or": "Function କିପରି call ହେଲା ତାହା this ସ୍ଥିର କରେ। Arrow functions ବାହାରୁ ନିଅନ୍ତି, ତେଣୁ Mocha this.timeout କେବଳ normal function ରେ ଚାଲେ।", "ar": "تحدد طريقة استدعاء الدالة قيمة this. الدوال السهمية تستعيرها من الخارج، لذلك يعمل this.timeout في Mocha فقط داخل دالة عادية.", "de": "this hängt davon ab, wie eine Funktion aufgerufen wird. Pfeilfunktionen leihen es von außen, daher funktioniert this.timeout in Mocha nur in normalen Funktionen."}, {"id": "higher-order", "h": "Higher order functions", "en": "Functions can take and return functions. Memoize remembers results and debounce waits until calls stop, which tests must wait for too.", "hi": "Functions दूसरे functions ले और लौटा सकते हैं। Memoize नतीजे याद रखता है और debounce calls रुकने तक रुकता है, जिसका tests को भी इंतज़ार करना होता है।", "kn": "Functions ಇತರ functions ತೆಗೆದು ಹಿಂದಿರುಗಿಸಬಹುದು. Memoize ಫಲಿತಾಂಶ ನೆನಪಿಡುತ್ತದೆ, debounce calls ನಿಲ್ಲುವವರೆಗೆ ಕಾಯುತ್ತದೆ.", "or": "Functions ଅନ୍ୟ functions ନେଇ ଫେରାଇପାରନ୍ତି। Memoize ଫଳାଫଳ ମନେ ରଖେ, debounce calls ବନ୍ଦ ହେବା ପର୍ଯ୍ୟନ୍ତ ଅପେକ୍ଷା କରେ।", "ar": "يمكن للدوال أن تأخذ دوالًا وتعيدها. memoize يتذكر النتائج وdebounce ينتظر حتى تتوقف الاستدعاءات، وعلى الاختبارات أن تنتظر أيضًا.", "de": "Funktionen können Funktionen annehmen und zurückgeben. Memoize merkt sich Ergebnisse, Debounce wartet, bis Aufrufe aufhören, und Tests müssen ebenfalls warten."}, {"id": "recursion", "h": "Recursion", "en": "A recursive function calls itself on a smaller problem and needs a base case. Each call waits on the call stack.", "hi": "Recursive function छोटे problem पर खुद को call करता है और उसे base case चाहिए। हर call call stack पर इंतज़ार करती है।", "kn": "Recursive function ಚಿಕ್ಕ problem ಮೇಲೆ ತನ್ನನ್ನೇ call ಮಾಡುತ್ತದೆ, base case ಬೇಕು. ಪ್ರತಿ call call stack ಮೇಲೆ ಕಾಯುತ್ತದೆ.", "or": "Recursive function ଛୋଟ problem ଉପରେ ନିଜକୁ call କରେ ଏବଂ base case ଦରକାର। ପ୍ରତ୍ୟେକ call call stack ରେ ଅପେକ୍ଷା କରେ।", "ar": "الدالة الذاتية تستدعي نفسها على مشكلة أصغر وتحتاج إلى حالة أساس. كل استدعاء ينتظر على مكدس الاستدعاءات.", "de": "Eine rekursive Funktion ruft sich mit einem kleineren Problem selbst auf und braucht einen Basisfall. Jeder Aufruf wartet auf dem Aufrufstapel."}, {"id": "scenario", "h": "Scenario", "en": "A closure based factory builds unique, valid test users by default and lets each test override only what it needs.", "hi": "Closure पर बनी factory default रूप से unique, valid test users बनाती है और हर test को सिर्फ ज़रूरी चीज़ बदलने देती है।", "kn": "Closure ಆಧಾರಿತ factory default ಆಗಿ unique, valid test users ರಚಿಸುತ್ತದೆ, ಪ್ರತಿ test ಬೇಕಾದದ್ದನ್ನು ಮಾತ್ರ ಬದಲಿಸಬಹುದು.", "or": "Closure ଆଧାରିତ factory default ଭାବେ unique, valid test users ତିଆରି କରେ ଏବଂ ପ୍ରତ୍ୟେକ test କେବଳ ଦରକାରୀ ବଦଳାଏ।", "ar": "مصنع مبني على الإغلاق ينشئ مستخدمي اختبار فريدين وصالحين افتراضيًا، ويسمح لكل اختبار بتغيير ما يحتاجه فقط.", "de": "Eine Fabrik auf Basis einer Closure baut standardmäßig eindeutige, gültige Testnutzer, und jeder Test ändert nur, was er braucht."}, {"id": "practice", "h": "Hands-on", "en": "Write functions with defaults, closures and wrappers, then run the tests in your browser.", "hi": "Defaults, closures और wrappers वाले functions लिखें, फिर tests अपने browser में चलाएँ।", "kn": "Defaults, closures ಮತ್ತು wrappers ಇರುವ functions ಬರೆಯಿರಿ, ನಂತರ tests ನಿಮ್ಮ browser ನಲ್ಲಿ ಓಡಿಸಿ.", "or": "Defaults, closures ଓ wrappers ଥିବା functions ଲେଖନ୍ତୁ, ତାପରେ tests ଆପଣଙ୍କ browser ରେ ଚଲାନ୍ତୁ।", "ar": "اكتب دوالًا بقيم افتراضية وإغلاقات وأغلفة، ثم شغل الاختبارات في متصفحك.", "de": "Schreibe Funktionen mit Standardwerten, Closures und Hüllen und führe die Tests im Browser aus."}], "ex": [{"id": "discount", "lv": "e", "title": "A discount with a default", "task": "<p>Write <code>discount(price, percent = 10)<\/code> that returns the price after the discount, rounded to two decimals as a number.<\/p>", "starter": "function discount(price, percent) {\n  \n}", "tests": [{"call": "discount(200)", "want": 180}, {"call": "discount(200, 25)", "want": 150}, {"call": "discount(99.99, 15)", "want": 84.99}, {"call": "discount(50, 0)", "want": 50}], "solution": "function discount(price, percent = 10) {\n  return Math.round(price * (100 - percent)) / 100;\n}", "hint": "Give <code>percent<\/code> a default. Round with <code>Math.round(x * 100) / 100<\/code>.", "why": "Multiplying by <code>(100 - percent)<\/code> and dividing by 100 once keeps rounding errors small."}, {"id": "counter", "lv": "m", "title": "A counter with a closure", "task": "<p>Write <code>makeCounter(start = 0)<\/code> that returns an object with <code>next()<\/code> (adds one and returns the new value), <code>reset()<\/code> (back to start) and <code>peek()<\/code> (returns the value without changing it).<\/p>", "starter": "function makeCounter(start = 0) {\n  \n}", "tests": [{"call": "(() => { const c = makeCounter(); c.next(); c.next(); return c.peek(); })()", "want": 2}, {"call": "(() => { const c = makeCounter(5); c.next(); c.reset(); return c.peek(); })()", "want": 5}, {"call": "(() => { const a = makeCounter(), b = makeCounter(); a.next(); return [a.peek(), b.peek()]; })()", "want": [1, 0]}, {"call": "makeCounter(1).next()", "want": 2}], "solution": "function makeCounter(start = 0) {\n  let count = start;\n  return {\n    next: () => ++count,\n    reset: () => { count = start; },\n    peek: () => count,\n  };\n}", "hint": "Keep <code>let count = start<\/code> inside makeCounter and return three arrow functions that use it.", "why": "Each call to makeCounter gets its own <code>count<\/code>, so counters never share state."}, {"id": "once", "lv": "h", "title": "Run only once", "task": "<p>Write <code>once(fn)<\/code>. It returns a function that calls <code>fn<\/code> with its arguments the first time and returns the result. Every later call returns that first result without calling <code>fn<\/code> again. This is how \"log in only once per suite\" helpers work.<\/p>", "starter": "function once(fn) {\n  return fn;\n}", "tests": [{"call": "(() => { let n = 0; const f = once(() => ++n); f(); f(); return n; })()", "want": 1}, {"call": "(() => { const f = once((a, b) => a + b); return [f(2, 3), f(10, 10)]; })()", "want": [5, 5]}, {"call": "(() => { const f = once(() => undefined); let calls = 0; const g = once(() => { calls++; }); g(); g(); return calls; })()", "want": 1}], "solution": "function once(fn) {\n  let done = false;\n  let result;\n  return (...args) => {\n    if (!done) {\n      done = true;\n      result = fn(...args);\n    }\n    return result;\n  };\n}", "hint": "Keep two variables in the closure: whether it has run, and the result.", "why": "Using a separate <code>done<\/code> flag works even when the first result is <code>undefined<\/code>."}, {"id": "debounce", "lv": "x", "title": "Write debounce", "task": "<p>Write <code>debounce(fn, wait)<\/code>. The returned function restarts a timer on every call and calls <code>fn<\/code> with the <b>latest<\/b> arguments once no call has happened for <code>wait<\/code> milliseconds.<\/p>", "starter": "function debounce(fn, wait) {\n  return fn;\n}", "tests": [{"call": "(async () => { const seen = []; const d = debounce(x => seen.push(x), 30); d(1); d(2); d(3); await new Promise(r => setTimeout(r, 80)); return seen; })()", "want": [3]}, {"call": "(async () => { const seen = []; const d = debounce(x => seen.push(x), 20); d(\"a\"); await new Promise(r => setTimeout(r, 60)); d(\"b\"); await new Promise(r => setTimeout(r, 60)); return seen; })()", "want": ["a", "b"]}, {"call": "(async () => { const seen = []; const d = debounce((a, b) => seen.push(a + b), 10); d(1, 2); return seen.length; })()", "want": 0}], "solution": "function debounce(fn, wait) {\n  let timer;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), wait);\n  };\n}", "hint": "Keep the timer id in the closure. <code>clearTimeout<\/code> the old one before starting a new one.", "why": "Each call cancels the pending timer, so only the last call in a burst survives long enough to run."}], "dg": {}, "lanes": {"scope": {"t": "Looking up a name through the scope chain", "code": "const app = \"Shop\";\nfunction checkout() {\n  const total = 499;\n  if (total > 100) {\n    const msg = \"big\";\n    console.log(app, total, msg);\n  }\n}\ncheckout();", "lanes": ["Global scope", "checkout() scope", "if block scope", "Lookup"], "tone": [2, 1, 0, 5], "steps": [{"l": 1, "v": [["app = \"Shop\"", "checkout = fn"], [], [], []], "m": "The global scope holds app and the checkout function."}, {"l": 9, "v": [["app = \"Shop\"", "checkout = fn"], ["(new scope)"], [], []], "m": "Calling checkout creates a new scope for that call."}, {"l": 3, "v": [["app = \"Shop\"", "checkout = fn"], ["total = 499"], [], []], "m": "total belongs to the function scope."}, {"l": 5, "v": [["app = \"Shop\"", "checkout = fn"], ["total = 499"], ["msg = \"big\""], []], "m": "msg is declared with const inside the if block, so it gets an even smaller scope."}, {"l": 6, "v": [["app = \"Shop\"", "checkout = fn"], ["total = 499"], ["msg = \"big\""], ["msg: found in the block"]], "m": "Looking up msg: found at once in the block."}, {"l": 6, "v": [["app = \"Shop\"", "checkout = fn"], ["total = 499"], ["msg = \"big\""], ["msg: found in the block", "total: not in block, found in function"]], "m": "total is not in the block, so the search moves one scope out."}, {"l": 6, "v": [["app = \"Shop\"", "checkout = fn"], ["total = 499"], ["msg = \"big\""], ["msg: found in the block", "total: not in block, found in function", "app: found in global"]], "m": "app is found two scopes out, in the global scope. The search only goes outwards, never inwards."}, {"l": 8, "v": [["app = \"Shop\"", "checkout = fn"], [], [], []], "m": "When the call ends, its scopes are gone, unless a closure still needs them."}]}, "closure": {"t": "A closure keeps its variables alive", "code": "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\nconst next = makeCounter();\nnext();\nnext();", "lanes": ["Global", "Kept alive by the closure", "Returned values"], "tone": [2, 3, 1], "steps": [{"l": 5, "v": [["makeCounter = fn"], ["count = 0"], []], "m": "Calling makeCounter creates count inside its scope."}, {"l": 3, "v": [["makeCounter = fn", "next = arrow fn"], ["count = 0"], []], "m": "The arrow function is returned. makeCounter has finished, yet count is kept because the arrow still refers to it."}, {"l": 6, "v": [["makeCounter = fn", "next = arrow fn"], ["count = 1"], ["1"]], "m": "next() reaches into the kept scope and adds one."}, {"l": 7, "v": [["makeCounter = fn", "next = arrow fn"], ["count = 2"], ["1", "2"]], "m": "The value survives between calls. Nothing outside can touch count directly."}]}, "stack": {"t": "factorial(3) on the call stack", "code": "function factorial(n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}\nfactorial(3);", "lanes": ["Call stack (top is running)", "Returned"], "tone": [0, 1], "steps": [{"l": 5, "v": [["factorial(3)"], []], "m": "factorial(3) starts and is placed on the stack."}, {"l": 3, "v": [["factorial(2)", "factorial(3) waits"], []], "m": "It needs factorial(2), which goes on top. factorial(3) waits."}, {"l": 3, "v": [["factorial(1)", "factorial(2) waits", "factorial(3) waits"], []], "m": "factorial(2) needs factorial(1)."}, {"l": 2, "v": [["factorial(2) waits", "factorial(3) waits"], ["factorial(1) = 1"]], "m": "The base case returns 1 without another call. Its frame leaves the stack."}, {"l": 3, "v": [["factorial(3) waits"], ["factorial(1) = 1", "factorial(2) = 2"]], "m": "factorial(2) can finish: 2 × 1 = 2."}, {"l": 3, "v": [[], ["factorial(1) = 1", "factorial(2) = 2", "factorial(3) = 6"]], "m": "factorial(3) finishes: 3 × 2 = 6. The stack is empty again."}]}}, "play": {}};
+JSPLAY.page({ title: "Functions, Scope and Closures", subject: "javascript" });
+</script>
+</body>
+</html>

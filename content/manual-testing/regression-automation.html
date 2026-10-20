@@ -983,6 +983,27 @@ pre.pseudo{margin:6px 0 0; background:var(--code-bg); color:var(--code-ink); bor
 .tg-why{font-size:12.5px; color:var(--ink2)}
 @media (max-width:600px){.tg-t{grid-template-columns:1fr}}
 
+/* ===== layout fixes: keep headings, labels and badges from overlapping ===== */
+html{scroll-padding-top:60px}
+h2{flex-wrap:nowrap}
+h2>span:not(.sec-em){flex:0 1 auto; min-width:0}
+h2 .vx-say{flex:none}
+.rm-c{padding-top:20px}
+.rm-c.rm-h{padding-top:5px}
+.rm-r{margin-top:0}
+.tw table.jt:has(tr>:nth-child(4)){min-width:600px}
+@media (max-width:640px){
+  html{scroll-padding-top:54px}
+  .topbar{padding:8px 12px}
+  .tb-brand{font-size:16px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .tb-btn{flex:none; padding:5px 12px}
+  table.jt{font-size:14px}
+  table.jt th,table.jt td{padding:7px 9px}
+}
+@media (max-width:560px){
+  .vx-fab{padding:10px}
+  .vx-fab .vx-flbl{display:none}
+}
 </style>
 </head>
 <body>
@@ -3728,6 +3749,26 @@ const OUTS = {"mt_reg_releases": {"py": "            new  regression  total run 
   revealHash();
 })();
 
+</script>
+<script>
+/* Reveal a section before jumping to it, so the jump lands below the sticky top bar instead of under it. */
+(() => {
+  function settle(id) {
+    const el = id && document.getElementById(id);
+    for (let e = el; e; e = e.parentElement) {
+      if (!e.classList.contains('reveal') || e.classList.contains('in')) continue;
+      e.style.transition = 'none';
+      e.classList.add('in');
+      void e.offsetHeight;
+      e.style.transition = '';
+    }
+  }
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (a) settle(decodeURIComponent(a.getAttribute('href').slice(1)));
+  }, true);
+  if (location.hash) settle(decodeURIComponent(location.hash.slice(1)));
+})();
 </script>
 </body>
 </html>

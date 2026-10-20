@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The DOM and the Browser · JavaScript</title>
+<meta name="description" content="DOM tree, querySelector, CSS selectors, XPath, locator strategy, textContent and innerHTML, XSS, events, bubbling, delegation, forms, validation, shadow DOM, iframes, MutationObserver, localStorage and cookies.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>⏳ Async and the platform</span><span>›</span><span>Chapter 11 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🌐</span><div><h1>The DOM and the Browser</h1><p class="lead">How the page becomes a tree of objects, finding elements with CSS selectors and XPath, choosing stable locators, changing the page safely, events and delegation, forms and validation, shadow DOM, iframes, observers, storage and cookies.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 19 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 11 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 7 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>UI automation is the DOM driven from outside. Locators, events, frames, shadow roots and browser storage explain most of what makes UI tests pass, fail or flake.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#dom" class="qa"><span>🌳</span>The DOM tree</a><a href="#selectors" class="qa"><span>🎯</span>Selectors and locators</a><a href="#change"><span>✏️</span>Changing the page</a><a href="#events" class="qa"><span>🖱️</span>Events</a><a href="#forms" class="qa"><span>📝</span>Forms and validation</a><a href="#advanced" class="qa"><span>🧱</span>Shadow DOM, iframes and observers</a><a href="#storage" class="qa"><span>🍪</span>Storage and cookies</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: check an order table</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="dom" data-say="dom"><div class="sec-num">Part 1</div><h2><span class="sec-em">🌳</span><span>The DOM tree</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Every locator in Selenium, Playwright and Cypress finds nodes in this tree.</span></div>
+<p>When a browser loads HTML, it builds the <b>DOM</b> (Document Object Model): a tree of objects, one for each element, piece of text and comment. JavaScript reads and changes the page only through this tree, and so does every UI automation tool.</p>
+<div class="codewrap" data-k="tree" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Finding elements and walking the tree · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;
+&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">header</span>&gt;&lt;<span class="k">nav</span> <span class="a">aria-label</span>=<span class="s">"Main"</span>&gt;&lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/"</span>&gt;Home&lt;/<span class="k">a</span>&gt; &lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/deals"</span> <span class="a">class</span>=<span class="s">"hot"</span>&gt;Deals&lt;/<span class="k">a</span>&gt;&lt;/<span class="k">nav</span>&gt;&lt;/<span class="k">header</span>&gt;
+  &lt;<span class="k">main</span> <span class="a">id</span>=<span class="s">"products"</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"PEN-01"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Gel pen&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹20&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card sold-out"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"BOOK-07"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Notebook&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹250&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span> <span class="a">disabled</span>&gt;Sold out&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"MUG-03"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Coffee mug&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹199&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+  &lt;/<span class="k">main</span>&gt;
+  &lt;<span class="k">p</span> <span class="a">id</span>=<span class="s">"cart-count"</span>&gt;0&lt;/<span class="k">p</span>&gt;
+&lt;/<span class="k">body</span>&gt;
+&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main">console.log(document.title === <span class="s">""</span>, document.body.children.length);
+
+<span class="k">const</span> main = document.getElementById(<span class="s">"products"</span>);
+<span class="k">const</span> firstCard = main.querySelector(<span class="s">".card"</span>);               <span class="c">// the first match</span>
+<span class="k">const</span> allCards = main.querySelectorAll(<span class="s">".card"</span>);              <span class="c">// a static NodeList</span>
+console.log(firstCard.querySelector(<span class="s">"h2"</span>).textContent, allCards.length);
+
+<span class="c">// Walk around the tree</span>
+<span class="k">const</span> price = firstCard.querySelector(<span class="s">".price"</span>);
+console.log(price.parentElement.dataset.sku);                 <span class="c">// up</span>
+console.log(price.previousElementSibling.textContent);        <span class="c">// sideways</span>
+console.log(price.closest(<span class="s">"main"</span>).id);                        <span class="c">// nearest ancestor that matches</span>
+console.log([...allCards].map(c =&gt; c.dataset.sku));</pre><div class="out"><span>Output</span><pre>true 3
+Gel pen 3
+PEN-01
+Gel pen
+products
+[ &#x27;PEN-01&#x27;, &#x27;BOOK-07&#x27;, &#x27;MUG-03&#x27; ]</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Method</th><th>Returns</th></tr>
+<tr><td><code>getElementById("x")</code></td><td>one element or <code>null</code></td></tr>
+<tr><td><code>querySelector(css)</code></td><td>the first match or <code>null</code></td></tr>
+<tr><td><code>querySelectorAll(css)</code></td><td>a NodeList of every match, possibly empty</td></tr>
+<tr><td><code>el.closest(css)</code></td><td>the element itself or its nearest ancestor that matches</td></tr>
+<tr><td><code>parentElement</code>, <code>children</code>, <code>nextElementSibling</code></td><td>neighbours in the tree</td></tr>
+</table></div>
+</section>
+<section class="card reveal jsec qa-part" id="selectors" data-say="selectors"><div class="sec-num">Part 2</div><h2><span class="sec-em">🎯</span><span>Selectors and locators</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Selenium</span><span class="qa-tool">Cypress</span><span class="qa-tool">WebdriverIO</span><span class="qa-why">Choosing stable locators decides how often your UI tests break.</span></div>
+<p>A <b>CSS selector</b> describes elements by tag, id, class, attribute and position. The same selector works in <code>document.querySelector</code>, in your stylesheet and in every test tool.</p>
+<div class="codewrap" data-k="selectors" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">CSS selectors for finding elements · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;
+&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">header</span>&gt;&lt;<span class="k">nav</span> <span class="a">aria-label</span>=<span class="s">"Main"</span>&gt;&lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/"</span>&gt;Home&lt;/<span class="k">a</span>&gt; &lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/deals"</span> <span class="a">class</span>=<span class="s">"hot"</span>&gt;Deals&lt;/<span class="k">a</span>&gt;&lt;/<span class="k">nav</span>&gt;&lt;/<span class="k">header</span>&gt;
+  &lt;<span class="k">main</span> <span class="a">id</span>=<span class="s">"products"</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"PEN-01"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Gel pen&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹20&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card sold-out"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"BOOK-07"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Notebook&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹250&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span> <span class="a">disabled</span>&gt;Sold out&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"MUG-03"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Coffee mug&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹199&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+  &lt;/<span class="k">main</span>&gt;
+  &lt;<span class="k">p</span> <span class="a">id</span>=<span class="s">"cart-count"</span>&gt;0&lt;/<span class="k">p</span>&gt;
+&lt;/<span class="k">body</span>&gt;
+&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="k">const</span> q = s =&gt; document.querySelectorAll(s).length;
+
+console.log(<span class="s">"by tag:            "</span>, q(<span class="s">"article"</span>));
+console.log(<span class="s">"by class:          "</span>, q(<span class="s">".card"</span>));
+console.log(<span class="s">"two classes:       "</span>, q(<span class="s">".card.sold-out"</span>));
+console.log(<span class="s">"attribute:         "</span>, q(<span class="s">'[data-test="product"]'</span>));
+console.log(<span class="s">"attribute prefix:  "</span>, q(<span class="s">'[data-sku^="PEN"]'</span>));
+console.log(<span class="s">"child of:          "</span>, q(<span class="s">"main &gt; article"</span>));
+console.log(<span class="s">"not:               "</span>, q(<span class="s">".card:not(.sold-out)"</span>));
+console.log(<span class="s">"nth:               "</span>, document.querySelector(<span class="s">".card:nth-of-type(3) h2"</span>).textContent);
+console.log(<span class="s">"has (parent by child):"</span>, q(<span class="s">"article:has(button:disabled)"</span>));
+console.log(<span class="s">"enabled buttons:   "</span>, q(<span class="s">"button.add:enabled"</span>));</pre><div class="out"><span>Output</span><pre>by tag:             3
+by class:           3
+two classes:        1
+attribute:          3
+attribute prefix:   1
+child of:           3
+not:                2
+nth:                Coffee mug
+has (parent by child): 1
+enabled buttons:    2</pre></div></div>
+<p><b>XPath</b> is an older query language for the same tree. It can find elements by their text and step up to ancestors, which CSS cannot. Selenium supports it fully and many older suites use it.</p>
+<div class="codewrap" data-k="xpath" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">XPath, used by Selenium and others · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;
+&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">header</span>&gt;&lt;<span class="k">nav</span> <span class="a">aria-label</span>=<span class="s">"Main"</span>&gt;&lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/"</span>&gt;Home&lt;/<span class="k">a</span>&gt; &lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/deals"</span> <span class="a">class</span>=<span class="s">"hot"</span>&gt;Deals&lt;/<span class="k">a</span>&gt;&lt;/<span class="k">nav</span>&gt;&lt;/<span class="k">header</span>&gt;
+  &lt;<span class="k">main</span> <span class="a">id</span>=<span class="s">"products"</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"PEN-01"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Gel pen&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹20&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card sold-out"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"BOOK-07"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Notebook&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹250&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span> <span class="a">disabled</span>&gt;Sold out&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"MUG-03"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Coffee mug&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹199&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+  &lt;/<span class="k">main</span>&gt;
+  &lt;<span class="k">p</span> <span class="a">id</span>=<span class="s">"cart-count"</span>&gt;0&lt;/<span class="k">p</span>&gt;
+&lt;/<span class="k">body</span>&gt;
+&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="k">function</span> xpath(expr, context = document) {
+  <span class="k">const</span> r = document.evaluate(expr, context, <span class="k">null</span>, <span class="t">XPathResult</span>.<span class="t">ORDERED_NODE_SNAPSHOT_TYPE</span>, <span class="k">null</span>);
+  <span class="k">return</span> <span class="t">Array</span>.<span class="k">from</span>({ length: r.snapshotLength }, (_, i) =&gt; r.snapshotItem(i));
+}
+
+<span class="c">// Find by visible text, which CSS cannot do</span>
+console.log(xpath(<span class="s">"//h2[text()='Coffee mug']"</span>).length);
+<span class="c">// Go up to the card that contains that heading, then down to its button</span>
+console.log(xpath(<span class="s">"//h2[text()='Coffee mug']/ancestor::article//button"</span>)[<span class="n">0</span>].textContent);
+<span class="c">// Contains, and an index</span>
+console.log(xpath(<span class="s">"//button[contains(., 'Sold')]"</span>).map(b =&gt; b.disabled));
+console.log(xpath(<span class="s">"(//span[@class='price'])[last()]"</span>)[<span class="n">0</span>].textContent);</pre><div class="out"><span>Output</span><pre>1
+Add to cart
+[ true ]
+₹199</pre></div></div>
+<h3>Which locator to choose</h3>
+<div class="tw"><table class="jt"><tr><th>Locator</th><th>Example</th><th>Stability</th></tr>
+<tr><td>Role and name (what a user sees)</td><td><code>getByRole("button", { name: "Add to cart" })</code></td><td>best: survives layout and styling changes</td></tr>
+<tr><td>Label or text</td><td><code>getByLabel("Email")</code>, <code>getByText("Deals")</code></td><td>good, changes with the wording</td></tr>
+<tr><td>Test id</td><td><code>[data-test="product"]</code>, <code>getByTestId</code></td><td>good, made for tests</td></tr>
+<tr><td>Short CSS</td><td><code>.card .price</code></td><td>fair, breaks when classes change</td></tr>
+<tr><td>Long CSS or XPath by position</td><td><code>/html/body/main/article[3]/button</code></td><td>poor, breaks with any layout change</td></tr>
+</table></div>
+</section>
+<section class="card reveal jsec" id="change" data-say="change"><div class="sec-num">Part 3</div><h2><span class="sec-em">✏️</span><span>Changing the page</span></h2>
+
+<p>Elements can be changed in place: their text, classes, attributes and children. <code>textContent</code> sets plain text and is always safe. <code>innerHTML</code> parses HTML, so putting user input into it can run an attacker's code, a bug called <b>cross site scripting</b> (XSS).</p>
+<div class="codewrap" data-k="change" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Changing text, classes, attributes and elements · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;
+&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">header</span>&gt;&lt;<span class="k">nav</span> <span class="a">aria-label</span>=<span class="s">"Main"</span>&gt;&lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/"</span>&gt;Home&lt;/<span class="k">a</span>&gt; &lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/deals"</span> <span class="a">class</span>=<span class="s">"hot"</span>&gt;Deals&lt;/<span class="k">a</span>&gt;&lt;/<span class="k">nav</span>&gt;&lt;/<span class="k">header</span>&gt;
+  &lt;<span class="k">main</span> <span class="a">id</span>=<span class="s">"products"</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"PEN-01"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Gel pen&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹20&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card sold-out"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"BOOK-07"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Notebook&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹250&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span> <span class="a">disabled</span>&gt;Sold out&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"MUG-03"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Coffee mug&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹199&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+  &lt;/<span class="k">main</span>&gt;
+  &lt;<span class="k">p</span> <span class="a">id</span>=<span class="s">"cart-count"</span>&gt;0&lt;/<span class="k">p</span>&gt;
+&lt;/<span class="k">body</span>&gt;
+&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="k">const</span> card = document.querySelector(<span class="s">'[data-sku="PEN-01"]'</span>);
+
+card.querySelector(<span class="s">"h2"</span>).textContent = <span class="s">"Gel pen (blue)"</span>;   <span class="c">// safe: plain text only</span>
+card.classList.add(<span class="s">"in-cart"</span>);
+card.classList.toggle(<span class="s">"highlight"</span>);
+card.setAttribute(<span class="s">"aria-label"</span>, <span class="s">"Gel pen, in cart"</span>);
+card.dataset.qty = <span class="s">"2"</span>;                                    <span class="c">// becomes data-qty="2"</span>
+console.log(card.className, card.getAttribute(<span class="s">"data-qty"</span>));
+
+<span class="k">const</span> badge = document.createElement(<span class="s">"span"</span>);
+badge.className = <span class="s">"badge"</span>;
+badge.textContent = <span class="s">"New"</span>;
+card.prepend(badge);
+console.log(card.firstElementChild.outerHTML);
+
+<span class="k">const</span> userInput = <span class="s">'&lt;img src=x onerror="alert(1)"&gt;'</span>;
+<span class="k">const</span> safe = document.createElement(<span class="s">"p"</span>);
+safe.textContent = userInput;                              <span class="c">// shown as text, never run</span>
+console.log(safe.innerHTML);
+
+document.querySelector(<span class="s">".sold-out"</span>).remove();
+console.log(document.querySelectorAll(<span class="s">".card"</span>).length);</pre><div class="out"><span>Output</span><pre>card in-cart highlight 2
+&lt;span class=&quot;badge&quot;&gt;New&lt;/span&gt;
+&amp;lt;img src=x onerror=&quot;alert(1)&quot;&amp;gt;
+2</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Property</th><th>Reads or writes</th></tr>
+<tr><td><code>textContent</code></td><td>all text, including hidden elements, fast</td></tr>
+<tr><td><code>innerText</code></td><td>only the text a user can see, with layout applied (what Selenium's <code>getText()</code> returns)</td></tr>
+<tr><td><code>innerHTML</code></td><td>the HTML inside the element</td></tr>
+<tr><td><code>value</code></td><td>what is typed in an input, select or textarea</td></tr>
+</table></div>
+<div class="qa-box">Testers deliberately type <code>&lt;script&gt;</code> and <code>&lt;img onerror&gt;</code> payloads into forms to check that the page shows them as text. If an alert pops up, you found an XSS bug.</div>
+</section>
+<section class="card reveal jsec qa-part" id="events" data-say="events"><div class="sec-num">Part 4</div><h2><span class="sec-em">🖱️</span><span>Events</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Selenium</span><span class="qa-tool">Cypress</span><span class="qa-why">Understanding bubbling and trusted events explains "element click intercepted" errors and why forced clicks hide bugs.</span></div>
+<p>Clicks, key presses, input changes and form submits are <b>events</b>. <code>addEventListener(type, handler)</code> runs your function each time one happens. An event travels down from the window to the target (<b>capture</b>), then back up (<b>bubble</b>), so a listener on a parent hears clicks on its children.</p>
+<div class="viz" data-viz="bubble"></div>
+<div class="codewrap" data-k="events" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Listening for events and event delegation · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;
+&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">header</span>&gt;&lt;<span class="k">nav</span> <span class="a">aria-label</span>=<span class="s">"Main"</span>&gt;&lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/"</span>&gt;Home&lt;/<span class="k">a</span>&gt; &lt;<span class="k">a</span> <span class="a">href</span>=<span class="s">"/deals"</span> <span class="a">class</span>=<span class="s">"hot"</span>&gt;Deals&lt;/<span class="k">a</span>&gt;&lt;/<span class="k">nav</span>&gt;&lt;/<span class="k">header</span>&gt;
+  &lt;<span class="k">main</span> <span class="a">id</span>=<span class="s">"products"</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"PEN-01"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Gel pen&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹20&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card sold-out"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"BOOK-07"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Notebook&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹250&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span> <span class="a">disabled</span>&gt;Sold out&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+    &lt;<span class="k">article</span> <span class="a">class</span>=<span class="s">"card"</span> <span class="a">data-test</span>=<span class="s">"product"</span> <span class="a">data-sku</span>=<span class="s">"MUG-03"</span>&gt;
+      &lt;<span class="k">h2</span>&gt;Coffee mug&lt;/<span class="k">h2</span>&gt;&lt;<span class="k">span</span> <span class="a">class</span>=<span class="s">"price"</span>&gt;₹199&lt;/<span class="k">span</span>&gt;
+      &lt;<span class="k">button</span> <span class="a">type</span>=<span class="s">"button"</span> <span class="a">class</span>=<span class="s">"add"</span>&gt;Add to cart&lt;/<span class="k">button</span>&gt;
+    &lt;/<span class="k">article</span>&gt;
+  &lt;/<span class="k">main</span>&gt;
+  &lt;<span class="k">p</span> <span class="a">id</span>=<span class="s">"cart-count"</span>&gt;0&lt;/<span class="k">p</span>&gt;
+&lt;/<span class="k">body</span>&gt;
+&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="k">const</span> count = document.querySelector(<span class="s">"#cart-count"</span>);
+
+<span class="c">// One listener on the parent handles every button, even ones added later</span>
+document.querySelector(<span class="s">"#products"</span>).addEventListener(<span class="s">"click"</span>, event =&gt; {
+  <span class="k">const</span> button = event.target.closest(<span class="s">"button.add"</span>);
+  <span class="k">if</span> (!button || button.disabled) <span class="k">return</span>;
+  <span class="k">const</span> sku = button.closest(<span class="s">"[data-sku]"</span>).dataset.sku;
+  count.textContent = <span class="t">Number</span>(count.textContent) + <span class="n">1</span>;
+  console.log(<span class="s">`added ${sku}, target was &lt;${event.target.tagName.toLowerCase()}&gt;, listener on #${event.currentTarget.id}`</span>);
+});
+
+document.querySelector(<span class="s">'[data-sku="PEN-01"] button'</span>).click();
+document.querySelector(<span class="s">'[data-sku="MUG-03"] button'</span>).click();
+document.querySelector(<span class="s">'[data-sku="BOOK-07"] button'</span>).click();   <span class="c">// disabled: click() does nothing</span>
+console.log(<span class="s">"cart count:"</span>, count.textContent);
+
+<span class="c">// A link whose default action is stopped</span>
+<span class="k">const</span> deals = document.querySelector(<span class="s">"a.hot"</span>);
+deals.addEventListener(<span class="s">"click"</span>, e =&gt; { e.preventDefault(); console.log(<span class="s">"navigation prevented"</span>); });
+deals.click();
+
+<span class="c">// Custom events let parts of a page talk to each other</span>
+document.addEventListener(<span class="s">"cart:changed"</span>, e =&gt; console.log(<span class="s">"custom event:"</span>, e.detail));
+document.dispatchEvent(<span class="k">new</span> <span class="t">CustomEvent</span>(<span class="s">"cart:changed"</span>, { detail: { items: <span class="n">2</span> } }));
+console.log(<span class="s">"isTrusted for script events:"</span>, <span class="k">new</span> <span class="t">MouseEvent</span>(<span class="s">"click"</span>).isTrusted);</pre><div class="out"><span>Output</span><pre>added PEN-01, target was &lt;button&gt;, listener on #products
+added MUG-03, target was &lt;button&gt;, listener on #products
+cart count: 2
+navigation prevented
+custom event: { items: 2 }
+isTrusted for script events: false</pre></div></div>
+<p><b>Event delegation</b> uses this: one listener on a list handles every item, including items added later. <code>event.target</code> is what was clicked and <code>event.currentTarget</code> is where the listener sits. <code>preventDefault()</code> stops the browser's own action, such as following a link.</p>
+<div class="warn">Events created by scripts have <code>isTrusted</code> set to false, and <code>element.click()</code> skips the checks a real user goes through: it works on hidden or covered buttons. That is why Playwright and Selenium move a real mouse and check that the element is visible and not covered before clicking, and why <code>{ force: true }</code> clicks can hide real bugs.</div>
+</section>
+<section class="card reveal jsec qa-part" id="forms" data-say="forms"><div class="sec-num">Part 5</div><h2><span class="sec-em">📝</span><span>Forms and validation</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Forms are the most tested part of any web app, and their validation rules are the source of many test cases.</span></div>
+<p>Form fields hold their current value in <code>value</code> (or <code>checked</code> for checkboxes). HTML attributes such as <code>required</code>, <code>type="email"</code> and <code>min</code> give free validation, which JavaScript reads through <code>checkValidity()</code> and each field's <code>validity</code>. <code>FormData</code> collects every named field in one go.</p>
+<div class="codewrap" data-k="forms" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Form values and built in validation · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;
+&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">form</span> <span class="a">id</span>=<span class="s">"signup"</span> <span class="a">novalidate</span>&gt;
+    &lt;<span class="k">label</span> <span class="a">for</span>=<span class="s">"email"</span>&gt;Email&lt;/<span class="k">label</span>&gt;
+    &lt;<span class="k">input</span> <span class="a">id</span>=<span class="s">"email"</span> <span class="a">name</span>=<span class="s">"email"</span> <span class="a">type</span>=<span class="s">"email"</span> <span class="a">required</span>&gt;
+    &lt;<span class="k">label</span> <span class="a">for</span>=<span class="s">"age"</span>&gt;Age&lt;/<span class="k">label</span>&gt;
+    &lt;<span class="k">input</span> <span class="a">id</span>=<span class="s">"age"</span> <span class="a">name</span>=<span class="s">"age"</span> <span class="a">type</span>=<span class="s">"number"</span> <span class="a">min</span>=<span class="s">"18"</span> <span class="a">max</span>=<span class="s">"120"</span>&gt;
+    &lt;<span class="k">label</span>&gt;&lt;<span class="k">input</span> <span class="a">type</span>=<span class="s">"checkbox"</span> <span class="a">name</span>=<span class="s">"terms"</span> <span class="a">id</span>=<span class="s">"terms"</span> <span class="a">required</span>&gt; I accept the terms&lt;/<span class="k">label</span>&gt;
+    &lt;<span class="k">select</span> <span class="a">id</span>=<span class="s">"plan"</span> <span class="a">name</span>=<span class="s">"plan"</span>&gt;
+      &lt;<span class="k">option</span> <span class="a">value</span>=<span class="s">"free"</span>&gt;Free&lt;/<span class="k">option</span>&gt;
+      &lt;<span class="k">option</span> <span class="a">value</span>=<span class="s">"pro"</span> <span class="a">selected</span>&gt;Pro&lt;/<span class="k">option</span>&gt;
+    &lt;/<span class="k">select</span>&gt;
+    &lt;<span class="k">button</span>&gt;Create account&lt;/<span class="k">button</span>&gt;
+  &lt;/<span class="k">form</span>&gt;
+&lt;/<span class="k">body</span>&gt;
+&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="k">const</span> form = document.querySelector(<span class="s">"#signup"</span>);
+<span class="k">const</span> email = form.elements.email;
+
+email.value = <span class="s">"not-an-email"</span>;
+form.elements.age.value = <span class="s">"15"</span>;
+console.log(<span class="s">"valid form:"</span>, form.checkValidity());
+<span class="k">for</span> (<span class="k">const</span> field <span class="k">of</span> form.elements) {
+  <span class="k">if</span> (!field.name || field.validity.valid) <span class="k">continue</span>;
+  <span class="k">const</span> problem = [<span class="s">"valueMissing"</span>, <span class="s">"typeMismatch"</span>, <span class="s">"rangeUnderflow"</span>, <span class="s">"rangeOverflow"</span>].find(k =&gt; field.validity[k]);
+  console.log(<span class="s">`  ${field.name}: ${problem}`</span>);
+}
+
+email.value = <span class="s">"asha@shop.example"</span>;
+form.elements.age.value = <span class="s">"29"</span>;
+form.elements.terms.checked = <span class="k">true</span>;
+form.elements.plan.value = <span class="s">"free"</span>;
+console.log(<span class="s">"valid form:"</span>, form.checkValidity());
+
+form.addEventListener(<span class="s">"submit"</span>, e =&gt; {
+  e.preventDefault();
+  console.log(<span class="s">"submitted:"</span>, <span class="t">Object</span>.fromEntries(<span class="k">new</span> <span class="t">FormData</span>(form)));
+});
+form.requestSubmit();</pre><div class="out"><span>Output</span><pre>valid form: false
+  email: typeMismatch
+  age: rangeUnderflow
+  terms: valueMissing
+valid form: true
+submitted: { email: &#x27;asha@shop.example&#x27;, age: &#x27;29&#x27;, terms: &#x27;on&#x27;, plan: &#x27;free&#x27; }</pre></div></div>
+<div class="qa-box">Form testing checklist: required fields, wrong formats, boundary values (17, 18, 120, 121 for an age between 18 and 120), very long text, leading and trailing spaces, pasted text, the Enter key, double submit, and the error message text. Always check the server rejects bad data too, because client side checks are easy to skip.</div>
+</section>
+<section class="card reveal jsec qa-part" id="advanced" data-say="advanced"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧱</span><span>Shadow DOM, iframes and observers</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Selenium</span><span class="qa-tool">Cypress</span><span class="qa-why">Elements inside shadow roots and iframes are the most common reason a correct looking locator finds nothing.</span></div>
+<p><b>Web components</b> hide their inner elements inside a <b>shadow root</b>. A normal <code>querySelector</code> from the document cannot see inside it. An <b>iframe</b> holds a whole separate document, often for payment forms, maps or embedded editors.</p>
+<div class="codewrap" data-k="shadow"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Shadow DOM and iframes · ▶ Runs in the browser</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;&lt;<span class="k">body</span>&gt;
+  &lt;<span class="k">user-card</span> <span class="a">name</span>=<span class="s">"Asha"</span>&gt;&lt;/<span class="k">user-card</span>&gt;
+  &lt;<span class="k">iframe</span> <span class="a">id</span>=<span class="s">"pay"</span>&gt;&lt;/<span class="k">iframe</span>&gt;
+&lt;/<span class="k">body</span>&gt;&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="k">class</span> <span class="t">UserCard</span> <span class="k">extends</span> <span class="t">HTMLElement</span> {
+  connectedCallback() {
+    <span class="k">const</span> root = <span class="k">this</span>.attachShadow({ mode: <span class="s">"open"</span> });
+    root.innerHTML = <span class="s">`&lt;p class="name"&gt;${this.getAttribute("name")}&lt;/p&gt;&lt;button&gt;Follow&lt;/button&gt;`</span>;
+  }
+}
+customElements.define(<span class="s">"user-card"</span>, <span class="t">UserCard</span>);
+
+console.log(<span class="s">"normal query finds:"</span>, document.querySelector(<span class="s">"user-card .name"</span>));
+<span class="k">const</span> host = document.querySelector(<span class="s">"user-card"</span>);
+console.log(<span class="s">"through shadowRoot:"</span>, host.shadowRoot.querySelector(<span class="s">".name"</span>).textContent);
+
+<span class="c">// An iframe has its own document. You must step into it first.</span>
+<span class="k">const</span> frame = document.querySelector(<span class="s">"#pay"</span>);
+frame.contentDocument.body.innerHTML = <span class="s">"&lt;button id='pay-now'&gt;Pay ₹499&lt;/button&gt;"</span>;   <span class="c">// the provider's page</span>
+console.log(<span class="s">"button in main page:"</span>, document.querySelector(<span class="s">"#pay-now"</span>));
+console.log(<span class="s">"button in iframe:"</span>, frame.contentDocument.querySelector(<span class="s">"#pay-now"</span>).textContent);</pre><div class="out"><span>Output</span><pre>normal query finds: null
+through shadowRoot: Asha
+button in main page: null
+button in iframe: Pay ₹499</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Tool</th><th>Shadow DOM</th><th>Iframes</th></tr>
+<tr><td>Playwright</td><td>pierced automatically by most locators</td><td><code>page.frameLocator("#pay").getByRole(...)</code></td></tr>
+<tr><td>Selenium</td><td><code>element.getShadowRoot()</code></td><td><code>driver.switchTo().frame(...)</code>, then back with <code>defaultContent()</code></td></tr>
+<tr><td>Cypress</td><td><code>.shadow()</code> or <code>includeShadowDom</code></td><td>needs a helper or plugin, same origin only</td></tr>
+</table></div>
+<p>A <b>MutationObserver</b> calls you back whenever the DOM changes. It is how "wait until the element appears" is built without polling.</p>
+<div class="codewrap" data-k="observer" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Waiting for an element with MutationObserver · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;&lt;<span class="k">body</span>&gt;&lt;<span class="k">div</span> <span class="a">id</span>=<span class="s">"results"</span>&gt;&lt;/<span class="k">div</span>&gt;&lt;/<span class="k">body</span>&gt;&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="c">// Resolve when an element matching the selector exists, or reject after a timeout</span>
+<span class="k">function</span> waitForElement(selector, timeout = <span class="n">1000</span>) {
+  <span class="k">return</span> <span class="k">new</span> <span class="t">Promise</span>((resolve, reject) =&gt; {
+    <span class="k">const</span> found = document.querySelector(selector);
+    <span class="k">if</span> (found) <span class="k">return</span> resolve(found);
+    <span class="k">const</span> observer = <span class="k">new</span> <span class="t">MutationObserver</span>(() =&gt; {
+      <span class="k">const</span> el = document.querySelector(selector);
+      <span class="k">if</span> (el) { observer.disconnect(); clearTimeout(timer); resolve(el); }
+    });
+    observer.observe(document.body, { childList: <span class="k">true</span>, subtree: <span class="k">true</span> });
+    <span class="k">const</span> timer = setTimeout(() =&gt; { observer.disconnect(); reject(<span class="k">new</span> <span class="t">Error</span>(<span class="s">`${selector} not found in ${timeout} ms`</span>)); }, timeout);
+  });
+}
+
+<span class="c">// The "app" renders results after a fake network delay</span>
+setTimeout(() =&gt; {
+  document.querySelector(<span class="s">"#results"</span>).innerHTML = <span class="s">'&lt;ul class="list"&gt;&lt;li&gt;Gel pen&lt;/li&gt;&lt;li&gt;Fountain pen&lt;/li&gt;&lt;/ul&gt;'</span>;
+}, <span class="n">200</span>);
+
+<span class="k">const</span> list = <span class="k">await</span> waitForElement(<span class="s">".list"</span>);
+console.log(<span class="s">"appeared with"</span>, list.children.length, <span class="s">"items"</span>);
+<span class="k">await</span> waitForElement(<span class="s">".no-such-thing"</span>, <span class="n">300</span>).<span class="k">catch</span>(e =&gt; console.log(e.message));</pre><div class="out"><span>Output</span><pre>appeared with 2 items
+.no-such-thing not found in 300 ms</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="storage" data-say="storage"><div class="sec-num">Part 7</div><h2><span class="sec-em">🍪</span><span>Storage and cookies</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">Selenium</span><span class="qa-why">Seeding storage and cookies skips slow login screens and sets up feature flags and consent banners.</span></div>
+<p>Browsers keep data for a site in three main places. <b>localStorage</b> keeps strings until they are deleted. <b>sessionStorage</b> keeps them until the tab closes. <b>Cookies</b> are small strings that are also sent to the server with every request, which is why logins usually live in them.</p>
+<div class="codewrap" data-k="storage" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">localStorage and sessionStorage · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;&lt;<span class="k">html</span>&gt;&lt;<span class="k">body</span>&gt;&lt;/<span class="k">body</span>&gt;&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main">localStorage.setItem(<span class="s">"theme"</span>, <span class="s">"dark"</span>);
+localStorage.setItem(<span class="s">"cart"</span>, <span class="t">JSON</span>.stringify([{ sku: <span class="s">"PEN-01"</span>, qty: <span class="n">2</span> }]));   <span class="c">// only strings are stored</span>
+console.log(localStorage.getItem(<span class="s">"theme"</span>), localStorage.length);
+console.log(<span class="t">JSON</span>.parse(localStorage.getItem(<span class="s">"cart"</span>))[<span class="n">0</span>].qty);
+console.log(localStorage.getItem(<span class="s">"missing"</span>));
+
+sessionStorage.setItem(<span class="s">"step"</span>, <span class="s">"3"</span>);          <span class="c">// cleared when the tab closes</span>
+console.log(sessionStorage.getItem(<span class="s">"step"</span>));
+
+localStorage.removeItem(<span class="s">"theme"</span>);
+localStorage.clear();
+console.log(localStorage.length);</pre><div class="out"><span>Output</span><pre>dark 2
+2
+null
+3
+0</pre></div></div>
+<div class="codewrap" data-k="cookies"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Reading and writing cookies · ▶ Runs in the browser</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;&lt;<span class="k">html</span>&gt;&lt;<span class="k">body</span>&gt;&lt;/<span class="k">body</span>&gt;&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main">document.cookie = <span class="s">"consent=yes; path=/; max-age=31536000; SameSite=Lax"</span>;
+document.cookie = <span class="s">"lang=hi; path=/"</span>;
+document.cookie = <span class="s">`recent=${encodeURIComponent("pen, mug")}; path=/`</span>;
+console.log(document.cookie);
+
+<span class="k">const</span> cookies = <span class="t">Object</span>.fromEntries(document.cookie.split(<span class="s">"; "</span>).map(c =&gt; {
+  <span class="k">const</span> i = c.indexOf(<span class="s">"="</span>);
+  <span class="k">return</span> [c.slice(<span class="n">0</span>, i), decodeURIComponent(c.slice(i + <span class="n">1</span>))];
+}));
+console.log(cookies.recent);
+
+document.cookie = <span class="s">"lang=; path=/; max-age=0"</span>;    <span class="c">// delete by expiring it</span>
+console.log(document.cookie.includes(<span class="s">"lang"</span>));</pre><div class="out"><span>Output</span><pre>consent=yes; lang=hi; recent=pen%2C%20mug
+pen, mug
+false</pre></div></div>
+<div class="warn">Cookies marked <code>HttpOnly</code> cannot be read from JavaScript at all, which protects session tokens from XSS. Test tools read them through the browser instead, for example <code>context.cookies()</code> in Playwright.</div>
+<div class="codewrap" data-k="pw-state"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Browser state in Playwright · Runs for real in chapter 15</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Log in once, save cookies and localStorage, reuse them in every test</span>
+<span class="c">// auth.setup.js</span>
+<span class="k">import</span> { test <span class="k">as</span> setup } <span class="k">from</span> <span class="s">"@playwright/test"</span>;
+setup(<span class="s">"log in"</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">"/login"</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">"Email"</span>).fill(process.env.<span class="t">TEST_USER</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">"Password"</span>).fill(process.env.<span class="t">TEST_PASSWORD</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">"button"</span>, { name: <span class="s">"Sign in"</span> }).click();
+  <span class="k">await</span> page.context().storageState({ path: <span class="s">".auth/user.json"</span> });
+});
+
+<span class="c">// in a test: read and change browser state directly</span>
+<span class="k">await</span> page.evaluate(() =&gt; localStorage.setItem(<span class="s">"onboarding-done"</span>, <span class="s">"true"</span>));
+<span class="k">const</span> cookies = <span class="k">await</span> page.context().cookies();
+<span class="k">await</span> page.context().addCookies([{ name: <span class="s">"consent"</span>, value: <span class="s">"yes"</span>, url: <span class="s">"https://shop.example"</span> }]);</pre><div class="note-out"><span>What happens</span><p>Tests start already logged in, which saves the login steps in every test and keeps them independent.</p></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 8</div><h2><span class="sec-em">🎬</span><span>Real world scenario: check an order table</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>A customer says the order history shows wrong amounts. You must check every row: quantity times price must equal the line total, and the lines must add up to the footer total.</div>
+<div class="codewrap" data-k="scenario" data-play="dom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Check every row of an order table · ▶ Runs in the browser</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><div class="fname">📄 page.html</div><pre class="src fixture">&lt;!doctype html&gt;
+&lt;<span class="k">html</span>&gt;&lt;<span class="k">body</span>&gt;
+&lt;<span class="k">table</span> <span class="a">id</span>=<span class="s">"orders"</span>&gt;
+  &lt;<span class="k">thead</span>&gt;&lt;<span class="k">tr</span>&gt;&lt;<span class="k">th</span>&gt;Order&lt;/<span class="k">th</span>&gt;&lt;<span class="k">th</span>&gt;Item&lt;/<span class="k">th</span>&gt;&lt;<span class="k">th</span>&gt;Qty&lt;/<span class="k">th</span>&gt;&lt;<span class="k">th</span>&gt;Price&lt;/<span class="k">th</span>&gt;&lt;<span class="k">th</span>&gt;Line total&lt;/<span class="k">th</span>&gt;&lt;/<span class="k">tr</span>&gt;&lt;/<span class="k">thead</span>&gt;
+  &lt;<span class="k">tbody</span>&gt;
+    &lt;<span class="k">tr</span>&gt;&lt;<span class="k">td</span>&gt;#1042&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;Gel pen&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;3&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;₹20.00&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;₹60.00&lt;/<span class="k">td</span>&gt;&lt;/<span class="k">tr</span>&gt;
+    &lt;<span class="k">tr</span>&gt;&lt;<span class="k">td</span>&gt;#1043&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;Coffee mug&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;2&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;₹199.00&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;₹398.00&lt;/<span class="k">td</span>&gt;&lt;/<span class="k">tr</span>&gt;
+    &lt;<span class="k">tr</span>&gt;&lt;<span class="k">td</span>&gt;#1044&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;Notebook&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;1&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;₹250.00&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;₹250.00&lt;/<span class="k">td</span>&gt;&lt;/<span class="k">tr</span>&gt;
+    &lt;<span class="k">tr</span>&gt;&lt;<span class="k">td</span>&gt;#1045&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;Desk lamp&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;2&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;₹1,299.00&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;₹2,589.00&lt;/<span class="k">td</span>&gt;&lt;/<span class="k">tr</span>&gt;
+  &lt;/<span class="k">tbody</span>&gt;
+  &lt;<span class="k">tfoot</span>&gt;&lt;<span class="k">tr</span>&gt;&lt;<span class="k">td</span> <span class="a">colspan</span>=<span class="s">"4"</span>&gt;Total&lt;/<span class="k">td</span>&gt;&lt;<span class="k">td</span>&gt;₹3,297.00&lt;/<span class="k">td</span>&gt;&lt;/<span class="k">tr</span>&gt;&lt;/<span class="k">tfoot</span>&gt;
+&lt;/<span class="k">table</span>&gt;
+&lt;/<span class="k">body</span>&gt;&lt;/<span class="k">html</span>&gt;</pre><div class="fname">📄 script.js</div><pre class="src main"><span class="k">const</span> money = text =&gt; <span class="t">Number</span>(text.replace(/[^\d.]/g, <span class="s">""</span>));
+<span class="k">const</span> headers = [...document.querySelectorAll(<span class="s">"#orders thead th"</span>)].map(th =&gt; th.textContent);
+<span class="k">const</span> rows = [...document.querySelectorAll(<span class="s">"#orders tbody tr"</span>)].map(tr =&gt;
+  <span class="t">Object</span>.fromEntries([...tr.cells].map((td, i) =&gt; [headers[i], td.textContent])));
+
+<span class="k">const</span> problems = [];
+<span class="k">for</span> (<span class="k">const</span> r <span class="k">of</span> rows) {
+  <span class="k">const</span> expected = <span class="t">Number</span>(r.<span class="t">Qty</span>) * money(r.<span class="t">Price</span>);
+  <span class="k">if</span> (expected !== money(r[<span class="s">"Line total"</span>])) {
+    problems.push(<span class="s">`${r.Order}: ${r.Qty} x ${r.Price} should be ${expected}, page shows ${r["Line total"]}`</span>);
+  }
+}
+<span class="k">const</span> sum = rows.reduce((s, r) =&gt; s + money(r[<span class="s">"Line total"</span>]), <span class="n">0</span>);
+<span class="k">const</span> shownTotal = money(document.querySelector(<span class="s">"#orders tfoot td:last-child"</span>).textContent);
+<span class="k">if</span> (sum !== shownTotal) problems.push(<span class="s">`total: rows add up to ${sum}, footer shows ${shownTotal}`</span>);
+
+console.log(rows.length, <span class="s">"rows checked"</span>);
+console.log(problems.length ? problems : <span class="s">"all good"</span>);</pre><div class="out"><span>Output</span><pre>4 rows checked
+[ &#x27;#1045: 2 x ₹1,299.00 should be 2598, page shows ₹2,589.00&#x27; ]</pre></div></div>
+<p>Reading the header cells first turns each row into an object keyed by column name, so the check keeps working if a column is added or moved. The footer does match the rows as shown, so a check of the total alone would have missed this bug. Only the line by line check catches it.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-async.html" data-topic="js-async"><small>← Previous chapter</small><b>⏳ Async JavaScript</b></a><a class="next" href="./js-http-node.html" data-topic="js-http-node"><small>Next chapter →</small><b>📡 HTTP and Node.js</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "The page is a tree you can query", "panels": [{"s": [["e", "🌳"], ["t", "document → body → main → article", {"b": 1, "size": 11}]], "h": "The DOM", "t": "HTML becomes a tree of objects.", "more": "Scripts and test tools both work on this tree."}, {"s": [["e", "🎯"], ["t", "getByRole(\"button\")", {"b": 1}]], "h": "Locators", "t": "Find elements the way a user would.", "more": "Roles and test ids survive redesigns. Long paths do not."}, {"s": [["e", "🖱️"], ["t", "capture ↓ target ↑ bubble", {"b": 1}]], "h": "Events", "t": "Clicks travel down and back up.", "more": "One listener on a parent can handle all its children."}, {"s": [["e", "🍪"], ["t", "cookies, localStorage", {"b": 1}]], "h": "State", "t": "The browser remembers things for each site.", "more": "Tests seed it to skip logins and banners."}], "remember": "Find with stable locators, act like a user, and check what the user would see."}, "real": [["🛒", "Add to cart", "A product grid with 200 items uses one delegated click listener instead of 200, and its buttons carry data-test attributes for the test suite."], ["💳", "A payment iframe", "The card form comes from the payment provider inside an iframe, so the checkout test switches into the frame to fill it."], ["🧾", "Report checks", "A nightly script opens the admin dashboard and checks that every table row adds up, catching a rounding bug before customers do."]], "quiz": [{"lv": "e", "q": "What does document.querySelector(\".card\") return when nothing matches?", "o": ["null", "an empty array", "undefined", "It throws"], "a": 0, "hint": "One element or nothing.", "why": "querySelector returns null, querySelectorAll returns an empty NodeList."}, {"lv": "e", "q": "Which selector matches <button data-test=\"buy\">?", "o": ["[data-test=\"buy\"]", "#buy", ".buy", "button:buy"], "a": 0, "hint": "Attribute selectors use square brackets.", "why": "The attribute and its value go inside brackets."}, {"lv": "e", "q": "Which property is safe for showing user input as text?", "o": ["textContent", "innerHTML", "outerHTML", "insertAdjacentHTML"], "a": 0, "hint": "No HTML parsing.", "why": "textContent never turns the text into elements, so scripts cannot sneak in."}, {"lv": "m", "q": "A click on a button inside a list fires a listener on the list. Which property points to the button?", "o": ["event.target", "event.currentTarget", "this", "event.list"], "a": 0, "hint": "Where the click started.", "why": "currentTarget is the list, where the listener sits. target is the clicked element."}, {"lv": "m", "q": "Which locator is most stable across a redesign?", "o": ["getByRole(\"button\", { name: \"Checkout\" })", "/html/body/div[2]/div/button[3]", ".btn.btn-primary.mt-2", "div > div > button"], "a": 0, "hint": "What does the user see?", "why": "Role and accessible name stay the same when markup and styling change."}, {"lv": "m", "q": "An age field allows 18 to 120. Which values are classic boundary tests?", "o": ["17, 18, 120, 121", "0 and 1000 only", "50 only", "18 and 120 only"], "a": 0, "hint": "Just inside and just outside each edge.", "why": "Boundary value analysis tests both sides of every limit."}, {"lv": "h", "q": "Why can document.querySelector not find a button inside a web component?", "o": ["It is inside a shadow root", "Buttons cannot be queried", "Web components are iframes", "It has no id"], "a": 0, "hint": "Encapsulation.", "why": "Shadow DOM hides its inner tree from document level queries."}, {"lv": "h", "q": "Why does Selenium need driver.switchTo().frame() for a payment form?", "o": ["The form is in an iframe with its own document", "The form is hidden", "Payments need HTTPS", "Selenium cannot type numbers"], "a": 0, "hint": "A separate document.", "why": "Commands run in one document at a time, so the driver must switch into the frame."}, {"lv": "h", "q": "What is true of a cookie marked HttpOnly?", "o": ["document.cookie cannot read it", "It is never sent to the server", "It expires immediately", "It only works on HTTP, not HTTPS"], "a": 0, "hint": "Protection against XSS.", "why": "The browser sends it with requests but hides it from page scripts."}, {"lv": "x", "q": "Why is a { force: true } click risky in a test?", "o": ["It clicks even if the element is hidden or covered, so it can pass when users would fail", "It is slower", "It clicks twice", "It only works in Chrome"], "a": 0, "hint": "Actionability checks.", "why": "Forcing skips the visibility and overlay checks that represent a real user."}, {"lv": "x", "q": "What does this print?", "o": ["\"string\"", "\"number\"", "\"object\"", "\"undefined\""], "a": 0, "hint": "Storage only keeps text.", "why": "Values are converted to strings, so use JSON for anything else.", "code": "localStorage.setItem(\"n\", 5);\nconsole.log(typeof localStorage.getItem(\"n\"));"}, {"lv": "x", "q": "Which XPath finds the card article that contains the heading \"Coffee mug\"?", "o": ["//h2[text()='Coffee mug']/ancestor::article", "//article[text()='Coffee mug']", "//h2/../..[@mug]", "article > h2:Coffee mug"], "a": 0, "hint": "Find the heading, then go up.", "why": "The ancestor axis walks up the tree, which CSS cannot do."}], "calc": [{"lv": "e", "q": "How many elements does document.querySelectorAll(\".card\") find on the shop page?", "ans": "3", "hint": "Count the articles.", "steps": ["There are three article elements with class card."]}, {"lv": "e", "q": "How many of them match \".card:not(.sold-out)\"?", "ans": "2", "hint": "One card is sold out.", "steps": ["3 cards minus 1 sold out."]}, {"lv": "m", "q": "A click on the button in window > document > body > div.card > button with listeners in both phases on every level. How many listener calls happen?", "ans": "9", "hint": "Down, target, up.", "steps": ["Capture: window, document, body, div.card is 4.", "Target: 1.", "Bubble: div.card, body, document, window is 4.", "<span class=\"eq\">4 + 1 + 4 = 9<\/span>"]}, {"lv": "m", "q": "Same click, but div.card calls stopPropagation in its bubble phase listener. How many listener calls happen now?", "ans": "6", "hint": "Body, document and window miss the bubble.", "steps": ["Capture: 4 calls, target: 1 call.", "Bubble: only div.card runs, 1 call.", "<span class=\"eq\">4 + 1 + 1 = 6<\/span>"]}, {"lv": "h", "q": "Row #1045 shows 2 × ₹1,299.00. What should the line total be?", "ans": "2598", "hint": "Multiply.", "steps": ["<span class=\"eq\">2 × 1299 = 2598<\/span>"]}, {"lv": "h", "q": "The rows as shown add up to what amount?", "ans": "3297", "hint": "Add the line totals.", "steps": ["<span class=\"eq\">60 + 398 + 250 + 2589 = 3297<\/span>"]}, {"lv": "x", "q": "If row #1045 were fixed, what would the correct order total be?", "ans": "3306", "hint": "Replace 2589 with 2598.", "steps": ["<span class=\"eq\">60 + 398 + 250 + 2598 = 3306<\/span>"]}, {"lv": "x", "q": "An age field accepts 18 to 120. With boundary value analysis you test one below, on and one above each edge. How many values is that?", "ans": "6", "hint": "Three per edge.", "steps": ["Lower edge: 17, 18, 19.", "Upper edge: 119, 120, 121."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers the DOM, selectors and XPath, changing the page, events, forms, shadow DOM, iframes, storage and cookies.", "hi": "यह अध्याय DOM, selectors और XPath, page बदलना, events, forms, shadow DOM, iframes, storage और cookies सिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ DOM, selectors ಮತ್ತು XPath, page ಬದಲಾವಣೆ, events, forms, shadow DOM, iframes, storage ಮತ್ತು cookies ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ DOM, selectors ଓ XPath, page ବଦଳାଇବା, events, forms, shadow DOM, iframes, storage ଓ cookies ଶିଖାଏ।", "ar": "يتناول هذا الفصل DOM والمحددات وXPath وتغيير الصفحة والأحداث والنماذج وShadow DOM والإطارات والتخزين وملفات تعريف الارتباط.", "de": "Dieses Kapitel behandelt das DOM, Selektoren und XPath, Seitenänderungen, Events, Formulare, Shadow DOM, iframes, Speicher und Cookies."}, {"id": "dom", "h": "The DOM", "en": "The browser turns HTML into a tree of objects. querySelector, closest and the parent and child properties move around it.", "hi": "Browser HTML को objects के tree में बदलता है। querySelector, closest और parent, child properties उसमें घूमते हैं।", "kn": "Browser HTML ಅನ್ನು objects tree ಆಗಿ ಮಾಡುತ್ತದೆ. querySelector, closest ಮತ್ತು parent, child properties ಅದರಲ್ಲಿ ಚಲಿಸುತ್ತವೆ.", "or": "Browser HTML କୁ objects ର tree କରେ। querySelector, closest ଓ parent, child properties ସେଥିରେ ଘୁରନ୍ତି।", "ar": "يحول المتصفح HTML إلى شجرة كائنات. تتنقل فيها querySelector وclosest وخصائص الأب والأبناء.", "de": "Der Browser macht aus HTML einen Objektbaum. querySelector, closest und Eltern- und Kind-Eigenschaften bewegen sich darin."}, {"id": "selectors", "h": "Selectors", "en": "CSS selectors and XPath find elements. Prefer roles, labels and test ids, because long paths break with every layout change.", "hi": "CSS selectors और XPath elements ढूंढते हैं। Roles, labels और test ids चुनें, क्योंकि लंबे paths हर layout बदलाव पर टूटते हैं।", "kn": "CSS selectors ಮತ್ತು XPath elements ಹುಡುಕುತ್ತವೆ. Roles, labels ಮತ್ತು test ids ಆಯ್ಕೆ ಮಾಡಿ, ಉದ್ದ paths layout ಬದಲಾದಾಗ ಮುರಿಯುತ್ತವೆ.", "or": "CSS selectors ଓ XPath elements ଖୋଜନ୍ତି। Roles, labels ଓ test ids ବାଛନ୍ତୁ, ଲମ୍ବା paths layout ବଦଳିଲେ ଭାଙ୍ଗେ।", "ar": "تجد محددات CSS وXPath العناصر. فضّل الأدوار والتسميات ومعرفات الاختبار، لأن المسارات الطويلة تنكسر مع كل تغيير في التخطيط.", "de": "CSS-Selektoren und XPath finden Elemente. Bevorzuge Rollen, Labels und Test-IDs, lange Pfade brechen bei jeder Layoutänderung."}, {"id": "change", "h": "Changing the page", "en": "textContent writes safe plain text. innerHTML parses HTML, so user input there can cause cross site scripting.", "hi": "textContent सुरक्षित plain text लिखता है। innerHTML HTML parse करता है, इसलिए वहां user input से XSS हो सकता है।", "kn": "textContent ಸುರಕ್ಷಿತ plain text ಬರೆಯುತ್ತದೆ. innerHTML HTML parse ಮಾಡುತ್ತದೆ, ಅಲ್ಲಿ user input XSS ಉಂಟುಮಾಡಬಹುದು.", "or": "textContent ସୁରକ୍ଷିତ plain text ଲେଖେ। innerHTML HTML parse କରେ, ତେଣୁ ସେଠାରେ user input XSS ଘଟାଇପାରେ।", "ar": "تكتب textContent نصًا آمنًا. أما innerHTML فتحلل HTML، لذا قد يسبب إدخال المستخدم فيها ثغرة XSS.", "de": "textContent schreibt sicheren Text. innerHTML parst HTML, Nutzereingaben dort können Cross-Site-Scripting auslösen."}, {"id": "events", "h": "Events", "en": "Events travel down to the target and bubble back up. One listener on a parent can handle all children. Script clicks skip real user checks.", "hi": "Events target तक नीचे जाते हैं और फिर ऊपर bubble होते हैं। Parent पर एक listener सभी children संभाल सकता है।", "kn": "Events target ವರೆಗೆ ಕೆಳಗೆ ಹೋಗಿ ಮತ್ತೆ ಮೇಲೆ bubble ಆಗುತ್ತವೆ. Parent ಮೇಲಿನ ಒಂದು listener ಎಲ್ಲ children ನೋಡಿಕೊಳ್ಳಬಹುದು.", "or": "Events target ପର୍ଯ୍ୟନ୍ତ ତଳକୁ ଯାଇ ପୁଣି ଉପରକୁ bubble ହୁଅନ୍ତି। Parent ରେ ଗୋଟିଏ listener ସବୁ children ସମ୍ଭାଳିପାରେ।", "ar": "تنتقل الأحداث نزولًا إلى الهدف ثم تصعد. يمكن لمستمع واحد على الأب معالجة كل الأبناء. نقرات السكربت تتجاوز فحوص المستخدم الحقيقي.", "de": "Events laufen zum Ziel hinab und steigen wieder auf. Ein Listener am Elternelement kann alle Kinder bedienen."}, {"id": "forms", "h": "Forms", "en": "Fields hold their value, HTML attributes give free validation, and FormData collects every field. Test boundaries and the server too.", "hi": "Fields अपनी value रखते हैं, HTML attributes मुफ्त validation देते हैं, और FormData सब fields इकट्ठा करता है।", "kn": "Fields ತಮ್ಮ value ಇಡುತ್ತವೆ, HTML attributes ಉಚಿತ validation ಕೊಡುತ್ತವೆ, FormData ಎಲ್ಲ fields ಸಂಗ್ರಹಿಸುತ್ತದೆ.", "or": "Fields ନିଜ value ରଖନ୍ତି, HTML attributes ମାଗଣା validation ଦିଅନ୍ତି, ଏବଂ FormData ସବୁ fields ସଂଗ୍ରହ କରେ।", "ar": "تحفظ الحقول قيمها، وتعطي سمات HTML تحققًا مجانيًا، وتجمع FormData كل الحقول. اختبر الحدود والخادم أيضًا.", "de": "Felder halten ihren Wert, HTML-Attribute validieren kostenlos, FormData sammelt alle Felder. Teste Grenzwerte und den Server."}, {"id": "advanced", "h": "Shadow DOM and iframes", "en": "Shadow roots and iframes hide elements from normal queries. Test tools have special ways to reach inside them.", "hi": "Shadow roots और iframes elements को सामान्य queries से छिपाते हैं। Test tools के पास अंदर पहुंचने के खास तरीके हैं।", "kn": "Shadow roots ಮತ್ತು iframes elements ಅನ್ನು ಸಾಮಾನ್ಯ queries ನಿಂದ ಮರೆಮಾಡುತ್ತವೆ. Test tools ಒಳಗೆ ತಲುಪಲು ವಿಶೇಷ ದಾರಿ ಹೊಂದಿವೆ.", "or": "Shadow roots ଓ iframes elements କୁ ସାଧାରଣ queries ରୁ ଲୁଚାନ୍ତି। Test tools ଭିତରେ ପହଞ୍ଚିବାର ବିଶେଷ ଉପାୟ ଅଛି।", "ar": "تخفي جذور الظل والإطارات العناصر عن الاستعلامات العادية. لأدوات الاختبار طرق خاصة للوصول إليها.", "de": "Shadow Roots und iframes verbergen Elemente vor normalen Abfragen. Testwerkzeuge haben eigene Wege hinein."}, {"id": "storage", "h": "Storage", "en": "localStorage keeps strings, sessionStorage lasts for one tab, and cookies are sent with every request. Tests seed them to skip logins.", "hi": "localStorage strings रखता है, sessionStorage एक tab तक रहता है, और cookies हर request के साथ जाती हैं।", "kn": "localStorage strings ಇಡುತ್ತದೆ, sessionStorage ಒಂದು tab ವರೆಗೆ ಇರುತ್ತದೆ, cookies ಪ್ರತಿ request ಜೊತೆ ಹೋಗುತ್ತವೆ.", "or": "localStorage strings ରଖେ, sessionStorage ଗୋଟିଏ tab ପର୍ଯ୍ୟନ୍ତ ରହେ, ଏବଂ cookies ପ୍ରତ୍ୟେକ request ସହ ଯାଏ।", "ar": "يحفظ localStorage النصوص، ويبقى sessionStorage لعلامة تبويب واحدة، وترسل ملفات الارتباط مع كل طلب.", "de": "localStorage hält Texte, sessionStorage gilt für einen Tab, Cookies gehen mit jeder Anfrage mit. Tests setzen sie, um Logins zu sparen."}, {"id": "scenario", "h": "Scenario", "en": "Read the table header, turn each row into an object, and check every line total and the footer total.", "hi": "Table header पढ़ें, हर row को object बनाएं, और हर line total और footer total जांचें।", "kn": "Table header ಓದಿ, ಪ್ರತಿ row ಅನ್ನು object ಮಾಡಿ, ಪ್ರತಿ line total ಮತ್ತು footer total ಪರಿಶೀಲಿಸಿ.", "or": "Table header ପଢ଼ନ୍ତୁ, ପ୍ରତ୍ୟେକ row କୁ object କରନ୍ତୁ, ଏବଂ ପ୍ରତ୍ୟେକ line total ଓ footer total ଯାଞ୍ଚ କରନ୍ତୁ।", "ar": "اقرأ رأس الجدول وحوّل كل صف إلى كائن وتحقق من كل مجموع سطر ومن المجموع النهائي.", "de": "Lies die Tabellenköpfe, mach aus jeder Zeile ein Objekt und prüfe jede Zeilensumme und die Gesamtsumme."}, {"id": "practice", "h": "Hands-on", "en": "Practise building selectors, parsing cookies, working out an event path and checking a sorted price list.", "hi": "Selectors बनाना, cookies parse करना, event path निकालना और sorted price list जांचने का अभ्यास करें।", "kn": "Selectors ರಚನೆ, cookies parse, event path ಮತ್ತು sorted price list ಪರಿಶೀಲನೆ ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Selectors ତିଆରି, cookies parse, event path ଓ sorted price list ଯାଞ୍ଚ ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على بناء المحددات وتحليل ملفات الارتباط وتتبع مسار الحدث وفحص قائمة أسعار مرتبة.", "de": "Übe Selektoren bauen, Cookies parsen, einen Event-Pfad bestimmen und eine sortierte Preisliste prüfen."}], "ex": [{"id": "selector", "lv": "e", "title": "Build a CSS selector", "task": "<p>Write <code>toSelector({ tag, id, classes, attrs })<\/code> that builds a CSS selector. Every key is optional. <code>attrs<\/code> is an object turned into <code>[name=\"value\"]<\/code> parts. Order: tag, id, classes, attributes.<\/p>", "starter": "function toSelector({ tag = \"\", id, classes = [], attrs = {} }) {\n  \n}", "tests": [{"call": "toSelector({ tag: \"button\", classes: [\"add\", \"primary\"] })", "want": "button.add.primary"}, {"call": "toSelector({ id: \"cart\" })", "want": "#cart"}, {"call": "toSelector({ tag: \"article\", attrs: { \"data-test\": \"product\", \"data-sku\": \"PEN-01\" } })", "want": "article[data-test=\"product\"][data-sku=\"PEN-01\"]"}], "solution": "function toSelector({ tag = \"\", id, classes = [], attrs = {} }) {\n  let s = tag;\n  if (id) s += \"#\" + id;\n  for (const c of classes) s += \".\" + c;\n  for (const [k, v] of Object.entries(attrs)) s += `[${k}=\"${v}\"]`;\n  return s;\n}", "hint": "Start with the tag and keep adding with <code>+=<\/code>.", "why": "Selector builders are common in page objects that take a product id and need its card."}, {"id": "cookies", "lv": "m", "title": "Parse document.cookie", "task": "<p>Write <code>parseCookies(text)<\/code> that turns <code>\"a=1; recent=pen%2C%20mug\"<\/code> into <code>{ a: \"1\", recent: \"pen, mug\" }<\/code>. Decode values with <code>decodeURIComponent<\/code>. An empty string gives an empty object.<\/p>", "starter": "function parseCookies(text) {\n  \n}", "tests": [{"call": "parseCookies(\"a=1; recent=pen%2C%20mug\")", "want": {"a": "1", "recent": "pen, mug"}}, {"call": "parseCookies(\"\")", "want": {}}, {"call": "parseCookies(\"token=abc==\")", "want": {"token": "abc=="}}], "solution": "function parseCookies(text) {\n  const out = {};\n  if (!text) return out;\n  for (const part of text.split(\"; \")) {\n    const i = part.indexOf(\"=\");\n    out[part.slice(0, i)] = decodeURIComponent(part.slice(i + 1));\n  }\n  return out;\n}", "hint": "Split on <code>\"; \"<\/code>, then cut each part at the first <code>=<\/code>.", "why": "Tokens often end in <code>=<\/code>, so splitting at every <code>=<\/code> would break them."}, {"id": "path", "lv": "h", "title": "The path of an event", "task": "<p>Write <code>eventPath(parents, target)<\/code>. <code>parents<\/code> maps each node name to its parent name, and the top node has no entry. Return the list of <code>\"capture:x\"<\/code>, <code>\"target:x\"<\/code> and <code>\"bubble:x\"<\/code> steps in the order a click on <code>target<\/code> visits them.<\/p>", "starter": "function eventPath(parents, target) {\n  \n}", "tests": [{"call": "eventPath({ document: \"window\", body: \"document\", button: \"body\" }, \"button\")", "want": ["capture:window", "capture:document", "capture:body", "target:button", "bubble:body", "bubble:document", "bubble:window"]}, {"call": "eventPath({}, \"window\")", "want": ["target:window"]}], "solution": "function eventPath(parents, target) {\n  const up = [];\n  for (let n = parents[target]; n; n = parents[n]) up.push(n);\n  return [\n    ...up.toReversed().map(n => \"capture:\" + n),\n    \"target:\" + target,\n    ...up.map(n => \"bubble:\" + n),\n  ];\n}", "hint": "Collect the ancestors from the target upwards. Capture uses them reversed, bubble uses them as they are.", "why": "This is exactly the order the bubble animation shows, and the order your listeners run in."}, {"id": "sorted", "lv": "x", "title": "Is the price list sorted?", "task": "<p>A test reads price texts from a product grid after choosing \"Price: low to high\". Write <code>firstUnsorted(prices)<\/code> that returns the index of the first price that is lower than the one before it, or <code>-1<\/code> if the list is sorted. Prices look like <code>\"₹1,299.00\"<\/code>.<\/p>", "starter": "function firstUnsorted(prices) {\n  \n}", "tests": [{"call": "firstUnsorted([\"₹20\", \"₹199.00\", \"₹1,299.00\"])", "want": -1}, {"call": "firstUnsorted([\"₹99\", \"₹1,000\", \"₹250\", \"₹300\"])", "want": 2}, {"call": "firstUnsorted([])", "want": -1}, {"call": "firstUnsorted([\"₹5\", \"₹5\"])", "want": -1}], "solution": "function firstUnsorted(prices) {\n  const nums = prices.map(p => Number(p.replace(/[^\\d.]/g, \"\")));\n  for (let i = 1; i < nums.length; i++) {\n    if (nums[i] < nums[i - 1]) return i;\n  }\n  return -1;\n}", "hint": "Turn each text into a number first by removing everything except digits and the dot.", "why": "Compared as text, \"₹1,000\" sorts before \"₹250\", which is the classic bug in sort tests."}], "dg": {}, "lanes": {}, "play": {"tree": {"html": "\n<!doctype html>\n<html>\n<body>\n  <header><nav aria-label=\"Main\"><a href=\"/\">Home<\/a> <a href=\"/deals\" class=\"hot\">Deals<\/a><\/nav><\/header>\n  <main id=\"products\">\n    <article class=\"card\" data-test=\"product\" data-sku=\"PEN-01\">\n      <h2>Gel pen<\/h2><span class=\"price\">₹20<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n    <article class=\"card sold-out\" data-test=\"product\" data-sku=\"BOOK-07\">\n      <h2>Notebook<\/h2><span class=\"price\">₹250<\/span>\n      <button type=\"button\" class=\"add\" disabled>Sold out<\/button>\n    <\/article>\n    <article class=\"card\" data-test=\"product\" data-sku=\"MUG-03\">\n      <h2>Coffee mug<\/h2><span class=\"price\">₹199<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n  <\/main>\n  <p id=\"cart-count\">0<\/p>\n<\/body>\n<\/html>\n"}, "selectors": {"html": "\n<!doctype html>\n<html>\n<body>\n  <header><nav aria-label=\"Main\"><a href=\"/\">Home<\/a> <a href=\"/deals\" class=\"hot\">Deals<\/a><\/nav><\/header>\n  <main id=\"products\">\n    <article class=\"card\" data-test=\"product\" data-sku=\"PEN-01\">\n      <h2>Gel pen<\/h2><span class=\"price\">₹20<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n    <article class=\"card sold-out\" data-test=\"product\" data-sku=\"BOOK-07\">\n      <h2>Notebook<\/h2><span class=\"price\">₹250<\/span>\n      <button type=\"button\" class=\"add\" disabled>Sold out<\/button>\n    <\/article>\n    <article class=\"card\" data-test=\"product\" data-sku=\"MUG-03\">\n      <h2>Coffee mug<\/h2><span class=\"price\">₹199<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n  <\/main>\n  <p id=\"cart-count\">0<\/p>\n<\/body>\n<\/html>\n"}, "xpath": {"html": "\n<!doctype html>\n<html>\n<body>\n  <header><nav aria-label=\"Main\"><a href=\"/\">Home<\/a> <a href=\"/deals\" class=\"hot\">Deals<\/a><\/nav><\/header>\n  <main id=\"products\">\n    <article class=\"card\" data-test=\"product\" data-sku=\"PEN-01\">\n      <h2>Gel pen<\/h2><span class=\"price\">₹20<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n    <article class=\"card sold-out\" data-test=\"product\" data-sku=\"BOOK-07\">\n      <h2>Notebook<\/h2><span class=\"price\">₹250<\/span>\n      <button type=\"button\" class=\"add\" disabled>Sold out<\/button>\n    <\/article>\n    <article class=\"card\" data-test=\"product\" data-sku=\"MUG-03\">\n      <h2>Coffee mug<\/h2><span class=\"price\">₹199<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n  <\/main>\n  <p id=\"cart-count\">0<\/p>\n<\/body>\n<\/html>\n"}, "change": {"html": "\n<!doctype html>\n<html>\n<body>\n  <header><nav aria-label=\"Main\"><a href=\"/\">Home<\/a> <a href=\"/deals\" class=\"hot\">Deals<\/a><\/nav><\/header>\n  <main id=\"products\">\n    <article class=\"card\" data-test=\"product\" data-sku=\"PEN-01\">\n      <h2>Gel pen<\/h2><span class=\"price\">₹20<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n    <article class=\"card sold-out\" data-test=\"product\" data-sku=\"BOOK-07\">\n      <h2>Notebook<\/h2><span class=\"price\">₹250<\/span>\n      <button type=\"button\" class=\"add\" disabled>Sold out<\/button>\n    <\/article>\n    <article class=\"card\" data-test=\"product\" data-sku=\"MUG-03\">\n      <h2>Coffee mug<\/h2><span class=\"price\">₹199<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n  <\/main>\n  <p id=\"cart-count\">0<\/p>\n<\/body>\n<\/html>\n"}, "events": {"html": "\n<!doctype html>\n<html>\n<body>\n  <header><nav aria-label=\"Main\"><a href=\"/\">Home<\/a> <a href=\"/deals\" class=\"hot\">Deals<\/a><\/nav><\/header>\n  <main id=\"products\">\n    <article class=\"card\" data-test=\"product\" data-sku=\"PEN-01\">\n      <h2>Gel pen<\/h2><span class=\"price\">₹20<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n    <article class=\"card sold-out\" data-test=\"product\" data-sku=\"BOOK-07\">\n      <h2>Notebook<\/h2><span class=\"price\">₹250<\/span>\n      <button type=\"button\" class=\"add\" disabled>Sold out<\/button>\n    <\/article>\n    <article class=\"card\" data-test=\"product\" data-sku=\"MUG-03\">\n      <h2>Coffee mug<\/h2><span class=\"price\">₹199<\/span>\n      <button type=\"button\" class=\"add\">Add to cart<\/button>\n    <\/article>\n  <\/main>\n  <p id=\"cart-count\">0<\/p>\n<\/body>\n<\/html>\n"}, "forms": {"html": "\n<!doctype html>\n<html>\n<body>\n  <form id=\"signup\" novalidate>\n    <label for=\"email\">Email<\/label>\n    <input id=\"email\" name=\"email\" type=\"email\" required>\n    <label for=\"age\">Age<\/label>\n    <input id=\"age\" name=\"age\" type=\"number\" min=\"18\" max=\"120\">\n    <label><input type=\"checkbox\" name=\"terms\" id=\"terms\" required> I accept the terms<\/label>\n    <select id=\"plan\" name=\"plan\">\n      <option value=\"free\">Free<\/option>\n      <option value=\"pro\" selected>Pro<\/option>\n    <\/select>\n    <button>Create account<\/button>\n  <\/form>\n<\/body>\n<\/html>\n"}, "shadow": {"html": "\n<!doctype html>\n<html><body>\n  <user-card name=\"Asha\"><\/user-card>\n  <iframe id=\"pay\"><\/iframe>\n<\/body><\/html>\n"}, "observer": {"html": "\n<!doctype html>\n<html><body><div id=\"results\"><\/div><\/body><\/html>\n"}, "storage": {"html": "<!doctype html><html><body><\/body><\/html>"}, "cookies": {"html": "<!doctype html><html><body><\/body><\/html>"}, "scenario": {"html": "\n<!doctype html>\n<html><body>\n<table id=\"orders\">\n  <thead><tr><th>Order<\/th><th>Item<\/th><th>Qty<\/th><th>Price<\/th><th>Line total<\/th><\/tr><\/thead>\n  <tbody>\n    <tr><td>#1042<\/td><td>Gel pen<\/td><td>3<\/td><td>₹20.00<\/td><td>₹60.00<\/td><\/tr>\n    <tr><td>#1043<\/td><td>Coffee mug<\/td><td>2<\/td><td>₹199.00<\/td><td>₹398.00<\/td><\/tr>\n    <tr><td>#1044<\/td><td>Notebook<\/td><td>1<\/td><td>₹250.00<\/td><td>₹250.00<\/td><\/tr>\n    <tr><td>#1045<\/td><td>Desk lamp<\/td><td>2<\/td><td>₹1,299.00<\/td><td>₹2,589.00<\/td><\/tr>\n  <\/tbody>\n  <tfoot><tr><td colspan=\"4\">Total<\/td><td>₹3,297.00<\/td><\/tr><\/tfoot>\n<\/table>\n<\/body><\/html>\n"}}};
+JSPLAY.page({ title: "The DOM and the Browser", subject: "javascript" });
+</script>
+</body>
+</html>
