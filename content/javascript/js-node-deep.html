@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Node.js in depth · JavaScript</title>
+<meta name="description" content="Node.js in depth: EventEmitter, events.once, streams, Transform, pipeline, backpressure, readline, Buffer, UTF-8, crypto, HMAC, timingSafeEqual, node:sqlite, spawn, signals, graceful shutdown, exit codes, util.parseArgs and testing a CLI.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 18 of 23</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🟩</span><div><h1>Node.js in depth</h1><p class="lead">The parts of Node.js that power real tools: EventEmitter and async event iteration, streams, pipeline and backpressure for huge files, buffers, encodings, hashes and webhook signatures, the built in SQLite database, child processes and signals, and a tested command line tool for CI.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 19 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 6 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Test tools are Node.js programs. Streams read huge logs, crypto checks webhooks, SQLite holds test data, and exit codes make your tools work in CI.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#events" class="qa"><span>📣</span>Events and EventEmitter</a><a href="#streams" class="qa"><span>🌊</span>Streams and backpressure</a><a href="#buffers" class="qa"><span>🔢</span>Buffers, encodings and crypto</a><a href="#sqlite" class="qa"><span>🗄️</span>The built in SQLite database</a><a href="#process" class="qa"><span>⚙️</span>Processes, signals and graceful shutdown</a><a href="#cli" class="qa"><span>💻</span>Building and testing a command line tool</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="events" data-say="events"><div class="sec-num">Part 1</div><h2><span class="sec-em">📣</span><span>Events and EventEmitter</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Test runners, reporters and browser drivers report progress through events, and custom reporters listen to them.</span></div>
+<p>Much of Node.js is built on <b>EventEmitter</b>: servers, sockets, streams, child processes and test runners. Listeners register with <code>on</code> or <code>once</code>, and <code>emit</code> calls them in order, synchronously. <code>events.once</code> turns one event into a promise and <code>events.on</code> turns a stream of events into an async iterator.</p>
+<div class="codewrap" data-k="events" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">EventEmitter: on, once, error and async iteration · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { <span class="t">EventEmitter</span>, once, on } <span class="k">from</span> <span class="s">"node:events"</span>;
+
+<span class="c">// A tiny test runner that reports progress with events</span>
+<span class="k">class</span> <span class="t">Runner</span> <span class="k">extends</span> <span class="t">EventEmitter</span> {
+  <span class="k">async</span> run(tests) {
+    <span class="k">this</span>.emit(<span class="s">"start"</span>, tests.length);
+    <span class="k">for</span> (<span class="k">const</span> [name, fn] <span class="k">of</span> tests) {
+      <span class="k">try</span> { <span class="k">await</span> fn(); <span class="k">this</span>.emit(<span class="s">"pass"</span>, name); }
+      <span class="k">catch</span> (e) { <span class="k">this</span>.emit(<span class="s">"fail"</span>, name, e.message); }
+    }
+    <span class="k">this</span>.emit(<span class="s">"end"</span>);
+  }
+}
+
+<span class="k">const</span> runner = <span class="k">new</span> <span class="t">Runner</span>();
+<span class="k">let</span> passed = <span class="n">0</span>;
+runner.on(<span class="s">"start"</span>, n =&gt; console.log(<span class="s">`running ${n} tests`</span>));
+runner.on(<span class="s">"pass"</span>, () =&gt; passed++);
+runner.on(<span class="s">"fail"</span>, (name, msg) =&gt; console.log(<span class="s">`✖ ${name}: ${msg}`</span>));
+runner.once(<span class="s">"end"</span>, () =&gt; console.log(<span class="s">`${passed} passed`</span>));
+
+<span class="k">const</span> finished = once(runner, <span class="s">"end"</span>);               <span class="c">// a promise for one event</span>
+<span class="k">await</span> runner.run([[<span class="s">"login"</span>, <span class="k">async</span> () =&gt; {}], [<span class="s">"cart"</span>, <span class="k">async</span> () =&gt; { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"expected 2, got 3"</span>); }], [<span class="s">"search"</span>, <span class="k">async</span> () =&gt; {}]]);
+<span class="k">await</span> finished;
+
+<span class="c">// An "error" event with no listener throws, so always listen for it</span>
+<span class="k">try</span> { <span class="k">new</span> <span class="t">EventEmitter</span>().emit(<span class="s">"error"</span>, <span class="k">new</span> <span class="t">Error</span>(<span class="s">"socket closed"</span>)); } <span class="k">catch</span> (e) { console.log(<span class="s">"unhandled error event:"</span>, e.message); }
+
+<span class="c">// Events as an async iterator, stopped by an AbortSignal</span>
+<span class="k">const</span> ticker = <span class="k">new</span> <span class="t">EventEmitter</span>(), ac = <span class="k">new</span> <span class="t">AbortController</span>();
+setTimeout(() =&gt; { ticker.emit(<span class="s">"tick"</span>, <span class="n">1</span>); ticker.emit(<span class="s">"tick"</span>, <span class="n">2</span>); ac.abort(); }, <span class="n">5</span>);
+<span class="k">try</span> { <span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> [n] <span class="k">of</span> on(ticker, <span class="s">"tick"</span>, { signal: ac.signal })) console.log(<span class="s">"tick"</span>, n); }
+<span class="k">catch</span> (e) { console.log(<span class="s">"stopped:"</span>, e.name); }</pre><div class="out"><span>Output</span><pre>running 3 tests
+✖ cart: expected 2, got 3
+2 passed
+unhandled error event: socket closed
+tick 1
+tick 2
+stopped: AbortError</pre></div></div>
+<div class="warn">An <code>"error"</code> event with no listener throws and can crash the process. Every emitter you create, and every stream and socket you use, needs an error listener or a <code>pipeline</code> that handles errors for you.</div>
+</section>
+<section class="card reveal jsec qa-part" id="streams" data-say="streams"><div class="sec-num">Part 2</div><h2><span class="sec-em">🌊</span><span>Streams and backpressure</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Reading huge logs, HAR files and test result exports needs streams, or the test tool runs out of memory.</span></div>
+<p>A <b>stream</b> moves data in small chunks, so a 5 GB log file never has to fit in memory. <b>Readable</b> streams produce data, <b>Writable</b> streams consume it, and <b>Transform</b> streams change it on the way. <code>pipeline</code> connects them, passes errors along and closes everything at the end.</p>
+<div class="codewrap" data-k="streams"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Streams: generate, filter and count a big file · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { <span class="t">Readable</span>, <span class="t">Transform</span>, <span class="t">Writable</span> } <span class="k">from</span> <span class="s">"node:stream"</span>;
+<span class="k">import</span> { pipeline } <span class="k">from</span> <span class="s">"node:stream/promises"</span>;
+<span class="k">import</span> { createWriteStream, createReadStream } <span class="k">from</span> <span class="s">"node:fs"</span>;
+<span class="k">import</span> { createInterface } <span class="k">from</span> <span class="s">"node:readline"</span>;
+
+<span class="c">// 1. Generate a large log file without holding it in memory</span>
+<span class="k">function</span>* lines() {
+  <span class="k">for</span> (<span class="k">let</span> i = <span class="n">1</span>; i &lt;= <span class="n">50_000</span>; i++) <span class="k">yield</span> <span class="s">`${i} ${i % 97 === 0 ? 500 : 200} /api/item/${i % 50}\n`</span>;
+}
+<span class="k">await</span> pipeline(<span class="t">Readable</span>.<span class="k">from</span>(lines()), createWriteStream(<span class="s">"big.log"</span>));
+
+<span class="c">// 2. Transform stream: keep only the 5xx lines and turn them into JSON</span>
+<span class="k">const</span> onlyErrors = <span class="k">new</span> <span class="t">Transform</span>({
+  objectMode: <span class="k">true</span>,
+  transform(line, _enc, done) {
+    <span class="k">const</span> [id, status, path] = line.split(<span class="s">" "</span>);
+    <span class="k">if</span> (status &gt;= <span class="n">500</span>) <span class="k">this</span>.push({ id: +id, status: +status, path });
+    done();
+  },
+});
+
+<span class="c">// 3. Writable sink that counts</span>
+<span class="k">let</span> errors = <span class="n">0</span>, first;
+<span class="k">const</span> counter = <span class="k">new</span> <span class="t">Writable</span>({ objectMode: <span class="k">true</span>, write(row, _enc, done) { errors++; first ??= row; done(); } });
+
+<span class="k">const</span> rl = createInterface({ input: createReadStream(<span class="s">"big.log"</span>), crlfDelay: <span class="t">Infinity</span> });
+<span class="k">await</span> pipeline(<span class="t">Readable</span>.<span class="k">from</span>(rl), onlyErrors, counter);
+console.log(<span class="s">"5xx lines:"</span>, errors, <span class="s">"| first:"</span>, first);
+console.log(<span class="s">"memory stays small: the file was never read into one string"</span>);</pre><div class="out"><span>Output</span><pre>5xx lines: 515 | first: { id: 97, status: 500, path: &#x27;/api/item/47&#x27; }
+memory stays small: the file was never read into one string</pre></div></div>
+<p><b>Backpressure</b> is how a slow consumer tells a fast producer to wait. When <code>write()</code> returns false, stop writing until the <code>"drain"</code> event. <code>pipeline</code> and <code>for await</code> do this automatically, which is the main reason to use them.</p>
+<div class="codewrap" data-k="backpressure"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Backpressure: when the reader is slower than the writer · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { <span class="t">Writable</span> } <span class="k">from</span> <span class="s">"node:stream"</span>;
+
+<span class="c">// A slow writer with a small buffer</span>
+<span class="k">const</span> slow = <span class="k">new</span> <span class="t">Writable</span>({
+  highWaterMark: <span class="n">4</span>,                                    <span class="c">// bytes before write() asks you to wait</span>
+  write(chunk, _enc, done) { setTimeout(done, <span class="n">1</span>); },
+});
+
+<span class="k">let</span> refused = <span class="n">0</span>, drained = <span class="n">0</span>;
+slow.on(<span class="s">"drain"</span>, () =&gt; drained++);
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; <span class="n">10</span>; i++) <span class="k">if</span> (!slow.write(<span class="s">"ab"</span>)) refused++;
+console.log(<span class="s">"write() returned false"</span>, refused, <span class="s">"times: stop and wait for drain"</span>);
+
+<span class="c">// The right way: await drain when write() returns false (pipeline does this for you)</span>
+<span class="k">async</span> <span class="k">function</span> writeAll(stream, chunks) {
+  <span class="k">for</span> (<span class="k">const</span> c <span class="k">of</span> chunks) <span class="k">if</span> (!stream.write(c)) <span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; stream.once(<span class="s">"drain"</span>, r));
+}
+<span class="k">await</span> writeAll(slow, <span class="t">Array</span>(<span class="n">10</span>).fill(<span class="s">"ab"</span>));
+console.log(<span class="s">"drain events so far:"</span>, drained &gt; <span class="n">0</span>);</pre><div class="out"><span>Output</span><pre>write() returned false 9 times: stop and wait for drain
+drain events so far: true</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="buffers" data-say="buffers"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔢</span><span>Buffers, encodings and crypto</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Webhook signatures, file checksums and binary uploads all need bytes, hashes and HMACs in tests.</span></div>
+<p>A <b>Buffer</b> is a fixed block of bytes, a <code>Uint8Array</code> with extra methods. Text needs an <b>encoding</b> to become bytes: in UTF-8, "é" takes 2 bytes and "₹" takes 3, so byte length and string length differ. The <code>crypto</code> module gives hashes, HMAC signatures, random ids and safe comparison.</p>
+<div class="codewrap" data-k="buffers"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Buffers, hashes and HMAC signatures · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { createHash, createHmac, randomUUID, timingSafeEqual, randomInt } <span class="k">from</span> <span class="s">"node:crypto"</span>;
+
+<span class="k">const</span> buf = <span class="t">Buffer</span>.<span class="k">from</span>(<span class="s">"Héllo ₹"</span>, <span class="s">"utf8"</span>);
+console.log(buf, buf.length, <span class="s">"bytes for"</span>, <span class="s">"Héllo ₹"</span>.length, <span class="s">"characters"</span>);
+console.log(buf.toString(<span class="s">"hex"</span>), buf.toString(<span class="s">"base64"</span>), <span class="t">Buffer</span>.<span class="k">from</span>(<span class="s">"SMOpbGxvIOKCuQ=="</span>, <span class="s">"base64"</span>).toString());
+console.log(buf <span class="k">instanceof</span> <span class="t">Uint8Array</span>);
+
+<span class="c">// Hash a file's bytes for golden file tests: same bytes, same hash</span>
+<span class="k">const</span> report = <span class="t">JSON</span>.stringify({ passed: <span class="n">41</span>, failed: <span class="n">1</span> });
+console.log(<span class="s">"sha256:"</span>, createHash(<span class="s">"sha256"</span>).update(report).digest(<span class="s">"hex"</span>).slice(<span class="n">0</span>, <span class="n">16</span>), <span class="s">"..."</span>);
+
+<span class="c">// HMAC signatures, as used by webhooks: compare in constant time</span>
+<span class="k">const</span> secret = <span class="s">"whsec_test"</span>;
+<span class="k">const</span> sign = body =&gt; createHmac(<span class="s">"sha256"</span>, secret).update(body).digest();
+<span class="k">const</span> sent = sign(<span class="s">'{"event":"order.paid"}'</span>);
+console.log(<span class="s">"valid signature:"</span>, timingSafeEqual(sent, sign(<span class="s">'{"event":"order.paid"}'</span>)));
+console.log(<span class="s">"tampered body:"</span>, timingSafeEqual(sent, sign(<span class="s">'{"event":"order.refunded"}'</span>)));
+console.log(<span class="s">"unique ids:"</span>, <span class="k">typeof</span> randomUUID(), randomInt(<span class="n">1</span>, <span class="n">7</span>) &gt;= <span class="n">1</span>);</pre><div class="out"><span>Output</span><pre>&lt;Buffer 48 c3 a9 6c 6c 6f 20 e2 82 b9&gt; 10 bytes for 7 characters
+48c3a96c6c6f20e282b9 SMOpbGxvIOKCuQ== Héllo ₹
+true
+sha256: 72a854db36da2159 ...
+valid signature: true
+tampered body: false
+unique ids: string true</pre></div></div>
+<div class="qa-box">Testing webhooks means checking signatures: compute the HMAC of the exact raw body with the shared secret and compare with <code>timingSafeEqual</code>. Also test a changed body, a wrong secret and a missing signature header, which must all be rejected.</div>
+</section>
+<section class="card reveal jsec qa-part" id="sqlite" data-say="sqlite"><div class="sec-num">Part 4</div><h2><span class="sec-em">🗄️</span><span>The built in SQLite database</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Database checks after an API or UI action confirm that data was really saved, which UI checks alone cannot prove.</span></div>
+<p>Node.js ships with <code>node:sqlite</code>, a full SQL database that runs in memory or in a file with no server and no install. It is ideal for seeding test data, checking reports, and learning SQL alongside JavaScript.</p>
+<div class="codewrap" data-k="sqlite"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The built in SQLite database · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { <span class="t">DatabaseSync</span> } <span class="k">from</span> <span class="s">"node:sqlite"</span>;
+
+<span class="c">// A real SQL database built into Node.js: perfect for test data and quick checks</span>
+<span class="k">const</span> db = <span class="k">new</span> <span class="t">DatabaseSync</span>(<span class="s">":memory:"</span>);
+db.exec(<span class="s">`
+  CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, role TEXT NOT NULL);
+  CREATE TABLE orders (id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES users(id), total REAL, status TEXT);
+`</span>);
+<span class="k">const</span> addUser = db.prepare(<span class="s">"INSERT INTO users (email, role) VALUES (?, ?)"</span>);
+<span class="k">const</span> addOrder = db.prepare(<span class="s">"INSERT INTO orders (user_id, total, status) VALUES (?, ?, ?)"</span>);
+<span class="k">for</span> (<span class="k">const</span> [email, role] <span class="k">of</span> [[<span class="s">"asha@shop.test"</span>, <span class="s">"admin"</span>], [<span class="s">"ravi@shop.test"</span>, <span class="s">"customer"</span>], [<span class="s">"li@shop.test"</span>, <span class="s">"customer"</span>]]) addUser.run(email, role);
+<span class="k">for</span> (<span class="k">const</span> [u, t, s] <span class="k">of</span> [[<span class="n">2</span>, <span class="n">450</span>, <span class="s">"paid"</span>], [<span class="n">2</span>, <span class="n">120</span>, <span class="s">"refunded"</span>], [<span class="n">3</span>, <span class="n">980</span>, <span class="s">"paid"</span>], [<span class="n">3</span>, <span class="n">40</span>, <span class="s">"new"</span>]]) addOrder.run(u, t, s);
+
+<span class="c">// Parameters, never string building, so test data with quotes is safe</span>
+console.log(db.prepare(<span class="s">"SELECT id, role FROM users WHERE email = ?"</span>).<span class="k">get</span>(<span class="s">"ravi@shop.test"</span>));
+
+<span class="k">const</span> report = db.prepare(<span class="s">`
+  SELECT u.email, COUNT(o.id) AS orders, SUM(CASE WHEN o.status = 'paid' THEN o.total ELSE 0 END) AS paid
+  FROM users u LEFT JOIN orders o ON o.user_id = u.id GROUP BY u.id ORDER BY paid DESC`</span>).all();
+console.table(report.map(r =&gt; ({ ...r })));
+
+<span class="k">try</span> { addUser.run(<span class="s">"asha@shop.test"</span>, <span class="s">"customer"</span>); } <span class="k">catch</span> (e) { console.log(<span class="s">"constraint:"</span>, e.message); }</pre><div class="out"><span>Output</span><pre>[Object: null prototype] { id: 2, role: &#x27;customer&#x27; }
+┌─────────┬──────────────────┬────────┬──────┐
+│ (index) │ email            │ orders │ paid │
+├─────────┼──────────────────┼────────┼──────┤
+│ 0       │ &#x27;li@shop.test&#x27;   │ 2      │ 980  │
+│ 1       │ &#x27;ravi@shop.test&#x27; │ 2      │ 450  │
+│ 2       │ &#x27;asha@shop.test&#x27; │ 0      │ 0    │
+└─────────┴──────────────────┴────────┴──────┘
+constraint: UNIQUE constraint failed: users.email</pre></div></div>
+<div class="tip">Always use prepared statements with <code>?</code> placeholders. Test data such as <code>O'Brien</code> then works, and so does an SQL injection test that tries <code>' OR '1'='1</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="process" data-say="process"><div class="sec-num">Part 5</div><h2><span class="sec-em">⚙️</span><span>Processes, signals and graceful shutdown</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">CI</span><span class="qa-tool">Node.js</span><span class="qa-why">Starting servers for tests, stopping them cleanly and returning the right exit code are what make a suite reliable in CI.</span></div>
+<p><code>spawn</code> starts another program and streams its output as it arrives, which suits long runs such as a test suite or a dev server. Programs are stopped with <b>signals</b>: <code>SIGINT</code> when you press Ctrl+C and <code>SIGTERM</code> when CI or Docker stops a job. A well written tool catches them, cleans up, and then exits.</p>
+<div class="codewrap" data-k="process"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Child processes, streaming output and graceful shutdown · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { spawn } <span class="k">from</span> <span class="s">"node:child_process"</span>;
+
+<span class="c">// spawn streams output as it arrives, unlike exec which waits for the end</span>
+<span class="k">const</span> child = spawn(process.execPath, [<span class="s">"-e"</span>, <span class="s">`
+  let n = 0;
+  const t = setInterval(() =&gt; console.log("test", ++n, "passed"), 10);
+  process.on("SIGTERM", () =&gt; { clearInterval(t); console.log("cleaning up, closing the browser"); process.exit(0); });
+`</span>]);
+
+<span class="k">let</span> lines = <span class="n">0</span>;
+child.stdout.setEncoding(<span class="s">"utf8"</span>);
+child.stdout.on(<span class="s">"data"</span>, chunk =&gt; {
+  <span class="k">for</span> (<span class="k">const</span> line <span class="k">of</span> chunk.trim().split(<span class="s">"\n"</span>)) {
+    console.log(<span class="s">"child:"</span>, line);
+    <span class="k">if</span> (++lines === <span class="n">3</span>) child.kill(<span class="s">"SIGTERM"</span>);          <span class="c">// ask it to stop nicely</span>
+  }
+});
+<span class="k">const</span> [code, signal] = <span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; child.on(<span class="s">"exit"</span>, (c, s) =&gt; r([c, s])));
+console.log(<span class="s">"exit code"</span>, code, <span class="s">"signal"</span>, signal);</pre><div class="out"><span>Output</span><pre>child: test 1 passed
+child: test 2 passed
+child: test 3 passed
+child: cleaning up, closing the browser
+exit code 0 signal null</pre></div></div>
+<div class="note">Exit codes are the contract with CI: 0 means success, 1 means the check failed, and 2 is the usual code for "used wrongly". Set <code>process.exitCode</code> instead of calling <code>process.exit()</code> so pending output is still written.</div>
+</section>
+<section class="card reveal jsec qa-part" id="cli" data-say="cli"><div class="sec-num">Part 6</div><h2><span class="sec-em">💻</span><span>Building and testing a command line tool</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Small CLI tools glue test pipelines together, and they need tests of their own exit codes and output.</span></div>
+<div class="scenario"><b>The situation</b>The release pipeline needs a small tool that reads a server log and fails the job when there are more 5xx errors than allowed.</div>
+<p><code>util.parseArgs</code> reads flags with no extra package, <code>readline</code> reads the file line by line, <code>styleText</code> adds colour that respects <code>NO_COLOR</code>, and the exit code tells CI the result. The <code>bin</code> field in package.json turns the file into a command after <code>npm install</code>.</p>
+<div class="codewrap tests" data-k="cli"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A command line tool with parseArgs, tested with spawnSync · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 bin/log-check.js</div><pre class="src" data-file="bin/log-check.js">#!/usr/bin/env node
+<span class="k">import</span> { parseArgs, styleText } <span class="k">from</span> <span class="s">"node:util"</span>;
+<span class="k">import</span> { createReadStream } <span class="k">from</span> <span class="s">"node:fs"</span>;
+<span class="k">import</span> { createInterface } <span class="k">from</span> <span class="s">"node:readline"</span>;
+
+<span class="k">const</span> { values, positionals } = parseArgs({
+  allowPositionals: <span class="k">true</span>,
+  options: {
+    <span class="s">"max-errors"</span>: { type: <span class="s">"string"</span>, <span class="k">default</span>: <span class="s">"0"</span> },
+    json: { type: <span class="s">"boolean"</span>, <span class="k">default</span>: <span class="k">false</span> },
+    help: { type: <span class="s">"boolean"</span>, short: <span class="s">"h"</span> },
+  },
+});
+<span class="k">if</span> (values.help || positionals.length === <span class="n">0</span>) {
+  console.log(<span class="s">"usage: log-check [--max-errors N] [--json] FILE"</span>);
+  process.exit(values.help ? <span class="n">0</span> : <span class="n">2</span>);                      <span class="c">// 2 means "used wrongly"</span>
+}
+
+<span class="k">let</span> total = <span class="n">0</span>, errors = <span class="n">0</span>;
+<span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> line <span class="k">of</span> createInterface({ input: createReadStream(positionals[<span class="n">0</span>]) })) {
+  total++;
+  <span class="k">if</span> (/ <span class="n">5</span>\d\d /.test(line)) errors++;
+}
+<span class="k">const</span> ok = errors &lt;= <span class="t">Number</span>(values[<span class="s">"max-errors"</span>]);
+<span class="k">if</span> (values.json) console.log(<span class="t">JSON</span>.stringify({ total, errors, ok }));
+<span class="k">else</span> console.log(styleText(ok ? <span class="s">"green"</span> : <span class="s">"red"</span>, <span class="s">`${errors} errors in ${total} lines`</span>));
+process.exitCode = ok ? <span class="n">0</span> : <span class="n">1</span>;                            <span class="c">// CI fails the job on 1</span></pre><div class="fname">📄 test/cli.test.js</div><pre class="src" data-file="test/cli.test.js"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> { spawnSync } <span class="k">from</span> <span class="s">"node:child_process"</span>;
+<span class="k">import</span> { writeFileSync } <span class="k">from</span> <span class="s">"node:fs"</span>;
+
+<span class="k">const</span> cli = (...args) =&gt; spawnSync(process.execPath, [<span class="s">"bin/log-check.js"</span>, ...args], { encoding: <span class="s">"utf8"</span> });
+writeFileSync(<span class="s">"ok.log"</span>, <span class="s">"GET /a 200 \nGET /b 200 \n"</span>);
+writeFileSync(<span class="s">"bad.log"</span>, <span class="s">"GET /a 200 \nPOST /orders 503 \nGET /b 500 \n"</span>);
+
+test(<span class="s">"no file prints usage and exits with 2"</span>, () =&gt; {
+  <span class="k">const</span> r = cli();
+  assert.equal(r.status, <span class="n">2</span>);
+  assert.match(r.stdout, /usage/);
+});
+test(<span class="s">"a clean log passes"</span>, () =&gt; {
+  assert.deepEqual(<span class="t">JSON</span>.parse(cli(<span class="s">"--json"</span>, <span class="s">"ok.log"</span>).stdout), { total: <span class="n">2</span>, errors: <span class="n">0</span>, ok: <span class="k">true</span> });
+});
+test(<span class="s">"errors over the limit fail with exit code 1"</span>, () =&gt; {
+  <span class="k">const</span> r = cli(<span class="s">"bad.log"</span>);
+  assert.equal(r.status, <span class="n">1</span>);
+  assert.equal(r.stdout.trim(), <span class="s">"2 errors in 3 lines"</span>);
+});
+test(<span class="s">"--max-errors raises the limit"</span>, () =&gt; assert.equal(cli(<span class="s">"--max-errors"</span>, <span class="s">"2"</span>, <span class="s">"bad.log"</span>).status, <span class="n">0</span>));</pre><div class="cmd"><span>Terminal</span><pre>$ npm test</pre></div><div class="out"><span>Terminal output</span><pre>
+&gt; log-check@1.0.0 test
+&gt; node --test
+
+✔ no file prints usage and exits with 2
+✔ a clean log passes
+✔ errors over the limit fail with exit code 1
+✔ --max-errors raises the limit
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 212.4</pre></div></div>
+<p>The tests run the real tool with <code>spawnSync</code> and check its output and exit code, exactly the way CI will use it.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-metaprogramming.html" data-topic="js-metaprogramming"><small>← Previous chapter</small><b>🪞 Metaprogramming</b></a><a class="next" href="./js-unit-testing.html" data-topic="js-unit-testing"><small>Next chapter →</small><b>🧪 Unit testing</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Node.js under the surface", "panels": [{"s": [["e", "📣"], ["t", "emitter.on(\"fail\", …)", {"b": 1, "size": 11}]], "h": "Events", "t": "Most of Node is event driven.", "more": "Always listen for \"error\"."}, {"s": [["e", "🌊"], ["t", "pipeline(read, transform, write)", {"b": 1, "size": 10}]], "h": "Streams", "t": "Chunks, not whole files.", "more": "pipeline handles backpressure."}, {"s": [["e", "🔐"], ["t", "createHmac(\"sha256\", secret)", {"b": 1, "size": 10}]], "h": "Crypto", "t": "Hashes and signatures.", "more": "Compare in constant time."}, {"s": [["e", "💻"], ["t", "process.exitCode = 1", {"b": 1, "size": 11}]], "h": "Tools", "t": "Flags in, exit code out.", "more": "Test them like CI uses them."}], "remember": "Listen for errors, stream big data through pipeline, use prepared statements, and give every tool a clear exit code."}, "real": [["📜", "A load test team", "Analysed a 12 GB access log with a Transform stream on a laptop with 8 GB of memory. Reading it as one string had crashed every time."], ["🔔", "A payments webhook", "Failed signature checks in tests because the body was parsed and re-serialised before hashing. Hashing the raw bytes fixed it."], ["🚦", "A release pipeline", "Uses a small log check CLI as a gate: more than five 5xx errors after a canary deploy and the job exits with 1 and rolls back."]], "quiz": [{"lv": "e", "q": "What does emitter.once(\"end\", fn) do?", "o": ["Calls fn for the first \"end\" event only", "Calls fn for every event", "Emits \"end\" once", "Removes all listeners"], "a": 0, "hint": "One time.", "why": "The listener is removed after the first call."}, {"lv": "e", "q": "Why use streams for a 5 GB file?", "o": ["So it never has to fit in memory at once", "Streams are always faster", "Files cannot be read otherwise", "To compress it"], "a": 0, "hint": "Chunks.", "why": "Each chunk is processed and then released."}, {"lv": "e", "q": "Which exit code tells CI that a check failed?", "o": ["1", "0", "200", "-1"], "a": 0, "hint": "Non zero means failure.", "why": "0 means success. 2 often means the tool was used wrongly."}, {"lv": "m", "q": "What happens when an EventEmitter emits \"error\" with no listener?", "o": ["It throws, which can crash the process", "Nothing", "It logs a warning", "It retries"], "a": 0, "hint": "Special event.", "why": "Always add an error listener or use pipeline."}, {"lv": "m", "q": "write() on a stream returns false. What should you do?", "o": ["Wait for the \"drain\" event before writing more", "Write faster", "Close the stream", "Ignore it"], "a": 0, "hint": "Backpressure.", "why": "The internal buffer is full."}, {"lv": "m", "q": "How many bytes does \"₹\" take in UTF-8?", "o": ["3", "1", "2", "4"], "a": 0, "hint": "Outside the first 2048 code points.", "why": "Buffer.byteLength(\"₹\") is 3."}, {"lv": "m", "q": "Why use ? placeholders in SQL statements?", "o": ["Values are passed separately, which prevents SQL injection and quoting bugs", "It is faster to type", "SQLite needs them", "To hide the query"], "a": 0, "hint": "Parameters.", "why": "O'Brien works without any escaping."}, {"lv": "h", "q": "Why compare HMAC signatures with timingSafeEqual instead of ===?", "o": ["=== can stop at the first different byte, which leaks timing information", "=== does not work on buffers", "It is shorter", "It hashes again"], "a": 0, "hint": "Timing attacks.", "why": "Constant time comparison takes the same time whatever the bytes are."}, {"lv": "h", "q": "What does pipeline give you over chaining .pipe()?", "o": ["Error handling and clean up of every stream, as a promise", "Faster code", "Compression", "Nothing"], "a": 0, "hint": "Errors and closing.", "why": ".pipe() does not forward errors, so failures could leak open files."}, {"lv": "h", "q": "Which signal does CI usually send to stop a job?", "o": ["SIGTERM", "SIGKILL first", "SIGHUP", "SIGSTOP"], "a": 0, "hint": "Polite stop.", "why": "SIGKILL follows only if the process does not exit in time."}, {"lv": "x", "q": "Why set process.exitCode = 1 instead of calling process.exit(1)?", "o": ["Pending output and async work can still finish", "exit() is not allowed", "It changes the code later", "It is required by npm"], "a": 0, "hint": "Clean exit.", "why": "process.exit() stops at once and can cut off logs."}, {"lv": "x", "q": "A webhook test parses the JSON body and re-serialises it before computing the HMAC. Why do valid signatures fail?", "o": ["The bytes differ, for example spacing or key order, so the hash differs", "HMAC cannot hash JSON", "The secret changed", "JSON is binary"], "a": 0, "hint": "Hash the raw bytes.", "why": "Always sign and verify the exact bytes that were sent."}], "calc": [{"lv": "e", "q": "In the streams example, every line number divisible by 97 is a 500. How many 5xx lines are in 50,000 lines?", "ans": "515", "hint": "Whole multiples.", "steps": ["<span class=\"eq\">⌊50000 ÷ 97⌋ = 515<\/span>"]}, {"lv": "e", "q": "Buffer.byteLength(\"Héllo\") where é is 2 bytes. How many bytes?", "ans": "6", "hint": "5 characters, one of them 2 bytes.", "steps": ["<span class=\"eq\">4 × 1 + 1 × 2 = 6<\/span>"]}, {"lv": "m", "q": "A stream with highWaterMark 16 KB reads a 1 MB file. About how many chunks is that?", "ans": "64", "hint": "1 MB is 1024 KB.", "steps": ["<span class=\"eq\">1024 ÷ 16 = 64<\/span>"]}, {"lv": "m", "q": "A SHA-256 hash in hex has how many characters?", "ans": "64", "hint": "256 bits, 4 bits per hex digit.", "steps": ["<span class=\"eq\">256 ÷ 4 = 64<\/span>"]}, {"lv": "m", "q": "Users 2 and 3 have paid orders of 450 and 980. What is the sum of paid totals in the report?", "ans": "1430", "hint": "Only status paid.", "steps": ["<span class=\"eq\">450 + 980 = 1430<\/span>"]}, {"lv": "h", "q": "base64 turns every 3 bytes into 4 characters. How long is the base64 of 9 bytes?", "ans": "12", "hint": "Groups of 3.", "steps": ["<span class=\"eq\">9 ÷ 3 × 4 = 12<\/span>"]}, {"lv": "h", "q": "A log check allows at most 5 errors. A canary run has 3 errors in 2,000 lines. What exit code does the tool return?", "ans": "0", "hint": "Within the limit.", "steps": ["3 is not more than 5, so the check passes."]}, {"lv": "x", "q": "A child test runner prints one line every 10 ms and is sent SIGTERM after its 3rd line. About how many ms did it run?", "ans": "30", "hint": "Three intervals.", "steps": ["<span class=\"eq\">3 × 10 = 30<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter goes deep into Node: events, streams and backpressure, buffers and crypto, the built in SQLite database, processes and signals, and command line tools.", "hi": "यह अध्याय Node में गहराई से जाता है: events, streams और backpressure, buffers और crypto, SQLite, processes, signals और command line tools।", "kn": "ಈ ಅಧ್ಯಾಯ Node ಆಳವಾಗಿ: events, streams, backpressure, buffers, crypto, SQLite, processes ಮತ್ತು CLI tools.", "or": "ଏହି ଅଧ୍ୟାୟ Node ଗଭୀରରେ: events, streams, backpressure, buffers, crypto, SQLite, processes ଓ CLI tools।", "ar": "يتعمق هذا الفصل في Node: الأحداث والتدفقات والضغط العكسي والمخازن والتشفير وقاعدة SQLite المدمجة والعمليات والإشارات وأدوات سطر الأوامر.", "de": "Dieses Kapitel geht tief in Node: Events, Streams, Backpressure, Buffer, Crypto, SQLite, Prozesse, Signale und Kommandozeilen-Tools."}, {"id": "events", "h": "Events", "en": "EventEmitter calls listeners in order when an event is emitted. events once gives a promise, and an error event with no listener throws.", "hi": "EventEmitter event होने पर listeners को क्रम से call करता है। events once promise देता है, और बिना listener का error event throw करता है।", "kn": "EventEmitter listeners ಅನ್ನು ಕ್ರಮವಾಗಿ call ಮಾಡುತ್ತದೆ. Listener ಇಲ್ಲದ error event throw ಮಾಡುತ್ತದೆ.", "or": "EventEmitter listeners କୁ କ୍ରମରେ call କରେ। Listener ନଥିବା error event throw କରେ।", "ar": "يستدعي EventEmitter المستمعين بالترتيب عند إطلاق الحدث، ويعطي events.once وعدًا، ويرمي حدث الخطأ بلا مستمع استثناء.", "de": "EventEmitter ruft Listener der Reihe nach auf. events.once liefert ein Promise, ein error-Event ohne Listener wirft."}, {"id": "streams", "h": "Streams", "en": "Streams move data in chunks. pipeline connects them, passes errors on and handles backpressure, so a slow writer is never flooded.", "hi": "Streams data को टुकड़ों में भेजते हैं। pipeline उन्हें जोड़ता है, errors आगे भेजता है और backpressure संभालता है।", "kn": "Streams data ತುಂಡುಗಳಲ್ಲಿ ಸಾಗಿಸುತ್ತವೆ. pipeline ಜೋಡಿಸಿ backpressure ನಿಭಾಯಿಸುತ್ತದೆ.", "or": "Streams data ଖଣ୍ଡରେ ପଠାନ୍ତି। pipeline ଯୋଡ଼େ ଓ backpressure ସମ୍ଭାଳେ।", "ar": "تنقل التدفقات البيانات على دفعات، ويربطها pipeline وينقل الأخطاء ويعالج الضغط العكسي.", "de": "Streams bewegen Daten in Stücken. pipeline verbindet sie, reicht Fehler weiter und regelt den Rückstau."}, {"id": "buffers", "h": "Buffers and crypto", "en": "A Buffer holds bytes, and text needs an encoding to become bytes. Use HMAC with timing safe equal to check webhook signatures.", "hi": "Buffer bytes रखता है, और text को bytes बनने के लिए encoding चाहिए। Webhook signatures के लिए HMAC और timing safe equal इस्तेमाल करें।", "kn": "Buffer bytes ಹಿಡಿಯುತ್ತದೆ, text ಗೆ encoding ಬೇಕು. Webhook ಗೆ HMAC ಬಳಸಿ.", "or": "Buffer bytes ରଖେ, text ପାଇଁ encoding ଦରକାର। Webhook ପାଇଁ HMAC ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "يحفظ Buffer البايتات ويحتاج النص إلى ترميز ليصبح بايتات. استخدم HMAC مع المقارنة الآمنة زمنيًا لفحص توقيعات الويب هوك.", "de": "Ein Buffer hält Bytes, Text braucht eine Kodierung. Prüfe Webhook-Signaturen mit HMAC und zeitsicherem Vergleich."}, {"id": "sqlite", "h": "SQLite", "en": "Node includes a SQLite database with no server. Use prepared statements with placeholders for safe test data and queries.", "hi": "Node में बिना server वाला SQLite database है। सुरक्षित test data के लिए placeholders वाले prepared statements इस्तेमाल करें।", "kn": "Node ನಲ್ಲಿ server ಇಲ್ಲದ SQLite ಇದೆ. Placeholders ಇರುವ prepared statements ಬಳಸಿ.", "or": "Node ରେ server ବିନା SQLite ଅଛି। Placeholders ଥିବା prepared statements ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "يتضمن Node قاعدة SQLite بلا خادم. استخدم عبارات معدة بعناصر نائبة لبيانات اختبار واستعلامات آمنة.", "de": "Node enthält eine SQLite-Datenbank ohne Server. Nutze vorbereitete Anweisungen mit Platzhaltern."}, {"id": "process", "h": "Processes", "en": "spawn streams the output of another program. Catch SIGTERM to clean up, and use exit codes: zero for success, one for failure.", "hi": "spawn दूसरे program का output stream करता है। साफ करने के लिए SIGTERM पकड़ें, और exit codes: शून्य सफलता, एक विफलता।", "kn": "spawn ಮತ್ತೊಂದು program output stream ಮಾಡುತ್ತದೆ. SIGTERM ಹಿಡಿದು clean up ಮಾಡಿ.", "or": "spawn ଅନ୍ୟ program output stream କରେ। SIGTERM ଧରି clean up କରନ୍ତୁ।", "ar": "تبث spawn مخرجات برنامج آخر. التقط SIGTERM للتنظيف، واستخدم رموز الخروج: صفر للنجاح وواحد للفشل.", "de": "spawn streamt die Ausgabe eines Programms. Fange SIGTERM zum Aufräumen ab, Exit-Code null heißt Erfolg."}, {"id": "cli", "h": "A CLI tool", "en": "parseArgs reads the flags, readline reads the file, and the exit code tells CI the result. Test the tool by running it with spawnSync.", "hi": "parseArgs flags पढ़ता है, readline file पढ़ता है, और exit code CI को नतीजा बताता है। spawnSync से tool test करें।", "kn": "parseArgs flags, readline file ಓದುತ್ತವೆ, exit code CI ಗೆ ಫಲಿತಾಂಶ. spawnSync ನಿಂದ test ಮಾಡಿ.", "or": "parseArgs flags, readline file ପଢ଼େ, exit code CI କୁ ଫଳାଫଳ। spawnSync ରେ test କରନ୍ତୁ।", "ar": "يقرأ parseArgs الخيارات ويقرأ readline الملف، ويخبر رمز الخروج نظام CI بالنتيجة. اختبر الأداة بتشغيلها عبر spawnSync.", "de": "parseArgs liest Flags, readline die Datei, der Exit-Code meldet das Ergebnis. Teste das Tool mit spawnSync."}, {"id": "practice", "h": "Hands-on", "en": "Practise a typed event bus, a line splitter for chunks, an HMAC style checksum check, and parsing command line flags.", "hi": "Event bus, chunks के लिए line splitter, checksum check और command line flags parse करने का अभ्यास करें।", "kn": "Event bus, line splitter, checksum check ಮತ್ತು command line flags ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Event bus, line splitter, checksum check ଓ command line flags ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على ناقل أحداث ومقسم أسطر للدفعات وفحص مجموع تحقق وتحليل خيارات سطر الأوامر.", "de": "Übe einen Event-Bus, einen Zeilenteiler für Chunks, eine Prüfsummenkontrolle und Kommandozeilen-Flags."}], "ex": [{"id": "bus", "lv": "e", "title": "A tiny event bus", "task": "<p>Write <code>createBus()<\/code> that returns <code>{ on, emit }<\/code>. <code>on(name, fn)<\/code> registers a listener and returns a function that removes it. <code>emit(name, ...args)<\/code> calls every listener for that name in order.<\/p>", "starter": "function createBus() {\n  \n}", "tests": [{"call": "(() => { const bus = createBus(); const log = []; const off = bus.on(\"pass\", n => log.push(\"a\" + n)); bus.on(\"pass\", n => log.push(\"b\" + n)); bus.emit(\"pass\", 1); off(); bus.emit(\"pass\", 2); bus.emit(\"other\"); return log; })()", "want": ["a1", "b1", "b2"]}], "solution": "function createBus() {\n  const map = new Map();\n  return {\n    on(name, fn) {\n      if (!map.has(name)) map.set(name, new Set());\n      map.get(name).add(fn);\n      return () => map.get(name).delete(fn);\n    },\n    emit(name, ...args) {\n      for (const fn of map.get(name) ?? []) fn(...args);\n    },\n  };\n}", "hint": "A Map from event name to a Set of listeners.", "why": "Returning an unsubscribe function avoids the listener leaks from chapter 27."}, {"id": "splitter", "lv": "m", "title": "Split chunks into lines", "task": "<p>Streams deliver text in chunks that can cut a line in half. Write <code>lineSplitter()<\/code> that returns <code>{ push(chunk), end() }<\/code>. <code>push<\/code> returns the complete lines found so far, and <code>end<\/code> returns what is left as a final line, or an empty array.<\/p>", "starter": "function lineSplitter() {\n  \n}", "tests": [{"call": "(() => { const s = lineSplitter(); return [s.push(\"GET /a 200\\nGET /b\"), s.push(\" 500\\nPOST\"), s.push(\" /c 201\\n\"), s.end()]; })()", "want": [["GET /a 200"], ["GET /b 500"], ["POST /c 201"], []]}, {"call": "(() => { const s = lineSplitter(); return [s.push(\"a\"), s.end()]; })()", "want": [[], ["a"]]}], "solution": "function lineSplitter() {\n  let rest = \"\";\n  return {\n    push(chunk) {\n      const parts = (rest + chunk).split(\"\\n\");\n      rest = parts.pop();\n      return parts;\n    },\n    end() {\n      return rest ? [rest] : [];\n    },\n  };\n}", "hint": "Keep the last, unfinished piece between calls.", "why": "This is what readline does inside. Forgetting the leftover piece loses or breaks lines at chunk edges."}, {"id": "checksum", "lv": "h", "title": "Verify a checksum", "task": "<p>Write <code>checksum(text)<\/code> that returns the sum of the UTF-8 byte values of the text modulo 256, and <code>verify(text, sum)<\/code> that returns true only when they match. Use <code>new TextEncoder().encode(text)<\/code> for the bytes.<\/p>", "starter": "function checksum(text) {\n  \n}\nfunction verify(text, sum) {\n  \n}", "tests": [{"call": "checksum(\"A\")", "want": 65}, {"call": "checksum(\"₹\")", "want": 29}, {"call": "verify(\"order.paid\", checksum(\"order.paid\"))", "want": true}, {"call": "verify(\"order.refunded\", checksum(\"order.paid\"))", "want": false}], "solution": "function checksum(text) {\n  return new TextEncoder().encode(text).reduce((s, b) => (s + b) % 256, 0);\n}\nfunction verify(text, sum) {\n  return checksum(text) === sum;\n}", "hint": "Encode to bytes, then reduce with addition modulo 256.", "why": "Real systems use SHA-256 or HMAC, but the idea is the same: compute over the exact bytes, then compare."}, {"id": "flags", "lv": "x", "title": "Parse command line flags", "task": "<p>Write <code>parseFlags(argv)<\/code> for arguments such as <code>[\"--json\", \"--max-errors\", \"3\", \"app.log\", \"--env=staging\"]<\/code>. Return <code>{ flags, files }<\/code>. <code>--name=value<\/code> and <code>--name value<\/code> set a string, a <code>--name<\/code> followed by another flag or by nothing is <code>true<\/code>, and everything else is a file.<\/p>", "starter": "function parseFlags(argv) {\n  \n}", "tests": [{"call": "parseFlags([\"--json\", \"--max-errors\", \"3\", \"app.log\", \"--env=staging\"])", "want": {"flags": {"json": true, "max-errors": "3", "env": "staging"}, "files": ["app.log"]}}, {"call": "parseFlags([\"a.log\", \"b.log\", \"--verbose\"])", "want": {"flags": {"verbose": true}, "files": ["a.log", "b.log"]}}, {"call": "parseFlags([])", "want": {"flags": {}, "files": []}}], "solution": "function parseFlags(argv) {\n  const flags = {}, files = [];\n  for (let i = 0; i < argv.length; i++) {\n    const a = argv[i];\n    if (!a.startsWith(\"--\")) { files.push(a); continue; }\n    const [name, value] = a.slice(2).split(\"=\");\n    if (value !== undefined) flags[name] = value;\n    else if (i + 1 < argv.length && !argv[i + 1].startsWith(\"--\") && !/\\.\\w+$/.test(argv[i + 1])) flags[name] = argv[++i];\n    else flags[name] = true;\n  }\n  return { flags, files };\n}", "hint": "Loop with an index so you can take the next argument as a value. Here a word that looks like a file name, such as app.log, is a file, not a value.", "why": "In real tools, declare which flags take values, as util.parseArgs does, instead of guessing."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Node.js in depth", subject: "javascript" });
+</script>
+</body>
+</html>
