@@ -42,7 +42,7 @@
 
   /* ----- assemble ----- */
   $('#comic').innerHTML = XTRA.infoHtml(PAGE.info);
-  $('.iv').innerHTML = PAGE.interview.map(([l, q, a]) => `<details class="lv-${LV[l][2]}"><summary>${esc(q)}<span class="lvx">${LV[l][0]}</span></summary><div>${esc(a)}</div></details>`).join('');
+  IQ.mount($('.iq-host'), INTERVIEW.questions, { key: 'api-manual', title: INTERVIEW.title, sub: 'Real interview questions from easy to expert. Write your answer first, open the hint if you are stuck, then compare with the model answer and rate yourself.', lang: 'js', must: INTERVIEW.must });
   $('#practice').innerHTML = practiceHtml(PAGE.practice);
   $('#quiz').innerHTML = LEARN.quizHtml(PAGE.quiz, { lang: 'js', sub: 'Six questions per level from easy to expert. Every answer comes with the reason behind it.' });
   $('#numbers').innerHTML = LEARN.calcHtml(PAGE.calc, { lang: 'js', sub: 'Pages, limits, SLAs, percentiles and retries. Type your answer and press Check, or open the working.' });
