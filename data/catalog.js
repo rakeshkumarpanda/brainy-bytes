@@ -1870,6 +1870,26 @@ function jsModules() {
         { id: "shard", title: "Split tests into shards", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "js-api-testing", title: "Automated API Testing with JavaScript", emoji: "🔌", page: "content/javascript/js-api-testing.html",
+        summary: "What an API test checks, a CRUD flow against a running server, JSON Schema validation with Ajv that catches breaking changes, data driven negative and boundary tests, login with tokens and checking side effects and conflicts, Playwright request with webServer, Cypress, Newman and k6 in brief, percentiles for response times, and an order flow written as named subtests.",
+        keywords: ["API testing", "REST", "CRUD", "fetch", "supertest", "Playwright request", "Ajv", "JSON Schema", "contract test", "negative testing", "boundary", "auth", "401", "409", "p95", "response time", "cleanup", "Newman", "k6"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What an API test checks", emoji: "🗺️", group: "QA essential", keywords: ["API testing", "what to test", "status code", "headers", "body", "schema", "side effects", "negative testing", "security", "response time", "test pyramid"] },
+        { id: "live", title: "Testing a running server: a CRUD flow", emoji: "🔁", group: "QA essential", keywords: ["CRUD", "running server", "fetch", "port 0", "before", "after", "POST", "GET", "PATCH", "DELETE", "Location header", "node:test"] },
+        { id: "schema", title: "Checking the shape with JSON Schema", emoji: "📐", group: "QA essential", keywords: ["JSON Schema", "Ajv", "schema validation", "contract test", "additionalProperties", "required", "OpenAPI", "breaking change", "response shape"] },
+        { id: "negative", title: "Negative, boundary and data driven tests", emoji: "🚫", group: "QA essential", keywords: ["negative testing", "boundary values", "data driven", "it.each", "test.each", "validation", "400", "malformed JSON", "supertest", "equivalence classes"] },
+        { id: "auth", title: "Authentication, state and conflicts", emoji: "🔐", group: "QA essential", keywords: ["authentication", "Bearer token", "beforeAll", "supertest auth", "401", "409 Conflict", "stock", "state change", "side effect", "Jest ESM"] },
+        { id: "playwright", title: "API testing with Playwright", emoji: "🎭", group: "QA essential", keywords: ["Playwright", "request fixture", "APIRequestContext", "webServer", "baseURL", "toBeOK", "cy.request", "Newman", "Postman", "k6"] },
+        { id: "performance", title: "Response times", emoji: "⏱️", group: "QA essential", keywords: ["response time", "latency", "percentile", "p95", "p99", "median", "throughput", "error rate", "load test", "performance"] },
+        { id: "scenario", title: "Real world scenario: buying the last two mugs", emoji: "🎬", group: "QA essential", keywords: ["end to end API flow", "subtests", "t.test", "stock", "sold out", "409", "test data cleanup", "API client"] },
+        { id: "check", title: "Check a response", emoji: "🏋️", group: "Easy practice" },
+        { id: "schema-mini", title: "A tiny schema validator", emoji: "🏋️", group: "Medium practice" },
+        { id: "pct", title: "Percentiles", emoji: "🏋️", group: "Hard practice" },
+        { id: "diff", title: "What changed in the response?", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];

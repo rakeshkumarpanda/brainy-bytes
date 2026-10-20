@@ -40,7 +40,7 @@ NODE = os.environ.get('JS_BUILD_NODE') or shutil.which('node')
 CHROME = os.environ.get('CHROME_BIN', '/opt/pw-browsers/chromium-1194/chrome-linux/chrome')
 CHROMEDRIVER = os.environ.get('CHROMEDRIVER', '')
 SUBJECT = 'javascript'
-RUN_STAMP = 3  # bump to rerun every example after changing how examples are run
+RUN_STAMP = 4  # bump to rerun every example after changing how examples are run
 LANGS = ['en', 'hi', 'kn', 'or', 'ar', 'de']
 
 
@@ -149,7 +149,7 @@ def env():
     # A plain terminal environment: some runners shorten their output when they detect an AI agent or a CI service.
     e = {k: v for k, v in os.environ.items() if not re.match(r'(CLAUDE|AI_AGENT|CCR_|CURSOR|CODEX|GITHUB_ACTIONS|GITLAB|BUILDKITE|TF_BUILD)', k)}
     e['PATH'] = os.pathsep.join([os.path.join(BOX, 'node_modules', '.bin'), os.path.dirname(NODE), e.get('PATH', '')])
-    e.update({'CI': '1', 'NO_COLOR': '1', 'FORCE_COLOR': '0', 'TZ': 'UTC', 'LANG': 'en_US.UTF-8',
+    e.update({'CI': '1', 'NO_COLOR': '1', 'TZ': 'UTC', 'LANG': 'en_US.UTF-8',
               'CHROME_BIN': CHROME, 'CHROMEDRIVER': CHROMEDRIVER})
     e.setdefault('PLAYWRIGHT_BROWSERS_PATH', '/opt/pw-browsers')
     e.pop('NODE_OPTIONS', None)
@@ -161,6 +161,9 @@ def clean(text, d):
     real = os.path.realpath(d)
     for p in {d, real}:
         text = text.replace('file://' + p + '/', '').replace(p + '/', '').replace(p, 'project')
+    # Runtime deprecation notices come from the tools, not from the example, so they are left out.
+    text = re.sub(r'\(node:\d+\) \[DEP\d+\] DeprecationWarning.*\n(\(Use `node --trace-deprecation.*\n)?', '', text)
+    text = re.sub(r"\(node:\d+\) Warning: The 'NO_COLOR' env is ignored.*\n(\(Use `node --trace-warnings.*\n)?", '', text)
     lines = [ln for ln in text.split('\n') if not re.match(r'\s+at .*\bnode:[a-z_]', ln) and not re.match(r'\s+at .*node_modules', ln)]
     return '\n'.join(lines).rstrip()
 
