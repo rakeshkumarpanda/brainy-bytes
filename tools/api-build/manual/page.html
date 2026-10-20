@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual API Testing: Basics to Expert · Manual API Testing</title>
+<meta name="description" content="A complete manual API testing course from the first HTTP request to contract testing, security testing and testing AI APIs, with animations, a live mock API playground with planted bugs, practice tasks, a quiz and number practice.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%8C%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/*@SHARED_CSS@*/
+/*@PAGE_CSS@*/
+</style>
+</head>
+<body>
+<header class="topbar"><span class="tb-brand">🔌 Brainy Bytes · Manual API Testing</span><span class="tb-sp"></span><button type="button" class="tb-btn" id="themeBtn">🌙 Dark</button></header>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=api-manual-testing" target="_top">🔌 Manual API Testing</a><span>›</span><span>📨 Manual API testing course</span><span>›</span><span>Basics to expert</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔌</span><div><h1>Manual API Testing: Basics to Expert</h1><p class="lead">Every app you use talks to a server through APIs. This course teaches you to test those APIs by hand, the way a tester explores them before anyone writes automation. You start with a single HTTP request and finish with contract testing, security testing and the newest topics such as testing AI APIs. Every part has an animation or a tool you can use, and the live playground lets you send real requests to a mock shop API with bugs hidden inside it.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 90 min read</span><span class="chip">📚 27 parts in 4 levels</span><span class="chip">🎬 14 animations and tools</span><span class="chip">🧪 Live API playground with 7 hidden bugs</span><span class="chip">🏋️ 8 practice tasks</span><span class="chip">🎯 24 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+  </header>
+
+  <nav class="lvl-nav" aria-label="Parts of this page">
+    <div class="lvl-row lv-easy"><span class="lvl-tag">🌱 Level 1 · Foundations</span><a href="#what-is-api">🔌 What an API is</a><a href="#http-basics">📨 HTTP</a><a href="#methods">🛠️ Methods</a><a href="#status-codes">🚦 Status codes</a><a href="#headers">🏷️ Headers</a><a href="#data-formats">🧾 JSON and XML</a><a href="#api-styles">🧭 API styles</a></div>
+    <div class="lvl-row lv-med"><span class="lvl-tag">🌿 Level 2 · Core skills</span><a href="#tools">🧰 Tools</a><a href="#api-docs">📘 OpenAPI docs</a><a href="#auth">🔐 Auth</a><a href="#test-design">✍️ Test design</a><a href="#validations">✅ Validations</a><a href="#chaining">🔗 Chaining</a></div>
+    <div class="lvl-row lv-hard"><span class="lvl-tag">🔥 Level 3 · Advanced</span><a href="#pagination">📄 Pagination</a><a href="#rate-limits">⏱️ Rate limits and caching</a><a href="#errors">🧯 Errors</a><a href="#security">🛡️ Security</a><a href="#performance">📈 Performance</a><a href="#async">📬 Async APIs</a><a href="#scenarios">🌍 Scenarios</a></div>
+    <div class="lvl-row lv-exp"><span class="lvl-tag">🧠 Level 4 · Expert and latest</span><a href="#contracts">🤝 Contracts</a><a href="#mocking">🎭 Mocking</a><a href="#graphql-grpc">📡 GraphQL and gRPC</a><a href="#cicd">🔭 CI and observability</a><a href="#ai-apis">🤖 AI APIs and MCP</a><a href="#latest">🆕 Latest</a><a href="#strategy">🗺️ Strategy</a></div>
+    <div class="lvl-row lv-hands"><span class="lvl-tag">🎮 Hands on</span><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#lab">🧪 API playground</a><a class="spec" href="#cheatsheet">📋 Cheat sheet</a><a class="spec" href="#interview">💼 Interview</a><a class="spec" href="#practice">🏋️ Practice</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></div>
+  </nav>
+
+  <section class="card reveal" id="comic"></section>
+
+<!-- ===================== LEVEL 1 ===================== -->
+<div class="lvl-banner lv-easy" id="level-1"><span>🌱</span><div><b>Level 1 · Foundations</b><small>What an API is, how HTTP works, and the vocabulary every API tester uses.</small></div></div>
+
+<section class="card reveal jsec" id="what-is-api" data-say="what-is-api"><div class="sec-num">Part 1</div><h2><span class="sec-em">🔌</span><span>What an API is and why we test it</span></h2>
+<p>An <b>API</b> (Application Programming Interface) is a set of rules that lets one program ask another program for data or for an action. When a food delivery app shows restaurants near you, the app sends a request such as <code>GET /restaurants?lat=12.97&amp;lng=77.59</code> to a server, and the server replies with a list in JSON. The screen you see is only the presentation. The API is where the business logic, the data and the security live.</p>
+<div class="grid2">
+  <div class="box"><h4>The parts of an API call</h4><ul><li><b>Client</b>: the app, browser, another service, or you with Postman.</li><li><b>Server</b>: the program that receives the request and does the work.</li><li><b>Endpoint</b>: an address such as <code>https://api.shop.com/v1/orders</code>.</li><li><b>Contract</b>: the agreed shape of requests and responses, usually written as an OpenAPI document.</li></ul></div>
+  <div class="box"><h4>What API testing means</h4><p>You send requests directly to endpoints, without the user interface, and check the status code, headers, body, data in the database, speed and security. Manual API testing is the exploratory, thinking part of this work. You read the contract, design cases, send requests by hand with a tool, and report what does not match.</p></div>
+</div>
+<h3>Why test at the API layer</h3>
+<div class="tw"><table class="jt"><tr><th>Reason</th><th>What it means in practice</th></tr>
+<tr><td>Earlier feedback</td><td>APIs are often ready before the screens. You can test the logic weeks before the UI exists.</td></tr>
+<tr><td>Faster and more stable</td><td>A request takes milliseconds. No browser, no waiting for pages, no flaky locators.</td></tr>
+<tr><td>Deeper coverage</td><td>The UI may block a negative quantity, but a direct API call can still send one. Attackers do not use your UI.</td></tr>
+<tr><td>Many clients share one API</td><td>The web app, the Android app, the iOS app and partner systems all call the same API. One bug reaches every client.</td></tr>
+<tr><td>Clear root cause</td><td>When a UI test fails you ask whether the page or the server broke. An API test points straight at the server.</td></tr></table></div>
+<div class="viz-host"><div class="pyr" data-w="pyramid"></div></div>
+<div class="tip">In the test pyramid, API tests sit in the middle layer, also called the service or integration layer. Teams usually want many unit tests, a solid set of API tests and only a few end to end UI tests, because the cost and the run time grow as you go up.</div>
+<h3>Types of API testing</h3>
+<div class="tw"><table class="jt"><tr><th>Type</th><th>What it confirms</th></tr>
+<tr><td>Functional</td><td>Each endpoint does what the contract says for valid and invalid input</td></tr>
+<tr><td>Integration</td><td>Several APIs and the database work together in a full flow</td></tr>
+<tr><td>Contract</td><td>The provider and its consumers still agree on the request and response shape</td></tr>
+<tr><td>Security</td><td>Nobody can read or change data they should not</td></tr>
+<tr><td>Performance</td><td>Response times stay within targets, also under load</td></tr>
+<tr><td>Reliability</td><td>Timeouts, retries, duplicates and partial failures are handled safely</td></tr>
+<tr><td>Usability of the API</td><td>Names, errors and documentation are clear for the developers who use it</td></tr></table></div>
+</section>
+
+<section class="card reveal jsec" id="http-basics" data-say="http-basics"><div class="sec-num">Part 2</div><h2><span class="sec-em">📨</span><span>How HTTP carries a request</span></h2>
+<p>Most APIs you will test use <b>HTTP</b> (Hypertext Transfer Protocol), and almost always <b>HTTPS</b>, which is HTTP inside an encrypted TLS connection. HTTP is a request and response protocol. The client sends one request, the server sends back one response. HTTP is <b>stateless</b>, so every request must carry everything the server needs, such as the token that says who you are.</p>
+<h3>Anatomy of a URL</h3>
+<p>Type any URL below and watch it split into its parts. Path parameters identify a resource. Query parameters filter, sort or page through it.</p>
+<div class="w" data-w="url"></div>
+<h3>Anatomy of a request and a response</h3>
+<div class="grid2">
+<div><pre class="http"><span class="h-m">POST</span> /v1/orders HTTP/1.1          <span class="h-c">← request line</span>
+Host: api.shop.com                <span class="h-c">← headers</span>
+Authorization: Bearer eyJhbGci...
+Content-Type: application/json
+Accept: application/json
+                                  <span class="h-c">← blank line</span>
+{ "productId": 7, "quantity": 2 } <span class="h-c">← body</span></pre></div>
+<div><pre class="http">HTTP/1.1 <span class="h-ok">201 Created</span>          <span class="h-c">← status line</span>
+Content-Type: application/json
+Location: /v1/orders/1042
+X-Request-Id: 7f3c9a10
+
+{
+  "id": 1042,
+  "status": "PLACED",
+  "total": 1998
+}</pre></div>
+</div>
+<h3>The journey of one request</h3>
+<p>Press Play to follow a request from the app to the database and back. Each stop is a place where things can go wrong and where testers look for evidence.</p>
+<div class="seq" data-seq="journey"></div>
+<h3>HTTP versions you will meet</h3>
+<div class="tw"><table class="jt"><tr><th>Version</th><th>What changed</th><th>Why a tester cares</th></tr>
+<tr><td>HTTP/1.1</td><td>Text based, one request at a time per connection, keep alive</td><td>Still the format you read in tools and logs</td></tr>
+<tr><td>HTTP/2</td><td>Binary frames, many requests at once over one connection, header compression</td><td>Header names are always lowercase on the wire. gRPC runs on it</td></tr>
+<tr><td>HTTP/3</td><td>Runs on QUIC over UDP, faster connection setup, better on weak mobile networks</td><td>Mostly invisible to API tests, but matters for performance on mobile</td></tr></table></div>
+<div class="rule">The meaning of methods, status codes and headers is the same in all three versions. It is defined in one document, RFC 9110 (HTTP Semantics), published in 2022.</div>
+</section>
+
+<section class="card reveal jsec" id="methods" data-say="methods"><div class="sec-num">Part 3</div><h2><span class="sec-em">🛠️</span><span>HTTP methods, safety and idempotency</span></h2>
+<p>The method tells the server what you want to do with the resource. Two properties matter a lot for testing. A <b>safe</b> method only reads and never changes data. An <b>idempotent</b> method gives the same server state whether you send it once or ten times. Idempotency matters because networks fail and clients retry.</p>
+<div class="tw"><table class="jt"><tr><th>Method</th><th>Purpose</th><th>Body</th><th>Safe</th><th>Idempotent</th><th>Typical success</th></tr>
+<tr><td><code>GET</code></td><td>Read a resource or a list</td><td>No</td><td class="yes">Yes</td><td class="yes">Yes</td><td>200 OK</td></tr>
+<tr><td><code>POST</code></td><td>Create a resource or trigger an action</td><td>Yes</td><td class="no">No</td><td class="no">No</td><td>201 Created, 200 or 202</td></tr>
+<tr><td><code>PUT</code></td><td>Replace the whole resource</td><td>Yes</td><td class="no">No</td><td class="yes">Yes</td><td>200 or 204</td></tr>
+<tr><td><code>PATCH</code></td><td>Change some fields</td><td>Yes</td><td class="no">No</td><td class="no">Not guaranteed</td><td>200 or 204</td></tr>
+<tr><td><code>DELETE</code></td><td>Remove a resource</td><td>Rarely</td><td class="no">No</td><td class="yes">Yes</td><td>204 or 200</td></tr>
+<tr><td><code>HEAD</code></td><td>Same as GET but headers only</td><td>No</td><td class="yes">Yes</td><td class="yes">Yes</td><td>200</td></tr>
+<tr><td><code>OPTIONS</code></td><td>Ask which methods are allowed, used by CORS preflight</td><td>No</td><td class="yes">Yes</td><td class="yes">Yes</td><td>204 or 200</td></tr></table></div>
+<h3>Try it: send the same request three times</h3>
+<p>Pick a method and press Send repeatedly. Watch the server state. POST creates a new order each time. PUT and DELETE leave the same final state no matter how many times you send them.</p>
+<div class="w" data-w="idem"></div>
+<div class="exam">Idempotent does not mean the same response. The first <code>DELETE /orders/5</code> returns 204 and the second returns 404. The <b>server state</b> is the same after both (order 5 is gone), so DELETE is still idempotent.</div>
+<div class="warn">A GET that changes data, such as <code>GET /orders/5/cancel</code>, is a design bug. Browsers, crawlers and caches may call GET links on their own and cancel real orders. Report it.</div>
+</section>
+
+<section class="card reveal jsec" id="status-codes" data-say="status-codes"><div class="sec-num">Part 4</div><h2><span class="sec-em">🚦</span><span>Status codes</span></h2>
+<p>The three digit status code is the first thing you check. The first digit gives the family.</p>
+<div class="fam">
+  <div class="fam-c f1"><b>1xx</b><span>Information</span><small>100 Continue, 101 Switching Protocols (WebSocket upgrade)</small></div>
+  <div class="fam-c f2"><b>2xx</b><span>Success</span><small>The request worked</small></div>
+  <div class="fam-c f3"><b>3xx</b><span>Redirection</span><small>Look elsewhere or use your cached copy</small></div>
+  <div class="fam-c f4"><b>4xx</b><span>Client error</span><small>The request is wrong. Fix the request</small></div>
+  <div class="fam-c f5"><b>5xx</b><span>Server error</span><small>The server failed. Always a bug or an outage</small></div>
+</div>
+<div class="tw"><table class="jt"><tr><th>Code</th><th>Name</th><th>When you should see it</th></tr>
+<tr><td>200</td><td>OK</td><td>A successful GET, or an update that returns the resource</td></tr>
+<tr><td>201</td><td>Created</td><td>A POST created something. A <code>Location</code> header should point to it</td></tr>
+<tr><td>202</td><td>Accepted</td><td>Work was queued and will finish later, for example a report export</td></tr>
+<tr><td>204</td><td>No Content</td><td>Success with an empty body, common for DELETE</td></tr>
+<tr><td>301 / 308</td><td>Moved Permanently / Permanent Redirect</td><td>The resource has a new URL. 308 keeps the method and body</td></tr>
+<tr><td>304</td><td>Not Modified</td><td>Your cached copy is still valid (after <code>If-None-Match</code>)</td></tr>
+<tr><td>400</td><td>Bad Request</td><td>Malformed JSON, wrong type, missing required field</td></tr>
+<tr><td>401</td><td>Unauthorized</td><td>No credentials, or invalid or expired credentials. It really means unauthenticated</td></tr>
+<tr><td>403</td><td>Forbidden</td><td>You are known, but not allowed to do this</td></tr>
+<tr><td>404</td><td>Not Found</td><td>The resource does not exist, or the API hides that it exists</td></tr>
+<tr><td>405</td><td>Method Not Allowed</td><td>For example DELETE on a read only endpoint. An <code>Allow</code> header should list valid methods</td></tr>
+<tr><td>409</td><td>Conflict</td><td>The request clashes with current state, such as a duplicate email</td></tr>
+<tr><td>412</td><td>Precondition Failed</td><td>An <code>If-Match</code> check failed because someone else changed the resource</td></tr>
+<tr><td>415</td><td>Unsupported Media Type</td><td>You sent XML to an endpoint that only accepts JSON</td></tr>
+<tr><td>422</td><td>Unprocessable Content</td><td>Valid JSON, but the values break a business rule</td></tr>
+<tr><td>429</td><td>Too Many Requests</td><td>You hit a rate limit. Look for <code>Retry-After</code></td></tr>
+<tr><td>500</td><td>Internal Server Error</td><td>Unhandled exception. Never acceptable as a response to bad input</td></tr>
+<tr><td>502 / 503 / 504</td><td>Bad Gateway / Service Unavailable / Gateway Timeout</td><td>A proxy or gateway could not get a good answer from the service behind it</td></tr></table></div>
+<h3>Game: pick the right status</h3>
+<div class="w" data-w="status"></div>
+<div class="rule">A 5xx caused by your input is always a bug. Bad input should give a 4xx with a helpful message. When you see a 500 with a stack trace in the body, report two bugs: the missing validation and the information leak.</div>
+</section>
+
+<section class="card reveal jsec" id="headers" data-say="headers"><div class="sec-num">Part 5</div><h2><span class="sec-em">🏷️</span><span>Headers, cookies and content negotiation</span></h2>
+<p>Headers carry metadata about the request or the response. Header names are case insensitive, so <code>content-type</code> and <code>Content-Type</code> are the same header.</p>
+<div class="tw"><table class="jt"><tr><th>Header</th><th>Direction</th><th>What to test</th></tr>
+<tr><td><code>Content-Type</code></td><td>Both</td><td>The format of the body. Send a wrong one and expect 415 or 400, not 500</td></tr>
+<tr><td><code>Accept</code></td><td>Request</td><td>The format you want back. Ask for XML from a JSON only API and expect 406</td></tr>
+<tr><td><code>Authorization</code></td><td>Request</td><td>Credentials such as <code>Bearer &lt;token&gt;</code>. Missing, malformed, expired and wrong user</td></tr>
+<tr><td><code>Cache-Control</code>, <code>ETag</code></td><td>Response</td><td>Private data must not be cached by shared caches. ETag changes when the resource changes</td></tr>
+<tr><td><code>Location</code></td><td>Response</td><td>Present on 201 and redirects, and the URL works</td></tr>
+<tr><td><code>X-Request-Id</code> or <code>traceparent</code></td><td>Both</td><td>A correlation id you can give developers to find the exact log line</td></tr>
+<tr><td><code>Set-Cookie</code></td><td>Response</td><td>Session cookies should have <code>HttpOnly</code>, <code>Secure</code> and a <code>SameSite</code> value</td></tr>
+<tr><td><code>Access-Control-Allow-Origin</code></td><td>Response</td><td>CORS. A wildcard together with credentials is a security bug</td></tr>
+<tr><td><code>Strict-Transport-Security</code></td><td>Response</td><td>Tells browsers to use HTTPS only</td></tr>
+<tr><td><code>Retry-After</code></td><td>Response</td><td>With 429 or 503, how long to wait before retrying</td></tr></table></div>
+<h3>Content negotiation</h3>
+<p>The client says what it can read with <code>Accept</code>, and what it is sending with <code>Content-Type</code>. The server picks a format and says what it chose in the response <code>Content-Type</code>. A good API test suite includes at least one case per supported format and one unsupported format.</p>
+<div class="grid2"><div class="box"><h4>Request</h4><pre class="http">GET /v1/products/7
+Accept: application/xml</pre></div><div class="box"><h4>Possible responses</h4><pre class="http"><span class="h-ok">200 OK</span>  Content-Type: application/xml
+<span class="h-bad">406 Not Acceptable</span>  if XML is not offered</pre></div></div>
+<div class="tip">In browser DevTools, open the Network tab, click any request and look at the Headers panel. Right click the request and choose Copy as cURL to replay it in a terminal or import it into Postman. This is the fastest way to start testing an API behind a web page.</div>
+</section>
+
+<section class="card reveal jsec" id="data-formats" data-say="data-formats"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧾</span><span>JSON, XML and other payloads</span></h2>
+<p><b>JSON</b> (JavaScript Object Notation) is the default format for modern APIs. It has six value types: string, number, boolean, null, object and array. Keys must be in double quotes, and trailing commas are not allowed.</p>
+<div class="grid2">
+<div><pre class="http">{
+  "id": 1042,
+  "customer": { "name": "Asha", "vip": true },
+  "items": [
+    { "sku": "PEN-01", "qty": 2, "price": 15.5 }
+  ],
+  "coupon": null
+}</pre></div>
+<div><pre class="http">&lt;order id="1042"&gt;
+  &lt;customer vip="true"&gt;
+    &lt;name&gt;Asha&lt;/name&gt;
+  &lt;/customer&gt;
+  &lt;items&gt;
+    &lt;item sku="PEN-01" qty="2" price="15.5"/&gt;
+  &lt;/items&gt;
+&lt;/order&gt;</pre></div>
+</div>
+<p><b>XML</b> is still common in SOAP services, banking and older enterprise systems. Other bodies you will meet are <code>application/x-www-form-urlencoded</code> (classic HTML forms and OAuth token requests), <code>multipart/form-data</code> (file uploads), plain text, and binary files such as PDFs.</p>
+<h3>Try it: JSON explorer</h3>
+<p>Edit the JSON, then type a path such as <code>$.items[0].price</code> or <code>$.items[*].sku</code>. The explorer validates the JSON and shows the value and its type. Break the JSON on purpose, for example add a trailing comma, to see the error a server parser would raise.</p>
+<div class="w" data-w="json"></div>
+<h3>Data checks testers forget</h3>
+<ul>
+<li><b>Types</b>: <code>"42"</code> (string) is not <code>42</code> (number). A client in a strictly typed language may crash on the wrong one.</li>
+<li><b>Null versus missing</b>: <code>"coupon": null</code> and no <code>coupon</code> key at all can mean different things. The contract should say which.</li>
+<li><b>Numbers</b>: money as a float such as <code>0.1 + 0.2</code> gives <code>0.30000000000000004</code>. Prefer integers in the smallest unit (paise or cents) or decimal strings. Very large ids above 2<sup>53</sup> lose precision in JavaScript.</li>
+<li><b>Dates</b>: expect ISO 8601 with a time zone, such as <code>2026-10-20T17:06:25Z</code>.</li>
+<li><b>Unicode</b>: send names like <code>Zoë</code>, <code>राकेश</code> and emoji, and check they come back unchanged.</li>
+<li><b>Empty values</b>: empty string, empty array, empty object, only spaces.</li>
+</ul>
+</section>
+
+<section class="card reveal jsec" id="api-styles" data-say="api-styles"><div class="sec-num">Part 7</div><h2><span class="sec-em">🧭</span><span>REST, SOAP, GraphQL, gRPC, WebSocket and webhooks</span></h2>
+<div class="tw"><table class="jt"><tr><th>Style</th><th>How it works</th><th>Typical tool</th><th>Testing focus</th></tr>
+<tr><td><b>REST</b></td><td>Resources at URLs, HTTP methods as verbs, usually JSON</td><td>Postman, curl, Bruno</td><td>Methods, status codes, resource naming, pagination</td></tr>
+<tr><td><b>SOAP</b></td><td>XML envelopes sent with POST, described by a WSDL file</td><td>SoapUI, Postman</td><td>XML schema (XSD) validation, SOAP faults, WS-Security</td></tr>
+<tr><td><b>GraphQL</b></td><td>One endpoint. The client sends a query that names exactly the fields it wants</td><td>Postman, Insomnia, GraphiQL</td><td>Errors inside a 200 response, query depth, field level authorization</td></tr>
+<tr><td><b>gRPC</b></td><td>Binary Protocol Buffers over HTTP/2, contract in a <code>.proto</code> file, supports streaming</td><td>grpcurl, Postman, Kreya</td><td>gRPC status codes, deadlines, streaming behaviour</td></tr>
+<tr><td><b>WebSocket</b></td><td>A long lived two way connection for chat, live prices, games</td><td>Postman, wscat</td><td>Connect, message order, reconnects, auth on connect</td></tr>
+<tr><td><b>Server-Sent Events</b></td><td>The server streams text events over one HTTP response</td><td>curl, Postman</td><td>Event format, streaming of AI responses, reconnect with Last-Event-ID</td></tr>
+<tr><td><b>Webhooks</b></td><td>The server calls <i>your</i> URL when an event happens</td><td>webhook.site, ngrok, mock servers</td><td>Signature checks, retries, duplicate delivery</td></tr></table></div>
+<h3>The REST constraints in plain words</h3>
+<ol><li><b>Client and server</b> are separate and can change independently.</li><li><b>Stateless</b>: every request carries its own context.</li><li><b>Cacheable</b>: responses say whether they may be cached.</li><li><b>Uniform interface</b>: resources have URLs and are changed through their representations.</li><li><b>Layered system</b>: gateways, proxies and caches can sit in between.</li><li><b>Code on demand</b> (optional): the server may send code to run.</li></ol>
+<div class="grid2"><div class="box"><h4>Good resource naming</h4><pre class="http">GET    /v1/customers/42/orders
+POST   /v1/orders
+GET    /v1/orders?status=PAID&amp;page=2
+DELETE /v1/orders/1042</pre></div><div class="box"><h4>Naming smells to report</h4><pre class="http">GET  /v1/getAllOrders      <span class="h-c">verb in URL</span>
+POST /v1/orders/delete/5   <span class="h-c">action hidden in POST</span>
+GET  /v1/Order_List        <span class="h-c">mixed case</span>
+GET  /v1/orders/5/cancel   <span class="h-c">GET with side effect</span></pre></div></div>
+</section>
+
+<!-- ===================== LEVEL 2 ===================== -->
+<div class="lvl-banner lv-med" id="level-2"><span>🌿</span><div><b>Level 2 · Core skills</b><small>The daily work of an API tester: tools, contracts, authentication, test design and validation.</small></div></div>
+
+<section class="card reveal jsec" id="tools" data-say="tools"><div class="sec-num">Part 8</div><h2><span class="sec-em">🧰</span><span>Tools: Postman, curl, Bruno and friends</span></h2>
+<div class="tw"><table class="jt"><tr><th>Tool</th><th>Best for</th><th>Notes</th></tr>
+<tr><td><b>Postman</b></td><td>Exploring, collections, environments, test scripts, collection runner</td><td>The most used tool in teams. Collections run in CI with the Postman CLI or Newman</td></tr>
+<tr><td><b>curl</b></td><td>Quick checks from a terminal, sharing exact requests in bug reports</td><td>Installed on almost every machine. Every tool can import a curl command</td></tr>
+<tr><td><b>Bruno</b></td><td>Offline, git friendly collections stored as plain text files</td><td>Popular since 2024 for teams that want collections reviewed in pull requests</td></tr>
+<tr><td><b>Insomnia, Hoppscotch</b></td><td>Lightweight REST, GraphQL and WebSocket clients</td><td>Hoppscotch runs in the browser</td></tr>
+<tr><td><b>Swagger UI, Redoc</b></td><td>Trying endpoints straight from the OpenAPI documentation</td><td>Good for a first look at a new API</td></tr>
+<tr><td><b>SoapUI</b></td><td>SOAP and WSDL based services</td><td>Also does REST and simple load tests</td></tr>
+<tr><td><b>Browser DevTools</b></td><td>Seeing the real calls a web page makes</td><td>Copy as cURL, throttle the network, block a request</td></tr>
+<tr><td><b>Charles, Fiddler, mitmproxy</b></td><td>Intercepting mobile app traffic, editing requests in flight</td><td>Needed to test what a mobile app really sends</td></tr></table></div>
+<h3>curl in five lines</h3>
+<pre class="cmdline">curl https://api.shop.test/v1/products/7
+curl -i https://api.shop.test/v1/products/7                 # -i shows status and headers
+curl -X POST https://api.shop.test/v1/orders \
+     -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -d '{"productId":7,"quantity":2}'
+curl -v ...        # -v prints the TLS handshake and every header sent and received
+curl -w "%{http_code} %{time_total}s\n" -o /dev/null -s https://api.shop.test/v1/products</pre>
+<h3>Postman building blocks</h3>
+<div class="grid2">
+<div class="box"><h4>Workspaces and collections</h4><p>A collection is a folder of saved requests, often one folder per resource. Share it so the whole team tests the same requests.</p></div>
+<div class="box"><h4>Environments and variables</h4><p><code>{{baseUrl}}</code> and <code>{{token}}</code> switch between dev, QA and staging. Scopes from widest to narrowest: global, collection, environment, data, local. The narrowest wins.</p></div>
+<div class="box"><h4>Pre-request scripts</h4><p>JavaScript that runs before the request, for example to create a timestamp, a random email or a signature.</p></div>
+<div class="box"><h4>Post-response scripts (Tests tab)</h4><p>JavaScript that runs after the response with <code>pm.test</code> and <code>pm.expect</code>. This is where manual testing turns into repeatable checks.</p></div>
+</div>
+<pre class="http">pm.test("status is 201", () =&gt; pm.response.to.have.status(201))
+pm.test("returns the new order id", () =&gt; {
+  const body = pm.response.json()
+  pm.expect(body.id).to.be.a("number")
+  pm.collectionVariables.set("orderId", body.id)
+})
+pm.test("answers in under 800 ms", () =&gt; pm.expect(pm.response.responseTime).to.be.below(800))</pre>
+<div class="tip">Never save real passwords or production tokens in a shared collection. Use the environment's secret variable type or a vault, and keep the current value local so it is not synced.</div>
+</section>
+
+<section class="card reveal jsec" id="api-docs" data-say="api-docs"><div class="sec-num">Part 9</div><h2><span class="sec-em">📘</span><span>Reading API docs and OpenAPI</span></h2>
+<p>Your test oracle is the contract. For REST APIs this is usually an <b>OpenAPI</b> document (formerly called Swagger) in YAML or JSON. It lists every path, method, parameter, request body, response, status code and security scheme. Learning to read it is the most valuable skill for a manual API tester, because every line is a test idea.</p>
+<pre class="http">openapi: 3.1.0
+info: { title: ShopLite API, version: 1.4.0 }
+paths:
+  /orders:
+    post:
+      summary: Place an order
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, quantity]
+              properties:
+                productId: { type: integer, minimum: 1 }
+                quantity:  { type: integer, minimum: 1, maximum: 10 }
+                note:      { type: string, maxLength: 200 }
+      responses:
+        "201": { description: Order created }
+        "401": { description: Missing or invalid token }
+        "422": { description: A rule was broken }</pre>
+<h3>Turn the contract into test ideas</h3>
+<div class="tw"><table class="jt"><tr><th>Line in the spec</th><th>Test ideas</th></tr>
+<tr><td><code>security: bearerAuth</code></td><td>No token gives 401. Expired token gives 401. Another user's token cannot see this user's data</td></tr>
+<tr><td><code>required: [productId, quantity]</code></td><td>Omit each one in turn. Send null. Send an empty body. Send <code>{}</code></td></tr>
+<tr><td><code>type: integer</code></td><td>Send <code>"2"</code>, <code>2.5</code>, <code>true</code>, <code>[]</code>, a very large number</td></tr>
+<tr><td><code>minimum: 1, maximum: 10</code></td><td>Boundary values 0, 1, 2, 9, 10, 11 and a negative number</td></tr>
+<tr><td><code>maxLength: 200</code></td><td>199, 200 and 201 characters, plus Unicode and HTML</td></tr>
+<tr><td><code>responses</code></td><td>Can you trigger every documented status. Does the API ever return a status that is not documented</td></tr></table></div>
+<div class="tip">Also test what the spec does not say. Send unknown extra fields and see whether they are ignored, rejected with 400, or saved. If they are saved, you may have found the mass assignment bug covered in the security part.</div>
+<div class="modern">OpenAPI 3.1 (2021) aligned its schemas with JSON Schema. OpenAPI 3.2, released in September 2025, adds support for the QUERY method, streaming responses such as Server-Sent Events, and nested tags. Expect to see 3.0 and 3.1 in most projects today.</div>
+</section>
+
+<section class="card reveal jsec" id="auth" data-say="auth"><div class="sec-num">Part 10</div><h2><span class="sec-em">🔐</span><span>Authentication and authorization</span></h2>
+<p><b>Authentication</b> answers who you are. <b>Authorization</b> answers what you are allowed to do. A missing or bad identity should give 401. A known identity without permission should give 403 (or 404 if the API hides that the resource exists).</p>
+<div class="tw"><table class="jt"><tr><th>Scheme</th><th>How it is sent</th><th>Tester checklist</th></tr>
+<tr><td>Basic auth</td><td><code>Authorization: Basic base64(user:password)</code></td><td>Only over HTTPS. Base64 is encoding, not encryption</td></tr>
+<tr><td>API key</td><td>A header such as <code>x-api-key</code>, sometimes a query parameter</td><td>Keys in URLs leak into logs. Revoked keys must stop working</td></tr>
+<tr><td>Bearer token</td><td><code>Authorization: Bearer &lt;token&gt;</code></td><td>Expiry, revocation on logout, token from another environment</td></tr>
+<tr><td>JWT</td><td>A bearer token with three base64url parts: header, payload, signature</td><td>Change the payload and the signature must fail. <code>alg: none</code> must be rejected</td></tr>
+<tr><td>OAuth 2.0</td><td>An authorization server issues access tokens with scopes</td><td>Scopes enforced, refresh flow, redirect URI exact match</td></tr>
+<tr><td>OpenID Connect</td><td>OAuth 2.0 plus an ID token that says who the user is</td><td>ID token audience and expiry</td></tr>
+<tr><td>Session cookie</td><td><code>Cookie: session=...</code></td><td>HttpOnly, Secure, SameSite, invalid after logout</td></tr>
+<tr><td>mTLS</td><td>Both sides present certificates</td><td>Requests without the client certificate are refused</td></tr></table></div>
+<h3>Try it: decode a JWT</h3>
+<p>A JWT is only signed, not encrypted. Anyone can read the payload, so it must never contain secrets. Paste a token or use the sample. The decoder shows the claims and flags common problems.</p>
+<div class="w" data-w="jwt"></div>
+<h3>OAuth 2.0 authorization code flow with PKCE</h3>
+<p>This is the flow used by web, mobile and single page apps to log a user in with an identity provider. PKCE (Proof Key for Code Exchange) stops a stolen authorization code from being used by another app. Step through it.</p>
+<div class="seq" data-seq="oauth"></div>
+<div class="grid2"><div class="box"><h4>Other OAuth flows</h4><ul><li><b>Client credentials</b>: service to service, no user involved.</li><li><b>Device code</b>: smart TVs and command line tools.</li><li><b>Refresh token</b>: gets a new access token without logging in again.</li><li>The implicit and password flows are deprecated and removed in OAuth 2.1.</li></ul></div>
+<div class="box"><h4>Authorization tests to always run</h4><ul><li>User A reads user B's resource by changing the id in the URL.</li><li>A normal user calls an admin endpoint.</li><li>A token with a <code>read</code> scope tries to write.</li><li>A token still works after logout or password change.</li><li>A token from staging is used on production.</li></ul></div></div>
+</section>
+
+<section class="card reveal jsec" id="test-design" data-say="test-design"><div class="sec-num">Part 11</div><h2><span class="sec-em">✍️</span><span>Designing API test cases</span></h2>
+<p>The test design techniques from manual testing all apply to APIs. The difference is that you control every byte of the request, so you can reach cases the UI never allows.</p>
+<div class="grid2">
+<div class="box"><h4>Positive</h4><p>Valid input, valid token, expected status and body. Include optional fields both present and absent.</p></div>
+<div class="box"><h4>Negative</h4><p>Missing fields, wrong types, invalid formats, unknown fields, wrong method, wrong content type, malformed JSON.</p></div>
+<div class="box"><h4>Boundary value analysis</h4><p>Test at, just below and just above every limit: lengths, numeric ranges, page sizes, dates.</p></div>
+<div class="box"><h4>Equivalence partitioning</h4><p>Group inputs that should behave the same and test one value from each group.</p></div>
+<div class="box"><h4>Decision tables</h4><p>For rules that combine conditions, such as coupon valid and cart above 500 and user is VIP.</p></div>
+<div class="box"><h4>State transitions</h4><p>An order goes PLACED to PAID to SHIPPED to DELIVERED. Try illegal jumps such as cancelling a delivered order.</p></div>
+</div>
+<h3>Try it: boundary and partition builder</h3>
+<p>Set the allowed range of a numeric field and the tool lists the values to test, the partition each belongs to and the status you should expect.</p>
+<div class="w" data-w="bva"></div>
+<h3>A sample API test case</h3>
+<div class="tw"><table class="jt"><tr><th>Field</th><th>Value</th></tr>
+<tr><td>ID and title</td><td>ORD-NEG-07: Quantity above the maximum is rejected</td></tr>
+<tr><td>Preconditions</td><td>Logged in as a customer. Product 7 exists and is in stock</td></tr>
+<tr><td>Request</td><td><code>POST {{baseUrl}}/v1/orders</code> with body <code>{"productId":7,"quantity":11}</code></td></tr>
+<tr><td>Expected status</td><td>422</td></tr>
+<tr><td>Expected body</td><td>Problem details with <code>errors[0].field = "quantity"</code> and a clear message</td></tr>
+<tr><td>Expected side effects</td><td>No order row created. Stock unchanged</td></tr>
+<tr><td>Priority and type</td><td>High, negative, boundary</td></tr></table></div>
+<h3>The field validation matrix</h3>
+<p>For every input field, walk through this list. It finds a large share of real API bugs.</p>
+<div class="tw"><table class="jt"><tr><th>Category</th><th>Values to try</th></tr>
+<tr><td>Presence</td><td>Missing key, <code>null</code>, empty string, only spaces</td></tr>
+<tr><td>Type</td><td>String for number, number for string, boolean, array, object</td></tr>
+<tr><td>Size</td><td>Min length minus one, min, max, max plus one, 10,000 characters</td></tr>
+<tr><td>Format</td><td>Invalid email, date in the wrong format, 30 February, negative zero</td></tr>
+<tr><td>Characters</td><td>Unicode, emoji, right to left text, leading and trailing spaces, line breaks</td></tr>
+<tr><td>Injection</td><td><code>' OR 1=1 --</code>, <code>&lt;script&gt;</code>, <code>{{7*7}}</code>, <code>../../etc/passwd</code></td></tr>
+<tr><td>Duplicates</td><td>The same key twice in one JSON object, the same item twice in an array</td></tr></table></div>
+</section>
+
+<section class="card reveal jsec" id="validations" data-say="validations"><div class="sec-num">Part 12</div><h2><span class="sec-em">✅</span><span>What to check in every response</span></h2>
+<p>A 200 status alone proves very little. A response can be 200 and still wrong. Check these layers every time.</p>
+<div class="layers">
+<div class="layer"><b>1. Status code</b><span>Exactly the documented one. 201 for create, not 200.</span></div>
+<div class="layer"><b>2. Headers</b><span>Content-Type, Location, caching, security headers, correlation id.</span></div>
+<div class="layer"><b>3. Schema</b><span>Every required field present with the right type. No unexpected fields.</span></div>
+<div class="layer"><b>4. Data values</b><span>Values match the request and the database. Totals add up. Dates in the right zone.</span></div>
+<div class="layer"><b>5. Business rules</b><span>Discounts applied, stock reduced, status moved to the right state.</span></div>
+<div class="layer"><b>6. Side effects</b><span>Database row, email or event sent, audit log written, and nothing extra.</span></div>
+<div class="layer"><b>7. Non functional</b><span>Response time, payload size, no sensitive data, no stack traces.</span></div>
+</div>
+<h3>Verifying in the database</h3>
+<p>Many API testers have read access to a test database. After <code>POST /orders</code> returns 201 with id 1042, confirm the data really landed.</p>
+<pre class="http">SELECT id, customer_id, product_id, quantity, total, status
+FROM orders WHERE id = 1042</pre>
+<p>Check that the customer id is the logged in user and not a value from the request body, that the total was calculated by the server and not trusted from the client, and that only one row exists after a retry.</p>
+<h3>Schema validation in Postman</h3>
+<pre class="http">const schema = {
+  type: "object",
+  required: ["id", "status", "total"],
+  properties: {
+    id: { type: "integer" },
+    status: { enum: ["PLACED", "PAID", "SHIPPED"] },
+    total: { type: "integer", minimum: 0 }
+  },
+  additionalProperties: false
+}
+pm.test("matches the order schema", () =&gt; pm.response.to.have.jsonSchema(schema))</pre>
+<div class="warn">Watch for responses that wrap errors inside a 200, such as <code>{"success": false, "error": "Invalid id"}</code>. Clients and monitors that only check the status will treat failures as success. Report it as a design issue.</div>
+</section>
+
+<section class="card reveal jsec" id="chaining" data-say="chaining"><div class="sec-num">Part 13</div><h2><span class="sec-em">🔗</span><span>Variables, chaining and end to end flows</span></h2>
+<p>Real flows need data from earlier responses. You log in, save the token, create an order, save its id, then read, update and delete that same order. This is called <b>request chaining</b>.</p>
+<div class="chain">
+<div class="ch-step"><b>1</b><code>POST /auth/login</code><small>save <code>token</code></small></div>
+<div class="ch-step"><b>2</b><code>POST /orders</code><small>use token, save <code>orderId</code></small></div>
+<div class="ch-step"><b>3</b><code>GET /orders/{{orderId}}</code><small>check the data</small></div>
+<div class="ch-step"><b>4</b><code>PATCH /orders/{{orderId}}</code><small>change the note</small></div>
+<div class="ch-step"><b>5</b><code>DELETE /orders/{{orderId}}</code><small>expect 204</small></div>
+<div class="ch-step"><b>6</b><code>GET /orders/{{orderId}}</code><small>expect 404</small></div>
+</div>
+<pre class="http">// Tests tab of step 1
+const { token } = pm.response.json()
+pm.environment.set("token", token)
+
+// Pre-request script of a create request: unique data on every run
+pm.variables.set("email", `qa+${Date.now()}@example.com`)</pre>
+<h3>Data driven runs</h3>
+<p>The Postman collection runner accepts a CSV or JSON file. Each row becomes one iteration, and columns become variables. This lets one request cover twenty boundary values.</p>
+<pre class="http">quantity,expectedStatus
+0,422
+1,201
+10,201
+11,422
+-1,422</pre>
+<pre class="cmdline">postman collection run shop.json -e qa.json -d quantities.csv
+newman run shop.json -e qa.json -d quantities.csv -r cli,htmlextra</pre>
+<div class="rule">Every test must create its own data or clean up after itself. A test that depends on an order created by yesterday's run will fail the day someone resets the database.</div>
+</section>
+
+<section class="card reveal" id="lab" data-say="lab"><div class="sec-num">Hands on lab</div><h2><span class="sec-em">🧪</span><span>API playground and bug hunt</span></h2>
+<p>This is a working mock of a small shop API running inside your browser. Nothing leaves your machine. Read the docs, send requests, complete the missions, and hunt the <b>seven bugs</b> planted in it. The bug board lights up each time you trigger one. Use what you learned in Levels 1 and 2, and come back after Level 3 for the security bugs.</p>
+<div class="w" data-w="lab"></div>
+</section>
+
+<!-- ===================== LEVEL 3 ===================== -->
+<div class="lvl-banner lv-hard" id="level-3"><span>🔥</span><div><b>Level 3 · Advanced</b><small>The behaviours that break in production: paging, limits, caching, errors, security, speed and async work.</small></div></div>
+
+<section class="card reveal jsec" id="pagination" data-say="pagination"><div class="sec-num">Part 14</div><h2><span class="sec-em">📄</span><span>Pagination, filtering and sorting</span></h2>
+<p>No API returns a million rows at once. Lists come in pages. There are three common styles.</p>
+<div class="tw"><table class="jt"><tr><th>Style</th><th>Request</th><th>Strength</th><th>Weakness</th></tr>
+<tr><td>Offset and limit</td><td><code>?offset=40&amp;limit=20</code> or <code>?page=3&amp;size=20</code></td><td>Jump to any page</td><td>Rows can repeat or be skipped when data changes between calls. Slow on large offsets</td></tr>
+<tr><td>Cursor</td><td><code>?after=eyJpZCI6NDB9&amp;limit=20</code></td><td>Stable and fast on large data</td><td>No jumping to page 7</td></tr>
+<tr><td>Keyset</td><td><code>?createdAfter=2026-10-01T00:00:00Z&amp;limit=20</code></td><td>Fast with an index</td><td>Needs a unique sort key</td></tr></table></div>
+<h3>Pagination test checklist</h3>
+<ul>
+<li>First page, middle page, last page, and one page past the end (expect an empty list, not an error or the last page again).</li>
+<li><code>limit</code> of 0, 1, the maximum, maximum plus one, negative, and not a number. Check that the maximum is enforced.</li>
+<li>The total count and the number of pages are correct: <code>pages = ceil(total / limit)</code>.</li>
+<li>No duplicates and no missing items when you walk every page and join the results.</li>
+<li>Insert a record while paging and see whether items shift between pages.</li>
+<li>Sort by every allowed field in both directions, with ties. Sort by a field that is not allowed.</li>
+<li>Filters combined with paging, and filters that match nothing.</li>
+<li>The <code>next</code> link or cursor works and keeps the same filters.</li>
+</ul>
+<div class="exam">Offset pagination with a changing data set is a classic interview question. If a new item is inserted at the top while you read page 1, the last item of page 1 moves to page 2 and you see it twice. Cursor pagination avoids this.</div>
+</section>
+
+<section class="card reveal jsec" id="rate-limits" data-say="rate-limits"><div class="sec-num">Part 15</div><h2><span class="sec-em">⏱️</span><span>Rate limits, caching and idempotency keys</span></h2>
+<h3>Rate limiting</h3>
+<p>APIs limit how many requests a client can make, to protect the service and to stop brute force attacks. When you exceed the limit you should get <b>429 Too Many Requests</b> with a <code>Retry-After</code> header. Many APIs also return headers such as <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code>.</p>
+<p>A common algorithm is the <b>token bucket</b>. The bucket holds up to N tokens and refills at a fixed rate. Each request takes one token. With no tokens left, the request is refused. Click Send quickly to drain it, then wait and watch it refill.</p>
+<div class="w" data-w="bucket"></div>
+<ul><li>Find out whether the limit applies per user, per API key, per IP address, or globally, and whether rotating IPs or keys gets around it.</li><li>Login, OTP and password reset endpoints should have much stricter limits than others.</li><li>The counter should reset at the time the headers say.</li></ul>
+<h3>Caching with ETags</h3>
+<div class="seq" data-seq="etag"></div>
+<p>Check that private responses carry <code>Cache-Control: private</code> or <code>no-store</code>, that the ETag changes after an update, and that <code>If-Match</code> with an old ETag returns 412, which protects against lost updates when two people edit the same record.</p>
+<h3>Idempotency keys</h3>
+<p>POST is not idempotent, so a retried payment could charge twice. Payment APIs such as Stripe accept an <code>Idempotency-Key</code> header. The server stores the first result for that key and returns it again for any retry.</p>
+<div class="seq" data-seq="idemkey"></div>
+<div class="tip">Test the same key with a <i>different</i> body. A well designed API returns an error such as 422 or 409, because reusing a key for a different payment is a client bug, not a retry.</div>
+</section>
+
+<section class="card reveal jsec" id="errors" data-say="errors"><div class="sec-num">Part 16</div><h2><span class="sec-em">🧯</span><span>Error handling and Problem Details</span></h2>
+<p>Good errors tell the client what went wrong and how to fix it, without leaking internals. The standard format is <b>Problem Details for HTTP APIs</b>, RFC 9457 (2023), which replaced RFC 7807. It uses the media type <code>application/problem+json</code>.</p>
+<pre class="http">HTTP/1.1 <span class="h-bad">422 Unprocessable Content</span>
+Content-Type: application/problem+json
+
+{
+  "type": "https://api.shop.test/problems/validation",
+  "title": "Your request has invalid fields",
+  "status": 422,
+  "detail": "quantity must be between 1 and 10",
+  "instance": "/v1/orders",
+  "errors": [ { "field": "quantity", "message": "must be at most 10" } ]
+}</pre>
+<div class="grid2"><div class="box"><h4>Good error response</h4><ul><li>Correct 4xx or 5xx status</li><li>Same structure for every error</li><li>Names the field and the rule</li><li>Has a correlation id for support</li><li>Same language as the API docs</li></ul></div>
+<div class="box"><h4>Bugs to report</h4><ul><li>Stack traces, SQL or file paths in the body</li><li>500 for bad input</li><li>Different error shapes on different endpoints</li><li>"Something went wrong" with no detail</li><li>Login errors that reveal whether an email exists</li></ul></div></div>
+<h3>Resilience checks</h3>
+<p>Ask developers or use a mock to make a dependency slow or broken, then check the API's behaviour. A payment provider timeout should give a clear 502 or 504 and leave the order in a known state, not a half saved one. Retries should use backoff, and a circuit breaker should stop hammering a service that is down.</p>
+</section>
+
+<section class="card reveal jsec" id="security" data-say="security"><div class="sec-num">Part 17</div><h2><span class="sec-em">🛡️</span><span>API security testing: the OWASP API Top 10</span></h2>
+<p>The OWASP API Security Top 10 (2023 edition) is the standard list of the most common API risks. Manual testers find many of these with nothing more than Postman and curiosity. Only test systems you are allowed to test.</p>
+<div class="tw"><table class="jt"><tr><th>Risk</th><th>What it looks like</th><th>How to test by hand</th></tr>
+<tr><td>API1 Broken Object Level Authorization (BOLA)</td><td>Change <code>/orders/1042</code> to <code>/orders/1041</code> and see someone else's order</td><td>Use two users. Swap ids in every path, query and body</td></tr>
+<tr><td>API2 Broken Authentication</td><td>Weak tokens, no lockout, tokens valid after logout</td><td>Brute force login a few times, replay old tokens, tamper JWTs</td></tr>
+<tr><td>API3 Broken Object Property Level Authorization</td><td>Response shows <code>passwordHash</code>, or a PATCH accepts <code>"role":"admin"</code></td><td>Read every field returned. Send extra fields in updates</td></tr>
+<tr><td>API4 Unrestricted Resource Consumption</td><td>No limit on page size, file size or number of requests</td><td><code>limit=100000</code>, huge uploads, many requests in a loop</td></tr>
+<tr><td>API5 Broken Function Level Authorization</td><td>A customer can call <code>DELETE /admin/users/7</code></td><td>Call admin and internal endpoints with a normal user token</td></tr>
+<tr><td>API6 Unrestricted Access to Sensitive Business Flows</td><td>A bot buys all concert tickets or abuses referral credits</td><td>Repeat the flow quickly and at scale, check for limits and checks</td></tr>
+<tr><td>API7 Server Side Request Forgery (SSRF)</td><td>An "import from URL" field fetches <code>http://169.254.169.254/</code></td><td>Give internal addresses to any field that takes a URL</td></tr>
+<tr><td>API8 Security Misconfiguration</td><td>CORS allows any origin, debug mode on, missing security headers</td><td>Check headers, error pages, OPTIONS responses, TLS settings</td></tr>
+<tr><td>API9 Improper Inventory Management</td><td>An old <code>/v1</code> still runs without the fixes that <code>/v2</code> has</td><td>Try older versions and staging hosts. Compare behaviour</td></tr>
+<tr><td>API10 Unsafe Consumption of APIs</td><td>The API trusts data from a partner API without validation</td><td>Mock the third party with bad or malicious responses</td></tr></table></div>
+<h3>Watch a BOLA attack</h3>
+<div class="seq" data-seq="bola"></div>
+<h3>Injection and input attacks</h3>
+<p>Send classic payloads into every string field and parameter: SQL (<code>' OR '1'='1</code>), NoSQL (<code>{"$ne": null}</code>), command (<code>; ls</code>), template (<code>{{7*7}}</code>), path traversal (<code>../../</code>) and very long strings. You are looking for 500 errors, database messages, delays, or a response that changes when it should not.</p>
+<div class="warn">Security testing on systems you do not own or have no written permission to test can be illegal. Use your team's QA environment, or practice on deliberately vulnerable apps such as OWASP crAPI and OWASP Juice Shop.</div>
+</section>
+
+<section class="card reveal jsec" id="performance" data-say="performance"><div class="sec-num">Part 18</div><h2><span class="sec-em">📈</span><span>Performance testing for APIs</span></h2>
+<p>Even manual testers should note response times and payload sizes, and know the vocabulary of load testing.</p>
+<div class="tw"><table class="jt"><tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>Latency or response time</td><td>Time from sending the request to receiving the full response</td></tr>
+<tr><td>Throughput</td><td>Requests handled per second (RPS)</td></tr>
+<tr><td>Percentile (p95, p99)</td><td>p95 = 300 ms means 95% of requests took 300 ms or less</td></tr>
+<tr><td>Error rate</td><td>Share of requests that failed, often with a target such as below 0.1%</td></tr>
+<tr><td>Concurrency</td><td>Requests in progress at the same time</td></tr></table></div>
+<div class="grid2"><div class="box"><h4>Kinds of load test</h4><ul><li><b>Load</b>: expected traffic</li><li><b>Stress</b>: beyond capacity, to find the breaking point</li><li><b>Spike</b>: sudden jump, such as a sale starting</li><li><b>Soak</b>: normal load for hours, to find memory leaks</li></ul></div>
+<div class="box"><h4>Common tools</h4><ul><li>JMeter, k6, Gatling, Locust, Artillery</li><li>Postman performance runs for quick checks</li><li>APM dashboards such as Grafana, Datadog or New Relic</li></ul></div></div>
+<h3>Try it: why averages hide pain</h3>
+<p>Generate response times and compare the average with the percentiles. A few slow requests barely move the average but ruin p99, and p99 is what your unluckiest users feel.</p>
+<div class="w" data-w="perc"></div>
+</section>
+
+<section class="card reveal jsec" id="async" data-say="async"><div class="sec-num">Part 19</div><h2><span class="sec-em">📬</span><span>Async APIs: webhooks, polling and queues</span></h2>
+<p>Some work takes too long for one request, such as generating a report or processing a video. The API answers <b>202 Accepted</b> with a job id, and the client either polls a status endpoint or waits for a webhook.</p>
+<div class="seq" data-seq="async"></div>
+<h3>Testing webhooks</h3>
+<ul>
+<li>Point the webhook URL at a request catcher such as webhook.site, or a local server exposed with ngrok, and inspect what arrives.</li>
+<li>Check the signature header (for example an HMAC of the body) and that a tampered body is rejected by your receiver.</li>
+<li>Make your endpoint return 500 or time out and confirm the provider retries with backoff.</li>
+<li>Confirm the receiver handles the same event delivered twice. Most providers guarantee at least once delivery, not exactly once.</li>
+<li>Events can arrive out of order. "paid" may arrive before "created".</li>
+</ul>
+<h3>Eventual consistency</h3>
+<p>In systems built from many services and message queues (Kafka, RabbitMQ, SQS), a write may take a moment to appear in another service. A test that reads immediately after a write may fail by chance. Poll with a timeout instead of a fixed sleep, and report when the delay exceeds what the business accepts.</p>
+</section>
+
+<section class="card reveal jsec" id="scenarios" data-say="scenarios"><div class="sec-num">Part 20</div><h2><span class="sec-em">🌍</span><span>Real world scenario walkthroughs</span></h2>
+<p>Here is how API testing looks on three real kinds of product. Pick a scenario to step through the calls, then read the test ideas a senior tester would bring to it.</p>
+<div class="scn-tabs" role="tablist"><button type="button" class="scn-tab on" data-scn="checkout">🛒 Shopping checkout</button><button type="button" class="scn-tab" data-scn="transfer">🏦 Bank transfer</button><button type="button" class="scn-tab" data-scn="ride">🚕 Ride booking</button></div>
+<div class="scn-pane" data-scn="checkout"><div class="seq" data-seq="checkout"></div>
+<div class="tw"><table class="jt"><tr><th>Risk</th><th>Test</th></tr>
+<tr><td>Price tampering</td><td>Send <code>"price": 1</code> in the cart body. The server must use its own price</td></tr>
+<tr><td>Stock race</td><td>Two users buy the last item at the same moment. Only one order succeeds</td></tr>
+<tr><td>Double charge</td><td>Retry the payment call with the same Idempotency-Key. Only one charge</td></tr>
+<tr><td>Coupon abuse</td><td>Apply the same single use coupon in two parallel requests</td></tr>
+<tr><td>Payment webhook lost</td><td>The order must not stay "pending" forever. A reconciliation job should fix it</td></tr></table></div></div>
+<div class="scn-pane" data-scn="transfer" hidden><div class="seq" data-seq="transfer"></div>
+<div class="tw"><table class="jt"><tr><th>Risk</th><th>Test</th></tr>
+<tr><td>Negative amount</td><td><code>"amount": -500</code> must be rejected, or money flows backwards</td></tr>
+<tr><td>Precision</td><td>0.1 plus 0.2 and amounts with three decimals. Money must be exact</td></tr>
+<tr><td>Atomicity</td><td>Debit succeeds and credit fails. Both must roll back</td></tr>
+<tr><td>Limits</td><td>Daily limit exactly reached, then one rupee more</td></tr>
+<tr><td>OTP</td><td>OTP brute force limit, OTP reuse, OTP from another transaction</td></tr></table></div></div>
+<div class="scn-pane" data-scn="ride" hidden><div class="seq" data-seq="ride"></div>
+<div class="tw"><table class="jt"><tr><th>Risk</th><th>Test</th></tr>
+<tr><td>Location data</td><td>Latitude 91, longitude 181, null island (0, 0), and spoofed jumps across the city</td></tr>
+<tr><td>Real time updates</td><td>WebSocket drops and reconnects. Driver position must resume without duplicates</td></tr>
+<tr><td>State machine</td><td>Cancel after the trip ended. Rate a trip that never happened</td></tr>
+<tr><td>Fare</td><td>Surge multiplier applied once, not twice. Fare shown equals fare charged</td></tr>
+<tr><td>Privacy</td><td>Rider phone number is masked in the driver API response</td></tr></table></div></div>
+</section>
+
+<!-- ===================== LEVEL 4 ===================== -->
+<div class="lvl-banner lv-exp" id="level-4"><span>🧠</span><div><b>Level 4 · Expert and latest</b><small>Contracts, mocks, other protocols, pipelines, AI APIs and the newest standards.</small></div></div>
+
+<section class="card reveal jsec" id="contracts" data-say="contracts"><div class="sec-num">Part 21</div><h2><span class="sec-em">🤝</span><span>Contract testing and versioning</span></h2>
+<p>When ten teams depend on one API, a small change such as renaming a field can break apps that nobody on the provider team knows about. <b>Contract testing</b> catches this before release.</p>
+<div class="grid2"><div class="box"><h4>Consumer driven contracts</h4><p>Each consumer writes down exactly what it uses (requests and the fields it reads). The provider runs these contracts in its own pipeline. The best known tool is Pact, with a Pact Broker to share contracts and a can-i-deploy check before release.</p></div>
+<div class="box"><h4>Provider or schema driven</h4><p>The OpenAPI document is the contract. Tools compare the running API with the spec, or compare two versions of the spec to flag breaking changes (for example oasdiff).</p></div></div>
+<h3>Try it: is this change breaking</h3>
+<p>Edit the new version of the response. The checker compares it with the old one and labels each difference as safe or breaking for existing clients.</p>
+<div class="w" data-w="diff"></div>
+<h3>Versioning and deprecation</h3>
+<div class="tw"><table class="jt"><tr><th>Strategy</th><th>Example</th></tr>
+<tr><td>URL path</td><td><code>/v1/orders</code> and <code>/v2/orders</code></td></tr>
+<tr><td>Header</td><td><code>Api-Version: 2026-10-01</code> (date based, used by Stripe and others)</td></tr>
+<tr><td>Media type</td><td><code>Accept: application/vnd.shop.v2+json</code></td></tr></table></div>
+<p>When an endpoint is retired, the <code>Deprecation</code> header (RFC 9745, 2025) says it is deprecated and the <code>Sunset</code> header (RFC 8594) gives the date it will stop working. Test that both old and new versions behave as documented until the sunset date, and that the old one really stops afterwards.</p>
+</section>
+
+<section class="card reveal jsec" id="mocking" data-say="mocking"><div class="sec-num">Part 22</div><h2><span class="sec-em">🎭</span><span>Mocks, service virtualization and test data</span></h2>
+<p>You often need to test an API whose dependencies are not ready, are expensive (a real payment provider), or cannot be made to fail on demand. A <b>mock server</b> pretends to be that dependency.</p>
+<div class="tw"><table class="jt"><tr><th>Tool</th><th>Use</th></tr>
+<tr><td>Postman mock servers</td><td>Return saved examples for a collection. Quick for front end teams</td></tr>
+<tr><td>WireMock</td><td>Rich request matching, fault injection, delays, stateful scenarios</td></tr>
+<tr><td>Prism</td><td>Starts a mock straight from an OpenAPI file and validates requests against it</td></tr>
+<tr><td>Mockoon, MockServer, Microcks</td><td>Desktop and container mocks, Microcks also handles async APIs</td></tr></table></div>
+<h3>What a mock lets you test</h3>
+<ul><li>A dependency that times out after 30 seconds.</li><li>A dependency that returns 503, then 200 on the retry.</li><li>Malformed or unexpected data from a partner (OWASP API10).</li><li>Rare states, such as a card that is declined for insufficient funds.</li></ul>
+<h3>Test data management</h3>
+<ul><li>Create data through the API in setup, and delete it in teardown.</li><li>Use unique values (timestamps, UUIDs) so parallel runs do not collide.</li><li>Never copy real customer data into test environments. Use synthetic or masked data, which privacy laws such as GDPR and India's DPDP Act expect.</li><li>Keep a small set of known seed records for read only tests.</li></ul>
+</section>
+
+<section class="card reveal jsec" id="graphql-grpc" data-say="graphql-grpc"><div class="sec-num">Part 23</div><h2><span class="sec-em">📡</span><span>Testing GraphQL, gRPC, WebSocket and SSE</span></h2>
+<h3>GraphQL</h3>
+<div class="grid2"><div><pre class="http">POST /graphql
+{
+  "query": "query($id: ID!) { order(id: $id) { id total items { sku } } }",
+  "variables": { "id": "1042" }
+}</pre></div><div><pre class="http"><span class="h-ok">200 OK</span>
+{
+  "data": { "order": null },
+  "errors": [ { "message": "Not authorized",
+               "path": ["order"] } ]
+}</pre></div></div>
+<ul><li>Errors usually come back with <b>status 200</b> and an <code>errors</code> array. Always check the body, not only the status.</li><li>Test field level authorization. A customer must not be able to query <code>order { customer { email } }</code> for another user's order.</li><li>Deeply nested queries and huge lists can overload the server. Check depth limits, complexity limits and query timeouts.</li><li>Introspection (<code>__schema</code>) is often turned off in production. Check it is.</li><li>Batching many operations in one request can bypass rate limits on login mutations.</li></ul>
+<h3>gRPC</h3>
+<pre class="cmdline">grpcurl -plaintext localhost:50051 list
+grpcurl -d '{"id": 1042}' -plaintext localhost:50051 shop.OrderService/GetOrder</pre>
+<p>gRPC has its own status codes such as <code>OK</code>, <code>INVALID_ARGUMENT</code>, <code>NOT_FOUND</code>, <code>PERMISSION_DENIED</code>, <code>UNAUTHENTICATED</code>, <code>RESOURCE_EXHAUSTED</code> and <code>DEADLINE_EXCEEDED</code>. Test deadlines (timeouts set by the client), and for streaming calls test early cancel and a stream that ends with an error.</p>
+<h3>WebSocket and Server-Sent Events</h3>
+<ul><li>Connect without a token, with an expired token, and with a token that expires during the session.</li><li>Send malformed messages and very large messages.</li><li>Drop the network and reconnect. Check whether missed messages are replayed, and in the right order.</li><li>For SSE, check the <code>text/event-stream</code> content type, the <code>data:</code> lines, and resume with <code>Last-Event-ID</code>.</li></ul>
+</section>
+
+<section class="card reveal jsec" id="cicd" data-say="cicd"><div class="sec-num">Part 24</div><h2><span class="sec-em">🔭</span><span>API tests in CI, monitoring and observability</span></h2>
+<p>Manual exploration finds the bugs. Saved collections stop them from coming back. A mature team runs its API collection on every pull request and on a schedule against live environments.</p>
+<pre class="http"># .github/workflows/api-tests.yml (simplified)
+name: api-tests
+on: [pull_request]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install -g newman newman-reporter-htmlextra
+      - run: newman run tests/shop.postman_collection.json -e tests/qa.postman_environment.json -r cli,htmlextra</pre>
+<div class="grid2"><div class="box"><h4>Shift left</h4><p>Review the OpenAPI spec before code is written. Lint it with tools such as Spectral for naming, error formats and security rules. Testers who join design reviews prevent bugs instead of finding them.</p></div>
+<div class="box"><h4>Shift right</h4><p>Synthetic monitors call key endpoints every few minutes in production and alert on failures or slow responses. Feature flags and canary releases expose a change to a small share of users first.</p></div></div>
+<h3>Observability for testers</h3>
+<p>Modern systems send <b>logs</b>, <b>metrics</b> and <b>traces</b>, often through OpenTelemetry. The W3C <code>traceparent</code> header carries a trace id through every service a request touches. When you report an API bug, include the trace id or request id. A developer can then open the exact trace and see which service was slow or failed.</p>
+<pre class="http">traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+              ver  trace id (32 hex)                 parent span id   flags</pre>
+</section>
+
+<section class="card reveal jsec" id="ai-apis" data-say="ai-apis"><div class="sec-num">Part 25</div><h2><span class="sec-em">🤖</span><span>Testing AI and LLM APIs and MCP servers</span></h2>
+<p>More and more products call large language model (LLM) APIs, or expose their own AI endpoints. These APIs behave differently from classic ones, and testers need new techniques.</p>
+<div class="tw"><table class="jt"><tr><th>Difference</th><th>How to test it</th></tr>
+<tr><td>Non deterministic output</td><td>The same prompt can give different words. Assert on structure, required facts and rules, not on exact text. Run the same case several times</td></tr>
+<tr><td>Streaming responses</td><td>Answers arrive as Server-Sent Events. Check the event order, the final event, and what happens if the stream is cut</td></tr>
+<tr><td>Structured output</td><td>When the API is asked for JSON, validate it against a schema every time</td></tr>
+<tr><td>Token limits and cost</td><td>Very long inputs, the max tokens setting, truncated answers, and usage numbers in the response</td></tr>
+<tr><td>Tool calling</td><td>The model asks your API to run a function. Check arguments are validated like any other untrusted input</td></tr>
+<tr><td>Safety</td><td>Prompt injection hidden in user content or documents, data leaks across users, harmful requests refused</td></tr>
+<tr><td>Rate limits</td><td>Limits in requests and tokens per minute, 429 and 529 style overload responses, retry with backoff</td></tr></table></div>
+<h3>Evaluations</h3>
+<p>Teams build an <b>eval set</b>: a list of inputs with the facts or rules each answer must satisfy. Each release is scored against it. Checks can be exact (the JSON parses, the order id is present), rule based (no phone numbers in the output), or graded by another model against a rubric. A manual tester's job is to design the cases, especially the tricky and adversarial ones.</p>
+<h3>MCP servers</h3>
+<p>The Model Context Protocol (MCP), introduced by Anthropic in late 2024, is an open standard that lets AI apps connect to tools and data through MCP servers. A server exposes <b>tools</b>, <b>resources</b> and <b>prompts</b> over JSON-RPC 2.0, using a local stdio connection or the Streamable HTTP transport.</p>
+<pre class="http">{ "jsonrpc": "2.0", "id": 3, "method": "tools/call",
+  "params": { "name": "get_order", "arguments": { "orderId": 1042 } } }</pre>
+<ul><li>Call <code>tools/list</code> and check every tool has a clear description and an input schema.</li><li>Send arguments that break the schema. Expect a JSON-RPC error or a tool error result, not a crash.</li><li>Authorization: a remote MCP server must check that the user behind the AI is allowed to see order 1042, exactly like a normal API (BOLA again).</li><li>Tool results that contain instructions are a prompt injection risk for the AI that reads them.</li><li>The MCP Inspector tool lets you connect to a server and call its tools by hand.</li></ul>
+</section>
+
+<section class="card reveal jsec" id="latest" data-say="latest"><div class="sec-num">Part 26</div><h2><span class="sec-em">🆕</span><span>Latest standards and trends</span></h2>
+<p>API standards keep moving. These are the ones worth knowing about today. Some are final standards, and some are drafts that tools already support.</p>
+<div class="tw"><table class="jt"><tr><th>Topic</th><th>Status</th><th>What it means for testers</th></tr>
+<tr><td>RFC 9457 Problem Details</td><td>Standard (2023)</td><td>One error format across APIs. Check <code>application/problem+json</code></td></tr>
+<tr><td>OpenAPI 3.1 and 3.2</td><td>3.2 released September 2025</td><td>Full JSON Schema, QUERY method, streaming responses, better tags</td></tr>
+<tr><td>Arazzo 1.0</td><td>OpenAPI Initiative standard (2024)</td><td>Describes multi step API workflows, such as login then order then pay. Useful as a source for end to end tests</td></tr>
+<tr><td>AsyncAPI 3.0</td><td>Standard (2023)</td><td>The OpenAPI equivalent for Kafka, MQTT and WebSocket based APIs</td></tr>
+<tr><td>HTTP QUERY method</td><td>IETF draft</td><td>A safe, idempotent request that carries a body, for complex searches</td></tr>
+<tr><td>RateLimit headers</td><td>IETF draft</td><td>Standard <code>RateLimit</code> and <code>RateLimit-Policy</code> headers to replace the many <code>X-RateLimit</code> variants</td></tr>
+<tr><td>Idempotency-Key header</td><td>IETF draft</td><td>Standardizes the header payment APIs already use</td></tr>
+<tr><td>Deprecation header</td><td>RFC 9745 (2025)</td><td>A standard way to announce deprecated endpoints</td></tr>
+<tr><td>OAuth 2.1</td><td>IETF draft</td><td>PKCE for every client, no implicit or password flow, exact redirect matching</td></tr>
+<tr><td>DPoP</td><td>RFC 9449 (2023)</td><td>Tokens bound to a key the client holds, so a stolen token alone is useless</td></tr>
+<tr><td>HTTP/3</td><td>RFC 9114 (2022)</td><td>Faster on mobile networks. Check your tools and gateways support it</td></tr>
+<tr><td>MCP</td><td>Open protocol (2024 onwards)</td><td>AI agents calling tools. A new kind of API to test</td></tr></table></div>
+<h3>Trends in how teams test</h3>
+<ul><li><b>AI assistants in API tools</b>: Postman's Postbot and similar assistants draft tests and documentation. Review what they generate, because they can assert the current behaviour even when it is a bug.</li><li><b>Git native collections</b>: Bruno and Postman's file based collections keep tests next to the code and reviewed in pull requests.</li><li><b>Spec first development</b>: the OpenAPI file is written and reviewed first, mocks are generated from it, and tests check the implementation against it.</li><li><b>API governance</b>: linting rules across all of a company's APIs, so every team uses the same errors, pagination and auth.</li><li><b>Zero trust</b>: every internal call is authenticated too, so internal APIs need the same security tests as public ones.</li></ul>
+</section>
+
+<section class="card reveal jsec" id="strategy" data-say="strategy"><div class="sec-num">Part 27</div><h2><span class="sec-em">🗺️</span><span>An API test strategy and great bug reports</span></h2>
+<h3>A strategy that scales</h3>
+<ol>
+<li><b>Understand</b>: read the spec, the user stories and the architecture diagram. List every endpoint, consumer and dependency.</li>
+<li><b>Prioritize by risk</b>: money, personal data, authentication and the busiest endpoints first.</li>
+<li><b>Design</b>: positive, negative, boundary, authorization, state and flow cases for each endpoint.</li>
+<li><b>Explore</b>: timebox sessions with a charter, for example "Explore order cancellation with two users and stale data to find authorization and state bugs".</li>
+<li><b>Automate what is stable</b>: move repeatable checks into a collection or code, and run them in CI.</li>
+<li><b>Measure</b>: endpoint coverage, status code coverage, defects found by layer, escaped defects.</li>
+<li><b>Monitor</b>: synthetic checks and alerts in production.</li>
+</ol>
+<h3>An API bug report that gets fixed fast</h3>
+<pre class="http">Title:     GET /v1/orders/{id} returns another customer's order (BOLA)
+Env:       QA, build 1.4.0-rc2, 20 Oct 2026 17:10 UTC
+Severity:  Critical (personal data exposure)
+Request id: 7f3c9a10
+
+Steps:
+1. Log in as alice (customer 1) and copy the token
+2. curl -i https://qa.shop.test/v1/orders/1001 -H "Authorization: Bearer &lt;alice token&gt;"
+   (order 1001 belongs to bob, customer 2)
+
+Expected: 404 Not Found (or 403), no order data
+Actual:   200 OK with bob's name, address and items
+
+Notes: Same for PATCH. GET /v1/orders (list) is correctly filtered.</pre>
+<div class="rule">Always include the exact request (a curl command is ideal), the full response with status and body, the environment, the time in UTC and the request id. Remove real tokens and personal data before you paste.</div>
+<h3>Test coverage checklist for one endpoint</h3>
+<div class="w" data-w="checklist"></div>
+</section>
+
+  <section class="card reveal" id="cheatsheet" data-say="cheatsheet"><div class="sec-num">Keep this handy</div><h2><span class="sec-em">📋</span><span>Cheat sheet</span></h2>
+  <div class="cheat">
+    <div class="box"><h4>Methods</h4><p><code>GET</code> read · <code>POST</code> create · <code>PUT</code> replace · <code>PATCH</code> change part · <code>DELETE</code> remove. Safe: GET, HEAD, OPTIONS. Idempotent: those plus PUT and DELETE.</p></div>
+    <div class="box"><h4>Status families</h4><p>2xx worked · 3xx look elsewhere · 4xx your request is wrong · 5xx the server failed. 401 who are you · 403 not allowed · 404 not found · 409 conflict · 422 rule broken · 429 slow down.</p></div>
+    <div class="box"><h4>Always check</h4><p>Status, headers, schema, values, business rule, side effects, time, no leaks.</p></div>
+    <div class="box"><h4>Security quick five</h4><p>Swap ids between two users. Call admin endpoints as a user. Send extra fields. Remove the token. Hammer login.</p></div>
+    <div class="box"><h4>curl flags</h4><p><code>-i</code> headers · <code>-v</code> verbose · <code>-X</code> method · <code>-H</code> header · <code>-d</code> body · <code>-o</code> output file · <code>-w</code> timing · <code>-k</code> skip TLS check (test only).</p></div>
+    <div class="box"><h4>Postman</h4><p><code>pm.response.code</code> · <code>pm.response.json()</code> · <code>pm.expect(x).to.eql(y)</code> · <code>pm.environment.set()</code> · <code>pm.response.responseTime</code>.</p></div>
+  </div>
+  </section>
+
+  <section class="card reveal" id="interview" data-say="interview"><div class="sec-num">Get the job</div><h2><span class="sec-em">💼</span><span>Interview questions</span></h2>
+  <p>Tap a question to see a strong answer.</p>
+  <div class="iv"></div>
+  </section>
+
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+</div>
+<script>
+/*@SHARED_JS@*/
+</script>
+<script>
+/*@PAGE_JS@*/
+</script>
+</body>
+</html>
