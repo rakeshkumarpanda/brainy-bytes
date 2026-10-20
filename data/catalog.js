@@ -204,6 +204,16 @@ window.CATALOG = {
       intro: 'Three chapters that take you from a first @Test to a Page Object framework with listeners, retries and parallel runs. Every Java example runs on real TestNG with its testng.xml, and the same idea is shown with pytest and Mocha.',
       tags: ['Annotations', 'testng.xml', 'DataProvider', 'Listeners', 'Parallel'],
       modules: [tngModule()]
+    },
+    {
+      id: 'api-manual-testing',
+      title: 'Manual API Testing',
+      emoji: '🔌',
+      color: '#8467f0',
+      blurb: 'Test APIs by hand from your first HTTP request to security, contracts and AI APIs, with a live playground.',
+      intro: 'One complete course in four levels, from what an API is to contract testing, the OWASP API Top 10 and testing AI and MCP APIs. Every part has an animation or a tool to try, and the live playground lets you send requests to a mock shop API and hunt seven hidden bugs.',
+      tags: ['HTTP', 'Postman', 'Status codes', 'Auth', 'API security'],
+      modules: [apiManualModule()]
     }
   ]
 };
@@ -1602,6 +1612,63 @@ function tngModule() {
           { id: "explicit-wait", title: "An explicit wait with a fake clock", emoji: '🏋️', group: "Hard practice" },
           { id: "product-page", title: "Check a product page with soft asserts", emoji: '🏋️', group: "Expert practice" },
           { id: "retry-config", title: "A retry limit from configuration", emoji: '🏋️', group: "Expert practice" },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      }
+      ]
+    };
+}
+
+function apiManualModule() {
+  return {
+      id: 'manual-api', title: 'Manual API testing course', emoji: '📨', blurb: 'From the first HTTP request to contract, security and AI API testing.',
+      topics: [
+      {
+        id: 'manual-api-testing', title: 'Manual API Testing: Basics to Expert', emoji: '🔌',
+        page: 'content/api-testing/manual-api-testing.html',
+        summary: 'HTTP, methods, status codes, headers, JSON, REST, SOAP, GraphQL and gRPC, Postman and curl, OpenAPI, JWT and OAuth 2.0 with PKCE, test design, validation, chaining, pagination, rate limits, caching, idempotency keys, Problem Details, the OWASP API Top 10, performance, async APIs, contract testing, mocking, CI, AI and MCP APIs, with a live mock API playground and seven hidden bugs.',
+        keywords: ['API testing', 'manual API testing', 'REST', 'HTTP', 'status codes', 'Postman', 'curl', 'Bruno', 'OpenAPI', 'Swagger', 'JWT', 'OAuth', 'PKCE', 'idempotency', 'ETag', '304', '429', 'rate limit', 'pagination', 'BOLA', 'OWASP API Top 10', 'mass assignment', 'Problem Details', 'RFC 9457', 'GraphQL', 'gRPC', 'WebSocket', 'webhook', 'contract testing', 'Pact', 'WireMock', 'Newman', 'percentile', 'p95', 'MCP', 'LLM API'],
+        added: '2026-10-20',
+        sections: [
+          { id: 'what-is-api', title: "What an API is and why we test it", emoji: '🔌', group: 'Level 1 · Foundations' },
+          { id: 'http-basics', title: "How HTTP carries a request", emoji: '📨', group: 'Level 1 · Foundations' },
+          { id: 'methods', title: "HTTP methods, safety and idempotency", emoji: '🛠️', group: 'Level 1 · Foundations' },
+          { id: 'status-codes', title: "Status codes", emoji: '🚦', group: 'Level 1 · Foundations' },
+          { id: 'headers', title: "Headers, cookies and content negotiation", emoji: '🏷️', group: 'Level 1 · Foundations' },
+          { id: 'data-formats', title: "JSON, XML and other payloads", emoji: '🧾', group: 'Level 1 · Foundations' },
+          { id: 'api-styles', title: "REST, SOAP, GraphQL, gRPC, WebSocket and webhooks", emoji: '🧭', group: 'Level 1 · Foundations' },
+          { id: 'tools', title: "Tools: Postman, curl, Bruno and friends", emoji: '🧰', group: 'Level 2 · Core skills' },
+          { id: 'api-docs', title: "Reading API docs and OpenAPI", emoji: '📘', group: 'Level 2 · Core skills' },
+          { id: 'auth', title: "Authentication and authorization", emoji: '🔐', group: 'Level 2 · Core skills' },
+          { id: 'test-design', title: "Designing API test cases", emoji: '✍️', group: 'Level 2 · Core skills' },
+          { id: 'validations', title: "What to check in every response", emoji: '✅', group: 'Level 2 · Core skills' },
+          { id: 'chaining', title: "Variables, chaining and end to end flows", emoji: '🔗', group: 'Level 2 · Core skills' },
+          { id: 'lab', title: "API playground and bug hunt", emoji: '🧪', group: 'Hands on' },
+          { id: 'pagination', title: "Pagination, filtering and sorting", emoji: '📄', group: 'Level 3 · Advanced' },
+          { id: 'rate-limits', title: "Rate limits, caching and idempotency keys", emoji: '⏱️', group: 'Level 3 · Advanced' },
+          { id: 'errors', title: "Error handling and Problem Details", emoji: '🧯', group: 'Level 3 · Advanced' },
+          { id: 'security', title: "API security testing: the OWASP API Top 10", emoji: '🛡️', group: 'Level 3 · Advanced' },
+          { id: 'performance', title: "Performance testing for APIs", emoji: '📈', group: 'Level 3 · Advanced' },
+          { id: 'async', title: "Async APIs: webhooks, polling and queues", emoji: '📬', group: 'Level 3 · Advanced' },
+          { id: 'scenarios', title: "Real world scenario walkthroughs", emoji: '🌍', group: 'Level 3 · Advanced' },
+          { id: 'contracts', title: "Contract testing and versioning", emoji: '🤝', group: 'Level 4 · Expert and latest' },
+          { id: 'mocking', title: "Mocks, service virtualization and test data", emoji: '🎭', group: 'Level 4 · Expert and latest' },
+          { id: 'graphql-grpc', title: "Testing GraphQL, gRPC, WebSocket and SSE", emoji: '📡', group: 'Level 4 · Expert and latest' },
+          { id: 'cicd', title: "API tests in CI, monitoring and observability", emoji: '🔭', group: 'Level 4 · Expert and latest' },
+          { id: 'ai-apis', title: "Testing AI and LLM APIs and MCP servers", emoji: '🤖', group: 'Level 4 · Expert and latest' },
+          { id: 'latest', title: "Latest standards and trends", emoji: '🆕', group: 'Level 4 · Expert and latest' },
+          { id: 'strategy', title: "An API test strategy and great bug reports", emoji: '🗺️', group: 'Level 4 · Expert and latest' },
+          { id: 'cheatsheet', title: "Cheat sheet", emoji: '📋', group: 'Hands on' },
+          { id: 'interview', title: "Interview questions", emoji: '💼', group: 'Hands on' },
+          { id: 'p-get-product', title: "Test cases for GET /v1/products/{id}", emoji: '🏋️', group: 'Easy practice' },
+          { id: 'p-read-response', title: "Spot the problems in a response", emoji: '🏋️', group: 'Easy practice' },
+          { id: 'p-boundaries', title: "Boundary tests for a coupon API", emoji: '🏋️', group: 'Medium practice' },
+          { id: 'p-chain', title: "Build a chained flow in Postman", emoji: '🏋️', group: 'Medium practice' },
+          { id: 'p-hunt', title: "Hunt the authorization bugs in the playground", emoji: '🏋️', group: 'Hard practice' },
+          { id: 'p-pagination', title: "Plan the tests for a product list", emoji: '🏋️', group: 'Hard practice' },
+          { id: 'p-contract', title: "Review a change for consumers", emoji: '🏋️', group: 'Expert practice' },
+          { id: 'p-llm', title: "Test a support chatbot API", emoji: '🏋️', group: 'Expert practice' },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
