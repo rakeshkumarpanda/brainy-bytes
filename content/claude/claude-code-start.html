@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Code: First Steps · Master the Claude</title>
+<meta name="description" content="Claude Code installation, first session, the agent loop, verification with tests, permission modes, plan mode, checkpoints and /rewind, sessions, slash commands and the .claude folder.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=master-claude" target="_top">✨ Master the Claude</a><span>›</span><span>🛠️ Claude Code and its files</span><span>›</span><span>Chapter 4 of 4</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">💻</span><div><h1>Claude Code: First Steps</h1><p class="lead">Install Claude Code, run your first session, see how the agent loop works, choose permission modes, follow the explore, plan, code, commit workflow, undo safely, and learn where every Claude Code file lives.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 15 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 2 examples run for real</span><span class="chip">📄 6 ready to copy files and prompts</span><span class="chip">🏋️ 3 hands-on exercises</span><span class="chip">🎯 10 quiz questions</span><span class="chip">🧮 6 calculations</span><span class="chip">🧒 7 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>Claude Code is Claude that can open, change and test files in a folder on your computer, and it asks you before doing anything risky.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#what" class="easy"><span>💻</span>What Claude Code is</a><a href="#install" class="easy"><span>📥</span>Install and start, step by step</a><a href="#loop" class="easy"><span>🔄</span>How it works: the agent loop</a><a href="#perms" class="easy"><span>🚦</span>Permission modes: how much Claude may do alone</a><a href="#plan"><span>🗺️</span>Explore, plan, code, commit</a><a href="#control" class="easy"><span>⏪</span>Stop, undo and come back later</a><a href="#commands" class="easy"><span>⌨️</span>The commands you will use most</a><a href="#folder" class="easy"><span>📁</span>The .claude folder: where everything lives</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="what" data-say="what"><div class="sec-num">Part 1</div><h2><span class="sec-em">💻</span><span>What Claude Code is</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p><b>Claude Code</b> is Claude working as an <b>agent</b> inside a folder on your computer. It can read your files, search them, edit them, run commands such as tests, and use git. You describe the goal in plain words. It works out the steps and asks before doing anything risky.</p>
+<p>It runs in the terminal, in VS Code and JetBrains, in the Claude desktop app and on the web at claude.ai/code. All of them read the same files you will learn about: <code>CLAUDE.md</code>, <code>.claude/</code> and <code>.mcp.json</code>.</p>
+<div class="tip">It is not only for programmers. People use it to tidy folders of documents, turn CSV files into reports, rename hundreds of photos and write scripts they could not write themselves.</div>
+</section>
+<section class="card reveal jsec easy-part" id="install" data-say="install"><div class="sec-num">Part 2</div><h2><span class="sec-em">📥</span><span>Install and start, step by step</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<ol class="steps"><li>Open a terminal. On Windows use PowerShell.</li>
+<li>Run the install command for your system.</li>
+<li>Close and reopen the terminal, then check with <code>claude --version</code>.</li>
+<li>Go to a project folder with <code>cd</code> and type <code>claude</code>.</li>
+<li>Log in when asked. A Claude Pro, Max, Team or Enterprise plan works, or a Claude Console account.</li></ol>
+<div class="codewrap" data-k="install"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Install Claude Code · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># macOS, Linux or WSL</span>
+<span class="k">curl</span> -fsSL https://<span class="k">claude</span>.ai/install.sh | bash
+
+<span class="c"># Windows PowerShell</span>
+irm https://<span class="k">claude</span>.ai/install.ps1 | iex
+
+<span class="c"># or with a package manager</span>
+brew install --cask <span class="k">claude</span>-code          <span class="c"># macOS</span>
+winget install Anthropic.ClaudeCode      <span class="c"># Windows</span>
+
+<span class="c"># check it worked</span>
+<span class="k">claude</span> --version</pre><div class="note-out"><span>What happens</span><p>The installer puts the claude command on your PATH. claude --version prints the installed version number.</p></div></div>
+<div class="codewrap" data-k="first"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Start your first session · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">cd</span> ~/projects/my-shop        <span class="c"># go to your project folder</span>
+<span class="k">claude</span>                       <span class="c"># start a session here. The first time, it asks you to log in.</span></pre><div class="note-out"><span>What happens</span><p>Claude Code opens in the terminal, shows the folder it is working in, and waits for your request. It asks before editing files or running commands.</p></div></div>
+<div class="codewrap" data-k="first-asks"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">First requests to try, one at a time · 💬 Prompt to try</span><button type="button" class="copy">Copy</button></div><pre class="src main">what does this project do? give me a 5 line summary
+where is the code that calculates the delivery charge?
+add a free delivery rule for orders above Rs 499, then run the tests
+what files have I changed?
+commit my changes with a descriptive message</pre><div class="note-out"><span>What happens</span><p>Claude reads files to answer the first two, edits the delivery code for the third and runs the tests, then uses git for the last two.</p></div></div>
+</section>
+<section class="card reveal jsec easy-part" id="loop" data-say="loop"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔄</span><span>How it works: the agent loop</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>For each request, Claude repeats a simple loop: <b>gather context</b> (search and read), <b>take action</b> (edit, run a command), <b>check the result</b>, then decide the next step. It stops when the task is done or it needs you.</p>
+<div class="viz" data-viz="flow" data-k="loop"></div>
+<div class="codewrap" data-k="loop" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The agent loop, step by step · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// What Claude Code does with one request: gather context, act, verify, repeat.</span>
+<span class="c">// The "model" here is a stand-in that follows a fixed plan, so the loop can run without an API key.</span>
+<span class="k">const</span> plan = [
+  { tool: <span class="s">"Grep"</span>,  input: <span class="s">"deliveryCharge"</span>,       note: <span class="s">"find where delivery is calculated"</span> },
+  { tool: <span class="s">"Read"</span>,  input: <span class="s">"src/delivery.js"</span>,      note: <span class="s">"read the function"</span> },
+  { tool: <span class="s">"Edit"</span>,  input: <span class="s">"src/delivery.js"</span>,      note: <span class="s">"add the free delivery rule"</span> },
+  { tool: <span class="s">"Bash"</span>,  input: <span class="s">"npm test"</span>,             note: <span class="s">"verify with the tests"</span> },
+  { tool: <span class="k">null</span>,    input: <span class="s">"Done. Orders above Rs 499 now ship free. 2 tests pass."</span> },
+];
+
+<span class="k">for</span> (<span class="k">let</span> turn = <span class="n">1</span>; ; turn++) {
+  <span class="k">const</span> step = plan[turn - <span class="n">1</span>];
+  <span class="k">if</span> (!step.tool) { console.log(<span class="s">`turn ${turn}: final answer -&gt; ${step.input}`</span>); <span class="k">break</span>; }
+  console.log(<span class="s">`turn ${turn}: ${step.tool.padEnd(5)} ${step.input.padEnd(22)} (${step.note})`</span>);
+}</pre><div class="out"><span>Output</span><pre>turn 1: Grep  deliveryCharge         (find where delivery is calculated)
+turn 2: Read  src/delivery.js        (read the function)
+turn 3: Edit  src/delivery.js        (add the free delivery rule)
+turn 4: Bash  npm test               (verify with the tests)
+turn 5: final answer -&gt; Done. Orders above Rs 499 now ship free. 2 tests pass.</pre></div></div>
+<p>The single most useful habit: <b>give Claude a way to check its work</b>, such as tests, a sample input with the expected output, or a screenshot to compare. With a check, Claude can fix its own mistakes before you see them.</p>
+<div class="codewrap tests" data-k="verify"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Give Claude a way to check its own work · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 package.json</div><pre class="src" data-file="package.json">{
+  <span class="s">"name"</span>: <span class="s">"my-shop"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"type"</span>: <span class="s">"module"</span>,
+  <span class="s">"scripts"</span>: {
+    <span class="s">"test"</span>: <span class="s">"node --test --test-reporter=spec"</span>
+  }
+}</pre><div class="fname">📄 src/delivery.js</div><pre class="src" data-file="src/delivery.js"><span class="k">export</span> <span class="k">function</span> deliveryCharge(orderTotal) {
+  <span class="k">if</span> (orderTotal &gt;= <span class="n">499</span>) <span class="k">return</span> <span class="n">0</span>;      <span class="c">// free delivery rule</span>
+  <span class="k">return</span> <span class="n">40</span>;
+}</pre><div class="fname">📄 test/delivery.test.js</div><pre class="src" data-file="test/delivery.test.js"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> { deliveryCharge } <span class="k">from</span> <span class="s">"../src/delivery.js"</span>;
+
+test(<span class="s">"small orders pay Rs 40"</span>, () =&gt; assert.equal(deliveryCharge(<span class="n">200</span>), <span class="n">40</span>));
+test(<span class="s">"Rs 499 and above ship free"</span>, () =&gt; {
+  assert.equal(deliveryCharge(<span class="n">499</span>), <span class="n">0</span>);
+  assert.equal(deliveryCharge(<span class="n">1200</span>), <span class="n">0</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npm test</pre></div><div class="out"><span>Terminal output</span><pre>✔ small orders pay Rs 40 (0.5ms)
+✔ Rs 499 and above ship free (0.5ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 0.5</pre></div></div>
+</section>
+<section class="card reveal jsec easy-part" id="perms" data-say="perms"><div class="sec-num">Part 4</div><h2><span class="sec-em">🚦</span><span>Permission modes: how much Claude may do alone</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 .claude/settings.json</span><span class="cl-file">📄 .claude/settings.local.json</span></div>
+<p>The permission mode decides which actions Claude can take without asking. Press <b>Shift+Tab</b> to switch during a session, or set <code>defaultMode</code> in <code>settings.json</code> (chapter 8).</p>
+<div class="tw"><table class="jt"><tr><th>Mode</th><th>What it means</th><th>Good for</th></tr>
+<tr><td><code>default</code> (shown as Manual)</td><td>asks the first time each tool is used</td><td>learning, unfamiliar projects</td></tr>
+<tr><td><code>acceptEdits</code></td><td>edits files and runs simple file commands without asking</td><td>trusted work where you review the diff later</td></tr>
+<tr><td><code>plan</code></td><td>reads and explores only, no edits to your source</td><td>thinking a change through first</td></tr>
+<tr><td><code>auto</code></td><td>no routine prompts, a safety check reviews risky actions</td><td>long tasks you supervise loosely</td></tr>
+<tr><td><code>dontAsk</code></td><td>refuses anything that would need a prompt</td><td>locked down scripts</td></tr>
+<tr><td><code>bypassPermissions</code></td><td>skips prompts</td><td>only inside a throwaway container</td></tr>
+</table></div>
+<div class="warn">When Claude asks, read the command. "Yes, and don't ask again" saves a rule to <code>.claude/settings.local.json</code>, so think before choosing it for commands like <code>git push</code>.</div>
+</section>
+<section class="card reveal jsec" id="plan" data-say="plan"><div class="sec-num">Part 5</div><h2><span class="sec-em">🗺️</span><span>Explore, plan, code, commit</span></h2>
+
+<p>Anthropic's recommended workflow for anything bigger than a one line fix has four steps. The first two happen in <b>plan mode</b>, so nothing changes until you agree.</p>
+<div class="codewrap" data-k="plan"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Plan mode · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">claude</span> --permission-mode plan        <span class="c"># start a session in plan mode</span>
+<span class="c"># or press Shift+Tab inside a session until the status bar shows "plan mode on"</span></pre><div class="note-out"><span>What happens</span><p>Claude reads files and runs read only commands, then writes a plan. It does not edit your source files until you approve. Ctrl+G opens the plan in your editor.</p></div></div>
+<div class="codewrap" data-k="epcc"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Explore, plan, code, commit · 💬 Prompt to try</span><button type="button" class="copy">Copy</button></div><pre class="src main">1. (plan mode) read src/checkout and explain how coupons are applied today
+2. (plan mode) I want coupons to expire. What files change? Write a plan.
+3. (normal mode) implement the plan. Add tests for an expired coupon and run them.
+4. commit with a message that explains why, and open a pull request</pre><div class="note-out"><span>What happens</span><p>Each step builds on the last. Mistakes are caught in the plan, where they are cheap to fix, instead of in the code.</p></div></div>
+<div class="scenario"><b>🏫 Real scenario: a school website</b>A volunteer wants a "notice board" page. In plan mode Claude finds that pages are built from Markdown files and proposes three changes. The volunteer edits the plan to drop a database they do not need, then approves. The result is smaller and fits the site.</div>
+</section>
+<section class="card reveal jsec easy-part" id="control" data-say="control"><div class="sec-num">Part 6</div><h2><span class="sec-em">⏪</span><span>Stop, undo and come back later</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<ul><li><b>Esc</b> stops Claude mid action. Your conversation stays, so you can redirect it.</li>
+<li><b>Esc Esc</b> or <code>/rewind</code> opens the rewind menu. Claude snapshots files before each change, so you can restore the code, the conversation, or both.</li>
+<li><code>/clear</code> starts fresh in the same window.</li></ul>
+<div class="codewrap" data-k="sessions"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Come back to earlier work · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">claude</span> --continue        <span class="c"># carry on with the most recent conversation in this folder</span>
+<span class="k">claude</span> --resume          <span class="c"># pick an older conversation from a list (or /resume inside a session)</span>
+<span class="k">claude</span> -p <span class="s">"summarise the last 5 commits"</span>     <span class="c"># one question, print the answer, exit</span></pre><div class="note-out"><span>What happens</span><p>--continue reopens the latest session, --resume shows a picker. -p runs once without the interactive screen, which is how scripts use Claude Code (chapter 11).</p></div></div>
+<div class="warn">Checkpoints cover edits Claude made with its file tools. They do not undo things outside your folder, such as a database change or a message sent by a command. Use git as well.</div>
+</section>
+<section class="card reveal jsec easy-part" id="commands" data-say="commands"><div class="sec-num">Part 7</div><h2><span class="sec-em">⌨️</span><span>The commands you will use most</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Type <code>/</code> in a session to see every command and skill. These are the ones this subject uses.</p>
+<div class="tw"><table class="jt"><tr><th>Command</th><th>What it does</th><th>Chapter</th></tr>
+<tr><td><code>/init</code></td><td>writes a starter <code>CLAUDE.md</code> for the project</td><td>5</td></tr>
+<tr><td><code>/memory</code></td><td>opens <code>CLAUDE.md</code> files and auto memory</td><td>5</td></tr>
+<tr><td><code>/skills</code></td><td>lists the skills Claude can use</td><td>7</td></tr>
+<tr><td><code>/permissions</code>, <code>/hooks</code></td><td>view and edit rules and hooks</td><td>8</td></tr>
+<tr><td><code>/agents</code></td><td>reminds you how to create and manage subagents</td><td>9</td></tr>
+<tr><td><code>/mcp</code></td><td>manage MCP server connections</td><td>10</td></tr>
+<tr><td><code>/plugin</code></td><td>browse and install plugins</td><td>11</td></tr>
+<tr><td><code>/model</code>, <code>/context</code>, <code>/usage</code></td><td>switch model, see context use, see cost and limits</td><td>1, 3</td></tr>
+<tr><td><code>/doctor</code></td><td>checks your installation and setup</td><td></td></tr>
+</table></div>
+<p>Two more shortcuts: type <code>@</code> and a file name to point Claude at a file, and press the up arrow for your earlier requests.</p>
+</section>
+<section class="card reveal jsec easy-part" id="folder" data-say="folder"><div class="sec-num">Part 8</div><h2><span class="sec-em">📁</span><span>The .claude folder: where everything lives</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 CLAUDE.md</span><span class="cl-file">📄 CLAUDE.local.md</span><span class="cl-file">📄 .mcp.json</span><span class="cl-file">📄 .claude/</span><span class="cl-file">📄 ~/.claude/</span><span class="cl-file">📄 ~/.claude.json</span></div>
+<p>Claude Code reads settings and instructions from two places: your <b>project</b> (shared with your team through git) and your <b>home folder</b> (just for you, in every project). The rest of this module fills in each file.</p>
+<pre class="tree"><b>my-shop/</b>                        <i>your project</i>
+├── CLAUDE.md                   <i>project instructions, loaded every session (ch 5)</i>
+├── CLAUDE.local.md             <i>your private notes for this project, add to .gitignore</i>
+├── .mcp.json                   <i>MCP servers the team shares (ch 10)</i>
+└── <b>.claude/</b>
+    ├── settings.json           <i>permissions, hooks, env for the team (ch 8)</i>
+    ├── settings.local.json     <i>your personal overrides, not committed</i>
+    ├── rules/                  <i>topic rules, some only for certain paths (ch 6)</i>
+    ├── skills/&lt;name&gt;/SKILL.md   <i>repeatable tasks (ch 7)</i>
+    ├── agents/&lt;name&gt;.md        <i>subagents (ch 9)</i>
+    ├── output-styles/          <i>custom response styles (ch 9)</i>
+    └── hooks/                  <i>scripts your hooks run (ch 8)</i>
+
+<b>~/.claude/</b>                       <i>your home folder, applies to every project</i>
+├── CLAUDE.md                   <i>your personal preferences</i>
+├── settings.json               <i>your personal settings</i>
+├── rules/  skills/  agents/  output-styles/
+└── projects/&lt;project&gt;/memory/MEMORY.md   <i>auto memory Claude writes</i>
+
+<b>~/.claude.json</b>                   <i>app state and your personal MCP servers</i></pre>
+<div class="cl-name">You may hear about files like "rules.md", "agents.md" or "skills.md". Claude Code has no single file with those names. The real places are the folders <code>.claude/rules/</code>, <code>.claude/agents/</code> and <code>.claude/skills/&lt;name&gt;/SKILL.md</code>. One exception: Claude Code can read an <code>AGENTS.md</code> file, used by other coding tools, when the folder has no <code>CLAUDE.md</code>. Chapter 5 covers it.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every file name, folder, setting and command on this page was checked against the official Claude and Claude Code documentation in October 2026.</p>
+  <nav class="pager"><a class="prev" href="./claude-context.html" data-topic="claude-context"><small>← Previous chapter</small><b>🧠 Context engineering</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script>
+const PAGE = {"info": {"title": "Claude Code in four panels", "panels": [{"s": [["e", "📥"], ["t", "curl ... | bash", {"b": 1}]], "h": "Install", "t": "One command, then claude.", "more": "Works in the terminal, IDEs, desktop and web."}, {"s": [["e", "🔄"], ["t", "gather, act, check", {"b": 1}]], "h": "The loop", "t": "Small steps until done.", "more": "Tests let it check itself."}, {"s": [["e", "🚦"], ["t", "Shift+Tab", {"b": 1}]], "h": "Permission modes", "t": "You decide how much it does alone.", "more": "Plan mode first for big changes."}, {"s": [["e", "⏪"], ["t", "Esc Esc", {"b": 1}]], "h": "Undo", "t": "Rewind code and chat.", "more": "Use git for everything else."}], "remember": "Explore, plan, code, commit. And always give Claude a way to check its work."}, "real": [["🧾", "An accountant", "Points Claude Code at a folder of 300 bank CSV files and asks for one monthly summary sheet. Claude writes and runs a small script, then shows the totals."], ["📸", "A photographer", "Asks Claude Code to rename 1,200 photos by date and place from their metadata. Plan mode shows the new names first."], ["🧑‍💻", "A junior developer", "Uses plan mode to understand an unfamiliar codebase on day one, then fixes a first bug with tests."]], "quiz": [{"lv": "e", "q": "Which command checks that Claude Code is installed?", "o": ["claude --version", "claude install", "npm claude", "claude.ai --check"], "a": 0, "hint": "Prints a number.", "why": "It prints the installed version."}, {"lv": "e", "q": "Which key cycles permission modes?", "o": ["Shift+Tab", "Ctrl+C", "F5", "Alt+P"], "a": 0, "hint": "Shift and another key.", "why": "Shift+Tab switches modes during a session."}, {"lv": "e", "q": "You want Claude to only look and suggest, not change files. Which mode?", "o": ["plan", "acceptEdits", "bypassPermissions", "auto"], "a": 0, "hint": "Think first.", "why": "Plan mode explores and writes a plan without editing your source."}, {"lv": "m", "q": "What is the most useful thing to give Claude for a coding task?", "o": ["A way to check its work, like tests", "A longer chat", "A bigger screen", "More emoji"], "a": 0, "hint": "Verification.", "why": "With a check, Claude can find and fix its own mistakes."}, {"lv": "m", "q": "How do you undo the last few edits Claude made?", "o": ["Esc Esc or /rewind", "/clear", "Close the terminal", "/init"], "a": 0, "hint": "Checkpoints.", "why": "The rewind menu restores code, conversation or both."}, {"lv": "m", "q": "Where does \"Yes, and don't ask again\" save its rule?", "o": [".claude/settings.local.json", "CLAUDE.md", ".mcp.json", "~/.claude.json"], "a": 0, "hint": "Your personal project settings.", "why": "It is a local file that is not meant to be committed."}, {"lv": "h", "q": "Which file do teammates share to configure permissions and hooks?", "o": [".claude/settings.json", ".claude/settings.local.json", "CLAUDE.local.md", "~/.claude/settings.json"], "a": 0, "hint": "Committed to git.", "why": "settings.json in the project .claude folder is shared."}, {"lv": "h", "q": "Does Claude Code use a file called rules.md?", "o": ["No, it uses the .claude/rules/ folder", "Yes, at the project root", "Yes, in ~/.claude", "Only on Windows"], "a": 0, "hint": "Folder, not file.", "why": "Rules are one topic per Markdown file inside .claude/rules/."}, {"lv": "x", "q": "What can checkpoints not undo?", "o": ["A database change made by a command", "An edit to a source file", "A new file Claude wrote", "The conversation"], "a": 0, "hint": "Outside the folder.", "why": "They restore files Claude changed with its file tools, not remote effects."}, {"lv": "x", "q": "Which order does Anthropic recommend for bigger changes?", "o": ["Explore, plan, code, commit", "Code, commit, plan", "Commit, explore, code", "Plan, commit, code"], "a": 0, "hint": "Understand first.", "why": "Exploring and planning first catches mistakes when they are cheap."}], "calc": [{"lv": "e", "q": "The loop example used how many tool steps before the final answer?", "ans": "4", "hint": "Count the tools.", "steps": ["Grep, Read, Edit, Bash."]}, {"lv": "e", "q": "deliveryCharge(499) returns what?", "ans": "0", "hint": "Check the rule.", "steps": ["499 is at least 499, so delivery is free."]}, {"lv": "m", "q": "Three orders of Rs 200, 450 and 600. Total delivery charges in rupees?", "ans": "80", "hint": "Below 499 pays 40.", "steps": ["200 and 450 pay 40 each.", "<span class=\"eq\">40 + 40 + 0 = 80<\/span>"]}, {"lv": "m", "q": "Renaming 1,200 photos takes you 20 seconds each by hand. How many hours is that?", "ans": "6.67", "hint": "Seconds to hours.", "steps": ["<span class=\"eq\">1,200 × 20 = 24,000 s<\/span>", "<span class=\"eq\">24,000 ÷ 3,600 ≈ 6.67 h<\/span>"], "alt": ["6.7", "6.666", "6.67 h"]}, {"lv": "h", "q": "How many permission modes are in the table?", "ans": "6", "hint": "Count the rows.", "steps": ["default, acceptEdits, plan, auto, dontAsk, bypassPermissions."]}, {"lv": "x", "q": "A plan catches a mistake that would take 3 hours to fix in code and 10 minutes in the plan. How many minutes are saved?", "ans": "170", "hint": "Hours to minutes.", "steps": ["<span class=\"eq\">3 × 60 = 180<\/span>", "<span class=\"eq\">180 − 10 = 170<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter installs Claude Code and teaches the agent loop, permission modes, plan mode, undo, sessions and the dot claude folder.", "hi": "यह अध्याय Claude Code install करना, agent loop, permission modes, plan mode, undo और .claude folder सिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ Claude Code install, agent loop, permission modes, plan mode, undo ಮತ್ತು .claude folder ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ Claude Code install, agent loop, permission modes, plan mode, undo ଓ .claude folder ଶିଖାଏ।", "ar": "يثبّت هذا الفصل Claude Code ويشرح حلقة الوكيل وأوضاع الأذونات ووضع التخطيط والتراجع ومجلد .claude.", "de": "Dieses Kapitel installiert Claude Code und erklärt die Agentenschleife, Berechtigungsmodi, Planmodus, Rückgängig und den .claude-Ordner."}, {"id": "what", "h": "What it is", "en": "Claude Code is Claude working as an agent in a folder. It reads, edits and runs things, and asks before risky steps.", "hi": "Claude Code एक folder में agent की तरह काम करता है। पढ़ता, बदलता और चलाता है, जोखिम से पहले पूछता है।", "kn": "Claude Code folder ನಲ್ಲಿ agent ಆಗಿ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಓದುತ್ತದೆ, ಬದಲಿಸುತ್ತದೆ, ಓಡಿಸುತ್ತದೆ.", "or": "Claude Code folder ରେ agent ଭାବେ କାମ କରେ। ପଢେ, ବଦଳାଏ ଓ ଚଲାଏ।", "ar": "Claude Code هو Claude يعمل كوكيل داخل مجلد. يقرأ ويعدّل ويشغّل ويسأل قبل الخطوات الخطرة.", "de": "Claude Code ist Claude als Agent in einem Ordner. Es liest, ändert und führt aus und fragt vor riskanten Schritten."}, {"id": "install", "h": "Install", "en": "Run the install command for your system, check with claude dash dash version, then type claude inside a project folder and log in.", "hi": "अपने system का install command चलाएं, claude --version से जांचें, फिर folder में claude लिखें।", "kn": "ನಿಮ್ಮ system ನ install command ಓಡಿಸಿ, claude --version ಪರಿಶೀಲಿಸಿ, folder ನಲ್ಲಿ claude ಟೈಪ್ ಮಾಡಿ.", "or": "ନିଜ system ର install command ଚଲାନ୍ତୁ, claude --version ଯାଞ୍ଚ କରନ୍ତୁ, folder ରେ claude ଟାଇପ୍ କରନ୍ତୁ।", "ar": "شغّل أمر التثبيت لنظامك وتحقق بـ claude --version ثم اكتب claude داخل مجلد المشروع.", "de": "Führe den Installationsbefehl aus, prüfe mit claude --version und tippe claude im Projektordner."}, {"id": "loop", "h": "The loop", "en": "Claude gathers context, acts, checks the result and repeats. Tests or expected output let it fix its own mistakes.", "hi": "Claude context इकट्ठा करता है, काम करता है, नतीजा जांचता है और दोहराता है।", "kn": "Claude context ಸಂಗ್ರಹಿಸಿ, ಕೆಲಸ ಮಾಡಿ, ಫಲಿತಾಂಶ ಪರಿಶೀಲಿಸಿ ಪುನರಾವರ್ತಿಸುತ್ತದೆ.", "or": "Claude context ସଂଗ୍ରହ କରେ, କାମ କରେ, ଫଳ ଯାଞ୍ଚ କରେ ଓ ପୁନରାବୃତ୍ତି କରେ।", "ar": "يجمع Claude السياق ثم يعمل ثم يتحقق من النتيجة ويكرر.", "de": "Claude sammelt Kontext, handelt, prüft das Ergebnis und wiederholt."}, {"id": "perms", "h": "Permission modes", "en": "Shift Tab switches modes. Default asks first, accept edits edits freely, plan only explores, auto uses a safety check.", "hi": "Shift+Tab से mode बदलें। Default पहले पूछता है, plan सिर्फ देखता है।", "kn": "Shift+Tab ನಿಂದ mode ಬದಲಿಸಿ. Default ಮೊದಲು ಕೇಳುತ್ತದೆ, plan ಕೇವಲ ನೋಡುತ್ತದೆ.", "or": "Shift+Tab ରେ mode ବଦଳାନ୍ତୁ। Default ପ୍ରଥମେ ପଚାରେ, plan କେବଳ ଦେଖେ।", "ar": "Shift+Tab يبدّل الأوضاع. الافتراضي يسأل أولًا ووضع التخطيط يستكشف فقط.", "de": "Shift+Tab wechselt den Modus. Standard fragt zuerst, Plan erkundet nur."}, {"id": "plan", "h": "Workflow", "en": "Explore and plan in plan mode, then code and commit. Mistakes are cheap to fix in the plan.", "hi": "Plan mode में explore और plan करें, फिर code और commit।", "kn": "Plan mode ನಲ್ಲಿ explore ಮತ್ತು plan, ನಂತರ code ಮತ್ತು commit.", "or": "Plan mode ରେ explore ଓ plan, ତାପରେ code ଓ commit.", "ar": "استكشف وخطط في وضع التخطيط ثم اكتب الشيفرة وثبّتها.", "de": "Im Planmodus erkunden und planen, dann programmieren und committen."}, {"id": "control", "h": "Undo", "en": "Escape stops Claude. Escape twice or slash rewind restores code and conversation. Continue and resume bring back old sessions.", "hi": "Esc रोकता है। दो बार Esc या /rewind code और बातचीत वापस लाता है।", "kn": "Esc ನಿಲ್ಲಿಸುತ್ತದೆ. ಎರಡು ಬಾರಿ Esc ಅಥವಾ /rewind ಹಿಂದಿನ ಸ್ಥಿತಿಗೆ ತರುತ್ತದೆ.", "or": "Esc ବନ୍ଦ କରେ। ଦୁଇ ଥର Esc ବା /rewind ପୂର୍ବ ଅବସ୍ଥା ଫେରାଏ।", "ar": "Esc يوقف Claude. ضغطتان أو /rewind تعيد الشيفرة والمحادثة.", "de": "Esc stoppt Claude. Zweimal Esc oder /rewind stellt Code und Gespräch wieder her."}, {"id": "commands", "h": "Commands", "en": "Type slash to see every command. Init, memory, skills, hooks, agents, mcp and plugin are the ones this subject uses.", "hi": "/ लिखकर सारे commands देखें। /init, /memory, /skills, /hooks, /mcp मुख्य हैं।", "kn": "/ ಟೈಪ್ ಮಾಡಿ ಎಲ್ಲಾ commands ನೋಡಿ. /init, /memory, /skills, /hooks, /mcp ಮುಖ್ಯ.", "or": "/ ଟାଇପ୍ କରି ସବୁ commands ଦେଖନ୍ତୁ। /init, /memory, /skills, /hooks, /mcp ମୁଖ୍ୟ।", "ar": "اكتب / لرؤية كل الأوامر. أهمها /init و/memory و/skills و/hooks و/mcp.", "de": "Tippe / für alle Befehle. Wichtig sind /init, /memory, /skills, /hooks und /mcp."}, {"id": "folder", "h": "The folder", "en": "Project files live in CLAUDE.md and the dot claude folder. Personal ones live in the home dot claude folder. There is no single rules.md or skills.md file.", "hi": "Project files CLAUDE.md और .claude folder में, personal files home के .claude में। कोई अकेली rules.md file नहीं है।", "kn": "Project files CLAUDE.md ಮತ್ತು .claude ನಲ್ಲಿ, personal files home .claude ನಲ್ಲಿ. ಒಂಟಿ rules.md ಇಲ್ಲ.", "or": "Project files CLAUDE.md ଓ .claude ରେ, personal files home .claude ରେ। ଏକା rules.md ନାହିଁ।", "ar": "ملفات المشروع في CLAUDE.md ومجلد .claude والملفات الشخصية في .claude بالمجلد الرئيسي. لا يوجد ملف rules.md واحد.", "de": "Projektdateien liegen in CLAUDE.md und .claude, persönliche in ~/.claude. Eine einzelne rules.md gibt es nicht."}, {"id": "practice", "h": "Practice", "en": "Practise choosing permission modes, reading the agent loop and finding where each file lives.", "hi": "Permission mode चुनने और हर file की जगह पहचानने का अभ्यास करें।", "kn": "Permission mode ಆಯ್ಕೆ ಮತ್ತು file ಸ್ಥಳ ಗುರುತಿಸುವ ಅಭ್ಯಾಸ.", "or": "Permission mode ବାଛିବା ଓ file ସ୍ଥାନ ଚିହ୍ନିବାର ଅଭ୍ୟାସ।", "ar": "تدرّب على اختيار وضع الأذونات ومعرفة مكان كل ملف.", "de": "Übe Berechtigungsmodi zu wählen und den Ort jeder Datei zu finden."}], "ex": [{"id": "pick-mode", "lv": "e", "title": "Pick a permission mode", "task": "<p>Write <code>pickMode(task)<\/code>. Return <code>\"plan\"<\/code> when <code>task.explainOnly<\/code> is true, <code>\"acceptEdits\"<\/code> when <code>task.trusted<\/code> is true, otherwise <code>\"default\"<\/code>.<\/p>", "starter": "function pickMode(task) {\n  \n}", "tests": [{"call": "pickMode({ explainOnly: true })", "want": "plan"}, {"call": "pickMode({ trusted: true })", "want": "acceptEdits"}, {"call": "pickMode({})", "want": "default"}], "solution": "function pickMode(task) {\n  if (task.explainOnly) return \"plan\";\n  if (task.trusted) return \"acceptEdits\";\n  return \"default\";\n}", "hint": "Check the safest case first.", "why": "Choosing the mode on purpose is the first safety habit with Claude Code."}, {"id": "where", "lv": "m", "title": "Where does it live?", "task": "<p>Write <code>whereIs(thing)<\/code> for these: <code>\"team instructions\"<\/code> gives <code>\"CLAUDE.md\"<\/code>, <code>\"team permissions\"<\/code> gives <code>\".claude/settings.json\"<\/code>, <code>\"my permissions\"<\/code> gives <code>\".claude/settings.local.json\"<\/code>, <code>\"team mcp\"<\/code> gives <code>\".mcp.json\"<\/code>. Anything else gives <code>\"unknown\"<\/code>.<\/p>", "starter": "function whereIs(thing) {\n  \n}", "tests": [{"call": "whereIs(\"team instructions\")", "want": "CLAUDE.md"}, {"call": "whereIs(\"my permissions\")", "want": ".claude/settings.local.json"}, {"call": "whereIs(\"team mcp\")", "want": ".mcp.json"}, {"call": "whereIs(\"rules.md\")", "want": "unknown"}], "solution": "function whereIs(thing) {\n  const map = {\n    \"team instructions\": \"CLAUDE.md\",\n    \"team permissions\": \".claude/settings.json\",\n    \"my permissions\": \".claude/settings.local.json\",\n    \"team mcp\": \".mcp.json\",\n  };\n  return map[thing] ?? \"unknown\";\n}", "hint": "An object as a lookup table, and <code>??<\/code> for the default.", "why": "Knowing which file is shared and which is personal stops private settings leaking into the team repo."}, {"id": "tiny-loop", "lv": "h", "title": "Run a tiny agent loop", "task": "<p>Write <code>runLoop(steps)<\/code>. Each step is <code>{ tool, ok }<\/code>. Go through the steps in order and collect the tool names. Stop after the first step whose <code>ok<\/code> is false and return <code>{ used, stopped: true }<\/code>. If every step is ok, return <code>{ used, stopped: false }<\/code>.<\/p>", "starter": "function runLoop(steps) {\n  \n}", "tests": [{"call": "runLoop([{tool:\"Read\",ok:true},{tool:\"Bash\",ok:false},{tool:\"Edit\",ok:true}])", "want": {"used": ["Read", "Bash"], "stopped": true}}, {"call": "runLoop([{tool:\"Read\",ok:true}])", "want": {"used": ["Read"], "stopped": false}}], "solution": "function runLoop(steps) {\n  const used = [];\n  for (const s of steps) {\n    used.push(s.tool);\n    if (!s.ok) return { used, stopped: true };\n  }\n  return { used, stopped: false };\n}", "hint": "A <code>for...of<\/code> loop with an early <code>return<\/code>.", "why": "Agents stop and ask when a check fails, instead of piling more changes on a broken state."}], "dg": {"loop": {"t": "One request, many small steps", "w": 900, "h": 260, "n": [["req", 20, 100, 140, 56, "your request", {"c": 5, "sh": "doc"}], ["g", 230, 20, 180, 56, "gather context", {"c": 2, "sub": "Grep, Glob, Read", "i": "Search and read only the files that matter."}], ["a", 470, 100, 180, 56, "take action", {"c": 0, "sub": "Edit, Write, Bash", "i": "Change files or run commands, asking first when the mode requires it."}], ["v", 230, 180, 180, 56, "check the result", {"c": 4, "sub": "tests, output", "i": "Run tests or compare output, then decide the next step."}], ["done", 720, 100, 160, 56, "answer", {"c": 1, "sh": "pill"}]], "e": [["req", "g"], ["g", "a"], ["a", "v"], ["v", "g", {"t": "not done yet"}], ["a", "done", {"t": "done"}]], "st": [[["req", "g", "req>g"], "Claude starts by finding the relevant code or files."], [["a", "g>a"], "It makes a change or runs a command."], [["v", "a>v", "v>g"], "It checks the result and loops if something is still wrong."], [["done", "a>done"], "When the check passes, it reports back."]]}}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Claude Code: First Steps", subject: "master-claude" });
+CLAUDE_PAGE.wire();
+</script>
+</body>
+</html>
