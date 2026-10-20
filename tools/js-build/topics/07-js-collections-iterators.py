@@ -247,7 +247,7 @@ PARTS = [
     part('symbols', '🔣', 'Symbols', '''
 <p>A <b>symbol</b> is a unique value used as a hidden key. Two symbols with the same description are still different, unless they come from the shared registry with <code>Symbol.for</code>. Symbol keys are skipped by <code>Object.keys</code> and <code>JSON.stringify</code>.</p>
 [[symbols]]
-<p><b>Well known symbols</b> let your objects plug into the language: <code>Symbol.iterator</code> makes them work with <code>for...of</code>, <code>Symbol.toPrimitive</code> controls how they turn into text and numbers, <code>Symbol.asyncIterator</code> works with <code>for await</code>, and <code>Symbol.dispose</code> works with <code>using</code> (chapter 16).</p>
+<p><b>Well known symbols</b> let your objects plug into the language: <code>Symbol.iterator</code> makes them work with <code>for...of</code>, <code>Symbol.toPrimitive</code> controls how they turn into text and numbers, <code>Symbol.asyncIterator</code> works with <code>for await</code>, and <code>Symbol.dispose</code> works with <code>using</code> (chapter 26).</p>
 ''', kw=['Symbol', 'Symbol.for', 'unique key', 'well known symbols', 'Symbol.iterator', 'Symbol.toPrimitive', 'Symbol.asyncIterator']),
     part('scenario', '🎬', 'Real world scenario: compare a menu and walk every page', '''
 <div class="scenario"><b>The situation</b>A release changed the site menu. You must report which items the spec asks for but the page lacks, which the page has that the spec does not mention, any duplicates, and whether the shared items keep their order. Then you must count every user across a paginated list.</div>

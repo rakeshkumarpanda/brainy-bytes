@@ -119,7 +119,7 @@ const count = await page.evaluate(() => document.querySelectorAll(".product").le
 
 // Cypress
 cy.window().then(win => win.localStorage.setItem("token", "abc"));
-''', 'Test tools send JavaScript into the page', note='Snippets, full runs come in chapter 15'),
+''', 'Test tools send JavaScript into the page', note='Snippets, full runs come in chapter 21'),
     'strict': run('''
 "use strict";
 let total = 0;

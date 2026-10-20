@@ -87,3 +87,30 @@ async function buildDriver() {
 
 module.exports = { buildDriver };
 '''
+
+
+# ---------- TypeScript examples ----------
+TSCONFIG = {
+    'compilerOptions': {'target': 'esnext', 'module': 'nodenext', 'strict': True, 'noEmit': True,
+                        'allowImportingTsExtensions': True, 'lib': ['esnext', 'dom'], 'types': ['node']},
+    'include': ['src'],
+}
+
+
+def ts(code, label, errors=0, run=True, name='main.ts', more=None, options=None, **kw):
+    """A TypeScript file checked by tsc with strict settings, then run by Node.js with type stripping.
+    errors is how many type errors tsc must report. The build fails if the count is different."""
+    cfg = json.loads(json.dumps(TSCONFIG))
+    cfg['compilerOptions'].update(options or {})
+    files = {'package.json': pkg('ts-demo', 'module'), 'tsconfig.json': json.dumps(cfg, indent=2), f'src/{name}': code, **(more or {})}
+    cmd = '(npx tsc -p . --pretty false && echo "tsc: no type errors")' + (f'; echo; echo "$ node src/{name}"; node src/{name}' if run else '')
+    shown = 'npx tsc' + (f' && node src/{name}' if run and not errors else (f'\n$ node src/{name}' if run else ''))
+    badge = f'🔷 tsc finds {errors} error{"" if errors == 1 else "s"}' if errors else '🔷 tsc passes'
+    if run:
+        badge += ', then Node.js runs it'
+    spec = {'t': 'test', 'files': files, 'cmd': cmd, 'label': label, 'show': [f'src/{name}', *(more or {})], 'shown_cmd': shown,
+            'badge': badge, 'ts_errors': errors}
+    if errors and not run:
+        spec['expect'] = 'fail'
+    spec.update(kw)
+    return spec

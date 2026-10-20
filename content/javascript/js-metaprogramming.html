@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Objects in depth and metaprogramming · JavaScript</title>
+<meta name="description" content="JavaScript metaprogramming: property descriptors, defineProperty, getters, setters, freeze, seal, Symbol.toPrimitive, Symbol.hasInstance, util.inspect.custom, Proxy, Reflect, traps, tagged template literals, String.raw and decorators.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 17 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🪞</span><div><h1>Objects in depth and metaprogramming</h1><p class="lead">Change how objects behave: property descriptors, getters and setters, freeze, seal and preventExtensions, well known symbols such as toPrimitive and util.inspect.custom, Proxy and Reflect for validation, logging and retries, tagged templates for safe HTML and SQL, and decorators.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 17 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 6 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 4 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Mocks, spies, fluent clients and step reporters are all metaprogramming. This chapter shows how they work so you can build and debug them.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#descriptors"><span>🧾</span>Property descriptors, getters and setters</a><a href="#symbols" class="qa"><span>🔣</span>Well known symbols</a><a href="#proxy" class="qa"><span>🪞</span>Proxy and Reflect</a><a href="#tagged" class="qa"><span>🏷️</span>Tagged template literals</a><a href="#decorators"><span>🎀</span>Decorators</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: a fluent API client</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="descriptors" data-say="descriptors"><div class="sec-num">Part 1</div><h2><span class="sec-em">🧾</span><span>Property descriptors, getters and setters</span></h2>
+
+<p>Every property has a <b>descriptor</b> with flags. <code>writable</code> allows changes, <code>enumerable</code> shows it in <code>Object.keys</code>, loops and JSON, and <code>configurable</code> allows deleting it or changing its flags. Accessor properties use <code>get</code> and <code>set</code> functions instead of a value.</p>
+<div class="codewrap" data-k="descriptors" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Property descriptors, getters, setters and locking · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="s">"use strict"</span>;
+<span class="k">const</span> user = { name: <span class="s">"Asha"</span> };
+<span class="t">Object</span>.defineProperty(user, <span class="s">"id"</span>, { value: <span class="n">7</span>, writable: <span class="k">false</span>, enumerable: <span class="k">false</span>, configurable: <span class="k">false</span> });
+
+console.log(<span class="t">Object</span>.getOwnPropertyDescriptor(user, <span class="s">"name"</span>));
+console.log(<span class="t">Object</span>.getOwnPropertyDescriptor(user, <span class="s">"id"</span>));
+console.log(<span class="t">Object</span>.keys(user), <span class="t">JSON</span>.stringify(user), user.id);      <span class="c">// not enumerable: hidden from keys and JSON</span>
+<span class="k">try</span> { user.id = <span class="n">8</span>; } <span class="k">catch</span> (e) { console.log(e.constructor.name, <span class="s">"on write"</span>) }
+<span class="k">try</span> { <span class="k">delete</span> user.id; } <span class="k">catch</span> (e) { console.log(e.constructor.name, <span class="s">"on delete"</span>) }
+
+<span class="c">// Getters and setters: computed and validated properties</span>
+<span class="k">const</span> cart = {
+  items: [{ price: <span class="n">40</span>, qty: <span class="n">2</span> }, { price: <span class="n">250</span>, qty: <span class="n">1</span> }],
+  <span class="k">get</span> total() { <span class="k">return</span> <span class="k">this</span>.items.reduce((s, i) =&gt; s + i.price * i.qty, <span class="n">0</span>); },
+  <span class="k">set</span> coupon(code) {
+    <span class="k">if</span> (!/^[<span class="t">A</span>-<span class="t">Z</span>]+\d+$/.test(code)) <span class="k">throw</span> <span class="k">new</span> <span class="t">RangeError</span>(<span class="s">`bad coupon ${code}`</span>);
+    <span class="k">this</span>._coupon = code;
+  },
+};
+console.log(<span class="s">"total"</span>, cart.total);
+cart.coupon = <span class="s">"SAVE10"</span>;
+<span class="k">try</span> { cart.coupon = <span class="s">"nope"</span>; } <span class="k">catch</span> (e) { console.log(e.message); }
+
+<span class="c">// The three levels of locking</span>
+<span class="k">const</span> levels = { preventExtensions: <span class="t">Object</span>.preventExtensions, seal: <span class="t">Object</span>.seal, freeze: <span class="t">Object</span>.freeze };
+<span class="k">for</span> (<span class="k">const</span> [name, lock] <span class="k">of</span> <span class="t">Object</span>.entries(levels)) {
+  <span class="k">const</span> o = lock({ a: <span class="n">1</span> });
+  <span class="k">const</span> can = op =&gt; { <span class="k">try</span> { op(o); <span class="k">return</span> <span class="s">"yes"</span>; } <span class="k">catch</span> { <span class="k">return</span> <span class="s">"no"</span>; } };
+  console.log(name.padEnd(<span class="n">17</span>), <span class="s">"add:"</span>, can(o =&gt; (o.b = <span class="n">2</span>)), <span class="s">" change:"</span>, can(o =&gt; (o.a = <span class="n">9</span>)), <span class="s">" delete:"</span>, can(o =&gt; <span class="k">delete</span> o.a));
+}</pre><div class="out"><span>Output</span><pre>{ value: &#x27;Asha&#x27;, writable: true, enumerable: true, configurable: true }
+{ value: 7, writable: false, enumerable: false, configurable: false }
+[ &#x27;name&#x27; ] {&quot;name&quot;:&quot;Asha&quot;} 7
+TypeError on write
+TypeError on delete
+total 330
+bad coupon nope
+preventExtensions add: no  change: yes  delete: yes
+seal              add: no  change: yes  delete: no
+freeze            add: no  change: no  delete: no</pre></div></div>
+<div class="tip">This is why a hidden property can be on an object you are testing but missing from <code>JSON.stringify</code> and <code>toEqual</code> comparisons. Use <code>Object.getOwnPropertyDescriptors</code> when an object behaves strangely.</div>
+</section>
+<section class="card reveal jsec qa-part" id="symbols" data-say="symbols"><div class="sec-num">Part 2</div><h2><span class="sec-em">🔣</span><span>Well known symbols</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Hiding secrets from logs and reports is a must for test frameworks that log every object.</span></div>
+<p>Built in operations look for special symbol keys on your objects. <code>Symbol.toPrimitive</code> controls conversion to numbers and strings, <code>Symbol.hasInstance</code> controls <code>instanceof</code>, <code>Symbol.toStringTag</code> the type label, and <code>Symbol.iterator</code> (chapter 7) makes an object loopable. Node.js adds <code>util.inspect.custom</code> for how an object is logged.</p>
+<div class="codewrap" data-k="symbols" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Well known symbols change built in behaviour · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> util <span class="k">from</span> <span class="s">"node:util"</span>;
+
+<span class="k">class</span> <span class="t">Money</span> {
+  constructor(amount, currency) { <span class="k">this</span>.amount = amount; <span class="k">this</span>.currency = currency; }
+  <span class="c">// Decide what the object becomes in maths, in strings and by default</span>
+  [<span class="t">Symbol</span>.toPrimitive](hint) { <span class="k">return</span> hint === <span class="s">"number"</span> ? <span class="k">this</span>.amount : <span class="s">`${this.currency} ${this.amount.toFixed(2)}`</span>; }
+  <span class="k">get</span> [<span class="t">Symbol</span>.toStringTag]() { <span class="k">return</span> <span class="s">"Money"</span>; }
+}
+<span class="k">const</span> price = <span class="k">new</span> <span class="t">Money</span>(<span class="n">49.5</span>, <span class="s">"INR"</span>);
+console.log(+price * <span class="n">2</span>, <span class="s">`${price}`</span>, <span class="t">Object</span>.prototype.toString.call(price));
+
+<span class="c">// Control instanceof for duck typing</span>
+<span class="k">class</span> <span class="t">Thenable</span> { <span class="k">static</span> [<span class="t">Symbol</span>.hasInstance](x) { <span class="k">return</span> <span class="k">typeof</span> x?.then === <span class="s">"function"</span>; } }
+console.log(<span class="t">Promise</span>.resolve() <span class="k">instanceof</span> <span class="t">Thenable</span>, {} <span class="k">instanceof</span> <span class="t">Thenable</span>);
+
+<span class="c">// Hide secrets when objects are logged in Node.js</span>
+<span class="k">class</span> <span class="t">Credentials</span> {
+  constructor(user, password) { <span class="k">this</span>.user = user; <span class="k">this</span>.password = password; }
+  [util.inspect.custom]() { <span class="k">return</span> <span class="s">`Credentials { user: '${this.user}', password: '***' }`</span>; }
+  toJSON() { <span class="k">return</span> { user: <span class="k">this</span>.user }; }
+}
+<span class="k">const</span> login = <span class="k">new</span> <span class="t">Credentials</span>(<span class="s">"asha"</span>, <span class="s">"s3cret"</span>);
+console.log(login, <span class="t">JSON</span>.stringify(login));</pre><div class="out"><span>Output</span><pre>99 INR 49.50 [object Money]
+true false
+Credentials { user: &#x27;asha&#x27;, password: &#x27;***&#x27; } {&quot;user&quot;:&quot;asha&quot;}</pre></div></div>
+<div class="qa-box">Give credential and token objects a custom inspect and a <code>toJSON</code> that leave the secret out. Test reports, CI logs and screenshots of the console then never leak a password.</div>
+</section>
+<section class="card reveal jsec qa-part" id="proxy" data-say="proxy"><div class="sec-num">Part 3</div><h2><span class="sec-em">🪞</span><span>Proxy and Reflect</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Selenium</span><span class="qa-why">Proxies power auto mocks and step logging, and let you add retries or reporting to every page object at once.</span></div>
+<p>A <b>Proxy</b> sits in front of an object and can intercept almost anything done to it: reading, writing, deleting, <code>in</code>, listing keys, calling and <code>new</code>. Each handler function is a <b>trap</b>. <b>Reflect</b> has a method for every trap that does the normal behaviour, so a trap can add checks and then hand over.</p>
+<div class="codewrap" data-k="proxy" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Proxy and Reflect: intercept property access · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// A Proxy wraps an object and intercepts operations through "traps"</span>
+<span class="k">const</span> strictConfig = target =&gt; <span class="k">new</span> <span class="t">Proxy</span>(target, {
+  <span class="k">get</span>(obj, key, receiver) {
+    <span class="k">if</span> (<span class="k">typeof</span> key === <span class="s">"string"</span> &amp;&amp; !(key <span class="k">in</span> obj)) <span class="k">throw</span> <span class="k">new</span> <span class="t">ReferenceError</span>(<span class="s">`unknown config key "${key}"`</span>);
+    <span class="k">return</span> <span class="t">Reflect</span>.<span class="k">get</span>(obj, key, receiver);
+  },
+  <span class="k">set</span>(obj, key, value) {
+    <span class="k">if</span> (key === <span class="s">"timeout"</span> &amp;&amp; !(<span class="t">Number</span>.isInteger(value) &amp;&amp; value &gt; <span class="n">0</span>)) <span class="k">throw</span> <span class="k">new</span> <span class="t">TypeError</span>(<span class="s">"timeout must be a positive integer"</span>);
+    <span class="k">return</span> <span class="t">Reflect</span>.<span class="k">set</span>(obj, key, value);
+  },
+});
+
+<span class="k">const</span> config = strictConfig({ baseURL: <span class="s">"http://localhost:3000"</span>, timeout: <span class="n">5000</span> });
+console.log(config.timeout);
+<span class="k">try</span> { config.timout; } <span class="k">catch</span> (e) { console.log(e.message); }              <span class="c">// typo caught at once</span>
+<span class="k">try</span> { config.timeout = <span class="s">"5s"</span>; } <span class="k">catch</span> (e) { console.log(e.message); }
+
+<span class="c">// Negative indexes for arrays</span>
+<span class="k">const</span> last = arr =&gt; <span class="k">new</span> <span class="t">Proxy</span>(arr, { <span class="k">get</span>: (a, k, r) =&gt; <span class="t">Reflect</span>.<span class="k">get</span>(a, <span class="k">typeof</span> k === <span class="s">"string"</span> &amp;&amp; /^-\d+$/.test(k) ? a.length + <span class="t">Number</span>(k) : k, r) });
+console.log(last([<span class="s">"login"</span>, <span class="s">"search"</span>, <span class="s">"checkout"</span>])[-<span class="n">1</span>]);
+
+<span class="c">// Count reads to find which settings are really used</span>
+<span class="k">const</span> reads = <span class="k">new</span> <span class="t">Map</span>();
+<span class="k">const</span> watched = <span class="k">new</span> <span class="t">Proxy</span>({ a: <span class="n">1</span>, b: <span class="n">2</span> }, { <span class="k">get</span>(o, k) { reads.<span class="k">set</span>(k, (reads.<span class="k">get</span>(k) ?? <span class="n">0</span>) + <span class="n">1</span>); <span class="k">return</span> o[k]; } });
+watched.a; watched.a; watched.b;
+console.log(<span class="t">Object</span>.fromEntries(reads));</pre><div class="out"><span>Output</span><pre>5000
+unknown config key &quot;timout&quot;
+timeout must be a positive integer
+checkout
+{ a: 2, b: 1 }</pre></div></div>
+<p>Test frameworks use proxies for auto mocking, for fluent APIs and for wrapping page objects. Here a Proxy adds step logging and one retry on a known flaky error to every method, without touching the page class.</p>
+<div class="codewrap" data-k="pom-proxy" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A Proxy that logs and retries page object steps · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Wrap every page object method: log the step and its time, and retry once on a known flaky error</span>
+<span class="k">function</span> instrument(page, { log = console.log } = {}) {
+  <span class="k">return</span> <span class="k">new</span> <span class="t">Proxy</span>(page, {
+    <span class="k">get</span>(target, key, receiver) {
+      <span class="k">const</span> value = <span class="t">Reflect</span>.<span class="k">get</span>(target, key, receiver);
+      <span class="k">if</span> (<span class="k">typeof</span> value !== <span class="s">"function"</span>) <span class="k">return</span> value;
+      <span class="k">return</span> <span class="k">async</span> (...args) =&gt; {
+        <span class="k">const</span> label = <span class="s">`${target.constructor.name}.${String(key)}(${args.map(a =&gt; JSON.stringify(a)).join(", ")})`</span>;
+        <span class="k">for</span> (<span class="k">let</span> attempt = <span class="n">1</span>; ; attempt++) {
+          <span class="k">try</span> {
+            <span class="k">const</span> result = <span class="k">await</span> value.apply(receiver, args);
+            log(<span class="s">`✔ ${label}${attempt &gt; 1 ? `</span> after ${attempt} tries<span class="s">` : ""}`</span>);
+            <span class="k">return</span> result;
+          } <span class="k">catch</span> (e) {
+            <span class="k">if</span> (attempt === <span class="n">2</span> || !/detached|stale/i.test(e.message)) { log(<span class="s">`✖ ${label}: ${e.message}`</span>); <span class="k">throw</span> e; }
+          }
+        }
+      };
+    },
+  });
+}
+
+<span class="k">class</span> <span class="t">SearchPage</span> {
+  clicks = <span class="n">0</span>;
+  <span class="k">async</span> search(term) { <span class="k">if</span> (++<span class="k">this</span>.clicks === <span class="n">1</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"element is detached from the DOM"</span>); <span class="k">return</span> <span class="s">`${term}: 3 results`</span>; }
+  <span class="k">async</span> openResult(n) { <span class="k">if</span> (n &gt; <span class="n">3</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">`result ${n} not found`</span>); <span class="k">return</span> <span class="s">`opened ${n}`</span>; }
+}
+<span class="k">const</span> page = instrument(<span class="k">new</span> <span class="t">SearchPage</span>());
+console.log(<span class="k">await</span> page.search(<span class="s">"pen"</span>));
+<span class="k">await</span> page.openResult(<span class="n">9</span>).<span class="k">catch</span>(() =&gt; {});</pre><div class="out"><span>Output</span><pre>✔ SearchPage.search(&quot;pen&quot;) after 2 tries
+pen: 3 results
+✖ SearchPage.openResult(9): result 9 not found</pre></div></div>
+<div class="warn">Proxies add a cost to every operation and can surprise people reading the code. Use them in tools and test frameworks, not in hot paths of application code.</div>
+</section>
+<section class="card reveal jsec qa-part" id="tagged" data-say="tagged"><div class="sec-num">Part 4</div><h2><span class="sec-em">🏷️</span><span>Tagged template literals</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Knowing how query tags keep values apart from SQL text explains why injection tests pass or fail.</span></div>
+<p>A <b>tag</b> is a function placed before a template literal. It receives the fixed text pieces and the values separately, so it can escape values, build safe queries or change the text. Libraries such as lit-html, styled-components and the <code>gql</code> tag for GraphQL are built on this.</p>
+<div class="codewrap" data-k="tagged" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Tagged templates: safe HTML and SQL · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// A tag function receives the fixed strings and the values separately</span>
+<span class="k">function</span> html(strings, ...values) {
+  <span class="k">const</span> escape = v =&gt; <span class="t">String</span>(v).replace(/[&amp;&lt;&gt;<span class="s">"']/g, c =&gt; ({ "</span>&amp;<span class="s">": "</span>&amp;amp;<span class="s">", "</span>&lt;<span class="s">": "</span>&amp;lt;<span class="s">", "</span>&gt;<span class="s">": "</span>&amp;gt;<span class="s">", '"</span><span class="s">': "&amp;quot;", "'</span><span class="s">": "</span>&amp;#39;" })[c]);
+  <span class="k">return</span> strings.reduce((out, s, i) =&gt; out + s + (i &lt; values.length ? escape(values[i]) : <span class="s">""</span>), <span class="s">""</span>);
+}
+<span class="k">const</span> review = <span class="s">'&lt;img src=x onerror="alert(1)"&gt;'</span>;
+console.log(html<span class="s">`&lt;p class="review"&gt;${review}&lt;/p&gt;`</span>);
+
+<span class="c">// A SQL tag that never builds text from values, which prevents SQL injection</span>
+<span class="k">function</span> sql(strings, ...values) {
+  <span class="k">return</span> { text: strings.reduce((q, s, i) =&gt; q + <span class="s">`$${i}`</span> + s), values };
+}
+<span class="k">const</span> email = <span class="s">"x' OR '1'='1"</span>;
+console.log(sql<span class="s">`SELECT * FROM users WHERE email = ${email} AND active = ${true}`</span>);
+
+<span class="c">// String.raw keeps backslashes, handy for regexes and Windows paths</span>
+console.log(<span class="t">String</span>.raw<span class="s">`C:\tests\new`</span>, <span class="s">"|"</span>, <span class="s">`C:\tests\new`</span>.length, <span class="t">String</span>.raw<span class="s">`C:\tests\new`</span>.length);
+
+<span class="c">// A dedent tag for readable multi line test data</span>
+<span class="k">const</span> dedent = (s, ...v) =&gt; <span class="t">String</span>.raw(s, ...v).replace(/^\n/, <span class="s">""</span>).replace(<span class="k">new</span> <span class="t">RegExp</span>(<span class="s">`^${String.raw(s, ...v).match(/^\n?( *)/)[1]}`</span>, <span class="s">"gm"</span>), <span class="s">""</span>);
+console.log(dedent<span class="s">`
+    Feature: Login
+      Scenario: wrong password
+        Then I see "Try again"`</span>);</pre><div class="out"><span>Output</span><pre>&lt;p class=&quot;review&quot;&gt;&amp;lt;img src=x onerror=&amp;quot;alert(1)&amp;quot;&amp;gt;&lt;/p&gt;
+{
+  text: &#x27;SELECT * FROM users WHERE email = $1 AND active = $2&#x27;,
+  values: [ &quot;x&#x27; OR &#x27;1&#x27;=&#x27;1&quot;, true ]
+}
+C:\tests\new | 10 12
+Feature: Login
+  Scenario: wrong password
+    Then I see &quot;Try again&quot;</pre></div></div>
+</section>
+<section class="card reveal jsec" id="decorators" data-say="decorators"><div class="sec-num">Part 5</div><h2><span class="sec-em">🎀</span><span>Decorators</span></h2>
+
+<p>A <b>decorator</b> is a function written as <code>@name</code> before a class, method, field or accessor. It receives the original and can replace or wrap it. Test frameworks use decorators for steps, retries, timeouts and dependency injection.</p>
+<div class="codewrap" data-k="decorators"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Decorators wrap methods and classes · Runs in chapter 24 with TypeScript</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Decorators are a stage 3 proposal. TypeScript 5 and later supports them today (chapter 24),</span>
+<span class="c">// and Babel can compile them for JavaScript.</span>
+<span class="k">class</span> <span class="t">CheckoutPage</span> {
+  <span class="a">@step</span>(<span class="s">"Pay with card"</span>)          <span class="c">// log the step in the report</span>
+  <span class="a">@retry</span>(<span class="n">2</span>)                       <span class="c">// retry the method on a flaky error</span>
+  <span class="k">async</span> pay(card) { <span class="c">/* ... */</span> }
+}
+
+<span class="k">function</span> step(title) {
+  <span class="k">return</span> <span class="k">function</span> (method, context) {
+    <span class="k">return</span> <span class="k">async</span> <span class="k">function</span> (...args) {
+      console.log(<span class="s">`step: ${title}`</span>);
+      <span class="k">return</span> method.apply(<span class="k">this</span>, args);
+    };
+  };
+}</pre></div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 6</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a fluent API client</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>The API test suite calls dozens of endpoints. Writing a function for each one is slow, and URL strings built by hand are full of typos.</div>
+<div class="codewrap" data-k="scenario" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A dynamic API client with a Proxy · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// A fluent API client built from a Proxy: api.users[7].orders.get() calls GET /users/7/orders</span>
+<span class="k">function</span> client(baseURL, fetchFn) {
+  <span class="k">const</span> make = path =&gt; <span class="k">new</span> <span class="t">Proxy</span>(() =&gt; {}, {
+    <span class="k">get</span>(_, key) {
+      <span class="k">if</span> ([<span class="s">"get"</span>, <span class="s">"post"</span>, <span class="s">"put"</span>, <span class="s">"delete"</span>].includes(key))
+        <span class="k">return</span> (body) =&gt; fetchFn(key.toUpperCase(), <span class="s">`${baseURL}${path}`</span>, body);
+      <span class="k">return</span> make(<span class="s">`${path}/${String(key)}`</span>);
+    },
+  });
+  <span class="k">return</span> make(<span class="s">""</span>);
+}
+
+<span class="c">// A fake fetch so the example runs anywhere</span>
+<span class="k">const</span> calls = [];
+<span class="k">const</span> fakeFetch = <span class="k">async</span> (method, url, body) =&gt; { calls.push(<span class="s">`${method} ${url}${body ? " " + JSON.stringify(body) : ""}`</span>); <span class="k">return</span> { status: method === <span class="s">"POST"</span> ? <span class="n">201</span> : <span class="n">200</span> }; };
+
+<span class="k">const</span> api = client(<span class="s">"https://api.shop.test/v1"</span>, fakeFetch);
+<span class="k">await</span> api.users[<span class="n">7</span>].orders.<span class="k">get</span>();
+<span class="k">await</span> api.products.post({ name: <span class="s">"Pen"</span>, price: <span class="n">40</span> });
+<span class="k">await</span> api.carts[<span class="s">"c-19"</span>].items.<span class="t">PEN</span>.<span class="k">delete</span>();
+console.log(calls);</pre><div class="out"><span>Output</span><pre>[
+  &#x27;GET https://api.shop.test/v1/users/7/orders&#x27;,
+  &#x27;POST https://api.shop.test/v1/products {&quot;name&quot;:&quot;Pen&quot;,&quot;price&quot;:40}&#x27;,
+  &#x27;DELETE https://api.shop.test/v1/carts/c-19/items/PEN&#x27;
+]</pre></div></div>
+<p>Each property read adds a part to the path, and the verb at the end sends the request. The same trick is used by real clients for large APIs. Pair it with TypeScript types (chapter 23) so the editor suggests only valid paths.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-functional.html" data-topic="js-functional"><small>← Previous chapter</small><b>🧩 Functional style</b></a><a class="next" href="./js-node-deep.html" data-topic="js-node-deep"><small>Next chapter →</small><b>🟩 Node.js in depth</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Code that shapes code", "panels": [{"s": [["e", "🧾"], ["t", "{ writable, enumerable }", {"b": 1, "size": 11}]], "h": "Descriptors", "t": "Flags on every property.", "more": "Hidden keys skip JSON."}, {"s": [["e", "🔣"], ["t", "[Symbol.toPrimitive]", {"b": 1, "size": 11}]], "h": "Symbols", "t": "Hooks into built in behaviour.", "more": "Hide secrets from logs."}, {"s": [["e", "🪞"], ["t", "new Proxy(obj, traps)", {"b": 1, "size": 11}]], "h": "Proxy", "t": "Intercept any operation.", "more": "Reflect does the default."}, {"s": [["e", "🏷️"], ["t", "sql`… ${email}`", {"b": 1}]], "h": "Tags", "t": "Values arrive separately.", "more": "Safe HTML and SQL."}], "remember": "Descriptors and symbols change how objects behave, Proxy intercepts operations, and tags keep values apart from text."}, "real": [["🧪", "Vitest and Jest", "Build automatic mocks of whole modules with proxies, so every function exists and records its calls."], ["🔐", "A banking test suite", "Logged request objects in every failure until a password appeared in a CI log. A custom inspect on the credentials class fixed it for good."], ["🐙", "A popular GitHub client", "Builds its methods for hundreds of endpoints from a description file, the same idea as the proxy client on this page."]], "quiz": [{"lv": "e", "q": "A property with enumerable: false is hidden from which of these?", "o": ["Object.keys and JSON.stringify", "Direct reads like obj.x", "The in operator", "Object.getOwnPropertyDescriptor"], "a": 0, "hint": "Enumeration.", "why": "You can still read it directly."}, {"lv": "e", "q": "What does a getter do?", "o": ["Runs a function when the property is read", "Runs when the object is created", "Deletes the property", "Copies the object"], "a": 0, "hint": "Computed property.", "why": "cart.total is computed from the items every time."}, {"lv": "e", "q": "What does a tag function receive first?", "o": ["An array of the fixed text pieces", "The whole string", "Only the values", "A regex"], "a": 0, "hint": "strings, then ...values.", "why": "There is always one more string than values."}, {"lv": "m", "q": "Which lock still allows changing existing values?", "o": ["Object.seal", "Object.freeze", "Both", "Neither"], "a": 0, "hint": "Seal stops adding and deleting.", "why": "Freeze also stops changes."}, {"lv": "m", "q": "Which symbol decides what +obj gives?", "o": ["Symbol.toPrimitive", "Symbol.iterator", "Symbol.hasInstance", "Symbol.toStringTag"], "a": 0, "hint": "Conversion.", "why": "It receives a hint of \"number\", \"string\" or \"default\"."}, {"lv": "m", "q": "Why call Reflect.get inside a get trap?", "o": ["To do the normal read after your own checks", "It is faster than nothing", "Traps must return undefined", "To create a new proxy"], "a": 0, "hint": "Default behaviour.", "why": "Passing the receiver keeps getters working correctly."}, {"lv": "m", "q": "How does util.inspect.custom help in test frameworks?", "o": ["It controls how an object is logged, so secrets can be hidden", "It speeds up tests", "It mocks modules", "It prints stack traces"], "a": 0, "hint": "Logging.", "why": "Add toJSON as well for reports that serialise objects."}, {"lv": "h", "q": "Why does the sql tag on this page prevent SQL injection?", "o": ["Values are sent separately as parameters, never pasted into the text", "It deletes quotes", "It uses a regex", "It encrypts the query"], "a": 0, "hint": "Parameterised query.", "why": "The database never treats a value as SQL."}, {"lv": "h", "q": "Which trap runs for \"key\" in proxy?", "o": ["has", "get", "ownKeys", "apply"], "a": 0, "hint": "The in operator.", "why": "ownKeys runs for Object.keys and for loops over keys."}, {"lv": "h", "q": "A Proxy wraps every page object method with a retry. What does the page class need to change?", "o": ["Nothing, the Proxy adds it from outside", "Every method", "Its constructor", "Its tests"], "a": 0, "hint": "Wrapping.", "why": "That is the main benefit: one place adds behaviour to all methods."}, {"lv": "x", "q": "Why does the fluent client proxy wrap a function () => {} instead of {}?", "o": ["So the proxy can also be called, which needs an apply trap on a function target", "Functions are faster", "Objects cannot be proxied", "To hide it from JSON"], "a": 0, "hint": "Callable proxies.", "why": "A Proxy is only callable if its target is a function."}, {"lv": "x", "q": "String.raw`a\\nb`.length is?", "o": ["4", "3", "2", "1"], "a": 0, "hint": "Backslash and n stay as two characters.", "why": "Without raw, \\n is one new line character, giving 3."}], "calc": [{"lv": "e", "q": "cart has items of 40 × 2 and 250 × 1. What does the total getter return?", "ans": "330", "hint": "Price times quantity.", "steps": ["<span class=\"eq\">40 × 2 + 250 × 1 = 330<\/span>"]}, {"lv": "e", "q": "A template literal has 2 values. How many text pieces does the tag function receive?", "ans": "3", "hint": "One more than values.", "steps": ["Text, value, text, value, text."]}, {"lv": "m", "q": "How many of add, change and delete does Object.seal allow on a sealed object?", "ans": "1", "hint": "Only change.", "steps": ["Adding and deleting fail, changing works."]}, {"lv": "m", "q": "last([\"a\", \"b\", \"c\", \"d\"])[-2] reads which index of the array?", "ans": "2", "hint": "length + (−2).", "steps": ["<span class=\"eq\">4 + (−2) = 2<\/span>", "Index 2 is \"c\"."]}, {"lv": "m", "q": "A watched proxy sees a read twice and b once. What is the total count of reads?", "ans": "3", "hint": "Add them.", "steps": ["2 + 1 = 3."]}, {"lv": "h", "q": "The instrumented search fails once with a detached error and then works. How many times did the real method run?", "ans": "2", "hint": "One retry.", "steps": ["First call threw, the retry returned results."]}, {"lv": "h", "q": "sql`… ${a} … ${b} … ${c}` produces placeholders $1 to $n. What is n?", "ans": "3", "hint": "One per value.", "steps": ["Three values give $1, $2 and $3."]}, {"lv": "x", "q": "api.carts[\"c-19\"].items.PEN.delete(). How many path segments are in the URL after the base?", "ans": "4", "hint": "carts, c-19, items, PEN.", "steps": ["/carts/c-19/items/PEN has 4 segments."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers objects in depth and metaprogramming: descriptors, getters and setters, well known symbols, Proxy and Reflect, tagged templates and decorators.", "hi": "यह अध्याय objects और metaprogramming सिखाता है: descriptors, getters और setters, symbols, Proxy और Reflect, tagged templates और decorators।", "kn": "ಈ ಅಧ್ಯಾಯ objects ಮತ್ತು metaprogramming: descriptors, getters, symbols, Proxy, Reflect, tagged templates ಮತ್ತು decorators.", "or": "ଏହି ଅଧ୍ୟାୟ objects ଓ metaprogramming: descriptors, getters, symbols, Proxy, Reflect, tagged templates ଓ decorators।", "ar": "يتناول هذا الفصل الكائنات بعمق والبرمجة الوصفية: الواصفات والمحصلات والرموز المعروفة وProxy وReflect والقوالب الموسومة والمزخرفات.", "de": "Dieses Kapitel behandelt Objekte im Detail und Metaprogrammierung: Deskriptoren, Getter, Symbole, Proxy, Reflect, Tags und Dekoratoren."}, {"id": "descriptors", "h": "Descriptors", "en": "Each property has flags: writable, enumerable and configurable. Getters and setters compute or check values. freeze, seal and preventExtensions lock objects.", "hi": "हर property के flags होते हैं: writable, enumerable और configurable। Getters और setters values गिनते या जांचते हैं।", "kn": "ಪ್ರತಿ property ಗೆ flags: writable, enumerable, configurable. Getters setters values ಲೆಕ್ಕಿಸುತ್ತವೆ.", "or": "ପ୍ରତି property ର flags: writable, enumerable, configurable। Getters setters values ହିସାବ କରନ୍ତି।", "ar": "لكل خاصية أعلام: قابلة للكتابة وقابلة للعد وقابلة للتهيئة. تحسب المحصلات والمعينات القيم أو تتحقق منها.", "de": "Jede Eigenschaft hat Flags: writable, enumerable, configurable. Getter und Setter berechnen oder prüfen Werte."}, {"id": "symbols", "h": "Symbols", "en": "Well known symbols let your objects control conversion, instanceof and logging. Use a custom inspect to hide passwords.", "hi": "Well known symbols से objects conversion, instanceof और logging नियंत्रित करते हैं। Passwords छिपाने के लिए custom inspect लगाएं।", "kn": "Well known symbols conversion, instanceof ಮತ್ತು logging ನಿಯಂತ್ರಿಸುತ್ತವೆ. Passwords ಮರೆಮಾಡಿ.", "or": "Well known symbols conversion, instanceof ଓ logging ନିୟନ୍ତ୍ରଣ କରନ୍ତି। Passwords ଲୁଚାନ୍ତୁ।", "ar": "تتيح الرموز المعروفة لكائناتك التحكم في التحويل وinstanceof والطباعة. استخدم inspect مخصصًا لإخفاء كلمات المرور.", "de": "Bekannte Symbole steuern Umwandlung, instanceof und Logging. Ein eigenes inspect versteckt Passwörter."}, {"id": "proxy", "h": "Proxy", "en": "A Proxy intercepts operations on an object with traps, and Reflect performs the normal behaviour. Test tools use it for mocks and step logging.", "hi": "Proxy traps से object के operations पकड़ता है, और Reflect सामान्य व्यवहार करता है। Test tools इसे mocks के लिए इस्तेमाल करते हैं।", "kn": "Proxy traps ಮೂಲಕ operations ತಡೆಯುತ್ತದೆ, Reflect ಸಾಮಾನ್ಯ ವರ್ತನೆ ಮಾಡುತ್ತದೆ.", "or": "Proxy traps ରେ operations ଧରେ, Reflect ସାଧାରଣ ବ୍ୟବହାର କରେ।", "ar": "يعترض Proxy العمليات على الكائن بالمصائد، وينفذ Reflect السلوك العادي. تستخدمه أدوات الاختبار للمحاكاة وتسجيل الخطوات.", "de": "Ein Proxy fängt Operationen mit Traps ab, Reflect führt das normale Verhalten aus. Testwerkzeuge nutzen das für Mocks."}, {"id": "tagged", "h": "Tagged templates", "en": "A tag function gets the text pieces and the values apart, so it can escape HTML or build a safe SQL query.", "hi": "Tag function को text pieces और values अलग मिलते हैं, इसलिए वह HTML escape या सुरक्षित SQL बना सकता है।", "kn": "Tag function text ಮತ್ತು values ಬೇರೆಯಾಗಿ ಪಡೆಯುತ್ತದೆ, HTML escape ಅಥವಾ safe SQL ಮಾಡುತ್ತದೆ.", "or": "Tag function text ଓ values ଅଲଗା ପାଏ, HTML escape କିମ୍ବା safe SQL କରେ।", "ar": "تستقبل دالة الوسم أجزاء النص والقيم منفصلة، فتستطيع تهريب HTML أو بناء استعلام SQL آمن.", "de": "Eine Tag-Funktion erhält Text und Werte getrennt und kann HTML escapen oder sicheres SQL bauen."}, {"id": "decorators", "h": "Decorators", "en": "A decorator is a function written with an at sign before a class or method. It can wrap the method with logging or retries.", "hi": "Decorator class या method से पहले at चिह्न के साथ लिखा function है। यह method को logging या retries से लपेट सकता है।", "kn": "Decorator ಎಂಬುದು class ಅಥವಾ method ಮುಂದೆ at ಚಿಹ್ನೆಯಿಂದ ಬರೆದ function.", "or": "Decorator ହେଉଛି class କିମ୍ବା method ପୂର୍ବରୁ at ଚିହ୍ନ ସହ ଲେଖା function।", "ar": "المزخرف دالة تكتب بعلامة at قبل صنف أو دالة، ويمكنها تغليف الدالة بالتسجيل أو إعادة المحاولة.", "de": "Ein Dekorator ist eine Funktion mit at-Zeichen vor Klasse oder Methode und kann sie mit Logging oder Retries umhüllen."}, {"id": "scenario", "h": "Scenario", "en": "Every property read adds a path segment and the verb sends the request, so one Proxy gives a client for every endpoint.", "hi": "हर property read path में एक हिस्सा जोड़ता है और verb request भेजता है, इसलिए एक Proxy हर endpoint का client बनता है।", "kn": "ಪ್ರತಿ property read path ಸೇರಿಸುತ್ತದೆ, verb request ಕಳುಹಿಸುತ್ತದೆ.", "or": "ପ୍ରତି property read path ଯୋଡ଼େ, verb request ପଠାଏ।", "ar": "كل قراءة خاصية تضيف جزءًا إلى المسار والفعل يرسل الطلب، فيعطي Proxy واحد عميلًا لكل نقطة نهاية.", "de": "Jedes Lesen fügt ein Pfadstück hinzu, das Verb sendet die Anfrage, so entsteht ein Client für jeden Endpunkt."}, {"id": "practice", "h": "Hands-on", "en": "Practise a read only view, a default value proxy, an HTML tag that escapes values, and a proxy that records method calls.", "hi": "Read only view, default value proxy, values escape करने वाला HTML tag और method calls record करने वाले proxy का अभ्यास करें।", "kn": "Read only view, default proxy, HTML tag ಮತ್ತು method calls record ಮಾಡುವ proxy ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Read only view, default proxy, HTML tag ଓ method calls record କରୁଥିବା proxy ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على عرض للقراءة فقط وProxy بقيم افتراضية ووسم HTML يهرب القيم وProxy يسجل استدعاءات الدوال.", "de": "Übe eine Nur-Lese-Ansicht, einen Proxy mit Standardwerten, einen HTML-Tag und einen Proxy, der Aufrufe aufzeichnet."}], "ex": [{"id": "readonly", "lv": "e", "title": "A read only view", "task": "<p>Write <code>readOnly(obj)<\/code> that returns a Proxy where reading works normally but any attempt to set or delete a property throws a <code>TypeError<\/code>. The original object stays writable.<\/p>", "starter": "function readOnly(obj) {\n  \n}", "tests": [{"call": "(() => { const o = { a: 1 }; const r = readOnly(o); let threw = 0; try { r.a = 2; } catch (e) { threw += e instanceof TypeError; } try { delete r.a; } catch (e) { threw += e instanceof TypeError; } o.b = 3; return [r.a, r.b, threw]; })()", "want": [1, 3, 2]}], "solution": "function readOnly(obj) {\n  const deny = () => { throw new TypeError(\"read only\"); };\n  return new Proxy(obj, { set: deny, deleteProperty: deny });\n}", "hint": "Traps for <code>set<\/code> and <code>deleteProperty<\/code> that throw.", "why": "Unlike freeze, the owner can still change the data while callers only get a view."}, {"id": "defaults", "lv": "m", "title": "Defaults for missing keys", "task": "<p>Write <code>withDefaults(obj, fallback)<\/code> that returns a Proxy. Reading a key that is not in the object returns <code>fallback<\/code>, and reading an existing key returns its value, even when that value is 0 or an empty string.<\/p>", "starter": "function withDefaults(obj, fallback) {\n  \n}", "tests": [{"call": "(() => { const p = withDefaults({ retries: 0, name: \"\" }, \"n/a\"); return [p.retries, p.name, p.missing]; })()", "want": [0, "", "n/a"]}], "solution": "function withDefaults(obj, fallback) {\n  return new Proxy(obj, {\n    get: (target, key, receiver) => (key in target ? Reflect.get(target, key, receiver) : fallback),\n  });\n}", "hint": "Use <code>key in target<\/code>, not a truthy check.", "why": "A truthy check would replace real values of 0 and \"\" with the fallback."}, {"id": "htmltag", "lv": "h", "title": "An escaping HTML tag", "task": "<p>Write a tag function <code>html<\/code> so that <code>html`&lt;b&gt;${x}&lt;/b&gt;`<\/code> escapes <code>&amp; &lt; &gt; \" '<\/code> in every value but leaves the fixed text alone.<\/p>", "starter": "function html(strings, ...values) {\n  \n}", "tests": [{"call": "html`<b>${\"<i>\"}<\/b>`", "want": "<b>&lt;i&gt;<\/b>"}, {"call": "html`${\"Tom & \\\"J\\\"\"} and ${5}`", "want": "Tom &amp; &quot;J&quot; and 5"}, {"call": "html`plain`", "want": "plain"}], "solution": "function html(strings, ...values) {\n  const map = { \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" };\n  const esc = v => String(v).replace(/[&<>\"']/g, c => map[c]);\n  return strings.reduce((out, s, i) => out + s + (i < values.length ? esc(values[i]) : \"\"), \"\");\n}", "hint": "Join the strings with the escaped values between them. There is one more string than values.", "why": "Template engines in every framework do exactly this, which is why they are safe from XSS by default."}, {"id": "recorder", "lv": "x", "title": "Record every method call", "task": "<p>Write <code>recorder(obj)<\/code> that returns <code>{ proxy, calls }<\/code>. Calling any method through <code>proxy<\/code> runs the real method with the right <code>this<\/code> and pushes <code>[name, args]<\/code> to <code>calls<\/code>. Reading non function properties works normally.<\/p>", "starter": "function recorder(obj) {\n  \n}", "tests": [{"call": "(() => { const o = { n: 1, add(x) { this.n += x; return this.n; } }; const { proxy, calls } = recorder(o); return [proxy.add(2), proxy.add(3), proxy.n, calls]; })()", "want": [3, 6, 6, [["add", [2]], ["add", [3]]]]}], "solution": "function recorder(obj) {\n  const calls = [];\n  const proxy = new Proxy(obj, {\n    get(target, key, receiver) {\n      const value = Reflect.get(target, key, receiver);\n      if (typeof value !== \"function\") return value;\n      return (...args) => {\n        calls.push([key, args]);\n        return value.apply(target, args);\n      };\n    },\n  });\n  return { proxy, calls };\n}", "hint": "In the get trap, wrap functions in an arrow that records and then calls <code>value.apply(target, args)<\/code>.", "why": "This is a spy. jest.spyOn and sinon.spy record calls the same way."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Objects in depth and metaprogramming", subject: "javascript" });
+</script>
+</body>
+</html>

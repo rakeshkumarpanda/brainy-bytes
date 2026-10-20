@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regular expressions in depth · JavaScript</title>
+<meta name="description" content="JavaScript regex in depth: backtracking, greedy and lazy, lookahead, lookbehind, backreferences, flags g m s y u v, lastIndex, unicode property escapes, replace with functions, masking, tokenizer, ReDoS and testing regular expressions.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 15 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧷</span><div><h1>Regular expressions in depth</h1><p class="lead">Go beyond the basics of chapter 6: how the backtracking engine finds a match, greedy and lazy quantifiers, lookarounds and backreferences, every flag and the lastIndex trap, unicode letters in every language, replacing and masking, a sticky tokeniser, ReDoS, and testing patterns with tables.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 9 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 7 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Regular expressions check text in assertions, extract ids from pages and logs, mask secrets in reports and find bugs in validation rules. This chapter makes you fluent and safe with them.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#engine"><span>⚙️</span>How the regex engine matches</a><a href="#lookaround" class="qa"><span>👀</span>Lookarounds and backreferences</a><a href="#flags" class="qa"><span>🚩</span>Flags in depth and the lastIndex trap</a><a href="#unicode" class="qa"><span>🌍</span>Unicode and every language</a><a href="#replace" class="qa"><span>✂️</span>Replacing, masking and splitting</a><a href="#redos" class="qa"><span>💣</span>ReDoS and safe patterns</a><a href="#validate" class="qa"><span>✅</span>Validation patterns and testing them</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: mine the access logs</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="engine" data-say="engine"><div class="sec-num">Part 1</div><h2><span class="sec-em">⚙️</span><span>How the regex engine matches</span></h2>
+
+<p>JavaScript uses a <b>backtracking</b> engine. It tries the pattern at the first position of the text and, when a step fails, goes back to the last choice it made and tries another. If nothing works, it moves one character on and starts again. Quantifiers are <b>greedy</b> by default: they take as much as they can, then give back. Add <code>?</code> to make them <b>lazy</b>.</p>
+<div class="viz" data-viz="regex"></div>
+<div class="codewrap" data-k="greedy" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Greedy, lazy and how the engine searches · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> html = <span class="s">'&lt;b&gt;Sale&lt;/b&gt; and &lt;b&gt;New&lt;/b&gt;'</span>;
+
+console.log(html.match(/&lt;b&gt;.*&lt;\/b&gt;/)[<span class="n">0</span>]);       <span class="c">// greedy: as much as possible</span>
+console.log(html.match(/&lt;b&gt;.*?&lt;\/b&gt;/)[<span class="n">0</span>]);      <span class="c">// lazy: as little as possible</span>
+console.log(html.match(/&lt;b&gt;[^&lt;]*&lt;\/b&gt;/g));      <span class="c">// a negated class is often clearer and faster</span>
+
+<span class="c">// The engine tries every start position, and backtracks inside each one</span>
+<span class="k">const</span> re = /a.*c/;
+console.log(re.exec(<span class="s">"xxabcbc"</span>), <span class="s">"| found at index"</span>, re.exec(<span class="s">"xxabcbc"</span>).index);</pre><div class="out"><span>Output</span><pre>&lt;b&gt;Sale&lt;/b&gt; and &lt;b&gt;New&lt;/b&gt;
+&lt;b&gt;Sale&lt;/b&gt;
+[ &#x27;&lt;b&gt;Sale&lt;/b&gt;&#x27;, &#x27;&lt;b&gt;New&lt;/b&gt;&#x27; ]
+[ &#x27;abcbc&#x27;, index: 2, input: &#x27;xxabcbc&#x27;, groups: undefined ] | found at index 2</pre></div></div>
+<div class="tip">When you can say exactly what is allowed, a negated class such as <code>[^&lt;]*</code> or <code>[^"]*</code> is clearer and much faster than <code>.*?</code>, because the engine never needs to backtrack.</div>
+</section>
+<section class="card reveal jsec qa-part" id="lookaround" data-say="lookaround"><div class="sec-num">Part 2</div><h2><span class="sec-em">👀</span><span>Lookarounds and backreferences</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Password rules, price extraction and duplicate word checks in content are everyday test tasks.</span></div>
+<p>A <b>lookaround</b> checks what comes before or after a position without including it in the match. <code>(?=x)</code> and <code>(?!x)</code> look ahead, <code>(?&lt;=x)</code> and <code>(?&lt;!x)</code> look behind. A <b>backreference</b> such as <code>\1</code> or <code>\k&lt;name&gt;</code> matches the same text a group already matched.</p>
+<div class="codewrap" data-k="lookaround" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lookahead, lookbehind and backreferences · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> prices = <span class="s">"Pen ₹40, Book ₹250, Bag $30, Mug ₹120"</span>;
+
+console.log(prices.match(/(?&lt;=₹)\d+/g));             <span class="c">// lookbehind: digits after ₹, without the ₹</span>
+console.log(prices.match(/\b\w+(?= ₹)/g));          <span class="c">// lookahead: words followed by " ₹"</span>
+console.log(prices.match(/(?&lt;!₹)\b\d+/g));          <span class="c">// negative lookbehind: numbers not in rupees</span>
+
+<span class="c">// Password rules as lookaheads: each (?=...) checks a rule without moving forward</span>
+<span class="k">const</span> strong = /^(?=.*[a-z])(?=.*[<span class="t">A</span>-<span class="t">Z</span>])(?=.*\d)(?=.*[^\w\s]).{<span class="n">8</span>,}$/;
+<span class="k">for</span> (<span class="k">const</span> pw <span class="k">of</span> [<span class="s">"Secret1!"</span>, <span class="s">"secret1!"</span>, <span class="s">"Sec1!"</span>, <span class="s">"Secret12"</span>]) console.log(pw.padEnd(<span class="n">9</span>), strong.test(pw));
+
+<span class="c">// Backreferences: \1 matches the same text the first group matched</span>
+console.log(<span class="s">"the the test passed passed"</span>.match(/\b(\w+) \<span class="n">1</span>\b/g));
+console.log(<span class="s">'&lt;a href="x"&gt;'</span>.match(/(["']).*?\<span class="n">1</span>/)[<span class="n">0</span>]);</pre><div class="out"><span>Output</span><pre>[ &#x27;40&#x27;, &#x27;250&#x27;, &#x27;120&#x27; ]
+[ &#x27;Pen&#x27;, &#x27;Book&#x27;, &#x27;Mug&#x27; ]
+[ &#x27;30&#x27; ]
+Secret1!  true
+secret1!  false
+Sec1!     false
+Secret12  false
+[ &#x27;the the&#x27;, &#x27;passed passed&#x27; ]
+&quot;x&quot;</pre></div></div>
+<div class="qa-box">Several lookaheads in a row are the standard way to express "must contain a lower case letter, a capital, a digit and a symbol". Each rule becomes a separate test case in your password suite.</div>
+</section>
+<section class="card reveal jsec qa-part" id="flags" data-say="flags"><div class="sec-num">Part 3</div><h2><span class="sec-em">🚩</span><span>Flags in depth and the lastIndex trap</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">A shared /g regex in a test helper makes checks pass and fail in turn, a confusing source of flaky tests.</span></div>
+<p>Flags change how the whole pattern works. The <code>g</code> and <code>y</code> flags also make a regex <b>stateful</b>: it remembers <code>lastIndex</code>, the position after the last match.</p>
+<div class="codewrap" data-k="flags" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Flags in depth: g, m, s, y and the lastIndex trap · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> log = <span class="s">`INFO  start
+ERROR db timeout
+info  retry
+ERROR card declined`</span>;
+
+console.log(log.match(/^<span class="t">ERROR</span>.*$/gm));                <span class="c">// m: ^ and $ work per line</span>
+console.log(log.match(/^info.*$/gim).length);          <span class="c">// i: ignore case</span>
+console.log(/start.<span class="t">ERROR</span>/.test(log), /start.<span class="t">ERROR</span>/s.test(log));   <span class="c">// s: dot matches a new line</span>
+
+<span class="c">// g with test() remembers lastIndex between calls, a classic bug</span>
+<span class="k">const</span> hasError = /<span class="t">ERROR</span>/g;
+console.log(hasError.test(log), hasError.test(log), hasError.test(log), <span class="s">"| lastIndex"</span>, hasError.lastIndex);
+
+<span class="c">// y (sticky) only matches exactly at lastIndex, which is how tokenisers work</span>
+<span class="k">const</span> word = /\w+/y;
+word.lastIndex = <span class="n">6</span>;
+console.log(word.exec(log)?.[<span class="n">0</span>], (word.lastIndex = <span class="n">5</span>, word.exec(log)));</pre><div class="out"><span>Output</span><pre>[ &#x27;ERROR db timeout&#x27;, &#x27;ERROR card declined&#x27; ]
+2
+false true
+true true false | lastIndex 0
+start null</pre></div></div>
+<div class="warn">Never reuse a regex with the <code>g</code> flag for <code>test()</code> across different strings or calls. The second call starts at the old <code>lastIndex</code> and can fail on text that clearly matches. Drop the <code>g</code> flag for yes or no checks.</div>
+</section>
+<section class="card reveal jsec qa-part" id="unicode" data-say="unicode"><div class="sec-num">Part 4</div><h2><span class="sec-em">🌍</span><span>Unicode and every language</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Internationalisation testing catches validation that only works for English input.</span></div>
+<p><code>[a-z]</code> only knows English. With the <code>u</code> or <code>v</code> flag, <code>\p{L}</code> matches a letter in any script, <code>\p{Script=Devanagari}</code> one script, and <code>\p{Emoji}</code> emoji. The <code>u</code> flag also treats an emoji as one character instead of two halves.</p>
+<div class="codewrap" data-k="unicode" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Unicode: letters in every language · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> names = [<span class="s">"Zoë"</span>, <span class="s">"Ravi"</span>, <span class="s">"José"</span>, <span class="s">"Łukasz"</span>, <span class="s">"東京"</span>, <span class="s">"😀 smile"</span>];
+
+console.log(names.filter(n =&gt; /^[a-z]+$/i.test(n)));          <span class="c">// ASCII only: drops real names</span>
+console.log(names.filter(n =&gt; /^\p{<span class="t">L</span>}+$/u.test(n)));         <span class="c">// any letter in any script</span>
+console.log(<span class="s">"😀"</span>.length, [...<span class="s">"😀"</span>].length, /^.$/.test(<span class="s">"😀"</span>), /^.$/u.test(<span class="s">"😀"</span>));
+console.log(<span class="s">"Grüße, Привет, नमस्ते"</span>.match(/\p{<span class="t">Script</span>=<span class="t">Devanagari</span>}+/u)[<span class="n">0</span>]);
+console.log(<span class="s">"café"</span>.normalize(<span class="s">"NFD"</span>).replace(/\p{<span class="t">M</span>}/gu, <span class="s">""</span>));  <span class="c">// strip accents</span></pre><div class="out"><span>Output</span><pre>[ &#x27;Ravi&#x27; ]
+[ &#x27;Zoë&#x27;, &#x27;Ravi&#x27;, &#x27;José&#x27;, &#x27;Łukasz&#x27;, &#x27;東京&#x27; ]
+2 1 false true
+नमस्ते
+cafe</pre></div></div>
+<div class="qa-box">Test name and address fields with names such as Zoë, José, Łukasz, 東京 and right to left Arabic. A form that rejects real names is a bug that hits real customers.</div>
+</section>
+<section class="card reveal jsec qa-part" id="replace" data-say="replace"><div class="sec-num">Part 5</div><h2><span class="sec-em">✂️</span><span>Replacing, masking and splitting</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Masking passwords, card numbers and tokens before logs and reports are saved is a security requirement in test frameworks.</span></div>
+<p><code>replace</code> and <code>replaceAll</code> can use <code>$1</code>, <code>$&lt;name&gt;</code> and <code>$&amp;</code> in the replacement text, or a function that receives every group and returns the new text.</p>
+<div class="codewrap" data-k="replace" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Replacing with groups and functions, masking secrets · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Replace with named groups and with a function</span>
+<span class="k">const</span> iso = <span class="s">"Shipped 2026-10-18, due 2026-10-25"</span>;
+console.log(iso.replace(/(?&lt;y&gt;\d{<span class="n">4</span>})-(?&lt;m&gt;\d\d)-(?&lt;d&gt;\d\d)/g, <span class="s">"$&lt;d&gt;/$&lt;m&gt;/$&lt;y&gt;"</span>));
+
+<span class="k">const</span> cart = <span class="s">"PEN x2 @40, BOOK x1 @250"</span>;
+console.log(cart.replace(/(\w+) x(\d+) @(\d+)/g, (all, sku, qty, price) =&gt; <span class="s">`${sku}=${qty * price}`</span>));
+
+<span class="c">// Mask secrets in logs before they are saved</span>
+<span class="k">const</span> line = <span class="s">'POST /login {"user":"asha","password":"s3cret","card":"4111111111111111"} token=eyJhbGciOi.abc.def'</span>;
+<span class="k">const</span> masked = line
+  .replace(/(<span class="s">"password"</span>:<span class="s">")[^"</span>]*/, <span class="s">"$1***"</span>)
+  .replace(/\b(\d{<span class="n">4</span>})\d{<span class="n">8</span>}(\d{<span class="n">4</span>})\b/, <span class="s">"$1********$2"</span>)
+  .replace(/token=[\w.-]+/, <span class="s">"token=[hidden]"</span>);
+console.log(masked);
+
+<span class="c">// split keeps captured separators</span>
+console.log(<span class="s">"a1b22c333"</span>.split(/(\d+)/));</pre><div class="out"><span>Output</span><pre>Shipped 18/10/2026, due 25/10/2026
+PEN=80, BOOK=250
+POST /login {&quot;user&quot;:&quot;asha&quot;,&quot;password&quot;:&quot;***&quot;,&quot;card&quot;:&quot;4111********1111&quot;} token=[hidden]
+[
+  &#x27;a&#x27;,  &#x27;1&#x27;, &#x27;b&#x27;,
+  &#x27;22&#x27;, &#x27;c&#x27;, &#x27;333&#x27;,
+  &#x27;&#x27;
+]</pre></div></div>
+<p>For anything with structure, such as a whole language of filters, use the sticky flag to read one token at a time from an exact position.</p>
+<div class="codewrap" data-k="tokenize" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Sticky regexes as a tokeniser · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// A tiny tokeniser for filter expressions such as: status == "failed" &amp;&amp; ms &gt; 1000</span>
+<span class="k">const</span> rules = [
+  [<span class="s">"space"</span>, /\s+/y], [<span class="s">"string"</span>, /<span class="s">"(?:[^"</span>\\]|\\.)*<span class="s">"/y], ["</span>number", /\d+(?:\.\d+)?/y],
+  [<span class="s">"op"</span>, /==|!=|&gt;=|&lt;=|&amp;&amp;|\|\||[&lt;&gt;!]/y], [<span class="s">"name"</span>, /[<span class="t">A</span>-<span class="t">Za</span>-z_]\w*/y], [<span class="s">"paren"</span>, /[()]/y],
+];
+
+<span class="k">function</span> tokenize(src) {
+  <span class="k">const</span> out = [];
+  <span class="k">let</span> pos = <span class="n">0</span>;
+  outer: <span class="k">while</span> (pos &lt; src.length) {
+    <span class="k">for</span> (<span class="k">const</span> [type, re] <span class="k">of</span> rules) {
+      re.lastIndex = pos;
+      <span class="k">const</span> m = re.exec(src);
+      <span class="k">if</span> (m) {
+        <span class="k">if</span> (type !== <span class="s">"space"</span>) out.push(<span class="s">`${type}:${m[0]}`</span>);
+        pos = re.lastIndex;
+        <span class="k">continue</span> outer;
+      }
+    }
+    <span class="k">throw</span> <span class="k">new</span> <span class="t">SyntaxError</span>(<span class="s">`Unexpected "${src[pos]}" at ${pos}`</span>);
+  }
+  <span class="k">return</span> out;
+}
+console.log(tokenize(<span class="s">'status == "failed" &amp;&amp; ms &gt; 1000'</span>));
+<span class="k">try</span> { tokenize(<span class="s">"ms # 2"</span>); } <span class="k">catch</span> (e) { console.log(e.message); }</pre><div class="out"><span>Output</span><pre>[
+  &#x27;name:status&#x27;,
+  &#x27;op:==&#x27;,
+  &#x27;string:&quot;failed&quot;&#x27;,
+  &#x27;op:&amp;&amp;&#x27;,
+  &#x27;name:ms&#x27;,
+  &#x27;op:&gt;&#x27;,
+  &#x27;number:1000&#x27;
+]
+Unexpected &quot;#&quot; at 3</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="redos" data-say="redos"><div class="sec-num">Part 6</div><h2><span class="sec-em">💣</span><span>ReDoS and safe patterns</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Sending long crafted strings to search and validation fields is a standard security and performance test.</span></div>
+<p>Some patterns make the engine try an exponential number of ways to split the input. <code>^(a+)+$</code> on a long run of "a" that ends with "!" never finishes in practice. An attacker who can send such input to a server can freeze it with one request. This is called <b>regular expression denial of service</b>.</p>
+<div class="codewrap" data-k="redos" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">ReDoS: a pattern that takes forever · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Catastrophic backtracking: nested quantifiers try every way to split the input</span>
+<span class="k">const</span> evil = /^(a+)+$/;
+<span class="k">const</span> safe = /^a+$/;
+
+<span class="k">function</span> time(re, n) {
+  <span class="k">const</span> input = <span class="s">"a"</span>.repeat(n) + <span class="s">"!"</span>;                  <span class="c">// the ! forces a failure at the end</span>
+  <span class="k">const</span> start = performance.now();
+  re.test(input);
+  <span class="k">return</span> performance.now() - start;
+}
+
+time(evil, <span class="n">5</span>);                                        <span class="c">// warm up, so compiling the regex is not measured</span>
+<span class="k">const</span> t22 = time(evil, <span class="n">22</span>), t26 = time(evil, <span class="n">26</span>);
+console.log(<span class="s">"4 more characters made it more than 5 times slower:"</span>, t26 / t22 &gt; <span class="n">5</span>);
+console.log(<span class="s">"the safe pattern on 100000 characters is instant:"</span>, time(safe, <span class="n">100_000</span>) &lt; <span class="n">50</span>);</pre><div class="out"><span>Output</span><pre>4 more characters made it more than 5 times slower: true
+the safe pattern on 100000 characters is instant: true</pre></div></div>
+<div class="warn">Danger signs: a quantifier inside a quantified group, such as <code>(a+)+</code>, <code>(\w*)*</code> or <code>(a|aa)+</code>. Safe habits: limit input length first, prefer specific classes, and run the linter rule <code>regexp/no-super-linear-backtracking</code> from eslint-plugin-regexp.</div>
+</section>
+<section class="card reveal jsec qa-part" id="validate" data-say="validate"><div class="sec-num">Part 7</div><h2><span class="sec-em">✅</span><span>Validation patterns and testing them</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Regex validation rules are a frequent source of bugs, and table driven tests show exactly which inputs they accept.</span></div>
+<p>A regex can check the <b>shape</b> of text, not its meaning. A date pattern accepts 31 February, and no practical email pattern follows the full standard. Use a regex for the shape, then real code for the rest, such as <code>Temporal.PlainDate.from</code> for dates.</p>
+<div class="codewrap" data-k="validate" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Validation patterns and their limits · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Practical patterns. Each one is a trade off, write tests that show the choice.</span>
+<span class="k">const</span> patterns = {
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]{<span class="n">2</span>,}$/,             <span class="c">// pragmatic, not the full RFC 5322</span>
+  isoDate: /^\d{<span class="n">4</span>}-(<span class="n">0</span>[<span class="n">1</span>-<span class="n">9</span>]|<span class="n">1</span>[<span class="n">0</span>-<span class="n">2</span>])-(<span class="n">0</span>[<span class="n">1</span>-<span class="n">9</span>]|[<span class="n">12</span>]\d|<span class="n">3</span>[<span class="n">01</span>])$/, <span class="c">// shape only: 2026-02-31 passes</span>
+  uuid: /^[<span class="n">0</span>-9a-f]{<span class="n">8</span>}-[<span class="n">0</span>-9a-f]{<span class="n">4</span>}-[<span class="n">1</span>-<span class="n">8</span>][<span class="n">0</span>-9a-f]{<span class="n">3</span>}-[89ab][<span class="n">0</span>-9a-f]{<span class="n">3</span>}-[<span class="n">0</span>-9a-f]{<span class="n">12</span>}$/i,
+  indianPin: /^[<span class="n">1</span>-<span class="n">9</span>]\d{<span class="n">5</span>}$/,
+  semver: /^(<span class="n">0</span>|[<span class="n">1</span>-<span class="n">9</span>]\d*)\.(<span class="n">0</span>|[<span class="n">1</span>-<span class="n">9</span>]\d*)\.(<span class="n">0</span>|[<span class="n">1</span>-<span class="n">9</span>]\d*)(?:-[\w.-]+)?$/,
+};
+<span class="k">const</span> samples = {
+  email: [<span class="s">"asha@example.com"</span>, <span class="s">"a@b"</span>, <span class="s">"no spaces@x.io"</span>],
+  isoDate: [<span class="s">"2026-10-20"</span>, <span class="s">"2026-13-01"</span>, <span class="s">"2026-02-31"</span>],
+  uuid: [crypto.randomUUID(), <span class="s">"1234"</span>],
+  indianPin: [<span class="s">"560001"</span>, <span class="s">"056001"</span>],
+  semver: [<span class="s">"1.56.1"</span>, <span class="s">"1.02.0"</span>, <span class="s">"2.0.0-rc.1"</span>],
+};
+<span class="k">for</span> (<span class="k">const</span> [name, list] <span class="k">of</span> <span class="t">Object</span>.entries(samples))
+  console.log(name.padEnd(<span class="n">9</span>), list.map(s =&gt; patterns[name].test(s)).join(<span class="s">" "</span>));</pre><div class="out"><span>Output</span><pre>email     true false false
+isoDate   true false true
+uuid      true false
+indianPin true false
+semver    true false true</pre></div></div>
+<p>Treat a regex like any other code: keep it in one module and test it with a table of strings that must match and strings that must not.</p>
+<div class="codewrap tests" data-k="regex-tests"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Test a regex with a table of cases · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/patterns.js</div><pre class="src" data-file="src/patterns.js"><span class="k">export</span> <span class="k">const</span> orderId = /^<span class="t">ORD</span>-\d{<span class="n">6</span>}$/;
+<span class="k">export</span> <span class="k">const</span> price = /^₹(?:<span class="n">0</span>|[<span class="n">1</span>-<span class="n">9</span>]\d{<span class="n">0</span>,<span class="n">2</span>}(?:,\d{<span class="n">3</span>})*|[<span class="n">1</span>-<span class="n">9</span>]\d*)(?:\.\d{<span class="n">2</span>})?$/;</pre><div class="fname">📄 test/patterns.test.js</div><pre class="src" data-file="test/patterns.test.js"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> { orderId, price } <span class="k">from</span> <span class="s">"../src/patterns.js"</span>;
+
+<span class="c">// A table of examples that must match and examples that must not</span>
+<span class="k">const</span> cases = {
+  orderId: { yes: [<span class="s">"ORD-000001"</span>, <span class="s">"ORD-104233"</span>], no: [<span class="s">"ord-104233"</span>, <span class="s">"ORD-10423"</span>, <span class="s">"ORD-1042333"</span>, <span class="s">" ORD-104233"</span>] },
+  price: { yes: [<span class="s">"₹0"</span>, <span class="s">"₹40"</span>, <span class="s">"₹1,250"</span>, <span class="s">"₹12,500"</span>, <span class="s">"₹99.50"</span>], no: [<span class="s">"₹040"</span>, <span class="s">"₹1,25"</span>, <span class="s">"₹9.5"</span>, <span class="s">"40"</span>, <span class="s">"₹-5"</span>] },
+};
+
+<span class="k">for</span> (<span class="k">const</span> [name, { yes, no }] <span class="k">of</span> <span class="t">Object</span>.entries(cases)) {
+  <span class="k">const</span> re = { orderId, price }[name];
+  <span class="k">for</span> (<span class="k">const</span> s <span class="k">of</span> yes) test(<span class="s">`${name} accepts ${JSON.stringify(s)}`</span>, () =&gt; assert.match(s, re));
+  <span class="k">for</span> (<span class="k">const</span> s <span class="k">of</span> no) test(<span class="s">`${name} rejects ${JSON.stringify(s)}`</span>, () =&gt; assert.doesNotMatch(s, re));
+}</pre><div class="cmd"><span>Terminal</span><pre>$ node --test --test-reporter=spec</pre></div><div class="out"><span>Terminal output</span><pre>✔ orderId accepts &quot;ORD-000001&quot;
+✔ orderId accepts &quot;ORD-104233&quot;
+✔ orderId rejects &quot;ord-104233&quot;
+✔ orderId rejects &quot;ORD-10423&quot;
+✔ orderId rejects &quot;ORD-1042333&quot;
+✔ orderId rejects &quot; ORD-104233&quot;
+✔ price accepts &quot;₹0&quot;
+✔ price accepts &quot;₹40&quot;
+✔ price accepts &quot;₹1,250&quot;
+✔ price accepts &quot;₹12,500&quot;
+✔ price accepts &quot;₹99.50&quot;
+✔ price rejects &quot;₹040&quot;
+✔ price rejects &quot;₹1,25&quot;
+✔ price rejects &quot;₹9.5&quot;
+✔ price rejects &quot;40&quot;
+✔ price rejects &quot;₹-5&quot;
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 41.2</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 8</div><h2><span class="sec-em">🎬</span><span>Real world scenario: mine the access logs</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>After a load test, the team wants every failed request and every slow one from the server access log, with the time of each.</div>
+<div class="codewrap" data-k="scenario" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Parse access logs and find the failures · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Turn raw access log lines into rows you can check</span>
+<span class="k">const</span> logs = <span class="s">`203.0.113.9 - - [20/Oct/2026:09:14:03 +0000] "GET /api/products?page=2 HTTP/1.1" 200 5123 412ms
+203.0.113.9 - - [20/Oct/2026:09:14:04 +0000] "POST /api/orders HTTP/1.1" 503 87 2210ms
+198.51.100.4 - - [20/Oct/2026:09:14:05 +0000] "GET /health HTTP/1.1" 200 2 3ms
+198.51.100.4 - - [20/Oct/2026:09:14:07 +0000] "POST /api/orders HTTP/1.1" 201 312 640ms
+garbage line`</span>;
+
+<span class="k">const</span> <span class="t">LINE</span> = /^(?&lt;ip&gt;\<span class="t">S</span>+) \<span class="t">S</span>+ \<span class="t">S</span>+ \[(?&lt;time&gt;[^\]]+)\] <span class="s">"(?&lt;method&gt;[A-Z]+) (?&lt;path&gt;[^ ?"</span>]+)(?:\?[^ <span class="s">"]*)? HTTP\/[\d.]+"</span> (?&lt;status&gt;\d{<span class="n">3</span>}) (?&lt;bytes&gt;\d+) (?&lt;ms&gt;\d+)ms$/;
+
+<span class="k">const</span> rows = [], bad = [];
+<span class="k">for</span> (<span class="k">const</span> line <span class="k">of</span> logs.split(<span class="s">"\n"</span>)) {
+  <span class="k">const</span> m = <span class="t">LINE</span>.exec(line);
+  <span class="k">if</span> (m) rows.push({ ...m.groups, status: +m.groups.status, ms: +m.groups.ms });
+  <span class="k">else</span> bad.push(line);
+}
+<span class="k">const</span> errors = rows.filter(r =&gt; r.status &gt;= <span class="n">500</span>);
+<span class="k">const</span> slow = rows.filter(r =&gt; r.ms &gt; <span class="n">1000</span> &amp;&amp; r.path !== <span class="s">"/health"</span>);
+console.log(rows.length, <span class="s">"parsed,"</span>, bad.length, <span class="s">"rejected:"</span>, bad);
+console.log(<span class="s">"5xx:"</span>, errors.map(r =&gt; <span class="s">`${r.method} ${r.path} at ${r.time.split(":").slice(1, 4).join(":")}`</span>));
+console.log(<span class="s">"slow:"</span>, slow.map(r =&gt; <span class="s">`${r.path} ${r.ms}ms`</span>), <span class="s">"| p50 of orders:"</span>, rows.filter(r =&gt; r.path === <span class="s">"/api/orders"</span>).map(r =&gt; r.ms).toSorted((a, b) =&gt; a - b)[<span class="n">0</span>], <span class="s">"ms"</span>);</pre><div class="out"><span>Output</span><pre>4 parsed, 1 rejected: [ &#x27;garbage line&#x27; ]
+5xx: [ &#x27;POST /api/orders at 09:14:04 +0000&#x27; ]
+slow: [ &#x27;/api/orders 2210ms&#x27; ] | p50 of orders: 640 ms</pre></div></div>
+<p>One pattern with named groups turns each line into an object. Lines that do not match are counted instead of silently dropped, which tells you when the log format changes. The same idea works for test runner output, browser console logs and CI logs.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-errors-debugging.html" data-topic="js-errors-debugging"><small>← Previous chapter</small><b>🧯 Errors and debugging</b></a><a class="next" href="./js-functional.html" data-topic="js-functional"><small>Next chapter →</small><b>🧩 Functional style</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Patterns with power", "panels": [{"s": [["e", "⚙️"], ["t", ".*  vs  .*?", {"b": 1}]], "h": "Greedy or lazy", "t": "The engine backtracks to find a match.", "more": "Negated classes avoid the work."}, {"s": [["e", "👀"], ["t", "(?=.*\\d)(?=.*[A-Z])", {"b": 1, "size": 11}]], "h": "Lookarounds", "t": "Check without consuming.", "more": "Ideal for password rules."}, {"s": [["e", "🌍"], ["t", "/\\p{L}+/u", {"b": 1}]], "h": "Every language", "t": "Letters in any script.", "more": "Real names pass."}, {"s": [["e", "💣"], ["t", "(a+)+", {"b": 1}]], "h": "Beware ReDoS", "t": "Nested quantifiers explode.", "more": "Limit input and lint patterns."}], "remember": "Know how the engine backtracks, drop g for yes or no checks, use \\p{L} for names, and test every pattern with a table of cases."}, "real": [["🧑‍🤝‍🧑", "A sign up form", "Rejected the name \"Zoë\" because its pattern was [A-Za-z]+. QA added names from twelve languages to the test data and the pattern became \\p{L}."], ["🔥", "A web API outage", "Was caused by a regex with nested quantifiers in a user agent check. One long header froze every worker for minutes."], ["🧾", "A test reporting tool", "Masks passwords, card numbers and tokens with three replace calls before any log is uploaded to the dashboard."]], "quiz": [{"lv": "e", "q": "What does the lazy pattern match?", "o": ["&lt;b&gt;A&lt;/b&gt;", "&lt;b&gt;A&lt;/b&gt;&lt;b&gt;B&lt;/b&gt;", "A", "Nothing"], "a": 0, "hint": "Lazy.", "why": "The ? after * stops at the first closing tag.", "code": "\"<b>A<\/b><b>B<\/b>\".match(/<b>.*?<\\/b>/)[0];"}, {"lv": "e", "q": "Which flag makes ^ and $ work on every line?", "o": ["m", "s", "g", "y"], "a": 0, "hint": "Multiline.", "why": "s is for the dot, g for all matches."}, {"lv": "e", "q": "Which pattern matches a letter in any language?", "o": ["/\\p{L}/u", "/[a-z]/i", "/\\w/", "/./"], "a": 0, "hint": "Unicode property.", "why": "\\w only covers A to Z, digits and underscore."}, {"lv": "m", "q": "What does (?&lt;=₹)\\d+ return from \"₹40\"?", "o": ["40", "₹40", "₹", "Nothing"], "a": 0, "hint": "Lookbehind does not consume.", "why": "The ₹ is checked but left out of the match."}, {"lv": "m", "q": "Why can calling test() twice on the same /x/g regex give different results?", "o": ["It remembers lastIndex between calls", "Regexes are random", "test() changes the string", "The g flag is ignored"], "a": 0, "hint": "State.", "why": "Drop g for yes or no checks, or reset lastIndex."}, {"lv": "m", "q": "What does \\1 mean in /(\\w+) \\1/?", "o": ["The same text that group 1 matched", "The digit 1", "Group 1 again as a pattern", "One repetition"], "a": 0, "hint": "Backreference.", "why": "It finds repeated words such as \"the the\"."}, {"lv": "m", "q": "In replace(re, fn), what does fn receive after the full match?", "o": ["Each captured group in order", "Only the index", "Nothing", "The flags"], "a": 0, "hint": "Groups first.", "why": "Then the offset, the whole string and the named groups object."}, {"lv": "h", "q": "Which pattern is at risk of catastrophic backtracking?", "o": ["/^(a+)+$/", "/^a+$/", "/^[a-z]{3}$/", "/^\\d{6}$/"], "a": 0, "hint": "Nested quantifier.", "why": "The engine tries every way to split the run of a characters."}, {"lv": "h", "q": "What does the y flag do?", "o": ["Matches only exactly at lastIndex", "Ignores case", "Matches all occurrences", "Allows lookbehind"], "a": 0, "hint": "Sticky.", "why": "That is how tokenisers read one token at a time."}, {"lv": "h", "q": "An ISO date regex accepts 2026-02-31. What is the right fix?", "o": ["Check the shape with the regex, then parse the date with real code", "Write a longer regex for every month", "Remove the check", "Use the s flag"], "a": 0, "hint": "Shape against meaning.", "why": "Temporal.PlainDate.from rejects 31 February."}, {"lv": "x", "q": "Why is \"😀\".length 2?", "o": ["Strings count UTF-16 code units, and this emoji needs two", "Emoji are two characters", "A bug in V8", "Because of the u flag"], "a": 0, "hint": "Surrogate pairs.", "why": "Spread or the u flag count code points instead."}, {"lv": "x", "q": "What does \"a1b22\".split(/(\\d+)/) return?", "o": ["[\"a\", \"1\", \"b\", \"22\", \"\"]", "[\"a\", \"b\"]", "[\"a1\", \"b22\"]", "[\"1\", \"22\"]"], "a": 0, "hint": "Captured separators stay.", "why": "A capture group in split keeps the separators in the result."}], "calc": [{"lv": "e", "q": "How many matches does /\\d+/g find in \"PEN 2, BOOK 10, BAG 3\"?", "ans": "3", "hint": "Runs of digits.", "steps": ["2, 10 and 3."]}, {"lv": "e", "q": "/^\\d{6}$/ accepts PIN codes. How many digits must the input have?", "ans": "6", "hint": "Exactly.", "steps": ["{6} means exactly six, and ^ $ forbid anything else."]}, {"lv": "m", "q": "How many strings of only \"a\" and \"b\" of length 3 does /^[ab]{3}$/ accept?", "ans": "8", "hint": "Two choices per position.", "steps": ["<span class=\"eq\">2<sup>3<\/sup> = 8<\/span>"]}, {"lv": "m", "q": "A password must have 4 kinds of character. A test suite checks each missing kind once, plus one valid password and one too short. How many cases?", "ans": "6", "hint": "One per rule plus two.", "steps": ["<span class=\"eq\">4 + 1 + 1 = 6<\/span>"]}, {"lv": "m", "q": "A card number 4111111111111111 is masked to keep the first 4 and last 4 digits. How many asterisks?", "ans": "8", "hint": "16 digits in total.", "steps": ["<span class=\"eq\">16 − 4 − 4 = 8<\/span>"]}, {"lv": "h", "q": "With ^(a+)+$, the number of ways to split n letters doubles with each extra letter. Going from 22 to 26 letters multiplies the work by how much?", "ans": "16", "hint": "Four doublings.", "steps": ["<span class=\"eq\">2<sup>4<\/sup> = 16<\/span>"]}, {"lv": "h", "q": "In the log scenario, how many of the 5 lines failed to match the pattern?", "ans": "1", "hint": "Only the garbage line.", "steps": ["Four real log lines parsed, one rejected."]}, {"lv": "x", "q": "A tokeniser reads status == \"failed\" && ms > 1000 and skips spaces. How many tokens does it produce?", "ans": "7", "hint": "Count names, operators, values.", "steps": ["status, ==, \"failed\", &&, ms, >, 1000."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter goes deep into regular expressions: how the engine backtracks, lookarounds, flags, unicode, replacing, tokenising, ReDoS and testing patterns.", "hi": "यह अध्याय regular expressions में गहराई से जाता है: engine backtracking, lookarounds, flags, unicode, replace, tokenising, ReDoS और patterns की testing।", "kn": "ಈ ಅಧ್ಯಾಯ regular expressions ಆಳವಾಗಿ: backtracking, lookarounds, flags, unicode, replace, ReDoS ಮತ್ತು testing.", "or": "ଏହି ଅଧ୍ୟାୟ regular expressions ଗଭୀରରେ: backtracking, lookarounds, flags, unicode, replace, ReDoS ଓ testing।", "ar": "يتعمق هذا الفصل في التعابير النمطية: التراجع في المحرك والنظر حول الموضع والأعلام ويونيكود والاستبدال وهجمات ReDoS واختبار الأنماط.", "de": "Dieses Kapitel geht tief in reguläre Ausdrücke: Backtracking, Lookarounds, Flags, Unicode, Ersetzen, ReDoS und Tests."}, {"id": "engine", "h": "The engine", "en": "The engine tries the pattern at each position and backtracks when a step fails. Greedy takes as much as it can, lazy as little as it can.", "hi": "Engine हर position पर pattern आज़माता है और step fail होने पर पीछे जाता है। Greedy ज़्यादा लेता है, lazy कम।", "kn": "Engine ಪ್ರತಿ position ನಲ್ಲಿ pattern ಪ್ರಯತ್ನಿಸಿ ವಿಫಲವಾದರೆ ಹಿಂದೆ ಹೋಗುತ್ತದೆ. Greedy ಹೆಚ್ಚು, lazy ಕಡಿಮೆ.", "or": "Engine ପ୍ରତି position ରେ pattern ଚେଷ୍ଟା କରେ, ବିଫଳ ହେଲେ ପଛକୁ ଯାଏ। Greedy ଅଧିକ, lazy କମ୍।", "ar": "يجرب المحرك النمط عند كل موضع ويتراجع عند فشل خطوة. الجشع يأخذ أكثر ما يمكن والكسول أقل ما يمكن.", "de": "Die Engine probiert das Muster an jeder Stelle und geht bei Fehlern zurück. Gierig nimmt viel, faul wenig."}, {"id": "lookaround", "h": "Lookarounds", "en": "Lookaheads and lookbehinds check text around a position without taking it. Backreferences match the same text again.", "hi": "Lookaheads और lookbehinds position के आसपास का text बिना लिए जांचते हैं। Backreferences वही text दोबारा मिलाते हैं।", "kn": "Lookaheads ಮತ್ತು lookbehinds ಸುತ್ತಲಿನ text ಪರಿಶೀಲಿಸುತ್ತವೆ. Backreferences ಅದೇ text ಮತ್ತೆ ಹೊಂದಿಸುತ್ತವೆ.", "or": "Lookaheads ଓ lookbehinds ଚାରିପାଖ text ଯାଞ୍ଚ କରନ୍ତି। Backreferences ସେହି text ପୁଣି ମେଳାଏ।", "ar": "تتحقق النظرات الأمامية والخلفية من النص حول الموضع دون أخذه، وتطابق المراجع الخلفية النص نفسه مرة أخرى.", "de": "Lookaheads und Lookbehinds prüfen den Text um eine Stelle, ohne ihn zu nehmen. Rückverweise finden denselben Text erneut."}, {"id": "flags", "h": "Flags", "en": "The m flag works per line, s lets the dot match new lines, and g and y remember lastIndex. Drop g for yes or no checks.", "hi": "m flag हर line पर, s dot को new line तक, और g व y lastIndex याद रखते हैं। हां या ना checks के लिए g हटाएं।", "kn": "m flag ಪ್ರತಿ ಸಾಲಿಗೆ, s dot ಗೆ new line, g ಮತ್ತು y lastIndex ನೆನಪಿಡುತ್ತವೆ.", "or": "m flag ପ୍ରତି ଧାଡ଼ିରେ, s dot କୁ new line, g ଓ y lastIndex ମନେ ରଖନ୍ତି।", "ar": "يعمل العلم m لكل سطر، ويجعل s النقطة تطابق السطر الجديد، ويتذكر g وy قيمة lastIndex. أزل g في فحوص نعم أو لا.", "de": "Das m-Flag wirkt pro Zeile, s lässt den Punkt Zeilenumbrüche finden, g und y merken sich lastIndex."}, {"id": "unicode", "h": "Unicode", "en": "With the u flag, p L matches a letter in any language and an emoji counts as one character.", "hi": "u flag के साथ p L किसी भी भाषा का अक्षर मिलाता है और emoji एक character गिना जाता है।", "kn": "u flag ಜೊತೆ p L ಯಾವುದೇ ಭಾಷೆಯ ಅಕ್ಷರ ಹೊಂದಿಸುತ್ತದೆ, emoji ಒಂದು character.", "or": "u flag ସହ p L ଯେକୌଣସି ଭାଷାର ଅକ୍ଷର ମେଳାଏ, emoji ଗୋଟିଏ character।", "ar": "مع العلم u يطابق p L حرفًا من أي لغة ويُعد الرمز التعبيري حرفًا واحدًا.", "de": "Mit dem u-Flag findet p L einen Buchstaben jeder Sprache, und ein Emoji zählt als ein Zeichen."}, {"id": "replace", "h": "Replace", "en": "replace can use group numbers, group names or a function. Use it to mask passwords and card numbers, and use sticky patterns to read tokens.", "hi": "replace group numbers, names या function इस्तेमाल कर सकता है। Passwords और card numbers छिपाने के लिए इसका उपयोग करें।", "kn": "replace group numbers, names ಅಥವಾ function ಬಳಸಬಹುದು. Passwords ಮತ್ತು card numbers ಮರೆಮಾಡಲು ಬಳಸಿ.", "or": "replace group numbers, names କିମ୍ବା function ବ୍ୟବହାର କରିପାରେ। Passwords ଓ card numbers ଲୁଚାନ୍ତୁ।", "ar": "يمكن لـ replace استخدام أرقام المجموعات أو أسمائها أو دالة. استخدمه لإخفاء كلمات المرور وأرقام البطاقات.", "de": "replace kann Gruppennummern, Namen oder eine Funktion nutzen. Damit maskierst du Passwörter und Kartennummern."}, {"id": "redos", "h": "ReDoS", "en": "Nested quantifiers can make matching take exponential time. Limit input length, prefer specific classes and lint your patterns.", "hi": "Nested quantifiers matching को exponential समय तक ले जा सकते हैं। Input की लंबाई सीमित करें और patterns को lint करें।", "kn": "Nested quantifiers exponential ಸಮಯ ತೆಗೆದುಕೊಳ್ಳಬಹುದು. Input ಉದ್ದ ಮಿತಿಗೊಳಿಸಿ, patterns lint ಮಾಡಿ.", "or": "Nested quantifiers exponential ସମୟ ନେଇପାରେ। Input ଲମ୍ବ ସୀମିତ କରନ୍ତୁ, patterns lint କରନ୍ତୁ।", "ar": "قد تجعل المكممات المتداخلة المطابقة تستغرق وقتًا أسيًا. حدد طول المدخلات وافحص أنماطك بأداة فحص.", "de": "Verschachtelte Quantoren können exponentiell lange brauchen. Begrenze die Eingabe und prüfe Muster mit einem Linter."}, {"id": "validate", "h": "Validation", "en": "A regex checks the shape of text, not its meaning. Keep patterns in one module and test them with tables of matching and non matching strings.", "hi": "Regex text का आकार जांचता है, अर्थ नहीं। Patterns एक module में रखें और matching व non matching strings की tables से test करें।", "kn": "Regex text ನ ಆಕಾರ ಪರಿಶೀಲಿಸುತ್ತದೆ, ಅರ್ಥವಲ್ಲ. Patterns ಅನ್ನು tables ನಿಂದ test ಮಾಡಿ.", "or": "Regex text ର ଆକାର ଯାଞ୍ଚ କରେ, ଅର୍ଥ ନୁହେଁ। Patterns କୁ tables ରେ test କରନ୍ତୁ।", "ar": "يتحقق التعبير النمطي من شكل النص لا معناه. احفظ الأنماط في وحدة واحدة واختبرها بجداول من النصوص المطابقة وغير المطابقة.", "de": "Ein Regex prüft die Form, nicht die Bedeutung. Teste Muster mit Tabellen passender und unpassender Texte."}, {"id": "scenario", "h": "Scenario", "en": "One pattern with named groups turns each log line into an object, so failed and slow requests are easy to list.", "hi": "Named groups वाला एक pattern हर log line को object बना देता है, जिससे failed और slow requests आसानी से मिलते हैं।", "kn": "Named groups ಇರುವ pattern ಪ್ರತಿ log line ಅನ್ನು object ಮಾಡುತ್ತದೆ.", "or": "Named groups ଥିବା pattern ପ୍ରତି log line କୁ object କରେ।", "ar": "نمط واحد بمجموعات مسماة يحول كل سطر سجل إلى كائن، فيسهل سرد الطلبات الفاشلة والبطيئة.", "de": "Ein Muster mit benannten Gruppen macht aus jeder Logzeile ein Objekt, so findest du fehlerhafte und langsame Anfragen."}, {"id": "practice", "h": "Hands-on", "en": "Practise extracting prices, a password policy with lookaheads, masking card numbers, and parsing key value pairs.", "hi": "Prices निकालना, lookaheads से password policy, card numbers छिपाना और key value pairs parse करने का अभ्यास करें।", "kn": "Prices ತೆಗೆಯುವುದು, password policy, card numbers ಮರೆಮಾಡುವುದು ಮತ್ತು key value pairs ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Prices ବାହାର କରିବା, password policy, card numbers ଲୁଚାଇବା ଓ key value pairs ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على استخراج الأسعار وسياسة كلمة مرور بالنظر الأمامي وإخفاء أرقام البطاقات وتحليل أزواج المفتاح والقيمة.", "de": "Übe Preise auslesen, eine Passwortregel mit Lookaheads, Kartennummern maskieren und Schlüssel-Wert-Paare lesen."}], "ex": [{"id": "prices", "lv": "e", "title": "Extract rupee prices", "task": "<p>Write <code>rupees(text)<\/code> that returns every rupee amount in the text as numbers. Amounts look like <code>₹40<\/code> or <code>₹1,250<\/code>. Ignore amounts in other currencies.<\/p>", "starter": "function rupees(text) {\n  \n}", "tests": [{"call": "rupees(\"Pen ₹40, Bag $30, Book ₹1,250\")", "want": [40, 1250]}, {"call": "rupees(\"no prices\")", "want": []}], "solution": "function rupees(text) {\n  return [...text.matchAll(/₹([\\d,]+)/g)].map(m => Number(m[1].replaceAll(\",\", \"\")));\n}", "hint": "<code>matchAll<\/code> with a group for the digits and commas, then remove the commas.", "why": "matchAll returns an iterator, and spreading it gives every match with its groups."}, {"id": "policy", "lv": "m", "title": "A password policy", "task": "<p>Write <code>isStrong(pw)<\/code> that returns true when the password has at least 8 characters, a lower case letter, a capital, a digit and a symbol (anything that is not a letter, digit or space).<\/p>", "starter": "function isStrong(pw) {\n  \n}", "tests": [{"call": "isStrong(\"Secret1!\")", "want": true}, {"call": "isStrong(\"secret1!\")", "want": false}, {"call": "isStrong(\"SECRET1!\")", "want": false}, {"call": "isStrong(\"Secret!!\")", "want": false}, {"call": "isStrong(\"Secret12\")", "want": false}, {"call": "isStrong(\"Se1!\")", "want": false}], "solution": "function isStrong(pw) {\n  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).{8,}$/.test(pw);\n}", "hint": "One lookahead per rule, then <code>.{8,}<\/code> for the length.", "why": "Each failing test in the list misses exactly one rule, which is how you design a password test suite."}, {"id": "mask", "lv": "h", "title": "Mask card numbers", "task": "<p>Write <code>maskCards(text)<\/code> that replaces every run of 13 to 19 digits with the first 4 digits, then one <code>*<\/code> per hidden digit, then the last 4 digits. Leave shorter numbers alone.<\/p>", "starter": "function maskCards(text) {\n  \n}", "tests": [{"call": "maskCards(\"card 4111111111111111 ok\")", "want": "card 4111********1111 ok"}, {"call": "maskCards(\"order 1042 and 1234567890123\")", "want": "order 1042 and 1234*****0123"}, {"call": "maskCards(\"none\")", "want": "none"}], "solution": "function maskCards(text) {\n  return text.replace(/\\b(\\d{4})(\\d{5,11})(\\d{4})\\b/g, (all, a, mid, b) => a + \"*\".repeat(mid.length) + b);\n}", "hint": "Three groups: 4 digits, the middle, 4 digits. A replace function can count the middle.", "why": "A function replacement is the only way to make the number of stars depend on the input."}, {"id": "kv", "lv": "x", "title": "Parse key=value pairs", "task": "<p>Write <code>parsePairs(text)<\/code> that reads pairs such as <code>env=staging retries=2 name=\"smoke run\"<\/code> into an object. Values in double quotes may contain spaces. Values that are whole numbers become numbers.<\/p>", "starter": "function parsePairs(text) {\n  \n}", "tests": [{"call": "parsePairs('env=staging retries=2 name=\"smoke run\"')", "want": {"env": "staging", "retries": 2, "name": "smoke run"}}, {"call": "parsePairs(\"\")", "want": {}}, {"call": "parsePairs('a=\"1\"')", "want": {"a": 1}}], "solution": "function parsePairs(text) {\n  const out = {};\n  for (const m of text.matchAll(/(\\w+)=(?:\"([^\"]*)\"|(\\S+))/g)) {\n    const raw = m[2] ?? m[3];\n    out[m[1]] = /^-?\\d+$/.test(raw) ? Number(raw) : raw;\n  }\n  return out;\n}", "hint": "An alternation: a quoted value <code>\"([^\"]*)\"<\/code> or a plain one <code>(\\S+)<\/code>. Only one of the two groups is filled.", "why": "CLI flags, test tags and environment strings all use this format."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Regular expressions in depth", subject: "javascript" });
+</script>
+</body>
+</html>

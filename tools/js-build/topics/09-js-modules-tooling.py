@@ -308,6 +308,7 @@ PARTS = [
 <tr><td><code>value as string</code></td><td>tell the checker you know better (use rarely)</td></tr>
 </table></div>
 <div class="modern">The <code>erasableSyntaxOnly</code> option (TypeScript 5.8) keeps you to type syntax that Node.js can simply remove, which is what makes running .ts files without a build step work.</div>
+<div class="tip">This is a first look. The TypeScript module, chapters 22 to 25, goes much further: narrowing and generics, mapped and conditional types, classes and decorators in real projects, and test automation written in TypeScript.</div>
 ''', qa=['Playwright', 'Cypress', 'WebdriverIO'], qa_why='Playwright and most modern frameworks generate TypeScript projects, and typed page objects catch broken locators and data at edit time.',
         kw=['TypeScript', 'types', 'interface', 'type alias', 'union', 'generics', 'tsc', 'tsconfig', 'type stripping', 'strict', 'erasableSyntaxOnly', 'optional property']),
     part('lint', '🧹', 'ESLint and Prettier', '''

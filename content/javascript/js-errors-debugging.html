@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Errors, debugging and logging · JavaScript</title>
+<meta name="description" content="JavaScript errors and debugging: error types, custom errors, error cause, AggregateError, async errors, unhandled rejections, result objects, util.inspect, debugger, Playwright trace viewer, structured logging, AsyncLocalStorage and source maps.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 14 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧯</span><div><h1>Errors, debugging and logging</h1><p class="lead">Handle failure like an expert: the built in error types, custom errors with codes and causes, errors in async code and unhandled rejections, when to return a result instead of throwing, real debuggers and the Playwright trace viewer, structured logs with request ids, and source maps.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 9 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 5 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>A tester spends much of the day reading failures. This chapter shows how errors are built, how to debug them fast, and how to sort a red pipeline into product, test and environment problems.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#types" class="qa"><span>🧯</span>The error types and building your own</a><a href="#async" class="qa"><span>⏳</span>Errors in async code</a><a href="#values"><span>📬</span>Throw or return: errors as values</a><a href="#debugging" class="qa"><span>🔎</span>Debugging tools</a><a href="#logging" class="qa"><span>🪵</span>Structured logging</a><a href="#sourcemaps"><span>🗺️</span>Source maps</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: triage a red pipeline</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="types" data-say="types"><div class="sec-num">Part 1</div><h2><span class="sec-em">🧯</span><span>The error types and building your own</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Test frameworks, HTTP clients and drivers all throw typed errors, and good helpers in a test framework do the same.</span></div>
+<p>Every error has a <code>name</code>, a <code>message</code> and a <code>stack</code>. The built in types tell you what kind of mistake happened, which narrows the search before you read a single line of code.</p>
+<div class="codewrap" data-k="builtin" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The built in error types · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> cases = [
+  () =&gt; <span class="k">null</span>.length,                         <span class="c">// TypeError: wrong kind of value</span>
+  () =&gt; notDefinedAnywhere,                  <span class="c">// ReferenceError: unknown name</span>
+  () =&gt; <span class="k">new</span> <span class="t">Array</span>(-<span class="n">1</span>),                       <span class="c">// RangeError: value out of range</span>
+  () =&gt; <span class="t">JSON</span>.parse(<span class="s">"{bad json}"</span>),            <span class="c">// SyntaxError: at run time, from a parser</span>
+  () =&gt; decodeURIComponent(<span class="s">"%"</span>),             <span class="c">// URIError</span>
+  () =&gt; { <span class="k">throw</span> <span class="k">new</span> <span class="t">AggregateError</span>([<span class="k">new</span> <span class="t">Error</span>(<span class="s">"a"</span>), <span class="k">new</span> <span class="t">Error</span>(<span class="s">"b"</span>)], <span class="s">"2 checks failed"</span>); },
+];
+<span class="k">for</span> (<span class="k">const</span> fn <span class="k">of</span> cases) {
+  <span class="k">try</span> { fn(); }
+  <span class="k">catch</span> (e) { console.log(e.constructor.name.padEnd(<span class="n">15</span>), e.message, e.errors ? <span class="s">`(${e.errors.length} inside)`</span> : <span class="s">""</span>); }
+}</pre><div class="out"><span>Output</span><pre>TypeError       Cannot read properties of null (reading &#x27;length&#x27;) 
+ReferenceError  notDefinedAnywhere is not defined 
+RangeError      Invalid array length 
+SyntaxError     Expected property name or &#x27;}&#x27; in JSON at position 1 (line 1 column 2) 
+URIError        URI malformed 
+AggregateError  2 checks failed (2 inside)</pre></div></div>
+<p>For your own code, a small hierarchy of error classes lets callers catch a whole family or one exact kind. Give each error a stable <code>code</code> for programs to check, a human <code>message</code>, and a <code>cause</code> when you wrap a lower level error.</p>
+<div class="codewrap" data-k="custom" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Custom errors with code and cause · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// A small hierarchy: catch the family, or one exact kind</span>
+<span class="k">class</span> <span class="t">AppError</span> <span class="k">extends</span> <span class="t">Error</span> {
+  constructor(message, { code, cause, details } = {}) {
+    <span class="k">super</span>(message, { cause });
+    <span class="k">this</span>.name = <span class="k">new</span>.target.name;             <span class="c">// "ValidationError", not "Error"</span>
+    <span class="k">this</span>.code = code;
+    <span class="k">this</span>.details = details;
+  }
+}
+<span class="k">class</span> <span class="t">ValidationError</span> <span class="k">extends</span> <span class="t">AppError</span> {}
+<span class="k">class</span> <span class="t">HttpError</span> <span class="k">extends</span> <span class="t">AppError</span> {
+  constructor(status, url) { <span class="k">super</span>(<span class="s">`HTTP ${status} from ${url}`</span>, { code: <span class="s">`HTTP_${status}`</span> }); <span class="k">this</span>.status = status; }
+  <span class="k">get</span> retryable() { <span class="k">return</span> <span class="k">this</span>.status &gt;= <span class="n">500</span> || <span class="k">this</span>.status === <span class="n">429</span>; }
+}
+
+<span class="k">function</span> placeOrder(qty) {
+  <span class="k">if</span> (!<span class="t">Number</span>.isInteger(qty) || qty &lt; <span class="n">1</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">ValidationError</span>(<span class="s">"qty must be a whole number from 1"</span>, { code: <span class="s">"BAD_QTY"</span>, details: { qty } });
+  <span class="k">throw</span> <span class="k">new</span> <span class="t">HttpError</span>(<span class="n">503</span>, <span class="s">"/api/orders"</span>);
+}
+
+<span class="k">for</span> (<span class="k">const</span> qty <span class="k">of</span> [<span class="n">0</span>, <span class="n">2</span>]) {
+  <span class="k">try</span> { placeOrder(qty); }
+  <span class="k">catch</span> (e) {
+    <span class="k">if</span> (e <span class="k">instanceof</span> <span class="t">ValidationError</span>) console.log(<span class="s">"fix the input:"</span>, e.code, e.details);
+    <span class="k">else</span> <span class="k">if</span> (e <span class="k">instanceof</span> <span class="t">HttpError</span>) console.log(e.name, e.message, <span class="s">"| retry?"</span>, e.retryable);
+    console.log(<span class="s">"  still an Error:"</span>, e <span class="k">instanceof</span> <span class="t">Error</span>, <span class="s">"| an AppError:"</span>, e <span class="k">instanceof</span> <span class="t">AppError</span>);
+  }
+}
+
+<span class="c">// Wrap low level errors with cause so no detail is lost</span>
+<span class="k">try</span> {
+  <span class="k">try</span> { <span class="t">JSON</span>.parse(<span class="s">"&lt;html&gt;502 Bad Gateway&lt;/html&gt;"</span>); }
+  <span class="k">catch</span> (e) { <span class="k">throw</span> <span class="k">new</span> <span class="t">AppError</span>(<span class="s">"Could not read the orders response"</span>, { code: <span class="s">"BAD_BODY"</span>, cause: e }); }
+} <span class="k">catch</span> (e) {
+  console.log(<span class="s">`${e.name}: ${e.message}\n  caused by ${e.cause.name}: ${e.cause.message.split(",")[0]}`</span>);
+}</pre><div class="out"><span>Output</span><pre>fix the input: BAD_QTY { qty: 0 }
+  still an Error: true | an AppError: true
+HttpError HTTP 503 from /api/orders | retry? true
+  still an Error: true | an AppError: true
+AppError: Could not read the orders response
+  caused by SyntaxError: Unexpected token &#x27;&lt;&#x27;</pre></div></div>
+<div class="tip">Check the <code>code</code> or the class, never the message text. Messages change with translations and wording fixes, codes do not.</div>
+</section>
+<section class="card reveal jsec qa-part" id="async" data-say="async"><div class="sec-num">Part 2</div><h2><span class="sec-em">⏳</span><span>Errors in async code</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Node.js</span><span class="qa-why">Missing awaits and unhandled rejections cause failures that appear in the wrong test, the hardest kind to debug.</span></div>
+<p>A <code>try</code> block only sees errors thrown while it is on the call stack. A callback that runs later has left it already. With <code>await</code>, a rejected promise turns into an ordinary throw at that line, which is the main reason async and await made error handling simple.</p>
+<div class="codewrap" data-k="async-errors" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Errors in async code · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// 1. try and catch does not reach a callback that runs later</span>
+<span class="k">try</span> {
+  setTimeout(() =&gt; { <span class="k">try</span> { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"inside the timer"</span>); } <span class="k">catch</span> (e) { console.log(<span class="s">"caught inside the callback:"</span>, e.message); } }, <span class="n">0</span>);
+} <span class="k">catch</span> { console.log(<span class="s">"this outer catch never runs"</span>); }
+
+<span class="c">// 2. With await, a rejected promise becomes a normal throw</span>
+<span class="k">async</span> <span class="k">function</span> loadUser() { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"401 Unauthorized"</span>); }
+<span class="k">try</span> { <span class="k">await</span> loadUser(); } <span class="k">catch</span> (e) { console.log(<span class="s">"await turns rejection into throw:"</span>, e.message); }
+
+<span class="c">// 3. Without await, the rejection escapes the try block</span>
+<span class="k">try</span> { loadUser().<span class="k">catch</span>(e =&gt; console.log(<span class="s">"only .catch sees it:"</span>, e.message)); }
+<span class="k">catch</span> { console.log(<span class="s">"never reached"</span>); }
+
+<span class="c">// 4. finally runs whatever happens, which is where clean up belongs</span>
+<span class="k">async</span> <span class="k">function</span> withBrowser() {
+  <span class="k">try</span> { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"assertion failed"</span>); }
+  <span class="k">finally</span> { console.log(<span class="s">"finally: browser closed"</span>); }
+}
+<span class="k">await</span> withBrowser().<span class="k">catch</span>(e =&gt; console.log(<span class="s">"test failed:"</span>, e.message));
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; setTimeout(r, <span class="n">5</span>));</pre><div class="out"><span>Output</span><pre>await turns rejection into throw: 401 Unauthorized
+finally: browser closed
+only .catch sees it: 401 Unauthorized
+test failed: assertion failed
+caught inside the callback: inside the timer</pre></div></div>
+<p>A rejected promise that nobody handles is an <b>unhandled rejection</b>. Since Node.js 15 it stops the process with exit code 1, which is good: the bug cannot hide.</p>
+<div class="codewrap" data-k="unhandled"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An unhandled rejection stops Node.js · 💥 Throws</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">async</span> <span class="k">function</span> save() { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"DB down"</span>); }
+save();                                      <span class="c">// nobody awaits or catches this promise</span>
+setTimeout(() =&gt; console.log(<span class="s">"this line never prints"</span>), <span class="n">10</span>);</pre><div class="err"><span>Output</span><pre>main.mjs:1
+async function save() { throw new Error(&quot;DB down&quot;); }
+                              ^
+
+Error: DB down
+    at save (main.mjs:1:31)
+    at main.mjs:2:1
+
+Node.js v26.12.0</pre></div></div>
+<div class="codewrap" data-k="handlers"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Global handlers for the errors nobody caught · 💥 Throws</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Last line of defence: log, then exit with a failure code so CI notices</span>
+process.on(<span class="s">"unhandledRejection"</span>, (reason) =&gt; {
+  console.log(<span class="s">"unhandledRejection:"</span>, reason.message);
+  process.exitCode = <span class="n">1</span>;
+});
+process.on(<span class="s">"uncaughtException"</span>, (err, origin) =&gt; {
+  console.log(<span class="s">`${origin}:`</span>, err.message);
+  process.exitCode = <span class="n">1</span>;
+});
+process.on(<span class="s">"exit"</span>, code =&gt; console.log(<span class="s">"exit code"</span>, code));
+
+<span class="t">Promise</span>.reject(<span class="k">new</span> <span class="t">Error</span>(<span class="s">"forgot to await the cleanup"</span>));
+setTimeout(() =&gt; { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"bug in a timer"</span>); }, <span class="n">0</span>);</pre><div class="err"><span>Output</span><pre>unhandledRejection: forgot to await the cleanup
+uncaughtException: bug in a timer
+exit code 1</pre></div></div>
+<div class="qa-box">The most common cause of an unhandled rejection in tests is a missing <code>await</code> before a Playwright action or an API call. The test may even pass, then a later test fails with a strange error. Turn on the <code>no-floating-promises</code> lint rule.</div>
+</section>
+<section class="card reveal jsec" id="values" data-say="values"><div class="sec-num">Part 3</div><h2><span class="sec-em">📬</span><span>Throw or return: errors as values</span></h2>
+
+<p>Throwing is right for things that should never happen. For failures you expect, such as a user typing a bad coupon, returning a result object keeps the flow simple and forces the caller to look at both cases.</p>
+<div class="codewrap" data-k="result" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Errors as values for expected failures · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Expected failures as values, unexpected ones as exceptions</span>
+<span class="k">const</span> ok = value =&gt; ({ ok: <span class="k">true</span>, value });
+<span class="k">const</span> fail = (code, message) =&gt; ({ ok: <span class="k">false</span>, code, message });
+
+<span class="k">function</span> parseCoupon(text) {
+  <span class="k">const</span> m = /^([<span class="t">A</span>-<span class="t">Z</span>]+)(\d{<span class="n">1</span>,<span class="n">2</span>})$/.exec(text.trim());
+  <span class="k">if</span> (!m) <span class="k">return</span> fail(<span class="s">"FORMAT"</span>, <span class="s">`"${text}" is not like SAVE10`</span>);
+  <span class="k">const</span> percent = <span class="t">Number</span>(m[<span class="n">2</span>]);
+  <span class="k">if</span> (percent &gt; <span class="n">50</span>) <span class="k">return</span> fail(<span class="s">"TOO_BIG"</span>, <span class="s">`${percent}% is over the 50% limit`</span>);
+  <span class="k">return</span> ok({ name: m[<span class="n">1</span>], percent });
+}
+
+<span class="k">for</span> (<span class="k">const</span> input <span class="k">of</span> [<span class="s">"SAVE10"</span>, <span class="s">"save10"</span>, <span class="s">"MEGA90"</span>]) {
+  <span class="k">const</span> r = parseCoupon(input);
+  console.log(input.padEnd(<span class="n">7</span>), r.ok ? <span class="s">`valid ${r.value.percent}%`</span> : <span class="s">`${r.code}: ${r.message}`</span>);
+}</pre><div class="out"><span>Output</span><pre>SAVE10  valid 10%
+save10  FORMAT: &quot;save10&quot; is not like SAVE10
+MEGA90  TOO_BIG: 90% is over the 50% limit</pre></div></div>
+<div class="note">A good rule: validation and parsing of outside input return results, while broken assumptions inside your own code throw. Never use an empty <code>catch {}</code>, which hides the very information you will need later.</div>
+</section>
+<section class="card reveal jsec qa-part" id="debugging" data-say="debugging"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔎</span><span>Debugging tools</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Vitest</span><span class="qa-why">The Inspector and trace viewer turn a red CI run into a step by step replay of what the browser saw.</span></div>
+<p><code>console.log</code> is fine for a quick look, but it hides deep objects and its output is easy to misread. Node.js gives you precise tools for inspecting values.</p>
+<div class="codewrap" data-k="inspect" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Inspect what you log · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> util <span class="k">from</span> <span class="s">"node:util"</span>;
+
+<span class="k">const</span> response = { status: <span class="n">200</span>, body: { order: { id: <span class="n">7</span>, items: [{ sku: <span class="s">"PEN"</span>, price: { amount: <span class="n">10</span>, currency: <span class="s">"INR"</span> } }] } } };
+console.log(response);                                          <span class="c">// nested objects are cut at depth 2</span>
+console.log(util.inspect(response, { depth: <span class="k">null</span>, compact: <span class="k">true</span>, breakLength: <span class="n">120</span> }));
+console.dir(response.body.order.items, { depth: <span class="n">0</span> });
+
+console.table([{ test: <span class="s">"login"</span>, ms: <span class="n">840</span>, ok: <span class="k">true</span> }, { test: <span class="s">"checkout"</span>, ms: <span class="n">2310</span>, ok: <span class="k">false</span> }]);
+console.group(<span class="s">"checkout"</span>);
+console.count(<span class="s">"retry"</span>);
+console.count(<span class="s">"retry"</span>);
+console.assert(<span class="n">1</span> + <span class="n">1</span> === <span class="n">3</span>, <span class="s">"maths is broken"</span>);               <span class="c">// prints only when false</span>
+console.groupEnd();
+console.log(util.format(<span class="s">"%s took %d ms (%o)"</span>, <span class="s">"login"</span>, <span class="n">840</span>, { slow: <span class="k">false</span> }));</pre><div class="out"><span>Output</span><pre>{ status: 200, body: { order: { id: 7, items: [Array] } } }
+{ status: 200, body: { order: { id: 7, items: [ { sku: &#x27;PEN&#x27;, price: { amount: 10, currency: &#x27;INR&#x27; } } ] } } }
+[ [Object] ]
+┌─────────┬────────────┬──────┬───────┐
+│ (index) │ test       │ ms   │ ok    │
+├─────────┼────────────┼──────┼───────┤
+│ 0       │ &#x27;login&#x27;    │ 840  │ true  │
+│ 1       │ &#x27;checkout&#x27; │ 2310 │ false │
+└─────────┴────────────┴──────┴───────┘
+checkout
+  retry: 1
+  retry: 2
+  Assertion failed: maths is broken
+login took 840 ms ({ slow: false })</pre></div></div>
+<p>For anything harder, use a real debugger. You can pause on any line, look at every variable, step into functions and set <b>conditional breakpoints</b> that stop only when, for example, <code>order.total &lt; 0</code>. <b>Logpoints</b> print a message without changing the code.</p>
+<div class="codewrap" data-k="debugger"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Starting the debuggers · Interactive tools</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># Pause on the first line, then open chrome://inspect in Chrome or press F5 in VS Code</span>
+<span class="k">node</span> --inspect-brk src/checkout.js
+
+<span class="c"># Debug a single test file</span>
+<span class="k">node</span> --inspect-brk --test test/cart.test.js
+<span class="k">npx</span> vitest --inspect-brk --no-file-parallelism cart.test.js
+
+<span class="c"># Playwright: step through actions in the Inspector, or record a trace to replay later</span>
+PWDEBUG=<span class="n">1</span> <span class="k">npx</span> playwright test checkout.spec.ts
+<span class="k">npx</span> playwright test --trace on &amp;&amp; <span class="k">npx</span> playwright show-trace test-results/**/trace.zip
+
+<span class="c"># A debugger; statement in code pauses there when DevTools or the debugger is attached</span></pre></div>
+<div class="qa-box">The Playwright <b>trace viewer</b> is the best debugger for a failed UI test: it shows every action, a DOM snapshot before and after, the network calls and the console, all from a CI run you cannot reproduce on your laptop.</div>
+</section>
+<section class="card reveal jsec qa-part" id="logging" data-say="logging"><div class="sec-num">Part 5</div><h2><span class="sec-em">🪵</span><span>Structured logging</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Attaching a test id or request id to every log line is how you find the server logs that match one failed test.</span></div>
+<p>Plain text logs are hard to search across many servers or parallel tests. <b>Structured logs</b> write one JSON object per line with a level, a message and fields. Tools such as pino in Node.js, and log platforms such as Grafana Loki, Datadog or ELK, filter them by any field.</p>
+<div class="codewrap" data-k="als" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Structured logs with a request id across awaits · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> { <span class="t">AsyncLocalStorage</span> } <span class="k">from</span> <span class="s">"node:async_hooks"</span>;
+
+<span class="c">// Structured JSON logs with a request id that follows the work through every await</span>
+<span class="k">const</span> context = <span class="k">new</span> <span class="t">AsyncLocalStorage</span>();
+<span class="k">const</span> log = (level, msg, extra = {}) =&gt;
+  console.log(<span class="t">JSON</span>.stringify({ level, msg, requestId: context.getStore()?.requestId, ...extra }));
+
+<span class="k">async</span> <span class="k">function</span> fetchStock(sku) { <span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; setTimeout(r, sku === <span class="s">"PEN"</span> ? <span class="n">20</span> : <span class="n">5</span>)); log(<span class="s">"debug"</span>, <span class="s">"stock checked"</span>, { sku }); <span class="k">return</span> <span class="n">3</span>; }
+<span class="k">async</span> <span class="k">function</span> handleOrder(requestId, sku) {
+  <span class="k">return</span> context.run({ requestId }, <span class="k">async</span> () =&gt; {
+    log(<span class="s">"info"</span>, <span class="s">"order received"</span>, { sku });
+    <span class="k">await</span> fetchStock(sku);
+    log(<span class="s">"info"</span>, <span class="s">"order placed"</span>);
+  });
+}
+
+<span class="c">// Two requests run at the same time, yet every line carries the right id</span>
+<span class="k">await</span> <span class="t">Promise</span>.all([handleOrder(<span class="s">"req-1"</span>, <span class="s">"PEN"</span>), handleOrder(<span class="s">"req-2"</span>, <span class="s">"BOOK"</span>)]);</pre><div class="out"><span>Output</span><pre>{&quot;level&quot;:&quot;info&quot;,&quot;msg&quot;:&quot;order received&quot;,&quot;requestId&quot;:&quot;req-1&quot;,&quot;sku&quot;:&quot;PEN&quot;}
+{&quot;level&quot;:&quot;info&quot;,&quot;msg&quot;:&quot;order received&quot;,&quot;requestId&quot;:&quot;req-2&quot;,&quot;sku&quot;:&quot;BOOK&quot;}
+{&quot;level&quot;:&quot;debug&quot;,&quot;msg&quot;:&quot;stock checked&quot;,&quot;requestId&quot;:&quot;req-2&quot;,&quot;sku&quot;:&quot;BOOK&quot;}
+{&quot;level&quot;:&quot;info&quot;,&quot;msg&quot;:&quot;order placed&quot;,&quot;requestId&quot;:&quot;req-2&quot;}
+{&quot;level&quot;:&quot;debug&quot;,&quot;msg&quot;:&quot;stock checked&quot;,&quot;requestId&quot;:&quot;req-1&quot;,&quot;sku&quot;:&quot;PEN&quot;}
+{&quot;level&quot;:&quot;info&quot;,&quot;msg&quot;:&quot;order placed&quot;,&quot;requestId&quot;:&quot;req-1&quot;}</pre></div></div>
+<p><code>AsyncLocalStorage</code> keeps a value, such as a request id or the current test name, attached to all async work started inside <code>context.run</code>. That is how a log line deep in a helper still knows which request or test it belongs to.</p>
+</section>
+<section class="card reveal jsec" id="sourcemaps" data-say="sourcemaps"><div class="sec-num">Part 6</div><h2><span class="sec-em">🗺️</span><span>Source maps</span></h2>
+
+<p>TypeScript, bundlers and minifiers change your code before it runs, so stack traces point at generated files. A <b>source map</b> is a file that maps each generated position back to the original line. Browsers use them automatically in DevTools. Node.js uses them with <code>--enable-source-maps</code>.</p>
+<div class="codewrap tests" data-k="sourcemaps"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Source maps point the trace at the TypeScript line · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/price.ts</div><pre class="src" data-file="src/price.ts"><span class="k">export</span> <span class="k">function</span> lineTotal(price: <span class="k">number</span>, qty: <span class="k">number</span>): <span class="k">number</span> {
+  <span class="k">if</span> (qty &gt; <span class="n">10</span>) {
+    <span class="k">throw</span> <span class="k">new</span> <span class="t">RangeError</span>(<span class="s">`qty ${qty} is over the limit of 10`</span>);
+  }
+  <span class="k">return</span> price * qty;
+}
+
+lineTotal(<span class="n">99</span>, <span class="n">12</span>);</pre><div class="fname">📄 run.sh</div><pre class="src" data-file="run.sh"><span class="k">npx</span> tsc || exit <span class="n">1</span>
+echo <span class="s">"$ node dist/price.js"</span>
+<span class="k">node</span> dist/price.js <span class="n">2</span>&gt;&amp;<span class="n">1</span> | grep -E <span class="s">"RangeError|at lineTotal"</span>
+echo
+echo <span class="s">"$ node --enable-source-maps dist/price.js"</span>
+<span class="k">node</span> --enable-source-maps dist/price.js <span class="n">2</span>&gt;&amp;<span class="n">1</span> | grep -E <span class="s">"RangeError|at lineTotal"</span>
+true</pre><div class="cmd"><span>Terminal</span><pre>$ sh run.sh</pre></div><div class="out"><span>Terminal output</span><pre>$ node dist/price.js
+        throw new RangeError(`qty ${qty} is over the limit of 10`);
+RangeError: qty 12 is over the limit of 10
+    at lineTotal (dist/price.js:3:15)
+
+$ node --enable-source-maps dist/price.js
+    throw new RangeError(`qty ${qty} is over the limit of 10`);
+RangeError: qty 12 is over the limit of 10
+    at lineTotal (src/price.ts:3:11)</pre></div></div>
+<div class="tip">Upload source maps to your error tracker, such as Sentry, so production errors show the real file and line. Keep them off the public web server if your source code is private.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: triage a red pipeline</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>The nightly run has five failures. Before anyone opens a debugger, the team wants to know which failures are the product, which are the tests and which are the environment.</div>
+<div class="codewrap" data-k="scenario" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Triage failures by error type · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Sort failed tests into buckets before anyone starts debugging</span>
+<span class="k">const</span> failures = [
+  { test: <span class="s">"checkout total"</span>, error: { name: <span class="s">"AssertionError"</span>, message: <span class="s">"expected 450 to equal 405"</span> } },
+  { test: <span class="s">"login"</span>, error: { name: <span class="s">"TimeoutError"</span>, message: <span class="s">"locator.click: Timeout 5000ms exceeded"</span> } },
+  { test: <span class="s">"search"</span>, error: { name: <span class="s">"Error"</span>, message: <span class="s">"connect ECONNREFUSED 127.0.0.1:3000"</span> } },
+  { test: <span class="s">"profile"</span>, error: { name: <span class="s">"TypeError"</span>, message: <span class="s">"Cannot read properties of undefined (reading 'name')"</span> } },
+  { test: <span class="s">"orders"</span>, error: { name: <span class="s">"Error"</span>, message: <span class="s">"HTTP 503 from /api/orders"</span> } },
+];
+
+<span class="k">const</span> rules = [
+  [e =&gt; /<span class="t">ECONNREFUSED</span>|<span class="t">ENOTFOUND</span>|<span class="t">HTTP</span> <span class="n">50</span>[<span class="n">234</span>]/.test(e.message), <span class="s">"environment"</span>],
+  [e =&gt; e.name === <span class="s">"TimeoutError"</span>, <span class="s">"timing or locator"</span>],
+  [e =&gt; e.name === <span class="s">"AssertionError"</span> || /expect/.test(e.message), <span class="s">"possible product bug"</span>],
+  [e =&gt; [<span class="s">"TypeError"</span>, <span class="s">"ReferenceError"</span>].includes(e.name), <span class="s">"test code bug"</span>],
+];
+<span class="k">const</span> bucket = e =&gt; rules.find(([match]) =&gt; match(e))?.[<span class="n">1</span>] ?? <span class="s">"unknown"</span>;
+
+<span class="k">const</span> report = <span class="t">Object</span>.groupBy(failures, f =&gt; bucket(f.error));
+<span class="k">for</span> (<span class="k">const</span> [kind, list] <span class="k">of</span> <span class="t">Object</span>.entries(report)) console.log(kind.padEnd(<span class="n">21</span>), list.map(f =&gt; f.test).join(<span class="s">", "</span>));</pre><div class="out"><span>Output</span><pre>possible product bug  checkout total
+timing or locator     login
+environment           search, orders
+test code bug         profile</pre></div></div>
+<p>Error names and messages carry enough signal to sort most failures automatically. Connection errors and 5xx responses point at the environment, timeouts at timing or locators, assertion errors at the product, and TypeErrors in test code at the tests themselves. Posting this summary to the team chat saves the first half hour of every morning.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-engine.html" data-topic="js-engine"><small>← Previous chapter</small><b>🔬 Engine internals</b></a><a class="next" href="./js-regex.html" data-topic="js-regex"><small>Next chapter →</small><b>🧷 Regex in depth</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "When things go wrong", "panels": [{"s": [["e", "🧯"], ["t", "class HttpError extends AppError", {"b": 1, "size": 11}]], "h": "Typed errors", "t": "A class and a code for each kind.", "more": "Wrap with cause, keep every detail."}, {"s": [["e", "⏳"], ["t", "await or .catch", {"b": 1}]], "h": "Async errors", "t": "try only sees what it awaits.", "more": "Unhandled rejections stop Node.js."}, {"s": [["e", "🔎"], ["t", "debugger;", {"b": 1}]], "h": "Real debuggers", "t": "Pause, look, step.", "more": "Trace viewer for UI tests."}, {"s": [["e", "🪵"], ["t", "{\"level\":\"info\",\"requestId\":…}", {"b": 1, "size": 11}]], "h": "Structured logs", "t": "JSON lines with ids.", "more": "Find every line of one request."}], "remember": "Throw typed errors with a code and cause, await everything, and log JSON with an id you can search."}, "real": [["🧾", "A payments API", "Gave every error a stable code such as CARD_DECLINED. Its client apps and the API tests check codes, so rewording messages never breaks anything."], ["🌙", "A nightly suite", "Bucketed failures by error type and posted the summary to chat. Environment failures went to the platform team, product bugs to developers."], ["🔗", "A microservice team", "Added a request id with AsyncLocalStorage and found a slow checkout by searching one id across five services."]], "quiz": [{"lv": "e", "q": "Which error do you get from null.length?", "o": ["TypeError", "ReferenceError", "RangeError", "SyntaxError"], "a": 0, "hint": "Wrong kind of value.", "why": "Reading a property of null or undefined is a TypeError."}, {"lv": "e", "q": "What does finally do?", "o": ["Runs after try and catch whether or not an error happened", "Runs only on errors", "Stops the error", "Retries the try block"], "a": 0, "hint": "Always.", "why": "That makes it the place for clean up such as closing a browser."}, {"lv": "e", "q": "Which console method shows an array of objects as a grid?", "o": ["console.table", "console.dir", "console.group", "console.count"], "a": 0, "hint": "A table.", "why": "Handy for test results and API rows."}, {"lv": "m", "q": "Why set this.name = new.target.name in a base error class?", "o": ["So every subclass reports its own class name", "To make it faster", "It is required by JavaScript", "To hide the stack"], "a": 0, "hint": "Subclasses.", "why": "Otherwise every custom error prints as plain \"Error\"."}, {"lv": "m", "q": "A function calls loadUser() inside try without await, and it rejects. What happens?", "o": ["The catch block does not see it", "catch handles it", "It retries", "Nothing ever"], "a": 0, "hint": "The promise is not awaited.", "why": "The rejection happens after the try block has finished."}, {"lv": "m", "q": "What does { cause } in new Error(msg, { cause }) give you?", "o": ["The original error kept inside the new one", "A retry count", "A stack trace only", "A status code"], "a": 0, "hint": "Wrapping.", "why": "Logs and inspect show both errors, so no detail is lost."}, {"lv": "m", "q": "Why check err.code instead of err.message?", "o": ["Codes are stable while messages change", "Messages are always empty", "Codes are faster", "Messages cannot be compared"], "a": 0, "hint": "Stability.", "why": "Rewording a message must never break a caller or a test."}, {"lv": "h", "q": "What does Node.js do by default with an unhandled rejection?", "o": ["Prints it and exits with code 1", "Ignores it", "Retries it", "Writes a warning only"], "a": 0, "hint": "Since Node.js 15.", "why": "Earlier versions only warned, which let bugs hide."}, {"lv": "h", "q": "What does AsyncLocalStorage give you?", "o": ["A value that follows async work started inside run()", "Browser local storage in Node", "A database", "A faster event loop"], "a": 0, "hint": "Context across awaits.", "why": "Used for request ids, user ids and test names in logs."}, {"lv": "h", "q": "What is a source map for?", "o": ["Mapping generated code positions back to original source lines", "Mapping URLs to routes", "Drawing a site map", "Compressing code"], "a": 0, "hint": "Stack traces.", "why": "It makes errors in compiled TypeScript point at the .ts line."}, {"lv": "x", "q": "A failure says \"connect ECONNREFUSED 127.0.0.1:3000\". Most likely cause?", "o": ["The server under test is not running", "An assertion is wrong", "A locator is wrong", "A TypeScript error"], "a": 0, "hint": "Connection refused.", "why": "Nothing is listening on that port, which is an environment problem."}, {"lv": "x", "q": "Which is the best use of AggregateError?", "o": ["Reporting several failures together, as Promise.any does", "Replacing all errors", "Adding a stack", "Catching syntax errors"], "a": 0, "hint": "Many at once.", "why": "Its errors property holds every inner error."}], "calc": [{"lv": "e", "q": "A suite has 5 failures: 2 environment, 1 timeout, 1 assertion, 1 TypeError. How many point at the product?", "ans": "1", "hint": "Assertions.", "steps": ["Only the assertion failure is a possible product bug."]}, {"lv": "e", "q": "console.count(\"retry\") is called 3 times. What number does the third call print?", "ans": "3", "hint": "It counts calls with that label.", "steps": ["retry: 1, retry: 2, retry: 3."]}, {"lv": "m", "q": "util.inspect default depth is 2. An object nests 4 levels deep. How many levels are hidden behind [Object]?", "ans": "2", "hint": "Shown levels are 0, 1 and 2.", "steps": ["Levels 3 and 4 are replaced by [Object]."], "alt": ["1"]}, {"lv": "m", "q": "A retry helper tries 3 times. Each failing call takes 2 s and there is a 1 s wait between tries. How long until the final failure, in seconds?", "ans": "8", "hint": "Calls plus waits.", "steps": ["<span class=\"eq\">3 × 2 + 2 × 1 = 8<\/span>"]}, {"lv": "m", "q": "Out of 200 nightly failures, 120 were environment problems. What percent is that?", "ans": "60", "hint": "Part over whole.", "steps": ["<span class=\"eq\">120 ÷ 200 × 100 = 60<\/span>"]}, {"lv": "h", "q": "A 5xx retry policy retries 503 and 429 but not 400 or 404. Of the statuses 400, 404, 429, 500, 503, how many are retried if 5xx also includes 500?", "ans": "3", "hint": "429 plus the 5xx ones.", "steps": ["429, 500 and 503 are retried.", "400 and 404 are not."]}, {"lv": "h", "q": "Exponential backoff waits 100 ms, then doubles each time. What is the total wait over 4 retries, in ms?", "ans": "1500", "hint": "100 + 200 + 400 + 800.", "steps": ["<span class=\"eq\">100 + 200 + 400 + 800 = 1500<\/span>"]}, {"lv": "x", "q": "Two requests log 3 lines each, interleaved. With a request id on every line, how many lines does a search for one id return?", "ans": "3", "hint": "Only its own lines.", "steps": ["The id filters exactly that request out of the 6 lines."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers errors in depth, async errors and unhandled rejections, errors as values, debugging tools, structured logging and source maps.", "hi": "यह अध्याय errors, async errors और unhandled rejections, errors as values, debugging tools, structured logging और source maps सिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ errors, async errors, unhandled rejections, debugging tools, structured logging ಮತ್ತು source maps ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ errors, async errors, unhandled rejections, debugging tools, structured logging ଓ source maps ଶିଖାଏ।", "ar": "يتناول هذا الفصل الأخطاء بعمق وأخطاء الشيفرة غير المتزامنة وأدوات التصحيح والسجلات المنظمة وخرائط المصدر.", "de": "Dieses Kapitel behandelt Fehler im Detail, asynchrone Fehler, Debugging-Werkzeuge, strukturiertes Logging und Source Maps."}, {"id": "types", "h": "Error types", "en": "Each built in error type points at a kind of mistake. Your own errors should have a class, a stable code and a cause when they wrap another error.", "hi": "हर built in error type एक तरह की गलती बताता है। अपने errors में class, stable code और cause रखें।", "kn": "ಪ್ರತಿ built in error type ಒಂದು ರೀತಿಯ ತಪ್ಪು ತೋರಿಸುತ್ತದೆ. ನಿಮ್ಮ errors ಗೆ class, code ಮತ್ತು cause ಇರಲಿ.", "or": "ପ୍ରତ୍ୟେକ built in error type ଗୋଟିଏ ପ୍ରକାର ଭୁଲ ଦେଖାଏ। ନିଜ errors ରେ class, code ଓ cause ରଖନ୍ତୁ।", "ar": "كل نوع خطأ مدمج يشير إلى نوع من الأخطاء. اجعل لأخطائك صنفًا ورمزًا ثابتًا وسببًا عند تغليف خطأ آخر.", "de": "Jeder eingebaute Fehlertyp zeigt eine Art von Fehler. Eigene Fehler brauchen eine Klasse, einen Code und eine Ursache."}, {"id": "async", "h": "Async errors", "en": "try only catches what it awaits. A promise nobody handles is an unhandled rejection, and Node stops with exit code one.", "hi": "try केवल वही पकड़ता है जिसे वह await करता है। कोई promise handle न हो तो Node exit code एक के साथ रुकता है।", "kn": "try ತಾನು await ಮಾಡಿದ್ದನ್ನು ಮಾತ್ರ ಹಿಡಿಯುತ್ತದೆ. Handle ಆಗದ promise ಇದ್ದರೆ Node ನಿಲ್ಲುತ್ತದೆ.", "or": "try କେବଳ await କରିଥିବା ଧରେ। Handle ହୋଇନଥିବା promise ଥିଲେ Node ବନ୍ଦ ହୁଏ।", "ar": "لا يلتقط try إلا ما ينتظره بـ await. الوعد المرفوض بلا معالجة يوقف Node برمز خروج واحد.", "de": "try fängt nur, was es mit await abwartet. Eine unbehandelte Ablehnung beendet Node mit Exit-Code eins."}, {"id": "values", "h": "Errors as values", "en": "Return a result object for failures you expect, such as bad input, and throw only for things that should never happen.", "hi": "अपेक्षित failures जैसे गलत input के लिए result object लौटाएं, और केवल असंभव चीज़ों पर throw करें।", "kn": "ನಿರೀಕ್ಷಿತ failures ಗೆ result object ಹಿಂದಿರುಗಿಸಿ, ಅಸಾಧ್ಯ ವಿಷಯಗಳಿಗೆ ಮಾತ್ರ throw ಮಾಡಿ.", "or": "ଆଶା କରାଯାଉଥିବା failures ପାଇଁ result object ଫେରାନ୍ତୁ, କେବଳ ଅସମ୍ଭବ କଥାରେ throw କରନ୍ତୁ।", "ar": "أعد كائن نتيجة للأخطاء المتوقعة مثل المدخلات الخاطئة، وارمِ الاستثناء فقط لما لا يجب أن يحدث.", "de": "Gib für erwartete Fehler wie falsche Eingaben ein Ergebnisobjekt zurück und wirf nur bei Unmöglichem."}, {"id": "debugging", "h": "Debugging", "en": "Use util inspect, console table and console dir to see values clearly, and a real debugger with breakpoints for harder problems.", "hi": "Values साफ देखने के लिए util inspect, console table और console dir, और कठिन समस्याओं के लिए breakpoints वाला debugger इस्तेमाल करें।", "kn": "Values ನೋಡಲು util inspect, console table ಬಳಸಿ, ಕಠಿಣ ಸಮಸ್ಯೆಗೆ breakpoints ಇರುವ debugger.", "or": "Values ଦେଖିବାକୁ util inspect, console table ବ୍ୟବହାର କରନ୍ତୁ, କଠିନ ସମସ୍ୟାରେ debugger।", "ar": "استخدم util.inspect وconsole.table وconsole.dir لرؤية القيم بوضوح، ومصححًا حقيقيًا بنقاط توقف للمشكلات الأصعب.", "de": "Nutze util.inspect, console.table und console.dir für klare Werte und einen echten Debugger mit Haltepunkten."}, {"id": "logging", "h": "Logging", "en": "Structured logs write one JSON object per line. AsyncLocalStorage keeps a request id attached to every await, so each line is easy to find.", "hi": "Structured logs हर line में एक JSON object लिखते हैं। AsyncLocalStorage हर await में request id साथ रखता है।", "kn": "Structured logs ಪ್ರತಿ ಸಾಲಿಗೆ ಒಂದು JSON object. AsyncLocalStorage request id ಅನ್ನು ಪ್ರತಿ await ಗೆ ಜೋಡಿಸುತ್ತದೆ.", "or": "Structured logs ପ୍ରତି ଧାଡ଼ିରେ ଗୋଟିଏ JSON object। AsyncLocalStorage request id ପ୍ରତି await ରେ ରଖେ।", "ar": "السجلات المنظمة تكتب كائن JSON في كل سطر، وتحفظ AsyncLocalStorage معرف الطلب عبر كل await.", "de": "Strukturierte Logs schreiben ein JSON-Objekt pro Zeile. AsyncLocalStorage hält die Request-ID über jedes await."}, {"id": "sourcemaps", "h": "Source maps", "en": "Source maps map generated code back to your original lines. Node uses them with the enable source maps flag.", "hi": "Source maps बने हुए code को आपकी असली lines से जोड़ते हैं। Node इन्हें enable source maps flag से इस्तेमाल करता है।", "kn": "Source maps generated code ಅನ್ನು ಮೂಲ ಸಾಲುಗಳಿಗೆ ಜೋಡಿಸುತ್ತವೆ. Node flag ಮೂಲಕ ಬಳಸುತ್ತದೆ.", "or": "Source maps generated code କୁ ମୂଳ ଧାଡ଼ି ସହ ଯୋଡ଼େ। Node flag ରେ ବ୍ୟବହାର କରେ।", "ar": "تربط خرائط المصدر الشيفرة المولدة بأسطرك الأصلية، ويستخدمها Node مع خيار enable source maps.", "de": "Source Maps führen erzeugten Code auf deine Originalzeilen zurück. Node nutzt sie mit einem Schalter."}, {"id": "scenario", "h": "Scenario", "en": "Sort failures by error type: connection errors are the environment, timeouts are timing, assertions are the product, TypeErrors are the tests.", "hi": "Failures को error type से बांटें: connection errors environment, timeouts timing, assertions product, TypeErrors tests।", "kn": "Failures ಅನ್ನು error type ನಿಂದ ವಿಂಗಡಿಸಿ: connection errors environment, timeouts timing, assertions product.", "or": "Failures କୁ error type ରେ ଭାଗ କରନ୍ତୁ: connection errors environment, timeouts timing, assertions product।", "ar": "صنف الإخفاقات حسب نوع الخطأ: أخطاء الاتصال للبيئة، والمهلات للتوقيت، والتأكيدات للمنتج، وTypeError للاختبارات.", "de": "Sortiere Fehler nach Typ: Verbindungsfehler sind die Umgebung, Timeouts das Timing, Assertions das Produkt."}, {"id": "practice", "h": "Hands-on", "en": "Practise a custom error class, a safe JSON parser that returns a result, a retry that only retries the right errors, and a failure triage function.", "hi": "Custom error class, result लौटाने वाला safe JSON parser, सही errors पर retry और failure triage function का अभ्यास करें।", "kn": "Custom error class, safe JSON parser, ಸರಿಯಾದ errors ಗೆ retry ಮತ್ತು triage function ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Custom error class, safe JSON parser, ଠିକ୍ errors ରେ retry ଓ triage function ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على صنف خطأ مخصص ومحلل JSON آمن يعيد نتيجة وإعادة محاولة للأخطاء المناسبة فقط ودالة فرز للإخفاقات.", "de": "Übe eine eigene Fehlerklasse, einen sicheren JSON-Parser, gezielte Wiederholungen und eine Triage-Funktion."}], "ex": [{"id": "httperror", "lv": "e", "title": "A custom error class", "task": "<p>Write a class <code>HttpError<\/code> that extends <code>Error<\/code>. <code>new HttpError(404, \"/cart\")<\/code> must have <code>name<\/code> \"HttpError\", <code>status<\/code> 404 and <code>message<\/code> \"HTTP 404 from /cart\".<\/p>", "starter": "class HttpError extends Error {\n  \n}", "tests": [{"call": "(() => { const e = new HttpError(404, \"/cart\"); return [e.name, e.status, e.message, e instanceof Error]; })()", "want": ["HttpError", 404, "HTTP 404 from /cart", true]}], "solution": "class HttpError extends Error {\n  constructor(status, url) {\n    super(`HTTP ${status} from ${url}`);\n    this.name = \"HttpError\";\n    this.status = status;\n  }\n}", "hint": "Call <code>super(message)<\/code> first, then set the extra fields.", "why": "Subclasses of Error keep the stack trace and work with instanceof."}, {"id": "safejson", "lv": "m", "title": "Parse JSON without throwing", "task": "<p>Write <code>safeJson(text)<\/code> that returns <code>{ ok: true, value }<\/code> for valid JSON and <code>{ ok: false, error }<\/code> with the error message for invalid JSON.<\/p>", "starter": "function safeJson(text) {\n  \n}", "tests": [{"call": "safeJson('{\"a\":1}')", "want": {"ok": true, "value": {"a": 1}}}, {"call": "safeJson(\"<html>\").ok", "want": false}, {"call": "typeof safeJson(\"{bad\").error", "want": "string"}], "solution": "function safeJson(text) {\n  try {\n    return { ok: true, value: JSON.parse(text) };\n  } catch (e) {\n    return { ok: false, error: e.message };\n  }\n}", "hint": "Wrap <code>JSON.parse<\/code> in try and catch and return an object from both branches.", "why": "An API test can now report \"the body was HTML, not JSON\" instead of crashing."}, {"id": "retryif", "lv": "h", "title": "Retry only the right errors", "task": "<p>Write <code>async retryIf(fn, shouldRetry, times)<\/code>. Call <code>fn()<\/code> up to <code>times<\/code> times. If it throws and <code>shouldRetry(error)<\/code> is true and tries are left, try again, otherwise rethrow at once. Return the first successful result.<\/p>", "starter": "async function retryIf(fn, shouldRetry, times) {\n  \n}", "tests": [{"call": "(async () => { let n = 0; const r = await retryIf(async () => { if (++n < 3) throw { status: 503 }; return \"ok\"; }, e => e.status >= 500, 5); return [r, n]; })()", "want": ["ok", 3]}, {"call": "(async () => { let n = 0; try { await retryIf(async () => { n++; throw { status: 400 }; }, e => e.status >= 500, 5); } catch (e) { return [e.status, n]; } })()", "want": [400, 1]}, {"call": "(async () => { let n = 0; try { await retryIf(async () => { n++; throw { status: 503 }; }, () => true, 2); } catch (e) { return [e.status, n]; } })()", "want": [503, 2]}], "solution": "async function retryIf(fn, shouldRetry, times) {\n  for (let i = 1; ; i++) {\n    try {\n      return await fn();\n    } catch (e) {\n      if (i >= times || !shouldRetry(e)) throw e;\n    }\n  }\n}", "hint": "A loop with try and catch. Rethrow when you are out of tries or the error is not retryable.", "why": "Retrying a 400 can never help and hides real bugs. Only retry errors that can go away by themselves."}, {"id": "triage", "lv": "x", "title": "Triage a failure", "task": "<p>Write <code>triage(error)<\/code> that returns <code>\"environment\"<\/code> when the message contains ECONNREFUSED or ENOTFOUND or \"HTTP 5\", <code>\"timing\"<\/code> when the name is TimeoutError, <code>\"product\"<\/code> when the name is AssertionError, <code>\"test\"<\/code> for TypeError or ReferenceError, and <code>\"unknown\"<\/code> otherwise. Check the rules in that order.<\/p>", "starter": "function triage(error) {\n  \n}", "tests": [{"call": "triage({ name: \"Error\", message: \"connect ECONNREFUSED 127.0.0.1:3000\" })", "want": "environment"}, {"call": "triage({ name: \"TimeoutError\", message: \"Timeout 5000ms\" })", "want": "timing"}, {"call": "triage({ name: \"AssertionError\", message: \"HTTP 500 expected 200\" })", "want": "environment"}, {"call": "triage({ name: \"AssertionError\", message: \"1 !== 2\" })", "want": "product"}, {"call": "triage({ name: \"TypeError\", message: \"x is undefined\" })", "want": "test"}, {"call": "triage({ name: \"Error\", message: \"?\" })", "want": "unknown"}], "solution": "function triage(error) {\n  const { name, message } = error;\n  if (/ECONNREFUSED|ENOTFOUND|HTTP 5/.test(message)) return \"environment\";\n  if (name === \"TimeoutError\") return \"timing\";\n  if (name === \"AssertionError\") return \"product\";\n  if (name === \"TypeError\" || name === \"ReferenceError\") return \"test\";\n  return \"unknown\";\n}", "hint": "Use a regular expression for the message test and simple comparisons for the names.", "why": "The third test shows why order matters: an assertion that failed because of a 500 is still an environment problem."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Errors, debugging and logging", subject: "javascript" });
+</script>
+</body>
+</html>

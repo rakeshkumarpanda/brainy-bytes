@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeScript fundamentals · JavaScript</title>
+<meta name="description" content="TypeScript fundamentals: tsc, tsconfig, type stripping, types, inference, unknown, any, never, functions, overloads, interface, type alias, union, narrowing, discriminated unions, enum, as const and strict mode.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔷 TypeScript</span><span>›</span><span>Chapter 22 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔷</span><div><h1>TypeScript fundamentals</h1><p class="lead">Start TypeScript the modern way: tsc to check and Node.js to run, a strict tsconfig, everyday types and inference, typed functions and overloads, interface and type, unions and narrowing, enums against as const objects, the strict options, and typed results from untyped JSON.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 0 animations</span><span class="chip">🔷 8 type checked examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Most new automation projects use TypeScript. Typed locators, fixtures and API responses catch mistakes in test code before the suite even starts.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#why" class="qa"><span>🔷</span>What TypeScript is and how it runs</a><a href="#everyday" class="qa"><span>🧱</span>Everyday types</a><a href="#functions"><span>🧩</span>Functions</a><a href="#shapes" class="qa"><span>📐</span>interface and type</a><a href="#narrowing" class="qa"><span>🔍</span>Unions and narrowing</a><a href="#enums"><span>🏷️</span>Enums and their modern alternative</a><a href="#strict" class="qa"><span>🛡️</span>Strict options</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: typed results from untyped JSON</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="why" data-say="why"><div class="sec-num">Part 1</div><h2><span class="sec-em">🔷</span><span>What TypeScript is and how it runs</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">WebdriverIO</span><span class="qa-why">Most modern automation frameworks are written and used in TypeScript.</span></div>
+<p><b>TypeScript</b> is JavaScript with type annotations. The compiler <code>tsc</code> reads the types and reports mistakes before the code runs. The types are then <b>erased</b>: at run time it is plain JavaScript. Node.js 23.6 and later can run <code>.ts</code> files directly by stripping the types, without checking them, so you use both: <code>tsc</code> to check, Node.js to run.</p>
+<div class="codewrap tests" data-k="first"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">tsc finds the mistakes, Node.js runs the code anyway · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// TypeScript is JavaScript plus types. The types are checked by tsc and then removed.</span>
+<span class="k">function</span> lineTotal(price: <span class="k">number</span>, qty: <span class="k">number</span>): <span class="k">number</span> {
+  <span class="k">return</span> price * qty;
+}
+
+<span class="k">const</span> total = lineTotal(<span class="n">40</span>, <span class="n">3</span>);
+<span class="k">const</span> wrong = lineTotal(<span class="s">"40"</span>, <span class="n">3</span>);          <span class="c">// a string where a number is expected</span>
+<span class="k">const</span> name: <span class="k">string</span> = total;                <span class="c">// a number where a string is expected</span>
+
+console.log(total, wrong, name);</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(7,25): error TS2345: Argument of type &#x27;string&#x27; is not assignable to parameter of type &#x27;number&#x27;.
+src/main.ts(8,7): error TS2322: Type &#x27;number&#x27; is not assignable to type &#x27;string&#x27;.
+
+$ node src/main.ts
+120 120 120</pre></div></div>
+<p>Notice that Node.js ran the file even with two type errors. Types never change what code does. They are a safety net that only works if <code>tsc</code> runs in your editor and in CI.</p>
+<div class="codewrap" data-k="tsconfig"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A modern tsconfig.json · Explained below</span><button type="button" class="copy">Copy</button></div><pre class="src main">{
+  <span class="s">"compilerOptions"</span>: {
+    <span class="s">"target"</span>: <span class="s">"es2024"</span>,            // which <span class="t">JavaScript</span> features the output may use
+    <span class="s">"module"</span>: <span class="s">"nodenext"</span>,          // how imports work: <span class="t">Node</span>.js rules for <span class="t">ESM</span> and <span class="t">CommonJS</span>
+    <span class="s">"strict"</span>: <span class="k">true</span>,                // turn on every strict check, always do this
+    <span class="s">"noUncheckedIndexedAccess"</span>: <span class="k">true</span>,
+    <span class="s">"noEmit"</span>: <span class="k">true</span>,                // only type check, <span class="t">Node</span>.js or a bundler runs the .ts files
+    <span class="s">"allowImportingTsExtensions"</span>: <span class="k">true</span>,
+    <span class="s">"erasableSyntaxOnly"</span>: <span class="k">true</span>,    // forbid syntax <span class="t">Node</span>.js cannot simply strip, such as enum
+    <span class="s">"types"</span>: [<span class="s">"node"</span>]              // types for process, <span class="t">Buffer</span> and friends from @types/node
+  },
+  <span class="s">"include"</span>: [<span class="s">"src"</span>, <span class="s">"tests"</span>]
+}</pre></div>
+<div class="tip">Playwright, Vitest, Jest (with a transform), Cypress and WebdriverIO all accept TypeScript tests. Most new automation projects are written in TypeScript because locators, fixtures and API responses become typed and the editor completes them.</div>
+</section>
+<section class="card reveal jsec qa-part" id="everyday" data-say="everyday"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧱</span><span>Everyday types</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Typed test data and typed API responses catch typos in field names before a test even starts.</span></div>
+<p>Most of the time TypeScript <b>infers</b> the type from the value, so you annotate function parameters, public APIs and empty containers, not every variable. Use <code>readonly</code> for data that must not change, <code>?</code> for optional properties, and tuples for fixed length lists.</p>
+<div class="codewrap tests" data-k="everyday"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Everyday types, inference, readonly and unknown · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// Inference: no annotation needed when the value says it all</span>
+<span class="k">let</span> retries = <span class="n">3</span>;                            <span class="c">// number</span>
+<span class="k">const</span> browser = <span class="s">"chromium"</span>;                 <span class="c">// the literal type "chromium", because const never changes</span>
+<span class="k">const</span> tags = [<span class="s">"smoke"</span>, <span class="s">"cart"</span>];             <span class="c">// string[]</span>
+
+<span class="c">// Arrays, tuples, objects, optional and readonly</span>
+<span class="k">const</span> timings: <span class="k">number</span>[] = [<span class="n">840</span>, <span class="n">2310</span>];
+<span class="k">const</span> pair: [<span class="k">string</span>, <span class="k">number</span>] = [<span class="s">"login"</span>, <span class="n">840</span>];
+<span class="k">const</span> user: { <span class="k">readonly</span> id: <span class="k">number</span>; name: <span class="k">string</span>; email?: <span class="k">string</span> } = { id: <span class="n">7</span>, name: <span class="s">"Asha"</span> };
+
+user.name = <span class="s">"Asha K"</span>;
+user.id = <span class="n">8</span>;                                <span class="c">// readonly</span>
+retries = <span class="s">"three"</span>;                          <span class="c">// number only</span>
+
+<span class="c">// any switches checking off. unknown must be checked before use.</span>
+<span class="k">const</span> fromApi: <span class="k">unknown</span> = <span class="t">JSON</span>.parse(<span class="s">'{"status": 200}'</span>);
+<span class="c">// fromApi.status;                          // error: 'fromApi' is of type 'unknown'</span>
+<span class="k">if</span> (<span class="k">typeof</span> fromApi === <span class="s">"object"</span> &amp;&amp; fromApi !== <span class="k">null</span> &amp;&amp; <span class="s">"status"</span> <span class="k">in</span> fromApi) console.log(<span class="s">"status"</span>, fromApi.status);
+
+console.log(browser, tags, timings, pair, user.email ?? <span class="s">"no email"</span>);</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(12,6): error TS2540: Cannot assign to &#x27;id&#x27; because it is a read-only property.
+src/main.ts(13,1): error TS2322: Type &#x27;string&#x27; is not assignable to type &#x27;number&#x27;.
+
+$ node src/main.ts
+status 200
+chromium [ &#x27;smoke&#x27;, &#x27;cart&#x27; ] [ 840, 2310 ] [ &#x27;login&#x27;, 840 ] no email</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Type</th><th>Use it for</th></tr>
+<tr><td><code>string number boolean bigint symbol</code></td><td>the primitive values</td></tr>
+<tr><td><code>null undefined</code></td><td>"no value", checked strictly with <code>strict</code></td></tr>
+<tr><td><code>string[]</code> or <code>Array&lt;string&gt;</code></td><td>lists of one type</td></tr>
+<tr><td><code>[string, number]</code></td><td>tuples: fixed positions</td></tr>
+<tr><td><code>"a" | "b"</code></td><td>literal unions: a fixed set of allowed values</td></tr>
+<tr><td><code>unknown</code></td><td>outside data: you must check it before use</td></tr>
+<tr><td><code>any</code></td><td>switches checking off, avoid it</td></tr>
+<tr><td><code>never</code></td><td>a value that cannot exist, such as the return of a function that always throws</td></tr>
+</table></div>
+</section>
+<section class="card reveal jsec" id="functions" data-say="functions"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧩</span><span>Functions</span></h2>
+
+<p>Annotate parameters, and let the return type be inferred or write it for public functions. Optional parameters use <code>?</code>, defaults give both a type and a value, and rest parameters are typed as arrays. Function types describe callbacks, and <b>overloads</b> give one function several typed call shapes.</p>
+<div class="codewrap tests" data-k="functions"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Typing functions, callbacks and overloads · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// Parameters and returns, optional and default values, rest parameters</span>
+<span class="k">function</span> greet(name: <span class="k">string</span>, greeting = <span class="s">"Hello"</span>, punctuation?: <span class="k">string</span>): <span class="k">string</span> {
+  <span class="k">return</span> <span class="s">`${greeting}, ${name}${punctuation ?? "!"}`</span>;
+}
+<span class="k">const</span> sum = (...values: <span class="k">number</span>[]): <span class="k">number</span> =&gt; values.reduce((a, b) =&gt; a + b, <span class="n">0</span>);
+
+<span class="c">// A function type, used for callbacks</span>
+<span class="k">type</span> <span class="t">Matcher</span> = (actual: <span class="k">string</span>) =&gt; <span class="k">boolean</span>;
+<span class="k">const</span> startsWith = (prefix: <span class="k">string</span>): <span class="t">Matcher</span> =&gt; actual =&gt; actual.startsWith(prefix);
+
+<span class="c">// Overloads: one implementation, several typed call shapes</span>
+<span class="k">function</span> find(id: <span class="k">number</span>): { id: <span class="k">number</span> };
+<span class="k">function</span> find(email: <span class="k">string</span>): { email: <span class="k">string</span> };
+<span class="k">function</span> find(key: <span class="k">number</span> | <span class="k">string</span>) {
+  <span class="k">return</span> <span class="k">typeof</span> key === <span class="s">"number"</span> ? { id: key } : { email: key };
+}
+
+<span class="c">// void for "returns nothing", never for "never returns"</span>
+<span class="k">function</span> fail(message: <span class="k">string</span>): <span class="k">never</span> { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(message); }
+
+console.log(greet(<span class="s">"Asha"</span>), greet(<span class="s">"Ravi"</span>, <span class="s">"Hi"</span>, <span class="s">"."</span>), sum(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>), startsWith(<span class="s">"ORD-"</span>)(<span class="s">"ORD-7"</span>));
+console.log(find(<span class="n">7</span>), find(<span class="s">"asha@shop.test"</span>));
+greet();                                    <span class="c">// missing argument</span>
+sum(<span class="n">1</span>, <span class="s">"2"</span>);                                <span class="c">// wrong type in the rest list</span>
+<span class="k">try</span> { fail(<span class="s">"stop"</span>); } <span class="k">catch</span> (e) { console.log((e <span class="k">as</span> <span class="t">Error</span>).message); }</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(23,1): error TS2554: Expected 1-3 arguments, but got 0.
+src/main.ts(24,8): error TS2345: Argument of type &#x27;string&#x27; is not assignable to parameter of type &#x27;number&#x27;.
+
+$ node src/main.ts
+Hello, Asha! Hi, Ravi. 6 true
+{ id: 7 } { email: &#x27;asha@shop.test&#x27; }
+stop</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="shapes" data-say="shapes"><div class="sec-num">Part 4</div><h2><span class="sec-em">📐</span><span>interface and type</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Interfaces describe API responses, test data and page object options in typed test projects.</span></div>
+<p>Both <code>interface</code> and <code>type</code> name an object shape. Interfaces can be extended with <code>extends</code> and are merged when declared twice, which suits public object shapes. Type aliases can name anything: unions, tuples, functions and combinations with <code>&amp;</code>. Teams usually pick one style for objects and use <code>type</code> for everything else.</p>
+<div class="codewrap tests" data-k="shapes"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">interface and type, extends and intersections · 🔷 tsc finds 1 error, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// interface: a named object shape that can be extended and merged</span>
+<span class="k">interface</span> <span class="t">TestResult</span> {
+  name: <span class="k">string</span>;
+  status: <span class="s">"passed"</span> | <span class="s">"failed"</span> | <span class="s">"skipped"</span>;
+  durationMs: <span class="k">number</span>;
+}
+<span class="k">interface</span> <span class="t">RetriedResult</span> <span class="k">extends</span> <span class="t">TestResult</span> {
+  retries: <span class="k">number</span>;
+}
+
+<span class="c">// type: a name for any type, including unions, tuples and intersections</span>
+<span class="k">type</span> <span class="t">Browser</span> = <span class="s">"chromium"</span> | <span class="s">"firefox"</span> | <span class="s">"webkit"</span>;
+<span class="k">type</span> <span class="t">WithBrowser</span> = <span class="t">TestResult</span> &amp; { browser: <span class="t">Browser</span> };
+<span class="k">type</span> <span class="t">ById</span> = <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="t">TestResult</span>&gt;;            <span class="c">// an object with any string keys</span>
+<span class="k">type</span> <span class="t">Timings</span> = { [testName: <span class="k">string</span>]: <span class="k">number</span> };     <span class="c">// index signature, the same idea</span>
+
+<span class="k">const</span> r: <span class="t">RetriedResult</span> = { name: <span class="s">"checkout"</span>, status: <span class="s">"failed"</span>, durationMs: <span class="n">2310</span>, retries: <span class="n">2</span> };
+<span class="k">const</span> w: <span class="t">WithBrowser</span> = { name: <span class="s">"login"</span>, status: <span class="s">"passed"</span>, durationMs: <span class="n">840</span>, browser: <span class="s">"safari"</span> };
+<span class="k">const</span> byId: <span class="t">ById</span> = { t1: r };
+<span class="k">const</span> timings: <span class="t">Timings</span> = { login: <span class="n">840</span> };
+
+console.log(r.retries, w.browser, <span class="t">Object</span>.keys(byId), timings.login);</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(18,76): error TS2322: Type &#x27;&quot;safari&quot;&#x27; is not assignable to type &#x27;Browser&#x27;.
+
+$ node src/main.ts
+2 safari [ &#x27;t1&#x27; ] 840</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="narrowing" data-say="narrowing"><div class="sec-num">Part 5</div><h2><span class="sec-em">🔍</span><span>Unions and narrowing</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">API responses are usually "success or error", which discriminated unions model exactly.</span></div>
+<p>A <b>union</b> such as <code>string | number</code> means "one of these". Before you use a union, you <b>narrow</b> it with a check that TypeScript understands: <code>typeof</code>, <code>instanceof</code>, <code>in</code>, equality, or a shared literal field. Inside each branch, TypeScript knows the exact type.</p>
+<div class="codewrap tests" data-k="narrowing"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Unions and narrowing · 🔷 tsc passes, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">type</span> <span class="t">ApiResult</span> = { ok: <span class="k">true</span>; data: <span class="k">string</span>[] } | { ok: <span class="k">false</span>; error: <span class="k">string</span>; status: <span class="k">number</span> };
+
+<span class="k">function</span> describe(r: <span class="t">ApiResult</span>): <span class="k">string</span> {
+  <span class="k">if</span> (r.ok) <span class="k">return</span> <span class="s">`got ${r.data.length} items`</span>;        <span class="c">// here TypeScript knows r has data</span>
+  <span class="k">return</span> <span class="s">`failed with ${r.status}: ${r.error}`</span>;          <span class="c">// and here that r has error and status</span>
+}
+
+<span class="k">function</span> formatId(id: <span class="k">string</span> | <span class="k">number</span> | <span class="k">null</span>): <span class="k">string</span> {
+  <span class="k">if</span> (id === <span class="k">null</span>) <span class="k">return</span> <span class="s">"none"</span>;                        <span class="c">// equality narrowing</span>
+  <span class="k">if</span> (<span class="k">typeof</span> id === <span class="s">"number"</span>) <span class="k">return</span> <span class="s">`#${id.toFixed(0)}`</span>; <span class="c">// typeof narrowing</span>
+  <span class="k">return</span> id.toUpperCase();                               <span class="c">// only string is left</span>
+}
+
+<span class="k">class</span> <span class="t">TimeoutError</span> <span class="k">extends</span> <span class="t">Error</span> {
+  ms: <span class="k">number</span>;
+  constructor(ms: <span class="k">number</span>) { <span class="k">super</span>(<span class="s">`timeout after ${ms} ms`</span>); <span class="k">this</span>.ms = ms; }
+}
+<span class="k">function</span> retryable(e: <span class="k">unknown</span>): <span class="k">boolean</span> {
+  <span class="k">if</span> (e <span class="k">instanceof</span> <span class="t">TimeoutError</span>) <span class="k">return</span> e.ms &lt; <span class="n">30_000</span>;  <span class="c">// instanceof narrowing</span>
+  <span class="k">if</span> (e <span class="k">instanceof</span> <span class="t">Error</span> &amp;&amp; <span class="s">"code"</span> <span class="k">in</span> e) <span class="k">return</span> e.code === <span class="s">"ECONNRESET"</span>;   <span class="c">// in narrowing</span>
+  <span class="k">return</span> <span class="k">false</span>;
+}
+
+console.log(describe({ ok: <span class="k">true</span>, data: [<span class="s">"a"</span>, <span class="s">"b"</span>] }), <span class="s">"|"</span>, describe({ ok: <span class="k">false</span>, error: <span class="s">"down"</span>, status: <span class="n">503</span> }));
+console.log(formatId(<span class="n">7</span>), formatId(<span class="s">"ord-7"</span>), formatId(<span class="k">null</span>), retryable(<span class="k">new</span> <span class="t">TimeoutError</span>(<span class="n">5000</span>)));</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc &amp;&amp; node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>tsc: no type errors
+
+$ node src/main.ts
+got 2 items | failed with 503: down
+#7 ORD-7 none true</pre></div></div>
+<div class="note">A union of objects with a common literal field, such as <code>ok: true</code> or <code>ok: false</code>, is a <b>discriminated union</b>. It is the best way to type API results, test outcomes and state machines, and chapter 23 makes it exhaustive.</div>
+</section>
+<section class="card reveal jsec" id="enums" data-say="enums"><div class="sec-num">Part 6</div><h2><span class="sec-em">🏷️</span><span>Enums and their modern alternative</span></h2>
+
+<p>An <code>enum</code> creates a real object at run time, so it is not erasable and fails with <code>erasableSyntaxOnly</code> and with Node.js type stripping. The modern alternative is a plain object marked <code>as const</code> plus a union type made from its values. It works everywhere and accepts both <code>Browser.Firefox</code> and the string <code>"firefox"</code>.</p>
+<div class="codewrap tests" data-k="enums"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">enum against as const objects · 🔷 tsc finds 2 errors</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// enum creates real JavaScript, so Node.js cannot just strip it</span>
+<span class="k">enum</span> <span class="t">Status</span> { <span class="t">Passed</span> = <span class="s">"passed"</span>, <span class="t">Failed</span> = <span class="s">"failed"</span> }
+
+<span class="c">// The erasable alternative: a const object and a union type made from it</span>
+<span class="k">const</span> <span class="t">Browser</span> = { <span class="t">Chromium</span>: <span class="s">"chromium"</span>, <span class="t">Firefox</span>: <span class="s">"firefox"</span>, <span class="t">Webkit</span>: <span class="s">"webkit"</span> } <span class="k">as</span> <span class="k">const</span>;
+<span class="k">type</span> <span class="t">Browser</span> = (<span class="k">typeof</span> <span class="t">Browser</span>)[<span class="k">keyof</span> <span class="k">typeof</span> <span class="t">Browser</span>];   <span class="c">// "chromium" | "firefox" | "webkit"</span>
+
+<span class="k">function</span> launch(b: <span class="t">Browser</span>) { <span class="k">return</span> <span class="s">`launching ${b}`</span>; }
+console.log(launch(<span class="t">Browser</span>.<span class="t">Firefox</span>), launch(<span class="s">"webkit"</span>), <span class="t">Status</span>.<span class="t">Passed</span>);
+launch(<span class="s">"edge"</span>);</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc</pre></div><div class="err"><span>Terminal output</span><pre>src/main.ts(2,6): error TS1294: This syntax is not allowed when &#x27;erasableSyntaxOnly&#x27; is enabled.
+src/main.ts(10,8): error TS2345: Argument of type &#x27;&quot;edge&quot;&#x27; is not assignable to parameter of type &#x27;Browser&#x27;.</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="strict" data-say="strict"><div class="sec-num">Part 7</div><h2><span class="sec-em">🛡️</span><span>Strict options</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Strict null checks catch the "cannot read properties of undefined" errors that make tests crash.</span></div>
+<p><code>"strict": true</code> turns on a family of checks. The two that catch the most bugs are <b>strictNullChecks</b>, which makes you handle <code>undefined</code> and <code>null</code>, and <b>noImplicitAny</b>, which stops untyped parameters. <code>noUncheckedIndexedAccess</code> goes further: reading an array element or a record key may give <code>undefined</code>.</p>
+<div class="codewrap tests" data-k="strict"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">What strict mode catches · 🔷 tsc finds 3 errors</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">const</span> users = [<span class="s">"asha"</span>, <span class="s">"ravi"</span>];
+<span class="k">const</span> third = users[<span class="n">2</span>];                   <span class="c">// with noUncheckedIndexedAccess this is string | undefined</span>
+console.log(third.toUpperCase());          <span class="c">// could crash at run time, so tsc complains</span>
+
+<span class="k">function</span> len(s) { <span class="k">return</span> s.length; }       <span class="c">// noImplicitAny: s has no type</span>
+
+<span class="k">const</span> config: { timeout?: <span class="k">number</span> } = {};
+<span class="k">const</span> ms: <span class="k">number</span> = config.timeout;         <span class="c">// strictNullChecks: it may be undefined</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc</pre></div><div class="err"><span>Terminal output</span><pre>src/main.ts(3,13): error TS18048: &#x27;third&#x27; is possibly &#x27;undefined&#x27;.
+src/main.ts(5,14): error TS7006: Parameter &#x27;s&#x27; implicitly has an &#x27;any&#x27; type.
+src/main.ts(8,7): error TS2322: Type &#x27;number | undefined&#x27; is not assignable to type &#x27;number&#x27;.
+  Type &#x27;undefined&#x27; is not assignable to type &#x27;number&#x27;.</pre></div></div>
+<div class="warn">A project without <code>strict</code> lets most of these bugs through, so TypeScript gives a false sense of safety. Turn it on from day one. When moving an old JavaScript project, turn on <code>checkJs</code> and fix files one folder at a time (chapter 24).</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 8</div><h2><span class="sec-em">🎬</span><span>Real world scenario: typed results from untyped JSON</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>A dashboard script reads test results from a JSON file written by another tool. Some rows have typos such as "pased" or a duration stored as a string.</div>
+<div class="codewrap tests" data-k="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Read untyped JSON safely · 🔷 tsc passes, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">import</span> { readFileSync } <span class="k">from</span> <span class="s">"node:fs"</span>;
+
+<span class="k">interface</span> <span class="t">Result</span> { name: <span class="k">string</span>; status: <span class="s">"passed"</span> | <span class="s">"failed"</span>; ms: <span class="k">number</span> }
+
+<span class="c">// JSON from a file or an API is unknown until it is checked</span>
+<span class="k">function</span> isResult(x: <span class="k">unknown</span>): x is <span class="t">Result</span> {
+  <span class="k">if</span> (<span class="k">typeof</span> x !== <span class="s">"object"</span> || x === <span class="k">null</span>) <span class="k">return</span> <span class="k">false</span>;
+  <span class="k">const</span> r = x <span class="k">as</span> <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="k">unknown</span>&gt;;
+  <span class="k">return</span> <span class="k">typeof</span> r.name === <span class="s">"string"</span> &amp;&amp; (r.status === <span class="s">"passed"</span> || r.status === <span class="s">"failed"</span>) &amp;&amp; <span class="k">typeof</span> r.ms === <span class="s">"number"</span>;
+}
+
+<span class="k">const</span> raw: <span class="k">unknown</span> = <span class="t">JSON</span>.parse(readFileSync(<span class="s">"src/results.json"</span>, <span class="s">"utf8"</span>));
+<span class="k">if</span> (!<span class="t">Array</span>.isArray(raw)) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"expected a list of results"</span>);
+
+<span class="k">const</span> valid = raw.filter(isResult);                 <span class="c">// Result[] from here on</span>
+<span class="k">const</span> rejected = raw.length - valid.length;
+<span class="k">const</span> failed = valid.filter(r =&gt; r.status === <span class="s">"failed"</span>).map(r =&gt; r.name);
+<span class="k">const</span> slowest = valid.toSorted((a, b) =&gt; b.ms - a.ms)[<span class="n">0</span>];
+
+console.log({ valid: valid.length, rejected, failed, slowest: slowest?.name });</pre><div class="fname">📄 src/results.json</div><pre class="src" data-file="src/results.json">[
+  { <span class="s">"name"</span>: <span class="s">"login"</span>, <span class="s">"status"</span>: <span class="s">"passed"</span>, <span class="s">"ms"</span>: <span class="n">840</span> },
+  { <span class="s">"name"</span>: <span class="s">"checkout"</span>, <span class="s">"status"</span>: <span class="s">"failed"</span>, <span class="s">"ms"</span>: <span class="n">2310</span> },
+  { <span class="s">"name"</span>: <span class="s">"search"</span>, <span class="s">"status"</span>: <span class="s">"pased"</span>, <span class="s">"ms"</span>: <span class="n">120</span> },
+  { <span class="s">"name"</span>: <span class="s">"profile"</span>, <span class="s">"status"</span>: <span class="s">"passed"</span>, <span class="s">"ms"</span>: <span class="s">"45"</span> }
+]</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc &amp;&amp; node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>tsc: no type errors
+
+$ node src/main.ts
+{ valid: 2, rejected: 2, failed: [ &#x27;checkout&#x27; ], slowest: &#x27;checkout&#x27; }</pre></div></div>
+<p><code>JSON.parse</code> really returns unknown data, whatever its declared type. A <b>type predicate</b> such as <code>x is Result</code> checks it at run time and tells TypeScript the result, so everything after the filter is fully typed and the bad rows are counted instead of breaking the report. Chapter 25 does the same with Zod.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-ui-automation.html" data-topic="js-ui-automation"><small>← Previous chapter</small><b>🎭 UI automation</b></a><a class="next" href="./ts-advanced.html" data-topic="ts-advanced"><small>Next chapter →</small><b>🧬 Advanced types</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Types that catch bugs early", "panels": [{"s": [["e", "🔷"], ["t", "price: number", {"b": 1}]], "h": "Annotate", "t": "Say what a value must be.", "more": "tsc checks, Node.js runs."}, {"s": [["e", "🧠"], ["t", "let n = 3 // number", {"b": 1}]], "h": "Infer", "t": "Most types come for free.", "more": "Annotate inputs and APIs."}, {"s": [["e", "🔍"], ["t", "if (r.ok) …", {"b": 1}]], "h": "Narrow", "t": "Check, then use.", "more": "Each branch knows the type."}, {"s": [["e", "🛡️"], ["t", "\"strict\": true", {"b": 1}]], "h": "Be strict", "t": "Handle undefined and null.", "more": "No silent any."}], "remember": "Turn on strict, annotate inputs, let the rest be inferred, treat outside data as unknown and narrow before you use it."}, "real": [["🎭", "A Playwright team", "Moved its tests to TypeScript and found 14 typos in locator option names and fixture names on the first tsc run, all of them silent bugs."], ["🧾", "A billing API", "Typed its response as a discriminated union of success and error. The client code could no longer read data from an error by mistake."], ["🧪", "A test data tool", "Treats every CSV and JSON input as unknown and checks it with type predicates, so a typo in a data file is reported with its row number."]], "quiz": [{"lv": "e", "q": "What happens to TypeScript types when the code runs?", "o": ["They are erased, it runs as JavaScript", "They are checked again", "They make it faster", "They are sent to the browser"], "a": 0, "hint": "Erasure.", "why": "Types exist only for tsc and your editor."}, {"lv": "e", "q": "Which type must be checked before you can use its properties?", "o": ["unknown", "any", "string", "object"], "a": 0, "hint": "Safe outside data.", "why": "any lets you do anything, which hides bugs."}, {"lv": "e", "q": "What does email?: string mean in an object type?", "o": ["email may be missing", "email is a string or a number", "email is readonly", "email is required"], "a": 0, "hint": "Optional.", "why": "Its type when read is string | undefined."}, {"lv": "m", "q": "Node.js runs a .ts file that has type errors. What happens?", "o": ["It runs, Node.js strips types without checking them", "It refuses to run", "It fixes the errors", "It prints the errors and stops"], "a": 0, "hint": "Strip only.", "why": "Run tsc in the editor and in CI to catch errors."}, {"lv": "m", "q": "What is the type of const browser = \"chromium\"?", "o": ["The literal type \"chromium\"", "string", "any", "unknown"], "a": 0, "hint": "const never changes.", "why": "let browser = \"chromium\" would be string."}, {"lv": "m", "q": "Which can type a union like \"a\" | \"b\"?", "o": ["type", "interface", "Both", "Neither"], "a": 0, "hint": "Type aliases name anything.", "why": "Interfaces describe object shapes only."}, {"lv": "m", "q": "After if (typeof id === \"number\") return …, what is id below it if it was string | number?", "o": ["string", "number", "never", "unknown"], "a": 0, "hint": "Control flow narrowing.", "why": "The number case has already returned."}, {"lv": "h", "q": "Why does erasableSyntaxOnly reject enum?", "o": ["enum creates run time code, so stripping types would break it", "enum is deprecated", "enum is slow", "enum needs classes"], "a": 0, "hint": "Not just a type.", "why": "Namespaces and parameter properties are rejected for the same reason."}, {"lv": "h", "q": "With noUncheckedIndexedAccess, what is the type of names[0] for names: string[]?", "o": ["string | undefined", "string", "never", "any"], "a": 0, "hint": "The list may be empty.", "why": "You must check it before calling string methods."}, {"lv": "h", "q": "What does a return type of x is Result do?", "o": ["Tells TypeScript that x is a Result when the function returns true", "Converts x to Result", "Throws if x is not a Result", "Nothing at run time or compile time"], "a": 0, "hint": "Type predicate.", "why": "Used with filter, it narrows the whole array."}, {"lv": "x", "q": "Which statement about overloads is true?", "o": ["Callers see only the overload signatures, not the implementation signature", "Each overload has its own body", "Overloads run in order", "They are erased at compile time and then fail"], "a": 0, "hint": "One body.", "why": "The implementation must handle every overload."}, {"lv": "x", "q": "What does the never return type say about fail(message)?", "o": ["It never returns normally, it always throws or loops", "It returns undefined", "It returns nothing useful", "It is unused"], "a": 0, "hint": "Unreachable end.", "why": "Code after a call to it is unreachable."}], "calc": [{"lv": "e", "q": "The first example has two wrong lines. How many type errors does tsc report?", "ans": "2", "hint": "One per mistake.", "steps": ["A string passed as a number, and a number stored in a string."]}, {"lv": "e", "q": "How many values does the type \"chromium\" | \"firefox\" | \"webkit\" allow?", "ans": "3", "hint": "Count the literals.", "steps": ["Three browsers."]}, {"lv": "m", "q": "A tuple [string, number, boolean] has what length?", "ans": "3", "hint": "Fixed positions.", "steps": ["Exactly three elements."]}, {"lv": "m", "q": "In the scenario, 4 rows were read. One has the status \"pased\" and one has ms \"45\". How many rows are valid?", "ans": "2", "hint": "Both broken rows fail.", "steps": ["<span class=\"eq\">4 − 2 = 2<\/span>"]}, {"lv": "m", "q": "A type has 5 properties and 2 are optional. How many must every object provide?", "ans": "3", "hint": "Required ones.", "steps": ["<span class=\"eq\">5 − 2 = 3<\/span>"]}, {"lv": "h", "q": "type A = \"a\" | \"b\" and type B = \"x\" | \"y\" | \"z\". How many combinations does the template type `${A}-${B}` allow?", "ans": "6", "hint": "Every pairing.", "steps": ["<span class=\"eq\">2 × 3 = 6<\/span>"]}, {"lv": "h", "q": "A project turns on strict and tsc reports 120 errors. A team fixes 15 a day. How many days?", "ans": "8", "hint": "Divide.", "steps": ["<span class=\"eq\">120 ÷ 15 = 8<\/span>"]}, {"lv": "x", "q": "How many of string, number, boolean, null, undefined remain after if (x == null) return, starting from all five?", "ans": "3", "hint": "== null removes both.", "steps": ["null and undefined are removed by == null.", "string, number and boolean remain."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter starts TypeScript: how it runs, everyday types, functions, interfaces and types, unions and narrowing, enums and strict options.", "hi": "यह अध्याय TypeScript शुरू करता है: यह कैसे चलता है, रोज़ के types, functions, interfaces और types, unions और narrowing, enums और strict options।", "kn": "ಈ ಅಧ್ಯಾಯ TypeScript ಆರಂಭಿಸುತ್ತದೆ: types, functions, interfaces, unions, narrowing, enums ಮತ್ತು strict options.", "or": "ଏହି ଅଧ୍ୟାୟ TypeScript ଆରମ୍ଭ କରେ: types, functions, interfaces, unions, narrowing, enums ଓ strict options।", "ar": "يبدأ هذا الفصل TypeScript: كيف يعمل والأنواع اليومية والدوال والواجهات والاتحادات والتضييق والتعدادات والخيارات الصارمة.", "de": "Dieses Kapitel startet TypeScript: wie es läuft, Alltagstypen, Funktionen, Interfaces, Unions, Narrowing, Enums und strikte Optionen."}, {"id": "why", "h": "What TypeScript is", "en": "TypeScript adds types to JavaScript. tsc checks them and then they are erased. Node runs ts files by stripping types, without checking them.", "hi": "TypeScript JavaScript में types जोड़ता है। tsc उन्हें जांचता है फिर वे हट जाते हैं। Node बिना जांचे types हटाकर ts files चलाता है।", "kn": "TypeScript JavaScript ಗೆ types ಸೇರಿಸುತ್ತದೆ. tsc ಪರಿಶೀಲಿಸುತ್ತದೆ, ನಂತರ ತೆಗೆಯಲಾಗುತ್ತದೆ.", "or": "TypeScript JavaScript ରେ types ଯୋଡ଼େ। tsc ଯାଞ୍ଚ କରେ, ତାପରେ ହଟିଯାଏ।", "ar": "تضيف TypeScript الأنواع إلى JavaScript، ويتحقق منها tsc ثم تُزال. يشغل Node ملفات ts بإزالة الأنواع دون فحصها.", "de": "TypeScript ergänzt JavaScript um Typen. tsc prüft sie, dann werden sie entfernt. Node führt ts-Dateien ohne Prüfung aus."}, {"id": "everyday", "h": "Everyday types", "en": "TypeScript infers most types. Use readonly, optional properties and tuples, treat outside data as unknown and avoid any.", "hi": "TypeScript ज़्यादातर types खुद समझ लेता है। readonly, optional properties और tuples इस्तेमाल करें, बाहर का data unknown मानें।", "kn": "TypeScript ಹೆಚ್ಚಿನ types ಊಹಿಸುತ್ತದೆ. readonly, optional, tuples ಬಳಸಿ, ಹೊರಗಿನ data unknown.", "or": "TypeScript ଅଧିକାଂଶ types ଅନୁମାନ କରେ। readonly, optional, tuples ବ୍ୟବହାର କରନ୍ତୁ, ବାହାର data unknown।", "ar": "تستنتج TypeScript أغلب الأنواع. استخدم readonly والخصائص الاختيارية والصفوف، واعتبر البيانات الخارجية unknown وتجنب any.", "de": "TypeScript leitet die meisten Typen ab. Nutze readonly, optionale Felder und Tupel, behandle externe Daten als unknown."}, {"id": "functions", "h": "Functions", "en": "Type the parameters, use optional and default values, describe callbacks with function types, and use overloads for several call shapes.", "hi": "Parameters को type दें, optional और default values इस्तेमाल करें, callbacks के लिए function types और कई रूपों के लिए overloads।", "kn": "Parameters ಗೆ type ಕೊಡಿ, callbacks ಗೆ function types, ಅನೇಕ ರೂಪಗಳಿಗೆ overloads.", "or": "Parameters କୁ type ଦିଅନ୍ତୁ, callbacks ପାଇଁ function types, ଅନେକ ରୂପ ପାଇଁ overloads।", "ar": "حدد أنواع المعاملات واستخدم القيم الاختيارية والافتراضية، وصف الاستدعاءات الراجعة بأنواع الدوال، واستخدم التحميل الزائد لأشكال متعددة.", "de": "Typisiere Parameter, nutze optionale und Standardwerte, beschreibe Callbacks mit Funktionstypen und Overloads."}, {"id": "shapes", "h": "interface and type", "en": "interface names an object shape and can be extended. type can name anything, including unions and intersections.", "hi": "interface object का आकार बताता है और extend हो सकता है। type कुछ भी नाम दे सकता है, unions और intersections भी।", "kn": "interface object ಆಕಾರ ಹೆಸರಿಸುತ್ತದೆ, extend ಆಗುತ್ತದೆ. type ಯಾವುದನ್ನೂ ಹೆಸರಿಸಬಹುದು.", "or": "interface object ଆକାର ନାମ ଦିଏ, extend ହୁଏ। type ଯାହା ବି ନାମ ଦେଇପାରେ।", "ar": "تسمي interface شكل كائن ويمكن توسيعها، ويمكن لـ type تسمية أي شيء بما فيه الاتحادات والتقاطعات.", "de": "interface benennt eine Objektform und lässt sich erweitern. type kann alles benennen, auch Unions."}, {"id": "narrowing", "h": "Narrowing", "en": "A union means one of several types. Narrow it with typeof, instanceof, in, equality or a shared literal field, and each branch knows the exact type.", "hi": "Union का मतलब कई में से एक type। typeof, instanceof, in, equality या literal field से narrow करें।", "kn": "Union ಎಂದರೆ ಹಲವು types ನಲ್ಲಿ ಒಂದು. typeof, instanceof, in ಮೂಲಕ narrow ಮಾಡಿ.", "or": "Union ମାନେ ଅନେକ types ମଧ୍ୟରୁ ଗୋଟିଏ। typeof, instanceof, in ରେ narrow କରନ୍ତୁ।", "ar": "الاتحاد يعني نوعًا من عدة أنواع. ضيّقه بـ typeof أو instanceof أو in أو المساواة أو حقل حرفي مشترك.", "de": "Eine Union ist einer von mehreren Typen. Grenze sie mit typeof, instanceof, in oder einem Literalfeld ein."}, {"id": "enums", "h": "Enums", "en": "An enum creates real code, so Node cannot strip it. Use a const object with as const and a union type made from its values.", "hi": "Enum असली code बनाता है, इसलिए Node उसे हटा नहीं सकता। as const object और उसके values से बना union type इस्तेमाल करें।", "kn": "Enum ನಿಜವಾದ code ಮಾಡುತ್ತದೆ. as const object ಮತ್ತು union type ಬಳಸಿ.", "or": "Enum ପ୍ରକୃତ code କରେ। as const object ଓ union type ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "ينشئ enum شيفرة حقيقية فلا يستطيع Node إزالته. استخدم كائنًا ثابتًا بـ as const ونوع اتحاد من قيمه.", "de": "Ein enum erzeugt echten Code, Node kann es nicht entfernen. Nutze ein Objekt mit as const und eine Union."}, {"id": "strict", "h": "Strict mode", "en": "strict turns on null checks and no implicit any. noUncheckedIndexedAccess also treats array reads as possibly undefined.", "hi": "strict null checks और no implicit any चालू करता है। noUncheckedIndexedAccess array reads को भी undefined मान सकता है।", "kn": "strict null checks ಮತ್ತು no implicit any ಆನ್ ಮಾಡುತ್ತದೆ.", "or": "strict null checks ଓ no implicit any ଚାଲୁ କରେ।", "ar": "يشغل strict فحوص null ومنع any الضمني، ويجعل noUncheckedIndexedAccess قراءة المصفوفة قد تكون undefined.", "de": "strict aktiviert Null-Prüfungen und verbietet implizites any. noUncheckedIndexedAccess macht Array-Zugriffe vorsichtig."}, {"id": "scenario", "h": "Scenario", "en": "JSON is unknown until it is checked. A type predicate checks each row at run time and gives TypeScript the type, so bad rows are counted.", "hi": "JSON जांचने तक unknown है। Type predicate हर row को run time पर जांचता है और TypeScript को type देता है।", "kn": "JSON ಪರಿಶೀಲಿಸುವವರೆಗೆ unknown. Type predicate ಪ್ರತಿ row ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "JSON ଯାଞ୍ଚ ପର୍ଯ୍ୟନ୍ତ unknown। Type predicate ପ୍ରତି row ଯାଞ୍ଚ କରେ।", "ar": "يبقى JSON مجهولًا حتى يُفحص. يفحص مسند النوع كل صف وقت التشغيل ويخبر TypeScript بالنوع، فتُعد الصفوف السيئة.", "de": "JSON ist unknown, bis es geprüft ist. Ein Typprädikat prüft jede Zeile und gibt TypeScript den Typ."}, {"id": "practice", "h": "Hands-on", "en": "Practise a type guard, a function that handles a union, an as const lookup and safe reads with defaults.", "hi": "Type guard, union संभालने वाला function, as const lookup और defaults के साथ safe reads का अभ्यास करें।", "kn": "Type guard, union function, as const lookup ಮತ್ತು safe reads ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Type guard, union function, as const lookup ଓ safe reads ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على حارس نوع ودالة تعالج اتحادًا وجدول بحث بـ as const وقراءات آمنة بقيم افتراضية.", "de": "Übe einen Type Guard, eine Funktion für Unions, ein as-const-Lookup und sichere Zugriffe mit Standardwerten."}], "ex": [{"id": "isorder", "lv": "e", "title": "A type guard", "task": "<p>TypeScript guards are plain functions at run time. Write <code>isOrder(x)<\/code> that returns true only for objects with a string <code>id<\/code> and a number <code>total<\/code>. In TypeScript its signature would be <code>(x: unknown): x is Order<\/code>.<\/p>", "starter": "function isOrder(x) {\n  \n}", "tests": [{"call": "isOrder({ id: \"ORD-1\", total: 40 })", "want": true}, {"call": "isOrder({ id: 1, total: 40 })", "want": false}, {"call": "isOrder({ id: \"ORD-1\" })", "want": false}, {"call": "isOrder(null)", "want": false}, {"call": "isOrder(\"ORD-1\")", "want": false}], "solution": "function isOrder(x) {\n  return typeof x === \"object\" && x !== null && typeof x.id === \"string\" && typeof x.total === \"number\";\n}", "hint": "Check for null separately, because <code>typeof null<\/code> is \"object\".", "why": "The same checks narrow an unknown value in TypeScript."}, {"id": "describe", "lv": "m", "title": "Handle a union", "task": "<p>Write <code>describe(r)<\/code> for results shaped like <code>{ ok: true, data }<\/code> or <code>{ ok: false, status, error }<\/code>. Return \"N items\" for success, where N is the length of data, and \"STATUS: ERROR\" for failure.<\/p>", "starter": "function describe(r) {\n  \n}", "tests": [{"call": "describe({ ok: true, data: [1, 2, 3] })", "want": "3 items"}, {"call": "describe({ ok: false, status: 503, error: \"down\" })", "want": "503: down"}, {"call": "describe({ ok: true, data: [] })", "want": "0 items"}], "solution": "function describe(r) {\n  return r.ok ? `${r.data.length} items` : `${r.status}: ${r.error}`;\n}", "hint": "Check <code>r.ok<\/code> first, the same way TypeScript narrows a discriminated union.", "why": "In TypeScript, reading r.data in the failure branch would be a compile error."}, {"id": "browsers", "lv": "h", "title": "An as const lookup", "task": "<p>Write <code>BROWSERS<\/code> as a frozen object <code>{ Chromium: \"chromium\", Firefox: \"firefox\", Webkit: \"webkit\" }<\/code> and <code>isBrowser(name)<\/code> that returns true only for one of its values.<\/p>", "starter": "const BROWSERS = {};\nfunction isBrowser(name) {\n  \n}", "tests": [{"call": "isBrowser(\"firefox\")", "want": true}, {"call": "isBrowser(\"edge\")", "want": false}, {"call": "isBrowser(\"Chromium\")", "want": false}, {"call": "Object.isFrozen(BROWSERS) && BROWSERS.Webkit", "want": "webkit"}], "solution": "const BROWSERS = Object.freeze({ Chromium: \"chromium\", Firefox: \"firefox\", Webkit: \"webkit\" });\nfunction isBrowser(name) {\n  return Object.values(BROWSERS).includes(name);\n}", "hint": "<code>Object.values<\/code> gives the list of allowed strings.", "why": "In TypeScript, as const plus this check gives a value of type Browser after the if."}, {"id": "safeget", "lv": "x", "title": "Safe reads with defaults", "task": "<p>With <code>noUncheckedIndexedAccess<\/code>, every read may be undefined. Write <code>at(list, index, fallback)<\/code> that returns the element, counting from the end for negative indexes, or <code>fallback<\/code> when it is missing. Keep real values such as 0 and \"\".<\/p>", "starter": "function at(list, index, fallback) {\n  \n}", "tests": [{"call": "at([10, 20, 30], 1, -1)", "want": 20}, {"call": "at([10, 20, 30], -1, -1)", "want": 30}, {"call": "at([10, 20], 5, -1)", "want": -1}, {"call": "at([0, \"\"], 1, \"x\")", "want": ""}, {"call": "at([0], 0, 9)", "want": 0}, {"call": "at([], -1, \"none\")", "want": "none"}], "solution": "function at(list, index, fallback) {\n  return list.at(index) ?? fallback;\n}", "hint": "<code>Array.prototype.at<\/code> handles negative indexes, and <code>??<\/code> only replaces undefined and null.", "why": "With || instead of ??, the 0 and \"\" cases would wrongly return the fallback."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "TypeScript fundamentals", subject: "javascript" });
+</script>
+</body>
+</html>

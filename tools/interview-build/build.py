@@ -136,13 +136,13 @@ if (!FUN.inFrame) document.querySelector('.home-link').removeAttribute('target')
 '''
 
 
-def run_outputs(name, items):
+def run_outputs(name, items, default_lang='java'):
     """Run every Output question that has a full Java program, Python script or JS file and compare with acode."""
     bad = []
     for it in items:
         if it.get('kind') != 'Output' or not it.get('code') or 'acode' not in it:
             continue
-        lang = it.get('lang', 'java')
+        lang = it.get('lang', default_lang)
         with tempfile.TemporaryDirectory() as d:
             if lang == 'java' and 'class Main' in it['code'] and shutil.which('java'):
                 f = os.path.join(d, 'Main.java')
@@ -180,7 +180,7 @@ def build(name):
     S, items = mod.SUBJECT, mod.ITEMS
     bad = check(name, S, items)
     if RUN:
-        bad += run_outputs(name, items)
+        bad += run_outputs(name, items, S.get('lang', 'java'))
     if bad:
         print('\n'.join(bad))
         raise SystemExit(f'{name}: {len(bad)} style problems')

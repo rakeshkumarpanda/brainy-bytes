@@ -1,4 +1,4 @@
-# Chapter 14: automated API testing in JavaScript: a live server, CRUD flows, schema checks, negative and data driven tests,
+# Chapter 20: automated API testing in JavaScript: a live server, CRUD flows, schema checks, negative and data driven tests,
 # auth, Playwright's request fixture, response times, and a full order flow.
 from kit import part, run, dom, test, show, say, quiz, calc, ex, panel, pkg
 

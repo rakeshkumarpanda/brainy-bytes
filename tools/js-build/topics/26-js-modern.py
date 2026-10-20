@@ -1,4 +1,4 @@
-# Chapter 16: what each yearly edition added, from ES2020 to the features arriving in 2026, with Temporal and resource management.
+# Chapter 26: what each yearly edition added, from ES2020 to the features arriving in 2026, with Temporal and resource management.
 from kit import part, run, dom, test, show, say, quiz, calc, ex, panel, pkg
 
 MODULE = ('🧠', 'Expert and latest', 'js-expert', 'The newest language features, performance, patterns, security and the habits of expert JavaScript developers and testers.')

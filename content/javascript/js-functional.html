@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functional programming in JavaScript · JavaScript</title>
+<meta name="description" content="Functional JavaScript: pure functions, side effects, immutability, Object.freeze, structuredClone, currying, partial application, compose and pipe, lazy iterator helpers, reduce, recursion, trampolines and composable validators.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 16 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧩</span><div><h1>Functional programming in JavaScript</h1><p class="lead">Write code that is simple to test: pure functions with side effects pushed to the edges, immutability and copy on change updates, currying, partial application and composition, lazy pipelines, recursion on real JSON trees, and an API validator built from tiny functions.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 16 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 6 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 4 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Functional habits make code testable and test code reliable: inject the clock, never change shared fixtures, and build checks from small reusable functions.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#pure" class="qa"><span>💧</span>Pure functions and side effects</a><a href="#immutable" class="qa"><span>🧊</span>Immutability</a><a href="#compose"><span>🧩</span>Currying, partial application and composition</a><a href="#lazy"><span>🦥</span>Eager and lazy collections</a><a href="#recursion" class="qa"><span>🌳</span>Recursion on real data</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: a validator built from tiny functions</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="pure" data-say="pure"><div class="sec-num">Part 1</div><h2><span class="sec-em">💧</span><span>Pure functions and side effects</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Hidden clocks and random numbers inside functions are a top cause of flaky unit tests.</span></div>
+<p>A <b>pure function</b> returns the same output for the same input and changes nothing outside itself: no global variables, no network, no clock, no random numbers. Pure functions are the easiest code in the world to test, because a test is just input and expected output.</p>
+<div class="codewrap" data-k="pure" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Pure functions and pushing side effects to the edge · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Impure: reads the clock and changes something outside itself</span>
+<span class="k">let</span> lastDiscount;
+<span class="k">function</span> discountImpure(total) {
+  <span class="k">const</span> isSale = <span class="k">new</span> <span class="t">Date</span>().getUTCDay() === <span class="n">5</span>;          <span class="c">// depends on when you run it</span>
+  lastDiscount = isSale ? total * <span class="n">0.2</span> : <span class="n">0</span>;              <span class="c">// side effect</span>
+  <span class="k">return</span> total - lastDiscount;
+}
+
+<span class="c">// Pure: the same inputs always give the same output, and nothing else changes</span>
+<span class="k">const</span> discount = (total, day) =&gt; (day === <span class="n">5</span> ? total * <span class="n">0.8</span> : total);
+
+console.log(discount(<span class="n">500</span>, <span class="n">5</span>), discount(<span class="n">500</span>, <span class="n">5</span>), discount(<span class="n">500</span>, <span class="n">2</span>));
+
+<span class="c">// Push the impure part to the edge and pass it in, then tests can choose the day</span>
+<span class="k">const</span> todayFrom = clock =&gt; clock().getUTCDay();
+<span class="k">const</span> fakeFriday = () =&gt; <span class="k">new</span> <span class="t">Date</span>(<span class="s">"2026-10-23T10:00:00Z"</span>);
+console.log(<span class="s">"on a Friday:"</span>, discount(<span class="n">500</span>, todayFrom(fakeFriday)));</pre><div class="out"><span>Output</span><pre>400 400 500
+on a Friday: 400</pre></div></div>
+<p>Real programs need side effects, so the functional style keeps them at the edges. Pass the clock, the random generator or the HTTP client in as arguments, and the core logic stays pure.</p>
+<div class="qa-box">If a function is hard to test, look for a hidden side effect: <code>Date.now()</code>, <code>Math.random()</code>, a global config or a direct <code>fetch</code>. Ask the developers to inject it, and the flaky test becomes a simple one.</div>
+</section>
+<section class="card reveal jsec qa-part" id="immutable" data-say="immutable"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧊</span><span>Immutability</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Shared test data that one test changes is a classic cause of tests that pass alone and fail together.</span></div>
+<p>Data that never changes cannot be broken by another part of the program. <code>const</code> only stops a variable from being reassigned. <code>Object.freeze</code> stops an object from changing, but only one level deep. For updates, build a new object that copies the path you change and shares everything else.</p>
+<div class="codewrap" data-k="immutable" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Immutability: freeze, deep freeze and copy on change · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="s">"use strict"</span>;
+<span class="k">const</span> config = <span class="t">Object</span>.freeze({ baseURL: <span class="s">"https://staging.example.test"</span>, retries: <span class="n">2</span>, users: { admin: <span class="s">"asha"</span> } });
+
+<span class="k">try</span> { config.retries = <span class="n">5</span>; } <span class="k">catch</span> (e) { console.log(e.constructor.name + <span class="s">":"</span>, e.message.split(<span class="s">" of "</span>)[<span class="n">0</span>]); }
+config.users.admin = <span class="s">"mallory"</span>;                          <span class="c">// freeze is shallow: nested objects still change</span>
+console.log(config.users.admin);
+
+<span class="k">function</span> deepFreeze(obj) {
+  <span class="k">for</span> (<span class="k">const</span> value <span class="k">of</span> <span class="t">Object</span>.values(obj)) <span class="k">if</span> (<span class="k">typeof</span> value === <span class="s">"object"</span> &amp;&amp; value !== <span class="k">null</span>) deepFreeze(value);
+  <span class="k">return</span> <span class="t">Object</span>.freeze(obj);
+}
+<span class="k">const</span> safe = deepFreeze({ users: { admin: <span class="s">"asha"</span> }, tags: [<span class="s">"smoke"</span>] });
+<span class="k">try</span> { safe.tags.push(<span class="s">"slow"</span>); } <span class="k">catch</span> (e) { console.log(<span class="s">"deep frozen:"</span>, e.constructor.name); }
+
+<span class="c">// Immutable updates: copy the path you change, share the rest</span>
+<span class="k">const</span> state = { cart: { items: [{ sku: <span class="s">"PEN"</span>, qty: <span class="n">1</span> }], coupon: <span class="k">null</span> }, user: { name: <span class="s">"Asha"</span> } };
+<span class="k">const</span> next = { ...state, cart: { ...state.cart, items: state.cart.items.map(i =&gt; (i.sku === <span class="s">"PEN"</span> ? { ...i, qty: i.qty + <span class="n">1</span> } : i)) } };
+console.log(state.cart.items[<span class="n">0</span>].qty, next.cart.items[<span class="n">0</span>].qty, <span class="s">"| user shared:"</span>, state.user === next.user);
+
+<span class="k">const</span> copy = structuredClone(state);                     <span class="c">// a full deep copy, including Dates and Maps</span>
+console.log(<span class="s">"deep copy is separate:"</span>, copy.cart !== state.cart);</pre><div class="out"><span>Output</span><pre>TypeError: Cannot assign to read only property &#x27;retries&#x27;
+mallory
+deep frozen: TypeError
+1 2 | user shared: true
+deep copy is separate: true</pre></div></div>
+<div class="tip">This copy on change style is how React, Redux and many state libraries know something changed: a new object means new data, so a simple <code>===</code> check is enough.</div>
+</section>
+<section class="card reveal jsec" id="compose" data-say="compose"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧩</span><span>Currying, partial application and composition</span></h2>
+
+<p><b>Currying</b> turns <code>f(a, b, c)</code> into <code>f(a)(b)(c)</code>. Fixing the first few arguments, called <b>partial application</b>, creates specialised functions from a general one. <b>Composition</b> builds a function out of smaller ones: <code>pipe</code> runs them left to right, <code>compose</code> right to left.</p>
+<div class="codewrap" data-k="curry" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Currying, partial application and composition · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Curry: a function of many arguments becomes a chain of one argument functions</span>
+<span class="k">const</span> curry = fn =&gt; <span class="k">function</span> curried(...args) {
+  <span class="k">return</span> args.length &gt;= fn.length ? fn.apply(<span class="k">this</span>, args) : (...more) =&gt; curried.apply(<span class="k">this</span>, [...args, ...more]);
+};
+
+<span class="k">const</span> withinTolerance = curry((tolerance, expected, actual) =&gt; <span class="t">Math</span>.abs(actual - expected) &lt;= tolerance);
+<span class="k">const</span> aboutRight = withinTolerance(<span class="n">0.01</span>);                <span class="c">// partial application: fix the tolerance</span>
+<span class="k">const</span> isTotal = aboutRight(<span class="n">179.1</span>);
+console.log(isTotal(<span class="n">179.1</span>), isTotal(<span class="n">179.104</span>), isTotal(<span class="n">179.2</span>), withinTolerance(<span class="n">1</span>, <span class="n">10</span>, <span class="n">10.5</span>));
+
+<span class="c">// Compose and pipe: build bigger functions from small ones</span>
+<span class="k">const</span> compose = (...fns) =&gt; x =&gt; fns.reduceRight((v, f) =&gt; f(v), x);
+<span class="k">const</span> pipe = (...fns) =&gt; x =&gt; fns.reduce((v, f) =&gt; f(v), x);
+<span class="k">const</span> trim = s =&gt; s.trim(), lower = s =&gt; s.toLowerCase(), squash = s =&gt; s.replace(/\s+/g, <span class="s">" "</span>);
+<span class="k">const</span> normalise = pipe(trim, squash, lower);
+console.log(<span class="t">JSON</span>.stringify(normalise(<span class="s">"   Add   TO  Cart "</span>)), compose(lower, trim)(<span class="s">"  OK "</span>) === pipe(trim, lower)(<span class="s">"  OK "</span>));
+
+<span class="c">// Point free style: pass functions without naming their arguments</span>
+<span class="k">const</span> labels = [<span class="s">"  Login "</span>, <span class="s">"CHECKOUT"</span>, <span class="s">" search"</span>].map(normalise);
+console.log(labels);</pre><div class="out"><span>Output</span><pre>true true false true
+&quot;add to cart&quot; true
+[ &#x27;login&#x27;, &#x27;checkout&#x27;, &#x27;search&#x27; ]</pre></div></div>
+</section>
+<section class="card reveal jsec" id="lazy" data-say="lazy"><div class="sec-num">Part 4</div><h2><span class="sec-em">🦥</span><span>Eager and lazy collections</span></h2>
+
+<p>Array methods are <b>eager</b>: each step creates a full new array. Iterator helpers from ES2025 are <b>lazy</b>: they pass one item at a time through all steps and stop as soon as <code>take</code> has enough. On large data that can be thousands of times less work.</p>
+<div class="codewrap" data-k="lazy" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lazy pipelines with iterator helpers · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Eager arrays build a full new array at every step</span>
+<span class="k">let</span> calls = <span class="n">0</span>;
+<span class="k">const</span> big = <span class="t">Array</span>.<span class="k">from</span>({ length: <span class="n">100_000</span> }, (_, i) =&gt; i);
+<span class="k">const</span> eager = big.map(n =&gt; (calls++, n * <span class="n">2</span>)).filter(n =&gt; n % <span class="n">3</span> === <span class="n">0</span>).slice(<span class="n">0</span>, <span class="n">3</span>);
+console.log(eager, <span class="s">"eager calls:"</span>, calls);
+
+<span class="c">// Lazy iterators pull one item through all steps, and stop when they have enough</span>
+calls = <span class="n">0</span>;
+<span class="k">const</span> lazy = big.values().map(n =&gt; (calls++, n * <span class="n">2</span>)).filter(n =&gt; n % <span class="n">3</span> === <span class="n">0</span>).take(<span class="n">3</span>).toArray();
+console.log(lazy, <span class="s">"lazy calls:"</span>, calls);
+
+<span class="c">// reduce builds any shape: here an index by id in one pass</span>
+<span class="k">const</span> products = [{ id: <span class="s">"p1"</span>, price: <span class="n">40</span> }, { id: <span class="s">"p2"</span>, price: <span class="n">250</span> }];
+<span class="k">const</span> byId = products.reduce((acc, p) =&gt; ({ ...acc, [p.id]: p }), {});
+console.log(<span class="t">Object</span>.keys(byId), byId.p2.price);
+
+<span class="c">// flatMap maps and flattens one level, often replacing a filter then map</span>
+<span class="k">const</span> orders = [{ id: <span class="n">1</span>, items: [<span class="s">"PEN"</span>, <span class="s">"INK"</span>] }, { id: <span class="n">2</span>, items: [] }, { id: <span class="n">3</span>, items: [<span class="s">"BAG"</span>] }];
+console.log(orders.flatMap(o =&gt; o.items.map(sku =&gt; <span class="s">`${o.id}:${sku}`</span>)));</pre><div class="out"><span>Output</span><pre>[ 0, 6, 12 ] eager calls: 100000
+[ 0, 6, 12 ] lazy calls: 7
+[ &#x27;p1&#x27;, &#x27;p2&#x27; ] 250
+[ &#x27;1:PEN&#x27;, &#x27;1:INK&#x27;, &#x27;3:BAG&#x27; ]</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="recursion" data-say="recursion"><div class="sec-num">Part 5</div><h2><span class="sec-em">🌳</span><span>Recursion on real data</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Searching a nested API response for every id or every price is a frequent API test task.</span></div>
+<p>JSON responses, the DOM and file systems are trees, and recursion is the natural way to walk a tree. Very deep recursion can overflow the stack, and a <b>trampoline</b> avoids that by returning a function instead of calling it, so a loop does the calls one at a time.</p>
+<div class="codewrap" data-k="recursion" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Recursion on trees, trampolines and deep equality · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Walk any JSON response and collect every value under a given key, at any depth</span>
+<span class="k">function</span> collect(node, key, out = []) {
+  <span class="k">if</span> (<span class="t">Array</span>.isArray(node)) node.forEach(child =&gt; collect(child, key, out));
+  <span class="k">else</span> <span class="k">if</span> (node &amp;&amp; <span class="k">typeof</span> node === <span class="s">"object"</span>)
+    <span class="k">for</span> (<span class="k">const</span> [k, v] <span class="k">of</span> <span class="t">Object</span>.entries(node)) { <span class="k">if</span> (k === key) out.push(v); collect(v, key, out); }
+  <span class="k">return</span> out;
+}
+<span class="k">const</span> response = { id: <span class="n">1</span>, order: { id: <span class="n">7</span>, lines: [{ id: <span class="n">70</span>, sku: <span class="s">"PEN"</span> }, { id: <span class="n">71</span>, sku: <span class="s">"INK"</span>, bundle: { id: <span class="n">710</span> } }] } };
+console.log(collect(response, <span class="s">"id"</span>));
+
+<span class="c">// Deep recursion can overflow the stack. A trampoline runs it in a loop instead.</span>
+<span class="k">const</span> trampoline = fn =&gt; (...args) =&gt; { <span class="k">let</span> r = fn(...args); <span class="k">while</span> (<span class="k">typeof</span> r === <span class="s">"function"</span>) r = r(); <span class="k">return</span> r; };
+<span class="k">const</span> sumTo = trampoline(<span class="k">function</span> sum(n, acc = <span class="n">0</span>) { <span class="k">return</span> n === <span class="n">0</span> ? acc : () =&gt; sum(n - <span class="n">1</span>, acc + n); });
+console.log(sumTo(<span class="n">1_000_000</span>));
+
+<span class="c">// Structural equality, the core of every deepEqual assertion</span>
+<span class="k">const</span> equal = (a, b) =&gt;
+  a === b || (<span class="k">typeof</span> a === <span class="s">"object"</span> &amp;&amp; <span class="k">typeof</span> b === <span class="s">"object"</span> &amp;&amp; a &amp;&amp; b &amp;&amp;
+    <span class="t">Object</span>.keys(a).length === <span class="t">Object</span>.keys(b).length &amp;&amp; <span class="t">Object</span>.keys(a).every(k =&gt; equal(a[k], b[k])));
+console.log(equal({ a: [<span class="n">1</span>, { b: <span class="n">2</span> }] }, { a: [<span class="n">1</span>, { b: <span class="n">2</span> }] }), equal({ a: <span class="n">1</span> }, { a: <span class="s">"1"</span> }));</pre><div class="out"><span>Output</span><pre>[ 1, 7, 70, 71, 710 ]
+500000500000
+true false</pre></div></div>
+<div class="note">The <code>equal</code> function above is a tiny version of what <code>assert.deepStrictEqual</code>, Jest's <code>toEqual</code> and Chai's <code>deep.equal</code> do, with extra care for Dates, Maps, Sets, cycles and prototypes.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 6</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a validator built from tiny functions</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>The API test suite needs to check the shape of order responses, and every failure must say exactly which field is wrong, such as <code>$.lines[1].sku</code>.</div>
+<div class="codewrap" data-k="scenario" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Composable validators for API responses · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Small checks that combine into a full API response validator</span>
+<span class="k">const</span> check = (name, test) =&gt; (value, path = <span class="s">"$"</span>) =&gt; (test(value) ? [] : [<span class="s">`${path}: expected ${name}, got ${JSON.stringify(value)}`</span>]);
+<span class="k">const</span> isString = check(<span class="s">"a string"</span>, v =&gt; <span class="k">typeof</span> v === <span class="s">"string"</span>);
+<span class="k">const</span> isPositive = check(<span class="s">"a number above 0"</span>, v =&gt; <span class="k">typeof</span> v === <span class="s">"number"</span> &amp;&amp; v &gt; <span class="n">0</span>);
+<span class="k">const</span> matches = re =&gt; check(<span class="s">`text matching ${re}`</span>, v =&gt; <span class="k">typeof</span> v === <span class="s">"string"</span> &amp;&amp; re.test(v));
+<span class="k">const</span> oneOf = (...vals) =&gt; check(<span class="s">`one of ${vals.join("|")}`</span>, v =&gt; vals.includes(v));
+
+<span class="k">const</span> shape = spec =&gt; (value, path = <span class="s">"$"</span>) =&gt;
+  value === <span class="k">null</span> || <span class="k">typeof</span> value !== <span class="s">"object"</span>
+    ? [<span class="s">`${path}: expected an object`</span>]
+    : <span class="t">Object</span>.entries(spec).flatMap(([key, rule]) =&gt; rule(value[key], <span class="s">`${path}.${key}`</span>));
+<span class="k">const</span> listOf = rule =&gt; (value, path = <span class="s">"$"</span>) =&gt;
+  <span class="t">Array</span>.isArray(value) ? value.flatMap((item, i) =&gt; rule(item, <span class="s">`${path}[${i}]`</span>)) : [<span class="s">`${path}: expected an array`</span>];
+
+<span class="k">const</span> orderSchema = shape({
+  id: matches(/^<span class="t">ORD</span>-\d{<span class="n">6</span>}$/),
+  status: oneOf(<span class="s">"new"</span>, <span class="s">"paid"</span>, <span class="s">"shipped"</span>),
+  lines: listOf(shape({ sku: isString, qty: isPositive, price: isPositive })),
+});
+
+<span class="k">const</span> good = { id: <span class="s">"ORD-104233"</span>, status: <span class="s">"paid"</span>, lines: [{ sku: <span class="s">"PEN"</span>, qty: <span class="n">2</span>, price: <span class="n">40</span> }] };
+<span class="k">const</span> bad = { id: <span class="s">"104233"</span>, status: <span class="s">"lost"</span>, lines: [{ sku: <span class="s">"PEN"</span>, qty: <span class="n">0</span>, price: <span class="n">40</span> }, { qty: <span class="n">1</span>, price: <span class="s">"9"</span> }] };
+console.log(orderSchema(good));
+console.log(orderSchema(bad));</pre><div class="out"><span>Output</span><pre>[]
+[
+  &#x27;$.id: expected text matching /^ORD-\\d{6}$/, got &quot;104233&quot;&#x27;,
+  &#x27;$.status: expected one of new|paid|shipped, got &quot;lost&quot;&#x27;,
+  &#x27;$.lines[0].qty: expected a number above 0, got 0&#x27;,
+  &#x27;$.lines[1].sku: expected a string, got undefined&#x27;,
+  &#x27;$.lines[1].price: expected a number above 0, got &quot;9&quot;&#x27;
+]</pre></div></div>
+<p>Each rule is a small pure function that returns a list of problems, and <code>shape</code> and <code>listOf</code> combine them. This is the same design that Zod, Yup, Joi and Superstruct use, and it shows why functional style suits test code: small parts, easy to combine, easy to test.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-regex.html" data-topic="js-regex"><small>← Previous chapter</small><b>🧷 Regex in depth</b></a><a class="next" href="./js-metaprogramming.html" data-topic="js-metaprogramming"><small>Next chapter →</small><b>🪞 Metaprogramming</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Small functions, combined", "panels": [{"s": [["e", "💧"], ["t", "f(x) is always the same", {"b": 1}]], "h": "Pure", "t": "No hidden inputs or outputs.", "more": "Tests are input and output."}, {"s": [["e", "🧊"], ["t", "{ ...state, cart }", {"b": 1}]], "h": "Immutable", "t": "Copy the path you change.", "more": "Share the rest."}, {"s": [["e", "🧩"], ["t", "pipe(trim, lower)", {"b": 1}]], "h": "Composed", "t": "Big functions from small ones.", "more": "Curry to specialise."}, {"s": [["e", "🦥"], ["t", ".values().map().take(3)", {"b": 1, "size": 11}]], "h": "Lazy", "t": "Only do the work you need.", "more": "Stop early."}], "remember": "Keep the core pure, push effects to the edges, never change shared data, and build big checks from small functions."}, "real": [["🧾", "An invoicing service", "Moved tax rules into pure functions with the date passed in. Its 600 unit tests went from flaky around midnight to stable."], ["🧪", "An API test framework", "Builds every response check from tiny validators like those on this page, and prints the JSON path of each wrong field."], ["🛒", "A shopping cart", "Uses copy on change updates for its state, so the UI tests can compare snapshots before and after an action with ===."]], "quiz": [{"lv": "e", "q": "Which function is pure?", "o": ["(a, b) => a + b", "() => Date.now()", "x => { log.push(x) }", "() => Math.random()"], "a": 0, "hint": "Same input, same output.", "why": "The others read the clock, change outside data or are random."}, {"lv": "e", "q": "What does Object.freeze do to nested objects?", "o": ["Nothing, it is shallow", "Freezes them too", "Deletes them", "Copies them"], "a": 0, "hint": "One level.", "why": "Write a deepFreeze or use structuredClone for deep safety."}, {"lv": "e", "q": "What does pipe(f, g)(x) compute?", "o": ["g(f(x))", "f(g(x))", "f(x) + g(x)", "x"], "a": 0, "hint": "Left to right.", "why": "compose(f, g)(x) is f(g(x))."}, {"lv": "m", "q": "What is partial application?", "o": ["Fixing some arguments to create a more specific function", "Calling half a function", "A function with no arguments", "Skipping errors"], "a": 0, "hint": "Specialise.", "why": "withinTolerance(0.01) gives a tolerance specific check."}, {"lv": "m", "q": "Why are pure functions easy to test?", "o": ["A test is just input and expected output", "They are always fast", "They never return", "They have no code"], "a": 0, "hint": "No setup.", "why": "No mocks, no clocks, no network."}, {"lv": "m", "q": "An immutable update to state.cart.items creates new copies of which objects?", "o": ["state, state.cart and the items array", "Only the items array", "Everything in state", "Nothing"], "a": 0, "hint": "The changed path.", "why": "Unchanged branches such as state.user are shared."}, {"lv": "m", "q": "What does fn.length return?", "o": ["The number of declared parameters", "The length of the source", "The number of calls", "Always 0"], "a": 0, "hint": "Arity.", "why": "curry uses it to know when enough arguments have arrived."}, {"lv": "h", "q": "Why are iterator helpers faster than map then filter then slice on a large array with take(3)?", "o": ["They stop once three items pass", "They use workers", "They skip filter", "They are not faster"], "a": 0, "hint": "Lazy.", "why": "Eager arrays process every item at every step."}, {"lv": "h", "q": "What problem does a trampoline solve?", "o": ["Stack overflow in very deep recursion", "Slow loops", "Async errors", "Memory leaks"], "a": 0, "hint": "Return a function, loop it.", "why": "The stack never grows beyond one frame."}, {"lv": "h", "q": "Why is shared mutable test data dangerous?", "o": ["One test can change it and break the next test", "It uses more memory", "It is slower", "Tests cannot read it"], "a": 0, "hint": "Order dependency.", "why": "Give each test its own copy or freeze the shared data."}, {"lv": "x", "q": "In the validator scenario, why does each rule return an array instead of throwing?", "o": ["So all problems are collected and reported together", "Arrays are faster", "Throwing is not allowed", "To save memory"], "a": 0, "hint": "Report everything.", "why": "flatMap combines the lists of problems from every rule."}, {"lv": "x", "q": "Which pair is equal under the equal() function on this page?", "o": ["{ a: [1, { b: 2 }] } and { a: [1, { b: 2 }] }", "{ a: 1 } and { a: \"1\" }", "{ a: 1 } and { a: 1, b: 2 }", "[1, 2] and [2, 1]"], "a": 0, "hint": "Same structure and values.", "why": "Strict equality is used on leaves, so 1 and \"1\" differ."}], "calc": [{"lv": "e", "q": "pipe(x => x + 1, x => x * 2)(3) gives?", "ans": "8", "hint": "Left to right.", "steps": ["<span class=\"eq\">(3 + 1) × 2 = 8<\/span>"]}, {"lv": "e", "q": "compose(x => x + 1, x => x * 2)(3) gives?", "ans": "7", "hint": "Right to left.", "steps": ["<span class=\"eq\">3 × 2 + 1 = 7<\/span>"]}, {"lv": "m", "q": "A curried function of 3 arguments is called as f(1)(2)(3). How many calls happen in total?", "ans": "3", "hint": "One per argument.", "steps": ["f(1), then (2), then (3)."]}, {"lv": "m", "q": "map then filter then slice(0, 3) on 1000 items. How many times does the map callback run?", "ans": "1000", "hint": "Eager.", "steps": ["map runs on every item before filter starts."]}, {"lv": "m", "q": "Lazy: n => n * 2, keep multiples of 3, take 3, starting from 0. How many map calls?", "ans": "7", "hint": "Track which pass.", "steps": ["0, 6 and 12 come from n = 0, 3 and 6.", "n runs from 0 to 6, which is 7 calls."]}, {"lv": "h", "q": "sumTo(1000) with the trampoline returns?", "ans": "500500", "hint": "n(n + 1) ÷ 2.", "steps": ["<span class=\"eq\">1000 × 1001 ÷ 2 = 500,500<\/span>"]}, {"lv": "h", "q": "How many id values does collect(response, \"id\") find in the recursion example?", "ans": "5", "hint": "Count every level.", "steps": ["1, 7, 70, 71 and 710."]}, {"lv": "x", "q": "The bad order in the scenario has 2 lines. How many problems does the validator report in total?", "ans": "5", "hint": "id, status, then each line.", "steps": ["id and status give 2.", "Line 0 has qty 0, line 1 misses sku and has a string price.", "<span class=\"eq\">2 + 1 + 2 = 5<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers functional programming: pure functions, immutability, currying and composition, lazy pipelines, recursion and composable validators.", "hi": "यह अध्याय functional programming सिखाता है: pure functions, immutability, currying और composition, lazy pipelines, recursion और validators।", "kn": "ಈ ಅಧ್ಯಾಯ functional programming: pure functions, immutability, currying, composition, lazy pipelines ಮತ್ತು recursion.", "or": "ଏହି ଅଧ୍ୟାୟ functional programming: pure functions, immutability, currying, composition, lazy pipelines ଓ recursion।", "ar": "يتناول هذا الفصل البرمجة الوظيفية: الدوال النقية وعدم التغير والتجزئة والتركيب والمعالجة الكسولة والتكرار والمدققات المركبة.", "de": "Dieses Kapitel behandelt funktionale Programmierung: reine Funktionen, Unveränderlichkeit, Currying, Komposition, Laziness und Rekursion."}, {"id": "pure", "h": "Pure functions", "en": "A pure function gives the same output for the same input and changes nothing else. Pass the clock and random numbers in, so tests can control them.", "hi": "Pure function एक ही input पर एक ही output देता है और कुछ नहीं बदलता। Clock और random numbers बाहर से दें।", "kn": "Pure function ಒಂದೇ input ಗೆ ಒಂದೇ output ಕೊಡುತ್ತದೆ. Clock ಮತ್ತು random ಹೊರಗಿನಿಂದ ಕೊಡಿ.", "or": "Pure function ସମାନ input ରେ ସମାନ output ଦିଏ। Clock ଓ random ବାହାରୁ ଦିଅନ୍ତୁ।", "ar": "الدالة النقية تعطي النتيجة نفسها للمدخلات نفسها ولا تغير شيئًا آخر. مرر الساعة والأرقام العشوائية من الخارج.", "de": "Eine reine Funktion liefert für gleiche Eingaben gleiche Ausgaben und ändert nichts sonst. Gib Uhr und Zufall von außen hinein."}, {"id": "immutable", "h": "Immutability", "en": "freeze stops changes one level deep. For updates, copy the path you change and share the rest.", "hi": "freeze एक level तक बदलाव रोकता है। Update के लिए बदलने वाला रास्ता copy करें और बाकी साझा करें।", "kn": "freeze ಒಂದು ಹಂತ ಮಾತ್ರ ತಡೆಯುತ್ತದೆ. Update ಗೆ ಬದಲಾಗುವ ಭಾಗ copy ಮಾಡಿ.", "or": "freeze ଗୋଟିଏ ସ୍ତର ପର୍ଯ୍ୟନ୍ତ ଅଟକାଏ। Update ପାଇଁ ବଦଳୁଥିବା ଅଂଶ copy କରନ୍ତୁ।", "ar": "يمنع freeze التغيير في مستوى واحد فقط. عند التحديث انسخ المسار الذي تغيره وشارك الباقي.", "de": "freeze verhindert Änderungen nur eine Ebene tief. Kopiere bei Updates nur den geänderten Pfad."}, {"id": "compose", "h": "Composition", "en": "Currying turns a function of many arguments into a chain. pipe joins small functions left to right into a bigger one.", "hi": "Currying कई arguments वाले function को chain बनाता है। pipe छोटे functions को बाएं से दाएं जोड़ता है।", "kn": "Currying ಅನೇಕ arguments function ಅನ್ನು chain ಮಾಡುತ್ತದೆ. pipe ಸಣ್ಣ functions ಜೋಡಿಸುತ್ತದೆ.", "or": "Currying ଅନେକ arguments function କୁ chain କରେ। pipe ଛୋଟ functions ଯୋଡ଼େ।", "ar": "التجزئة تحول دالة متعددة المعاملات إلى سلسلة، وتربط pipe دوال صغيرة من اليسار إلى اليمين.", "de": "Currying macht aus vielen Argumenten eine Kette. pipe verbindet kleine Funktionen von links nach rechts."}, {"id": "lazy", "h": "Lazy pipelines", "en": "Array methods do every step for every item. Iterator helpers pass one item at a time and stop early, which saves work on large data.", "hi": "Array methods हर item पर हर step करते हैं। Iterator helpers एक item पास करते हैं और जल्दी रुकते हैं।", "kn": "Array methods ಪ್ರತಿ item ಗೆ ಪ್ರತಿ step ಮಾಡುತ್ತವೆ. Iterator helpers ಬೇಗ ನಿಲ್ಲುತ್ತವೆ.", "or": "Array methods ପ୍ରତି item ରେ ପ୍ରତି step କରେ। Iterator helpers ଶୀଘ୍ର ଅଟକେ।", "ar": "تنفذ دوال المصفوفات كل خطوة لكل عنصر، أما مساعدات المكررات فتمرر عنصرًا واحدًا وتتوقف مبكرًا.", "de": "Array-Methoden machen jeden Schritt für jedes Element. Iterator-Helfer reichen einzeln weiter und hören früh auf."}, {"id": "recursion", "h": "Recursion", "en": "JSON and the DOM are trees, so recursion walks them naturally. A trampoline avoids stack overflow for very deep recursion.", "hi": "JSON और DOM पेड़ हैं, इसलिए recursion उन्हें आसानी से चलता है। Trampoline गहरी recursion में stack overflow रोकता है।", "kn": "JSON ಮತ್ತು DOM ಮರಗಳು, recursion ಸಹಜ. Trampoline stack overflow ತಡೆಯುತ್ತದೆ.", "or": "JSON ଓ DOM ଗଛ, recursion ସ୍ୱାଭାବିକ। Trampoline stack overflow ଅଟକାଏ।", "ar": "JSON وDOM أشجار، فالتكرار يمشي فيها بطبيعية، ويمنع الترامبولين فيض المكدس عند التكرار العميق.", "de": "JSON und DOM sind Bäume, Rekursion läuft sie natürlich ab. Ein Trampolin verhindert Stack-Überläufe."}, {"id": "scenario", "h": "Scenario", "en": "Tiny checks combine into a validator that reports the exact JSON path of every wrong field.", "hi": "छोटे checks मिलकर एक validator बनाते हैं जो हर गलत field का JSON path बताता है।", "kn": "ಸಣ್ಣ checks ಸೇರಿ validator ಆಗುತ್ತವೆ, ಪ್ರತಿ ತಪ್ಪು field ನ JSON path ತೋರಿಸುತ್ತದೆ.", "or": "ଛୋଟ checks ମିଶି validator ହୁଏ, ପ୍ରତି ଭୁଲ field ର JSON path ଦେଖାଏ।", "ar": "تجتمع فحوص صغيرة في مدقق يذكر مسار JSON الدقيق لكل حقل خاطئ.", "de": "Kleine Prüfungen ergeben einen Validator, der den JSON-Pfad jedes falschen Feldes nennt."}, {"id": "practice", "h": "Hands-on", "en": "Practise a pipe helper, a deep freeze, an immutable cart update and a recursive key finder.", "hi": "pipe helper, deep freeze, immutable cart update और recursive key finder का अभ्यास करें।", "kn": "pipe, deep freeze, immutable cart update ಮತ್ತು recursive key finder ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "pipe, deep freeze, immutable cart update ଓ recursive key finder ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على دالة pipe والتجميد العميق وتحديث سلة دون تغيير وباحث متكرر عن المفاتيح.", "de": "Übe pipe, tiefes Einfrieren, ein unveränderliches Warenkorb-Update und eine rekursive Schlüsselsuche."}], "ex": [{"id": "pipe", "lv": "e", "title": "Write pipe", "task": "<p>Write <code>pipe(...fns)<\/code> that returns a function which passes its input through every function from left to right. With no functions it returns the input unchanged.<\/p>", "starter": "function pipe(...fns) {\n  \n}", "tests": [{"call": "pipe(x => x + 1, x => x * 2)(3)", "want": 8}, {"call": "pipe()(5)", "want": 5}, {"call": "pipe(s => s.trim(), s => s.toUpperCase())(\"  ok \")", "want": "OK"}], "solution": "function pipe(...fns) {\n  return x => fns.reduce((value, fn) => fn(value), x);\n}", "hint": "<code>reduce<\/code> over the functions, starting with the input.", "why": "compose is the same with reduceRight."}, {"id": "deepfreeze", "lv": "m", "title": "Deep freeze", "task": "<p>Write <code>deepFreeze(obj)<\/code> that freezes the object and every nested object and array, then returns it.<\/p>", "starter": "function deepFreeze(obj) {\n  \n}", "tests": [{"call": "(() => { const o = deepFreeze({ a: { b: [1, { c: 2 }] } }); return [Object.isFrozen(o), Object.isFrozen(o.a), Object.isFrozen(o.a.b), Object.isFrozen(o.a.b[1])]; })()", "want": [true, true, true, true]}, {"call": "deepFreeze({ x: null, y: 1 }).y", "want": 1}], "solution": "function deepFreeze(obj) {\n  for (const value of Object.values(obj)) {\n    if (typeof value === \"object\" && value !== null) deepFreeze(value);\n  }\n  return Object.freeze(obj);\n}", "hint": "Recurse into every value that is an object, and remember <code>typeof null<\/code> is \"object\".", "why": "Shared fixtures frozen this way throw in strict mode the moment a test tries to change them."}, {"id": "addqty", "lv": "h", "title": "An immutable cart update", "task": "<p>Write <code>addQty(state, sku, n)<\/code> that returns a new state where the item with that sku has <code>qty + n<\/code>. Do not change the original state, and keep <code>state.user<\/code> as the same object.<\/p>", "starter": "function addQty(state, sku, n) {\n  \n}", "tests": [{"call": "(() => { const s = { user: { id: 1 }, cart: { items: [{ sku: \"PEN\", qty: 1 }, { sku: \"INK\", qty: 2 }] } }; const t = addQty(s, \"PEN\", 2); return [s.cart.items[0].qty, t.cart.items[0].qty, t.cart.items[1] === s.cart.items[1], t.user === s.user, t !== s]; })()", "want": [1, 3, true, true, true]}], "solution": "function addQty(state, sku, n) {\n  return {\n    ...state,\n    cart: {\n      ...state.cart,\n      items: state.cart.items.map(i => (i.sku === sku ? { ...i, qty: i.qty + n } : i)),\n    },\n  };\n}", "hint": "Spread each level on the path: state, cart, the items array, the one item.", "why": "Unchanged items stay the same objects, so a UI can skip re-rendering them."}, {"id": "findkey", "lv": "x", "title": "Find every value of a key", "task": "<p>Write <code>findAll(node, key)<\/code> that returns every value stored under <code>key<\/code> anywhere inside nested objects and arrays, in the order a depth first walk meets them.<\/p>", "starter": "function findAll(node, key) {\n  \n}", "tests": [{"call": "findAll({ id: 1, a: [{ id: 2 }, { b: { id: 3 } }] }, \"id\")", "want": [1, 2, 3]}, {"call": "findAll([{ price: 5 }, [{ price: 7 }]], \"price\")", "want": [5, 7]}, {"call": "findAll(\"text\", \"id\")", "want": []}], "solution": "function findAll(node, key) {\n  const out = [];\n  const walk = n => {\n    if (Array.isArray(n)) n.forEach(walk);\n    else if (n && typeof n === \"object\") {\n      for (const [k, v] of Object.entries(n)) {\n        if (k === key) out.push(v);\n        walk(v);\n      }\n    }\n  };\n  walk(node);\n  return out;\n}", "hint": "An inner <code>walk<\/code> function that handles arrays, objects and everything else.", "why": "API tests use this to check that every price in a response is positive, wherever it appears."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Functional programming in JavaScript", subject: "javascript" });
+</script>
+</body>
+</html>

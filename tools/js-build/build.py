@@ -291,6 +291,10 @@ def block(key, spec, res):
         ok = (res['code'] == 0) == (spec.get('expect', 'pass') == 'pass')
         if not ok:
             raise SystemExit(f'{key}: test run ended with exit code {res["code"]}, expected {spec.get("expect", "pass")}\n{res["out"]}')
+        if 'ts_errors' in spec:
+            found = len(re.findall(r'error TS\d+', res['out']))
+            if found != spec['ts_errors']:
+                raise SystemExit(f'{key}: tsc reported {found} type errors, expected {spec["ts_errors"]}\n{res["out"]}')
         cls = 'out' if res['code'] == 0 else 'err'
         body += f'<div class="{cls}"><span>Terminal output</span><pre>{esc(trim(res["out"], spec))}</pre></div>'
         return f'<div class="codewrap tests" data-k="{key}">{bar}{body}</div>'
@@ -441,10 +445,10 @@ def build(T, chapters):
     parts = T['parts']
     n_viz = sum(len(re.findall(r'data-viz="', p['html'])) for p in parts)
     n_run = sum(1 for s in T['codes'].values() if s['t'] in ('run', 'dom'))
-    n_test = sum(1 for s in T['codes'].values() if s['t'] == 'test')
+    n_test = sum(1 for s in T['codes'].values() if s['t'] == 'test' and 'ts_errors' not in s)
+    n_ts = sum(1 for s in T['codes'].values() if 'ts_errors' in s)
     n_qa = sum(1 for p in parts if p.get('qa'))
-    chips = [f'⏱️ About {T["minutes"]} min read', f'📚 {len(parts)} parts', f'🎬 {n_viz} animations',
-             f'▶ {n_run} runnable examples'] + ([f'🧪 {n_test} real test run' + ('s' if n_test > 1 else '')] if n_test else []) + [
+    chips = [f'⏱️ About {T["minutes"]} min read', f'📚 {len(parts)} parts', f'🎬 {n_viz} animations'] + ([f'▶ {n_run} runnable examples'] if n_run else []) + ([f'🔷 {n_ts} type checked example' + ('s' if n_ts > 1 else '')] if n_ts else []) + ([f'🧪 {n_test} real test run' + ('s' if n_test > 1 else '')] if n_test else []) + [
              f'🏋️ {len(T["ex"])} hands-on exercises', f'🎯 {len(T["quiz"])} quiz questions', f'🧮 {len(T["calc"])} calculations',
              f'🧪 {n_qa} QA essential parts']
     chip_html = ''.join(f'<span class="chip">{c}</span>' for c in chips)
@@ -473,6 +477,8 @@ def build(T, chapters):
     pager = f'<nav class="pager">{a}{b}</nav>'
 
     page = {k: T[k] for k in ['info', 'real', 'quiz', 'calc', 'say', 'ex']}
+    page['quiz'] = [{**q, 'q': inline(q['q']), 'o': [inline(o) for o in q['o']], 'hint': inline(q['hint']), 'why': inline(q['why'])} for q in T['quiz']]
+    page['calc'] = [{**c, 'q': inline(c['q']), 'hint': inline(c['hint']), 'steps': [inline(x) for x in c['steps']]} for c in T['calc']]
     page['dg'] = T.get('dg', {})
     page['lanes'] = T.get('lanes', {})
     page['play'] = play
@@ -528,11 +534,20 @@ JSPLAY.page({{ title: {js(T["title"])}, subject: {js(SUBJECT)} }});
     dest = os.path.join(OUT, T['slug'] + '.html')
     os.makedirs(OUT, exist_ok=True)
     open(dest, 'w', encoding='utf-8').write(out)
-    print(f'{T["slug"]}: {len(parts)} parts, {n_viz} animations, {n_run} runnable, {n_test} test runs, {len(T["ex"])} exercises, '
+    print(f'{T["slug"]}: {len(parts)} parts, {n_viz} animations, {n_run} runnable, {n_ts} type checked, {n_test} test runs, {len(T["ex"])} exercises, '
           f'{len(out) // 1024} KB -> {os.path.relpath(dest, ROOT)}')
 
 
 # ---------- the catalog block ----------
+INLINE_TAGS = r'(?:code|b|i|em|strong|span|sup|sub|br)'
+
+
+def inline(s):
+    """Quiz and calc text is shown as HTML. Keep the few inline tags the topics use and escape every other <,
+    so code such as <T>, <button> or a < b shows as text."""
+    return re.sub(r'<(?!/?' + INLINE_TAGS + r'[\s>/])', '&lt;', s)
+
+
 def strip_tags(s):
     return re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', '', s))).strip()
 

@@ -1,4 +1,4 @@
-"""The demo shop that chapter 15 automates: an Express server, one HTML page and its script."""
+"""The demo shop that chapter 21 automates: an Express server, one HTML page and its script."""
 
 SHOP_FILES = {
     'server.js': r'''

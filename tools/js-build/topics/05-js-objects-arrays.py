@@ -79,7 +79,7 @@ test.each([
 ])("password $input is valid: $valid", ({ input, valid }) => {
   expect(isValidPassword(input)).toBe(valid);
 });
-''', 'Destructuring inside test runners', note='Snippets, full runs in chapters 13 to 15'),
+''', 'Destructuring inside test runners', note='Snippets, full runs in chapters 19 to 21'),
     'spread': run('''
 const defaults = { browser: "chromium", headless: true, retries: 0 };
 const ciConfig = { ...defaults, retries: 2 };           // later keys win
