@@ -330,7 +330,7 @@ test("wrong password shows an error", async ({ page }) => {
   await login.loginAs("asha@shop.example", "wrong");
   await expect(login.error).toHaveText("Wrong email or password");
 });
-''', 'The same page object in Playwright', note='Runs for real in chapter 15', result='The test reads like the steps a manual tester writes. When the button text changes, only the page object changes.'),
+''', 'The same page object in Playwright', note='Runs for real in chapter 21', result='The test reads like the steps a manual tester writes. When the button text changes, only the page object changes.'),
     'pom-selenium': show('''
 // pages/LoginPage.js (Selenium WebDriver)
 const { By, until } = require("selenium-webdriver");
@@ -357,7 +357,7 @@ class LoginPage {
   }
 }
 module.exports = { LoginPage };
-''', 'The same page object in Selenium', note='Runs for real in chapter 15', result='Locators live in static fields, and every method is async because each WebDriver call talks to the browser.'),
+''', 'The same page object in Selenium', note='Runs for real in chapter 21', result='Locators live in static fields, and every method is async because each WebDriver call talks to the browser.'),
     'builder': run('''
 class UserBuilder {
   #data = { name: "Test User", email: "user@test.example", role: "customer", verified: true, address: { city: "Pune" } };
@@ -626,6 +626,6 @@ T = {
     'desc': 'Prototypes, constructor functions, classes, getters, static members, private fields, extends, super, custom errors, mixins, composition and the Page Object Model.',
     'summary': 'The prototype chain, constructor functions and new, classes with fields, getters and static methods, lost this and other class traps, private fields and static blocks, inheritance with extends and super, custom error classes with cause, mixins and dependency injection, the Page Object Model in plain DOM, Playwright and Selenium, a test data builder and an API client class.',
     'keywords': ['prototype', 'class', 'constructor', 'getter', 'static', 'private field', 'extends', 'super', 'custom error', 'mixin', 'composition', 'dependency injection', 'Page Object Model', 'POM', 'builder pattern'],
-    'qa_intro': 'Page objects, API clients, test data builders and custom errors are all classes. This chapter is the base for the framework design in chapter 15.',
+    'qa_intro': 'Page objects, API clients, test data builders and custom errors are all classes. This chapter is the base for the framework design in chapter 21.',
     'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

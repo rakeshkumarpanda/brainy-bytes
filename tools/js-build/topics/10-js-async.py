@@ -254,7 +254,7 @@ const [response] = await Promise.all([
 
 // Avoid: a fixed sleep is either too long or too short
 await page.waitForTimeout(3000);
-''', 'Waiting the right way in Playwright', note='Runs for real in chapter 15'),
+''', 'Waiting the right way in Playwright', note='Runs for real in chapter 21'),
     'scenario': run('''
 // Check 8 product URLs, at most 3 requests at a time, with a timeout on each.
 const sleep = ms => new Promise(r => setTimeout(r, ms));

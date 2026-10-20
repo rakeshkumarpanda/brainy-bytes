@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How JavaScript really works · JavaScript</title>
+<meta name="description" content="JavaScript internals: execution context, call stack, hoisting, TDZ, scope chain, this binding rules, Node.js event loop phases, nextTick, setImmediate, V8 JIT, hidden classes, inline caches and garbage collection.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 13 of 18</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔬</span><div><h1>How JavaScript really works</h1><p class="lead">What the engine does with your code: execution contexts and the call stack, hoisting and the scope chain, the five rules of this, the Node.js event loop phase by phase, V8 hidden classes and inline caches, and generational garbage collection.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 9 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 5 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Testers who know the engine read stack traces faster, explain odd log orders, and recognise the "this is undefined" crash in page objects at a glance.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#stack" class="qa"><span>📚</span>Execution contexts and the call stack</a><a href="#contexts"><span>🏗️</span>Creation phase, hoisting and the scope chain</a><a href="#this" class="qa"><span>👉</span>this in depth: five rules and a precedence</a><a href="#loop" class="qa"><span>🔄</span>The Node.js event loop, phase by phase</a><a href="#v8"><span>⚙️</span>Inside V8: JIT, hidden classes and inline caches</a><a href="#gc" class="qa"><span>🧹</span>Garbage collection</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: a crash only in the retry helper</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="stack" data-say="stack"><div class="sec-num">Part 1</div><h2><span class="sec-em">📚</span><span>Execution contexts and the call stack</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Reading stack traces quickly is the first step in debugging every failed automated test.</span></div>
+<p>Every time a function is called, the engine creates an <b>execution context</b>: a record of its variables, its scope chain and its <code>this</code>. Contexts sit on the <b>call stack</b>. The one on top is running, and when it returns it is popped off. A stack trace in an error is simply a print of this stack.</p>
+<div class="codewrap" data-k="stack" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The call stack and stack overflow · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">function</span> placeOrder() { <span class="k">return</span> chargeCard(); }
+<span class="k">function</span> chargeCard() { <span class="k">return</span> callBank(); }
+<span class="k">function</span> callBank() {
+  <span class="c">// Error().stack is a snapshot of the call stack at this moment</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"snapshot"</span>).stack.split(<span class="s">"\n"</span>).slice(<span class="n">1</span>, <span class="n">4</span>).map(l =&gt; l.trim().split(<span class="s">" ("</span>)[<span class="n">0</span>]);
+}
+console.log(placeOrder());
+
+<span class="c">// Each call adds a frame. Too many frames and the engine stops you.</span>
+<span class="k">function</span> countDown(n) { <span class="k">return</span> n === <span class="n">0</span> ? <span class="s">"done"</span> : countDown(n - <span class="n">1</span>); }
+console.log(countDown(<span class="n">1000</span>));
+<span class="k">try</span> { countDown(<span class="n">1e6</span>); } <span class="k">catch</span> (e) { console.log(e.name + <span class="s">":"</span>, e.message); }</pre><div class="out"><span>Output</span><pre>[ &#x27;at callBank&#x27;, &#x27;at chargeCard&#x27;, &#x27;at placeOrder&#x27; ]
+done
+RangeError: Maximum call stack size exceeded</pre></div></div>
+<div class="qa-box">Read a failing test's stack trace from the top: the first line that points into <b>your</b> code (a page object, a helper, a spec file) is usually where the fix belongs. Lines inside <code>node_modules</code> are the framework calling you.</div>
+</section>
+<section class="card reveal jsec" id="contexts" data-say="contexts"><div class="sec-num">Part 2</div><h2><span class="sec-em">🏗️</span><span>Creation phase, hoisting and the scope chain</span></h2>
+
+<p>Before a function runs, the engine scans it and sets up its bindings. <code>var</code> names start as <code>undefined</code>, function declarations are ready to call, and <code>let</code>, <code>const</code> and <code>class</code> exist but sit in the <b>temporal dead zone</b> until their line runs. This scan is what people call <b>hoisting</b>.</p>
+<div class="codewrap" data-k="contexts" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Execution contexts, the TDZ and the scope chain · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Creation phase: the engine scans the function before running a single line</span>
+<span class="k">function</span> checkout() {
+  console.log(<span class="k">typeof</span> total, <span class="k">typeof</span> applyCoupon);           <span class="c">// var is undefined, the function exists</span>
+  <span class="k">try</span> { console.log(discount); } <span class="k">catch</span> (e) { console.log(e.name + <span class="s">":"</span>, e.message); }
+  <span class="k">try</span> { <span class="k">typeof</span> <span class="t">Cart</span>; } <span class="k">catch</span> (e) { console.log(<span class="s">"even typeof throws in the TDZ:"</span>, e.name); }
+
+  <span class="k">var</span> total = <span class="n">100</span>;
+  <span class="k">let</span> discount = <span class="n">10</span>;                                             <span class="c">// in the temporal dead zone until here</span>
+  <span class="k">function</span> applyCoupon(t) { <span class="k">return</span> t - discount; }
+  <span class="k">class</span> <span class="t">Cart</span> {}
+  <span class="k">return</span> applyCoupon(total);
+}
+console.log(checkout());
+
+<span class="c">// Each loop iteration with let gets a fresh binding. var shares one.</span>
+<span class="k">const</span> withVar = [], withLet = [];
+<span class="k">for</span> (<span class="k">var</span> i = <span class="n">0</span>; i &lt; <span class="n">3</span>; i++) withVar.push(() =&gt; i);
+<span class="k">for</span> (<span class="k">let</span> j = <span class="n">0</span>; j &lt; <span class="n">3</span>; j++) withLet.push(() =&gt; j);
+console.log(withVar.map(f =&gt; f()), withLet.map(f =&gt; f()));
+
+<span class="c">// The scope chain is fixed where the function is written, not where it is called</span>
+<span class="k">const</span> label = <span class="s">"global"</span>;
+<span class="k">function</span> show() { <span class="k">return</span> label; }
+<span class="k">function</span> caller() { <span class="k">const</span> label = <span class="s">"caller"</span>; <span class="k">return</span> show(); }
+console.log(caller());</pre><div class="out"><span>Output</span><pre>undefined function
+ReferenceError: Cannot access &#x27;discount&#x27; before initialization
+even typeof throws in the TDZ: ReferenceError
+90
+[ 3, 3, 3 ] [ 0, 1, 2 ]
+global</pre></div></div>
+<p>Scope is <b>lexical</b>: a function looks up names in the place it was written, then outwards, never in the place it was called from. Closures (chapter 4) are this rule plus the fact that the outer variables stay alive as long as the inner function does.</p>
+</section>
+<section class="card reveal jsec qa-part" id="this" data-say="this"><div class="sec-num">Part 3</div><h2><span class="sec-em">👉</span><span>this in depth: five rules and a precedence</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Selenium</span><span class="qa-why">Page object methods passed to forEach, retry helpers or event handlers lose this, which crashes the test.</span></div>
+<p>The value of <code>this</code> is decided by <b>how a function is called</b>, not where it is written. Five rules cover every case, and when several apply, the one higher in this list wins.</p>
+<div class="viz" data-viz="lanes" data-k="this"></div>
+<div class="codewrap" data-k="this-rules" data-play="worker"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The five rules of this · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="s">"use strict"</span>;
+<span class="k">function</span> who() { <span class="k">return</span> <span class="k">this</span>?.name ?? <span class="t">String</span>(<span class="k">this</span>); }
+<span class="k">const</span> page = { name: <span class="s">"LoginPage"</span>, who };
+<span class="k">const</span> other = { name: <span class="s">"CartPage"</span> };
+
+console.log(<span class="s">"1 default:"</span>, who());                       <span class="c">// plain call: undefined in strict mode</span>
+console.log(<span class="s">"2 implicit:"</span>, page.who());                 <span class="c">// called on an object</span>
+console.log(<span class="s">"3 explicit:"</span>, who.call(other));            <span class="c">// call, apply</span>
+<span class="k">const</span> bound = who.bind(other);
+console.log(<span class="s">"4 bound:"</span>, bound(), bound.call(page));     <span class="c">// bind wins over call</span>
+<span class="k">function</span> <span class="t">Page</span>(name) { <span class="k">this</span>.name = name; }
+console.log(<span class="s">"5 new:"</span>, <span class="k">new</span> <span class="t">Page</span>(<span class="s">"Home"</span>).name);           <span class="c">// new creates a fresh this</span>
+
+<span class="c">// Arrow functions have no this of their own. They use the one around them.</span>
+<span class="k">const</span> timer = {
+  name: <span class="s">"Timer"</span>,
+  regular() { <span class="k">return</span> [<span class="n">1</span>].map(<span class="k">function</span> () { <span class="k">return</span> <span class="k">this</span>?.name; })[<span class="n">0</span>]; },
+  arrow() { <span class="k">return</span> [<span class="n">1</span>].map(() =&gt; <span class="k">this</span>.name)[<span class="n">0</span>]; },
+};
+console.log(<span class="s">"arrow:"</span>, timer.arrow(), <span class="s">"regular:"</span>, timer.regular());</pre><div class="out"><span>Output</span><pre>1 default: undefined
+2 implicit: LoginPage
+3 explicit: CartPage
+4 bound: CartPage CartPage
+5 new: Home
+arrow: Timer regular: undefined</pre></div></div>
+<p>The most common bug in test code is passing a method as a callback. The method is detached from its object, so the call becomes a plain call and <code>this</code> is <code>undefined</code>.</p>
+<div class="codewrap" data-k="lost-this" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Losing this when you pass a method · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">SearchPage</span> {
+  results = [];
+  query = <span class="s">"pen"</span>;
+  <span class="c">// A normal method: "this" depends on how it is called</span>
+  collect(item) { <span class="k">this</span>.results.push(<span class="s">`${this.query}:${item}`</span>); }
+  <span class="c">// A class field arrow: "this" is fixed to the instance</span>
+  collectSafe = item =&gt; { <span class="k">this</span>.results.push(<span class="s">`${this.query}:${item}`</span>); };
+}
+
+<span class="k">const</span> page = <span class="k">new</span> <span class="t">SearchPage</span>();
+<span class="k">try</span> { [<span class="s">"blue"</span>, <span class="s">"red"</span>].forEach(page.collect); }
+<span class="k">catch</span> (e) { console.log(<span class="s">"passing the method:"</span>, e.constructor.name, <span class="s">"-"</span>, e.message); }
+
+[<span class="s">"blue"</span>, <span class="s">"red"</span>].forEach(page.collect.bind(page));
+[<span class="s">"green"</span>].forEach(page.collectSafe);
+[<span class="s">"black"</span>].forEach(item =&gt; page.collect(item));
+console.log(page.results);</pre><div class="out"><span>Output</span><pre>passing the method: TypeError - Cannot read properties of undefined (reading &#x27;results&#x27;)
+[ &#x27;pen:blue&#x27;, &#x27;pen:red&#x27;, &#x27;pen:green&#x27;, &#x27;pen:black&#x27; ]</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="loop" data-say="loop"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔄</span><span>The Node.js event loop, phase by phase</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Knowing which callback runs first explains log orders, race conditions and why a missing await lets a test finish too early.</span></div>
+<p>Chapter 10 showed the browser view: microtasks first, then one task. Node.js splits the task side into <b>phases</b> that run in a fixed order on every turn: <b>timers</b> (setTimeout and setInterval), <b>poll</b> (finished I/O such as files and sockets) and <b>check</b> (setImmediate). Between every callback, Node.js empties the <code>process.nextTick</code> queue and then the promise microtask queue.</p>
+<div class="viz" data-viz="lanes" data-k="phases"></div>
+<div class="codewrap" data-k="loop" data-play="worker"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Node.js event loop phases in order · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> fs = require(<span class="s">"node:fs"</span>);
+
+console.log(<span class="s">"1 sync start"</span>);
+setTimeout(() =&gt; console.log(<span class="s">"6 timers phase: setTimeout 0"</span>), <span class="n">0</span>);
+<span class="t">Promise</span>.resolve().then(() =&gt; console.log(<span class="s">"4 microtask: promise then"</span>));
+queueMicrotask(() =&gt; console.log(<span class="s">"5 microtask: queueMicrotask"</span>));
+process.nextTick(() =&gt; console.log(<span class="s">"3 nextTick queue"</span>));
+
+fs.readFile(__filename, () =&gt; {
+  console.log(<span class="s">"7 poll phase: I/O callback"</span>);
+  setTimeout(() =&gt; console.log(<span class="s">"9 timers phase, next loop"</span>), <span class="n">0</span>);
+  setImmediate(() =&gt; console.log(<span class="s">"8 check phase: setImmediate"</span>));
+  process.nextTick(() =&gt; console.log(<span class="s">"7b nextTick after the callback"</span>));
+});
+console.log(<span class="s">"2 sync end"</span>);</pre><div class="out"><span>Output</span><pre>1 sync start
+2 sync end
+3 nextTick queue
+4 microtask: promise then
+5 microtask: queueMicrotask
+6 timers phase: setTimeout 0
+7 poll phase: I/O callback
+7b nextTick after the callback
+8 check phase: setImmediate
+9 timers phase, next loop</pre></div></div>
+<div class="codewrap" data-k="await-ticks" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Every await gives other code a turn · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> log = [];
+<span class="k">async</span> <span class="k">function</span> step(name) {
+  log.push(<span class="s">`${name} start`</span>);
+  <span class="k">await</span> <span class="k">null</span>;                        <span class="c">// one microtask hop, even for a value that is not a promise</span>
+  log.push(<span class="s">`${name} after await`</span>);
+}
+step(<span class="s">"A"</span>);
+step(<span class="s">"B"</span>);
+<span class="t">Promise</span>.resolve().then(() =&gt; log.push(<span class="s">"then C"</span>));
+log.push(<span class="s">"sync done"</span>);
+<span class="k">await</span> <span class="k">new</span> <span class="t">Promise</span>(r =&gt; setTimeout(r, <span class="n">0</span>));
+console.log(log);</pre><div class="out"><span>Output</span><pre>[
+  &#x27;A start&#x27;,
+  &#x27;B start&#x27;,
+  &#x27;sync done&#x27;,
+  &#x27;A after await&#x27;,
+  &#x27;B after await&#x27;,
+  &#x27;then C&#x27;
+]</pre></div></div>
+<div class="note">Inside an I/O callback, <code>setImmediate</code> always runs before <code>setTimeout(fn, 0)</code>, because the check phase comes straight after poll. At the top level of a script, the order of those two depends on how fast the process starts, so never write a test that relies on it.</div>
+</section>
+<section class="card reveal jsec" id="v8" data-say="v8"><div class="sec-num">Part 5</div><h2><span class="sec-em">⚙️</span><span>Inside V8: JIT, hidden classes and inline caches</span></h2>
+
+<p>V8, the engine in Chrome and Node.js, first turns your code into bytecode and runs it with the <b>Ignition</b> interpreter. Functions that run often are compiled to machine code by the optimising compilers (<b>Sparkplug</b>, <b>Maglev</b> and <b>TurboFan</b>). The optimised code makes guesses, such as "this object always has x then y". If a guess turns out wrong, V8 <b>deoptimises</b> and falls back to slower code.</p>
+<div class="codewrap" data-k="shapes"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Hidden classes: objects with the same shape · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// V8 gives objects with the same properties added in the same order the same hidden class ("map").</span>
+<span class="c">// Code that always sees one shape stays fast. %HaveSameMap is a V8 debugging helper.</span>
+<span class="k">function</span> <span class="t">Point</span>(x, y) { <span class="k">this</span>.x = x; <span class="k">this</span>.y = y; }
+<span class="k">const</span> a = <span class="k">new</span> <span class="t">Point</span>(<span class="n">1</span>, <span class="n">2</span>), b = <span class="k">new</span> <span class="t">Point</span>(<span class="n">3</span>, <span class="n">4</span>);
+console.log(<span class="s">"same constructor:"</span>, %<span class="t">HaveSameMap</span>(a, b));
+
+<span class="k">const</span> c = <span class="k">new</span> <span class="t">Point</span>(<span class="n">5</span>, <span class="n">6</span>);
+c.label = <span class="s">"extra"</span>;                                   <span class="c">// a new property moves c to a new shape</span>
+console.log(<span class="s">"extra property:"</span>, %<span class="t">HaveSameMap</span>(a, c));
+
+console.log(<span class="s">"different order:"</span>, %<span class="t">HaveSameMap</span>({ x: <span class="n">1</span>, y: <span class="n">2</span> }, { y: <span class="n">2</span>, x: <span class="n">1</span> }));
+
+<span class="k">const</span> d = <span class="k">new</span> <span class="t">Point</span>(<span class="n">7</span>, <span class="n">8</span>);
+<span class="k">delete</span> d.x;                                          <span class="c">// delete makes V8 fall back to a slow dictionary</span>
+console.log(<span class="s">"after delete:"</span>, %<span class="t">HaveSameMap</span>(a, d), <span class="s">"| dictionary mode:"</span>, !%<span class="t">HasFastProperties</span>(d));</pre><div class="cmd"><span>Terminal</span><pre>$ node --allow-natives-syntax main.mjs</pre></div><div class="out"><span>Output</span><pre>same constructor: true
+extra property: false
+different order: false
+after delete: false | dictionary mode: true</pre></div></div>
+<p>Each property access remembers the shapes it has seen in an <b>inline cache</b>. One shape is monomorphic and fastest, a few is polymorphic, and many is megamorphic and slow. In practice: create objects with all their properties in the constructor, in the same order, and avoid <code>delete</code> on hot objects.</p>
+<div class="tip">Do not tune for the engine before you measure (chapter 27). Shapes matter in tight loops over millions of objects, such as parsing a large log file, and almost never in test code.</div>
+</section>
+<section class="card reveal jsec qa-part" id="gc" data-say="gc"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧹</span><span>Garbage collection</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Soak tests and long UI sessions expose memory leaks, and heap snapshots are how testers report them precisely.</span></div>
+<p>JavaScript frees memory for you. V8 uses a <b>generational</b> collector because most objects die young. New objects go into the small <b>young generation</b>, which is cleaned often with a fast copying "scavenge". Objects that survive twice move to the <b>old generation</b>, which is cleaned less often with <b>mark and sweep</b>: mark everything reachable from the roots (globals and the stack), then free the rest. Most of the work happens in parallel and in small steps, so pauses stay short.</p>
+<div class="codewrap" data-k="gc"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Generations in the V8 heap · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> v8 <span class="k">from</span> <span class="s">"node:v8"</span>;
+
+<span class="c">// The heap is split into a young generation (new objects) and an old generation (survivors)</span>
+<span class="k">const</span> spaces = v8.getHeapSpaceStatistics().map(s =&gt; s.space_name);
+console.log(<span class="s">"young:"</span>, spaces.includes(<span class="s">"new_space"</span>), <span class="s">"| old:"</span>, spaces.includes(<span class="s">"old_space"</span>), <span class="s">"| big objects:"</span>, spaces.includes(<span class="s">"large_object_space"</span>));
+
+<span class="c">// Short lived objects are cheap: most die young and are collected in a quick "scavenge"</span>
+<span class="k">let</span> kept = [];
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; <span class="n">100_000</span>; i++) {
+  <span class="k">const</span> temp = { id: i, tags: [<span class="s">"a"</span>, <span class="s">"b"</span>] };          <span class="c">// garbage right after this iteration</span>
+  <span class="k">if</span> (i % <span class="n">10_000</span> === <span class="n">0</span>) kept.push(temp);              <span class="c">// only these survive</span>
+}
+console.log(<span class="s">"kept"</span>, kept.length, <span class="s">"objects out of 100000"</span>);
+console.log(<span class="s">"heap limit is a few GB:"</span>, v8.getHeapStatistics().heap_size_limit &gt; <span class="n">1e9</span>);</pre><div class="out"><span>Output</span><pre>young: true | old: true | big objects: true
+kept 10 objects out of 100000
+heap limit is a few GB: true</pre></div></div>
+<div class="qa-box">If memory keeps rising in a long test run, take two heap snapshots in Chrome DevTools (Memory tab) or with <code>v8.writeHeapSnapshot()</code> and compare them. The objects that grow between the snapshots, and the "retainers" that hold them, point to the leak (chapter 27).</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a crash only in the retry helper</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>A test fails with "Cannot read properties of undefined (reading 'attempts')". The page object works when called directly, and fails only when it is passed to the shared retry helper.</div>
+<div class="codewrap" data-k="scenario" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Fix &quot;Cannot read properties of undefined&quot; in a page object · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// A retry helper used by many page objects</span>
+<span class="k">async</span> <span class="k">function</span> retry(action, times = <span class="n">3</span>) {
+  <span class="k">for</span> (<span class="k">let</span> i = <span class="n">1</span>; i &lt;= times; i++) {
+    <span class="k">try</span> { <span class="k">return</span> <span class="k">await</span> action(); }
+    <span class="k">catch</span> (e) { <span class="k">if</span> (i === times) <span class="k">throw</span> e; }
+  }
+}
+
+<span class="k">class</span> <span class="t">CheckoutPage</span> {
+  attempts = <span class="n">0</span>;
+  constructor(api) { <span class="k">this</span>.api = api; }
+  <span class="k">async</span> submit() { <span class="k">this</span>.attempts++; <span class="k">return</span> <span class="k">this</span>.api.post(<span class="s">"/orders"</span>); }
+}
+
+<span class="k">const</span> flakyApi = { calls: <span class="n">0</span>, <span class="k">async</span> post() { <span class="k">if</span> (++<span class="k">this</span>.calls &lt; <span class="n">2</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(<span class="s">"503"</span>); <span class="k">return</span> { id: <span class="n">1042</span> }; } };
+<span class="k">const</span> page = <span class="k">new</span> <span class="t">CheckoutPage</span>(flakyApi);
+
+<span class="c">// The bug from the ticket: "Cannot read properties of undefined (reading 'attempts')"</span>
+<span class="k">await</span> retry(page.submit).<span class="k">catch</span>(e =&gt; console.log(<span class="s">"bug:"</span>, e.message));
+
+<span class="c">// Three fixes, each keeps "this" pointing at the page</span>
+console.log(<span class="k">await</span> retry(() =&gt; page.submit()), <span class="s">"attempts:"</span>, page.attempts);
+console.log(<span class="k">await</span> retry(page.submit.bind(page)), <span class="s">"attempts:"</span>, page.attempts);</pre><div class="out"><span>Output</span><pre>bug: Cannot read properties of undefined (reading &#x27;attempts&#x27;)
+{ id: 1042 } attempts: 2
+{ id: 1042 } attempts: 3</pre></div></div>
+<p>The helper calls <code>action()</code> as a plain function, so <code>this</code> is undefined inside <code>submit</code>. Wrapping it in an arrow or binding it keeps the page object as <code>this</code>. The team also added a lint rule, <code>@typescript-eslint/unbound-method</code>, which flags this mistake in review.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-http-node.html" data-topic="js-http-node"><small>← Previous chapter</small><b>📡 HTTP and Node.js</b></a><a class="next" href="./js-unit-testing.html" data-topic="js-unit-testing"><small>Next chapter →</small><b>🧪 Unit testing</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "What happens when your code runs", "panels": [{"s": [["e", "📚"], ["t", "call stack", {"b": 1}]], "h": "One stack", "t": "Each call adds a context on top.", "more": "An error prints the stack as a trace."}, {"s": [["e", "👉"], ["t", "obj.fn() vs fn()", {"b": 1}]], "h": "this follows the call", "t": "Five rules, new is the strongest.", "more": "Arrows keep the outer this."}, {"s": [["e", "🔄"], ["t", "timers → poll → check", {"b": 1}]], "h": "Loop phases", "t": "nextTick and microtasks run between them.", "more": "Each await is one microtask hop."}, {"s": [["e", "⚙️"], ["t", "same shape = fast", {"b": 1}]], "h": "V8 guesses", "t": "Stable shapes keep code optimised.", "more": "Young objects are collected cheaply."}], "remember": "The call decides this, the place you write a function decides its scope, and the loop runs microtasks before the next phase."}, "real": [["🐞", "A Selenium suite", "Passed a page object method to an array forEach and got \"this is undefined\" only on one screen. A class field arrow fixed it for every caller."], ["📈", "A log parser", "Built its objects with different property orders, which made a hot loop megamorphic. Creating every record with the same constructor made it four times faster."], ["⏱️", "An API mock", "Used setImmediate inside a socket callback to send a reply after the request was fully read, which the poll and check phase order guarantees."]], "quiz": [{"lv": "e", "q": "What does a stack trace show?", "o": ["The chain of function calls that led to the error", "Every variable in the program", "The network requests", "The order of tests"], "a": 0, "hint": "The call stack.", "why": "Read from the top to see the innermost call first."}, {"lv": "e", "q": "What does typeof x print on the line before var x = 5?", "o": ["undefined", "number", "It throws", "null"], "a": 0, "hint": "var is hoisted with undefined.", "why": "The declaration is set up early, the value 5 is assigned only when that line runs."}, {"lv": "e", "q": "Inside an arrow function, where does this come from?", "o": ["The code around the arrow", "The object before the dot", "Always globalThis", "The arguments"], "a": 0, "hint": "Arrows have no own this.", "why": "That is why arrows are handy inside callbacks of methods."}, {"lv": "m", "q": "Which wins: fn.bind(a).call(b)?", "o": ["a", "b", "undefined", "globalThis"], "a": 0, "hint": "bind is stronger than call.", "why": "A bound function ignores call and apply. Only new can override bind."}, {"lv": "m", "q": "Why does accessing a let variable before its line throw?", "o": ["It is in the temporal dead zone", "let is not hoisted at all", "Strict mode forbids it", "It is a syntax error"], "a": 0, "hint": "TDZ.", "why": "let is hoisted but not initialised until its declaration runs."}, {"lv": "m", "q": "A function uses a variable named label. Which label does it see?", "o": ["The one in scope where the function was written", "The one where it was called", "The global one always", "The newest one created"], "a": 0, "hint": "Lexical scope.", "why": "JavaScript scope is decided by where code is written."}, {"lv": "m", "q": "In CommonJS, which runs first after the main script: process.nextTick or a promise then?", "o": ["process.nextTick", "The promise then", "They run in random order", "setTimeout"], "a": 0, "hint": "The nextTick queue goes first.", "why": "Node.js empties the nextTick queue before the promise microtask queue."}, {"lv": "h", "q": "Inside an fs.readFile callback, setTimeout(a, 0) and setImmediate(b). Which runs first?", "o": ["b, the check phase follows poll", "a, timers always first", "Random", "Neither runs"], "a": 0, "hint": "Poll, then check, then timers on the next turn.", "why": "This order is guaranteed inside I/O callbacks."}, {"lv": "h", "q": "What makes two objects share a V8 hidden class?", "o": ["The same properties added in the same order", "The same values", "The same variable name", "Being created on the same line"], "a": 0, "hint": "Shape.", "why": "{x, y} and {y, x} have different shapes."}, {"lv": "h", "q": "Why are most objects collected cheaply?", "o": ["Most die young, and the young generation is cleaned with a fast copy", "They are never collected", "They are stored on disk", "The browser restarts often"], "a": 0, "hint": "Generational hypothesis.", "why": "Only survivors pay for the slower old generation collection."}, {"lv": "x", "q": "What does the last line return?", "o": ["undefined, class bodies are strict", "The P instance", "globalThis", "It throws a SyntaxError"], "a": 0, "hint": "Classes run in strict mode.", "why": "The detached method is a plain call, which gives undefined in strict code.", "code": "class P { m() { return this; } }\nconst f = new P().m;\nf();"}, {"lv": "x", "q": "Two async functions each await null once. In what order do their second halves run?", "o": ["In the order the functions were called", "Reverse order", "After all timers", "Random"], "a": 0, "hint": "Each await queues one microtask.", "why": "Microtasks run first in, first out."}], "calc": [{"lv": "e", "q": "placeOrder calls chargeCard, which calls callBank. How many of these frames are on the stack while callBank runs?", "ans": "3", "hint": "Count the calls not yet returned.", "steps": ["placeOrder, chargeCard and callBank are all still running."]}, {"lv": "e", "q": "What does fns[0]() return?", "ans": "3", "hint": "One shared i.", "steps": ["All three arrows read the same i, which ends at 3."], "code": "const fns = [];\nfor (var i = 0; i < 3; i++) fns.push(() => i);"}, {"lv": "m", "q": "With let instead, what does fns[0]() + fns[1]() + fns[2]() give?", "ans": "3", "hint": "A fresh binding per turn.", "steps": ["<span class=\"eq\">0 + 1 + 2 = 3<\/span>"], "code": "const fns = [];\nfor (let i = 0; i < 3; i++) fns.push(() => i);"}, {"lv": "m", "q": "A CommonJS file logs: sync A, nextTick B, promise C, timeout D, sync E. Write the position (1 to 5) of D in the output.", "ans": "5", "hint": "Sync, then nextTick, then microtasks, then timers.", "steps": ["Order: A, E, B, C, D.", "D is fifth."]}, {"lv": "m", "q": "countDown(n) recurses until 0. How many frames does countDown(1000) push, counting the first call?", "ans": "1001", "hint": "n from 1000 down to 0.", "steps": ["<span class=\"eq\">1000 − 0 + 1 = 1001<\/span>"]}, {"lv": "h", "q": "An object survives two scavenges and is promoted. Scavenges run every 8 MB of new objects. After how many MB of allocation at the earliest is it in the old generation?", "ans": "16", "hint": "Two scavenges.", "steps": ["<span class=\"eq\">2 × 8 = 16<\/span>"]}, {"lv": "h", "q": "A property access sees 1 shape (fast), 3 shapes (polymorphic) or more than 4 (megamorphic). How many shapes can a polymorphic cache hold at most?", "ans": "4", "hint": "V8 keeps up to four.", "steps": ["A polymorphic inline cache stores up to 4 shapes.", "A fifth shape makes it megamorphic."]}, {"lv": "x", "q": "An async function has 3 awaits on already resolved values. How many microtask hops before it returns?", "ans": "3", "hint": "One per await.", "steps": ["Each await, even on a plain value, schedules the rest as a microtask."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter looks under the hood: execution contexts, hoisting, the rules of this, the Node event loop phases, V8 optimisation and garbage collection.", "hi": "यह अध्याय अंदर की बात दिखाता है: execution contexts, hoisting, this के नियम, Node event loop phases, V8 optimisation और garbage collection।", "kn": "ಈ ಅಧ್ಯಾಯ ಒಳಗಿನ ಕೆಲಸ ತೋರಿಸುತ್ತದೆ: execution contexts, hoisting, this ನಿಯಮಗಳು, Node event loop phases, V8 ಮತ್ತು garbage collection.", "or": "ଏହି ଅଧ୍ୟାୟ ଭିତରର କାମ ଦେଖାଏ: execution contexts, hoisting, this ନିୟମ, Node event loop phases, V8 ଓ garbage collection।", "ar": "يكشف هذا الفصل ما يجري في الداخل: سياقات التنفيذ والرفع وقواعد this ومراحل حلقة أحداث Node وتحسينات V8 وجمع المهملات.", "de": "Dieses Kapitel schaut unter die Haube: Ausführungskontexte, Hoisting, die Regeln von this, Event-Loop-Phasen, V8 und Garbage Collection."}, {"id": "stack", "h": "Call stack", "en": "Each call creates an execution context on the call stack. A stack trace prints that stack, and the first line in your own code is usually where to look.", "hi": "हर call stack पर एक execution context बनाता है। Stack trace वही stack दिखाता है, और आपके code की पहली line अक्सर सही जगह होती है।", "kn": "ಪ್ರತಿ call stack ನಲ್ಲಿ execution context ಮಾಡುತ್ತದೆ. Stack trace ನಲ್ಲಿ ನಿಮ್ಮ code ನ ಮೊದಲ ಸಾಲು ನೋಡಿ.", "or": "ପ୍ରତ୍ୟେକ call stack ରେ execution context ତିଆରି କରେ। Stack trace ରେ ଆପଣଙ୍କ code ର ପ୍ରଥମ ଧାଡ଼ି ଦେଖନ୍ତୁ।", "ar": "كل استدعاء ينشئ سياق تنفيذ على المكدس. أثر المكدس يطبعه، وأول سطر من شيفرتك هو غالبًا مكان المشكلة.", "de": "Jeder Aufruf legt einen Kontext auf den Stack. Ein Stack-Trace druckt ihn, die erste Zeile aus deinem Code ist meist die richtige Stelle."}, {"id": "contexts", "h": "Hoisting", "en": "Before running, the engine sets up names. var starts as undefined, functions are ready, and let, const and class wait in the temporal dead zone.", "hi": "चलने से पहले engine नाम तैयार करता है। var undefined से शुरू होता है, functions तैयार रहते हैं, और let, const, class TDZ में रहते हैं।", "kn": "ಓಡುವ ಮೊದಲು engine ಹೆಸರುಗಳನ್ನು ಸಿದ್ಧಪಡಿಸುತ್ತದೆ. var undefined, functions ಸಿದ್ಧ, let const class TDZ ನಲ್ಲಿ.", "or": "ଚାଲିବା ପୂର୍ବରୁ engine ନାମ ପ୍ରସ୍ତୁତ କରେ। var undefined, functions ପ୍ରସ୍ତୁତ, let const class TDZ ରେ।", "ar": "قبل التشغيل يجهز المحرك الأسماء. يبدأ var بقيمة undefined، والدوال جاهزة، وlet وconst وclass في المنطقة الميتة مؤقتًا.", "de": "Vor dem Start legt die Engine Namen an. var beginnt als undefined, Funktionen sind bereit, let, const und class warten in der TDZ."}, {"id": "this", "h": "this", "en": "this is decided by the call. new wins, then bind, then call and apply, then the object before the dot, then a plain call. Arrows keep the outer this.", "hi": "this call से तय होता है। पहले new, फिर bind, फिर call और apply, फिर dot से पहले का object, फिर plain call। Arrow बाहर का this रखते हैं।", "kn": "this call ನಿಂದ ನಿರ್ಧಾರ. ಮೊದಲು new, ನಂತರ bind, call apply, dot ಮುಂದಿನ object, ಕೊನೆಗೆ plain call.", "or": "this call ରୁ ସ୍ଥିର ହୁଏ। ପ୍ରଥମେ new, ତାପରେ bind, call apply, dot ପୂର୍ବ object, ଶେଷରେ plain call।", "ar": "يحدد الاستدعاء قيمة this. أولًا new ثم bind ثم call وapply ثم الكائن قبل النقطة ثم الاستدعاء العادي. الدوال السهمية تحتفظ بـ this الخارجي.", "de": "this hängt vom Aufruf ab. Zuerst new, dann bind, dann call und apply, dann das Objekt vor dem Punkt, dann ein normaler Aufruf."}, {"id": "loop", "h": "Event loop phases", "en": "Node runs timers, then poll for finished I O, then check for setImmediate. Between callbacks it empties nextTick and then the promise microtasks.", "hi": "Node पहले timers, फिर finished I O के लिए poll, फिर setImmediate के लिए check चलाता है। बीच में nextTick और promise microtasks खाली होते हैं।", "kn": "Node ಮೊದಲು timers, ನಂತರ poll, ನಂತರ check ಓಡಿಸುತ್ತದೆ. ಮಧ್ಯೆ nextTick ಮತ್ತು microtasks ಖಾಲಿಯಾಗುತ್ತವೆ.", "or": "Node ପ୍ରଥମେ timers, ତାପରେ poll, ତାପରେ check ଚଲାଏ। ମଝିରେ nextTick ଓ microtasks ଖାଲି ହୁଏ।", "ar": "ينفذ Node المؤقتات ثم مرحلة الاستطلاع للإدخال والإخراج ثم مرحلة التحقق لـ setImmediate، ويفرغ بينها nextTick ثم المهام الدقيقة.", "de": "Node führt Timer aus, dann Poll für fertige I/O, dann Check für setImmediate. Dazwischen leert es nextTick und die Microtasks."}, {"id": "v8", "h": "Inside V8", "en": "V8 compiles hot code and guesses object shapes. Objects built the same way share a hidden class, which keeps property access fast.", "hi": "V8 बार बार चलने वाले code को compile करता है और object shapes का अनुमान लगाता है। एक जैसे बने objects एक hidden class साझा करते हैं।", "kn": "V8 ಹೆಚ್ಚು ಓಡುವ code compile ಮಾಡಿ object shapes ಊಹಿಸುತ್ತದೆ. ಒಂದೇ ರೀತಿ ಮಾಡಿದ objects hidden class ಹಂಚುತ್ತವೆ.", "or": "V8 ଅଧିକ ଚାଲୁଥିବା code compile କରି object shapes ଅନୁମାନ କରେ। ସମାନ objects hidden class ବାଣ୍ଟନ୍ତି।", "ar": "يترجم V8 الشيفرة المتكررة ويخمن أشكال الكائنات. الكائنات المبنية بالطريقة نفسها تتشارك صنفًا مخفيًا فيبقى الوصول سريعًا.", "de": "V8 kompiliert häufigen Code und rät Objektformen. Gleich gebaute Objekte teilen eine versteckte Klasse, das hält Zugriffe schnell."}, {"id": "gc", "h": "Garbage collection", "en": "New objects live in the young generation and most die there cheaply. Survivors move to the old generation, which is cleaned with mark and sweep.", "hi": "नए objects young generation में रहते हैं और ज़्यादातर वहीं खत्म होते हैं। बचे हुए old generation में जाते हैं, जहां mark and sweep होता है।", "kn": "ಹೊಸ objects young generation ನಲ್ಲಿ, ಹೆಚ್ಚಿನವು ಅಲ್ಲೇ ಸಾಯುತ್ತವೆ. ಉಳಿದವು old generation ಗೆ ಹೋಗುತ್ತವೆ.", "or": "ନୂଆ objects young generation ରେ, ଅଧିକାଂଶ ସେଠାରେ ଶେଷ ହୁଅନ୍ତି। ବଞ୍ଚିଥିବା old generation କୁ ଯାଆନ୍ତି।", "ar": "تعيش الكائنات الجديدة في الجيل الصغير ويموت أغلبها هناك بتكلفة قليلة، وينتقل الناجون إلى الجيل القديم الذي ينظف بالتعليم والكنس.", "de": "Neue Objekte leben in der jungen Generation, die meisten sterben dort. Überlebende kommen in die alte Generation mit Mark and Sweep."}, {"id": "scenario", "h": "Scenario", "en": "A retry helper called a page object method as a plain function, so this was undefined. An arrow wrapper or bind fixed it.", "hi": "Retry helper ने page object method को plain function की तरह call किया, इसलिए this undefined था। Arrow wrapper या bind से ठीक हुआ।", "kn": "Retry helper page object method ಅನ್ನು plain function ಆಗಿ call ಮಾಡಿತು, this undefined ಆಯಿತು. Arrow ಅಥವಾ bind ಸರಿಪಡಿಸಿತು.", "or": "Retry helper page object method କୁ plain function ଭାବେ call କଲା, this undefined ହେଲା। Arrow କିମ୍ବା bind ଠିକ୍ କଲା।", "ar": "استدعت دالة إعادة المحاولة دالة كائن الصفحة كدالة عادية فصار this غير معرف، وأصلحه غلاف سهمي أو bind.", "de": "Ein Retry-Helfer rief eine Page-Object-Methode als normale Funktion auf, also war this undefined. Ein Arrow oder bind half."}, {"id": "practice", "h": "Hands-on", "en": "Practise predicting log order, fixing a lost this, writing your own bind, and building a tiny event loop with phases.", "hi": "Log का क्रम पहचानने, खोया this ठीक करने, अपना bind लिखने और phases वाला छोटा event loop बनाने का अभ्यास करें।", "kn": "Log ಕ್ರಮ ಊಹಿಸುವುದು, ಕಳೆದ this ಸರಿಪಡಿಸುವುದು, ನಿಮ್ಮ bind ಬರೆಯುವುದು ಮತ್ತು ಸಣ್ಣ event loop ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Log କ୍ରମ ଅନୁମାନ, ହଜିଥିବା this ଠିକ୍, ନିଜ bind ଲେଖିବା ଓ ଛୋଟ event loop ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على توقع ترتيب السجل وإصلاح this المفقود وكتابة bind بنفسك وبناء حلقة أحداث صغيرة بمراحل.", "de": "Übe, die Log-Reihenfolge vorherzusagen, ein verlorenes this zu reparieren, bind selbst zu schreiben und eine kleine Event Loop zu bauen."}], "ex": [{"id": "order", "lv": "e", "title": "Predict the log order", "task": "<p>Write <code>logOrder()<\/code> that returns an array of the labels in the order this CommonJS code prints them: <code>console.log(\"A\"); setTimeout(() => console.log(\"B\")); Promise.resolve().then(() => console.log(\"C\")); process.nextTick(() => console.log(\"D\")); console.log(\"E\");<\/code><\/p>", "starter": "function logOrder() {\n  return [];\n}", "tests": [{"call": "logOrder()", "want": ["A", "E", "D", "C", "B"]}], "solution": "function logOrder() {\n  return [\"A\", \"E\", \"D\", \"C\", \"B\"];\n}", "hint": "Synchronous lines first, then nextTick, then promise microtasks, then timers.", "why": "This exact order is what the loop example on this page printed."}, {"id": "bindme", "lv": "m", "title": "Write your own bind", "task": "<p>Write <code>myBind(fn, thisArg, ...preset)<\/code> that returns a function which calls <code>fn<\/code> with <code>this<\/code> set to <code>thisArg<\/code>, the preset arguments first and then the new ones. Do not use the built in <code>bind<\/code>.<\/p>", "starter": "function myBind(fn, thisArg, ...preset) {\n  \n}", "tests": [{"call": "myBind(function (x, y) { return this.base + x + y; }, { base: 10 }, 1)(2)", "want": 13}, {"call": "(() => { const page = { name: \"Login\", hello(g) { return g + \" \" + this.name; } }; const f = myBind(page.hello, page); return [\"hi\", \"yo\"].map(f); })()", "want": ["hi Login", "yo Login"]}], "solution": "function myBind(fn, thisArg, ...preset) {\n  return (...args) => fn.apply(thisArg, [...preset, ...args]);\n}", "hint": "Return an arrow that calls <code>fn.apply<\/code>.", "why": "The returned arrow ignores the this it is called with, which is exactly why bound functions cannot be rebound by call."}, {"id": "fixthis", "lv": "h", "title": "Fix the lost this", "task": "<p><code>class Counter { count = 0; inc() { this.count++; } }<\/code> crashes when <code>inc<\/code> is passed to <code>forEach<\/code>. Write <code>makeCounter()<\/code> that returns an object with a <code>count<\/code> of 0 and an <code>inc<\/code> that still works when detached: <code>[1, 2, 3].forEach(c.inc)<\/code> must leave <code>c.count<\/code> at 3.<\/p>", "starter": "function makeCounter() {\n  return { count: 0, inc() { this.count++; } };\n}", "tests": [{"call": "(() => { const c = makeCounter(); [1, 2, 3].forEach(c.inc); return c.count; })()", "want": 3}, {"call": "(() => { const c = makeCounter(); c.inc(); const f = c.inc; f(); return c.count; })()", "want": 2}], "solution": "function makeCounter() {\n  const c = { count: 0 };\n  c.inc = () => { c.count++; };\n  return c;\n}", "hint": "Close over the object instead of using <code>this<\/code>.", "why": "A class field arrow, <code>inc = () => this.count++<\/code>, does the same thing inside a class."}, {"id": "miniloop", "lv": "x", "title": "A tiny event loop", "task": "<p>Write <code>runLoop(jobs)<\/code>. Each job is <code>{ kind, name }<\/code> where kind is <code>\"sync\"<\/code>, <code>\"micro\"<\/code>, <code>\"timer\"<\/code> or <code>\"immediate\"<\/code>. Return the names in the order Node.js would run them from the main script: all sync jobs, then all micro jobs, then timers, then immediates, each group keeping its input order.<\/p>", "starter": "function runLoop(jobs) {\n  \n}", "tests": [{"call": "runLoop([{ kind: \"timer\", name: \"t\" }, { kind: \"sync\", name: \"s1\" }, { kind: \"micro\", name: \"m\" }, { kind: \"immediate\", name: \"i\" }, { kind: \"sync\", name: \"s2\" }])", "want": ["s1", "s2", "m", "t", "i"]}, {"call": "runLoop([{ kind: \"micro\", name: \"a\" }, { kind: \"micro\", name: \"b\" }])", "want": ["a", "b"]}, {"call": "runLoop([])", "want": []}], "solution": "function runLoop(jobs) {\n  const order = [\"sync\", \"micro\", \"timer\", \"immediate\"];\n  return order.flatMap(kind => jobs.filter(j => j.kind === kind).map(j => j.name));\n}", "hint": "Go through the kinds in a fixed order and filter the jobs for each one.", "why": "Real loops also run new microtasks created by a timer before the next timer, which is the \"between every callback\" rule."}], "dg": {}, "lanes": {"phases": {"t": "One turn of the Node.js event loop", "code": "setTimeout(t, 0)          // timers\nfs.readFile(f, io)        // poll\nsetImmediate(i)           // check\nprocess.nextTick(n)       // between every step\nPromise.resolve().then(p) // microtasks", "lanes": ["Running now", "nextTick and microtasks", "Loop phase", "Console"], "tone": [2, 1, 3, 4], "steps": [{"l": [1, 2, 3, 4, 5], "v": [["main script"], ["n", "p"], ["timers: t", "poll: waiting for io", "check: i"], []], "m": "The main script registers everything. Nothing has run yet."}, {"l": 4, "v": [[], ["p"], ["timers: t", "poll: io", "check: i"], ["n"]], "m": "The script ends. In CommonJS, process.nextTick callbacks run first."}, {"l": 5, "v": [[], [], ["timers: t", "poll: io", "check: i"], ["n", "p"]], "m": "Then the promise microtasks. Both queues are emptied after every single callback."}, {"l": 1, "v": [["t"], [], ["poll: io", "check: i"], ["n", "p", "t"]], "m": "Timers phase: expired setTimeout and setInterval callbacks run."}, {"l": 2, "v": [["io"], [], ["check: i"], ["n", "p", "t", "io"]], "m": "Poll phase: finished I/O such as files and sockets runs its callbacks."}, {"l": 3, "v": [["i"], [], [], ["n", "p", "t", "io", "i"]], "m": "Check phase: setImmediate callbacks run. Then the loop starts the next turn."}]}, "this": {"t": "Which this does the call get", "code": "new Page()          // 1. new\nfn.bind(obj)()      // 2. bound\nfn.call(obj)        // 3. explicit\nobj.fn()            // 4. implicit\nfn()                // 5. default", "lanes": ["Call form", "Rule", "this is"], "tone": [2, 1, 3], "steps": [{"l": 1, "v": [["new Page()"], ["new binding"], ["the new object"]], "m": "new always wins. It creates an object and runs the function with this set to it."}, {"l": 2, "v": [["bound()"], ["bind"], ["the bound object"]], "m": "A bound function ignores call and apply. Only new can override it."}, {"l": 3, "v": [["fn.call(obj)"], ["explicit"], ["obj"]], "m": "call and apply set this for one call."}, {"l": 4, "v": [["obj.fn()"], ["implicit"], ["obj, the thing before the dot"]], "m": "A method call uses the object before the dot."}, {"l": 5, "v": [["fn()"], ["default"], ["undefined in strict code"]], "m": "A plain call gets undefined in strict mode and modules, and globalThis in old sloppy scripts."}, {"l": [], "v": [["() => this"], ["arrow"], ["this from the surrounding code"]], "m": "Arrow functions skip all five rules and keep the this of the code around them."}]}}, "play": {}};
+JSPLAY.page({ title: "How JavaScript really works", subject: "javascript" });
+</script>
+</body>
+</html>

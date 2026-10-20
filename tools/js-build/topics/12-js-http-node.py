@@ -311,7 +311,7 @@ PARTS = [
 [[express]]
 <div class="dev-box">Return the right status code and a helpful error body. Clients and tests rely on 201 with a <code>Location</code> header for created items, 204 with no body for deletes, 400 for bad input and 404 for missing items.</div>
 <div class="qa-box">Knowing how routes and status codes are written makes API bugs easier to explain: "POST with price 0 returns 400, as it should, but PUT with price 0 returns 200 and saves it" points straight at the missing check.</div>
-''', qa=['supertest'], qa_why='API test suites start a server like this one, and chapter 14 tests this exact app with supertest.',
+''', qa=['supertest'], qa_why='API test suites start a server like this one, and chapter 20 tests this exact app with supertest.',
         kw=['Express', 'server', 'route', 'middleware', 'req.params', 'req.query', 'req.body', 'res.status', 'res.json', 'REST', 'CRUD', '201', '204', '400']),
     part('node', '🧰', 'Node.js core modules', '''
 <p>Node.js comes with modules for files, paths, processes and more. Test suites use them to read test data, write reports and run other tools.</p>
@@ -322,7 +322,7 @@ PARTS = [
 <tr><td><code>node:path</code></td><td>join and split file paths the same way on Windows, macOS and Linux</td></tr>
 <tr><td><code>node:child_process</code></td><td>run other programs</td></tr>
 <tr><td><code>node:crypto</code></td><td>random ids (<code>randomUUID</code>) and hashes</td></tr>
-<tr><td><code>node:test</code>, <code>node:assert</code></td><td>the built in test runner (chapter 13)</td></tr>
+<tr><td><code>node:test</code>, <code>node:assert</code></td><td>the built in test runner (chapter 19)</td></tr>
 </table></div>
 ''', qa=True, qa_why='Data driven tests read CSV and JSON files, and custom reports are written with fs and path.',
         kw=['fs', 'fs/promises', 'readFile', 'writeFile', 'mkdir', 'path', 'path.join', 'os', 'process.argv', 'child_process', 'execFile', 'CSV', 'test data']),
@@ -457,6 +457,6 @@ T = {
     'desc': 'HTTP methods and status codes, fetch, URL and URLSearchParams, Bearer tokens, 401 against 403, Express routes and middleware, fs, path, child_process and a mock API server.',
     'summary': 'A raw HTTP exchange, methods and status codes, fetch with GET and POST and why it does not reject on 404, building URLs with the URL class, token login and access checks, an Express REST API with proper status codes, reading CSV test data and writing reports, running other programs, and a mock API with reset, fault injection and delays.',
     'keywords': ['HTTP', 'status code', 'fetch', 'URL', 'URLSearchParams', 'Bearer token', '401', '403', 'Express', 'REST', 'middleware', 'fs', 'path', 'child_process', 'mock server', 'fault injection'],
-    'qa_intro': 'API testing is HTTP. Methods, status codes, headers, auth and a server you control are the foundations for chapter 14.',
+    'qa_intro': 'API testing is HTTP. Methods, status codes, headers, auth and a server you control are the foundations for chapter 20.',
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

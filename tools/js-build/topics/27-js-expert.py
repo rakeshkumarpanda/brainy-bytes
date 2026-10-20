@@ -1,4 +1,4 @@
-# Chapter 17: expert habits for developers and testers: performance, memory, patterns, workers, security and test quality.
+# Chapter 27: expert habits for developers and testers: performance, memory, patterns, workers, security and test quality.
 from kit import part, run, dom, test, show, say, quiz, calc, ex, panel, pkg
 
 MODULE = ('🧠', 'Expert and latest', 'js-expert', 'The newest language features, performance, patterns, security and the habits of expert JavaScript developers and testers.')
@@ -431,7 +431,7 @@ PARTS = [
 <tr><td>Secrets</td><td>No API keys in the browser bundle or in git. Read them from environment variables</td></tr>
 <tr><td>eval</td><td>No <code>eval</code> or <code>new Function</code> on user input</td></tr>
 <tr><td>Dependencies</td><td>Run <code>npm audit</code>, keep a lock file and use <code>npm ci</code> in CI</td></tr>
-<tr><td>Auth</td><td>Every API checks the token and the role, not just the UI (chapter 14)</td></tr>
+<tr><td>Auth</td><td>Every API checks the token and the role, not just the UI (chapter 20)</td></tr>
 <tr><td>Cookies</td><td>Session cookies use HttpOnly, Secure and SameSite</td></tr>
 </table></div>
 ''', qa=True, qa_why='Security checks such as XSS payloads and auth rules belong in every regression suite.',

@@ -1,4 +1,4 @@
-# Chapter 15: browser automation with Playwright, Selenium WebDriver, Cypress and WebdriverIO, run against a small demo shop.
+# Chapter 21: browser automation with Playwright, Selenium WebDriver, Cypress and WebdriverIO, run against a small demo shop.
 import os
 import sys
 

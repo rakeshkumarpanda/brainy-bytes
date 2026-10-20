@@ -1,4 +1,4 @@
-# Chapter 13: unit testing with node:test, Jest, Vitest and Mocha, mocks and fake timers, many ways to run a suite,
+# Chapter 19: unit testing with node:test, Jest, Vitest and Mocha, mocks and fake timers, many ways to run a suite,
 # unit tests for web (DOM) code and for API code, coverage and CI.
 from kit import part, run, dom, test, show, say, quiz, calc, ex, panel, pkg
 
@@ -751,7 +751,7 @@ PARTS = [
 <p>API code has two sides to test. <b>Incoming</b>: your routes. <b>supertest</b> sends requests straight into an Express app, without opening a port, and checks the status, headers and body. <b>Outgoing</b>: calls your code makes to other services. <b>nock</b> intercepts them and answers with whatever the test needs, including errors that are hard to produce for real.</p>
 [[api-unit]]
 <div class="tip">Passing <code>stockService</code> into <code>createApp</code> is what makes the route easy to test. Code that creates its own clients inside every function is much harder to test, so testable design starts with how dependencies are passed in.</div>
-<div class="dev-box">Chapter 14 goes further: tests against a running server, JSON Schema validation, contract checks and Playwright's API testing.</div>
+<div class="dev-box">Chapter 20 goes further: tests against a running server, JSON Schema validation, contract checks and Playwright's API testing.</div>
 ''', qa=['supertest', 'nock', 'Jest', 'Vitest'], qa_why='Most API test frameworks start from supertest and nock, and their ideas carry over to every other tool.',
         kw=['API unit test', 'supertest', 'nock', 'Express', 'route test', 'status code', 'mock HTTP', 'outgoing request', 'dependency injection', '503', '404']),
     part('scenario', '🎬', 'Real world scenario: turn a bug report into a test', '''

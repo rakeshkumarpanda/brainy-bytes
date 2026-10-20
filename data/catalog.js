@@ -1937,6 +1937,46 @@ function jsModules() {
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] },
+    { id: "js-depth", title: "JavaScript in depth", emoji: "🔬", blurb: "How the engine really works, errors and debugging, regular expressions, functional style, metaprogramming and Node.js in depth.", topics: [
+      { id: "js-engine", title: "How JavaScript really works", emoji: "🔬", page: "content/javascript/js-engine.html",
+        summary: "The call stack and stack traces, the creation phase with hoisting, the temporal dead zone and lexical scope, the five rules of this and how methods lose it, the Node.js event loop phases with nextTick and microtasks, V8 compilers, hidden classes and inline caches, generational garbage collection, and a page object that crashes inside a retry helper.",
+        keywords: ["execution context", "call stack", "hoisting", "TDZ", "scope chain", "this", "bind", "event loop phases", "process.nextTick", "setImmediate", "V8", "hidden class", "inline cache", "garbage collection", "JavaScript internals", "interview"],
+        added: "2026-10-20",
+        sections: [
+        { id: "stack", title: "Execution contexts and the call stack", emoji: "📚", group: "QA essential", keywords: ["execution context", "call stack", "stack frame", "stack trace", "stack overflow", "RangeError", "Maximum call stack size exceeded", "recursion"] },
+        { id: "contexts", title: "Creation phase, hoisting and the scope chain", emoji: "🏗️", group: "Lesson", keywords: ["creation phase", "hoisting", "temporal dead zone", "TDZ", "lexical scope", "scope chain", "lexical environment", "var in loops", "closure", "let per iteration"] },
+        { id: "this", title: "this in depth: five rules and a precedence", emoji: "👉", group: "QA essential", keywords: ["this", "default binding", "implicit binding", "explicit binding", "call", "apply", "bind", "new", "arrow function this", "class field arrow", "lost this", "strict mode"] },
+        { id: "loop", title: "The Node.js event loop, phase by phase", emoji: "🔄", group: "QA essential", keywords: ["event loop phases", "timers phase", "poll phase", "check phase", "setImmediate", "process.nextTick", "microtask", "queueMicrotask", "libuv", "await microtask"] },
+        { id: "v8", title: "Inside V8: JIT, hidden classes and inline caches", emoji: "⚙️", group: "Lesson", keywords: ["V8", "Ignition", "TurboFan", "Maglev", "Sparkplug", "JIT", "bytecode", "hidden class", "shape", "map", "inline cache", "monomorphic", "megamorphic", "deoptimisation", "delete"] },
+        { id: "gc", title: "Garbage collection", emoji: "🧹", group: "QA essential", keywords: ["garbage collection", "generational GC", "young generation", "old generation", "scavenge", "mark and sweep", "roots", "reachability", "heap snapshot", "v8.getHeapStatistics", "memory"] },
+        { id: "scenario", title: "Real world scenario: a crash only in the retry helper", emoji: "🎬", group: "QA essential", keywords: ["debugging", "this undefined", "retry helper", "page object", "bind", "arrow wrapper", "unbound-method"] },
+        { id: "order", title: "Predict the log order", emoji: "🏋️", group: "Easy practice" },
+        { id: "bindme", title: "Write your own bind", emoji: "🏋️", group: "Medium practice" },
+        { id: "fixthis", title: "Fix the lost this", emoji: "🏋️", group: "Hard practice" },
+        { id: "miniloop", title: "A tiny event loop", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "js-errors-debugging", title: "Errors, debugging and logging", emoji: "🧯", page: "content/javascript/js-errors-debugging.html",
+        summary: "Built in error types and custom error classes with codes and causes, errors in callbacks and promises, unhandled rejections and global handlers, errors as values, inspecting values and starting the debuggers, JSON logs with a request id through AsyncLocalStorage, source maps for TypeScript stack traces, and sorting test failures by error type.",
+        keywords: ["errors", "custom error", "error cause", "AggregateError", "unhandled rejection", "uncaughtException", "debugging", "debugger", "trace viewer", "util.inspect", "structured logging", "AsyncLocalStorage", "source maps", "triage", "interview"],
+        added: "2026-10-20",
+        sections: [
+        { id: "types", title: "The error types and building your own", emoji: "🧯", group: "QA essential", keywords: ["Error", "TypeError", "ReferenceError", "RangeError", "SyntaxError", "URIError", "AggregateError", "custom error", "extends Error", "error code", "cause", "instanceof", "new.target"] },
+        { id: "async", title: "Errors in async code", emoji: "⏳", group: "QA essential", keywords: ["async error", "try catch", "await", "rejected promise", "unhandledRejection", "uncaughtException", "finally", "exit code", "floating promise", "process.on"] },
+        { id: "values", title: "Throw or return: errors as values", emoji: "📬", group: "Lesson", keywords: ["result object", "errors as values", "throw vs return", "validation", "expected failure", "empty catch"] },
+        { id: "debugging", title: "Debugging tools", emoji: "🔎", group: "QA essential", keywords: ["debugging", "console.table", "console.dir", "util.inspect", "console.count", "console.assert", "--inspect", "--inspect-brk", "breakpoint", "conditional breakpoint", "logpoint", "debugger statement", "PWDEBUG", "trace viewer", "VS Code debugger"] },
+        { id: "logging", title: "Structured logging", emoji: "🪵", group: "QA essential", keywords: ["structured logging", "JSON logs", "log levels", "pino", "request id", "correlation id", "AsyncLocalStorage", "context", "observability"] },
+        { id: "sourcemaps", title: "Source maps", emoji: "🗺️", group: "Lesson", keywords: ["source map", "sourceMap", "--enable-source-maps", "minified code", "stack trace", "TypeScript", "Sentry"] },
+        { id: "scenario", title: "Real world scenario: triage a red pipeline", emoji: "🎬", group: "QA essential", keywords: ["triage", "test failure analysis", "AssertionError", "TimeoutError", "ECONNREFUSED", "environment issue", "product bug", "test bug", "nightly run"] },
+        { id: "httperror", title: "A custom error class", emoji: "🏋️", group: "Easy practice" },
+        { id: "safejson", title: "Parse JSON without throwing", emoji: "🏋️", group: "Medium practice" },
+        { id: "retryif", title: "Retry only the right errors", emoji: "🏋️", group: "Hard practice" },
+        { id: "triage", title: "Triage a failure", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
+    ] },
     { id: "js-testing", title: "Testing with JavaScript", emoji: "🧪", blurb: "Unit tests, API tests and browser automation with node:test, Jest, Vitest, Mocha, supertest, Playwright, Selenium and Cypress.", topics: [
       { id: "js-unit-testing", title: "Unit Testing: node:test, Jest, Vitest and Mocha", emoji: "🧪", page: "content/javascript/js-unit-testing.html",
         summary: "The test pyramid and Arrange Act Assert, node:test with mocks and a fake clock, Jest matchers, test.each, module mocks, spies and fake timers, Vitest and Mocha with Chai and Sinon, seven ways to run a node:test suite and five with Jest, a CI matrix with shards, UI component tests with jsdom, Testing Library and user-event, API route tests with supertest, outgoing HTTP faked with nock, and a bug turned into a regression test.",
