@@ -100,7 +100,7 @@ public class Brackets {
             if ("([{".indexOf(ch) >= 0) {
                 stack.push(ch);                      // an opener waits for its partner
             } else if (PAIRS.containsKey(ch)) {
-                if (stack.isEmpty() || stack.peek() != PAIRS.get(ch)) return false;  // wrong partner, or nothing to close
+                if (stack.isEmpty() || !stack.peek().equals(PAIRS.get(ch))) return false;  // wrong partner, or nothing to close
                 stack.pop();
             }
         }
@@ -1580,7 +1580,7 @@ VIZ_JS = r'''
     function show(k) {
       const s = steps[k];
       $('.vz-arr', b).innerHTML = a.map((v, x) => cell(v, x === s.i ? 'hl' : x === s.pop ? 'ok' : s.st.includes(x) ? 'sel' : '', x)).join('');
-      $('.vz-res', b).innerHTML = s.res.map(v => cell(v === null ? '' : v, v === null ? 'empty' : v < 0 ? 'dim' : 'ok')).join('');
+      $('.vz-res', b).innerHTML = s.res.map(v => cell(v === null ? '' : v, v === null ? 'empty' : v < 0 ? 'dim' : 'ok', ' ')).join('');
       $('.vz-sbox', b).innerHTML = plates(s.st.map(x => a[x]));
       $('.vz-msg', b).innerHTML = s.msg;
     }
