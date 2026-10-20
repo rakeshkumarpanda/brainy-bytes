@@ -496,7 +496,8 @@ html.embedded .topbar{display:none}
 .iq-ab{border:0; border-radius:999px; padding:6px 14px; font:inherit; font-size:13.5px; font-weight:800; cursor:pointer; background:linear-gradient(90deg,var(--green),var(--teal)); color:#fff}
 .iq-ab:disabled{opacity:.45; cursor:not-allowed}
 .iq-ab.on{background:var(--surface2); color:var(--ink2); border:1.5px solid var(--line)}
-.iq-ans{margin-top:10px; display:grid; gap:10px; animation:fun-pop .4s ease}
+.iq-ans{margin-top:10px; display:grid; grid-template-columns:minmax(0,1fr); gap:10px; animation:fun-pop .4s ease}
+.iq-ans[hidden]{display:none}
 .iq-ans>div>b{display:block; font-size:12.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink2); margin-bottom:4px}
 .iq-mine{padding:10px 14px; border-radius:12px; border:1.5px dashed var(--box-line); background:var(--surface)}
 .iq-mtext{white-space:pre-wrap; font-size:14.5px}
@@ -521,6 +522,7 @@ html.embedded .topbar{display:none}
   .iq-item{padding:12px}
   .iq-row{flex-direction:column; align-items:stretch}
 }
+.iq-ans>div,.iq-qt,.iq-hint{min-width:0; overflow-wrap:anywhere}
 
 /* ===== Manual API testing page ===== */
 .lvl-nav{display:flex; flex-direction:column; gap:8px; margin:8px 0 4px}
