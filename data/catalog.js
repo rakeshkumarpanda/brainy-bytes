@@ -1890,6 +1890,25 @@ function jsModules() {
         { id: "diff", title: "What changed in the response?", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "js-ui-automation", title: "UI Automation: Playwright, Selenium, Cypress and WebdriverIO", emoji: "🎭", page: "content/javascript/js-ui-automation.html",
+        summary: "How each tool reaches the browser, a Playwright suite with role based locators and web first assertions, a strict mode failure, page.route for errors and fake data, waitForRequest, a page object with a fixture, retries that report flaky tests, the Playwright command line, Selenium WebDriver with Mocha, explicit waits, XPath and screenshots, the same tests in Cypress and WebdriverIO, and a sharded GitHub Actions workflow.",
+        keywords: ["UI automation", "end to end", "Playwright", "Selenium", "WebDriver", "Cypress", "WebdriverIO", "locator", "getByRole", "auto-waiting", "explicit wait", "strict mode", "page.route", "cy.intercept", "page object", "fixture", "retries", "flaky", "trace", "shard", "CI"],
+        added: "2026-10-20",
+        sections: [
+        { id: "tools", title: "The tools and how they drive a browser", emoji: "🧭", group: "QA essential", keywords: ["UI automation", "end to end", "Playwright", "Selenium", "WebDriver", "Cypress", "WebdriverIO", "CDP", "BiDi", "Appium", "browser driver", "tool comparison"] },
+        { id: "playwright", title: "Playwright: locators and web first assertions", emoji: "🎭", group: "QA essential", keywords: ["Playwright", "page", "locator", "getByRole", "getByLabel", "getByText", "getByTestId", "filter", "hasText", "expect", "toHaveText", "toHaveCount", "toBeVisible", "auto-waiting", "strict mode", "web first assertions"] },
+        { id: "network", title: "Controlling the network", emoji: "🛰️", group: "QA essential", keywords: ["page.route", "route.fulfill", "network mocking", "waitForRequest", "waitForResponse", "postDataJSON", "error state", "cy.intercept", "stub API"] },
+        { id: "framework", title: "Page objects, fixtures and retries", emoji: "🏗️", group: "QA essential", keywords: ["page object", "fixture", "test.extend", "use", "retries", "flaky", "trace", "testInfo.retry", "grep", "headed", "debug", "UI mode", "codegen", "shard", "repeat-each"] },
+        { id: "selenium", title: "Selenium WebDriver", emoji: "🚗", group: "QA essential", keywords: ["Selenium", "WebDriver", "selenium-webdriver", "chromedriver", "By", "xpath", "css", "driver.wait", "until", "explicit wait", "implicit wait", "sendKeys", "Grid", "Mocha", "screenshot"] },
+        { id: "cypress", title: "Cypress and WebdriverIO", emoji: "🌲", group: "QA essential", keywords: ["Cypress", "cy.get", "cy.contains", "cy.intercept", "cy.wait", "alias", "custom command", "should", "command queue", "WebdriverIO", "wdio", "$", "$$", "Appium"] },
+        { id: "scenario", title: "Real world scenario: a UI suite in CI", emoji: "🎬", group: "QA essential", keywords: ["CI", "GitHub Actions", "shard", "matrix", "HTML report", "trace", "artifact", "playwright install", "pipeline", "flaky tests", "test strategy"] },
+        { id: "pick", title: "Pick the best locator", emoji: "🏋️", group: "Easy practice" },
+        { id: "wait", title: "A waitFor helper", emoji: "🏋️", group: "Medium practice" },
+        { id: "filter", title: "filter({ hasText }) for cards", emoji: "🏋️", group: "Hard practice" },
+        { id: "flaky", title: "Find the flaky tests", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
