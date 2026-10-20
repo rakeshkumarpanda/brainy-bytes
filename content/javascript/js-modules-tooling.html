@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modules, npm, TypeScript and Tooling · JavaScript</title>
+<meta name="description" content="import and export, CommonJS, npm, package.json, semver, lock files, TypeScript, tsc, ESLint, Prettier, .env files and test project structure.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🏗️ Structure and tooling</span><span>›</span><span>Chapter 9 of 9</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">📦</span><div><h1>Modules, npm, TypeScript and Tooling</h1><p class="lead">ES modules and CommonJS, npm with package.json and version ranges, TypeScript run straight in Node.js and checked with tsc, ESLint and Prettier, configuration from environment variables, and how a real test project is laid out.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 16 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 6 runnable examples</span><span class="chip">🧪 4 real test runs</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 7 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Every automation framework is a Node.js project: modules, npm scripts, TypeScript, lint rules and environment config are what you touch on day one.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#esm" class="qa"><span>📦</span>ES modules: import and export</a><a href="#cjs" class="qa"><span>🧱</span>CommonJS and how the two mix</a><a href="#npm" class="qa"><span>📥</span>npm and package.json</a><a href="#typescript" class="qa"><span>🔷</span>TypeScript</a><a href="#lint" class="qa"><span>🧹</span>ESLint and Prettier</a><a href="#env" class="qa"><span>🔐</span>Environment variables and config</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: lay out a test project</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="esm" data-say="esm"><div class="sec-num">Part 1</div><h2><span class="sec-em">📦</span><span>ES modules: import and export</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Every test file imports a runner, page objects and helpers. Playwright, Vitest and WebdriverIO projects are ES modules by default.</span></div>
+<p>A <b>module</b> is a file with its own scope. Nothing inside it is visible to other files unless it is <b>exported</b>, and nothing from outside is available unless it is <b>imported</b>. This keeps large codebases and test suites tidy: page objects, helpers and test data each live in their own file.</p>
+<div class="codewrap" data-k="esm"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Named and default exports · ▶ Runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 money.mjs</div><pre class="src" data-file="money.mjs"><span class="k">export</span> <span class="k">const</span> <span class="t">TAX_RATE</span> = <span class="n">0.18</span>;
+
+<span class="k">export</span> <span class="k">function</span> addTax(amount) {
+  <span class="k">return</span> <span class="t">Math</span>.round(amount * (<span class="n">1</span> + <span class="t">TAX_RATE</span>));
+}
+
+<span class="k">export</span> <span class="k">class</span> <span class="t">Cart</span> {
+  total = <span class="n">0</span>;
+  add(price) { <span class="k">this</span>.total += price; <span class="k">return</span> <span class="k">this</span>; }
+}
+
+<span class="k">export</span> <span class="k">default</span> <span class="k">function</span> formatPrice(amount) {
+  <span class="k">return</span> <span class="s">`₹${amount.toLocaleString("en-IN")}`</span>;
+}</pre><div class="fname">📄 main.mjs</div><pre class="src main"><span class="k">import</span> formatPrice, { <span class="t">TAX_RATE</span>, addTax, <span class="t">Cart</span> <span class="k">as</span> <span class="t">ShoppingCart</span> } <span class="k">from</span> <span class="s">"./money.mjs"</span>;
+<span class="k">import</span> * <span class="k">as</span> money <span class="k">from</span> <span class="s">"./money.mjs"</span>;       <span class="c">// everything, as one object</span>
+
+console.log(<span class="t">TAX_RATE</span>, addTax(<span class="n">100</span>));
+console.log(formatPrice(<span class="n">2695</span>));
+<span class="k">const</span> cart = <span class="k">new</span> <span class="t">ShoppingCart</span>();
+console.log(cart.add(<span class="n">500</span>).add(<span class="n">250</span>).total);
+console.log(<span class="t">Object</span>.keys(money));</pre><div class="cmd"><span>Terminal</span><pre>$ node main.mjs</pre></div><div class="out"><span>Output</span><pre>0.18 118
+₹2,695
+750
+[ &#x27;Cart&#x27;, &#x27;TAX_RATE&#x27;, &#x27;addTax&#x27;, &#x27;default&#x27; ]</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Syntax</th><th>Meaning</th></tr>
+<tr><td><code>export const x</code>, <code>export function f</code></td><td>named export, imported with the same name in braces</td></tr>
+<tr><td><code>export default ...</code></td><td>one main value per file, imported with any name</td></tr>
+<tr><td><code>import { a as b }</code></td><td>rename while importing</td></tr>
+<tr><td><code>import * as ns</code></td><td>every export as one object</td></tr>
+<tr><td><code>await import("./x.js")</code></td><td>load later, only when needed</td></tr>
+</table></div>
+<p>Modules are always strict, run once however many files import them, and may use <code>await</code> at the top level.</p>
+<div class="codewrap" data-k="dynamic"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Dynamic import, JSON modules and import.meta · ▶ Runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 messages/hi.mjs</div><pre class="src" data-file="messages/hi.mjs"><span class="k">export</span> <span class="k">default</span> { welcome: <span class="s">"नमस्ते"</span> };</pre><div class="fname">📄 settings.json</div><pre class="src" data-file="settings.json">{ <span class="s">"baseURL"</span>: <span class="s">"https://staging.shop.example"</span>, <span class="s">"retries"</span>: <span class="n">2</span> }</pre><div class="fname">📄 main.mjs</div><pre class="src main"><span class="c">// Top level await: modules may await without an async function</span>
+<span class="k">const</span> lang = process.env.<span class="t">APP_LANG</span> ?? <span class="s">"hi"</span>;
+
+<span class="c">// Dynamic import loads a module only when it is needed</span>
+<span class="k">const</span> { <span class="k">default</span>: messages } = <span class="k">await</span> <span class="k">import</span>(<span class="s">`./messages/${lang}.mjs`</span>);
+console.log(messages.welcome);
+
+<span class="c">// JSON can be imported with an import attribute</span>
+<span class="k">import</span> settings <span class="k">from</span> <span class="s">"./settings.json"</span> <span class="k">with</span> { type: <span class="s">"json"</span> };
+console.log(settings.retries, settings.baseURL);
+
+console.log(<span class="k">import</span>.meta.filename.split(<span class="s">"/"</span>).at(-<span class="n">1</span>));</pre><div class="cmd"><span>Terminal</span><pre>$ node main.mjs</pre></div><div class="out"><span>Output</span><pre>नमस्ते
+2 https://staging.shop.example
+main.mjs</pre></div></div>
+<div class="tip">Many teams avoid default exports: named exports keep the same name in every file, which makes search and automatic refactoring reliable.</div>
+</section>
+<section class="card reveal jsec qa-part" id="cjs" data-say="cjs"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧱</span><span>CommonJS and how the two mix</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Jest</span><span class="qa-tool">Mocha</span><span class="qa-tool">Selenium</span><span class="qa-why">Jest, Mocha and many Selenium projects are CommonJS, and mixing the two styles causes the most common set up errors.</span></div>
+<p>Before ES modules, Node.js used <b>CommonJS</b>: <code>require()</code> to load and <code>module.exports</code> to share. Older packages, Jest setups, Mocha and many Selenium projects still use it, so you will read both styles.</p>
+<div class="codewrap" data-k="cjs"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">CommonJS: require and module.exports · ▶ Runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 text.cjs</div><pre class="src" data-file="text.cjs"><span class="k">function</span> slugify(text) {
+  <span class="k">return</span> text.toLowerCase().trim().replace(/[^a-z0-<span class="n">9</span>]+/g, <span class="s">"-"</span>);
+}
+module.exports = { slugify };</pre><div class="fname">📄 money.mjs</div><pre class="src" data-file="money.mjs"><span class="k">export</span> <span class="k">const</span> addTax = amount =&gt; <span class="t">Math</span>.round(amount * <span class="n">1.18</span>);</pre><div class="fname">📄 main.cjs</div><pre class="src main"><span class="k">const</span> { slugify } = require(<span class="s">"./text.cjs"</span>);     <span class="c">// CommonJS: require and module.exports</span>
+<span class="k">const</span> path = require(<span class="s">"node:path"</span>);
+
+console.log(slugify(<span class="s">"Add to Cart Button"</span>));
+console.log(path.join(<span class="s">"tests"</span>, <span class="s">"e2e"</span>, <span class="s">"login.spec.js"</span>));
+console.log(<span class="k">typeof</span> module.exports, <span class="k">typeof</span> __dirname);
+
+<span class="c">// Since Node 22, require() can also load an ES module that has no top level await</span>
+<span class="k">const</span> { addTax } = require(<span class="s">"./money.mjs"</span>);
+console.log(addTax(<span class="n">100</span>));</pre><div class="cmd"><span>Terminal</span><pre>$ node main.cjs</pre></div><div class="out"><span>Output</span><pre>add-to-cart-button
+tests/e2e/login.spec.js
+object string
+118</pre></div></div>
+<div class="tw"><table class="jt"><tr><th></th><th>ES modules</th><th>CommonJS</th></tr>
+<tr><td>Load</td><td><code>import</code>, loaded before the code runs</td><td><code>require()</code>, a normal function call</td></tr>
+<tr><td>Share</td><td><code>export</code></td><td><code>module.exports</code></td></tr>
+<tr><td>Chosen by</td><td><code>.mjs</code>, or <code>.js</code> with <code>"type": "module"</code></td><td><code>.cjs</code>, or <code>.js</code> without it</td></tr>
+<tr><td>Top level await</td><td>yes</td><td>no</td></tr>
+<tr><td>Where you see it</td><td>Playwright, Vitest, browsers, new code</td><td>older Node.js code, Jest by default, Mocha</td></tr>
+</table></div>
+<div class="warn">The error <code>Cannot use import statement outside a module</code> means a file with <code>import</code> is being treated as CommonJS. Add <code>"type": "module"</code> to package.json or rename the file to <code>.mjs</code>.</div>
+</section>
+<section class="card reveal jsec qa-part" id="npm" data-say="npm"><div class="sec-num">Part 3</div><h2><span class="sec-em">📥</span><span>npm and package.json</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Installing, pinning and updating test tools, and running them through npm scripts, is part of every automation project.</span></div>
+<p><b>npm</b> installs packages from the npm registry into <code>node_modules</code> and records them in <b>package.json</b>. The <b>lock file</b> (<code>package-lock.json</code>) pins the exact version of every package, so every laptop and CI machine installs the same thing.</p>
+<div class="codewrap" data-k="package-json"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A package.json for a test project · Reference</span><button type="button" class="copy">Copy</button></div><pre class="src main">{
+  <span class="s">"name"</span>: <span class="s">"shop-tests"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"type"</span>: <span class="s">"module"</span>,
+  <span class="s">"engines"</span>: { <span class="s">"node"</span>: <span class="s">"&gt;=22"</span> },
+  <span class="s">"scripts"</span>: {
+    <span class="s">"test"</span>: <span class="s">"npm run test:unit &amp;&amp; npm run test:api"</span>,
+    <span class="s">"test:unit"</span>: <span class="s">"vitest run"</span>,
+    <span class="s">"test:api"</span>: <span class="s">"node --test tests/api/"</span>,
+    <span class="s">"test:e2e"</span>: <span class="s">"playwright test"</span>,
+    <span class="s">"lint"</span>: <span class="s">"eslint ."</span>,
+    <span class="s">"format"</span>: <span class="s">"prettier --write ."</span>
+  },
+  <span class="s">"dependencies"</span>: {
+    <span class="s">"ajv"</span>: <span class="s">"^8.17.1"</span>
+  },
+  <span class="s">"devDependencies"</span>: {
+    <span class="s">"@playwright/test"</span>: <span class="s">"~1.56.0"</span>,
+    <span class="s">"vitest"</span>: <span class="s">"^5.0.0"</span>,
+    <span class="s">"eslint"</span>: <span class="s">"10.13.0"</span>
+  }
+}</pre><div class="note-out"><span>What happens</span><p>"type": "module" makes .js files ES modules. Scripts run with npm run test:unit. devDependencies are tools only needed to build and test.</p></div></div>
+<h3>Version ranges</h3>
+<p>Versions follow <b>semantic versioning</b>: <code>MAJOR.MINOR.PATCH</code>. A major bump may break your code. A caret <code>^</code> allows new minor and patch versions. A tilde <code>~</code> allows only new patches. No symbol means that exact version. Below 1.0.0 the caret is stricter: <code>^0.4.2</code> allows only <code>0.4.x</code>, because in a 0.x package every minor release may break things.</p>
+<div class="codewrap" data-k="semver"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">What ^ and ~ allow · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> semver <span class="k">from</span> <span class="s">"semver"</span>;            <span class="c">// a package from node_modules</span>
+
+<span class="k">const</span> checks = [
+  [<span class="s">"^1.56.0"</span>, <span class="s">"1.58.2"</span>], [<span class="s">"^1.56.0"</span>, <span class="s">"2.0.0"</span>],
+  [<span class="s">"~1.56.0"</span>, <span class="s">"1.56.9"</span>], [<span class="s">"~1.56.0"</span>, <span class="s">"1.57.0"</span>],
+  [<span class="s">"1.56.1"</span>, <span class="s">"1.56.2"</span>], [<span class="s">"^0.4.2"</span>, <span class="s">"0.5.0"</span>],
+];
+<span class="k">for</span> (<span class="k">const</span> [range, version] <span class="k">of</span> checks) {
+  console.log(range.padEnd(<span class="n">8</span>), version.padEnd(<span class="n">7</span>), semver.satisfies(version, range) ? <span class="s">"allowed"</span> : <span class="s">"not allowed"</span>);
+}
+console.log(semver.maxSatisfying([<span class="s">"1.55.0"</span>, <span class="s">"1.56.4"</span>, <span class="s">"1.60.1"</span>, <span class="s">"2.1.0"</span>], <span class="s">"^1.56.0"</span>));</pre><div class="out"><span>Output</span><pre>^1.56.0  1.58.2  allowed
+^1.56.0  2.0.0   not allowed
+~1.56.0  1.56.9  allowed
+~1.56.0  1.57.0  not allowed
+1.56.1   1.56.2  not allowed
+^0.4.2   0.5.0   not allowed
+1.60.1</pre></div></div>
+<div class="codewrap" data-k="npm-cmds"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The npm commands you use every week · Reference</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">npm</span> init -y                      <span class="c"># create package.json</span>
+<span class="k">npm</span> install ajv                  <span class="c"># add a dependency (writes package.json and package-lock.json)</span>
+<span class="k">npm</span> install -D @playwright/test  <span class="c"># add a dev dependency</span>
+<span class="k">npm</span> ci                           <span class="c"># clean install exactly what the lock file says (use this in CI)</span>
+<span class="k">npm</span> run test:unit                <span class="c"># run a script from package.json</span>
+<span class="k">npm</span> test -- --reporter=verbose   <span class="c"># pass extra options to the script after --</span>
+<span class="k">npx</span> playwright test --headed     <span class="c"># run a tool from node_modules/.bin</span>
+<span class="k">npm</span> outdated                     <span class="c"># what has newer versions</span>
+<span class="k">npm</span> audit                        <span class="c"># known security problems in dependencies</span></pre></div>
+<div class="qa-box">Use <code>npm ci</code> in pipelines, not <code>npm install</code>. It fails if package.json and the lock file disagree, and it never changes the lock file. Pin browser automation tools such as Playwright exactly or with <code>~</code>, because a new version also brings new browser builds.</div>
+</section>
+<section class="card reveal jsec qa-part" id="typescript" data-say="typescript"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔷</span><span>TypeScript</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Cypress</span><span class="qa-tool">WebdriverIO</span><span class="qa-why">Playwright and most modern frameworks generate TypeScript projects, and typed page objects catch broken locators and data at edit time.</span></div>
+<p><b>TypeScript</b> is JavaScript with types added. You describe the shape of your data once, and the type checker warns you about wrong property names, missing fields and wrong value types while you type, long before a test runs. Playwright, Angular and most new projects use it, and its tests are usually written in it too.</p>
+<div class="codewrap" data-k="ts-run"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">TypeScript runs directly in Node.js · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main">type <span class="t">Status</span> = <span class="s">"passed"</span> | <span class="s">"failed"</span> | <span class="s">"skipped"</span>;
+
+interface <span class="t">TestResult</span> {
+  name: string;
+  status: <span class="t">Status</span>;
+  durationMs: number;
+  retries?: number;              <span class="c">// optional</span>
+}
+
+<span class="k">function</span> slowest&lt;<span class="t">T</span> <span class="k">extends</span> { durationMs: number }&gt;(items: <span class="t">T</span>[], count = <span class="n">1</span>): <span class="t">T</span>[] {
+  <span class="k">return</span> items.toSorted((a, b) =&gt; b.durationMs - a.durationMs).slice(<span class="n">0</span>, count);
+}
+
+<span class="k">const</span> results: <span class="t">TestResult</span>[] = [
+  { name: <span class="s">"login"</span>, status: <span class="s">"passed"</span>, durationMs: <span class="n">840</span> },
+  { name: <span class="s">"checkout"</span>, status: <span class="s">"failed"</span>, durationMs: <span class="n">2310</span>, retries: <span class="n">2</span> },
+  { name: <span class="s">"search"</span>, status: <span class="s">"passed"</span>, durationMs: <span class="n">120</span> },
+];
+
+<span class="k">const</span> failed = results.filter(r =&gt; r.status === <span class="s">"failed"</span>).map(r =&gt; r.name);
+console.log(failed, slowest(results)[<span class="n">0</span>].name);</pre><div class="out"><span>Output</span><pre>[ &#x27;checkout&#x27; ] checkout</pre></div></div>
+<p>Node.js 23.6 and later run <code>.ts</code> files directly by removing the type annotations. It does not check them. Checking is the job of <code>tsc</code>, the TypeScript compiler, usually run as its own step in CI.</p>
+<div class="codewrap tests" data-k="tsc"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The type checker finds bugs before any test runs · 🔎 Type check, finds 2 errors</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 tsconfig.json</div><pre class="src" data-file="tsconfig.json">{
+  <span class="s">"compilerOptions"</span>: {
+    <span class="s">"target"</span>: <span class="s">"es2024"</span>,
+    <span class="s">"module"</span>: <span class="s">"nodenext"</span>,
+    <span class="s">"strict"</span>: <span class="k">true</span>,
+    <span class="s">"noEmit"</span>: <span class="k">true</span>,
+    <span class="s">"erasableSyntaxOnly"</span>: <span class="k">true</span>
+  },
+  <span class="s">"include"</span>: [<span class="s">"src"</span>]
+}</pre><div class="fname">📄 src/order.ts</div><pre class="src" data-file="src/order.ts"><span class="k">interface</span> <span class="t">Order</span> {
+  id: <span class="k">number</span>;
+  total: <span class="k">number</span>;
+  coupon?: <span class="k">string</span>;
+}
+
+<span class="k">export</span> <span class="k">function</span> discount(order: <span class="t">Order</span>): <span class="k">number</span> {
+  <span class="k">return</span> order.coupon.length &gt; <span class="n">0</span> ? order.total * <span class="n">0.9</span> : order.total;
+}
+
+discount({ id: <span class="n">7</span>, total: <span class="s">"499"</span> });</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc</pre></div><div class="err"><span>Terminal output</span><pre>src/order.ts(8,10): error TS18048: &#x27;order.coupon&#x27; is possibly &#x27;undefined&#x27;.
+src/order.ts(11,19): error TS2322: Type &#x27;string&#x27; is not assignable to type &#x27;number&#x27;.</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Syntax</th><th>Meaning</th></tr>
+<tr><td><code>let n: number</code></td><td>a type annotation</td></tr>
+<tr><td><code>interface User { name: string; age?: number }</code></td><td>the shape of an object, <code>?</code> marks optional</td></tr>
+<tr><td><code>type Status = "passed" | "failed"</code></td><td>a union: one of these values</td></tr>
+<tr><td><code>function first&lt;T&gt;(list: T[]): T</code></td><td>a generic: works for any type T</td></tr>
+<tr><td><code>value as string</code></td><td>tell the checker you know better (use rarely)</td></tr>
+</table></div>
+<div class="modern">The <code>erasableSyntaxOnly</code> option (TypeScript 5.8) keeps you to type syntax that Node.js can simply remove, which is what makes running .ts files without a build step work.</div>
+</section>
+<section class="card reveal jsec qa-part" id="lint" data-say="lint"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧹</span><span>ESLint and Prettier</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">Jest</span><span class="qa-tool">Cypress</span><span class="qa-why">A missing await or a forgotten test.only is caught by the linter before it reaches CI.</span></div>
+<p><b>ESLint</b> reads your code without running it and reports likely bugs and risky habits: unused variables, typos in names, <code>==</code> where <code>===</code> was meant, an <code>async</code> function that never awaits. Rules live in <code>eslint.config.js</code>.</p>
+<div class="codewrap tests" data-k="eslint"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">ESLint reads the code and reports problems · 🔎 Lint, finds problems</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 package.json</div><pre class="src" data-file="package.json">{
+  <span class="s">"name"</span>: <span class="s">"linted"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"type"</span>: <span class="s">"module"</span>,
+  <span class="s">"scripts"</span>: {
+    <span class="s">"lint"</span>: <span class="s">"eslint ."</span>
+  }
+}</pre><div class="fname">📄 eslint.config.js</div><pre class="src" data-file="eslint.config.js"><span class="k">import</span> js <span class="k">from</span> <span class="s">"@eslint/js"</span>;
+<span class="k">import</span> globals <span class="k">from</span> <span class="s">"globals"</span>;
+
+<span class="k">export</span> <span class="k">default</span> [
+  js.configs.recommended,
+  {
+    languageOptions: { globals: { ...globals.node } },
+    rules: {
+      eqeqeq: <span class="s">"error"</span>,
+      <span class="s">"no-unused-vars"</span>: <span class="s">"error"</span>,
+      <span class="s">"require-await"</span>: <span class="s">"error"</span>,
+    },
+  },
+];</pre><div class="fname">📄 tests/cart.test.js</div><pre class="src" data-file="tests/cart.test.js"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+
+test(<span class="s">"cart total"</span>, <span class="k">async</span> () =&gt; {
+  <span class="k">const</span> items = [{ price: <span class="n">100</span> }, { price: <span class="s">"50"</span> }];
+  <span class="k">const</span> unused = <span class="n">3</span>;
+  <span class="k">let</span> total = <span class="n">0</span>;
+  <span class="k">for</span> (<span class="k">const</span> i <span class="k">of</span> items) total += <span class="t">Number</span>(i.price);
+  assert.ok(total == <span class="n">150</span>);
+  assert.equal(totl, <span class="n">150</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx eslint .</pre></div><div class="err"><span>Terminal output</span><pre>
+tests/cart.test.js
+   4:29  error  Async arrow function has no &#x27;await&#x27; expression  require-await
+   6:9   error  &#x27;unused&#x27; is assigned a value but never used     no-unused-vars
+   9:19  error  Expected &#x27;===&#x27; and instead saw &#x27;==&#x27;             eqeqeq
+  10:16  error  &#x27;totl&#x27; is not defined                           no-undef
+
+✖ 4 problems (4 errors, 0 warnings)</pre></div></div>
+<p><b>Prettier</b> only formats: spaces, quotes, line breaks and commas. It ends style discussions in code review because everyone's code comes out the same.</p>
+<div class="codewrap tests" data-k="prettier"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Prettier rewrites the layout, never the meaning · ✨ Formatter runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 package.json</div><pre class="src" data-file="package.json">{
+  <span class="s">"name"</span>: <span class="s">"pretty"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"type"</span>: <span class="s">"module"</span>
+}</pre><div class="fname">📄 messy.js</div><pre class="src" data-file="messy.js"><span class="k">const</span> user={name:<span class="s">"Asha"</span>,roles:[ <span class="s">'admin'</span>,<span class="s">'qa'</span> ],active:<span class="k">true</span>}
+<span class="k">function</span> greet( u ){<span class="k">return</span> <span class="s">`Hello, ${u.name}`</span>}</pre><div class="cmd"><span>Terminal</span><pre>$ npx prettier messy.js</pre></div><div class="out"><span>Terminal output</span><pre>const user = { name: &quot;Asha&quot;, roles: [&quot;admin&quot;, &quot;qa&quot;], active: true };
+function greet(u) {
+  return `Hello, ${u.name}`;
+}</pre></div></div>
+<div class="qa-box">Lint test code too. Plugins such as <code>eslint-plugin-playwright</code>, <code>eslint-plugin-jest</code> and <code>eslint-plugin-cypress</code> catch a missing <code>await</code> before an action, a forgotten <code>test.only</code> and conditionals inside tests. With TypeScript, the <code>@typescript-eslint/no-floating-promises</code> rule finds the missing <code>await</code> that causes most flaky Playwright tests.</div>
+</section>
+<section class="card reveal jsec qa-part" id="env" data-say="env"><div class="sec-num">Part 6</div><h2><span class="sec-em">🔐</span><span>Environment variables and config</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Choosing the target environment, test users and secrets through variables is how one suite runs against every environment.</span></div>
+<p>The same tests must run against a laptop, a staging server and sometimes production. The parts that change, such as the base URL, user names and secrets, come from <b>environment variables</b> in <code>process.env</code>. Node.js can load them from a <code>.env</code> file with <code>--env-file</code>, with no extra package.</p>
+<div class="codewrap" data-k="env"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Configuration from environment variables · ▶ Runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 .env</div><pre class="src" data-file=".env"><span class="c"># Never commit real secrets. Keep .env in .gitignore and use CI secrets instead.</span>
+TEST_ENV=staging
+BASE_URL=https://staging.shop.example
+TEST_USER=qa.bot@shop.example
+TEST_PASSWORD=not-a-real-password
+HEADLESS=true</pre><div class="fname">📄 main.mjs</div><pre class="src main"><span class="c">// Values come from .env, which Node.js loads with --env-file</span>
+<span class="k">const</span> config = {
+  env: process.env.<span class="t">TEST_ENV</span>,
+  baseURL: process.env.<span class="t">BASE_URL</span>,
+  user: process.env.<span class="t">TEST_USER</span>,
+  headless: process.env.<span class="t">HEADLESS</span> !== <span class="s">"false"</span>,
+  workers: <span class="t">Number</span>(process.env.<span class="t">WORKERS</span> ?? <span class="n">2</span>),
+};
+console.log(config);
+console.log(<span class="s">"password loaded:"</span>, <span class="t">Boolean</span>(process.env.<span class="t">TEST_PASSWORD</span>), <span class="s">"| length:"</span>, process.env.<span class="t">TEST_PASSWORD</span>.length);</pre><div class="cmd"><span>Terminal</span><pre>$ node --env-file=.env main.mjs</pre></div><div class="out"><span>Output</span><pre>{
+  env: &#x27;staging&#x27;,
+  baseURL: &#x27;https://staging.shop.example&#x27;,
+  user: &#x27;qa.bot@shop.example&#x27;,
+  headless: true,
+  workers: 2
+}
+password loaded: true | length: 19</pre></div></div>
+<div class="warn">Everything in <code>process.env</code> is a string. <code>"false"</code> is truthy, so compare with <code>=== "true"</code> or <code>!== "false"</code>, and turn numbers into numbers. Never commit passwords or tokens: add <code>.env</code> to <code>.gitignore</code> and use your CI tool's secret store.</div>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: lay out a test project</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
+<div class="scenario"><b>The situation</b>You are starting the automation project for a shop. Unit tests, API tests and end to end tests must be runnable on their own, and CI must be able to run each of them as a separate job.</div>
+<p>Source code lives in <code>src</code>. Tests are split by kind under <code>tests</code>. Each kind gets its own npm script, so a developer runs <code>npm run test:unit</code> in seconds while CI runs every script.</p>
+<div class="codewrap tests" data-k="project"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Separate scripts for each kind of test · 🧪 Tests run</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 package.json</div><pre class="src" data-file="package.json">{
+  <span class="s">"name"</span>: <span class="s">"shop-tests"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"type"</span>: <span class="s">"module"</span>,
+  <span class="s">"scripts"</span>: {
+    <span class="s">"test:unit"</span>: <span class="s">"node --test --test-reporter=spec tests/unit/"</span>,
+    <span class="s">"test:api"</span>: <span class="s">"node --test --test-reporter=spec tests/api/"</span>
+  }
+}</pre><div class="fname">📄 src/price.js</div><pre class="src" data-file="src/price.js"><span class="k">export</span> <span class="k">function</span> addTax(amount, rate = <span class="n">0.18</span>) {
+  <span class="k">return</span> <span class="t">Math</span>.round(amount * (<span class="n">1</span> + rate) * <span class="n">100</span>) / <span class="n">100</span>;
+}</pre><div class="fname">📄 src/api.js</div><pre class="src" data-file="src/api.js"><span class="k">export</span> <span class="k">function</span> buildQuery(params) {
+  <span class="k">return</span> <span class="k">new</span> <span class="t">URLSearchParams</span>(<span class="t">Object</span>.entries(params).filter(([, v]) =&gt; v != <span class="k">null</span>)).toString();
+}</pre><div class="fname">📄 tests/unit/price.test.js</div><pre class="src" data-file="tests/unit/price.test.js"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> { addTax } <span class="k">from</span> <span class="s">"../../src/price.js"</span>;
+
+test(<span class="s">"adds 18% by default"</span>, () =&gt; assert.equal(addTax(<span class="n">100</span>), <span class="n">118</span>));
+test(<span class="s">"rounds to paise"</span>, () =&gt; assert.equal(addTax(<span class="n">9.99</span>), <span class="n">11.79</span>));</pre><div class="fname">📄 tests/api/query.test.js</div><pre class="src" data-file="tests/api/query.test.js"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+<span class="k">import</span> { buildQuery } <span class="k">from</span> <span class="s">"../../src/api.js"</span>;
+
+test(<span class="s">"drops empty filters"</span>, () =&gt; {
+  assert.equal(buildQuery({ q: <span class="s">"pen"</span>, page: <span class="n">2</span>, sort: <span class="k">null</span> }), <span class="s">"q=pen&amp;page=2"</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npm run -s test:unit &amp;&amp; npm run -s test:api</pre></div><div class="out"><span>Terminal output</span><pre>✔ adds 18% by default (0.5ms)
+✔ rounds to paise (0.5ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 0.5
+✔ drops empty filters (0.5ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 0.5</pre></div></div>
+<div class="tip"><b>A typical layout</b><pre class="tree">shop-tests/
+  package.json, package-lock.json, tsconfig.json, eslint.config.js
+  .env.example        names of the variables, no real values
+  src/                helpers, API clients, test data builders
+  pages/              page objects
+  tests/unit/         fast checks of pure functions
+  tests/api/          HTTP requests against a running server
+  tests/e2e/          browser tests with Playwright or Cypress
+  playwright.config.ts</pre></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./js-oop.html" data-topic="js-oop"><small>← Previous chapter</small><b>🏛️ Classes and OOP</b></a><span></span></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "From one file to a real project", "panels": [{"s": [["e", "📦"], ["t", "import { addTax } from \"./money.js\"", {"b": 1, "size": 11}]], "h": "Modules", "t": "Each file shares only what it exports.", "more": "ES modules in new code, CommonJS in older code."}, {"s": [["e", "📥"], ["t", "npm ci", {"b": 1}]], "h": "Packages", "t": "npm installs tools and records exact versions.", "more": "The lock file makes every machine install the same thing."}, {"s": [["e", "🔷"], ["t", "total: number", {"b": 1}]], "h": "Types", "t": "TypeScript catches wrong data while you type.", "more": "Node.js runs .ts files, tsc checks them."}, {"s": [["e", "🧹"], ["t", "eslint . && prettier --check .", {"b": 1, "size": 11}]], "h": "Quality gates", "t": "Lint finds risky code, Prettier fixes layout.", "more": "Both run in CI before the tests."}], "remember": "Modules split the code, npm brings the tools, TypeScript and ESLint catch mistakes before tests run."}, "real": [["🏭", "A monorepo", "A company keeps its web app, its API and its Playwright suite in one repository with npm workspaces, so a change and its tests land in one pull request."], ["🔒", "A supply chain alert", "npm audit flags a vulnerable package in the test tools. The team updates it in the lock file and CI confirms nothing broke."], ["🌍", "One suite, three environments", "The same Playwright tests run against dev, staging and pre-production by changing BASE_URL and the test user in the CI job."]], "quiz": [{"lv": "e", "q": "Which line imports a named export called addTax?", "o": ["import { addTax } from \"./money.js\"", "import addTax from \"./money.js\"", "require addTax from \"./money.js\"", "import \"./money.js\" as addTax"], "a": 0, "hint": "Named exports go in braces.", "why": "Without braces you would get the default export instead."}, {"lv": "e", "q": "Which command should CI use to install dependencies?", "o": ["npm ci", "npm install", "npm update", "npx install"], "a": 0, "hint": "Clean and exact.", "why": "<code>npm ci<\/code> installs exactly what the lock file says and fails if it is out of date."}, {"lv": "e", "q": "Where do test tools such as Playwright and Jest usually go?", "o": ["devDependencies", "dependencies", "scripts", "engines"], "a": 0, "hint": "Needed only to build and test.", "why": "devDependencies are not installed when the app itself is deployed."}, {"lv": "m", "q": "What does \"^1.56.0\" allow?", "o": ["1.56.0 up to, but not including, 2.0.0", "Only 1.56.x", "Only 1.56.0", "Any version"], "a": 0, "hint": "Caret: same major.", "why": "A caret allows new minor and patch versions within major version 1."}, {"lv": "m", "q": "You see \"Cannot use import statement outside a module\". What is the usual fix?", "o": ["Add \"type\": \"module\" to package.json or use .mjs", "Install the import package", "Use var instead of const", "Restart the computer"], "a": 0, "hint": "The file is being treated as CommonJS.", "why": "Node.js decides the module system from the extension and the type field."}, {"lv": "m", "q": "process.env.HEADLESS is \"false\". What is Boolean(process.env.HEADLESS)?", "o": ["true", "false", "undefined", "It throws"], "a": 0, "hint": "Every non empty string is truthy.", "why": "Environment values are strings, so compare them as text."}, {"lv": "h", "q": "What does Node.js do with type annotations in a .ts file?", "o": ["Removes them and runs the code without checking them", "Checks them and refuses to run", "Converts them to JSDoc", "Ignores the whole file"], "a": 0, "hint": "Type stripping.", "why": "Checking is done separately by <code>tsc<\/code>."}, {"lv": "h", "q": "Which tool would report total == 150 when the rule eqeqeq is on?", "o": ["ESLint", "Prettier", "npm", "tsc"], "a": 0, "hint": "A rule about code quality.", "why": "Prettier only changes layout. ESLint enforces rules like using ===."}, {"lv": "h", "q": "A module is imported by five test files. How many times does its top level code run?", "o": ["Once", "Five times", "Never", "Once per test"], "a": 0, "hint": "Modules are cached.", "why": "A module is evaluated once, and every importer shares the same exports."}, {"lv": "x", "q": "Why might a team avoid export default?", "o": ["Named exports keep one name everywhere, which helps search and refactoring", "Default exports are slower", "Default exports are not standard", "Default exports cannot be functions"], "a": 0, "hint": "import Foo vs import Bar of the same thing.", "why": "Each importer can call a default export by a different name, which makes code harder to search."}, {"lv": "x", "q": "What does a lock file protect you from?", "o": ["A dependency getting a new version between two installs and changing behaviour", "Viruses", "Running out of disk", "Syntax errors"], "a": 0, "hint": "Reproducible installs.", "why": "Without a lock file, a range like ^1.2.0 can resolve to a different version tomorrow."}, {"lv": "x", "q": "Which TypeScript error did tsc report first for discount({ id: 7, total: \"499\" })?", "o": ["order.coupon is possibly undefined", "id must be a string", "discount is not exported", "interface is a reserved word"], "a": 0, "hint": "coupon has a question mark.", "why": "An optional property may be undefined, so calling <code>.length<\/code> on it is flagged. The string total is the second error."}], "calc": [{"lv": "e", "q": "A project has 3 dependencies and 5 devDependencies. How many packages does package.json list?", "ans": "8", "hint": "Add both lists.", "steps": ["<span class=\"eq\">3 + 5 = 8<\/span>"]}, {"lv": "e", "q": "What is the MAJOR number in version 4.12.7?", "ans": "4", "hint": "MAJOR.MINOR.PATCH.", "steps": ["The first number is the major version."]}, {"lv": "m", "q": "Which of 1.56.9, 1.57.0, 2.0.0 does \"~1.56.0\" allow? Answer with how many.", "ans": "1", "hint": "Tilde: same minor.", "steps": ["Only 1.56.9 keeps minor version 56."]}, {"lv": "m", "q": "Unit tests take 20 s, API tests 90 s, e2e tests 6 minutes. In seconds, how long is the whole run one after another?", "ans": "470", "hint": "Turn minutes into seconds.", "steps": ["<span class=\"eq\">6 × 60 = 360<\/span>", "<span class=\"eq\">20 + 90 + 360 = 470<\/span>"]}, {"lv": "h", "q": "The same three jobs run in parallel CI jobs. In seconds, how long until all are done?", "ans": "360", "hint": "The slowest job decides.", "steps": ["Parallel jobs finish when the longest one ends: 360 s."]}, {"lv": "h", "q": "WORKERS is \"4\" in .env. What is process.env.WORKERS + 1?", "ans": "41", "hint": "A string plus a number.", "steps": ["Environment values are strings.", "<span class=\"eq\">\"4\" + 1 = \"41\"<\/span>"], "alt": ["\"41\""]}, {"lv": "x", "q": "How many errors did tsc report for src/order.ts?", "ans": "2", "hint": "Read the output.", "steps": ["coupon is possibly undefined.", "The string \"499\" is not a number."]}, {"lv": "x", "q": "semver.maxSatisfying([\"1.55.0\", \"1.56.4\", \"1.60.1\", \"2.1.0\"], \"^1.56.0\") returned what?", "ans": "1.60.1", "hint": "The highest version inside the range.", "steps": ["1.55.0 is too low and 2.1.0 is a new major.", "Of 1.56.4 and 1.60.1, the higher is 1.60.1."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers modules, npm and package.json, TypeScript, ESLint and Prettier, environment variables and the layout of a test project.", "hi": "यह अध्याय modules, npm और package.json, TypeScript, ESLint और Prettier, environment variables और test project का ढांचा सिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ modules, npm ಮತ್ತು package.json, TypeScript, ESLint ಮತ್ತು Prettier, environment variables ಮತ್ತು test project ರಚನೆ ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ modules, npm ଓ package.json, TypeScript, ESLint ଓ Prettier, environment variables ଓ test project ର ଗଠନ ଶିଖାଏ।", "ar": "يتناول هذا الفصل الوحدات وnpm وملف package.json وTypeScript وESLint وPrettier ومتغيرات البيئة وتنظيم مشروع الاختبار.", "de": "Dieses Kapitel behandelt Module, npm und package.json, TypeScript, ESLint und Prettier, Umgebungsvariablen und den Aufbau eines Testprojekts."}, {"id": "esm", "h": "ES modules", "en": "Each module shares only what it exports. Import named values in braces, a default value with any name, or load a module later with dynamic import.", "hi": "हर module सिर्फ वही share करता है जो वह export करता है। Named values braces में import करें, default किसी भी नाम से।", "kn": "ಪ್ರತಿ module ತಾನು export ಮಾಡಿದ್ದನ್ನು ಮಾತ್ರ ಹಂಚುತ್ತದೆ. Named values braces ನಲ್ಲಿ, default ಯಾವುದೇ ಹೆಸರಿನಲ್ಲಿ import ಮಾಡಿ.", "or": "ପ୍ରତ୍ୟେକ module କେବଳ ଯାହା export କରେ ତାହା share କରେ। Named values braces ରେ, default ଯେକୌଣସି ନାମରେ import କରନ୍ତୁ।", "ar": "تشارك كل وحدة ما تصدره فقط. استورد القيم المسماة بين أقواس، والقيمة الافتراضية بأي اسم، أو حمّل وحدة لاحقًا بالاستيراد الديناميكي.", "de": "Jedes Modul teilt nur, was es exportiert. Benannte Werte in Klammern importieren, den Standardwert unter beliebigem Namen."}, {"id": "cjs", "h": "CommonJS", "en": "Older code uses require and module exports. The file extension or the type field in package json decides which style a file uses.", "hi": "पुराना code require और module.exports इस्तेमाल करता है। File extension या package.json का type तय करता है कि कौन सा style है।", "kn": "ಹಳೆಯ code require ಮತ್ತು module.exports ಬಳಸುತ್ತದೆ. File extension ಅಥವಾ package.json ನ type style ನಿರ್ಧರಿಸುತ್ತದೆ.", "or": "ପୁରୁଣା code require ଓ module.exports ବ୍ୟବହାର କରେ। File extension କିମ୍ବା package.json ର type style ସ୍ଥିର କରେ।", "ar": "يستخدم الكود القديم require وmodule.exports. يحدد امتداد الملف أو حقل type في package.json النمط المستخدم.", "de": "Älterer Code nutzt require und module.exports. Die Dateiendung oder das type-Feld in package.json entscheidet den Stil."}, {"id": "npm", "h": "npm", "en": "npm installs packages and records them in package json. The lock file pins exact versions, and npm ci installs exactly those in CI.", "hi": "npm packages install करता है और package.json में लिखता है। Lock file exact versions तय करती है, और CI में npm ci वही install करता है।", "kn": "npm packages install ಮಾಡಿ package.json ನಲ್ಲಿ ಬರೆಯುತ್ತದೆ. Lock file exact versions ಸ್ಥಿರಗೊಳಿಸುತ್ತದೆ, CI ನಲ್ಲಿ npm ci ಅವನ್ನೇ install ಮಾಡುತ್ತದೆ.", "or": "npm packages install କରି package.json ରେ ଲେଖେ। Lock file exact versions ସ୍ଥିର କରେ, CI ରେ npm ci ସେଗୁଡ଼ିକୁ install କରେ।", "ar": "يثبت npm الحزم ويسجلها في package.json. يثبت ملف القفل الإصدارات بدقة، ويثبتها npm ci كما هي في CI.", "de": "npm installiert Pakete und trägt sie in package.json ein. Die Lock-Datei fixiert Versionen, npm ci installiert genau diese im CI."}, {"id": "typescript", "h": "TypeScript", "en": "TypeScript adds types to JavaScript. Node runs ts files by removing the types, and tsc checks them for mistakes.", "hi": "TypeScript JavaScript में types जोड़ता है। Node types हटाकर ts files चलाता है, और tsc गलतियां जांचता है।", "kn": "TypeScript JavaScript ಗೆ types ಸೇರಿಸುತ್ತದೆ. Node types ತೆಗೆದು ts files ಓಡಿಸುತ್ತದೆ, tsc ತಪ್ಪುಗಳನ್ನು ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "TypeScript JavaScript ରେ types ଯୋଡ଼େ। Node types ହଟାଇ ts files ଚଲାଏ, ଏବଂ tsc ଭୁଲ ଯାଞ୍ଚ କରେ।", "ar": "يضيف TypeScript الأنواع إلى JavaScript. يشغل Node ملفات ts بإزالة الأنواع، ويتحقق tsc من الأخطاء.", "de": "TypeScript ergänzt JavaScript um Typen. Node führt ts-Dateien ohne Typen aus, tsc prüft sie auf Fehler."}, {"id": "lint", "h": "Lint and format", "en": "ESLint finds risky code without running it. Prettier formats code the same way for everyone. Lint your tests too.", "hi": "ESLint code चलाए बिना जोखिम भरा code ढूंढता है। Prettier सबका code एक जैसा format करता है। Tests को भी lint करें।", "kn": "ESLint code ಓಡಿಸದೆ ಅಪಾಯಕಾರಿ code ಹುಡುಕುತ್ತದೆ. Prettier ಎಲ್ಲರ code ಒಂದೇ ರೀತಿ format ಮಾಡುತ್ತದೆ. Tests ಅನ್ನೂ lint ಮಾಡಿ.", "or": "ESLint code ନ ଚଲାଇ ବିପଦଜନକ code ଖୋଜେ। Prettier ସମସ୍ତଙ୍କ code ଏକା ପରି format କରେ। Tests କୁ ମଧ୍ୟ lint କରନ୍ତୁ।", "ar": "يجد ESLint الكود الخطر دون تشغيله. ينسق Prettier الكود بالطريقة نفسها للجميع. افحص اختباراتك أيضًا.", "de": "ESLint findet riskanten Code, ohne ihn auszuführen. Prettier formatiert für alle gleich. Prüfe auch deine Tests."}, {"id": "env", "h": "Environment", "en": "Settings that change between environments come from process env. Everything there is a string, and secrets never go into git.", "hi": "Environments के बीच बदलने वाली settings process.env से आती हैं। वहां सब string है, और secrets कभी git में न डालें।", "kn": "Environments ನಡುವೆ ಬದಲಾಗುವ settings process.env ನಿಂದ ಬರುತ್ತವೆ. ಅಲ್ಲಿ ಎಲ್ಲವೂ string, secrets git ಗೆ ಹಾಕಬೇಡಿ.", "or": "Environments ମଧ୍ୟରେ ବଦଳୁଥିବା settings process.env ରୁ ଆସେ। ସେଠାରେ ସବୁ string, ଏବଂ secrets git ରେ ରଖନ୍ତୁ ନାହିଁ।", "ar": "تأتي الإعدادات التي تتغير بين البيئات من process.env. كل ما فيها نص، ولا تضع الأسرار في git أبدًا.", "de": "Einstellungen, die sich je Umgebung ändern, kommen aus process.env. Alles dort ist Text, Geheimnisse gehören nie ins Git."}, {"id": "scenario", "h": "Scenario", "en": "A test project keeps source, page objects and each kind of test in its own folder, with one npm script per kind.", "hi": "Test project source, page objects और हर तरह के test को अलग folder में रखता है, हर तरह के लिए एक npm script के साथ।", "kn": "Test project source, page objects ಮತ್ತು ಪ್ರತಿ ರೀತಿಯ test ಅನ್ನು ಬೇರೆ folder ನಲ್ಲಿ ಇಡುತ್ತದೆ, ಪ್ರತಿಯೊಂದಕ್ಕೂ ಒಂದು npm script.", "or": "Test project source, page objects ଓ ପ୍ରତ୍ୟେକ ପ୍ରକାର test କୁ ଅଲଗା folder ରେ ରଖେ, ପ୍ରତ୍ୟେକ ପାଇଁ ଗୋଟିଏ npm script।", "ar": "يحفظ مشروع الاختبار الكود وكائنات الصفحات وكل نوع من الاختبارات في مجلد خاص، مع سكربت npm لكل نوع.", "de": "Ein Testprojekt hält Quellcode, Page Objects und jede Testart in eigenen Ordnern, mit einem npm-Skript pro Art."}, {"id": "practice", "h": "Hands-on", "en": "Practise reading configuration, checking version ranges, parsing an env file and resolving import paths.", "hi": "Configuration पढ़ना, version ranges जांचना, env file parse करना और import paths निकालने का अभ्यास करें।", "kn": "Configuration ಓದುವುದು, version ranges ಪರಿಶೀಲಿಸುವುದು, env file parse ಮಾಡುವುದು ಮತ್ತು import paths ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Configuration ପଢ଼ିବା, version ranges ଯାଞ୍ଚ, env file parse ଓ import paths ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على قراءة الإعدادات وفحص نطاقات الإصدارات وتحليل ملف env وحل مسارات الاستيراد.", "de": "Übe das Lesen von Konfiguration, Versionsbereiche, das Parsen einer env-Datei und das Auflösen von Importpfaden."}], "ex": [{"id": "env-parse", "lv": "e", "title": "Parse an env file", "task": "<p>Write <code>parseEnv(text)<\/code> that turns lines like <code>KEY=value<\/code> into an object. Skip empty lines and lines starting with <code>#<\/code>. Values may contain <code>=<\/code>, so split only at the first one.<\/p>", "starter": "function parseEnv(text) {\n  \n}", "tests": [{"call": "parseEnv(\"A=1\\nB=two\")", "want": {"A": "1", "B": "two"}}, {"call": "parseEnv(\"# comment\\n\\nURL=https://x.example/?a=b\")", "want": {"URL": "https://x.example/?a=b"}}, {"call": "parseEnv(\"\")", "want": {}}], "solution": "function parseEnv(text) {\n  const out = {};\n  for (const line of text.split(\"\\n\")) {\n    const t = line.trim();\n    if (!t || t.startsWith(\"#\")) continue;\n    const i = t.indexOf(\"=\");\n    out[t.slice(0, i)] = t.slice(i + 1);\n  }\n  return out;\n}", "hint": "Use <code>indexOf(\"=\")<\/code> and <code>slice<\/code>, not <code>split(\"=\")<\/code>.", "why": "URLs and tokens often contain <code>=<\/code>, so splitting at every one would cut them apart."}, {"id": "config", "lv": "m", "title": "Typed config from strings", "task": "<p>Write <code>loadConfig(env)<\/code> that reads a plain object of strings and returns <code>{ baseURL, headless, workers }<\/code>. <code>baseURL<\/code> defaults to <code>\"http://localhost:3000\"<\/code>. <code>headless<\/code> is false only when the value is exactly <code>\"false\"<\/code>. <code>workers<\/code> is a number, default 2.<\/p>", "starter": "function loadConfig(env) {\n  \n}", "tests": [{"call": "loadConfig({})", "want": {"baseURL": "http://localhost:3000", "headless": true, "workers": 2}}, {"call": "loadConfig({ BASE_URL: \"https://staging.example\", HEADLESS: \"false\", WORKERS: \"4\" })", "want": {"baseURL": "https://staging.example", "headless": false, "workers": 4}}], "solution": "function loadConfig(env) {\n  return {\n    baseURL: env.BASE_URL ?? \"http://localhost:3000\",\n    headless: env.HEADLESS !== \"false\",\n    workers: Number(env.WORKERS ?? 2),\n  };\n}", "hint": "<code>??<\/code> gives defaults, <code>Number()<\/code> converts the text.", "why": "Turning strings into real types in one place means the rest of the suite never has to remember that env values are text."}, {"id": "caret", "lv": "h", "title": "Does ^ allow it?", "task": "<p>Write <code>caretAllows(range, version)<\/code> for ranges like <code>\"^1.4.2\"<\/code> and versions like <code>\"1.9.0\"<\/code>. Return true when the major numbers match and the version is not lower than the range. To keep it short, ignore the stricter rule for major version 0.<\/p>", "starter": "function caretAllows(range, version) {\n  \n}", "tests": [{"call": "caretAllows(\"^1.4.2\", \"1.9.0\")", "want": true}, {"call": "caretAllows(\"^1.4.2\", \"1.4.1\")", "want": false}, {"call": "caretAllows(\"^1.4.2\", \"2.0.0\")", "want": false}, {"call": "caretAllows(\"^1.4.2\", \"1.4.10\")", "want": true}], "solution": "function caretAllows(range, version) {\n  const [a1, a2, a3] = range.slice(1).split(\".\").map(Number);\n  const [b1, b2, b3] = version.split(\".\").map(Number);\n  if (a1 !== b1) return false;\n  if (b2 !== a2) return b2 > a2;\n  return b3 >= a3;\n}", "hint": "Turn both into three numbers. Compare minor first, then patch.", "why": "Comparing as numbers matters: as text, \"1.4.10\" would sort before \"1.4.2\"."}, {"id": "resolve", "lv": "x", "title": "Resolve an import path", "task": "<p>Write <code>resolveImport(fromFile, spec)<\/code>. For a relative <code>spec<\/code> starting with <code>./<\/code> or <code>../<\/code>, return the path of the imported file relative to the project root, as Node.js would. For anything else (a package name), return <code>\"node_modules/\" + spec<\/code>.<\/p>", "starter": "function resolveImport(fromFile, spec) {\n  \n}", "tests": [{"call": "resolveImport(\"tests/unit/price.test.js\", \"../../src/price.js\")", "want": "src/price.js"}, {"call": "resolveImport(\"tests/e2e/login.spec.js\", \"./helpers.js\")", "want": "tests/e2e/helpers.js"}, {"call": "resolveImport(\"tests/a.js\", \"vitest\")", "want": "node_modules/vitest"}], "solution": "function resolveImport(fromFile, spec) {\n  if (!spec.startsWith(\"./\") && !spec.startsWith(\"../\")) return \"node_modules/\" + spec;\n  const parts = fromFile.split(\"/\").slice(0, -1);\n  for (const piece of spec.split(\"/\")) {\n    if (piece === \"..\") parts.pop();\n    else if (piece !== \".\") parts.push(piece);\n  }\n  return parts.join(\"/\");\n}", "hint": "Start from the folder of <code>fromFile<\/code>. <code>..<\/code> removes a folder, <code>.<\/code> does nothing, any other piece is added.", "why": "This is what happens every time a test imports a page object, and getting it wrong is the cause of most \"Cannot find module\" errors."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Modules, npm, TypeScript and Tooling", subject: "javascript" });
+</script>
+</body>
+</html>

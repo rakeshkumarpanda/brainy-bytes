@@ -1750,6 +1750,46 @@ function jsModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "js-structure", title: "Structure and tooling", emoji: "🏗️", blurb: "Classes, modules, packages, TypeScript and the tools that keep a growing codebase and test suite in order.", topics: [
+      { id: "js-oop", title: "Prototypes, Classes and the Page Object Model", emoji: "🏛️", page: "content/javascript/js-oop.html",
+        summary: "The prototype chain, constructor functions and new, classes with fields, getters and static methods, lost this and other class traps, private fields and static blocks, inheritance with extends and super, custom error classes with cause, mixins and dependency injection, the Page Object Model in plain DOM, Playwright and Selenium, a test data builder and an API client class.",
+        keywords: ["prototype", "class", "constructor", "getter", "static", "private field", "extends", "super", "custom error", "mixin", "composition", "dependency injection", "Page Object Model", "POM", "builder pattern"],
+        added: "2026-10-20",
+        sections: [
+        { id: "prototypes", title: "Objects and prototypes", emoji: "🧬", group: "Lesson", keywords: ["prototype", "prototype chain", "__proto__", "Object.create", "Object.getPrototypeOf", "hasOwn", "constructor function", "new", "Object.prototype"] },
+        { id: "classes", title: "Classes", emoji: "🏛️", group: "QA essential", keywords: ["class", "constructor", "method", "field", "getter", "setter", "get", "static", "this", "chaining", "strict mode", "hoisting"] },
+        { id: "private", title: "Private fields and encapsulation", emoji: "🔒", group: "Lesson", keywords: ["private", "#", "private field", "private method", "encapsulation", "static block", "ergonomic brand check", "in", "ES2022"] },
+        { id: "inheritance", title: "Inheritance with extends and super", emoji: "🌳", group: "QA essential", keywords: ["extends", "super", "inheritance", "override", "instanceof", "subclass", "custom error", "Error cause", "HttpError", "BasePage"] },
+        { id: "composition", title: "Composition over inheritance", emoji: "🧩", group: "Lesson", keywords: ["composition", "mixin", "dependency injection", "has a", "is a", "component", "logger", "retry"] },
+        { id: "pom", title: "The Page Object Model", emoji: "📄", group: "QA essential", keywords: ["Page Object Model", "POM", "page object", "locator", "loginAs", "BasePage", "component", "Playwright", "Selenium", "maintainable tests"] },
+        { id: "scenario", title: "Real world scenario: test data and an API client", emoji: "🎬", group: "QA essential", keywords: ["builder pattern", "test data builder", "API client", "base class", "dependency injection", "fake transport", "fluent interface"] },
+        { id: "rect", title: "A rectangle class", emoji: "🏋️", group: "Easy practice" },
+        { id: "stack", title: "A stack with private storage", emoji: "🏋️", group: "Medium practice" },
+        { id: "errors", title: "A custom error class", emoji: "🏋️", group: "Hard practice" },
+        { id: "page-object", title: "A page object for a search box", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "js-modules-tooling", title: "Modules, npm, TypeScript and Tooling", emoji: "📦", page: "content/javascript/js-modules-tooling.html",
+        summary: "Named and default exports, dynamic import, JSON modules, CommonJS and how it mixes with ES modules, package.json scripts and dependencies, semantic version ranges, npm ci and the lock file, TypeScript types and the type checker, ESLint and Prettier on real code, environment variables with --env-file, and a test project with separate unit and API scripts.",
+        keywords: ["import", "export", "ES modules", "CommonJS", "require", "npm", "package.json", "semver", "package-lock.json", "npm ci", "TypeScript", "tsc", "ESLint", "Prettier", "process.env", ".env", "project structure"],
+        added: "2026-10-20",
+        sections: [
+        { id: "esm", title: "ES modules: import and export", emoji: "📦", group: "QA essential", keywords: ["module", "ES modules", "ESM", "import", "export", "default export", "named export", "dynamic import", "top level await", "import attributes", "JSON modules", "import.meta"] },
+        { id: "cjs", title: "CommonJS and how the two mix", emoji: "🧱", group: "QA essential", keywords: ["CommonJS", "require", "module.exports", ".cjs", ".mjs", "type module", "Cannot use import statement outside a module", "__dirname", "require esm"] },
+        { id: "npm", title: "npm and package.json", emoji: "📥", group: "QA essential", keywords: ["npm", "package.json", "package-lock.json", "node_modules", "dependencies", "devDependencies", "scripts", "npm ci", "npx", "semver", "caret", "tilde", "npm audit"] },
+        { id: "typescript", title: "TypeScript", emoji: "🔷", group: "QA essential", keywords: ["TypeScript", "types", "interface", "type alias", "union", "generics", "tsc", "tsconfig", "type stripping", "strict", "erasableSyntaxOnly", "optional property"] },
+        { id: "lint", title: "ESLint and Prettier", emoji: "🧹", group: "QA essential", keywords: ["ESLint", "lint", "eslint.config.js", "flat config", "rules", "Prettier", "format", "no-unused-vars", "eqeqeq", "no-floating-promises", "eslint-plugin-playwright"] },
+        { id: "env", title: "Environment variables and config", emoji: "🔐", group: "QA essential", keywords: ["environment variables", "process.env", ".env", "--env-file", "dotenv", "secrets", "config", "baseURL", "staging"] },
+        { id: "scenario", title: "Real world scenario: lay out a test project", emoji: "🎬", group: "QA essential", keywords: ["project structure", "folder layout", "npm scripts", "test:unit", "test:api", "test:e2e", "node --test", "CI jobs"] },
+        { id: "env-parse", title: "Parse an env file", emoji: "🏋️", group: "Easy practice" },
+        { id: "config", title: "Typed config from strings", emoji: "🏋️", group: "Medium practice" },
+        { id: "caret", title: "Does ^ allow it?", emoji: "🏋️", group: "Hard practice" },
+        { id: "resolve", title: "Resolve an import path", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

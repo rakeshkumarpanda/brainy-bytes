@@ -171,7 +171,7 @@ const fs = require('fs');
 const vc = new VirtualConsole();
 vc.forwardTo(console, { jsdomErrors: 'none' });
 vc.on('jsdomError', e => console.error(String(e.detail || e.message)));
-const dom = new JSDOM(fs.readFileSync('page.html', 'utf8'), { runScripts: 'outside-only', virtualConsole: vc, url: 'https://shop.example/' });
+const dom = new JSDOM(fs.readFileSync('page.html', 'utf8'), { runScripts: 'dangerously', virtualConsole: vc, url: 'https://shop.example/' });
 dom.window.eval(fs.readFileSync('code.js', 'utf8'));
 setTimeout(() => dom.window.close(), 1500);
 '''
@@ -255,6 +255,8 @@ def js(v):
 
 
 def badge(spec):
+    if spec.get('badge'):
+        return spec['badge']
     if spec['t'] == 'run':
         return '▶ Runs' if spec.get('expect', 'ok') == 'ok' else '💥 Throws'
     if spec['t'] == 'dom':
@@ -290,9 +292,16 @@ def block(key, spec, res):
     code = spec['code'].strip('\n')
     lang = spec.get('lang', 'js')
     body = ''
+    if spec['t'] == 'run' and spec.get('extra'):
+        # A small multi file program: show the helper files, then the file that is run and the command.
+        for n, src in spec['extra'].items():
+            body += f'<div class="fname">📄 {esc(n)}</div><pre class="src" data-file="{esc(n)}">{hl(src.strip(chr(10)), lang_of(n))}</pre>'
+        body += f'<div class="fname">📄 {esc(spec.get("file", "main.mjs"))}</div>'
     if spec['t'] == 'dom':
         body += f'<div class="fname">📄 page.html</div><pre class="src fixture">{hl(spec["html"].strip(chr(10)), "html")}</pre><div class="fname">📄 script.js</div>'
     body += f'<pre class="src main">{hl(code, lang)}</pre>'
+    if spec['t'] == 'run' and (spec.get('extra') or spec.get('flags')):
+        body += f'<div class="cmd"><span>Terminal</span><pre>$ {esc(" ".join(["node", *spec.get("flags", []), spec.get("file", "main.mjs")]))}</pre></div>'
     if spec['t'] in ('run', 'dom'):
         want_fail = spec.get('expect', 'ok') != 'ok'
         if (res['code'] != 0) != want_fail:
@@ -318,7 +327,7 @@ def trim(out, spec):
 def lang_of(name):
     ext = name.rsplit('.', 1)[-1]
     return {'js': 'js', 'mjs': 'js', 'cjs': 'js', 'ts': 'ts', 'json': 'json', 'html': 'html', 'yml': 'yaml', 'yaml': 'yaml',
-            'java': 'java', 'py': 'py', 'sh': 'bash'}.get(ext, 'js')
+            'java': 'java', 'py': 'py', 'sh': 'bash', 'env': 'bash', 'txt': 'bash'}.get(ext, 'js')
 
 
 def load_topic(path):
