@@ -2729,6 +2729,23 @@ function claudeModules() {
         { id: "pick-model", title: "Pick a model", emoji: "🏋️", group: "Hard practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-agents", title: "Build Your Own Agents", emoji: "🤖", page: "content/claude/claude-agents.html",
+        summary: "The agent loop explained, writing tool definitions, a two round stock agent built by hand and run step by step, the tool runner version with a spending gate that refuses a big order, the Claude Agent SDK with built-in tools, and a table for choosing the right approach.",
+        keywords: ["agents", "agent loop", "tools", "tool_use", "tool_result", "tool runner", "@beta_tool", "Claude Agent SDK", "claude-agent-sdk", "safety gate", "Managed Agents"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What an agent really is", emoji: "🔁", group: "Beginner path", keywords: ["agent", "agent loop", "tool_use", "tool_result", "stop_reason"] },
+        { id: "tools", title: "Define tools Claude can use", emoji: "🧰", group: "Beginner path", keywords: ["tool definition", "input_schema", "tool description", "JSON schema"] },
+        { id: "manual", title: "Build the loop by hand, step by step", emoji: "✍️", group: "Beginner path", keywords: ["manual agent loop", "tool_use_id", "messages", "max steps"] },
+        { id: "runner", title: "Less code with the tool runner", emoji: "🏃", group: "Lesson", keywords: ["tool runner", "@beta_tool", "tool_runner", "safety gate", "human approval"] },
+        { id: "sdk", title: "The Claude Agent SDK: Claude Code as a library", emoji: "🧠", group: "Beginner path", keywords: ["Claude Agent SDK", "claude-agent-sdk", "query", "ClaudeAgentOptions", "allowed_tools"] },
+        { id: "choose", title: "Which way to build your agent", emoji: "🧭", group: "Beginner path", keywords: ["choose agent approach", "Managed Agents", "workflow vs agent", "start simple"] },
+        { id: "result-block", title: "Build a tool_result", emoji: "🏋️", group: "Easy practice" },
+        { id: "gate", title: "A spending gate", emoji: "🏋️", group: "Medium practice" },
+        { id: "loop-sim", title: "Run a loop", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];

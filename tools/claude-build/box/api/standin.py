@@ -19,7 +19,24 @@ def tokens(s):
     return max(1, round(len(s) / 4))
 
 
+def tool_blocks(text, calls):
+    blocks = [{'type': 'text', 'text': text}] if text else []
+    for c in calls:
+        COUNTER['n'] += 1
+        blocks.append({'type': 'tool_use', 'id': f'toolu_standin_{COUNTER["n"]}', 'name': c['name'], 'input': c['input']})
+    return blocks, 'tool_use'
+
+
 def choose(body):
+    if body.get('tools') and SCRIPT.get('steps'):
+        # A scripted multi step run: step i is used after i rounds of tool results.
+        done = sum(1 for m in body['messages'] if m['role'] == 'assistant')
+        steps = SCRIPT['steps']
+        if done < len(steps):
+            return tool_blocks(steps[done].get('say', ''), steps[done]['calls'])
+        last = body['messages'][-1]['content']
+        joined = '\n'.join(r['content'] if isinstance(r['content'], str) else text_of(r['content']) for r in last if isinstance(r, dict) and r.get('type') == 'tool_result')
+        return [{'type': 'text', 'text': SCRIPT['final'].format(result=joined)}], 'end_turn'
     last = body['messages'][-1]
     content = last['content']
     results = [b for b in content if isinstance(b, dict) and b.get('type') == 'tool_result'] if isinstance(content, list) else []
@@ -30,12 +47,7 @@ def choose(body):
     if body.get('tools'):
         for key, call in SCRIPT.get('tool_calls', {}).items():
             if key in said:
-                calls = call if isinstance(call, list) else [call]
-                blocks = [{'type': 'text', 'text': SCRIPT.get('before_tool', 'Let me check.')}]
-                for c in calls:
-                    COUNTER['n'] += 1
-                    blocks.append({'type': 'tool_use', 'id': f'toolu_standin_{COUNTER["n"]}', 'name': c['name'], 'input': c['input']})
-                return blocks, 'tool_use'
+                return tool_blocks(SCRIPT.get('before_tool', 'Let me check.'), call if isinstance(call, list) else [call])
     for key, reply in SCRIPT.get('replies', {}).items():
         if key in said:
             return [{'type': 'text', 'text': reply}], 'end_turn'
