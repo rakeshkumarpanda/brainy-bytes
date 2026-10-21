@@ -1,5 +1,6 @@
 """Helpers for the Master the Claude topic files. Everything from tools/js-build/kit.py is available here too."""
 import json
+import os
 
 from kit import run, dom, test, show, say, quiz, calc, ex, panel, pkg  # noqa: F401  (re-exported for the topic files)
 
@@ -51,5 +52,21 @@ def hook(script, events, label, name='.claude/hooks/hook.mjs', settings=None, mo
     show_files = ([ '.claude/settings.json'] if settings else []) + [name] + list(more or {})
     spec = {'t': 'test', 'files': files, 'cmd': ' ; '.join(lines) + ' ; true', 'label': label, 'show': show_files,
             'shown_cmd': '\n$ '.join(shown_lines), 'badge': '🪝 Hook run for real with the JSON Claude Code sends'}
+    spec.update(kw)
+    return spec
+
+
+_API = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'box', 'api')
+
+
+def api_run(script, label, replies, name='app.py', more=None, log=True, **kw):
+    """Run a Claude API example written with the real Python SDK against a local stand-in for the API.
+    The stand-in's replies are scripted from replies, so the page labels them as not written by Claude."""
+    files = {name: script, 'replies.json': json.dumps(replies, ensure_ascii=False)}
+    for f in ('standin.py', 'run.py'):
+        files[f] = open(os.path.join(_API, f)).read()
+    files.update(more or {})
+    spec = {'t': 'test', 'files': files, 'cmd': ('STANDIN_LOG=1 ' if log else '') + f'$PY run.py {name}', 'label': label,
+            'show': [name] + list(more or {}), 'shown_cmd': f'python {name}', 'badge': '▶ Real SDK code, run against a local stand-in API with scripted replies'}
     spec.update(kw)
     return spec

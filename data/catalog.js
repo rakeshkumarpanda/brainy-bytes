@@ -2709,6 +2709,27 @@ function claudeModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "claude-build-api", title: "Building with the API", emoji: "🔌", blurb: "Call Claude from your own code: the Messages API, tools, agent loops and the Agent SDK.", topics: [
+      { id: "claude-api", title: "The Claude API Step by Step", emoji: "🧩", page: "content/claude/claude-api.html",
+        summary: "API keys and SDK install, a first call with every response field explained plus TypeScript and curl versions, a tutor with a system prompt and history, models and prices with a cost run, streaming, json_schema outputs, effort and cache_control, and error codes with retries.",
+        keywords: ["Claude API", "Messages API", "anthropic", "messages.create", "system prompt", "streaming", "structured outputs", "pricing", "prompt caching", "effort", "errors"],
+        added: "2026-10-20",
+        sections: [
+        { id: "setup", title: "Get a key and install the SDK", emoji: "🔑", group: "Beginner path", keywords: ["API key", "ANTHROPIC_API_KEY", "pip install anthropic", "@anthropic-ai/sdk", "Claude Console"] },
+        { id: "first", title: "Your first call, line by line", emoji: "👋", group: "Beginner path", keywords: ["messages.create", "model", "max_tokens", "messages", "stop_reason", "usage"] },
+        { id: "system", title: "System prompts and conversations", emoji: "🧑‍🏫", group: "Beginner path", keywords: ["system prompt", "conversation history", "stateless", "multi-turn"] },
+        { id: "models", title: "Choose a model and know the cost", emoji: "⚖️", group: "Beginner path", keywords: ["models", "pricing", "Haiku", "Sonnet", "Opus", "Fable", "tokens", "cost"] },
+        { id: "stream", title: "Streaming: show words as they arrive", emoji: "🌊", group: "Lesson", keywords: ["streaming", "messages.stream", "text_stream", "get_final_message"] },
+        { id: "json", title: "Get JSON your code can trust", emoji: "🧾", group: "Lesson", keywords: ["structured outputs", "json_schema", "output_config", "JSON"] },
+        { id: "cache", title: "Effort and prompt caching", emoji: "💾", group: "Lesson", keywords: ["effort", "prompt caching", "cache_control", "ephemeral", "cache_read_input_tokens"] },
+        { id: "errors", title: "When things go wrong", emoji: "🧯", group: "Lesson", keywords: ["errors", "429", "retries", "max_tokens", "refusal"] },
+        { id: "cost-of", title: "Cost of one call", emoji: "🏋️", group: "Easy practice" },
+        { id: "add-turn", title: "Keep the history", emoji: "🏋️", group: "Medium practice" },
+        { id: "pick-model", title: "Pick a model", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
