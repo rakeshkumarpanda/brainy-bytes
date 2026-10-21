@@ -235,6 +235,16 @@ window.CATALOG = {
       tags: ['Rest Assured', 'Playwright', 'pytest', 'Postman', 'Newman', 'fetch', 'HttpClient', 'JSON Schema'],
       page: 'content/api-automation/api-automation.html'
     },
+    {
+      id: 'master-claude',
+      title: 'Master the Claude',
+      emoji: '✨',
+      color: '#d97757',
+      blurb: 'Get the most out of Claude: prompting, projects, Claude Code and the Claude API.',
+      intro: 'Fourteen chapters in four modules take you from your first chat to your own agents. Learn to prompt well and manage context, then set up Claude Code step by step and see exactly what goes in CLAUDE.md, rules, skills, settings, hooks, subagents, output styles, plugins and .mcp.json, with ready to copy files for real jobs. Build MCP servers in Node.js and Python, automate daily work with claude -p and GitHub Actions, call the Claude API, and build agents with tools and safety limits. Every file name, field and command was checked against the official documentation, and every script, hook, MCP server and SDK example on these pages was run for real. Parts marked Easy make a beginner path a child can follow. The last chapter is a bank of interview questions with hints and full answers.',
+      tags: ['Prompting', 'Claude Code', 'Claude API', 'Agents', 'MCP'],
+      modules: claudeModules().concat(iqModule('master-claude'))
+    },
 
     /* ===== Coming soon subjects. Each one shows a Coming soon card until its first topic gets a page. ===== */
     {
@@ -430,22 +440,6 @@ window.CATALOG = {
         ['Cryptography', '🔏', 'Hashing, encryption and digital signatures.'],
         ['Common attacks', '⚠️', 'Phishing, malware, injection and more.'],
         ['Defence and incident response', '🚨', 'Monitoring, logging and responding to attacks.']
-      ])]
-    },
-    {
-      id: 'master-claude',
-      title: 'Master the Claude',
-      emoji: '✨',
-      color: '#d97757',
-      blurb: 'Get the most out of Claude: prompting, projects, Claude Code and the Claude API.',
-      intro: 'Learn to work with Claude well, from writing clear prompts to building apps and agents with the Claude API and automating coding work with Claude Code.',
-      tags: ['Prompting', 'Claude Code', 'Claude API', 'Agents', 'MCP'],
-      modules: [soonModule([
-        ['Getting started with Claude', '👋', 'What Claude can do and how to ask well.'],
-        ['Prompt engineering', '✍️', 'Clear instructions, examples and structure.'],
-        ['Claude Code', '💻', 'Let Claude read, write and test your code.'],
-        ['The Claude API', '🔌', 'Send messages, stream replies and use tools.'],
-        ['Agents and MCP', '🧠', 'Connect Claude to tools and data with the Model Context Protocol.']
       ])]
     }
   ]
@@ -1281,7 +1275,8 @@ function iqModule(sid) {
     'java': ['content/java/interview-questions.html', 'Real Java interview questions on the JVM, OOP, strings, exceptions, collections, Java 8 streams, threads and framework design, with output questions run on the JDK.', ['JDK JRE JVM', 'string pool', 'equals and hashCode', 'HashMap internals', 'checked exception', 'final finally finalize', 'streams', 'functional interface', 'ThreadLocal', 'singleton', 'immutable class']],
     'testng': ['content/testng/interview-questions.html', 'TestNG questions from automation interviews: annotation order, testng.xml, groups, dependencies, data providers, soft asserts, listeners, retries, parallel runs and Maven.', ['annotation order', 'testng.xml', 'groups', 'dependsOnMethods', 'DataProvider', 'SoftAssert', 'ITestListener', 'IRetryAnalyzer', 'parallel', 'surefire']],
     'javascript': ['content/javascript/interview-questions.html', 'JavaScript and TypeScript questions from developer and automation interviews: types, closures, this, prototypes, the event loop, promises, TypeScript generics and narrowing, unit and API tests, Playwright and framework design, with output questions run on Node.js.', ['var let const', 'hoisting', 'closure', 'this', 'event loop', 'microtask', 'Promise.all', 'debounce', 'deep clone', 'interface vs type', 'any vs unknown', 'generics', 'utility types', 'mocks and spies', 'auto waiting', 'flaky tests', 'fixtures']],
-    'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']]
+    'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']],
+    'master-claude': ['content/claude/interview-questions.html', 'Claude interview questions on prompting, context engineering, CLAUDE.md and rules, skills, permissions and hooks, subagents, MCP, claude -p and GitHub Actions, the Claude API, agents, cost and safety, with real scenario questions.', ['prompt engineering', 'context rot', 'CLAUDE.md', 'rules.md', 'SKILL.md', 'hooks exit code 2', 'subagents', 'MCP', '.mcp.json', 'claude -p', 'tool use loop', 'prompt caching', 'agent safety']]
   }[sid];
   return {
     id: 'interview', title: 'Interview Questions', emoji: '🎤',

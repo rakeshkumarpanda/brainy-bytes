@@ -9,11 +9,12 @@ syntax colouring, quizzes, number practice and exercises. This file adds what th
 
 Every runnable example runs for real when the page is built and the real output is shown under it.
 Hooks are run by piping the same JSON Claude Code sends on stdin. MCP servers are started and called
-by a real MCP client. Nothing that needs a Claude login or an API key is run: those blocks are marked
-"Shown, not run here".
+by a real MCP client. Claude API examples use the real Python SDK against box/api/standin.py, a local
+stand-in for the Messages API whose replies are scripted, and the page says so. Nothing that needs a Claude
+login or a real API key is run: those blocks are marked "Shown, not run here".
 
 Usage:  python3 tools/claude-build/build.py [slug ...]        (no slug builds every chapter)
-Needs:  python3, Node.js 22 or later, npm ci inside tools/claude-build/box, and the Python MCP SDK:
+Needs:  python3, Node.js 22 or later, npm ci inside tools/claude-build/box, and the Python packages (mcp, anthropic):
         python3 -m venv tools/claude-build/box/.venv
         tools/claude-build/box/.venv/bin/pip install -r tools/claude-build/box/requirements.txt
 """
