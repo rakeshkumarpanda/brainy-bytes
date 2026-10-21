@@ -1311,14 +1311,6 @@ function mtModules() {
           { id: "principles", title: "The seven principles of testing", emoji: "📜", group: 'Lesson', keywords: ["seven testing principles", "ISTQB", "presence of defects", "exhaustive testing impossible", "early testing", "defect clustering", "pesticide paradox", "context dependent", "absence of errors fallacy"] },
           { id: "cost", title: "Why a late bug costs more", emoji: "💸", group: 'Lesson', keywords: ["cost of a bug", "shift left", "early testing", "requirement review", "rework", "phase", "production defect"] },
           { id: "roles", title: "Who does what in a software company", emoji: "👥", group: 'Lesson', keywords: ["business analyst", "product analyst", "architect", "development manager", "developer", "test engineer", "test lead", "test manager", "build team", "customer"] },
-          { id: "valid-username", title: "Check the username rule", emoji: '🏋️', group: "Easy practice" },
-          { id: "pass-rate", title: "Summarise a test run", emoji: '🏋️', group: "Easy practice" },
-          { id: "break-even", title: "When does automation pay off?", emoji: '🏋️', group: "Medium practice" },
-          { id: "pareto-modules", title: "Which modules hold most bugs?", emoji: '🏋️', group: "Medium practice" },
-          { id: "record-playback", title: "Replay a recorded script on a new build", emoji: '🏋️', group: "Hard practice" },
-          { id: "one-field-at-a-time", title: "Every combination or one field at a time?", emoji: '🏋️', group: "Hard practice" },
-          { id: "data-driven-test", title: "A data driven test with a bug report", emoji: '🏋️', group: "Expert practice" },
-          { id: "shift-left", title: "How many review rounds?", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1340,14 +1332,6 @@ function mtModules() {
           { id: "vmodel", title: "The V and V model (V model)", emoji: "✌️", group: 'Lesson', keywords: ["V model", "verification and validation", "review", "CRS", "SRS", "HLD", "LLD", "acceptance test document", "system test document", "integration test document", "functional test document", "UAT", "system testing", "integration testing", "functional testing", "white box testing"] },
           { id: "agile", title: "Agile and Scrum", emoji: "🏃", group: 'Lesson', keywords: ["agile", "scrum", "iterative incremental", "user story", "sprint", "release", "scrum team", "scrum master", "product owner", "pigs and chickens", "product backlog", "sprint backlog", "carry forward", "sprint planning", "daily stand up", "retrospective", "kick off"] },
           { id: "choose", title: "Hybrid models and choosing a model", emoji: "🧭", group: 'Lesson', keywords: ["hybrid model", "spiral plus prototype", "prototype plus V", "choosing SDLC model", "comparison of models"] },
-          { id: "phase-order", title: "Is this SDLC plan in the right order?", emoji: '🏋️', group: "Easy practice" },
-          { id: "count-sprints", title: "How many sprints?", emoji: '🏋️', group: "Easy practice" },
-          { id: "waterfall-rework", title: "The price of a late change in waterfall", emoji: '🏋️', group: "Medium practice" },
-          { id: "velocity-forecast", title: "Forecast with velocity", emoji: '🏋️', group: "Medium practice" },
-          { id: "v-model-trace", title: "Which review should have caught it?", emoji: '🏋️', group: "Hard practice" },
-          { id: "spiral-changes", title: "A spiral with a major change", emoji: '🏋️', group: "Hard practice" },
-          { id: "burndown", title: "Read a sprint burndown", emoji: '🏋️', group: "Expert practice" },
-          { id: "sprints-with-dependencies", title: "Plan sprints that respect dependencies", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1396,14 +1380,6 @@ function mtModules() {
           { id: "adhoc", title: "Ad hoc and exploratory testing", emoji: "🐒", group: 'Lesson', keywords: ["ad hoc testing", "monkey testing", "random testing", "negative scenarios", "exploratory testing", "requirement missing", "domain expert"] },
           { id: "uat", title: "User acceptance testing, alpha and beta", emoji: "🤝", group: 'Lesson', keywords: ["UAT", "user acceptance testing", "customer", "business scenarios", "domain expert", "alpha testing", "beta testing", "service based", "product based", "trial version"] },
           { id: "levels", title: "The levels of testing at a glance", emoji: "📶", group: 'Lesson', keywords: ["levels of testing", "unit", "integration", "system", "acceptance", "functional vs non functional"] },
-          { id: "classify-level", title: "Which level of testing is this?", emoji: '🏋️', group: "Easy practice" },
-          { id: "subject-length", title: "Test the subject length", emoji: '🏋️', group: "Easy practice" },
-          { id: "to-field", title: "Validate the To field", emoji: '🏋️', group: "Medium practice" },
-          { id: "plan-stubs", title: "Plan stubs for top down integration", emoji: '🏋️', group: "Medium practice" },
-          { id: "gmail-data-flow", title: "Check Gmail's data flow", emoji: '🏋️', group: "Hard practice" },
-          { id: "smoke-first-days", title: "Smoke first or deep first?", emoji: '🏋️', group: "Hard practice" },
-          { id: "od-rules", title: "Overdraft rules over time", emoji: '🏋️', group: "Expert practice" },
-          { id: "big-bang-suspects", title: "Why big bang hides the culprit", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1423,14 +1399,6 @@ function mtModules() {
           { id: "builds", title: "The build process", emoji: "📦", group: 'Lesson', keywords: ["build", "version control", "build tool", "compile", "compress", "zip", "war", "jar", "build number", "install on test server", "test cycle"] },
           { id: "respin", title: "Respin, patch and blocker", emoji: "🩹", group: 'Lesson', keywords: ["respin", "patch", "blocker bug", "hot fix", "test cycle", "temporary fix", "permanent fix", "tube puncture analogy"] },
           { id: "release", title: "Release, version and the road to production", emoji: "🚀", group: 'Lesson', keywords: ["release", "version", "release vs version", "final product", "UAT", "production", "Cheeta", "Tiger", "Lion"] },
-          { id: "ui-bl-db", title: "UI, business logic or database?", emoji: '🏋️', group: "Easy practice" },
-          { id: "build-ids", title: "Build numbers", emoji: '🏋️', group: "Easy practice" },
-          { id: "server-hits", title: "Count server hits in a session", emoji: '🏋️', group: "Medium practice" },
-          { id: "environment-urls", title: "Environment URLs", emoji: '🏋️', group: "Medium practice" },
-          { id: "sql-cross-check", title: "Cross check the screen with SQL", emoji: '🏋️', group: "Hard practice" },
-          { id: "build-schedule", title: "Schedule the builds", emoji: '🏋️', group: "Hard practice" },
-          { id: "credit-dates", title: "Real calendar dates for the 30 day rule", emoji: '🏋️', group: "Expert practice" },
-          { id: "patch-or-respin", title: "Patch or respin?", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1457,14 +1425,6 @@ function mtModules() {
           { id: "rtm", title: "The repository and the RTM", emoji: "🧭", group: 'Lesson', keywords: ["test case repository", "baseline", "centralised", "smoke test cases", "requirement traceability matrix", "RTM", "CRM", "missing test case", "drawback"] },
           { id: "ter", title: "The test execution report", emoji: "📊", group: 'Lesson', keywords: ["test execution report", "TER", "pass percentage", "fail percentage", "modules", "exit criteria", "stability"] },
           { id: "stlc", title: "STLC: the software testing life cycle", emoji: "🔁", group: 'Lesson', keywords: ["STLC", "software testing life cycle", "system study", "test plan", "test documents", "RTM", "test execution", "defect tracking", "TER", "retrospect", "post mortem"] },
-          { id: "ep-values", title: "Equivalence partitioning values", emoji: '🏋️', group: "Easy practice" },
-          { id: "case-names", title: "Build and parse test case names", emoji: '🏋️', group: "Easy practice" },
-          { id: "bva-list", title: "Boundary values for a whole form", emoji: '🏋️', group: "Medium practice" },
-          { id: "case-status", title: "Pass, fail or partial", emoji: '🏋️', group: "Medium practice" },
-          { id: "rtm-matrix", title: "An RTM with orphans", emoji: '🏋️', group: "Hard practice" },
-          { id: "review-rounds", title: "Review rounds", emoji: '🏋️', group: "Hard practice" },
-          { id: "loan-bug", title: "Catch the interest band bug", emoji: '🏋️', group: "Expert practice" },
-          { id: "pairwise", title: "Generate pairwise tests", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1485,14 +1445,6 @@ function mtModules() {
           { id: "severity", title: "Severity and priority", emoji: "🚦", group: 'Lesson', keywords: ["severity", "priority", "blocker", "critical", "major", "minor", "urgent", "P1", "P2", "P3", "P4", "impact", "which bug first", "examples"] },
           { id: "report", title: "Writing the bug report", emoji: "📝", group: 'Lesson', keywords: ["bug report template", "bug id", "test case name", "module", "status", "reporter", "assigned to", "CC", "release", "version", "severity", "priority", "test data", "server", "OS and browser", "build", "screenshot", "brief description", "steps to reproduce", "observation", "expected result"] },
           { id: "tools", title: "Bug tracking tools and queries", emoji: "🛠️", group: 'Lesson', keywords: ["bug tracking tool", "Jira", "Bugzilla", "Mantis", "Quality Center", "ALM", "manual bug report drawbacks", "logging a bug", "query", "search", "comments"] },
-          { id: "wrong-missing-extra", title: "Wrong, missing or extra", emoji: '🏋️', group: "Easy practice" },
-          { id: "status-history", title: "Validate a status history", emoji: '🏋️', group: "Easy practice" },
-          { id: "severity-table", title: "Bugs by module and severity", emoji: '🏋️', group: "Medium practice" },
-          { id: "merge-duplicates", title: "Merge duplicate reports", emoji: '🏋️', group: "Medium practice" },
-          { id: "bug-aging", title: "How long do bugs stay open", emoji: '🏋️', group: "Hard practice" },
-          { id: "reopen-roles", title: "Who may change the status", emoji: '🏋️', group: "Hard practice" },
-          { id: "defer-plan", title: "Fix or defer before release", emoji: '🏋️', group: "Expert practice" },
-          { id: "retest-plan", title: "Which fixed bugs to retest now", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1517,14 +1469,6 @@ function mtModules() {
           { id: "auto-lc", title: "The automation life cycle", emoji: "⚙️", group: 'Lesson', keywords: ["automation life cycle", "manual team", "automation team", "test cases", "stable application", "tool", "script execution", "failed scripts", "manual retest"] },
           { id: "cant-automate", title: "What cannot be automated", emoji: "🚧", group: 'Lesson', keywords: ["cannot automate", "unstable features", "captcha", "virtual keyboard", "OTP", "complex", "human judgement", "usability"] },
           { id: "compare", title: "The classic comparisons", emoji: "⚖️", group: 'Lesson', keywords: ["smoke vs sanity", "static vs dynamic", "verification", "validation", "QA vs QC", "quality assurance", "quality control", "functional vs non-functional", "preventive", "detective"] },
-          { id: "repo-growth", title: "Repository growth", emoji: '🏋️', group: "Easy practice" },
-          { id: "classify-activity", title: "Name the testing activity", emoji: '🏋️', group: "Easy practice" },
-          { id: "regression-type", title: "Choose the regression type", emoji: '🏋️', group: "Medium practice" },
-          { id: "pick-cases", title: "Pick the affected test cases", emoji: '🏋️', group: "Medium practice" },
-          { id: "ripple", title: "Ripple effect with a depth limit", emoji: '🏋️', group: "Hard practice" },
-          { id: "payback", title: "Automation payback by release", emoji: '🏋️', group: "Hard practice" },
-          { id: "risk-knapsack", title: "Riskiest cases in 120 minutes", emoji: '🏋️', group: "Expert practice" },
-          { id: "flaky-scripts", title: "Spot flaky scripts", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1543,14 +1487,6 @@ function mtModules() {
           { id: "performance", title: "Performance testing", emoji: "🚀", group: 'Lesson', keywords: ["performance testing", "response time", "load", "stability", "virtual users", "LoadRunner", "JMeter", "script", "scenario", "distribute load", "result graph", "average", "maximum", "minimum", "percentile"] },
           { id: "bottleneck", title: "Bottlenecks and tuning", emoji: "🧪", group: 'Lesson', keywords: ["bottleneck", "tuning", "analyse results", "architect", "DBA", "network admin", "code", "database", "server", "hardware", "network", "re-execute"] },
           { id: "types", title: "Load, stress, scalability, volume and soak", emoji: "📈", group: 'Lesson', keywords: ["load testing", "stress testing", "scalability testing", "stability testing", "volume testing", "soak testing", "endurance testing", "desired load", "upward", "downward", "crash"] },
-          { id: "platform-combos", title: "Sensible platform combinations", emoji: '🏋️', group: "Easy practice" },
-          { id: "breadcrumbs", title: "Breadcrumbs and required links", emoji: '🏋️', group: "Easy practice" },
-          { id: "forward-backward", title: "Forward and backward gaps", emoji: '🏋️', group: "Medium practice" },
-          { id: "split-users", title: "Split virtual users exactly", emoji: '🏋️', group: "Medium practice" },
-          { id: "littles-law", title: "Little's law", emoji: '🏋️', group: "Hard practice" },
-          { id: "sla-streak", title: "Longest breach in a stability test", emoji: '🏋️', group: "Hard practice" },
-          { id: "capacity-knee", title: "Estimate capacity from measurements", emoji: '🏋️', group: "Expert practice" },
-          { id: "soak-leak", title: "Project a memory leak", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1576,14 +1512,6 @@ function mtModules() {
           { id: "tools", title: "Tools", emoji: "🛠️", group: 'Lesson', keywords: ["tools", "functional testing tool", "performance testing tool", "test management tool", "licences", "UFT", "QTP", "Selenium", "LoadRunner", "JMeter", "Quality Center", "ALM", "Jira", "virtual users"] },
           { id: "criteria", title: "Entry and exit criteria", emoji: "🚦", group: 'Lesson', keywords: ["entry criteria", "exit criteria", "coding completed", "build installed", "test documents prepared", "resources ready", "executed percentage", "pass percentage", "blocker", "critical", "major", "minor", "release decision"] },
           { id: "more", title: "Parallel testing and the whole journey", emoji: "🧭", group: 'Lesson', keywords: ["parallel testing", "old and new version", "same inputs", "anomalies", "hot fix", "latent bug", "golden bug", "the testing journey", "STLC"] },
-          { id: "scope-split", title: "In scope and out of scope", emoji: '🏋️', group: "Easy practice" },
-          { id: "contacts", title: "Primary and secondary contacts", emoji: '🏋️', group: "Easy practice" },
-          { id: "working-days", title: "Schedule around weekends and holidays", emoji: '🏋️', group: "Medium practice" },
-          { id: "entry-check", title: "Check the entry criteria", emoji: '🏋️', group: "Medium practice" },
-          { id: "progress", title: "Track execution and forecast the finish", emoji: '🏋️', group: "Hard practice" },
-          { id: "tool-cost", title: "Licensed or open source", emoji: '🏋️', group: "Hard practice" },
-          { id: "critical-path", title: "Critical path of the test schedule", emoji: '🏋️', group: "Expert practice" },
-          { id: "balance", title: "Balance modules across testers", emoji: '🏋️', group: "Expert practice" },
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
