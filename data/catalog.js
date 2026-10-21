@@ -235,6 +235,16 @@ window.CATALOG = {
       tags: ['Rest Assured', 'Playwright', 'pytest', 'Postman', 'Newman', 'fetch', 'HttpClient', 'JSON Schema'],
       page: 'content/api-automation/api-automation.html'
     },
+    {
+      id: 'master-claude',
+      title: 'Master the Claude',
+      emoji: '✨',
+      color: '#d97757',
+      blurb: 'Get the most out of Claude: prompting, projects, Claude Code and the Claude API.',
+      intro: 'Fourteen chapters in four modules take you from your first chat to your own agents. Learn to prompt well and manage context, then set up Claude Code step by step and see exactly what goes in CLAUDE.md, rules, skills, settings, hooks, subagents, output styles, plugins and .mcp.json, with ready to copy files for real jobs. Build MCP servers in Node.js and Python, automate daily work with claude -p and GitHub Actions, call the Claude API, and build agents with tools and safety limits. Every file name, field and command was checked against the official documentation, and every script, hook, MCP server and SDK example on these pages was run for real. Parts marked Easy make a beginner path a child can follow. The last chapter is a bank of interview questions with hints and full answers.',
+      tags: ['Prompting', 'Claude Code', 'Claude API', 'Agents', 'MCP'],
+      modules: claudeModules().concat(iqModule('master-claude'))
+    },
 
     /* ===== Coming soon subjects. Each one shows a Coming soon card until its first topic gets a page. ===== */
     {
@@ -430,22 +440,6 @@ window.CATALOG = {
         ['Cryptography', '🔏', 'Hashing, encryption and digital signatures.'],
         ['Common attacks', '⚠️', 'Phishing, malware, injection and more.'],
         ['Defence and incident response', '🚨', 'Monitoring, logging and responding to attacks.']
-      ])]
-    },
-    {
-      id: 'master-claude',
-      title: 'Master the Claude',
-      emoji: '✨',
-      color: '#d97757',
-      blurb: 'Get the most out of Claude: prompting, projects, Claude Code and the Claude API.',
-      intro: 'Learn to work with Claude well, from writing clear prompts to building apps and agents with the Claude API and automating coding work with Claude Code.',
-      tags: ['Prompting', 'Claude Code', 'Claude API', 'Agents', 'MCP'],
-      modules: [soonModule([
-        ['Getting started with Claude', '👋', 'What Claude can do and how to ask well.'],
-        ['Prompt engineering', '✍️', 'Clear instructions, examples and structure.'],
-        ['Claude Code', '💻', 'Let Claude read, write and test your code.'],
-        ['The Claude API', '🔌', 'Send messages, stream replies and use tools.'],
-        ['Agents and MCP', '🧠', 'Connect Claude to tools and data with the Model Context Protocol.']
       ])]
     }
   ]
@@ -1281,7 +1275,8 @@ function iqModule(sid) {
     'java': ['content/java/interview-questions.html', 'Real Java interview questions on the JVM, OOP, strings, exceptions, collections, Java 8 streams, threads and framework design, with output questions run on the JDK.', ['JDK JRE JVM', 'string pool', 'equals and hashCode', 'HashMap internals', 'checked exception', 'final finally finalize', 'streams', 'functional interface', 'ThreadLocal', 'singleton', 'immutable class']],
     'testng': ['content/testng/interview-questions.html', 'TestNG questions from automation interviews: annotation order, testng.xml, groups, dependencies, data providers, soft asserts, listeners, retries, parallel runs and Maven.', ['annotation order', 'testng.xml', 'groups', 'dependsOnMethods', 'DataProvider', 'SoftAssert', 'ITestListener', 'IRetryAnalyzer', 'parallel', 'surefire']],
     'javascript': ['content/javascript/interview-questions.html', 'JavaScript and TypeScript questions from developer and automation interviews: types, closures, this, prototypes, the event loop, promises, TypeScript generics and narrowing, unit and API tests, Playwright and framework design, with output questions run on Node.js.', ['var let const', 'hoisting', 'closure', 'this', 'event loop', 'microtask', 'Promise.all', 'debounce', 'deep clone', 'interface vs type', 'any vs unknown', 'generics', 'utility types', 'mocks and spies', 'auto waiting', 'flaky tests', 'fixtures']],
-    'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']]
+    'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']],
+    'master-claude': ['content/claude/interview-questions.html', 'Claude interview questions on prompting, context engineering, CLAUDE.md and rules, skills, permissions and hooks, subagents, MCP, claude -p and GitHub Actions, the Claude API, agents, cost and safety, with real scenario questions.', ['prompt engineering', 'context rot', 'CLAUDE.md', 'rules.md', 'SKILL.md', 'hooks exit code 2', 'subagents', 'MCP', '.mcp.json', 'claude -p', 'tool use loop', 'prompt caching', 'agent safety']]
   }[sid];
   return {
     id: 'interview', title: 'Interview Questions', emoji: '🎤',
@@ -2488,3 +2483,285 @@ function soonModule(rows) {
     }))
   };
 }
+
+/* ===== claude-build: Master the Claude chapters. Generated by tools/claude-build/build.py, edit the topic files instead. ===== */
+function claudeModules() {
+  return [
+    { id: "claude-foundations", title: "Foundations", emoji: "🌱", blurb: "What Claude is, how to talk to it, and how to give it the right information at the right time.", topics: [
+      { id: "claude-meet", title: "Meet Claude: Models, Tokens, Projects and Skills", emoji: "👋", page: "content/claude/claude-meet.html",
+        summary: "The Claude products (claude.ai, Claude Code, the API), the four models with their API names and prices, tokens and the 1M token context window, why every turn re-sends the chat, a first practical prompt, claude.ai Projects with instructions and knowledge, Skills uploaded as a ZIP, and a map of every file this subject teaches.",
+        keywords: ["Claude", "models", "Opus", "Sonnet", "Haiku", "Fable", "tokens", "context window", "pricing", "Projects", "project instructions", "Skills", "claude.ai"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What Claude is, in plain words", emoji: "👋", group: "Beginner path", keywords: ["what is Claude", "Anthropic", "claude.ai", "Claude Code", "Claude API", "desktop app"] },
+        { id: "models", title: "The Claude models and when to pick each", emoji: "🧠", group: "Beginner path", keywords: ["models", "Opus", "Sonnet", "Haiku", "Fable", "pricing", "model id"] },
+        { id: "tokens", title: "Tokens and the context window", emoji: "🔢", group: "Beginner path", keywords: ["tokens", "context window", "1M tokens", "input tokens", "output tokens", "cost"] },
+        { id: "turns", title: "How a conversation really works", emoji: "🔁", group: "Beginner path", keywords: ["conversation", "messages", "system prompt", "new chat", "stateless"] },
+        { id: "first", title: "Your first useful prompt", emoji: "✍️", group: "Beginner path", keywords: ["first prompt", "daily automation", "table", "orders"] },
+        { id: "projects", title: "claude.ai Projects: instructions plus knowledge", emoji: "🗂️", group: "Beginner path", keywords: ["claude.ai Projects", "project instructions", "project knowledge", "custom instructions"] },
+        { id: "skills-intro", title: "Skills: teach Claude a task once", emoji: "🧰", group: "Beginner path", keywords: ["skills", "SKILL.md", "upload skill", "zip", "capabilities"] },
+        { id: "map", title: "The map of this subject", emoji: "🗺️", group: "Beginner path", keywords: ["overview", "which file", "map"] },
+        { id: "habits", title: "Safe habits from day one", emoji: "🛡️", group: "Beginner path", keywords: ["safety", "privacy", "API keys", "review"] },
+        { id: "est-tokens", title: "Estimate tokens", emoji: "🏋️", group: "Easy practice" },
+        { id: "cost-calc", title: "Price a job", emoji: "🏋️", group: "Medium practice" },
+        { id: "pick-model", title: "Pick a model", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-prompting", title: "Prompt Engineering That Works", emoji: "✍️", page: "content/claude/claude-prompting.html",
+        summary: "Clear and direct prompts, giving reasons, few shot examples in example tags, XML tags with long documents first, roles in the system prompt, controlling output format and why prefill no longer works, step by step thinking, reusable prompt templates for daily work, prompt chains for self correction, and a seven step prompt recipe.",
+        keywords: ["prompt engineering", "prompting", "few shot", "examples", "XML tags", "system prompt", "role", "output format", "prefill", "chain of thought", "template", "prompt chaining"],
+        added: "2026-10-20",
+        sections: [
+        { id: "clear", title: "Be clear and direct", emoji: "🎯", group: "Beginner path", keywords: ["clear prompt", "specific", "golden rule", "new employee"] },
+        { id: "why", title: "Say why, not only what", emoji: "💡", group: "Beginner path", keywords: ["context", "motivation", "reason", "positive instructions"] },
+        { id: "examples", title: "Show examples", emoji: "🧪", group: "Beginner path", keywords: ["few shot", "multishot", "examples", "example tags", "classification"] },
+        { id: "xml", title: "Use XML tags to separate the pieces", emoji: "🏷️", group: "Lesson", keywords: ["XML tags", "documents", "long context", "quotes", "grounding"] },
+        { id: "role", title: "Give Claude a role", emoji: "🎭", group: "Lesson", keywords: ["role", "system prompt", "persona", "tutor"] },
+        { id: "format", title: "Control the format of the answer", emoji: "📐", group: "Beginner path", keywords: ["format", "output format", "list", "JSON", "prefill", "preamble"] },
+        { id: "think", title: "Let Claude think before answering", emoji: "🤔", group: "Lesson", keywords: ["step by step", "thinking", "chain of thought", "adaptive thinking"] },
+        { id: "template", title: "Prompt templates for daily work", emoji: "🧩", group: "Beginner path", keywords: ["template", "variables", "daily automation", "inbox triage", "prompt checker"] },
+        { id: "chain", title: "Chain prompts: draft, review, refine", emoji: "⛓️", group: "Lesson", keywords: ["prompt chaining", "self correction", "review", "pipeline"] },
+        { id: "recipe", title: "A recipe card for any prompt", emoji: "📋", group: "Beginner path", keywords: ["prompt checklist", "recipe", "structure"] },
+        { id: "fill", title: "Fill a template", emoji: "🏋️", group: "Easy practice" },
+        { id: "tag", title: "Wrap data in tags", emoji: "🏋️", group: "Medium practice" },
+        { id: "fewshot", title: "Build a few shot block", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-context", title: "Context Engineering: The Right Information at the Right Time", emoji: "🧠", page: "content/claude/claude-context.html",
+        summary: "Context engineering versus prompt engineering, context rot and the attention budget, instructions at the right altitude, tools and examples as context, just in time retrieval, compaction, progress files and subagents for long tasks, what Claude Code loads when and what survives /compact, and a checklist for where each piece of context belongs.",
+        keywords: ["context engineering", "context window", "context rot", "attention budget", "just in time", "retrieval", "compaction", "/compact", "/context", "/clear", "progress notes", "subagents"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "Context engineering in one sentence", emoji: "🧠", group: "Beginner path", keywords: ["context engineering", "context", "tokens", "what Claude sees"] },
+        { id: "rot", title: "Why more is not always better", emoji: "🫧", group: "Beginner path", keywords: ["context rot", "attention budget", "window size", "/context"] },
+        { id: "altitude", title: "Write instructions at the right altitude", emoji: "🎚️", group: "Lesson", keywords: ["system prompt", "altitude", "principles", "instructions"] },
+        { id: "tools", title: "Tools and examples are context too", emoji: "🔧", group: "Lesson", keywords: ["tools", "tool descriptions", "MCP tools", "examples"] },
+        { id: "jit", title: "Just in time retrieval", emoji: "🎯", group: "Beginner path", keywords: ["just in time", "retrieval", "search", "progressive disclosure", "RAG"] },
+        { id: "long", title: "Long tasks: compaction, notes and subagents", emoji: "⏳", group: "Lesson", keywords: ["compaction", "structured notes", "progress file", "subagents", "long running tasks"] },
+        { id: "cc", title: "Context tools in Claude Code", emoji: "💻", group: "Beginner path", keywords: ["/context", "/clear", "/compact", "/btw", "compaction", "context cost"] },
+        { id: "checklist", title: "A context checklist for any task", emoji: "✅", group: "Beginner path", keywords: ["checklist", "where to put context"] },
+        { id: "fits", title: "Does it fit?", emoji: "🏋️", group: "Easy practice" },
+        { id: "relevant", title: "Pick relevant files", emoji: "🏋️", group: "Medium practice" },
+        { id: "compact", title: "Compact a conversation", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "claude-code-files", title: "Claude Code and its files", emoji: "🛠️", blurb: "Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.", topics: [
+      { id: "claude-code-start", title: "Claude Code: First Steps", emoji: "💻", page: "content/claude/claude-code-start.html",
+        summary: "What Claude Code is, installing it on macOS, Linux and Windows, first requests, the gather, act and verify loop with a real test run, the six permission modes, plan mode and the explore, plan, code, commit workflow, Esc, /rewind and resuming sessions, the most used slash commands, and a full map of the .claude folder and home folder, including why there is no single rules.md file.",
+        keywords: ["Claude Code", "install", "permission modes", "plan mode", "Shift+Tab", "agent loop", "/rewind", "checkpoints", "--continue", "--resume", "slash commands", ".claude folder", "settings.local.json"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What Claude Code is", emoji: "💻", group: "Beginner path", keywords: ["Claude Code", "agent", "terminal", "VS Code", "JetBrains", "desktop app"] },
+        { id: "install", title: "Install and start, step by step", emoji: "📥", group: "Beginner path", keywords: ["install", "curl install.sh", "winget", "brew", "claude --version", "login"] },
+        { id: "loop", title: "How it works: the agent loop", emoji: "🔄", group: "Beginner path", keywords: ["agent loop", "tools", "Read", "Edit", "Bash", "Grep", "verify", "tests"] },
+        { id: "perms", title: "Permission modes: how much Claude may do alone", emoji: "🚦", group: "Beginner path", keywords: ["permission modes", "Shift+Tab", "acceptEdits", "plan mode", "auto mode", "bypassPermissions", "defaultMode"] },
+        { id: "plan", title: "Explore, plan, code, commit", emoji: "🗺️", group: "Lesson", keywords: ["plan mode", "explore plan code commit", "Ctrl+G", "workflow"] },
+        { id: "control", title: "Stop, undo and come back later", emoji: "⏪", group: "Beginner path", keywords: ["Esc", "/rewind", "checkpoints", "--continue", "--resume", "claude -p"] },
+        { id: "commands", title: "The commands you will use most", emoji: "⌨️", group: "Beginner path", keywords: ["slash commands", "/init", "/memory", "/skills", "/hooks", "/mcp", "/plugin", "/doctor", "@ mention"] },
+        { id: "folder", title: "The .claude folder: where everything lives", emoji: "📁", group: "Beginner path", keywords: [".claude folder", "project settings", "home folder", "file map", "rules.md", "agents.md"] },
+        { id: "pick-mode", title: "Pick a permission mode", emoji: "🏋️", group: "Easy practice" },
+        { id: "where", title: "Where does it live?", emoji: "🏋️", group: "Medium practice" },
+        { id: "tiny-loop", title: "Run a tiny agent loop", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-md", title: "CLAUDE.md and Memory: What Goes Where", emoji: "📘", page: "content/claude/claude-md.html",
+        summary: "What CLAUDE.md is for and why it is guidance not enforcement, managed, user, project and local locations with the real load order, Anthropic's include and exclude table, three ready to copy CLAUDE.md files, personal files, @ imports run through a model of the loader, AGENTS.md rules, auto memory with MEMORY.md and memory types, and a workflow with /init, /context and /doctor prompt-audit.",
+        keywords: ["CLAUDE.md", "CLAUDE.local.md", "~/.claude/CLAUDE.md", "memory", "auto memory", "MEMORY.md", "@ import", "AGENTS.md", "/init", "/memory", "load order", "what to include"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What CLAUDE.md is for", emoji: "📘", group: "Beginner path", keywords: ["CLAUDE.md", "project instructions", "memory", "persistent context"] },
+        { id: "where", title: "Where CLAUDE.md files live", emoji: "📍", group: "Beginner path", keywords: ["locations", "load order", "managed policy", "user CLAUDE.md", "CLAUDE.local.md", "subdirectory"] },
+        { id: "put", title: "What to put in, and what to leave out", emoji: "📥", group: "Beginner path", keywords: ["what to include", "what to exclude", "200 lines", "IMPORTANT", "best practices"] },
+        { id: "examples", title: "Three real CLAUDE.md files", emoji: "🧾", group: "Beginner path", keywords: ["CLAUDE.md example", "web app", "data team", "writer", "template"] },
+        { id: "personal", title: "Your personal files: ~/.claude/CLAUDE.md and CLAUDE.local.md", emoji: "🙋", group: "Beginner path", keywords: ["user CLAUDE.md", "CLAUDE.local.md", "personal preferences", "gitignore"] },
+        { id: "imports", title: "Split a long file with @ imports", emoji: "🔗", group: "Lesson", keywords: ["@ imports", "import", "four hops", "HTML comments", "backticks"] },
+        { id: "agentsmd", title: "AGENTS.md and other tools", emoji: "🤝", group: "Lesson", keywords: ["AGENTS.md", "other tools", "project instructions setting"] },
+        { id: "auto", title: "Auto memory: notes Claude writes for itself", emoji: "🧠", group: "Beginner path", keywords: ["auto memory", "MEMORY.md", "autoMemoryEnabled", "memory types"] },
+        { id: "workflow", title: "Create, check and improve it", emoji: "🔁", group: "Beginner path", keywords: ["/init", "/memory", "/context", "/doctor prompt-audit", "maintain"] },
+        { id: "keep-or-cut", title: "Keep or cut?", emoji: "🏋️", group: "Easy practice" },
+        { id: "find-imports", title: "Find the imports", emoji: "🏋️", group: "Medium practice" },
+        { id: "review-md", title: "Check a CLAUDE.md", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-rules", title: "Rules: The .claude/rules Folder and Path Rules", emoji: "📏", page: "content/claude/claude-rules.html",
+        summary: "The name check (no rules.md, the real .claude/rules/ folder), creating rule files step by step, path rules with the paths field and glob patterns, a run showing which rules load for which file, ready to copy rules for APIs, tests, blog posts and contracts, personal rules in ~/.claude/rules/, sharing rules with symlinks, choosing between rules, CLAUDE.md, skills and hooks, and debugging rules.",
+        keywords: ["rules", "rules.md", ".claude/rules", "paths", "path rules", "glob", "frontmatter", "user rules", "symlink", "CLAUDE.md vs rules"],
+        added: "2026-10-20",
+        sections: [
+        { id: "name", title: "First, the name: there is no rules.md", emoji: "🔎", group: "Beginner path", keywords: ["rules.md", "name check", ".claude/rules", "cursorrules"] },
+        { id: "setup", title: "Create your first rules, step by step", emoji: "🧱", group: "Beginner path", keywords: ["create rules", "one topic per file", "subfolders", "setup"] },
+        { id: "paths", title: "Path rules: load only for matching files", emoji: "🎯", group: "Lesson", keywords: ["paths", "frontmatter", "glob", "path-specific rules", "brace expansion"] },
+        { id: "examples", title: "Ready to copy rule files", emoji: "🧾", group: "Beginner path", keywords: ["rule examples", "testing rules", "content rules", "legal rules"] },
+        { id: "user", title: "Personal rules in ~/.claude/rules/", emoji: "🙋", group: "Beginner path", keywords: ["user rules", "personal rules", "home folder"] },
+        { id: "share", title: "Share one set of rules across many projects", emoji: "🔗", group: "Lesson", keywords: ["symlink", "shared rules", "company standards"] },
+        { id: "choose", title: "Rules, CLAUDE.md, skills or hooks?", emoji: "⚖️", group: "Beginner path", keywords: ["rules vs CLAUDE.md", "rules vs skills", "compaction", "when to use"] },
+        { id: "debug", title: "When a rule does not seem to work", emoji: "🩺", group: "Lesson", keywords: ["debug rules", "/context", "claude --debug", "troubleshooting"] },
+        { id: "has-paths", title: "Does it have paths?", emoji: "🏋️", group: "Easy practice" },
+        { id: "ext-match", title: "Match by extension", emoji: "🏋️", group: "Medium practice" },
+        { id: "where-goes", title: "Where does this instruction go?", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-skills", title: "Skills: Build SKILL.md Step by Step", emoji: "🧰", page: "content/claude/claude-skills.html",
+        summary: "What a skill is and its three loading levels, a first skill in three steps, personal, project and plugin locations and command names, every front matter field with good and weak descriptions, arguments and dynamic context run on a real git repo, supporting files and a Python script checking a real invoice, invocation control, daily work skills, the claude.ai upload rules checked by a validator, and tips for reliable skills.",
+        keywords: ["skills", "SKILL.md", "Skills.md", "frontmatter", "description", "$ARGUMENTS", "dynamic context", "allowed-tools", "disable-model-invocation", "user-invocable", "context fork", "claude.ai upload", "Agent Skills", "progressive disclosure"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What a skill is", emoji: "🧰", group: "Beginner path", keywords: ["skill", "SKILL.md", "progressive disclosure", "levels"] },
+        { id: "first", title: "Build your first skill in three steps", emoji: "🚀", group: "Beginner path", keywords: ["first skill", "create skill", "step by step", "summarize-changes"] },
+        { id: "where", title: "Where skills live and how they get their name", emoji: "📍", group: "Beginner path", keywords: ["skill locations", "personal skills", "project skills", "command name", "skills.md", ".claude/commands"] },
+        { id: "front", title: "The front matter: what goes at the top", emoji: "🏷️", group: "Lesson", keywords: ["frontmatter", "description", "disable-model-invocation", "user-invocable", "allowed-tools", "context fork", "when_to_use"] },
+        { id: "args", title: "Arguments and live data", emoji: "🔣", group: "Lesson", keywords: ["$ARGUMENTS", "$0", "arguments", "dynamic context", "!command", "CLAUDE_SKILL_DIR"] },
+        { id: "files", title: "Supporting files and scripts", emoji: "📎", group: "Lesson", keywords: ["supporting files", "scripts", "reference files", "500 lines", "invoice"] },
+        { id: "who", title: "Who can start a skill", emoji: "🎛️", group: "Lesson", keywords: ["disable-model-invocation", "user-invocable", "context fork", "agent", "side effects"] },
+        { id: "daily", title: "Skills for daily work", emoji: "📅", group: "Beginner path", keywords: ["daily automation", "meeting notes", "commit message", "skill examples"] },
+        { id: "upload", title: "Skills in claude.ai and the API", emoji: "☁️", group: "Lesson", keywords: ["claude.ai upload", "Skills API", "Agent Skills spec", "zip", "name rules"] },
+        { id: "tips", title: "Make skills that work every time", emoji: "💡", group: "Beginner path", keywords: ["skill tips", "testing skills", "/skills", "skill-creator", "troubleshooting"] },
+        { id: "front-desc", title: "Read the description", emoji: "🏋️", group: "Easy practice" },
+        { id: "fill-args", title: "Fill in the arguments", emoji: "🏋️", group: "Medium practice" },
+        { id: "valid-name", title: "Check an upload name", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-settings-hooks", title: "settings.json, Permissions and Hooks", emoji: "🪝", page: "content/claude/claude-settings-hooks.html",
+        summary: "Settings files and precedence, permission rules with a run of deny, ask and allow matching, ready to copy team, personal and local settings, hook events and how hooks talk through stdin and exit codes, four hooks run for real (block dangerous commands, protect files with a JSON answer, add a release freeze notice, log every edit), the official format and notification hooks, and debugging with /hooks, /permissions and /status.",
+        keywords: ["settings.json", "settings.local.json", "permissions", "allow", "deny", "ask", "hooks", "PreToolUse", "PostToolUse", "UserPromptSubmit", "Notification", "exit code 2", "/hooks", "defaultMode"],
+        added: "2026-10-20",
+        sections: [
+        { id: "files", title: "The settings files and which one wins", emoji: "⚙️", group: "Beginner path", keywords: ["settings.json", "settings precedence", "managed settings", "settings.local.json", "$schema"] },
+        { id: "perms", title: "Permission rules: allow, ask and deny", emoji: "🚦", group: "Beginner path", keywords: ["permissions", "allow", "ask", "deny", "rule syntax", "Bash()", "Read()", "WebFetch domain"] },
+        { id: "copy", title: "Ready to copy settings files", emoji: "📄", group: "Beginner path", keywords: ["settings example", "env", "model", "defaultMode", "workspace trust"] },
+        { id: "hooks", title: "Hooks: code that runs on events", emoji: "🪝", group: "Beginner path", keywords: ["hooks", "events", "PreToolUse", "PostToolUse", "UserPromptSubmit", "Notification", "exit code 2", "stdin JSON"] },
+        { id: "block", title: "Hook 1: block dangerous commands", emoji: "⛔", group: "Beginner path", keywords: ["PreToolUse", "block command", "exit 2", "rm -rf", "force push"] },
+        { id: "protect", title: "Hook 2: protect secret files, with a JSON answer", emoji: "🔒", group: "Lesson", keywords: ["protect files", "permissionDecision", "deny", "JSON output", ".env"] },
+        { id: "context", title: "Hook 3: add live facts to prompts", emoji: "📣", group: "Lesson", keywords: ["UserPromptSubmit", "additionalContext", "release freeze", "inject context"] },
+        { id: "after", title: "Hook 4: after every edit, log, format or notify", emoji: "🧹", group: "Lesson", keywords: ["PostToolUse", "audit log", "prettier", "Notification hook", "osascript"] },
+        { id: "check", title: "Check and debug", emoji: "🩺", group: "Lesson", keywords: ["/hooks", "/permissions", "/status", "debug hooks", "claude --debug"] },
+        { id: "banned", title: "Spot a banned command", emoji: "🏋️", group: "Easy practice" },
+        { id: "decide", title: "deny, ask, allow", emoji: "🏋️", group: "Medium practice" },
+        { id: "hook-answer", title: "Build a hook answer", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-subagents", title: "Subagents and Output Styles", emoji: "🤖", page: "content/claude/claude-subagents.html",
+        summary: "What subagents are and how much context they save, built-in agents, creating an agent file step by step and the agents.md name check, every frontmatter field with a checker run on four files, ready to copy test-runner and doc-researcher agents, three ways to call an agent and --agent sessions, agent memory, and built-in and custom output styles.",
+        keywords: ["subagents", ".claude/agents", "agents.md", "agent file", "Explore", "Plan", "tools", "model", "maxTurns", "memory", "@-mention", "--agent", "output styles", "keep-coding-instructions"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What a subagent is", emoji: "🤖", group: "Beginner path", keywords: ["subagent", "delegation", "own context window", "summary"] },
+        { id: "builtin", title: "Built-in subagents you already have", emoji: "🧩", group: "Beginner path", keywords: ["Explore", "Plan", "general-purpose", "built-in agents"] },
+        { id: "create", title: "Create your first subagent, step by step", emoji: "🛠️", group: "Beginner path", keywords: ["create subagent", "agent file", "system prompt", "agents.md"] },
+        { id: "fields", title: "Every field in an agent file", emoji: "🏷️", group: "Lesson", keywords: ["frontmatter", "tools", "model", "permissionMode", "maxTurns", "skills", "mcpServers", "memory", "isolation worktree"] },
+        { id: "gallery", title: "Ready to copy agents", emoji: "🗂️", group: "Beginner path", keywords: ["test runner agent", "research agent", "agent examples"] },
+        { id: "use", title: "Calling a subagent", emoji: "📣", group: "Beginner path", keywords: ["invoke subagent", "@-mention", "--agent", "parallel subagents"] },
+        { id: "memory", title: "Agents that remember", emoji: "🧠", group: "Lesson", keywords: ["agent memory", "persistent memory", "memory field"] },
+        { id: "styles", title: "Output styles: change how Claude talks for a whole session", emoji: "🎨", group: "Beginner path", keywords: ["output styles", "Concise", "Explanatory", "Learning", "Proactive", "keep-coding-instructions", "/output-style"] },
+        { id: "agent-valid", title: "Is the agent file valid?", emoji: "🏋️", group: "Easy practice" },
+        { id: "read-only", title: "Is it read only?", emoji: "🏋️", group: "Medium practice" },
+        { id: "saved", title: "Context saved", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-mcp", title: "MCP: Connect and Build Servers", emoji: "🔌", page: "content/claude/claude-mcp.html",
+        summary: "What MCP servers offer, connecting a first server, managing servers, local, project and user scopes with a full .mcp.json, a Node.js expenses server and a Python timetable server built and tested with a real client, the JSON-RPC handshake on the wire, tool names and permission rules, output limits and tool search, and claude_desktop_config.json.",
+        keywords: ["MCP", "Model Context Protocol", "claude mcp add", ".mcp.json", "scopes", "McpServer", "registerTool", "MCPServer", "Python MCP", "JSON-RPC", "mcp__", "Claude Desktop", "claude_desktop_config.json"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What MCP is", emoji: "🔌", group: "Beginner path", keywords: ["MCP", "Model Context Protocol", "server", "client", "tools", "resources", "prompts"] },
+        { id: "connect", title: "Connect a server, step by step", emoji: "🧷", group: "Beginner path", keywords: ["claude mcp add", "--transport http", "stdio", "claude mcp list", "/mcp"] },
+        { id: "scopes", title: "Scopes and the .mcp.json file", emoji: "📍", group: "Lesson", keywords: ["scope", "local", "project", "user", ".mcp.json", "environment variables", "${VAR}"] },
+        { id: "build-node", title: "Build your own server in Node.js", emoji: "🟩", group: "Beginner path", keywords: ["build MCP server", "McpServer", "registerTool", "zod", "StdioServerTransport", "Node.js"] },
+        { id: "build-py", title: "Build your own server in Python", emoji: "🐍", group: "Beginner path", keywords: ["Python MCP server", "MCPServer", "@mcp.tool", "@mcp.resource", "pip install mcp"] },
+        { id: "wire", title: "What travels between Claude and a server", emoji: "📨", group: "Lesson", keywords: ["JSON-RPC", "initialize", "tools/list", "tools/call", "protocol"] },
+        { id: "use", title: "Using MCP inside Claude Code", emoji: "🎛️", group: "Beginner path", keywords: ["mcp__server__tool", "permissions", "resources @", "MCP prompts", "MAX_MCP_OUTPUT_TOKENS", "tool search"] },
+        { id: "desktop", title: "The same servers in Claude Desktop", emoji: "🖥️", group: "Lesson", keywords: ["Claude Desktop", "claude_desktop_config.json", "add-from-claude-desktop", "claude mcp serve"] },
+        { id: "full-name", title: "Full tool name", emoji: "🏋️", group: "Easy practice" },
+        { id: "which-file", title: "Which file?", emoji: "🏋️", group: "Medium practice" },
+        { id: "expand", title: "Expand ${VAR}", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-automation", title: "Daily Automation: Plugins, Scripts and GitHub", emoji: "⚙️", page: "content/claude/claude-automation.html",
+        summary: "A full plugin layout with a layout checker, plugin commands and marketplaces, claude -p flags, --bare, structured JSON output used by a real script, GitHub Actions set up for @claude and a weekday report, cron lines explained, /loop, and five daily recipes.",
+        keywords: ["automation", "plugin", "plugin.json", "claude -p", "headless", "--json-schema", "structured_output", "GitHub Actions", "claude-code-action", "cron", "schedule", "/loop", "recipes"],
+        added: "2026-10-20",
+        sections: [
+        { id: "plugins", title: "Plugins: share your whole setup in one folder", emoji: "📦", group: "Beginner path", keywords: ["plugin", "plugin.json", "manifest", "marketplace", "--plugin-dir", "claude plugin validate"] },
+        { id: "headless", title: "claude -p: use Claude in scripts", emoji: "🧾", group: "Beginner path", keywords: ["claude -p", "headless", "--allowedTools", "--bare", "--continue", "scripts"] },
+        { id: "json", title: "Get data back, not just text", emoji: "🧮", group: "Lesson", keywords: ["--output-format json", "--json-schema", "structured_output", "total_cost_usd", "jq"] },
+        { id: "gha", title: "Claude in GitHub Actions", emoji: "🐙", group: "Beginner path", keywords: ["GitHub Actions", "claude-code-action", "@claude", "/install-github-app", "secrets"] },
+        { id: "schedule", title: "Run it on a schedule", emoji: "⏰", group: "Lesson", keywords: ["schedule", "cron", "UTC", "claude_args", "--max-turns", "/loop"] },
+        { id: "recipes", title: "Daily automation recipes", emoji: "🍳", group: "Beginner path", keywords: ["automation recipes", "commit message", "meeting notes", "CSV cleaning", "CI failure"] },
+        { id: "skill-cmd", title: "Plugin skill command", emoji: "🏋️", group: "Easy practice" },
+        { id: "allowed", title: "Build --allowedTools", emoji: "🏋️", group: "Medium practice" },
+        { id: "to-utc", title: "Local time to a cron line", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "claude-build-api", title: "Building with the API", emoji: "🔌", blurb: "Call Claude from your own code: the Messages API, tools, agent loops and the Agent SDK.", topics: [
+      { id: "claude-api", title: "The Claude API Step by Step", emoji: "🧩", page: "content/claude/claude-api.html",
+        summary: "API keys and SDK install, a first call with every response field explained plus TypeScript and curl versions, a tutor with a system prompt and history, models and prices with a cost run, streaming, json_schema outputs, effort and cache_control, and error codes with retries.",
+        keywords: ["Claude API", "Messages API", "anthropic", "messages.create", "system prompt", "streaming", "structured outputs", "pricing", "prompt caching", "effort", "errors"],
+        added: "2026-10-20",
+        sections: [
+        { id: "setup", title: "Get a key and install the SDK", emoji: "🔑", group: "Beginner path", keywords: ["API key", "ANTHROPIC_API_KEY", "pip install anthropic", "@anthropic-ai/sdk", "Claude Console"] },
+        { id: "first", title: "Your first call, line by line", emoji: "👋", group: "Beginner path", keywords: ["messages.create", "model", "max_tokens", "messages", "stop_reason", "usage"] },
+        { id: "system", title: "System prompts and conversations", emoji: "🧑‍🏫", group: "Beginner path", keywords: ["system prompt", "conversation history", "stateless", "multi-turn"] },
+        { id: "models", title: "Choose a model and know the cost", emoji: "⚖️", group: "Beginner path", keywords: ["models", "pricing", "Haiku", "Sonnet", "Opus", "Fable", "tokens", "cost"] },
+        { id: "stream", title: "Streaming: show words as they arrive", emoji: "🌊", group: "Lesson", keywords: ["streaming", "messages.stream", "text_stream", "get_final_message"] },
+        { id: "json", title: "Get JSON your code can trust", emoji: "🧾", group: "Lesson", keywords: ["structured outputs", "json_schema", "output_config", "JSON"] },
+        { id: "cache", title: "Effort and prompt caching", emoji: "💾", group: "Lesson", keywords: ["effort", "prompt caching", "cache_control", "ephemeral", "cache_read_input_tokens"] },
+        { id: "errors", title: "When things go wrong", emoji: "🧯", group: "Lesson", keywords: ["errors", "429", "retries", "max_tokens", "refusal"] },
+        { id: "cost-of", title: "Cost of one call", emoji: "🏋️", group: "Easy practice" },
+        { id: "add-turn", title: "Keep the history", emoji: "🏋️", group: "Medium practice" },
+        { id: "pick-model", title: "Pick a model", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-agents", title: "Build Your Own Agents", emoji: "🤖", page: "content/claude/claude-agents.html",
+        summary: "The agent loop explained, writing tool definitions, a two round stock agent built by hand and run step by step, the tool runner version with a spending gate that refuses a big order, the Claude Agent SDK with built-in tools, and a table for choosing the right approach.",
+        keywords: ["agents", "agent loop", "tools", "tool_use", "tool_result", "tool runner", "@beta_tool", "Claude Agent SDK", "claude-agent-sdk", "safety gate", "Managed Agents"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What an agent really is", emoji: "🔁", group: "Beginner path", keywords: ["agent", "agent loop", "tool_use", "tool_result", "stop_reason"] },
+        { id: "tools", title: "Define tools Claude can use", emoji: "🧰", group: "Beginner path", keywords: ["tool definition", "input_schema", "tool description", "JSON schema"] },
+        { id: "manual", title: "Build the loop by hand, step by step", emoji: "✍️", group: "Beginner path", keywords: ["manual agent loop", "tool_use_id", "messages", "max steps"] },
+        { id: "runner", title: "Less code with the tool runner", emoji: "🏃", group: "Lesson", keywords: ["tool runner", "@beta_tool", "tool_runner", "safety gate", "human approval"] },
+        { id: "sdk", title: "The Claude Agent SDK: Claude Code as a library", emoji: "🧠", group: "Beginner path", keywords: ["Claude Agent SDK", "claude-agent-sdk", "query", "ClaudeAgentOptions", "allowed_tools"] },
+        { id: "choose", title: "Which way to build your agent", emoji: "🧭", group: "Beginner path", keywords: ["choose agent approach", "Managed Agents", "workflow vs agent", "start simple"] },
+        { id: "result-block", title: "Build a tool_result", emoji: "🏋️", group: "Easy practice" },
+        { id: "gate", title: "A spending gate", emoji: "🏋️", group: "Medium practice" },
+        { id: "loop-sim", title: "Run a loop", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "claude-capstone", title: "Capstone", emoji: "🏁", blurb: "Put it all together: the full file map and a complete setup built step by step.", topics: [
+      { id: "claude-file-map", title: "Capstone: Which File Holds What", emoji: "🗺️", page: "content/claude/claude-file-map.html",
+        summary: "The complete Claude file map with what goes in and stays out of each file, the real names behind common wrong ones, a router run on eleven example instructions, a full project setup with a checker that finds two problems, a homework helper with CLAUDE.md, a quiz skill and a claude.ai Project version, and a six week practice path.",
+        keywords: ["file map", "CLAUDE.md", "rules", "SKILL.md", "agents", "settings.json", ".mcp.json", "what goes where", "homework helper", "capstone"],
+        added: "2026-10-20",
+        sections: [
+        { id: "map", title: "Every file, and what goes in it", emoji: "🗺️", group: "Beginner path", keywords: ["file map", "which file", "what goes where"] },
+        { id: "names", title: "The real names behind the names people use", emoji: "🔎", group: "Beginner path", keywords: ["rules.md", "skills.md", "agents.md", "prompt file", "name check"] },
+        { id: "decide", title: "Decide where an instruction belongs", emoji: "🧭", group: "Beginner path", keywords: ["decision guide", "hook or CLAUDE.md", "skill or rule"] },
+        { id: "setup", title: "A complete project, checked for real", emoji: "🏗️", group: "Lesson", keywords: ["project setup", "full example", "checker"] },
+        { id: "kid", title: "Build a homework helper, step by step", emoji: "🧒", group: "Beginner path", keywords: ["homework helper", "kids", "claude.ai Projects", "beginner build"] },
+        { id: "next", title: "Your next level, one week at a time", emoji: "🚀", group: "Beginner path", keywords: ["learning path", "next steps", "practice plan"] },
+        { id: "kind", title: "Hook or CLAUDE.md?", emoji: "🏋️", group: "Easy practice" },
+        { id: "skill-path", title: "Skill path", emoji: "🏋️", group: "Medium practice" },
+        { id: "has-secret", title: "Find a secret", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of claude-build ===== */

@@ -1,0 +1,34 @@
+/* ===== Master the Claude chapters: file tags, the beginner path and the file map (assets/claude.js) ===== */
+
+/* the "Modern" callout reads as a recent Claude feature on these pages */
+.modern::before{content:"🆕 New in Claude"}
+
+/* tags under each part title: beginner friendly and the real files the part teaches */
+.cl-tags{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:2px 0 10px}
+.cl-easy{display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; background:#d97757; color:#fff; font-weight:800; font-size:12.5px; letter-spacing:.02em}
+.cl-file{padding:2px 9px; border-radius:999px; border:1.5px solid color-mix(in srgb, #d97757 50%, var(--line)); color:var(--ink); background:color-mix(in srgb, #d97757 9%, var(--surface)); font-family:var(--font-mono); font-weight:700; font-size:12px; overflow-wrap:anywhere}
+
+/* "In plain words" box in the chapter header */
+.cl-plain{margin-top:14px; padding:10px 14px; border-radius:14px; background:color-mix(in srgb, #d97757 10%, var(--surface)); border:1.5px solid color-mix(in srgb, #d97757 45%, var(--line))}
+.cl-plain p{margin:2px 0 0; font-size:15px; color:var(--ink)}
+
+/* beginner path toggle */
+.toc a.easy{border-color:color-mix(in srgb, #d97757 55%, var(--line))}
+.toc a.easy::after{content:"🧒"; font-size:12px}
+.cl-toggle{border:1.5px solid #d97757; background:color-mix(in srgb, #d97757 12%, var(--surface)); color:var(--ink); border-radius:999px; padding:6px 12px; font:inherit; font-weight:800; font-size:13.5px; cursor:pointer}
+.cl-toggle[aria-pressed="true"]{background:#d97757; color:#fff}
+body.easy-only .jsec:not(.easy-part), body.easy-only .toc a:not(.easy):not(.spec){display:none}
+
+/* "Which file?" boxes: what the reader asked for versus what really exists */
+.cl-name{position:relative; margin:12px 0; padding:10px 14px; border-radius:14px; font-size:15px; border:1.5px solid color-mix(in srgb, var(--yellow) 60%, var(--line)); background:color-mix(in srgb, var(--yellow) 12%, var(--surface))}
+.cl-name::before{content:"🔎 Name check"; display:block; font-family:var(--font-head); font-weight:800; font-size:14px; margin-bottom:2px}
+.cl-put{position:relative; margin:12px 0; padding:10px 14px; border-radius:14px; font-size:15px; border:1.5px solid color-mix(in srgb, var(--green) 50%, var(--line)); background:color-mix(in srgb, var(--green) 9%, var(--surface))}
+.cl-put::before{content:"📥 What goes in this file"; display:block; font-family:var(--font-head); font-weight:800; font-size:14px; margin-bottom:2px}
+.cl-put ul, .cl-name ul{margin:4px 0 0; padding-left:20px}
+
+/* folder trees */
+pre.tree{margin:10px 0; padding:12px 14px; border-radius:14px; background:var(--code-bg); color:#dbe6f7; font-family:var(--font-mono); font-size:13px; line-height:1.55; overflow-x:auto; white-space:pre}
+pre.tree b{color:#ffb38a; font-weight:700}
+pre.tree i{color:#8fa3bf; font-style:normal}
+
+.cl-checked{margin:18px 4px 6px; color:var(--ink2); font-size:14px; font-weight:700}

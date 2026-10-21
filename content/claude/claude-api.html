@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Claude API Step by Step · Master the Claude</title>
+<meta name="description" content="Claude API tutorial with the Python SDK: API keys, messages.create, system prompts, conversation history, model choice and pricing, streaming, JSON structured outputs, effort, prompt caching and error handling.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=master-claude" target="_top">✨ Master the Claude</a><span>›</span><span>🔌 Building with the API</span><span>›</span><span>Chapter 12 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧩</span><div><h1>The Claude API Step by Step</h1><p class="lead">Get a key and install the SDK, make your first call and read every field of the reply, build a tutor with a system prompt and chat history, choose a model and price a job, stream answers, get JSON in a fixed shape, use effort and prompt caching, and handle errors.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 6 examples run for real</span><span class="chip">📄 4 ready to copy files and prompts</span><span class="chip">🏋️ 3 hands-on exercises</span><span class="chip">🎯 10 quiz questions</span><span class="chip">🧮 6 calculations</span><span class="chip">🧒 4 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>The API is a way for your own program to send Claude a message and get the answer back, the same as chatting, but from code.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#setup" class="easy"><span>🔑</span>Get a key and install the SDK</a><a href="#first" class="easy"><span>👋</span>Your first call, line by line</a><a href="#system" class="easy"><span>🧑‍🏫</span>System prompts and conversations</a><a href="#models" class="easy"><span>⚖️</span>Choose a model and know the cost</a><a href="#stream"><span>🌊</span>Streaming: show words as they arrive</a><a href="#json"><span>🧾</span>Get JSON your code can trust</a><a href="#cache"><span>💾</span>Effort and prompt caching</a><a href="#errors"><span>🧯</span>When things go wrong</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="setup" data-say="setup"><div class="sec-num">Part 1</div><h2><span class="sec-em">🔑</span><span>Get a key and install the SDK</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>The <b>Claude API</b> lets your own program talk to Claude. You pay per token used, separate from a Claude.ai subscription.</p>
+<ol class="steps"><li>Sign in at <code>platform.claude.com</code> and add billing.</li><li>Create an API key.</li><li>Store it in the <code>ANTHROPIC_API_KEY</code> environment variable.</li><li>Install the official SDK.</li></ol>
+<div class="codewrap" data-k="setup"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Get a key and install the SDK · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># 1. Create a key at platform.claude.com (Settings, then API keys)</span>
+<span class="c"># 2. Keep it in an environment variable, never in code</span>
+<span class="k">export</span> ANTHROPIC_API_KEY=<span class="s">"sk-ant-..."</span>        <span class="c"># macOS / Linux</span>
+setx ANTHROPIC_API_KEY <span class="s">"sk-ant-..."</span>          <span class="c"># Windows (open a new terminal after)</span>
+
+<span class="c"># 3. Install the SDK for your language</span>
+<span class="k">pip</span> install anthropic                        <span class="c"># Python</span>
+<span class="k">npm</span> install @anthropic-ai/sdk                <span class="c"># JavaScript / TypeScript</span></pre></div>
+<div class="cl-put"><b>Never</b> put the key in code, in a Git repository or in a web page. Anyone with the key can spend your money. Keep it in an environment variable or a secrets manager.</div>
+</section>
+<section class="card reveal jsec easy-part" id="first" data-say="first"><div class="sec-num">Part 2</div><h2><span class="sec-em">👋</span><span>Your first call, line by line</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<div class="codewrap tests" data-k="hello"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Your first API call · ▶ Real SDK code, run against a local stand-in API with scripted replies</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 app.py</div><pre class="src" data-file="app.py"><span class="k">import</span> anthropic
+
+client = anthropic.<span class="t">Anthropic</span>()   <span class="c"># reads ANTHROPIC_API_KEY from the environment</span>
+
+response = client.messages.create(
+    model=<span class="s">"claude-haiku-5-5"</span>,
+    max_tokens=<span class="n">1000</span>,
+    messages=[
+        {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"What is the capital of India? One sentence."</span>}
+    ],
+)
+
+<span class="k">for</span> block <span class="k">in</span> response.content:
+    <span class="k">if</span> block.type == <span class="s">"text"</span>:
+        print(block.text)
+
+print(<span class="s">"stop_reason:"</span>, response.stop_reason)
+print(<span class="s">"tokens in:"</span>, response.usage.input_tokens, <span class="s">"| tokens out:"</span>, response.usage.output_tokens)</pre><div class="cmd"><span>Terminal</span><pre>$ python app.py</pre></div><div class="out"><span>Terminal output</span><pre>   [API request: 1 message(s), 0 tool(s), stream=False]
+The capital of India is New Delhi.
+stop_reason: end_turn
+tokens in: 11 | tokens out: 16</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Part</th><th>What it means</th></tr>
+<tr><td><code>model</code></td><td>which Claude to use</td></tr>
+<tr><td><code>max_tokens</code></td><td>the most it may write. A token is about three quarters of an English word.</td></tr>
+<tr><td><code>messages</code></td><td>the conversation so far, as a list of user and assistant turns</td></tr>
+<tr><td><code>response.content</code></td><td>a list of blocks. Check <code>block.type</code> before reading <code>.text</code>.</td></tr>
+<tr><td><code>stop_reason</code></td><td><code>end_turn</code> (finished), <code>max_tokens</code> (cut off), <code>tool_use</code>, or <code>refusal</code></td></tr>
+<tr><td><code>usage</code></td><td>tokens in and out, which is what you pay for</td></tr></table></div>
+<div class="codewrap" data-k="hello-ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same call in TypeScript · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> <span class="t">Anthropic</span> <span class="k">from</span> <span class="s">"@anthropic-ai/sdk"</span>;
+
+<span class="k">const</span> client = <span class="k">new</span> <span class="t">Anthropic</span>();   <span class="c">// reads ANTHROPIC_API_KEY</span>
+
+<span class="k">const</span> response = <span class="k">await</span> client.messages.create({
+  model: <span class="s">"claude-haiku-5-5"</span>,
+  max_tokens: <span class="n">1000</span>,
+  messages: [{ role: <span class="s">"user"</span>, content: <span class="s">"What is the capital of India? One sentence."</span> }],
+});
+
+<span class="k">for</span> (<span class="k">const</span> block <span class="k">of</span> response.content) {
+  <span class="k">if</span> (block.type === <span class="s">"text"</span>) console.log(block.text);
+}</pre></div>
+<div class="codewrap" data-k="curl"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">And with plain HTTP · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">curl</span> https://api.anthropic.com/v1/messages \
+  -H <span class="s">"x-api-key: $ANTHROPIC_API_KEY"</span> \
+  -H <span class="s">"anthropic-version: 2023-06-01"</span> \
+  -H <span class="s">"content-type: application/json"</span> \
+  -d '{<span class="s">"model"</span>: <span class="s">"claude-haiku-5-5"</span>, <span class="s">"max_tokens"</span>: <span class="n">1000</span>,
+       <span class="s">"messages"</span>: [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"What is the capital of India?"</span>}]}'</pre></div>
+</section>
+<section class="card reveal jsec easy-part" id="system" data-say="system"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧑‍🏫</span><span>System prompts and conversations</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>The <code>system</code> prompt sets the role and rules for the whole chat. The API does <b>not remember</b> anything between calls, so your code keeps the history and sends it every time.</p>
+<div class="codewrap tests" data-k="chat"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A tutor with a system prompt and memory of the chat · ▶ Real SDK code, run against a local stand-in API with scripted replies</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 app.py</div><pre class="src" data-file="app.py"><span class="k">import</span> anthropic
+
+client = anthropic.<span class="t">Anthropic</span>()
+
+<span class="t">SYSTEM</span> = <span class="s">""</span>"<span class="t">You</span> are <span class="t">Pinky</span>, a friendly maths tutor <span class="k">for</span> a <span class="n">9</span> year old.
+<span class="t">Use</span> short sentences <span class="k">and</span> <span class="t">Indian</span> examples like rupees <span class="k">and</span> cricket.
+<span class="t">Never</span> give the final answer straight away. <span class="t">Give</span> one hint at a time.<span class="s">""</span>"
+
+history = []
+
+<span class="k">def</span> ask(text):
+    history.append({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: text})
+    reply = client.messages.create(
+        model=<span class="s">"claude-sonnet-5-5"</span>,
+        max_tokens=<span class="n">500</span>,
+        system=<span class="t">SYSTEM</span>,
+        messages=history,          <span class="c"># the API remembers nothing, so send the whole chat each time</span>
+    )
+    answer = reply.content[<span class="n">0</span>].text
+    history.append({<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: answer})
+    print(<span class="s">"Child:"</span>, text)
+    print(<span class="s">"Pinky:"</span>, answer, <span class="s">"\n"</span>)
+
+ask(<span class="s">"What is 3 times 4?"</span>)
+ask(<span class="s">"Is it 7?"</span>)
+ask(<span class="s">"Oh! Then it is 12?"</span>)
+print(<span class="s">"messages sent in the last request:"</span>, len(history) - <span class="n">1</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ python app.py</pre></div><div class="out"><span>Terminal output</span><pre>   [API request: 1 message(s), 0 tool(s), stream=False]
+Child: What is 3 times 4?
+Pinky: Think of 3 overs where you score 4 runs in each. How many runs is that in total? 
+
+   [API request: 3 message(s), 0 tool(s), stream=False]
+Child: Is it 7?
+Pinky: Close, but 7 is what you get when you add 3 and 4. Times means groups. Try counting 4, 8, ... 
+
+   [API request: 5 message(s), 0 tool(s), stream=False]
+Child: Oh! Then it is 12?
+Pinky: Yes! 3 groups of 4 make 12. Well done, champion! 🏏 
+
+messages sent in the last request: 5</pre></div></div>
+<div class="cl-put"><b>What goes in a system prompt:</b> who Claude is in this app, who the user is, the tone, the rules it must always follow, and the format of answers. The same advice as chapter 2 applies: be clear, give reasons, use examples and XML tags.</div>
+</section>
+<section class="card reveal jsec easy-part" id="models" data-say="models"><div class="sec-num">Part 4</div><h2><span class="sec-em">⚖️</span><span>Choose a model and know the cost</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<div class="tw"><table class="jt"><tr><th>Model</th><th>Id</th><th>$ per million in / out</th><th>Good for</th></tr>
+<tr><td>Fable 5.1</td><td><code>claude-fable-5-1</code></td><td>10 / 50</td><td>the hardest, longest tasks</td></tr>
+<tr><td>Opus 5.5</td><td><code>claude-opus-5-5</code></td><td>4 / 20</td><td>complex agents, coding, deep analysis</td></tr>
+<tr><td>Sonnet 5.5</td><td><code>claude-sonnet-5-5</code></td><td>2 / 10</td><td>most apps: strong and quick</td></tr>
+<tr><td>Haiku 5.5</td><td><code>claude-haiku-5-5</code></td><td>0.10 / 0.50</td><td>sorting, extracting, high volume</td></tr></table></div>
+<p>All four have a 1 million token context window and up to 128K output tokens. Haiku 5.5 costs $0.50 / $2.50 for prompts over 100K tokens.</p>
+<p class="eq">cost = (input tokens × input price + output tokens × output price) ÷ 1,000,000</p>
+<div class="codewrap" data-k="cost" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same job priced on four models · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// What a job costs on each model. Prices are dollars per million tokens (input / output).</span>
+<span class="k">const</span> <span class="t">PRICES</span> = {
+  <span class="s">"claude-fable-5-1"</span>:  [<span class="n">10</span>, <span class="n">50</span>],
+  <span class="s">"claude-opus-5-5"</span>:   [<span class="n">4</span>, <span class="n">20</span>],
+  <span class="s">"claude-sonnet-5-5"</span>: [<span class="n">2</span>, <span class="n">10</span>],
+  <span class="s">"claude-haiku-5-5"</span>:  [<span class="n">0.10</span>, <span class="n">0.50</span>],   <span class="c">// for prompts of 100K tokens or fewer</span>
+};
+
+<span class="c">// A support team summarises 2,000 tickets a day: about 1,500 tokens in and 200 out each.</span>
+<span class="k">const</span> tickets = <span class="n">2000</span>, inTok = <span class="n">1500</span>, outTok = <span class="n">200</span>;
+
+<span class="k">for</span> (<span class="k">const</span> [model, [pin, pout]] <span class="k">of</span> <span class="t">Object</span>.entries(<span class="t">PRICES</span>)) {
+  <span class="k">const</span> perDay = tickets * (inTok * pin + outTok * pout) / <span class="n">1e6</span>;
+  console.log(model.padEnd(<span class="n">18</span>), <span class="s">"$"</span> + perDay.toFixed(<span class="n">2</span>).padStart(<span class="n">7</span>), <span class="s">"a day  $"</span> + (perDay * <span class="n">30</span>).toFixed(<span class="n">0</span>).padStart(<span class="n">5</span>), <span class="s">"a month"</span>);
+}</pre><div class="out"><span>Output</span><pre>claude-fable-5-1   $  50.00 a day  $ 1500 a month
+claude-opus-5-5    $  20.00 a day  $  600 a month
+claude-sonnet-5-5  $  10.00 a day  $  300 a month
+claude-haiku-5-5   $   0.50 a day  $   15 a month</pre></div></div>
+<p>Start with Sonnet. Move simple, high volume steps to Haiku, and hard steps to Opus. Test with your own examples before you switch.</p>
+</section>
+<section class="card reveal jsec" id="stream" data-say="stream"><div class="sec-num">Part 5</div><h2><span class="sec-em">🌊</span><span>Streaming: show words as they arrive</span></h2>
+
+<p>Long answers take time. Streaming sends the text piece by piece, so your app can show it at once. Use it for anything long, because it also avoids request timeouts.</p>
+<div class="codewrap tests" data-k="stream"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Stream the answer as it is written · ▶ Real SDK code, run against a local stand-in API with scripted replies</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 app.py</div><pre class="src" data-file="app.py"><span class="k">import</span> anthropic
+
+client = anthropic.<span class="t">Anthropic</span>()
+
+<span class="k">with</span> client.messages.stream(
+    model=<span class="s">"claude-sonnet-5-5"</span>,
+    max_tokens=<span class="n">2000</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"Write a two line poem about monsoon rain."</span>}],
+) <span class="k">as</span> stream:
+    <span class="k">for</span> text <span class="k">in</span> stream.text_stream:
+        print(text, end=<span class="s">""</span>, flush=<span class="k">True</span>)    <span class="c"># words appear as they are written</span>
+    final = stream.get_final_message()
+
+print(<span class="s">"\n\nstop_reason:"</span>, final.stop_reason, <span class="s">"| tokens out:"</span>, final.usage.output_tokens)</pre><div class="cmd"><span>Terminal</span><pre>$ python app.py</pre></div><div class="out"><span>Terminal output</span><pre>   [API request: 1 message(s), 0 tool(s), stream=True]
+Grey clouds hum a song on the tin roof,
+and the dry earth smells of first rain.
+
+stop_reason: end_turn | tokens out: 27</pre></div></div>
+</section>
+<section class="card reveal jsec" id="json" data-say="json"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧾</span><span>Get JSON your code can trust</span></h2>
+
+<p>With <code>output_config.format</code> and a JSON schema, the reply is valid JSON in exactly that shape. No more "please answer only in JSON" and hoping.</p>
+<div class="codewrap tests" data-k="json"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Get JSON in a fixed shape · ▶ Real SDK code, run against a local stand-in API with scripted replies</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 app.py</div><pre class="src" data-file="app.py"><span class="k">import</span> json
+<span class="k">import</span> anthropic
+
+client = anthropic.<span class="t">Anthropic</span>()
+
+review = <span class="s">"Delivery was 2 days late but the mixer grinder works great. Box was damaged."</span>
+
+response = client.messages.create(
+    model=<span class="s">"claude-haiku-5-5"</span>,
+    max_tokens=<span class="n">1000</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: f<span class="s">"Read this product review and fill in the fields.\n\n&lt;review&gt;{review}&lt;/review&gt;"</span>}],
+    output_config={
+        <span class="s">"format"</span>: {
+            <span class="s">"type"</span>: <span class="s">"json_schema"</span>,
+            <span class="s">"schema"</span>: {
+                <span class="s">"type"</span>: <span class="s">"object"</span>,
+                <span class="s">"properties"</span>: {
+                    <span class="s">"sentiment"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>, <span class="s">"enum"</span>: [<span class="s">"positive"</span>, <span class="s">"mixed"</span>, <span class="s">"negative"</span>]},
+                    <span class="s">"issues"</span>: {<span class="s">"type"</span>: <span class="s">"array"</span>, <span class="s">"items"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}},
+                    <span class="s">"stars"</span>: {<span class="s">"type"</span>: <span class="s">"integer"</span>},
+                },
+                <span class="s">"required"</span>: [<span class="s">"sentiment"</span>, <span class="s">"issues"</span>, <span class="s">"stars"</span>],
+                <span class="s">"additionalProperties"</span>: <span class="k">False</span>,
+            },
+        }
+    },
+)
+
+data = json.loads(response.content[<span class="n">0</span>].text)   <span class="c"># valid JSON in the exact shape asked for</span>
+print(data)
+print(<span class="s">"needs follow-up:"</span>, data[<span class="s">"sentiment"</span>] != <span class="s">"positive"</span> <span class="k">and</span> len(data[<span class="s">"issues"</span>]) &gt; <span class="n">0</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ python app.py</pre></div><div class="out"><span>Terminal output</span><pre>{&#x27;sentiment&#x27;: &#x27;mixed&#x27;, &#x27;issues&#x27;: [&#x27;late delivery&#x27;, &#x27;damaged box&#x27;], &#x27;stars&#x27;: 3}
+needs follow-up: True</pre></div></div>
+</section>
+<section class="card reveal jsec" id="cache" data-say="cache"><div class="sec-num">Part 7</div><h2><span class="sec-em">💾</span><span>Effort and prompt caching</span></h2>
+
+<ul><li><b>Effort</b> (<code>output_config.effort</code>) sets how hard Claude thinks: <code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code> or <code>max</code>. Low is faster and cheaper, high is better for hard problems.</li>
+<li><b>Prompt caching</b> stores the start of a prompt you send again and again, such as a long policy. Later calls read it from the cache at a fraction of the price: $0.20 per million instead of $4 on Opus 5.5.</li></ul>
+<div class="codewrap tests" data-k="cache"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Effort and prompt caching · ▶ Real SDK code, run against a local stand-in API with scripted replies</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 app.py</div><pre class="src" data-file="app.py"><span class="k">import</span> anthropic
+
+client = anthropic.<span class="t">Anthropic</span>()
+<span class="t">POLICY</span> = open(<span class="s">"leave-policy.md"</span>).read()   <span class="c"># a long document you send with every question</span>
+
+response = client.messages.create(
+    model=<span class="s">"claude-opus-5-5"</span>,
+    max_tokens=<span class="n">1000</span>,
+    output_config={<span class="s">"effort"</span>: <span class="s">"low"</span>},       <span class="c"># low | medium | high | xhigh | max</span>
+    system=[
+        {<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: <span class="s">"Answer HR questions using only the policy below."</span>},
+        {<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: <span class="t">POLICY</span>, <span class="s">"cache_control"</span>: {<span class="s">"type"</span>: <span class="s">"ephemeral"</span>}},   <span class="c"># cache everything up to here</span>
+    ],
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"How many casual leaves do I get?"</span>}],
+)
+print(response.content[<span class="n">0</span>].text)
+print(<span class="s">"written to cache:"</span>, response.usage.cache_creation_input_tokens,
+      <span class="s">"| read from cache:"</span>, response.usage.cache_read_input_tokens)</pre><div class="fname">📄 leave-policy.md</div><pre class="src" data-file="leave-policy.md"><span class="k"># Leave policy</span>
+
+Casual leave: 12 days a year.
+Sick leave: 10 days a year.</pre><div class="cmd"><span>Terminal</span><pre>$ python app.py</pre></div><div class="out"><span>Terminal output</span><pre>You get 12 casual leaves a year. (stand-in reply)
+written to cache: 0 | read from cache: 0</pre></div></div>
+<p>The stand-in API does not cache, so it reports 0 for both. Against the real API the first call writes the policy to the cache and calls in the next 5 minutes read it.</p>
+</section>
+<section class="card reveal jsec" id="errors" data-say="errors"><div class="sec-num">Part 8</div><h2><span class="sec-em">🧯</span><span>When things go wrong</span></h2>
+
+<div class="codewrap" data-k="errors"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">errors.py: handle what can go wrong · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> anthropic
+
+client = anthropic.<span class="t">Anthropic</span>(max_retries=<span class="n">4</span>)   <span class="c"># 429, 5xx and connection errors are retried for you (default 2)</span>
+
+<span class="k">try</span>:
+    response = client.messages.create(
+        model=<span class="s">"claude-sonnet-5-5"</span>,
+        max_tokens=<span class="n">300</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"Summarise our refund policy"</span>}],
+    )
+<span class="k">except</span> anthropic.<span class="t">AuthenticationError</span>:
+    print(<span class="s">"401: the API key is missing or wrong"</span>)
+<span class="k">except</span> anthropic.<span class="t">RateLimitError</span>:
+    print(<span class="s">"429: too many requests, slow down and try later"</span>)
+<span class="k">except</span> anthropic.<span class="t">APIStatusError</span> <span class="k">as</span> e:
+    print(<span class="s">"API error"</span>, e.status_code, e.message)
+<span class="k">else</span>:
+    <span class="k">if</span> response.stop_reason == <span class="s">"max_tokens"</span>:
+        print(<span class="s">"The answer was cut off. Raise max_tokens."</span>)
+    <span class="k">elif</span> response.stop_reason == <span class="s">"refusal"</span>:
+        print(<span class="s">"Claude declined this request."</span>)
+    <span class="k">else</span>:
+        print(response.content[<span class="n">0</span>].text)</pre></div>
+<div class="tw"><table class="jt"><tr><th>Code</th><th>Meaning</th><th>What to do</th></tr>
+<tr><td>400</td><td>the request is wrong</td><td>read the message, fix the field</td></tr>
+<tr><td>401</td><td>bad or missing key</td><td>check <code>ANTHROPIC_API_KEY</code></td></tr>
+<tr><td>429</td><td>rate limit</td><td>the SDK retries. Slow down if it keeps happening.</td></tr>
+<tr><td>500, 529</td><td>server busy or error</td><td>the SDK retries. Try again later.</td></tr></table></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every file name, folder, setting and command on this page was checked against the official Claude and Claude Code documentation in October 2026.</p>
+  <nav class="pager"><a class="prev" href="./claude-automation.html" data-topic="claude-automation"><small>← Previous chapter</small><b>⚙️ Daily automation</b></a><a class="next" href="./claude-agents.html" data-topic="claude-agents"><small>Next chapter →</small><b>🤖 Build agents</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script>
+const PAGE = {"info": {"title": "The Claude API in one page", "panels": [{"s": [["e", "🔑"], ["t", "ANTHROPIC_API_KEY", {"b": 1, "size": 11}]], "h": "Key", "t": "From platform.claude.com.", "more": "Only in the environment."}, {"s": [["e", "📨"], ["t", "messages.create", {"b": 1}]], "h": "Call", "t": "model, max_tokens, messages.", "more": "Optional system prompt."}, {"s": [["e", "🧾"], ["t", "json_schema", {"b": 1}]], "h": "Shape", "t": "JSON your code can trust.", "more": "Stream long answers."}, {"s": [["e", "💰"], ["t", "usage", {"b": 1}]], "h": "Cost", "t": "Pay per token in and out.", "more": "Haiku for volume, Opus for hard."}], "remember": "The API remembers nothing. Your code sends the history every time."}, "real": [["🛍️", "An online store", "Sends each new review to Haiku with a JSON schema. Mixed and negative reviews with issues go straight to the support queue."], ["📚", "An edtech startup", "Built a maths tutor like Pinky above with a system prompt and saved chat history, then streamed answers to the app."], ["🏢", "An HR team", "Caches a 60 page policy in the system prompt so each employee question costs a fraction of the first one."]], "quiz": [{"lv": "e", "q": "Where should your API key live?", "o": ["In an environment variable", "In the code", "In the README", "In a web page"], "a": 0, "hint": "Keep it secret.", "why": "The SDK reads ANTHROPIC_API_KEY."}, {"lv": "e", "q": "Which three fields does every messages.create call need?", "o": ["model, max_tokens, messages", "key, prompt, model", "system, tools, model", "model, temperature, user"], "a": 0, "hint": "Model, limit, conversation.", "why": "system and tools are optional."}, {"lv": "e", "q": "Does the API remember earlier calls?", "o": ["No, send the history each time", "Yes, for one hour", "Yes, forever", "Only with Opus"], "a": 0, "hint": "Stateless.", "why": "Your code keeps the history."}, {"lv": "m", "q": "stop_reason is max_tokens. What happened?", "o": ["The answer was cut off", "It finished normally", "It wants a tool", "It refused"], "a": 0, "hint": "It hit the limit.", "why": "Raise max_tokens or ask for less."}, {"lv": "m", "q": "Which model is cheapest for sorting thousands of short messages?", "o": ["claude-haiku-5-5", "claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5"], "a": 0, "hint": "High volume.", "why": "Haiku is built for fast, simple, high volume work."}, {"lv": "m", "q": "Why stream a long answer?", "o": ["Show text sooner and avoid timeouts", "It is cheaper", "It is more accurate", "It skips the key"], "a": 0, "hint": "Speed for the user.", "why": "Streaming sends text as it is written."}, {"lv": "h", "q": "What guarantees the reply is valid JSON in your shape?", "o": ["output_config.format with a json_schema", "Asking nicely", "A higher max_tokens", "Streaming"], "a": 0, "hint": "Structured outputs.", "why": "The schema constrains the output."}, {"lv": "h", "q": "What does cache_control on a long system block do?", "o": ["Later calls read that prefix cheaply", "Hides it from Claude", "Saves it to disk", "Deletes it after use"], "a": 0, "hint": "Prompt caching.", "why": "Cache reads cost a small fraction of normal input."}, {"lv": "x", "q": "Which errors does the SDK retry on its own?", "o": ["429, 5xx and connection errors", "400 and 401", "Only 404", "None"], "a": 0, "hint": "Temporary ones.", "why": "Fix 400 and 401 yourself."}, {"lv": "x", "q": "Which effort value is best for a quick, simple extraction?", "o": ["low", "max", "xhigh", "high"], "a": 0, "hint": "Speed and cost.", "why": "Low effort answers faster and cheaper."}], "calc": [{"lv": "e", "q": "A call uses 2,000 input tokens on Sonnet 5.5 at $2 per million. Input cost in dollars?", "ans": "0.004", "hint": "Tokens times price, divided by a million.", "steps": ["<span class=\"eq\">2,000 × 2 ÷ 1,000,000 = 0.004<\/span>"], "alt": ["$0.004"]}, {"lv": "e", "q": "It also writes 500 tokens at $10 per million. Output cost in dollars?", "ans": "0.005", "hint": "Same formula.", "steps": ["<span class=\"eq\">500 × 10 ÷ 1,000,000 = 0.005<\/span>"], "alt": ["$0.005"]}, {"lv": "m", "q": "From the cost run, how many dollars a month does Haiku 5.5 cost for the ticket job?", "ans": "15", "hint": "Read the output.", "steps": ["<span class=\"eq\">2,000 × (1,500 × 0.10 + 200 × 0.50) ÷ 10⁶ × 30 = 15<\/span>"], "alt": ["$15"]}, {"lv": "m", "q": "And Sonnet 5.5 for the same job, per month?", "ans": "300", "hint": "Read the output.", "steps": ["<span class=\"eq\">2,000 × (1,500 × 2 + 200 × 10) ÷ 10⁶ × 30 = 300<\/span>"], "alt": ["$300"]}, {"lv": "h", "q": "In the tutor run, how many messages were in the last request?", "ans": "5", "hint": "Read the last line.", "steps": ["Three child turns and two Pinky turns."]}, {"lv": "x", "q": "A 50,000 token policy is read 400 times a day on Opus 5.5. Saving per day with cache reads at $0.20 instead of $4 per million?", "ans": "76", "hint": "Tokens per day × price difference.", "steps": ["<span class=\"eq\">50,000 × 400 × (4 − 0.20) ÷ 10⁶ = 76<\/span>"], "alt": ["$76"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter calls Claude from your own code with the Messages API, step by step.", "hi": "यह अध्याय आपके code से Messages API के ज़रिए Claude को बुलाता है।", "kn": "ಈ ಅಧ್ಯಾಯ ನಿಮ್ಮ code ನಿಂದ Messages API ಮೂಲಕ Claude ಅನ್ನು ಕರೆಯುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ ଆପଣଙ୍କ code ରୁ Messages API ଦ୍ୱାରା Claude କୁ ଡାକେ।", "ar": "يستدعي هذا الفصل Claude من شيفرتك عبر واجهة الرسائل خطوة بخطوة.", "de": "Dieses Kapitel ruft Claude Schritt für Schritt aus deinem Code über die Messages API auf."}, {"id": "setup", "h": "Setup", "en": "Create a key, keep it in an environment variable, and install the SDK.", "hi": "Key बनाएँ, environment variable में रखें, SDK install करें।", "kn": "Key ರಚಿಸಿ, environment variable ನಲ್ಲಿ ಇಡಿ, SDK install ಮಾಡಿ.", "or": "Key ତିଆରି କରି environment variable ରେ ରଖନ୍ତୁ, SDK install କରନ୍ତୁ।", "ar": "أنشئ مفتاحًا واحفظه في متغير بيئة وثبّت الحزمة.", "de": "Erstelle einen Schlüssel, lege ihn in eine Umgebungsvariable und installiere das SDK."}, {"id": "first", "h": "First call", "en": "Send a model, max tokens and messages. Read the text blocks, the stop reason and the token usage.", "hi": "Model, max_tokens और messages भेजें। Text, stop_reason और usage पढ़ें।", "kn": "Model, max_tokens, messages ಕಳುಹಿಸಿ. Text, stop_reason, usage ಓದಿ.", "or": "Model, max_tokens ଓ messages ପଠାନ୍ତୁ। Text, stop_reason ଓ usage ପଢନ୍ତୁ।", "ar": "أرسل النموذج والحد الأقصى والرسائل، ثم اقرأ النص وسبب التوقف والاستهلاك.", "de": "Sende Modell, max_tokens und Nachrichten. Lies Text, Stoppgrund und Verbrauch."}, {"id": "system", "h": "System prompt", "en": "The system prompt sets the role. The API remembers nothing, so send the whole history each time.", "hi": "System prompt भूमिका तय करता है। पूरा history हर बार भेजें।", "kn": "System prompt ಪಾತ್ರ ನಿರ್ಧರಿಸುತ್ತದೆ. ಪೂರ್ಣ history ಪ್ರತಿಬಾರಿ ಕಳುಹಿಸಿ.", "or": "System prompt ଭୂମିକା ସ୍ଥିର କରେ। ପୂରା history ପ୍ରତିଥର ପଠାନ୍ତୁ।", "ar": "موجّه النظام يحدد الدور، والواجهة لا تتذكر، فأرسل السجل كاملًا كل مرة.", "de": "Der Systemprompt legt die Rolle fest. Sende jedes Mal den ganzen Verlauf."}, {"id": "models", "h": "Models", "en": "Haiku is cheapest, Sonnet suits most apps, Opus and Fable handle the hardest work. Cost is tokens times price.", "hi": "Haiku सबसे सस्ता, Sonnet ज़्यादातर apps के लिए, Opus कठिन काम के लिए।", "kn": "Haiku ಅಗ್ಗ, Sonnet ಹೆಚ್ಚಿನ apps ಗೆ, Opus ಕಠಿಣ ಕೆಲಸಕ್ಕೆ.", "or": "Haiku ଶସ୍ତା, Sonnet ଅଧିକାଂଶ apps ପାଇଁ, Opus କଠିନ କାମ ପାଇଁ।", "ar": "Haiku الأرخص وSonnet لمعظم التطبيقات وOpus للأصعب.", "de": "Haiku ist am günstigsten, Sonnet für die meisten Apps, Opus für das Schwerste."}, {"id": "stream", "h": "Streaming", "en": "Streaming shows words as they arrive and avoids timeouts on long answers.", "hi": "Streaming शब्दों को आते ही दिखाता है।", "kn": "Streaming ಪದಗಳನ್ನು ಬಂದಂತೆ ತೋರಿಸುತ್ತದೆ.", "or": "Streaming ଶବ୍ଦ ଆସୁଆସୁ ଦେଖାଏ।", "ar": "البث يعرض الكلمات فور وصولها.", "de": "Streaming zeigt Wörter sofort an."}, {"id": "json", "h": "JSON", "en": "A JSON schema in output config makes the reply valid JSON in exactly that shape.", "hi": "Output config में JSON schema देने से जवाब सही JSON होता है।", "kn": "Output config ನಲ್ಲಿ JSON schema ಕೊಟ್ಟರೆ ಸರಿಯಾದ JSON ಬರುತ್ತದೆ.", "or": "Output config ରେ JSON schema ଦେଲେ ଠିକ୍ JSON ଆସେ।", "ar": "مخطط JSON في الإعدادات يجعل الرد JSON صالحًا بالشكل المطلوب.", "de": "Ein JSON-Schema sorgt für gültiges JSON in genau dieser Form."}, {"id": "cache", "h": "Effort and caching", "en": "Effort sets how hard Claude thinks. Caching makes a repeated long prompt much cheaper.", "hi": "Effort सोचने की गहराई तय करता है। Caching दोहराए prompt को सस्ता करता है।", "kn": "Effort ಆಲೋಚನೆಯ ಆಳ, caching ಪುನರಾವರ್ತಿತ prompt ಅಗ್ಗ.", "or": "Effort ଚିନ୍ତାର ଗଭୀରତା, caching ପୁନରାବୃତ୍ତ prompt ଶସ୍ତା କରେ।", "ar": "الجهد يحدد عمق التفكير والتخزين المؤقت يخفض كلفة الموجّه المكرر.", "de": "Effort steuert die Denktiefe, Caching verbilligt wiederholte Prompts."}, {"id": "errors", "h": "Errors", "en": "The SDK retries rate limits and server errors. Check the stop reason for cut off answers and refusals.", "hi": "SDK 429 और 5xx पर फिर कोशिश करता है। Stop reason जाँचें।", "kn": "SDK 429, 5xx ಗೆ ಮರುಪ್ರಯತ್ನಿಸುತ್ತದೆ. Stop reason ನೋಡಿ.", "or": "SDK 429 ଓ 5xx ରେ ପୁଣି ଚେଷ୍ଟା କରେ। Stop reason ଦେଖନ୍ତୁ।", "ar": "تعيد الحزمة المحاولة عند 429 و5xx. افحص سبب التوقف.", "de": "Das SDK wiederholt bei 429 und 5xx. Prüfe den Stoppgrund."}, {"id": "practice", "h": "Practice", "en": "Practise counting tokens, pricing jobs and building message lists.", "hi": "Tokens, कीमत और message lists का अभ्यास।", "kn": "Tokens, ಬೆಲೆ, message lists ಅಭ್ಯಾಸ.", "or": "Tokens, ମୂଲ୍ୟ ଓ message lists ଅଭ୍ୟାସ।", "ar": "تدرّب على حساب الرموز والكلفة وبناء قوائم الرسائل.", "de": "Übe Tokens, Preise und Nachrichtenlisten."}], "ex": [{"id": "cost-of", "lv": "e", "title": "Cost of one call", "task": "<p>Write <code>cost(inTok, outTok, inPrice, outPrice)<\/code> that returns the dollar cost. Prices are per million tokens.<\/p>", "starter": "function cost(inTok, outTok, inPrice, outPrice) {\n  \n}", "tests": [{"call": "cost(2000, 500, 2, 10)", "want": 0.009}, {"call": "cost(1000000, 0, 4, 20)", "want": 4}, {"call": "cost(0, 1000000, 0.1, 0.5)", "want": 0.5}], "solution": "function cost(inTok, outTok, inPrice, outPrice) {\n  return (inTok * inPrice + outTok * outPrice) / 1e6;\n}", "hint": "Add the two parts, then divide by a million.", "why": "Every model choice starts with this formula."}, {"id": "add-turn", "lv": "m", "title": "Keep the history", "task": "<p>Write <code>addTurn(history, role, text)<\/code> that returns a <b>new<\/b> array with <code>{ role, content: text }<\/code> added at the end. Do not change the original.<\/p>", "starter": "function addTurn(history, role, text) {\n  \n}", "tests": [{"call": "addTurn([], \"user\", \"hi\").length", "want": 1}, {"call": "addTurn([{ role: \"user\", content: \"hi\" }], \"assistant\", \"hello\")[1].role", "want": "assistant"}, {"call": "(() => { const h = []; addTurn(h, \"user\", \"x\"); return h.length; })()", "want": 0}], "solution": "function addTurn(history, role, text) {\n  return [...history, { role, content: text }];\n}", "hint": "Spread the old array into a new one.", "why": "Your code is the memory of the conversation."}, {"id": "pick-model", "lv": "h", "title": "Pick a model", "task": "<p>Write <code>pickModel(task)<\/code>. Return <code>\"claude-haiku-5-5\"<\/code> for <code>\"classify\"<\/code> and <code>\"extract\"<\/code>, <code>\"claude-opus-5-5\"<\/code> for <code>\"agent\"<\/code> and <code>\"research\"<\/code>, and <code>\"claude-sonnet-5-5\"<\/code> for anything else.<\/p>", "starter": "function pickModel(task) {\n  \n}", "tests": [{"call": "pickModel(\"classify\")", "want": "claude-haiku-5-5"}, {"call": "pickModel(\"research\")", "want": "claude-opus-5-5"}, {"call": "pickModel(\"chat\")", "want": "claude-sonnet-5-5"}], "solution": "function pickModel(task) {\n  if ([\"classify\", \"extract\"].includes(task)) return \"claude-haiku-5-5\";\n  if ([\"agent\", \"research\"].includes(task)) return \"claude-opus-5-5\";\n  return \"claude-sonnet-5-5\";\n}", "hint": "Two includes checks and a default.", "why": "Routing each step to the right model saves real money."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "The Claude API Step by Step", subject: "master-claude" });
+CLAUDE_PAGE.wire();
+</script>
+</body>
+</html>

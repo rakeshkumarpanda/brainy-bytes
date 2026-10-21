@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subagents and Output Styles · Master the Claude</title>
+<meta name="description" content="Claude Code subagents: .claude/agents files, frontmatter fields, built-in Explore and Plan agents, reviewer, test runner and research agents, @-mentions, agent memory and output styles.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=master-claude" target="_top">✨ Master the Claude</a><span>›</span><span>🛠️ Claude Code and its files</span><span>›</span><span>Chapter 9 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🤖</span><div><h1>Subagents and Output Styles</h1><p class="lead">What a subagent is and when to use one, the built-in agents, writing .claude/agents files step by step with every field, ready to copy reviewer, tester and researcher agents, calling and remembering, and output styles that change how Claude talks.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 16 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 2 examples run for real</span><span class="chip">📄 9 ready to copy files and prompts</span><span class="chip">🏋️ 3 hands-on exercises</span><span class="chip">🎯 10 quiz questions</span><span class="chip">🧮 6 calculations</span><span class="chip">🧒 6 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>A subagent is a helper Claude sends to do one job, like reading a pile of papers. The helper reads them at its own desk and comes back with a short note.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#what" class="easy"><span>🤖</span>What a subagent is</a><a href="#builtin" class="easy"><span>🧩</span>Built-in subagents you already have</a><a href="#create" class="easy"><span>🛠️</span>Create your first subagent, step by step</a><a href="#fields"><span>🏷️</span>Every field in an agent file</a><a href="#gallery" class="easy"><span>🗂️</span>Ready to copy agents</a><a href="#use" class="easy"><span>📣</span>Calling a subagent</a><a href="#memory"><span>🧠</span>Agents that remember</a><a href="#styles" class="easy"><span>🎨</span>Output styles: change how Claude talks for a whole session</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="what" data-say="what"><div class="sec-num">Part 1</div><h2><span class="sec-em">🤖</span><span>What a subagent is</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 .claude/agents/</span></div>
+<p>A <b>subagent</b> is a helper that Claude can hand a task to. It has its <b>own context window</b>, its own instructions and its own allowed tools. It does the work, then sends back <b>only a short result</b>. Your main conversation stays small and focused.</p>
+<div class="viz" data-viz="flow" data-k="delegate"></div>
+<div class="codewrap" data-k="savings" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Context saved by delegating a big search · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Why subagents keep your main conversation clean.</span>
+<span class="c">// A subagent reads in its own context window and sends back only a summary.</span>
+<span class="k">const</span> task = { filesRead: <span class="n">38</span>, tokensPerFile: <span class="n">3_200</span>, summaryTokens: <span class="n">700</span> };
+
+<span class="k">const</span> withoutSubagent = task.filesRead * task.tokensPerFile;   <span class="c">// all of it lands in your chat</span>
+<span class="k">const</span> withSubagent = task.summaryTokens;                       <span class="c">// only the summary lands in your chat</span>
+
+console.log(<span class="s">"tokens added to the main chat without a subagent:"</span>, withoutSubagent.toLocaleString(<span class="s">"en-IN"</span>));
+console.log(<span class="s">"tokens added to the main chat with a subagent:   "</span>, withSubagent.toLocaleString(<span class="s">"en-IN"</span>));
+console.log(<span class="s">"main chat kept"</span>, ((<span class="n">1</span> - withSubagent / withoutSubagent) * <span class="n">100</span>).toFixed(<span class="n">1</span>) + <span class="s">"% smaller"</span>);</pre><div class="out"><span>Output</span><pre>tokens added to the main chat without a subagent: 1,21,600
+tokens added to the main chat with a subagent:    700
+main chat kept 99.4% smaller</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Use a subagent when...</th><th>Stay in the main chat when...</th></tr>
+<tr><td>a task reads many files or long logs</td><td>you need quick back and forth</td></tr>
+<tr><td>you want a specialist with fixed rules, like a reviewer</td><td>several steps share a lot of context</td></tr>
+<tr><td>several independent searches can run in parallel</td><td>the change is small and quick</td></tr></table></div>
+</section>
+<section class="card reveal jsec easy-part" id="builtin" data-say="builtin"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧩</span><span>Built-in subagents you already have</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<div class="tw"><table class="jt"><tr><th>Agent</th><th>What it does</th></tr>
+<tr><td><b>Explore</b></td><td>fast, read only search of a codebase. Starts without your <code>CLAUDE.md</code> to stay light.</td></tr>
+<tr><td><b>Plan</b></td><td>read only research used in plan mode</td></tr>
+<tr><td><b>general-purpose</b></td><td>complex tasks that need both exploring and changing</td></tr>
+<tr><td><b>claude</b></td><td>the catch all when nothing more specific fits</td></tr>
+<tr><td>statusline-setup, claude-code-guide</td><td>small helpers for the status line and for questions about Claude Code</td></tr>
+</table></div>
+<p>Claude uses these on its own. You will see a row in the transcript such as <code>Explore(Find the payment code)</code>.</p>
+</section>
+<section class="card reveal jsec easy-part" id="create" data-say="create"><div class="sec-num">Part 3</div><h2><span class="sec-em">🛠️</span><span>Create your first subagent, step by step</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 .claude/agents/code-reviewer.md</span><span class="cl-file">📄 ~/.claude/agents/</span></div>
+<ol class="steps"><li>Decide the scope: <code>~/.claude/agents/</code> for you in every project, or <code>.claude/agents/</code> for the team.</li>
+<li>Ask Claude to write it, or create a Markdown file yourself.</li>
+<li>Check the front matter: <code>name</code> and <code>description</code> are required.</li>
+<li>Write the body. It becomes the agent's <b>system prompt</b>.</li>
+<li>Try it: "Use the code-reviewer agent to check my changes".</li></ol>
+<div class="codewrap" data-k="ask-create"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Ask Claude to write the agent file for you · 💬 Prompt to try</span><button type="button" class="copy">Copy</button></div><pre class="src main">Create a personal code-improver subagent in ~/.claude/agents/ that scans
+files and suggests improvements for readability, performance, and best
+practices. It should explain each issue, show the current code, and
+provide an improved version. Make it read-only and have it use Sonnet.</pre><div class="note-out"><span>What happens</span><p>Claude writes ~/.claude/agents/code-improver.md with a name, description, a read-only tools list, model: sonnet and a system prompt. You review it and keep or edit it.</p></div></div>
+<div class="codewrap" data-k="reviewer"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">.claude/agents/code-reviewer.md · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">---</span>
+<span class="a">name</span>: <span class="s">code-reviewer</span>
+<span class="a">description</span>: <span class="s">Expert code reviewer. Use right after writing or changing code, and before any commit.</span>
+<span class="a">tools</span>: <span class="s">Read, Grep, Glob, Bash</span>
+<span class="a">model</span>: <span class="s">sonnet</span>
+<span class="c">---</span>
+
+You are a senior code reviewer for this repository.
+
+When invoked:
+<span class="t">1.</span> Run <span class="s">`git diff`</span> to see recent changes and focus on the changed files.
+<span class="t">2.</span> Check for: unclear names, duplicated code, missing error handling,
+   secrets in code, missing input validation and missing tests.
+<span class="t">3.</span> Report findings in three groups: Must fix, Should fix, Nice to have.
+   For each, give the file, the line and a concrete fix.
+
+Be specific and brief. Do not rewrite files yourself.</pre></div>
+<div class="cl-name">This is the real "agents.md" people talk about: not one file, but <b>one Markdown file per agent</b> inside <code>.claude/agents/</code>. A root level <code>AGENTS.md</code> is something else: shared project instructions (chapter 5).</div>
+</section>
+<section class="card reveal jsec" id="fields" data-say="fields"><div class="sec-num">Part 4</div><h2><span class="sec-em">🏷️</span><span>Every field in an agent file</span></h2>
+<div class="cl-tags"><span class="cl-file">📄 .claude/agents/&lt;name&gt;.md</span></div>
+<p>Multi word fields use camelCase, such as <code>maxTurns</code>. A misspelled field is ignored without an error.</p>
+<div class="tw"><table class="jt"><tr><th>Field</th><th>What it does</th></tr>
+<tr><td><code>name</code> (required)</td><td>unique id, no <code>:</code></td></tr>
+<tr><td><code>description</code> (required)</td><td>when Claude should delegate to it. Add "use proactively" to encourage it.</td></tr>
+<tr><td><code>tools</code>, <code>disallowedTools</code></td><td>allow list or block list of tools. Leave <code>tools</code> out to inherit all.</td></tr>
+<tr><td><code>model</code></td><td><code>sonnet</code>, <code>opus</code>, <code>haiku</code>, <code>fable</code>, a full model id, or <code>inherit</code></td></tr>
+<tr><td><code>permissionMode</code></td><td><code>default</code>, <code>acceptEdits</code>, <code>auto</code>, <code>dontAsk</code>, <code>bypassPermissions</code>, <code>plan</code></td></tr>
+<tr><td><code>maxTurns</code></td><td>stop after this many steps</td></tr>
+<tr><td><code>skills</code></td><td>skills loaded in full at start</td></tr>
+<tr><td><code>mcpServers</code></td><td>MCP servers only this agent can use</td></tr>
+<tr><td><code>memory</code></td><td><code>user</code>, <code>project</code> or <code>local</code>: notes it keeps between sessions</td></tr>
+<tr><td><code>hooks</code>, <code>effort</code>, <code>background</code></td><td>hooks while it runs, effort level, run in the background</td></tr>
+<tr><td><code>isolation: worktree</code></td><td>work on a separate copy of the repository</td></tr>
+<tr><td><code>omitClaudeMd</code>, <code>color</code>, <code>initialPrompt</code></td><td>skip <code>CLAUDE.md</code>, colour in the task list, first prompt when run with <code>--agent</code></td></tr>
+</table></div>
+<div class="codewrap tests" data-k="check"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Check four agent files · ▶ Runs a check of agent file rules</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 .claude/agents/broken.md</div><pre class="src" data-file=".claude/agents/broken.md"><span class="c">---</span>
+<span class="a">name</span>: <span class="s">team:helper</span>
+<span class="a">descripton</span>: <span class="s">Helps the team</span>
+<span class="a">max_turns</span>: <span class="k">10</span>
+<span class="c">---</span>
+
+You help the team with anything.</pre><div class="fname">📄 check-agents.mjs</div><pre class="src" data-file="check-agents.mjs"><span class="c">// Checks agent files the way the docs describe: name and description are required,</span>
+<span class="c">// name may not contain ":", field names are camelCase and unknown fields are ignored.</span>
+<span class="k">import</span> { readFileSync, readdirSync } <span class="k">from</span> <span class="s">"node:fs"</span>;
+
+<span class="k">const</span> <span class="t">KNOWN</span> = [<span class="s">"name"</span>, <span class="s">"description"</span>, <span class="s">"tools"</span>, <span class="s">"disallowedTools"</span>, <span class="s">"model"</span>, <span class="s">"permissionMode"</span>, <span class="s">"maxTurns"</span>, <span class="s">"autoCompactWindow"</span>,
+  <span class="s">"skills"</span>, <span class="s">"mcpServers"</span>, <span class="s">"hooks"</span>, <span class="s">"memory"</span>, <span class="s">"background"</span>, <span class="s">"omitClaudeMd"</span>, <span class="s">"effort"</span>, <span class="s">"isolation"</span>, <span class="s">"color"</span>, <span class="s">"initialPrompt"</span>, <span class="s">"experimental"</span>];
+
+<span class="k">for</span> (<span class="k">const</span> f <span class="k">of</span> readdirSync(<span class="s">".claude/agents"</span>).sort()) {
+  <span class="k">const</span> text = readFileSync(<span class="s">".claude/agents/"</span> + f, <span class="s">"utf8"</span>);
+  <span class="k">const</span> [, front, body] = text.match(/^---\n([\s\<span class="t">S</span>]*?)\n---\n([\s\<span class="t">S</span>]*)$/);
+  <span class="k">const</span> fields = <span class="t">Object</span>.fromEntries([...front.matchAll(/^([\w-]+):\s*(.*)$/gm)].map(m =&gt; [m[<span class="n">1</span>], m[<span class="n">2</span>]]));
+  <span class="k">const</span> problems = [];
+  <span class="k">if</span> (!fields.name) problems.push(<span class="s">"missing name"</span>);
+  <span class="k">if</span> (!fields.description) problems.push(<span class="s">"missing description"</span>);
+  <span class="k">if</span> ((fields.name ?? <span class="s">""</span>).includes(<span class="s">":"</span>)) problems.push(<span class="s">'name may not contain ":"'</span>);
+  <span class="k">for</span> (<span class="k">const</span> k <span class="k">of</span> <span class="t">Object</span>.keys(fields)) <span class="k">if</span> (!<span class="t">KNOWN</span>.includes(k)) problems.push(<span class="s">`unknown field "${k}" is ignored`</span>);
+  <span class="k">const</span> tools = fields.tools ? fields.tools : <span class="s">"all tools"</span>;
+  console.log(<span class="s">`${f.padEnd(20)} model=${(fields.model ?? "default").padEnd(7)} tools=${tools}`</span>);
+  console.log(<span class="s">`${"".padEnd(20)} system prompt: ${body.trim().split("\n")[0].slice(0, 60)}...`</span>);
+  <span class="k">if</span> (problems.length) console.log(<span class="s">`${"".padEnd(20)} PROBLEMS: ${problems.join("; ")}`</span>);
+}</pre><div class="cmd"><span>Terminal</span><pre>$ node check-agents.mjs</pre></div><div class="out"><span>Terminal output</span><pre>broken.md            model=default tools=all tools
+                     system prompt: You help the team with anything....
+                     PROBLEMS: missing description; name may not contain &quot;:&quot;; unknown field &quot;descripton&quot; is ignored; unknown field &quot;max_turns&quot; is ignored
+code-reviewer.md     model=sonnet  tools=Read, Grep, Glob, Bash
+                     system prompt: You are a senior code reviewer for this repository....
+doc-researcher.md    model=haiku   tools=Read, Grep, Glob, WebFetch
+                     system prompt: You research questions in documents and return only what mat...
+test-runner.md       model=inherit tools=Read, Edit, Bash, Grep, Glob
+                     system prompt: You run tests and fix failures....</pre></div></div>
+</section>
+<section class="card reveal jsec easy-part" id="gallery" data-say="gallery"><div class="sec-num">Part 5</div><h2><span class="sec-em">🗂️</span><span>Ready to copy agents</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 .claude/agents/test-runner.md</span><span class="cl-file">📄 .claude/agents/doc-researcher.md</span></div>
+<div class="codewrap" data-k="tester"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">.claude/agents/test-runner.md · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">---</span>
+<span class="a">name</span>: <span class="s">test-runner</span>
+<span class="a">description</span>: <span class="s">Runs the test suite and fixes failing tests. Use proactively after code changes or when the user mentions failing tests.</span>
+<span class="a">tools</span>: <span class="s">Read, Edit, Bash, Grep, Glob</span>
+<span class="a">model</span>: <span class="s">inherit</span>
+<span class="a">maxTurns</span>: <span class="k">25</span>
+<span class="c">---</span>
+
+You run tests and fix failures.
+
+<span class="t">1.</span> Run the smallest test command that covers the change (see CLAUDE.md).
+<span class="t">2.</span> For each failure, find the cause in the code under test, not in the test.
+<span class="t">3.</span> Fix it, rerun, and repeat until green.
+<span class="t">4.</span> Reply with: what failed, the cause, the fix, and the final test summary.
+
+Never delete or skip a test to make it pass.</pre></div>
+<div class="codewrap" data-k="research"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">.claude/agents/doc-researcher.md · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">---</span>
+<span class="a">name</span>: <span class="s">doc-researcher</span>
+<span class="a">description</span>: <span class="s">Reads long documents, policies or reports and returns a short cited summary. Use when a question needs many files read.</span>
+<span class="a">tools</span>: <span class="s">Read, Grep, Glob, WebFetch</span>
+<span class="a">model</span>: <span class="s">haiku</span>
+<span class="a">color</span>: <span class="s">cyan</span>
+<span class="c">---</span>
+
+You research questions in documents and return only what matters.
+
+<span class="t">-</span> Search first, then read only the relevant sections.
+<span class="t">-</span> Return at most 10 bullet points.
+<span class="t">-</span> Cite the file and heading for every point.</pre></div>
+<div class="cl-put"><ul><li><b>Description:</b> when to use it, in the words people use.</li>
+<li><b>Tools:</b> only what the job needs. A reviewer does not need <code>Edit</code>.</li>
+<li><b>Model:</b> <code>haiku</code> for quick reading jobs, <code>sonnet</code> or <code>inherit</code> for real work.</li>
+<li><b>Body:</b> numbered steps, what to return and in what shape, and the one or two things it must never do.</li></ul></div>
+</section>
+<section class="card reveal jsec easy-part" id="use" data-say="use"><div class="sec-num">Part 6</div><h2><span class="sec-em">📣</span><span>Calling a subagent</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<div class="codewrap" data-k="invoke"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Three ways to call a subagent · 💬 Prompt to try</span><button type="button" class="copy">Copy</button></div><pre class="src main">Use the test-runner subagent to fix the failing checkout tests
+@"code-reviewer (agent)" look at my changes to src/payments
+Use 3 doc-researcher subagents in parallel: one on the leave policy, one on travel, one on expenses</pre><div class="note-out"><span>What happens</span><p>The first lets Claude decide to delegate. The @-mention makes sure that exact agent runs. The third runs three helpers at once, each returning a short summary.</p></div></div>
+<div class="codewrap" data-k="session"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Run a whole session as one agent · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">claude</span> --agent code-reviewer        <span class="c"># the whole session runs as that agent</span>
+/agents                             <span class="c"># prints a reminder of where agent files live</span></pre><div class="note-out"><span>What happens</span><p>With --agent, the agent's system prompt, tools and model apply to the main conversation. Setting "agent": "code-reviewer" in .claude/settings.json makes it the project default.</p></div></div>
+<div class="scenario"><b>🧑‍⚖️ Real scenario: a policy question</b>An HR manager asks "can a new joiner take leave in their first month and get travel paid for a training?". Claude starts two <code>doc-researcher</code> agents in parallel on the leave and travel policies. Each returns five cited bullets. The answer arrives with exact clause references and the main chat stays short.</div>
+</section>
+<section class="card reveal jsec" id="memory" data-say="memory"><div class="sec-num">Part 7</div><h2><span class="sec-em">🧠</span><span>Agents that remember</span></h2>
+<div class="cl-tags"><span class="cl-file">📄 .claude/agents/support-triage.md</span></div>
+<p>With <code>memory</code> set, the agent keeps its own notes folder and gets better over time, for example learning which support issues keep coming back.</p>
+<div class="codewrap" data-k="memory-agent"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An agent that remembers between sessions · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">---</span>
+<span class="a">name</span>: <span class="s">support-triage</span>
+<span class="a">description</span>: <span class="s">Triages new support tickets by product area and urgency. Use for any batch of tickets.</span>
+<span class="a">tools</span>: <span class="s">Read, Grep</span>
+<span class="a">memory</span>: <span class="s">project</span>
+<span class="c">---</span>
+
+Sort each ticket into: billing, delivery, product, account.
+Mark urgency as P1 (money or data at risk), P2 (blocked) or P3 (other).
+Check your memory for recurring issues and update it with new patterns you see.</pre></div>
+<ul><li><code>user</code>: notes shared across all your projects.</li><li><code>project</code>: notes for this project, can be shared with the team.</li><li><code>local</code>: notes for this project on your machine only.</li></ul>
+</section>
+<section class="card reveal jsec easy-part" id="styles" data-say="styles"><div class="sec-num">Part 8</div><h2><span class="sec-em">🎨</span><span>Output styles: change how Claude talks for a whole session</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 ~/.claude/output-styles/</span><span class="cl-file">📄 .claude/output-styles/</span></div>
+<p>An <b>output style</b> changes Claude's role, tone and answer format for the session. Four built-in styles sit on top of the Default:</p>
+<div class="tw"><table class="jt"><tr><th>Style</th><th>What changes</th></tr>
+<tr><td>Proactive</td><td>starts work right away and makes reasonable assumptions</td></tr>
+<tr><td>Concise</td><td>leads with the result, no preamble or recap</td></tr>
+<tr><td>Explanatory</td><td>adds short "Insight" notes explaining the choices</td></tr>
+<tr><td>Learning</td><td>explains and leaves small pieces of code for you to write</td></tr>
+</table></div>
+<p>Make your own in <code>~/.claude/output-styles/</code> or <code>.claude/output-styles/</code>. Set <code>keep-coding-instructions: true</code> if Claude will still write code.</p>
+<div class="codewrap" data-k="style"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">~/.claude/output-styles/teach-me.md · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">---</span>
+<span class="a">name</span>: <span class="s">Teach me</span>
+<span class="a">description</span>: <span class="s">Explains every step in plain words for a beginner and checks understanding</span>
+<span class="a">keep-coding-instructions</span>: <span class="k">true</span>
+<span class="c">---</span>
+
+You are working with a beginner who is learning while you work.
+
+<span class="t">-</span> Before each change, say in one sentence what you are about to do and why.
+<span class="t">-</span> After each change, explain any new word or command in plain English.
+<span class="t">-</span> Every few steps, ask one short question to check understanding.
+<span class="t">-</span> Keep the actual work the same quality as usual.</pre></div>
+<div class="codewrap" data-k="style-cmds"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Switch output styles · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main">/output-style                 <span class="c"># list styles and see the current one</span>
+/output-style concise         <span class="c"># switch to a built-in style</span>
+/output-style <span class="s">"Teach me"</span>      <span class="c"># switch to your own style</span></pre><div class="note-out"><span>What happens</span><p>The choice is saved to .claude/settings.local.json as "outputStyle". Set it in ~/.claude/settings.json to make it your default everywhere.</p></div></div>
+<div class="vs"><div><b>📘 CLAUDE.md</b>facts and rules about your project</div><div><b>🎨 Output style</b>role, tone and format of every answer</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every file name, folder, setting and command on this page was checked against the official Claude and Claude Code documentation in October 2026.</p>
+  <nav class="pager"><a class="prev" href="./claude-settings-hooks.html" data-topic="claude-settings-hooks"><small>← Previous chapter</small><b>🪝 Settings and hooks</b></a><a class="next" href="./claude-mcp.html" data-topic="claude-mcp"><small>Next chapter →</small><b>🔌 MCP servers</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script>
+const PAGE = {"info": {"title": "Subagents: helpers with their own desk", "panels": [{"s": [["e", "🤖"], ["t", "own context window", {"b": 1}]], "h": "A helper", "t": "Does one job in its own space.", "more": "Sends back only a summary."}, {"s": [["e", "📄"], ["t", ".claude/agents/<name>.md", {"b": 1, "size": 11}]], "h": "One file each", "t": "Front matter plus a system prompt.", "more": "name and description are required."}, {"s": [["e", "🔧"], ["t", "tools: Read, Grep", {"b": 1}]], "h": "Least power", "t": "Give only the tools it needs.", "more": "Pick a cheaper model for reading jobs."}, {"s": [["e", "🎨"], ["t", "/output-style concise", {"b": 1}]], "h": "Output styles", "t": "Change tone and format for a session.", "more": "Built-in or your own."}], "remember": "Delegate noisy work, keep the main chat for decisions."}, "real": [["🔍", "A security team", "Keeps a read-only security-reviewer agent with only Read, Grep and Glob. It checks every pull request and cannot change a line."], ["📚", "A university library", "Runs three doc-researcher agents on Haiku in parallel across thesis guidelines, citation rules and formatting rules, then merges the answers."], ["🧑‍🏫", "A coding bootcamp", "Gives students a \"Teach me\" output style so Claude explains every step while still finishing the work."]], "quiz": [{"lv": "e", "q": "Where do team subagents live?", "o": [".claude/agents/&lt;name>.md", "AGENTS.md", ".claude/skills/", "CLAUDE.md"], "a": 0, "hint": "One file per agent.", "why": "Each agent is a Markdown file in the agents folder."}, {"lv": "e", "q": "Which two fields are required in an agent file?", "o": ["name and description", "tools and model", "name and model", "description and tools"], "a": 0, "hint": "Identity and purpose.", "why": "Everything else is optional."}, {"lv": "e", "q": "What does a subagent send back to the main chat?", "o": ["A short result", "Every file it read", "Its full context", "Nothing"], "a": 0, "hint": "Keeps the chat clean.", "why": "Only the summary returns."}, {"lv": "m", "q": "What does the body of an agent file become?", "o": ["The agent's system prompt", "A comment", "A test", "The first user message"], "a": 0, "hint": "Below the front matter.", "why": "The Markdown after the front matter is its system prompt."}, {"lv": "m", "q": "Which built-in agent is fast and read only for searching code?", "o": ["Explore", "general-purpose", "claude", "statusline-setup"], "a": 0, "hint": "It explores.", "why": "Explore cannot write or edit."}, {"lv": "m", "q": "How do you make sure a specific agent runs for one task?", "o": ["@-mention it", "Write its name in CLAUDE.md", "Restart Claude Code", "Use /clear"], "a": 0, "hint": "Like mentioning a file.", "why": "The @-mention guarantees that agent is used."}, {"lv": "h", "q": "You write max_turns: 10. What happens?", "o": ["It is ignored because the field is maxTurns", "It works", "The agent fails to load", "It becomes a tool"], "a": 0, "hint": "camelCase.", "why": "Unknown fields are ignored without an error."}, {"lv": "h", "q": "Which model value is best for a cheap reading and summarising agent?", "o": ["haiku", "fable", "opus", "bypass"], "a": 0, "hint": "Fast and low cost.", "why": "Haiku suits simple, high volume reading."}, {"lv": "x", "q": "Which file sets tone and format for every answer in a session?", "o": ["An output style", "A subagent", "A path rule", ".mcp.json"], "a": 0, "hint": "Style.", "why": "Output styles change role, tone and format."}, {"lv": "x", "q": "A subagent should never change files. What is the cleanest setup?", "o": ["tools: Read, Grep, Glob", "Write \"do not edit\" in the description", "model: haiku", "color: red"], "a": 0, "hint": "Least power.", "why": "Without Edit or Write it cannot change files at all."}], "calc": [{"lv": "e", "q": "A subagent reads 38 files of 3,200 tokens each. How many tokens is that?", "ans": "121600", "hint": "Multiply.", "steps": ["<span class=\"eq\">38 × 3,200 = 121,600<\/span>"], "alt": ["121,600"]}, {"lv": "e", "q": "It returns a 700 token summary. How many tokens did the main chat avoid?", "ans": "120900", "hint": "Read minus returned.", "steps": ["<span class=\"eq\">121,600 − 700 = 120,900<\/span>"], "alt": ["120,900"]}, {"lv": "m", "q": "Three researchers run in parallel, taking 40 s, 55 s and 35 s. How long until all are done, in seconds?", "ans": "55", "hint": "The slowest decides.", "steps": ["Parallel work finishes with the longest job."]}, {"lv": "m", "q": "The same three run one after another. How many seconds?", "ans": "130", "hint": "Add them.", "steps": ["<span class=\"eq\">40 + 55 + 35 = 130<\/span>"]}, {"lv": "h", "q": "How many problems did the checker report for broken.md?", "ans": "4", "hint": "Read the PROBLEMS line.", "steps": ["Missing description, a colon in the name, the misspelled descripton field and the unknown max_turns field make 4."]}, {"lv": "x", "q": "An agent on Haiku ($0.10 per million input) reads 1,216,000 tokens. Input cost in dollars?", "ans": "0.12", "hint": "Millions times price.", "steps": ["<span class=\"eq\">1.216 × 0.10 ≈ 0.12<\/span>"], "alt": ["0.1216", "$0.12"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter builds subagents, helpers with their own context, and shows output styles that change how Claude talks.", "hi": "यह अध्याय subagents बनाता है और output styles दिखाता है।", "kn": "ಈ ಅಧ್ಯಾಯ subagents ಕಟ್ಟುತ್ತದೆ ಮತ್ತು output styles ತೋರಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ subagents ତିଆରି କରେ ଓ output styles ଦେଖାଏ।", "ar": "يبني هذا الفصل الوكلاء الفرعيين ويعرض أنماط الإخراج.", "de": "Dieses Kapitel baut Subagenten und zeigt Ausgabestile."}, {"id": "what", "h": "What it is", "en": "A subagent works in its own context window and sends back only a short summary, so the main chat stays small.", "hi": "Subagent अपनी context window में काम करता है और सिर्फ सार भेजता है।", "kn": "Subagent ತನ್ನ context window ನಲ್ಲಿ ಕೆಲಸ ಮಾಡಿ ಸಾರಾಂಶ ಮಾತ್ರ ಕಳುಹಿಸುತ್ತದೆ.", "or": "Subagent ନିଜ context window ରେ କାମ କରି କେବଳ ସାରାଂଶ ପଠାଏ।", "ar": "الوكيل الفرعي يعمل في نافذته الخاصة ويرسل ملخصًا فقط.", "de": "Ein Subagent arbeitet im eigenen Kontextfenster und liefert nur eine Zusammenfassung."}, {"id": "builtin", "h": "Built-ins", "en": "Explore searches, Plan researches in plan mode, and general purpose handles complex tasks. Claude uses them on its own.", "hi": "Explore खोजता है, Plan योजना के लिए, general-purpose जटिल कामों के लिए।", "kn": "Explore ಹುಡುಕುತ್ತದೆ, Plan ಯೋಜನೆಗೆ, general-purpose ಸಂಕೀರ್ಣ ಕೆಲಸಕ್ಕೆ.", "or": "Explore ଖୋଜେ, Plan ଯୋଜନା ପାଇଁ, general-purpose ଜଟିଳ କାମ ପାଇଁ।", "ar": "Explore للبحث وPlan للتخطيط وgeneral-purpose للمهام المعقدة.", "de": "Explore sucht, Plan recherchiert im Planmodus, general-purpose erledigt komplexe Aufgaben."}, {"id": "create", "h": "Create one", "en": "Put one Markdown file per agent in the agents folder. Name and description are required, and the body is its system prompt.", "hi": "हर agent के लिए agents folder में एक file। Name और description ज़रूरी।", "kn": "ಪ್ರತಿ agent ಗೆ agents folder ನಲ್ಲಿ ಒಂದು file. Name, description ಕಡ್ಡಾಯ.", "or": "ପ୍ରତି agent ପାଇଁ agents folder ରେ ଗୋଟିଏ file. Name ଓ description ଜରୁରୀ।", "ar": "ملف واحد لكل وكيل في مجلد agents. الاسم والوصف مطلوبان.", "de": "Eine Datei pro Agent im agents-Ordner. Name und Beschreibung sind Pflicht."}, {"id": "fields", "h": "Fields", "en": "Fields set tools, model, permission mode, turn limit, skills, MCP servers, memory and more. Misspelled fields are ignored.", "hi": "Fields tools, model, mode, skills और memory तय करते हैं। गलत नाम अनदेखा होता है।", "kn": "Fields tools, model, mode, skills, memory ನಿರ್ಧರಿಸುತ್ತವೆ.", "or": "Fields tools, model, mode, skills, memory ସ୍ଥିର କରେ।", "ar": "الحقول تضبط الأدوات والنموذج والوضع والمهارات والذاكرة.", "de": "Felder legen Tools, Modell, Modus, Skills und Gedächtnis fest."}, {"id": "gallery", "h": "Examples", "en": "A test runner, a document researcher and a code reviewer. Give each only the tools it needs.", "hi": "Test runner, document researcher और code reviewer, हर एक को ज़रूरी tools ही।", "kn": "Test runner, document researcher, code reviewer. ಅಗತ್ಯ tools ಮಾತ್ರ.", "or": "Test runner, document researcher, code reviewer. ଦରକାରୀ tools ହିଁ।", "ar": "مشغّل اختبارات وباحث مستندات ومراجع شيفرة، كل منها بالأدوات اللازمة فقط.", "de": "Testläufer, Dokumentrechercheur und Code-Reviewer, jeweils nur mit nötigen Tools."}, {"id": "use", "h": "Calling", "en": "Name the agent in your prompt, at mention it to be sure, or run a whole session with dash dash agent.", "hi": "Prompt में नाम लें, @ से पक्का करें, या --agent से पूरा session।", "kn": "Prompt ನಲ್ಲಿ ಹೆಸರು, @ ಮೂಲಕ ಖಚಿತ, ಅಥವಾ --agent.", "or": "Prompt ରେ ନାମ, @ ଦ୍ୱାରା ନିଶ୍ଚିତ, ବା --agent.", "ar": "اذكر الوكيل في الموجّه أو استخدم @ أو شغّل الجلسة كلها بـ --agent.", "de": "Nenne den Agenten, erwähne ihn mit @ oder starte die Sitzung mit --agent."}, {"id": "memory", "h": "Memory", "en": "With the memory field an agent keeps notes between sessions at user, project or local level.", "hi": "Memory field से agent sessions के बीच notes रखता है।", "kn": "Memory field ಮೂಲಕ agent notes ಉಳಿಸುತ್ತದೆ.", "or": "Memory field ଦ୍ୱାରା agent notes ରଖେ।", "ar": "بحقل memory يحتفظ الوكيل بملاحظات بين الجلسات.", "de": "Mit dem memory-Feld behält ein Agent Notizen zwischen Sitzungen."}, {"id": "styles", "h": "Output styles", "en": "Output styles change role, tone and format for a session. Use built-in ones or write your own Markdown file.", "hi": "Output styles पूरे session का tone और format बदलते हैं।", "kn": "Output styles session ನ tone ಮತ್ತು format ಬದಲಿಸುತ್ತವೆ.", "or": "Output styles session ର tone ଓ format ବଦଳାଏ।", "ar": "أنماط الإخراج تغيّر النبرة والشكل للجلسة كلها.", "de": "Ausgabestile ändern Ton und Format für die ganze Sitzung."}, {"id": "practice", "h": "Practice", "en": "Practise checking agent files, picking tools and estimating context saved by delegation.", "hi": "Agent files जांचने और context बचत का अभ्यास।", "kn": "Agent files ಪರಿಶೀಲನೆ ಮತ್ತು context ಉಳಿತಾಯ ಅಭ್ಯಾಸ.", "or": "Agent files ଯାଞ୍ଚ ଓ context ସଞ୍ଚୟ ଅଭ୍ୟାସ।", "ar": "تدرّب على فحص ملفات الوكلاء وتقدير التوفير.", "de": "Übe Agentendateien zu prüfen und Kontextersparnis zu schätzen."}], "ex": [{"id": "agent-valid", "lv": "e", "title": "Is the agent file valid?", "task": "<p>Write <code>isValidAgent(fields)<\/code>. Return true when <code>fields.name<\/code> and <code>fields.description<\/code> are non empty strings and the name has no <code>:<\/code>.<\/p>", "starter": "function isValidAgent(fields) {\n  \n}", "tests": [{"call": "isValidAgent({ name: \"reviewer\", description: \"Reviews code\" })", "want": true}, {"call": "isValidAgent({ name: \"team:reviewer\", description: \"x\" })", "want": false}, {"call": "isValidAgent({ name: \"x\" })", "want": false}], "solution": "function isValidAgent(fields) {\n  return !!fields.name && !!fields.description && !fields.name.includes(\":\");\n}", "hint": "Three checks joined with <code>&amp;&amp;<\/code>.", "why": "An agent with no description is never chosen, and a colon is reserved for plugin names."}, {"id": "read-only", "lv": "m", "title": "Is it read only?", "task": "<p>Write <code>isReadOnly(tools)<\/code>. <code>tools<\/code> is a comma separated string like <code>\"Read, Grep, Glob\"<\/code>. Return true when none of <code>Edit<\/code>, <code>Write<\/code> or <code>Bash<\/code> is in the list.<\/p>", "starter": "function isReadOnly(tools) {\n  \n}", "tests": [{"call": "isReadOnly(\"Read, Grep, Glob\")", "want": true}, {"call": "isReadOnly(\"Read, Edit\")", "want": false}, {"call": "isReadOnly(\"Bash\")", "want": false}], "solution": "function isReadOnly(tools) {\n  const list = tools.split(\",\").map(t => t.trim());\n  return !list.some(t => [\"Edit\", \"Write\", \"Bash\"].includes(t));\n}", "hint": "Split, trim, then check each name.", "why": "Reviewers and researchers should not be able to change anything."}, {"id": "saved", "lv": "h", "title": "Context saved", "task": "<p>Write <code>saved(files, perFile, summary)<\/code> that returns the percentage of tokens the main chat avoids by delegating, rounded to one decimal place as a number.<\/p>", "starter": "function saved(files, perFile, summary) {\n  \n}", "tests": [{"call": "saved(38, 3200, 700)", "want": 99.4}, {"call": "saved(10, 1000, 1000)", "want": 90}, {"call": "saved(1, 500, 500)", "want": 0}], "solution": "function saved(files, perFile, summary) {\n  const total = files * perFile;\n  return Math.round((1 - summary / total) * 1000) / 10;\n}", "hint": "One minus the share that comes back, times 100.", "why": "Numbers like these tell you when a subagent is worth it."}], "dg": {"delegate": {"t": "Main conversation and a subagent", "w": 900, "h": 260, "n": [["you", 20, 100, 120, 56, "You", {"c": 5, "sh": "pill"}], ["main", 190, 100, 200, 56, "main conversation", {"c": 1, "sub": "stays small"}], ["sub", 470, 20, 200, 56, "subagent", {"c": 3, "sub": "own context window", "i": "Has its own system prompt, tools and model."}], ["files", 740, 20, 140, 56, "38 files", {"c": 0, "sh": "doc", "i": "Read inside the subagent only."}], ["sum", 470, 180, 200, 56, "short summary", {"c": 4, "sh": "doc"}]], "e": [["you", "main"], ["main", "sub", {"t": "task"}], ["sub", "files"], ["sub", "sum"], ["sum", "main", {"t": "result"}]], "st": [[["you", "main", "you>main"], "You ask a question that needs a big search."], [["sub", "main>sub"], "Claude hands the search to a subagent with clear instructions."], [["files", "sub>files"], "The subagent reads many files in its own window."], [["sum", "sub>sum", "sum>main"], "Only the short summary returns. Your chat stays clean."]]}}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Subagents and Output Styles", subject: "master-claude" });
+CLAUDE_PAGE.wire();
+</script>
+</body>
+</html>

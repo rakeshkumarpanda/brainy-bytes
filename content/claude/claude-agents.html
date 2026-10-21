@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build Your Own Agents · Master the Claude</title>
+<meta name="description" content="Build AI agents with Claude: tool definitions, the agentic loop with tool_use and tool_result, the Python tool runner with @beta_tool, safety gates, the Claude Agent SDK and choosing between agents and workflows.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=master-claude" target="_top">✨ Master the Claude</a><span>›</span><span>🔌 Building with the API</span><span>›</span><span>Chapter 13 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🤖</span><div><h1>Build Your Own Agents</h1><p class="lead">What an agent is, how to define tools, a shopkeeper's stock agent built by hand with the loop shown step by step, the same agent with the tool runner and a spending limit, the Claude Agent SDK, and how to choose the simplest approach that works.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 2 examples run for real</span><span class="chip">📄 3 ready to copy files and prompts</span><span class="chip">🏋️ 3 hands-on exercises</span><span class="chip">🎯 10 quiz questions</span><span class="chip">🧮 6 calculations</span><span class="chip">🧒 5 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>An agent is Claude doing a job in several steps. It asks your program to do small things, like "check the rice", and decides the next step from each answer.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#what" class="easy"><span>🔁</span>What an agent really is</a><a href="#tools" class="easy"><span>🧰</span>Define tools Claude can use</a><a href="#manual" class="easy"><span>✍️</span>Build the loop by hand, step by step</a><a href="#runner"><span>🏃</span>Less code with the tool runner</a><a href="#sdk" class="easy"><span>🧠</span>The Claude Agent SDK: Claude Code as a library</a><a href="#choose" class="easy"><span>🧭</span>Which way to build your agent</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="what" data-say="what"><div class="sec-num">Part 1</div><h2><span class="sec-em">🔁</span><span>What an agent really is</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>An <b>agent</b> is Claude plus <b>tools</b> plus a <b>loop</b>. Claude reads the goal, asks for a tool, your code runs it and sends back the result, and this repeats until Claude says it is done.</p>
+<div class="viz" data-viz="flow" data-k="loop"></div>
+<ol class="steps"><li>You send the goal and the list of tools.</li><li>Claude replies with <code>stop_reason: "tool_use"</code> and a <code>tool_use</code> block: a name and inputs.</li><li>Your code runs the tool and sends a <code>tool_result</code> with the same id.</li><li>Repeat until <code>stop_reason</code> is <code>end_turn</code>.</li></ol>
+<div class="cl-put">Claude never runs anything itself. It only asks. Your code decides what actually happens, which is where you put limits and checks.</div>
+</section>
+<section class="card reveal jsec easy-part" id="tools" data-say="tools"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧰</span><span>Define tools Claude can use</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>A tool is a name, a description and an <b>input schema</b>. Claude chooses tools by reading the descriptions, so write them for a new colleague: what it does, when to use it and what each input means.</p>
+<div class="codewrap" data-k="tools"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">tools.py: two tool definitions · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="t">TOOLS</span> = [
+    {
+        <span class="s">"name"</span>: <span class="s">"check_stock"</span>,
+        <span class="s">"description"</span>: <span class="s">"Look up how many bags of one item are in the store room. Use before ordering."</span>,
+        <span class="s">"input_schema"</span>: {
+            <span class="s">"type"</span>: <span class="s">"object"</span>,
+            <span class="s">"properties"</span>: {<span class="s">"item"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>, <span class="s">"description"</span>: <span class="s">"Item name, for example toor dal"</span>}},
+            <span class="s">"required"</span>: [<span class="s">"item"</span>],
+        },
+    },
+    {
+        <span class="s">"name"</span>: <span class="s">"place_order"</span>,
+        <span class="s">"description"</span>: <span class="s">"Order more bags of an item from the wholesaler. Only order when stock is low."</span>,
+        <span class="s">"input_schema"</span>: {
+            <span class="s">"type"</span>: <span class="s">"object"</span>,
+            <span class="s">"properties"</span>: {
+                <span class="s">"item"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>},
+                <span class="s">"bags"</span>: {<span class="s">"type"</span>: <span class="s">"integer"</span>, <span class="s">"description"</span>: <span class="s">"How many bags to order"</span>},
+            },
+            <span class="s">"required"</span>: [<span class="s">"item"</span>, <span class="s">"bags"</span>],
+        },
+    },
+]</pre></div>
+<div class="tw"><table class="jt"><tr><th>Good</th><th>Weak</th></tr>
+<tr><td><code>check_stock</code>: "Look up how many bags... Use before ordering."</td><td><code>tool1</code>: "stock"</td></tr>
+<tr><td>one clear job per tool</td><td>one tool with a <code>mode</code> field that does five things</td></tr>
+<tr><td>results that say what happened, in words</td><td>a bare <code>true</code></td></tr></table></div>
+</section>
+<section class="card reveal jsec easy-part" id="manual" data-say="manual"><div class="sec-num">Part 3</div><h2><span class="sec-em">✍️</span><span>Build the loop by hand, step by step</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 agent.py</span><span class="cl-file">📄 tools.py</span></div>
+<p>Here is a shopkeeper's assistant. It checks the rice stock, sees it is low and places an order, in two rounds of tool use.</p>
+<div class="codewrap tests" data-k="manual"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The agent loop written by hand · ▶ Real SDK code, run against a local stand-in API with scripted replies</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 agent.py</div><pre class="src" data-file="agent.py"><span class="k">import</span> anthropic
+<span class="k">from</span> shop <span class="k">import</span> <span class="t">STOCK</span>, <span class="t">PRICE</span>
+<span class="k">from</span> tools <span class="k">import</span> <span class="t">TOOLS</span>
+
+client = anthropic.<span class="t">Anthropic</span>()
+
+<span class="k">def</span> run_tool(name, args):
+    <span class="s">""</span><span class="s">"Your code does the real work. Claude only asks."</span><span class="s">""</span>
+    <span class="k">if</span> name == <span class="s">"check_stock"</span>:
+        <span class="k">return</span> f<span class="s">"{STOCK.get(args['item'], 0)} bags of {args['item']} in stock"</span>
+    <span class="k">if</span> name == <span class="s">"place_order"</span>:
+        cost = args[<span class="s">"bags"</span>] * <span class="t">PRICE</span>[args[<span class="s">"item"</span>]]
+        <span class="k">return</span> f<span class="s">"Order placed: {args['bags']} bags of {args['item']} for ₹{cost:,}"</span>
+    <span class="k">return</span> f<span class="s">"Unknown tool {name}"</span>
+
+messages = [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"Do we have enough basmati rice? If fewer than 10 bags, order 20."</span>}]
+
+<span class="k">for</span> step <span class="k">in</span> range(<span class="n">1</span>, <span class="n">11</span>):                      <span class="c"># never loop for ever</span>
+    response = client.messages.create(
+        model=<span class="s">"claude-sonnet-5-5"</span>, max_tokens=<span class="n">2000</span>, tools=<span class="t">TOOLS</span>, messages=messages,
+    )
+    messages.append({<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: response.content})
+
+    <span class="k">if</span> response.stop_reason != <span class="s">"tool_use"</span>:     <span class="c"># Claude is finished</span>
+        print(<span class="s">"FINAL:"</span>, response.content[<span class="n">0</span>].text)
+        <span class="k">break</span>
+
+    results = []
+    <span class="k">for</span> block <span class="k">in</span> response.content:
+        <span class="k">if</span> block.type == <span class="s">"text"</span>:
+            print(f<span class="s">"step {step} | Claude: {block.text}"</span>)
+        <span class="k">if</span> block.type == <span class="s">"tool_use"</span>:
+            output = run_tool(block.name, block.input)
+            print(f<span class="s">"step {step} | tool {block.name}({block.input}) -&gt; {output}"</span>)
+            results.append({<span class="s">"type"</span>: <span class="s">"tool_result"</span>, <span class="s">"tool_use_id"</span>: block.id, <span class="s">"content"</span>: output})
+    messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: results})</pre><div class="fname">📄 shop.py</div><pre class="src" data-file="shop.py"><span class="t">STOCK</span> = {<span class="s">"basmati rice"</span>: <span class="n">6</span>, <span class="s">"toor dal"</span>: <span class="n">14</span>, <span class="s">"sugar"</span>: <span class="n">25</span>}      <span class="c"># bags in the store room</span>
+<span class="t">PRICE</span> = {<span class="s">"basmati rice"</span>: <span class="n">900</span>, <span class="s">"toor dal"</span>: <span class="n">1400</span>, <span class="s">"sugar"</span>: <span class="n">2100</span>}  <span class="c"># rupees per bag</span></pre><div class="fname">📄 tools.py</div><pre class="src" data-file="tools.py"><span class="t">TOOLS</span> = [
+    {
+        <span class="s">"name"</span>: <span class="s">"check_stock"</span>,
+        <span class="s">"description"</span>: <span class="s">"Look up how many bags of one item are in the store room. Use before ordering."</span>,
+        <span class="s">"input_schema"</span>: {
+            <span class="s">"type"</span>: <span class="s">"object"</span>,
+            <span class="s">"properties"</span>: {<span class="s">"item"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>, <span class="s">"description"</span>: <span class="s">"Item name, for example toor dal"</span>}},
+            <span class="s">"required"</span>: [<span class="s">"item"</span>],
+        },
+    },
+    {
+        <span class="s">"name"</span>: <span class="s">"place_order"</span>,
+        <span class="s">"description"</span>: <span class="s">"Order more bags of an item from the wholesaler. Only order when stock is low."</span>,
+        <span class="s">"input_schema"</span>: {
+            <span class="s">"type"</span>: <span class="s">"object"</span>,
+            <span class="s">"properties"</span>: {
+                <span class="s">"item"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>},
+                <span class="s">"bags"</span>: {<span class="s">"type"</span>: <span class="s">"integer"</span>, <span class="s">"description"</span>: <span class="s">"How many bags to order"</span>},
+            },
+            <span class="s">"required"</span>: [<span class="s">"item"</span>, <span class="s">"bags"</span>],
+        },
+    },
+]</pre><div class="cmd"><span>Terminal</span><pre>$ python agent.py</pre></div><div class="out"><span>Terminal output</span><pre>   [API request: 1 message(s), 2 tool(s), stream=False]
+step 1 | Claude: I will check the basmati rice stock first.
+step 1 | tool check_stock({&#x27;item&#x27;: &#x27;basmati rice&#x27;}) -&gt; 6 bags of basmati rice in stock
+   [API request: 3 message(s), 2 tool(s), stream=False]
+step 2 | Claude: Only 6 bags are left, which is fewer than 10, so I will order 20.
+step 2 | tool place_order({&#x27;item&#x27;: &#x27;basmati rice&#x27;, &#x27;bags&#x27;: 20}) -&gt; Order placed: 20 bags of basmati rice for ₹18,000
+   [API request: 5 message(s), 2 tool(s), stream=False]
+FINAL: Done. Order placed: 20 bags of basmati rice for ₹18,000. You now have enough basmati rice.</pre></div></div>
+<ul><li>Append Claude's whole reply to <code>messages</code>, then your tool results as the next user turn.</li><li>Each <code>tool_result</code> carries the <code>tool_use_id</code> it answers.</li><li>The <code>for step in range(1, 11)</code> is a hard limit so a confused agent stops.</li></ul>
+</section>
+<section class="card reveal jsec" id="runner" data-say="runner"><div class="sec-num">Part 4</div><h2><span class="sec-em">🏃</span><span>Less code with the tool runner</span></h2>
+<div class="cl-tags"><span class="cl-file">📄 runner.py</span></div>
+<p>The SDK's <b>tool runner</b> writes the loop for you. Decorate a normal Python function with <code>@beta_tool</code>: the type hints become the schema and the docstring becomes the description.</p>
+<div class="codewrap tests" data-k="runner"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same agent with the tool runner and a spending limit · ▶ Real SDK code, run against a local stand-in API with scripted replies</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 runner.py</div><pre class="src" data-file="runner.py"><span class="k">import</span> anthropic
+<span class="k">from</span> anthropic <span class="k">import</span> beta_tool
+<span class="k">from</span> shop <span class="k">import</span> <span class="t">STOCK</span>, <span class="t">PRICE</span>
+
+client = anthropic.<span class="t">Anthropic</span>()
+<span class="t">LIMIT</span> = <span class="n">10_000</span>   <span class="c"># rupees: bigger orders need the owner</span>
+
+<span class="a">@beta</span>_tool
+<span class="k">def</span> check_stock(item: str) -&gt; str:
+    <span class="s">""</span>"<span class="t">Look</span> up how many bags of one item are <span class="k">in</span> the store room. <span class="t">Use</span> before ordering.
+
+    <span class="t">Args</span>:
+        item: <span class="t">Item</span> name, <span class="k">for</span> example toor dal.
+    <span class="s">""</span>"
+    <span class="k">return</span> f<span class="s">"{STOCK.get(item, 0)} bags of {item} in stock"</span>
+
+<span class="a">@beta</span>_tool
+<span class="k">def</span> place_order(item: str, bags: int) -&gt; str:
+    <span class="s">""</span>"<span class="t">Order</span> more bags of an item <span class="k">from</span> the wholesaler. <span class="t">Only</span> order when stock <span class="k">is</span> low.
+
+    <span class="t">Args</span>:
+        item: <span class="t">Item</span> name.
+        bags: <span class="t">How</span> many bags to order.
+    <span class="s">""</span>"
+    cost = bags * <span class="t">PRICE</span>[item]
+    <span class="k">if</span> cost &gt; <span class="t">LIMIT</span>:                            <span class="c"># a safety gate in plain code</span>
+        <span class="k">return</span> f<span class="s">"Not placed: ₹{cost:,} is over the ₹{LIMIT:,} limit. Ask the owner to approve."</span>
+    <span class="k">return</span> f<span class="s">"Order placed: {bags} bags of {item} for ₹{cost:,}"</span>
+
+runner = client.beta.messages.tool_runner(
+    model=<span class="s">"claude-sonnet-5-5"</span>,
+    max_tokens=<span class="n">2000</span>,
+    tools=[check_stock, place_order],
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"Do we have enough basmati rice? If fewer than 10 bags, order 20."</span>}],
+)
+
+<span class="k">for</span> message <span class="k">in</span> runner:                          <span class="c"># the SDK runs the loop and calls your functions</span>
+    <span class="k">for</span> block <span class="k">in</span> message.content:
+        <span class="k">if</span> block.type == <span class="s">"text"</span>:
+            print(<span class="s">"Claude:"</span>, block.text)
+        <span class="k">elif</span> block.type == <span class="s">"tool_use"</span>:
+            print(<span class="s">"  calls"</span>, block.name, block.input)</pre><div class="fname">📄 shop.py</div><pre class="src" data-file="shop.py"><span class="t">STOCK</span> = {<span class="s">"basmati rice"</span>: <span class="n">6</span>, <span class="s">"toor dal"</span>: <span class="n">14</span>, <span class="s">"sugar"</span>: <span class="n">25</span>}      <span class="c"># bags in the store room</span>
+<span class="t">PRICE</span> = {<span class="s">"basmati rice"</span>: <span class="n">900</span>, <span class="s">"toor dal"</span>: <span class="n">1400</span>, <span class="s">"sugar"</span>: <span class="n">2100</span>}  <span class="c"># rupees per bag</span></pre><div class="cmd"><span>Terminal</span><pre>$ python runner.py</pre></div><div class="out"><span>Terminal output</span><pre>   [API request: 1 message(s), 2 tool(s), stream=False]
+Claude: I will check the basmati rice stock first.
+  calls check_stock {&#x27;item&#x27;: &#x27;basmati rice&#x27;}
+   [API request: 3 message(s), 2 tool(s), stream=False]
+Claude: Only 6 bags are left, which is fewer than 10, so I will order 20.
+  calls place_order {&#x27;item&#x27;: &#x27;basmati rice&#x27;, &#x27;bags&#x27;: 20}
+   [API request: 5 message(s), 2 tool(s), stream=False]
+Claude: I could not finish the order. Not placed: ₹18,000 is over the ₹10,000 limit. Ask the owner to approve.</pre></div></div>
+<div class="scenario"><b>🛑 The safety gate worked</b>20 bags at ₹900 is ₹18,000, over the ₹10,000 limit. The order function refused in plain code and Claude reported back instead of trying again. Put money, deletes and emails behind checks like this.</div>
+</section>
+<section class="card reveal jsec easy-part" id="sdk" data-say="sdk"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧠</span><span>The Claude Agent SDK: Claude Code as a library</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>The <b>Agent SDK</b> gives your program the same tools, loop, permissions, hooks, skills and MCP support as Claude Code. You do not write tools for reading files or running commands. You just say which ones are allowed.</p>
+<div class="codewrap" data-k="sdk-install"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Install the Claude Agent SDK · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">mkdir</span> shop-agent &amp;&amp; <span class="k">cd</span> shop-agent
+<span class="k">python3</span> -m venv .venv &amp;&amp; source .venv/bin/activate
+<span class="k">pip</span> install <span class="k">claude</span>-agent-sdk
+<span class="k">export</span> ANTHROPIC_API_KEY=<span class="s">"sk-ant-..."</span>
+<span class="k">python</span> agent.py</pre></div>
+<div class="codewrap" data-k="sdk"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">agent.py: an agent with Claude Code&#x27;s own tools · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> asyncio
+<span class="k">from</span> claude_agent_sdk <span class="k">import</span> query, <span class="t">ClaudeAgentOptions</span>, <span class="t">AssistantMessage</span>, <span class="t">ResultMessage</span>
+
+<span class="k">async</span> <span class="k">def</span> main():
+    <span class="k">async</span> <span class="k">for</span> message <span class="k">in</span> query(
+        prompt=<span class="s">"Read sales.csv, find the 3 slowest selling items this month and write reorder.md with advice."</span>,
+        options=<span class="t">ClaudeAgentOptions</span>(
+            allowed_tools=[<span class="s">"Read"</span>, <span class="s">"Write"</span>, <span class="s">"Glob"</span>],     <span class="c"># what it may do without asking</span>
+            permission_mode=<span class="s">"acceptEdits"</span>,
+            system_prompt=<span class="s">"You help a small shop owner. Use simple words and rupees."</span>,
+        ),
+    ):
+        <span class="k">if</span> isinstance(message, <span class="t">AssistantMessage</span>):
+            <span class="k">for</span> block <span class="k">in</span> message.content:
+                <span class="k">if</span> hasattr(block, <span class="s">"text"</span>):
+                    print(block.text)
+                <span class="k">elif</span> hasattr(block, <span class="s">"name"</span>):
+                    print(<span class="s">"Tool:"</span>, block.name)
+        <span class="k">elif</span> isinstance(message, <span class="t">ResultMessage</span>):
+            print(<span class="s">"Done:"</span>, message.subtype)
+
+asyncio.run(main())</pre></div>
+<div class="tw"><table class="jt"><tr><th>Tools allowed</th><th>What the agent can do</th></tr>
+<tr><td><code>Read</code>, <code>Glob</code>, <code>Grep</code></td><td>look but not touch</td></tr>
+<tr><td><code>Read</code>, <code>Edit</code>, <code>Glob</code></td><td>read and change files</td></tr>
+<tr><td>plus <code>Bash</code></td><td>run commands and tests too</td></tr></table></div>
+<p>The Agent SDK also loads <code>CLAUDE.md</code>, skills and settings from <code>.claude/</code>, so everything from the earlier chapters works here too.</p>
+</section>
+<section class="card reveal jsec easy-part" id="choose" data-say="choose"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧭</span><span>Which way to build your agent</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<div class="tw"><table class="jt"><tr><th>You want</th><th>Use</th></tr>
+<tr><td>one answer, no tools</td><td>a single <code>messages.create</code> call (chapter 12)</td></tr>
+<tr><td>your own tools, full control of each step</td><td>the hand written loop</td></tr>
+<tr><td>your own tools, less code</td><td>the tool runner</td></tr>
+<tr><td>files, commands, web, skills, MCP, ready made</td><td>the Claude Agent SDK</td></tr>
+<tr><td>Anthropic to run the loop and the sandbox for you</td><td>Managed Agents on the Claude API</td></tr>
+<tr><td>help inside your own coding sessions</td><td>Claude Code subagents (chapter 9)</td></tr></table></div>
+<div class="cl-put"><b>Start simple.</b> Many jobs that sound like agents are a fixed chain of two or three calls. Use a real agent only when the steps cannot be known in advance. Then give it few tools, clear descriptions, a step limit and checks on anything risky.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every file name, folder, setting and command on this page was checked against the official Claude and Claude Code documentation in October 2026.</p>
+  <nav class="pager"><a class="prev" href="./claude-api.html" data-topic="claude-api"><small>← Previous chapter</small><b>🧩 Claude API</b></a><a class="next" href="./claude-file-map.html" data-topic="claude-file-map"><small>Next chapter →</small><b>🗺️ File map capstone</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script>
+const PAGE = {"info": {"title": "Agents: model, tools, loop", "panels": [{"s": [["e", "🧰"], ["t", "name + description + schema", {"b": 1, "size": 11}]], "h": "Tools", "t": "Descriptions decide which tool is used.", "more": "One job per tool."}, {"s": [["e", "🔁"], ["t", "tool_use → tool_result", {"b": 1, "size": 11}]], "h": "Loop", "t": "Repeat until end_turn.", "more": "Cap the steps."}, {"s": [["e", "🛑"], ["t", "if cost > LIMIT", {"b": 1}]], "h": "Gates", "t": "Your code has the final say.", "more": "Money, deletes, emails."}, {"s": [["e", "🧠"], ["t", "claude-agent-sdk", {"b": 1}]], "h": "Agent SDK", "t": "Claude Code as a library.", "more": "Built-in tools ready."}], "remember": "Claude asks, your code acts. Put the rules in the code."}, "real": [["🏪", "A kirana chain", "Runs the stock agent from this chapter every night across 12 stores. Orders under ₹10,000 go through, bigger ones wait for the owner."], ["🧑‍💼", "An HR team", "Built an onboarding agent with the Agent SDK that reads the joining checklist, creates accounts through MCP tools and writes a welcome note."], ["🔧", "A support desk", "Gives an agent three tools: search the help centre, read an order and draft a reply. A person approves every reply before it is sent."]], "quiz": [{"lv": "e", "q": "What three things make an agent?", "o": ["Model, tools and a loop", "A key, a prompt and a file", "Two models", "A chat window"], "a": 0, "hint": "Think of the diagram.", "why": "Claude, tools and a loop that repeats."}, {"lv": "e", "q": "Who actually runs a tool?", "o": ["Your code", "Claude", "The browser", "Anthropic, always"], "a": 0, "hint": "Claude only asks.", "why": "Your code runs it and returns the result."}, {"lv": "e", "q": "Which stop_reason means Claude wants a tool?", "o": ["tool_use", "end_turn", "max_tokens", "refusal"], "a": 0, "hint": "The name says it.", "why": "Run the tool and send a tool_result."}, {"lv": "m", "q": "What must a tool_result include?", "o": ["The tool_use_id it answers", "The API key", "The model name", "The full chat"], "a": 0, "hint": "Matching.", "why": "The id links the result to the request."}, {"lv": "m", "q": "What decides which tool Claude picks?", "o": ["The tool names and descriptions", "The order of the list only", "The price", "Random choice"], "a": 0, "hint": "Write them well.", "why": "Clear descriptions lead to the right tool."}, {"lv": "m", "q": "What does @beta_tool turn into the input schema?", "o": ["The type hints", "The function body", "The return value", "Comments"], "a": 0, "hint": "Python typing.", "why": "The docstring becomes the description."}, {"lv": "h", "q": "Where should a spending limit live?", "o": ["In the tool function code", "Only in the system prompt", "In the tool name", "Nowhere"], "a": 0, "hint": "Code always runs.", "why": "A prompt can be ignored. Code cannot."}, {"lv": "h", "q": "Why cap the number of loop steps?", "o": ["So a confused agent stops", "To save the key", "The API needs it", "To stream faster"], "a": 0, "hint": "Safety.", "why": "It bounds time and cost."}, {"lv": "x", "q": "Which option gives your program file and shell tools without writing them?", "o": ["The Claude Agent SDK", "A single messages.create call", "A JSON schema", "Prompt caching"], "a": 0, "hint": "Claude Code as a library.", "why": "It includes Read, Edit, Bash, Glob and more."}, {"lv": "x", "q": "A task is always: extract fields, then translate, then email. Best design?", "o": ["A fixed chain of calls", "A fully autonomous agent", "Ten subagents", "No code"], "a": 0, "hint": "Steps are known.", "why": "Use agents only when steps are not known ahead."}], "calc": [{"lv": "e", "q": "In the hand written loop, how many API requests were made?", "ans": "3", "hint": "Count the request lines.", "steps": ["Two rounds of tools and one final answer."]}, {"lv": "e", "q": "How many messages were in the last request?", "ans": "5", "hint": "Read the request lines.", "steps": ["The goal, then two pairs of tool request and tool result."]}, {"lv": "m", "q": "What does an order of 20 bags of basmati rice cost at ₹900 a bag?", "ans": "18000", "hint": "Multiply.", "steps": ["<span class=\"eq\">20 × 900 = 18,000<\/span>"], "alt": ["18,000", "₹18,000"]}, {"lv": "m", "q": "With a ₹10,000 limit, what is the most bags of rice the agent may order?", "ans": "11", "hint": "Divide and round down.", "steps": ["<span class=\"eq\">⌊10,000 ÷ 900⌋ = 11<\/span>"]}, {"lv": "h", "q": "A loop sends about 3,000 input tokens per step for 6 steps on Sonnet 5.5 ($2 per million). Input cost in dollars?", "ans": "0.036", "hint": "Tokens × steps × price.", "steps": ["<span class=\"eq\">3,000 × 6 × 2 ÷ 10⁶ = 0.036<\/span>"], "alt": ["$0.036"]}, {"lv": "x", "q": "The history grows by 800 tokens per step from 2,000. Total input tokens over 5 steps?", "ans": "18000", "hint": "Add 2,000, 2,800, 3,600, 4,400 and 5,200.", "steps": ["<span class=\"eq\">2,000 + 2,800 + 3,600 + 4,400 + 5,200 = 18,000<\/span>"], "alt": ["18,000"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter builds agents: Claude plus tools plus a loop, first by hand, then with the tool runner and the Agent SDK.", "hi": "यह अध्याय agents बनाता है: Claude, tools और loop।", "kn": "ಈ ಅಧ್ಯಾಯ agents ಕಟ್ಟುತ್ತದೆ: Claude, tools ಮತ್ತು loop.", "or": "ଏହି ଅଧ୍ୟାୟ agents ତିଆରି କରେ: Claude, tools ଓ loop।", "ar": "يبني هذا الفصل الوكلاء: Claude مع الأدوات والحلقة.", "de": "Dieses Kapitel baut Agenten: Claude, Tools und eine Schleife."}, {"id": "what", "h": "What an agent is", "en": "Claude asks for a tool, your code runs it and sends the result back, and this repeats until Claude is done.", "hi": "Claude tool माँगता है, आपका code चलाता है और नतीजा लौटाता है।", "kn": "Claude tool ಕೇಳುತ್ತದೆ, ನಿಮ್ಮ code ಚಲಾಯಿಸಿ ಫಲಿತಾಂಶ ಕಳುಹಿಸುತ್ತದೆ.", "or": "Claude tool ମାଗେ, ଆପଣଙ୍କ code ଚଲାଇ ଫଳାଫଳ ପଠାଏ।", "ar": "يطلب Claude أداة فتشغّلها شيفرتك وتعيد النتيجة حتى ينتهي.", "de": "Claude fordert ein Tool an, dein Code führt es aus und schickt das Ergebnis zurück."}, {"id": "tools", "h": "Tools", "en": "A tool has a name, a description and an input schema. Clear descriptions decide which tool Claude picks.", "hi": "Tool का नाम, विवरण और schema होता है। साफ़ विवरण ज़रूरी है।", "kn": "Tool ಗೆ ಹೆಸರು, ವಿವರಣೆ, schema ಇರುತ್ತದೆ.", "or": "Tool ର ନାମ, ବର୍ଣ୍ଣନା ଓ schema ଥାଏ।", "ar": "للأداة اسم ووصف ومخطط مدخلات، والوصف الواضح يحدد الاختيار.", "de": "Ein Tool hat Name, Beschreibung und Eingabeschema."}, {"id": "manual", "h": "By hand", "en": "Append the reply, run each tool, send results with the matching id, and stop after a fixed number of steps.", "hi": "जवाब जोड़ें, tool चलाएँ, सही id के साथ नतीजा भेजें।", "kn": "ಉತ್ತರ ಸೇರಿಸಿ, tool ಚಲಾಯಿಸಿ, id ಜೊತೆ ಫಲಿತಾಂಶ ಕಳುಹಿಸಿ.", "or": "ଉତ୍ତର ଯୋଡି tool ଚଲାନ୍ତୁ ଓ id ସହ ଫଳାଫଳ ପଠାନ୍ତୁ।", "ar": "أضف الرد وشغّل الأداة وأرسل النتيجة بالمعرّف نفسه.", "de": "Antwort anhängen, Tool ausführen, Ergebnis mit passender ID senden."}, {"id": "runner", "h": "Tool runner", "en": "The tool runner writes the loop. Put safety limits inside the tool function itself.", "hi": "Tool runner loop लिखता है। सुरक्षा सीमा function में रखें।", "kn": "Tool runner loop ಬರೆಯುತ್ತದೆ. ಸುರಕ್ಷತಾ ಮಿತಿ function ನಲ್ಲಿ.", "or": "Tool runner loop ଲେଖେ। ସୁରକ୍ଷା ସୀମା function ରେ।", "ar": "منفّذ الأدوات يكتب الحلقة، وضع حدود الأمان داخل الدالة.", "de": "Der Tool Runner schreibt die Schleife. Sicherheitsgrenzen gehören in die Funktion."}, {"id": "sdk", "h": "Agent SDK", "en": "The Agent SDK gives your program Claude Code's own tools and loop. You only choose which tools are allowed.", "hi": "Agent SDK आपके program को Claude Code के tools देता है।", "kn": "Agent SDK ನಿಮ್ಮ program ಗೆ Claude Code tools ನೀಡುತ್ತದೆ.", "or": "Agent SDK ଆପଣଙ୍କ program କୁ Claude Code tools ଦିଏ।", "ar": "تمنح حزمة الوكلاء برنامجك أدوات Claude Code وحلقته.", "de": "Das Agent SDK gibt deinem Programm die Tools von Claude Code."}, {"id": "choose", "h": "Choosing", "en": "Start with the simplest option. Use a full agent only when the steps cannot be known in advance.", "hi": "सबसे सरल तरीके से शुरू करें।", "kn": "ಸರಳ ಮಾರ್ಗದಿಂದ ಆರಂಭಿಸಿ.", "or": "ସରଳ ଉପାୟରୁ ଆରମ୍ଭ କରନ୍ତୁ।", "ar": "ابدأ بأبسط خيار.", "de": "Beginne mit der einfachsten Lösung."}, {"id": "practice", "h": "Practice", "en": "Practise tool results, loop limits and spending gates.", "hi": "Tool results, loop सीमा और खर्च सीमा का अभ्यास।", "kn": "Tool results, loop ಮಿತಿ ಅಭ್ಯಾಸ.", "or": "Tool results ଓ loop ସୀମା ଅଭ୍ୟାସ।", "ar": "تدرّب على نتائج الأدوات وحدود الحلقة.", "de": "Übe Tool-Ergebnisse und Schleifengrenzen."}], "ex": [{"id": "result-block", "lv": "e", "title": "Build a tool_result", "task": "<p>Write <code>toolResult(id, text)<\/code> that returns <code>{ type: \"tool_result\", tool_use_id: id, content: text }<\/code>.<\/p>", "starter": "function toolResult(id, text) {\n  \n}", "tests": [{"call": "toolResult(\"toolu_1\", \"6 bags\").tool_use_id", "want": "toolu_1"}, {"call": "toolResult(\"toolu_1\", \"6 bags\").type", "want": "tool_result"}, {"call": "toolResult(\"x\", \"ok\").content", "want": "ok"}], "solution": "function toolResult(id, text) {\n  return { type: \"tool_result\", tool_use_id: id, content: text };\n}", "hint": "Return an object with three keys.", "why": "Every round of the loop ends with blocks like this."}, {"id": "gate", "lv": "m", "title": "A spending gate", "task": "<p>Write <code>canOrder(bags, price, limit)<\/code> that returns true when <code>bags × price<\/code> is at most <code>limit<\/code>.<\/p>", "starter": "function canOrder(bags, price, limit) {\n  \n}", "tests": [{"call": "canOrder(20, 900, 10000)", "want": false}, {"call": "canOrder(11, 900, 10000)", "want": true}, {"call": "canOrder(0, 900, 10000)", "want": true}], "solution": "function canOrder(bags, price, limit) {\n  return bags * price <= limit;\n}", "hint": "One comparison.", "why": "Gates in code are what make agents safe to run."}, {"id": "loop-sim", "lv": "h", "title": "Run a loop", "task": "<p>Write <code>runLoop(replies, maxSteps)<\/code>. <code>replies<\/code> is a list of stop reasons Claude would give. Walk through them and return the number of steps until the first <code>\"end_turn\"<\/code>, or <code>\"stopped\"<\/code> if <code>maxSteps<\/code> is reached first.<\/p>", "starter": "function runLoop(replies, maxSteps) {\n  \n}", "tests": [{"call": "runLoop([\"tool_use\", \"tool_use\", \"end_turn\"], 10)", "want": 3}, {"call": "runLoop([\"tool_use\", \"tool_use\", \"tool_use\"], 2)", "want": "stopped"}, {"call": "runLoop([\"end_turn\"], 5)", "want": 1}], "solution": "function runLoop(replies, maxSteps) {\n  for (let step = 1; step <= maxSteps && step <= replies.length; step++) {\n    if (replies[step - 1] === \"end_turn\") return step;\n  }\n  return \"stopped\";\n}", "hint": "A for loop with two limits.", "why": "This is the skeleton of every agent."}], "dg": {"loop": {"t": "The agent loop", "w": 900, "h": 250, "n": [["goal", 20, 95, 140, 56, "Goal + tools", {"c": 5, "sh": "pill"}], ["claude", 230, 95, 170, 56, "Claude", {"c": 1, "sub": "decides the next step"}], ["ask", 470, 20, 170, 56, "tool_use", {"c": 3, "sub": "name + inputs", "sh": "doc"}], ["code", 710, 95, 170, 56, "Your code", {"c": 0, "sub": "runs the tool", "i": "Checks, limits and approvals live here."}], ["res", 470, 170, 170, 56, "tool_result", {"c": 4, "sub": "what happened", "sh": "doc"}]], "e": [["goal", "claude"], ["claude", "ask"], ["ask", "code"], ["code", "res"], ["res", "claude"]], "st": [[["goal", "claude", "goal>claude"], "You send the goal and the tools."], [["ask", "claude>ask"], "Claude asks for a tool by name with inputs."], [["code", "ask>code"], "Your code runs it. Claude never runs anything itself."], [["res", "code>res", "res>claude"], "The result goes back and the loop repeats until Claude is done."]]}}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Build Your Own Agents", subject: "master-claude" });
+CLAUDE_PAGE.wire();
+</script>
+</body>
+</html>
