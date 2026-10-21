@@ -2672,6 +2672,25 @@ function claudeModules() {
         { id: "saved", title: "Context saved", emoji: "🏋️", group: "Hard practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-mcp", title: "MCP: Connect and Build Servers", emoji: "🔌", page: "content/claude/claude-mcp.html",
+        summary: "What MCP servers offer, connecting a first server, managing servers, local, project and user scopes with a full .mcp.json, a Node.js expenses server and a Python timetable server built and tested with a real client, the JSON-RPC handshake on the wire, tool names and permission rules, output limits and tool search, and claude_desktop_config.json.",
+        keywords: ["MCP", "Model Context Protocol", "claude mcp add", ".mcp.json", "scopes", "McpServer", "registerTool", "MCPServer", "Python MCP", "JSON-RPC", "mcp__", "Claude Desktop", "claude_desktop_config.json"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What MCP is", emoji: "🔌", group: "Beginner path", keywords: ["MCP", "Model Context Protocol", "server", "client", "tools", "resources", "prompts"] },
+        { id: "connect", title: "Connect a server, step by step", emoji: "🧷", group: "Beginner path", keywords: ["claude mcp add", "--transport http", "stdio", "claude mcp list", "/mcp"] },
+        { id: "scopes", title: "Scopes and the .mcp.json file", emoji: "📍", group: "Lesson", keywords: ["scope", "local", "project", "user", ".mcp.json", "environment variables", "${VAR}"] },
+        { id: "build-node", title: "Build your own server in Node.js", emoji: "🟩", group: "Beginner path", keywords: ["build MCP server", "McpServer", "registerTool", "zod", "StdioServerTransport", "Node.js"] },
+        { id: "build-py", title: "Build your own server in Python", emoji: "🐍", group: "Beginner path", keywords: ["Python MCP server", "MCPServer", "@mcp.tool", "@mcp.resource", "pip install mcp"] },
+        { id: "wire", title: "What travels between Claude and a server", emoji: "📨", group: "Lesson", keywords: ["JSON-RPC", "initialize", "tools/list", "tools/call", "protocol"] },
+        { id: "use", title: "Using MCP inside Claude Code", emoji: "🎛️", group: "Beginner path", keywords: ["mcp__server__tool", "permissions", "resources @", "MCP prompts", "MAX_MCP_OUTPUT_TOKENS", "tool search"] },
+        { id: "desktop", title: "The same servers in Claude Desktop", emoji: "🖥️", group: "Lesson", keywords: ["Claude Desktop", "claude_desktop_config.json", "add-from-claude-desktop", "claude mcp serve"] },
+        { id: "full-name", title: "Full tool name", emoji: "🏋️", group: "Easy practice" },
+        { id: "which-file", title: "Which file?", emoji: "🏋️", group: "Medium practice" },
+        { id: "expand", title: "Expand ${VAR}", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];

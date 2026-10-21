@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP: Connect and Build Servers · Master the Claude</title>
+<meta name="description" content="MCP for Claude Code: claude mcp add, http and stdio, scopes, .mcp.json with environment variables, building MCP servers in Node.js and Python, JSON-RPC messages, mcp__ tool names and Claude Desktop config.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=master-claude" target="_top">✨ Master the Claude</a><span>›</span><span>🛠️ Claude Code and its files</span><span>›</span><span>Chapter 10 of 10</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔌</span><div><h1>MCP: Connect and Build Servers</h1><p class="lead">What MCP is, connecting your first server in three steps, scopes and exactly what goes in .mcp.json, building a real expenses server in Node.js and a timetable server in Python step by step, the JSON that travels between them, and using MCP in Claude Code and Claude Desktop.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 3 examples run for real</span><span class="chip">📄 12 ready to copy files and prompts</span><span class="chip">🏋️ 3 hands-on exercises</span><span class="chip">🎯 10 quiz questions</span><span class="chip">🧮 6 calculations</span><span class="chip">🧒 5 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>MCP lets Claude use other programs. You write a small program that says "I can add an expense", and when you ask Claude to add one, Claude asks your program to do it.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#what" class="easy"><span>🔌</span>What MCP is</a><a href="#connect" class="easy"><span>🧷</span>Connect a server, step by step</a><a href="#scopes"><span>📍</span>Scopes and the .mcp.json file</a><a href="#build-node" class="easy"><span>🟩</span>Build your own server in Node.js</a><a href="#build-py" class="easy"><span>🐍</span>Build your own server in Python</a><a href="#wire"><span>📨</span>What travels between Claude and a server</a><a href="#use" class="easy"><span>🎛️</span>Using MCP inside Claude Code</a><a href="#desktop"><span>🖥️</span>The same servers in Claude Desktop</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="what" data-say="what"><div class="sec-num">Part 1</div><h2><span class="sec-em">🔌</span><span>What MCP is</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p><b>MCP</b> (Model Context Protocol) is an open standard that lets Claude use tools and data from other programs: your issue tracker, a database, a calendar, or a script you wrote yourself. One program, the <b>MCP server</b>, offers the tools. Claude Code, Claude Desktop and claude.ai are <b>MCP clients</b> that connect to it.</p>
+<div class="viz" data-viz="flow" data-k="mcp"></div>
+<div class="tw"><table class="jt"><tr><th>A server can offer</th><th>What it is</th><th>How you use it</th></tr>
+<tr><td><b>Tools</b></td><td>actions Claude can run, like "add expense"</td><td>Claude calls them when they fit your request</td></tr>
+<tr><td><b>Resources</b></td><td>read only data, like a file or a record</td><td>type <code>@server:uri</code> in your prompt</td></tr>
+<tr><td><b>Prompts</b></td><td>ready made prompt templates</td><td>type <code>/mcp__server__prompt</code></td></tr></table></div>
+</section>
+<section class="card reveal jsec easy-part" id="connect" data-say="connect"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧷</span><span>Connect a server, step by step</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<ol class="steps"><li>Find a server: the Anthropic Directory, or the vendor's own docs.</li>
+<li>Run <code>claude mcp add</code> in your terminal, outside a session.</li>
+<li>Check it with <code>claude mcp list</code>, or <code>/mcp</code> inside a session.</li>
+<li>If it needs a login, open <code>/mcp</code> and pick it to sign in.</li>
+<li>Ask for something the server can do.</li></ol>
+<div class="codewrap" data-k="first"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Your first MCP server in three steps · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># 1. Add the free Claude Code docs server (no login needed)</span>
+<span class="k">claude</span> mcp add --transport http <span class="k">claude</span>-code-docs https://code.<span class="k">claude</span>.com/docs/mcp
+
+<span class="c"># 2. Check it connected</span>
+<span class="k">claude</span> mcp list
+
+<span class="c"># 3. Use it</span>
+<span class="k">claude</span>
+&gt; Use the <span class="k">claude</span>-code-docs server to find how hooks block a command</pre><div class="note-out"><span>What happens</span><p>claude mcp list shows the server with a connected tick. In the session Claude calls the server's search tool and answers from the official pages.</p></div></div>
+<div class="codewrap" data-k="add"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Adding and managing servers · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># A hosted (remote) server: use http</span>
+<span class="k">claude</span> mcp add --transport http notion https://mcp.notion.com/mcp
+
+<span class="c"># A remote server that needs a key in a header</span>
+<span class="k">claude</span> mcp add --transport http secure-api https://api.example.com/mcp \
+  --header <span class="s">"Authorization: Bearer your-token"</span>
+
+<span class="c"># A local program (stdio). Everything after -- is the command that starts it</span>
+<span class="k">claude</span> mcp add --transport stdio --env AIRTABLE_API_KEY=YOUR_KEY airtable \
+  -- <span class="k">npx</span> -y airtable-mcp-server
+
+<span class="c"># Manage</span>
+<span class="k">claude</span> mcp list            <span class="c"># all servers</span>
+<span class="k">claude</span> mcp get notion      <span class="c"># one server</span>
+<span class="k">claude</span> mcp remove notion   <span class="c"># remove it</span>
+/mcp                       <span class="c"># inside a session: status, sign in, tools</span></pre><div class="note-out"><span>What happens</span><p>http is for hosted services and is the recommended remote transport. stdio starts a program on your computer. SSE still works but is deprecated.</p></div></div>
+<div class="cl-name">For a local server, the <code>--</code> matters. Everything after it is the command that starts the server, so flags like <code>--port</code> go to the server and not to Claude.</div>
+</section>
+<section class="card reveal jsec" id="scopes" data-say="scopes"><div class="sec-num">Part 3</div><h2><span class="sec-em">📍</span><span>Scopes and the .mcp.json file</span></h2>
+<div class="cl-tags"><span class="cl-file">📄 .mcp.json</span><span class="cl-file">📄 ~/.claude.json</span></div>
+<div class="tw"><table class="jt"><tr><th>Scope</th><th>Loads in</th><th>Shared with team</th><th>Stored in</th></tr>
+<tr><td>local (default)</td><td>this project only</td><td>no</td><td><code>~/.claude.json</code>, under this project</td></tr>
+<tr><td>project</td><td>this project only</td><td>yes, through git</td><td><code>.mcp.json</code> at the project root</td></tr>
+<tr><td>user</td><td>all your projects</td><td>no</td><td><code>~/.claude.json</code></td></tr></table></div>
+<div class="codewrap" data-k="scope-cmds"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Choosing a scope · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">claude</span> mcp add --transport http stripe https://mcp.stripe.com                    <span class="c"># local (default)</span>
+<span class="k">claude</span> mcp add --transport http shared --scope project https://example.com/mcp  <span class="c"># writes .mcp.json</span>
+<span class="k">claude</span> mcp add --transport http hubspot --scope user https://mcp.hubspot.com/anthropic
+<span class="k">claude</span> mcp reset-project-choices   <span class="c"># forget your approvals of .mcp.json servers</span></pre></div>
+<div class="codewrap" data-k="mcpjson"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">.mcp.json (at the project root, committed for the team) · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main">{
+  <span class="s">"mcpServers"</span>: {
+    <span class="s">"claude-code-docs"</span>: {
+      <span class="s">"type"</span>: <span class="s">"http"</span>,
+      <span class="s">"url"</span>: <span class="s">"https://code.claude.com/docs/mcp"</span>
+    },
+    <span class="s">"expenses"</span>: {
+      <span class="s">"type"</span>: <span class="s">"stdio"</span>,
+      <span class="s">"command"</span>: <span class="s">"node"</span>,
+      <span class="s">"args"</span>: [<span class="s">"${CLAUDE_PROJECT_DIR:-.}/mcp/server.mjs"</span>]
+    },
+    <span class="s">"company-api"</span>: {
+      <span class="s">"type"</span>: <span class="s">"http"</span>,
+      <span class="s">"url"</span>: <span class="s">"${API_BASE_URL:-https://api.example.com}/mcp"</span>,
+      <span class="s">"headers"</span>: { <span class="s">"Authorization"</span>: <span class="s">"Bearer ${API_KEY}"</span> }
+    }
+  }
+}</pre></div>
+<div class="cl-put"><b>What goes in .mcp.json:</b> one entry per server under <code>mcpServers</code>. Each has a <code>type</code> (<code>http</code> or <code>stdio</code>), then <code>url</code> and <code>headers</code> for http, or <code>command</code>, <code>args</code> and <code>env</code> for stdio. Never write a real key here. Use <code>${API_KEY}</code> so each person's key comes from their own environment, and <code>${VAR:-default}</code> for a fallback.</div>
+<div class="cl-name">The file is <code>.mcp.json</code> at the project root. Claude Code does not read <code>~/.claude/mcp.json</code> or <code>.claude/.mcp.json</code>. An http entry without <code>"type"</code> is an error, because an entry with no type is read as stdio.</div>
+<p>When the same name is in several scopes, local wins, then project, then user. Claude Code asks once before it uses servers from a project's <code>.mcp.json</code>.</p>
+</section>
+<section class="card reveal jsec easy-part" id="build-node" data-say="build-node"><div class="sec-num">Part 4</div><h2><span class="sec-em">🟩</span><span>Build your own server in Node.js</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 server.mjs</span><span class="cl-file">📄 package.json</span></div>
+<p>Here is a server that saves expenses. Claude will be able to say "Saved team lunch for ₹850" because it called your code.</p>
+<ol class="steps"><li>Make a folder and install the SDK and zod.</li><li>Write <code>server.mjs</code>: create an <code>McpServer</code>, register each tool with a name, a description and an input schema, then connect over stdio.</li><li>Test it with a small client before you add it to Claude.</li><li>Add it with <code>claude mcp add</code> and ask Claude to use it.</li></ol>
+<div class="codewrap" data-k="node-steps"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Set up a Node.js server project · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">mkdir</span> expenses-mcp &amp;&amp; <span class="k">cd</span> expenses-mcp
+<span class="k">npm</span> init -y
+<span class="k">npm</span> pkg set type=module
+<span class="k">npm</span> install @modelcontextprotocol/sdk zod
+<span class="c"># write server.mjs (below), then test it (below), then:</span>
+<span class="k">claude</span> mcp add --transport stdio expenses -- <span class="k">node</span> <span class="s">"$PWD/server.mjs"</span></pre></div>
+<div class="codewrap" data-k="node-server"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">server.mjs · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// server.mjs: a small MCP server that saves expenses to a file.</span>
+<span class="k">import</span> { <span class="t">McpServer</span> } <span class="k">from</span> <span class="s">"@modelcontextprotocol/sdk/server/mcp.js"</span>;
+<span class="k">import</span> { <span class="t">StdioServerTransport</span> } <span class="k">from</span> <span class="s">"@modelcontextprotocol/sdk/server/stdio.js"</span>;
+<span class="k">import</span> { z } <span class="k">from</span> <span class="s">"zod"</span>;
+<span class="k">import</span> { readFileSync, writeFileSync, existsSync } <span class="k">from</span> <span class="s">"node:fs"</span>;
+
+<span class="k">const</span> <span class="t">FILE</span> = <span class="s">"expenses.json"</span>;
+<span class="k">const</span> load = () =&gt; (existsSync(<span class="t">FILE</span>) ? <span class="t">JSON</span>.parse(readFileSync(<span class="t">FILE</span>, <span class="s">"utf8"</span>)) : []);
+
+<span class="k">const</span> server = <span class="k">new</span> <span class="t">McpServer</span>({ name: <span class="s">"expenses"</span>, version: <span class="s">"1.0.0"</span> });
+
+<span class="c">// Tool 1: save one expense. The description tells Claude when to use it.</span>
+server.registerTool(<span class="s">"add_expense"</span>, {
+  title: <span class="s">"Add an expense"</span>,
+  description: <span class="s">"Save one expense with what it was for and the amount in rupees."</span>,
+  inputSchema: {
+    item: z.string().describe(<span class="s">"What the money was spent on"</span>),
+    amount: z.number().positive().describe(<span class="s">"Amount in rupees"</span>),
+  },
+}, <span class="k">async</span> ({ item, amount }) =&gt; {
+  <span class="k">const</span> list = load();
+  list.push({ item, amount });
+  writeFileSync(<span class="t">FILE</span>, <span class="t">JSON</span>.stringify(list, <span class="k">null</span>, <span class="n">2</span>));
+  <span class="k">return</span> { content: [{ type: <span class="s">"text"</span>, text: <span class="s">`Saved ${item} for ₹${amount}. Expenses saved: ${list.length}.`</span> }] };
+});
+
+<span class="c">// Tool 2: add everything up.</span>
+server.registerTool(<span class="s">"total_spent"</span>, {
+  title: <span class="s">"Total spent"</span>,
+  description: <span class="s">"Add up every saved expense and say the total in rupees."</span>,
+  inputSchema: {},
+}, <span class="k">async</span> () =&gt; {
+  <span class="k">const</span> total = load().reduce((sum, e) =&gt; sum + e.amount, <span class="n">0</span>);
+  <span class="k">return</span> { content: [{ type: <span class="s">"text"</span>, text: <span class="s">`Total spent: ₹${total}`</span> }] };
+});
+
+<span class="c">// stdio servers talk on stdin and stdout, so log to stderr only.</span>
+<span class="k">await</span> server.connect(<span class="k">new</span> <span class="t">StdioServerTransport</span>());
+console.error(<span class="s">"expenses MCP server is running"</span>);</pre></div>
+<div class="codewrap tests" data-k="node-try"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Start the server and call its tools · ▶ A real MCP client talks to the real server</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 try-it.mjs</div><pre class="src" data-file="try-it.mjs"><span class="c">// try-it.mjs: plays the part of Claude Code. It starts the server, lists its tools and calls them.</span>
+<span class="k">import</span> { <span class="t">Client</span> } <span class="k">from</span> <span class="s">"@modelcontextprotocol/sdk/client/index.js"</span>;
+<span class="k">import</span> { <span class="t">StdioClientTransport</span> } <span class="k">from</span> <span class="s">"@modelcontextprotocol/sdk/client/stdio.js"</span>;
+
+<span class="k">const</span> client = <span class="k">new</span> <span class="t">Client</span>({ name: <span class="s">"try-it"</span>, version: <span class="s">"1.0.0"</span> });
+<span class="k">await</span> client.connect(<span class="k">new</span> <span class="t">StdioClientTransport</span>({ command: <span class="s">"node"</span>, args: [<span class="s">"server.mjs"</span>], stderr: <span class="s">"ignore"</span> }));
+
+<span class="k">const</span> { tools } = <span class="k">await</span> client.listTools();
+console.log(<span class="s">"Tools the server offers:"</span>);
+<span class="k">for</span> (<span class="k">const</span> t <span class="k">of</span> tools) console.log(<span class="s">" -"</span>, t.name + <span class="s">":"</span>, t.description);
+
+<span class="k">const</span> call = <span class="k">async</span> (name, args = {}) =&gt; {
+  <span class="k">const</span> r = <span class="k">await</span> client.callTool({ name, arguments: args });
+  console.log(<span class="s">`${name}(${JSON.stringify(args)}) -&gt;`</span>, r.isError ? <span class="s">"ERROR "</span> : <span class="s">""</span>, r.content[<span class="n">0</span>].text.split(<span class="s">"\n"</span>)[<span class="n">0</span>]);
+};
+<span class="k">await</span> call(<span class="s">"add_expense"</span>, { item: <span class="s">"auto rickshaw"</span>, amount: <span class="n">120</span> });
+<span class="k">await</span> call(<span class="s">"add_expense"</span>, { item: <span class="s">"team lunch"</span>, amount: <span class="n">850</span> });
+<span class="k">await</span> call(<span class="s">"total_spent"</span>);
+<span class="k">await</span> call(<span class="s">"add_expense"</span>, { item: <span class="s">"refund"</span>, amount: -<span class="n">50</span> });   <span class="c">// the schema says positive, so this is refused</span>
+
+<span class="k">await</span> client.close();</pre><div class="cmd"><span>Terminal</span><pre>$ node try-it.mjs</pre></div><div class="out"><span>Terminal output</span><pre>Tools the server offers:
+ - add_expense: Save one expense with what it was for and the amount in rupees.
+ - total_spent: Add up every saved expense and say the total in rupees.
+add_expense({&quot;item&quot;:&quot;auto rickshaw&quot;,&quot;amount&quot;:120}) -&gt;  Saved auto rickshaw for ₹120. Expenses saved: 1.
+add_expense({&quot;item&quot;:&quot;team lunch&quot;,&quot;amount&quot;:850}) -&gt;  Saved team lunch for ₹850. Expenses saved: 2.
+total_spent({}) -&gt;  Total spent: ₹970
+add_expense({&quot;item&quot;:&quot;refund&quot;,&quot;amount&quot;:-50}) -&gt; ERROR  MCP error -32602: Input validation error: Invalid arguments for tool add_expense: Too small: expected number to be &gt;0 at amount</pre></div></div>
+<div class="cl-put"><b>What makes a good tool:</b> a short verb name like <code>add_expense</code>, a description that says when to use it, an input schema with a description on every field, and a reply that tells Claude what happened. Never <code>console.log</code> in a stdio server, because stdout carries the messages. Use <code>console.error</code>.</div>
+</section>
+<section class="card reveal jsec easy-part" id="build-py" data-say="build-py"><div class="sec-num">Part 5</div><h2><span class="sec-em">🐍</span><span>Build your own server in Python</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 timetable.py</span></div>
+<p>The same idea in Python: a school timetable that a child could ask about. The function's type hints become the input schema and the docstring becomes the description.</p>
+<div class="codewrap" data-k="py-steps"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Set up a Python server project · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">mkdir</span> timetable-mcp &amp;&amp; <span class="k">cd</span> timetable-mcp
+<span class="k">python3</span> -m venv .venv &amp;&amp; source .venv/bin/activate
+<span class="k">pip</span> install <span class="s">"mcp&gt;=2"</span>
+<span class="c"># write timetable.py (below), then:</span>
+<span class="k">claude</span> mcp add --transport stdio timetable -- <span class="s">"$PWD/.venv/bin/python"</span> <span class="s">"$PWD/timetable.py"</span></pre></div>
+<div class="codewrap" data-k="py-server"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">timetable.py · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># timetable.py: a small MCP server in Python with one tool and one resource.</span>
+<span class="k">from</span> mcp.server <span class="k">import</span> <span class="t">MCPServer</span>
+
+mcp = <span class="t">MCPServer</span>(<span class="s">"timetable"</span>)
+
+<span class="t">TIMETABLE</span> = {
+    <span class="s">"monday"</span>: [<span class="s">"Maths"</span>, <span class="s">"English"</span>, <span class="s">"Science"</span>, <span class="s">"Art"</span>],
+    <span class="s">"tuesday"</span>: [<span class="s">"Hindi"</span>, <span class="s">"Maths"</span>, <span class="s">"Games"</span>, <span class="s">"Computers"</span>],
+}
+
+
+<span class="a">@mcp</span>.tool()
+<span class="k">def</span> classes_on(day: str) -&gt; str:
+    <span class="s">""</span><span class="s">"List the classes for one school day, for example monday."</span><span class="s">""</span>
+    lessons = <span class="t">TIMETABLE</span>.get(day.lower())
+    <span class="k">if</span> <span class="k">not</span> lessons:
+        <span class="k">return</span> f<span class="s">"No timetable saved for {day}."</span>
+    <span class="k">return</span> f<span class="s">"{day.title()}: "</span> + <span class="s">", "</span>.join(lessons)
+
+
+<span class="a">@mcp</span>.resource(<span class="s">"timetable://week"</span>)
+<span class="k">def</span> whole_week() -&gt; str:
+    <span class="s">""</span><span class="s">"The whole week's timetable."</span><span class="s">""</span>
+    <span class="k">return</span> <span class="s">"\n"</span>.join(f<span class="s">"{d}: {', '.join(l)}"</span> <span class="k">for</span> d, l <span class="k">in</span> <span class="t">TIMETABLE</span>.items())
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    mcp.run()   <span class="c"># stdio by default</span></pre></div>
+<div class="codewrap tests" data-k="py-try"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Start the Python server and use it · ▶ The Python server answers a real MCP client</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 try-python.mjs</div><pre class="src" data-file="try-python.mjs"><span class="c">// try-python.mjs: starts the Python server the same way Claude Code would and uses it.</span>
+<span class="k">import</span> { <span class="t">Client</span> } <span class="k">from</span> <span class="s">"@modelcontextprotocol/sdk/client/index.js"</span>;
+<span class="k">import</span> { <span class="t">StdioClientTransport</span> } <span class="k">from</span> <span class="s">"@modelcontextprotocol/sdk/client/stdio.js"</span>;
+
+<span class="k">const</span> client = <span class="k">new</span> <span class="t">Client</span>({ name: <span class="s">"try-python"</span>, version: <span class="s">"1.0.0"</span> });
+<span class="k">await</span> client.connect(<span class="k">new</span> <span class="t">StdioClientTransport</span>({ command: process.env.<span class="t">PY</span>, args: [<span class="s">"timetable.py"</span>], stderr: <span class="s">"ignore"</span> }));
+
+<span class="k">const</span> { tools } = <span class="k">await</span> client.listTools();
+<span class="k">for</span> (<span class="k">const</span> t <span class="k">of</span> tools) console.log(<span class="s">"tool:"</span>, t.name, <span class="s">"| input:"</span>, <span class="t">JSON</span>.stringify(t.inputSchema.properties));
+
+<span class="k">for</span> (<span class="k">const</span> day <span class="k">of</span> [<span class="s">"Monday"</span>, <span class="s">"sunday"</span>]) {
+  <span class="k">const</span> r = <span class="k">await</span> client.callTool({ name: <span class="s">"classes_on"</span>, arguments: { day } });
+  console.log(<span class="s">`classes_on(${day}) -&gt;`</span>, r.content[<span class="n">0</span>].text);
+}
+
+<span class="k">const</span> { resources } = <span class="k">await</span> client.listResources();
+console.log(<span class="s">"resources:"</span>, resources.map(r =&gt; r.uri).join(<span class="s">", "</span>));
+<span class="k">const</span> week = <span class="k">await</span> client.readResource({ uri: <span class="s">"timetable://week"</span> });
+console.log(week.contents[<span class="n">0</span>].text);
+<span class="k">await</span> client.close();</pre><div class="cmd"><span>Terminal</span><pre>$ node try-python.mjs</pre></div><div class="out"><span>Terminal output</span><pre>tool: classes_on | input: {&quot;day&quot;:{&quot;title&quot;:&quot;Day&quot;,&quot;type&quot;:&quot;string&quot;}}
+classes_on(Monday) -&gt; Monday: Maths, English, Science, Art
+classes_on(sunday) -&gt; No timetable saved for sunday.
+resources: timetable://week
+monday: Maths, English, Science, Art
+tuesday: Hindi, Maths, Games, Computers</pre></div></div>
+<div class="cl-name">Version 2 of the Python <code>mcp</code> package imports <code>MCPServer</code> from <code>mcp.server</code>. Older tutorials use <code>FastMCP</code>, which version 2 no longer has.</div>
+</section>
+<section class="card reveal jsec" id="wire" data-say="wire"><div class="sec-num">Part 6</div><h2><span class="sec-em">📨</span><span>What travels between Claude and a server</span></h2>
+
+<p>Under the hood, MCP is a conversation of small JSON messages (JSON-RPC). For a stdio server they go one per line on stdin and stdout. First a handshake, then Claude asks for the tool list, then it calls a tool.</p>
+<div class="codewrap tests" data-k="wire"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The JSON messages on the wire · ▶ Every line below was really sent and received</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 wire.mjs</div><pre class="src" data-file="wire.mjs"><span class="c">// wire.mjs: shows the exact JSON messages that travel between Claude Code and an MCP server.</span>
+<span class="k">import</span> { spawn } <span class="k">from</span> <span class="s">"node:child_process"</span>;
+<span class="k">import</span> { createInterface } <span class="k">from</span> <span class="s">"node:readline"</span>;
+
+<span class="k">const</span> server = spawn(<span class="s">"node"</span>, [<span class="s">"server.mjs"</span>], { stdio: [<span class="s">"pipe"</span>, <span class="s">"pipe"</span>, <span class="s">"ignore"</span>] });
+<span class="k">const</span> replies = createInterface({ input: server.stdout });
+<span class="k">const</span> waiting = <span class="k">new</span> <span class="t">Map</span>();
+replies.on(<span class="s">"line"</span>, line =&gt; { <span class="k">const</span> m = <span class="t">JSON</span>.parse(line); waiting.<span class="k">get</span>(m.id)?.(m); });
+
+<span class="k">let</span> id = <span class="n">0</span>;
+<span class="k">const</span> send = (method, params) =&gt; <span class="k">new</span> <span class="t">Promise</span>(resolve =&gt; {
+  <span class="k">const</span> msg = { jsonrpc: <span class="s">"2.0"</span>, id: ++id, method, params };
+  console.log(<span class="s">"CLAUDE CODE -&gt;"</span>, <span class="t">JSON</span>.stringify(msg));
+  waiting.<span class="k">set</span>(id, m =&gt; { console.log(<span class="s">"SERVER      &lt;-"</span>, <span class="t">JSON</span>.stringify(m.result).slice(<span class="n">0</span>, <span class="n">150</span>) + <span class="s">"\n"</span>); resolve(m); });
+  server.stdin.write(<span class="t">JSON</span>.stringify(msg) + <span class="s">"\n"</span>);
+});
+
+<span class="k">await</span> send(<span class="s">"initialize"</span>, { protocolVersion: <span class="s">"2025-11-25"</span>, capabilities: {}, clientInfo: { name: <span class="s">"demo"</span>, version: <span class="s">"1"</span> } });
+server.stdin.write(<span class="t">JSON</span>.stringify({ jsonrpc: <span class="s">"2.0"</span>, method: <span class="s">"notifications/initialized"</span> }) + <span class="s">"\n"</span>);
+<span class="k">await</span> send(<span class="s">"tools/list"</span>, {});
+<span class="k">await</span> send(<span class="s">"tools/call"</span>, { name: <span class="s">"add_expense"</span>, arguments: { item: <span class="s">"chai"</span>, amount: <span class="n">20</span> } });
+server.kill();</pre><div class="cmd"><span>Terminal</span><pre>$ node wire.mjs</pre></div><div class="out"><span>Terminal output</span><pre>CLAUDE CODE -&gt; {&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;id&quot;:1,&quot;method&quot;:&quot;initialize&quot;,&quot;params&quot;:{&quot;protocolVersion&quot;:&quot;2025-11-25&quot;,&quot;capabilities&quot;:{},&quot;clientInfo&quot;:{&quot;name&quot;:&quot;demo&quot;,&quot;version&quot;:&quot;1&quot;}}}
+SERVER      &lt;- {&quot;protocolVersion&quot;:&quot;2025-11-25&quot;,&quot;capabilities&quot;:{&quot;tools&quot;:{&quot;listChanged&quot;:true}},&quot;serverInfo&quot;:{&quot;name&quot;:&quot;expenses&quot;,&quot;version&quot;:&quot;1.0.0&quot;}}
+
+CLAUDE CODE -&gt; {&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;id&quot;:2,&quot;method&quot;:&quot;tools/list&quot;,&quot;params&quot;:{}}
+SERVER      &lt;- {&quot;tools&quot;:[{&quot;name&quot;:&quot;add_expense&quot;,&quot;title&quot;:&quot;Add an expense&quot;,&quot;description&quot;:&quot;Save one expense with what it was for and the amount in rupees.&quot;,&quot;inputSchema&quot;
+
+CLAUDE CODE -&gt; {&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;id&quot;:3,&quot;method&quot;:&quot;tools/call&quot;,&quot;params&quot;:{&quot;name&quot;:&quot;add_expense&quot;,&quot;arguments&quot;:{&quot;item&quot;:&quot;chai&quot;,&quot;amount&quot;:20}}}
+SERVER      &lt;- {&quot;content&quot;:[{&quot;type&quot;:&quot;text&quot;,&quot;text&quot;:&quot;Saved chai for ₹20. Expenses saved: 1.&quot;}]}</pre></div></div>
+<p>Each tool's name, description and schema are what Claude reads to decide when to call it. That is why clear descriptions matter so much.</p>
+</section>
+<section class="card reveal jsec easy-part" id="use" data-say="use"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎛️</span><span>Using MCP inside Claude Code</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 .claude/settings.json</span></div>
+<div class="codewrap" data-k="use"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Using tools, resources and prompts · 💬 Prompt to try</span><button type="button" class="copy">Copy</button></div><pre class="src main">Add a ₹450 expense for printer ink, then tell me the total
+Compare @github:issue://123 with @docs:file://api/authentication
+/mcp__github__pr_review 456</pre><div class="note-out"><span>What happens</span><p>Claude calls mcp__expenses__add_expense and mcp__expenses__total_spent. The @ mentions pull in two resources. The slash command runs a prompt the github server offers.</p></div></div>
+<p>Every MCP tool gets a full name <code>mcp__&lt;server&gt;__&lt;tool&gt;</code>. Use that name in permission rules, in a skill's <code>allowed-tools</code>, in an agent's <code>tools</code> and in hook matchers.</p>
+<div class="codewrap" data-k="perm"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">.claude/settings.json: rules for MCP tools · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main">{
+  <span class="s">"permissions"</span>: {
+    <span class="s">"allow"</span>: [<span class="s">"mcp__expenses__*"</span>, <span class="s">"mcp__claude-code-docs__*"</span>],
+    <span class="s">"ask"</span>:   [<span class="s">"mcp__github__create_pull_request"</span>],
+    <span class="s">"deny"</span>:  [<span class="s">"mcp__company-api__delete_customer"</span>]
+  }
+}</pre></div>
+<ul><li>Claude warns when one tool result is over 10,000 tokens. The default limit is 25,000, set by <code>MAX_MCP_OUTPUT_TOKENS</code>.</li>
+<li><b>Tool search</b> loads only tool names at start and fetches full definitions when needed, so many servers cost little context.</li>
+<li>Only add servers you trust. A server can read what you send it and its replies go into Claude's context.</li></ul>
+</section>
+<section class="card reveal jsec" id="desktop" data-say="desktop"><div class="sec-num">Part 8</div><h2><span class="sec-em">🖥️</span><span>The same servers in Claude Desktop</span></h2>
+<div class="cl-tags"><span class="cl-file">📄 claude_desktop_config.json</span></div>
+<p>The Claude Desktop chat app reads its own file, <code>claude_desktop_config.json</code>. Open it from Settings, then Developer, then Edit Config. On macOS it is in <code>~/Library/Application Support/Claude/</code> and on Windows in <code>%APPDATA%\Claude\</code>. Use full paths, then restart the app.</p>
+<div class="codewrap" data-k="desktop"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">claude_desktop_config.json (Claude Desktop app) · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main">{
+  <span class="s">"mcpServers"</span>: {
+    <span class="s">"expenses"</span>: {
+      <span class="s">"command"</span>: <span class="s">"node"</span>,
+      <span class="s">"args"</span>: [<span class="s">"/Users/asha/expenses-mcp/server.mjs"</span>]
+    },
+    <span class="s">"timetable"</span>: {
+      <span class="s">"command"</span>: <span class="s">"/Users/asha/timetable-mcp/.venv/bin/python"</span>,
+      <span class="s">"args"</span>: [<span class="s">"/Users/asha/timetable-mcp/timetable.py"</span>]
+    }
+  }
+}</pre></div>
+<div class="codewrap" data-k="desktop-cmds"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Moving between Claude Desktop and Claude Code · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">claude</span> mcp add-from-<span class="k">claude</span>-desktop   <span class="c"># copy Desktop servers into Claude Code (macOS, WSL)</span>
+<span class="k">claude</span> mcp serve                     <span class="c"># run Claude Code itself as an MCP server for other apps</span></pre></div>
+<div class="scenario"><b>🧾 Real scenario: a shop owner</b>Asha runs a small bakery. Her nephew builds the expenses server above on her laptop and adds it to Claude Desktop. Now she types "add ₹1,200 for flour and tell me this week's total", and Claude saves it to her file and answers with the sum.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every file name, folder, setting and command on this page was checked against the official Claude and Claude Code documentation in October 2026.</p>
+  <nav class="pager"><a class="prev" href="./claude-subagents.html" data-topic="claude-subagents"><small>← Previous chapter</small><b>🤖 Subagents and styles</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script>
+const PAGE = {"info": {"title": "MCP: connect Claude to anything", "panels": [{"s": [["e", "🔌"], ["t", "claude mcp add", {"b": 1}]], "h": "Connect", "t": "http for hosted services.", "more": "stdio for programs on your computer."}, {"s": [["e", "📄"], ["t", ".mcp.json", {"b": 1}]], "h": "Share", "t": "Project scope goes in .mcp.json.", "more": "Keys stay in ${VARS}."}, {"s": [["e", "🛠️"], ["t", "registerTool", {"b": 1}]], "h": "Build", "t": "Name, description, schema, handler.", "more": "Node.js or Python."}, {"s": [["e", "🔐"], ["t", "mcp__server__tool", {"b": 1}]], "h": "Control", "t": "Allow, ask or deny per tool.", "more": "Only add servers you trust."}], "remember": "A clear tool description is what makes Claude pick the right tool."}, "real": [["🐛", "A product team", "Connects Jira and GitHub servers. \"Implement PROJ-412 and open a pull request\" now works end to end in one session."], ["📊", "An analyst", "Adds a read only Postgres server with project scope, so everyone on the team can ask \"how many sign-ups last week\" in plain words."], ["🏫", "A school teacher", "Builds the timetable server in Python for the class laptop. Students ask Claude \"what do I have on Tuesday\" and get the real answer."]], "quiz": [{"lv": "e", "q": "What does an MCP server give Claude?", "o": ["Tools, resources and prompts", "A new model", "More context window", "A login"], "a": 0, "hint": "Three kinds of things.", "why": "Servers offer tools, resources and prompts."}, {"lv": "e", "q": "Which transport is recommended for a hosted MCP server?", "o": ["http", "sse", "ftp", "stdio"], "a": 0, "hint": "SSE is deprecated.", "why": "Use --transport http for remote servers."}, {"lv": "e", "q": "Where do project scoped servers live?", "o": [".mcp.json at the project root", ".claude/mcp.json", "CLAUDE.md", "~/.claude/settings.json"], "a": 0, "hint": "Shared through git.", "why": "Project scope writes .mcp.json at the root."}, {"lv": "m", "q": "In claude mcp add ... -- python server.py --port 8080, who gets --port?", "o": ["The server", "Claude Code", "Nobody", "npm"], "a": 0, "hint": "After the double dash.", "why": "Everything after -- is passed to the server untouched."}, {"lv": "m", "q": "Why must a stdio server not print with console.log?", "o": ["stdout carries the protocol messages", "It is slow", "It is not allowed in Node", "It deletes files"], "a": 0, "hint": "Think about the wire.", "why": "Log to stderr so the JSON stream stays clean."}, {"lv": "m", "q": "What is the full name of the add_expense tool on the expenses server?", "o": ["mcp__expenses__add_expense", "expenses.add_expense", "add_expense@expenses", "mcp:expenses:add_expense"], "a": 0, "hint": "Two underscores each.", "why": "MCP tools are named mcp__server__tool."}, {"lv": "h", "q": "How should an API key appear in a shared .mcp.json?", "o": ["${API_KEY}", "The real key", "In a comment", "Base64 encoded"], "a": 0, "hint": "Each person has their own.", "why": "Environment variable expansion keeps secrets out of git."}, {"lv": "h", "q": "In version 2 of the Python mcp package, what do you import?", "o": ["MCPServer from mcp.server", "FastMCP from mcp.server.fastmcp", "Server from anthropic", "McpServer from zod"], "a": 0, "hint": "The name changed.", "why": "FastMCP was removed in version 2."}, {"lv": "x", "q": "An http entry in .mcp.json has a url but no type. What happens?", "o": ["It is skipped with an error", "It works as http", "It works as sse", "Claude asks which"], "a": 0, "hint": "No type means stdio.", "why": "Add \"type\": \"http\"."}, {"lv": "x", "q": "A tool returns 30,000 tokens with default settings. What happens?", "o": ["It is saved to a file and Claude gets the path", "Claude crashes", "It is cut to 100 words", "Nothing"], "a": 0, "hint": "Default limit 25,000.", "why": "Large results are written to a file Claude can read when needed."}], "calc": [{"lv": "e", "q": "After the auto rickshaw (₹120) and team lunch (₹850), what total does total_spent report?", "ans": "970", "hint": "Add the two.", "steps": ["<span class=\"eq\">120 + 850 = 970<\/span>"], "alt": ["₹970"]}, {"lv": "e", "q": "How many tools does the expenses server offer?", "ans": "2", "hint": "Read the list.", "steps": ["add_expense and total_spent."]}, {"lv": "m", "q": "A server has 40 tools at 300 tokens each. How many tokens would loading them all up front cost?", "ans": "12000", "hint": "Multiply.", "steps": ["<span class=\"eq\">40 × 300 = 12,000<\/span>"], "alt": ["12,000"]}, {"lv": "m", "q": "With tool search only names load, about 15 tokens each. How many tokens for the same 40 tools?", "ans": "600", "hint": "Multiply.", "steps": ["<span class=\"eq\">40 × 15 = 600<\/span>"]}, {"lv": "h", "q": "A result is 18,000 tokens. How many tokens over the 10,000 warning line is it?", "ans": "8000", "hint": "Subtract.", "steps": ["<span class=\"eq\">18,000 − 10,000 = 8,000<\/span>"], "alt": ["8,000"]}, {"lv": "x", "q": "In the wire demo, how many requests with an id did the client send?", "ans": "3", "hint": "Count the CLAUDE CODE lines.", "steps": ["initialize, tools/list and tools/call. The initialized notification has no id."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter connects Claude to other apps with MCP, and builds two real servers step by step, one in Node and one in Python.", "hi": "यह अध्याय MCP से Claude को दूसरे apps से जोड़ता है और दो असली servers बनाता है।", "kn": "ಈ ಅಧ್ಯಾಯ MCP ಮೂಲಕ Claude ಅನ್ನು ಇತರ apps ಗೆ ಜೋಡಿಸಿ ಎರಡು servers ಕಟ್ಟುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ MCP ଦ୍ୱାରା Claude କୁ ଅନ୍ୟ apps ସହ ଯୋଡେ ଓ ଦୁଇଟି server ତିଆରି କରେ।", "ar": "يربط هذا الفصل Claude بتطبيقات أخرى عبر MCP ويبني خادمين حقيقيين.", "de": "Dieses Kapitel verbindet Claude per MCP mit anderen Apps und baut zwei echte Server."}, {"id": "what", "h": "What it is", "en": "MCP is an open standard. A server offers tools, resources and prompts, and Claude Code connects to it as a client.", "hi": "MCP एक खुला मानक है। Server tools, resources और prompts देता है।", "kn": "MCP ಒಂದು ಮುಕ್ತ ಮಾನಕ. Server tools, resources, prompts ನೀಡುತ್ತದೆ.", "or": "MCP ଏକ ମୁକ୍ତ ମାନକ। Server tools, resources ଓ prompts ଦିଏ।", "ar": "MCP معيار مفتوح. الخادم يقدّم أدوات وموارد وموجّهات.", "de": "MCP ist ein offener Standard. Ein Server bietet Tools, Ressourcen und Prompts."}, {"id": "connect", "h": "Connect", "en": "Run claude mcp add with http for hosted services or stdio for local programs, then check with claude mcp list.", "hi": "Hosted के लिए http, local के लिए stdio के साथ claude mcp add चलाएँ।", "kn": "Hosted ಗೆ http, local ಗೆ stdio ಜೊತೆ claude mcp add ಚಲಾಯಿಸಿ.", "or": "Hosted ପାଇଁ http, local ପାଇଁ stdio ସହ claude mcp add ଚଲାନ୍ତୁ।", "ar": "شغّل claude mcp add مع http للخدمات المستضافة أو stdio للبرامج المحلية.", "de": "Nutze claude mcp add mit http für gehostete Dienste oder stdio für lokale Programme."}, {"id": "scopes", "h": "Scopes", "en": "Local is just you in this project, project goes in the shared dot mcp dot json file, and user is all your projects.", "hi": "Local सिर्फ आप, project साझा .mcp.json में, user सभी projects।", "kn": "Local ನೀವು ಮಾತ್ರ, project ಹಂಚಿದ .mcp.json, user ಎಲ್ಲಾ projects.", "or": "Local କେବଳ ଆପଣ, project ଅଂଶୀଦାର .mcp.json, user ସବୁ projects।", "ar": "المحلي لك وحدك، والمشروع في .mcp.json المشترك، والمستخدم لكل مشاريعك.", "de": "Local nur für dich, project in der geteilten .mcp.json, user für alle Projekte."}, {"id": "build-node", "h": "Node server", "en": "Create an MCP server, register each tool with a name, description and schema, connect over stdio, and test it with a client.", "hi": "McpServer बनाएँ, हर tool को नाम, विवरण और schema दें, फिर test करें।", "kn": "McpServer ರಚಿಸಿ, ಪ್ರತಿ tool ಗೆ ಹೆಸರು, ವಿವರಣೆ, schema ಕೊಡಿ.", "or": "McpServer ତିଆରି କରି ପ୍ରତି tool କୁ ନାମ, ବର୍ଣ୍ଣନା ଓ schema ଦିଅନ୍ତୁ।", "ar": "أنشئ خادمًا وسجّل كل أداة باسم ووصف ومخطط ثم اختبره.", "de": "Erstelle einen Server, registriere jedes Tool mit Name, Beschreibung und Schema und teste ihn."}, {"id": "build-py", "h": "Python server", "en": "In Python, decorate a function with mcp dot tool. Type hints become the schema and the docstring becomes the description.", "hi": "Python में function पर @mcp.tool लगाएँ। Type hints schema बनते हैं।", "kn": "Python ನಲ್ಲಿ function ಗೆ @mcp.tool ಹಾಕಿ. Type hints schema ಆಗುತ್ತವೆ.", "or": "Python ରେ function ଉପରେ @mcp.tool ଦିଅନ୍ତୁ। Type hints schema ହୁଏ।", "ar": "في Python زيّن الدالة بـ mcp.tool وتصبح التلميحات مخططًا.", "de": "In Python dekorierst du eine Funktion mit mcp.tool. Typhinweise werden zum Schema."}, {"id": "wire", "h": "On the wire", "en": "Client and server swap small JSON messages: a handshake, a tools list request, then tool calls.", "hi": "Client और server छोटे JSON संदेश भेजते हैं: handshake, tools list, फिर calls।", "kn": "Client ಮತ್ತು server ಸಣ್ಣ JSON ಸಂದೇಶಗಳನ್ನು ವಿನಿಮಯ ಮಾಡುತ್ತವೆ.", "or": "Client ଓ server ଛୋଟ JSON ବାର୍ତ୍ତା ଅଦଳବଦଳ କରନ୍ତି।", "ar": "يتبادل العميل والخادم رسائل JSON صغيرة: مصافحة ثم قائمة أدوات ثم استدعاءات.", "de": "Client und Server tauschen kleine JSON-Nachrichten: Handshake, Toolliste, dann Aufrufe."}, {"id": "use", "h": "Using it", "en": "Each tool is named mcp, server, tool. Use that name in permission rules. Mention resources with at and run prompts with a slash.", "hi": "हर tool का नाम mcp__server__tool होता है। इसे permission rules में लिखें।", "kn": "ಪ್ರತಿ tool ಹೆಸರು mcp__server__tool. ಅದನ್ನು permission rules ನಲ್ಲಿ ಬಳಸಿ.", "or": "ପ୍ରତି tool ର ନାମ mcp__server__tool. ଏହାକୁ permission rules ରେ ଲେଖନ୍ତୁ।", "ar": "اسم كل أداة mcp__server__tool. استخدمه في قواعد الأذونات.", "de": "Jedes Tool heißt mcp__server__tool. Nutze den Namen in Berechtigungsregeln."}, {"id": "desktop", "h": "Desktop", "en": "Claude Desktop reads claude desktop config dot json. Use full paths and restart the app.", "hi": "Claude Desktop claude_desktop_config.json पढ़ता है। पूरे paths लिखें।", "kn": "Claude Desktop claude_desktop_config.json ಓದುತ್ತದೆ. ಪೂರ್ಣ paths ಬಳಸಿ.", "or": "Claude Desktop claude_desktop_config.json ପଢେ। ପୂରା paths ଲେଖନ୍ତୁ।", "ar": "يقرأ Claude Desktop الملف claude_desktop_config.json. استخدم مسارات كاملة.", "de": "Claude Desktop liest claude_desktop_config.json. Nutze volle Pfade."}, {"id": "practice", "h": "Practice", "en": "Practise tool names, scopes and environment variable expansion.", "hi": "Tool नाम, scopes और variables का अभ्यास करें।", "kn": "Tool ಹೆಸರು, scopes, variables ಅಭ್ಯಾಸ.", "or": "Tool ନାମ, scopes ଓ variables ଅଭ୍ୟାସ।", "ar": "تدرّب على أسماء الأدوات والنطاقات والمتغيرات.", "de": "Übe Toolnamen, Scopes und Variablen."}], "ex": [{"id": "full-name", "lv": "e", "title": "Full tool name", "task": "<p>Write <code>toolName(server, tool)<\/code> that returns the full MCP tool name, such as <code>mcp__expenses__add_expense<\/code>. Replace any <code>.<\/code> or space in the server name with <code>_<\/code>.<\/p>", "starter": "function toolName(server, tool) {\n  \n}", "tests": [{"call": "toolName(\"expenses\", \"add_expense\")", "want": "mcp__expenses__add_expense"}, {"call": "toolName(\"my.server\", \"go\")", "want": "mcp__my_server__go"}, {"call": "toolName(\"team db\", \"query\")", "want": "mcp__team_db__query"}], "solution": "function toolName(server, tool) {\n  return \"mcp__\" + server.replace(/[. ]/g, \"_\") + \"__\" + tool;\n}", "hint": "Use a regular expression with the g flag.", "why": "You need the exact name for permission rules, skills and hooks."}, {"id": "which-file", "lv": "m", "title": "Which file?", "task": "<p>Write <code>fileFor(scope)<\/code> that returns where a server added with that scope is stored: <code>\"~/.claude.json\"<\/code> for <code>local<\/code> and <code>user<\/code>, <code>\".mcp.json\"<\/code> for <code>project<\/code>, and <code>null<\/code> for anything else.<\/p>", "starter": "function fileFor(scope) {\n  \n}", "tests": [{"call": "fileFor(\"local\")", "want": "~/.claude.json"}, {"call": "fileFor(\"project\")", "want": ".mcp.json"}, {"call": "fileFor(\"user\")", "want": "~/.claude.json"}, {"call": "fileFor(\"team\")", "want": null}], "solution": "function fileFor(scope) {\n  if (scope === \"project\") return \".mcp.json\";\n  if (scope === \"local\" || scope === \"user\") return \"~/.claude.json\";\n  return null;\n}", "hint": "Only project scope writes a file in the repository.", "why": "Knowing the file tells you who will see the server."}, {"id": "expand", "lv": "h", "title": "Expand ${VAR}", "task": "<p>Write <code>expand(text, env)<\/code> that replaces <code>${NAME}<\/code> with <code>env.NAME<\/code> and <code>${NAME:-fallback}<\/code> with <code>env.NAME<\/code> or the fallback when it is not set. Leave an unset <code>${NAME}<\/code> with no fallback as it is.<\/p>", "starter": "function expand(text, env) {\n  \n}", "tests": [{"call": "expand(\"${A}/mcp\", { A: \"https://x.io\" })", "want": "https://x.io/mcp"}, {"call": "expand(\"${B:-https://api.example.com}/mcp\", {})", "want": "https://api.example.com/mcp"}, {"call": "expand(\"Bearer ${KEY}\", {})", "want": "Bearer ${KEY}"}], "solution": "function expand(text, env) {\n  return text.replace(/\\$\\{(\\w+)(?::-([^}]*))?\\}/g, (whole, name, fallback) =>\n    env[name] ?? fallback ?? whole);\n}", "hint": "One regular expression with an optional group for the fallback.", "why": "This is how .mcp.json keeps keys and machine paths out of git."}], "dg": {"mcp": {"t": "Claude Code, an MCP server and your data", "w": 900, "h": 240, "n": [["you", 20, 90, 110, 56, "You", {"c": 5, "sh": "pill"}], ["cc", 170, 90, 180, 56, "Claude Code", {"c": 1, "sub": "MCP client"}], ["srv", 420, 90, 190, 56, "MCP server", {"c": 3, "sub": "expenses", "i": "A small program that offers tools, resources and prompts."}], ["data", 690, 20, 180, 56, "expenses.json", {"c": 0, "sh": "doc"}], ["api", 690, 160, 180, 56, "any app or API", {"c": 4, "sh": "doc"}]], "e": [["you", "cc"], ["cc", "srv", {"t": "tools/call"}], ["srv", "data"], ["srv", "api"]], "st": [[["you", "cc", "you>cc"], "You ask: add ₹120 for an auto ride."], [["srv", "cc>srv"], "Claude Code sees the add_expense tool and calls it with item and amount."], [["data", "api", "srv>data", "srv>api"], "The server does the real work: it writes the file or calls an app."], [["cc", "srv"], "The server replies with text, and Claude tells you what happened."]]}}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "MCP: Connect and Build Servers", subject: "master-claude" });
+CLAUDE_PAGE.wire();
+</script>
+</body>
+</html>
