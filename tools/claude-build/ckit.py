@@ -35,20 +35,21 @@ def node_files(extra=None, type_module=True):
     return files
 
 
-def hook(script, events, label, name='.claude/hooks/hook.mjs', settings=None, more=None, **kw):
+def hook(script, events, label, name='.claude/hooks/hook.py', settings=None, more=None, **kw):
     """Run a hook script for real: each event is piped on stdin the way Claude Code sends it,
     and the exit code, stdout and stderr are printed. settings is the matching settings.json, shown with it."""
     files = {name: script}
     if settings:
         files['.claude/settings.json'] = json.dumps(settings, indent=2)
     files.update(more or {})
+    runner, shown_runner = ('$PY', 'python3') if name.endswith('.py') else ('node', 'node')
     lines = []
     shown_lines = []
     for i, ev in enumerate(events):
         body = json.dumps(ev)
         files[f'events/{i + 1}.json'] = body
-        lines.append(f'echo "--- event {i + 1}: {ev.get("tool_name") or ev.get("hook_event_name")}"; node {name} < events/{i + 1}.json; echo "exit code: $?"')
-        shown_lines.append(f"echo '{body}' | node {name}")
+        lines.append(f'echo "--- event {i + 1}: {ev.get("tool_name") or ev.get("hook_event_name")}"; {runner} {name} < events/{i + 1}.json; echo "exit code: $?"')
+        shown_lines.append(f"echo '{body}' | {shown_runner} {name}")
     show_files = ([ '.claude/settings.json'] if settings else []) + [name] + list(more or {})
     spec = {'t': 'test', 'files': files, 'cmd': ' ; '.join(lines) + ' ; true', 'label': label, 'show': show_files,
             'shown_cmd': '\n$ '.join(shown_lines), 'badge': '🪝 Hook run for real with the JSON Claude Code sends'}

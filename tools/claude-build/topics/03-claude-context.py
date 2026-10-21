@@ -1,30 +1,23 @@
 # Chapter 3: context engineering. What fills the window, context rot, the right altitude, just in time retrieval, compaction, notes and subagents.
-from ckit import part, run, show, md, cli, prompt, say, quiz, calc, ex, panel
+from ckit import part, md, cli, prompt, say, quiz, calc, panel
 
 MODULE = ('🌱', 'Foundations', 'claude-foundations', 'What Claude is, how to talk to it, and how to give it the right information at the right time.')
 
 CODES = {
-    'budget': run('''
-// Everything Claude sees in one request shares the same context window.
-// Rough sizes in tokens for a typical Claude Code session:
-const parts = {
-  "system prompt and tools":        18_000,
-  "CLAUDE.md (180 lines)":           2_500,
-  "skill descriptions (12 skills)":  1_200,
-  "MCP tool names (3 servers)":        900,
-  "conversation so far":            64_000,
-  "files Claude has read":          95_000,
-};
-const WINDOW = 1_000_000;
-let used = 0;
-for (const [name, tokens] of Object.entries(parts)) {
-  used += tokens;
-  console.log(name.padEnd(32), String(tokens).padStart(7));
-}
-console.log("-".repeat(40));
-console.log("used".padEnd(32), String(used).padStart(7), `(${(used / WINDOW * 100).toFixed(1)}% of 1M)`);
-console.log("biggest item:", Object.entries(parts).sort((a, b) => b[1] - a[1])[0][0]);
-''', 'Where the tokens go in a session'),
+    'notes-file': md('''
+# NOTES.md: invoice clean-up, started 2026-10-19
+
+## Done
+- Fixed date formats in invoices 001 to 140
+- Removed 12 duplicate rows (list in duplicates.csv)
+
+## Next
+- Invoices 141 to 300
+- Check the 3 invoices with a missing GST number (ids in todo.csv)
+
+## Decisions
+- Amounts stay in paise as whole numbers. Format only in the final report.
+''', 'A progress file Claude keeps and a fresh session reads first'),
     'altitude': md('''
 <!-- Too low: brittle if-else rules -->
 If the customer says "refund" reply with template R1.
@@ -43,70 +36,6 @@ Resolve the customer's issue in one reply when possible.
 - If the order is older than 30 days, explain the policy kindly and offer store credit.
 - If you are not sure which policy applies, ask one clarifying question.
 ''', 'Three system prompts at different altitudes'),
-    'jit': run('''
-// Just in time retrieval: keep light pointers, load the details only when needed.
-// Instead of pasting all 400 policy pages, give Claude an index and a search tool.
-const library = {
-  "policies/refunds.md":  "Refunds within 30 days to the original payment method. Store credit after 30 days.",
-  "policies/delivery.md": "Metro cities 2 days, other cities 5 days. Free delivery above Rs 499.",
-  "policies/warranty.md": "Electronics 1 year warranty. Accidental damage not covered.",
-  "policies/privacy.md":  "We never sell customer data. Delete requests within 7 days.",
-};
-
-function search(query) {
-  const words = query.toLowerCase().split(/\\W+/).filter(w => w.length > 4);   // skip short words such as "days"
-  return Object.entries(library)
-    .map(([path, text]) => [path, words.filter(w => text.toLowerCase().includes(w)).length])
-    .filter(([, score]) => score > 0)
-    .sort((a, b) => b[1] - a[1])
-    .map(([path]) => path);
-}
-
-const question = "How many days until delivery reaches a small town, and is delivery free?";
-const hits = search(question);
-console.log("index sent up front:", Object.keys(library).length, "paths");
-console.log("files loaded for this question:", hits);
-console.log("text loaded:", hits.map(h => library[h]).join(" "));
-''', 'Load only what the question needs'),
-    'compact': run('''
-// Compaction: when the window fills up, replace old turns with a summary
-// and keep the most recent turns word for word.
-function compact(turns, keepLast, summarise) {
-  if (turns.length <= keepLast) return turns;
-  const old = turns.slice(0, -keepLast);
-  return [{ role: "summary", text: summarise(old) }, ...turns.slice(-keepLast)];
-}
-
-const turns = [
-  { role: "user", text: "Fix the login bug in auth.js" },
-  { role: "claude", text: "Found it: token expiry compared in seconds vs ms. Fixed line 42." },
-  { role: "user", text: "Now add a test" },
-  { role: "claude", text: "Added tests/auth.test.js with 3 cases. All pass." },
-  { role: "user", text: "Update the changelog" },
-  { role: "claude", text: "Added an entry under 2.4.1." },
-];
-
-const summary = old => "Done so far: " + old.filter(t => t.role === "claude").map(t => t.text.split(". ")[0]).join("; ");
-for (const t of compact(turns, 2, summary)) console.log(t.role.padEnd(8), t.text);
-''', 'Summarise old turns, keep the latest'),
-    'notes': run('''
-// Structured note taking: Claude keeps a small progress file outside the chat,
-// so work survives /clear, compaction or a brand new session.
-import { writeFileSync, readFileSync } from "node:fs";
-
-const progress = {
-  goal: "Move 40 product pages to the new template",
-  done: ["home", "pens", "notebooks"],
-  next: "bags",
-  notes: ["Prices must keep two decimals", "Old URLs need redirects"],
-};
-writeFileSync("progress.json", JSON.stringify(progress, null, 2));
-
-// ...later, in a fresh session, the first step is to read it back:
-const p = JSON.parse(readFileSync("progress.json", "utf8"));
-console.log(`Resume: ${p.done.length}/40 done, next is "${p.next}".`);
-console.log("Remember:", p.notes.join(" | "));
-''', 'A progress file that survives a fresh start', play=False),
     'cc-cmds': cli('''
 /context                        # see what is using the window right now
 /clear                          # start fresh when you switch to unrelated work
@@ -127,7 +56,6 @@ PARTS = [
 ''', easy=True, kw=['context engineering', 'context', 'tokens', 'what Claude sees']),
     part('rot', '🫧', 'Why more is not always better', '''
 <p>Claude's attention is a <b>limited budget</b>. Every extra token takes a little of it. As the window fills, the model gets slightly worse at recalling any one fact. Anthropic calls this <b>context rot</b>. So even with a one million token window, a focused context gives better answers than a stuffed one.</p>
-[[budget]]
 <div class="tip">In Claude Code, run <code>/context</code> to see the real numbers for your session. The biggest item is usually files read and old conversation, not your instructions.</div>
 ''', easy=True, kw=['context rot', 'attention budget', 'window size', '/context']),
     part('altitude', '🎚️', 'Write instructions at the right altitude', '''
@@ -143,16 +71,14 @@ PARTS = [
 ''', kw=['tools', 'tool descriptions', 'MCP tools', 'examples']),
     part('jit', '🎯', 'Just in time retrieval', '''
 <p>Do not paste everything up front. Give Claude <b>light pointers</b> such as file paths, a list of document titles or a search tool, and let it load details only when a question needs them. Claude Code works this way: it keeps file paths and uses search and read tools instead of reading your whole project at the start.</p>
-[[jit]]
 <p>A mix often works best: load a little up front (like <code>CLAUDE.md</code>) and fetch the rest on demand (files, skills, MCP tools).</p>
 ''', easy=True, kw=['just in time', 'retrieval', 'search', 'progressive disclosure', 'RAG']),
     part('long', '⏳', 'Long tasks: compaction, notes and subagents', '''
 <p>Some jobs run for hours and outgrow any window. Three techniques keep them on track.</p>
 <div class="viz" data-viz="lanes" data-k="window"></div>
 <p><b>1. Compaction.</b> Summarise the old conversation and continue with the summary plus the latest turns. Claude Code does this automatically near the limit.</p>
-[[compact]]
 <p><b>2. Structured notes.</b> Claude writes progress to a file such as <code>progress.json</code>, a to do list or <code>NOTES.md</code>. A fresh session reads it and carries on.</p>
-[[notes]]
+[[notes-file]]
 <p><b>3. Subagents.</b> A helper explores in its own clean window and returns only a short summary. Chapter 9 builds them.</p>
 [[sub-prompt]]
 ''', kw=['compaction', 'structured notes', 'progress file', 'subagents', 'long running tasks']),
@@ -288,26 +214,7 @@ CALC = [
     calc('x', 'Moving a 9,000 token style guide from CLAUDE.md into a skill (90 token description) saves how many tokens per request when the skill is not used?', '8910', 'Old cost minus new cost.', ['<span class="eq">9,000 − 90 = 8,910</span>'], alt=['8,910']),
 ]
 
-EX = [
-    ex('fits', 'e', 'Does it fit?', '<p>Write <code>fits(parts, window)</code>. <code>parts</code> is an object of token counts. Return true when their total is at most <code>window</code>.</p>',
-       'function fits(parts, window) {\n  \n}\n',
-       [('fits({ a: 100, b: 200 }, 300)', True), ('fits({ a: 100, b: 201 }, 300)', False), ('fits({}, 10)', True)],
-       'function fits(parts, window) {\n  return Object.values(parts).reduce((s, n) => s + n, 0) <= window;\n}',
-       hint='<code>Object.values</code> and <code>reduce</code>.', why='Checking the budget before a long job avoids surprise compaction in the middle of it.'),
-    ex('relevant', 'm', 'Pick relevant files', '<p>Write <code>relevant(files, question)</code>. <code>files</code> maps a path to its text. Return the paths whose text contains at least one word from the question that is longer than 3 letters (ignore case), in the original order.</p>',
-       'function relevant(files, question) {\n  \n}\n',
-       [('relevant({ "a.md": "Refunds in 30 days", "b.md": "Delivery in 2 days" }, "When do refunds arrive?")', ['a.md']),
-        ('relevant({ "a.md": "x", "b.md": "y" }, "hello there")', []),
-        ('relevant({ "a.md": "DELIVERY fees", "b.md": "delivery times" }, "delivery")', ['a.md', 'b.md'])],
-       'function relevant(files, question) {\n  const words = question.toLowerCase().split(/\\W+/).filter(w => w.length > 3);\n  return Object.keys(files).filter(p => words.some(w => files[p].toLowerCase().includes(w)));\n}',
-       hint='Split the question into words, then <code>filter</code> the paths.', why='This is the core of just in time retrieval: load only what the question points at.'),
-    ex('compact', 'h', 'Compact a conversation', '<p>Write <code>compact(turns, keep)</code>. If there are more than <code>keep</code> turns, return a new list that starts with <code>{ role: "summary", text: N + " earlier turns" }</code> (N is how many were removed) followed by the last <code>keep</code> turns. Otherwise return the turns unchanged.</p>',
-       'function compact(turns, keep) {\n  \n}\n',
-       [('compact([{role:"user",text:"a"},{role:"claude",text:"b"},{role:"user",text:"c"}], 1)', [{'role': 'summary', 'text': '2 earlier turns'}, {'role': 'user', 'text': 'c'}]),
-        ('compact([{role:"user",text:"a"}], 3).length', 1)],
-       'function compact(turns, keep) {\n  if (turns.length <= keep) return turns;\n  const removed = turns.length - keep;\n  return [{ role: "summary", text: removed + " earlier turns" }, ...turns.slice(-keep)];\n}',
-       hint='<code>slice(-keep)</code> gives the last turns.', why='Keeping recent turns word for word and summarising the rest is exactly how compaction keeps long sessions useful.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-context', 'title': 'Context Engineering: The Right Information at the Right Time', 'short': 'Context engineering', 'emoji': '🧠', 'module': MODULE, 'minutes': 15,

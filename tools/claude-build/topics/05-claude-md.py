@@ -1,62 +1,34 @@
 # Chapter 5: CLAUDE.md and memory. Locations, load order, what to put in, imports, CLAUDE.local.md, AGENTS.md, auto memory, /init and /memory.
-from ckit import part, run, test, show, md, cli, prompt, say, quiz, calc, ex, panel, pkg
+from ckit import part, show, md, cli, say, quiz, calc, panel
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
 
-EXPAND = '''
-// A small model of how Claude Code reads a CLAUDE.md: block HTML comments are
-// removed, and every @path import (relative to the importing file, at most four
-// hops deep) is loaded too. Paths inside backticks are left alone.
-import { readFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-
-const loaded = [];
-function load(file, from, depth) {
-  const text = readFileSync(file, "utf8").replace(/^<!--[\\s\\S]*?-->\\n?/gm, "").trim();
-  loaded.push({ file, from, text });
-  for (const line of text.split("\\n")) {
-    if (line.includes("`")) continue;                         // `@path` in backticks is not an import
-    for (const m of line.matchAll(/(^|\\s)@([\\w./~-]+)/g)) {
-      const target = join(dirname(file), m[2]);
-      if (depth < 4 && existsSync(target)) load(target, file, depth + 1);
-    }
-  }
-}
-
-load("CLAUDE.md", null, 0);
-for (const f of loaded) {
-  console.log(`=== ${f.file}` + (f.from ? `  (imported by ${f.from})` : ""));
-  console.log(f.text + "\\n");
-}
-const lines = loaded.reduce((n, f) => n + f.text.split("\\n").length, 0);
-console.log(`files loaded: ${loaded.length}, lines Claude sees: ${lines}`);
-'''
 
 CODES = {
     'shop': md('''
 # GreenLeaf shop website
 
-Online plant shop. Next.js front end, Node API, PostgreSQL.
+Online plant shop. FastAPI back end with Jinja templates, PostgreSQL.
 
 ## Commands
-- Install: `npm ci`
-- Run locally: `npm run dev` (http://localhost:3000)
-- Test one file: `npx vitest run path/to/file.test.ts`
-- Before every commit: `npm run lint && npm run typecheck`
+- Install: `uv sync`
+- Run locally: `uv run fastapi dev app/main.py` (http://localhost:8000)
+- Test one file: `uv run pytest tests/test_cart.py -q`
+- Before every commit: `uv run ruff check . && uv run mypy app`
 
 ## Code style
-- TypeScript strict mode. No `any`.
-- Prices are stored in paise as integers. Format only in the UI with `formatINR()`.
-- API handlers live in `src/api/handlers/`, one file per route.
+- Type hints on every function. `mypy --strict` must pass.
+- Prices are stored in paise as integers. Format only in templates with `format_inr()`.
+- API routes live in `app/api/routes/`, one file per resource.
 
 ## Workflow
 - Branch names: `feat/short-name` or `fix/short-name`.
 - Write or update a test for every bug fix.
-- IMPORTANT: never edit files in `src/generated/`. Run `npm run codegen` instead.
+- IMPORTANT: never edit files in `app/generated/`. Run `make codegen` instead.
 
 ## Gotchas
 - The payment sandbox needs `RAZORPAY_KEY_ID` in `.env.local`. Ask the user if it is missing.
-- Images must go through `next/image`, the CDN rejects raw `<img>` tags.
+- Product images must use the `cdn_url()` helper, the CDN rejects direct file paths.
 ''', 'CLAUDE.md for a web shop'),
     'data': md('''
 # Sales analytics notebooks
@@ -105,8 +77,7 @@ This folder holds my blog posts as Markdown files in `posts/`.
 - My test store runs at http://localhost:4100, not 3000.
 - Use the test customer asha.test@greenleaf.example for checkout flows.
 ''', 'CLAUDE.local.md: private notes for this project'),
-    'imports': test({
-        'CLAUDE.md': '''
+    'imports': md('''
 <!-- Maintainers: keep this file under 200 lines. Claude never sees this comment. -->
 # GreenLeaf
 
@@ -117,45 +88,18 @@ See @README.md for what the project does.
 
 ## Note
 Mention a file without loading it by using backticks: `@docs/old-notes.md`
-''',
-        'README.md': 'GreenLeaf is an online plant shop. Customers order plants and pots.',
-        'docs/git.md': '''
-- Branches: feat/name or fix/name
-- Squash merge pull requests. See @../RELEASE.md for releases.
-''',
-        'RELEASE.md': '- Releases are tagged vYYYY.MM.DD every Friday.',
-        'docs/old-notes.md': 'Old notes that should not load.',
-        'expand.mjs': EXPAND,
-    }, 'node expand.mjs', '@ imports, expanded the way Claude Code loads them', show=['CLAUDE.md', 'docs/git.md', 'expand.mjs'],
-        badge='▶ Runs a small model of the loader'),
-    'order': run('''
-// Claude Code loads CLAUDE.md and CLAUDE.local.md from the folder you start in
-// and every folder above it. They are joined from the top folder down,
-// so the instructions closest to you are read last.
-const files = {
-  "/home/asha/CLAUDE.md": "(not loaded: only ~/.claude/CLAUDE.md is your user file)",
-  "/home/asha/.claude/CLAUDE.md": "user: short answers",
-  "/home/asha/work/CLAUDE.md": "work: company rules",
-  "/home/asha/work/shop/CLAUDE.md": "shop: npm ci, vitest",
-  "/home/asha/work/shop/CLAUDE.local.md": "local: my port is 4100",
-  "/home/asha/work/shop/api/CLAUDE.md": "api: loads later, when Claude touches a file in api/",
-};
+''', 'CLAUDE.md with two imports', result='Claude loads CLAUDE.md, README.md and docs/git.md. If docs/git.md itself imports @../RELEASE.md, that loads too (two hops). docs/old-notes.md is not loaded because it sits in backticks, and the HTML comment is removed.'),
+    'order': show('''
+Started in: /home/asha/work/shop
 
-function loadOrder(cwd) {
-  const order = ["/home/asha/.claude/CLAUDE.md"];
-  const parts = cwd.split("/").filter(Boolean);
-  for (let i = 1; i <= parts.length; i++) {
-    const dir = "/" + parts.slice(0, i).join("/");
-    for (const name of ["CLAUDE.md", "CLAUDE.local.md"]) {
-      const f = dir + "/" + name;
-      if (f in files && f !== "/home/asha/CLAUDE.md") order.push(f);
-    }
-  }
-  return order;
-}
+1  ~/.claude/CLAUDE.md                     user: short answers
+2  /home/asha/work/CLAUDE.md               work: company rules
+3  /home/asha/work/shop/CLAUDE.md          shop: install, test commands
+4  /home/asha/work/shop/CLAUDE.local.md    local: my port is 4100
 
-loadOrder("/home/asha/work/shop").forEach((f, i) => console.log(i + 1, f.padEnd(40), files[f]));
-''', 'Which files load, and in what order'),
+Later, only when Claude touches a file in api/:
+5  /home/asha/work/shop/api/CLAUDE.md      api: rules for the API folder
+''', 'Which files load, and in what order', lang='text', note='📂 Load order'),
     'init': cli('''
 cd ~/projects/greenleaf
 claude
@@ -214,7 +158,7 @@ PARTS = [
 <tr><td>environment quirks, required variables</td><td>a description of every file</td></tr>
 <tr><td>gotchas that are not obvious</td><td>"write clean code" and other things that go without saying</td></tr>
 </table></div>
-<div class="cl-put"><ul><li>Concrete and checkable lines: "Run <code>npm test</code> before committing", not "test your changes".</li>
+<div class="cl-put"><ul><li>Concrete and checkable lines: "Run <code>pytest</code> before committing", not "test your changes".</li>
 <li>Headings and bullets, not long paragraphs.</li>
 <li>Under <b>200 lines</b>. Longer files cost context on every request and are followed less well.</li>
 <li>One line with <b>IMPORTANT</b> when Claude keeps skipping it. If everything is important, nothing stands out.</li></ul></div>
@@ -367,7 +311,7 @@ QUIZ = [
     quiz('e', 'When does Claude Code read the project CLAUDE.md?', ['At the start of every session', 'Only when you type /init', 'Once a week', 'Never'], 0, 'Every time.', 'It is loaded at launch into every session in that folder.'),
     quiz('e', 'Where do personal preferences for all your projects go?', ['~/.claude/CLAUDE.md', './CLAUDE.md', '.mcp.json', 'README.md'], 0, 'Your home folder.', 'The user file applies to every project and is only yours.'),
     quiz('e', 'Which file should be in .gitignore?', ['CLAUDE.local.md', 'CLAUDE.md', '.claude/settings.json', 'AGENTS.md'], 0, 'Private.', 'CLAUDE.local.md holds your personal notes for one project.'),
-    quiz('m', 'Which line belongs in CLAUDE.md?', ['Run npm run typecheck before committing', 'Write clean code', 'JavaScript has arrays', 'src/ has many files'], 0, 'Concrete and project specific.', 'The others are obvious or can be read from the code.'),
+    quiz('m', 'Which line belongs in CLAUDE.md?', ['Run mypy app before committing', 'Write clean code', 'Python has lists', 'app/ has many files'], 0, 'Concrete and project specific.', 'The others are obvious or can be read from the code.'),
     quiz('m', 'What is the target length for a CLAUDE.md file?', ['Under 200 lines', 'Over 1,000 lines', 'Exactly 50 lines', 'No limit, longer is better'], 0, 'Short is followed better.', 'Longer files cost more context and reduce adherence.'),
     quiz('m', 'A CLAUDE.md sits in src/api/. When does it load?', ['When Claude reads or edits a file in src/api/', 'At launch', 'Never', 'Only with /memory'], 0, 'Subfolder.', 'Subfolder files load on demand.'),
     quiz('h', 'How deep can @ imports nest?', ['Four hops', 'One hop', 'Ten hops', 'Unlimited'], 0, 'A small number.', 'Imported files can import others up to four hops.'),
@@ -379,29 +323,13 @@ QUIZ = [
 CALC = [
     calc('e', 'A CLAUDE.md has 150 lines and imports a 70 line file. How many lines load at launch?', '220', 'Imports load too.', ['<span class="eq">150 + 70 = 220</span>']),
     calc('e', 'How many lines of MEMORY.md load at most?', '200', 'Or 25KB.', ['The first 200 lines or 25KB, whichever comes first.']),
-    calc('m', 'In the imports example, how many files did Claude load in total?', '4', 'Read the output.', ['CLAUDE.md, README.md, docs/git.md and RELEASE.md. The old notes in backticks were skipped.']),
-    calc('m', 'Running Claude in /home/asha/work/shop, how many files loaded in the load order example?', '4', 'Count the rows.', ['user file, work, shop and shop local.']),
+    calc('m', 'In the imports example, docs/git.md also imports RELEASE.md. How many files load in total?', '4', 'Count each file once.', ['CLAUDE.md, README.md, docs/git.md and RELEASE.md. The old notes in backticks are skipped.']),
+    calc('m', 'Running Claude in /home/asha/work/shop, how many files load at launch in the load order example?', '4', 'Count the rows before "Later".', ['user file, work, shop and shop local.']),
     calc('h', 'A 600 line CLAUDE.md costs 9,000 tokens. You cut it to 120 lines. About how many tokens now, assuming the same tokens per line?', '1800', 'Tokens per line first.', ['<span class="eq">9,000 ÷ 600 = 15 per line</span>', '<span class="eq">120 × 15 = 1,800</span>'], alt=['1,800']),
     calc('x', 'That saving applies to each of 50 requests a day. How many tokens saved per day?', '360000', 'Saving per request times requests.', ['<span class="eq">9,000 − 1,800 = 7,200</span>', '<span class="eq">7,200 × 50 = 360,000</span>'], alt=['360,000']),
 ]
 
-EX = [
-    ex('keep-or-cut', 'e', 'Keep or cut?', '<p>Write <code>keepLine(line)</code>. Return false for vague lines that contain <code>"clean code"</code>, <code>"best practices"</code> or <code>"be careful"</code> (any case). Return true otherwise.</p>',
-       'function keepLine(line) {\n  \n}\n',
-       [('keepLine("Write clean code")', False), ('keepLine("Follow BEST PRACTICES")', False), ('keepLine("Run npm test before committing")', True)],
-       'function keepLine(line) {\n  const vague = ["clean code", "best practices", "be careful"];\n  return !vague.some(v => line.toLowerCase().includes(v));\n}',
-       hint='Lowercase the line and use <code>some</code>.', why='Lines that say nothing specific cost tokens on every request and change nothing.'),
-    ex('find-imports', 'm', 'Find the imports', '<p>Write <code>findImports(text)</code> that returns every <code>@path</code> in the text (without the @) where the @ is at the start of a line or after a space. Skip lines that contain a backtick.</p>',
-       'function findImports(text) {\n  \n}\n',
-       [('findImports("See @README.md and @docs/git.md")', ['README.md', 'docs/git.md']), ('findImports("email me at a@b.com")', []), ('findImports("`@old.md`\\n@new.md")', ['new.md'])],
-       'function findImports(text) {\n  const out = [];\n  for (const line of text.split("\\n")) {\n    if (line.includes("`")) continue;\n    for (const m of line.matchAll(/(^|\\s)@([\\w./~-]+)/g)) out.push(m[2]);\n  }\n  return out;\n}',
-       hint='<code>matchAll</code> with <code>/(^|\\s)@([\\w./~-]+)/g</code>.', why='Knowing exactly which files are imported tells you what really loads at launch.'),
-    ex('review-md', 'h', 'Check a CLAUDE.md', '<p>Write <code>review(text)</code> that returns a list of warnings: <code>"too long"</code> when there are more than 200 lines, and <code>"too many IMPORTANT"</code> when more than 3 lines contain <code>IMPORTANT</code>. Return an empty list when all is well.</p>',
-       'function review(text) {\n  \n}\n',
-       [('review("a\\nb")', []), ('review(Array(201).fill("x").join("\\n"))', ['too long']), ('review("IMPORTANT a\\nIMPORTANT b\\nIMPORTANT c\\nIMPORTANT d")', ['too many IMPORTANT'])],
-       'function review(text) {\n  const lines = text.split("\\n");\n  const out = [];\n  if (lines.length > 200) out.push("too long");\n  if (lines.filter(l => l.includes("IMPORTANT")).length > 3) out.push("too many IMPORTANT");\n  return out;\n}',
-       hint='Split into lines, then count.', why='These are the two most common reasons Claude starts ignoring instructions.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-md', 'title': 'CLAUDE.md and Memory: What Goes Where', 'short': 'CLAUDE.md and memory', 'emoji': '📘', 'module': MODULE, 'minutes': 17,

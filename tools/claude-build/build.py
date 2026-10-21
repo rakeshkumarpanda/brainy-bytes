@@ -1,11 +1,11 @@
 """Build the Master the Claude chapter pages in content/claude/ from the topic files in topics/.
 
 The chapters reuse the JavaScript chapter builder (tools/js-build/build.py) for running examples,
-syntax colouring, quizzes, number practice and exercises. This file adds what the Claude chapters need:
+syntax colouring, quizzes and number practice. Every code example in these chapters is Python. This file adds what the Claude chapters need:
   - Markdown, YAML and plain text colouring for CLAUDE.md, SKILL.md, agent files and rules
   - a "files" row on each part that names the real files and folders the part teaches
   - a beginner path: parts marked easy=True stay visible when the reader picks "beginner path only"
-  - Python examples (MCP servers, skill scripts) run with box/.venv/bin/python, exposed to commands as $PY
+  - Python examples (tests, hooks, MCP servers, skill scripts) run with box/.venv/bin/python, exposed to commands as $PY
 
 Every runnable example runs for real when the page is built and the real output is shown under it.
 Hooks are run by piping the same JSON Claude Code sends on stdin. MCP servers are started and called
@@ -14,7 +14,7 @@ stand-in for the Messages API whose replies are scripted, and the page says so. 
 login or a real API key is run: those blocks are marked "Shown, not run here".
 
 Usage:  python3 tools/claude-build/build.py [slug ...]        (no slug builds every chapter)
-Needs:  python3, Node.js 22 or later, npm ci inside tools/claude-build/box, and the Python packages (mcp, anthropic):
+Needs:  python3, Node.js 22 or later (the shared builder uses it), and the Python packages (mcp, anthropic):
         python3 -m venv tools/claude-build/box/.venv
         tools/claude-build/box/.venv/bin/pip install -r tools/claude-build/box/requirements.txt
 """
@@ -215,12 +215,12 @@ def build(T, chapters):
     n_easy = sum(1 for p in parts if p.get('easy'))
     chips = [f'⏱️ About {T["minutes"]} min read', f'📚 {len(parts)} parts', f'🎬 {n_viz} animations'] + \
             ([f'▶ {n_run} examples run for real'] if n_run else []) + [f'📄 {n_files} ready to copy files and prompts',
-            f'🏋️ {len(T["ex"])} hands-on exercises', f'🎯 {len(T["quiz"])} quiz questions', f'🧮 {len(T["calc"])} calculations',
+            ] + ([f'🏋️ {len(T["ex"])} hands-on exercises'] if T['ex'] else []) + [f'🎯 {len(T["quiz"])} quiz questions', f'🧮 {len(T["calc"])} calculations',
             f'🧒 {n_easy} beginner parts']
     chip_html = ''.join(f'<span class="chip">{c}</span>' for c in chips)
     toc = ''.join(f'<a href="#{p["id"]}"{" class=\"easy\"" if p.get("easy") else ""}><span>{p["emoji"]}</span>{esc(p["title"])}</a>' for p in parts)
     toc += ('<a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a>'
-            '<a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a>'
+            + ('<a class="spec" href="#practice">🏋️ Hands-on</a>' if T['ex'] else '') + '<a class="spec" href="#quiz">🎯 Quiz</a>'
             '<a class="spec" href="#numbers">🧮 Number crunch</a>')
     secs = []
     for i, p in enumerate(parts, 1):
@@ -277,8 +277,8 @@ def build(T, chapters):
 
 {"".join(secs)}
   <section class="card reveal" id="real-life"></section>
-  <section class="card reveal" id="practice" data-say="practice"></section>
-  <section class="card reveal" id="quiz"></section>
+  {'<section class="card reveal" id="practice" data-say="practice"></section>' if T['ex'] else '<section id="practice" hidden></section>'}
+  <section class="card reveal" id="quiz"{'' if T['ex'] else ' data-say="practice"'}></section>
   <section class="card reveal" id="numbers"></section>
   <p class="cl-checked">📖 {T.get("checked", "Every file name, folder, setting and command on this page was checked against the official Claude and Claude Code documentation in October 2026.")}</p>
   {pager}

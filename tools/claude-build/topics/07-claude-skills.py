@@ -1,27 +1,8 @@
 # Chapter 7: skills. SKILL.md step by step, where skills live, frontmatter, arguments, supporting files and scripts, dynamic context, who invokes, real skills, claude.ai uploads.
-from ckit import part, run, test, show, md, cli, prompt, say, quiz, calc, ex, panel
+from ckit import part, test, show, md, cli, say, quiz, calc, panel
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
 
-RENDER = r'''
-// A model of what Claude Code does when a skill is invoked: drop the front matter,
-// put the arguments in place of $ARGUMENTS, $0, $1 and named arguments, then run each
-// !`command` line and paste its output in, so Claude receives real data.
-import { readFileSync } from "node:fs";
-import { execSync } from "node:child_process";
-
-function render(path, args) {
-  const text = readFileSync(path, "utf8");
-  const [, front, body] = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  const names = (front.match(/^arguments:\s*\[(.*)\]/m)?.[1] ?? "").split(",").map(s => s.trim()).filter(Boolean);
-  let out = body.replace(/\$ARGUMENTS\[(\d+)\]|\$(\d+)|\$ARGUMENTS/g, (all, a, b) =>
-    a ?? b ? (args[Number(a ?? b)] ?? all) : args.join(" "));
-  names.forEach((n, i) => { out = out.replaceAll("$" + n, args[i] ?? ""); });
-  return out.replace(/(^|\s)!`([^`]+)`/g, (all, pre, cmd) => pre + execSync(cmd, { encoding: "utf8" }).trim());
-}
-
-console.log(render(".claude/skills/standup/SKILL.md", ["Asha", "2026-10-19"]).trim());
-'''
 
 TOTALS = '''
 """Add up an invoice CSV and check it against the total line. Prints a short report."""
@@ -61,31 +42,6 @@ allowed-tools: Bash(python ${CLAUDE_SKILL_DIR}/scripts/totals.py *)
    - a two sentence email to the supplier if anything is wrong
 '''
 
-VALIDATE = r'''
-// Checks the front matter rules that claude.ai uploads and the Skills API enforce.
-// Claude Code accepts more fields, but an upload with any other key is rejected.
-import { readFileSync } from "node:fs";
-
-const ALLOWED = ["name", "description", "license", "compatibility", "metadata", "allowed-tools"];
-
-function check(path) {
-  const front = readFileSync(path, "utf8").match(/^---\n([\s\S]*?)\n---/)[1];
-  const keys = [...front.matchAll(/^([\w-]+):/gm)].map(m => m[1]);
-  const get = k => (front.match(new RegExp("^" + k + ":\\s*(.*)$", "m")) || [])[1] || "";
-  const name = get("name"), desc = get("description");
-  const errors = [];
-  const extra = keys.filter(k => !ALLOWED.includes(k));
-  if (extra.length) errors.push("unexpected key(s): " + extra.join(", "));
-  if (!/^[a-z0-9-]{1,64}$/.test(name)) errors.push("name must be 1-64 lowercase letters, numbers or hyphens");
-  if (/anthropic|claude/i.test(name)) errors.push('name may not contain "anthropic" or "claude"');
-  if (!desc || desc.length > 1024) errors.push("description must be 1-1024 characters");
-  if (/<[^>]+>/.test(name + desc)) errors.push("no XML tags in name or description");
-  console.log(path.padEnd(28), errors.length ? "FAIL\n  - " + errors.join("\n  - ") : "OK");
-}
-
-check("invoice-checker/SKILL.md");
-check("claude-helper/SKILL.md");
-'''
 
 CODES = {
     'first': md('''
@@ -142,31 +98,20 @@ Write a stand-up update for $person for $day.
 ## Format
 Three headings: Done, Doing, Blocked. At most 3 bullets each. Plain English, no commit hashes.
 ''', '.claude/skills/standup/SKILL.md'),
-    'render': test({
-        '.claude/skills/standup/SKILL.md': '''
----
-name: standup
-description: Writes my daily stand-up update from yesterday's git commits. Use when I ask for a standup, daily update or what I did yesterday.
-argument-hint: "[name] [date]"
-arguments: [person, day]
----
-
-Write a stand-up update for $person for $day.
+    'render': show('''
+Write a stand-up update for Asha for 2026-10-19.
 
 ## Commits since yesterday
-!`git log --pretty=format:"- %s"`
+- Add tests for free delivery rule
+- Fix coupon rounding on checkout
 
 ## Open tasks
-!`cat TODO.md`
+- Add GST to the invoice PDF
+- Waiting on design for the new cart page
 
 ## Format
 Three headings: Done, Doing, Blocked. At most 3 bullets each. Plain English, no commit hashes.
-''',
-        'TODO.md': '- Add GST to the invoice PDF\n- Waiting on design for the new cart page',
-        'render.mjs': RENDER,
-    }, 'git init -q && git -c user.email=a@b.c -c user.name=A commit -q --allow-empty -m "Fix coupon rounding on checkout" && git -c user.email=a@b.c -c user.name=A commit -q --allow-empty -m "Add tests for free delivery rule" && node render.mjs',
-        'What Claude receives after /standup Asha 2026-10-19', show=['render.mjs'], shown_cmd='node render.mjs',
-        badge='▶ Runs a model of skill rendering with a real git repository'),
+''', 'What Claude receives after /standup Asha 2026-10-19', lang='text', note='📨 After the placeholders and commands are filled in'),
     'invoice-skill': md(INVOICE_SKILL, '.claude/skills/invoice-checker/SKILL.md'),
     'checklist': md('''
 # Invoice checklist
@@ -191,7 +136,7 @@ TOTAL,,,3632.00
 name: deploy
 description: Deploy the application to production
 disable-model-invocation: true
-allowed-tools: Bash(npm run build) Bash(npm test)
+allowed-tools: Bash(python -m build) Bash(pytest *)
 ---
 
 Deploy $ARGUMENTS to production:
@@ -256,20 +201,6 @@ allowed-tools: Bash(git add *) Bash(git commit *) Bash(git status *) Bash(git di
    ("Add", "Fix", "Remove"), a blank line, then why the change was needed.
 3. Stage only files related to this change and commit.
 ''', 'Daily work: commit messages'),
-    'upload-check': test({
-        'invoice-checker/SKILL.md': INVOICE_SKILL,
-        'claude-helper/SKILL.md': '''
----
-name: Claude Helper
-description: Helps with things
-argument-hint: "[topic]"
----
-
-Help with $ARGUMENTS.
-''',
-        'validate.mjs': VALIDATE,
-    }, 'node validate.mjs', 'Will these upload to claude.ai?', show=['claude-helper/SKILL.md', 'validate.mjs'],
-        badge='▶ Runs a check of the upload rules'),
     'zip': cli('''
 cd ~/.claude/skills
 zip -r invoice-checker.zip invoice-checker      # the ZIP holds the folder, SKILL.md inside it
@@ -328,7 +259,7 @@ PARTS = [
     part('args', '🔣', 'Arguments and live data', '''
 <p>Text typed after the skill name becomes its arguments. Use <code>$ARGUMENTS</code> for all of it, <code>$0</code>, <code>$1</code> for each word (counting from zero), or names listed in <code>arguments</code>. Lines with <code>!`command`</code> are replaced by the command's output before Claude sees the skill.</p>
 [[standup]]
-<p>Here is a small program that does the same steps on a real git repository, so you can see exactly what Claude would receive.</p>
+<p>Here is what Claude actually receives once the arguments and the two <code>!`git ...`</code> commands are filled in on a real repository.</p>
 [[render]]
 <div class="tw"><table class="jt"><tr><th>Placeholder</th><th>Becomes</th></tr>
 <tr><td><code>$ARGUMENTS</code></td><td>everything typed after the name</td></tr>
@@ -369,7 +300,6 @@ PARTS = [
 <li><code>name</code>: up to 64 characters, lowercase letters, numbers and hyphens, and it may not contain "anthropic" or "claude".</li>
 <li><code>description</code>: not empty, up to 1,024 characters, no XML tags.</li>
 <li>Claude Code only features such as <code>!`command`</code> do not work in claude.ai or the API.</li></ul>
-[[upload-check]]
 [[zip]]
 ''', files=['SKILL.md', 'skill.zip'], kw=['claude.ai upload', 'Skills API', 'Agent Skills spec', 'zip', 'name rules']),
     part('tips', '💡', 'Make skills that work every time', '''
@@ -502,30 +432,14 @@ CALC = [
     calc('x', 'What is the longest description, in characters, that a claude.ai skill upload accepts?', '1024', 'From the spec.', ['Up to 1,024 characters, not empty, no XML tags.'], alt=['1,024']),
 ]
 
-EX = [
-    ex('front-desc', 'e', 'Read the description', '<p>Write <code>getDescription(skill)</code> that returns the text after <code>description:</code> in the front matter, trimmed. Return an empty string when there is none.</p>',
-       'function getDescription(skill) {\n  \n}\n',
-       [('getDescription("---\\nname: a\\ndescription: Checks invoices\\n---\\nSteps")', 'Checks invoices'), ('getDescription("---\\nname: a\\n---\\nhi")', '')],
-       'function getDescription(skill) {\n  const m = skill.match(/^description:(.*)$/m);\n  return m ? m[1].trim() : "";\n}',
-       hint='A regular expression with the <code>m</code> flag so <code>^</code> matches each line.', why='The description is the one line that decides whether your skill is ever used.'),
-    ex('fill-args', 'm', 'Fill in the arguments', '<p>Write <code>fillArgs(body, args)</code> that replaces <code>$ARGUMENTS</code> with all args joined by spaces, and <code>$0</code>, <code>$1</code> and so on with each argument. Leave a <code>$N</code> with no matching argument unchanged.</p>',
-       'function fillArgs(body, args) {\n  \n}\n',
-       [('fillArgs("Fix issue $ARGUMENTS", ["123"])', 'Fix issue 123'), ('fillArgs("Move $0 from $1 to $2", ["Bar", "JS", "TS"])', 'Move Bar from JS to TS'), ('fillArgs("Hi $0 and $1", ["Asha"])', 'Hi Asha and $1')],
-       'function fillArgs(body, args) {\n  return body.replace(/\\$ARGUMENTS|\\$(\\d+)/g, (all, n) => n === undefined ? args.join(" ") : (args[Number(n)] ?? all));\n}',
-       hint='One <code>replace</code> with a pattern for both forms.', why='This is how one skill handles any issue number, file or date you give it.'),
-    ex('valid-name', 'h', 'Check an upload name', '<p>Write <code>validName(name)</code>. Return true only when the name is 1 to 64 characters of lowercase letters, numbers and hyphens, and does not contain <code>anthropic</code> or <code>claude</code>.</p>',
-       'function validName(name) {\n  \n}\n',
-       [('validName("invoice-checker")', True), ('validName("Invoice Checker")', False), ('validName("claude-helper")', False), ('validName("a".repeat(65))', False)],
-       'function validName(name) {\n  return /^[a-z0-9-]{1,64}$/.test(name) && !/anthropic|claude/.test(name);\n}',
-       hint='One pattern for the shape, one test for the reserved words.', why='Checking before you zip saves a failed upload.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-skills', 'title': 'Skills: Build SKILL.md Step by Step', 'short': 'Skills', 'emoji': '🧰', 'module': MODULE, 'minutes': 20,
     'lead': 'Build a skill from an empty folder, learn where skills live and how they are named, every front matter field, arguments and live command output, supporting files and scripts, who can start a skill, real skills for daily work, and the stricter rules for uploading to claude.ai.',
     'plain': 'A skill is a recipe card for Claude. You write the steps once in a file called SKILL.md, and Claude follows the card whenever that job comes up.',
     'desc': 'Claude skills explained: SKILL.md, progressive disclosure, skill locations, frontmatter fields, $ARGUMENTS, dynamic context, scripts, disable-model-invocation, claude.ai upload rules.',
-    'summary': 'What a skill is and its three loading levels, a first skill in three steps, personal, project and plugin locations and command names, every front matter field with good and weak descriptions, arguments and dynamic context run on a real git repo, supporting files and a Python script checking a real invoice, invocation control, daily work skills, the claude.ai upload rules checked by a validator, and tips for reliable skills.',
+    'summary': 'What a skill is and its three loading levels, a first skill in three steps, personal, project and plugin locations and command names, every front matter field with good and weak descriptions, arguments and dynamic context with what Claude receives, supporting files and a Python script checking a real invoice, invocation control, daily work skills, the claude.ai upload rules, and tips for reliable skills.',
     'keywords': ['skills', 'SKILL.md', 'Skills.md', 'frontmatter', 'description', '$ARGUMENTS', 'dynamic context', 'allowed-tools', 'disable-model-invocation', 'user-invocable', 'context fork', 'claude.ai upload', 'Agent Skills', 'progressive disclosure'],
     'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

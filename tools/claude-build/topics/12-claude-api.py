@@ -1,6 +1,6 @@
 # Chapter 12: the Claude API. Keys, the first call, system prompts and conversations, choosing a model and cost,
 # streaming, JSON output, effort and caching, and handling errors. SDK code runs against a local stand-in API.
-from ckit import part, run, show, cli, say, quiz, calc, ex, panel, api_run
+from ckit import part, show, cli, say, quiz, calc, panel, api_run
 
 MODULE = ('🔌', 'Building with the API', 'claude-build-api', 'Call Claude from your own code: the Messages API, tools, agent loops and the Agent SDK.')
 
@@ -106,24 +106,6 @@ print(data)
 print("needs follow-up:", data["sentiment"] != "positive" and len(data["issues"]) > 0)
 '''
 
-COST = r'''
-// What a job costs on each model. Prices are dollars per million tokens (input / output).
-const PRICES = {
-  "claude-fable-5-1":  [10, 50],
-  "claude-opus-5-5":   [4, 20],
-  "claude-sonnet-5-5": [2, 10],
-  "claude-haiku-5-5":  [0.10, 0.50],   // for prompts of 100K tokens or fewer
-};
-
-// A support team summarises 2,000 tickets a day: about 1,500 tokens in and 200 out each.
-const tickets = 2000, inTok = 1500, outTok = 200;
-
-for (const [model, [pin, pout]] of Object.entries(PRICES)) {
-  const perDay = tickets * (inTok * pin + outTok * pout) / 1e6;
-  console.log(model.padEnd(18), "$" + perDay.toFixed(2).padStart(7), "a day  $" + (perDay * 30).toFixed(0).padStart(5), "a month");
-}
-'''
-
 CACHE = '''
 import anthropic
 
@@ -178,39 +160,14 @@ CODES = {
 export ANTHROPIC_API_KEY="sk-ant-..."        # macOS / Linux
 setx ANTHROPIC_API_KEY "sk-ant-..."          # Windows (open a new terminal after)
 
-# 3. Install the SDK for your language
+# 3. Install the Python SDK
 pip install anthropic                        # Python
-npm install @anthropic-ai/sdk                # JavaScript / TypeScript
 ''', 'Get a key and install the SDK'),
     'hello': api_run(HELLO, 'Your first API call', {'replies': {'capital': 'The capital of India is New Delhi.'}}),
-    'hello-ts': show('''
-import Anthropic from "@anthropic-ai/sdk";
-
-const client = new Anthropic();   // reads ANTHROPIC_API_KEY
-
-const response = await client.messages.create({
-  model: "claude-haiku-5-5",
-  max_tokens: 1000,
-  messages: [{ role: "user", content: "What is the capital of India? One sentence." }],
-});
-
-for (const block of response.content) {
-  if (block.type === "text") console.log(block.text);
-}
-''', 'The same call in TypeScript', lang='js', note='📄 Ready to copy'),
-    'curl': cli('''
-curl https://api.anthropic.com/v1/messages \\
-  -H "x-api-key: $ANTHROPIC_API_KEY" \\
-  -H "anthropic-version: 2023-06-01" \\
-  -H "content-type: application/json" \\
-  -d '{"model": "claude-haiku-5-5", "max_tokens": 1000,
-       "messages": [{"role": "user", "content": "What is the capital of India?"}]}'
-''', 'And with plain HTTP'),
     'chat': api_run(CHAT, 'A tutor with a system prompt and memory of the chat', {
         'replies': {'oh!': 'Yes! 3 groups of 4 make 12. Well done, champion! 🏏',
                     'is it 7': 'Close, but 7 is what you get when you add 3 and 4. Times means groups. Try counting 4, 8, ...',
                     '3 times 4': 'Think of 3 overs where you score 4 runs in each. How many runs is that in total?'}}),
-    'cost': run(COST, 'The same job priced on four models'),
     'stream': api_run(STREAM, 'Stream the answer as it is written', {'default': 'Grey clouds hum a song on the tin roof,\nand the dry earth smells of first rain.'}),
     'json': api_run(JSON_OUT, 'Get JSON in a fixed shape', {'default': '{"sentiment": "mixed", "issues": ["late delivery", "damaged box"], "stars": 3}'}, log=False),
     'cache': api_run(CACHE, 'Effort and prompt caching', {'default': 'You get 12 casual leaves a year. (stand-in reply)'}, log=False,
@@ -224,7 +181,7 @@ PARTS = [
 <ol class="steps"><li>Sign in at <code>platform.claude.com</code> and add billing.</li><li>Create an API key.</li><li>Store it in the <code>ANTHROPIC_API_KEY</code> environment variable.</li><li>Install the official SDK.</li></ol>
 [[setup]]
 <div class="cl-put"><b>Never</b> put the key in code, in a Git repository or in a web page. Anyone with the key can spend your money. Keep it in an environment variable or a secrets manager.</div>
-''', easy=True, kw=['API key', 'ANTHROPIC_API_KEY', 'pip install anthropic', '@anthropic-ai/sdk', 'Claude Console']),
+''', easy=True, kw=['API key', 'ANTHROPIC_API_KEY', 'pip install anthropic', 'Claude Console']),
     part('first', '👋', 'Your first call, line by line', '''
 [[hello]]
 <div class="tw"><table class="jt"><tr><th>Part</th><th>What it means</th></tr>
@@ -234,8 +191,6 @@ PARTS = [
 <tr><td><code>response.content</code></td><td>a list of blocks. Check <code>block.type</code> before reading <code>.text</code>.</td></tr>
 <tr><td><code>stop_reason</code></td><td><code>end_turn</code> (finished), <code>max_tokens</code> (cut off), <code>tool_use</code>, or <code>refusal</code></td></tr>
 <tr><td><code>usage</code></td><td>tokens in and out, which is what you pay for</td></tr></table></div>
-[[hello-ts]]
-[[curl]]
 ''', easy=True, kw=['messages.create', 'model', 'max_tokens', 'messages', 'stop_reason', 'usage']),
     part('system', '🧑‍🏫', 'System prompts and conversations', '''
 <p>The <code>system</code> prompt sets the role and rules for the whole chat. The API does <b>not remember</b> anything between calls, so your code keeps the history and sends it every time.</p>
@@ -250,7 +205,12 @@ PARTS = [
 <tr><td>Haiku 5.5</td><td><code>claude-haiku-5-5</code></td><td>0.10 / 0.50</td><td>sorting, extracting, high volume</td></tr></table></div>
 <p>All four have a 1 million token context window and up to 128K output tokens. Haiku 5.5 costs $0.50 / $2.50 for prompts over 100K tokens.</p>
 <p class="eq">cost = (input tokens × input price + output tokens × output price) ÷ 1,000,000</p>
-[[cost]]
+<div class="scenario"><b>🎫 Worked example: a support team</b>The team summarises 2,000 tickets a day, about 1,500 tokens in and 200 tokens out each, for 30 days.</div>
+<div class="tw"><table class="jt"><tr><th>Model</th><th>Per day</th><th>Per month</th></tr>
+<tr><td>Fable 5.1</td><td>$50.00</td><td>$1,500</td></tr>
+<tr><td>Opus 5.5</td><td>$20.00</td><td>$600</td></tr>
+<tr><td>Sonnet 5.5</td><td>$10.00</td><td>$300</td></tr>
+<tr><td>Haiku 5.5</td><td>$0.50</td><td>$15</td></tr></table></div>
 <p>Start with Sonnet. Move simple, high volume steps to Haiku, and hard steps to Opus. Test with your own examples before you switch.</p>
 ''', easy=True, kw=['models', 'pricing', 'Haiku', 'Sonnet', 'Opus', 'Fable', 'tokens', 'cost']),
     part('stream', '🌊', 'Streaming: show words as they arrive', '''
@@ -345,7 +305,7 @@ SAY = [
         'SDK 429 ଓ 5xx ରେ ପୁଣି ଚେଷ୍ଟା କରେ। Stop reason ଦେଖନ୍ତୁ।',
         'تعيد الحزمة المحاولة عند 429 و5xx. افحص سبب التوقف.',
         'Das SDK wiederholt bei 429 und 5xx. Prüfe den Stoppgrund.'),
-    say('practice', 'Practice', 'Practise counting tokens, pricing jobs and building message lists.',
+    say('practice', 'Practice', 'Test yourself on tokens, prices and message lists.',
         'Tokens, कीमत और message lists का अभ्यास।',
         'Tokens, ಬೆಲೆ, message lists ಅಭ್ಯಾಸ.',
         'Tokens, ମୂଲ୍ୟ ଓ message lists ଅଭ୍ୟାସ।',
@@ -369,36 +329,20 @@ QUIZ = [
 CALC = [
     calc('e', 'A call uses 2,000 input tokens on Sonnet 5.5 at $2 per million. Input cost in dollars?', '0.004', 'Tokens times price, divided by a million.', ['<span class="eq">2,000 × 2 ÷ 1,000,000 = 0.004</span>'], alt=['$0.004']),
     calc('e', 'It also writes 500 tokens at $10 per million. Output cost in dollars?', '0.005', 'Same formula.', ['<span class="eq">500 × 10 ÷ 1,000,000 = 0.005</span>'], alt=['$0.005']),
-    calc('m', 'From the cost run, how many dollars a month does Haiku 5.5 cost for the ticket job?', '15', 'Read the output.', ['<span class="eq">2,000 × (1,500 × 0.10 + 200 × 0.50) ÷ 10⁶ × 30 = 15</span>'], alt=['$15']),
-    calc('m', 'And Sonnet 5.5 for the same job, per month?', '300', 'Read the output.', ['<span class="eq">2,000 × (1,500 × 2 + 200 × 10) ÷ 10⁶ × 30 = 300</span>'], alt=['$300']),
+    calc('m', '2,000 tickets a day, 1,500 tokens in and 200 out each, for 30 days. How many dollars a month on Haiku 5.5?', '15', 'Use the cost formula, then times 30.', ['<span class="eq">2,000 × (1,500 × 0.10 + 200 × 0.50) ÷ 10⁶ × 30 = 15</span>'], alt=['$15']),
+    calc('m', 'And Sonnet 5.5 for the same job, per month?', '300', 'Same formula with $2 and $10.', ['<span class="eq">2,000 × (1,500 × 2 + 200 × 10) ÷ 10⁶ × 30 = 300</span>'], alt=['$300']),
     calc('h', 'In the tutor run, how many messages were in the last request?', '5', 'Read the last line.', ['Three child turns and two Pinky turns.']),
     calc('x', 'A 50,000 token policy is read 400 times a day on Opus 5.5. Saving per day with cache reads at $0.20 instead of $4 per million?', '76', 'Tokens per day × price difference.', ['<span class="eq">50,000 × 400 × (4 − 0.20) ÷ 10⁶ = 76</span>'], alt=['$76']),
 ]
 
-EX = [
-    ex('cost-of', 'e', 'Cost of one call', '<p>Write <code>cost(inTok, outTok, inPrice, outPrice)</code> that returns the dollar cost. Prices are per million tokens.</p>',
-       'function cost(inTok, outTok, inPrice, outPrice) {\n  \n}\n',
-       [('cost(2000, 500, 2, 10)', 0.009), ('cost(1000000, 0, 4, 20)', 4), ('cost(0, 1000000, 0.1, 0.5)', 0.5)],
-       'function cost(inTok, outTok, inPrice, outPrice) {\n  return (inTok * inPrice + outTok * outPrice) / 1e6;\n}',
-       hint='Add the two parts, then divide by a million.', why='Every model choice starts with this formula.'),
-    ex('add-turn', 'm', 'Keep the history', '<p>Write <code>addTurn(history, role, text)</code> that returns a <b>new</b> array with <code>{ role, content: text }</code> added at the end. Do not change the original.</p>',
-       'function addTurn(history, role, text) {\n  \n}\n',
-       [('addTurn([], "user", "hi").length', 1), ('addTurn([{ role: "user", content: "hi" }], "assistant", "hello")[1].role', 'assistant'), ('(() => { const h = []; addTurn(h, "user", "x"); return h.length; })()', 0)],
-       'function addTurn(history, role, text) {\n  return [...history, { role, content: text }];\n}',
-       hint='Spread the old array into a new one.', why='Your code is the memory of the conversation.'),
-    ex('pick-model', 'h', 'Pick a model', '<p>Write <code>pickModel(task)</code>. Return <code>"claude-haiku-5-5"</code> for <code>"classify"</code> and <code>"extract"</code>, <code>"claude-opus-5-5"</code> for <code>"agent"</code> and <code>"research"</code>, and <code>"claude-sonnet-5-5"</code> for anything else.</p>',
-       'function pickModel(task) {\n  \n}\n',
-       [('pickModel("classify")', 'claude-haiku-5-5'), ('pickModel("research")', 'claude-opus-5-5'), ('pickModel("chat")', 'claude-sonnet-5-5')],
-       'function pickModel(task) {\n  if (["classify", "extract"].includes(task)) return "claude-haiku-5-5";\n  if (["agent", "research"].includes(task)) return "claude-opus-5-5";\n  return "claude-sonnet-5-5";\n}',
-       hint='Two includes checks and a default.', why='Routing each step to the right model saves real money.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-api', 'title': 'The Claude API Step by Step', 'short': 'Claude API', 'emoji': '🧩', 'module': MODULE, 'minutes': 20,
     'lead': 'Get a key and install the SDK, make your first call and read every field of the reply, build a tutor with a system prompt and chat history, choose a model and price a job, stream answers, get JSON in a fixed shape, use effort and prompt caching, and handle errors.',
     'plain': 'The API is a way for your own program to send Claude a message and get the answer back, the same as chatting, but from code.',
     'desc': 'Claude API tutorial with the Python SDK: API keys, messages.create, system prompts, conversation history, model choice and pricing, streaming, JSON structured outputs, effort, prompt caching and error handling.',
-    'summary': 'API keys and SDK install, a first call with every response field explained plus TypeScript and curl versions, a tutor with a system prompt and history, models and prices with a cost run, streaming, json_schema outputs, effort and cache_control, and error codes with retries.',
+    'summary': 'API keys and SDK install, a first call with every response field explained, a tutor with a system prompt and history, models and prices with a worked cost table, streaming, json_schema outputs, effort and cache_control, and error codes with retries.',
     'keywords': ['Claude API', 'Messages API', 'anthropic', 'messages.create', 'system prompt', 'streaming', 'structured outputs', 'pricing', 'prompt caching', 'effort', 'errors'],
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

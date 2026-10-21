@@ -1,36 +1,14 @@
 # Chapter 6: rules. The .claude/rules/ folder, the paths field, glob patterns, real rule files, user rules, symlinks, and choosing rules versus CLAUDE.md and skills.
-from ckit import part, run, test, show, md, cli, say, quiz, calc, ex, panel
+from ckit import part, show, md, cli, say, quiz, calc, panel
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
 
-WHICH = '''
-// A model of how Claude Code picks rules: a rule with no paths loads at launch,
-// a rule with paths loads when Claude reads, writes or edits a matching file.
-import { readFileSync, readdirSync } from "node:fs";
-import { join, matchesGlob } from "node:path";
-
-function rules(dir) {
-  return readdirSync(dir, { recursive: true }).filter(f => f.endsWith(".md")).map(f => {
-    const text = readFileSync(join(dir, f), "utf8");
-    const front = text.match(/^---\\n([\\s\\S]*?)\\n---/);
-    const paths = front ? [...front[1].matchAll(/^\\s*-\\s*"(.+)"/gm)].map(m => m[1]) : [];
-    return { file: f, paths };
-  });
-}
-
-const all = rules(".claude/rules");
-console.log("At launch:", all.filter(r => !r.paths.length).map(r => r.file).join(", "));
-for (const touched of ["src/api/orders.ts", "tests/cart.test.ts", "README.md", "content/blog/diwali-sale.md"]) {
-  const extra = all.filter(r => r.paths.some(p => matchesGlob(touched, p))).map(r => r.file);
-  console.log(`Claude edits ${touched.padEnd(28)} -> also loads: ${extra.join(", ") || "(nothing new)"}`);
-}
-'''
 
 RULES = {
     '.claude/rules/code-style.md': '''
 # Code style
-- TypeScript strict mode. No `any`.
-- Name files in kebab-case: `order-summary.ts`.
+- Type hints on every function. `mypy --strict` must pass.
+- Name files in snake_case: `order_summary.py`.
 - Prefer small pure functions. Keep side effects at the edges.
 ''',
     '.claude/rules/security.md': '''
@@ -41,25 +19,25 @@ RULES = {
     '.claude/rules/backend/api.md': '''
 ---
 paths:
-  - "src/api/**/*.ts"
+  - "app/api/**/*.py"
 ---
 
 # API rules
-- Validate every request body with the schemas in `src/api/schemas/`.
+- Validate every request body with the Pydantic models in `app/api/schemas/`.
 - Errors use the shape `{ error: { code, message } }` with a 4xx or 5xx status.
 - Every new endpoint gets an entry in `docs/openapi.yaml`.
 ''',
     '.claude/rules/testing.md': '''
 ---
 paths:
-  - "tests/**/*.test.ts"
-  - "src/**/*.test.ts"
+  - "tests/**/test_*.py"
+  - "app/**/test_*.py"
 ---
 
 # Testing rules
-- Use Vitest. One `describe` per function, plain English test names.
+- Use pytest. One test file per module, plain English test names.
 - No real network calls. Use the fakes in `tests/fakes/`.
-- Run only the changed file: `npx vitest run <file>`.
+- Run only the changed file: `pytest <file> -q`.
 ''',
     '.claude/rules/content/blog.md': '''
 ---
@@ -84,7 +62,7 @@ your-project/
         ├── security.md          <- no paths: loads every session
         ├── testing.md           <- paths: tests only
         ├── backend/
-        │   └── api.md           <- paths: src/api only
+        │   └── api.md           <- paths: app/api only
         └── content/
             └── blog.md          <- paths: blog posts only
 ''', 'A project with rules', lang='text', note='📂 Folder layout'),
@@ -102,8 +80,6 @@ paths: "contracts/**/*.docx, contracts/**/*.pdf"
 - Quote the exact clause number for every point you raise.
 - Our standard payment term is 30 days. Flag anything longer.
 ''', '.claude/rules/contracts.md (comma separated paths, for a legal team)'),
-    'which': test({**RULES, 'which-rules.mjs': WHICH}, 'node which-rules.mjs', 'Which rules load for which file', show=['which-rules.mjs'],
-                  badge='▶ Runs a model of rule loading on the five rule files above'),
     'user-rules': show('''
 ~/.claude/rules/
 ├── preferences.md     # "Answer with the command first, then one line of explanation"
@@ -142,14 +118,19 @@ PARTS = [
 <p>Add YAML front matter with a <code>paths</code> list. The rule then loads only when Claude <b>reads, writes or edits</b> a file that matches one of the patterns. <code>paths</code> is the <b>only</b> field rules use. Any other field is ignored.</p>
 [[api]]
 <div class="tw"><table class="jt"><tr><th>Pattern</th><th>Matches</th></tr>
-<tr><td><code>**/*.ts</code></td><td>every TypeScript file, in any folder</td></tr>
-<tr><td><code>src/**/*</code></td><td>everything under <code>src/</code></td></tr>
+<tr><td><code>**/*.py</code></td><td>every Python file, in any folder</td></tr>
+<tr><td><code>app/**/*</code></td><td>everything under <code>app/</code></td></tr>
 <tr><td><code>*.md</code></td><td>Markdown files in the project root only</td></tr>
-<tr><td><code>src/**/*.{ts,tsx}</code></td><td>both <code>.ts</code> and <code>.tsx</code> under <code>src/</code></td></tr>
+<tr><td><code>app/**/*.{py,pyi}</code></td><td>both <code>.py</code> and <code>.pyi</code> under <code>app/</code></td></tr>
 </table></div>
 <p>You can write <code>paths</code> as a list, or as one comma separated string.</p>
 <div class="viz" data-viz="flow" data-k="load"></div>
-[[which]]
+<div class="tw"><table class="jt"><tr><th>What Claude is doing</th><th>Rules loaded</th></tr>
+<tr><td>Session starts</td><td><code>code-style.md</code>, <code>security.md</code> (no <code>paths</code>)</td></tr>
+<tr><td>Edits <code>app/api/orders.py</code></td><td>also <code>backend/api.md</code></td></tr>
+<tr><td>Edits <code>tests/test_cart.py</code></td><td>also <code>testing.md</code></td></tr>
+<tr><td>Edits <code>README.md</code></td><td>nothing new</td></tr>
+<tr><td>Edits <code>content/blog/diwali-sale.md</code></td><td>also <code>content/blog.md</code></td></tr></table></div>
 ''', files=['.claude/rules/backend/api.md'], kw=['paths', 'frontmatter', 'glob', 'path-specific rules', 'brace expansion']),
     part('examples', '🧾', 'Ready to copy rule files', '''
 <p>Rules are not only for code. Any team that keeps files in a folder can use them.</p>
@@ -191,8 +172,8 @@ DG = {
     'load': {'t': 'When each rule joins the context', 'w': 900, 'h': 280,
              'n': [['start', 20, 110, 150, 56, 'session starts', {'c': 5, 'sh': 'pill'}],
                    ['always', 230, 20, 220, 56, 'code-style.md, security.md', {'c': 0, 'sub': 'no paths', 'i': 'Loaded at launch, like CLAUDE.md.'}],
-                   ['edit', 230, 200, 220, 56, 'Claude edits src/api/orders.ts', {'c': 2, 'i': 'Read, Write or Edit on a file.'}],
-                   ['api', 520, 200, 180, 56, 'backend/api.md', {'c': 3, 'sub': 'paths match', 'i': 'paths: src/api/**/*.ts matches the edited file.'}],
+                   ['edit', 230, 200, 220, 56, 'Claude edits app/api/orders.py', {'c': 2, 'i': 'Read, Write or Edit on a file.'}],
+                   ['api', 520, 200, 180, 56, 'backend/api.md', {'c': 3, 'sub': 'paths match', 'i': 'paths: app/api/**/*.py matches the edited file.'}],
                    ['tst', 520, 110, 180, 56, 'testing.md', {'c': 4, 'sub': 'waits', 'i': 'Not loaded until a test file is touched.'}],
                    ['ctx', 760, 20, 120, 56, 'context', {'c': 1, 'sh': 'pill'}]],
              'e': [['start', 'always'], ['always', 'ctx'], ['start', 'edit', {'t': 'later'}], ['edit', 'api'], ['api', 'ctx']],
@@ -204,7 +185,7 @@ DG = {
 
 INFO = {'title': 'Rules: the right advice for the right files', 'panels': [
     panel([['e', '🔎'], ['t', 'rules.md ✗  .claude/rules/ ✓', {'b': 1, 'size': 11}]], 'Name check', 'A folder, not one file.', 'One topic per Markdown file.'),
-    panel([['e', '🎯'], ['t', 'paths: src/api/**', {'b': 1}]], 'Path rules', 'Load only for matching files.', 'paths is the only field.'),
+    panel([['e', '🎯'], ['t', 'paths: app/api/**', {'b': 1}]], 'Path rules', 'Load only for matching files.', 'paths is the only field.'),
     panel([['e', '🙋'], ['t', '~/.claude/rules/', {'b': 1}]], 'Personal rules', 'Apply to all your projects.', 'Loaded before project rules.'),
     panel([['e', '⚖️'], ['t', 'rule vs skill vs hook', {'b': 1}]], 'Pick the right tool', 'Rules guide, hooks enforce.', 'Procedures go in skills.')],
     'remember': 'No paths: every session. With paths: only when a matching file is touched.'}
@@ -293,37 +274,21 @@ QUIZ = [
 
 CALC = [
     calc('e', 'In the example project, how many rules load at launch?', '2', 'Rules without paths.', ['code-style.md and security.md.']),
-    calc('e', 'How many expanded patterns does src/*.{ts,tsx} become?', '2', 'One per option in the braces.', ['src/*.ts and src/*.tsx.']),
-    calc('m', 'How many patterns does {a,b}/{c,d}/*.{ts,tsx} expand to?', '8', 'Multiply the options.', ['<span class="eq">2 × 2 × 2 = 8</span>']),
-    calc('m', 'Claude edits tests/cart.test.ts. How many rules are loaded in total now?', '3', 'Launch rules plus matches.', ['2 at launch plus testing.md.', '<span class="eq">2 + 1 = 3</span>']),
+    calc('e', 'How many expanded patterns does app/*.{py,pyi} become?', '2', 'One per option in the braces.', ['app/*.py and app/*.pyi.']),
+    calc('m', 'How many patterns does {a,b}/{c,d}/*.{py,pyi} expand to?', '8', 'Multiply the options.', ['<span class="eq">2 × 2 × 2 = 8</span>']),
+    calc('m', 'Claude edits tests/test_cart.py. How many rules are loaded in total now?', '3', 'Launch rules plus matches.', ['2 at launch plus testing.md.', '<span class="eq">2 + 1 = 3</span>']),
     calc('h', 'An API rule is 600 tokens. Front end developers make 80 requests a day and never touch API files. How many tokens a day does the paths field save them?', '48000', 'It never loads for them.', ['<span class="eq">600 × 80 = 48,000</span>'], alt=['48,000']),
     calc('x', 'What is the expanded pattern budget for one rule\'s paths list?', '1000', 'From the docs.', ['1,000 expanded patterns and 4 MiB per rule.'], alt=['1,000']),
 ]
 
-EX = [
-    ex('has-paths', 'e', 'Does it have paths?', '<p>Write <code>hasPaths(text)</code>. Return true when the text starts with a front matter block (<code>---</code> on the first line, a closing <code>---</code> later) that contains a line starting with <code>paths:</code>.</p>',
-       'function hasPaths(text) {\n  \n}\n',
-       [('hasPaths("---\\npaths:\\n  - \\"src/**\\"\\n---\\n# API")', True), ('hasPaths("# Style\\n- tabs")', False), ('hasPaths("---\\nname: x\\n---\\nhi")', False)],
-       'function hasPaths(text) {\n  const m = text.match(/^---\\n([\\s\\S]*?)\\n---/);\n  return !!m && /^paths:/m.test(m[1]);\n}',
-       hint='Match the block with a regular expression, then look inside it.', why='Knowing whether a rule is conditional tells you when it costs context.'),
-    ex('ext-match', 'm', 'Match by extension', '<p>Write <code>matchesExt(file, exts)</code>. <code>exts</code> is a list like <code>["ts", "tsx"]</code>. Return true when the file name ends with a dot and one of them.</p>',
-       'function matchesExt(file, exts) {\n  \n}\n',
-       [('matchesExt("src/a.tsx", ["ts", "tsx"])', True), ('matchesExt("src/a.js", ["ts"])', False), ('matchesExt("notes.ts.md", ["ts"])', False)],
-       'function matchesExt(file, exts) {\n  return exts.some(e => file.endsWith("." + e));\n}',
-       hint='<code>endsWith</code> with the dot included.', why='This is what a brace pattern like <code>*.{ts,tsx}</code> does for the file name part.'),
-    ex('where-goes', 'h', 'Where does this instruction go?', '<p>Write <code>placeFor(item)</code>. <code>item</code> has <code>always</code>, <code>forPaths</code>, <code>steps</code> and <code>mustNever</code>. Return <code>"hook"</code> if <code>mustNever</code>, else <code>"skill"</code> if <code>steps</code> is more than 3, else <code>"path rule"</code> if <code>forPaths</code>, else <code>"CLAUDE.md"</code>.</p>',
-       'function placeFor(item) {\n  \n}\n',
-       [('placeFor({ mustNever: true })', 'hook'), ('placeFor({ steps: 9 })', 'skill'), ('placeFor({ forPaths: true, steps: 1 })', 'path rule'), ('placeFor({ always: true })', 'CLAUDE.md')],
-       'function placeFor(item) {\n  if (item.mustNever) return "hook";\n  if ((item.steps ?? 0) > 3) return "skill";\n  if (item.forPaths) return "path rule";\n  return "CLAUDE.md";\n}',
-       hint='Check the strongest need first.', why='Putting each instruction in the right place keeps context small and rules reliable.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-rules', 'title': 'Rules: The .claude/rules Folder and Path Rules', 'short': 'Rules', 'emoji': '📏', 'module': MODULE, 'minutes': 13,
     'lead': 'Why there is no rules.md, how to build a .claude/rules/ folder step by step, path rules that load only for matching files, ready to copy rules for code, content and contracts, personal and shared rules, and how to choose between rules, CLAUDE.md, skills and hooks.',
     'plain': 'Rules are small notes for Claude, one topic per note, kept in a folder. Some notes are always read. Others are read only when Claude opens certain files.',
     'desc': 'Claude Code rules explained: the .claude/rules folder, the paths frontmatter field, glob patterns, user rules, symlinks, and rules versus CLAUDE.md, skills and hooks.',
-    'summary': 'The name check (no rules.md, the real .claude/rules/ folder), creating rule files step by step, path rules with the paths field and glob patterns, a run showing which rules load for which file, ready to copy rules for APIs, tests, blog posts and contracts, personal rules in ~/.claude/rules/, sharing rules with symlinks, choosing between rules, CLAUDE.md, skills and hooks, and debugging rules.',
+    'summary': 'The name check (no rules.md, the real .claude/rules/ folder), creating rule files step by step, path rules with the paths field and glob patterns, a table of which rules load for which file, ready to copy rules for APIs, tests, blog posts and contracts, personal rules in ~/.claude/rules/, sharing rules with symlinks, choosing between rules, CLAUDE.md, skills and hooks, and debugging rules.',
     'keywords': ['rules', 'rules.md', '.claude/rules', 'paths', 'path rules', 'glob', 'frontmatter', 'user rules', 'symlink', 'CLAUDE.md vs rules'],
     'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

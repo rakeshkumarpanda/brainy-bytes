@@ -1,67 +1,9 @@
 # Chapter 1: what Claude is, where it lives, the models, tokens and the context window, claude.ai Projects and Skills.
-from ckit import part, run, show, md, prompt, say, quiz, calc, ex, panel
+from ckit import part, show, md, prompt, say, quiz, calc, panel
 
 MODULE = ('🌱', 'Foundations', 'claude-foundations', 'What Claude is, how to talk to it, and how to give it the right information at the right time.')
 
 CODES = {
-    'tokens': run('''
-// Claude reads text as tokens: small pieces of words.
-// The models page says 1M tokens is roughly 555,000 English words,
-// so one word is about 1.8 tokens on average.
-const TOKENS_PER_WORD = 1_000_000 / 555_000;
-
-function estimateTokens(text) {
-  const words = text.trim().split(/\\s+/).filter(Boolean).length;
-  return Math.round(words * TOKENS_PER_WORD);
-}
-
-const email = "Hi team, please send me the sales numbers for March before Friday. Thanks!";
-console.log("words:", email.split(" ").length, "tokens about:", estimateTokens(email));
-
-const book = 90_000;                       // a typical novel has about 90k words
-console.log("novel tokens about:", Math.round(book * TOKENS_PER_WORD));
-console.log("novels that fit in 1M tokens:", Math.floor(1_000_000 / (book * TOKENS_PER_WORD)));
-''', 'Estimate tokens from words'),
-    'cost': run('''
-// Price per million tokens (MTok) from the official models page, October 2026.
-const PRICES = {
-  "claude-fable-5-1":  { input: 10,   output: 50 },
-  "claude-opus-5-5":   { input: 4,    output: 20 },
-  "claude-sonnet-5-5": { input: 2,    output: 10 },
-  "claude-haiku-5-5":  { input: 0.10, output: 0.50 },   // "from" price
-};
-
-function costUSD(model, inputTokens, outputTokens) {
-  const p = PRICES[model];
-  return (inputTokens * p.input + outputTokens * p.output) / 1_000_000;
-}
-
-// Summarise 200 support emails: about 400 tokens in and 120 tokens out each.
-for (const model of Object.keys(PRICES)) {
-  const total = costUSD(model, 200 * 400, 200 * 120);
-  console.log(model.padEnd(18), "$" + total.toFixed(4));
-}
-''', 'What a daily job costs on each model'),
-    'turns': run('''
-// A chat is a list of messages. Every time you send a new message,
-// the WHOLE list goes to Claude again. Nothing is remembered in between.
-const conversation = [];
-let sent = 0;
-
-function ask(text, reply) {
-  conversation.push({ role: "user", content: text });
-  sent += conversation.reduce((n, m) => n + m.content.split(" ").length, 0);
-  conversation.push({ role: "assistant", content: reply });
-}
-
-ask("Plan a 3 day trip to Goa", "Day 1 beaches, day 2 forts, day 3 markets.");
-ask("Make day 2 kid friendly", "Swap the forts for the science centre and a boat ride.");
-ask("Now give me a packing list", "Sunscreen, hats, water bottles, swimwear, snacks.");
-
-console.log("messages in the list:", conversation.length);
-console.log("words Claude had to read in total:", sent);
-console.log(conversation.map(m => m.role).join(" -> "));
-''', 'Why long chats get slower and cost more'),
     'project-instr': md('''
 # Project instructions: "Shop Support Replies"
 
@@ -130,15 +72,12 @@ PARTS = [
     part('tokens', '🔢', 'Tokens and the context window', '''
 <p>Claude does not read letters or whole words. It reads <b>tokens</b>, which are small pieces of text. A short word is usually one token. A long word may be two or three.</p>
 <p>The <b>context window</b> is everything Claude can see at one moment: your messages, its replies, files you attach and any instructions. It is measured in tokens. 1 million tokens is roughly 555 thousand English words.</p>
-[[tokens]]
 <p>Price is also counted in tokens. <b>Input tokens</b> are what you send. <b>Output tokens</b> are what Claude writes, and they cost five times more.</p>
-[[cost]]
 <div class="fun">Even with a huge window, less is more. A focused page of the right facts beats a pile of loosely related files. Chapter 3 is all about this.</div>
 ''', easy=True, files=[], kw=['tokens', 'context window', '1M tokens', 'input tokens', 'output tokens', 'cost']),
     part('turns', '🔁', 'How a conversation really works', '''
 <p>Claude has no hidden memory between messages. Each time you press send, the app sends the <b>whole conversation so far</b>, and Claude reads all of it again before replying.</p>
 <div class="viz" data-viz="lanes" data-k="chat"></div>
-[[turns]]
 <p>Two habits follow from this:</p>
 <ul><li>Start a <b>new chat</b> when you switch to a new task. Old messages about the last task only distract.</li>
 <li>Put facts Claude needs <b>every time</b> in a place that is loaded every time: project instructions in claude.ai, <code>CLAUDE.md</code> in Claude Code, or the system prompt in the API.</li></ul>
@@ -324,23 +263,7 @@ CALC = [
     calc('x', 'Sorting 2,000 emails a day on Haiku 5.5 uses 400 input and 20 output tokens each, at $0.10 and $0.50 per million. Cost per day in dollars?', '0.1', 'Total tokens first.', ['<span class="eq">2,000 × 400 = 800,000 input</span>', '<span class="eq">2,000 × 20 = 40,000 output</span>', '<span class="eq">0.8 × 0.10 + 0.04 × 0.50 = 0.08 + 0.02 = 0.10</span>'], alt=['0.10', '$0.10', '$0.1']),
 ]
 
-EX = [
-    ex('est-tokens', 'e', 'Estimate tokens', '<p>Write <code>estimateTokens(text)</code>. Count the words (split on spaces, ignore empty pieces) and multiply by <code>1.8</code>. Round to the nearest whole number.</p>',
-       'function estimateTokens(text) {\n  \n}\n',
-       [('estimateTokens("hello there friend")', 5), ('estimateTokens("  one   two ")', 4), ('estimateTokens("")', 0)],
-       'function estimateTokens(text) {\n  const words = text.split(" ").filter(w => w !== "").length;\n  return Math.round(words * 1.8);\n}',
-       hint='<code>split(" ")</code> then <code>filter</code> out empty strings.', why='A quick estimate tells you whether a document fits and roughly what it costs before you send it.'),
-    ex('cost-calc', 'm', 'Price a job', '<p>Write <code>costUSD(model, inTok, outTok)</code> using these prices per million tokens: opus 4 in and 20 out, sonnet 2 and 10, haiku 0.1 and 0.5. Return the dollars rounded to 4 decimal places as a number.</p>',
-       'function costUSD(model, inTok, outTok) {\n  \n}\n',
-       [('costUSD("opus", 1000000, 0)', 4), ('costUSD("sonnet", 80000, 24000)', 0.4), ('costUSD("haiku", 800000, 40000)', 0.1)],
-       'function costUSD(model, inTok, outTok) {\n  const p = { opus: [4, 20], sonnet: [2, 10], haiku: [0.1, 0.5] }[model];\n  const usd = (inTok * p[0] + outTok * p[1]) / 1e6;\n  return Math.round(usd * 10000) / 10000;\n}',
-       hint='Keep the prices in an object. Divide by one million at the end.', why='Teams that automate daily work check the cost of a job before running it a thousand times.'),
-    ex('pick-model', 'h', 'Pick a model', '<p>Write <code>pickModel(job)</code>. <code>job</code> has <code>volume</code> (items per day) and <code>hard</code> (true or false). Return <code>"claude-fable-5-1"</code> when hard and volume is under 10, <code>"claude-opus-5-5"</code> for other hard jobs, <code>"claude-haiku-5-5"</code> when not hard and volume is 1000 or more, else <code>"claude-sonnet-5-5"</code>.</p>',
-       'function pickModel(job) {\n  \n}\n',
-       [('pickModel({ volume: 3, hard: true })', 'claude-fable-5-1'), ('pickModel({ volume: 50, hard: true })', 'claude-opus-5-5'), ('pickModel({ volume: 5000, hard: false })', 'claude-haiku-5-5'), ('pickModel({ volume: 20, hard: false })', 'claude-sonnet-5-5')],
-       'function pickModel(job) {\n  if (job.hard) return job.volume < 10 ? "claude-fable-5-1" : "claude-opus-5-5";\n  return job.volume >= 1000 ? "claude-haiku-5-5" : "claude-sonnet-5-5";\n}',
-       hint='Check <code>hard</code> first, then the volume.', why='Matching the model to the job keeps quality high where it matters and cost low where it does not.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-meet', 'title': 'Meet Claude: Models, Tokens, Projects and Skills', 'short': 'Meet Claude', 'emoji': '👋', 'module': MODULE, 'minutes': 14,

@@ -4,7 +4,7 @@ IQ_SETS["master-claude"] = {
  "opts": {
   "title": "Claude Interview Questions",
   "sub": "Answer as if the interviewer asked \"how did you use this in a real project\". Name the exact file or field when you can. Open the hint only if you are stuck.",
-  "lang": "js",
+  "lang": "py",
   "must": [
    [
     "✍️",
@@ -150,7 +150,7 @@ IQ_SETS["master-claude"] = {
    "q": "A colleague says \"put it in rules.md\". What actually exists?",
    "hint": "It is a folder, and there is one optional front matter field.",
    "answer": "There is no single rules.md file. Rules are Markdown files in the .claude/rules/ folder, one per topic. Each may have a paths field in front matter with glob patterns, so it loads only when Claude works on matching files. Without paths it loads every session like CLAUDE.md.",
-   "explain": "<pre>---\npaths:\n  - \"src/api/**/*.ts\"\n---\n\n- Validate every request body with zod.</pre><p>User level rules live in ~/.claude/rules/.</p>"
+   "explain": "<pre>---\npaths:\n  - \"app/api/**/*.py\"\n---\n\n- Validate every request body with a Pydantic model.</pre><p>User level rules live in ~/.claude/rules/.</p>"
   },
   {
    "id": "imports",
@@ -195,13 +195,13 @@ IQ_SETS["master-claude"] = {
    "q": "In what order are permission rules checked, and which settings file wins?",
    "hint": "Deny, ask, allow. Then think from managed down to user.",
    "answer": "Rules are checked deny first, then ask, then allow, so a deny always wins. Settings files are merged with managed settings highest, then command line, then .claude/settings.local.json, then .claude/settings.json, then ~/.claude/settings.json. Permission rule lists are merged across files rather than replaced.",
-   "explain": "<pre>{\n  \"permissions\": {\n    \"allow\": [\"Bash(npm run test *)\"],\n    \"deny\": [\"Read(./.env*)\", \"Bash(git push --force *)\"]\n  }\n}</pre>"
+   "explain": "<pre>{\n  \"permissions\": {\n    \"allow\": [\"Bash(pytest *)\"],\n    \"deny\": [\"Read(./.env*)\", \"Bash(git push --force *)\"]\n  }\n}</pre>"
   },
   {
    "id": "hook-vs-instruction",
    "topic": "Settings and hooks",
    "lv": "e",
-   "q": "Why use a hook instead of writing \"always run prettier\" in CLAUDE.md?",
+   "q": "Why use a hook instead of writing \"always run ruff format\" in CLAUDE.md?",
    "hint": "Request versus guarantee.",
    "answer": "CLAUDE.md is guidance that Claude usually follows but can miss. A hook is code that Claude Code runs every time the event happens, so it is a guarantee. Anything that must happen every time, such as formatting after edits or blocking a dangerous command, belongs in a hook.",
    "explain": "<p>A PostToolUse hook with matcher \"Edit|Write\" can run the formatter on every changed file.</p>"
@@ -214,7 +214,7 @@ IQ_SETS["master-claude"] = {
    "hint": "An exit code, or JSON on stdout.",
    "answer": "The hook reads the event as JSON on stdin. Exiting with code 2 blocks the call and sends stderr back to Claude as the reason. Or it exits 0 and prints JSON with hookSpecificOutput.permissionDecision set to deny, ask or allow, plus a permissionDecisionReason.",
    "explain": "<p>Exit code 1 is only a non blocking error. Use 2 to block. Test hooks by piping a sample event JSON into the script before relying on them.</p>",
-   "code": "// .claude/hooks/no-force-push.mjs\nimport { readFileSync } from \"node:fs\";\nconst ev = JSON.parse(readFileSync(0, \"utf8\"));\nif (/git push .*--force/.test(ev.tool_input?.command ?? \"\")) {\n  console.error(\"Force push is not allowed. Push normally.\");\n  process.exit(2);\n}"
+   "code": "# .claude/hooks/no_force_push.py\nimport json, re, sys\n\nev = json.load(sys.stdin)\ncommand = ev.get(\"tool_input\", {}).get(\"command\", \"\")\nif re.search(r\"git push .*--force\", command):\n    print(\"Force push is not allowed. Push normally.\", file=sys.stderr)\n    sys.exit(2)"
   },
   {
    "id": "agent-file",
@@ -274,11 +274,11 @@ IQ_SETS["master-claude"] = {
    "id": "mcp-build",
    "topic": "MCP",
    "lv": "h",
-   "q": "Walk through building a small MCP server in Node.js.",
+   "q": "Walk through building a small MCP server in Python.",
    "hint": "SDK, register tools, transport, test, add.",
-   "answer": "Install @modelcontextprotocol/sdk and zod. Create an McpServer with a name and version, call registerTool for each tool with a title, a description and a zod input schema, and return content blocks from the handler. Connect a StdioServerTransport. Test it with an MCP client, then add it with claude mcp add --transport stdio name -- node server.mjs.",
-   "explain": "<p>Never write to stdout from a stdio server except protocol messages. Log with console.error. In Python, version 2 of the mcp package uses MCPServer from mcp.server with @mcp.tool() functions.</p>",
-   "code": "server.registerTool(\"add_expense\", {\n  description: \"Save one expense in rupees.\",\n  inputSchema: { item: z.string(), amount: z.number().positive() },\n}, async ({ item, amount }) => ({ content: [{ type: \"text\", text: `Saved ${item}` }] }));"
+   "answer": "Install the mcp package (version 2) in a virtual environment. Create an MCPServer with a name, mark each tool function with @mcp.tool(), give it a docstring that says when to use it and type hints for its inputs, and return a string. Call mcp.run() to serve over stdio. Test it with an MCP client, then add it with claude mcp add --transport stdio name -- /path/to/.venv/bin/python server.py.",
+   "explain": "<p>Never print() from a stdio server, because stdout carries the protocol messages. Log to stderr. Version 2 of the mcp package imports MCPServer from mcp.server. Older tutorials use FastMCP, which version 2 no longer has.</p>",
+   "code": "from mcp.server import MCPServer\n\nmcp = MCPServer(\"expenses\")\n\n@mcp.tool()\ndef add_expense(item: str, amount: float) -> str:\n    \"\"\"Save one expense in rupees.\"\"\"\n    return f\"Saved {item}\"\n\nif __name__ == \"__main__\":\n    mcp.run()"
   },
   {
    "id": "mcp-name",
@@ -296,7 +296,7 @@ IQ_SETS["master-claude"] = {
    "q": "How do you use Claude Code inside a script or CI job?",
    "hint": "One flag turns it into a normal command.",
    "answer": "Use claude -p \"prompt\". It runs once, prints the result and exits with code 0 on success. Limit tools with --allowedTools, choose --output-format json or stream-json, and add --bare for runs that must not load local hooks, plugins, MCP or CLAUDE.md.",
-   "explain": "<p>Example: git diff main | claude -p \"list each typo as file:line\" in an npm script.</p>"
+   "explain": "<p>Example: git diff main | claude -p \"list each typo as file:line\" in a CI step.</p>"
   },
   {
    "id": "json-schema",
@@ -370,8 +370,8 @@ IQ_SETS["master-claude"] = {
    "answer": "0.0090",
    "explain": "<p class=\"eq\">(2,000 × 2 + 500 × 10) ÷ 1,000,000 = 0.009</p>",
    "kind": "Output",
-   "lang": "js",
-   "code": "const cost = (inTok, outTok, pin, pout) => (inTok * pin + outTok * pout) / 1e6;\nconsole.log(cost(2000, 500, 2, 10).toFixed(4));",
+   "lang": "py",
+   "code": "def cost(in_tok, out_tok, p_in, p_out):\n    return (in_tok * p_in + out_tok * p_out) / 1e6\n\nprint(f\"{cost(2000, 500, 2, 10):.4f}\")",
    "acode": "0.0090"
   },
   {
@@ -383,8 +383,8 @@ IQ_SETS["master-claude"] = {
    "answer": "mcp__team_db__query",
    "explain": "<p>MCP tool names are mcp__ + server + __ + tool, and characters outside letters, digits, underscore and hyphen in the server name become underscores.</p>",
    "kind": "Output",
-   "lang": "js",
-   "code": "const name = (s, t) => \"mcp__\" + s.replace(/[^A-Za-z0-9_-]/g, \"_\") + \"__\" + t;\nconsole.log(name(\"team.db\", \"query\"));",
+   "lang": "py",
+   "code": "import re\n\ndef name(server, tool):\n    return \"mcp__\" + re.sub(r\"[^A-Za-z0-9_-]\", \"_\", server) + \"__\" + tool\n\nprint(name(\"team.db\", \"query\"))",
    "acode": "mcp__team_db__query"
   },
   {
@@ -402,16 +402,16 @@ IQ_SETS["master-claude"] = {
    "lv": "m",
    "q": "When would you use the Claude Agent SDK instead of the Messages API with your own tools?",
    "hint": "Built in tools.",
-   "answer": "When the agent needs what Claude Code already has: reading and editing files, running commands, web search, permissions, hooks, skills, subagents and MCP. The Agent SDK gives you the same loop and tools as a Python or TypeScript library, and you choose allowed tools and a permission mode.",
+   "answer": "When the agent needs what Claude Code already has: reading and editing files, running commands, web search, permissions, hooks, skills, subagents and MCP. The Agent SDK gives you the same loop and tools as a Python library (pip install claude-agent-sdk), and you choose allowed tools and a permission mode.",
    "explain": "<p>For a single answer use one messages.create call. For a few custom tools, the tool runner is lighter. For a hosted loop and sandbox, Managed Agents.</p>"
   },
   {
    "id": "where-put",
    "topic": "Scenarios",
    "lv": "m",
-   "q": "Place each: \"run tests with npm test\", \"never read .env files\", \"format after every edit\", \"the monthly invoice procedure\", \"API handlers must validate with zod\".",
+   "q": "Place each: \"run tests with pytest\", \"never read .env files\", \"format after every edit\", \"the monthly invoice procedure\", \"API handlers must validate with Pydantic\".",
    "hint": "Every time, allowed or not, sometimes, always true.",
-   "answer": "npm test goes in CLAUDE.md. Never read .env is a deny rule in .claude/settings.json. Format after every edit is a PostToolUse hook. The invoice procedure is a skill in .claude/skills/invoice/SKILL.md. The zod rule is a path scoped rule in .claude/rules/api.md.",
+   "answer": "The pytest command goes in CLAUDE.md. Never read .env is a deny rule in .claude/settings.json. Format after every edit is a PostToolUse hook. The invoice procedure is a skill in .claude/skills/invoice/SKILL.md. The Pydantic rule is a path scoped rule in .claude/rules/api.md.",
    "explain": "<p>Order of questions: must it happen every time (hook), is it about what Claude may do (permissions), is it a procedure or only for some files (skill or rule), otherwise a short line in CLAUDE.md.</p>",
    "kind": "Scenario"
   },

@@ -1,9 +1,8 @@
 # Chapter 4: Claude Code first steps. Install, first session, the agent loop, permission modes, plan mode, checkpoints, sessions, the .claude folder.
-from ckit import part, run, test, show, cli, prompt, say, quiz, calc, ex, panel, pkg
+from ckit import part, test, cli, prompt, say, quiz, calc, panel
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
 
-NODE_TEST_TIMES = [(r'duration_ms [\d.]+', 'duration_ms 0.5'), (r'\(\d+(\.\d+)?ms\)', '(0.5ms)')]
 
 CODES = {
     'install': cli('''
@@ -31,43 +30,30 @@ add a free delivery rule for orders above Rs 499, then run the tests
 what files have I changed?
 commit my changes with a descriptive message
 ''', 'First requests to try, one at a time', result='Claude reads files to answer the first two, edits the delivery code for the third and runs the tests, then uses git for the last two.'),
-    'loop': run('''
-// What Claude Code does with one request: gather context, act, verify, repeat.
-// The "model" here is a stand-in that follows a fixed plan, so the loop can run without an API key.
-const plan = [
-  { tool: "Grep",  input: "deliveryCharge",       note: "find where delivery is calculated" },
-  { tool: "Read",  input: "src/delivery.js",      note: "read the function" },
-  { tool: "Edit",  input: "src/delivery.js",      note: "add the free delivery rule" },
-  { tool: "Bash",  input: "npm test",             note: "verify with the tests" },
-  { tool: null,    input: "Done. Orders above Rs 499 now ship free. 2 tests pass." },
-];
-
-for (let turn = 1; ; turn++) {
-  const step = plan[turn - 1];
-  if (!step.tool) { console.log(`turn ${turn}: final answer -> ${step.input}`); break; }
-  console.log(`turn ${turn}: ${step.tool.padEnd(5)} ${step.input.padEnd(22)} (${step.note})`);
-}
-''', 'The agent loop, step by step'),
     'verify': test({
-        'package.json': pkg('my-shop', 'module', {'test': 'node --test --test-reporter=spec'}),
-        'src/delivery.js': '''
-export function deliveryCharge(orderTotal) {
-  if (orderTotal >= 499) return 0;      // free delivery rule
-  return 40;
-}
+        'shop/delivery.py': '''
+def delivery_charge(order_total):
+    if order_total >= 499:      # free delivery rule
+        return 0
+    return 40
 ''',
-        'test/delivery.test.js': '''
-import { test } from "node:test";
-import assert from "node:assert/strict";
-import { deliveryCharge } from "../src/delivery.js";
+        'tests/test_delivery.py': '''
+import unittest
+from shop.delivery import delivery_charge
 
-test("small orders pay Rs 40", () => assert.equal(deliveryCharge(200), 40));
-test("Rs 499 and above ship free", () => {
-  assert.equal(deliveryCharge(499), 0);
-  assert.equal(deliveryCharge(1200), 0);
-});
+
+class DeliveryTest(unittest.TestCase):
+    def test_small_orders_pay_40(self):
+        self.assertEqual(delivery_charge(200), 40)
+
+    def test_499_and_above_ship_free(self):
+        self.assertEqual(delivery_charge(499), 0)
+        self.assertEqual(delivery_charge(1200), 0)
 ''',
-    }, 'npm test --silent', 'Give Claude a way to check its own work', replace=NODE_TEST_TIMES, shown_cmd='npm test'),
+        'shop/__init__.py': '',
+        'tests/__init__.py': '',
+    }, '$PY -m unittest -v 2>&1 | sed -E "s/ in [0-9.]+s/ in 0.00s/"', 'Give Claude a way to check its own work', shown_cmd='python -m unittest -v',
+        show=['shop/delivery.py', 'tests/test_delivery.py']),
     'plan': cli('''
 claude --permission-mode plan        # start a session in plan mode
 # or press Shift+Tab inside a session until the status bar shows "plan mode on"
@@ -104,7 +90,6 @@ PARTS = [
     part('loop', '🔄', 'How it works: the agent loop', '''
 <p>For each request, Claude repeats a simple loop: <b>gather context</b> (search and read), <b>take action</b> (edit, run a command), <b>check the result</b>, then decide the next step. It stops when the task is done or it needs you.</p>
 <div class="viz" data-viz="flow" data-k="loop"></div>
-[[loop]]
 <p>The single most useful habit: <b>give Claude a way to check its work</b>, such as tests, a sample input with the expected output, or a screenshot to compare. With a check, Claude can fix its own mistakes before you see them.</p>
 [[verify]]
 ''', easy=True, kw=['agent loop', 'tools', 'Read', 'Edit', 'Bash', 'Grep', 'verify', 'tests']),
@@ -286,24 +271,7 @@ CALC = [
     calc('x', 'A plan catches a mistake that would take 3 hours to fix in code and 10 minutes in the plan. How many minutes are saved?', '170', 'Hours to minutes.', ['<span class="eq">3 × 60 = 180</span>', '<span class="eq">180 − 10 = 170</span>']),
 ]
 
-EX = [
-    ex('pick-mode', 'e', 'Pick a permission mode', '<p>Write <code>pickMode(task)</code>. Return <code>"plan"</code> when <code>task.explainOnly</code> is true, <code>"acceptEdits"</code> when <code>task.trusted</code> is true, otherwise <code>"default"</code>.</p>',
-       'function pickMode(task) {\n  \n}\n',
-       [('pickMode({ explainOnly: true })', 'plan'), ('pickMode({ trusted: true })', 'acceptEdits'), ('pickMode({})', 'default')],
-       'function pickMode(task) {\n  if (task.explainOnly) return "plan";\n  if (task.trusted) return "acceptEdits";\n  return "default";\n}',
-       hint='Check the safest case first.', why='Choosing the mode on purpose is the first safety habit with Claude Code.'),
-    ex('where', 'm', 'Where does it live?', '<p>Write <code>whereIs(thing)</code> for these: <code>"team instructions"</code> gives <code>"CLAUDE.md"</code>, <code>"team permissions"</code> gives <code>".claude/settings.json"</code>, <code>"my permissions"</code> gives <code>".claude/settings.local.json"</code>, <code>"team mcp"</code> gives <code>".mcp.json"</code>. Anything else gives <code>"unknown"</code>.</p>',
-       'function whereIs(thing) {\n  \n}\n',
-       [('whereIs("team instructions")', 'CLAUDE.md'), ('whereIs("my permissions")', '.claude/settings.local.json'), ('whereIs("team mcp")', '.mcp.json'), ('whereIs("rules.md")', 'unknown')],
-       'function whereIs(thing) {\n  const map = {\n    "team instructions": "CLAUDE.md",\n    "team permissions": ".claude/settings.json",\n    "my permissions": ".claude/settings.local.json",\n    "team mcp": ".mcp.json",\n  };\n  return map[thing] ?? "unknown";\n}',
-       hint='An object as a lookup table, and <code>??</code> for the default.', why='Knowing which file is shared and which is personal stops private settings leaking into the team repo.'),
-    ex('tiny-loop', 'h', 'Run a tiny agent loop', '<p>Write <code>runLoop(steps)</code>. Each step is <code>{ tool, ok }</code>. Go through the steps in order and collect the tool names. Stop after the first step whose <code>ok</code> is false and return <code>{ used, stopped: true }</code>. If every step is ok, return <code>{ used, stopped: false }</code>.</p>',
-       'function runLoop(steps) {\n  \n}\n',
-       [('runLoop([{tool:"Read",ok:true},{tool:"Bash",ok:false},{tool:"Edit",ok:true}])', {'used': ['Read', 'Bash'], 'stopped': True}),
-        ('runLoop([{tool:"Read",ok:true}])', {'used': ['Read'], 'stopped': False})],
-       'function runLoop(steps) {\n  const used = [];\n  for (const s of steps) {\n    used.push(s.tool);\n    if (!s.ok) return { used, stopped: true };\n  }\n  return { used, stopped: false };\n}',
-       hint='A <code>for...of</code> loop with an early <code>return</code>.', why='Agents stop and ask when a check fails, instead of piling more changes on a broken state.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-code-start', 'title': 'Claude Code: First Steps', 'short': 'Claude Code first steps', 'emoji': '💻', 'module': MODULE, 'minutes': 15,
