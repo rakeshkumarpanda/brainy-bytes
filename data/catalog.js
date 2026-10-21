@@ -2691,6 +2691,23 @@ function claudeModules() {
         { id: "expand", title: "Expand ${VAR}", emoji: "🏋️", group: "Hard practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-automation", title: "Daily Automation: Plugins, Scripts and GitHub", emoji: "⚙️", page: "content/claude/claude-automation.html",
+        summary: "A full plugin layout with a layout checker, plugin commands and marketplaces, claude -p flags, --bare, structured JSON output used by a real script, GitHub Actions set up for @claude and a weekday report, cron lines explained, /loop, and five daily recipes.",
+        keywords: ["automation", "plugin", "plugin.json", "claude -p", "headless", "--json-schema", "structured_output", "GitHub Actions", "claude-code-action", "cron", "schedule", "/loop", "recipes"],
+        added: "2026-10-20",
+        sections: [
+        { id: "plugins", title: "Plugins: share your whole setup in one folder", emoji: "📦", group: "Beginner path", keywords: ["plugin", "plugin.json", "manifest", "marketplace", "--plugin-dir", "claude plugin validate"] },
+        { id: "headless", title: "claude -p: use Claude in scripts", emoji: "🧾", group: "Beginner path", keywords: ["claude -p", "headless", "--allowedTools", "--bare", "--continue", "scripts"] },
+        { id: "json", title: "Get data back, not just text", emoji: "🧮", group: "Lesson", keywords: ["--output-format json", "--json-schema", "structured_output", "total_cost_usd", "jq"] },
+        { id: "gha", title: "Claude in GitHub Actions", emoji: "🐙", group: "Beginner path", keywords: ["GitHub Actions", "claude-code-action", "@claude", "/install-github-app", "secrets"] },
+        { id: "schedule", title: "Run it on a schedule", emoji: "⏰", group: "Lesson", keywords: ["schedule", "cron", "UTC", "claude_args", "--max-turns", "/loop"] },
+        { id: "recipes", title: "Daily automation recipes", emoji: "🍳", group: "Beginner path", keywords: ["automation recipes", "commit message", "meeting notes", "CSV cleaning", "CI failure"] },
+        { id: "skill-cmd", title: "Plugin skill command", emoji: "🏋️", group: "Easy practice" },
+        { id: "allowed", title: "Build --allowedTools", emoji: "🏋️", group: "Medium practice" },
+        { id: "to-utc", title: "Local time to a cron line", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];

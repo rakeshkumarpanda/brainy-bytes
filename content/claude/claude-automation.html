@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Automation: Plugins, Scripts and GitHub · Master the Claude</title>
+<meta name="description" content="Automate daily work with Claude Code: plugins and plugin.json, claude -p in scripts, --json-schema structured output, GitHub Actions with claude-code-action, cron schedules and ready to use recipes.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=master-claude" target="_top">✨ Master the Claude</a><span>›</span><span>🛠️ Claude Code and its files</span><span>›</span><span>Chapter 11 of 11</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">⚙️</span><div><h1>Daily Automation: Plugins, Scripts and GitHub</h1><p class="lead">Bundle skills, agents, hooks and MCP into a plugin, run Claude inside scripts with claude -p, get JSON back with a schema, answer @claude in GitHub, run reports on a schedule, and five copy and paste recipes for daily work.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 0 animations</span><span class="chip">▶ 3 examples run for real</span><span class="chip">📄 10 ready to copy files and prompts</span><span class="chip">🏋️ 3 hands-on exercises</span><span class="chip">🎯 10 quiz questions</span><span class="chip">🧮 6 calculations</span><span class="chip">🧒 4 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>Instead of opening Claude and typing every morning, you write the request once and let the computer run it for you every day.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#plugins" class="easy"><span>📦</span>Plugins: share your whole setup in one folder</a><a href="#headless" class="easy"><span>🧾</span>claude -p: use Claude in scripts</a><a href="#json"><span>🧮</span>Get data back, not just text</a><a href="#gha" class="easy"><span>🐙</span>Claude in GitHub Actions</a><a href="#schedule"><span>⏰</span>Run it on a schedule</a><a href="#recipes" class="easy"><span>🍳</span>Daily automation recipes</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="plugins" data-say="plugins"><div class="sec-num">Part 1</div><h2><span class="sec-em">📦</span><span>Plugins: share your whole setup in one folder</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 .claude-plugin/plugin.json</span><span class="cl-file">📄 skills/</span><span class="cl-file">📄 agents/</span><span class="cl-file">📄 hooks/hooks.json</span><span class="cl-file">📄 .mcp.json</span></div>
+<p>By now you have skills, agents, hooks and MCP servers. A <b>plugin</b> puts them in one folder so a whole team can install them with one command. Use plain <code>.claude/</code> files for one project, and a plugin when several projects or people need the same setup.</p>
+<div class="codewrap" data-k="tree"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A complete plugin · 📂 Folder layout</span><button type="button" class="copy">Copy</button></div><pre class="src main">team-toolkit/
+├── .claude-plugin/
+│   └── plugin.json          the manifest: name, description, version, author
+├── skills/
+│   └── release-notes/
+│       └── SKILL.md         becomes /team-toolkit:release-notes
+├── agents/
+│   └── reviewer.md          a subagent
+├── hooks/
+│   └── hooks.json           { "hooks": { ... } } same shape as in settings.json
+└── .mcp.json                MCP servers the plugin brings</pre></div>
+<div class="codewrap" data-k="manifest"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">team-toolkit/.claude-plugin/plugin.json · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main">{
+  <span class="s">"name"</span>: <span class="s">"team-toolkit"</span>,
+  <span class="s">"description"</span>: <span class="s">"Our review agent, release notes skill, format hook and docs MCP server"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"author"</span>: { <span class="s">"name"</span>: <span class="s">"Platform team"</span> }
+}</pre></div>
+<div class="cl-put"><b>What goes where:</b> only <code>plugin.json</code> goes inside <code>.claude-plugin/</code>. Skills, agents, <code>hooks/hooks.json</code> and <code>.mcp.json</code> sit next to that folder at the plugin root. Plugin skills are called with the plugin name in front, such as <code>/team-toolkit:release-notes</code>.</div>
+<div class="codewrap tests" data-k="plugin-check"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Check two plugin folders · ▶ Runs a check of the plugin layout rules</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 check-plugin.mjs</div><pre class="src" data-file="check-plugin.mjs"><span class="c">// check-plugin.mjs: checks a plugin folder against the layout rules in the plugin docs.</span>
+<span class="k">import</span> { existsSync, readdirSync, readFileSync, statSync } <span class="k">from</span> <span class="s">"node:fs"</span>;
+<span class="k">import</span> { join } <span class="k">from</span> <span class="s">"node:path"</span>;
+
+<span class="k">for</span> (<span class="k">const</span> dir <span class="k">of</span> process.argv.slice(<span class="n">2</span>)) {
+  <span class="k">const</span> problems = [];
+  <span class="k">const</span> manifestPath = join(dir, <span class="s">".claude-plugin"</span>, <span class="s">"plugin.json"</span>);
+  <span class="k">let</span> name = dir;
+  <span class="k">if</span> (existsSync(manifestPath)) {
+    <span class="k">const</span> m = <span class="t">JSON</span>.parse(readFileSync(manifestPath, <span class="s">"utf8"</span>));
+    name = m.name;
+    <span class="k">if</span> (!m.name) problems.push(<span class="s">"plugin.json has no name"</span>);
+    <span class="k">else</span> <span class="k">if</span> (/\s/.test(m.name)) problems.push(<span class="s">"name may not contain spaces"</span>);
+  }
+  <span class="k">for</span> (<span class="k">const</span> f <span class="k">of</span> readdirSync(join(dir, <span class="s">".claude-plugin"</span>))) {
+    <span class="k">if</span> (f !== <span class="s">"plugin.json"</span>) problems.push(<span class="s">`.claude-plugin/${f} will not load: only plugin.json goes there`</span>);
+  }
+  <span class="k">const</span> found = [];
+  <span class="k">if</span> (existsSync(join(dir, <span class="s">"skills"</span>))) <span class="k">for</span> (<span class="k">const</span> s <span class="k">of</span> readdirSync(join(dir, <span class="s">"skills"</span>))) {
+    <span class="k">if</span> (existsSync(join(dir, <span class="s">"skills"</span>, s, <span class="s">"SKILL.md"</span>))) found.push(<span class="s">`skill  /${name}:${s}`</span>);
+    <span class="k">else</span> problems.push(<span class="s">`skills/${s} has no SKILL.md`</span>);
+  }
+  <span class="k">if</span> (existsSync(join(dir, <span class="s">"agents"</span>))) <span class="k">for</span> (<span class="k">const</span> a <span class="k">of</span> readdirSync(join(dir, <span class="s">"agents"</span>))) found.push(<span class="s">`agent  ${name}:${a.replace(/\.md$/, "")}`</span>);
+  <span class="k">if</span> (existsSync(join(dir, <span class="s">"hooks"</span>, <span class="s">"hooks.json"</span>))) {
+    <span class="k">const</span> h = <span class="t">JSON</span>.parse(readFileSync(join(dir, <span class="s">"hooks"</span>, <span class="s">"hooks.json"</span>), <span class="s">"utf8"</span>));
+    <span class="k">if</span> (!h.hooks) problems.push(<span class="s">'hooks/hooks.json needs a top level "hooks" key'</span>);
+    <span class="k">else</span> found.push(<span class="s">"hooks  "</span> + <span class="t">Object</span>.keys(h.hooks).join(<span class="s">", "</span>));
+  }
+  <span class="k">if</span> (existsSync(join(dir, <span class="s">".mcp.json"</span>))) found.push(<span class="s">"mcp    "</span> + <span class="t">Object</span>.keys(<span class="t">JSON</span>.parse(readFileSync(join(dir, <span class="s">".mcp.json"</span>), <span class="s">"utf8"</span>)).mcpServers).join(<span class="s">", "</span>));
+  console.log(<span class="s">`== ${dir}`</span>);
+  <span class="k">for</span> (<span class="k">const</span> f <span class="k">of</span> found) console.log(<span class="s">"   "</span> + f);
+  console.log(problems.length ? problems.map(p =&gt; <span class="s">"   ✘ "</span> + p).join(<span class="s">"\n"</span>) : <span class="s">"   ✔ layout looks right"</span>);
+}</pre><div class="cmd"><span>Terminal</span><pre>$ node check-plugin.mjs team-toolkit broken-kit</pre></div><div class="out"><span>Terminal output</span><pre>== team-toolkit
+   skill  /team-toolkit:release-notes
+   agent  team-toolkit:reviewer
+   hooks  PostToolUse
+   mcp    claude-code-docs
+   ✔ layout looks right
+== broken-kit
+   ✘ name may not contain spaces
+   ✘ .claude-plugin/skills.md will not load: only plugin.json goes there
+   ✘ skills/notes has no SKILL.md</pre></div></div>
+<div class="codewrap" data-k="plugin-cmds"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Build, test and install plugins · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">claude</span> plugin validate ./team-toolkit        <span class="c"># check the manifest and frontmatter</span>
+<span class="k">claude</span> --plugin-dir ./team-toolkit           <span class="c"># try it in one session</span>
+/team-toolkit:release-notes                  <span class="c"># run its skill</span>
+
+/plugin marketplace add anthropics/<span class="k">claude</span>-plugins-official
+/plugin install plugin-dev@claude-plugins-official
+/plugin-dev:create-plugin a plugin with our review agent and release notes skill</pre><div class="note-out"><span>What happens</span><p>validate prints ✔ Validation passed or names each field to fix. --plugin-dir loads the plugin for that session only.</p></div></div>
+</section>
+<section class="card reveal jsec easy-part" id="headless" data-say="headless"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧾</span><span>claude -p: use Claude in scripts</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>The <code>-p</code> flag runs Claude Code once, prints the answer and exits. That makes it a normal command you can put in shell scripts, npm scripts and scheduled jobs.</p>
+<div class="codewrap" data-k="headless"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">claude -p: Claude Code inside any script · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># Ask once and print the answer</span>
+<span class="k">claude</span> -p <span class="s">"What does the auth module do?"</span>
+
+<span class="c"># Pipe data in, write the answer out</span>
+<span class="k">cat</span> build-error.txt | <span class="k">claude</span> -p <span class="s">"explain the root cause in 3 lines"</span> &gt; why.txt
+
+<span class="c"># Let it use only some tools, without prompts</span>
+<span class="k">claude</span> -p <span class="s">"Run the tests and fix failures"</span> --allowedTools <span class="s">"Bash,Read,Edit"</span>
+
+<span class="c"># Same result on every machine: skip local CLAUDE.md, hooks, plugins and MCP</span>
+<span class="k">claude</span> --bare -p <span class="s">"Summarize README.md"</span> --allowedTools <span class="s">"Read"</span>
+
+<span class="c"># Carry on the same conversation</span>
+<span class="k">claude</span> -p <span class="s">"Review this codebase for performance issues"</span>
+<span class="k">claude</span> -p <span class="s">"Now focus on the database queries"</span> --continue</pre><div class="note-out"><span>What happens</span><p>Exit code 0 means success, so scripts can check it. --bare needs ANTHROPIC_API_KEY because it skips your login.</p></div></div>
+<div class="tw"><table class="jt"><tr><th>Flag</th><th>What it does</th></tr>
+<tr><td><code>--allowedTools</code></td><td>tools it may use without asking, in permission rule syntax</td></tr>
+<tr><td><code>--permission-mode</code></td><td>a baseline such as <code>acceptEdits</code> or <code>dontAsk</code></td></tr>
+<tr><td><code>--output-format</code></td><td><code>text</code>, <code>json</code> or <code>stream-json</code></td></tr>
+<tr><td><code>--json-schema</code></td><td>the exact shape of data you want back</td></tr>
+<tr><td><code>--append-system-prompt</code></td><td>extra instructions on top of the default</td></tr>
+<tr><td><code>--bare</code></td><td>skip local hooks, skills, plugins, MCP and CLAUDE.md for repeatable runs</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="json" data-say="json"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧮</span><span>Get data back, not just text</span></h2>
+
+<p>Ask for JSON in a fixed shape with <code>--json-schema</code>. The data arrives in the <code>structured_output</code> field, ready for the next step of your script.</p>
+<div class="codewrap" data-k="schema"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Ask for data in a fixed shape · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">claude</span> -p <span class="s">"Read invoices/*.pdf and list each customer, amount and days late"</span> \
+  --allowedTools <span class="s">"Read"</span> \
+  --output-format json \
+  --json-schema <span class="s">'{"type":"object","properties":{"invoices":{"type":"array","items":{"type":"object","properties":{"customer":{"type":"string"},"amount":{"type":"number"},"days_late":{"type":"integer"}},"required":["customer","amount","days_late"]}}},"required":["invoices"]}'</span> \
+  &gt; result.json</pre></div>
+<div class="codewrap tests" data-k="read-json"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Use the structured output in a script · ▶ Runs on an example of the JSON shape</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 result.json</div><pre class="src" data-file="result.json">{
+  <span class="s">"type"</span>: <span class="s">"result"</span>,
+  <span class="s">"subtype"</span>: <span class="s">"success"</span>,
+  <span class="s">"is_error"</span>: <span class="k">false</span>,
+  <span class="s">"result"</span>: <span class="s">"Found 4 invoices."</span>,
+  <span class="s">"session_id"</span>: <span class="s">"9f1c2e7a-0000-4000-8000-000000000000"</span>,
+  <span class="s">"total_cost_usd"</span>: <span class="n">0.0213</span>,
+  <span class="s">"structured_output"</span>: {
+    <span class="s">"invoices"</span>: [
+      { <span class="s">"customer"</span>: <span class="s">"Sharma Traders"</span>, <span class="s">"amount"</span>: <span class="n">48000</span>, <span class="s">"days_late"</span>: <span class="n">45</span> },
+      { <span class="s">"customer"</span>: <span class="s">"Green Leaf Cafe"</span>, <span class="s">"amount"</span>: <span class="n">7200</span>, <span class="s">"days_late"</span>: <span class="n">12</span> },
+      { <span class="s">"customer"</span>: <span class="s">"Patel Hardware"</span>, <span class="s">"amount"</span>: <span class="n">125000</span>, <span class="s">"days_late"</span>: <span class="n">61</span> },
+      { <span class="s">"customer"</span>: <span class="s">"City Clinic"</span>, <span class="s">"amount"</span>: <span class="n">15500</span>, <span class="s">"days_late"</span>: <span class="n">0</span> }
+    ]
+  }
+}</pre><div class="fname">📄 read-result.mjs</div><pre class="src" data-file="read-result.mjs"><span class="c">// read-result.mjs: a script reading the JSON that claude -p --output-format json prints.</span>
+<span class="c">// result.json below is a hand written example of that shape, so the script can run here without a login.</span>
+<span class="k">import</span> { readFileSync } <span class="k">from</span> <span class="s">"node:fs"</span>;
+
+<span class="k">const</span> r = <span class="t">JSON</span>.parse(readFileSync(<span class="s">"result.json"</span>, <span class="s">"utf8"</span>));
+<span class="k">if</span> (r.is_error || !r.structured_output) {
+  console.error(<span class="s">"Claude did not return the data:"</span>, r.result);
+  process.exit(<span class="n">1</span>);
+}
+<span class="k">const</span> { invoices } = r.structured_output;
+<span class="k">const</span> overdue = invoices.filter(i =&gt; i.days_late &gt; <span class="n">30</span>);
+console.log(<span class="s">`${invoices.length} invoices, ${overdue.length} more than 30 days late:`</span>);
+<span class="k">for</span> (<span class="k">const</span> i <span class="k">of</span> overdue) console.log(<span class="s">` - ${i.customer}: ₹${i.amount.toLocaleString("en-IN")} (${i.days_late} days)`</span>);
+console.log(<span class="s">"cost of this run: $"</span> + r.total_cost_usd.toFixed(<span class="n">4</span>));</pre><div class="cmd"><span>Terminal</span><pre>$ node read-result.mjs</pre></div><div class="out"><span>Terminal output</span><pre>4 invoices, 2 more than 30 days late:
+ - Sharma Traders: ₹48,000 (45 days)
+ - Patel Hardware: ₹1,25,000 (61 days)
+cost of this run: $0.0213</pre></div></div>
+<p>Always check that <code>structured_output</code> is there before you use it. If Claude could not do the task, the field is missing.</p>
+</section>
+<section class="card reveal jsec easy-part" id="gha" data-say="gha"><div class="sec-num">Part 4</div><h2><span class="sec-em">🐙</span><span>Claude in GitHub Actions</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span><span class="cl-file">📄 .github/workflows/claude.yml</span></div>
+<ol class="steps"><li>Run <code>/install-github-app</code> in Claude Code inside your repository.</li>
+<li>It installs the Claude GitHub App and saves a secret named <code>ANTHROPIC_API_KEY</code> (or <code>CLAUDE_CODE_OAUTH_TOKEN</code> for a subscription).</li>
+<li>Merge the pull request it opens with the workflow file.</li>
+<li>Write <code>@claude</code> in an issue or pull request comment.</li></ol>
+<div class="codewrap" data-k="gha-setup"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Set up GitHub Actions the quick way · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main">gh auth login            <span class="c"># once, so Claude Code can talk to GitHub</span>
+<span class="k">claude</span>
+/install-github-app      <span class="c"># installs the app, saves the secret, opens a pull request with the workflow</span></pre></div>
+<div class="codewrap" data-k="gha-mention"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">.github/workflows/claude.yml: answer @claude in issues and pull requests · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="a">name</span>: <span class="s">Claude Code</span>
+<span class="a">on</span>:
+  <span class="a">issue_comment</span>:
+    <span class="a">types</span>: <span class="s">[created]</span>
+  <span class="a">pull_request_review_comment</span>:
+    <span class="a">types</span>: <span class="s">[created]</span>
+<span class="a">jobs</span>:
+  <span class="a">claude</span>:
+    <span class="a">if</span>: <span class="s">contains(github.event.comment.body, '@claude')</span>
+    <span class="a">runs-on</span>: <span class="s">ubuntu-latest</span>
+    <span class="a">permissions</span>:
+      <span class="a">contents</span>: <span class="s">write</span>
+      <span class="a">pull-requests</span>: <span class="s">write</span>
+      <span class="a">issues</span>: <span class="s">write</span>
+      <span class="a">id-token</span>: <span class="s">write</span>
+      <span class="a">actions</span>: <span class="s">read</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>: <span class="s">actions/checkout@v6</span>
+        <span class="a">with</span>:
+          <span class="a">fetch-depth</span>: <span class="k">1</span>
+      - <span class="a">uses</span>: <span class="s">anthropics/claude-code-action@v1</span>
+        <span class="a">with</span>:
+          <span class="a">anthropic_api_key</span>: <span class="s">${{ secrets.ANTHROPIC_API_KEY }}</span></pre></div>
+<div class="cl-put"><b>Never</b> paste a key into a workflow file. Always use <code>${{ secrets.ANTHROPIC_API_KEY }}</code>. Put your review standards in <code>CLAUDE.md</code>, because the action reads it too.</div>
+</section>
+<section class="card reveal jsec" id="schedule" data-say="schedule"><div class="sec-num">Part 5</div><h2><span class="sec-em">⏰</span><span>Run it on a schedule</span></h2>
+<div class="cl-tags"><span class="cl-file">📄 .github/workflows/daily-report.yml</span></div>
+<p>With a <code>prompt</code> input, the action runs on any event, including a timer. GitHub schedules use cron lines in UTC.</p>
+<div class="codewrap" data-k="gha-daily"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">.github/workflows/daily-report.yml: a weekday morning report · 📄 Ready to copy</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="a">name</span>: <span class="s">Daily Report</span>
+<span class="a">on</span>:
+  <span class="a">schedule</span>:
+    - <span class="a">cron</span>: <span class="s">"30 3 * * 1-5"      # 09:00 in India on weekdays</span>
+<span class="a">jobs</span>:
+  <span class="a">report</span>:
+    <span class="a">runs-on</span>: <span class="s">ubuntu-latest</span>
+    <span class="a">permissions</span>:
+      <span class="a">contents</span>: <span class="s">read</span>
+      <span class="a">issues</span>: <span class="s">read</span>
+      <span class="a">id-token</span>: <span class="s">write</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>: <span class="s">anthropics/claude-code-action@v1</span>
+        <span class="a">with</span>:
+          <span class="a">anthropic_api_key</span>: <span class="s">${{ secrets.ANTHROPIC_API_KEY }}</span>
+          <span class="a">prompt</span>: <span class="s">"Summarize yesterday's commits and open issues for the stand-up"</span>
+          <span class="a">claude_args</span>: <span class="s">|</span>
+            <span class="s">--model claude-sonnet-5-5</span>
+            <span class="s">--max-turns 10</span>
+            <span class="s">--allowedTools "mcp__github__list_commits,mcp__github__list_issues"</span></pre></div>
+<div class="codewrap" data-k="cron" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Read a cron line in plain words · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// cron.mjs: explains a five part cron line, the format GitHub Actions schedules use (always in UTC).</span>
+<span class="k">const</span> <span class="t">DAYS</span> = [<span class="s">"Sunday"</span>, <span class="s">"Monday"</span>, <span class="s">"Tuesday"</span>, <span class="s">"Wednesday"</span>, <span class="s">"Thursday"</span>, <span class="s">"Friday"</span>, <span class="s">"Saturday"</span>];
+
+<span class="k">function</span> explain(line) {
+  <span class="k">const</span> [min, hour, dom, mon, dow] = line.trim().split(/\s+/);
+  <span class="k">const</span> time = <span class="s">`${hour.padStart(2, "0")}:${min.padStart(2, "0")} UTC`</span>;
+  <span class="k">let</span> when = <span class="s">"every day"</span>;
+  <span class="k">if</span> (dow === <span class="s">"1-5"</span>) when = <span class="s">"every weekday"</span>;
+  <span class="k">else</span> <span class="k">if</span> (dow !== <span class="s">"*"</span>) when = <span class="s">"every "</span> + dow.split(<span class="s">","</span>).map(d =&gt; <span class="t">DAYS</span>[+d]).join(<span class="s">" and "</span>);
+  <span class="k">if</span> (dom !== <span class="s">"*"</span>) when = <span class="s">`on day ${dom} of every month`</span>;
+  <span class="k">return</span> <span class="s">`${line.padEnd(14)} -&gt; ${when} at ${time}`</span>;
+}
+
+<span class="k">for</span> (<span class="k">const</span> line <span class="k">of</span> [<span class="s">"0 9 * * *"</span>, <span class="s">"30 3 * * 1-5"</span>, <span class="s">"0 17 * * 5"</span>, <span class="s">"0 6 1 * *"</span>]) console.log(explain(line));
+
+<span class="c">// India is UTC + 5:30, so 03:30 UTC is 09:00 in India.</span>
+<span class="k">const</span> ist = (h, m) =&gt; { <span class="k">const</span> t = h * <span class="n">60</span> + m + <span class="n">330</span>; <span class="k">return</span> <span class="s">`${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")} IST`</span>; };
+console.log(<span class="s">"\n03:30 UTC is"</span>, ist(<span class="n">3</span>, <span class="n">30</span>));</pre><div class="out"><span>Output</span><pre>0 9 * * *      -&gt; every day at 09:00 UTC
+30 3 * * 1-5   -&gt; every weekday at 03:30 UTC
+0 17 * * 5     -&gt; every Friday at 17:00 UTC
+0 6 1 * *      -&gt; on day 1 of every month at 06:00 UTC
+
+03:30 UTC is 09:00 IST</pre></div></div>
+<p>A plain prompt gets no shell or GitHub tools until you allow them in <code>claude_args</code>. GitHub runs schedules only from the default branch.</p>
+<div class="codewrap" data-k="loop"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Repeat something during a session · 💬 Prompt to try</span><button type="button" class="copy">Copy</button></div><pre class="src main">/loop 10m check whether the staging deploy finished and tell me when it does
+/loop 1h /release-notes</pre><div class="note-out"><span>What happens</span><p>/loop runs a prompt or a slash command again on an interval while the session is open. Leave out the interval and Claude picks the pace.</p></div></div>
+</section>
+<section class="card reveal jsec easy-part" id="recipes" data-say="recipes"><div class="sec-num">Part 6</div><h2><span class="sec-em">🍳</span><span>Daily automation recipes</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<div class="codewrap" data-k="recipes"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Five daily recipes · ⌨️ Type this in your terminal</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># 1. Commit message from staged changes</span>
+<span class="k">claude</span> -p <span class="s">"Write a commit message for my staged changes and commit"</span> \
+  --allowedTools <span class="s">"Bash(git diff *),Bash(git status *),Bash(git commit *)"</span>
+
+<span class="c"># 2. Typo check on a pull request diff (in package.json scripts)</span>
+<span class="k">git</span> diff main | <span class="k">claude</span> -p <span class="s">"list each typo as file:line then the fix. nothing else."</span>
+
+<span class="c"># 3. Meeting notes to action items</span>
+<span class="k">claude</span> -p <span class="s">"Turn notes/standup.md into a table of owner, task and due date"</span> &gt; actions.md
+
+<span class="c"># 4. Clean a messy spreadsheet export</span>
+<span class="k">claude</span> -p <span class="s">"Read sales.csv, fix the date formats to YYYY-MM-DD, remove duplicate rows, save clean.csv"</span> \
+  --allowedTools <span class="s">"Read,Write"</span>
+
+<span class="c"># 5. Explain a failing build in CI</span>
+<span class="k">npm</span> test <span class="n">2</span>&gt;&amp;<span class="n">1</span> | tail -<span class="n">80</span> | <span class="k">claude</span> -p <span class="s">"explain why this failed and the smallest fix"</span></pre></div>
+<div class="scenario"><b>🏢 Real scenario: an accounts team</b>Every Monday a scheduled job runs the invoice script from this chapter. It reads the PDFs, returns JSON, and the script posts the list of invoices more than 30 days late to the team channel. Nobody opens a spreadsheet.</div>
+<div class="cl-put"><b>A safe recipe has four parts:</b> a clear prompt, the smallest <code>--allowedTools</code> list, an output you can check (a file, JSON or an exit code), and <code>--max-turns</code> so it cannot run for ever.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every file name, folder, setting and command on this page was checked against the official Claude and Claude Code documentation in October 2026.</p>
+  <nav class="pager"><a class="prev" href="./claude-mcp.html" data-topic="claude-mcp"><small>← Previous chapter</small><b>🔌 MCP servers</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script>
+const PAGE = {"info": {"title": "Automate daily work with Claude", "panels": [{"s": [["e", "📦"], ["t", "plugin.json", {"b": 1}]], "h": "Plugins", "t": "Skills, agents, hooks and MCP in one folder.", "more": "Install with /plugin install."}, {"s": [["e", "🧾"], ["t", "claude -p", {"b": 1}]], "h": "Scripts", "t": "Run once, print, exit.", "more": "Check the exit code."}, {"s": [["e", "🧮"], ["t", "--json-schema", {"b": 1}]], "h": "Data", "t": "Get structured_output back.", "more": "Feed it to the next step."}, {"s": [["e", "🐙"], ["t", "@claude", {"b": 1}]], "h": "GitHub", "t": "Mentions, reviews and schedules.", "more": "Keys only in secrets."}], "remember": "Small prompt, few tools, checkable output, turn limit."}, "real": [["🛒", "An online shop", "A nightly job asks Claude for any product page with a missing price or image and opens one issue listing them."], ["🏦", "A finance team", "Uses claude -p with a JSON schema to read vendor invoices and load them straight into their accounts sheet."], ["👩‍💻", "An open source project", "Answers @claude in issues and reviews every pull request with the code-review plugin."]], "quiz": [{"lv": "e", "q": "What is the only file inside .claude-plugin/?", "o": ["plugin.json", "SKILL.md", "hooks.json", ".mcp.json"], "a": 0, "hint": "The manifest.", "why": "Everything else sits at the plugin root."}, {"lv": "e", "q": "What does claude -p do?", "o": ["Runs once, prints the answer and exits", "Opens plan mode", "Prints the price", "Pauses Claude"], "a": 0, "hint": "Print mode.", "why": "It makes Claude usable in scripts."}, {"lv": "e", "q": "Where should the API key for GitHub Actions be?", "o": ["In repository secrets", "In the workflow file", "In CLAUDE.md", "In the README"], "a": 0, "hint": "Never in a file.", "why": "Use ${{ secrets.ANTHROPIC_API_KEY }}."}, {"lv": "m", "q": "How is the release-notes skill in the team-toolkit plugin called?", "o": ["/team-toolkit:release-notes", "/release-notes", "/plugin release-notes", "@release-notes"], "a": 0, "hint": "Plugin name first.", "why": "Plugin skills are namespaced."}, {"lv": "m", "q": "Which flag makes a script run the same on every machine?", "o": ["--bare", "--verbose", "--continue", "--debug"], "a": 0, "hint": "Skips local setup.", "why": "It skips hooks, plugins, MCP, memory and CLAUDE.md."}, {"lv": "m", "q": "Where does --json-schema data appear?", "o": ["structured_output", "result", "session_id", "stdout only as text"], "a": 0, "hint": "Structured.", "why": "Check it is present before use."}, {"lv": "h", "q": "What does \"0 9 * * *\" mean in a GitHub schedule?", "o": ["Every day at 09:00 UTC", "Every 9 minutes", "At 09:00 local time", "On the 9th"], "a": 0, "hint": "UTC.", "why": "GitHub cron lines are in UTC."}, {"lv": "h", "q": "Why add --max-turns to an unattended run?", "o": ["So it cannot run for ever", "To make it smarter", "To save the key", "It is required"], "a": 0, "hint": "A safety limit.", "why": "It caps the number of turns."}, {"lv": "x", "q": "Bash(git diff *) allows which command?", "o": ["git diff --staged", "git diff-index", "git push", "rm -rf"], "a": 0, "hint": "The space before * matters.", "why": "Without the space it would also match git diff-index."}, {"lv": "x", "q": "A broken plugin has skills.md inside .claude-plugin/. What happens?", "o": ["It does not load", "It loads as a skill", "It replaces plugin.json", "Claude asks"], "a": 0, "hint": "Wrong place.", "why": "Components saved there do not load."}], "calc": [{"lv": "e", "q": "In the invoice example, how many invoices are more than 30 days late?", "ans": "2", "hint": "Read the output.", "steps": ["Sharma Traders (45) and Patel Hardware (61)."]}, {"lv": "e", "q": "What is their total in rupees?", "ans": "173000", "hint": "Add them.", "steps": ["<span class=\"eq\">48,000 + 1,25,000 = 1,73,000<\/span>"], "alt": ["1,73,000", "173,000"]}, {"lv": "m", "q": "You want 09:00 in India (UTC + 5:30). What UTC hour and minute is that? Answer as HH:MM.", "ans": "03:30", "hint": "Subtract 5:30.", "steps": ["<span class=\"eq\">09:00 − 05:30 = 03:30<\/span>"], "alt": ["3:30"]}, {"lv": "m", "q": "A daily job costs $0.02 a run on weekdays only. About how many dollars in a 22 working day month?", "ans": "0.44", "hint": "Multiply.", "steps": ["<span class=\"eq\">22 × 0.02 = 0.44<\/span>"], "alt": ["$0.44"]}, {"lv": "h", "q": "The plugin check found how many problems in broken-kit?", "ans": "3", "hint": "Count the ✘ lines.", "steps": ["A space in the name, a file inside .claude-plugin and a skill folder with no SKILL.md."]}, {"lv": "x", "q": "A team of 12 each saves 15 minutes a day with recipes. Hours saved in 22 working days?", "ans": "66", "hint": "People × minutes × days ÷ 60.", "steps": ["<span class=\"eq\">12 × 15 × 22 ÷ 60 = 66<\/span>"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter turns Claude into everyday automation: plugins, scripts, structured data, GitHub Actions and schedules.", "hi": "यह अध्याय Claude से रोज़ का automation बनाता है: plugins, scripts, GitHub Actions।", "kn": "ಈ ಅಧ್ಯಾಯ Claude ಮೂಲಕ ದಿನನಿತ್ಯದ automation ಕಲಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ Claude ଦ୍ୱାରା ଦୈନିକ automation ଶିଖାଏ।", "ar": "يحوّل هذا الفصل Claude إلى أتمتة يومية: إضافات وسكربتات وGitHub Actions.", "de": "Dieses Kapitel macht Claude zur Alltagsautomatisierung: Plugins, Skripte, GitHub Actions."}, {"id": "plugins", "h": "Plugins", "en": "A plugin bundles skills, agents, hooks and MCP servers. Only plugin dot json goes in the dot claude plugin folder.", "hi": "Plugin skills, agents, hooks और MCP को एक folder में रखता है।", "kn": "Plugin skills, agents, hooks, MCP ಅನ್ನು ಒಂದೇ folder ನಲ್ಲಿ ಇಡುತ್ತದೆ.", "or": "Plugin skills, agents, hooks ଓ MCP କୁ ଗୋଟିଏ folder ରେ ରଖେ।", "ar": "الإضافة تجمع المهارات والوكلاء والخطافات وخوادم MCP في مجلد واحد.", "de": "Ein Plugin bündelt Skills, Agenten, Hooks und MCP-Server in einem Ordner."}, {"id": "headless", "h": "Scripts", "en": "Dash p runs Claude once and exits, so it works inside scripts. Limit tools with allowed tools.", "hi": "-p Claude को एक बार चलाकर बंद करता है, scripts में काम आता है।", "kn": "-p Claude ಅನ್ನು ಒಮ್ಮೆ ಚಲಾಯಿಸಿ ನಿಲ್ಲಿಸುತ್ತದೆ.", "or": "-p Claude କୁ ଥରେ ଚଲାଇ ବନ୍ଦ କରେ।", "ar": "الخيار -p يشغّل Claude مرة واحدة ثم يخرج، فيعمل داخل السكربتات.", "de": "-p startet Claude einmal und beendet sich, ideal für Skripte."}, {"id": "json", "h": "Data", "en": "Ask for a JSON schema and read the structured output field in your script.", "hi": "JSON schema माँगें और structured_output पढ़ें।", "kn": "JSON schema ಕೇಳಿ, structured_output ಓದಿ.", "or": "JSON schema ମାଗି structured_output ପଢନ୍ତୁ।", "ar": "اطلب مخطط JSON واقرأ الحقل structured_output.", "de": "Fordere ein JSON-Schema an und lies structured_output."}, {"id": "gha", "h": "GitHub", "en": "Install the GitHub app from Claude Code, keep the key in secrets, and mention at Claude in a comment.", "hi": "GitHub app लगाएँ, key secrets में रखें, comment में @claude लिखें।", "kn": "GitHub app ಹಾಕಿ, key secrets ನಲ್ಲಿ ಇಡಿ, @claude ಬರೆಯಿರಿ.", "or": "GitHub app ଲଗାନ୍ତୁ, key secrets ରେ ରଖନ୍ତୁ, @claude ଲେଖନ୍ତୁ।", "ar": "ثبّت تطبيق GitHub واحفظ المفتاح في الأسرار واكتب @claude في تعليق.", "de": "Installiere die GitHub-App, lege den Schlüssel in Secrets ab und erwähne @claude."}, {"id": "schedule", "h": "Schedules", "en": "A cron line runs the action on a timer in UTC. Allow only the tools the prompt needs.", "hi": "Cron line UTC में समय पर action चलाती है।", "kn": "Cron line UTC ನಲ್ಲಿ action ಚಲಾಯಿಸುತ್ತದೆ.", "or": "Cron line UTC ରେ action ଚଲାଏ।", "ar": "سطر cron يشغّل الإجراء في موعد بتوقيت UTC.", "de": "Eine Cron-Zeile startet die Action nach Zeitplan in UTC."}, {"id": "recipes", "h": "Recipes", "en": "Commit messages, typo checks, action items, clean spreadsheets and failed builds, each a one line command.", "hi": "Commit message, typo check, action items, साफ़ spreadsheet, हर एक एक line में।", "kn": "Commit message, typo, action items, spreadsheet, ಒಂದೇ line.", "or": "Commit message, typo, action items, spreadsheet, ଗୋଟିଏ line ରେ।", "ar": "رسائل الإيداع والأخطاء الإملائية والمهام والجداول، كل منها بسطر واحد.", "de": "Commit-Nachrichten, Tippfehler, Aufgaben und Tabellen, jeweils eine Zeile."}, {"id": "practice", "h": "Practice", "en": "Practise plugin layout, flags and cron times.", "hi": "Plugin layout, flags और cron का अभ्यास।", "kn": "Plugin layout, flags, cron ಅಭ್ಯಾಸ.", "or": "Plugin layout, flags ଓ cron ଅଭ୍ୟାସ।", "ar": "تدرّب على بنية الإضافة والخيارات وأوقات cron.", "de": "Übe Plugin-Aufbau, Flags und Cron-Zeiten."}], "ex": [{"id": "skill-cmd", "lv": "e", "title": "Plugin skill command", "task": "<p>Write <code>skillCommand(plugin, skill)<\/code> that returns how you type a plugin skill, such as <code>/team-toolkit:release-notes<\/code>.<\/p>", "starter": "function skillCommand(plugin, skill) {\n  \n}", "tests": [{"call": "skillCommand(\"team-toolkit\", \"release-notes\")", "want": "/team-toolkit:release-notes"}, {"call": "skillCommand(\"my-first-plugin\", \"hello\")", "want": "/my-first-plugin:hello"}], "solution": "function skillCommand(plugin, skill) {\n  return `/${plugin}:${skill}`;\n}", "hint": "A template string.", "why": "Plugin skills always carry the plugin name."}, {"id": "allowed", "lv": "m", "title": "Build --allowedTools", "task": "<p>Write <code>allowed(cmds)<\/code>. Given an array of git sub commands like <code>[\"diff\", \"commit\"]<\/code>, return <code>Bash(git diff *),Bash(git commit *)<\/code>.<\/p>", "starter": "function allowed(cmds) {\n  \n}", "tests": [{"call": "allowed([\"diff\", \"commit\"])", "want": "Bash(git diff *),Bash(git commit *)"}, {"call": "allowed([\"status\"])", "want": "Bash(git status *)"}], "solution": "function allowed(cmds) {\n  return cmds.map(c => `Bash(git ${c} *)`).join(\",\");\n}", "hint": "map, then join with a comma.", "why": "A narrow allow list keeps scripted runs safe."}, {"id": "to-utc", "lv": "h", "title": "Local time to a cron line", "task": "<p>Write <code>dailyCron(hour, minute, offsetMinutes)<\/code> that turns a local time into a daily GitHub cron line in UTC. India is <code>330<\/code>. Wrap past midnight correctly.<\/p>", "starter": "function dailyCron(hour, minute, offsetMinutes) {\n  \n}", "tests": [{"call": "dailyCron(9, 0, 330)", "want": "30 3 * * *"}, {"call": "dailyCron(18, 30, 330)", "want": "0 13 * * *"}, {"call": "dailyCron(2, 0, 330)", "want": "30 20 * * *"}], "solution": "function dailyCron(hour, minute, offsetMinutes) {\n  const t = ((hour * 60 + minute - offsetMinutes) % 1440 + 1440) % 1440;\n  return `${t % 60} ${Math.floor(t / 60)} * * *`;\n}", "hint": "Work in minutes since midnight and keep the result between 0 and 1439.", "why": "Schedules in the wrong time zone are the most common automation mistake."}], "dg": {}, "lanes": {}, "play": {}};
+JSPLAY.page({ title: "Daily Automation: Plugins, Scripts and GitHub", subject: "master-claude" });
+CLAUDE_PAGE.wire();
+</script>
+</body>
+</html>
