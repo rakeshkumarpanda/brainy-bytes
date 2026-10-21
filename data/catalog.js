@@ -2633,6 +2633,45 @@ function claudeModules() {
         { id: "valid-name", title: "Check an upload name", emoji: "🏋️", group: "Hard practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-settings-hooks", title: "settings.json, Permissions and Hooks", emoji: "🪝", page: "content/claude/claude-settings-hooks.html",
+        summary: "Settings files and precedence, permission rules with a run of deny, ask and allow matching, ready to copy team, personal and local settings, hook events and how hooks talk through stdin and exit codes, four hooks run for real (block dangerous commands, protect files with a JSON answer, add a release freeze notice, log every edit), the official format and notification hooks, and debugging with /hooks, /permissions and /status.",
+        keywords: ["settings.json", "settings.local.json", "permissions", "allow", "deny", "ask", "hooks", "PreToolUse", "PostToolUse", "UserPromptSubmit", "Notification", "exit code 2", "/hooks", "defaultMode"],
+        added: "2026-10-20",
+        sections: [
+        { id: "files", title: "The settings files and which one wins", emoji: "⚙️", group: "Beginner path", keywords: ["settings.json", "settings precedence", "managed settings", "settings.local.json", "$schema"] },
+        { id: "perms", title: "Permission rules: allow, ask and deny", emoji: "🚦", group: "Beginner path", keywords: ["permissions", "allow", "ask", "deny", "rule syntax", "Bash()", "Read()", "WebFetch domain"] },
+        { id: "copy", title: "Ready to copy settings files", emoji: "📄", group: "Beginner path", keywords: ["settings example", "env", "model", "defaultMode", "workspace trust"] },
+        { id: "hooks", title: "Hooks: code that runs on events", emoji: "🪝", group: "Beginner path", keywords: ["hooks", "events", "PreToolUse", "PostToolUse", "UserPromptSubmit", "Notification", "exit code 2", "stdin JSON"] },
+        { id: "block", title: "Hook 1: block dangerous commands", emoji: "⛔", group: "Beginner path", keywords: ["PreToolUse", "block command", "exit 2", "rm -rf", "force push"] },
+        { id: "protect", title: "Hook 2: protect secret files, with a JSON answer", emoji: "🔒", group: "Lesson", keywords: ["protect files", "permissionDecision", "deny", "JSON output", ".env"] },
+        { id: "context", title: "Hook 3: add live facts to prompts", emoji: "📣", group: "Lesson", keywords: ["UserPromptSubmit", "additionalContext", "release freeze", "inject context"] },
+        { id: "after", title: "Hook 4: after every edit, log, format or notify", emoji: "🧹", group: "Lesson", keywords: ["PostToolUse", "audit log", "prettier", "Notification hook", "osascript"] },
+        { id: "check", title: "Check and debug", emoji: "🩺", group: "Lesson", keywords: ["/hooks", "/permissions", "/status", "debug hooks", "claude --debug"] },
+        { id: "banned", title: "Spot a banned command", emoji: "🏋️", group: "Easy practice" },
+        { id: "decide", title: "deny, ask, allow", emoji: "🏋️", group: "Medium practice" },
+        { id: "hook-answer", title: "Build a hook answer", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "claude-subagents", title: "Subagents and Output Styles", emoji: "🤖", page: "content/claude/claude-subagents.html",
+        summary: "What subagents are and how much context they save, built-in agents, creating an agent file step by step and the agents.md name check, every frontmatter field with a checker run on four files, ready to copy test-runner and doc-researcher agents, three ways to call an agent and --agent sessions, agent memory, and built-in and custom output styles.",
+        keywords: ["subagents", ".claude/agents", "agents.md", "agent file", "Explore", "Plan", "tools", "model", "maxTurns", "memory", "@-mention", "--agent", "output styles", "keep-coding-instructions"],
+        added: "2026-10-20",
+        sections: [
+        { id: "what", title: "What a subagent is", emoji: "🤖", group: "Beginner path", keywords: ["subagent", "delegation", "own context window", "summary"] },
+        { id: "builtin", title: "Built-in subagents you already have", emoji: "🧩", group: "Beginner path", keywords: ["Explore", "Plan", "general-purpose", "built-in agents"] },
+        { id: "create", title: "Create your first subagent, step by step", emoji: "🛠️", group: "Beginner path", keywords: ["create subagent", "agent file", "system prompt", "agents.md"] },
+        { id: "fields", title: "Every field in an agent file", emoji: "🏷️", group: "Lesson", keywords: ["frontmatter", "tools", "model", "permissionMode", "maxTurns", "skills", "mcpServers", "memory", "isolation worktree"] },
+        { id: "gallery", title: "Ready to copy agents", emoji: "🗂️", group: "Beginner path", keywords: ["test runner agent", "research agent", "agent examples"] },
+        { id: "use", title: "Calling a subagent", emoji: "📣", group: "Beginner path", keywords: ["invoke subagent", "@-mention", "--agent", "parallel subagents"] },
+        { id: "memory", title: "Agents that remember", emoji: "🧠", group: "Lesson", keywords: ["agent memory", "persistent memory", "memory field"] },
+        { id: "styles", title: "Output styles: change how Claude talks for a whole session", emoji: "🎨", group: "Beginner path", keywords: ["output styles", "Concise", "Explanatory", "Learning", "Proactive", "keep-coding-instructions", "/output-style"] },
+        { id: "agent-valid", title: "Is the agent file valid?", emoji: "🏋️", group: "Easy practice" },
+        { id: "read-only", title: "Is it read only?", emoji: "🏋️", group: "Medium practice" },
+        { id: "saved", title: "Context saved", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
