@@ -2747,6 +2747,25 @@ function claudeModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "claude-capstone", title: "Capstone", emoji: "🏁", blurb: "Put it all together: the full file map and a complete setup built step by step.", topics: [
+      { id: "claude-file-map", title: "Capstone: Which File Holds What", emoji: "🗺️", page: "content/claude/claude-file-map.html",
+        summary: "The complete Claude file map with what goes in and stays out of each file, the real names behind common wrong ones, a router run on eleven example instructions, a full project setup with a checker that finds two problems, a homework helper with CLAUDE.md, a quiz skill and a claude.ai Project version, and a six week practice path.",
+        keywords: ["file map", "CLAUDE.md", "rules", "SKILL.md", "agents", "settings.json", ".mcp.json", "what goes where", "homework helper", "capstone"],
+        added: "2026-10-20",
+        sections: [
+        { id: "map", title: "Every file, and what goes in it", emoji: "🗺️", group: "Beginner path", keywords: ["file map", "which file", "what goes where"] },
+        { id: "names", title: "The real names behind the names people use", emoji: "🔎", group: "Beginner path", keywords: ["rules.md", "skills.md", "agents.md", "prompt file", "name check"] },
+        { id: "decide", title: "Decide where an instruction belongs", emoji: "🧭", group: "Beginner path", keywords: ["decision guide", "hook or CLAUDE.md", "skill or rule"] },
+        { id: "setup", title: "A complete project, checked for real", emoji: "🏗️", group: "Lesson", keywords: ["project setup", "full example", "checker"] },
+        { id: "kid", title: "Build a homework helper, step by step", emoji: "🧒", group: "Beginner path", keywords: ["homework helper", "kids", "claude.ai Projects", "beginner build"] },
+        { id: "next", title: "Your next level, one week at a time", emoji: "🚀", group: "Beginner path", keywords: ["learning path", "next steps", "practice plan"] },
+        { id: "kind", title: "Hook or CLAUDE.md?", emoji: "🏋️", group: "Easy practice" },
+        { id: "skill-path", title: "Skill path", emoji: "🏋️", group: "Medium practice" },
+        { id: "has-secret", title: "Find a secret", emoji: "🏋️", group: "Hard practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
