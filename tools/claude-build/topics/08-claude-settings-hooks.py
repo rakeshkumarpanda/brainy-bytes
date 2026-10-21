@@ -1,80 +1,82 @@
 # Chapter 8: settings.json, permission rules and hooks. Scopes and precedence, allow, ask and deny, ready to copy settings, hook events, real hooks run with real JSON.
-from ckit import part, run, show, cli, js_, say, quiz, calc, ex, panel, hook
+from ckit import part, cli, js_, say, quiz, calc, panel, hook
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
 
-BLOCK = '''
-// PreToolUse hook for Bash: block a few commands that should never run.
-// Claude Code sends the tool call as JSON on stdin.
-let raw = "";
-for await (const chunk of process.stdin) raw += chunk;
-const { tool_input } = JSON.parse(raw);
-const cmd = tool_input.command ?? "";
+BLOCK = r'''
+# PreToolUse hook for Bash: block a few commands that should never run.
+# Claude Code sends the tool call as JSON on stdin.
+import json
+import re
+import sys
 
-const banned = [
-  [/\\brm\\s+-rf\\s+(\\/|~|\\*)/, "deleting whole folders is not allowed"],
-  [/git\\s+push\\b.*--force/, "force pushing is not allowed, open a pull request instead"],
-  [/drop\\s+table/i, "dropping tables is not allowed"],
-];
+cmd = json.load(sys.stdin)["tool_input"].get("command", "")
 
-for (const [pattern, reason] of banned) {
-  if (pattern.test(cmd)) {
-    console.error(`Blocked: ${reason}. Command was: ${cmd}`);   // stderr goes back to Claude
-    process.exit(2);                                              // exit 2 = block this tool call
-  }
-}
-process.exit(0);                                                  // exit 0 = no objection
+BANNED = [
+    (r"\brm\s+-rf\s+(/|~|\*)", "deleting whole folders is not allowed"),
+    (r"git\s+push\b.*--force", "force pushing is not allowed, open a pull request instead"),
+    (r"(?i)drop\s+table", "dropping tables is not allowed"),
+]
+
+for pattern, reason in BANNED:
+    if re.search(pattern, cmd):
+        print(f"Blocked: {reason}. Command was: {cmd}", file=sys.stderr)  # stderr goes back to Claude
+        sys.exit(2)                                                       # exit 2 = block this tool call
+
+sys.exit(0)                                                               # exit 0 = no objection
 '''
 
-PROTECT = '''
-// PreToolUse hook for Edit and Write: refuse to touch secret or generated files.
-// It answers with JSON instead of an exit code, so it can give a clear reason.
-let raw = "";
-for await (const chunk of process.stdin) raw += chunk;
-const file = (JSON.parse(raw).tool_input.file_path ?? "").replaceAll("\\\\", "/");
+PROTECT = r'''
+# PreToolUse hook for Edit and Write: refuse to touch secret or generated files.
+# It answers with JSON instead of an exit code, so it can give a clear reason.
+import json
+import sys
 
-const protectedParts = [".env", "package-lock.json", ".git/", "src/generated/"];
-const hit = protectedParts.find(p => file.includes(p));
+path = json.load(sys.stdin)["tool_input"].get("file_path", "").replace("\\", "/")
 
-if (hit) {
-  console.log(JSON.stringify({
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: "deny",
-      permissionDecisionReason: `${file} is protected (${hit}). Ask the user to change it by hand.`,
-    },
-  }));
-}
+PROTECTED = [".env", "uv.lock", ".git/", "app/generated/"]
+hit = next((p for p in PROTECTED if p in path), None)
+
+if hit:
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": f"{path} is protected ({hit}). Ask the user to change it by hand.",
+        }
+    }))
 '''
 
-CONTEXT = '''
-// UserPromptSubmit hook: add today's release status to every prompt.
-import { readFileSync, existsSync } from "node:fs";
+CONTEXT = r'''
+# UserPromptSubmit hook: add today's release status to every prompt about releases.
+import json
+import re
+import sys
+from pathlib import Path
 
-let raw = "";
-for await (const chunk of process.stdin) raw += chunk;
-const { prompt } = JSON.parse(raw);
+prompt = json.load(sys.stdin)["prompt"]
+freeze_file = Path("release-freeze.txt")
+freeze = freeze_file.read_text().strip() if freeze_file.exists() else ""
 
-const freeze = existsSync("release-freeze.txt") ? readFileSync("release-freeze.txt", "utf8").trim() : "";
-if (freeze && /deploy|release|merge/i.test(prompt)) {
-  console.log(JSON.stringify({
-    hookSpecificOutput: { hookEventName: "UserPromptSubmit", additionalContext: "Release status: " + freeze },
-  }));
-}
+if freeze and re.search(r"(?i)deploy|release|merge", prompt):
+    print(json.dumps({
+        "hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": "Release status: " + freeze}
+    }))
 '''
 
-AUDIT = '''
-// PostToolUse hook for Edit and Write: keep a simple audit log of every file Claude changed.
-import { appendFileSync, readFileSync } from "node:fs";
+AUDIT = r'''
+# PostToolUse hook for Edit and Write: keep a simple audit log of every file Claude changed.
+import json
+import sys
+from pathlib import Path
 
-let raw = "";
-for await (const chunk of process.stdin) raw += chunk;
-const { tool_name, tool_input, session_id } = JSON.parse(raw);
+event = json.load(sys.stdin)
+log = Path(".claude/edits.log")
+with log.open("a") as f:
+    f.write(f"{event['session_id']} {event['tool_name']} {event['tool_input']['file_path']}\n")
 
-appendFileSync(".claude/edits.log", `${session_id} ${tool_name} ${tool_input.file_path}\\n`);
-console.error("log now has", readFileSync(".claude/edits.log", "utf8").trim().split("\\n").length, "line(s)");
+print("log now has", len(log.read_text().splitlines()), "line(s)", file=sys.stderr)
 '''
-
 
 def ev(name, tool=None, **inp):
     d = {'session_id': 'abc123', 'cwd': '/home/asha/shop', 'hook_event_name': name}
@@ -92,8 +94,8 @@ CODES = {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
-      "Bash(npm run lint)",
-      "Bash(npm run test *)",
+      "Bash(ruff check *)",
+      "Bash(pytest *)",
       "Bash(git status)",
       "Bash(git diff *)"
     ],
@@ -132,45 +134,19 @@ CODES = {
   }
 }
 ''', '.claude/settings.local.json (just you, this project, not committed)'),
-    'match': run('''
-// A model of how Claude Code checks permission rules for a Bash command:
-// deny first, then ask, then allow. The first list with a match decides.
-const rules = {
-  deny:  ["Bash(rm *)", "Bash(curl *)"],
-  ask:   ["Bash(git push *)"],
-  allow: ["Bash(npm run *)", "Bash(git *)"],
-};
-
-function matches(rule, cmd) {
-  const pattern = rule.slice(5, -1);                       // text inside Bash(...)
-  const re = new RegExp("^" + pattern.split("*").map(s => s.replace(/[.+?^${}()|[\\]\\\\]/g, "\\\\$&")).join(".*") + "$");
-  return re.test(cmd);
-}
-
-function decide(cmd) {
-  for (const list of ["deny", "ask", "allow"]) {
-    if (rules[list].some(r => matches(r, cmd))) return list;
-  }
-  return "ask (no rule, so the mode decides)";
-}
-
-for (const cmd of ["npm run test", "git status", "git push origin main", "rm -rf build", "/bin/rm -rf build", "python manage.py migrate"]) {
-  console.log(cmd.padEnd(26), "->", decide(cmd));
-}
-''', 'deny, then ask, then allow'),
-    'block': hook(BLOCK, [ev('PreToolUse', 'Bash', command='npm test'), ev('PreToolUse', 'Bash', command='rm -rf ~'), ev('PreToolUse', 'Bash', command='git push origin main --force')],
-                  'Block dangerous commands', name='.claude/hooks/block-dangerous.mjs',
-                  settings={'hooks': {'PreToolUse': [{'matcher': 'Bash', 'hooks': [{'type': 'command', 'command': 'node "$CLAUDE_PROJECT_DIR"/.claude/hooks/block-dangerous.mjs'}]}]}}),
-    'protect': hook(PROTECT, [ev('PreToolUse', 'Edit', file_path='/home/asha/shop/src/cart.ts'), ev('PreToolUse', 'Write', file_path='/home/asha/shop/.env')],
-                    'Protect secret and generated files', name='.claude/hooks/protect-files.mjs',
-                    settings={'hooks': {'PreToolUse': [{'matcher': 'Edit|Write', 'hooks': [{'type': 'command', 'command': 'node "$CLAUDE_PROJECT_DIR"/.claude/hooks/protect-files.mjs'}]}]}}),
+    'block': hook(BLOCK, [ev('PreToolUse', 'Bash', command='pytest -q'), ev('PreToolUse', 'Bash', command='rm -rf ~'), ev('PreToolUse', 'Bash', command='git push origin main --force')],
+                  'Block dangerous commands', name='.claude/hooks/block_dangerous.py',
+                  settings={'hooks': {'PreToolUse': [{'matcher': 'Bash', 'hooks': [{'type': 'command', 'command': 'python3 "$CLAUDE_PROJECT_DIR"/.claude/hooks/block_dangerous.py'}]}]}}),
+    'protect': hook(PROTECT, [ev('PreToolUse', 'Edit', file_path='/home/asha/shop/app/cart.py'), ev('PreToolUse', 'Write', file_path='/home/asha/shop/.env')],
+                    'Protect secret and generated files', name='.claude/hooks/protect_files.py',
+                    settings={'hooks': {'PreToolUse': [{'matcher': 'Edit|Write', 'hooks': [{'type': 'command', 'command': 'python3 "$CLAUDE_PROJECT_DIR"/.claude/hooks/protect_files.py'}]}]}}),
     'context': hook(CONTEXT, [ev('UserPromptSubmit', prompt='fix the typo on the about page'), ev('UserPromptSubmit', prompt='deploy the new cart to production')],
-                    'Add live facts to every prompt', name='.claude/hooks/release-status.mjs',
-                    settings={'hooks': {'UserPromptSubmit': [{'hooks': [{'type': 'command', 'command': 'node "$CLAUDE_PROJECT_DIR"/.claude/hooks/release-status.mjs'}]}]}},
+                    'Add live facts to every prompt', name='.claude/hooks/release_status.py',
+                    settings={'hooks': {'UserPromptSubmit': [{'hooks': [{'type': 'command', 'command': 'python3 "$CLAUDE_PROJECT_DIR"/.claude/hooks/release_status.py'}]}]}},
                     more={'release-freeze.txt': 'FROZEN until Friday 24 Oct for the Diwali sale. Only hotfixes with a ticket.'}),
-    'audit': hook(AUDIT, [ev('PostToolUse', 'Edit', file_path='src/cart.ts'), ev('PostToolUse', 'Write', file_path='tests/cart.test.ts')],
-                  'Log every file Claude changes', name='.claude/hooks/audit-log.mjs',
-                  settings={'hooks': {'PostToolUse': [{'matcher': 'Edit|Write', 'hooks': [{'type': 'command', 'command': 'node "$CLAUDE_PROJECT_DIR"/.claude/hooks/audit-log.mjs'}]}]}}),
+    'audit': hook(AUDIT, [ev('PostToolUse', 'Edit', file_path='app/cart.py'), ev('PostToolUse', 'Write', file_path='tests/test_cart.py')],
+                  'Log every file Claude changes', name='.claude/hooks/audit_log.py',
+                  settings={'hooks': {'PostToolUse': [{'matcher': 'Edit|Write', 'hooks': [{'type': 'command', 'command': 'python3 "$CLAUDE_PROJECT_DIR"/.claude/hooks/audit_log.py'}]}]}}),
     'notify': js_('''
 {
   "hooks": {
@@ -188,14 +164,14 @@ for (const cmd of ["npm run test", "git status", "git push origin main", "rm -rf
   }
 }
 ''', '~/.claude/settings.json: a desktop alert when Claude is waiting (macOS)'),
-    'prettier': js_('''
+    'formatter': js_('''
 {
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "jq -r '.tool_input.file_path' | xargs npx prettier --write" }
+          { "type": "command", "command": "jq -r '.tool_input.file_path' | xargs ruff format" }
         ]
       }
     ]
@@ -225,10 +201,16 @@ PARTS = [
 <div class="warn">Settings files are strict JSON. A comment or a trailing comma breaks the file. Add the <code>$schema</code> line to get autocomplete and checks in your editor, and run <code>/status</code> to confirm what loaded.</div>
 ''', easy=True, files=['~/.claude/settings.json', '.claude/settings.json', '.claude/settings.local.json'], kw=['settings.json', 'settings precedence', 'managed settings', 'settings.local.json', '$schema']),
     part('perms', '🚦', 'Permission rules: allow, ask and deny', '''
-<p>A rule names a tool, and optionally what it may touch: <code>Bash(npm run test *)</code>, <code>Read(./.env)</code>, <code>Edit(src/**)</code>, <code>WebFetch(domain:example.com)</code>. A <code>*</code> matches anything.</p>
+<p>A rule names a tool, and optionally what it may touch: <code>Bash(pytest *)</code>, <code>Read(./.env)</code>, <code>Edit(app/**)</code>, <code>WebFetch(domain:example.com)</code>. A <code>*</code> matches anything.</p>
 <ul><li><b>allow</b>: run without asking.</li><li><b>ask</b>: always ask, even in a relaxed mode.</li><li><b>deny</b>: never run.</li></ul>
 <p>Rules are checked <b>deny first, then ask, then allow</b>. An allow rule can never make an exception to a deny rule.</p>
-[[match]]
+<div class="tw"><table class="jt"><tr><th>Command</th><th>Rules: deny <code>Bash(rm *)</code>, ask <code>Bash(git push *)</code>, allow <code>Bash(pytest *)</code> and <code>Bash(git *)</code></th></tr>
+<tr><td><code>pytest tests/</code></td><td>allow</td></tr>
+<tr><td><code>git status</code></td><td>allow</td></tr>
+<tr><td><code>git push origin main</code></td><td>ask (ask is checked before allow)</td></tr>
+<tr><td><code>rm -rf build</code></td><td>deny</td></tr>
+<tr><td><code>/bin/rm -rf build</code></td><td>no rule matches, so the permission mode decides</td></tr>
+<tr><td><code>python manage.py migrate</code></td><td>no rule matches, so the permission mode decides</td></tr></table></div>
 <div class="warn">Look at the <code>/bin/rm</code> line. Pattern rules match the command as written, so <code>Bash(rm *)</code> does not catch <code>/bin/rm</code> or <code>bash -c 'rm ...'</code>. Use deny rules for clear cases and a <b>hook</b> for anything that truly must be stopped.</div>
 ''', easy=True, files=['.claude/settings.json'], kw=['permissions', 'allow', 'ask', 'deny', 'rule syntax', 'Bash()', 'Read()', 'WebFetch domain']),
     part('copy', '📄', 'Ready to copy settings files', '''
@@ -261,23 +243,23 @@ PARTS = [
 <li>Test it by piping a sample event into it, exactly as below.</li></ol>
 [[block]]
 <p>Claude sees the "Blocked" message and tries a safer way, or asks you.</p>
-''', easy=True, files=['.claude/hooks/block-dangerous.mjs', '.claude/settings.json'], kw=['PreToolUse', 'block command', 'exit 2', 'rm -rf', 'force push']),
+''', easy=True, files=['.claude/hooks/block_dangerous.py', '.claude/settings.json'], kw=['PreToolUse', 'block command', 'exit 2', 'rm -rf', 'force push']),
     part('protect', '🔒', 'Hook 2: protect secret files, with a JSON answer', '''
 <p>Instead of an exit code, a <code>PreToolUse</code> hook can print JSON with <code>permissionDecision</code> set to <code>deny</code>, <code>ask</code> or <code>allow</code>, plus a reason Claude will read.</p>
 [[protect]]
 <div class="tip">A hook that says <code>allow</code> still cannot override a deny rule in settings. Deny always wins.</div>
-''', files=['.claude/hooks/protect-files.mjs'], kw=['protect files', 'permissionDecision', 'deny', 'JSON output', '.env']),
+''', files=['.claude/hooks/protect_files.py'], kw=['protect files', 'permissionDecision', 'deny', 'JSON output', '.env']),
     part('context', '📣', 'Hook 3: add live facts to prompts', '''
 <p>A <code>UserPromptSubmit</code> hook can add text to Claude's context with <code>additionalContext</code>, nested inside <code>hookSpecificOutput</code>. Here it tells Claude about a release freeze, but only when the prompt is about deploying.</p>
 [[context]]
-''', files=['.claude/hooks/release-status.mjs'], kw=['UserPromptSubmit', 'additionalContext', 'release freeze', 'inject context']),
+''', files=['.claude/hooks/release_status.py'], kw=['UserPromptSubmit', 'additionalContext', 'release freeze', 'inject context']),
     part('after', '🧹', 'Hook 4: after every edit, log, format or notify', '''
 [[audit]]
 <p>Two more from the official guide, ready to paste:</p>
-[[prettier]]
+[[formatter]]
 [[notify]]
 <p>On Linux, swap the notification command for <code>notify-send 'Claude Code' 'Claude Code needs your attention'</code>. On Windows, use a PowerShell message box command.</p>
-''', files=['.claude/hooks/audit-log.mjs', '.claude/settings.json', '~/.claude/settings.json'], kw=['PostToolUse', 'audit log', 'prettier', 'Notification hook', 'osascript']),
+''', files=['.claude/hooks/audit_log.py', '.claude/settings.json', '~/.claude/settings.json'], kw=['PostToolUse', 'audit log', 'ruff format', 'Notification hook', 'osascript']),
     part('check', '🩺', 'Check and debug', '''
 [[hook-cmds]]
 <ul><li><b>Hook not firing?</b> Event names are case sensitive (<code>PreToolUse</code>, not <code>preToolUse</code>). The matcher must match the tool name.</li>
@@ -305,13 +287,13 @@ DG = {
 }
 
 LANES = {
-    'events': {'t': 'Hooks along one request', 's': 'Step through a request and see which events fire.', 'code': 'session starts\nyou: "deploy the cart"\nClaude runs: git push --force\nClaude edits src/cart.ts\nClaude finishes',
+    'events': {'t': 'Hooks along one request', 's': 'Step through a request and see which events fire.', 'code': 'session starts\nyou: "deploy the cart"\nClaude runs: git push --force\nClaude edits app/cart.py\nClaude finishes',
                'lanes': ['What happens', 'Hook that fires'], 'tone': [2, 3],
                'steps': [{'l': 1, 'v': [['session starts'], ['SessionStart']], 'm': 'A SessionStart hook can load fresh facts.'},
                          {'l': 2, 'v': [['session starts', 'you send a prompt'], ['SessionStart', 'UserPromptSubmit: adds freeze notice']], 'm': 'Your prompt mentions deploy, so the release status is added.'},
                          {'l': 3, 'v': [['session starts', 'you send a prompt', 'Bash: git push --force'], ['SessionStart', 'UserPromptSubmit', 'PreToolUse: exit 2, blocked']], 'm': 'PreToolUse blocks the force push. Claude reads the reason.'},
-                         {'l': 4, 'v': [['session starts', 'you send a prompt', 'Bash: blocked', 'Edit src/cart.ts'], ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse: logged']], 'm': 'After the edit, PostToolUse logs or formats the file.'},
-                         {'l': 5, 'v': [['session starts', 'you send a prompt', 'Bash: blocked', 'Edit src/cart.ts', 'answer'], ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop']], 'm': 'When Claude finishes, a Stop hook can run final checks.'}]},
+                         {'l': 4, 'v': [['session starts', 'you send a prompt', 'Bash: blocked', 'Edit app/cart.py'], ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse: logged']], 'm': 'After the edit, PostToolUse logs or formats the file.'},
+                         {'l': 5, 'v': [['session starts', 'you send a prompt', 'Bash: blocked', 'Edit app/cart.py', 'answer'], ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop']], 'm': 'When Claude finishes, a Stop hook can run final checks.'}]},
 }
 
 INFO = {'title': 'Settings guide Claude, hooks guard it', 'panels': [
@@ -411,30 +393,14 @@ QUIZ = [
 
 CALC = [
     calc('e', 'How many levels are in the settings precedence list?', '5', 'Count them.', ['Managed, command line, local, project, user.']),
-    calc('e', 'In the hook run, which exit code did npm test get?', '0', 'Read the output.', ['npm test is not banned, so the hook exits 0.']),
-    calc('m', 'In the rule matching run, how many of the 6 commands were denied?', '1', 'Read the output.', ['Only rm -rf build matched a deny rule. /bin/rm was not matched.']),
+    calc('e', 'In the hook run, which exit code did pytest -q get?', '0', 'Read the output.', ['pytest is not banned, so the hook exits 0.']),
+    calc('m', 'In the rule matching table, how many of the 6 commands were denied?', '1', 'Read the table.', ['Only rm -rf build matched a deny rule. /bin/rm was not matched.']),
     calc('m', 'The team file allows 4 commands and your local file allows 1 more. How many allow rules apply?', '5', 'Lists are merged.', ['<span class="eq">4 + 1 = 5</span>']),
     calc('h', 'A hook takes 40 ms and runs on 300 tool calls a day. How many seconds a day does it add?', '12', 'Milliseconds to seconds.', ['<span class="eq">40 × 300 = 12,000 ms</span>', '<span class="eq">12,000 ÷ 1,000 = 12 s</span>']),
     calc('x', 'The audit log ran on 2 events. How many lines does .claude/edits.log hold at the end?', '2', 'One line per event.', ['Each PostToolUse event appends one line.']),
 ]
 
-EX = [
-    ex('banned', 'e', 'Spot a banned command', '<p>Write <code>isBanned(cmd)</code>. Return true when the command contains <code>rm -rf /</code>, <code>--force</code> together with <code>git push</code>, or <code>drop table</code> in any case.</p>',
-       'function isBanned(cmd) {\n  \n}\n',
-       [('isBanned("git push origin main --force")', True), ('isBanned("DROP TABLE users")', True), ('isBanned("npm test")', False), ('isBanned("git push origin main")', False)],
-       'function isBanned(cmd) {\n  const c = cmd.toLowerCase();\n  return c.includes("rm -rf /") || (c.includes("git push") && c.includes("--force")) || c.includes("drop table");\n}',
-       hint='Lowercase first, then <code>includes</code>.', why='This is the heart of a PreToolUse hook: look at the command, decide, and say why.'),
-    ex('decide', 'm', 'deny, ask, allow', '<p>Write <code>decide(cmd, rules)</code>. <code>rules</code> has lists <code>deny</code>, <code>ask</code>, <code>allow</code> of prefixes. Return the first list name, in that order, that has a prefix the command starts with. Return <code>"none"</code> if no list matches.</p>',
-       'function decide(cmd, rules) {\n  \n}\n',
-       [('decide("rm -rf x", { deny: ["rm "], ask: [], allow: ["rm "] })', 'deny'), ('decide("git push", { deny: [], ask: ["git push"], allow: ["git "] })', 'ask'), ('decide("npm test", { deny: [], ask: [], allow: ["npm "] })', 'allow'), ('decide("ls", { deny: [], ask: [], allow: [] })', 'none')],
-       'function decide(cmd, rules) {\n  for (const list of ["deny", "ask", "allow"]) {\n    if (rules[list].some(p => cmd.startsWith(p))) return list;\n  }\n  return "none";\n}',
-       hint='Loop over the three names in order.', why='The order is the whole point: deny can never be overruled by a broader allow.'),
-    ex('hook-answer', 'h', 'Build a hook answer', '<p>Write <code>answer(filePath)</code>. If the path contains <code>.env</code>, return the object <code>{ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: "protected" } }</code>. Otherwise return <code>null</code>.</p>',
-       'function answer(filePath) {\n  \n}\n',
-       [('answer("/app/.env")', {'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'deny', 'permissionDecisionReason': 'protected'}}), ('answer("/app/src/cart.ts")', None)],
-       'function answer(filePath) {\n  if (!filePath.includes(".env")) return null;\n  return { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: "protected" } };\n}',
-       hint='Return early for the safe case.', why='Getting the nesting exactly right is the most common hook mistake.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-settings-hooks', 'title': 'settings.json, Permissions and Hooks', 'short': 'Settings and hooks', 'emoji': '🪝', 'module': MODULE, 'minutes': 18,

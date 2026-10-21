@@ -7,7 +7,6 @@ Builds the fourteen chapter pages in `content/claude/` from the topic files in `
 ## Set up once
 
 ```bash
-cd tools/claude-build/box && npm ci && cd -
 python3 -m venv tools/claude-build/box/.venv
 tools/claude-build/box/.venv/bin/pip install -r tools/claude-build/box/requirements.txt
 ```
@@ -31,7 +30,7 @@ and `T`, and optionally `DG` for animations. Helpers come from `ckit.py`:
 | - | - |
 | `part(id, emoji, title, html, easy=True, files=[...])` | one part. `easy=True` keeps it on the beginner path |
 | `md`, `js_`, `cli`, `prompt`, `show` | files and commands that are shown, not run |
-| `run`, `test` | JavaScript, or a small project run with a command (`$PY` is the box Python) |
+| `test` | a small Python project run with a command (`$PY` is the box Python) |
 | `hook(script, events, label, settings=...)` | a hook script run with the JSON Claude Code sends on stdin |
 | `api_run(script, label, replies)` | Python SDK code run against the local stand-in API in `box/api/` |
 
@@ -40,8 +39,8 @@ and `T`, and optionally `DG` for animations. Helpers come from `ckit.py`:
 - Narration in all six languages for every part, plus `top` and `practice`.
 - No em dashes, en dashes or semicolons in prose.
 - At least one easy part per chapter.
-- Part ids and exercise ids must not collide.
-- Every exercise solution passes its tests and every starter fails them.
+- Part ids must be unique. Chapters have no coding exercises, so `EX = []` and the quiz carries the practice narration.
+- Code examples are Python only. Leave a code block out when a table or a short text explains the point just as well.
 
 ## Gotchas
 

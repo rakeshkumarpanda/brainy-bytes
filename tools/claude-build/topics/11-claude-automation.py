@@ -1,6 +1,6 @@
 # Chapter 11: daily automation. Plugins that bundle everything, claude -p in scripts, structured output,
 # GitHub Actions, schedules and a set of ready to use daily recipes.
-from ckit import part, run, test, show, md, cli, prompt, js_, say, quiz, calc, ex, panel, node_files
+from ckit import part, test, show, md, cli, prompt, js_, say, quiz, calc, panel
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
 
@@ -26,109 +26,35 @@ disable-model-invocation: true
 4. Write each line for a customer, not a developer.
 '''
 
-AGENT = '''
----
-name: reviewer
-description: Reviews changed code before a commit
-tools: Read, Grep, Glob, Bash
----
-
-Run git diff, then list Must fix, Should fix and Nice to have with file and line.
-'''
-
 HOOKS = '''
 {
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "hooks": [{ "type": "command", "command": "npx prettier --write \\"$CLAUDE_PROJECT_DIR\\"/src" }]
+        "hooks": [{ "type": "command", "command": "ruff format \\"$CLAUDE_PROJECT_DIR\\"/src" }]
       }
     ]
   }
 }
 '''
 
-MCP = '''
-{
-  "mcpServers": {
-    "claude-code-docs": { "type": "http", "url": "https://code.claude.com/docs/mcp" }
-  }
-}
-'''
-
-LAYOUT_CHECK = r'''
-// check-plugin.mjs: checks a plugin folder against the layout rules in the plugin docs.
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
-
-for (const dir of process.argv.slice(2)) {
-  const problems = [];
-  const manifestPath = join(dir, ".claude-plugin", "plugin.json");
-  let name = dir;
-  if (existsSync(manifestPath)) {
-    const m = JSON.parse(readFileSync(manifestPath, "utf8"));
-    name = m.name;
-    if (!m.name) problems.push("plugin.json has no name");
-    else if (/\s/.test(m.name)) problems.push("name may not contain spaces");
-  }
-  for (const f of readdirSync(join(dir, ".claude-plugin"))) {
-    if (f !== "plugin.json") problems.push(`.claude-plugin/${f} will not load: only plugin.json goes there`);
-  }
-  const found = [];
-  if (existsSync(join(dir, "skills"))) for (const s of readdirSync(join(dir, "skills"))) {
-    if (existsSync(join(dir, "skills", s, "SKILL.md"))) found.push(`skill  /${name}:${s}`);
-    else problems.push(`skills/${s} has no SKILL.md`);
-  }
-  if (existsSync(join(dir, "agents"))) for (const a of readdirSync(join(dir, "agents"))) found.push(`agent  ${name}:${a.replace(/\.md$/, "")}`);
-  if (existsSync(join(dir, "hooks", "hooks.json"))) {
-    const h = JSON.parse(readFileSync(join(dir, "hooks", "hooks.json"), "utf8"));
-    if (!h.hooks) problems.push('hooks/hooks.json needs a top level "hooks" key');
-    else found.push("hooks  " + Object.keys(h.hooks).join(", "));
-  }
-  if (existsSync(join(dir, ".mcp.json"))) found.push("mcp    " + Object.keys(JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers).join(", "));
-  console.log(`== ${dir}`);
-  for (const f of found) console.log("   " + f);
-  console.log(problems.length ? problems.map(p => "   ✘ " + p).join("\n") : "   ✔ layout looks right");
-}
-'''
-
-CRON = r'''
-// cron.mjs: explains a five part cron line, the format GitHub Actions schedules use (always in UTC).
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-function explain(line) {
-  const [min, hour, dom, mon, dow] = line.trim().split(/\s+/);
-  const time = `${hour.padStart(2, "0")}:${min.padStart(2, "0")} UTC`;
-  let when = "every day";
-  if (dow === "1-5") when = "every weekday";
-  else if (dow !== "*") when = "every " + dow.split(",").map(d => DAYS[+d]).join(" and ");
-  if (dom !== "*") when = `on day ${dom} of every month`;
-  return `${line.padEnd(14)} -> ${when} at ${time}`;
-}
-
-for (const line of ["0 9 * * *", "30 3 * * 1-5", "0 17 * * 5", "0 6 1 * *"]) console.log(explain(line));
-
-// India is UTC + 5:30, so 03:30 UTC is 09:00 in India.
-const ist = (h, m) => { const t = h * 60 + m + 330; return `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")} IST`; };
-console.log("\n03:30 UTC is", ist(3, 30));
-'''
-
 READ_JSON = r'''
-// read-result.mjs: a script reading the JSON that claude -p --output-format json prints.
-// result.json below is a hand written example of that shape, so the script can run here without a login.
-import { readFileSync } from "node:fs";
+# read_result.py: a script reading the JSON that claude -p --output-format json prints.
+# result.json below is a hand written example of that shape, so the script can run here without a login.
+import json
+import sys
 
-const r = JSON.parse(readFileSync("result.json", "utf8"));
-if (r.is_error || !r.structured_output) {
-  console.error("Claude did not return the data:", r.result);
-  process.exit(1);
-}
-const { invoices } = r.structured_output;
-const overdue = invoices.filter(i => i.days_late > 30);
-console.log(`${invoices.length} invoices, ${overdue.length} more than 30 days late:`);
-for (const i of overdue) console.log(` - ${i.customer}: ₹${i.amount.toLocaleString("en-IN")} (${i.days_late} days)`);
-console.log("cost of this run: $" + r.total_cost_usd.toFixed(4));
+r = json.load(open("result.json"))
+if r["is_error"] or "structured_output" not in r:
+    sys.exit("Claude did not return the data: " + r["result"])
+
+invoices = r["structured_output"]["invoices"]
+overdue = [i for i in invoices if i["days_late"] > 30]
+print(f"{len(invoices)} invoices, {len(overdue)} more than 30 days late:")
+for i in overdue:
+    print(f" - {i['customer']}: ₹{i['amount']:,} ({i['days_late']} days)")
+print(f"cost of this run: ${r['total_cost_usd']:.4f}")
 '''
 
 RESULT = '''
@@ -149,18 +75,6 @@ RESULT = '''
   }
 }
 '''
-
-PLUGIN_FILES = {
-    'team-toolkit/.claude-plugin/plugin.json': MANIFEST,
-    'team-toolkit/skills/release-notes/SKILL.md': SKILL,
-    'team-toolkit/agents/reviewer.md': AGENT,
-    'team-toolkit/hooks/hooks.json': HOOKS,
-    'team-toolkit/.mcp.json': MCP,
-    'broken-kit/.claude-plugin/plugin.json': '{ "name": "broken kit" }',
-    'broken-kit/.claude-plugin/skills.md': '# put here by mistake',
-    'broken-kit/skills/notes/README.md': 'no SKILL.md here',
-    'check-plugin.mjs': LAYOUT_CHECK,
-}
 
 CODES = {
     'tree': show('''
@@ -186,8 +100,8 @@ claude --plugin-dir ./team-toolkit           # try it in one session
 /plugin install plugin-dev@claude-plugins-official
 /plugin-dev:create-plugin a plugin with our review agent and release notes skill
 ''', 'Build, test and install plugins', result='validate prints ✔ Validation passed or names each field to fix. --plugin-dir loads the plugin for that session only.'),
-    'plugin-check': test(PLUGIN_FILES, 'node check-plugin.mjs team-toolkit broken-kit', 'Check two plugin folders',
-                         show=['check-plugin.mjs'], badge='▶ Runs a check of the plugin layout rules'),
+    'plugin-skill': md(SKILL, 'team-toolkit/skills/release-notes/SKILL.md'),
+    'plugin-hooks': js_(HOOKS, 'team-toolkit/hooks/hooks.json'),
     'headless': cli('''
 # Ask once and print the answer
 claude -p "What does the auth module do?"
@@ -212,8 +126,8 @@ claude -p "Read invoices/*.pdf and list each customer, amount and days late" \\
   --json-schema '{"type":"object","properties":{"invoices":{"type":"array","items":{"type":"object","properties":{"customer":{"type":"string"},"amount":{"type":"number"},"days_late":{"type":"integer"}},"required":["customer","amount","days_late"]}}},"required":["invoices"]}' \\
   > result.json
 ''', 'Ask for data in a fixed shape'),
-    'read-json': test(node_files({'result.json': RESULT, 'read-result.mjs': READ_JSON}), 'node read-result.mjs', 'Use the structured output in a script',
-                      show=['result.json', 'read-result.mjs'], badge='▶ Runs on an example of the JSON shape'),
+    'read-json': test({'result.json': RESULT, 'read_result.py': READ_JSON}, '$PY read_result.py', 'Use the structured output in a script',
+                      show=['result.json', 'read_result.py'], shown_cmd='python read_result.py', badge='▶ Runs on an example of the JSON shape'),
     'gha-setup': cli('''
 gh auth login            # once, so Claude Code can talk to GitHub
 claude
@@ -266,7 +180,6 @@ jobs:
             --max-turns 10
             --allowedTools "mcp__github__list_commits,mcp__github__list_issues"
 ''', '.github/workflows/daily-report.yml: a weekday morning report', lang='yaml', note='📄 Ready to copy'),
-    'cron': run(CRON, 'Read a cron line in plain words'),
     'loop': prompt('''
 /loop 10m check whether the staging deploy finished and tell me when it does
 /loop 1h /release-notes
@@ -276,7 +189,7 @@ jobs:
 claude -p "Write a commit message for my staged changes and commit" \\
   --allowedTools "Bash(git diff *),Bash(git status *),Bash(git commit *)"
 
-# 2. Typo check on a pull request diff (in package.json scripts)
+# 2. Typo check on a pull request diff
 git diff main | claude -p "list each typo as file:line then the fix. nothing else."
 
 # 3. Meeting notes to action items
@@ -287,7 +200,7 @@ claude -p "Read sales.csv, fix the date formats to YYYY-MM-DD, remove duplicate 
   --allowedTools "Read,Write"
 
 # 5. Explain a failing build in CI
-npm test 2>&1 | tail -80 | claude -p "explain why this failed and the smallest fix"
+python -m pytest 2>&1 | tail -80 | claude -p "explain why this failed and the smallest fix"
 ''', 'Five daily recipes'),
 }
 
@@ -297,11 +210,16 @@ PARTS = [
 [[tree]]
 [[manifest]]
 <div class="cl-put"><b>What goes where:</b> only <code>plugin.json</code> goes inside <code>.claude-plugin/</code>. Skills, agents, <code>hooks/hooks.json</code> and <code>.mcp.json</code> sit next to that folder at the plugin root. Plugin skills are called with the plugin name in front, such as <code>/team-toolkit:release-notes</code>.</div>
-[[plugin-check]]
+[[plugin-skill]]
+[[plugin-hooks]]
+<div class="tw"><table class="jt"><tr><th>Common mistake</th><th>What happens</th><th>Fix</th></tr>
+<tr><td><code>"name": "broken kit"</code></td><td>a plugin name may not contain spaces</td><td><code>"name": "broken-kit"</code></td></tr>
+<tr><td><code>.claude-plugin/skills.md</code></td><td>never loads, only <code>plugin.json</code> goes in that folder</td><td>move skills to <code>skills/&lt;name&gt;/SKILL.md</code></td></tr>
+<tr><td><code>skills/notes/README.md</code></td><td>the skill folder has no <code>SKILL.md</code>, so there is no skill</td><td>rename it to <code>SKILL.md</code> with front matter</td></tr></table></div>
 [[plugin-cmds]]
 ''', easy=True, files=['.claude-plugin/plugin.json', 'skills/', 'agents/', 'hooks/hooks.json', '.mcp.json'], kw=['plugin', 'plugin.json', 'manifest', 'marketplace', '--plugin-dir', 'claude plugin validate']),
     part('headless', '🧾', 'claude -p: use Claude in scripts', '''
-<p>The <code>-p</code> flag runs Claude Code once, prints the answer and exits. That makes it a normal command you can put in shell scripts, npm scripts and scheduled jobs.</p>
+<p>The <code>-p</code> flag runs Claude Code once, prints the answer and exits. That makes it a normal command you can put in shell scripts, Makefiles and scheduled jobs.</p>
 [[headless]]
 <div class="tw"><table class="jt"><tr><th>Flag</th><th>What it does</th></tr>
 <tr><td><code>--allowedTools</code></td><td>tools it may use without asking, in permission rule syntax</td></tr>
@@ -329,7 +247,11 @@ PARTS = [
     part('schedule', '⏰', 'Run it on a schedule', '''
 <p>With a <code>prompt</code> input, the action runs on any event, including a timer. GitHub schedules use cron lines in UTC.</p>
 [[gha-daily]]
-[[cron]]
+<div class="tw"><table class="jt"><tr><th>Cron line (minute hour day month weekday)</th><th>When it runs</th></tr>
+<tr><td><code>0 9 * * *</code></td><td>every day at 09:00 UTC</td></tr>
+<tr><td><code>30 3 * * 1-5</code></td><td>every weekday at 03:30 UTC, which is 09:00 in India</td></tr>
+<tr><td><code>0 17 * * 5</code></td><td>every Friday at 17:00 UTC</td></tr>
+<tr><td><code>0 6 1 * *</code></td><td>on day 1 of every month at 06:00 UTC</td></tr></table></div>
 <p>A plain prompt gets no shell or GitHub tools until you allow them in <code>claude_args</code>. GitHub runs schedules only from the default branch.</p>
 [[loop]]
 ''', files=['.github/workflows/daily-report.yml'], kw=['schedule', 'cron', 'UTC', 'claude_args', '--max-turns', '/loop']),
@@ -396,7 +318,7 @@ SAY = [
         'Commit message, typo, action items, spreadsheet, ଗୋଟିଏ line ରେ।',
         'رسائل الإيداع والأخطاء الإملائية والمهام والجداول، كل منها بسطر واحد.',
         'Commit-Nachrichten, Tippfehler, Aufgaben und Tabellen, jeweils eine Zeile.'),
-    say('practice', 'Practice', 'Practise plugin layout, flags and cron times.',
+    say('practice', 'Practice', 'Test yourself on plugin layout, flags and cron times.',
         'Plugin layout, flags और cron का अभ्यास।',
         'Plugin layout, flags, cron ಅಭ್ಯಾಸ.',
         'Plugin layout, flags ଓ cron ଅଭ୍ୟାସ।',
@@ -422,34 +344,18 @@ CALC = [
     calc('e', 'What is their total in rupees?', '173000', 'Add them.', ['<span class="eq">48,000 + 1,25,000 = 1,73,000</span>'], alt=['1,73,000', '173,000']),
     calc('m', 'You want 09:00 in India (UTC + 5:30). What UTC hour and minute is that? Answer as HH:MM.', '03:30', 'Subtract 5:30.', ['<span class="eq">09:00 − 05:30 = 03:30</span>'], alt=['3:30']),
     calc('m', 'A daily job costs $0.02 a run on weekdays only. About how many dollars in a 22 working day month?', '0.44', 'Multiply.', ['<span class="eq">22 × 0.02 = 0.44</span>'], alt=['$0.44']),
-    calc('h', 'The plugin check found how many problems in broken-kit?', '3', 'Count the ✘ lines.', ['A space in the name, a file inside .claude-plugin and a skill folder with no SKILL.md.']),
+    calc('h', 'How many mistakes does the table list for the broken plugin?', '3', 'Count the rows.', ['A space in the name, a file inside .claude-plugin and a skill folder with no SKILL.md.']),
     calc('x', 'A team of 12 each saves 15 minutes a day with recipes. Hours saved in 22 working days?', '66', 'People × minutes × days ÷ 60.', ['<span class="eq">12 × 15 × 22 ÷ 60 = 66</span>']),
 ]
 
-EX = [
-    ex('skill-cmd', 'e', 'Plugin skill command', '<p>Write <code>skillCommand(plugin, skill)</code> that returns how you type a plugin skill, such as <code>/team-toolkit:release-notes</code>.</p>',
-       'function skillCommand(plugin, skill) {\n  \n}\n',
-       [('skillCommand("team-toolkit", "release-notes")', '/team-toolkit:release-notes'), ('skillCommand("my-first-plugin", "hello")', '/my-first-plugin:hello')],
-       'function skillCommand(plugin, skill) {\n  return `/${plugin}:${skill}`;\n}',
-       hint='A template string.', why='Plugin skills always carry the plugin name.'),
-    ex('allowed', 'm', 'Build --allowedTools', '<p>Write <code>allowed(cmds)</code>. Given an array of git sub commands like <code>["diff", "commit"]</code>, return <code>Bash(git diff *),Bash(git commit *)</code>.</p>',
-       'function allowed(cmds) {\n  \n}\n',
-       [('allowed(["diff", "commit"])', 'Bash(git diff *),Bash(git commit *)'), ('allowed(["status"])', 'Bash(git status *)')],
-       'function allowed(cmds) {\n  return cmds.map(c => `Bash(git ${c} *)`).join(",");\n}',
-       hint='map, then join with a comma.', why='A narrow allow list keeps scripted runs safe.'),
-    ex('to-utc', 'h', 'Local time to a cron line', '<p>Write <code>dailyCron(hour, minute, offsetMinutes)</code> that turns a local time into a daily GitHub cron line in UTC. India is <code>330</code>. Wrap past midnight correctly.</p>',
-       'function dailyCron(hour, minute, offsetMinutes) {\n  \n}\n',
-       [('dailyCron(9, 0, 330)', '30 3 * * *'), ('dailyCron(18, 30, 330)', '0 13 * * *'), ('dailyCron(2, 0, 330)', '30 20 * * *')],
-       'function dailyCron(hour, minute, offsetMinutes) {\n  const t = ((hour * 60 + minute - offsetMinutes) % 1440 + 1440) % 1440;\n  return `${t % 60} ${Math.floor(t / 60)} * * *`;\n}',
-       hint='Work in minutes since midnight and keep the result between 0 and 1439.', why='Schedules in the wrong time zone are the most common automation mistake.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-automation', 'title': 'Daily Automation: Plugins, Scripts and GitHub', 'short': 'Daily automation', 'emoji': '⚙️', 'module': MODULE, 'minutes': 18,
     'lead': 'Bundle skills, agents, hooks and MCP into a plugin, run Claude inside scripts with claude -p, get JSON back with a schema, answer @claude in GitHub, run reports on a schedule, and five copy and paste recipes for daily work.',
     'plain': 'Instead of opening Claude and typing every morning, you write the request once and let the computer run it for you every day.',
     'desc': 'Automate daily work with Claude Code: plugins and plugin.json, claude -p in scripts, --json-schema structured output, GitHub Actions with claude-code-action, cron schedules and ready to use recipes.',
-    'summary': 'A full plugin layout with a layout checker, plugin commands and marketplaces, claude -p flags, --bare, structured JSON output used by a real script, GitHub Actions set up for @claude and a weekday report, cron lines explained, /loop, and five daily recipes.',
+    'summary': 'A full plugin layout with its skill and hooks files and three common mistakes, plugin commands and marketplaces, claude -p flags, --bare, structured JSON output used by a real script, GitHub Actions set up for @claude and a weekday report, a table of cron lines, /loop, and five daily recipes.',
     'keywords': ['automation', 'plugin', 'plugin.json', 'claude -p', 'headless', '--json-schema', 'structured_output', 'GitHub Actions', 'claude-code-action', 'cron', 'schedule', '/loop', 'recipes'],
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

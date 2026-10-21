@@ -1,9 +1,37 @@
 # Chapter 2: prompt engineering. Clear and direct, context and why, examples, XML tags, roles, long documents, format, chains and templates.
-from ckit import part, run, show, prompt, say, quiz, calc, ex, panel
+from ckit import part, show, prompt, say, quiz, calc, panel
 
 MODULE = ('🌱', 'Foundations', 'claude-foundations', 'What Claude is, how to talk to it, and how to give it the right information at the right time.')
 
 CODES = {
+    'xml-doc': prompt('''
+<documents>
+  <document source="leave-policy.pdf" updated="2026-04-01">
+  (paste the leave policy here)
+  </document>
+  <document source="travel-policy.pdf" updated="2026-06-15">
+  (paste the travel policy here)
+  </document>
+</documents>
+
+<instructions>
+Answer the question using only the documents above.
+First copy the exact lines you used into <quotes> tags.
+Then give the answer in <answer> tags, in at most 4 sentences.
+</instructions>
+
+Question: Can a new joiner take leave in their first month and still claim travel for a training?
+''', 'Long documents first, each in its own tag, the question last', result='Claude quotes the clauses it relied on, then answers. You can check every claim against the quotes.'),
+    'template-text': prompt('''
+You are helping {{name}}, who works as a {{job}}.
+
+<notes>
+{{notes}}
+</notes>
+
+Turn the notes into a status update for {{audience}}.
+Keep it under {{words}} words and end with one clear next step.
+''', 'A reusable template: fill the blanks each time', result='Save it once, then each day replace the five blanks. In chapter 7 the same text becomes a skill, and the blanks become $ARGUMENTS.'),
     'vague': prompt('''
 Write something about our new product.
 ''', 'A vague prompt', result='Claude has to guess the product, the reader, the length and the purpose. You get a generic paragraph you cannot use.'),
@@ -42,24 +70,6 @@ Reply with the label only.
 
 <message>The lid of my lunch box cracked on day one, I want my money back</message>
 ''', 'Teach the pattern with examples', result='Claude replies with the single word refund, in the same format as the examples.'),
-    'xml': run('''
-// Wrapping each piece of a prompt in its own tag stops Claude mixing them up.
-// This helper builds a prompt with several documents, the way the docs recommend:
-// long documents first, the question last.
-function buildPrompt(docs, question) {
-  const body = docs.map((d, i) =>
-    `  <document index="${i + 1}">\\n    <source>${d.source}</source>\\n` +
-    `    <document_content>\\n${d.text}\\n    </document_content>\\n  </document>`).join("\\n");
-  return `<documents>\\n${body}\\n</documents>\\n\\n${question}`;
-}
-
-const prompt = buildPrompt(
-  [{ source: "leave-policy.pdf", text: "Staff get 18 days of paid leave a year." },
-   { source: "holiday-list-2026.xlsx", text: "Office closed on 15 Aug, 2 Oct and 25 Dec." }],
-  "Using only the documents above, how many paid days off does a new hire get in 2026? Quote the lines you used.");
-
-console.log(prompt);
-''', 'Several documents in XML tags'),
     'role': show('''
 import anthropic
 
@@ -100,44 +110,6 @@ Then give the final answer inside <answer> tags.
 
 Question: did the return rate go up or down, and by how many percentage points?
 ''', 'Ask Claude to think first', result='Inside thinking: 62 ÷ 1,240 = 5.0% and 93 ÷ 1,550 = 6.0%. Inside answer: the return rate went up by 1 percentage point.'),
-    'template': run('''
-// A prompt template: write the prompt once, fill in the details every day.
-const TEMPLATE = `You are helping {{name}}, who works as {{job}}.
-
-<task>
-{{task}}
-</task>
-
-Rules:
-- Keep the answer under {{words}} words.
-- Use simple English.`;
-
-function fill(template, values) {
-  return template.replace(/{{(\\w+)}}/g, (whole, key) => {
-    if (!(key in values)) throw new Error("missing value for " + key);
-    return values[key];
-  });
-}
-
-console.log(fill(TEMPLATE, {
-  name: "Anita", job: "an HR executive", words: 120,
-  task: "Draft a polite reminder to staff to submit timesheets by Friday 5pm.",
-}));
-''', 'Fill a reusable prompt template'),
-    'lint': run('''
-// A tiny prompt checker. It looks for the things good prompts usually have.
-function checkPrompt(p) {
-  const tips = [];
-  if (p.split(/\\s+/).length < 12) tips.push("Too short: add who it is for and why.");
-  if (!/\\d+\\s*(words|lines|bullet|items|sentences)|table|list|json/i.test(p)) tips.push("Say the format or length you want.");
-  if (/\\b(something|stuff|good|nice|etc)\\b/i.test(p)) tips.push("Replace vague words with specifics.");
-  if (p.length > 400 && !/<\\w+>/.test(p)) tips.push("Long input: wrap data in tags like <notes>.");
-  return tips.length ? tips : ["Looks clear."];
-}
-
-console.log(checkPrompt("Write something nice about our product"));
-console.log(checkPrompt("Write a 60 word caption for college students about our 2 for 1 lassi offer this weekend, playful tone."));
-''', 'A simple prompt checker'),
     'chain': prompt('''
 Step 1 prompt:  "Draft a 150 word apology email to a customer whose order was late. <order>...</order>"
 Step 2 prompt:  "Review this draft against the checklist: polite, gives a reason, gives a new date,
@@ -179,7 +151,7 @@ PARTS = [
     part('xml', '🏷️', 'Use XML tags to separate the pieces', '''
 <p>A prompt often mixes instructions, background, examples and data. Put each kind in its own tag, such as <code>&lt;instructions&gt;</code>, <code>&lt;context&gt;</code> or <code>&lt;notes&gt;</code>. There are no magic tag names. Pick clear ones and use them the same way every time.</p>
 <p>For long material, the docs give two tips: put the <b>documents at the top</b> and the <b>question at the end</b> (this improved answers by up to 30 percent in Anthropic's tests), and give each document its own tag with its source.</p>
-[[xml]]
+[[xml-doc]]
 <div class="tip">Asking Claude to <b>quote the lines it used</b> before answering keeps it grounded in your documents instead of its general knowledge.</div>
 ''', kw=['XML tags', 'documents', 'long context', 'quotes', 'grounding']),
     part('role', '🎭', 'Give Claude a role', '''
@@ -198,10 +170,9 @@ PARTS = [
 ''', kw=['step by step', 'thinking', 'chain of thought', 'adaptive thinking']),
     part('template', '🧩', 'Prompt templates for daily work', '''
 <p>When you send the same kind of prompt every day, turn it into a <b>template</b> with blanks in double braces. Fill the blanks each time. Later, the same template becomes a skill (chapter 7) or a line in a script (chapter 11).</p>
-[[template]]
+[[template-text]]
 [[daily]]
-[[lint]]
-''', easy=True, kw=['template', 'variables', 'daily automation', 'inbox triage', 'prompt checker']),
+''', easy=True, kw=['template', 'variables', 'daily automation', 'inbox triage']),
     part('chain', '⛓️', 'Chain prompts: draft, review, refine', '''
 <p>Big jobs go better in steps. The most useful chain is <b>self correction</b>: one prompt drafts, one checks the draft against a list, one rewrites. You can read each step and stop if something is off.</p>
 [[chain]]
@@ -345,24 +316,7 @@ CALC = [
     calc('x', 'Inbox triage runs on 25 emails a day for 22 working days. How many emails a month?', '550', 'Multiply.', ['<span class="eq">25 × 22 = 550</span>']),
 ]
 
-EX = [
-    ex('fill', 'e', 'Fill a template', '<p>Write <code>fill(template, values)</code> that replaces every <code>{{key}}</code> with <code>values[key]</code>. Leave a blank untouched when the key is missing.</p>',
-       'function fill(template, values) {\n  \n}\n',
-       [('fill("Hi {{name}}!", { name: "Asha" })', 'Hi Asha!'), ('fill("{{a}} and {{a}}", { a: "x" })', 'x and x'), ('fill("Dear {{who}}", {})', 'Dear {{who}}')],
-       'function fill(template, values) {\n  return template.replace(/{{(\\w+)}}/g, (whole, key) => key in values ? String(values[key]) : whole);\n}',
-       hint='<code>replace</code> with a regular expression and a function.', why='Templates turn a good prompt into something you can run every day without retyping.'),
-    ex('tag', 'm', 'Wrap data in tags', '<p>Write <code>tag(name, text)</code> that returns <code>&lt;name&gt;</code>, a new line, the trimmed text, a new line and <code>&lt;/name&gt;</code>.</p>',
-       'function tag(name, text) {\n  \n}\n',
-       [('tag("notes", "  call Ravi ")', '<notes>\ncall Ravi\n</notes>'), ('tag("q", "Why?")', '<q>\nWhy?\n</q>')],
-       'function tag(name, text) {\n  return `<${name}>\\n${text.trim()}\\n</${name}>`;\n}',
-       hint='Use a template literal.', why='Tagging every pasted input the same way makes prompts easy for Claude and for you to read.'),
-    ex('fewshot', 'h', 'Build a few shot block', '<p>Write <code>fewShot(pairs)</code>. <code>pairs</code> is a list of <code>[input, output]</code>. Return them inside <code>&lt;examples&gt;</code> where each pair becomes <code>&lt;example&gt;&lt;input&gt;...&lt;/input&gt;&lt;output&gt;...&lt;/output&gt;&lt;/example&gt;</code>, with every tag on one line and examples joined by new lines.</p>',
-       'function fewShot(pairs) {\n  \n}\n',
-       [('fewShot([["hi", "greeting"]])', '<examples>\n<example><input>hi</input><output>greeting</output></example>\n</examples>'),
-        ('fewShot([["a", "1"], ["b", "2"]]).split("\\n").length', 4)],
-       'function fewShot(pairs) {\n  const rows = pairs.map(([i, o]) => `<example><input>${i}</input><output>${o}</output></example>`);\n  return ["<examples>", ...rows, "</examples>"].join("\\n");\n}',
-       hint='Map each pair to one line, then join with the opening and closing tags.', why='Generating examples from a list lets you grow your example set without hand editing the prompt.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-prompting', 'title': 'Prompt Engineering That Works', 'short': 'Prompt engineering', 'emoji': '✍️', 'module': MODULE, 'minutes': 16,

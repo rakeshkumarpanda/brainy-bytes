@@ -1,31 +1,7 @@
 # Chapter 9: subagents and output styles. What a subagent is, built-ins, the agent file, every field, ready to copy agents, invoking them, memory, and output styles.
-from ckit import part, run, test, show, md, cli, prompt, js_, say, quiz, calc, ex, panel
+from ckit import part, md, cli, prompt, say, quiz, calc, panel
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
-
-CHECK = r'''
-// Checks agent files the way the docs describe: name and description are required,
-// name may not contain ":", field names are camelCase and unknown fields are ignored.
-import { readFileSync, readdirSync } from "node:fs";
-
-const KNOWN = ["name", "description", "tools", "disallowedTools", "model", "permissionMode", "maxTurns", "autoCompactWindow",
-  "skills", "mcpServers", "hooks", "memory", "background", "omitClaudeMd", "effort", "isolation", "color", "initialPrompt", "experimental"];
-
-for (const f of readdirSync(".claude/agents").sort()) {
-  const text = readFileSync(".claude/agents/" + f, "utf8");
-  const [, front, body] = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  const fields = Object.fromEntries([...front.matchAll(/^([\w-]+):\s*(.*)$/gm)].map(m => [m[1], m[2]]));
-  const problems = [];
-  if (!fields.name) problems.push("missing name");
-  if (!fields.description) problems.push("missing description");
-  if ((fields.name ?? "").includes(":")) problems.push('name may not contain ":"');
-  for (const k of Object.keys(fields)) if (!KNOWN.includes(k)) problems.push(`unknown field "${k}" is ignored`);
-  const tools = fields.tools ? fields.tools : "all tools";
-  console.log(`${f.padEnd(20)} model=${(fields.model ?? "default").padEnd(7)} tools=${tools}`);
-  console.log(`${"".padEnd(20)} system prompt: ${body.trim().split("\n")[0].slice(0, 60)}...`);
-  if (problems.length) console.log(`${"".padEnd(20)} PROBLEMS: ${problems.join("; ")}`);
-}
-'''
 
 REVIEWER = '''
 ---
@@ -102,9 +78,7 @@ provide an improved version. Make it read-only and have it use Sonnet.
     'reviewer': md(REVIEWER, '.claude/agents/code-reviewer.md'),
     'tester': md(TESTER, '.claude/agents/test-runner.md'),
     'research': md(RESEARCH, '.claude/agents/doc-researcher.md'),
-    'check': test({'.claude/agents/code-reviewer.md': REVIEWER, '.claude/agents/test-runner.md': TESTER, '.claude/agents/doc-researcher.md': RESEARCH,
-                   '.claude/agents/broken.md': BROKEN, 'check-agents.mjs': CHECK}, 'node check-agents.mjs', 'Check four agent files',
-                  show=['.claude/agents/broken.md', 'check-agents.mjs'], badge='▶ Runs a check of agent file rules'),
+    'broken': md(BROKEN, '.claude/agents/broken.md'),
     'invoke': prompt('''
 Use the test-runner subagent to fix the failing checkout tests
 @"code-reviewer (agent)" look at my changes to src/payments
@@ -114,18 +88,6 @@ Use 3 doc-researcher subagents in parallel: one on the leave policy, one on trav
 claude --agent code-reviewer        # the whole session runs as that agent
 /agents                             # prints a reminder of where agent files live
 ''', 'Run a whole session as one agent', result='With --agent, the agent\'s system prompt, tools and model apply to the main conversation. Setting "agent": "code-reviewer" in .claude/settings.json makes it the project default.'),
-    'savings': run('''
-// Why subagents keep your main conversation clean.
-// A subagent reads in its own context window and sends back only a summary.
-const task = { filesRead: 38, tokensPerFile: 3_200, summaryTokens: 700 };
-
-const withoutSubagent = task.filesRead * task.tokensPerFile;   // all of it lands in your chat
-const withSubagent = task.summaryTokens;                       // only the summary lands in your chat
-
-console.log("tokens added to the main chat without a subagent:", withoutSubagent.toLocaleString("en-IN"));
-console.log("tokens added to the main chat with a subagent:   ", withSubagent.toLocaleString("en-IN"));
-console.log("main chat kept", ((1 - withSubagent / withoutSubagent) * 100).toFixed(1) + "% smaller");
-''', 'Context saved by delegating a big search'),
     'memory-agent': md('''
 ---
 name: support-triage
@@ -163,7 +125,6 @@ PARTS = [
     part('what', '🤖', 'What a subagent is', '''
 <p>A <b>subagent</b> is a helper that Claude can hand a task to. It has its <b>own context window</b>, its own instructions and its own allowed tools. It does the work, then sends back <b>only a short result</b>. Your main conversation stays small and focused.</p>
 <div class="viz" data-viz="flow" data-k="delegate"></div>
-[[savings]]
 <div class="tw"><table class="jt"><tr><th>Use a subagent when...</th><th>Stay in the main chat when...</th></tr>
 <tr><td>a task reads many files or long logs</td><td>you need quick back and forth</td></tr>
 <tr><td>you want a specialist with fixed rules, like a reviewer</td><td>several steps share a lot of context</td></tr>
@@ -205,7 +166,13 @@ PARTS = [
 <tr><td><code>isolation: worktree</code></td><td>work on a separate copy of the repository</td></tr>
 <tr><td><code>omitClaudeMd</code>, <code>color</code>, <code>initialPrompt</code></td><td>skip <code>CLAUDE.md</code>, colour in the task list, first prompt when run with <code>--agent</code></td></tr>
 </table></div>
-[[check]]
+<p>Here is an agent file with four mistakes. Try to spot them before reading the table.</p>
+[[broken]]
+<div class="tw"><table class="jt"><tr><th>Line</th><th>Problem</th><th>Fix</th></tr>
+<tr><td><code>name: team:helper</code></td><td>a name may not contain <code>:</code></td><td><code>name: team-helper</code></td></tr>
+<tr><td><code>descripton:</code></td><td>misspelled, so it is ignored and the agent has no description</td><td><code>description: ...</code></td></tr>
+<tr><td>(missing)</td><td>without a description Claude never knows when to use it</td><td>say when to delegate, in plain words</td></tr>
+<tr><td><code>max_turns: 10</code></td><td>unknown field, ignored without an error</td><td><code>maxTurns: 10</code></td></tr></table></div>
 ''', files=['.claude/agents/<name>.md'], kw=['frontmatter', 'tools', 'model', 'permissionMode', 'maxTurns', 'skills', 'mcpServers', 'memory', 'isolation worktree']),
     part('gallery', '🗂️', 'Ready to copy agents', '''
 [[tester]]
@@ -322,7 +289,7 @@ SAY = [
         'Output styles session ର tone ଓ format ବଦଳାଏ।',
         'أنماط الإخراج تغيّر النبرة والشكل للجلسة كلها.',
         'Ausgabestile ändern Ton und Format für die ganze Sitzung.'),
-    say('practice', 'Practice', 'Practise checking agent files, picking tools and estimating context saved by delegation.',
+    say('practice', 'Practice', 'Test yourself on agent files, picking tools and the context saved by delegation.',
         'Agent files जांचने और context बचत का अभ्यास।',
         'Agent files ಪರಿಶೀಲನೆ ಮತ್ತು context ಉಳಿತಾಯ ಅಭ್ಯಾಸ.',
         'Agent files ଯାଞ୍ଚ ଓ context ସଞ୍ଚୟ ଅଭ୍ୟାସ।',
@@ -348,34 +315,18 @@ CALC = [
     calc('e', 'It returns a 700 token summary. How many tokens did the main chat avoid?', '120900', 'Read minus returned.', ['<span class="eq">121,600 − 700 = 120,900</span>'], alt=['120,900']),
     calc('m', 'Three researchers run in parallel, taking 40 s, 55 s and 35 s. How long until all are done, in seconds?', '55', 'The slowest decides.', ['Parallel work finishes with the longest job.']),
     calc('m', 'The same three run one after another. How many seconds?', '130', 'Add them.', ['<span class="eq">40 + 55 + 35 = 130</span>']),
-    calc('h', 'How many problems did the checker report for broken.md?', '4', 'Read the PROBLEMS line.', ['Missing description, a colon in the name, the misspelled descripton field and the unknown max_turns field make 4.']),
+    calc('h', 'How many problems does the table list for broken.md?', '4', 'Count the rows.', ['Missing description, a colon in the name, the misspelled descripton field and the unknown max_turns field make 4.']),
     calc('x', 'An agent on Haiku ($0.10 per million input) reads 1,216,000 tokens. Input cost in dollars?', '0.12', 'Millions times price.', ['<span class="eq">1.216 × 0.10 ≈ 0.12</span>'], alt=['0.1216', '$0.12']),
 ]
 
-EX = [
-    ex('agent-valid', 'e', 'Is the agent file valid?', '<p>Write <code>isValidAgent(fields)</code>. Return true when <code>fields.name</code> and <code>fields.description</code> are non empty strings and the name has no <code>:</code>.</p>',
-       'function isValidAgent(fields) {\n  \n}\n',
-       [('isValidAgent({ name: "reviewer", description: "Reviews code" })', True), ('isValidAgent({ name: "team:reviewer", description: "x" })', False), ('isValidAgent({ name: "x" })', False)],
-       'function isValidAgent(fields) {\n  return !!fields.name && !!fields.description && !fields.name.includes(":");\n}',
-       hint='Three checks joined with <code>&amp;&amp;</code>.', why='An agent with no description is never chosen, and a colon is reserved for plugin names.'),
-    ex('read-only', 'm', 'Is it read only?', '<p>Write <code>isReadOnly(tools)</code>. <code>tools</code> is a comma separated string like <code>"Read, Grep, Glob"</code>. Return true when none of <code>Edit</code>, <code>Write</code> or <code>Bash</code> is in the list.</p>',
-       'function isReadOnly(tools) {\n  \n}\n',
-       [('isReadOnly("Read, Grep, Glob")', True), ('isReadOnly("Read, Edit")', False), ('isReadOnly("Bash")', False)],
-       'function isReadOnly(tools) {\n  const list = tools.split(",").map(t => t.trim());\n  return !list.some(t => ["Edit", "Write", "Bash"].includes(t));\n}',
-       hint='Split, trim, then check each name.', why='Reviewers and researchers should not be able to change anything.'),
-    ex('saved', 'h', 'Context saved', '<p>Write <code>saved(files, perFile, summary)</code> that returns the percentage of tokens the main chat avoids by delegating, rounded to one decimal place as a number.</p>',
-       'function saved(files, perFile, summary) {\n  \n}\n',
-       [('saved(38, 3200, 700)', 99.4), ('saved(10, 1000, 1000)', 90), ('saved(1, 500, 500)', 0)],
-       'function saved(files, perFile, summary) {\n  const total = files * perFile;\n  return Math.round((1 - summary / total) * 1000) / 10;\n}',
-       hint='One minus the share that comes back, times 100.', why='Numbers like these tell you when a subagent is worth it.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-subagents', 'title': 'Subagents and Output Styles', 'short': 'Subagents and styles', 'emoji': '🤖', 'module': MODULE, 'minutes': 16,
     'lead': 'What a subagent is and when to use one, the built-in agents, writing .claude/agents files step by step with every field, ready to copy reviewer, tester and researcher agents, calling and remembering, and output styles that change how Claude talks.',
     'plain': 'A subagent is a helper Claude sends to do one job, like reading a pile of papers. The helper reads them at its own desk and comes back with a short note.',
     'desc': 'Claude Code subagents: .claude/agents files, frontmatter fields, built-in Explore and Plan agents, reviewer, test runner and research agents, @-mentions, agent memory and output styles.',
-    'summary': 'What subagents are and how much context they save, built-in agents, creating an agent file step by step and the agents.md name check, every frontmatter field with a checker run on four files, ready to copy test-runner and doc-researcher agents, three ways to call an agent and --agent sessions, agent memory, and built-in and custom output styles.',
+    'summary': 'What subagents are and how much context they save, built-in agents, creating an agent file step by step and the agents.md name check, every frontmatter field with a broken agent file and its four mistakes, ready to copy test-runner and doc-researcher agents, three ways to call an agent and --agent sessions, agent memory, and built-in and custom output styles.',
     'keywords': ['subagents', '.claude/agents', 'agents.md', 'agent file', 'Explore', 'Plan', 'tools', 'model', 'maxTurns', 'memory', '@-mention', '--agent', 'output styles', 'keep-coding-instructions'],
     'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

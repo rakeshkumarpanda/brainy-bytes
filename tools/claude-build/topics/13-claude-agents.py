@@ -1,6 +1,6 @@
 # Chapter 13: build agents. Tools and the agent loop by hand, the tool runner, safety gates, the Claude Agent SDK,
 # and how to choose between the ways of building an agent. SDK code runs against a local stand-in API.
-from ckit import part, show, cli, say, quiz, calc, ex, panel, api_run
+from ckit import part, show, cli, say, quiz, calc, panel, api_run
 
 MODULE = ('🔌', 'Building with the API', 'claude-build-api', 'Call Claude from your own code: the Messages API, tools, agent loops and the Agent SDK.')
 
@@ -284,7 +284,7 @@ SAY = [
         'ସରଳ ଉପାୟରୁ ଆରମ୍ଭ କରନ୍ତୁ।',
         'ابدأ بأبسط خيار.',
         'Beginne mit der einfachsten Lösung.'),
-    say('practice', 'Practice', 'Practise tool results, loop limits and spending gates.',
+    say('practice', 'Practice', 'Test yourself on tool results, loop limits and spending gates.',
         'Tool results, loop सीमा और खर्च सीमा का अभ्यास।',
         'Tool results, loop ಮಿತಿ ಅಭ್ಯಾಸ.',
         'Tool results ଓ loop ସୀମା ଅଭ୍ୟାସ।',
@@ -314,23 +314,7 @@ CALC = [
     calc('x', 'The history grows by 800 tokens per step from 2,000. Total input tokens over 5 steps?', '18000', 'Add 2,000, 2,800, 3,600, 4,400 and 5,200.', ['<span class="eq">2,000 + 2,800 + 3,600 + 4,400 + 5,200 = 18,000</span>'], alt=['18,000']),
 ]
 
-EX = [
-    ex('result-block', 'e', 'Build a tool_result', '<p>Write <code>toolResult(id, text)</code> that returns <code>{ type: "tool_result", tool_use_id: id, content: text }</code>.</p>',
-       'function toolResult(id, text) {\n  \n}\n',
-       [('toolResult("toolu_1", "6 bags").tool_use_id', 'toolu_1'), ('toolResult("toolu_1", "6 bags").type', 'tool_result'), ('toolResult("x", "ok").content', 'ok')],
-       'function toolResult(id, text) {\n  return { type: "tool_result", tool_use_id: id, content: text };\n}',
-       hint='Return an object with three keys.', why='Every round of the loop ends with blocks like this.'),
-    ex('gate', 'm', 'A spending gate', '<p>Write <code>canOrder(bags, price, limit)</code> that returns true when <code>bags × price</code> is at most <code>limit</code>.</p>',
-       'function canOrder(bags, price, limit) {\n  \n}\n',
-       [('canOrder(20, 900, 10000)', False), ('canOrder(11, 900, 10000)', True), ('canOrder(0, 900, 10000)', True)],
-       'function canOrder(bags, price, limit) {\n  return bags * price <= limit;\n}',
-       hint='One comparison.', why='Gates in code are what make agents safe to run.'),
-    ex('loop-sim', 'h', 'Run a loop', '<p>Write <code>runLoop(replies, maxSteps)</code>. <code>replies</code> is a list of stop reasons Claude would give. Walk through them and return the number of steps until the first <code>"end_turn"</code>, or <code>"stopped"</code> if <code>maxSteps</code> is reached first.</p>',
-       'function runLoop(replies, maxSteps) {\n  \n}\n',
-       [('runLoop(["tool_use", "tool_use", "end_turn"], 10)', 3), ('runLoop(["tool_use", "tool_use", "tool_use"], 2)', 'stopped'), ('runLoop(["end_turn"], 5)', 1)],
-       'function runLoop(replies, maxSteps) {\n  for (let step = 1; step <= maxSteps && step <= replies.length; step++) {\n    if (replies[step - 1] === "end_turn") return step;\n  }\n  return "stopped";\n}',
-       hint='A for loop with two limits.', why='This is the skeleton of every agent.'),
-]
+EX = []
 
 T = {
     'slug': 'claude-agents', 'title': 'Build Your Own Agents', 'short': 'Build agents', 'emoji': '🤖', 'module': MODULE, 'minutes': 20,
