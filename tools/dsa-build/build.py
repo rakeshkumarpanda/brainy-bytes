@@ -26,6 +26,11 @@ DSA = os.path.join(ROOT, 'content', 'dsa')
 CACHE = os.path.join(HERE, '.cache')
 JTOOL = os.path.join(CACHE, 'jtool')
 LANGS = ['py', 'js', 'java']
+# Other subjects reuse this builder (see tools/mlmath-build/build.py). They change these settings before building.
+OUT = DSA
+TOPICS = os.path.join(HERE, 'topics')
+SUBJ = {'id': 'dsa', 'crumb': '🧩 Data Structures &amp; Algorithms', 'tag': 'DSA', 'langs': '🐍 Python · 🟨 JavaScript · ☕ Java'}
+PATCH = None  # optional function(css, topbar, shared, glue) -> the same four, to adapt the shared frame
 
 
 # ---------- the shared page frame ----------
@@ -35,6 +40,8 @@ def frame():
     topbar = re.search(r'<header class="topbar">.*?</header>', src).group(0)
     shared = re.search(r'<script>\n(/\* ===== Shared fun layer.*?)\nconst META = ', src, re.S).group(1)
     glue = re.search(r'\n(/\* ===== Page glue.*?)</script>', src, re.S).group(1)
+    if PATCH:
+        return PATCH(css, topbar, shared, glue)
     return css, topbar, shared, glue
 
 
@@ -58,7 +65,9 @@ def run_one(lang, code):
             open(p, 'w', encoding='utf-8').write(code)
             plain = subprocess.run([sys.executable, p], capture_output=True, text=True, timeout=60)
             r = subprocess.run([sys.executable, os.path.join(HERE, 'py_trace.py'), p], capture_output=True, text=True, timeout=300)
-        elif lang == 'js':
+        elif lang in ('js', 'ts'):
+            if lang == 'ts':
+                code = strip_types(d, code)
             p = os.path.join(d, 'prog.js')
             open(p, 'w', encoding='utf-8').write(code)
             plain = subprocess.run(['node', p], capture_output=True, text=True, timeout=60)
@@ -82,12 +91,25 @@ def run_one(lang, code):
     return res
 
 
+def strip_types(d, code):
+    """Check a TypeScript program with tsc in strict mode, then remove its types with Node.js.
+    Node replaces each type with spaces, so every line keeps its number for the line by line viewer."""
+    src = os.path.join(d, 'prog.ts')
+    open(src, 'w', encoding='utf-8').write(code)
+    c = subprocess.run(['tsc', '--strict', '--noEmit', '--target', 'es2022', '--lib', 'es2022,dom', src], capture_output=True, text=True)
+    if c.returncode:
+        raise RuntimeError('tsc found type errors:\n' + c.stdout + c.stderr)
+    s = subprocess.run(['node', '--no-warnings', '-e', 'process.stdout.write(require("node:module").stripTypeScriptTypes(require("fs").readFileSync(process.argv[1], "utf8")))', src],
+                       capture_output=True, text=True, check=True)
+    return s.stdout
+
+
 _stamps = {}
 
 
 def tracer_stamp(lang):
     if lang not in _stamps:
-        f = {'py': 'py_trace.py', 'js': 'js_trace.mjs', 'java': 'JavaTrace.java'}[lang]
+        f = {'py': 'py_trace.py', 'js': 'js_trace.mjs', 'ts': 'js_trace.mjs', 'java': 'JavaTrace.java'}[lang]
         _stamps[lang] = hashlib.sha256(open(os.path.join(HERE, f), 'rb').read()).hexdigest()[:12]
     return _stamps[lang]
 
@@ -132,7 +154,7 @@ def check(T):
 
 
 def build(slug):
-    T = load_topic(os.path.join(HERE, 'topics', slug + '.py'))
+    T = load_topic(os.path.join(TOPICS, slug + '.py'))
     errs = check(T)
     if errs:
         raise SystemExit(f'{slug}:\n  ' + '\n  '.join(errs))
@@ -165,7 +187,7 @@ def build(slug):
             traces[f'{T["prefix"]}|{k}|{l}'] = t
             tr[k].append(l)
 
-    meta = {'slug': T['slug'], 'title': T['title'], 'topic': T['topic'], 'prefix': T['prefix'], 'subject': 'dsa',
+    meta = {'slug': T['slug'], 'title': T['title'], 'topic': T['topic'], 'prefix': T['prefix'], 'subject': SUBJ['id'],
             'same': same, 'trace': tr, 'outlbl': T.get('outlbl', {})}
     page = {k: T[k] for k in ['info', 'real', 'quiz', 'calc', 'say', 'practice']}
     page['dg'] = None
@@ -175,7 +197,7 @@ def build(slug):
     n_viz = sum(len(re.findall(r'data-viz="', p['html'])) for p in parts)
     chips = [f'⏱️ About {T["minutes"]} min read', f'📚 {len(parts)} parts', f'🎬 {n_viz} animations',
              f'🏋️ {len(T["practice"])} practice problems', f'🎯 {len(T["quiz"])} quiz questions',
-             f'🧮 {len(T["calc"])} calculations', '🐍 Python · 🟨 JavaScript · ☕ Java']
+             f'🧮 {len(T["calc"])} calculations', SUBJ['langs']]
     chip_html = ''.join(f'<span class="chip">{c}</span>' for c in chips)
     toc = ''.join(f'<a href="#{p["id"]}"><span>{p["emoji"]}</span>{html.escape(p["title"])}</a>' for p in parts)
     toc += ('<a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a>'
@@ -198,7 +220,7 @@ def build(slug):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{html.escape(T["title"])} · DSA</title>
+<title>{html.escape(T["title"])} · {SUBJ["tag"]}</title>
 <meta name="description" content="{html.escape(T["desc"])}">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -210,7 +232,7 @@ def build(slug):
 <body>
 {topbar}
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=dsa" target="_top">🧩 Data Structures &amp; Algorithms</a><span>›</span><span>{mod[0]} {html.escape(mod[1])}</span><span>›</span><span>{html.escape(T["short"])}</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s={SUBJ["id"]}" target="_top">{SUBJ["crumb"]}</a><span>›</span><span>{mod[0]} {html.escape(mod[1])}</span><span>›</span><span>{html.escape(T["short"])}</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">{T["emoji"]}</span><div><h1>{html.escape(T["title"])}</h1><p class="lead">{T["lead"]}</p></div></div>
     <div class="chips">{chip_html}<button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -238,14 +260,14 @@ const OUTS = {js(outs)};
 </body>
 </html>
 '''
-    dest = os.path.join(DSA, T['slug'] + '.html')
+    dest = os.path.join(OUT, T['slug'] + '.html')
     open(dest, 'w', encoding='utf-8').write(out)
     print(f'{slug}: {len(parts)} parts, {n_viz} animations, {len(T["codes"])} programs, {len(out) // 1024} KB -> {os.path.relpath(dest, ROOT)}')
 
 
 def main():
     java_tool()
-    slugs = sys.argv[1:] or sorted(f[:-3] for f in os.listdir(os.path.join(HERE, 'topics')) if f.endswith('.py'))
+    slugs = sys.argv[1:] or sorted(f[:-3] for f in os.listdir(TOPICS) if f.endswith('.py'))
     for s in slugs:
         build(s)
 

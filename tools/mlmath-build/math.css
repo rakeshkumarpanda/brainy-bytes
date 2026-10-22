@@ -1,0 +1,119 @@
+/* ===== Maths for Machine Learning: formula cards, tips, matrices, fractions and the plotting widgets ===== */
+.fx-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; margin:12px 0}
+.fx{margin:12px 0; padding:12px 16px 12px; border-radius:16px; border:2px solid color-mix(in srgb, var(--purple) 50%, var(--line)); background:color-mix(in srgb, var(--purple) 8%, var(--surface)); box-shadow:var(--shadow)}
+.fx-grid .fx{margin:0}
+.fx-h{font-family:var(--font-head); font-weight:800; font-size:14px; color:var(--exp); letter-spacing:.02em}
+.fx-b{font-family:"Cambria Math","STIX Two Math","Latin Modern Math","Times New Roman",serif; font-size:21px; line-height:1.9; margin:4px 0; overflow-x:auto; overflow-y:hidden; white-space:nowrap; padding-bottom:2px}
+.fx-b .sm{font-size:16px}
+.fx-n{font-size:14px; color:var(--ink2); font-weight:600}
+.trick,.mlnote,.life{position:relative; margin:12px 0; padding:10px 14px; border-radius:14px; font-size:15px; border:1.5px solid var(--line)}
+.trick::before,.mlnote::before,.life::before{display:block; font-family:var(--font-head); font-weight:800; font-size:14px; margin-bottom:2px}
+.trick{background:color-mix(in srgb, var(--pink) 10%, var(--surface)); border-color:color-mix(in srgb, var(--pink) 50%, var(--line))}
+.trick::before{content:"🪄 Memory trick"}
+.mlnote{background:color-mix(in srgb, var(--teal) 10%, var(--surface)); border-color:color-mix(in srgb, var(--teal) 50%, var(--line))}
+.mlnote::before{content:"🤖 Where machine learning uses this"}
+.life{background:color-mix(in srgb, var(--green) 8%, var(--surface)); border-color:color-mix(in srgb, var(--green) 40%, var(--line))}
+.life::before{content:"🌍 In everyday life"}
+.eq .fr,.fx-b .fr,p .fr,td .fr,li .fr{font-size:.92em}
+.fr{display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; margin:0 3px; line-height:1.15}
+.fr>span{padding:0 3px}
+.fr>span:first-child{border-bottom:1.5px solid currentColor}
+.mx{display:inline-flex; flex-direction:column; vertical-align:middle; position:relative; padding:2px 8px; margin:0 4px; font-family:var(--font-mono); font-size:.8em; line-height:1.45}
+.mx::before,.mx::after{content:""; position:absolute; top:0; bottom:0; width:6px; border:2px solid currentColor}
+.mx::before{left:0; border-right:none; border-radius:3px 0 0 3px}
+.mx::after{right:0; border-left:none; border-radius:0 3px 3px 0}
+.mr{display:flex; gap:12px; justify-content:space-between}
+.mr>span{min-width:1.6em; text-align:center}
+.mx.hlr .mr:first-child{background:var(--hl); border-radius:4px}
+sub,sup{line-height:0}
+.lvl{display:inline-block; font-size:12px; font-weight:800; padding:1px 8px; border-radius:99px; margin-right:6px; vertical-align:middle}
+.lvl.e{background:var(--easy-soft); color:var(--easy)} .lvl.m{background:var(--med-soft); color:var(--med)} .lvl.h{background:var(--hard-soft); color:var(--hard)} .lvl.x{background:var(--exp-soft); color:var(--exp)}
+.roadmap{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin:10px 0}
+.roadmap div{padding:8px 10px; border-radius:12px; background:var(--surface2); border:1px solid var(--line); font-size:14px; font-weight:700}
+.roadmap small{display:block; font-weight:600; color:var(--ink2)}
+
+/* ----- plotting widgets ----- */
+.mv-svg{display:block; width:100%; height:auto; max-height:420px; touch-action:none; user-select:none; -webkit-user-select:none; background:var(--surface); border-radius:12px; border:1px solid var(--line)}
+.mv-grid{stroke:var(--line); stroke-width:1}
+.mv-axis{stroke:var(--ink2); stroke-width:1.4}
+.mv-tick{fill:var(--ink2); font-size:11px; font-family:var(--font-mono)}
+.mv-lab{fill:var(--ink); font-size:12.5px; font-weight:700; font-family:var(--font)}
+.mv-lab.sm{font-size:11px; font-weight:600; fill:var(--ink2)}
+.mv-curve{fill:none; stroke:var(--accent); stroke-width:2.6; stroke-linejoin:round; stroke-linecap:round}
+.mv-curve.c2{stroke:var(--orange)} .mv-curve.c3{stroke:var(--green)} .mv-curve.c4{stroke:var(--purple)} .mv-curve.c5{stroke:var(--pink)}
+.mv-curve.thin{stroke-width:1.6} .mv-curve.dash{stroke-dasharray:6 5}
+.mv-fill{fill:color-mix(in srgb, var(--accent) 22%, transparent); stroke:none}
+.mv-fill.c2{fill:color-mix(in srgb, var(--orange) 25%, transparent)} .mv-fill.c3{fill:color-mix(in srgb, var(--green) 25%, transparent)} .mv-fill.c4{fill:color-mix(in srgb, var(--purple) 22%, transparent)}
+.mv-v{stroke-width:3; fill:none; stroke-linecap:round}
+.mv-v.a{stroke:var(--accent)} .mv-v.o{stroke:var(--orange)} .mv-v.g{stroke:var(--green)} .mv-v.p{stroke:var(--purple)} .mv-v.r{stroke:var(--red)} .mv-v.k{stroke:var(--ink2)}
+.mv-v.dash{stroke-dasharray:6 5; stroke-width:2}
+.mv-ah.a{fill:var(--accent)} .mv-ah.o{fill:var(--orange)} .mv-ah.g{fill:var(--green)} .mv-ah.p{fill:var(--purple)} .mv-ah.r{fill:var(--red)} .mv-ah.k{fill:var(--ink2)}
+.mv-pt{fill:var(--accent); stroke:var(--surface); stroke-width:2}
+.mv-pt.o{fill:var(--orange)} .mv-pt.g{fill:var(--green)} .mv-pt.r{fill:var(--red)} .mv-pt.p{fill:var(--purple)} .mv-pt.k{fill:var(--ink2)}
+.mv-pt.big{stroke-width:3}
+.mv-drag{cursor:grab}
+.mv-drag:active{cursor:grabbing}
+.mv-poly{fill:color-mix(in srgb, var(--accent) 16%, transparent); stroke:var(--accent); stroke-width:2}
+.mv-poly.o{fill:color-mix(in srgb, var(--orange) 18%, transparent); stroke:var(--orange)}
+.mv-poly.g{fill:color-mix(in srgb, var(--green) 18%, transparent); stroke:var(--green)}
+.mv-bar{fill:color-mix(in srgb, var(--accent) 55%, var(--surface)); stroke:var(--accent); stroke-width:1}
+.mv-bar.o{fill:color-mix(in srgb, var(--orange) 55%, var(--surface)); stroke:var(--orange)}
+.mv-bar.g{fill:color-mix(in srgb, var(--green) 55%, var(--surface)); stroke:var(--green)}
+.mv-cont{fill:none; stroke:color-mix(in srgb, var(--accent) 45%, var(--line)); stroke-width:1.2}
+.mv-res{stroke:var(--red); stroke-width:1.5; stroke-dasharray:3 3}
+.mv-heat{stroke:none}
+.mv-wrap{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:14px; align-items:start; margin-top:8px}
+.mv-side{display:flex; flex-direction:column; gap:8px; min-width:0}
+.mv-read{padding:10px 12px; border-radius:12px; background:var(--surface2); border:1px solid var(--line); font-size:14.5px; line-height:1.55; overflow-wrap:anywhere}
+.mv-read b{font-family:var(--font-mono)}
+.mv-read .big{font-size:20px; font-weight:800; font-family:var(--font-mono)}
+.mv-inp{display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-weight:700; font-size:14px}
+.mv-inp input[type=number],.mv-inp input[type=text]{width:74px; padding:5px 7px; border-radius:9px; border:1.5px solid var(--box-line); background:var(--box); color:var(--box-ink); font:inherit; font-family:var(--font-mono)}
+.mv-inp input[type=text]{width:160px}
+.mv-inp button,.mv-btns button{padding:6px 12px; border-radius:10px; border:1.5px solid var(--accent); background:var(--accent-soft); color:var(--accent-deep); font:inherit; font-weight:800; cursor:pointer}
+.mv-btns{display:flex; flex-wrap:wrap; gap:6px}
+.mv-mgrid{display:inline-grid; gap:4px; padding:6px 10px; position:relative; vertical-align:middle}
+.mv-mgrid::before,.mv-mgrid::after{content:""; position:absolute; top:0; bottom:0; width:7px; border:2.5px solid var(--ink2)}
+.mv-mgrid::before{left:0; border-right:none; border-radius:4px 0 0 4px}
+.mv-mgrid::after{right:0; border-left:none; border-radius:0 4px 4px 0}
+.mv-c{min-width:42px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:var(--box); border:1.5px solid var(--box-line); font-family:var(--font-mono); font-weight:700; font-size:15px; transition:background .25s, border-color .25s, transform .25s}
+.mv-c input{width:44px; height:34px; border:none; background:transparent; text-align:center; font:inherit; color:var(--box-ink)}
+.mv-c.hl{background:var(--hl); border-color:var(--hl-line); transform:scale(1.06)}
+.mv-c.ok{background:var(--ok); border-color:var(--ok-line)}
+.mv-c.sel{background:var(--sel); border-color:var(--sel-line)}
+.mv-c.mv{background:var(--mv); border-color:var(--mv-line)}
+.mv-mm{display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:center; margin:8px 0}
+.mv-mm .op{font-size:22px; font-weight:800; color:var(--ink2)}
+.mv-mm .lbl{display:block; text-align:center; font-size:12px; font-weight:800; color:var(--ink2); margin-top:2px}
+.mv-calc{font-family:var(--font-mono); font-size:14px; padding:8px 12px; border-radius:10px; background:var(--surface2); border:1px dashed var(--box-line); min-height:2.6em; overflow-x:auto}
+.mv-calc .t{color:var(--accent-deep); font-weight:800}
+.mv-legend{display:flex; flex-wrap:wrap; gap:10px; font-size:13px; font-weight:700; color:var(--ink2)}
+.mv-legend i{display:inline-block; width:14px; height:4px; border-radius:2px; vertical-align:middle; margin-right:4px; background:var(--accent)}
+.mv-legend i.o{background:var(--orange)} .mv-legend i.g{background:var(--green)} .mv-legend i.p{background:var(--purple)} .mv-legend i.r{background:var(--red)} .mv-legend i.k{background:var(--ink2)}
+.mv-people{display:grid; grid-template-columns:repeat(25,1fr); gap:2px; margin:6px 0}
+.mv-people span{aspect-ratio:1; border-radius:3px; background:var(--dimbox); border:1px solid var(--line)}
+.mv-people span.tp{background:var(--red)} .mv-people span.fn{background:color-mix(in srgb, var(--red) 35%, var(--surface))}
+.mv-people span.fp{background:var(--orange)} .mv-people span.tn{background:color-mix(in srgb, var(--green) 30%, var(--surface))}
+.mv-bars{display:flex; flex-direction:column; gap:6px}
+.mv-brow{display:grid; grid-template-columns:70px 1fr 64px; gap:8px; align-items:center; font-size:13.5px; font-weight:700}
+.mv-brow .tr{height:18px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); overflow:hidden}
+.mv-brow .tr i{display:block; height:100%; background:var(--accent); transition:width .3s}
+.mv-brow .tr i.o{background:var(--orange)} .mv-brow .tr i.g{background:var(--green)}
+.mv-brow b{font-family:var(--font-mono); text-align:right}
+
+/* ----- worked example player ----- */
+.wk-steps{list-style:none; margin:6px 0 0; padding:0; counter-reset:wk}
+.wk-steps li{counter-increment:wk; position:relative; padding:8px 12px 8px 44px; margin:6px 0; border-radius:12px; background:var(--surface2); border:1px solid var(--line); opacity:.3; transform:translateY(4px); transition:opacity .35s, transform .35s, background .35s, border-color .35s; overflow-x:auto}
+.wk-steps li::before{content:counter(wk); position:absolute; left:10px; top:8px; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; background:var(--accent-soft); color:var(--accent-deep)}
+.wk-steps li.on{opacity:1; transform:none}
+.wk-steps li.cur{background:color-mix(in srgb, var(--yellow) 22%, var(--surface)); border-color:var(--hl-line)}
+.wk-steps li.hide{display:none}
+
+@media (max-width:760px){
+  .mv-wrap{grid-template-columns:minmax(0,1fr)}
+  .fx-b{font-size:18px}
+  .mv-c{min-width:36px; height:34px; font-size:13.5px}
+  .mv-c input{width:36px}
+  .mv-people{grid-template-columns:repeat(20,1fr)}
+}
+.wk-steps .eq{display:inline-block; margin:2px 4px; padding:2px 10px}
