@@ -84,19 +84,21 @@
     pupils.forEach(w => w.animate([{ opacity: 1 }, { opacity: 0 }, { opacity: 1 }], { duration: 220 }));
   }, 4200);
 
-  /* subject cards */
-  let filter = 'all';
-  const fbtns = [['all', 'All'], ['ready', 'Ready now'], ['soon', 'Coming soon']];
+  /* subject cards: compact tiles, a status filter and a text filter keep the list short */
+  let filter = 'all', query = '';
+  const nReady = cat.subjects.filter(s => !s.soon).length;
+  const fbtns = [['all', 'All', cat.subjects.length], ['ready', 'Ready now', nReady], ['soon', 'Coming soon', cat.subjects.length - nReady]];
   const fbox = document.getElementById('filters');
   const grid = document.getElementById('subjectGrid');
+  const find = document.getElementById('subjFind');
+  const hay = s => [s.title, s.blurb, ...(s.tags || [])].join(' ').toLowerCase();
   function card(s) {
     const total = s.topics.length, ready = s.liveTopics.length;
     const pct = s.page ? 100 : total ? Math.round(ready / total * 100) : 0;
     const status = s.page ? 'Ready to read' : ready ? `${ready} of ${total} topics ready` : 'Cooking right now';
     const prog = PROGRESS.stats(s.topics);
-    return `<a class="scard reveal ${s.soon ? 'soonc' : ''}" href="${LH.subjectUrl(s)}" target="_blank" rel="noopener" style="--c:${esc(s.color || 'var(--accent)')}">
-      <span class="em">${esc(s.emoji)}</span>
-      <h3>${esc(s.title)}</h3>
+    return `<a class="scard ${s.soon ? 'soonc' : ''}" href="${LH.subjectUrl(s)}" target="_blank" rel="noopener" style="--c:${esc(s.color || 'var(--accent)')}">
+      <div class="top"><span class="em">${esc(s.emoji)}</span><h3>${esc(s.title)}</h3></div>
       <p>${esc(s.blurb || '')}</p>
       ${s.tags && s.tags.length ? `<div class="tags">${s.tags.slice(0, 5).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
       <div class="meter"><i data-w="${pct}"></i></div>
@@ -104,10 +106,11 @@
     </a>`;
   }
   function renderGrid() {
-    fbox.innerHTML = fbtns.map(([k, l]) => `<button class="qchip" data-f="${k}" style="${filter === k ? 'background:var(--accent);color:var(--accent-ink);border-color:var(--accent)' : ''}">${l}</button>`).join('');
-    const list = cat.subjects.filter(s => filter === 'all' || (filter === 'ready' ? !s.soon : s.soon));
-    grid.innerHTML = list.map(card).join('') || '<p>No subjects here yet.</p>';
-    FUN.observe(grid);
+    fbox.innerHTML = fbtns.map(([k, l, n]) => `<button class="qchip" role="tab" aria-selected="${filter === k}" data-f="${k}" style="${filter === k ? 'background:var(--accent);color:var(--accent-ink);border-color:var(--accent)' : ''}">${l} <span class="cnt">${n}</span></button>`).join('');
+    const q = query.trim().toLowerCase();
+    const list = cat.subjects.filter(s => (filter === 'all' || (filter === 'ready' ? !s.soon : s.soon)) && (!q || hay(s).includes(q)));
+    grid.innerHTML = list.map(card).join('') || '<p class="nosubj">No subjects match. Try another word or pick All.</p>';
+    grid.scrollLeft = 0;
     requestAnimationFrame(() => grid.querySelectorAll('.meter i').forEach(i => { i.style.width = i.dataset.w + '%'; }));
     grid.querySelectorAll('.scard').forEach(c => {
       c.addEventListener('mousemove', e => {
@@ -120,6 +123,7 @@
     });
   }
   fbox.addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b) { filter = b.dataset.f; renderGrid(); } });
+  find.addEventListener('input', () => { query = find.value; renderGrid(); });
   renderGrid();
 
   /* surprise me */
@@ -142,13 +146,23 @@
 
   /* newest topics */
   const fresh = live.filter(t => t.added).sort((a, b) => String(b.added).localeCompare(String(a.added))).slice(0, 6);
-  if (!fresh.length) document.getElementById('newSec').remove();
+  if (!fresh.length) { document.getElementById('newSec').remove(); document.querySelector('[data-tab="new"]').remove(); }
   else document.getElementById('newList').innerHTML = fresh.map(t => `<a class="ncard reveal" href="${LH.topicUrl(t)}" target="_blank" rel="noopener"><span class="em">${esc(t.emoji)}</span><span><b>${esc(t.title)}</b><small>${esc(t.subject.title)} · added ${esc(t.added)}</small></span></a>`).join('');
 
   /* joke of the day */
   const day = Math.floor(Date.now() / 864e5);
   const j = jokes[day % jokes.length];
   document.getElementById('jotd').textContent = Array.isArray(j) ? j[0] + '… ' + j[1] : j;
+
+  /* one tabbed card holds the smaller sections, so they sit side by side instead of stacking */
+  const tabs = [...document.querySelectorAll('#infoTabs .itab')];
+  const panels = [...document.querySelectorAll('#moreSec .ipanel')];
+  const show = k => {
+    tabs.forEach(t => t.setAttribute('aria-selected', t.dataset.tab === k));
+    panels.forEach(p => { p.hidden = p.dataset.panel !== k; });
+  };
+  document.getElementById('infoTabs').addEventListener('click', e => { const t = e.target.closest('.itab'); if (t) show(t.dataset.tab); });
+  if (tabs.length) show(tabs[0].dataset.tab);
 
   FUN.initScroll();
   FUN.observe();
