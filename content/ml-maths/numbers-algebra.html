@@ -3154,13 +3154,22 @@ const MV = (() => {
   }
   function curve(F, f, cls = '', o = {}) {
     const n = o.n || 300, a = o.from !== undefined ? o.from : F.xr[0], b = o.to !== undefined ? o.to : F.xr[1];
-    const lo = F.yr[0] - (F.yr[1] - F.yr[0]) * 2, hi = F.yr[1] + (F.yr[1] - F.yr[0]) * 2;
-    let d = '', pen = false;
+    const [lo, hi] = F.yr;
+    const clampY = y => Math.max(lo, Math.min(hi, y));
+    let d = '', pen = false, prev = null;
     for (let i = 0; i <= n; i++) {
       const x = a + (b - a) * i / n, y = f(x);
-      if (!isFinite(y) || y < lo || y > hi) { pen = false; continue; }
-      d += (pen ? 'L' : 'M') + r2(F.sx(x)) + ',' + r2(F.sy(y));
-      pen = true;
+      const ok = isFinite(y), inside = ok && y >= lo && y <= hi;
+      if (inside) {
+        if (!pen) d += prev && isFinite(prev[1]) ? 'M' + r2(F.sx(prev[0])) + ',' + r2(F.sy(clampY(prev[1]))) + 'L' : 'M';
+        else d += 'L';
+        d += r2(F.sx(x)) + ',' + r2(F.sy(y));
+        pen = true;
+      } else {
+        if (pen && ok) d += 'L' + r2(F.sx(x)) + ',' + r2(F.sy(clampY(y)));
+        pen = false;
+      }
+      prev = [x, y];
     }
     return `<path class="mv-curve ${cls}" d="${d}"/>`;
   }

@@ -2713,6 +2713,25 @@ function mlMathModules() {
         { id: "knn", title: "A k nearest neighbours classifier", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "matrices", title: "Matrices and Matrix Multiplication", emoji: "🔢", page: "content/ml-maths/matrices.html",
+        summary: "Shapes and data matrices, addition, transpose and the element wise product, matrix multiplication with the shape rule, transformations and the Wx + b layer, identity, determinant and inverse, Gaussian elimination, rank, special matrices and the normal equations for regression.",
+        keywords: ["matrix", "matrix multiplication", "transpose", "shape", "linear transformation", "rotation matrix", "determinant", "inverse", "identity matrix", "gaussian elimination", "Ax = b", "rank", "normal equations", "dense layer", "markov chain"],
+        added: "2026-10-22",
+        sections: [
+        { id: "what", title: "What a matrix is", emoji: "🔢", group: "Lesson", keywords: ["matrix", "shape", "rows", "columns", "entry", "tensor", "dataset matrix"] },
+        { id: "basic", title: "Adding, scaling and transposing", emoji: "🧩", group: "Lesson", keywords: ["matrix addition", "scalar multiplication", "transpose", "hadamard product", "element wise product"] },
+        { id: "matmul", title: "Matrix multiplication, step by step", emoji: "🎯", group: "Lesson", keywords: ["matrix multiplication", "matmul", "row times column", "shape rule", "not commutative", "associative"] },
+        { id: "transform", title: "A matrix is a transformation", emoji: "🔄", group: "Lesson", keywords: ["linear transformation", "rotation matrix", "scaling", "shear", "reflection", "dense layer", "Wx + b"] },
+        { id: "inverse", title: "Identity, determinant and inverse", emoji: "↩️", group: "Lesson", keywords: ["identity matrix", "inverse matrix", "determinant", "singular matrix", "invertible", "2x2 inverse"] },
+        { id: "systems", title: "Solving many equations at once", emoji: "🧮", group: "Lesson", keywords: ["system of linear equations", "Ax = b", "gaussian elimination", "back substitution", "augmented matrix", "normal equations"] },
+        { id: "rank", title: "Rank and special matrices", emoji: "🏷️", group: "Lesson", keywords: ["rank", "diagonal matrix", "symmetric matrix", "orthogonal matrix", "triangular matrix", "sparse matrix", "low rank", "LoRA", "markov chain"] },
+        { id: "shapes", title: "AB and BA have different shapes", emoji: "🏋️", group: "Easy practice" },
+        { id: "rotate", title: "Rotate a square with a matrix", emoji: "🏋️", group: "Medium practice" },
+        { id: "markov", title: "Population moves with a matrix power", emoji: "🏋️", group: "Hard practice" },
+        { id: "normal-eq", title: "Fit a line with the normal equations", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
