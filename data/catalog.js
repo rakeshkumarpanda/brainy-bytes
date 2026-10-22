@@ -2791,6 +2791,25 @@ function mlMathModules() {
         { id: "twolayer", title: "Backprop through a two layer network", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "optimisation", title: "Gradient Descent and Optimisation", emoji: "⛷️", page: "content/ml-maths/optimisation.html",
+        summary: "The gradient descent update, learning rates that crawl, converge, zig zag or diverge, SGD, mini batches and epochs, momentum, RMSProp and Adam with bias correction, convex and non convex landscapes, the condition number and feature scaling, Lagrange multipliers, warm up, cosine decay, clipping and early stopping.",
+        keywords: ["gradient descent", "learning rate", "sgd", "mini batch", "epoch", "momentum", "rmsprop", "adam", "adamw", "convex", "saddle point", "condition number", "lagrange multiplier", "learning rate schedule", "gradient clipping", "early stopping"],
+        added: "2026-10-22",
+        sections: [
+        { id: "idea", title: "Gradient descent: walk downhill", emoji: "⛷️", group: "Lesson", keywords: ["gradient descent", "update rule", "learning rate", "eta", "minimise loss", "downhill"] },
+        { id: "lr", title: "The learning rate: not too small, not too big", emoji: "🎛️", group: "Lesson", keywords: ["learning rate", "step size", "divergence", "oscillation", "convergence", "stability", "too large learning rate"] },
+        { id: "sgd", title: "Stochastic and mini batch gradient descent", emoji: "🎲", group: "Lesson", keywords: ["stochastic gradient descent", "sgd", "mini batch", "batch size", "epoch", "shuffle", "noise"] },
+        { id: "adam", title: "Momentum, RMSProp and Adam", emoji: "🚀", group: "Lesson", keywords: ["momentum", "rmsprop", "adam", "adamw", "adaptive learning rate", "narrow valley", "zig zag", "bias correction"] },
+        { id: "landscape", title: "Convexity, local minima and saddles", emoji: "🗺️", group: "Lesson", keywords: ["convex", "non convex", "local minimum", "global minimum", "saddle point", "plateau", "condition number", "feature scaling", "initialisation"] },
+        { id: "lagrange", title: "Optimising with constraints: Lagrange multipliers", emoji: "🔒", group: "Lesson", keywords: ["lagrange multiplier", "constrained optimisation", "constraint", "parallel gradients", "svm", "regularisation as constraint"] },
+        { id: "practice", title: "Training tricks: schedules, clipping and stopping", emoji: "🛠️", group: "Lesson", keywords: ["learning rate schedule", "warm up", "cosine decay", "gradient clipping", "early stopping", "weight decay", "NaN loss"] },
+        { id: "mean", title: "Gradient descent finds the mean", emoji: "🏋️", group: "Easy practice" },
+        { id: "lr-sweep", title: "Four learning rates on one bowl", emoji: "🏋️", group: "Medium practice" },
+        { id: "lagrange", title: "The biggest field against a wall", emoji: "🏋️", group: "Hard practice" },
+        { id: "adam", title: "Adam by hand", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
