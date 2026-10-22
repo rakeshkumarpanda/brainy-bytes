@@ -44,7 +44,7 @@ window.CATALOG = {
     name: 'Brainy Bytes',
     tagline: 'Deep concepts, served with a smile',
     headline: ['Learn it deep.', 'Laugh along the way.'],
-    hello: 'New: JavaScript from basics to expert with test automation, Manual Testing, the Complete Java Session track and TestNG, with programs in Java, Python and JavaScript',
+    hello: 'New: Maths for Machine Learning, twelve animated chapters from school basics to expert with interview questions, plus JavaScript, Manual Testing, Java and TestNG',
     intro: 'Free notes that move, joke and run. Every topic comes with animations you can control, everyday examples, step by step code in Java, JavaScript and Python, and practice from easy to expert.',
     footer: 'Brainy Bytes. Free to learn, free to share.',
     searchExamples: ['binary search', 'heap sort', 'two pointers', 'Kadane', 'boundary value analysis', 'bug life cycle', 'constructor chaining', 'HashMap', 'DataProvider', 'listeners'],
@@ -319,16 +319,9 @@ window.CATALOG = {
       emoji: '📐',
       color: '#0ea5e9',
       blurb: 'The linear algebra, calculus, probability and statistics that machine learning is built on.',
-      intro: 'Every idea is shown as an animation and then written as code, so the maths behind machine learning feels practical instead of abstract.',
-      tags: ['Linear algebra', 'Calculus', 'Probability', 'Statistics'],
-      modules: [soonModule([
-        ['Vectors and matrices', '🧮', 'Dot products, matrix multiplication and transforms.'],
-        ['Eigenvalues and decompositions', '🌀', 'Eigenvectors, SVD and PCA.'],
-        ['Derivatives and gradients', '📉', 'Slopes, partial derivatives and the chain rule.'],
-        ['Probability', '🎲', 'Random variables, distributions and Bayes theorem.'],
-        ['Statistics', '📊', 'Mean, variance, hypothesis tests and confidence intervals.'],
-        ['Optimisation', '⛰️', 'Gradient descent and its variants.']
-      ])]
+      intro: 'Twelve chapters that start from school arithmetic and climb to the maths inside real models. Every idea is shown as a step by step animation you can control, worked through with examples, and run as code in Python, JavaScript, TypeScript and Java.',
+      tags: ['Linear algebra', 'Calculus', 'Probability', 'Statistics', 'Loss and metrics'],
+      modules: mlMathModules().concat(iqModule('ml-maths'))
     },
     {
       id: 'machine-learning',
@@ -1276,6 +1269,7 @@ function iqModule(sid) {
     'testng': ['content/testng/interview-questions.html', 'TestNG questions from automation interviews: annotation order, testng.xml, groups, dependencies, data providers, soft asserts, listeners, retries, parallel runs and Maven.', ['annotation order', 'testng.xml', 'groups', 'dependsOnMethods', 'DataProvider', 'SoftAssert', 'ITestListener', 'IRetryAnalyzer', 'parallel', 'surefire']],
     'javascript': ['content/javascript/interview-questions.html', 'JavaScript and TypeScript questions from developer and automation interviews: types, closures, this, prototypes, the event loop, promises, TypeScript generics and narrowing, unit and API tests, Playwright and framework design, with output questions run on Node.js.', ['var let const', 'hoisting', 'closure', 'this', 'event loop', 'microtask', 'Promise.all', 'debounce', 'deep clone', 'interface vs type', 'any vs unknown', 'generics', 'utility types', 'mocks and spies', 'auto waiting', 'flaky tests', 'fixtures']],
     'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']],
+    'ml-maths': ['content/ml-maths/interview-questions.html', 'Maths questions from machine learning interviews and certification theory sections: dot products, matrix shapes, eigenvalues and PCA, derivatives, backpropagation, gradient descent and Adam, Bayes, distributions, confidence intervals, A/B tests, entropy, losses and metrics, each solved step by step.', ['dot product', 'cosine similarity', 'matrix multiplication', 'eigenvalues', 'PCA', 'chain rule', 'sigmoid derivative', 'gradient descent', 'Adam', 'Bayes theorem', 'central limit theorem', 'p-value', 'A/B test', 'cross entropy', 'precision recall', 'ROC AUC']],
     'master-claude': ['content/claude/interview-questions.html', 'Claude interview questions on prompting, context engineering, CLAUDE.md and rules, skills, permissions and hooks, subagents, MCP, claude -p and GitHub Actions, the Claude API, agents, cost and safety, with real scenario questions.', ['prompt engineering', 'context rot', 'CLAUDE.md', 'rules.md', 'SKILL.md', 'hooks exit code 2', 'subagents', 'MCP', '.mcp.json', 'claude -p', 'tool use loop', 'prompt caching', 'agent safety']]
   }[sid];
   return {
