@@ -2673,6 +2673,25 @@ function mlMathModules() {
         { id: "babylon", title: "Square roots by repeated averaging", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "functions-logs", title: "Functions, Graphs, Exponents and Logarithms", emoji: "📈", page: "content/ml-maths/functions-logs.html",
+        summary: "Domain and range, slope and intercept, the quadratic formula and the vertex, exponential growth and e, log rules and why ML adds log probabilities, sigmoid, tanh and ReLU, composition, shifts and inverse functions such as logit.",
+        keywords: ["function", "graph", "slope", "intercept", "quadratic", "parabola", "exponential", "euler number", "logarithm", "ln", "sigmoid", "tanh", "ReLU", "logit", "inverse function", "composition"],
+        added: "2026-10-22",
+        sections: [
+        { id: "functions", title: "What a function is", emoji: "⚙️", group: "Lesson", keywords: ["function", "f(x)", "domain", "range", "graph", "vertical line test"] },
+        { id: "lines", title: "Straight lines: slope and intercept", emoji: "📈", group: "Lesson", keywords: ["straight line", "slope", "intercept", "y = mx + b", "gradient of a line", "weights", "bias", "linear regression"] },
+        { id: "quadratic", title: "Quadratics and polynomials", emoji: "🪣", group: "Lesson", keywords: ["quadratic", "parabola", "vertex", "roots", "quadratic formula", "discriminant", "polynomial", "overfitting"] },
+        { id: "exponential", title: "Exponential growth and the number e", emoji: "🚀", group: "Lesson", keywords: ["exponential", "exponential growth", "decay", "euler number", "e", "compound interest", "half life"] },
+        { id: "logs", title: "Logarithms: the undo button for powers", emoji: "🪵", group: "Lesson", keywords: ["logarithm", "log", "ln", "natural log", "log rules", "change of base", "log loss", "underflow", "decibel"] },
+        { id: "activation", title: "The S curve and other functions machine learning uses", emoji: "〰️", group: "Lesson", keywords: ["sigmoid", "tanh", "ReLU", "activation function", "softmax", "S curve", "logistic function"] },
+        { id: "compose", title: "Composing, shifting and inverting functions", emoji: "🔗", group: "Lesson", keywords: ["composition", "inverse function", "logit", "odds", "shift", "stretch", "f(g(x))"] },
+        { id: "line-two-points", title: "The line through two points", emoji: "🏋️", group: "Easy practice" },
+        { id: "half-life", title: "When does the medicine drop below 50 mg", emoji: "🏋️", group: "Medium practice" },
+        { id: "log-likelihood", title: "Products of probabilities as sums of logs", emoji: "🏋️", group: "Hard practice" },
+        { id: "invert-sigmoid", title: "Invert the sigmoid by bisection", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
