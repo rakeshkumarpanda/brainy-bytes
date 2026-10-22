@@ -2772,6 +2772,25 @@ function mlMathModules() {
         { id: "simpson", title: "Area under the bell curve", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "gradients", title: "Gradients and Backpropagation", emoji: "🧗", page: "content/ml-maths/gradients.html",
+        summary: "Partial derivatives as slices, the gradient as the steepest uphill direction, contour lines, directional derivatives and tangent planes, Jacobian and Hessian matrices with the bowl, cap and saddle test, computational graphs, backpropagation through a neuron and a two layer net, and the vectorised MSE gradient.",
+        keywords: ["partial derivative", "gradient", "nabla", "contour", "directional derivative", "tangent plane", "jacobian", "hessian", "saddle point", "computational graph", "chain rule", "backpropagation", "gradient check", "mse gradient", "autograd"],
+        added: "2026-10-22",
+        sections: [
+        { id: "partial", title: "Partial derivatives: one knob at a time", emoji: "🎚️", group: "Lesson", keywords: ["partial derivative", "multivariable function", "hold constant", "∂f/∂x", "slice"] },
+        { id: "gradient", title: "The gradient: the steepest way uphill", emoji: "🧗", group: "Lesson", keywords: ["gradient", "nabla", "∇f", "steepest ascent", "steepest descent", "contour lines", "level curves"] },
+        { id: "approx", title: "Directional derivatives and linear approximation", emoji: "📐", group: "Lesson", keywords: ["directional derivative", "tangent plane", "linear approximation", "first order taylor", "dot product with gradient"] },
+        { id: "jacobian", title: "Jacobian and Hessian matrices", emoji: "🧮", group: "Lesson", keywords: ["jacobian", "hessian", "second partial derivatives", "saddle point", "curvature", "second derivative test"] },
+        { id: "chain", title: "The chain rule on a computational graph", emoji: "🔗", group: "Lesson", keywords: ["computational graph", "multivariable chain rule", "forward pass", "backward pass", "local gradient", "add node", "multiply node"] },
+        { id: "backprop", title: "Backpropagation through a neuron", emoji: "🧠", group: "Lesson", keywords: ["backpropagation", "neuron gradient", "sigmoid neuron", "gradient check", "chain rule example", "weights and bias gradients"] },
+        { id: "ml", title: "Gradients for whole datasets", emoji: "🤖", group: "Lesson", keywords: ["vectorised gradient", "mse gradient", "Xᵀ(Xw − y)", "mini batch", "stochastic gradient", "autograd"] },
+        { id: "plane", title: "Guess a value with the tangent plane", emoji: "🏋️", group: "Easy practice" },
+        { id: "hessian", title: "Bowl or saddle?", emoji: "🏋️", group: "Medium practice" },
+        { id: "linreg-grad", title: "The gradient of mean squared error", emoji: "🏋️", group: "Hard practice" },
+        { id: "twolayer", title: "Backprop through a two layer network", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
