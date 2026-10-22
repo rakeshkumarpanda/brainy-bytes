@@ -1,0 +1,90 @@
+{
+ "version": [
+  {
+   "cmd": "claude --version",
+   "out": "2.1.308 (Claude Code)"
+  }
+ ],
+ "skill-make": [
+  {
+   "cmd": "mkdir -p .claude/skills/pick-regression/scripts",
+   "out": ""
+  },
+  {
+   "cmd": "find .claude -type f | sort",
+   "out": ".claude/skills/pick-regression/SKILL.md\n.claude/skills/pick-regression/scripts/map_tests.py"
+  },
+  {
+   "cmd": "head -5 .claude/skills/pick-regression/SKILL.md",
+   "out": "---\nname: pick-regression\ndescription: Picks which tests to run for the current changes. Use when the user asks what to test, which regression tests to run, or whether a branch is safe to merge.\nallowed-tools: Bash(python ${CLAUDE_SKILL_DIR}/scripts/map_tests.py *)\n---"
+  }
+ ],
+ "skill-run": [
+  {
+   "cmd": "git diff --name-only origin/main...HEAD",
+   "out": "app/cart/pricing.py\napp/cart/shipping.py"
+  },
+  {
+   "cmd": "python .claude/skills/pick-regression/scripts/map_tests.py app/cart/pricing.py app/cart/shipping.py",
+   "out": "tests/api/test_checkout_api.py     imports app.cart.pricing\ntests/smoke/test_health.py         smoke test, always runs\ntests/test_pricing.py              named after app/cart/pricing.py\n\nRun: pytest -q tests/api/test_checkout_api.py tests/smoke/test_health.py tests/test_pricing.py\nNO TESTS FOUND for app/cart/shipping.py"
+  }
+ ],
+ "skill-zip": [
+  {
+   "cmd": "cd .claude/skills && zip -r pick-regression.zip pick-regression",
+   "out": "  adding: pick-regression/ (stored 0%)\n  adding: pick-regression/SKILL.md (deflated 40%)\n  adding: pick-regression/scripts/ (stored 0%)\n  adding: pick-regression/scripts/map_tests.py (deflated 54%)"
+  },
+  {
+   "cmd": "unzip -l .claude/skills/pick-regression.zip",
+   "out": "Archive:  .claude/skills/pick-regression.zip\n  Length      Date    Time    Name\n---------  ---------- -----   ----\n        0  2026-10-22 17:37   pick-regression/\n      625  2026-10-22 17:37   pick-regression/SKILL.md\n        0  2026-10-22 17:37   pick-regression/scripts/\n     1393  2026-10-22 17:37   pick-regression/scripts/map_tests.py\n---------                     -------\n     2018                     4 files"
+  }
+ ],
+ "rules-make": [
+  {
+   "cmd": "mkdir -p .claude/rules/qa .claude/rules/dev",
+   "out": ""
+  },
+  {
+   "cmd": "find .claude/rules -type f | sort",
+   "out": ".claude/rules/dev/db-migrations.md\n.claude/rules/dev/pull-requests.md\n.claude/rules/dev/python.md\n.claude/rules/qa/api-tests.md\n.claude/rules/qa/bug-reports.md\n.claude/rules/qa/test-design.md\n.claude/rules/qa/ui-tests.md"
+  },
+  {
+   "cmd": "head -4 .claude/rules/qa/ui-tests.md",
+   "out": "---\npaths:\n  - \"tests/ui/**/*.py\"\n---"
+  }
+ ],
+ "mcp-add": [
+  {
+   "cmd": "claude mcp add --transport stdio expenses -- ~/expenses-mcp/.venv/bin/python ~/expenses-mcp/server.py",
+   "out": "Added stdio MCP server expenses with command: ~/expenses-mcp/.venv/bin/python ~/expenses-mcp/server.py to local config\nFile modified: ~/.claude.json [project: ~/shop-app]"
+  }
+ ],
+ "mcp-list": [
+  {
+   "cmd": "claude mcp list",
+   "out": "Checking MCP server health…\n\nexpenses: ~/expenses-mcp/.venv/bin/python ~/expenses-mcp/server.py - ✔ Connected"
+  },
+  {
+   "cmd": "claude mcp get expenses",
+   "out": "expenses:\n  Scope: Local config (private to you in this project)\n  Status: ✔ Connected\n  Type: stdio\n  Command: ~/expenses-mcp/.venv/bin/python\n  Args: ~/expenses-mcp/server.py\n  Environment:\n\nTo remove this server, run: claude mcp remove expenses -s local"
+  }
+ ],
+ "mcp-project": [
+  {
+   "cmd": "claude mcp add --transport http claude-code-docs --scope project https://code.claude.com/docs/mcp",
+   "out": "Added HTTP MCP server claude-code-docs with URL: https://code.claude.com/docs/mcp to project config\nFile modified: ~/shop-app/.mcp.json"
+  },
+  {
+   "cmd": "cat .mcp.json",
+   "out": "{\n  \"mcpServers\": {\n    \"claude-code-docs\": {\n      \"type\": \"http\",\n      \"url\": \"https://code.claude.com/docs/mcp\"\n    }\n  }\n}"
+  },
+  {
+   "cmd": "claude mcp list",
+   "out": "Checking MCP server health…\n\nclaude-code-docs: https://code.claude.com/docs/mcp (HTTP) - ⏸ Pending approval (run `claude` to approve)\nexpenses: ~/expenses-mcp/.venv/bin/python ~/expenses-mcp/server.py - ✔ Connected"
+  }
+ ],
+ "_meta": {
+  "claude_version": "2.1.308 (Claude Code)",
+  "cwd": "~/shop-app"
+ }
+}

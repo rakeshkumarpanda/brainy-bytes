@@ -71,3 +71,31 @@ def api_run(script, label, replies, name='app.py', more=None, log=True, **kw):
             'show': [name] + list(more or {}), 'shown_cmd': f'python {name}', 'badge': '▶ Real SDK code, run against a local stand-in API with scripted replies'}
     spec.update(kw)
     return spec
+
+
+_SHOTS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'content', 'claude', 'shots')
+
+
+def _png_size(name):
+    with open(os.path.join(_SHOTS, name + '.png'), 'rb') as f:
+        head = f.read(24)
+    return int.from_bytes(head[16:20], 'big'), int.from_bytes(head[20:24], 'big')
+
+
+def shots(title, steps):
+    """A step by step guide with one picture per step, shown one step at a time with Back and Next buttons.
+    steps is a list of (picture name in content/claude/shots, step title, step text as HTML).
+    term-* pictures are real terminal output from shots/capture.py. ui-* pictures are illustrated mockups."""
+    items = []
+    for i, (img, head, text) in enumerate(steps, 1):
+        w, h = _png_size(img)
+        real = img.startswith('term-')
+        kind = ('<span class="cl-kind real">✅ Real terminal output</span>' if real
+                else '<span class="cl-kind mock">🎨 Illustrated mockup, the real screen may look a little different</span>')
+        items.append(f'<li class="cl-step"{"" if i == 1 else " hidden"}><div class="cl-step-text"><b>Step {i}. {head}</b><p>{text}</p>{kind}</div>'
+                     f'<a href="./shots/{img}.png" target="_blank" rel="noopener"><img src="./shots/{img}.png" width="{w}" height="{h}" loading="lazy" '
+                     f'alt="Step {i}: {head}"></a></li>')
+    dots = ''.join(f'<button type="button" class="cl-dot" aria-label="Go to step {i}"{" aria-current=\"step\"" if i == 1 else ""}>{i}</button>' for i in range(1, len(steps) + 1))
+    return (f'<div class="cl-shots"><div class="cl-shots-head"><b>📸 {title}</b><span class="cl-dots">{dots}</span></div>'
+            f'<ol class="cl-shot-list">{"".join(items)}</ol>'
+            '<div class="cl-shots-nav"><button type="button" class="cl-prev">← Back</button><span class="cl-count"></span><button type="button" class="cl-next">Next →</button></div></div>')

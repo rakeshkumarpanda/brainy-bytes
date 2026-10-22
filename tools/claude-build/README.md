@@ -1,6 +1,6 @@
 # Master the Claude chapter builder
 
-Builds the fourteen chapter pages in `content/claude/` from the topic files in `topics/`, and writes the
+Builds the fifteen chapter pages in `content/claude/` from the topic files in `topics/`, and writes the
 `claudeModules()` block in `data/catalog.js`. The Interview Questions page is built separately by
 `tools/interview-build/build.py master-claude`.
 
@@ -20,6 +20,22 @@ python3 tools/interview-build/build.py --run master-claude
 ```
 
 Run outputs are cached in `.cache/` by the hash of the example, so a rebuild only reruns what changed.
+
+## Screenshots for the setup guides
+
+The step by step guides in the rules, skills and MCP chapters show pictures from `content/claude/shots/`.
+
+```bash
+python3 tools/claude-build/shots/capture.py    # runs the real claude mcp, git and script commands, saves captures.json
+node tools/claude-build/shots/render.mjs        # draws every picture into content/claude/shots/
+```
+
+- `term-*.png` are real terminal output from `capture.py`, run in a throwaway home folder shown as `~`. No Claude login is needed.
+- `ui-*.png` are illustrated mockups of claude.ai, Claude Desktop and a Claude Code session, which need a signed in account.
+  Each one says "Illustrated mockup" in its corner and on the page. Menu names follow the Claude Help Center.
+- Use `shots(title, [(picture, step title, step text), ...])` from `ckit.py` in a part to show a guide.
+
+The QA and developer skills and rules live in `qadev.py`, so the chapters and the screenshots use the same files.
 
 ## Writing a topic file
 

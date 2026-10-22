@@ -29,7 +29,7 @@ invoice-checker.zip
     ├── checklist.md        <- optional: extra detail Claude reads only when needed
     └── scripts/
         └── totals.py       <- optional: code Claude can run
-''', 'What a skill upload looks like', lang='text', note='📦 Upload in Settings, Capabilities'),
+''', 'What a skill upload looks like', lang='text', note='📦 Upload in Customize, Skills'),
     'first-prompt': prompt('''
 I run a small home bakery. Every Sunday I get about 30 WhatsApp orders.
 Here are this week's orders, pasted below.
@@ -106,7 +106,7 @@ PARTS = [
 [[skill-zip]]
 <p>To add a skill in claude.ai:</p>
 <ol class="steps"><li>Open <b>Settings</b>, then <b>Capabilities</b>, and turn on <b>Code execution and file creation</b>.</li>
-<li>In the Skills area, choose <b>Upload skill</b> and pick a ZIP file of the skill folder.</li>
+<li>Open <b>Customize</b>, then <b>Skills</b>. Click <b>+</b>, then <b>+ Create skill</b>, then <b>Upload a skill</b>, and pick a ZIP file of the skill folder.</li>
 <li>Ask for the task in a normal chat, for example "check this invoice". Claude uses the skill when the description matches.</li></ol>
 <p>The same <code>SKILL.md</code> format works in Claude Code and the API. Chapter 7 builds skills step by step.</p>
 ''', easy=True, files=['SKILL.md'], kw=['skills', 'SKILL.md', 'upload skill', 'zip', 'capabilities']),

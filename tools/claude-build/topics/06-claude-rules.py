@@ -1,5 +1,6 @@
 # Chapter 6: rules. The .claude/rules/ folder, the paths field, glob patterns, real rule files, user rules, symlinks, and choosing rules versus CLAUDE.md and skills.
-from ckit import part, show, md, cli, say, quiz, calc, panel
+from ckit import part, show, md, cli, say, quiz, calc, panel, shots
+import qadev
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
 
@@ -95,6 +96,29 @@ ln -s ~/shared-claude-rules .claude/rules/shared
 /memory           # open and edit rule files
 claude --debug    # shows a YAML parse error if a rule's frontmatter is broken
 ''', 'Check that your rules load', result='A rule whose frontmatter does not parse is loaded as if it had no paths, so it loads every session. --debug shows why.'),
+    'qa-tree': show('''
+shop-app/
+├── CLAUDE.md
+├── .claude/rules/
+│   ├── qa/
+│   │   ├── test-design.md     <- paths: tests/**/*.py, testcases/**/*.md
+│   │   ├── api-tests.md       <- paths: tests/api/**/*.py
+│   │   ├── ui-tests.md        <- paths: tests/ui/**/*.py
+│   │   └── bug-reports.md     <- paths: bugs/**/*.md
+│   └── dev/
+│       ├── python.md          <- no paths: every session
+│       ├── db-migrations.md   <- paths: migrations/**, app/models/**
+│       └── pull-requests.md   <- no paths: every session
+├── app/  migrations/  bugs/  testcases/
+└── tests/  api/  ui/  smoke/
+''', 'One repo, rules for testers and developers', lang='text', note='📂 Folder layout'),
+    'qa-design': md(qadev.QA_RULES['.claude/rules/qa/test-design.md'], '.claude/rules/qa/test-design.md'),
+    'qa-api': md(qadev.QA_RULES['.claude/rules/qa/api-tests.md'], '.claude/rules/qa/api-tests.md'),
+    'qa-ui': md(qadev.QA_RULES['.claude/rules/qa/ui-tests.md'], '.claude/rules/qa/ui-tests.md'),
+    'qa-bugs': md(qadev.QA_RULES['.claude/rules/qa/bug-reports.md'], '.claude/rules/qa/bug-reports.md'),
+    'dev-python': md(qadev.DEV_RULES['.claude/rules/dev/python.md'], '.claude/rules/dev/python.md (no paths, always loaded)'),
+    'dev-db': md(qadev.DEV_RULES['.claude/rules/dev/db-migrations.md'], '.claude/rules/dev/db-migrations.md'),
+    'dev-pr': md(qadev.DEV_RULES['.claude/rules/dev/pull-requests.md'], '.claude/rules/dev/pull-requests.md (no paths, always loaded)'),
 }
 
 PARTS = [
@@ -142,6 +166,42 @@ PARTS = [
 <li>Rules for one area: <code>paths</code> that match that area.</li>
 <li>Short, concrete bullets that can be checked.</li></ul></div>
 ''', easy=True, files=['.claude/rules/testing.md', '.claude/rules/content/blog.md', '.claude/rules/contracts.md'], kw=['rule examples', 'testing rules', 'content rules', 'legal rules']),
+    part('setup-shots', '📸', 'Set up QA and developer rules, with screenshots', '''
+<p>This is the real setup of the rule files from the next two parts, in a small Python shop app. Both pictures are real terminal output.</p>
+''' + shots('Add the rules folder to a project', [
+        ('term-rules-make', 'Make the folders and add the files', 'Create <code>.claude/rules/qa/</code> and <code>.claude/rules/dev/</code>, then save each rule file from the next two parts. <code>find</code> lists all seven. <code>head</code> shows the <code>paths</code> block at the very top of a path rule.'),
+        ('ui-cc-context', 'Start a fresh session and check', 'Run <code>claude</code> in the project, then <code>/context</code>. Rules without <code>paths</code> show in the memory files list right away. A path rule appears once Claude touches a matching file.'),
+    ]) + '''
+<ol class="steps"><li>Ask Claude to "add a test for free delivery at Rs 499". It edits <code>tests/test_pricing.py</code>.</li>
+<li>That file matches <code>tests/**/*.py</code>, so <code>qa/test-design.md</code> joins the context.</li>
+<li>The new test follows your naming rule: <code>test_free_delivery_starts_at_499</code>.</li></ol>
+''', easy=True, files=['.claude/rules/qa/', '.claude/rules/dev/'], kw=['setup rules', 'screenshots', 'step by step', '/context']),
+    part('qa-rules', '🧪', 'Rule files for a QA engineer', '''
+<p>Testers repeat the same team standards in every chat: our ID format, no <code>time.sleep</code>, check the status code first. Put each standard in a rule with <code>paths</code>, and it appears exactly when Claude works on that kind of file.</p>
+[[qa-tree]]
+[[qa-design]]
+[[qa-api]]
+[[qa-ui]]
+[[qa-bugs]]
+<div class="tw"><table class="jt"><tr><th>QA task today</th><th>File Claude touches</th><th>Rules that load</th></tr>
+<tr><td>Write test cases for a story</td><td><code>testcases/SHOP-142.md</code></td><td><code>test-design.md</code></td></tr>
+<tr><td>Automate a checkout API test</td><td><code>tests/api/test_checkout_api.py</code></td><td><code>test-design.md</code>, <code>api-tests.md</code></td></tr>
+<tr><td>Fix a flaky login UI test</td><td><code>tests/ui/test_login.py</code></td><td><code>test-design.md</code>, <code>ui-tests.md</code></td></tr>
+<tr><td>Log a bug</td><td><code>bugs/coupon-not-applied.md</code></td><td><code>bug-reports.md</code></td></tr></table></div>
+<div class="scenario"><b>⏱️ Real scenario: a flaky test</b>A UI test fails one run in five. Ravi asks Claude to fix it. Because <code>ui-tests.md</code> loads for <code>tests/ui/</code>, Claude replaces <code>time.sleep(3)</code> with <code>expect(page.get_by_role("button", name="Pay")).to_be_enabled()</code>, which waits only as long as needed, and the test stops flaking.</div>
+''', easy=True, files=['.claude/rules/qa/test-design.md', '.claude/rules/qa/api-tests.md', '.claude/rules/qa/ui-tests.md', '.claude/rules/qa/bug-reports.md'], kw=['QA rules', 'test rules', 'API test rules', 'UI test rules', 'Playwright', 'bug report rules', 'tester']),
+    part('dev-rules', '👩‍💻', 'Rule files for a developer', '''
+<p>Developers need two kinds of rules: a few that apply to all code, and some that matter only in risky places such as database migrations.</p>
+[[dev-python]]
+[[dev-db]]
+[[dev-pr]]
+<div class="tw"><table class="jt"><tr><th>Developer task today</th><th>File Claude touches</th><th>Rules that load</th></tr>
+<tr><td>Any task</td><td>(session start)</td><td><code>python.md</code>, <code>pull-requests.md</code></td></tr>
+<tr><td>Add a <code>gst_number</code> column to orders</td><td><code>app/models/order.py</code></td><td>also <code>db-migrations.md</code></td></tr>
+<tr><td>Fix a pricing bug</td><td><code>app/cart/pricing.py</code></td><td>nothing new</td></tr>
+<tr><td>Add a test for it</td><td><code>tests/test_pricing.py</code></td><td>also <code>qa/test-design.md</code></td></tr></table></div>
+<div class="tip">Developers and testers share one repo, so they share one rules folder. A developer adding a test gets the QA naming rules too, and a tester never pays the token cost of the migration rule.</div>
+''', files=['.claude/rules/dev/python.md', '.claude/rules/dev/db-migrations.md', '.claude/rules/dev/pull-requests.md'], kw=['developer rules', 'python rules', 'migration rules', 'pull request rules', 'Alembic']),
     part('user', '🙋', 'Personal rules in ~/.claude/rules/', '''
 <p>Rules in your home folder apply to <b>every project</b> on your machine. They load before project rules. Neither overrides the other, so if they disagree Claude may follow either. Keep them consistent.</p>
 [[user-rules]]
@@ -193,6 +253,7 @@ INFO = {'title': 'Rules: the right advice for the right files', 'panels': [
 REAL = [
     ['🏦', 'A bank\'s app team', 'Keeps security rules without paths so they load in every session, and API rules with paths so the front end team never sees them.'],
     ['📰', 'A news website', 'Has a content rule for content/**/*.md with headline length and style. Writers using Claude Code get it only when editing articles.'],
+    ['🧪', 'A QA team', 'Keeps a ui-tests rule that bans time.sleep for tests/ui/. Flaky tests drop because every test Claude writes waits with expect instead.'],
     ['⚖️', 'A legal team', 'Adds a contracts rule so any time Claude opens a contract it checks liability and renewal clauses the same way.'],
 ]
 
@@ -227,6 +288,24 @@ SAY = [
         'Rules tests, blog ଓ contracts ସବୁ ପାଇଁ କାମ କରେ।',
         'القواعد تصلح للاختبارات والمدونات والعقود.',
         'Regeln passen für Tests, Blogposts und Verträge.'),
+    say('setup-shots', 'Setup with screenshots', 'Make the qa and dev folders inside dot claude rules, add the files, then start a fresh session and check with slash context.',
+        '.claude/rules में qa और dev folders बनाएं, files जोड़ें, फिर /context से जांचें।',
+        '.claude/rules ನಲ್ಲಿ qa ಮತ್ತು dev folders ಮಾಡಿ, files ಸೇರಿಸಿ, /context ಪರಿಶೀಲಿಸಿ.',
+        '.claude/rules ରେ qa ଓ dev folders କରନ୍ତୁ, files ଯୋଡନ୍ତୁ, /context ଯାଞ୍ଚ।',
+        'أنشئ مجلدي qa وdev داخل .claude/rules وأضف الملفات ثم تحقق بـ /context.',
+        'Lege die Ordner qa und dev in .claude/rules an, füge die Dateien hinzu und prüfe mit /context.'),
+    say('qa-rules', 'QA rules', 'Testers keep path rules for test design, API tests, UI tests and bug reports. Each loads only when Claude touches that kind of file.',
+        'Testers के path rules: test design, API tests, UI tests और bug reports।',
+        'Testers ಗೆ path rules: test design, API, UI tests, bug reports.',
+        'Testers ପାଇଁ path rules: test design, API, UI tests, bug reports.',
+        'للمختبرين قواعد مسارات لتصميم الاختبارات واختبارات API والواجهة وتقارير الأخطاء.',
+        'Tester haben Pfadregeln für Testdesign, API-Tests, UI-Tests und Fehlerberichte.'),
+    say('dev-rules', 'Developer rules', 'Developers keep a few rules for all code, and path rules for risky places such as database migrations.',
+        'Developers के सब code के लिए कुछ rules, और migrations जैसी जगह के लिए path rules।',
+        'Developers ಗೆ ಎಲ್ಲ code ಗೆ ಕೆಲವು rules, migrations ಗೆ path rules.',
+        'Developers ପାଇଁ ସବୁ code ର rules, migrations ପାଇଁ path rules.',
+        'للمطورين قواعد عامة لكل الشيفرة وقواعد مسارات لأماكن حساسة مثل ترحيل قاعدة البيانات.',
+        'Entwickler haben Regeln für allen Code und Pfadregeln für heikle Stellen wie Migrationen.'),
     say('user', 'Personal rules', 'Rules in your home dot claude rules folder apply to every project and load before project rules.',
         '~/.claude/rules हर project पर लागू होते हैं।',
         '~/.claude/rules ಎಲ್ಲಾ projects ಗೆ ಅನ್ವಯ.',
@@ -268,6 +347,8 @@ QUIZ = [
     quiz('m', 'When does a path rule load?', ['When Claude reads, writes or edits a matching file', 'At launch', 'When you open the folder in your editor', 'After /compact'], 0, 'A file is touched.', 'Matching happens on Read, Write and Edit, and on single file reads like cat.'),
     quiz('h', 'A rule\'s YAML does not parse. What happens?', ['It loads as if it had no paths', 'Claude Code crashes', 'The rule is deleted', 'It never loads'], 0, 'Front matter ignored.', 'Run claude --debug to see the parse error.'),
     quiz('h', 'After /compact, what happens to a path rule that had loaded?', ['It is summarised away until a matching file is touched again', 'It stays word for word', 'It is deleted from disk', 'It turns into CLAUDE.md'], 0, 'It joined as a message.', 'Root CLAUDE.md and rules without paths are reloaded, path rules return on demand.'),
+    quiz('m', 'A tester asks Claude to fix tests/ui/test_login.py. Which QA rules load?', ['test-design.md and ui-tests.md', 'Only api-tests.md', 'All four QA rules', 'None until /compact'], 0, 'Match the paths.', 'tests/**/*.py and tests/ui/**/*.py both match that file.'),
+    quiz('h', 'Where should "Every upgrade() has a working downgrade()" go?', ['A rule with paths for migrations/**', 'A rule without paths', 'The skill description', 'A hook'], 0, 'Only for migration files.', 'It matters only when Claude edits migrations, so a path rule keeps it out of every other session.'),
     quiz('x', 'A user rule and a project rule disagree. What happens?', ['Claude may follow either, so keep them consistent', 'The project rule always wins', 'The user rule always wins', 'Both are dropped'], 0, 'Neither overrides.', 'Both load, user rules first, so contradictions are risky.'),
     quiz('x', 'Your team has a 9 step release checklist used once a week. Where should it go?', ['A skill', 'A rule without paths', 'CLAUDE.md', 'A path rule for every file'], 0, 'Procedure, used sometimes.', 'Skills load their steps only when used.'),
 ]
@@ -278,17 +359,19 @@ CALC = [
     calc('m', 'How many patterns does {a,b}/{c,d}/*.{py,pyi} expand to?', '8', 'Multiply the options.', ['<span class="eq">2 × 2 × 2 = 8</span>']),
     calc('m', 'Claude edits tests/test_cart.py. How many rules are loaded in total now?', '3', 'Launch rules plus matches.', ['2 at launch plus testing.md.', '<span class="eq">2 + 1 = 3</span>']),
     calc('h', 'An API rule is 600 tokens. Front end developers make 80 requests a day and never touch API files. How many tokens a day does the paths field save them?', '48000', 'It never loads for them.', ['<span class="eq">600 × 80 = 48,000</span>'], alt=['48,000']),
+    calc('m', 'In the shop app, how many of the seven rule files load at the start of a session?', '2', 'Rules without paths.', ['python.md and pull-requests.md have no paths.']),
+    calc('h', 'Claude edits tests/api/test_checkout_api.py in the shop app. How many rules are loaded now?', '4', 'Start rules plus matches.', ['2 at start: python.md and pull-requests.md.', '2 match: test-design.md and api-tests.md.', '<span class="eq">2 + 2 = 4</span>']),
     calc('x', 'What is the expanded pattern budget for one rule\'s paths list?', '1000', 'From the docs.', ['1,000 expanded patterns and 4 MiB per rule.'], alt=['1,000']),
 ]
 
 EX = []
 
 T = {
-    'slug': 'claude-rules', 'title': 'Rules: The .claude/rules Folder and Path Rules', 'short': 'Rules', 'emoji': '📏', 'module': MODULE, 'minutes': 13,
-    'lead': 'Why there is no rules.md, how to build a .claude/rules/ folder step by step, path rules that load only for matching files, ready to copy rules for code, content and contracts, personal and shared rules, and how to choose between rules, CLAUDE.md, skills and hooks.',
+    'slug': 'claude-rules', 'title': 'Rules: The .claude/rules Folder and Path Rules', 'short': 'Rules', 'emoji': '📏', 'module': MODULE, 'minutes': 19,
+    'lead': 'Why there is no rules.md, how to build a .claude/rules/ folder step by step, path rules that load only for matching files, ready to copy rules for code, content and contracts, a screenshot guide, rule files for a QA engineer and for a developer, personal and shared rules, and how to choose between rules, CLAUDE.md, skills and hooks.',
     'plain': 'Rules are small notes for Claude, one topic per note, kept in a folder. Some notes are always read. Others are read only when Claude opens certain files.',
     'desc': 'Claude Code rules explained: the .claude/rules folder, the paths frontmatter field, glob patterns, user rules, symlinks, and rules versus CLAUDE.md, skills and hooks.',
-    'summary': 'The name check (no rules.md, the real .claude/rules/ folder), creating rule files step by step, path rules with the paths field and glob patterns, a table of which rules load for which file, ready to copy rules for APIs, tests, blog posts and contracts, personal rules in ~/.claude/rules/, sharing rules with symlinks, choosing between rules, CLAUDE.md, skills and hooks, and debugging rules.',
-    'keywords': ['rules', 'rules.md', '.claude/rules', 'paths', 'path rules', 'glob', 'frontmatter', 'user rules', 'symlink', 'CLAUDE.md vs rules'],
+    'summary': 'The name check (no rules.md, the real .claude/rules/ folder), creating rule files step by step, path rules with the paths field and glob patterns, a table of which rules load for which file, ready to copy rules for APIs, tests, blog posts and contracts, a screenshot guide, QA rules for test design, API tests, UI tests and bug reports, developer rules for Python, migrations and pull requests, personal rules in ~/.claude/rules/, sharing rules with symlinks, choosing between rules, CLAUDE.md, skills and hooks, and debugging rules.',
+    'keywords': ['rules', 'rules.md', '.claude/rules', 'paths', 'path rules', 'glob', 'frontmatter', 'user rules', 'symlink', 'CLAUDE.md vs rules', 'QA rules', 'developer rules', 'test rules'],
     'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

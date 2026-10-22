@@ -32,3 +32,31 @@ pre.tree b{color:#ffb38a; font-weight:700}
 pre.tree i{color:#8fa3bf; font-style:normal}
 
 .cl-checked{margin:18px 4px 6px; color:var(--ink2); font-size:14px; font-weight:700}
+
+/* step by step screenshot guides: one step at a time, Back and Next (assets/claude.js) */
+.cl-shots{margin:14px 0; border:1.5px solid color-mix(in srgb, #d97757 45%, var(--line)); border-radius:16px; background:color-mix(in srgb, #d97757 5%, var(--surface)); padding:12px 14px}
+.cl-shots-head{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; font-family:var(--font-head); font-size:16px}
+.cl-dots{display:flex; flex-wrap:wrap; gap:5px}
+.cl-dot{width:28px; height:28px; border-radius:50%; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; font-size:13px; font-weight:800; cursor:pointer}
+.cl-dot[aria-current="step"]{background:#d97757; border-color:#d97757; color:#fff}
+.cl-shot-list{list-style:none; margin:0; padding:0}
+.cl-step{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1.9fr); gap:14px; align-items:start}
+.cl-step[hidden]{display:none}
+.cl-step-text p{margin:6px 0 8px; font-size:15px}
+.cl-step img{display:block; width:100%; height:auto; border-radius:10px; border:1px solid var(--line); background:#fff}
+.cl-kind{display:inline-block; padding:3px 9px; border-radius:999px; font-size:12px; font-weight:800}
+.cl-kind.real{background:color-mix(in srgb, var(--green) 18%, var(--surface)); color:var(--ink)}
+.cl-kind.mock{background:color-mix(in srgb, var(--yellow) 30%, var(--surface)); color:var(--ink)}
+.cl-shots-nav{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px}
+.cl-shots-nav button{border:1.5px solid #d97757; background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 14px; font:inherit; font-weight:800; cursor:pointer}
+.cl-shots-nav button:disabled{opacity:.4; cursor:default}
+.cl-count{font-size:13px; font-weight:700; color:var(--ink2)}
+@media (max-width:760px){.cl-step{grid-template-columns:1fr}}
+
+/* exam domain weights in the Claude 101 chapter */
+.cl-bars{display:grid; gap:6px; margin:12px 0}
+.cl-bar{display:grid; grid-template-columns:minmax(0, 15em) minmax(0, 1fr) 3em; gap:8px; align-items:center; font-size:14.5px}
+.cl-bar i{display:block; height:14px; border-radius:999px; background:linear-gradient(90deg, #d97757, color-mix(in srgb, #d97757 60%, var(--yellow))); width:0; transition:width .9s ease}
+.cl-bar.in i{width:var(--w)}
+.cl-bar b{text-align:right}
+@media (max-width:560px){.cl-bar{grid-template-columns:1fr 3em}.cl-bar span{grid-column:1 / -1}}

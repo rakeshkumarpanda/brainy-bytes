@@ -1,5 +1,6 @@
 # Chapter 7: skills. SKILL.md step by step, where skills live, frontmatter, arguments, supporting files and scripts, dynamic context, who invokes, real skills, claude.ai uploads.
-from ckit import part, test, show, md, cli, say, quiz, calc, panel
+from ckit import part, test, show, md, cli, say, quiz, calc, panel, shots
+import qadev
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
 
@@ -204,8 +205,22 @@ allowed-tools: Bash(git add *) Bash(git commit *) Bash(git status *) Bash(git di
     'zip': cli('''
 cd ~/.claude/skills
 zip -r invoice-checker.zip invoice-checker      # the ZIP holds the folder, SKILL.md inside it
-# then in claude.ai: Settings, Capabilities, Skills, Upload skill
+# then in claude.ai: Customize, Skills, +, Create skill, Upload a skill
 ''', 'Package a skill for claude.ai', result='The upload checks the front matter. A skill that passes can be turned on for your account and used in chats.'),
+    'qa-cases': md(qadev.TEST_CASES_SKILL, '.claude/skills/test-cases/SKILL.md'),
+    'qa-bug': md(qadev.BUG_REPORT_SKILL, '.claude/skills/bug-report/SKILL.md'),
+    'qa-pick': md(qadev.PICK_TESTS_SKILL, '.claude/skills/pick-regression/SKILL.md'),
+    'qa-map': test({
+        '.claude/skills/pick-regression/scripts/map_tests.py': qadev.MAP_TESTS,
+        'app/cart/pricing.py': 'def total(items):\n    return sum(items)\n',
+        'app/cart/shipping.py': 'FREE_FROM = 499\n',
+        **qadev.SHOP_FILES,
+    }, '$PY .claude/skills/pick-regression/scripts/map_tests.py app/cart/pricing.py app/cart/shipping.py', 'The skill\'s script, run on a branch that changed two files',
+        show=['.claude/skills/pick-regression/scripts/map_tests.py'],
+        shown_cmd='python .claude/skills/pick-regression/scripts/map_tests.py app/cart/pricing.py app/cart/shipping.py', badge='🐍 Python script run for real'),
+    'dev-fix': md(qadev.FIX_ISSUE_SKILL, '.claude/skills/fix-issue/SKILL.md'),
+    'dev-review': md(qadev.PR_REVIEW_SKILL, '.claude/skills/pr-review/SKILL.md'),
+    'dev-release': md(qadev.RELEASE_NOTES_SKILL, '.claude/skills/release-notes/SKILL.md'),
 }
 
 PARTS = [
@@ -228,6 +243,16 @@ PARTS = [
 [[first-steps]]
 <p>The line <code>!`git diff HEAD`</code> is <b>dynamic context</b>: Claude Code runs the command first and pastes the output into the skill, so Claude reads your real changes.</p>
 ''', easy=True, files=['~/.claude/skills/<name>/SKILL.md'], kw=['first skill', 'create skill', 'step by step', 'summarize-changes']),
+    part('setup-shots', '📸', 'Set up a skill in Claude Code, with screenshots', '''
+<p>Here is the whole setup for a real QA skill, <code>pick-regression</code>, one screen at a time. The terminal pictures are real output from a real run. Use the numbers or the Back and Next buttons to move between steps.</p>
+''' + shots('Set up the pick-regression skill in Claude Code', [
+        ('term-version', 'Check Claude Code is installed', 'Open a terminal in your project folder and run <code>claude --version</code>. Any recent version works. Chapter 4 shows how to install it.'),
+        ('term-skill-make', 'Make the folder and add the files', 'Create <code>.claude/skills/pick-regression/</code> with a <code>scripts</code> folder inside. Save <code>SKILL.md</code> and <code>scripts/map_tests.py</code> from the QA part of this chapter. <code>head</code> shows the front matter is at the very top.'),
+        ('term-skill-run', 'Try the script on its own first', 'Run the script by hand on the files your branch changed. If it works here, it will work when Claude runs it. Notice it flags <code>shipping.py</code> because no test covers it.'),
+        ('ui-cc-slash', 'Start Claude Code and call the skill', 'Run <code>claude</code>, type <code>/</code> and choose <code>/pick-regression</code> from the list. Or just ask "which tests should I run for this branch?" and Claude picks the skill from its description.'),
+    ]) + '''
+<div class="tip">If the skill does not show up, check three things: the file is named <code>SKILL.md</code> in capitals, the front matter starts on line 1 with <code>---</code>, and the folder is inside <code>.claude/skills/</code>. Run <code>/skills</code> to see every skill Claude Code found.</div>
+''', easy=True, files=['.claude/skills/pick-regression/SKILL.md', 'scripts/map_tests.py'], kw=['setup skill', 'screenshots', 'step by step', 'install skill', '/skills']),
     part('where', '📍', 'Where skills live and how they get their name', '''
 <div class="tw"><table class="jt"><tr><th>Where</th><th>Path</th><th>Who gets it</th></tr>
 <tr><td>Personal</td><td><code>~/.claude/skills/&lt;name&gt;/SKILL.md</code></td><td>you, in every project</td></tr>
@@ -294,6 +319,41 @@ PARTS = [
 [[commit]]
 <div class="scenario"><b>👩‍💼 Real scenario: an HR team</b>The team makes three skills: <code>offer-letter</code> (fills the template from a candidate sheet), <code>policy-answer</code> (answers staff questions using the policy files in the folder), and <code>exit-checklist</code>. New joiners get the same quality as the senior staff on day one.</div>
 ''', easy=True, files=['.claude/skills/meeting-actions/SKILL.md', '.claude/skills/commit/SKILL.md'], kw=['daily automation', 'meeting notes', 'commit message', 'skill examples']),
+    part('qa-skills', '🧪', 'Skills for a QA engineer\'s day', '''
+<p>A tester repeats the same kinds of work every day: reading stories, writing test cases, logging bugs and deciding what to retest. Each of those is a perfect skill, because the steps are the same every time and only the input changes.</p>
+<div class="tw"><table class="jt"><tr><th>Time</th><th>Daily task</th><th>Skill</th><th>You type</th></tr>
+<tr><td>10:00</td><td>Grooming: a new story arrives</td><td><code>test-cases</code></td><td><code>/test-cases SHOP-142</code> and paste the story</td></tr>
+<tr><td>12:30</td><td>Testing: something breaks</td><td><code>bug-report</code></td><td>"I found a bug" and paste your notes or the log</td></tr>
+<tr><td>16:00</td><td>A developer's branch is ready</td><td><code>pick-regression</code></td><td>"which tests should I run for this branch?"</td></tr>
+</table></div>
+<p><b>1. Test cases from a story.</b> The skill asks for positive, negative and boundary cases every time, so nobody forgets the edges. For a rule like "1 to 10 items per order" it adds tests for 0, 1, 2, 9, 10 and 11.</p>
+[[qa-cases]]
+<p><b>2. Bug reports that anyone can repeat.</b> The template stops Claude from guessing. If you did not say which browser, the report says "Not given" and asks you.</p>
+[[qa-bug]]
+<p><b>3. Pick the regression tests for a branch.</b> The <code>!`git diff ...`</code> line pastes the real list of changed files in. A Python script then does the matching, so the answer is exact and the same every time.</p>
+[[qa-pick]]
+[[qa-map]]
+<div class="scenario"><b>🛒 Real scenario: a sale weekend</b>Before a festival sale, Priya's team changes delivery charges. The script picks three test files to run and also prints <code>NO TESTS FOUND for app/cart/shipping.py</code>. Priya writes a test for the new free delivery rule before the code goes live, not after a customer complains.</div>
+<div class="tip">Pair these skills with the QA rules from Chapter 6. The skill says <b>what to do</b>. The rule in <code>.claude/rules/qa/</code> says <b>how your team does it</b>, such as the test case ID format, and loads only when Claude touches test files.</div>
+''', easy=True, files=['.claude/skills/test-cases/SKILL.md', '.claude/skills/bug-report/SKILL.md', '.claude/skills/pick-regression/SKILL.md'], kw=['QA skills', 'test cases', 'bug report', 'regression', 'tester', 'boundary values', 'daily QA']),
+    part('dev-skills', '👩‍💻', 'Skills for a developer\'s day', '''
+<p>A developer's day has its own loop: pick up an issue, fix it, review the change, ship it. Three skills cover that loop.</p>
+<div class="tw"><table class="jt"><tr><th>Time</th><th>Daily task</th><th>Skill</th><th>Who can start it</th></tr>
+<tr><td>09:30</td><td>Pick up a bug ticket</td><td><code>fix-issue</code></td><td>only you, with <code>/fix-issue 214</code></td></tr>
+<tr><td>15:00</td><td>Check your branch before opening a PR</td><td><code>pr-review</code></td><td>you or Claude</td></tr>
+<tr><td>Friday</td><td>Write the notes for a release</td><td><code>release-notes</code></td><td>you or Claude</td></tr>
+</table></div>
+<p><b>1. Fix an issue the same careful way every time.</b> A failing test comes first, then the fix. <code>disable-model-invocation: true</code> means Claude never starts changing code just because an issue number came up in chat.</p>
+[[dev-fix]]
+<p><b>2. Review your own branch.</b> <code>context: fork</code> runs the review in a separate helper with a fresh context, so it reads only the diff and is not biased by the chat where you wrote the code.</p>
+[[dev-review]]
+<p><b>3. Release notes from git history.</b> Named arguments make the command read well: <code>/release-notes v1.4.0 v1.5.0</code>.</p>
+[[dev-release]]
+<div class="tw"><table class="jt"><tr><th>Skill</th><th>Front matter that matters</th><th>Why</th></tr>
+<tr><td><code>fix-issue</code></td><td><code>disable-model-invocation: true</code></td><td>it edits code, so only you start it</td></tr>
+<tr><td><code>pr-review</code></td><td><code>context: fork</code>, <code>agent: Explore</code></td><td>a fresh, read only reviewer</td></tr>
+<tr><td><code>release-notes</code></td><td><code>arguments: [from, to]</code></td><td>clear names instead of <code>$0</code> and <code>$1</code></td></tr></table></div>
+''', files=['.claude/skills/fix-issue/SKILL.md', '.claude/skills/pr-review/SKILL.md', '.claude/skills/release-notes/SKILL.md'], kw=['developer skills', 'fix issue', 'PR review', 'release notes', 'daily developer', 'code review']),
     part('upload', '☁️', 'Skills in claude.ai and the API', '''
 <p>The same folder can be uploaded to claude.ai as a ZIP, or sent through the Skills API. Uploads follow the open <b>Agent Skills</b> format, which is stricter than Claude Code:</p>
 <ul><li>Only six front matter fields: <code>name</code>, <code>description</code>, <code>license</code>, <code>compatibility</code>, <code>metadata</code>, <code>allowed-tools</code>.</li>
@@ -301,6 +361,13 @@ PARTS = [
 <li><code>description</code>: not empty, up to 1,024 characters, no XML tags.</li>
 <li>Claude Code only features such as <code>!`command`</code> do not work in claude.ai or the API.</li></ul>
 [[zip]]
+''' + shots('Upload a skill to claude.ai', [
+        ('term-skill-zip', 'Zip the skill folder', 'Zip the <b>folder</b>, not just the file inside it. <code>unzip -l</code> shows <code>pick-regression/SKILL.md</code> at the top of the ZIP, which is what claude.ai expects.'),
+        ('ui-capabilities', 'Turn on code execution', 'Skills need it. On Free, Pro and Max open <b>Settings</b>, then <b>Capabilities</b>, and turn on <b>Code execution and file creation</b>. On Team and Enterprise an owner turns on skills for the organisation first.'),
+        ('ui-skills-upload', 'Open Customize, then Skills, and upload', 'Click <b>+</b>, then <b>+ Create skill</b>, then <b>Upload a skill</b>, and pick your ZIP file.'),
+        ('ui-skills-list', 'Check it is switched on', 'The skill appears in your list with a toggle. It stays private to you until you share it. Now ask for the task in any chat.'),
+    ]) + '''
+<p>On Team and Enterprise plans you can share a skill from its menu, or choose <b>Publish to org</b> so everyone gets it. Anthropic's own skills for Excel, Word, PowerPoint and PDF files are already there for every user.</p>
 ''', files=['SKILL.md', 'skill.zip'], kw=['claude.ai upload', 'Skills API', 'Agent Skills spec', 'zip', 'name rules']),
     part('tips', '💡', 'Make skills that work every time', '''
 <ul><li><b>Description first.</b> If a skill does not trigger, add the words people really use to its description.</li>
@@ -333,6 +400,8 @@ REAL = [
     ['🧾', 'A finance team', 'An invoice-checker skill with a Python script catches a Rs 4,000 overbilling in its first week, because the script never miscounts.'],
     ['🧑‍💻', 'A developer team', 'A commit skill with allowed-tools for git means every commit message follows the same format without anyone reminding anyone.'],
     ['📣', 'A marketing team', 'A brand-voice skill that only Claude can use keeps every email, post and product page in one voice.'],
+    ['🧪', 'A QA team', 'A test-cases skill gives every tester the same table with boundary values, so a new joiner writes test cases as complete as a senior tester on day one.'],
+    ['🚀', 'A product team', 'A pick-regression skill tells them which tests to run for each branch and flags changed files with no tests, before the release, not after.'],
 ]
 
 SAY = [
@@ -384,13 +453,31 @@ SAY = [
         'disable-model-invocation ହେଲେ କେବଳ ଆପଣ, user-invocable false ହେଲେ କେବଳ Claude.',
         'disable-model-invocation يعني أنت فقط، وuser-invocable false يعني Claude فقط.',
         'disable-model-invocation: nur du. user-invocable false: nur Claude.'),
+    say('setup-shots', 'Setup with screenshots', 'Check Claude Code is installed, make the skill folder, try the script by hand, then call the skill with slash and its name.',
+        'Claude Code जांचें, skill folder बनाएं, script खुद चलाकर देखें, फिर /name से skill चलाएं।',
+        'Claude Code ಪರಿಶೀಲಿಸಿ, skill folder ಮಾಡಿ, script ಪ್ರಯತ್ನಿಸಿ, ನಂತರ /name ಬಳಸಿ.',
+        'Claude Code ଯାଞ୍ଚ କରନ୍ତୁ, skill folder କରନ୍ତୁ, script ଚଳାଇ ଦେଖନ୍ତୁ, ପରେ /name ବ୍ୟବହାର କରନ୍ତୁ।',
+        'تحقق من Claude Code وأنشئ مجلد المهارة وجرّب السكربت ثم استدعِ المهارة باسمها.',
+        'Claude Code prüfen, Skill-Ordner anlegen, Skript von Hand testen, dann den Skill mit /Name starten.'),
     say('daily', 'Daily skills', 'Start with jobs you already do every week, like meeting notes to actions and commit messages.',
         'हर हफ्ते के कामों से शुरू करें, जैसे meeting notes और commit messages।',
         'ಪ್ರತಿ ವಾರದ ಕೆಲಸಗಳಿಂದ ಆರಂಭಿಸಿ.',
         'ପ୍ରତି ସପ୍ତାହର କାମରୁ ଆରମ୍ଭ କରନ୍ତୁ।',
         'ابدأ بمهام أسبوعية مثل محاضر الاجتماعات ورسائل الإيداع.',
         'Beginne mit wöchentlichen Aufgaben wie Meeting-Notizen und Commit-Nachrichten.'),
-    say('upload', 'Uploading', 'claude dot ai and the API accept only six front matter fields, and the name must be lowercase without the words anthropic or claude.',
+    say('qa-skills', 'QA skills', 'A tester can keep three skills: test cases from a story with boundary values, bug reports anyone can repeat, and picking regression tests for a branch with a script.',
+        'Tester के तीन skills: story से test cases, साफ bug report, और branch के लिए regression tests चुनना।',
+        'Tester ಗೆ ಮೂರು skills: story ಇಂದ test cases, ಸ್ಪಷ್ಟ bug report, regression tests ಆಯ್ಕೆ.',
+        'Tester ପାଇଁ ତିନି skills: story ରୁ test cases, ସ୍ପଷ୍ଟ bug report, regression tests ବାଛିବା।',
+        'للمختبر ثلاث مهارات: حالات اختبار من القصة وتقارير أخطاء واضحة واختيار اختبارات الانحدار.',
+        'Drei Skills für Tester: Testfälle aus einer Story, klare Fehlerberichte und die Auswahl der Regressionstests.'),
+    say('dev-skills', 'Developer skills', 'A developer can keep three skills: fix an issue with a failing test first, review a branch in a fresh helper, and write release notes from git history.',
+        'Developer के तीन skills: पहले failing test से issue ठीक करना, branch review, और release notes।',
+        'Developer ಗೆ ಮೂರು skills: issue ಸರಿಪಡಿಸುವುದು, branch review, release notes.',
+        'Developer ପାଇଁ ତିନି skills: issue ଠିକ୍ କରିବା, branch review, release notes.',
+        'للمطور ثلاث مهارات: إصلاح المشكلة باختبار فاشل أولًا ومراجعة الفرع وملاحظات الإصدار.',
+        'Drei Skills für Entwickler: Issue mit fehlschlagendem Test zuerst beheben, Branch prüfen, Release Notes schreiben.'),
+    say('upload', 'Uploading', 'Zip the skill folder, turn on code execution, then in claude dot ai open Customize, Skills, and upload it. Only six front matter fields are allowed and the name must be lowercase.',
         'claude.ai और API सिर्फ छह fields मानते हैं, नाम lowercase हो।',
         'claude.ai ಮತ್ತು API ಆರು fields ಮಾತ್ರ, ಹೆಸರು lowercase.',
         'claude.ai ଓ API କେବଳ ଛଅଟି fields, ନାମ lowercase.',
@@ -420,6 +507,10 @@ QUIZ = [
     quiz('h', 'What does !`git diff HEAD` do inside a skill?', ['Runs the command first and pastes its output in', 'Shows the command to Claude', 'Deletes the diff', 'Asks Claude to run it later'], 0, 'Dynamic context.', 'Claude receives the real output, not the command.'),
     quiz('h', 'Why put sums in a script instead of asking Claude to add up numbers?', ['Scripts give the same exact result every time and cost little context', 'Claude cannot add', 'Scripts are required', 'It is faster to type'], 0, 'Deterministic.', 'Only the script output is read, and the arithmetic never varies.'),
     quiz('x', 'A skill with argument-hint fails to upload to claude.ai. Why?', ['argument-hint is not one of the six allowed upload fields', 'The ZIP is too small', 'Skills cannot be uploaded', 'The description is too short'], 0, 'Stricter format.', 'Uploads allow name, description, license, compatibility, metadata and allowed-tools.'),
+    quiz('m', 'A QA skill must work out which tests to run for changed files. Where should the matching logic go?', ['In a script the skill runs', 'In the description', 'In CLAUDE.md', 'Nowhere, Claude will guess'], 0, 'Exact work.', 'A script gives the same exact answer every time and only its output enters the context.'),
+    quiz('h', 'Why does the fix-issue skill set disable-model-invocation: true?', ['It changes code, so only you should start it', 'It makes the skill faster', 'It hides the skill from /skills', 'It is required for arguments'], 0, 'Side effects.', 'Claude will not start it by itself just because an issue number came up in chat.'),
+    quiz('h', 'Why does pr-review use context: fork?', ['The review runs in a fresh helper that sees only the diff', 'It forks the git repository', 'It makes a copy of the skill', 'It lets two people use it'], 0, 'A fresh context.', 'The reviewer is not biased by the chat where the code was written.'),
+    quiz('e', 'In claude.ai, where do you upload a skill ZIP?', ['Customize, Skills, +, Create skill, Upload a skill', 'Settings, Billing', 'Projects, Files', 'It cannot be uploaded'], 0, 'Customize.', 'Turn on code execution first, then upload under Customize, Skills.'),
     quiz('x', 'Which name is valid for a claude.ai upload?', ['invoice-checker', 'Invoice Checker', 'claude-helper', 'my_skill!'], 0, 'Lowercase, hyphens, no reserved words.', 'Spaces, capitals, symbols and the word claude are not allowed.'),
 ]
 
@@ -429,17 +520,19 @@ CALC = [
     calc('m', 'What computed total did totals.py print for inv-001.csv?', '3596', 'Read the output.', ['<span class="eq">2,450 + 720 + 426 = 3,596</span>'], alt=['3596.00', '3,596']),
     calc('m', 'Whiteboard markers: 12 at 35.50. What should the line amount be?', '426', 'qty times rate.', ['<span class="eq">12 × 35.50 = 426.00</span>'], alt=['426.00']),
     calc('h', 'The invoice stated 462.00 for the markers. By how much is that line overbilled?', '36', 'Stated minus correct.', ['<span class="eq">462 − 426 = 36</span>'], alt=['36.00']),
+    calc('m', 'A story says "1 to 10 items per order". Boundary testing checks just below, on and just above each edge. How many values is that?', '6', 'Two edges, three values each.', ['Lower edge: 0, 1, 2. Upper edge: 9, 10, 11.', '<span class="eq">2 × 3 = 6</span>']),
+    calc('h', 'map_tests.py picked how many test files for the branch above?', '3', 'Read the run output.', ['test_checkout_api.py, test_health.py and test_pricing.py.']),
     calc('x', 'What is the longest description, in characters, that a claude.ai skill upload accepts?', '1024', 'From the spec.', ['Up to 1,024 characters, not empty, no XML tags.'], alt=['1,024']),
 ]
 
 EX = []
 
 T = {
-    'slug': 'claude-skills', 'title': 'Skills: Build SKILL.md Step by Step', 'short': 'Skills', 'emoji': '🧰', 'module': MODULE, 'minutes': 20,
-    'lead': 'Build a skill from an empty folder, learn where skills live and how they are named, every front matter field, arguments and live command output, supporting files and scripts, who can start a skill, real skills for daily work, and the stricter rules for uploading to claude.ai.',
+    'slug': 'claude-skills', 'title': 'Skills: Build SKILL.md Step by Step', 'short': 'Skills', 'emoji': '🧰', 'module': MODULE, 'minutes': 28,
+    'lead': 'Build a skill from an empty folder with a screenshot for every step, learn where skills live and how they are named, every front matter field, arguments and live command output, supporting files and scripts, who can start a skill, ready to copy skills for a QA engineer\'s day and a developer\'s day, and how to upload a skill to claude.ai.',
     'plain': 'A skill is a recipe card for Claude. You write the steps once in a file called SKILL.md, and Claude follows the card whenever that job comes up.',
     'desc': 'Claude skills explained: SKILL.md, progressive disclosure, skill locations, frontmatter fields, $ARGUMENTS, dynamic context, scripts, disable-model-invocation, claude.ai upload rules.',
-    'summary': 'What a skill is and its three loading levels, a first skill in three steps, personal, project and plugin locations and command names, every front matter field with good and weak descriptions, arguments and dynamic context with what Claude receives, supporting files and a Python script checking a real invoice, invocation control, daily work skills, the claude.ai upload rules, and tips for reliable skills.',
-    'keywords': ['skills', 'SKILL.md', 'Skills.md', 'frontmatter', 'description', '$ARGUMENTS', 'dynamic context', 'allowed-tools', 'disable-model-invocation', 'user-invocable', 'context fork', 'claude.ai upload', 'Agent Skills', 'progressive disclosure'],
+    'summary': 'What a skill is and its three loading levels, a first skill in three steps, personal, project and plugin locations and command names, every front matter field with good and weak descriptions, arguments and dynamic context with what Claude receives, supporting files and a Python script checking a real invoice, invocation control, daily work skills, QA skills for test cases, bug reports and picking regression tests with a real Python script, developer skills to fix issues, review a branch and write release notes, a screenshot guide for Claude Code and for claude.ai uploads, the claude.ai upload rules, and tips for reliable skills.',
+    'keywords': ['skills', 'SKILL.md', 'Skills.md', 'frontmatter', 'description', '$ARGUMENTS', 'dynamic context', 'allowed-tools', 'disable-model-invocation', 'user-invocable', 'context fork', 'claude.ai upload', 'Agent Skills', 'progressive disclosure', 'QA skills', 'developer skills', 'test cases', 'bug report', 'regression', 'screenshots'],
     'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }
