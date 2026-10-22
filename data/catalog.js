@@ -2901,6 +2901,27 @@ function mlMathModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "models", title: "Maths inside ML models", emoji: "🤖", blurb: "Entropy, loss functions, regularisation and evaluation metrics: where all the earlier maths meets real models.", topics: [
+      { id: "loss-metrics", title: "Entropy, Loss Functions and Metrics", emoji: "🎯", page: "content/ml-maths/loss-metrics.html",
+        summary: "Surprise and entropy in bits, cross entropy and KL divergence, softmax with temperature and the log-sum-exp trick, regression losses and outliers, binary cross entropy and its p − y gradient, ridge and lasso regularisation, and classification metrics from the confusion matrix to ROC and AUC.",
+        keywords: ["entropy", "information theory", "cross entropy", "kl divergence", "softmax", "temperature", "log sum exp", "loss function", "mse", "mae", "huber", "log loss", "regularisation", "ridge", "lasso", "precision", "recall", "f1", "roc", "auc"],
+        added: "2026-10-22",
+        sections: [
+        { id: "entropy", title: "Information and entropy", emoji: "🔥", group: "Lesson", keywords: ["information theory", "entropy", "bits", "surprise", "self information", "information gain", "shannon"] },
+        { id: "xent", title: "Cross entropy and KL divergence", emoji: "🎯", group: "Lesson", keywords: ["cross entropy", "kl divergence", "kullback leibler", "relative entropy", "one hot", "information loss"] },
+        { id: "softmax", title: "Softmax, temperature and log-sum-exp", emoji: "🌡️", group: "Lesson", keywords: ["softmax", "logits", "temperature", "log sum exp", "numerical stability", "overflow", "multiclass classification"] },
+        { id: "losses", title: "Loss functions for regression", emoji: "📉", group: "Lesson", keywords: ["loss function", "mean squared error", "MSE", "mean absolute error", "MAE", "huber loss", "outliers", "regression loss"] },
+        { id: "logloss", title: "Log loss for classification", emoji: "🪵", group: "Lesson", keywords: ["log loss", "binary cross entropy", "logistic regression", "sigmoid", "gradient p minus y", "classification loss"] },
+        { id: "reg", title: "Regularisation: L2 and L1", emoji: "🧲", group: "Lesson", keywords: ["regularisation", "L2", "ridge", "weight decay", "L1", "lasso", "lambda", "sparsity", "overfitting"] },
+        { id: "metrics", title: "Classification metrics, ROC and AUC", emoji: "📊", group: "Lesson", keywords: ["confusion matrix", "accuracy", "precision", "recall", "F1 score", "ROC curve", "AUC", "threshold", "true positive rate", "false positive rate", "imbalanced data"] },
+        { id: "bits", title: "Counting bits", emoji: "🏋️", group: "Easy practice" },
+        { id: "stable", title: "A softmax that does not overflow", emoji: "🏋️", group: "Medium practice" },
+        { id: "ridge", title: "Ridge shrinks the weight", emoji: "🏋️", group: "Hard practice" },
+        { id: "auc", title: "AUC by counting pairs", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
