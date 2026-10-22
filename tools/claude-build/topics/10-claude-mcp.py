@@ -1,6 +1,6 @@
 # Chapter 10: MCP. What it is, connecting servers, scopes and .mcp.json, building a server in Python
 # step by step, what travels on the wire, using tools, resources and prompts, and Claude Desktop.
-from ckit import part, test, show, cli, prompt, js_, say, quiz, calc, panel
+from ckit import part, test, show, cli, prompt, js_, say, quiz, calc, panel, shots
 
 MODULE = ('🛠️', 'Claude Code and its files', 'claude-code-files', 'Claude Code step by step, and exactly what goes in CLAUDE.md, rules, skills, settings, hooks, agents and MCP files.')
 
@@ -221,6 +221,16 @@ PARTS = [
 [[add]]
 <div class="cl-name">For a local server, the <code>--</code> matters. Everything after it is the command that starts the server, so flags like <code>--port</code> go to the server and not to Claude.</div>
 ''', easy=True, kw=['claude mcp add', '--transport http', 'stdio', 'claude mcp list', '/mcp']),
+    part('setup-shots', '📸', 'Set up MCP in Claude Code, with screenshots', '''
+<p>Here is the expenses server from this chapter added to Claude Code for real, then a shared server added for the whole team. The terminal pictures are real output, with the home folder shown as <code>~</code>.</p>
+''' + shots('Connect MCP servers to Claude Code', [
+        ('term-version', 'Check Claude Code is installed', 'Run <code>claude --version</code>. The <code>claude mcp</code> commands below work without starting a session.'),
+        ('term-mcp-add', 'Add your own server, then check it', 'Use <code>--transport stdio</code> for a program on your computer. Everything after <code>--</code> is the command that starts it. Use full paths. <code>claude mcp list</code> starts each server and shows <b>✔ Connected</b> when the handshake works. <code>claude mcp get</code> shows the scope and command.'),
+        ('term-mcp-project', 'Add a server for the whole team', '<code>--scope project</code> writes the server into <code>.mcp.json</code> at the project root, so it can be committed. For safety, Claude Code shows it as <b>Pending approval</b> until each person approves it once.'),
+        ('ui-cc-mcp', 'Approve and use it inside a session', 'Run <code>claude</code>, approve the project server when asked, then type <code>/mcp</code> to see every server, its tools and its status. Now ask "add Rs 450 for printer ink and tell me the total".'),
+    ]) + '''
+<div class="tip">If <code>claude mcp list</code> shows <b>✘ Failed</b>, run the start command yourself in the terminal. The error you see there is the real reason, most often a wrong path or a missing package.</div>
+''', easy=True, files=['~/.claude.json', '.mcp.json'], kw=['setup MCP', 'screenshots', 'claude mcp list', 'claude mcp get', 'pending approval', 'step by step']),
     part('scopes', '📍', 'Scopes and the .mcp.json file', '''
 <div class="tw"><table class="jt"><tr><th>Scope</th><th>Loads in</th><th>Shared with team</th><th>Stored in</th></tr>
 <tr><td>local (default)</td><td>this project only</td><td>no</td><td><code>~/.claude.json</code>, under this project</td></tr>
@@ -260,6 +270,20 @@ PARTS = [
 [[desktop-cmds]]
 <div class="scenario"><b>🧾 Real scenario: a shop owner</b>Asha runs a small bakery. Her nephew builds the expenses server above on her laptop and adds it to Claude Desktop. Now she types "add ₹1,200 for flour and tell me this week's total", and Claude saves it to her file and answers with the sum.</div>
 ''', files=['claude_desktop_config.json'], kw=['Claude Desktop', 'claude_desktop_config.json', 'add-from-claude-desktop', 'claude mcp serve']),
+    part('connectors', '🧩', 'MCP in claude.ai: connectors, with screenshots', '''
+<p>In claude.ai an MCP server is called a <b>connector</b>. Popular services are in the Connectors Directory. Your own server can be added as a <b>custom connector</b>. The difference from Claude Code: claude.ai connects to your server <b>from Anthropic's cloud</b>, so the server must be a remote (http) server that the internet can reach. A stdio server on your laptop cannot be added this way. Use Claude Desktop or Claude Code for that.</p>
+''' + shots('Add and use a connector in claude.ai and Claude Desktop', [
+        ('ui-connector-add', 'Add a custom connector', 'Open <b>Customize</b>, then <b>Connectors</b>, click <b>Add</b>, hover <b>Custom</b> and pick <b>Web</b>. Give it a name, paste the remote MCP server URL, and click <b>Continue</b>. Then choose how people sign in and click <b>Add</b>.'),
+        ('ui-chat-plus', 'Turn it on in a chat', 'Click <b>+</b> in the message box, hover <b>Connectors</b> and switch on the ones this chat needs. <b>Tool access</b> is <b>Auto</b> by default. With ten or more connectors, <b>On demand</b> keeps the context small.'),
+        ('ui-desktop-config', 'Local servers in Claude Desktop', 'For a server that runs on your own computer, open Claude Desktop, then <b>Settings</b>, <b>Developer</b>, <b>Edit Config</b>. Add the server to <code>claude_desktop_config.json</code> as shown above and restart the app.'),
+    ]) + '''
+<div class="tw"><table class="jt"><tr><th>Fact</th><th>What it means for you</th></tr>
+<tr><td>Claude gets your permissions</td><td>if you cannot open a file in the source app, Claude cannot either</td></tr>
+<tr><td>Free plan: one custom connector</td><td>paid plans can add more</td></tr>
+<tr><td>Team and Enterprise</td><td>an owner enables a connector first, then each person signs in with their own account</td></tr>
+<tr><td>Owners set tool permissions</td><td>each tool can be <b>Always allow</b>, <b>Needs approval</b> or <b>Blocked</b> for the whole organisation</td></tr></table></div>
+<div class="warn">Custom connectors are not checked by Anthropic. Only add servers from people and companies you trust, because a connector can read and sometimes change data with your permissions.</div>
+''', easy=True, files=['claude.ai Customize, Connectors', 'claude_desktop_config.json'], kw=['connectors', 'custom connector', 'claude.ai MCP', 'remote MCP', 'tool access', 'Connectors Directory']),
 ]
 
 DG = {
@@ -332,6 +356,18 @@ SAY = [
         'ପ୍ରତି tool ର ନାମ mcp__server__tool. ଏହାକୁ permission rules ରେ ଲେଖନ୍ତୁ।',
         'اسم كل أداة mcp__server__tool. استخدمه في قواعد الأذونات.',
         'Jedes Tool heißt mcp__server__tool. Nutze den Namen in Berechtigungsregeln.'),
+    say('setup-shots', 'Setup with screenshots', 'Add your server with claude mcp add, check it with claude mcp list, add a team server with scope project, then approve it and look at slash mcp.',
+        'claude mcp add से server जोड़ें, claude mcp list से जांचें, scope project से team server, फिर /mcp देखें।',
+        'claude mcp add ಇಂದ ಸೇರಿಸಿ, claude mcp list ಇಂದ ಪರಿಶೀಲಿಸಿ, scope project, ನಂತರ /mcp.',
+        'claude mcp add ରେ ଯୋଡନ୍ତୁ, claude mcp list ରେ ଯାଞ୍ଚ, scope project, ପରେ /mcp.',
+        'أضف الخادم بـ claude mcp add وتحقق بـ claude mcp list ثم خادم الفريق ثم /mcp.',
+        'Server mit claude mcp add hinzufügen, mit claude mcp list prüfen, Team-Server mit scope project, dann /mcp.'),
+    say('connectors', 'Connectors', 'In claude dot ai an MCP server is a connector. Add a custom one under Customize, Connectors, then switch it on from the plus menu in a chat.',
+        'claude.ai में MCP server को connector कहते हैं। Customize, Connectors में जोड़ें, फिर chat के + menu से चालू करें।',
+        'claude.ai ನಲ್ಲಿ MCP server ಅಂದರೆ connector. Customize, Connectors ನಲ್ಲಿ ಸೇರಿಸಿ, + menu ಇಂದ ಆನ್ ಮಾಡಿ.',
+        'claude.ai ରେ MCP server କୁ connector କୁହାଯାଏ। Customize, Connectors ରେ ଯୋଡନ୍ତୁ, + menu ରୁ ଚାଲୁ କରନ୍ତୁ।',
+        'في claude.ai يسمى خادم MCP موصلًا. أضفه من Customize ثم Connectors وفعّله من قائمة + في المحادثة.',
+        'In claude.ai heißt ein MCP-Server Connector. Unter Customize, Connectors hinzufügen und im Chat über + einschalten.'),
     say('desktop', 'Desktop', 'Claude Desktop reads claude desktop config dot json. Use full paths and restart the app.',
         'Claude Desktop claude_desktop_config.json पढ़ता है। पूरे paths लिखें।',
         'Claude Desktop claude_desktop_config.json ಓದುತ್ತದೆ. ಪೂರ್ಣ paths ಬಳಸಿ.',
@@ -355,6 +391,9 @@ QUIZ = [
     quiz('m', 'What is the full name of the add_expense tool on the expenses server?', ['mcp__expenses__add_expense', 'expenses.add_expense', 'add_expense@expenses', 'mcp:expenses:add_expense'], 0, 'Two underscores each.', 'MCP tools are named mcp__server__tool.'),
     quiz('h', 'How should an API key appear in a shared .mcp.json?', ['${API_KEY}', 'The real key', 'In a comment', 'Base64 encoded'], 0, 'Each person has their own.', 'Environment variable expansion keeps secrets out of git.'),
     quiz('h', 'In version 2 of the Python mcp package, what do you import?', ['MCPServer from mcp.server', 'FastMCP from mcp.server.fastmcp', 'Server from anthropic', 'McpServer from zod'], 0, 'The name changed.', 'FastMCP was removed in version 2.'),
+    quiz('m', 'claude mcp list shows a project server as Pending approval. What do you do?', ['Start claude in the project and approve it once', 'Delete .mcp.json', 'Reinstall Claude Code', 'Add it again with scope user'], 0, 'A safety check.', 'Servers from a shared .mcp.json need each person to approve them once.'),
+    quiz('h', 'Can you add a stdio server that runs on your laptop as a claude.ai custom connector?', ['No, claude.ai connects from the cloud to a remote server', 'Yes, paste the python command', 'Only on the Free plan', 'Only on mobile'], 0, 'Who connects to whom.', 'Use Claude Desktop or Claude Code for local servers, or host the server on the internet.'),
+    quiz('e', 'In a claude.ai chat, where do you switch a connector on?', ['The + button in the message box, then Connectors', 'Settings, Billing', 'The Artifacts tab', 'You cannot choose'], 0, 'The message box.', 'Hover Connectors and toggle the ones this chat needs.'),
     quiz('x', 'An http entry in .mcp.json has a url but no type. What happens?', ['It is skipped with an error', 'It works as http', 'It works as sse', 'Claude asks which'], 0, 'No type means stdio.', 'Add "type": "http".'),
     quiz('x', 'A tool returns 30,000 tokens with default settings. What happens?', ['It is saved to a file and Claude gets the path', 'Claude crashes', 'It is cut to 100 words', 'Nothing'], 0, 'Default limit 25,000.', 'Large results are written to a file Claude can read when needed.'),
 ]
@@ -371,11 +410,11 @@ CALC = [
 EX = []
 
 T = {
-    'slug': 'claude-mcp', 'title': 'MCP: Connect and Build Servers', 'short': 'MCP servers', 'emoji': '🔌', 'module': MODULE, 'minutes': 20,
-    'lead': 'What MCP is, connecting your first server in three steps, scopes and exactly what goes in .mcp.json, building a real expenses server in Python step by step, the JSON that travels between them, and using MCP in Claude Code and Claude Desktop.',
+    'slug': 'claude-mcp', 'title': 'MCP: Connect and Build Servers', 'short': 'MCP servers', 'emoji': '🔌', 'module': MODULE, 'minutes': 26,
+    'lead': 'What MCP is, connecting your first server in three steps, scopes and exactly what goes in .mcp.json, building a real expenses server in Python step by step, the JSON that travels between them, using MCP in Claude Code and Claude Desktop, and adding connectors in claude.ai, with a screenshot for every setup step.',
     'plain': 'MCP lets Claude use other programs. You write a small program that says "I can add an expense", and when you ask Claude to add one, Claude asks your program to do it.',
     'desc': 'MCP for Claude Code: claude mcp add, http and stdio, scopes, .mcp.json with environment variables, building MCP servers in Python, JSON-RPC messages, mcp__ tool names and Claude Desktop config.',
-    'summary': 'What MCP servers offer, connecting a first server, managing servers, local, project and user scopes with a full .mcp.json, a Python expenses server built and tested with a real client, the JSON-RPC handshake on the wire, tool names and permission rules, output limits and tool search, and claude_desktop_config.json.',
-    'keywords': ['MCP', 'Model Context Protocol', 'claude mcp add', '.mcp.json', 'scopes', 'MCPServer', '@mcp.tool', 'Python MCP', 'JSON-RPC', 'mcp__', 'Claude Desktop', 'claude_desktop_config.json'],
+    'summary': 'What MCP servers offer, connecting a first server, managing servers, local, project and user scopes with a full .mcp.json, a Python expenses server built and tested with a real client, the JSON-RPC handshake on the wire, tool names and permission rules, output limits and tool search, claude_desktop_config.json, a screenshot guide with real claude mcp output, and custom connectors in claude.ai.',
+    'keywords': ['MCP', 'Model Context Protocol', 'claude mcp add', '.mcp.json', 'scopes', 'MCPServer', '@mcp.tool', 'Python MCP', 'JSON-RPC', 'mcp__', 'Claude Desktop', 'claude_desktop_config.json', 'connectors', 'custom connector', 'screenshots'],
     'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }
