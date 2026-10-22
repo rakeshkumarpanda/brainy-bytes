@@ -2811,6 +2811,27 @@ function mlMathModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "probability", title: "Probability and statistics", emoji: "🎲", blurb: "Chance, distributions and statistics: the maths that lets a model handle uncertainty and judge its own results.", topics: [
+      { id: "probability", title: "Probability and Bayes' Theorem", emoji: "🎲", page: "content/ml-maths/probability.html",
+        summary: "Outcomes, events and the complement rule, the law of large numbers, AND and OR rules, independent versus mutually exclusive events, factorials, permutations and combinations, conditional probability from a table, Bayes' theorem and base rates, naive Bayes with Laplace smoothing, and Monte Carlo estimates.",
+        keywords: ["probability", "sample space", "event", "addition rule", "multiplication rule", "independent events", "mutually exclusive", "permutation", "combination", "conditional probability", "bayes theorem", "prior", "posterior", "naive bayes", "monte carlo", "birthday problem"],
+        added: "2026-10-22",
+        sections: [
+        { id: "basics", title: "Chance, outcomes and events", emoji: "🎲", group: "Lesson", keywords: ["probability", "sample space", "event", "outcome", "complement", "law of large numbers", "dice"] },
+        { id: "rules", title: "AND, OR and independence", emoji: "➕", group: "Lesson", keywords: ["addition rule", "multiplication rule", "union", "intersection", "independent events", "mutually exclusive", "venn diagram"] },
+        { id: "counting", title: "Counting: permutations and combinations", emoji: "🔢", group: "Lesson", keywords: ["factorial", "permutation", "combination", "n choose k", "counting", "lottery odds"] },
+        { id: "conditional", title: "Conditional probability", emoji: "🔍", group: "Lesson", keywords: ["conditional probability", "given", "contingency table", "P(A|B)", "independence test", "prosecutor fallacy"] },
+        { id: "bayes", title: "Bayes' theorem: updating beliefs", emoji: "🔄", group: "Lesson", keywords: ["bayes theorem", "prior", "posterior", "likelihood", "evidence", "base rate", "false positive", "medical test"] },
+        { id: "naive", title: "Naive Bayes: a classifier from counting", emoji: "📧", group: "Lesson", keywords: ["naive bayes", "spam filter", "laplace smoothing", "text classification", "conditional independence", "log probabilities"] },
+        { id: "ml", title: "Probability inside machine learning", emoji: "🤖", group: "Lesson", keywords: ["monte carlo", "simulation", "predicted probability", "calibration", "likelihood", "sampling", "birthday problem"] },
+        { id: "cards", title: "Aces and hearts", emoji: "🏋️", group: "Easy practice" },
+        { id: "birthday", title: "The birthday surprise", emoji: "🏋️", group: "Medium practice" },
+        { id: "bayes-two", title: "Testing positive again", emoji: "🏋️", group: "Hard practice" },
+        { id: "naive", title: "A naive Bayes spam score", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
