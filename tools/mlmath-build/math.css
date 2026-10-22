@@ -117,3 +117,5 @@ sub,sup{line-height:0}
   .mv-people{grid-template-columns:repeat(20,1fr)}
 }
 .wk-steps .eq{display:inline-block; margin:2px 4px; padding:2px 10px; max-width:100%; white-space:normal; overflow-wrap:anywhere}
+.mv-pt.mv-drag{fill-opacity:.22; stroke:var(--accent); stroke-width:2.5}
+.mv-pt.o.mv-drag{stroke:var(--orange)} .mv-pt.g.mv-drag{stroke:var(--green)} .mv-pt.p.mv-drag{stroke:var(--purple)} .mv-pt.r.mv-drag{stroke:var(--red)}

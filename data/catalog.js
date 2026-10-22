@@ -2693,6 +2693,27 @@ function mlMathModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "linear-algebra", title: "Linear algebra", emoji: "🧮", blurb: "Vectors, matrices, eigenvalues, SVD and PCA: the maths that lets a model handle thousands of numbers at once.", topics: [
+      { id: "vectors", title: "Vectors", emoji: "➡️", page: "content/ml-maths/vectors.html",
+        summary: "Feature vectors and embeddings, adding and scaling, L1, L2 and L infinity norms, unit vectors and distances, the dot product and the angle between vectors, cosine similarity for recommendations and search, projections, span, independence and basis.",
+        keywords: ["vector", "feature vector", "embedding", "norm", "L1 norm", "L2 norm", "unit vector", "euclidean distance", "dot product", "cosine similarity", "projection", "span", "linear independence", "basis", "k nearest neighbours"],
+        added: "2026-10-22",
+        sections: [
+        { id: "what", title: "What a vector is", emoji: "➡️", group: "Lesson", keywords: ["vector", "component", "feature vector", "dimension", "embedding", "R^n"] },
+        { id: "ops", title: "Adding, subtracting and scaling vectors", emoji: "➕", group: "Lesson", keywords: ["vector addition", "scalar multiplication", "linear combination", "tip to tail", "resultant"] },
+        { id: "norm", title: "Length (norm) and distance", emoji: "📏", group: "Lesson", keywords: ["norm", "length", "magnitude", "euclidean distance", "manhattan distance", "L1", "L2", "unit vector", "normalise", "feature scaling"] },
+        { id: "dot", title: "The dot product", emoji: "✖️", group: "Lesson", keywords: ["dot product", "inner product", "angle between vectors", "orthogonal", "perpendicular", "cos theta", "attention"] },
+        { id: "cosine", title: "Cosine similarity: how alike are two things", emoji: "🎬", group: "Lesson", keywords: ["cosine similarity", "similarity", "recommendation", "semantic search", "embedding", "RAG"] },
+        { id: "proj", title: "Projection: the shadow of a vector", emoji: "🔦", group: "Lesson", keywords: ["projection", "vector projection", "scalar projection", "shadow", "orthogonal decomposition"] },
+        { id: "span", title: "Span, independence and basis", emoji: "🧱", group: "Lesson", keywords: ["span", "linear independence", "linearly dependent", "basis", "dimension", "orthonormal basis", "multicollinearity"] },
+        { id: "nearest-shop", title: "Which shop is nearest", emoji: "🏋️", group: "Easy practice" },
+        { id: "rank-docs", title: "Rank documents for a search", emoji: "🏋️", group: "Medium practice" },
+        { id: "gram-schmidt", title: "Make two vectors perpendicular", emoji: "🏋️", group: "Hard practice" },
+        { id: "knn", title: "A k nearest neighbours classifier", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

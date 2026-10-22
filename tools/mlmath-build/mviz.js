@@ -66,8 +66,13 @@ const MV = (() => {
     return `<path class="mv-fill ${cls}" d="${d}"/>`;
   }
   function arrow(F, x1, y1, x2, y2, c = 'a', extra = '') {
-    defs();
-    return `<line class="mv-v ${c} ${extra}" x1="${r2(F.sx(x1))}" y1="${r2(F.sy(y1))}" x2="${r2(F.sx(x2))}" y2="${r2(F.sy(y2))}" marker-end="url(#mvah-${c.split(' ')[0]})"/>`;
+    const X1 = F.sx(x1), Y1 = F.sy(y1), X2 = F.sx(x2), Y2 = F.sy(y2), L = Math.hypot(X2 - X1, Y2 - Y1);
+    if (L < 1) return '';
+    const ux = (X2 - X1) / L, uy = (Y2 - Y1) / L, h = Math.min(13, L * 0.45), w = h * 0.5;
+    const bx = X2 - ux * h, by = Y2 - uy * h;
+    const col = c.split(' ')[0];
+    return `<line class="mv-v ${c} ${extra}" x1="${r2(X1)}" y1="${r2(Y1)}" x2="${r2(bx + ux * 2)}" y2="${r2(by + uy * 2)}"/>` +
+      `<polygon class="mv-ah ${col}" points="${r2(X2)},${r2(Y2)} ${r2(bx - uy * w)},${r2(by + ux * w)} ${r2(bx + uy * w)},${r2(by - ux * w)}"/>`;
   }
   function line(F, x1, y1, x2, y2, cls = 'mv-v k dash') {
     return `<line class="${cls}" x1="${r2(F.sx(x1))}" y1="${r2(F.sy(y1))}" x2="${r2(F.sx(x2))}" y2="${r2(F.sy(y2))}"/>`;
