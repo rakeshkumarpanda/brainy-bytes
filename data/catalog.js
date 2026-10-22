@@ -2752,6 +2752,27 @@ function mlMathModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "calculus", title: "Calculus", emoji: "📉", blurb: "Derivatives, gradients, the chain rule and optimisation: the maths that lets a model learn from its mistakes.", topics: [
+      { id: "derivatives", title: "Derivatives and Integrals", emoji: "📈", page: "content/ml-maths/derivatives.html",
+        summary: "Average and instant rate of change, limits and the difference quotient, numerical derivatives and gradient checking, the differentiation rules and table, the chain rule and the sigmoid derivative, critical points and the second derivative, convexity, Riemann sums, the fundamental theorem and how derivatives drive learning.",
+        keywords: ["derivative", "slope", "tangent", "limit", "power rule", "product rule", "quotient rule", "chain rule", "sigmoid derivative", "second derivative", "maximum", "minimum", "convex", "integral", "riemann sum", "newton method"],
+        added: "2026-10-22",
+        sections: [
+        { id: "rate", title: "Rate of change and slope", emoji: "🚗", group: "Lesson", keywords: ["derivative", "rate of change", "slope", "secant", "tangent", "average speed", "instant speed"] },
+        { id: "limit", title: "Limits and the derivative from first principles", emoji: "🔬", group: "Lesson", keywords: ["limit", "first principles", "difference quotient", "central difference", "gradient checking", "numerical derivative"] },
+        { id: "rules", title: "The rules of differentiation", emoji: "📏", group: "Lesson", keywords: ["power rule", "product rule", "quotient rule", "sum rule", "derivative of e^x", "derivative of ln x", "derivative table"] },
+        { id: "chain", title: "The chain rule", emoji: "⛓️", group: "Lesson", keywords: ["chain rule", "composite function", "sigmoid derivative", "backpropagation", "vanishing gradient", "outside inside"] },
+        { id: "shape", title: "Peaks, valleys and the second derivative", emoji: "⛰️", group: "Lesson", keywords: ["critical point", "maximum", "minimum", "second derivative", "concave", "convex", "inflection point", "optimisation"] },
+        { id: "integral", title: "Integrals: adding up tiny pieces", emoji: "📐", group: "Lesson", keywords: ["integral", "area under curve", "riemann sum", "antiderivative", "fundamental theorem of calculus", "definite integral", "AUC"] },
+        { id: "ml", title: "Why derivatives make machines learn", emoji: "🤖", group: "Lesson", keywords: ["loss", "gradient descent preview", "learning rate", "activation derivatives", "relu derivative", "automatic differentiation", "newton method"] },
+        { id: "tangent", title: "The tangent line to a cubic", emoji: "🏋️", group: "Easy practice" },
+        { id: "box", title: "The biggest open box", emoji: "🏋️", group: "Medium practice" },
+        { id: "newton", title: "Square root of 2 with Newton's method", emoji: "🏋️", group: "Hard practice" },
+        { id: "simpson", title: "Area under the bell curve", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
