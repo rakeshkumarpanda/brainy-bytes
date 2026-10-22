@@ -2881,6 +2881,25 @@ function mlMathModules() {
         { id: "exam", title: "Exam cutoffs on the bell curve", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "statistics", title: "Statistics and Inference", emoji: "📈", page: "content/ml-maths/statistics.html",
+        summary: "Descriptive statistics and outliers, populations, samples and bias, standard error, confidence intervals, null and alternative hypotheses, p-values, Type I and Type II errors, two proportion z-tests for A/B tests, sample size and power, maximum likelihood estimation, least squares regression, R² and the bias and variance trade-off.",
+        keywords: ["statistics", "mean", "median", "standard deviation", "outlier", "sample", "bias", "standard error", "confidence interval", "hypothesis test", "p-value", "a/b test", "maximum likelihood", "linear regression", "R squared", "overfitting", "bias variance"],
+        added: "2026-10-22",
+        sections: [
+        { id: "describe", title: "Describing data: centre, spread and outliers", emoji: "📋", group: "Lesson", keywords: ["descriptive statistics", "mean", "median", "mode", "variance", "standard deviation", "quartile", "IQR", "outlier", "bessel correction"] },
+        { id: "sampling", title: "Samples, bias and standard error", emoji: "🎣", group: "Lesson", keywords: ["population", "sample", "statistic", "parameter", "standard error", "sampling bias", "selection bias", "survivorship bias"] },
+        { id: "ci", title: "Confidence intervals", emoji: "📏", group: "Lesson", keywords: ["confidence interval", "margin of error", "z star", "95 percent", "interval estimate", "coverage"] },
+        { id: "tests", title: "Hypothesis tests and p-values", emoji: "⚖️", group: "Lesson", keywords: ["hypothesis test", "null hypothesis", "alternative hypothesis", "p-value", "significance level", "type I error", "type II error", "power", "z test"] },
+        { id: "ab", title: "A/B testing", emoji: "🆎", group: "Lesson", keywords: ["a/b test", "conversion rate", "two proportion z test", "pooled proportion", "peeking", "sample size", "online experiment"] },
+        { id: "mle", title: "Maximum likelihood estimation", emoji: "🎯", group: "Lesson", keywords: ["maximum likelihood", "MLE", "likelihood", "log-likelihood", "estimator", "cross entropy", "least squares"] },
+        { id: "regress", title: "Regression, R² and the bias and variance trade-off", emoji: "📈", group: "Lesson", keywords: ["linear regression", "least squares", "residual", "R squared", "coefficient of determination", "bias variance tradeoff", "overfitting", "underfitting"] },
+        { id: "outlier", title: "Spot the outlier", emoji: "🏋️", group: "Easy practice" },
+        { id: "poll", title: "Reading a poll", emoji: "🏋️", group: "Medium practice" },
+        { id: "ztest", title: "Is the coffee machine off?", emoji: "🏋️", group: "Hard practice" },
+        { id: "samplesize", title: "How big should an A/B test be?", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
