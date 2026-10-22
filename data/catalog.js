@@ -2732,6 +2732,25 @@ function mlMathModules() {
         { id: "normal-eq", title: "Fit a line with the normal equations", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "eigen-svd-pca", title: "Eigenvalues, SVD and PCA", emoji: "🧭", page: "content/ml-maths/eigen-svd-pca.html",
+        summary: "Eigenvectors as directions a matrix keeps, the characteristic equation, the trace and determinant checks, diagonalisation and matrix powers, Markov steady states, power iteration and PageRank, SVD as rotate stretch rotate, low rank approximation, PCA step by step, explained variance and the condition number.",
+        keywords: ["eigenvalue", "eigenvector", "characteristic equation", "trace", "diagonalisation", "power iteration", "pagerank", "svd", "singular value decomposition", "singular values", "low rank approximation", "pca", "principal component analysis", "covariance matrix", "explained variance", "condition number"],
+        added: "2026-10-22",
+        sections: [
+        { id: "what", title: "Eigenvectors: the directions a matrix keeps", emoji: "🧭", group: "Lesson", keywords: ["eigenvector", "eigenvalue", "Av = λv", "lambda", "special direction"] },
+        { id: "find", title: "Finding eigenvalues by hand", emoji: "🔎", group: "Lesson", keywords: ["characteristic equation", "det(A − λI) = 0", "trace", "find eigenvalues", "2x2 eigenvalues"] },
+        { id: "props", title: "Rules that save time", emoji: "🧩", group: "Lesson", keywords: ["trace", "determinant", "diagonalisation", "eigendecomposition", "PDP⁻¹", "matrix power", "steady state", "symmetric matrix"] },
+        { id: "power", title: "Power iteration and PageRank", emoji: "🔁", group: "Lesson", keywords: ["power iteration", "rayleigh quotient", "dominant eigenvalue", "pagerank", "convergence"] },
+        { id: "svd", title: "Singular value decomposition (SVD)", emoji: "🧱", group: "Lesson", keywords: ["svd", "singular value decomposition", "singular values", "UΣVᵀ", "low rank approximation", "eckart young", "image compression", "pseudo inverse"] },
+        { id: "pca", title: "Principal component analysis (PCA)", emoji: "🎯", group: "Lesson", keywords: ["pca", "principal component analysis", "covariance matrix", "explained variance", "dimensionality reduction", "standardise", "scree plot"] },
+        { id: "ml", title: "Where machine learning uses all this", emoji: "🤖", group: "Lesson", keywords: ["condition number", "hessian eigenvalues", "spectral clustering", "low rank", "LoRA", "recommender", "matrix factorisation"] },
+        { id: "check", title: "Is it an eigenvector?", emoji: "🏋️", group: "Easy practice" },
+        { id: "steady", title: "The long run of a Markov chain", emoji: "🏋️", group: "Medium practice" },
+        { id: "power3", title: "The top principal direction by power iteration", emoji: "🏋️", group: "Hard practice" },
+        { id: "lowrank", title: "Compress a picture with one singular value", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
