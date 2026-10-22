@@ -2831,6 +2831,25 @@ function mlMathModules() {
         { id: "naive", title: "A naive Bayes spam score", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "distributions", title: "Random Variables and Distributions", emoji: "🔔", page: "content/ml-maths/distributions.html",
+        summary: "Discrete and continuous random variables, PMF, PDF and CDF, expected value, variance and standard deviation, the Bernoulli, binomial and Poisson distributions, the normal curve and the 68, 95, 99.7 rule, z-scores, the central limit theorem and standard error, covariance and correlation.",
+        keywords: ["random variable", "probability distribution", "pmf", "pdf", "cdf", "expected value", "variance", "standard deviation", "bernoulli", "binomial", "poisson", "normal distribution", "gaussian", "z-score", "central limit theorem", "standard error", "covariance", "correlation"],
+        added: "2026-10-22",
+        sections: [
+        { id: "rv", title: "Random variables, PMF, PDF and CDF", emoji: "🎯", group: "Lesson", keywords: ["random variable", "discrete", "continuous", "pmf", "pdf", "cdf", "probability mass function", "probability density function", "cumulative distribution"] },
+        { id: "expect", title: "Expected value and variance", emoji: "⚖️", group: "Lesson", keywords: ["expected value", "mean", "variance", "standard deviation", "E[X]", "linearity of expectation", "dice game"] },
+        { id: "binomial", title: "Bernoulli and binomial: counting successes", emoji: "🪙", group: "Lesson", keywords: ["bernoulli", "binomial distribution", "success probability", "n choose k", "coin flips", "number of successes"] },
+        { id: "poisson", title: "Poisson, uniform and exponential", emoji: "📞", group: "Lesson", keywords: ["poisson distribution", "lambda", "rate", "uniform distribution", "exponential distribution", "waiting time", "count data"] },
+        { id: "normal", title: "The normal distribution and z-scores", emoji: "🔔", group: "Lesson", keywords: ["normal distribution", "gaussian", "bell curve", "z-score", "standard normal", "68 95 99.7 rule", "standardisation"] },
+        { id: "clt", title: "The central limit theorem", emoji: "📊", group: "Lesson", keywords: ["central limit theorem", "clt", "sample mean", "standard error", "square root n", "sampling distribution"] },
+        { id: "cov", title: "Covariance, correlation and distributions in ML", emoji: "🔗", group: "Lesson", keywords: ["covariance", "correlation", "pearson r", "correlation is not causation", "covariance matrix", "distributions in machine learning"] },
+        { id: "raffle", title: "Is a raffle ticket worth it?", emoji: "🏋️", group: "Easy practice" },
+        { id: "freethrow", title: "Free throws", emoji: "🏋️", group: "Medium practice" },
+        { id: "poisson", title: "Calls at the help desk", emoji: "🏋️", group: "Hard practice" },
+        { id: "exam", title: "Exam cutoffs on the bell curve", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
