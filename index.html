@@ -48,13 +48,21 @@
 
 <section class="section" id="subjects">
   <div class="sechead">
-    <div><h2>Pick your adventure</h2><p>Every card opens its subject in a new tab.</p></div>
+    <div><h2>Pick your adventure</h2><p>Ready subjects come first, then the ones still cooking. Both lists are A to Z.</p></div>
     <span class="grow"></span>
     <label class="sfind"><span aria-hidden="true">🔎</span><input id="subjFind" type="search" placeholder="Filter subjects" aria-label="Filter subjects"></label>
     <div class="filters" id="filters" role="tablist" aria-label="Show subjects"></div>
   </div>
-  <div class="subjects" id="subjectGrid"></div>
-  <p class="swipehint" id="swipeHint" aria-hidden="true">Swipe sideways to see every subject →</p>
+  <div class="subgroup" id="bakedGroup">
+    <h3 class="subhead">🍪 Already baked <span class="cnt" id="bakedCnt"></span><small>Open any card to start learning</small></h3>
+    <div class="subjects" id="subjectGrid"></div>
+    <p class="swipehint" aria-hidden="true">Swipe sideways to see every subject →</p>
+  </div>
+  <div class="subgroup" id="soonGroup">
+    <h3 class="subhead">⏳ Coming Soon <span class="cnt" id="soonCnt"></span><small>Still in the oven. Each one moves up as soon as its first topic is ready</small></h3>
+    <div class="soonlist" id="soonList"></div>
+    <p class="swipehint" aria-hidden="true">Swipe sideways to see what is cooking →</p>
+  </div>
 </section>
 
 <section class="section" id="moreSec">
