@@ -84,33 +84,52 @@
     pupils.forEach(w => w.animate([{ opacity: 1 }, { opacity: 0 }, { opacity: 1 }], { duration: 220 }));
   }, 4200);
 
-  /* subject cards: compact tiles, a status filter and a text filter keep the list short */
+  /* subjects: ready ones first as clickable tiles, then a Coming Soon list of plain banners.
+     The split comes from the catalog itself (a subject is ready once it has a page or any live topic),
+     and both lists are A to Z, so a subject moves up on its own as soon as its first topic goes live. */
   let filter = 'all', query = '';
-  const nReady = cat.subjects.filter(s => !s.soon).length;
-  const fbtns = [['all', 'All', cat.subjects.length], ['ready', 'Ready now', nReady], ['soon', 'Coming soon', cat.subjects.length - nReady]];
+  const byTitle = (a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base', numeric: true });
+  const baked = cat.subjects.filter(s => !s.soon).sort(byTitle);
+  const cooking = cat.subjects.filter(s => s.soon).sort(byTitle);
+  const fbtns = [['all', 'All', cat.subjects.length], ['ready', 'Already baked', baked.length], ['soon', 'Coming soon', cooking.length]];
   const fbox = document.getElementById('filters');
   const grid = document.getElementById('subjectGrid');
+  const soonList = document.getElementById('soonList');
+  const bakedGroup = document.getElementById('bakedGroup');
+  const soonGroup = document.getElementById('soonGroup');
   const find = document.getElementById('subjFind');
   const hay = s => [s.title, s.blurb, ...(s.tags || [])].join(' ').toLowerCase();
   function card(s) {
     const total = s.topics.length, ready = s.liveTopics.length;
     const pct = s.page ? 100 : total ? Math.round(ready / total * 100) : 0;
-    const status = s.page ? 'Ready to read' : ready ? `${ready} of ${total} topics ready` : 'Cooking right now';
+    const status = s.page ? 'Ready to read' : `${ready} of ${total} topics ready`;
     const prog = PROGRESS.stats(s.topics);
-    return `<a class="scard ${s.soon ? 'soonc' : ''}" href="${LH.subjectUrl(s)}" target="_blank" rel="noopener" style="--c:${esc(s.color || 'var(--accent)')}">
+    return `<a class="scard" href="${LH.subjectUrl(s)}" target="_blank" rel="noopener" style="--c:${esc(s.color || 'var(--accent)')}">
       <div class="top"><span class="em">${esc(s.emoji)}</span><h3>${esc(s.title)}</h3></div>
       <p>${esc(s.blurb || '')}</p>
       ${s.tags && s.tags.length ? `<div class="tags">${s.tags.slice(0, 5).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
       <div class="meter"><i data-w="${pct}"></i></div>
-      <div class="foot">${s.soon ? '<span class="soon">Coming soon</span>' : `<span>${status}</span>`}${prog.done ? `<span class="donechip">✅ ${prog.done} done</span>` : ''}<span class="go">Open ↗</span></div>
+      <div class="foot"><span>${status}</span>${prog.done ? `<span class="donechip">✅ ${prog.done} done</span>` : ''}<span class="go">Open ↗</span></div>
     </a>`;
   }
+  const banner = s => `<div class="soonban" style="--c:${esc(s.color || 'var(--accent)')}" title="${esc(s.title + (s.blurb ? ': ' + s.blurb : ''))}">
+      <span class="em" aria-hidden="true">${esc(s.emoji)}</span>
+      <span class="bt"><b>${esc(s.title)}</b><small>${esc(s.blurb || '')}</small></span>
+      <span class="soon">Soon</span>
+    </div>`;
   function renderGrid() {
     fbox.innerHTML = fbtns.map(([k, l, n]) => `<button class="qchip" role="tab" aria-selected="${filter === k}" data-f="${k}" style="${filter === k ? 'background:var(--accent);color:var(--accent-ink);border-color:var(--accent)' : ''}">${l} <span class="cnt">${n}</span></button>`).join('');
     const q = query.trim().toLowerCase();
-    const list = cat.subjects.filter(s => (filter === 'all' || (filter === 'ready' ? !s.soon : s.soon)) && (!q || hay(s).includes(q)));
-    grid.innerHTML = list.map(card).join('') || '<p class="nosubj">No subjects match. Try another word or pick All.</p>';
-    grid.scrollLeft = 0;
+    const match = s => !q || hay(s).includes(q);
+    const b = filter === 'soon' ? [] : baked.filter(match);
+    const c = filter === 'ready' ? [] : cooking.filter(match);
+    bakedGroup.hidden = !b.length && c.length > 0;
+    soonGroup.hidden = !c.length;
+    document.getElementById('bakedCnt').textContent = b.length;
+    document.getElementById('soonCnt').textContent = c.length;
+    grid.innerHTML = b.map(card).join('') || '<p class="nosubj">No subjects match. Try another word or pick All.</p>';
+    soonList.innerHTML = c.map(banner).join('');
+    grid.scrollLeft = 0; soonList.scrollLeft = 0;
     requestAnimationFrame(() => grid.querySelectorAll('.meter i').forEach(i => { i.style.width = i.dataset.w + '%'; }));
     grid.querySelectorAll('.scard').forEach(c => {
       c.addEventListener('mousemove', e => {
