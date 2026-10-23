@@ -44,7 +44,7 @@ window.CATALOG = {
     name: 'Brainy Bytes',
     tagline: 'Deep concepts, served with a smile',
     headline: ['Learn it deep.', 'Laugh along the way.'],
-    hello: 'New: JavaScript from basics to expert with test automation, Manual Testing, the Complete Java Session track and TestNG, with programs in Java, Python and JavaScript',
+    hello: 'New: Maths for Machine Learning, twelve animated chapters from school basics to expert with interview questions, plus JavaScript, Manual Testing, Java and TestNG',
     intro: 'Free notes that move, joke and run. Every topic comes with animations you can control, everyday examples, step by step code in Java, JavaScript and Python, and practice from easy to expert.',
     footer: 'Brainy Bytes. Free to learn, free to share.',
     searchExamples: ['binary search', 'heap sort', 'two pointers', 'Kadane', 'boundary value analysis', 'bug life cycle', 'constructor chaining', 'HashMap', 'DataProvider', 'listeners'],
@@ -319,16 +319,9 @@ window.CATALOG = {
       emoji: '📐',
       color: '#0ea5e9',
       blurb: 'The linear algebra, calculus, probability and statistics that machine learning is built on.',
-      intro: 'Every idea is shown as an animation and then written as code, so the maths behind machine learning feels practical instead of abstract.',
-      tags: ['Linear algebra', 'Calculus', 'Probability', 'Statistics'],
-      modules: [soonModule([
-        ['Vectors and matrices', '🧮', 'Dot products, matrix multiplication and transforms.'],
-        ['Eigenvalues and decompositions', '🌀', 'Eigenvectors, SVD and PCA.'],
-        ['Derivatives and gradients', '📉', 'Slopes, partial derivatives and the chain rule.'],
-        ['Probability', '🎲', 'Random variables, distributions and Bayes theorem.'],
-        ['Statistics', '📊', 'Mean, variance, hypothesis tests and confidence intervals.'],
-        ['Optimisation', '⛰️', 'Gradient descent and its variants.']
-      ])]
+      intro: 'Twelve chapters that start from school arithmetic and climb to the maths inside real models. Every idea is shown as a step by step animation you can control, worked through with examples, and run as code in Python, JavaScript, TypeScript and Java.',
+      tags: ['Linear algebra', 'Calculus', 'Probability', 'Statistics', 'Loss and metrics'],
+      modules: mlMathModules().concat(iqModule('ml-maths'))
     },
     {
       id: 'machine-learning',
@@ -1276,6 +1269,7 @@ function iqModule(sid) {
     'testng': ['content/testng/interview-questions.html', 'TestNG questions from automation interviews: annotation order, testng.xml, groups, dependencies, data providers, soft asserts, listeners, retries, parallel runs and Maven.', ['annotation order', 'testng.xml', 'groups', 'dependsOnMethods', 'DataProvider', 'SoftAssert', 'ITestListener', 'IRetryAnalyzer', 'parallel', 'surefire']],
     'javascript': ['content/javascript/interview-questions.html', 'JavaScript and TypeScript questions from developer and automation interviews: types, closures, this, prototypes, the event loop, promises, TypeScript generics and narrowing, unit and API tests, Playwright and framework design, with output questions run on Node.js.', ['var let const', 'hoisting', 'closure', 'this', 'event loop', 'microtask', 'Promise.all', 'debounce', 'deep clone', 'interface vs type', 'any vs unknown', 'generics', 'utility types', 'mocks and spies', 'auto waiting', 'flaky tests', 'fixtures']],
     'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']],
+    'ml-maths': ['content/ml-maths/interview-questions.html', 'Maths questions from machine learning interviews and certification theory sections: dot products, matrix shapes, eigenvalues and PCA, derivatives, backpropagation, gradient descent and Adam, Bayes, distributions, confidence intervals, A/B tests, entropy, losses and metrics, each solved step by step.', ['dot product', 'cosine similarity', 'matrix multiplication', 'eigenvalues', 'PCA', 'chain rule', 'sigmoid derivative', 'gradient descent', 'Adam', 'Bayes theorem', 'central limit theorem', 'p-value', 'A/B test', 'cross entropy', 'precision recall', 'ROC AUC']],
     'master-claude': ['content/claude/interview-questions.html', 'Claude interview questions on prompting, context engineering, CLAUDE.md and rules, skills, permissions and hooks, subagents, MCP, claude -p and GitHub Actions, the Claude API, agents, cost and safety, with real scenario questions.', ['prompt engineering', 'context rot', 'CLAUDE.md', 'rules.md', 'SKILL.md', 'hooks exit code 2', 'subagents', 'MCP', '.mcp.json', 'claude -p', 'tool use loop', 'prompt caching', 'agent safety']]
   }[sid];
   return {
@@ -2879,6 +2873,46 @@ function mlMathModules() {
         { id: "freethrow", title: "Free throws", emoji: "🏋️", group: "Medium practice" },
         { id: "poisson", title: "Calls at the help desk", emoji: "🏋️", group: "Hard practice" },
         { id: "exam", title: "Exam cutoffs on the bell curve", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "statistics", title: "Statistics and Inference", emoji: "📈", page: "content/ml-maths/statistics.html",
+        summary: "Descriptive statistics and outliers, populations, samples and bias, standard error, confidence intervals, null and alternative hypotheses, p-values, Type I and Type II errors, two proportion z-tests for A/B tests, sample size and power, maximum likelihood estimation, least squares regression, R² and the bias and variance trade-off.",
+        keywords: ["statistics", "mean", "median", "standard deviation", "outlier", "sample", "bias", "standard error", "confidence interval", "hypothesis test", "p-value", "a/b test", "maximum likelihood", "linear regression", "R squared", "overfitting", "bias variance"],
+        added: "2026-10-22",
+        sections: [
+        { id: "describe", title: "Describing data: centre, spread and outliers", emoji: "📋", group: "Lesson", keywords: ["descriptive statistics", "mean", "median", "mode", "variance", "standard deviation", "quartile", "IQR", "outlier", "bessel correction"] },
+        { id: "sampling", title: "Samples, bias and standard error", emoji: "🎣", group: "Lesson", keywords: ["population", "sample", "statistic", "parameter", "standard error", "sampling bias", "selection bias", "survivorship bias"] },
+        { id: "ci", title: "Confidence intervals", emoji: "📏", group: "Lesson", keywords: ["confidence interval", "margin of error", "z star", "95 percent", "interval estimate", "coverage"] },
+        { id: "tests", title: "Hypothesis tests and p-values", emoji: "⚖️", group: "Lesson", keywords: ["hypothesis test", "null hypothesis", "alternative hypothesis", "p-value", "significance level", "type I error", "type II error", "power", "z test"] },
+        { id: "ab", title: "A/B testing", emoji: "🆎", group: "Lesson", keywords: ["a/b test", "conversion rate", "two proportion z test", "pooled proportion", "peeking", "sample size", "online experiment"] },
+        { id: "mle", title: "Maximum likelihood estimation", emoji: "🎯", group: "Lesson", keywords: ["maximum likelihood", "MLE", "likelihood", "log-likelihood", "estimator", "cross entropy", "least squares"] },
+        { id: "regress", title: "Regression, R² and the bias and variance trade-off", emoji: "📈", group: "Lesson", keywords: ["linear regression", "least squares", "residual", "R squared", "coefficient of determination", "bias variance tradeoff", "overfitting", "underfitting"] },
+        { id: "outlier", title: "Spot the outlier", emoji: "🏋️", group: "Easy practice" },
+        { id: "poll", title: "Reading a poll", emoji: "🏋️", group: "Medium practice" },
+        { id: "ztest", title: "Is the coffee machine off?", emoji: "🏋️", group: "Hard practice" },
+        { id: "samplesize", title: "How big should an A/B test be?", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "models", title: "Maths inside ML models", emoji: "🤖", blurb: "Entropy, loss functions, regularisation and evaluation metrics: where all the earlier maths meets real models.", topics: [
+      { id: "loss-metrics", title: "Entropy, Loss Functions and Metrics", emoji: "🎯", page: "content/ml-maths/loss-metrics.html",
+        summary: "Surprise and entropy in bits, cross entropy and KL divergence, softmax with temperature and the log-sum-exp trick, regression losses and outliers, binary cross entropy and its p − y gradient, ridge and lasso regularisation, and classification metrics from the confusion matrix to ROC and AUC.",
+        keywords: ["entropy", "information theory", "cross entropy", "kl divergence", "softmax", "temperature", "log sum exp", "loss function", "mse", "mae", "huber", "log loss", "regularisation", "ridge", "lasso", "precision", "recall", "f1", "roc", "auc"],
+        added: "2026-10-22",
+        sections: [
+        { id: "entropy", title: "Information and entropy", emoji: "🔥", group: "Lesson", keywords: ["information theory", "entropy", "bits", "surprise", "self information", "information gain", "shannon"] },
+        { id: "xent", title: "Cross entropy and KL divergence", emoji: "🎯", group: "Lesson", keywords: ["cross entropy", "kl divergence", "kullback leibler", "relative entropy", "one hot", "information loss"] },
+        { id: "softmax", title: "Softmax, temperature and log-sum-exp", emoji: "🌡️", group: "Lesson", keywords: ["softmax", "logits", "temperature", "log sum exp", "numerical stability", "overflow", "multiclass classification"] },
+        { id: "losses", title: "Loss functions for regression", emoji: "📉", group: "Lesson", keywords: ["loss function", "mean squared error", "MSE", "mean absolute error", "MAE", "huber loss", "outliers", "regression loss"] },
+        { id: "logloss", title: "Log loss for classification", emoji: "🪵", group: "Lesson", keywords: ["log loss", "binary cross entropy", "logistic regression", "sigmoid", "gradient p minus y", "classification loss"] },
+        { id: "reg", title: "Regularisation: L2 and L1", emoji: "🧲", group: "Lesson", keywords: ["regularisation", "L2", "ridge", "weight decay", "L1", "lasso", "lambda", "sparsity", "overfitting"] },
+        { id: "metrics", title: "Classification metrics, ROC and AUC", emoji: "📊", group: "Lesson", keywords: ["confusion matrix", "accuracy", "precision", "recall", "F1 score", "ROC curve", "AUC", "threshold", "true positive rate", "false positive rate", "imbalanced data"] },
+        { id: "bits", title: "Counting bits", emoji: "🏋️", group: "Easy practice" },
+        { id: "stable", title: "A softmax that does not overflow", emoji: "🏋️", group: "Medium practice" },
+        { id: "ridge", title: "Ridge shrinks the weight", emoji: "🏋️", group: "Hard practice" },
+        { id: "auc", title: "AUC by counting pairs", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
