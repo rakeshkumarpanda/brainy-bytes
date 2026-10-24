@@ -230,9 +230,9 @@ window.CATALOG = {
       title: 'API Automation Testing',
       emoji: '🤖',
       color: '#8467f0',
-      blurb: 'Pick a language, then a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript.',
-      intro: 'One page that asks for your programming language first, then for a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, and Postman, Playwright or fetch in JavaScript. Every track runs from a first GET to schema checks, mocking, framework design, parallel runs and CI, with a real world scenario, a quiz, an animated request walkthrough and a hands on sandbox. Every code sample was run against a copy of the Restful Booker practice API.',
-      tags: ['Rest Assured', 'Playwright', 'pytest', 'Postman', 'Newman', 'fetch', 'HttpClient', 'JSON Schema'],
+      blurb: 'Pick a language, then a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript, and Playwright in TypeScript.',
+      intro: 'One page that asks for your programming language first, then for a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript, and Playwright with Zod and OpenAPI generated types in TypeScript. Every track runs from a first GET to schema checks, mocking, framework design, real project essentials (environments, secrets, fake data, safe logging and cleanup), parallel runs, CI and a lesson on the newest tool features, with a real world scenario, a quiz, an animated request walkthrough and a hands on sandbox. Every code sample was run against a copy of the Restful Booker practice API.',
+      tags: ['Rest Assured', 'Playwright', 'TypeScript', 'pytest', 'Postman', 'Newman', 'fetch', 'HttpClient', 'JSON Schema', 'Zod'],
       page: 'content/api-automation/api-automation.html'
     },
     {
