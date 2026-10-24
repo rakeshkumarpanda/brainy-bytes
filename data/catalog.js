@@ -2995,6 +2995,24 @@ function javaNewModules() {
         { id: "scenario", title: "Real world scenario: a fast smoke test", emoji: "🎬", group: "Chapter 23", keywords: ["smoke test", "virtual threads", "Semaphore", "ConcurrentSkipListMap", "parallel API checks", "deployment check"] },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "java-jvm-internals", title: "Inside the JVM: how a Java program really runs", emoji: "⚙️", page: "content/java/java-jvm-internals.html",
+        summary: "The journey from source to machine code, the class file layout and versions, class loaders and lazy initialisation, stack frames and the heap, bytecode on the operand stack, tiered JIT compilation, G1, ZGC and the Java 27 G1 default, compact object headers, Flight Recorder events and secret redaction, the AOT cache, and tuning a service for a small container.",
+        keywords: ["JVM internals", "class loader", "bytecode", "JIT", "HotSpot", "garbage collector", "G1", "ZGC", "stack", "heap", "metaspace", "JFR", "AOT cache", "Project Leyden", "compact object headers", "Java 27"],
+        added: "2026-10-24",
+        sections: [
+        { id: "journey", title: "The journey of a Java program", emoji: "🧭", group: "Chapter 24", keywords: ["JVM", "how Java runs", "bytecode", "interpreter", "JIT", "class loader", "verifier", "execution engine", "write once run anywhere"] },
+        { id: "classfile", title: "Inside a class file", emoji: "📄", group: "Chapter 24", keywords: ["class file", "CAFEBABE", "magic number", "major version", "constant pool", "javap -v", "UnsupportedClassVersionError", "--release"] },
+        { id: "loading", title: "Class loading: delegation and lazy initialisation", emoji: "🚚", group: "Chapter 24", keywords: ["class loader", "bootstrap", "platform class loader", "application class loader", "parent delegation", "static initialiser", "lazy loading", "ClassNotFoundException", "NoClassDefFoundError", "linking"] },
+        { id: "memory", title: "The runtime memory areas", emoji: "🗄️", group: "Chapter 24", keywords: ["stack", "heap", "metaspace", "code cache", "stack frame", "local variables", "StackOverflowError", "OutOfMemoryError", "-Xss", "-Xmx", "PermGen"] },
+        { id: "bytecode", title: "Bytecode and the operand stack", emoji: "🔢", group: "Chapter 24", keywords: ["bytecode", "operand stack", "stack machine", "iload", "imul", "ireturn", "invokevirtual", "invokedynamic", "javap -c", "opcode"] },
+        { id: "jit", title: "The interpreter and the JIT compiler", emoji: "🔥", group: "Chapter 24", keywords: ["JIT", "just in time", "HotSpot", "C1", "C2", "tiered compilation", "PrintCompilation", "inlining", "deoptimisation", "warm up", "JMH"] },
+        { id: "gc", title: "Garbage collectors and object headers", emoji: "♻️", group: "Chapter 24", keywords: ["garbage collector", "G1", "ZGC", "Parallel GC", "Serial GC", "generational", "JEP 523", "compact object headers", "JEP 519", "JEP 534", "object header", "UseCompactObjectHeaders", "-Xlog:gc"] },
+        { id: "jfr", title: "JDK Flight Recorder: see what really happened", emoji: "📹", group: "Chapter 24", keywords: ["JFR", "Java Flight Recorder", "JDK Flight Recorder", "jdk.jfr.Event", "custom event", "jcmd", "JFR.start", "jfr print", "Mission Control", "redaction", "JEP 536", "profiling"] },
+        { id: "aot", title: "Faster startup with the AOT cache", emoji: "⚡", group: "Chapter 24", keywords: ["AOT cache", "ahead of time", "Project Leyden", "startup time", "AOTCacheOutput", "AOTCache", "JEP 483", "JEP 514", "JEP 515", "JEP 516", "CDS", "class data sharing", "training run"] },
+        { id: "scenario", title: "Real world scenario: a service that misbehaves in a small container", emoji: "🎬", group: "Chapter 24", keywords: ["container", "Docker", "MaxRAMPercentage", "JVM flags", "ManagementFactory", "GarbageCollectorMXBean", "HeapDumpOnOutOfMemoryError", "JVM tuning", "production troubleshooting"] },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
