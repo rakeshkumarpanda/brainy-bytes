@@ -69,11 +69,11 @@ console.log("ok".isWellFormed(), "bad \\uD800".isWellFormed());
 console.log("Héllo Wörld".match(/[\\p{L}--[a-z]]/gv));    // letters that are not plain a to z
 ''', 'ES2024: groupBy, withResolvers, the v flag'),
     'es2025': run('''
-// Iterator helpers: lazy map, filter, take on any iterator (chapter 7)
+// Iterator helpers: lazy map, filter, take on any iterator ({{ch:js-collections-iterators}})
 function* ids() { let n = 1; while (true) yield `TC-${n++}`; }
 console.log(ids().filter(id => id.endsWith("7")).take(2).toArray());
 
-// Set methods (chapter 7)
+// Set methods ({{ch:js-collections-iterators}})
 console.log([...new Set(["a", "b", "c"]).difference(new Set(["b"]))]);
 
 // RegExp.escape: put user text into a pattern safely
@@ -97,7 +97,7 @@ console.log(Math.f16round(1.337), new Float16Array([1.337])[0]);
 // ES2025: import attributes and JSON modules
 import config from "./playwright.settings.json" with { type: "json" };
 const { default: users } = await import("./users.json", { with: { type: "json" } });
-''', 'Import attributes for JSON', note='Runs in chapter 9'),
+''', 'Import attributes for JSON', note='Runs in {{ch:js-modules-tooling}}'),
     'es2026': run('''
 // Explicit resource management: "using" calls Symbol.dispose when the block ends,
 // even if an error is thrown. Great for browsers, servers, temp files and DB connections.

@@ -264,7 +264,7 @@ setup("log in", async ({ page }) => {
 await page.evaluate(() => localStorage.setItem("onboarding-done", "true"));
 const cookies = await page.context().cookies();
 await page.context().addCookies([{ name: "consent", value: "yes", url: "https://shop.example" }]);
-''', 'Browser state in Playwright', note='Runs for real in chapter 21', result='Tests start already logged in, which saves the login steps in every test and keeps them independent.'),
+''', 'Browser state in Playwright', note='Runs for real in {{ch:js-ui-automation}}', result='Tests start already logged in, which saves the login steps in every test and keeps them independent.'),
     'scenario': dom('''
 <!doctype html>
 <html><body>

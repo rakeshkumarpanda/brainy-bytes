@@ -306,7 +306,7 @@ PARTS = [
 <li>Asymmetric matchers (<code>expect.stringMatching</code>, <code>expect.any</code>) check the <b>kind</b> of value when the exact value changes every run.</li>
 <li>The clock is fixed (<code>now</code> is a constant), so the time check passes on any day it runs.</li>
 </ul>
-<div class="dev-box">Chapter 20 turns this into a real API suite: starting a server, sending requests with fetch and supertest, and validating whole responses against a JSON Schema.</div>
+<div class="dev-box">{{Ch:js-api-testing}} turns this into a real API suite: starting a server, sending requests with fetch and supertest, and validating whole responses against a JSON Schema.</div>
 ''', qa=['Jest', 'Vitest'], kw=['API response validation', 'toMatchObject', 'expect.stringMatching', 'expect.any', 'JSON body', 'ISO date check', 'currency check']),
 ]
 

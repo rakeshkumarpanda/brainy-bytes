@@ -470,7 +470,7 @@ PARTS = [
 <tr><td>Security</td><td>401 without a token, 403 or 404 for someone else's data</td></tr>
 <tr><td>Speed</td><td>95% of requests under 200 ms</td></tr>
 </table></div>
-<div class="tip">This chapter tests one small shop API, written with Express in <code>shop-api.js</code>, with four different tools. It is the same app as in chapter 12, with login and orders added.</div>
+<div class="tip">This chapter tests one small shop API, written with Express in <code>shop-api.js</code>, with four different tools. It is the same app as in {{ch:js-http-node}}, with login and orders added.</div>
 ''', qa=True, qa_why='API tests give the most coverage per minute of any automated test.',
         kw=['API testing', 'what to test', 'status code', 'headers', 'body', 'schema', 'side effects', 'negative testing', 'security', 'response time', 'test pyramid']),
     part('live', '🔁', 'Testing a running server: a CRUD flow', '''

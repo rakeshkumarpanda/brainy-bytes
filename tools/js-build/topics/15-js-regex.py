@@ -365,7 +365,7 @@ EX = [
 
 T = {
     'slug': 'js-regex', 'title': 'Regular expressions in depth', 'short': 'Regex in depth', 'emoji': '🧷', 'module': MODULE, 'minutes': 18,
-    'lead': 'Go beyond the basics of chapter 6: how the backtracking engine finds a match, greedy and lazy quantifiers, lookarounds and backreferences, every flag and the lastIndex trap, unicode letters in every language, replacing and masking, a sticky tokeniser, ReDoS, and testing patterns with tables.',
+    'lead': 'Go beyond the basics of {{ch:js-strings-dates-json}}: how the backtracking engine finds a match, greedy and lazy quantifiers, lookarounds and backreferences, every flag and the lastIndex trap, unicode letters in every language, replacing and masking, a sticky tokeniser, ReDoS, and testing patterns with tables.',
     'desc': 'JavaScript regex in depth: backtracking, greedy and lazy, lookahead, lookbehind, backreferences, flags g m s y u v, lastIndex, unicode property escapes, replace with functions, masking, tokenizer, ReDoS and testing regular expressions.',
     'summary': 'How the backtracking engine matches, greedy against lazy, lookarounds for password rules and backreferences, the m, s, g and y flags and the lastIndex trap, unicode letters and emoji, replacing with groups and functions to mask secrets, a sticky tokeniser, catastrophic backtracking, validation patterns with table driven tests, and parsing access logs.',
     'keywords': ['regex', 'regular expressions', 'backtracking', 'lazy quantifier', 'lookahead', 'lookbehind', 'backreference', 'lastIndex', 'unicode regex', 'replace function', 'masking', 'tokenizer', 'ReDoS', 'validation', 'log parsing', 'interview'],

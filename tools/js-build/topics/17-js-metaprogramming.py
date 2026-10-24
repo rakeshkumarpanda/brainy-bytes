@@ -148,7 +148,7 @@ console.log(dedent`
         Then I see "Try again"`);
 ''', 'Tagged templates: safe HTML and SQL'),
     'decorators': show('''
-// Decorators are a stage 3 proposal. TypeScript 5 and later supports them today (chapter 24),
+// Decorators are a stage 3 proposal. TypeScript 5 and later supports them today ({{ch:ts-projects}}),
 // and Babel can compile them for JavaScript.
 class CheckoutPage {
   @step("Pay with card")          // log the step in the report
@@ -164,7 +164,7 @@ function step(title) {
     };
   };
 }
-''', 'Decorators wrap methods and classes', note='Runs in chapter 24 with TypeScript'),
+''', 'Decorators wrap methods and classes', note='Runs in {{ch:ts-projects}} with TypeScript'),
     'scenario': run('''
 // A fluent API client built from a Proxy: api.users[7].orders.get() calls GET /users/7/orders
 function client(baseURL, fetchFn) {
@@ -197,7 +197,7 @@ PARTS = [
 <div class="tip">This is why a hidden property can be on an object you are testing but missing from <code>JSON.stringify</code> and <code>toEqual</code> comparisons. Use <code>Object.getOwnPropertyDescriptors</code> when an object behaves strangely.</div>
 ''', kw=['property descriptor', 'defineProperty', 'writable', 'enumerable', 'configurable', 'getter', 'setter', 'accessor', 'Object.freeze', 'Object.seal', 'preventExtensions']),
     part('symbols', '🔣', 'Well known symbols', '''
-<p>Built in operations look for special symbol keys on your objects. <code>Symbol.toPrimitive</code> controls conversion to numbers and strings, <code>Symbol.hasInstance</code> controls <code>instanceof</code>, <code>Symbol.toStringTag</code> the type label, and <code>Symbol.iterator</code> (chapter 7) makes an object loopable. Node.js adds <code>util.inspect.custom</code> for how an object is logged.</p>
+<p>Built in operations look for special symbol keys on your objects. <code>Symbol.toPrimitive</code> controls conversion to numbers and strings, <code>Symbol.hasInstance</code> controls <code>instanceof</code>, <code>Symbol.toStringTag</code> the type label, and <code>Symbol.iterator</code> ({{ch:js-collections-iterators}}) makes an object loopable. Node.js adds <code>util.inspect.custom</code> for how an object is logged.</p>
 [[symbols]]
 <div class="qa-box">Give credential and token objects a custom inspect and a <code>toJSON</code> that leave the secret out. Test reports, CI logs and screenshots of the console then never leak a password.</div>
 ''', qa=True, qa_why='Hiding secrets from logs and reports is a must for test frameworks that log every object.',
@@ -222,7 +222,7 @@ PARTS = [
     part('scenario', '🎬', 'Real world scenario: a fluent API client', '''
 <div class="scenario"><b>The situation</b>The API test suite calls dozens of endpoints. Writing a function for each one is slow, and URL strings built by hand are full of typos.</div>
 [[scenario]]
-<p>Each property read adds a part to the path, and the verb at the end sends the request. The same trick is used by real clients for large APIs. Pair it with TypeScript types (chapter 23) so the editor suggests only valid paths.</p>
+<p>Each property read adds a part to the path, and the verb at the end sends the request. The same trick is used by real clients for large APIs. Pair it with TypeScript types ({{ch:ts-advanced}}) so the editor suggests only valid paths.</p>
 ''', qa=True, kw=['API client', 'fluent API', 'Proxy', 'REST', 'URL builder', 'fake fetch']),
 ]
 

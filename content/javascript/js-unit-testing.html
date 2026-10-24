@@ -467,9 +467,9 @@ src/cart.test.js
 src/shipping.test.js
 
 $ npx jest -t &quot;@smoke&quot; --verbose
-  ✓ @smoke free shipping from 499
   ✓ @smoke checkout total
   ○ skipped discount with SAVE10
+  ✓ @smoke free shipping from 499
 Tests:       1 skipped, 2 passed, 3 total
 
 $ npx jest shipping
@@ -697,12 +697,12 @@ describe(<span class="s">"stockClient (outgoing HTTP, faked with nock)"</span>, 
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx vitest run --reporter=verbose</pre></div><div class="out"><span>Terminal output</span><pre>
  RUN  v5.0.5 project
 
- ✓ test/app.test.js &gt; GET /api/products/:sku/stock (route, fake service) &gt; 200 with the quantity
- ✓ test/app.test.js &gt; GET /api/products/:sku/stock (route, fake service) &gt; 404 for an unknown product
- ✓ test/app.test.js &gt; GET /api/products/:sku/stock (route, fake service) &gt; 503 when the stock service fails
  ✓ test/stock-client.test.js &gt; stockClient (outgoing HTTP, faked with nock) &gt; reads the available quantity
  ✓ test/stock-client.test.js &gt; stockClient (outgoing HTTP, faked with nock) &gt; returns null on 404
  ✓ test/stock-client.test.js &gt; stockClient (outgoing HTTP, faked with nock) &gt; throws on 500 so the route can answer 503
+ ✓ test/app.test.js &gt; GET /api/products/:sku/stock (route, fake service) &gt; 200 with the quantity
+ ✓ test/app.test.js &gt; GET /api/products/:sku/stock (route, fake service) &gt; 404 for an unknown product
+ ✓ test/app.test.js &gt; GET /api/products/:sku/stock (route, fake service) &gt; 503 when the stock service fails
 
  Test Files  2 passed (2)
       Tests  6 passed (6)

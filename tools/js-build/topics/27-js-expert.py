@@ -409,7 +409,7 @@ PARTS = [
     part('patterns', '🧩', 'Patterns experts reach for', '''
 <p>A pattern is a known shape for a common problem. These four appear in application code and in test frameworks alike.</p>
 [[patterns]]
-<p>For tests, the two most useful patterns are the <b>page object</b> from chapter 8 and the <b>test data builder</b>. A builder gives every field a valid default, so each test states only what it is about.</p>
+<p>For tests, the two most useful patterns are the <b>page object</b> from {{ch:js-oop}} and the <b>test data builder</b>. A builder gives every field a valid default, so each test states only what it is about.</p>
 [[builder]]
 <div class="tip">Unique values from a counter or <code>crypto.randomUUID()</code> keep tests that run in parallel from clashing over the same email or order id.</div>
 ''', qa=True, qa_why='Builders, factories and page objects make large test suites readable and safe to run in parallel.',
@@ -431,7 +431,7 @@ PARTS = [
 <tr><td>Secrets</td><td>No API keys in the browser bundle or in git. Read them from environment variables</td></tr>
 <tr><td>eval</td><td>No <code>eval</code> or <code>new Function</code> on user input</td></tr>
 <tr><td>Dependencies</td><td>Run <code>npm audit</code>, keep a lock file and use <code>npm ci</code> in CI</td></tr>
-<tr><td>Auth</td><td>Every API checks the token and the role, not just the UI (chapter 20)</td></tr>
+<tr><td>Auth</td><td>Every API checks the token and the role, not just the UI ({{ch:js-api-testing}})</td></tr>
 <tr><td>Cookies</td><td>Session cookies use HttpOnly, Secure and SameSite</td></tr>
 </table></div>
 ''', qa=True, qa_why='Security checks such as XSS payloads and auth rules belong in every regression suite.',

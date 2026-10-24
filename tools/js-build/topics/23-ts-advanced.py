@@ -237,7 +237,7 @@ PARTS = [
     part('generics', '🧬', 'Generics', '''
 <p>A <b>generic</b> is a type parameter, written <code>&lt;T&gt;</code>, that is filled in when the function or type is used. It keeps the connection between inputs and outputs: <code>first</code> of a number list is a number. A <b>constraint</b> with <code>extends</code> says what <code>T</code> must at least have.</p>
 [[generics]]
-<div class="tip">Generics are why Playwright's <code>test.extend&lt;{ cart: CartPage }&gt;()</code> knows the type of every fixture, and why <code>response.json()</code> in a typed client can return your response type (chapter 25).</div>
+<div class="tip">Generics are why Playwright's <code>test.extend&lt;{ cart: CartPage }&gt;()</code> knows the type of every fixture, and why <code>response.json()</code> in a typed client can return your response type ({{ch:ts-testing}}).</div>
 ''', qa=['Playwright'], qa_why='Typed fixtures, typed API clients and test data builders are all built with generics.',
         kw=['generics', 'type parameter', '<T>', 'generic constraint', 'extends', 'default type parameter', 'generic type', 'inference']),
     part('keyof', '🔑', 'typeof, keyof and indexed access', '''
