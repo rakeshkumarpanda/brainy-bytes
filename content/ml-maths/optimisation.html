@@ -992,6 +992,11 @@ pre.pseudo{margin:6px 0 0; background:var(--code-bg); color:var(--code-ink); bor
 .fx-b{font-family:"Cambria Math","STIX Two Math","Latin Modern Math","Times New Roman",serif; font-size:21px; line-height:1.9; margin:4px 0; overflow-x:auto; overflow-y:hidden; white-space:nowrap; padding-bottom:2px}
 .fx-b .sm{font-size:16px}
 .fx-n{font-size:14px; color:var(--ink2); font-weight:600}
+.deep{margin:16px 0 12px; padding:12px 16px; border-radius:16px; border:1.5px dashed color-mix(in srgb, var(--accent) 55%, var(--line)); background:color-mix(in srgb, var(--accent) 5%, var(--surface))}
+.deep-h{font-family:var(--font-head); font-weight:800; font-size:16px; color:var(--accent-deep); margin-bottom:4px}
+.deep>p:first-of-type{margin-top:4px}
+.deep ol,.deep ul{padding-left:22px}
+.deep li{margin:4px 0}
 .trick,.mlnote,.life{position:relative; margin:12px 0; padding:10px 14px; border-radius:14px; font-size:15px; border:1.5px solid var(--line)}
 .trick::before,.mlnote::before,.life::before{display:block; font-family:var(--font-head); font-weight:800; font-size:14px; margin-bottom:2px}
 .trick{background:color-mix(in srgb, var(--pink) 10%, var(--surface)); border-color:color-mix(in srgb, var(--pink) 50%, var(--line))}
@@ -1107,7 +1112,7 @@ sub,sup{line-height:0}
 .mv-pt.o.mv-drag{stroke:var(--orange)} .mv-pt.g.mv-drag{stroke:var(--green)} .mv-pt.p.mv-drag{stroke:var(--purple)} .mv-pt.r.mv-drag{stroke:var(--red)}
 
 /* ===== Extra styles for this topic's animations ===== */
-
+.sg-plot .mv-svg{max-height:400px}
 </style>
 </head>
 <body>
@@ -1116,7 +1121,7 @@ sub,sup{line-height:0}
   <div class="crumb"><a class="home-link" href="../../subject.html?s=ml-maths" target="_top">📐 Maths for Machine Learning</a><span>›</span><span>📉 Calculus</span><span>›</span><span>Optimisation</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">⛷️</span><div><h1>Gradient Descent and Optimisation</h1><p class="lead">Training a model is walking downhill on its loss. Run gradient descent step by step, find the learning rate that is just right, see why mini batches work, race plain gradient descent against momentum and Adam, and solve problems with constraints using Lagrange multipliers.</p></div></div>
-    <div class="chips"><span class="chip">⏱️ About 60 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 6 animations</span><span class="chip">🏋️ 4 practice problems</span><span class="chip">🎯 15 quiz questions</span><span class="chip">🧮 13 calculations</span><span class="chip">🐍 Python · 🟨 JavaScript · 🔷 TypeScript · ☕ Java</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="chips"><span class="chip">⏱️ About 60 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 10 animations</span><span class="chip">🏋️ 4 practice problems</span><span class="chip">🎯 15 quiz questions</span><span class="chip">🧮 13 calculations</span><span class="chip">🐍 Python · 🟨 JavaScript · 🔷 TypeScript · ☕ Java</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
   </header>
   <nav class="toc" aria-label="Parts of this page"><a href="#idea"><span>⛷️</span>Gradient descent: walk downhill</a><a href="#lr"><span>🎛️</span>The learning rate: not too small, not too big</a><a href="#sgd"><span>🎲</span>Stochastic and mini batch gradient descent</a><a href="#adam"><span>🚀</span>Momentum, RMSProp and Adam</a><a href="#landscape"><span>🗺️</span>Convexity, local minima and saddles</a><a href="#lagrange"><span>🔒</span>Optimising with constraints: Lagrange multipliers</a><a href="#practice"><span>🛠️</span>Training tricks: schedules, clipping and stopping</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Practice</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
   <section class="card reveal" id="comic"></section>
@@ -1128,6 +1133,13 @@ sub,sup{line-height:0}
 <div class="viz" data-viz="walk" data-title="Three steps on L(w) = w² − 4w + 5, starting at w = 0 with η = 0.1" data-sub="Press Play, or step through it one line at a time." data-steps="[&quot;Slope: &lt;span class=\&quot;eq\&quot;&gt;L′(w) = 2w − 4&lt;/span&gt;. At w = 0 the slope is −4, so the bowl goes down to the right.&quot;, &quot;Step 1: &lt;span class=\&quot;eq\&quot;&gt;w = 0 − 0.1 × (−4) = 0.4&lt;/span&gt;&quot;, &quot;Step 2: slope &lt;span class=\&quot;eq\&quot;&gt;2 × 0.4 − 4 = −3.2&lt;/span&gt;, so &lt;span class=\&quot;eq\&quot;&gt;w = 0.4 + 0.32 = 0.72&lt;/span&gt;&quot;, &quot;Step 3: slope &lt;span class=\&quot;eq\&quot;&gt;2 × 0.72 − 4 = −2.56&lt;/span&gt;, so &lt;span class=\&quot;eq\&quot;&gt;w = 0.72 + 0.256 = 0.976&lt;/span&gt;&quot;, &quot;The steps shrink as the slope flattens, and w heads for the bottom at w = 2.&quot;]"></div>
 <div class="c3" data-k="gd_basic" data-label="Five steps of gradient descent"></div>
 <div class="trick">Gradient descent never needs to see the whole landscape. Like a ball rolling downhill, it only needs the slope where it is standing right now.</div>
+<div class="deep"><div class="deep-h">🔍 Going deeper: when to stop, and why the steps shrink on their own</div>
+<p>Gradient descent is a loop, so it needs a rule for when to stop. Real training code uses one or more of these.</p>
+<div class="tw"><table class="jt"><tr><th>Stopping rule</th><th>Check</th><th>Typical setting</th></tr><tr><td>fixed budget</td><td>stop after a set number of steps or epochs</td><td>10 epochs, or 100000 steps</td></tr><tr><td>small gradient</td><td>stop when ‖∇L‖ is tiny, since that means the ground is flat</td><td>‖∇L‖ &lt; 10⁻⁶</td></tr><tr><td>small improvement</td><td>stop when the loss barely changes between checks</td><td>less than 0.01% better</td></tr><tr><td>early stopping</td><td>stop when the validation loss has not improved for a while</td><td>patience of 5 epochs</td></tr></table></div>
+<p>Notice that the learning rate η stays the same in the worked example, yet the steps get smaller. That happens because the step is η × slope, and the slope itself shrinks near the bottom of a smooth bowl. Gradient descent slows down by itself exactly where caution is needed.</p>
+<div class="fx"><div class="fx-h">🧮 Progress per step on a smooth loss</div><div class="fx-b">L(w − η∇L) ≈ L(w) − η ‖∇L‖²</div><div class="fx-n">From the linear approximation of Chapter 7. As long as η is small enough, every step lowers the loss by roughly η times the squared gradient length.</div></div>
+<div class="life">Parking a car: you drive at normal speed down the street, slow as you near the space, and creep the last few centimetres. Gradient descent follows the same pattern because its steps are proportional to how far the slope says you still have to go.</div>
+</div>
 </section>
 <section class="card reveal jsec" id="lr" data-say="lr"><div class="sec-num">Part 2</div><h2><span class="sec-em">🎛️</span><span>The learning rate: not too small, not too big</span></h2>
 <p>The learning rate is the most important setting in training. Too small and training crawls. Too big and every step overshoots the valley floor, bouncing from side to side or flying off completely.</p>
@@ -1136,6 +1148,12 @@ sub,sup{line-height:0}
 <div class="c3" data-k="p_lr_sweep" data-label="Four learning rates on the same bowl"></div>
 <div class="tip">A common recipe: try learning rates spaced by factors of 10 (0.1, 0.01, 0.001), watch the loss for a few hundred steps, and keep the largest one that still falls smoothly. Adam usually starts at 0.001.</div>
 <div class="life">Adjusting a shower: turn the tap a tiny bit and you wait ages for the right temperature. Turn it a lot and you swing between freezing and scalding. A sensible turn gets you there in a couple of goes.</div>
+<div class="deep"><div class="deep-h">🔍 Going deeper: see the loss curves for each learning rate</div>
+<p>Engineers rarely look at the weights directly. They watch the <b>loss curve</b>, the loss plotted against the step number, and read the learning rate from its shape. Compare four learning rates on the same bowl below, then add your own.</p>
+<div class="viz" data-viz="lrcurve"></div>
+<div class="tw"><table class="jt"><tr><th>Shape of the loss curve</th><th>Diagnosis</th><th>Action</th></tr><tr><td>almost flat from the start</td><td>learning rate far too small</td><td>multiply η by 10</td></tr><tr><td>smooth fast drop, then flat</td><td>about right</td><td>keep it</td></tr><tr><td>drops, but saw tooth wobbles</td><td>a little too big</td><td>halve η, or add momentum</td></tr><tr><td>rises, or jumps to NaN</td><td>far too big, diverging</td><td>divide η by 10, add gradient clipping</td></tr></table></div>
+<p>A popular trick for finding a good starting value is the <b>learning rate range test</b>: run a few hundred steps while raising η exponentially from 10⁻⁷ to 1, and plot the loss against η. Pick a value a little below the point where the loss falls fastest, well before it shoots up.</p>
+</div>
 </section>
 <section class="card reveal jsec" id="sgd" data-say="sgd"><div class="sec-num">Part 3</div><h2><span class="sec-em">🎲</span><span>Stochastic and mini batch gradient descent</span></h2>
 <p>The true gradient averages over every training example. With a million examples, that is a million calculations for one step. <b>Stochastic gradient descent (SGD)</b> estimates the gradient from a small random sample instead, and takes many more, cheaper steps.</p>
@@ -1143,6 +1161,12 @@ sub,sup{line-height:0}
 <div class="fx-grid"><div class="fx"><div class="fx-h">🧮 Mini batch gradient</div><div class="fx-b">g = <span class="fr"><span>1</span><span>B</span></span> Σ<sub>i ∈ batch</sub> ∇Lᵢ(w)</div><div class="fx-n">An unbiased estimate of the full gradient. Its noise shrinks like 1/√B.</div></div><div class="fx"><div class="fx-h">🧮 Epoch</div><div class="fx-b">updates per epoch = <span class="fr"><span>n</span><span>B</span></span></div><div class="fx-n">One epoch is one full pass over the data. 50000 images with B = 100 gives 500 updates per epoch.</div></div></div>
 <div class="c3" data-k="sgd" data-label="SGD learns y = 2x + 1 from five points"></div>
 <div class="mlnote">Shuffle the data every epoch. If the examples always come in the same order, for example all cats then all dogs, the weights get dragged back and forth and training suffers.</div>
+<div class="deep"><div class="deep-h">🔍 Going deeper: watch full batch, mini batch and single example paths</div>
+<p>All three methods head for the same valley, but they take very different routes. The animation fits y = w x + b to 40 noisy points. Each dot on the contour map is one update. Full batch gradient descent glides smoothly. Single example SGD stumbles around, because each step listens to only one point. Mini batches are in between.</p>
+<div class="viz" data-viz="sgdpath"></div>
+<p>Why is the noisy path still useful? Each SGD step costs 1 ÷ n of a full batch step, so in the time a full batch takes one careful step, SGD takes n quick ones. Early in training, when you are far from the valley, rough directions are good enough and speed wins. Near the bottom, the noise makes SGD jitter around the best point instead of landing on it, which is why the learning rate is usually lowered later in training.</p>
+<div class="fx"><div class="fx-h">🧮 Noise in a mini batch gradient</div><div class="fx-b">spread ∝ <span class="fr"><span>σ</span><span>√B</span></span></div><div class="fx-n">σ is how much the per example gradients disagree. Four times the batch size halves the noise, the same √n rule as the standard error in Chapter 10.</div></div>
+</div>
 </section>
 <section class="card reveal jsec" id="adam" data-say="adam"><div class="sec-num">Part 4</div><h2><span class="sec-em">🚀</span><span>Momentum, RMSProp and Adam</span></h2>
 <p>Plain gradient descent struggles in long narrow valleys. The steep walls make it zig zag while the gentle floor makes it crawl. Smarter optimisers fix this with two tricks: remember past directions (<b>momentum</b>), and give each weight its own step size (<b>adaptive learning rates</b>).</p>
@@ -1158,6 +1182,11 @@ sub,sup{line-height:0}
 <div class="fx"><div class="fx-h">🧮 Condition number of the loss</div><div class="fx-b">κ = λmax ÷ λmin of the Hessian</div><div class="fx-n">Large κ means a long narrow valley. Plain gradient descent needs roughly κ steps to make progress, which is why feature scaling and adaptive optimisers matter.</div></div>
 <div class="viz" data-viz="walk" data-title="Why feature scaling speeds up training" data-sub="Press Play, or step through it one line at a time." data-steps="[&quot;House area in square feet (around 1000) and number of rooms (around 3) feed the same linear model.&quot;, &quot;The loss curvature along each weight grows with the square of its feature size: roughly &lt;span class=\&quot;eq\&quot;&gt;1000² = 1000000&lt;/span&gt; versus &lt;span class=\&quot;eq\&quot;&gt;3² = 9&lt;/span&gt;&quot;, &quot;Condition number: about &lt;span class=\&quot;eq\&quot;&gt;1000000 ÷ 9 ≈ 110000&lt;/span&gt;. A very long narrow valley.&quot;, &quot;After standardising both features to mean 0 and standard deviation 1, both curvatures are about 1 and &lt;span class=\&quot;eq\&quot;&gt;κ ≈ 1&lt;/span&gt;: a round bowl that gradient descent crosses in a few steps.&quot;]"></div>
 <div class="mlnote">Good starting weights matter in non convex problems. Schemes like Xavier and He initialisation pick random starting values scaled so that signals neither explode nor vanish through the layers.</div>
+<div class="deep"><div class="deep-h">🔍 Going deeper: meeting a saddle point</div>
+<p>A saddle is flat in the middle, but it curves up in one direction and down in another, which is where the name comes from: the seat used for horse riding has exactly this shape. The simplest example is f(x, y) = x² − y².</p>
+<div class="viz" data-viz="walk" data-title="Why (0, 0) is a saddle of f = x² − y²" data-sub="Press Play, or step through it one line at a time." data-steps="[&quot;Gradient: &lt;span class=\&quot;eq\&quot;&gt;∇f = [2x, −2y]&lt;/span&gt;, which is &lt;span class=\&quot;eq\&quot;&gt;[0, 0]&lt;/span&gt; at the origin. So it is a flat point.&quot;, &quot;Hessian: &lt;span class=\&quot;eq\&quot;&gt;H = [[2, 0], [0, −2]]&lt;/span&gt;, with eigenvalues &lt;span class=\&quot;eq\&quot;&gt;2&lt;/span&gt; and &lt;span class=\&quot;eq\&quot;&gt;−2&lt;/span&gt;&quot;, &quot;One positive eigenvalue: along x the surface is a valley.&quot;, &quot;One negative eigenvalue: along y the surface is a hill.&quot;, &quot;Mixed signs mean a saddle. A tiny push in y and gradient descent rolls away downhill.&quot;]"></div>
+<p>In a network with millions of weights, a flat point is a minimum only if <b>every</b> one of millions of curvature directions bends upward. That is extremely unlikely, so most flat points are saddles. Plain gradient descent can crawl near them because the gradient is tiny, but the randomness of mini batches and the speed kept by momentum usually carry the weights past.</p>
+</div>
 </section>
 <section class="card reveal jsec" id="lagrange" data-say="lagrange"><div class="sec-num">Part 6</div><h2><span class="sec-em">🔒</span><span>Optimising with constraints: Lagrange multipliers</span></h2>
 <p>Sometimes the answer must obey a rule: a fixed budget, a fixed length of fence, probabilities that add to 1. At the best point on the constraint, you cannot do better by sliding along it, which happens exactly when the contour of the goal just touches the constraint. There, the two gradients are parallel.</p>
@@ -1166,6 +1195,12 @@ sub,sup{line-height:0}
 <div class="viz" data-viz="walk" data-title="Largest area xy with x + y = 10" data-sub="Press Play, or step through it one line at a time." data-steps="[&quot;Goal f = xy, rule g = x + y = 10&quot;, &quot;Gradients: &lt;span class=\&quot;eq\&quot;&gt;∇f = [y, x]&lt;/span&gt; and &lt;span class=\&quot;eq\&quot;&gt;∇g = [1, 1]&lt;/span&gt;&quot;, &quot;Lagrange: &lt;span class=\&quot;eq\&quot;&gt;y = λ&lt;/span&gt; and &lt;span class=\&quot;eq\&quot;&gt;x = λ&lt;/span&gt;, so &lt;span class=\&quot;eq\&quot;&gt;x = y&lt;/span&gt;&quot;, &quot;Put into the rule: &lt;span class=\&quot;eq\&quot;&gt;2x = 10, x = y = 5&lt;/span&gt;. Area &lt;span class=\&quot;eq\&quot;&gt;5 × 5 = 25&lt;/span&gt;&quot;, &quot;λ = 5: with 11 instead of 10, the best area is 5.5² = 30.25, about 5 more, as λ predicts.&quot;]"></div>
 <div class="c3" data-k="p_lagrange" data-label="A fence against a wall, by trying and by Lagrange"></div>
 <div class="mlnote">Support vector machines are found with Lagrange multipliers, and the training points with non zero multipliers are the "support vectors". L2 regularisation is the same as asking the weights to stay inside a ball, ‖w‖ ≤ r, and the regularisation strength plays the part of λ.</div>
+<div class="deep"><div class="deep-h">🔍 Going deeper: inequality constraints and the KKT conditions in plain words</div>
+<p>Many real rules are limits rather than exact equalities: "spend at most 100", "the weights must have length at most 1", "a probability cannot be negative". These are <b>inequality constraints</b>, g(x) ≤ c. There are only two possibilities at the best point.</p>
+<div class="tw"><table class="jt"><tr><th>Case</th><th>What happens</th><th>Multiplier</th></tr><tr><td>the limit is not reached</td><td>the best point is inside the allowed region, so ∇f = 0 there as usual</td><td>λ = 0, the rule costs nothing</td></tr><tr><td>the limit is reached</td><td>the best point sits on the boundary, and the Lagrange rule ∇f = λ∇g holds</td><td>λ &gt; 0, loosening the rule would help</td></tr></table></div>
+<p>Both cases are captured in one line, called <b>complementary slackness</b>: λ × (g(x) − c) = 0. Either the multiplier is zero or the constraint is tight. Together with ∇f = λ∇g and λ ≥ 0 these are the <b>Karush Kuhn Tucker (KKT) conditions</b>, the rule book for constrained optimisation.</p>
+<div class="mlnote">In a support vector machine, every training point has its own multiplier. Points far from the boundary have λ = 0 and do not affect the answer at all. Only the points that sit right on the margin have λ &gt; 0. Those are the support vectors that give the method its name.</div>
+</div>
 </section>
 <section class="card reveal jsec" id="practice" data-say="practice"><div class="sec-num">Part 7</div><h2><span class="sec-em">🛠️</span><span>Training tricks: schedules, clipping and stopping</span></h2>
 <p>Real training runs add a few simple tools around the optimiser.</p>
@@ -1173,6 +1208,12 @@ sub,sup{line-height:0}
 <div class="fx-grid"><div class="fx"><div class="fx-h">🧮 Cosine decay</div><div class="fx-b">η(t) = η<sub>max</sub> × ½ (1 + cos(π t ÷ T))</div><div class="fx-n">Starts at the maximum and glides smoothly to 0 at step T.</div></div><div class="fx"><div class="fx-h">🧮 Gradient clipping by norm</div><div class="fx-b">g ← g × min(1, <span class="fr"><span>c</span><span>‖g‖</span></span>)</div><div class="fx-n">Keeps the direction, caps the length at c.</div></div></div>
 <div class="c3" data-k="schedule" data-label="Warm up followed by cosine decay"></div>
 <div class="trick">If the loss suddenly becomes NaN, the usual suspects are a learning rate that is too big, a missing gradient clip, or a log of zero somewhere in the loss.</div>
+<div class="deep"><div class="deep-h">🔍 Going deeper: draw your own learning rate schedule</div>
+<p>A schedule is just a function η(t) of the step number. The most common one for large models has a short linear <b>warm up</b> followed by a <b>cosine decay</b>. Set the number of steps and the warm up below and press Play to move along the schedule.</p>
+<div class="viz" data-viz="sched"></div>
+<div class="fx"><div class="fx-h">🧮 Warm up then cosine</div><div class="fx-b">η(t) = η<sub>max</sub> × <span class="fr"><span>t</span><span>T<sub>w</sub></span></span> for t &lt; T<sub>w</sub>, then η<sub>max</sub> × ½(1 + cos(π <span class="fr"><span>t − T<sub>w</sub></span><span>T − T<sub>w</sub></span></span>))</div><div class="fx-n">T<sub>w</sub> is the warm up length and T the total number of steps.</div></div>
+<p>Why warm up at all? At step 1 the weights are random and Adam has not yet seen enough gradients to estimate their typical size, so its step sizes can be wild. A gentle start for the first few hundred or thousand steps lets those statistics settle before the full learning rate is used.</p>
+</div>
 </section>
 
   <section class="card reveal" id="real-life"></section>
@@ -3339,6 +3380,104 @@ const OUTS = {"gd_basic": {"py": "start: w = 0.0000, loss = 5.0000\nstep 1: w = 
     wireSlider(b, 'p', v => { P.pause(); x = v; draw(); });
     P.load(41, 0);
     x = 2; draw();
+  };
+})();
+
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+
+  /* ----- loss curves for several learning rates ----- */
+  W.lrcurve = el => {
+    const b = shell(el, 'Loss curves for different learning rates', 'Gradient descent on L = w² from w = 1. Grey curves are fixed examples. Move the slider to draw your own curve in orange, then press Play to draw all of them step by step.');
+    b.innerHTML = `<div class="mv-wrap"><div class="lc-plot"></div><div class="mv-side">${slider('lr', 'your η', 0.01, 1.05, 0.3, 0.01)}<div class="mv-legend"><span><i class="k"></i>η = 0.02, 0.2, 0.95</span><span><i class="o"></i>your η</span></div><div class="mv-read lc-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let lr = 0.3;
+    const run = e => { let w = 1; const L = [1]; for (let k = 0; k < 20; k++) { w = (1 - 2 * e) * w; L.push(Math.min(3, w * w)); } return L; };
+    const G = MV.frame(440, 300, [0, 20.5], [0, 1.6]);
+    function show(t) {
+      let s = MV.axes(G, { labels: false, xl: 'step', yl: 'loss' });
+      for (let k = 5; k <= 20; k += 5) s += MV.text(G, k, 0, String(k), { dy: 14, anchor: 'middle', cls: 'sm' });
+      [0.5, 1].forEach(y => { s += MV.text(G, 0, y, MV.num(y, 1), { dx: 3, dy: 4, cls: 'sm' }); });
+      const line = (L, cls) => `<polyline class="mv-v ${cls}" stroke-width="2" points="${L.slice(0, t + 1).map((v, k) => G.sx(k).toFixed(1) + ',' + G.sy(Math.min(1.6, v)).toFixed(1)).join(' ')}"/>`;
+      [0.02, 0.2, 0.95].forEach(e => { s += line(run(e), 'k'); });
+      const mine = run(lr);
+      s += line(mine, 'o');
+      $('.lc-plot', b).innerHTML = MV.svg(G, s, 'Loss curves');
+      const f = 1 - 2 * lr;
+      $('.lc-out', b).innerHTML = `your η = <b>${MV.num(lr)}</b><br>each step multiplies w by 1 − 2η = <b>${MV.num(f, 2)}</b><br>loss at step ${t}: <b>${MV.num(mine[t], 5)}</b><br>` +
+        (Math.abs(f) >= 1 ? '❌ |factor| ≥ 1: the loss never falls. Diverging.' : f < 0 ? '⚠️ Negative factor: w flips sign each step (zig zag), but it still shrinks.' : lr < 0.05 ? '🐢 Very slow.' : '✅ Smooth and steady.');
+    }
+    const P = Player($('.vz-p', b), show, 250);
+    wireSlider(b, 'lr', v => { lr = v; P.load(21, 20); });
+    P.load(21, 20);
+  };
+
+  /* ----- full batch, mini batch and single example paths on one contour map ----- */
+  W.sgdpath = el => {
+    const b = shell(el, 'Three ways down the same valley', 'Fitting y = w x + b to 40 noisy points from y = 2x + 1. Press Play to take updates. The purple dot marks the best (w, b).');
+    b.innerHTML = `<div class="vz-row">${seg('m', [['all', 'All three'], ['full', 'Full batch'], ['mini', 'Mini batch of 8'], ['one', 'One example']], 'all')}</div><div class="mv-wrap"><div class="sg-plot"></div><div class="mv-side"><div class="mv-legend"><span><i class="g"></i>full batch</span><span><i class="a"></i>mini batch 8</span><span><i class="r"></i>one example</span></div><div class="mv-read sg-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const xs = [], ys = [];
+    for (let i = 0; i < 40; i++) { const x = -1 + 2 * i / 39; xs.push(x); ys.push(2 * x + 1 + (rnd() - 0.5) * 1.2); }
+    const n = xs.length, mx = xs.reduce((a, c) => a + c) / n, my = ys.reduce((a, c) => a + c) / n;
+    let sxy = 0, sxx = 0; for (let i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) ** 2; }
+    const wB = sxy / sxx, bB = my - wB * mx;
+    const loss = (w, bb) => { let s = 0; for (let i = 0; i < n; i++) s += (w * xs[i] + bb - ys[i]) ** 2; return s / n; };
+    const N = 40, lr = 0.25;
+    const run = B => {
+      let w = -1, bb = -1.5, p = [[w, bb]], order = [];
+      seed = 11;
+      for (let t = 0; t < N; t++) {
+        if (order.length < B) { const o = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [o[i], o[j]] = [o[j], o[i]]; } order = order.concat(o); }
+        const idx = order.splice(0, B);
+        let gw = 0, gb = 0; idx.forEach(i => { const e = w * xs[i] + bb - ys[i]; gw += 2 * e * xs[i] / B; gb += 2 * e / B; });
+        w -= lr * gw; bb -= lr * gb; p.push([w, bb]);
+      }
+      return p;
+    };
+    const paths = { full: run(n), mini: run(8), one: run(1) };
+    const G = MV.frame(420, 380, [-1.5, 4], [-2, 3]);
+    const cont = (() => { let s = ''; const lv = [0.3, 0.6, 1.2, 2.5, 5, 9]; for (let gx = 0; gx < 56; gx++) for (let gy = 0; gy < 50; gy++) { const w = -1.5 + gx * 0.1, bb = -2 + gy * 0.1; const v = loss(w, bb), k = lv.findIndex(l => v < l); const op = k < 0 ? 0.02 : 0.06 + (lv.length - k) * 0.035; s += `<rect class="mv-heat" x="${G.sx(w - 0.05).toFixed(1)}" y="${G.sy(bb + 0.05).toFixed(1)}" width="${(G.sx(0.1) - G.sx(0)).toFixed(1)}" height="${(G.sy(0) - G.sy(0.1)).toFixed(1)}" style="fill:var(--accent);opacity:${op.toFixed(3)}"/>`; } return s; })();
+    let mode = 'all';
+    function show(t) {
+      let s = cont + MV.axes(G, { labels: false, xl: 'w', yl: 'b' }) + MV.dot(G, wB, bB, 'p', 7);
+      const draw = (k, c) => { const p = paths[k].slice(0, t + 1); s += `<polyline class="mv-v ${c}" stroke-width="2" points="${p.map(q => G.sx(q[0]).toFixed(1) + ',' + G.sy(q[1]).toFixed(1)).join(' ')}"/>` + MV.dot(G, p[p.length - 1][0], p[p.length - 1][1], c, 5); };
+      if (mode === 'all' || mode === 'full') draw('full', 'g');
+      if (mode === 'all' || mode === 'mini') draw('mini', 'a');
+      if (mode === 'all' || mode === 'one') draw('one', 'r');
+      $('.sg-plot', b).innerHTML = MV.svg(G, s, 'Paths on the loss surface');
+      const L = k => MV.num(loss(...paths[k][t]), 4);
+      $('.sg-out', b).innerHTML = `update ${t}<br>best fit: w = ${MV.num(wB, 3)}, b = ${MV.num(bB, 3)}, loss ${MV.num(loss(wB, bB), 4)}<br>full batch loss: <b>${L('full')}</b> (uses 40 points per step)<br>mini batch loss: <b>${L('mini')}</b> (8 points per step)<br>one example loss: <b>${L('one')}</b> (1 point per step)`;
+    }
+    const P = Player($('.vz-p', b), show, 220);
+    wireSeg(b, 'm', v => { mode = v; show(P.i); });
+    P.load(N + 1, 0);
+  };
+
+  /* ----- warm up plus cosine (or step) learning rate schedule ----- */
+  W.sched = el => {
+    const b = shell(el, 'Learning rate schedules', 'Choose a schedule, the total number of steps and the warm up length. Press Play to walk along it and read η at each step.');
+    b.innerHTML = `<div class="vz-row">${seg('k', [['cos', 'Warm up + cosine'], ['step', 'Step decay'], ['const', 'Constant']], 'cos')}</div><div class="mv-wrap"><div class="sc-plot"></div><div class="mv-side">${slider('T', 'total steps', 200, 2000, 1000, 100)}${slider('w', 'warm up steps', 0, 400, 100, 10)}<div class="mv-read sc-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let kind = 'cos', T = 1000, Tw = 100, cur = 0;
+    const eta = t => { const m = 0.001; if (kind === 'const') return m; if (t < Tw) return m * (t + 1) / Tw; if (kind === 'step') return m * 0.1 ** Math.floor((t - Tw) / ((T - Tw) / 3)); return m * 0.5 * (1 + Math.cos(Math.PI * (t - Tw) / Math.max(1, T - Tw))); };
+    function show(i) {
+      cur = Math.round(i / 40 * T);
+      const G = MV.frame(440, 280, [0, T], [0, 0.0011]);
+      let s = MV.axes(G, { labels: false, xl: 'step', yl: 'η' });
+      [0.0005, 0.001].forEach(y => { s += MV.text(G, 0, y, y.toString(), { dx: 3, dy: -3, cls: 'sm' }); });
+      s += MV.text(G, T, 0, String(T), { dy: 14, anchor: 'end', cls: 'sm' });
+      s += MV.curve(G, eta, '', { n: 400 }) + MV.dot(G, cur, eta(Math.min(T - 1, cur)), 'o', 7);
+      if (Tw > 0 && kind !== 'const') s += MV.line(G, Tw, 0, Tw, 0.0011, 'mv-v k dash') + MV.text(G, Tw, 0.00105, 'end of warm up', { dx: 4, cls: 'sm' });
+      $('.sc-plot', b).innerHTML = MV.svg(G, s, 'Learning rate against step');
+      const e = eta(Math.min(T - 1, cur));
+      $('.sc-out', b).innerHTML = `step <b>${cur}</b> of ${T}<br>η = <b>${e.toExponential(2)}</b><br>` + (kind !== 'const' && cur < Tw ? 'warming up: η grows in a straight line' : kind === 'cos' ? 'cosine decay: slow at first, fastest in the middle, gentle at the end' : kind === 'step' ? 'step decay: η drops by 10 times at fixed points' : 'constant: the same η all the way');
+    }
+    const P = Player($('.vz-p', b), show, 200);
+    wireSeg(b, 'k', v => { kind = v; show(P.i); });
+    wireSlider(b, 'T', v => { T = v; if (Tw > T / 2) Tw = Math.floor(T / 2); show(P.i); });
+    wireSlider(b, 'w', v => { Tw = Math.min(v, T / 2); show(P.i); });
+    P.load(41, 12);
   };
 })();
 /* ===== Page glue for the standalone DSA lessons =====

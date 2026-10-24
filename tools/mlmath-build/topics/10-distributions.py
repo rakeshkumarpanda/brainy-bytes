@@ -1,6 +1,6 @@
 # Chapter 10: random variables, PMF, PDF and CDF, expectation and variance, the Bernoulli, binomial and
 # Poisson distributions, the normal distribution and z-scores, the central limit theorem, and covariance.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, deep
 
 K = Kit()
 
@@ -1099,6 +1099,165 @@ VIZ_JS = r'''
 
 CSS = r'''
 .cl-plot .mv-bar{stroke-width:.5}
+'''
+
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'rv': deep('build a PMF and a CDF from two dice', f'''
+<p>Roll two dice and add them. The total X is a discrete random variable with values 2 to 12. There are 36 equally likely pairs, so P(X = x) is just "how many pairs give x" divided by 36. Seven is the most likely total because six pairs make it: (1, 6), (2, 5), (3, 4), (4, 3), (5, 2) and (6, 1).</p>
+{viz('pmfcdf')}
+<p>The CDF answers "at most" questions in one look. P(X ≤ 4) is the height of the CDF staircase at 4, which is (1 + 2 + 3) ÷ 36 = 6 ÷ 36. Questions about a range use a difference: P(5 ≤ X ≤ 9) = F(9) − F(4).</p>
+{fx('Quantile (the inverse of the CDF)', 'the q quantile is the smallest x with F(x) ≥ q', 'The median is the 0.5 quantile. The 0.95 quantile is the value that 95% of results stay at or below. Weather services and delivery apps quote these: "arrives within 30 minutes 95% of the time".')}
+{ml('A classifier that outputs probabilities is giving a PMF over the classes. A regression model that outputs a mean and a spread is giving a PDF. Models that predict whole distributions, not just single numbers, are called probabilistic models.')}
+'''),
+    'expect': deep('the mean is a balance point, and a worked game', f'''
+<p>Picture the PMF bars standing on a see saw. The expected value is exactly the point where the see saw balances. Pull probability towards the right and the balance point moves right. Spread the bars out and the variance grows, even if the balance point stays put. Try it below.</p>
+{viz('balance')}
+{worked('Is this game worth playing? Pay 10 to roll one die and win 4 times the number shown if it is a 5 or 6, nothing otherwise.', [
+        'Win amounts: 20 on a five, 24 on a six, 0 otherwise. Each face has chance 1 ÷ 6.',
+        'Expected winnings: <span class="eq">(20 + 24) ÷ 6 ≈ 7.33</span>',
+        'Expected profit: <span class="eq">7.33 − 10 = −2.67</span> per game',
+        'E[W²] = <span class="eq">(400 + 576) ÷ 6 ≈ 162.67</span>, so Var(W) = <span class="eq">162.67 − 7.33² ≈ 108.9</span> and SD ≈ 10.4',
+        'Over 100 games you expect to lose about 267. Any single game is a big gamble (SD 10.4), but the average is predictable.'])}
+<p>The expected value is also the best single guess if you are scored by squared error. That is why regression models trained with mean squared error learn to predict the conditional mean, E[Y | inputs].</p>
+'''),
+    'poisson': deep('play with λ, and see the binomial turn into Poisson', f'''
+<p>Move λ below to see the Poisson shape. Small λ piles up near 0 and is lopsided. Larger λ moves the peak to about λ and the shape becomes a bell, because a Poisson count with a big λ is like adding many small independent counts, and the central limit theorem takes over.</p>
+{viz('poisson')}
+{worked('A help desk gets 3 calls per hour on average. What is the chance of a quiet hour with no calls, and of a busy hour with 6 or more?', [
+        'Poisson with <span class="eq">λ = 3</span>',
+        'No calls: <span class="eq">P(0) = e⁻³ × 3⁰ ÷ 0! = e⁻³ ≈ 0.0498</span>, about 1 hour in 20',
+        'Add P(0) to P(5): <span class="eq">0.0498 + 0.1494 + 0.2240 + 0.2240 + 0.1680 + 0.1008 = 0.9161</span>',
+        '6 or more: <span class="eq">1 − 0.9161 ≈ 0.084</span>, about 1 hour in 12'])}
+<p>The <b>exponential</b> distribution is the Poisson’s partner. If events arrive at rate λ, the waiting time until the next one is exponential with mean 1 ÷ λ. It has a strange "memoryless" property: if you have already waited 10 minutes for a random event, the chance of waiting 5 more is the same as if you had just arrived. Buses on a timetable are not memoryless, but radioactive decays and many website requests are close to it.</p>
+'''),
+    'cov': deep('see correlation, and meet the covariance matrix', f'''
+<p>Move the slider to choose a correlation and watch the cloud of 200 points squeeze from a round blob (r = 0) into a thin line (r = ±1). Then switch to the curved pattern to see a strong relationship that correlation completely misses.</p>
+{viz('corr')}
+<p>With several features, all the variances and covariances are collected into one square table, the <b>covariance matrix</b> Σ. Entry (i, j) is Cov(Xᵢ, Xⱼ). The diagonal holds the variances, and the table is symmetric because Cov(X, Y) = Cov(Y, X).</p>
+{worked('Covariance matrix of three students’ hours and marks', [
+        'Hours h = [2, 4, 6], marks m = [50, 60, 85]. Means: <span class="eq">h̄ = 4</span>, <span class="eq">m̄ = 65</span>',
+        'Deviations: h − h̄ = [−2, 0, 2], m − m̄ = [−15, −5, 20]',
+        'Var(h) = <span class="eq">(4 + 0 + 4) ÷ 2 = 4</span>, Var(m) = <span class="eq">(225 + 25 + 400) ÷ 2 = 325</span>',
+        'Cov(h, m) = <span class="eq">(30 + 0 + 40) ÷ 2 = 35</span>',
+        'Σ = <span class="eq">[[4, 35], [35, 325]]</span>, and r = 35 ÷ (2 × 18.03) ≈ 0.97, a strong positive link.'])}
+{ml('PCA (Chapter 5) is the eigen decomposition of exactly this matrix. The multivariate normal distribution of Chapter 15 uses Σ to describe tilted, stretched bell shaped clouds of data.')}
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+  const fact = n => n <= 1 ? 1 : n * fact(n - 1);
+
+  /* ----- PMF bars and CDF staircase for the sum of two dice ----- */
+  W.pmfcdf = el => {
+    const b = shell(el, 'PMF and CDF of the sum of two dice', 'Move x, or press Play to sweep it. Orange bars are the ones counted in P(X ≤ x). The staircase below is the CDF, and its height at x is that same total.');
+    b.innerHTML = `<div class="mv-wrap"><div><div class="pc-top"></div><div class="pc-bot"></div></div><div class="mv-side">${slider('x', 'x', 2, 12, 7, 1)}<div class="mv-read pf-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    const p = {}; for (let s = 2; s <= 12; s++) p[s] = (6 - Math.abs(s - 7)) / 36;
+    let x = 7;
+    function draw() {
+      const G1 = MV.frame(440, 200, [1, 13], [0, 0.2]), G2 = MV.frame(440, 180, [1, 13], [0, 1.08]);
+      let s1 = MV.axes(G1, { labels: false, yl: 'P(X = x)' }), s2 = MV.axes(G2, { labels: false, yl: 'F(x)' }), cum = 0;
+      for (let k = 2; k <= 12; k++) {
+        s1 += `<rect class="mv-bar ${k <= x ? 'o' : ''}" x="${G1.sx(k - 0.38)}" y="${G1.sy(p[k])}" width="${G1.sx(0.76) - G1.sx(0)}" height="${G1.sy(0) - G1.sy(p[k])}" rx="3"/>` + MV.text(G1, k, 0, String(k), { dy: 14, anchor: 'middle', cls: 'sm' });
+        const prev = cum; cum += p[k];
+        s2 += MV.line(G2, k, cum, k + 1, cum, `mv-v ${k <= x ? 'o' : 'a'}`) + MV.line(G2, k, prev, k, cum, 'mv-v k dash') + MV.dot(G2, k, cum, k <= x ? 'o' : '', 4);
+      }
+      s2 += MV.line(G2, 1, 1, 13, 1, 'mv-grid') + MV.text(G2, 1, 1, '1', { dx: 4, dy: -4, cls: 'sm' });
+      $('.pc-top', b).innerHTML = MV.svg(G1, s1, 'PMF bars');
+      $('.pc-bot', b).innerHTML = MV.svg(G2, s2, 'CDF staircase');
+      let ways = 0; for (let k = 2; k <= x; k++) ways += 6 - Math.abs(k - 7);
+      $('.pf-out', b).innerHTML = `P(X = ${x}) = ${6 - Math.abs(x - 7)} ÷ 36 = <b>${MV.num(p[x], 4)}</b><br>P(X ≤ ${x}) = ${ways} ÷ 36 = <span class="big">${MV.num(ways / 36, 4)}</span><br>P(X &gt; ${x}) = 1 − ${MV.num(ways / 36, 4)} = <b>${MV.num(1 - ways / 36, 4)}</b>` + (x === 7 ? '<br>7 is also the median: F first reaches 0.5 here.' : '');
+    }
+    const P = Player($('.vz-p', b), t => { x = t + 2; $('[data-sl="x"]', b).value = x; $('[data-slv="x"]', b).textContent = x; draw(); }, 600);
+    wireSlider(b, 'x', v => { P.pause(); x = v; draw(); });
+    P.load(11, 5);
+  };
+
+  /* ----- the mean as the balance point of the PMF ----- */
+  W.balance = el => {
+    const b = shell(el, 'The mean is where the bars balance', 'Set how likely each value 1 to 5 is (the weights are rescaled to add up to 1). The triangle sits at the mean, and the band shows mean ± one standard deviation. Press Play for a few ready made shapes.');
+    b.innerHTML = `<div class="mv-wrap"><div class="bl-plot"></div><div class="mv-side">${[1, 2, 3, 4, 5].map(k => slider('w' + k, 'weight of ' + k, 0, 10, [1, 2, 4, 2, 1][k - 1], 1)).join('')}<div class="mv-read bl-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    const w = [1, 2, 4, 2, 1];
+    const shapes = [[1, 2, 4, 2, 1], [5, 0, 0, 0, 5], [0, 0, 10, 0, 0], [8, 4, 2, 1, 1], [1, 1, 1, 1, 1]];
+    function draw() {
+      const tot = w.reduce((a, c) => a + c, 0) || 1, p = w.map(v => v / tot);
+      const mu = p.reduce((a, c, i) => a + c * (i + 1), 0), v2 = p.reduce((a, c, i) => a + c * (i + 1 - mu) ** 2, 0), sd = Math.sqrt(v2);
+      const G = MV.frame(440, 290, [0.3, 5.7], [-0.18, 1.05]);
+      let s = `<rect class="mv-fill c4" x="${G.sx(Math.max(0.3, mu - sd))}" y="${G.sy(1.02)}" width="${G.sx(Math.min(5.7, mu + sd)) - G.sx(Math.max(0.3, mu - sd))}" height="${G.sy(0) - G.sy(1.02)}"/>`;
+      s += MV.line(G, 0.3, 0, 5.7, 0, 'mv-v k');
+      p.forEach((q, i) => { s += `<rect class="mv-bar" x="${G.sx(i + 1 - 0.3)}" y="${G.sy(q)}" width="${G.sx(0.6) - G.sx(0)}" height="${G.sy(0) - G.sy(q)}" rx="3"/>` + MV.text(G, i + 1, q, MV.num(q, 2), { dy: -5, anchor: 'middle', cls: 'sm' }) + MV.text(G, i + 1, -0.12, String(i + 1), { anchor: 'middle', cls: 'sm', dy: 10 }); });
+      s += `<polygon class="mv-poly o" points="${G.sx(mu)},${G.sy(0)} ${G.sx(mu) - 12},${G.sy(0) + 20} ${G.sx(mu) + 12},${G.sy(0) + 20}"/>`;
+      $('.bl-plot', b).innerHTML = MV.svg(G, s, 'Balance of a PMF');
+      $('.bl-out', b).innerHTML = `P = [${p.map(q => MV.num(q, 2)).join(', ')}]<br>mean = Σ x·p(x) = <span class="big">${MV.num(mu, 3)}</span><br>variance = <b>${MV.num(v2, 3)}</b>, SD = <b>${MV.num(sd, 3)}</b>`;
+    }
+    const setW = arr => arr.forEach((v, i) => { w[i] = v; $(`[data-sl="w${i + 1}"]`, b).value = v; $(`[data-slv="w${i + 1}"]`, b).textContent = v; });
+    const P = Player($('.vz-p', b), t => { setW(shapes[t]); draw(); }, 1500);
+    [1, 2, 3, 4, 5].forEach(k => wireSlider(b, 'w' + k, v => { P.pause(); w[k - 1] = v; draw(); }));
+    P.load(shapes.length, 0);
+  };
+
+  /* ----- Poisson bars with an optional binomial overlay ----- */
+  W.poisson = el => {
+    const b = shell(el, 'Poisson counts and the binomial that becomes one', 'Bars show Poisson(λ). Orange dots show a binomial with n tries and p = λ ÷ n. Press Play to raise n and watch the dots settle onto the bars.');
+    b.innerHTML = `<div class="mv-wrap"><div class="po-plot"></div><div class="mv-side">${slider('l', 'λ', 0.5, 12, 3, 0.5)}${slider('n', 'binomial n', 4, 200, 10, 1)}<div class="mv-read po-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let lam = 3, n = 10;
+    const C = (n, k) => { let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; };
+    function draw() {
+      const K = Math.max(10, Math.ceil(lam + 4 * Math.sqrt(lam))), pois = [], bin = [], p = Math.min(1, lam / n);
+      for (let k = 0; k <= K; k++) { pois.push(Math.exp(-lam) * lam ** k / fact(k)); bin.push(k <= n ? C(n, k) * p ** k * (1 - p) ** (n - k) : 0); }
+      const top = Math.max(...pois, ...bin) * 1.15, G = MV.frame(440, 290, [-0.8, K + 0.8], [0, top]);
+      let s = MV.axes(G, { labels: false, yl: 'P(X = k)' });
+      pois.forEach((q, k) => { s += `<rect class="mv-bar" x="${G.sx(k - 0.35)}" y="${G.sy(q)}" width="${G.sx(0.7) - G.sx(0)}" height="${G.sy(0) - G.sy(q)}" rx="2"/>`; if (k % Math.ceil(K / 10) === 0) s += MV.text(G, k, 0, String(k), { dy: 14, anchor: 'middle', cls: 'sm' }); });
+      bin.forEach((q, k) => { s += MV.dot(G, k, q, 'o', 4); });
+      $('.po-plot', b).innerHTML = MV.svg(G, s, 'Poisson and binomial');
+      let gap = 0; pois.forEach((q, k) => { gap = Math.max(gap, Math.abs(q - bin[k])); });
+      $('.po-out', b).innerHTML = `Poisson λ = <b>${MV.num(lam)}</b>: mean ${MV.num(lam)}, variance ${MV.num(lam)}<br>P(0) = e^(−λ) = <b>${MV.num(pois[0], 4)}</b><br>most likely count: <b>${pois.indexOf(Math.max(...pois))}</b><br>binomial n = ${n}, p = ${MV.num(p, 4)}<br>biggest gap between them: <b>${MV.num(gap, 4)}</b>` + (n < lam ? '<br>⚠️ n is smaller than λ, so p would be above 1.' : '');
+    }
+    const NS = [5, 10, 20, 50, 100, 200];
+    const P = Player($('.vz-p', b), t => { n = Math.max(NS[t], Math.ceil(lam)); $('[data-sl="n"]', b).value = n; $('[data-slv="n"]', b).textContent = n; draw(); }, 1100);
+    wireSlider(b, 'l', v => { lam = v; draw(); });
+    wireSlider(b, 'n', v => { P.pause(); n = v; draw(); });
+    P.load(NS.length, 1);
+  };
+
+  /* ----- scatter clouds with a chosen correlation ----- */
+  W.corr = el => {
+    const b = shell(el, 'What a correlation looks like', 'Choose a target correlation ρ. The 200 points are redrawn with that correlation and the sample r is measured from them. Press Play to sweep ρ from −1 to 1.');
+    b.innerHTML = `<div class="vz-row">${seg('m', [['lin', 'Straight line pattern'], ['sq', 'Curved pattern y = x²']], 'lin')}</div><div class="mv-wrap"><div class="co-plot"></div><div class="mv-side">${slider('r', 'target ρ', -1, 1, 0.6, 0.05)}<div class="mv-read co-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let s0 = 5; const rnd = () => { s0 = (s0 * 16807) % 2147483647; return s0 / 2147483647; };
+    const gz = () => { const u = Math.max(1e-12, rnd()), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    const Z1 = [], Z2 = []; for (let i = 0; i < 200; i++) { Z1.push(gz()); Z2.push(gz()); }
+    let rho = 0.6, mode = 'lin';
+    const G = MV.frame(380, 380, [-3.5, 3.5], [-3.5, 3.5]);
+    function draw() {
+      const xs = Z1, ys = mode === 'lin' ? Z1.map((z, i) => rho * z + Math.sqrt(Math.max(0, 1 - rho * rho)) * Z2[i]) : Z1.map((z, i) => z * z - 1 + 0.15 * Z2[i]);
+      const n = xs.length, mx = xs.reduce((a, c) => a + c) / n, my = ys.reduce((a, c) => a + c) / n;
+      let sxy = 0, sxx = 0, syy = 0; for (let i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) ** 2; syy += (ys[i] - my) ** 2; }
+      const r = sxy / Math.sqrt(sxx * syy);
+      let s = MV.axes(G, { labels: false, xl: 'x', yl: 'y' });
+      xs.forEach((x, i) => { if (Math.abs(x) < 3.5 && Math.abs(ys[i]) < 3.5) s += `<circle class="mv-pt" cx="${G.sx(x).toFixed(1)}" cy="${G.sy(ys[i]).toFixed(1)}" r="3" style="stroke:none;opacity:.7"/>`; });
+      s += MV.curve(G, x => my + sxy / sxx * (x - mx), 'c2 thin');
+      $('.co-plot', b).innerHTML = MV.svg(G, s, 'Scatter plot');
+      $('.co-out', b).innerHTML = (mode === 'lin' ? `target ρ = <b>${MV.num(rho)}</b><br>` : 'y depends completely on x (y = x² plus a little noise)<br>') + `measured r = <span class="big">${MV.num(r, 3)}</span><br>` +
+        (mode === 'sq' ? 'r is near 0 even though y is fully determined by x. Correlation only sees straight line patterns.' : Math.abs(r) > 0.9 ? 'Very strong: the points hug a line.' : Math.abs(r) > 0.5 ? 'Clear trend with scatter.' : Math.abs(r) > 0.2 ? 'Weak trend.' : 'Almost no straight line trend.');
+    }
+    const P = Player($('.vz-p', b), t => { rho = -1 + t * 0.1; $('[data-sl="r"]', b).value = rho; $('[data-slv="r"]', b).textContent = MV.num(rho); draw(); }, 400);
+    wireSeg(b, 'm', v => { mode = v; draw(); });
+    wireSlider(b, 'r', v => { P.pause(); rho = v; draw(); });
+    P.load(21, 16);
+  };
+})();
+'''
+CSS += r'''
+.pc-top .mv-svg{max-height:230px; margin-bottom:6px} .pc-bot .mv-svg{max-height:210px}
+.co-plot .mv-svg{max-height:400px}
 '''
 
 T = K.topic(

@@ -1,6 +1,6 @@
 # Chapter 5: eigenvalues and eigenvectors, the characteristic equation, diagonalisation, power iteration,
 # singular value decomposition, low rank approximation and principal component analysis.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, vec, mat
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, vec, mat, deep
 
 K = Kit()
 
@@ -1177,6 +1177,126 @@ VIZ_JS = r'''
 
 CSS = r'''
 .eg-tg{display:flex; align-items:center; gap:6px; font-size:14px; font-weight:700; color:var(--ink2); margin:6px 0}
+'''
+
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'find': deep('from eigenvalues to eigenvectors, fully worked', f'''
+<p>Finding λ is only half the job. For each λ you then find the direction v by solving (A − λI)v = 0. Here is a full example with no steps skipped.</p>
+{worked('Eigenvalues and eigenvectors of A = [[4, 1], [2, 3]]', [
+        'trace = <span class="eq">4 + 3 = 7</span>, det = <span class="eq">4 × 3 − 1 × 2 = 10</span>',
+        'Characteristic equation: <span class="eq">λ² − 7λ + 10 = 0</span>, which factors as <span class="eq">(λ − 5)(λ − 2) = 0</span>',
+        'So <span class="eq">λ₁ = 5</span> and <span class="eq">λ₂ = 2</span>. Check: 5 + 2 = 7 = trace and 5 × 2 = 10 = det ✓',
+        'For λ = 5: <span class="eq">A − 5I = [[−1, 1], [2, −2]]</span>. The first row says −v₁ + v₂ = 0, so <span class="eq">v = [1, 1]</span>',
+        'For λ = 2: <span class="eq">A − 2I = [[2, 1], [2, 1]]</span>. The row says 2v₁ + v₂ = 0, so <span class="eq">v = [1, −2]</span>',
+        'Check: <span class="eq">A[1, −2] = [4 − 2, 2 − 6] = [2, −4] = 2 × [1, −2]</span> ✓'])}
+<p>The characteristic equation is a quadratic in λ, so it is a parabola. Its roots, where it crosses zero, are the eigenvalues. Change the matrix below and watch the roots move. When the parabola floats above the axis there are no real roots: the matrix turns every direction, as a rotation does.</p>
+{viz('charpoly')}
+{trick('The two rows of A − λI are always multiples of each other (that is what det = 0 means). So you only ever need to read one row to find v.')}
+'''),
+    'power': deep('watch power iteration swing round', f'''
+<p>Why does power iteration work? Write the starting vector as a mix of eigenvectors: x = c₁v₁ + c₂v₂. Multiplying by A k times gives c₁λ₁ᵏv₁ + c₂λ₂ᵏv₂. If |λ₁| is bigger than |λ₂|, the first term grows faster and soon swamps the second. Scaling back to length 1 each time only keeps the numbers from overflowing.</p>
+{fx('Speed of power iteration', 'error after k steps ≈ |λ₂ ÷ λ₁|ᵏ', 'With λ₁ = 5 and λ₂ = 2 the error shrinks by 0.4 each step. With λ₁ = 1 and λ₂ = 0.99 it shrinks by only 1% each step, which is very slow.')}
+<p>Press Play below. The orange arrow is the current guess. Each step multiplies by A (dashed) and then rescales. The guess swings round onto the blue eigenvector line, and the Rayleigh estimate of λ closes in on the true value.</p>
+{viz('poweriter')}
+{life('Repeatedly asking "which pages do the important pages link to?" is power iteration. After a few rounds the answer stops changing, and that steady answer is the PageRank score.')}
+'''),
+    'svd': deep('how much an SVD really saves, and how much it keeps', f'''
+<p>Keeping only the top k singular values gives a rank k copy of the matrix. Two simple formulas tell you what that costs and what it keeps.</p>
+{fxs(fx('Storage for a rank k copy', 'k × (m + n + 1) numbers', 'k columns of U (m each), k rows of Vᵀ (n each) and k singular values, instead of m × n.'),
+         fx('Share of the "energy" kept', f'{frac("σ₁² + … + σₖ²", "σ₁² + … + σᵣ²")}', 'The squared singular values add up to the sum of all squared entries of the matrix. This share says how much of it the copy keeps.'))}
+{worked('Compressing an 800 × 600 grey photo', [
+        'Full photo: <span class="eq">800 × 600 = 480000</span> numbers',
+        'Rank 50 copy: <span class="eq">50 × (800 + 600 + 1) = 70050</span> numbers, about <span class="eq">15%</span> of the original',
+        'Suppose the singular values squared add up to 1000 and the top 50 of them add up to 960.',
+        'Energy kept: <span class="eq">960 ÷ 1000 = 96%</span>. The picture looks almost the same, and the dropped 4% is mostly fine grain and noise.'])}
+<p>Natural data almost always has fast falling singular values. A few directions carry the big structure, and the long tail is noise. That is why "throw away the small singular values" works so well for photos, ratings tables and text.</p>
+'''),
+    'ml': deep('the condition number in numbers, and how ridge fixes it', f'''
+<p>The condition number κ = λmax ÷ λmin of XᵀX says how sensitive regression is to tiny changes in the data. Here is what it looks like when two features are almost copies of each other.</p>
+{worked('Two nearly duplicate features', [
+        'Suppose XᵀX has eigenvalues <span class="eq">100</span> (the shared direction) and <span class="eq">0.01</span> (the tiny difference between the two features).',
+        'Condition number: <span class="eq">κ = 100 ÷ 0.01 = 10000</span>. A 0.01% wobble in the data can move the weights by about 100%.',
+        'Ridge regression solves with <span class="eq">XᵀX + λI</span>. Adding λ = 1 adds 1 to every eigenvalue: <span class="eq">101</span> and <span class="eq">1.01</span>',
+        'New condition number: <span class="eq">101 ÷ 1.01 = 100</span>, a hundred times better. The weights become stable, at the price of a small bias towards zero.'])}
+<p>This is the single most common reason ridge (L2) regularisation is switched on by default in libraries. It is not only about overfitting, it is also about making the maths stable when features overlap.</p>
+{table(['Eigenvalue or singular value pattern', 'What it tells you'], [
+        ['a few large values, then a sharp drop', 'the data really lives in a low dimensional space, PCA will work well'],
+        ['values falling slowly and evenly', 'information is spread out, compression will lose a lot'],
+        ['one value close to 0', 'two or more features are nearly dependent, watch out for unstable weights'],
+    ])}
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+
+  /* ----- the characteristic polynomial of a 2 × 2 matrix ----- */
+  W.charpoly = el => {
+    const b = shell(el, 'Eigenvalues are the roots of a parabola', 'The curve is p(λ) = λ² − (trace)λ + det for the matrix [[a, b], [c, d]]. Green dots are the eigenvalues. Press Play to lower b step by step and watch two real eigenvalues meet and then vanish into complex ones.');
+    b.innerHTML = `<div class="mv-wrap"><div class="cpl-plot"></div><div class="mv-side">${slider('a', 'a', -4, 6, 4, 0.5)}${slider('b', 'b', -4, 4, 1, 0.5)}${slider('c', 'c', -4, 4, 2, 0.5)}${slider('d', 'd', -4, 6, 3, 0.5)}<div class="mv-read cpl-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    const M = { a: 4, b: 1, c: 2, d: 3 };
+    const G = MV.frame(440, 330, [-4, 8], [-8, 12]);
+    function draw() {
+      const { a, b: bb, c, d } = M, tr = a + d, det = a * d - bb * c, D = tr * tr - 4 * det;
+      let s = MV.axes(G, { xstep: 2, ystep: 4, xl: 'λ', yl: 'p(λ)' }) + MV.curve(G, l => l * l - tr * l + det);
+      const out = [`trace = ${MV.num(tr)}, det = ${MV.num(det)}`, `p(λ) = λ² − ${MV.num(tr)}λ + ${MV.num(det)}`, `discriminant = trace² − 4 det = <b>${MV.num(D)}</b>`];
+      if (D >= -1e-9) {
+        const r = Math.sqrt(Math.max(0, D)), l1 = (tr + r) / 2, l2 = (tr - r) / 2;
+        s += MV.dot(G, l1, 0, 'g', 7) + MV.dot(G, l2, 0, 'g', 7);
+        out.push(`eigenvalues λ = <b>${MV.num(l1)}</b> and <b>${MV.num(l2)}</b>`);
+        if (Math.abs(bb) > 1e-9 || Math.abs(a - l1) > 1e-9) { const v = Math.abs(bb) > 1e-9 ? [bb, l1 - a] : [l1 - d, c]; const L = Math.hypot(...v) || 1; out.push(`eigenvector for λ = ${MV.num(l1)}: about [${MV.num(v[0] / L)}, ${MV.num(v[1] / L)}]`); }
+      } else out.push('⚠️ No real roots: the eigenvalues are complex. The matrix rotates every direction.', `they are ${MV.num(tr / 2)} ± ${MV.num(Math.sqrt(-D) / 2)}i`);
+      $('.cpl-plot', b).innerHTML = MV.svg(G, s, 'Characteristic polynomial');
+      $('.cpl-out', b).innerHTML = out.join('<br>');
+    }
+    const setS = (k, v) => { M[k] = v; $(`[data-sl="${k}"]`, b).value = v; $(`[data-slv="${k}"]`, b).textContent = MV.num(v); };
+    const P = Player($('.vz-p', b), t => { setS('a', 4); setS('d', 3); setS('c', 2); setS('b', 1 - t * 0.5); draw(); }, 600);
+    ['a', 'b', 'c', 'd'].forEach(k => wireSlider(b, k, v => { P.pause(); M[k] = v; draw(); }));
+    P.load(9, 0);
+  };
+
+  /* ----- power iteration converging to the top eigenvector ----- */
+  W.poweriter = el => {
+    const b = shell(el, 'Power iteration, one multiply at a time', 'Pick a matrix and a starting angle. Each step multiplies the orange guess by A, then shrinks it back to length 1. The blue line is the true top eigenvector.');
+    const MS = { a: [[4, 1], [2, 3]], s: [[2, 1], [1, 2]], c: [[1, 0.1], [0.1, 0.95]] };
+    b.innerHTML = `<div class="vz-row">${seg('m', [['a', '[[4, 1], [2, 3]]'], ['s', '[[2, 1], [1, 2]]'], ['c', 'close eigenvalues']], 'a')}</div><div class="mv-wrap"><div class="pi-plot"></div><div class="mv-side">${slider('ang', 'start angle °', 0, 350, 160, 10)}<div class="mv-read pi-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let A = MS.a, ang = 160, path = [];
+    const G = MV.frame(400, 400, [-2.2, 2.2], [-2.2, 2.2]);
+    const top = () => { const tr = A[0][0] + A[1][1], det = A[0][0] * A[1][1] - A[0][1] * A[1][0], r = Math.sqrt(tr * tr - 4 * det), l1 = (tr + r) / 2, l2 = (tr - r) / 2; const v = [A[0][1], l1 - A[0][0]], L = Math.hypot(...v); return { l1, l2, v: [v[0] / L, v[1] / L] }; };
+    function plan() {
+      let x = [Math.cos(ang * Math.PI / 180), Math.sin(ang * Math.PI / 180)];
+      path = [{ x, y: null }];
+      for (let k = 0; k < 14; k++) { const y = [A[0][0] * x[0] + A[0][1] * x[1], A[1][0] * x[0] + A[1][1] * x[1]], L = Math.hypot(...y); path[path.length - 1].y = y; x = [y[0] / L, y[1] / L]; path.push({ x, y: null }); }
+      P.load(path.length, 0);
+    }
+    function show(t) {
+      const T = top(), x = path[t].x;
+      let s = MV.axes(G, { labels: false });
+      s += `<circle cx="${G.sx(0)}" cy="${G.sy(0)}" r="${G.sx(1) - G.sx(0)}" class="mv-cont"/>`;
+      s += MV.line(G, -2.2 * T.v[0], -2.2 * T.v[1], 2.2 * T.v[0], 2.2 * T.v[1], 'mv-v a dash');
+      for (let k = 0; k < t; k++) s += MV.dot(G, path[k].x[0], path[k].x[1], 'k', 3);
+      const y = [A[0][0] * x[0] + A[0][1] * x[1], A[1][0] * x[0] + A[1][1] * x[1]], sc = Math.min(1, 2 / Math.hypot(...y));
+      s += MV.arrow(G, 0, 0, y[0] * sc, y[1] * sc, 'p', 'dash') + MV.arrow(G, 0, 0, x[0], x[1], 'o');
+      $('.pi-plot', b).innerHTML = MV.svg(G, s, 'Power iteration');
+      const ray = x[0] * y[0] + x[1] * y[1], cosang = Math.abs(x[0] * T.v[0] + x[1] * T.v[1]);
+      $('.pi-out', b).innerHTML = `step ${t}<br>guess = [${MV.num(x[0], 3)}, ${MV.num(x[1], 3)}]<br>Rayleigh estimate xᵀAx = <b>${MV.num(ray, 4)}</b><br>true λ₁ = ${MV.num(T.l1, 4)}, λ₂ = ${MV.num(T.l2, 4)}<br>angle to the eigenvector: <b>${MV.num(Math.acos(Math.min(1, cosang)) * 180 / Math.PI, 2)}°</b><br>ratio |λ₂ ÷ λ₁| = ${MV.num(Math.abs(T.l2 / T.l1), 3)}${Math.abs(T.l2 / T.l1) > 0.8 ? ' (slow)' : ''}` + (t ? '' : '<br><small>The purple dashed arrow is A times the guess, shrunk to fit.</small>');
+    }
+    const P = Player($('.vz-p', b), show, 800);
+    wireSeg(b, 'm', v => { A = MS[v]; plan(); });
+    wireSlider(b, 'ang', v => { ang = v; plan(); });
+    plan();
+  };
+})();
+'''
+CSS += r'''
+.pi-plot .mv-svg,.cpl-plot .mv-svg{max-height:400px}
 '''
 
 T = K.topic(

@@ -1,6 +1,6 @@
 # Chapter 9: chance and sample spaces, the addition and multiplication rules, counting, conditional
 # probability, independence, Bayes' theorem, naive Bayes and Monte Carlo simulation.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, deep
 
 K = Kit()
 
@@ -933,6 +933,174 @@ CSS = r'''
 .vn-g .dim{opacity:.18}
 .vn-g .on{transform:scale(1.06)}
 .dc-new{margin:6px 0}
+'''
+
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'rules': deep('the birthday problem, where the complement rule shines', f'''
+<p>How many people must be in a room before two of them probably share a birthday? Most people guess around 180. The real answer is 23. The trick is to work out the chance that <b>nobody</b> shares, using the AND rule, and then take the complement.</p>
+{worked('Chance that at least two of 23 people share a birthday (365 equally likely days)', [
+        'Person 1 can have any birthday: chance <span class="eq">365 ÷ 365</span>',
+        'Person 2 must avoid that day: <span class="eq">364 ÷ 365</span>. Person 3 must avoid two days: <span class="eq">363 ÷ 365</span>',
+        'Keep going to person 23, who must avoid 22 days: <span class="eq">343 ÷ 365</span>',
+        'All different (AND, so multiply): <span class="eq">(365 × 364 × … × 343) ÷ 365²³ ≈ 0.493</span>',
+        'At least one shared birthday (complement): <span class="eq">1 − 0.493 = 0.507</span>, just over half.'])}
+<p>Why so few? With 23 people there are C(23, 2) = 253 different <b>pairs</b>, and each pair is a fresh chance of a match. Counting pairs, not people, is what intuition misses.</p>
+{ml('The same maths decides how often two different items get the same hash code in a hash table or a data deduplication system. With about 1.2 × √N items you reach a 50% chance of at least one collision among N possible codes.')}
+'''),
+    'counting': deep('see permutations collapse into combinations', f'''
+<p>Combinations are permutations with the order thrown away. Every group of k items can be lined up in k! different orders, so the list of permutations contains each combination exactly k! times. Dividing by k! removes the repeats.</p>
+{viz('perm')}
+{worked('Odds of a 6 from 49 lottery', [
+        'Order does not matter, so count combinations: <span class="eq">C(49, 6) = 49! ÷ (6! × 43!)</span>',
+        'Cancel the 43!: <span class="eq">(49 × 48 × 47 × 46 × 45 × 44) ÷ (6 × 5 × 4 × 3 × 2 × 1)</span>',
+        'Top: <span class="eq">10068347520</span>. Bottom: <span class="eq">720</span>',
+        '<span class="eq">10068347520 ÷ 720 = 13983816</span> possible tickets',
+        'One ticket wins with chance about <span class="eq">1 in 14 million</span>.'])}
+{trick('When working out C(n, k) by hand, cancel the bigger factorial first and multiply only k numbers on top. C(10, 3) = (10 × 9 × 8) ÷ (3 × 2 × 1) = 120.')}
+'''),
+    'conditional': deep('shrink the world and watch the probability change', f'''
+<p>"Given B" means: throw away every outcome where B did not happen, and measure inside what is left. The grid below shows the 200 students from the table. Pick a "given" and the rest of the grid fades away. The probability is just a count of the bright dots divided by the size of the remaining world.</p>
+{viz('condgrid')}
+<p>A <b>probability tree</b> is another way to keep conditional probabilities straight. The first branches split on one question, the second branches on the next, and you multiply along a path.</p>
+{worked('Probability tree for the study table', [
+        'First branch: <span class="eq">P(studied) = 100 ÷ 200 = 0.5</span> and <span class="eq">P(did not) = 0.5</span>',
+        'Second branch after studying: <span class="eq">P(pass | studied) = 0.9</span>. After not studying: <span class="eq">P(pass | not) = 0.4</span>',
+        'Multiply along each path: studied and passed <span class="eq">0.5 × 0.9 = 0.45</span>, did not study and passed <span class="eq">0.5 × 0.4 = 0.2</span>',
+        'Add the paths that end in "pass": <span class="eq">P(pass) = 0.45 + 0.2 = 0.65</span>, which matches 130 ÷ 200 ✓',
+        'This last step has a name, the law of total probability, and it is the bottom of Bayes’ theorem.'])}
+'''),
+    'bayes': deep('the odds form of Bayes, the quickest way to update', f'''
+<p>Bayes’ theorem has a second form that is easier to use in your head. Write beliefs as <b>odds</b> (chance for ÷ chance against) and each new piece of evidence multiplies the odds by a single number, the <b>likelihood ratio</b>.</p>
+{fx('Bayes in odds form', 'posterior odds = prior odds × likelihood ratio', 'likelihood ratio = P(evidence | A) ÷ P(evidence | not A). Above 1 the evidence favours A, below 1 it favours not A.')}
+{worked('A disease in 1 of 100 people, test sensitivity 90%, false positive rate 5%', [
+        'Prior odds of being sick: <span class="eq">1 : 99</span>',
+        'Likelihood ratio of a positive test: <span class="eq">0.90 ÷ 0.05 = 18</span>',
+        'Posterior odds: <span class="eq">1 × 18 : 99 = 18 : 99</span>',
+        'Back to a probability: <span class="eq">18 ÷ (18 + 99) = 18 ÷ 117 ≈ 0.154</span>, about 15%',
+        'A second, independent positive test multiplies by 18 again: <span class="eq">324 : 99</span>, so about 77%.'])}
+<p>The odds form shows clearly why a rare condition stays fairly unlikely after one positive test: the prior odds start very low, and one multiplication by 18 cannot make up all the difference. It also shows how evidence piles up, one multiplication per independent clue, which is exactly what naive Bayes does in the next lesson.</p>
+'''),
+    'naive': deep('what "naive" costs and the Gaussian version', f'''
+<p>The naive assumption says that, once you know the class, the words do not influence each other. In real email "free" and "money" do travel together in spam. Naive Bayes then counts that evidence twice and becomes over confident: its probabilities are often pushed close to 0 or 1. Yet the <b>ranking</b> (which class has the bigger score) is usually still right, which is all a classifier needs to pick a label.</p>
+{table(['Version', 'Features', 'P(feature | class) comes from'], [
+        ['Multinomial', 'word counts', 'counting words in each class, with add one smoothing'],
+        ['Bernoulli', 'word present or absent', 'the share of documents in each class that contain the word'],
+        ['Gaussian', 'numbers such as height or blood pressure', 'a normal curve with the mean and SD of that feature in that class (Chapter 10)'],
+    ])}
+{worked('Gaussian naive Bayes with one feature', [
+        'Class A heights: mean 160 cm, SD 10. Class B: mean 180 cm, SD 10. Equal priors.',
+        'A new person is 172 cm. z under A: <span class="eq">(172 − 160) ÷ 10 = 1.2</span>. z under B: <span class="eq">(172 − 180) ÷ 10 = −0.8</span>',
+        'The normal density is proportional to <span class="eq">e^(−z²/2)</span>: for A <span class="eq">e^(−0.72) ≈ 0.487</span>, for B <span class="eq">e^(−0.32) ≈ 0.726</span>',
+        'Normalise: <span class="eq">P(B | 172) = 0.726 ÷ (0.487 + 0.726) ≈ 0.60</span>',
+        'So class B, with 60% confidence. The boundary sits at 170 cm, halfway between the means, because the SDs are equal.'])}
+'''),
+    'ml': deep('estimate π by throwing random darts', f'''
+<p>Monte Carlo methods replace a hard calculation by a simple random experiment repeated many times. Here is the classic example. Throw darts uniformly at a 1 × 1 square. The quarter circle of radius 1 inside it has area π ÷ 4, so the share of darts that land inside should approach π ÷ 4. Multiply by 4 and you have an estimate of π.</p>
+{viz('mcpi')}
+<p>Watch how the estimate wobbles a lot at first and then settles. The error shrinks like 1 ÷ √n, the same rule as the standard error in Chapter 10: 100 times more darts gives about 10 times more accuracy. That slow but steady rule works in any number of dimensions, which is why Monte Carlo is the standard tool for the huge integrals of Bayesian machine learning (Chapter 15).</p>
+{ml('Dropout in neural networks is a Monte Carlo idea too. During training, each neuron is switched off at random, so each mini batch trains a slightly different random sub network. At test time the network behaves like an average over all those sub networks.')}
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+
+  /* ----- list permutations, then group them into combinations ----- */
+  W.perm = el => {
+    const b = shell(el, 'Permutations, then combinations', 'Choose k letters from A to E. Press Play: first every ordered arrangement appears, then arrangements with the same letters are grouped into one combination.');
+    b.innerHTML = `<div class="mv-wrap"><div class="pm-host"></div><div class="mv-side">${slider('n', 'n letters', 3, 5, 4, 1)}${slider('k', 'k chosen', 1, 3, 2, 1)}<div class="mv-read pm-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let n = 4, k = 2, perms = [];
+    const fact = m => m <= 1 ? 1 : m * fact(m - 1);
+    function plan() {
+      k = Math.min(k, n);
+      const L = 'ABCDE'.slice(0, n).split(''); perms = [];
+      const rec = (cur, used) => { if (cur.length === k) { perms.push(cur.join('')); return; } L.forEach((c, i) => { if (!used[i]) { used[i] = 1; cur.push(c); rec(cur, used); cur.pop(); used[i] = 0; } }); };
+      rec([], []);
+      P.load(perms.length + 2, 0);
+    }
+    function show(t) {
+      const grouped = t > perms.length;
+      const key = s => s.split('').sort().join('');
+      const groups = {}; perms.forEach(p => { (groups[key(p)] = groups[key(p)] || []).push(p); });
+      const hue = Object.keys(groups);
+      const cell = (p, on) => `<span class="pm-c${on ? '' : ' off'}" style="--h:${hue.indexOf(key(p)) * 47 % 360}">${p}</span>`;
+      $('.pm-host', b).innerHTML = grouped
+        ? `<div class="pm-groups">${hue.map(g => `<div class="pm-g">${groups[g].map(p => cell(p, true)).join('')}<b>→ {${g.split('').join(', ')}}</b></div>`).join('')}</div>`
+        : `<div class="pm-list">${perms.map((p, i) => cell(p, i < t)).join('')}</div>`;
+      const P1 = fact(n) / fact(n - k), C = P1 / fact(k);
+      $('.pm-out', b).innerHTML = `ordered arrangements P(${n}, ${k}) = ${n}! ÷ ${n - k}! = <b>${P1}</b><br>` + (grouped ? `each group holds ${k}! = ${fact(k)} orders of the same letters<br>combinations C(${n}, ${k}) = ${P1} ÷ ${fact(k)} = <span class="big">${C}</span>` : `listed so far: <b>${Math.min(t, perms.length)}</b>`);
+    }
+    const P = Player($('.vz-p', b), show, 450);
+    wireSlider(b, 'n', v => { n = v; plan(); });
+    wireSlider(b, 'k', v => { k = v; plan(); });
+    plan();
+  };
+
+  /* ----- conditional probability as a shrinking world of 200 students ----- */
+  W.condgrid = el => {
+    const b = shell(el, 'Given B: shrink the world', 'Each square is one of 200 students. Green = passed, grey = failed. A thick border means they studied. Pick what you are given and read the probability as bright squares divided by the remaining world.');
+    b.innerHTML = `<div class="vz-row">${seg('g', [['all', 'Everyone'], ['st', 'Given studied'], ['ns', 'Given did not study'], ['pa', 'Given passed']], 'all')}</div><div class="cg-grid"></div><div class="mv-read cg-out" aria-live="polite"></div>`;
+    const S = [];
+    for (let i = 0; i < 200; i++) { const st = i < 100, pass = st ? i < 90 : i < 140; S.push({ st, pass }); }
+    function draw(g) {
+      const keep = s => g === 'all' || (g === 'st' && s.st) || (g === 'ns' && !s.st) || (g === 'pa' && s.pass);
+      $('.cg-grid', b).innerHTML = S.map(s => `<span class="${s.pass ? 'p' : 'f'}${s.st ? ' s' : ''}${keep(s) ? '' : ' dim'}"></span>`).join('');
+      const world = S.filter(keep), wp = world.filter(s => s.pass).length, ws = world.filter(s => s.st).length;
+      const msg = {
+        all: `P(pass) = 130 ÷ 200 = <b>0.65</b>`,
+        st: `world = the ${world.length} who studied<br>P(pass | studied) = ${wp} ÷ ${world.length} = <b>${MV.num(wp / world.length, 3)}</b>`,
+        ns: `world = the ${world.length} who did not study<br>P(pass | did not study) = ${wp} ÷ ${world.length} = <b>${MV.num(wp / world.length, 3)}</b>`,
+        pa: `world = the ${world.length} who passed<br>P(studied | passed) = ${ws} ÷ ${world.length} = <b>${MV.num(ws / world.length, 3)}</b><br>Not the same as P(pass | studied) = 0.9. The order of the bar matters.`,
+      }[g];
+      $('.cg-out', b).innerHTML = msg;
+    }
+    wireSeg(b, 'g', draw);
+    draw('all');
+  };
+
+  /* ----- Monte Carlo estimate of π ----- */
+  W.mcpi = el => {
+    const b = shell(el, 'Estimate π with random darts', 'Press Play to throw darts in batches. Orange darts land inside the quarter circle. The estimate is 4 × (inside ÷ total).');
+    b.innerHTML = `<div class="mv-wrap"><div class="mc-plot"></div><div class="mv-side">${slider('seed', 'random seed', 1, 9, 3, 1)}<div class="mv-read mc-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    const G = MV.frame(360, 360, [0, 1], [0, 1], 16);
+    const sizes = [0, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000];
+    let pts = [], seed = 3;
+    function plan() { let s = seed * 9973 + 1; const r = () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; pts = []; for (let i = 0; i < 5000; i++) pts.push([r(), r()]); P.load(sizes.length, 0); }
+    function show(t) {
+      const n = sizes[t];
+      let s = `<rect x="${G.sx(0)}" y="${G.sy(1)}" width="${G.sx(1) - G.sx(0)}" height="${G.sy(0) - G.sy(1)}" class="mv-poly" style="fill:none"/>` + MV.curve(G, x => Math.sqrt(Math.max(0, 1 - x * x)), 'c4', { n: 120 });
+      let inside = 0;
+      for (let i = 0; i < n; i++) { const [x, y] = pts[i], ok = x * x + y * y <= 1; if (ok) inside++; s += `<circle cx="${G.sx(x).toFixed(1)}" cy="${G.sy(y).toFixed(1)}" r="${n > 1000 ? 1.2 : 2.2}" class="mv-pt ${ok ? 'o' : 'k'}" style="stroke:none"/>`; }
+      $('.mc-plot', b).innerHTML = MV.svg(G, s, 'Darts in a square');
+      const est = n ? 4 * inside / n : 0;
+      $('.mc-out', b).innerHTML = n ? `darts: <b>${n}</b><br>inside: <b>${inside}</b><br>estimate 4 × ${inside} ÷ ${n} = <span class="big">${est.toFixed(4)}</span><br>true π = 3.1416<br>error = ${Math.abs(est - Math.PI).toFixed(4)}<br>typical error ≈ 1.64 ÷ √n = ${(1.64 / Math.sqrt(n)).toFixed(4)}` : 'No darts yet. Press Play.';
+    }
+    const P = Player($('.vz-p', b), show, 900);
+    wireSlider(b, 'seed', v => { seed = v; plan(); });
+    plan();
+  };
+})();
+'''
+CSS += r'''
+.pm-list,.pm-groups{display:flex; flex-wrap:wrap; gap:6px; align-content:flex-start}
+.pm-g{display:flex; flex-wrap:wrap; gap:4px; align-items:center; padding:6px; border-radius:10px; border:1px solid var(--line); background:var(--surface2)}
+.pm-g b{font-family:var(--font-mono); font-size:13px; margin-left:4px}
+.pm-c{font-family:var(--font-mono); font-weight:800; padding:4px 8px; border-radius:8px; background:hsl(var(--h) 70% 60% / .25); border:1.5px solid hsl(var(--h) 60% 45% / .7); transition:opacity .3s}
+.pm-c.off{opacity:.12}
+.cg-grid{display:grid; grid-template-columns:repeat(20,1fr); gap:3px; margin:8px 0; max-width:520px}
+.cg-grid span{aspect-ratio:1; border-radius:3px; border:1px solid var(--line); transition:opacity .3s}
+.cg-grid span.p{background:color-mix(in srgb, var(--green) 60%, var(--surface))}
+.cg-grid span.f{background:var(--dimbox)}
+.cg-grid span.s{border:2px solid var(--ink)}
+.cg-grid span.dim{opacity:.1}
+.mc-plot .mv-svg{max-height:380px}
 '''
 
 T = K.topic(
