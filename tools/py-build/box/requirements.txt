@@ -1,0 +1,2 @@
+# Test tools the Python chapter builder runs the examples with. Not part of the website.
+pytest==9.1.1
