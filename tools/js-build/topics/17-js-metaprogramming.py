@@ -148,7 +148,7 @@ console.log(dedent`
         Then I see "Try again"`);
 ''', 'Tagged templates: safe HTML and SQL'),
     'decorators': show('''
-// Decorators are a stage 3 proposal. TypeScript 5 and later supports them today ({{ch:ts-projects}}),
+// Decorators are a TC39 proposal (listed at stage 2.7 in October 2026). TypeScript 5 and later supports them today ({{ch:ts-projects}}),
 // and Babel can compile them for JavaScript.
 class CheckoutPage {
   @step("Pay with card")          // log the step in the report
@@ -218,7 +218,7 @@ PARTS = [
     part('decorators', '🎀', 'Decorators', '''
 <p>A <b>decorator</b> is a function written as <code>@name</code> before a class, method, field or accessor. It receives the original and can replace or wrap it. Test frameworks use decorators for steps, retries, timeouts and dependency injection.</p>
 [[decorators]]
-''', kw=['decorators', 'stage 3', '@decorator', 'method decorator', 'TypeScript decorators', 'Babel']),
+''', kw=['decorators', 'stage 2.7', '@decorator', 'method decorator', 'TypeScript decorators', 'Babel']),
     part('scenario', '🎬', 'Real world scenario: a fluent API client', '''
 <div class="scenario"><b>The situation</b>The API test suite calls dozens of endpoints. Writing a function for each one is slow, and URL strings built by hand are full of typos.</div>
 [[scenario]]

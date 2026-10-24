@@ -4,6 +4,40 @@ from kit import part, run, dom, test, show, say, quiz, calc, ex, panel, pkg
 MODULE = ('📦', 'Working with data', 'js-data', 'Objects, arrays, text, numbers, dates, JSON and collections: the data every app and every test handles.')
 
 CODES = {
+    'intl': run('''
+// One amount and one moment, shown the way people in each country expect
+const amount = 1234567.891;
+console.log(new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount));
+console.log(new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount));
+console.log(new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(amount));
+console.log(new Intl.NumberFormat("en-IN", { notation: "compact" }).format(2_500_000), new Intl.NumberFormat("en-US", { notation: "compact" }).format(2_500_000));
+
+const when = new Date("2026-10-24T09:30:00Z");
+for (const loc of ["en-IN", "en-US", "de-DE", "ar-EG", "hi-IN"]) {
+  console.log(loc.padEnd(6), new Intl.DateTimeFormat(loc, { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" }).format(when));
+}
+
+// "yesterday", "in 3 hours": relative times
+const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+console.log(rtf.format(-1, "day"), "|", rtf.format(3, "hour"), "|", new Intl.RelativeTimeFormat("hi", { numeric: "auto" }).format(-1, "day"));
+
+// Plurals and ordinals: "1 item" against "2 items", "1st" against "22nd"
+const pr = new Intl.PluralRules("en-US");
+console.log([0, 1, 2].map(n => `${n} item${pr.select(n) === "one" ? "" : "s"}`).join(", "));
+const ord = new Intl.PluralRules("en-US", { type: "ordinal" });
+const suffix = { one: "st", two: "nd", few: "rd", other: "th" };
+console.log([1, 2, 3, 4, 11, 21, 22, 103].map(n => n + suffix[ord.select(n)]).join(" "));
+
+// Lists, names of countries and languages
+console.log(new Intl.ListFormat("en", { type: "conjunction" }).format(["Chrome", "Firefox", "Safari"]), "|", new Intl.ListFormat("de", { type: "disjunction" }).format(["Chrome", "Firefox"]));
+console.log(new Intl.DisplayNames(["en"], { type: "region" }).of("IN"), "|", new Intl.DisplayNames(["hi"], { type: "language" }).of("en"));
+
+// Characters a person sees, and sorting the way people expect
+const text = "नमस्ते 👨‍👩‍👧";
+console.log("length", text.length, "| code points", [...text].length, "| graphemes", [...new Intl.Segmenter("hi", { granularity: "grapheme" }).segment(text)].length);
+const words = ["résumé", "resume", "Zebra", "apple"];
+console.log(words.toSorted(), words.toSorted(new Intl.Collator("en").compare));
+''', 'Intl: numbers, dates, plurals, lists and characters for every country'),
     'strings': run('''
 const title = "  Wireless Mouse, Silent Click  ";
 const t = title.trim();
@@ -108,7 +142,7 @@ console.log(d.toLocaleDateString("de-DE", { timeZone: "UTC" }), d.toLocaleDateSt
 console.log(new Date("2026-02-30").toString(), new Date("not a date").getTime());
 ''', 'The Date object', play=True),
     'temporal': run('''
-// Temporal (ES2026): immutable, time zone aware, months start at 1.
+// Temporal (finished in 2026, part of ES2027): immutable, time zone aware, months start at 1.
 const today = Temporal.PlainDate.from("2026-10-20");
 console.log(today.toString(), today.dayOfWeek, today.month);
 
@@ -222,6 +256,18 @@ describe("order response", () => {
     }, 'npx jest --verbose', 'Validate an order API response', replace=[(r'Time:\s+[\d.]+ s.*', 'Time:        0.3 s'), (r' \(\d+ ms\)', '')]),
 }
 
+LANES = {
+    'json-trip': {'t': 'An order goes to JSON text and back',
+                  'code': 'const order = { id: 7, total: 199.5, note: undefined,\n  placed: new Date("2026-10-24"), tags: new Set(["gift"]),\n  print() {} };\nconst text = JSON.stringify(order);\nconst back = JSON.parse(text);',
+                  'lanes': ['JavaScript object', 'JSON text', 'Parsed back'], 'tone': [2, 5, 1],
+                  'steps': [{'l': [1, 2, 3], 'v': [['id: 7', 'total: 199.5', 'note: undefined', 'placed: Date', 'tags: Set {"gift"}', 'print: function'], [], []], 'm': 'The object holds six fields of different kinds.'},
+                            {'l': 4, 'v': [['id: 7', 'total: 199.5', 'note: undefined', 'placed: Date', 'tags: Set {"gift"}', 'print: function'], ['"id":7', '"total":199.5'], []], 'm': 'Numbers and strings go straight into the text.'},
+                            {'l': 4, 'v': [['id: 7', 'total: 199.5', 'note: undefined', 'placed: Date', 'tags: Set {"gift"}', 'print: function'], ['"id":7', '"total":199.5', '(note dropped)'], []], 'm': 'undefined has no JSON form, so the note key is simply left out.'},
+                            {'l': 4, 'v': [['id: 7', 'total: 199.5', 'note: undefined', 'placed: Date', 'tags: Set {"gift"}', 'print: function'], ['"id":7', '"total":199.5', '(note dropped)', '"placed":"2026-10-24T00:00:00.000Z"'], []], 'm': 'A Date calls its toJSON method and becomes an ISO text.'},
+                            {'l': 4, 'v': [['id: 7', 'total: 199.5', 'note: undefined', 'placed: Date', 'tags: Set {"gift"}', 'print: function'], ['"id":7', '"total":199.5', '(note dropped)', '"placed":"2026-10-24T00:00:00.000Z"', '"tags":{}', '(print dropped)'], []], 'm': 'A Set has no own enumerable fields, so it becomes an empty object. Functions are dropped.'},
+                            {'l': 5, 'v': [['id: 7', 'total: 199.5', 'note: undefined', 'placed: Date', 'tags: Set {"gift"}', 'print: function'], ['{"id":7,"total":199.5,"placed":"2026-10-24T00:00:00.000Z","tags":{}}'], ['id: 7', 'total: 199.5', 'placed: "2026-10-24T00:00:00.000Z" (a string)', 'tags: {}']], 'm': 'Parsing gives back plain data. The date is now a string, the set is an empty object, and note and print are gone. Convert these fields yourself, or with a reviver.'}]},
+}
+
 PARTS = [
     part('strings', '🔤', 'Working with strings', '''
 <p>A <b>string</b> is text. Strings are <b>immutable</b>: every method returns a new string and the original never changes. Indexes start at 0.</p>
@@ -271,8 +317,24 @@ PARTS = [
 </ul>
 <div class="qa-box">To check a price on screen, format the expected number with the same <code>Intl.NumberFormat</code> settings the app uses and compare text with text. This catches the wrong currency sign, the wrong grouping (₹12,34,567 in India against $1,234,567 in the US) and wrong rounding.</div>
 ''', qa=True, kw=['Math', 'Math.round', 'Math.floor', 'Math.ceil', 'Math.random', 'random integer', 'toFixed', 'Intl.NumberFormat', 'currency format', 'percent', 'compact notation']),
+    part('intl', '🌐', 'Intl: one app, every language and country', '''
+<p>A shopping app used in Mumbai, Chicago and Berlin must show the same price, date and sentence in three different ways. Writing those rules by hand is how bugs like "1 items" or "$12,34,567" reach production. The built in <b>Intl</b> object knows the rules for hundreds of languages and countries, taken from the Unicode CLDR data that every major platform shares.</p>
+<div class="tw"><table class="jt"><tr><th>Tool</th><th>What it formats</th><th>Real example</th></tr>
+<tr><td><code>Intl.NumberFormat</code></td><td>numbers, currencies, percentages, units, compact numbers</td><td>₹12,34,567.89 in India, $1,234,567.89 in the US</td></tr>
+<tr><td><code>Intl.DateTimeFormat</code></td><td>dates and times in a chosen time zone</td><td>a delivery slot shown in the customer's own zone</td></tr>
+<tr><td><code>Intl.RelativeTimeFormat</code></td><td>"yesterday", "in 3 hours"</td><td>"Order placed 2 days ago"</td></tr>
+<tr><td><code>Intl.PluralRules</code></td><td>which plural form a number needs</td><td>"1 item" and "2 items", or Arabic with six forms</td></tr>
+<tr><td><code>Intl.ListFormat</code></td><td>"A, B, and C" or "A oder B"</td><td>"Ships with Chrome, Firefox, and Safari"</td></tr>
+<tr><td><code>Intl.DisplayNames</code></td><td>names of countries, languages and currencies</td><td>a country dropdown in the user's language</td></tr>
+<tr><td><code>Intl.Segmenter</code></td><td>characters, words and sentences as people see them</td><td>a character counter for a Hindi or emoji message</td></tr>
+<tr><td><code>Intl.Collator</code></td><td>sorting and comparing text like a human</td><td>"résumé" next to "resume", "apple" before "Zebra"</td></tr></table></div>
+[[intl]]
+<p>Read the last two lines closely. The text "नमस्ते 👨‍👩‍👧" has a <code>length</code> of 15, but a person sees far fewer characters, because <code>length</code> counts UTF-16 units and the family emoji is several code points joined together. Only <code>Intl.Segmenter</code> counts what the user sees, which matters for limits such as "maximum 160 characters". Plain <code>sort()</code> compares character codes, so every capital letter comes before every small letter. A <code>Collator</code> sorts the way a dictionary does.</p>
+<div class="qa-box">Localisation testing is a test type of its own. Run the same check under several locales and time zones (Playwright's <code>locale</code> and <code>timezoneId</code> options, or <code>LANG</code> and <code>TZ</code> on CI), and build the expected text with the same <code>Intl</code> settings instead of hard coding it. Watch for text that is longer in German, right to left layout in Arabic, and Hindi "कल", which means both yesterday and tomorrow.</div>
+''', qa=['Playwright', 'Cypress', 'Jest'], qa_why='Localisation bugs in prices, dates and plurals are common, and expected values should be built with the same Intl rules the app uses.',
+        kw=['Intl', 'internationalisation', 'i18n', 'localisation', 'l10n', 'locale', 'NumberFormat', 'DateTimeFormat', 'RelativeTimeFormat', 'PluralRules', 'ListFormat', 'DisplayNames', 'Segmenter', 'Collator', 'grapheme', 'CLDR', 'lakh', 'timezoneId']),
     part('dates', '📅', 'Dates, time zones and Temporal', '''
-<p>The <code>Date</code> object stores one moment as milliseconds since 1 January 1970 UTC. It has well known traps, which is why the new <b>Temporal</b> API was added in ES2026.</p>
+<p>The <code>Date</code> object stores one moment as milliseconds since 1 January 1970 UTC. It has well known traps, which is why the new <b>Temporal</b> API was designed. It reached stage 4 in 2026 and is listed for the ES2027 edition.</p>
 [[dates]]
 <div class="warn"><code>Date</code> months start at 0 (January is 0, December is 11), invalid dates such as 30 February roll over silently, and methods without "UTC" use the computer's time zone, so the same test can pass in Bengaluru and fail on a CI server in Frankfurt.</div>
 <h3>Temporal</h3>
@@ -285,6 +347,8 @@ PARTS = [
     part('json', '📄', 'JSON', '''
 <p><b>JSON</b> (JavaScript Object Notation) is the text format of almost every API. <code>JSON.stringify</code> turns a value into JSON text and <code>JSON.parse</code> turns text back into a value.</p>
 [[json]]
+<p>Watch what happens to each field of an order when it travels to a server and back. This is exactly what happens when a page saves data with <code>fetch</code> and reads it again, or when a test writes a fixture file and loads it in the next run.</p>
+<div class="viz" data-viz="lanes" data-k="json-trip"></div>
 <div class="tw"><table class="jt"><tr><th>JavaScript value</th><th>What JSON does with it</th></tr>
 <tr><td>objects, arrays, strings, numbers, booleans, null</td><td>kept</td></tr>
 <tr><td><code>undefined</code>, functions, symbols</td><td>dropped from objects, turned into <code>null</code> in arrays</td></tr>
@@ -360,6 +424,12 @@ SAY = [
         'JSON.stringify values କୁ text କରେ ଏବଂ JSON.parse ଫେରାଏ। Dates strings ହୋଇ ଫେରେ, undefined ଓ functions ବାଦ ପଡ଼େ।',
         'يحول JSON.stringify القيم إلى نص ويعيدها JSON.parse. تعود التواريخ نصوصًا وتُحذف undefined والدوال.',
         'JSON.stringify macht Werte zu Text, JSON.parse zurück. Datumswerte kommen als Strings zurück, undefined und Funktionen fallen weg.'),
+    say('intl', 'Intl', 'The Intl object formats numbers, dates, plurals, lists and names the way each country expects, counts characters as people see them, and sorts text like a dictionary.',
+        'Intl object numbers, dates, plurals, lists और names को हर देश के तरीके से दिखाता है, characters को वैसे गिनता है जैसे लोग देखते हैं, और text को dictionary की तरह sort करता है।',
+        'Intl object numbers, dates, plurals, lists ಮತ್ತು names ಅನ್ನು ಪ್ರತಿ ದೇಶದ ರೀತಿಯಲ್ಲಿ ತೋರಿಸುತ್ತದೆ ಮತ್ತು text ಅನ್ನು dictionary ರೀತಿ sort ಮಾಡುತ್ತದೆ.',
+        'Intl object numbers, dates, plurals, lists ଓ names କୁ ପ୍ରତ୍ୟେକ ଦେଶ ଅନୁଯାୟୀ ଦେଖାଏ ଓ text କୁ dictionary ପରି sort କରେ।',
+        'يعرض كائن Intl الأرقام والتواريخ وصيغ الجمع والقوائم والأسماء كما يتوقعها أهل كل بلد، ويعد الحروف كما يراها الناس، ويرتب النص كالقاموس.',
+        'Intl formatiert Zahlen, Daten, Plurale, Listen und Namen so, wie jedes Land es erwartet, zählt sichtbare Zeichen und sortiert wie ein Wörterbuch.'),
     say('scenario', 'Scenario', 'A Jest test checks an order response with toMatchObject, regex and type matchers, a formatted amount and a fixed clock.',
         'एक Jest test order response को toMatchObject, regex और type matchers, formatted amount और fixed clock से जाँचता है।',
         'ಒಂದು Jest test order response ಅನ್ನು toMatchObject, regex, type matchers, formatted amount ಮತ್ತು fixed clock ಮೂಲಕ ಪರಿಶೀಲಿಸುತ್ತದೆ.',
@@ -375,6 +445,8 @@ SAY = [
 ]
 
 QUIZ = [
+    quiz('m', 'Which tool counts the characters a person actually sees, such as one family emoji?', ['Intl.Segmenter', 'String length', 'Array.from', 'Intl.Collator'], 0, 'Graphemes.', 'length counts UTF-16 units and spreading counts code points. Only a grapheme segmenter matches what the eye sees.'),
+    quiz('h', 'What does new Intl.PluralRules("en-US", { type: "ordinal" }).select(22) return?', ['"two", so the suffix is nd', '"other"', '"few"', '"one"'], 0, '22nd.', 'Ordinal rules give one, two, few and other in English: 1st, 2nd, 3rd, 4th, and 21st, 22nd, 23rd.'),
     quiz('e', 'What does "  hi  ".trim() return?', ['"hi"', '"  hi"', '"hi  "', '"  hi  "'], 0, 'trim removes both ends.', '<code>trim</code> removes whitespace from both ends.'),
     quiz('e', 'Which flag makes a regex find every match instead of only the first?', ['g', 'i', 'm', 's'], 0, 'g for global.', 'The <code>g</code> flag finds all matches. <code>i</code> ignores case.'),
     quiz('e', 'What month is new Date(2026, 0, 15)?', ['January', 'December', 'February', 'An invalid date'], 0, 'Date months start at 0.', 'Month 0 is January. Temporal uses 1 for January.'),
@@ -423,11 +495,11 @@ EX = [
 ]
 
 T = {
-    'slug': 'js-strings-dates-json', 'title': 'Strings, Regex, Numbers, Dates and JSON', 'short': 'Strings, dates and JSON', 'emoji': '🔤', 'module': MODULE, 'minutes': 22,
-    'lead': 'String methods and Unicode, comparing text read from a page, regular expressions in code and in assertions, Math and Intl number formatting, Date traps and the new Temporal API, and JSON for APIs and fixture files.',
+    'slug': 'js-strings-dates-json', 'title': 'Strings, Regex, Numbers, Dates and JSON', 'short': 'Strings, dates and JSON', 'emoji': '🔤', 'module': MODULE, 'minutes': 26,
+    'lead': 'String methods and Unicode, comparing text read from a page, regular expressions in code and in assertions, Math and Intl number formatting, Intl for dates, plurals, lists and characters in every language, Date traps and the new Temporal API, and JSON for APIs and fixture files.',
     'desc': 'String methods, Unicode, regular expressions, Math, Intl.NumberFormat, Date, time zones, Temporal, JSON.stringify, JSON.parse and validating an API response.',
-    'summary': 'String methods and Unicode, normalising page text for comparisons, regular expressions with groups, lookahead and flags, regex in Playwright, Cypress and Jest, Math and rounding traps, Intl.NumberFormat for currencies, Date and time zone traps, Temporal, JSON with replacers and revivers, JSON fixture files and validating an order API response.',
-    'keywords': ['string', 'regex', 'regular expression', 'Math', 'Intl.NumberFormat', 'currency', 'Date', 'time zone', 'Temporal', 'JSON', 'JSON.parse', 'JSON.stringify', 'fixtures', 'toMatch', 'toMatchObject'],
+    'summary': 'String methods and Unicode, normalising page text for comparisons, regular expressions with groups, lookahead and flags, regex in Playwright, Cypress and Jest, Math and rounding traps, Intl.NumberFormat for currencies, Intl for relative times, plurals, lists, display names, graphemes and sorting, Date and time zone traps, Temporal, JSON with replacers and revivers, JSON fixture files and validating an order API response.',
+    'keywords': ['string', 'regex', 'regular expression', 'Math', 'Intl.NumberFormat', 'currency', 'Intl', 'localisation', 'PluralRules', 'Segmenter', 'Date', 'time zone', 'Temporal', 'JSON', 'JSON.parse', 'JSON.stringify', 'fixtures', 'toMatch', 'toMatchObject'],
     'qa_intro': 'Text, pattern, price and date checks make up most assertions. This chapter shows how to make them strict where it matters and stable everywhere else.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

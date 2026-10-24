@@ -4,6 +4,55 @@ from kit import part, run, dom, test, show, say, quiz, calc, ex, panel, pkg
 MODULE = ('📦', 'Working with data', 'js-data', 'Objects, arrays, text, numbers, dates, JSON and collections: the data every app and every test handles.')
 
 CODES = {
+    'binary': run('''
+// An ArrayBuffer is raw memory. Typed arrays and DataView are windows onto it.
+const buf = new ArrayBuffer(8);
+const bytes = new Uint8Array(buf);
+const words = new Uint32Array(buf);
+words[0] = 0x12345678;
+console.log("bytes after one 32 bit write:", [...bytes.slice(0, 4)].map(b => b.toString(16)));   // little endian on this CPU
+
+// Fixed size and fixed type: values wrap or are clamped
+const small = new Uint8Array([250, 255, 256, -1]);
+console.log("Uint8Array:", [...small], "| clamped:", [...new Uint8ClampedArray([250, 255, 256, -1])]);
+
+// DataView reads any type at any position, with the byte order you choose (network protocols, file headers)
+const header = new DataView(new ArrayBuffer(6));
+header.setUint16(0, 0x4241);                      // "BA" magic number, big endian by default
+header.setUint32(2, 1_000_000, true);             // little endian length
+console.log(header.getUint16(0).toString(16), header.getUint32(2, true), new Uint8Array(header.buffer));
+
+// Text to bytes and back
+const encoded = new TextEncoder().encode("₹99 ✓");
+console.log(encoded.length, "bytes for", "₹99 ✓".length, "UTF-16 units:", new TextDecoder().decode(encoded));
+
+// subarray shares memory, slice copies
+const all = new Uint8Array([1, 2, 3, 4]);
+const view = all.subarray(1, 3), copy = all.slice(1, 3);
+view[0] = 99;
+console.log([...all], [...copy]);
+
+// Files: the first bytes tell you the real type, whatever the extension says
+const png = Uint8Array.fromHex("89504e470d0a1a0a0000000d");
+const isPng = [0x89, 0x50, 0x4e, 0x47].every((b, i) => png[i] === b);
+console.log("is png:", isPng, "| base64:", png.toBase64());
+''', 'Raw bytes: ArrayBuffer, typed arrays, DataView and encodings'),
+    'shared': run('''
+import { Worker } from "node:worker_threads";
+
+// A SharedArrayBuffer is memory that several threads see at the same time
+const shared = new SharedArrayBuffer(4);
+const counter = new Int32Array(shared);
+
+const code = `
+  const { workerData } = require("node:worker_threads");
+  const counter = new Int32Array(workerData);
+  for (let i = 0; i < 100000; i++) Atomics.add(counter, 0, 1);   // one indivisible read, add and write
+`;
+const workers = [1, 2, 3, 4].map(() => new Worker(code, { eval: true, workerData: shared }));
+await Promise.all(workers.map(w => new Promise(r => w.on("exit", r))));
+console.log("4 workers x 100000 with Atomics.add:", Atomics.load(counter, 0));
+''', 'SharedArrayBuffer and Atomics across worker threads', play=False),
     'map': run('''
 const tokens = new Map();
 tokens.set("admin", "tok-a1");
@@ -244,6 +293,22 @@ PARTS = [
 <div class="qa-box">Paginated endpoints are a classic API test target: page sizes, the last page, an empty page, a stable order across pages. An async generator gives you every item in one loop, and <code>Array.fromAsync</code> collects them for one big assertion.</div>
 ''', qa=['Jest', 'Playwright'], qa_why='API tests often have to walk paginated endpoints, and async generators make that a plain loop.',
         kw=['generator', 'function*', 'yield', 'yield*', 'next', 'lazy', 'async generator', 'for await', 'pagination', 'Array.fromAsync']),
+    part('binary', '🧱', 'Binary data: ArrayBuffer, typed arrays and DataView', '''
+<p>Most JavaScript works with text and objects, but files, images, network packets, audio and cryptography work with <b>bytes</b>. An <b>ArrayBuffer</b> is a block of raw memory with a fixed size. You never read it directly. You put a <b>view</b> on it: a typed array such as <code>Uint8Array</code> (whole numbers 0 to 255), <code>Int32Array</code> or <code>Float64Array</code>, or a <code>DataView</code> that can read any type at any position.</p>
+<div class="viz" data-viz="lanes" data-k="bytes"></div>
+[[binary]]
+<ul>
+<li>Typed arrays have a <b>fixed length and type</b>. Writing 256 into a <code>Uint8Array</code> wraps around to 0, and <code>Uint8ClampedArray</code>, used for canvas pixels, clamps it to 255 instead.</li>
+<li><b>Byte order</b> (endianness) decides which byte comes first. Most computers store numbers little endian, while network protocols and many file formats use big endian. <code>DataView</code> lets you choose on every read and write.</li>
+<li><code>TextEncoder</code> and <code>TextDecoder</code> turn text into UTF-8 bytes and back. The rupee sign takes 3 bytes, which is why a byte limit and a character limit are different things.</li>
+<li><code>subarray</code> is another view on the same memory, <code>slice</code> is a copy. Mixing them up is a classic bug.</li>
+</ul>
+<h3>Sharing memory between threads</h3>
+<p>Normally each worker thread gets a copy of the data you send it. A <b>SharedArrayBuffer</b> is the exception: every thread sees the same bytes. Two threads that do <code>c[0] = c[0] + 1</code> at the same moment can both read the old value, and one update is lost. <b>Atomics</b> functions do the read, change and write as one indivisible step, so the total below is always exactly right. In browsers, SharedArrayBuffer is only available on pages that send the cross origin isolation headers.</p>
+[[shared]]
+<div class="qa-box">Testers meet binary data in file upload and download tests. Check the first bytes (the "magic number") to prove a downloaded report is really a PDF or PNG, compare file sizes in bytes, and hash files with <code>crypto.subtle.digest</code> to prove two downloads are identical.</div>
+''', qa=['Playwright', 'Node.js'], qa_why='Upload and download tests check real bytes: file signatures, sizes and hashes.',
+        kw=['ArrayBuffer', 'typed array', 'Uint8Array', 'Int32Array', 'Float64Array', 'Uint8ClampedArray', 'DataView', 'endianness', 'little endian', 'big endian', 'TextEncoder', 'TextDecoder', 'UTF-8', 'subarray', 'slice', 'SharedArrayBuffer', 'Atomics', 'magic number', 'file signature']),
     part('symbols', '🔣', 'Symbols', '''
 <p>A <b>symbol</b> is a unique value used as a hidden key. Two symbols with the same description are still different, unless they come from the shared registry with <code>Symbol.for</code>. Symbol keys are skipped by <code>Object.keys</code> and <code>JSON.stringify</code>.</p>
 [[symbols]]
@@ -257,6 +322,15 @@ PARTS = [
 ]
 
 LANES = {
+    'bytes': {'t': 'Three views on the same eight bytes',
+              'code': 'const buf = new ArrayBuffer(8);\nconst bytes = new Uint8Array(buf);\nconst words = new Uint32Array(buf);\nwords[0] = 0x12345678;\nbytes[4] = 255;',
+              'lanes': ['Raw memory (8 bytes)', 'Uint8Array view', 'Uint32Array view'], 'tone': [5, 2, 3],
+              'steps': [{'l': 1, 'v': [['00 00 00 00 00 00 00 00'], [], []], 'm': 'new ArrayBuffer(8) reserves 8 bytes, all zero. You cannot read them without a view.'},
+                        {'l': 2, 'v': [['00 00 00 00 00 00 00 00'], ['[0, 0, 0, 0, 0, 0, 0, 0]'], []], 'm': 'A Uint8Array sees every byte as its own number from 0 to 255. Length 8.'},
+                        {'l': 3, 'v': [['00 00 00 00 00 00 00 00'], ['[0, 0, 0, 0, 0, 0, 0, 0]'], ['[0, 0]']], 'm': 'A Uint32Array sees the same memory as two numbers of 4 bytes each. Length 2. Nothing was copied.'},
+                        {'l': 4, 'v': [['78 56 34 12 00 00 00 00'], ['[120, 86, 52, 18, 0, 0, 0, 0]'], ['[305419896, 0]']], 'm': 'Writing one 32 bit number fills 4 bytes. On a little endian CPU the lowest byte, 78, is stored first. The byte view sees the change at once.'},
+                        {'l': 5, 'v': [['78 56 34 12 ff 00 00 00'], ['[120, 86, 52, 18, 255, 0, 0, 0]'], ['[305419896, 255]']], 'm': 'Writing one byte through the byte view changes the second 32 bit number too. All views share one memory.'}]},
+
     'gen': {'t': 'A generator pauses at every yield', 'code': 'function* steps() {\n  yield "open";\n  yield "click";\n  return "done";\n}\nconst g = steps();\ng.next();\ng.next();\ng.next();',
             'lanes': ['Caller', 'Generator', 'next() returned'], 'tone': [2, 3, 1],
             'steps': [{'l': 6, 'v': [['g = steps()'], ['paused before line 2'], []], 'm': 'Calling steps() runs nothing. It only creates the paused generator g.'},
@@ -315,6 +389,12 @@ SAY = [
         'Generator ପ୍ରତ୍ୟେକ yield ରେ ଅଟକେ ଏବଂ ପରବର୍ତ୍ତୀ call ରେ ଚାଲେ। Async generators paginated APIs କୁ ସରଳ loops କରନ୍ତି।',
         'يتوقف المولد عند كل yield ويستأنف في الاستدعاء التالي. المولدات غير المتزامنة مع for await تحول واجهات الصفحات إلى حلقات بسيطة.',
         'Ein Generator pausiert bei jedem yield und macht beim nächsten Aufruf weiter. Asynchrone Generatoren machen seitenweise APIs zu einfachen Schleifen.'),
+    say('binary', 'Binary data', 'An ArrayBuffer is raw memory. Typed arrays and DataView are views on it that read bytes as numbers. SharedArrayBuffer is shared between threads, and Atomics keeps updates safe.',
+        'ArrayBuffer raw memory है। Typed arrays और DataView उस पर views हैं जो bytes को numbers की तरह पढ़ते हैं। SharedArrayBuffer threads में बँटता है और Atomics updates को सुरक्षित रखता है।',
+        'ArrayBuffer raw memory. Typed arrays ಮತ್ತು DataView ಅದರ ಮೇಲಿನ views. SharedArrayBuffer threads ನಡುವೆ ಹಂಚಲ್ಪಡುತ್ತದೆ, Atomics updates ಸುರಕ್ಷಿತವಾಗಿಡುತ್ತದೆ.',
+        'ArrayBuffer raw memory। Typed arrays ଓ DataView ଏହା ଉପରେ views। SharedArrayBuffer threads ମଧ୍ୟରେ ବଣ୍ଟା ହୁଏ, Atomics updates ସୁରକ୍ଷିତ ରଖେ।',
+        'ArrayBuffer ذاكرة خام، والمصفوفات المحددة النوع وDataView نوافذ عليها تقرأ البايتات كأرقام. تتشارك الخيوط SharedArrayBuffer وتحمي Atomics التحديثات.',
+        'Ein ArrayBuffer ist roher Speicher. Typisierte Arrays und DataView sind Sichten darauf. SharedArrayBuffer teilen sich Threads, Atomics hält Änderungen sicher.'),
     say('symbols', 'Symbols', 'Symbols are unique hidden keys. Well known symbols such as Symbol iterator let your objects work with the language.',
         'Symbols unique छिपी keys हैं। Symbol.iterator जैसे well known symbols आपके objects को language के साथ जोड़ते हैं।',
         'Symbols unique ಅಡಗಿದ keys. Symbol.iterator ನಂತಹ well known symbols ನಿಮ್ಮ objects ಅನ್ನು language ಜೊತೆ ಕೆಲಸ ಮಾಡಿಸುತ್ತವೆ.',
@@ -336,6 +416,8 @@ SAY = [
 ]
 
 QUIZ = [
+    quiz('m', 'What does new Uint8Array([256])[0] hold?', ['0, the value wraps around', '256', '255', 'It throws a RangeError'], 0, 'Only 0 to 255 fit in one byte.', 'Typed arrays store the value modulo 256. Uint8ClampedArray would store 255.'),
+    quiz('h', 'Two Uint8Array objects are made with subarray and slice from the same array. Which one changes when the original changes?', ['The subarray, it shares the memory', 'The slice, it shares the memory', 'Both', 'Neither'], 0, 'View against copy.', 'subarray creates a new view over the same ArrayBuffer. slice copies the bytes.'),
     quiz('e', 'What is new Set([1, 1, 2, 2, 3]).size?', ['3', '5', '2', '1'], 0, 'Duplicates are kept once.', 'A Set keeps 1, 2 and 3.'),
     quiz('e', 'Which can be a key in a Map but not (as itself) in a plain object?', ['An object', 'A string', 'A symbol', 'A text key with spaces'], 0, 'Object keys become strings.', 'Plain objects turn keys into strings (or symbols). A Map keeps any value, including objects.'),
     quiz('e', 'What does calling a generator function do?', ['Returns a paused iterator without running the body', 'Runs the whole body', 'Runs until the first yield', 'Throws unless you use await'], 0, 'Nothing runs until next().', 'The body only starts on the first <code>next()</code>.'),
@@ -386,11 +468,11 @@ EX = [
 ]
 
 T = {
-    'slug': 'js-collections-iterators', 'title': 'Map, Set, Iterators and Generators', 'short': 'Collections and generators', 'emoji': '🗂️', 'module': MODULE, 'minutes': 16,
-    'lead': 'Map for lookups with any key, Set with the new union and difference methods, weak collections, the iteration protocol and lazy iterator helpers, generators, async generators for paginated APIs, and symbols.',
-    'desc': 'Map, Set, set operations, WeakMap, WeakRef, iterators, iterator helpers, generators, async generators, for await and symbols.',
-    'summary': 'Map and when it beats an object, getOrInsert, Set with union, intersection and difference, WeakMap and WeakRef, the iteration protocol, lazy iterator helpers, generators that pause and resume, async generators and for await for paginated APIs, symbols and well known symbols, and comparing an expected menu with the real one.',
-    'keywords': ['Map', 'Set', 'union', 'intersection', 'difference', 'WeakMap', 'WeakRef', 'iterator', 'iterable', 'iterator helpers', 'generator', 'yield', 'async generator', 'for await', 'pagination', 'Symbol'],
+    'slug': 'js-collections-iterators', 'title': 'Map, Set, Iterators and Generators', 'short': 'Collections and generators', 'emoji': '🗂️', 'module': MODULE, 'minutes': 21,
+    'lead': 'Map for lookups with any key, Set with the new union and difference methods, weak collections, the iteration protocol and lazy iterator helpers, generators, async generators for paginated APIs, binary data with ArrayBuffer, typed arrays, DataView and Atomics, and symbols.',
+    'desc': 'Map, Set, set operations, WeakMap, WeakRef, ArrayBuffer, typed arrays, DataView, SharedArrayBuffer, Atomics, iterators, iterator helpers, generators, async generators, for await and symbols.',
+    'summary': 'Map and when it beats an object, getOrInsert, Set with union, intersection and difference, WeakMap and WeakRef, the iteration protocol, lazy iterator helpers, generators that pause and resume, async generators and for await for paginated APIs, binary data with typed arrays, DataView, encodings, SharedArrayBuffer and Atomics, symbols and well known symbols, and comparing an expected menu with the real one.',
+    'keywords': ['Map', 'Set', 'ArrayBuffer', 'typed array', 'Uint8Array', 'DataView', 'SharedArrayBuffer', 'Atomics', 'union', 'intersection', 'difference', 'WeakMap', 'WeakRef', 'iterator', 'iterable', 'iterator helpers', 'generator', 'yield', 'async generator', 'for await', 'pagination', 'Symbol'],
     'qa_intro': 'Set operations make expected against actual list checks a one liner, and async generators make paginated API tests a plain loop.',
     'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

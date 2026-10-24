@@ -7,6 +7,103 @@ PORT = [(r'127\.0\.0\.1:\d+', '127.0.0.1:41234'), (r'localhost:\d+', 'localhost:
         (r'[Dd]ate: .*', 'Date: Tue, 20 Oct 2026 09:00:00 GMT'), (r"'date' => '[^']*'", "'date' => 'Mon, 20 Oct 2026 09:00:00 GMT'"), (r'"date":"[^"]*"', '"date":"Mon, 20 Oct 2026 09:00:00 GMT"')]
 
 CODES = {
+    'cors': run('''
+import http from "node:http";
+
+// An API that allows only the shop's own front end to call it from a browser
+const ALLOWED = "https://shop.example";
+const server = http.createServer((req, res) => {
+  const origin = req.headers.origin;
+  if (origin === ALLOWED) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  if (req.method === "OPTIONS") {                       // the preflight
+    if (origin === ALLOWED) {
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      res.setHeader("Access-Control-Max-Age", "600");
+    }
+    res.writeHead(204).end();
+    return;
+  }
+  res.writeHead(200, { "Content-Type": "application/json" }).end('{"orders":3}');
+}).listen(0);
+const api = `http://localhost:${server.address().port}/orders`;
+
+// What a browser does before a DELETE with a token from another origin
+async function browserCall(origin, method) {
+  const pre = await fetch(api, { method: "OPTIONS", headers: { Origin: origin, "Access-Control-Request-Method": method, "Access-Control-Request-Headers": "authorization" } });
+  const allowedOrigin = pre.headers.get("access-control-allow-origin");
+  const allowedMethods = pre.headers.get("access-control-allow-methods") ?? "";
+  const ok = allowedOrigin === origin && allowedMethods.includes(method);
+  console.log(`${origin.padEnd(26)} ${method.padEnd(6)} preflight ${pre.status}, allow-origin: ${allowedOrigin ?? "(none)"} -> ${ok ? "browser sends the real request" : "browser blocks it: CORS error in the console"}`);
+}
+await browserCall("https://shop.example", "DELETE");
+await browserCall("https://evil.example", "DELETE");
+await browserCall("https://shop.example", "PUT");
+
+// Outside a browser there is no CORS check at all: a script or a test tool gets the data
+const direct = await fetch(api, { headers: { Origin: "https://evil.example" } });
+console.log("Node.js fetch from any origin:", direct.status, await direct.text());
+server.close();
+''', 'A CORS preflight, checked the way a browser checks it', play=False),
+    'realtime': run('''
+import http from "node:http";
+import { WebSocketServer } from "ws";     // the ws library for the server side
+
+// 1. Server-Sent Events: one long HTTP response, the server pushes "data:" lines
+const sse = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" });
+  let n = 0;
+  const timer = setInterval(() => {
+    n++;
+    res.write(`event: status\\ndata: {"order":42,"step":${n}}\\n\\n`);
+    if (n === 3) { clearInterval(timer); res.end(); }
+  }, 20);
+}).listen(0);
+
+const res = await fetch(`http://localhost:${sse.address().port}/orders/42/events`);
+console.log("SSE content type:", res.headers.get("content-type"));
+let buffer = "";
+for await (const chunk of res.body.pipeThrough(new TextDecoderStream())) {
+  buffer += chunk;
+  let end;
+  while ((end = buffer.indexOf("\\n\\n")) !== -1) {
+    const event = buffer.slice(0, end);
+    buffer = buffer.slice(end + 2);
+    const data = JSON.parse(event.split("\\n").find(l => l.startsWith("data: ")).slice(6));
+    console.log("SSE  server pushed step", data.step);
+  }
+}
+sse.close();
+
+// 2. WebSocket: one connection, messages both ways at any time
+const wss = new WebSocketServer({ port: 0 });
+wss.on("connection", socket => {
+  socket.on("message", msg => socket.send(`echo: ${msg}`));
+  socket.send("welcome");
+});
+const ws = new WebSocket(`ws://localhost:${wss.address().port}`);   // the WebSocket client is built into Node.js
+const got = [];
+await new Promise(resolve => {
+  ws.onmessage = e => { got.push(e.data); if (got.length === 1) ws.send("ping"); else { ws.close(); resolve(); } };
+});
+console.log("WS  ", got);
+wss.close();
+''', 'Server-Sent Events and a WebSocket, both for real', play=False),
+    'pw-realtime': show('''
+// Playwright can watch and fake real time traffic too
+page.on("websocket", ws => {
+  ws.on("framereceived", f => console.log("server sent", f.payload));
+});
+
+// Replace the real server with a scripted one (Playwright 1.48 and later)
+await page.routeWebSocket("wss://shop.example/live", ws => {
+  ws.onMessage(msg => { if (msg === "subscribe:42") ws.send(JSON.stringify({ order: 42, step: "shipped" })); });
+});
+await expect(page.getByText("Shipped")).toBeVisible();
+''', 'Testing live updates with Playwright', note='Playwright spec, shown here'),
     'raw': run('''
 import http from "node:http";
 import net from "node:net";
@@ -274,6 +371,8 @@ server.close();
 PARTS = [
     part('http', '📨', 'How HTTP works', '''
 <p>Browsers, apps and test tools talk to servers with <b>HTTP</b>. The client sends a <b>request</b>: a method, a path, headers and sometimes a body. The server sends back a <b>response</b>: a status code, headers and usually a body. Both are plain text you can read.</p>
+<p>Before that text can travel, several things happen in a few milliseconds. Press Play to follow one request for <code>https://shop.example/api/orders</code> from the browser to the server and back.</p>
+<div class="viz" data-viz="flow" data-k="request"></div>
 [[raw]]
 <div class="tw"><table class="jt"><tr><th>Method</th><th>Meaning</th><th>Safe to repeat</th></tr>
 <tr><td>GET</td><td>read</td><td>yes</td></tr>
@@ -313,6 +412,28 @@ PARTS = [
 <div class="qa-box">Knowing how routes and status codes are written makes API bugs easier to explain: "POST with price 0 returns 400, as it should, but PUT with price 0 returns 200 and saves it" points straight at the missing check.</div>
 ''', qa=['supertest'], qa_why='API test suites start a server like this one, and {{ch:js-api-testing}} tests this exact app with supertest.',
         kw=['Express', 'server', 'route', 'middleware', 'req.params', 'req.query', 'req.body', 'res.status', 'res.json', 'REST', 'CRUD', '201', '204', '400']),
+    part('cors', '🛂', 'CORS and the same origin policy', '''
+<p>A browser keeps websites apart. A page from <code>https://shop.example</code> may freely <b>send</b> requests to other sites, but by default its JavaScript may not <b>read</b> the answers from a different <b>origin</b> (scheme, host and port together). This is the <b>same origin policy</b>, and it stops a random site you visit from reading your bank's API with your cookies.</p>
+<p><b>CORS</b> (Cross Origin Resource Sharing) is how a server says "this other origin may read my responses". For anything beyond a simple GET or form POST, such as a DELETE or a request with an <code>Authorization</code> header, the browser first sends a <b>preflight</b> <code>OPTIONS</code> request and only sends the real request if the answer allows it.</p>
+<div class="viz" data-viz="flow" data-k="cors"></div>
+[[cors]]
+<p>The last line is the important lesson. CORS is enforced by the <b>browser</b>, not the server. Postman, curl, Node.js and API test tools ignore it completely. So a CORS setting never protects data: authentication and authorisation do that. CORS only decides which websites' JavaScript may read the responses inside a user's browser.</p>
+<div class="tw"><table class="jt"><tr><th>Console message</th><th>What it usually means</th></tr>
+<tr><td>No 'Access-Control-Allow-Origin' header is present</td><td>The server did not list your origin, or the request failed before CORS headers were added (often a 500 or a proxy error)</td></tr>
+<tr><td>Response to preflight request does not pass access control check</td><td>The OPTIONS answer is missing the method or a header your request uses</td></tr>
+<tr><td>The value of the 'Access-Control-Allow-Origin' header must not be the wildcard '*' when the credentials mode is 'include'</td><td>Requests that send cookies need the exact origin, never <code>*</code></td></tr></table></div>
+<div class="qa-box">Test CORS in a real browser or by sending the same headers yourself: an allowed origin, an unknown origin, every method the UI uses, and requests with credentials. A "works in Postman, fails in the browser" bug report is almost always CORS, and the browser console message tells you which header is missing.</div>
+''', qa=['Playwright', 'API testing'], qa_why='"Works in Postman, fails in the browser" is a classic bug report, and CORS settings need their own test cases.',
+        kw=['CORS', 'same origin policy', 'origin', 'preflight', 'OPTIONS', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Methods', 'Access-Control-Allow-Headers', 'credentials', 'Vary Origin', 'works in Postman fails in browser']),
+    part('realtime', '📶', 'Real time: Server-Sent Events and WebSockets', '''
+<p>Normal HTTP is "ask, then get one answer". Live order tracking, chat, stock prices and multiplayer games need the server to <b>push</b> updates the moment they happen. Asking again every few seconds (polling) works but wastes requests and is always a little late. Two standard tools do better.</p>
+<div class="vs"><div><b>Server-Sent Events (SSE)</b>One long HTTP response that never ends. The server writes <code>data:</code> lines whenever something happens. One direction only, from server to page. Browsers reconnect automatically with <code>EventSource</code>. Good for notifications, progress bars and live order status.</div><div><b>WebSocket</b>The connection starts as HTTP, switches protocol (status 101) and becomes a two way channel. Either side can send a message at any time. Good for chat, collaborative editing and games.</div></div>
+[[realtime]]
+<p>In the browser, SSE is <code>new EventSource(url)</code> with an <code>onmessage</code> handler, and a WebSocket is <code>new WebSocket("wss://...")</code> with <code>send</code> and <code>onmessage</code>. Node.js 22 and later has the same WebSocket client built in, which is what the example uses.</p>
+[[pw-realtime]]
+<div class="qa-box">Live features need tests for the unhappy paths: the connection drops and comes back, messages arrive out of order or twice, the user opens two tabs, and the server sends an update for an order the page is not showing. Faking the server side, as above, makes each case repeatable.</div>
+''', qa=['Playwright'], qa_why='Live updates are hard to test without controlling the server, and Playwright can watch and fake WebSocket traffic.',
+        kw=['real time', 'Server-Sent Events', 'SSE', 'EventSource', 'text/event-stream', 'WebSocket', 'ws', '101 Switching Protocols', 'polling', 'push', 'routeWebSocket', 'live updates']),
     part('node', '🧰', 'Node.js core modules', '''
 <p>Node.js comes with modules for files, paths, processes and more. Test suites use them to read test data, write reports and run other tools.</p>
 [[node-core]]
@@ -346,6 +467,39 @@ REAL = [
     ['🔐', 'A broken access check', 'An API test changed the order id in /orders/1042 to another customer\'s order and got 200. The bug was fixed before release.'],
     ['🧪', 'A mock payment provider', 'The checkout tests point at a small Express server that pretends to be the bank, including declined cards and timeouts.'],
 ]
+
+DG = {
+    'request': {'t': 'The life of one HTTPS request', 'w': 960, 'h': 240,
+                'n': [['br', 20, 90, 120, 60, 'browser or test', {'c': 2, 'sh': 'screen'}],
+                      ['dns', 190, 20, 130, 50, 'DNS lookup', {'c': 3, 'sub': 'name to IP address', 'i': 'shop.example is turned into an IP address. Results are cached, so this is often skipped.'}],
+                      ['tcp', 190, 90, 130, 50, 'TCP connect', {'c': 3, 'sub': 'three way handshake', 'i': 'SYN, SYN-ACK, ACK. Kept open and reused for later requests.'}],
+                      ['tls', 190, 160, 130, 50, 'TLS handshake', {'c': 3, 'sub': 'certificate, keys', 'i': 'The browser checks the certificate and both sides agree on keys. After this everything is encrypted.'}],
+                      ['req', 380, 90, 140, 60, 'HTTP request', {'c': 0, 'sub': 'method, path, headers, body'}],
+                      ['lb', 565, 90, 130, 60, 'load balancer\nor CDN', {'c': 1, 'i': 'Picks a server, may answer from a cache, may add headers.'}],
+                      ['srv', 740, 20, 190, 60, 'server: middleware, route', {'c': 4, 'i': 'Parses JSON, checks the token, runs the route handler, queries the database.'}],
+                      ['res', 740, 160, 190, 60, 'HTTP response', {'c': 1, 'sub': 'status, headers, body'}]],
+                'e': [['br', 'dns'], ['dns', 'tcp'], ['tcp', 'tls'], ['tls', 'req', {'fs': 'r', 'ts': 'b'}], ['req', 'lb'], ['lb', 'srv'], ['srv', 'res'], ['res', 'br', {'t': 'back to the caller', 'fs': 'b', 'ts': 'b', 'via': [[835, 232], [80, 232]]}]],
+                'st': [[['br', 'dns', 'br>dns'], 'The name shop.example is looked up in DNS to find the server\'s IP address.'],
+                       [['tcp', 'dns>tcp'], 'A TCP connection is opened with a three way handshake.'],
+                       [['tls', 'tcp>tls'], 'For https, TLS checks the certificate and sets up encryption. A wrong or expired certificate stops the request here.'],
+                       [['req', 'tls>req'], 'Now the HTTP request itself is sent: method, path, headers and body.'],
+                       [['lb', 'req>lb'], 'A load balancer or CDN picks a server, or answers from its cache.'],
+                       [['srv', 'lb>srv'], 'The server runs its middleware and the route handler, which may call a database.'],
+                       [['res', 'srv>res', 'res>br'], 'The response comes back with a status code, headers and a body. Later requests reuse the same connection and skip the first three steps.']]},
+    'cors': {'t': 'A cross origin DELETE with a preflight', 'w': 940, 'h': 230,
+             'n': [['page', 20, 80, 160, 60, 'page on shop.example', {'c': 2, 'sh': 'screen'}],
+                   ['brw', 260, 80, 160, 60, 'browser checks', {'c': 5, 'sh': 'diamond'}],
+                   ['pre', 500, 20, 180, 50, 'OPTIONS /orders', {'c': 3, 'sub': 'Origin, Request-Method'}],
+                   ['api', 760, 80, 160, 60, 'api.shop.example', {'c': 1}],
+                   ['real', 500, 160, 180, 50, 'DELETE /orders/7', {'c': 0, 'sub': 'only if allowed'}],
+                   ['blk', 260, 175, 160, 44, 'CORS error in console', {'c': 6, 'sh': 'pill'}]],
+             'e': [['page', 'brw', {'t': 'fetch'}], ['brw', 'pre', {'fs': 't', 'ts': 'l'}], ['pre', 'api', {'ts': 't'}], ['api', 'brw', {'t': 'Allow-Origin, Allow-Methods', 'd': 1}], ['brw', 'real', {'fs': 'b', 'ts': 'l', 't': 'allowed'}], ['real', 'api', {'ts': 'b'}], ['brw', 'blk', {'t': 'not allowed'}]],
+             'st': [[['page', 'brw', 'page>brw'], 'The page calls fetch with method DELETE and an Authorization header to another origin.'],
+                    [['pre', 'brw>pre', 'pre>api'], 'Before sending it, the browser asks first with an OPTIONS preflight that names the origin, the method and the headers.'],
+                    [['api', 'api>brw'], 'The server answers with Access-Control-Allow headers, or without them.'],
+                    [['real', 'brw>real', 'real>api'], 'If the origin, method and headers are all allowed, the real DELETE is sent and the page can read the answer.'],
+                    [['blk', 'brw>blk'], 'If not, the browser stops and prints a CORS error. The server never sees the DELETE.']]},
+}
 
 SAY = [
     say('top', 'Welcome', 'This chapter covers HTTP, fetch, URLs, logging in with tokens, an Express server, the Node core modules and a mock API for tests.',
@@ -384,6 +538,18 @@ SAY = [
         'fs files ପଢ଼େ ଓ ଲେଖେ, path paths ସୁରକ୍ଷିତ ଭାବେ ଯୋଡ଼େ, ଏବଂ child_process ଅନ୍ୟ programs ଚଲାଏ।',
         'تقرأ fs الملفات وتكتبها، وتجمع path المسارات بأمان، وتشغل child_process برامج أخرى.',
         'fs liest und schreibt Dateien, path verbindet Pfade sicher, child_process startet andere Programme.'),
+    say('cors', 'CORS', 'Browsers only let a page read answers from another origin when the server allows it with CORS headers. A preflight OPTIONS request asks first. Tools outside the browser ignore CORS.',
+        'Browser किसी दूसरे origin का जवाब तभी पढ़ने देता है जब server CORS headers से अनुमति दे। Preflight OPTIONS request पहले पूछती है। Browser के बाहर के tools CORS नहीं मानते।',
+        'Server CORS headers ಮೂಲಕ ಅನುಮತಿಸಿದಾಗ ಮಾತ್ರ browser ಬೇರೆ origin ಉತ್ತರ ಓದಲು ಬಿಡುತ್ತದೆ. Preflight OPTIONS ಮೊದಲು ಕೇಳುತ್ತದೆ.',
+        'Server CORS headers ରେ ଅନୁମତି ଦେଲେ ହିଁ browser ଅନ୍ୟ origin ର ଉତ୍ତର ପଢ଼ିବାକୁ ଦିଏ। Preflight OPTIONS ପ୍ରଥମେ ପଚାରେ।',
+        'لا يسمح المتصفح للصفحة بقراءة ردود أصل آخر إلا إذا سمح الخادم بذلك عبر ترويسات CORS، ويسأل طلب OPTIONS التمهيدي أولًا. الأدوات خارج المتصفح تتجاهل CORS.',
+        'Browser lassen eine Seite Antworten fremder Origins nur lesen, wenn der Server es per CORS erlaubt. Ein OPTIONS-Preflight fragt vorher. Werkzeuge außerhalb des Browsers ignorieren CORS.'),
+    say('realtime', 'Real time', 'Server-Sent Events keep one HTTP response open so the server can push updates. A WebSocket is a two way channel where both sides send messages at any time.',
+        'Server-Sent Events एक HTTP response खुला रखते हैं ताकि server updates भेज सके। WebSocket दोनों तरफ का channel है जहाँ कोई भी कभी भी message भेज सकता है।',
+        'Server-Sent Events ಒಂದು HTTP response ತೆರೆದಿಡುತ್ತವೆ. WebSocket ಎರಡೂ ಕಡೆಯ channel, ಯಾರೂ ಯಾವಾಗ ಬೇಕಾದರೂ message ಕಳುಹಿಸಬಹುದು.',
+        'Server-Sent Events ଗୋଟିଏ HTTP response ଖୋଲା ରଖେ। WebSocket ଦୁଇ ପାର୍ଶ୍ୱ channel, ଯେକେହି ଯେକୌଣସି ସମୟରେ message ପଠାଇପାରେ।',
+        'تبقي أحداث الخادم استجابة HTTP واحدة مفتوحة ليدفع الخادم التحديثات، أما WebSocket فقناة باتجاهين يرسل فيها الطرفان الرسائل في أي وقت.',
+        'Server-Sent Events halten eine HTTP-Antwort offen, damit der Server Neuigkeiten schickt. Ein WebSocket ist ein Kanal in beide Richtungen.'),
     say('scenario', 'Scenario', 'A mock API lets each test reset data, slow the network down and inject failures, so UI tests stop failing for backend reasons.',
         'Mock API हर test को data reset करने, network धीमा करने और failures डालने देता है।',
         'Mock API ಪ್ರತಿ test ಗೆ data reset, network ನಿಧಾನ ಮತ್ತು failures ಸೇರಿಸಲು ಅವಕಾಶ ಕೊಡುತ್ತದೆ.',
@@ -399,6 +565,8 @@ SAY = [
 ]
 
 QUIZ = [
+    quiz('m', 'An API call works in Postman but fails in the browser with a message about Access-Control-Allow-Origin. What is the likely cause?', ['The server does not allow the page\'s origin with CORS headers', 'The token expired', 'The server is down', 'JSON is invalid'], 0, 'Postman ignores CORS.', 'Only browsers enforce CORS, so the same request succeeds from tools outside the browser.'),
+    quiz('h', 'Which real time option sends messages in both directions over one connection?', ['WebSocket', 'Server-Sent Events', 'Polling with fetch', 'A 304 response'], 0, 'SSE is server to client only.', 'A WebSocket upgrades an HTTP connection (status 101) into a two way channel.'),
     quiz('e', 'Which status code means a new item was created?', ['201', '200', '204', '301'], 0, 'Created.', '201 Created, usually with a Location header pointing at the new item.'),
     quiz('e', 'Which method should only read data?', ['GET', 'POST', 'DELETE', 'PATCH'], 0, 'Safe and repeatable.', 'GET must not change anything on the server.'),
     quiz('e', 'What group is status 503 in?', ['Server error', 'Client error', 'Success', 'Redirect'], 0, 'First digit 5.', '5xx means the server failed. 503 says it is unavailable right now.'),
@@ -452,11 +620,11 @@ EX = [
 ]
 
 T = {
-    'slug': 'js-http-node', 'title': 'HTTP, fetch and Node.js Servers', 'short': 'HTTP and Node.js', 'emoji': '📡', 'module': MODULE, 'minutes': 18,
-    'lead': 'What a request and a response look like, fetch and URLs, logging in with tokens and the difference between 401 and 403, writing a REST API with Express, the Node.js core modules, and a mock API that UI tests can control.',
-    'desc': 'HTTP methods and status codes, fetch, URL and URLSearchParams, Bearer tokens, 401 against 403, Express routes and middleware, fs, path, child_process and a mock API server.',
-    'summary': 'A raw HTTP exchange, methods and status codes, fetch with GET and POST and why it does not reject on 404, building URLs with the URL class, token login and access checks, an Express REST API with proper status codes, reading CSV test data and writing reports, running other programs, and a mock API with reset, fault injection and delays.',
-    'keywords': ['HTTP', 'status code', 'fetch', 'URL', 'URLSearchParams', 'Bearer token', '401', '403', 'Express', 'REST', 'middleware', 'fs', 'path', 'child_process', 'mock server', 'fault injection'],
+    'slug': 'js-http-node', 'title': 'HTTP, fetch and Node.js Servers', 'short': 'HTTP and Node.js', 'emoji': '📡', 'module': MODULE, 'minutes': 24,
+    'lead': 'What a request and a response look like, fetch and URLs, logging in with tokens and the difference between 401 and 403, writing a REST API with Express, CORS and preflight requests, real time updates with Server-Sent Events and WebSockets, the Node.js core modules, and a mock API that UI tests can control.',
+    'desc': 'HTTP methods and status codes, fetch, URL and URLSearchParams, Bearer tokens, 401 against 403, Express routes and middleware, CORS, preflight, Server-Sent Events, WebSocket, fs, path, child_process and a mock API server.',
+    'summary': 'A raw HTTP exchange, methods and status codes, fetch with GET and POST and why it does not reject on 404, building URLs with the URL class, token login and access checks, an Express REST API with proper status codes, CORS checked the way a browser does it, Server-Sent Events and WebSockets, reading CSV test data and writing reports, running other programs, and a mock API with reset, fault injection and delays.',
+    'keywords': ['HTTP', 'status code', 'fetch', 'URL', 'URLSearchParams', 'Bearer token', '401', '403', 'Express', 'REST', 'middleware', 'CORS', 'preflight', 'SSE', 'WebSocket', 'fs', 'path', 'child_process', 'mock server', 'fault injection'],
     'qa_intro': 'API testing is HTTP. Methods, status codes, headers, auth and a server you control are the foundations for {{ch:js-api-testing}}.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }
