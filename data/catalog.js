@@ -2960,6 +2960,24 @@ function javaNewModules() {
         { id: "scenario", title: "Real world scenario: a nightly test report", emoji: "🎬", group: "Chapter 21", keywords: ["test report", "flaky test detection", "groupingBy", "averagingInt", "pass rate", "analytics", "printf"] },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "java-records-patterns", title: "Records, sealed types and pattern matching", emoji: "📇", page: "content/java/java-records-patterns.html",
+        summary: "var and its limits, text blocks for JSON bodies and SQL, switch expressions with yield, records with validation and their shallow immutability, sealed classes and exhaustive switches, pattern matching for instanceof and switch with guards and null, record patterns and data oriented programming, unnamed variables, primitive patterns in the Java 27 preview, and an API client that models every outcome as a sealed type.",
+        keywords: ["var", "text block", "switch expression", "yield", "record", "sealed", "permits", "pattern matching", "instanceof", "record pattern", "guard", "when", "unnamed variable", "data oriented programming", "Java 17", "Java 21"],
+        added: "2026-10-24",
+        sections: [
+        { id: "var", title: "var: let the compiler write the type", emoji: "🏷️", group: "Chapter 22", keywords: ["var", "local variable type inference", "Java 10", "type inference", "cannot infer type"] },
+        { id: "text-blocks", title: "Text blocks", emoji: "📜", group: "Chapter 22", keywords: ["text block", "triple quotes", "multi-line string", "Java 15", "formatted", "JSON body", "stripIndent", "escape"] },
+        { id: "switch", title: "Switch expressions", emoji: "🔀", group: "Chapter 22", keywords: ["switch expression", "arrow case", "yield", "fall through", "break", "multiple case labels", "exhaustive switch", "enum switch", "Java 14"] },
+        { id: "records", title: "Records", emoji: "📇", group: "Chapter 22", keywords: ["record", "Java 16", "compact constructor", "canonical constructor", "accessor", "equals", "hashCode", "toString", "immutable", "defensive copy", "List.copyOf", "DTO", "wither"] },
+        { id: "sealed", title: "Sealed classes and interfaces", emoji: "🔒", group: "Chapter 22", keywords: ["sealed", "permits", "non-sealed", "final", "Java 17", "closed hierarchy", "exhaustiveness", "getPermittedSubclasses", "algebraic data type"] },
+        { id: "instanceof", title: "Pattern matching for instanceof", emoji: "🔍", group: "Chapter 22", keywords: ["pattern matching", "instanceof", "type pattern", "binding variable", "flow scoping", "Java 16", "cast"] },
+        { id: "switch-patterns", title: "Pattern matching for switch", emoji: "🎯", group: "Chapter 22", keywords: ["pattern matching for switch", "Java 21", "case null", "guard", "when", "type pattern", "dominance", "first match wins", "MatchException"] },
+        { id: "record-patterns", title: "Record patterns and unnamed variables", emoji: "🪆", group: "Chapter 22", keywords: ["record pattern", "deconstruction", "nested pattern", "data oriented programming", "unnamed variable", "underscore", "_", "Java 21", "Java 22"] },
+        { id: "primitive-patterns", title: "Primitive patterns (preview in Java 27)", emoji: "🧪", group: "Chapter 22", keywords: ["primitive patterns", "JEP 532", "preview feature", "--enable-preview", "Java 27", "instanceof int", "exact conversion"] },
+        { id: "scenario", title: "Real world scenario: modelling API outcomes", emoji: "🎬", group: "Chapter 22", keywords: ["API result", "sealed interface", "record pattern", "error handling", "test client", "retry", "exhaustive switch"] },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
