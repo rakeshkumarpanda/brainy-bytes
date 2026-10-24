@@ -2978,6 +2978,23 @@ function javaNewModules() {
         { id: "scenario", title: "Real world scenario: modelling API outcomes", emoji: "🎬", group: "Chapter 22", keywords: ["API result", "sealed interface", "record pattern", "error handling", "test client", "retry", "exhaustive switch"] },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "java-concurrency", title: "Concurrency in depth: from executors to virtual threads", emoji: "🧵", page: "content/java/java-concurrency.html",
+        summary: "Executors and futures, race conditions and four fixes, tryLock, visibility and happens-before, concurrent collections and check then act, producer consumer queues, CountDownLatch and Semaphore, CompletableFuture with errors and timeouts, virtual threads and how they use carrier threads, structured concurrency (Java 27 preview) and scoped values (Java 25), and a 300 endpoint smoke test.",
+        keywords: ["concurrency", "ExecutorService", "Future", "race condition", "AtomicInteger", "ReentrantLock", "volatile", "happens-before", "ConcurrentHashMap", "BlockingQueue", "CompletableFuture", "virtual threads", "structured concurrency", "scoped values", "Java 21", "Java 25"],
+        added: "2026-10-24",
+        sections: [
+        { id: "executors", title: "Executors: tasks instead of threads", emoji: "🏭", group: "Chapter 23", keywords: ["ExecutorService", "Executors", "thread pool", "Callable", "Future", "submit", "invokeAll", "shutdown", "awaitTermination", "AutoCloseable executor", "newFixedThreadPool"] },
+        { id: "race", title: "Race conditions and four fixes", emoji: "🏁", group: "Chapter 23", keywords: ["race condition", "lost update", "count++ not atomic", "synchronized", "AtomicInteger", "compare and swap", "CAS", "LongAdder", "ReentrantLock", "tryLock", "deadlock avoidance", "ReadWriteLock"] },
+        { id: "memory-model", title: "Visibility and the Java memory model", emoji: "👁️", group: "Chapter 23", keywords: ["Java memory model", "JMM", "happens-before", "volatile", "visibility", "CPU cache", "reordering", "atomicity", "JSR 133"] },
+        { id: "collections", title: "Concurrent collections", emoji: "🗄️", group: "Chapter 23", keywords: ["ConcurrentHashMap", "merge", "compute", "computeIfAbsent", "check then act", "CopyOnWriteArrayList", "BlockingQueue", "ArrayBlockingQueue", "producer consumer", "poison pill", "ConcurrentLinkedQueue"] },
+        { id: "synchronizers", title: "Synchronizers: latches and semaphores", emoji: "🚦", group: "Chapter 23", keywords: ["CountDownLatch", "Semaphore", "permits", "rate limit", "CyclicBarrier", "Phaser", "Exchanger", "synchronizer"] },
+        { id: "completable", title: "CompletableFuture", emoji: "🔮", group: "Chapter 23", keywords: ["CompletableFuture", "supplyAsync", "thenApply", "thenCompose", "thenCombine", "allOf", "anyOf", "exceptionally", "handle", "orTimeout", "completeOnTimeout", "CompletionException", "async"] },
+        { id: "virtual", title: "Virtual threads (Java 21)", emoji: "🪶", group: "Chapter 23", keywords: ["virtual thread", "Project Loom", "JEP 444", "carrier thread", "platform thread", "newVirtualThreadPerTaskExecutor", "Thread.ofVirtual", "pinning", "JEP 491", "mount", "unmount", "blocking I/O"] },
+        { id: "structured", title: "Structured concurrency and scoped values", emoji: "🌳", group: "Chapter 23", keywords: ["structured concurrency", "StructuredTaskScope", "fork", "join", "Joiner", "anySuccessfulOrThrow", "ExecutionException", "JEP 533", "scoped value", "ScopedValue", "JEP 506", "ThreadLocal", "request id", "cancellation"] },
+        { id: "scenario", title: "Real world scenario: a fast smoke test", emoji: "🎬", group: "Chapter 23", keywords: ["smoke test", "virtual threads", "Semaphore", "ConcurrentSkipListMap", "parallel API checks", "deployment check"] },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];

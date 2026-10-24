@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concurrency in depth: from executors to virtual threads · Java</title>
+<meta name="description" content="Java concurrency in depth: ExecutorService, Callable, Future, race conditions, synchronized, AtomicInteger, LongAdder, ReentrantLock, volatile and happens-before, ConcurrentHashMap, BlockingQueue, CountDownLatch, Semaphore, CompletableFuture, virtual threads, structured concurrency and scoped values.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/xv.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🚀 Modern Java</span><span>›</span><span>Chapter 23 of 23</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧵</span><div><h1>Concurrency in depth: from executors to virtual threads</h1><p class="lead">Doing many things at once is where Java programs get fast, and where the hardest bugs hide. This chapter builds on the multithreading chapter with executors and futures, race conditions and their fixes, the memory model, concurrent collections, latches and semaphores, CompletableFuture, virtual threads from Java 21, and structured concurrency and scoped values from Java 25 to 27.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 28 min read</span><span class="chip">📚 9 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 13 examples run on a real JDK</span><span class="chip">👣 1 line by line replays</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="jdk-note">Every example below was compiled and run on java version &quot;25.0.5.0.2&quot; 2026-10-21 LTS and java version &quot;27.0.1.0.2&quot; 2026-10-21 when this page was built, so each output is real. Press <b>👣 Run line by line</b> on an example to replay that run one line at a time.</div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#executors"><span>🏭</span>Executors: tasks instead of threads</a><a href="#race"><span>🏁</span>Race conditions and four fixes</a><a href="#memory-model"><span>👁️</span>Visibility and the Java memory model</a><a href="#collections"><span>🗄️</span>Concurrent collections</a><a href="#synchronizers"><span>🚦</span>Synchronizers: latches and semaphores</a><a href="#completable"><span>🔮</span>CompletableFuture</a><a href="#virtual"><span>🪶</span>Virtual threads (Java 21)</a><a href="#structured"><span>🌳</span>Structured concurrency and scoped values</a><a href="#scenario"><span>🎬</span>Real world scenario: a fast smoke test</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="executors" data-say="executors"><div class="sec-num">Part 1</div><h2><span class="sec-em">🏭</span><span>Executors: tasks instead of threads</span></h2>
+<p>The multithreading chapter created threads by hand. Real programs rarely do that. They hand <b>tasks</b> to an <b>ExecutorService</b>, which owns a pool of threads and reuses them, the way a restaurant gives orders to a fixed team of cooks instead of hiring a cook per order.</p>
+<div class="codewrap" data-k="executor"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">ExecutorService, Callable and Future · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="c">// try-with-resources (Java 19+): close() waits for every task, then shuts the pool down</span>
+        <span class="k">try</span> (<span class="t">ExecutorService</span> pool = <span class="t">Executors</span>.newFixedThreadPool(<span class="n">3</span>)) {
+            <span class="t">Callable</span>&lt;<span class="t">String</span>&gt; login = () -&gt; { <span class="t">Thread</span>.sleep(<span class="n">200</span>); <span class="k">return</span> <span class="s">"login PASS"</span>; };
+            <span class="t">Callable</span>&lt;<span class="t">String</span>&gt; search = () -&gt; { <span class="t">Thread</span>.sleep(<span class="n">100</span>); <span class="k">return</span> <span class="s">"search PASS"</span>; };
+            <span class="t">Callable</span>&lt;<span class="t">String</span>&gt; cart = () -&gt; { <span class="t">Thread</span>.sleep(<span class="n">150</span>); <span class="k">return</span> <span class="s">"cart FAIL"</span>; };
+
+            <span class="t">Future</span>&lt;<span class="t">String</span>&gt; f = pool.submit(login);                 <span class="c">// one task, a result later</span>
+            <span class="t">System</span>.out.println(<span class="s">"submitted, done yet? "</span> + f.isDone());
+            <span class="t">System</span>.out.println(f.get());                           <span class="c">// waits for the result</span>
+
+            <span class="k">for</span> (<span class="t">Future</span>&lt;<span class="t">String</span>&gt; r : pool.invokeAll(<span class="t">List</span>.of(search, cart))) {   <span class="c">// many tasks, wait for all</span>
+                <span class="t">System</span>.out.println(r.get());
+            }
+        }
+        <span class="t">System</span>.out.println(<span class="s">"pool closed"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>submitted, done yet? false
+login PASS
+search PASS
+cart FAIL
+pool closed</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Factory</th><th>Gives</th></tr>
+<tr><td><code>newFixedThreadPool(n)</code></td><td>n threads, extra tasks wait in a queue</td></tr>
+<tr><td><code>newCachedThreadPool()</code></td><td>creates threads as needed, reuses idle ones</td></tr>
+<tr><td><code>newScheduledThreadPool(n)</code></td><td>run later or every few seconds</td></tr>
+<tr><td><code>newVirtualThreadPerTaskExecutor()</code></td><td>Java 21: a new virtual thread for every task</td></tr></table></div>
+<div class="note">A <code>Callable</code> returns a value and may throw. A <code>Runnable</code> does neither. <code>Future.get()</code> waits for the value, so call it as late as possible.</div>
+</section>
+<section class="card reveal jsec" id="race" data-say="race"><div class="sec-num">Part 2</div><h2><span class="sec-em">🏁</span><span>Race conditions and four fixes</span></h2>
+<p>When two threads change the same data without coordination, the result depends on timing. That is a <b>race condition</b>. It is the most common reason for a test that fails "only sometimes on CI".</p>
+<div class="codewrap" data-k="race"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A race condition: two threads, one counter · Not run on this page</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> count = <span class="n">0</span>;
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Runnable</span> work = () -&gt; { <span class="k">for</span> (<span class="k">int</span> i = <span class="n">0</span>; i &lt; <span class="n">1_000_000</span>; i++) count++; };
+        <span class="t">Thread</span> a = <span class="k">new</span> <span class="t">Thread</span>(work), b = <span class="k">new</span> <span class="t">Thread</span>(work);
+        a.start(); b.start(); a.join(); b.join();
+        <span class="t">System</span>.out.println(count);       <span class="c">// expected 2000000</span>
+    }
+}</pre><div class="note-out"><span>What happens</span><p>Prints a different number on almost every run, such as 1183342 or 1529871, and very rarely 2000000. <code>count++</code> is really three steps (read, add one, write), and two threads interleave them, so updates are lost. Because the result changes from run to run, it is not run on this page.</p></div></div>
+<p>The fixes all make the read, change and write happen as one unit that other threads cannot split.</p>
+<div class="codewrap" data-k="fixes"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Four correct ways to count from many threads · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.*;
+<span class="k">import</span> java.util.concurrent.atomic.*;
+<span class="k">import</span> java.util.concurrent.locks.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">int</span> syncCount = <span class="n">0</span>;
+    <span class="k">static</span> synchronized <span class="k">void</span> inc() { syncCount++; }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">AtomicInteger</span> atomic = <span class="k">new</span> <span class="t">AtomicInteger</span>();
+        <span class="t">LongAdder</span> adder = <span class="k">new</span> <span class="t">LongAdder</span>();                  <span class="c">// fastest under heavy contention</span>
+        <span class="t">ReentrantLock</span> lock = <span class="k">new</span> <span class="t">ReentrantLock</span>();
+        <span class="k">int</span>[] locked = {<span class="n">0</span>};
+
+        <span class="t">Runnable</span> work = () -&gt; {
+            <span class="k">for</span> (<span class="k">int</span> i = <span class="n">0</span>; i &lt; <span class="n">1_000_000</span>; i++) {
+                inc();
+                atomic.incrementAndGet();
+                adder.increment();
+                lock.lock();
+                <span class="k">try</span> { locked[<span class="n">0</span>]++; } <span class="k">finally</span> { lock.unlock(); }   <span class="c">// always unlock in finally</span>
+            }
+        };
+        <span class="k">try</span> (<span class="k">var</span> pool = <span class="t">Executors</span>.newFixedThreadPool(<span class="n">4</span>)) {
+            <span class="k">for</span> (<span class="k">int</span> t = <span class="n">0</span>; t &lt; <span class="n">4</span>; t++) pool.submit(work);
+        }
+        <span class="t">System</span>.out.println(<span class="s">"synchronized  "</span> + syncCount);
+        <span class="t">System</span>.out.println(<span class="s">"AtomicInteger "</span> + atomic.get());
+        <span class="t">System</span>.out.println(<span class="s">"LongAdder     "</span> + adder.sum());
+        <span class="t">System</span>.out.println(<span class="s">"ReentrantLock "</span> + locked[<span class="n">0</span>]);
+    }
+}</pre><div class="out"><span>Output</span><pre>synchronized  4000000
+AtomicInteger 4000000
+LongAdder     4000000
+ReentrantLock 4000000</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Tool</th><th>Use it when</th></tr>
+<tr><td><code>synchronized</code></td><td>simple, short critical sections</td></tr>
+<tr><td><code>AtomicInteger</code> <code>AtomicReference</code></td><td>one variable, lock free, uses compare and swap (CAS)</td></tr>
+<tr><td><code>LongAdder</code></td><td>counters hit by many threads, such as metrics</td></tr>
+<tr><td><code>ReentrantLock</code></td><td>you need tryLock, timeouts, fairness or several conditions</td></tr></table></div>
+<div class="codewrap" data-k="trylock"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">tryLock with a timeout · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.*;
+<span class="k">import</span> java.util.concurrent.locks.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">ReentrantLock</span> seat = <span class="k">new</span> <span class="t">ReentrantLock</span>();
+        <span class="t">CountDownLatch</span> held = <span class="k">new</span> <span class="t">CountDownLatch</span>(<span class="n">1</span>);
+
+        <span class="t">Thread</span> booker = <span class="k">new</span> <span class="t">Thread</span>(() -&gt; {
+            seat.lock();
+            <span class="k">try</span> { held.countDown(); <span class="t">Thread</span>.sleep(<span class="n">500</span>); }      <span class="c">// holds the seat for half a second</span>
+            <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { }
+            <span class="k">finally</span> { seat.unlock(); }
+        });
+        booker.start();
+        held.await();
+
+        <span class="c">// tryLock with a timeout: give up instead of waiting forever (one way to avoid deadlocks)</span>
+        <span class="k">if</span> (seat.tryLock(<span class="n">100</span>, <span class="t">TimeUnit</span>.<span class="t">MILLISECONDS</span>)) {
+            <span class="k">try</span> { <span class="t">System</span>.out.println(<span class="s">"got the seat"</span>); } <span class="k">finally</span> { seat.unlock(); }
+        } <span class="k">else</span> {
+            <span class="t">System</span>.out.println(<span class="s">"seat busy, try another one"</span>);
+        }
+        booker.join();
+        <span class="t">System</span>.out.println(<span class="s">"after the first booking: "</span> + (seat.tryLock() ? <span class="s">"free"</span> : <span class="s">"busy"</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>seat busy, try another one
+after the first booking: free</pre></div></div>
+</section>
+<section class="card reveal jsec" id="memory-model" data-say="memory-model"><div class="sec-num">Part 3</div><h2><span class="sec-em">👁️</span><span>Visibility and the Java memory model</span></h2>
+<p>Each CPU core keeps its own cache, and the compiler may reorder instructions. So a value written by one thread is not guaranteed to be seen by another, unless there is a <b>happens-before</b> relationship between them. The Java Memory Model (JSR 133) defines those relationships.</p>
+<div class="codewrap" data-k="volatile"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">volatile makes a change visible to other threads · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> volatile <span class="k">boolean</span> running = <span class="k">true</span>;     <span class="c">// without volatile the loop may never see the change</span>
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Thread</span> poller = <span class="k">new</span> <span class="t">Thread</span>(() -&gt; {
+            <span class="k">long</span> checks = <span class="n">0</span>;
+            <span class="k">while</span> (running) checks++;
+            <span class="t">System</span>.out.println(<span class="s">"poller saw the stop signal"</span>);
+        });
+        poller.start();
+        <span class="t">Thread</span>.sleep(<span class="n">200</span>);
+        running = <span class="k">false</span>;                        <span class="c">// a write to a volatile happens-before every later read of it</span>
+        poller.join(<span class="n">2000</span>);
+        <span class="t">System</span>.out.println(<span class="s">"poller alive? "</span> + poller.isAlive());
+    }
+}</pre><div class="out"><span>Output</span><pre>poller saw the stop signal
+poller alive? false</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>These create happens-before</th></tr>
+<tr><td>Unlocking a monitor or lock, then locking the same one</td></tr>
+<tr><td>Writing a <code>volatile</code> field, then reading it</td></tr>
+<tr><td><code>Thread.start()</code>, and everything a thread did before another thread's <code>join()</code> returns</td></tr>
+<tr><td>Putting into a concurrent collection, then taking it out</td></tr></table></div>
+<div class="warn"><code>volatile</code> fixes <b>visibility</b>, not <b>atomicity</b>. <code>volatileCount++</code> still loses updates.</div>
+</section>
+<section class="card reveal jsec" id="collections" data-say="collections"><div class="sec-num">Part 4</div><h2><span class="sec-em">🗄️</span><span>Concurrent collections</span></h2>
+<p>A normal HashMap shared by threads can lose entries or, in old Java versions, even loop forever. The <code>java.util.concurrent</code> collections are built for sharing.</p>
+<div class="codewrap" data-k="chm"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">ConcurrentHashMap and CopyOnWriteArrayList · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">ConcurrentHashMap</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; hits = <span class="k">new</span> <span class="t">ConcurrentHashMap</span>&lt;&gt;();
+        <span class="t">List</span>&lt;<span class="t">String</span>&gt; log = <span class="t">List</span>.of(<span class="s">"/cart"</span>, <span class="s">"/login"</span>, <span class="s">"/cart"</span>, <span class="s">"/pay"</span>, <span class="s">"/cart"</span>, <span class="s">"/login"</span>);
+
+        <span class="k">try</span> (<span class="k">var</span> pool = <span class="t">Executors</span>.newFixedThreadPool(<span class="n">3</span>)) {
+            <span class="k">for</span> (<span class="k">int</span> round = <span class="n">0</span>; round &lt; <span class="n">1000</span>; round++) {
+                <span class="k">for</span> (<span class="t">String</span> path : log) pool.submit(() -&gt; hits.merge(path, <span class="n">1</span>, <span class="t">Integer</span>::sum));   <span class="c">// atomic read, add and write</span>
+            }
+        }
+        <span class="t">System</span>.out.println(<span class="k">new</span> <span class="t">TreeMap</span>&lt;&gt;(hits));
+
+        <span class="c">// check then act must be one atomic call, not get followed by put</span>
+        hits.computeIfAbsent(<span class="s">"/search"</span>, p -&gt; <span class="n">0</span>);
+        hits.compute(<span class="s">"/search"</span>, (p, n) -&gt; n + <span class="n">5</span>);
+        <span class="t">System</span>.out.println(<span class="s">"/search "</span> + hits.get(<span class="s">"/search"</span>));
+
+        <span class="t">CopyOnWriteArrayList</span>&lt;<span class="t">String</span>&gt; listeners = <span class="k">new</span> <span class="t">CopyOnWriteArrayList</span>&lt;&gt;(<span class="t">List</span>.of(<span class="s">"slack"</span>, <span class="s">"email"</span>));
+        <span class="k">for</span> (<span class="t">String</span> l : listeners) listeners.add(<span class="s">"sms-"</span> + l);    <span class="c">// safe: the loop reads a snapshot</span>
+        <span class="t">System</span>.out.println(listeners);
+    }
+}</pre><div class="out"><span>Output</span><pre>{/cart=3000, /login=2000, /pay=1000}
+/search 5
+[slack, email, sms-slack, sms-email]</pre></div></div>
+<div class="tip">The bug to look for in code reviews is "check then act": <code>if (!map.containsKey(k)) map.put(k, v)</code>. Between the check and the put, another thread can get in. Use <code>putIfAbsent</code>, <code>computeIfAbsent</code> or <code>merge</code>, which do both in one atomic step.</div>
+<p>A <b>BlockingQueue</b> connects producers and consumers. <code>put</code> waits when the queue is full and <code>take</code> waits when it is empty, so a fast producer cannot flood a slow consumer.</p>
+<div class="codewrap" data-k="queue"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Producer and consumer with a BlockingQueue · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">BlockingQueue</span>&lt;<span class="t">String</span>&gt; jobs = <span class="k">new</span> <span class="t">ArrayBlockingQueue</span>&lt;&gt;(<span class="n">2</span>);    <span class="c">// a small queue: put waits when it is full</span>
+        <span class="t">String</span> <span class="t">STOP</span> = <span class="s">"STOP"</span>;
+
+        <span class="t">Thread</span> consumer = <span class="k">new</span> <span class="t">Thread</span>(() -&gt; {
+            <span class="k">try</span> {
+                <span class="k">while</span> (<span class="k">true</span>) {
+                    <span class="t">String</span> job = jobs.take();                          <span class="c">// waits when the queue is empty</span>
+                    <span class="k">if</span> (job.equals(<span class="t">STOP</span>)) <span class="k">break</span>;
+                    <span class="t">System</span>.out.println(<span class="s">"  processed "</span> + job);
+                }
+            } <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { <span class="t">Thread</span>.currentThread().interrupt(); }
+        });
+        consumer.start();
+        <span class="k">for</span> (<span class="t">String</span> order : <span class="k">new</span> <span class="t">String</span>[]{<span class="s">"ORD-1"</span>, <span class="s">"ORD-2"</span>, <span class="s">"ORD-3"</span>, <span class="s">"ORD-4"</span>}) {
+            jobs.put(order);
+        }
+        jobs.put(<span class="t">STOP</span>);                                               <span class="c">// a "poison pill" ends the consumer</span>
+        consumer.join();
+        <span class="t">System</span>.out.println(<span class="s">"all orders processed"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>  processed ORD-1
+  processed ORD-2
+  processed ORD-3
+  processed ORD-4
+all orders processed</pre></div></div>
+</section>
+<section class="card reveal jsec" id="synchronizers" data-say="synchronizers"><div class="sec-num">Part 5</div><h2><span class="sec-em">🚦</span><span>Synchronizers: latches and semaphores</span></h2>
+<p>Synchronizers coordinate threads. A <b>CountDownLatch</b> lets threads wait until a count reaches zero, such as "start the tests when the database, cache and API are ready". A <b>Semaphore</b> hands out a fixed number of permits, which is a simple way to limit how many calls hit a server at once.</p>
+<div class="codewrap" data-k="sync-tools"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">CountDownLatch and Semaphore · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.concurrent.*;
+<span class="k">import</span> java.util.concurrent.atomic.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="c">// CountDownLatch: wait until 3 services report ready</span>
+        <span class="t">CountDownLatch</span> ready = <span class="k">new</span> <span class="t">CountDownLatch</span>(<span class="n">3</span>);
+        <span class="k">for</span> (<span class="t">String</span> s : <span class="t">List</span>.of(<span class="s">"db"</span>, <span class="s">"cache"</span>, <span class="s">"api"</span>)) {
+            <span class="k">new</span> <span class="t">Thread</span>(() -&gt; { sleep(<span class="n">100</span>); ready.countDown(); }).start();
+        }
+        ready.await();
+        <span class="t">System</span>.out.println(<span class="s">"all 3 services ready, start the tests"</span>);
+
+        <span class="c">// Semaphore: at most 2 calls at the same time, like a rate limit on a test account</span>
+        <span class="t">Semaphore</span> <span class="k">permits</span> = <span class="k">new</span> <span class="t">Semaphore</span>(<span class="n">2</span>);
+        <span class="t">AtomicInteger</span> now = <span class="k">new</span> <span class="t">AtomicInteger</span>(), peak = <span class="k">new</span> <span class="t">AtomicInteger</span>();
+        <span class="k">try</span> (<span class="k">var</span> pool = <span class="t">Executors</span>.newFixedThreadPool(<span class="n">6</span>)) {
+            <span class="k">for</span> (<span class="k">int</span> i = <span class="n">0</span>; i &lt; <span class="n">6</span>; i++) pool.submit(() -&gt; {
+                <span class="k">permits</span>.acquireUninterruptibly();
+                <span class="k">try</span> { peak.accumulateAndGet(now.incrementAndGet(), <span class="t">Math</span>::max); sleep(<span class="n">100</span>); now.decrementAndGet(); }
+                <span class="k">finally</span> { <span class="k">permits</span>.release(); }
+            });
+        }
+        <span class="t">System</span>.out.println(<span class="s">"6 calls made, never more than "</span> + peak.get() + <span class="s">" at once"</span>);
+    }
+
+    <span class="k">static</span> <span class="k">void</span> sleep(<span class="k">long</span> ms) { <span class="k">try</span> { <span class="t">Thread</span>.sleep(ms); } <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { <span class="t">Thread</span>.currentThread().interrupt(); } }
+}</pre><div class="out"><span>Output</span><pre>all 3 services ready, start the tests
+6 calls made, never more than 2 at once</pre></div></div>
+<div class="note">Also in the toolbox: <code>CyclicBarrier</code> (wait for each other, then all continue, and reuse it), <code>Phaser</code> (a flexible barrier with phases) and <code>Exchanger</code> (two threads swap objects).</div>
+</section>
+<section class="card reveal jsec" id="completable" data-say="completable"><div class="sec-num">Part 6</div><h2><span class="sec-em">🔮</span><span>CompletableFuture</span></h2>
+<p><code>Future.get()</code> blocks. <b>CompletableFuture</b> (Java 8) lets you describe what to do <b>when</b> the result arrives: transform it, combine it with another, or recover from an error, without blocking a thread while you wait.</p>
+<div class="codewrap" data-k="cf"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">CompletableFuture: run calls in parallel and combine them · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="t">String</span> call(<span class="t">String</span> what, <span class="k">long</span> ms) {
+        <span class="k">try</span> { <span class="t">Thread</span>.sleep(ms); } <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { <span class="k">throw</span> <span class="k">new</span> <span class="t">RuntimeException</span>(e); }
+        <span class="k">return</span> what;
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">long</span> t0 = <span class="t">System</span>.currentTimeMillis();
+        <span class="t">String</span> a = call(<span class="s">"price"</span>, <span class="n">400</span>), b = call(<span class="s">"stock"</span>, <span class="n">600</span>), c = call(<span class="s">"reviews"</span>, <span class="n">300</span>);
+        <span class="t">System</span>.out.println(<span class="s">"one after another: "</span> + a + <span class="s">", "</span> + b + <span class="s">", "</span> + c + <span class="s">" in about "</span> + round(t0) + <span class="s">" ms"</span>);
+
+        t0 = <span class="t">System</span>.currentTimeMillis();
+        <span class="k">var</span> price = <span class="t">CompletableFuture</span>.supplyAsync(() -&gt; call(<span class="s">"price"</span>, <span class="n">400</span>));
+        <span class="k">var</span> stock = <span class="t">CompletableFuture</span>.supplyAsync(() -&gt; call(<span class="s">"stock"</span>, <span class="n">600</span>));
+        <span class="k">var</span> reviews = <span class="t">CompletableFuture</span>.supplyAsync(() -&gt; call(<span class="s">"reviews"</span>, <span class="n">300</span>));
+        <span class="t">String</span> page = <span class="t">CompletableFuture</span>.allOf(price, stock, reviews)
+            .thenApply(v -&gt; price.join() + <span class="s">", "</span> + stock.join() + <span class="s">", "</span> + reviews.join())
+            .join();
+        <span class="t">System</span>.out.println(<span class="s">"in parallel:       "</span> + page + <span class="s">" in about "</span> + round(t0) + <span class="s">" ms"</span>);
+
+        <span class="t">String</span> combined = price.thenCombine(stock, (p, s) -&gt; p + <span class="s">"+"</span> + s).thenApply(<span class="t">String</span>::toUpperCase).join();
+        <span class="t">System</span>.out.println(combined);
+    }
+
+    <span class="k">static</span> <span class="k">long</span> round(<span class="k">long</span> t0) { <span class="k">return</span> <span class="t">Math</span>.round((<span class="t">System</span>.currentTimeMillis() - t0) / <span class="n">100.0</span>) * <span class="n">100</span>; }
+}</pre><div class="out"><span>Output</span><pre>one after another: price, stock, reviews in about 1300 ms
+in parallel:       price, stock, reviews in about 600 ms
+PRICE+STOCK</pre></div></div>
+<div class="viz" data-viz="jcf"></div>
+<div class="codewrap" data-k="cf-errors"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Errors and timeouts: exceptionally, handle, completeOnTimeout and orTimeout · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">CompletableFuture</span>&lt;<span class="t">Integer</span>&gt; broken = <span class="t">CompletableFuture</span>.supplyAsync(() -&gt; {
+            <span class="k">if</span> (<span class="k">true</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalStateException</span>(<span class="s">"inventory service down"</span>);
+            <span class="k">return</span> <span class="n">5</span>;
+        });
+        <span class="t">System</span>.out.println(broken.exceptionally(e -&gt; {                       <span class="c">// a fallback value</span>
+            <span class="t">System</span>.out.println(<span class="s">"recovered from: "</span> + e.getCause().getMessage());
+            <span class="k">return</span> <span class="n">0</span>;
+        }).join());
+
+        <span class="t">System</span>.out.println(broken.handle((v, e) -&gt; e == <span class="k">null</span> ? <span class="s">"ok "</span> + v : <span class="s">"failed"</span>).join());   <span class="c">// sees both</span>
+
+        <span class="t">CompletableFuture</span>&lt;<span class="t">String</span>&gt; slow = <span class="t">CompletableFuture</span>.supplyAsync(() -&gt; {
+            <span class="k">try</span> { <span class="t">Thread</span>.sleep(<span class="n">2000</span>); } <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { }
+            <span class="k">return</span> <span class="s">"late answer"</span>;
+        });
+        <span class="t">System</span>.out.println(slow.completeOnTimeout(<span class="s">"cached answer"</span>, <span class="n">200</span>, <span class="t">TimeUnit</span>.<span class="t">MILLISECONDS</span>).join());  <span class="c">// Java 9</span>
+        <span class="k">try</span> {
+            <span class="t">CompletableFuture</span>.supplyAsync(() -&gt; { <span class="k">try</span> { <span class="t">Thread</span>.sleep(<span class="n">2000</span>); } <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { } <span class="k">return</span> <span class="n">1</span>; })
+                .orTimeout(<span class="n">200</span>, <span class="t">TimeUnit</span>.<span class="t">MILLISECONDS</span>).join();
+        } <span class="k">catch</span> (<span class="t">CompletionException</span> e) {
+            <span class="t">System</span>.out.println(<span class="s">"orTimeout: "</span> + e.getCause().getClass().getSimpleName());
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>recovered from: inventory service down
+0
+failed
+cached answer
+orTimeout: TimeoutException</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Method</th><th>Meaning</th></tr>
+<tr><td><code>supplyAsync</code> <code>runAsync</code></td><td>start work on another thread</td></tr>
+<tr><td><code>thenApply</code> <code>thenCompose</code></td><td>transform the value, or chain another async call</td></tr>
+<tr><td><code>thenCombine</code> <code>allOf</code> <code>anyOf</code></td><td>join two, all or the first of several</td></tr>
+<tr><td><code>exceptionally</code> <code>handle</code> <code>whenComplete</code></td><td>recover, see value and error, or just log</td></tr>
+<tr><td><code>orTimeout</code> <code>completeOnTimeout</code></td><td>Java 9: fail or use a default when too slow</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="virtual" data-say="virtual"><div class="sec-num">Part 7</div><h2><span class="sec-em">🪶</span><span>Virtual threads (Java 21)</span></h2>
+<p>A normal (platform) thread is a real operating system thread with about a megabyte of stack, so a server can afford a few thousand. A <b>virtual thread</b> (JEP 444, final in Java 21) is managed by the JVM and costs a few hundred bytes when idle, so millions are fine. When a virtual thread blocks on I/O, the JVM parks it and gives its carrier thread to someone else.</p>
+<div class="viz" data-viz="flow" data-k="vt"></div>
+<div class="codewrap" data-k="virtual"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Virtual threads: ten thousand blocking tasks at once · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.*;
+<span class="k">import</span> java.util.stream.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Thread</span> v = <span class="t">Thread</span>.ofVirtual().name(<span class="s">"checker"</span>).start(() -&gt; <span class="t">System</span>.out.println(<span class="s">"virtual? "</span> + <span class="t">Thread</span>.currentThread().isVirtual()));
+        v.join();
+
+        <span class="k">long</span> t0 = <span class="t">System</span>.currentTimeMillis();
+        <span class="k">try</span> (<span class="k">var</span> exec = <span class="t">Executors</span>.newVirtualThreadPerTaskExecutor()) {        <span class="c">// one new virtual thread per task</span>
+            <span class="t">IntStream</span>.range(<span class="n">0</span>, <span class="n">10_000</span>).forEach(i -&gt; exec.submit(() -&gt; {
+                <span class="t">Thread</span>.sleep(<span class="n">1000</span>);                                            <span class="c">// blocking I/O stand-in</span>
+                <span class="k">return</span> i;
+            }));
+        }
+        <span class="k">long</span> secs = <span class="t">Math</span>.round((<span class="t">System</span>.currentTimeMillis() - t0) / <span class="n">1000.0</span>);
+        <span class="t">System</span>.out.println(<span class="s">"10000 tasks that each wait 1 s finished in about "</span> + secs + <span class="s">" s"</span>);
+
+        t0 = <span class="t">System</span>.currentTimeMillis();
+        <span class="k">try</span> (<span class="k">var</span> exec = <span class="t">Executors</span>.newFixedThreadPool(<span class="n">100</span>)) {                  <span class="c">// the classic way: a pool of 100</span>
+            <span class="t">IntStream</span>.range(<span class="n">0</span>, <span class="n">1_000</span>).forEach(i -&gt; exec.submit(() -&gt; { <span class="t">Thread</span>.sleep(<span class="n">1000</span>); <span class="k">return</span> i; }));
+        }
+        secs = <span class="t">Math</span>.round((<span class="t">System</span>.currentTimeMillis() - t0) / <span class="n">1000.0</span>);
+        <span class="t">System</span>.out.println(<span class="s">"1000 tasks on 100 platform threads took about "</span> + secs + <span class="s">" s"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>virtual? true
+10000 tasks that each wait 1 s finished in about 1 s
+1000 tasks on 100 platform threads took about 10 s</pre></div></div>
+<div class="viz" data-viz="jvthreads"></div>
+<div class="tip">Rules for virtual threads: create one per task and never pool them, keep using plain blocking code (no callbacks needed), limit access to scarce resources with a Semaphore instead of a small pool, and do not expect speed ups for pure calculation. Since Java 24 (JEP 491), <code>synchronized</code> blocks no longer pin a virtual thread to its carrier.</div>
+</section>
+<section class="card reveal jsec" id="structured" data-say="structured"><div class="sec-num">Part 8</div><h2><span class="sec-em">🌳</span><span>Structured concurrency and scoped values</span></h2>
+<p><b>Structured concurrency</b> treats a group of subtasks as one unit: they start inside a block, and the block does not end until all of them are done. If one fails, the others are cancelled. No thread is left running in the background by accident. It is still a preview (JEP 533, seventh preview in Java 27), with a new API since Java 25. In Java 27 <code>join()</code> reports a failed subtask with the familiar <code>ExecutionException</code>, and the joiner that returns the first good answer is called <code>anySuccessfulOrThrow</code>.</p>
+<div class="codewrap" data-k="structured"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Structured concurrency (preview in Java 27) · ▶ Runs · ☕ JDK 27 preview</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.*;
+<span class="k">import</span> java.util.concurrent.<span class="t">StructuredTaskScope</span>.*;
+
+<span class="k">void</span> main() <span class="k">throws</span> <span class="t">Exception</span> {
+    <span class="c">// Java 27 preview (JEP 533): subtasks live and die together, like the lines of a method</span>
+    <span class="k">try</span> (<span class="k">var</span> scope = <span class="t">StructuredTaskScope</span>.open()) {
+        <span class="t">Subtask</span>&lt;<span class="t">String</span>&gt; user = scope.fork(() -&gt; { <span class="t">Thread</span>.sleep(<span class="n">200</span>); <span class="k">return</span> <span class="s">"Asha"</span>; });
+        <span class="t">Subtask</span>&lt;<span class="t">Integer</span>&gt; cart = scope.fork(() -&gt; { <span class="t">Thread</span>.sleep(<span class="n">300</span>); <span class="k">return</span> <span class="n">3</span>; });
+        scope.join();                                   <span class="c">// waits for both, fails if either fails</span>
+        <span class="t">IO</span>.println(user.get() + <span class="s">" has "</span> + cart.get() + <span class="s">" items in the cart"</span>);
+    }
+
+    <span class="k">try</span> (<span class="k">var</span> scope = <span class="t">StructuredTaskScope</span>.open()) {
+        <span class="t">Subtask</span>&lt;<span class="t">String</span>&gt; ok = scope.fork(() -&gt; { <span class="t">Thread</span>.sleep(<span class="n">2000</span>); <span class="k">return</span> <span class="s">"slow but fine"</span>; });
+        <span class="t">Subtask</span>&lt;<span class="t">String</span>&gt; bad = scope.fork(() -&gt; { <span class="t">Thread</span>.sleep(<span class="n">100</span>); <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalStateException</span>(<span class="s">"payment service down"</span>); });
+        scope.join();
+    } <span class="k">catch</span> (<span class="t">ExecutionException</span> e) {                   <span class="c">// Java 27: join throws ExecutionException</span>
+        <span class="t">IO</span>.println(<span class="s">"failed fast: "</span> + e.getCause().getMessage() + <span class="s">", and the slow sibling was cancelled"</span>);
+    }
+
+    <span class="c">// A different joiner: the first successful answer wins, like asking two mirrors</span>
+    <span class="k">try</span> (<span class="k">var</span> scope = <span class="t">StructuredTaskScope</span>.open(<span class="t">Joiner</span>.&lt;<span class="t">String</span>&gt;anySuccessfulOrThrow())) {
+        scope.fork(() -&gt; { <span class="t">Thread</span>.sleep(<span class="n">500</span>); <span class="k">return</span> <span class="s">"mirror-eu"</span>; });
+        scope.fork(() -&gt; { <span class="t">Thread</span>.sleep(<span class="n">100</span>); <span class="k">return</span> <span class="s">"mirror-in"</span>; });
+        <span class="t">IO</span>.println(<span class="s">"fastest mirror: "</span> + scope.join());
+    }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ java --enable-preview Main.java</pre></div><div class="out"><span>Output</span><pre>Asha has 3 items in the cart
+failed fast: payment service down, and the slow sibling was cancelled
+fastest mirror: mirror-in</pre></div></div>
+<p><b>Scoped values</b> (JEP 506, final in Java 25) share a value, such as a request id or the current user, with every method called inside a block, without passing it as a parameter. Unlike <code>ThreadLocal</code>, the value cannot be changed by callees, it disappears when the block ends, and it is cheap to share with millions of virtual threads.</p>
+<div class="codewrap" data-k="scoped" data-trace="scoped"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Scoped values instead of ThreadLocal (final in Java 25) · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="c">// Java 25: a scoped value is set for one block of code and every method it calls, then it is gone</span>
+    <span class="k">static</span> <span class="k">final</span> <span class="t">ScopedValue</span>&lt;<span class="t">String</span>&gt; <span class="t">REQUEST_ID</span> = <span class="t">ScopedValue</span>.newInstance();
+
+    <span class="k">static</span> <span class="k">void</span> log(<span class="t">String</span> msg) {
+        <span class="t">System</span>.out.println(<span class="s">"["</span> + (<span class="t">REQUEST_ID</span>.isBound() ? <span class="t">REQUEST_ID</span>.get() : <span class="s">"no-request"</span>) + <span class="s">"] "</span> + msg);
+    }
+    <span class="k">static</span> <span class="k">void</span> loadCart() { log(<span class="s">"loading cart"</span>); }
+    <span class="k">static</span> <span class="k">void</span> pay() { log(<span class="s">"charging card"</span>); }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">ScopedValue</span>.where(<span class="t">REQUEST_ID</span>, <span class="s">"req-7f3a"</span>).run(() -&gt; {
+            log(<span class="s">"checkout started"</span>);
+            loadCart();                                   <span class="c">// no need to pass the id down every method</span>
+            <span class="t">ScopedValue</span>.where(<span class="t">REQUEST_ID</span>, <span class="s">"req-7f3a/retry"</span>).run(<span class="t">Main</span>::pay);   <span class="c">// rebound for an inner block only</span>
+            log(<span class="s">"checkout done"</span>);
+        });
+        log(<span class="s">"outside any request"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>[req-7f3a] checkout started
+[req-7f3a] loading cart
+[req-7f3a/retry] charging card
+[req-7f3a] checkout done
+[no-request] outside any request</pre></div></div>
+</section>
+<section class="card reveal jsec" id="scenario" data-say="scenario"><div class="sec-num">Part 9</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a fast smoke test</span></h2>
+<div class="scenario"><b>The situation</b>After every deployment, a team checks 300 product endpoints. Done one after another, it takes over a minute. A pool of 10 threads still takes about 10 seconds, and nobody wants to tune pool sizes.</div>
+<div class="codewrap" data-k="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Real world: a smoke test of 300 endpoints on virtual threads · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.concurrent.*;
+<span class="k">import</span> java.util.concurrent.atomic.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">record</span> <span class="t">Check</span>(<span class="t">String</span> endpoint, <span class="k">int</span> status, <span class="k">long</span> ms) {}
+
+    <span class="c">// Stand in for an HTTP call: the result depends only on the endpoint, so the report is the same every run</span>
+    <span class="k">static</span> <span class="t">Check</span> probe(<span class="t">String</span> endpoint) <span class="k">throws</span> <span class="t">InterruptedException</span> {
+        <span class="k">int</span> n = <span class="t">Math</span>.abs(endpoint.hashCode());
+        <span class="k">long</span> ms = <span class="n">100</span> + n % <span class="n">400</span>;
+        <span class="t">Thread</span>.sleep(ms);
+        <span class="k">int</span> status = n % <span class="n">17</span> == <span class="n">0</span> ? <span class="n">503</span> : n % <span class="n">11</span> == <span class="n">0</span> ? <span class="n">404</span> : <span class="n">200</span>;
+        <span class="k">return</span> <span class="k">new</span> <span class="t">Check</span>(endpoint, status, ms);
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">List</span>&lt;<span class="t">String</span>&gt; endpoints = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();
+        <span class="k">for</span> (<span class="k">int</span> i = <span class="n">1</span>; i &lt;= <span class="n">300</span>; i++) endpoints.add(<span class="s">"/api/v1/products/"</span> + i);
+
+        <span class="t">Semaphore</span> limit = <span class="k">new</span> <span class="t">Semaphore</span>(<span class="n">50</span>);                      <span class="c">// be kind to the server: 50 at a time</span>
+        <span class="t">Map</span>&lt;<span class="t">Integer</span>, <span class="t">AtomicInteger</span>&gt; byStatus = <span class="k">new</span> <span class="t">ConcurrentSkipListMap</span>&lt;&gt;();
+        <span class="t">Queue</span>&lt;<span class="t">Check</span>&gt; failures = <span class="k">new</span> <span class="t">ConcurrentLinkedQueue</span>&lt;&gt;();
+        <span class="k">long</span> t0 = <span class="t">System</span>.currentTimeMillis();
+
+        <span class="k">try</span> (<span class="k">var</span> exec = <span class="t">Executors</span>.newVirtualThreadPerTaskExecutor()) {
+            <span class="k">for</span> (<span class="t">String</span> e : endpoints) exec.submit(() -&gt; {
+                limit.acquire();
+                <span class="k">try</span> {
+                    <span class="t">Check</span> c = probe(e);
+                    byStatus.computeIfAbsent(c.status(), s -&gt; <span class="k">new</span> <span class="t">AtomicInteger</span>()).incrementAndGet();
+                    <span class="k">if</span> (c.status() != <span class="n">200</span>) failures.add(c);
+                } <span class="k">finally</span> { limit.release(); }
+                <span class="k">return</span> <span class="k">null</span>;
+            });
+        }
+        <span class="k">long</span> secs = <span class="t">Math</span>.round((<span class="t">System</span>.currentTimeMillis() - t0) / <span class="n">1000.0</span>);
+        <span class="t">System</span>.out.println(<span class="s">"checked "</span> + endpoints.size() + <span class="s">" endpoints in about "</span> + secs + <span class="s">" s"</span>);
+        <span class="t">System</span>.out.println(<span class="s">"by status: "</span> + byStatus);
+        failures.stream().sorted(<span class="t">Comparator</span>.comparing(<span class="t">Check</span>::endpoint)).limit(<span class="n">3</span>)
+            .forEach(c -&gt; <span class="t">System</span>.out.println(<span class="s">"  "</span> + c.status() + <span class="s">" "</span> + c.endpoint()));
+    }
+}</pre><div class="out"><span>Output</span><pre>checked 300 endpoints in about 2 s
+by status: {200=256, 404=27, 503=17}
+  404 /api/v1/products/105
+  503 /api/v1/products/11
+  404 /api/v1/products/117</pre></div></div>
+<p>Each endpoint gets its own virtual thread, a Semaphore keeps the load at 50 calls at a time, and the results go into concurrent collections. The code reads like a simple loop, finishes in a few seconds, and the report is sorted so it is the same on every run.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./java-records-patterns.html" data-topic="java-records-patterns"><small>← Previous chapter</small><b>📇 Records and patterns</b></a><span></span></nav>
+</div>
+<script type="application/json" id="traces">{"scoped": {"steps": [{"l": 14, "s": ["main()"], "d": {"L.args": "[]", "G.REQUEST_ID": "ScopedValue{hash=251658721}"}}, {"l": 15, "s": ["main()", "lambda in main()"], "d": {"L.args": null}}, {"l": 8, "s": ["main()", "lambda in main()", "log()"], "d": {"L.msg": "\"checkout started\""}}, {"l": 9, "o": "[req-7f3a] checkout started\n"}, {"l": 16, "s": ["main()", "lambda in main()"], "d": {"L.msg": null}}, {"l": 10, "s": ["main()", "lambda in main()", "loadCart()"]}, {"l": 8, "s": ["main()", "lambda in main()", "loadCart()", "log()"], "d": {"L.msg": "\"loading cart\""}}, {"l": 9, "o": "[req-7f3a] loading cart\n"}, {"l": 10, "s": ["main()", "lambda in main()", "loadCart()"], "d": {"L.msg": null}}, {"l": 17, "s": ["main()", "lambda in main()"]}, {"l": 11, "s": ["main()", "lambda in main()", "pay()"]}, {"l": 8, "s": ["main()", "lambda in main()", "pay()", "log()"], "d": {"L.msg": "\"charging card\""}}, {"l": 9, "o": "[req-7f3a/retry] charging card\n"}, {"l": 11, "s": ["main()", "lambda in main()", "pay()"], "d": {"L.msg": null}}, {"l": 18, "s": ["main()", "lambda in main()"]}, {"l": 8, "s": ["main()", "lambda in main()", "log()"], "d": {"L.msg": "\"checkout done\""}}, {"l": 9, "o": "[req-7f3a] checkout done\n"}, {"l": 19, "s": ["main()", "lambda in main()"], "d": {"L.msg": null}}, {"l": 20, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 8, "s": ["main()", "log()"], "d": {"L.msg": "\"outside any request\"", "L.args": null}}, {"l": 9, "o": "[no-request] outside any request\n"}, {"l": 21, "s": ["main()"], "d": {"L.args": "[]", "L.msg": null}}], "end": {"o": "", "t": false}}}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/javaviz.js"></script>
+<script src="../../assets/xv.js"></script>
+<script>
+const PAGE = {"info": {"title": "Many cooks, one kitchen", "panels": [{"s": [["e", "🏭"], ["t", "pool.submit(task)", {"b": 1}]], "h": "Executors", "t": "Hand over tasks, not threads.", "more": "A pool reuses a fixed team of threads."}, {"s": [["e", "🏁"], ["t", "count++  // 3 steps", {"b": 1}]], "h": "Races", "t": "Unsynchronised updates get lost.", "more": "Atomics, locks or synchronized fix it."}, {"s": [["e", "🔮"], ["t", "allOf(a, b, c).join()", {"b": 1}]], "h": "CompletableFuture", "t": "Wait for the slowest, not the sum.", "more": "Recover with exceptionally, limit with orTimeout."}, {"s": [["e", "🪶"], ["t", "newVirtualThreadPerTaskExecutor()", {"b": 1, "size": 10}]], "h": "Virtual threads", "t": "A thread per task again.", "more": "Blocking is cheap, so simple code scales."}], "remember": "Use executors for tasks, atomics or locks for shared counters, concurrent collections instead of synchronised maps, CompletableFuture to combine async results, and virtual threads for lots of waiting."}, "real": [["🎟️", "A ticket booking site", "Uses <code>tryLock<\/code> with a short timeout on each seat, so two people clicking the same seat never both get it and nobody waits forever."], ["🛍️", "A product page", "Fetches price, stock and reviews with three CompletableFutures, so the page waits 600 ms for the slowest instead of 1300 ms for all three."], ["🧪", "A test platform", "Moved its API test runner to virtual threads and went from 200 to 5000 concurrent simulated users on the same machine."]], "quiz": [{"lv": "e", "q": "What does a Callable have that a Runnable does not?", "o": ["A return value and the right to throw checked exceptions", "A name", "A priority", "A thread of its own"], "a": 0, "hint": "call() versus run().", "why": "Callable&lt;V&gt; has V call() throws Exception."}, {"lv": "e", "q": "Why is <code>count++<\/code> not safe from two threads?", "o": ["It is a read, an add and a write that threads can interleave", "int is too small", "Threads cannot see static fields", "It always throws"], "a": 0, "hint": "Three steps.", "why": "Two threads can read the same old value and both write the same new value."}, {"lv": "e", "q": "Which executor gives each task a new virtual thread?", "o": ["newVirtualThreadPerTaskExecutor", "newFixedThreadPool", "newCachedThreadPool", "newSingleThreadExecutor"], "a": 0, "hint": "Java 21.", "why": "Virtual threads are never pooled, so one per task is the right design."}, {"lv": "m", "q": "What does <code>volatile<\/code> guarantee?", "o": ["Visibility of writes to other threads and ordering, but not atomic compound actions", "That ++ is atomic", "That only one thread runs", "That the field is constant"], "a": 0, "hint": "Visible, not atomic.", "why": "Use AtomicInteger or a lock for read, modify, write."}, {"lv": "m", "q": "Three calls take 400, 600 and 300 ms. How long does allOf on three supplyAsync calls take, roughly?", "o": ["600 ms", "1300 ms", "300 ms", "433 ms"], "a": 0, "hint": "Wait for the slowest.", "why": "They run at the same time, so the total is the maximum."}, {"lv": "m", "q": "Which ConcurrentHashMap call counts hits safely?", "o": ["map.merge(key, 1, Integer::sum)", "map.put(key, map.get(key) + 1)", "if (!map.containsKey(key)) map.put(key, 1)", "map.get(key) + 1"], "a": 0, "hint": "One atomic call.", "why": "get then put is \"check then act\" and can lose updates."}, {"lv": "m", "q": "What does this print?", "o": ["5", "0", "Compile error", "It hangs"], "a": 0, "hint": "A latch of 5 counted down 5 times.", "why": "The loop calls countDown until the count is zero, which takes 5 calls. After that await returns at once instead of waiting, so the program prints 5.", "code": "void main() throws InterruptedException {\n    CountDownLatch l = new CountDownLatch(5);\n    int calls = 0;\n    while (l.getCount() > 0) { l.countDown(); calls++; }\n    l.await();\n    System.out.println(calls);\n}", "run": 1}, {"lv": "h", "q": "What happens to a virtual thread that blocks on a socket read?", "o": ["It is unmounted and its carrier thread runs another virtual thread", "Its carrier thread blocks too", "The JVM creates a new platform thread", "It throws an exception"], "a": 0, "hint": "Parked, not blocking.", "why": "Its stack is saved on the heap until the data arrives."}, {"lv": "h", "q": "In structured concurrency with the default joiner, what happens when one forked subtask fails?", "o": ["The other subtasks are cancelled and join throws", "The others keep running in the background", "The failure is ignored", "The JVM exits"], "a": 0, "hint": "One unit.", "why": "That is the point: no orphan threads keep working after the result is already lost."}, {"lv": "h", "q": "Why are scoped values a better fit than ThreadLocal for virtual threads?", "o": ["They are immutable, bounded to a block and cheap to share with many threads", "ThreadLocal does not work at all with virtual threads", "They are faster to type", "They store values on disk"], "a": 0, "hint": "Lifetime and cost.", "why": "ThreadLocal values are mutable, live as long as the thread, and are copied per thread, which adds up with millions of threads."}, {"lv": "x", "q": "What does this print?", "o": ["true", "false", "null", "Compile error"], "a": 0, "hint": "Run inside a virtual thread.", "why": "isVirtual reports true inside a thread started by Thread.ofVirtual().", "code": "void main() throws InterruptedException {\n    Thread t = Thread.ofVirtual().start(() -> System.out.println(Thread.currentThread().isVirtual()));\n    t.join();\n}", "run": 1}, {"lv": "x", "q": "What does this print?", "o": ["fallback", "ok", "IllegalStateException", "null"], "a": 0, "hint": "exceptionally provides the value.", "why": "The supplier throws, so exceptionally runs and returns \"fallback\".", "code": "System.out.println(CompletableFuture.supplyAsync(() -> { if (true) throw new IllegalStateException(\"x\"); return \"ok\"; }).exceptionally(e -> \"fallback\").join());", "run": 1}], "calc": [{"lv": "e", "q": "Two threads each add 1 to an AtomicInteger 500 times. What is the final value?", "ans": "1000", "hint": "Atomics never lose updates.", "steps": ["<span class=\"eq\">2 × 500 = 1000<\/span>"]}, {"lv": "e", "q": "Three services take 400, 600 and 300 ms. How many ms does calling them one after another take?", "ans": "1300", "hint": "Add them.", "steps": ["<span class=\"eq\">400 + 600 + 300 = 1300<\/span>"]}, {"lv": "m", "q": "How many ms are saved by running those three calls in parallel?", "ans": "700", "hint": "Sum minus the slowest.", "steps": ["<span class=\"eq\">1300 − max(400, 600, 300) = 1300 − 600 = 700<\/span>"]}, {"lv": "m", "q": "1000 tasks each wait 1 second on a fixed pool of 100 platform threads. About how many seconds does it take?", "ans": "10", "hint": "Rounds of 100.", "steps": ["<span class=\"eq\"><span class=\"fr\"><i>1000<\/i><i>100<\/i><\/span> = 10 rounds × 1 s = 10 s<\/span>"]}, {"lv": "m", "q": "What does this print?", "ans": "{a=2, b=1}", "hint": "merge adds 1 per occurrence.", "steps": ["a appears twice and b once."], "code": "var m = new ConcurrentHashMap<String, Integer>();\nfor (String k : List.of(\"a\", \"b\", \"a\")) m.merge(k, 1, Integer::sum);\nSystem.out.println(new TreeMap<>(m));", "run": 1}, {"lv": "h", "q": "A Semaphore has 50 permits and 300 calls take 0.3 s each. Ignoring overhead, about how many seconds does the smoke test take?", "ans": "1.8", "hint": "Rounds of 50.", "steps": ["<span class=\"eq\"><span class=\"fr\"><i>300<\/i><i>50<\/i><\/span> = 6 rounds<\/span>", "<span class=\"eq\">6 × 0.3 = 1.8 s<\/span>"]}, {"lv": "h", "q": "A platform thread reserves about 1 MB of stack. How many MB do 4000 platform threads reserve?", "ans": "4000", "hint": "One MB each.", "steps": ["<span class=\"eq\">4000 × 1 MB = 4000 MB, about 4 GB<\/span>", "This is why servers could not simply use a thread per request before virtual threads."]}, {"lv": "x", "q": "What does this print?", "ans": "3", "hint": "Count the successful tryLock calls on a free lock.", "steps": ["A ReentrantLock can be locked again by the thread that holds it.", "All 3 tryLock calls succeed and the hold count is 3."], "code": "var lock = new java.util.concurrent.locks.ReentrantLock();\nint ok = 0;\nfor (int i = 0; i < 3; i++) if (lock.tryLock()) ok++;\nSystem.out.println(lock.getHoldCount());", "run": 1}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to concurrency in depth: executors, race conditions, locks, the memory model, concurrent collections, CompletableFuture, virtual threads and structured concurrency.", "hi": "Concurrency की गहराई में स्वागत है: executors, race conditions, locks, memory model, concurrent collections, CompletableFuture, virtual threads और structured concurrency।", "kn": "Concurrency ಆಳಕ್ಕೆ ಸ್ವಾಗತ: executors, race conditions, locks, memory model, CompletableFuture, virtual threads.", "or": "Concurrency ଗଭୀରତାକୁ ସ୍ୱାଗତ: executors, race conditions, locks, memory model, CompletableFuture, virtual threads।", "ar": "مرحبًا بك في التزامن بعمق: المنفذون، وحالات السباق، والأقفال، ونموذج الذاكرة، والمجموعات المتزامنة، وCompletableFuture، والخيوط الافتراضية.", "de": "Willkommen zur Nebenläufigkeit im Detail: Executors, Race Conditions, Locks, Speichermodell, Concurrent Collections, CompletableFuture und virtuelle Threads."}, {"id": "executors", "h": "Executors", "en": "Hand tasks to an ExecutorService that owns a pool of threads. Callable returns a value, and Future gets it later.", "hi": "Tasks को ExecutorService को दें जिसके पास threads का pool है। Callable value लौटाता है, और Future उसे बाद में देता है।", "kn": "Tasks ಅನ್ನು threads pool ಇರುವ ExecutorService ಗೆ ಕೊಡಿ. Callable value ಕೊಡುತ್ತದೆ, Future ನಂತರ ಪಡೆಯುತ್ತದೆ.", "or": "Tasks କୁ threads pool ଥିବା ExecutorService କୁ ଦିଅନ୍ତୁ। Callable value ଦିଏ, Future ପରେ ପାଏ।", "ar": "سلّم المهام إلى ExecutorService الذي يملك مجموعة خيوط. Callable يعيد قيمة، وFuture يحصل عليها لاحقًا.", "de": "Gib Aufgaben an einen ExecutorService mit Thread-Pool. Callable liefert einen Wert, Future holt ihn später."}, {"id": "race", "h": "Race conditions", "en": "count plus plus is three steps, so two threads lose updates. synchronized, atomics, LongAdder or a lock make it safe.", "hi": "count plus plus तीन कदम है, इसलिए दो threads updates खो देते हैं। synchronized, atomics, LongAdder या lock इसे सुरक्षित बनाते हैं।", "kn": "count plus plus ಮೂರು ಹಂತ, ಆದ್ದರಿಂದ updates ಕಳೆಯುತ್ತವೆ. synchronized, atomics ಅಥವಾ lock ಸುರಕ್ಷಿತಗೊಳಿಸುತ್ತವೆ.", "or": "count plus plus ତିନି ପଦକ୍ଷେପ, ତେଣୁ updates ହଜେ। synchronized, atomics କିମ୍ବା lock ସୁରକ୍ଷିତ କରେ।", "ar": "زيادة العداد ثلاث خطوات، فيضيع خيطان بعض التحديثات. synchronized أو الذريات أو LongAdder أو القفل تجعلها آمنة.", "de": "count++ sind drei Schritte, daher gehen Updates verloren. synchronized, Atomics, LongAdder oder ein Lock machen es sicher."}, {"id": "memory-model", "h": "Memory model", "en": "A write is only guaranteed visible to another thread through happens-before, such as a lock or a volatile field. volatile does not make plus plus atomic.", "hi": "एक write दूसरे thread को happens-before से ही दिखता है, जैसे lock या volatile field। volatile plus plus को atomic नहीं बनाता।", "kn": "Write ಇನ್ನೊಂದು thread ಗೆ happens-before ಮೂಲಕ ಮಾತ್ರ ಕಾಣುತ್ತದೆ. volatile atomic ಅಲ್ಲ.", "or": "Write ଅନ୍ୟ thread କୁ happens-before ଦ୍ୱାରା ହିଁ ଦେଖାଯାଏ। volatile atomic ନୁହେଁ।", "ar": "الكتابة تظهر لخيط آخر فقط عبر علاقة happens-before مثل قفل أو حقل volatile، وvolatile لا يجعل الزيادة ذرية.", "de": "Ein Schreibzugriff ist nur über happens-before sichtbar, etwa Lock oder volatile. volatile macht ++ nicht atomar."}, {"id": "collections", "h": "Concurrent collections", "en": "Use ConcurrentHashMap with merge or compute, avoid check then act, and connect producers and consumers with a BlockingQueue.", "hi": "ConcurrentHashMap को merge या compute के साथ इस्तेमाल करें, check then act से बचें, और BlockingQueue से producers और consumers जोड़ें।", "kn": "ConcurrentHashMap merge ಅಥವಾ compute ಜೊತೆ ಬಳಸಿ, BlockingQueue ಮೂಲಕ producer consumer ಸಂಪರ್ಕಿಸಿ.", "or": "ConcurrentHashMap merge କିମ୍ବା compute ସହ, BlockingQueue ଦ୍ୱାରା producer consumer ଯୋଡ଼ନ୍ତୁ।", "ar": "استخدم ConcurrentHashMap مع merge أو compute، وتجنب الفحص ثم التنفيذ، واربط المنتجين والمستهلكين بطابور BlockingQueue.", "de": "Nutze ConcurrentHashMap mit merge oder compute, vermeide Prüfen-dann-Handeln und verbinde Erzeuger und Verbraucher mit einer BlockingQueue."}, {"id": "synchronizers", "h": "Synchronizers", "en": "A CountDownLatch waits for a count to reach zero. A Semaphore limits how many threads do something at once.", "hi": "CountDownLatch count के शून्य होने का इंतज़ार करता है। Semaphore सीमित करता है कि एक साथ कितने threads काम करें।", "kn": "CountDownLatch count ಶೂನ್ಯವಾಗುವವರೆಗೆ ಕಾಯುತ್ತದೆ. Semaphore ಒಮ್ಮೆಗೆ ಎಷ್ಟು threads ಎಂದು ಮಿತಿಗೊಳಿಸುತ್ತದೆ.", "or": "CountDownLatch count ଶୂନ ହେବା ପର୍ଯ୍ୟନ୍ତ ଅପେକ୍ଷା କରେ। Semaphore ଏକାଥରେ କେତେ threads ସୀମିତ କରେ।", "ar": "ينتظر CountDownLatch حتى يصل العد إلى صفر، ويحدد Semaphore عدد الخيوط التي تعمل في الوقت نفسه.", "de": "Ein CountDownLatch wartet, bis der Zähler null ist. Ein Semaphore begrenzt, wie viele Threads gleichzeitig arbeiten."}, {"id": "completable", "h": "CompletableFuture", "en": "CompletableFuture runs calls in parallel and combines them. The total time is the slowest call, not the sum. Recover with exceptionally and limit with orTimeout.", "hi": "CompletableFuture calls को parallel चलाकर जोड़ता है। कुल समय सबसे धीमे call का होता है, जोड़ नहीं। exceptionally से संभलें और orTimeout से सीमा लगाएँ।", "kn": "CompletableFuture calls ಸಮಾಂತರವಾಗಿ ಓಡಿಸಿ ಸೇರಿಸುತ್ತದೆ. ಒಟ್ಟು ಸಮಯ ನಿಧಾನದ call.", "or": "CompletableFuture calls ସମାନ୍ତରାଳରେ ଚଲାଇ ଯୋଡ଼େ। ମୋଟ ସମୟ ସବୁଠୁ ଧୀର call।", "ar": "يشغل CompletableFuture الاستدعاءات بالتوازي ويجمعها، فيكون الزمن الكلي زمن أبطأ استدعاء لا مجموعها.", "de": "CompletableFuture führt Aufrufe parallel aus und kombiniert sie. Die Gesamtzeit ist der langsamste Aufruf, nicht die Summe."}, {"id": "virtual", "h": "Virtual threads", "en": "Virtual threads are cheap. When one blocks on I/O, it is parked and its carrier thread runs another task, so thousands of waiting tasks are fine.", "hi": "Virtual threads सस्ते हैं। जब कोई I/O पर रुकता है, उसे park किया जाता है और carrier thread दूसरा task चलाता है।", "kn": "Virtual threads ಅಗ್ಗ. I/O ನಲ್ಲಿ ತಡೆದಾಗ park ಆಗಿ carrier ಬೇರೆ task ಓಡಿಸುತ್ತದೆ.", "or": "Virtual threads ଶସ୍ତା। I/O ରେ ଅଟକିଲେ park ହୁଏ ଏବଂ carrier ଅନ୍ୟ task ଚଲାଏ।", "ar": "الخيوط الافتراضية رخيصة، فعندما يتوقف أحدها على الإدخال والإخراج يُركن ويشغل الخيط الحامل مهمة أخرى.", "de": "Virtuelle Threads sind günstig. Blockiert einer bei I/O, wird er geparkt und der Träger-Thread führt eine andere Aufgabe aus."}, {"id": "structured", "h": "Structured concurrency", "en": "Structured concurrency keeps subtasks inside one block and cancels the rest when one fails. Scoped values share a request id without ThreadLocal.", "hi": "Structured concurrency subtasks को एक block में रखता है और एक fail होने पर बाकी cancel करता है। Scoped values ThreadLocal के बिना request id बाँटते हैं।", "kn": "Structured concurrency subtasks ಒಂದೇ block ನಲ್ಲಿ ಇಡುತ್ತದೆ. Scoped values request id ಹಂಚುತ್ತವೆ.", "or": "Structured concurrency subtasks କୁ ଗୋଟିଏ block ରେ ରଖେ। Scoped values request id ବାଣ୍ଟନ୍ତି।", "ar": "يبقي التزامن المنظم المهام الفرعية داخل كتلة واحدة ويلغي البقية عند فشل إحداها، وتشارك القيم المحددة النطاق معرّف الطلب دون ThreadLocal.", "de": "Strukturierte Nebenläufigkeit hält Teilaufgaben in einem Block und bricht den Rest ab, wenn eine scheitert. Scoped Values teilen eine Request-ID ohne ThreadLocal."}, {"id": "scenario", "h": "Scenario", "en": "Three hundred endpoints are checked on virtual threads, fifty at a time, and the results are collected in concurrent collections.", "hi": "तीन सौ endpoints virtual threads पर, पचास एक साथ, जाँचे जाते हैं और परिणाम concurrent collections में जमा होते हैं।", "kn": "ಮುನ್ನೂರು endpoints virtual threads ನಲ್ಲಿ ಐವತ್ತು ಒಮ್ಮೆಗೆ ಪರೀಕ್ಷಿಸಲಾಗುತ್ತದೆ.", "or": "ତିନି ଶହ endpoints virtual threads ରେ ପଚାଶ ଏକାଥରେ ଯାଞ୍ଚ ହୁଏ।", "ar": "تُفحص ثلاثمئة نقطة نهاية على خيوط افتراضية، خمسون في كل مرة، وتُجمع النتائج في مجموعات متزامنة.", "de": "Dreihundert Endpunkte werden auf virtuellen Threads geprüft, fünfzig gleichzeitig, und die Ergebnisse landen in Concurrent Collections."}], "dg": {"vt": {"t": "How virtual threads share a few carrier threads", "w": 900, "h": 300, "mw": 640, "g": [[20, 20, 400, 260, "Virtual threads (millions are fine)", 1], [480, 20, 400, 260, "Carrier threads (one per CPU core)", 2]], "n": [["v1", 50, 60, 150, 44, "task 1", {"c": 1}], ["v2", 240, 60, 150, 44, "task 2", {"c": 1}], ["v3", 50, 140, 150, 44, "task 3", {"c": 1}], ["v4", 240, 140, 150, 44, "task 4", {"c": 1}], ["park", 120, 215, 200, 44, "waiting for I/O", {"c": 5, "sub": "stack saved on the heap"}], ["c1", 560, 70, 240, 54, "carrier 1", {"c": 2}], ["c2", 560, 170, 240, 54, "carrier 2", {"c": 2}]], "e": [["v1", "c1", {"t": "mounted", "id": "m1"}], ["v2", "c2", {"t": "mounted", "id": "m2"}], ["v1", "park", {"t": "blocks", "id": "p1"}], ["v3", "c1", {"t": "mounted", "id": "m3"}], ["park", "c2", {"t": "resumes later", "id": "r1", "d": 1}]], "st": [[["v1", "v2", "c1", "c2", "m1", "m2"], "Tasks 1 and 2 are mounted on the two carrier threads and run Java code."], [["v1", "park", "p1"], "Task 1 calls a blocking method, such as reading a socket. Instead of blocking the carrier, the JVM saves its stack on the heap and unmounts it."], [["v3", "c1", "m3"], "Carrier 1 is free right away, so task 3 is mounted on it. No CPU time is wasted waiting."], [["park", "c2", "r1"], "When the I/O answer arrives, task 1 is mounted again, on whichever carrier is free, and continues from the same line."], [["v4"], "This is why thousands of waiting tasks need only a handful of real threads. Pure calculation still needs real cores."]]}}, "lanes": {}, "jv": {}};
+JAVAPAGE.start({ title: "Concurrency in depth: from executors to virtual threads" });
+</script>
+</body>
+</html>

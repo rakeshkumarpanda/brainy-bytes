@@ -138,7 +138,7 @@
     function draw() {
       const n = +$('[data-sl="tasks"]', b).value, w = +$('[data-sl="wait"]', b).value, p = +$('[data-sl="pool"]', b).value;
       const plat = Math.ceil(n / p) * w, virt = w + Math.ceil(n / 2000) * 5, max = Math.max(plat, virt);
-      const bar = (ms, c) => `<div class="jv-bar" style="width:${Math.max(4, ms / max * 100)}%; background:${c}">${ms >= 1000 ? (ms / 1000).toFixed(1) + ' s' : ms + ' ms'}</div>`;
+      const bar = (ms, c) => `<div style="display:flex;align-items:center;gap:8px;min-width:0"><div class="jv-bar" style="flex:0 0 auto;width:calc(${Math.max(2, ms / max * 100)}% - 60px);min-width:6px;padding:0;background:${c}"></div><b style="white-space:nowrap">${ms >= 1000 ? (ms / 1000).toFixed(1) + ' s' : ms + ' ms'}</b></div>`;
       $('[data-t]', b).innerHTML = `<span>Platform pool of ${p}</span>${bar(plat, 'var(--orange)')}<span>Virtual threads</span>${bar(virt, 'var(--green)')}`;
       $('.vz-msg', b).innerHTML = `With ${p} platform threads only ${p} tasks can wait at the same time, so ${n} tasks need ${Math.ceil(n / p)} rounds of ${w} ms. Each platform thread also holds about 1 MB of stack. A virtual thread that blocks is <b>unmounted</b> from its carrier thread, so all ${n} tasks can wait together on a few carrier threads (one per CPU core). That is about <mark>${(plat / virt).toFixed(1)}×</mark> faster here. Virtual threads help when tasks <b>wait</b>. For pure calculation, the number of CPU cores is still the limit.`;
     }
@@ -196,11 +196,11 @@
     function draw() {
       const p = +$('[data-sl="p"]', b).value, s = +$('[data-sl="s"]', b).value, r = +$('[data-sl="r"]', b).value;
       const seq = p + s + r, par = Math.max(p, s, r);
-      const lane = (start, len, c, t) => `<div style="position:relative;height:26px"><div class="jv-bar" style="position:absolute;left:${start / seq * 100}%;width:${Math.max(3, len / seq * 100)}%;background:${c}">${t}</div></div>`;
+      const lane = (start, len, c) => `<div style="position:relative;height:26px;overflow:hidden"><div class="jv-bar" style="position:absolute;left:${Math.min(start / seq * 100, 98)}%;width:max(4px, ${len / seq * 100}%);padding:0;background:${c}"></div></div>`;
       $('[data-t]', b).innerHTML = `<b>One after another</b><span>${seq} ms in total</span>
-        <span>price</span>${lane(0, p, 'var(--orange)', p + ' ms')}<span>stock</span>${lane(p, s, 'var(--blue)', s + ' ms')}<span>reviews</span>${lane(p + s, r, 'var(--purple)', r + ' ms')}
+        <span>price ${p} ms</span>${lane(0, p, 'var(--orange)')}<span>stock ${s} ms</span>${lane(p, s, 'var(--blue)')}<span>reviews ${r} ms</span>${lane(p + s, r, 'var(--purple)')}
         <b>supplyAsync + allOf</b><span>${par} ms in total</span>
-        <span>price</span>${lane(0, p, 'var(--orange)', p + ' ms')}<span>stock</span>${lane(0, s, 'var(--blue)', s + ' ms')}<span>reviews</span>${lane(0, r, 'var(--purple)', r + ' ms')}`;
+        <span>price ${p} ms</span>${lane(0, p, 'var(--orange)')}<span>stock ${s} ms</span>${lane(0, s, 'var(--blue)')}<span>reviews ${r} ms</span>${lane(0, r, 'var(--purple)')}`;
       $('.vz-msg', b).innerHTML = `Sequential time is the <b>sum</b>: ${p} + ${s} + ${r} = ${seq} ms. In parallel the page waits only for the <b>slowest</b> call: max(${p}, ${s}, ${r}) = ${par} ms, a saving of <mark>${seq - par} ms</mark>. This only works when the calls do not need each other's results.`;
     }
     ['p', 's', 'r'].forEach(x => K.wireSlider(b, x, draw));
