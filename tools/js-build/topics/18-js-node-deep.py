@@ -216,6 +216,10 @@ test("--max-errors raises the limit", () => assert.equal(cli("--max-errors", "2"
         replace=[(r' \([\d.]+ms\)', ''), (r'ℹ duration_ms [\d.]+', 'ℹ duration_ms 212.4')]),
 }
 
+LANES = {
+    'backpressure': {'t': 'Backpressure: write, pause, drain, resume', 'code': 'const out = fs.createWriteStream("big.csv", { highWaterMark: 16 * 1024 });\nfor (const row of rows) {\n  if (!out.write(row)) await once(out, "drain");\n}', 'lanes': ['Your loop', 'Buffer in memory (16 KB limit)', 'Disk'], 'tone': [2, 5, 1], 'steps': [{'l': 3, 'v': [['write 4 KB: true'], ['4 KB'], []], 'm': "write puts the chunk in the stream's buffer and returns true: there is room for more."}, {'l': 3, 'v': [['write 4 KB: true'], ['8 KB'], ['writing...']], 'm': 'The disk starts writing in the background, but the loop is faster.'}, {'l': 3, 'v': [['write 4 KB: true'], ['12 KB'], ['writing...']], 'm': 'The buffer keeps growing because the producer is faster than the disk.'}, {'l': 3, 'v': [['write 4 KB: false'], ['16 KB, full'], ['writing...']], 'm': 'The buffer reached highWaterMark, so write returns false. That is the signal to stop.'}, {'l': 3, 'v': [['await once(out, "drain")'], ['8 KB'], ['8 KB written']], 'm': 'The loop pauses. Memory stays small while the disk catches up.'}, {'l': 3, 'v': [['drain fired, keep going'], ['0 KB'], ['16 KB written']], 'm': 'When the buffer is empty, the stream emits drain and the loop continues. Ignoring false would let memory grow until the process crashes on a big file.'}]},
+}
+
 PARTS = [
     part('events', '📣', 'Events and EventEmitter', '''
 <p>Much of Node.js is built on <b>EventEmitter</b>: servers, sockets, streams, child processes and test runners. Listeners register with <code>on</code> or <code>once</code>, and <code>emit</code> calls them in order, synchronously. <code>events.once</code> turns one event into a promise and <code>events.on</code> turns a stream of events into an async iterator.</p>
@@ -226,6 +230,8 @@ PARTS = [
     part('streams', '🌊', 'Streams and backpressure', '''
 <p>A <b>stream</b> moves data in small chunks, so a 5 GB log file never has to fit in memory. <b>Readable</b> streams produce data, <b>Writable</b> streams consume it, and <b>Transform</b> streams change it on the way. <code>pipeline</code> connects them, passes errors along and closes everything at the end.</p>
 [[streams]]
+<p>The animation shows what happens inside a write stream when your code produces data faster than the disk or the network can take it.</p>
+<div class="viz" data-viz="lanes" data-k="backpressure"></div>
 <p><b>Backpressure</b> is how a slow consumer tells a fast producer to wait. When <code>write()</code> returns false, stop writing until the <code>"drain"</code> event. <code>pipeline</code> and <code>for await</code> do this automatically, which is the main reason to use them.</p>
 [[backpressure]]
 ''', qa=True, qa_why='Reading huge logs, HAR files and test result exports needs streams, or the test tool runs out of memory.',
@@ -376,5 +382,5 @@ T = {
     'summary': 'EventEmitter with once, error events and async iteration, generating and filtering a big file with streams, backpressure and drain, buffers, encodings, SHA-256 and HMAC webhook signatures, the built in SQLite database with prepared statements, spawn with streaming output and SIGTERM clean up, and a log check CLI tested with spawnSync.',
     'keywords': ['Node.js', 'EventEmitter', 'streams', 'pipeline', 'backpressure', 'Buffer', 'crypto', 'HMAC', 'webhook', 'node:sqlite', 'SQLite', 'spawn', 'SIGTERM', 'exit code', 'parseArgs', 'CLI', 'interview'],
     'qa_intro': 'Test tools are Node.js programs. Streams read huge logs, crypto checks webhooks, SQLite holds test data, and exit codes make your tools work in CI.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

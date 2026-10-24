@@ -190,6 +190,10 @@ console.log(calls);
 ''', 'A dynamic API client with a Proxy'),
 }
 
+LANES = {
+    'proxy': {'t': 'Every access goes through the Proxy first', 'code': 'const target = { price: 100 };\nconst guarded = new Proxy(target, {\n  get(t, key, r) { log.push(`read ${key}`); return Reflect.get(t, key, r); },\n  set(t, key, v, r) { if (v < 0) throw new RangeError("negative"); return Reflect.set(t, key, v, r); },\n});\nguarded.price;\nguarded.price = 120;\nguarded.price = -5;', 'lanes': ['Your code', 'Trap', 'Target object', 'Log'], 'tone': [2, 3, 1, 4], 'steps': [{'l': [1, 2], 'v': [['new Proxy(target, handler)'], [], ['price: 100'], []], 'm': 'The proxy wraps the target. Code should use guarded, not target, from now on.'}, {'l': 6, 'v': [['guarded.price'], ['get trap'], ['price: 100'], ['read price']], 'm': 'Reading a property calls the get trap. It logs the read, then Reflect.get does the normal read and returns 100.'}, {'l': 7, 'v': [['guarded.price = 120'], ['set trap: 120 is fine'], ['price: 120'], ['read price']], 'm': 'Writing calls the set trap. 120 passes the check, so Reflect.set writes it to the target.'}, {'l': 8, 'v': [['guarded.price = -5'], ['set trap: throws RangeError'], ['price: 120'], ['read price']], 'm': 'A negative price fails the check. The trap throws and the target is never changed.'}]},
+}
+
 PARTS = [
     part('descriptors', '🧾', 'Property descriptors, getters and setters', '''
 <p>Every property has a <b>descriptor</b> with flags. <code>writable</code> allows changes, <code>enumerable</code> shows it in <code>Object.keys</code>, loops and JSON, and <code>configurable</code> allows deleting it or changing its flags. Accessor properties use <code>get</code> and <code>set</code> functions instead of a value.</p>
@@ -205,6 +209,8 @@ PARTS = [
     part('proxy', '🪞', 'Proxy and Reflect', '''
 <p>A <b>Proxy</b> sits in front of an object and can intercept almost anything done to it: reading, writing, deleting, <code>in</code>, listing keys, calling and <code>new</code>. Each handler function is a <b>trap</b>. <b>Reflect</b> has a method for every trap that does the normal behaviour, so a trap can add checks and then hand over.</p>
 [[proxy]]
+<p>The key idea is that the proxy and the target are two different objects. Code talks to the proxy, every operation is handed to a trap if there is one, and the trap decides whether to pass it on to the real object with <code>Reflect</code>.</p>
+<div class="viz" data-viz="lanes" data-k="proxy"></div>
 <p>Test frameworks use proxies for auto mocking, for fluent APIs and for wrapping page objects. Here a Proxy adds step logging and one retry on a known flaky error to every method, without touching the page class.</p>
 [[pom-proxy]]
 <div class="warn">Proxies add a cost to every operation and can surprise people reading the code. Use them in tools and test frameworks, not in hot paths of application code.</div>
@@ -344,5 +350,5 @@ T = {
     'summary': 'Descriptor flags, getters, setters and the three levels of locking, well known symbols and hiding secrets from logs, Proxy and Reflect for strict config, negative indexes and usage tracking, a proxy that logs and retries page object steps, tagged templates for HTML and SQL, decorators, and a fluent API client.',
     'keywords': ['property descriptor', 'defineProperty', 'getter', 'setter', 'Object.seal', 'Symbol.toPrimitive', 'util.inspect.custom', 'Proxy', 'Reflect', 'trap', 'tagged template', 'String.raw', 'decorators', 'spy', 'interview'],
     'qa_intro': 'Mocks, spies, fluent clients and step reporters are all metaprogramming. This chapter shows how they work so you can build and debug them.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

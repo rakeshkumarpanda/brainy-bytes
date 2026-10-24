@@ -457,6 +457,10 @@ test("a customer buys the last two mugs", async t => {
     }, 'npm test', 'An end to end API flow with steps', show=['test/order-flow.test.js'], replace=NT),
 }
 
+DG = {
+    'api-check': {'t': 'One API test, from request to the last check', 'w': 940, 'h': 250, 'n': [['test', 20, 95, 130, 56, 'test', {'c': 2, 'sh': 'screen'}], ['req', 190, 95, 150, 56, 'POST /orders', {'c': 0, 'sub': 'headers, token, JSON body'}], ['api', 380, 95, 140, 56, 'API server', {'c': 4, 'sub': 'routes, rules, auth'}], ['db', 380, 185, 140, 50, 'database', {'c': 3, 'sh': 'db'}], ['res', 560, 95, 150, 56, 'response', {'c': 1, 'sub': 'status, headers, body'}], ['chk', 750, 60, 170, 70, 'checks', {'c': 5, 'sh': 'note', 'sub': 'status, type, schema, values'}], ['side', 750, 175, 170, 56, 'GET /orders/7 again', {'c': 1, 'sub': 'side effect check'}]], 'e': [['test', 'req'], ['req', 'api'], ['api', 'db', {'t': 'insert'}], ['api', 'res'], ['res', 'chk'], ['chk', 'side', {'t': 'then'}], ['side', 'db', {'t': 'read', 'd': 1, 'fs': 'b', 'ts': 'b', 'via': [[835, 245], [450, 245]]}]], 'st': [[['test', 'req', 'test>req'], 'Arrange: the test builds the request with a token and a JSON body.'], [['api', 'req>api'], 'Act: the request goes to the running API, which checks the token and validates the body.'], [['db', 'api>db'], 'The API saves the order in the database.'], [['res', 'api>res'], 'The response comes back.'], [['chk', 'res>chk'], 'Assert, in order: the status code, the headers, the shape of the body (schema) and the important values.'], [['side', 'chk>side', 'side>db'], 'Finally check the side effect: read the order again, so you know it was really saved and not just echoed back.']]},
+}
+
 PARTS = [
     part('what', '🗺️', 'What an API test checks', '''
 <p>An <b>API test</b> sends real HTTP requests to a running service and checks the answers. It sits in the middle of the test pyramid: much faster and steadier than a browser test, and it checks the real routes, validation, database and auth together, which unit tests cannot.</p>
@@ -470,6 +474,8 @@ PARTS = [
 <tr><td>Security</td><td>401 without a token, 403 or 404 for someone else's data</td></tr>
 <tr><td>Speed</td><td>95% of requests under 200 ms</td></tr>
 </table></div>
+<p>Press Play to follow one API test through the system. The last step is the one beginners forget: a response that says "created" proves nothing until you read the item back.</p>
+<div class="viz" data-viz="flow" data-k="api-check"></div>
 <div class="tip">This chapter tests one small shop API, written with Express in <code>shop-api.js</code>, with four different tools. It is the same app as in {{ch:js-http-node}}, with login and orders added.</div>
 ''', qa=True, qa_why='API tests give the most coverage per minute of any automated test.',
         kw=['API testing', 'what to test', 'status code', 'headers', 'body', 'schema', 'side effects', 'negative testing', 'security', 'response time', 'test pyramid']),
@@ -660,5 +666,5 @@ T = {
     'summary': 'What an API test checks, a CRUD flow against a running server, JSON Schema validation with Ajv that catches breaking changes, data driven negative and boundary tests, login with tokens and checking side effects and conflicts, Playwright request with webServer, Cypress, Newman and k6 in brief, percentiles for response times, and an order flow written as named subtests.',
     'keywords': ['API testing', 'REST', 'CRUD', 'fetch', 'supertest', 'Playwright request', 'Ajv', 'JSON Schema', 'contract test', 'negative testing', 'boundary', 'auth', '401', '409', 'p95', 'response time', 'cleanup', 'Newman', 'k6'],
     'qa_intro': 'Every test on this page ran against a real Express server when the page was built. Pick the tool your team uses, the ideas are the same in all of them.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

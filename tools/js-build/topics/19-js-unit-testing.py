@@ -669,12 +669,18 @@ test("examples", () => {
     }, 'npm test', 'Step 2: fix the code and the same tests pass', show=['src/split.js'], badge='🟢 Green: fixed', replace=NT),
 }
 
+LANES = {
+    'hooks': {'t': 'The order hooks and tests run in', 'code': 'beforeAll(startServer);\nbeforeEach(seedData);\nafterEach(clearData);\nafterAll(stopServer);\ntest("A adds an item", ...);\ntest("B removes an item", ...);', 'lanes': ['Running now', 'Order so far'], 'tone': [2, 1], 'steps': [{'l': 1, 'v': [['beforeAll'], ['startServer']], 'm': 'beforeAll runs once before any test in the file or describe block: start a server, open a browser.'}, {'l': 2, 'v': [['beforeEach'], ['startServer', 'seedData']], 'm': 'beforeEach runs before every test, so each test starts from the same data.'}, {'l': 5, 'v': [['test A'], ['startServer', 'seedData', 'A']], 'm': 'Test A runs.'}, {'l': 3, 'v': [['afterEach'], ['startServer', 'seedData', 'A', 'clearData']], 'm': 'afterEach runs after every test, even when the test failed.'}, {'l': 2, 'v': [['beforeEach'], ['startServer', 'seedData', 'A', 'clearData', 'seedData']], 'm': 'Fresh data again for the next test. A cannot leave anything behind for B.'}, {'l': 6, 'v': [['test B'], ['startServer', 'seedData', 'A', 'clearData', 'seedData', 'B']], 'm': 'Test B runs.'}, {'l': 3, 'v': [['afterEach'], ['startServer', 'seedData', 'A', 'clearData', 'seedData', 'B', 'clearData']], 'm': 'Clean up after B.'}, {'l': 4, 'v': [['afterAll'], ['startServer', 'seedData', 'A', 'clearData', 'seedData', 'B', 'clearData', 'stopServer']], 'm': 'afterAll runs once at the end. Jest, Vitest, Mocha (before and beforeEach) and node:test all follow this order.'}]},
+}
+
 PARTS = [
     part('basics', '🧱', 'What a unit test is', '''
 <p>A <b>unit test</b> checks one small piece of code, usually one function or one class, on its own. It runs in milliseconds, needs no browser, server or database, and tells you exactly which piece broke. A good suite has many unit tests, fewer API or integration tests, and a small number of slow end to end tests. This shape is called the <b>test pyramid</b>.</p>
 <div class="viz" data-viz="flow" data-k="pyramid"></div>
 <p>Every test follows the same three steps: <b>Arrange</b> the input, <b>Act</b> by calling the code, <b>Assert</b> that the result is right. Node.js has a test runner built in, so the first suite needs nothing installed.</p>
 [[first]]
+<p>Most suites also need set up and clean up. <b>Hooks</b> run code around the tests, and their order is the same in every popular runner. Getting it wrong is a common cause of tests that pass alone and fail together.</p>
+<div class="viz" data-viz="lanes" data-k="hooks"></div>
 <div class="tip">Good unit tests are fast, independent of each other and of the order they run in, repeatable on any machine, and named so that a failure explains itself: "takes 10% off with SAVE10" beats "test 3".</div>
 ''', qa=['node:test'], qa_why="Testers who read and write unit tests can review developers' tests and spot missing cases early.",
         kw=['unit test', 'test pyramid', 'Arrange Act Assert', 'AAA', 'node:test', 'describe', 'it', 'assert', 'assert.equal', 'assert.throws', 'deepEqual']),
@@ -913,5 +919,5 @@ T = {
     'summary': 'The test pyramid and Arrange Act Assert, node:test with mocks and a fake clock, Jest matchers, test.each, module mocks, spies and fake timers, Vitest and Mocha with Chai and Sinon, seven ways to run a node:test suite and five with Jest, a CI matrix with shards, UI component tests with jsdom, Testing Library and user-event, API route tests with supertest, outgoing HTTP faked with nock, and a bug turned into a regression test.',
     'keywords': ['unit testing', 'node:test', 'Jest', 'Vitest', 'Mocha', 'Chai', 'Sinon', 'mock', 'spy', 'stub', 'fake timers', 'test.each', 'filter', 'tags', 'shard', 'coverage', 'JUnit', 'CI', 'jsdom', 'Testing Library', 'supertest', 'nock', 'TDD', 'regression test'],
     'qa_intro': 'Every example on this page ran with the real runner when the page was built. You will see the same test written for web code and for API code, and the same suite run in many different ways.',
-    'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

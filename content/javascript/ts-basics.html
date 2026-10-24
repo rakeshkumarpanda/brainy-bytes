@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔷 TypeScript</span><span>›</span><span>Chapter 22 of 27</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔷 TypeScript</span><span>›</span><span>Chapter 23 of 28</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🔷</span><div><h1>TypeScript fundamentals</h1><p class="lead">Start TypeScript the modern way: tsc to check and Node.js to run, a strict tsconfig, everyday types and inference, typed functions and overloads, interface and type, unions and narrowing, enums against as const objects, the strict options, and typed results from untyped JSON.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 0 animations</span><span class="chip">🔷 8 type checked examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -196,7 +196,7 @@ console.log(formatId(<span class="n">7</span>), formatId(<span class="s">"ord-7"
 $ node src/main.ts
 got 2 items | failed with 503: down
 #7 ORD-7 none true</pre></div></div>
-<div class="note">A union of objects with a common literal field, such as <code>ok: true</code> or <code>ok: false</code>, is a <b>discriminated union</b>. It is the best way to type API results, test outcomes and state machines, and chapter 23 makes it exhaustive.</div>
+<div class="note">A union of objects with a common literal field, such as <code>ok: true</code> or <code>ok: false</code>, is a <b>discriminated union</b>. It is the best way to type API results, test outcomes and state machines, and chapter 24 makes it exhaustive.</div>
 </section>
 <section class="card reveal jsec" id="enums" data-say="enums"><div class="sec-num">Part 6</div><h2><span class="sec-em">🏷️</span><span>Enums and their modern alternative</span></h2>
 
@@ -227,7 +227,7 @@ console.log(third.toUpperCase());          <span class="c">// could crash at run
 src/main.ts(5,14): error TS7006: Parameter &#x27;s&#x27; implicitly has an &#x27;any&#x27; type.
 src/main.ts(8,7): error TS2322: Type &#x27;number | undefined&#x27; is not assignable to type &#x27;number&#x27;.
   Type &#x27;undefined&#x27; is not assignable to type &#x27;number&#x27;.</pre></div></div>
-<div class="warn">A project without <code>strict</code> lets most of these bugs through, so TypeScript gives a false sense of safety. Turn it on from day one. When moving an old JavaScript project, turn on <code>checkJs</code> and fix files one folder at a time (chapter 24).</div>
+<div class="warn">A project without <code>strict</code> lets most of these bugs through, so TypeScript gives a false sense of safety. Turn it on from day one. When moving an old JavaScript project, turn on <code>checkJs</code> and fix files one folder at a time (chapter 25).</div>
 </section>
 <section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 8</div><h2><span class="sec-em">🎬</span><span>Real world scenario: typed results from untyped JSON</span></h2>
 <div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>
@@ -260,7 +260,7 @@ console.log({ valid: valid.length, rejected, failed, slowest: slowest?.name });<
 
 $ node src/main.ts
 { valid: 2, rejected: 2, failed: [ &#x27;checkout&#x27; ], slowest: &#x27;checkout&#x27; }</pre></div></div>
-<p><code>JSON.parse</code> really returns unknown data, whatever its declared type. A <b>type predicate</b> such as <code>x is Result</code> checks it at run time and tells TypeScript the result, so everything after the filter is fully typed and the bad rows are counted instead of breaking the report. Chapter 25 does the same with Zod.</p>
+<p><code>JSON.parse</code> really returns unknown data, whatever its declared type. A <b>type predicate</b> such as <code>x is Result</code> checks it at run time and tells TypeScript the result, so everything after the filter is fully typed and the bad rows are counted instead of breaking the report. Chapter 26 does the same with Zod.</p>
 </section>
 
   <section class="card reveal" id="real-life"></section>

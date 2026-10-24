@@ -139,6 +139,10 @@ console.log(orderSchema(bad));
 ''', 'Composable validators for API responses'),
 }
 
+LANES = {
+    'pipe': {'t': 'A value flowing through pipe', 'code': 'const pipe = (...fns) => x => fns.reduce((v, f) => f(v), x);\nconst cleanEmail = pipe(\n  s => s.trim(),\n  s => s.toLowerCase(),\n  s => s.replace(/\\+.*@/, "@"),\n);\ncleanEmail("  Asha+test@Mail.com ");', 'lanes': ['Function', 'Value in', 'Value out'], 'tone': [3, 5, 1], 'steps': [{'l': [2, 6], 'v': [['pipe(trim, lower, removeTag)'], [], []], 'm': 'pipe only stores the three functions and returns a new one. Nothing runs yet.'}, {'l': [3, 7], 'v': [['s.trim()'], ['"  Asha+test@Mail.com "'], ['"Asha+test@Mail.com"']], 'm': 'Calling cleanEmail starts reduce. The first function removes the spaces at both ends.'}, {'l': 4, 'v': [['s.toLowerCase()'], ['"Asha+test@Mail.com"'], ['"asha+test@mail.com"']], 'm': "Its output is the next function's input. Now everything is lower case."}, {'l': 5, 'v': [['s.replace(...)'], ['"asha+test@mail.com"'], ['"asha@mail.com"']], 'm': 'The last step removes the +tag part that many mail services allow.'}, {'l': 7, 'v': [['result'], [], ['"asha@mail.com"']], 'm': 'The final value comes out. Each small function is easy to test alone, and the order is read from top to bottom.'}]},
+}
+
 PARTS = [
     part('pure', '💧', 'Pure functions and side effects', '''
 <p>A <b>pure function</b> returns the same output for the same input and changes nothing outside itself: no global variables, no network, no clock, no random numbers. Pure functions are the easiest code in the world to test, because a test is just input and expected output.</p>
@@ -156,6 +160,8 @@ PARTS = [
     part('compose', '🧩', 'Currying, partial application and composition', '''
 <p><b>Currying</b> turns <code>f(a, b, c)</code> into <code>f(a)(b)(c)</code>. Fixing the first few arguments, called <b>partial application</b>, creates specialised functions from a general one. <b>Composition</b> builds a function out of smaller ones: <code>pipe</code> runs them left to right, <code>compose</code> right to left.</p>
 [[curry]]
+<p>Composition is easiest to understand by watching one value travel through it. Each function gets the previous function's output, so every step must take one value and return one value.</p>
+<div class="viz" data-viz="lanes" data-k="pipe"></div>
 ''', kw=['currying', 'curry', 'partial application', 'compose', 'pipe', 'point free', 'function arity', 'fn.length', 'higher order function']),
     part('lazy', '🦥', 'Eager and lazy collections', '''
 <p>Array methods are <b>eager</b>: each step creates a full new array. Iterator helpers from ES2025 are <b>lazy</b>: they pass one item at a time through all steps and stop as soon as <code>take</code> has enough. On large data that can be thousands of times less work.</p>
@@ -292,5 +298,5 @@ T = {
     'summary': 'Pure functions and injecting the clock, freeze, deep freeze and immutable updates, curry, partial application, pipe and compose, eager arrays against lazy iterator helpers, recursion over JSON, trampolines and deep equality, and a composable validator that reports the JSON path of each wrong field.',
     'keywords': ['functional programming', 'pure function', 'side effects', 'immutability', 'Object.freeze', 'currying', 'partial application', 'compose', 'pipe', 'lazy evaluation', 'recursion', 'trampoline', 'validator', 'interview'],
     'qa_intro': 'Functional habits make code testable and test code reliable: inject the clock, never change shared fixtures, and build checks from small reusable functions.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

@@ -189,11 +189,17 @@ console.log("slow:", slow.map(r => `${r.path} ${r.ms}ms`), "| p50 of orders:", r
 ''', 'Parse access logs and find the failures'),
 }
 
+LANES = {
+    'backtrack': {'t': 'Greedy against lazy on the same text', 'code': '"<b>hi</b>".match(/<.+>/)[0];    // greedy\n"<b>hi</b>".match(/<.+?>/)[0];   // lazy', 'lanes': ['Pattern step', 'Matched so far', 'What happens'], 'tone': [3, 1, 5], 'steps': [{'l': 1, 'v': [['<'], ['<'], ['the first character matches <']], 'm': 'Greedy: the engine starts at position 0, where < matches.'}, {'l': 1, 'v': [['.+'], ['<b>hi</b>'], ['.+ takes everything to the end']], 'm': 'A greedy .+ grabs as many characters as it can, all the way to the end of the text.'}, {'l': 1, 'v': [['>'], ['<b>hi</b>'], ['nothing left, > fails']], 'm': 'Now > must match, but the text has ended. That step fails.'}, {'l': 1, 'v': [['backtrack .+'], ['<b>hi</b'], ['give back one character']], 'm': 'The engine backtracks: .+ gives back its last character, so > can try again.'}, {'l': 1, 'v': [['>'], ['<b>hi</b>'], ['> matches, done']], 'm': 'The given back character is >, so the match succeeds with the whole text, from the first < to the last >. Greedy means as long as possible.'}, {'l': 2, 'v': [['< then .+?'], ['<b'], ['lazy takes one character']], 'm': 'Lazy: .+? takes the fewest characters it can, just one, then lets the rest of the pattern try.'}, {'l': 2, 'v': [['>'], ['<b>'], ['> matches, done']], 'm': 'The next character is >, so the match ends at once with just the opening tag, the first three characters. Lazy means as short as possible.'}]},
+}
+
 PARTS = [
     part('engine', '⚙️', 'How the regex engine matches', '''
 <p>JavaScript uses a <b>backtracking</b> engine. It tries the pattern at the first position of the text and, when a step fails, goes back to the last choice it made and tries another. If nothing works, it moves one character on and starts again. Quantifiers are <b>greedy</b> by default: they take as much as they can, then give back. Add <code>?</code> to make them <b>lazy</b>.</p>
 <div class="viz" data-viz="regex"></div>
 [[greedy]]
+<p>The animation shows the same text matched twice. Each "give back one character" is a backtracking step. On a short string that costs nothing, but nested quantifiers on a long string can need millions of them, which is the ReDoS problem later in this chapter.</p>
+<div class="viz" data-viz="lanes" data-k="backtrack"></div>
 <div class="tip">When you can say exactly what is allowed, a negated class such as <code>[^&lt;]*</code> or <code>[^"]*</code> is clearer and much faster than <code>.*?</code>, because the engine never needs to backtrack.</div>
 ''', kw=['regex engine', 'backtracking', 'greedy', 'lazy', 'non greedy', '.*?', 'negated character class', 'match position']),
     part('lookaround', '👀', 'Lookarounds and backreferences', '''
@@ -370,5 +376,5 @@ T = {
     'summary': 'How the backtracking engine matches, greedy against lazy, lookarounds for password rules and backreferences, the m, s, g and y flags and the lastIndex trap, unicode letters and emoji, replacing with groups and functions to mask secrets, a sticky tokeniser, catastrophic backtracking, validation patterns with table driven tests, and parsing access logs.',
     'keywords': ['regex', 'regular expressions', 'backtracking', 'lazy quantifier', 'lookahead', 'lookbehind', 'backreference', 'lastIndex', 'unicode regex', 'replace function', 'masking', 'tokenizer', 'ReDoS', 'validation', 'log parsing', 'interview'],
     'qa_intro': 'Regular expressions check text in assertions, extract ids from pages and logs, mask secrets in reports and find bugs in validation rules. This chapter makes you fluent and safe with them.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

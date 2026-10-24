@@ -256,6 +256,10 @@ test("drops empty filters", () => {
     }, 'npm run -s test:unit && npm run -s test:api', 'Separate scripts for each kind of test', replace=NODE_TEST_TIMES),
 }
 
+DG = {
+    'resolve': {'t': 'How Node.js finds import "zod"', 'w': 940, 'h': 250, 'n': [['imp', 20, 95, 140, 56, 'import "zod"', {'c': 5, 'sh': 'doc'}], ['kind', 200, 95, 150, 56, 'what kind of name', {'c': 3, 'sh': 'diamond'}], ['core', 200, 10, 150, 46, 'node:fs, node:path', {'c': 1, 'sub': 'built in, done'}], ['rel', 200, 190, 150, 46, './cart.js', {'c': 1, 'sub': 'a path, read that file'}], ['nm', 400, 95, 160, 56, 'node_modules/zod', {'c': 0, 'sub': 'this folder, then parents', 'i': 'Node.js looks in ./node_modules, then ../node_modules, and so on up to the root of the disk.'}], ['pkg', 600, 95, 150, 56, 'package.json', {'c': 2, 'sub': '"exports" field', 'i': 'The exports map lists which files outsiders may import, with different files for import and require.'}], ['file', 790, 95, 130, 56, 'index.js', {'c': 4, 'sub': 'loaded once'}]], 'e': [['imp', 'kind'], ['kind', 'core', {'t': 'node:'}], ['kind', 'rel', {'t': './ or ../'}], ['kind', 'nm', {'t': 'bare name'}], ['nm', 'pkg'], ['pkg', 'file', {'t': 'import condition'}]], 'st': [[['imp', 'kind', 'imp>kind'], 'Node.js first looks at the shape of the name.'], [['core', 'kind>core'], 'A name starting with node: is a built in module. Nothing is read from disk.'], [['rel', 'kind>rel'], 'A name starting with ./ or ../ is a file path, relative to the importing file.'], [['nm', 'kind>nm'], 'A bare name such as zod is a package. Node.js looks in node_modules, then in each parent folder.'], [['pkg', 'nm>pkg'], 'Inside the package, the "exports" field of package.json says which file to use for import and which for require.'], [['file', 'pkg>file'], 'That file is loaded and cached. Every later import of "zod" gets the same module.']]},
+}
+
 PARTS = [
     part('esm', '📦', 'ES modules: import and export', '''
 <p>A <b>module</b> is a file with its own scope. Nothing inside it is visible to other files unless it is <b>exported</b>, and nothing from outside is available unless it is <b>imported</b>. This keeps large codebases and test suites tidy: page objects, helpers and test data each live in their own file.</p>
@@ -288,6 +292,8 @@ PARTS = [
     part('npm', '📥', 'npm and package.json', '''
 <p><b>npm</b> installs packages from the npm registry into <code>node_modules</code> and records them in <b>package.json</b>. The <b>lock file</b> (<code>package-lock.json</code>) pins the exact version of every package, so every laptop and CI machine installs the same thing.</p>
 [[package-json]]
+<p>When a file says <code>import { z } from "zod"</code>, Node.js has to turn that short name into a real file on disk. Knowing the steps explains the common "Cannot find package" and "not exported" errors, and why deleting <code>node_modules</code> and running <code>npm ci</code> fixes so many strange problems.</p>
+<div class="viz" data-viz="flow" data-k="resolve"></div>
 <h3>Version ranges</h3>
 <p>Versions follow <b>semantic versioning</b>: <code>MAJOR.MINOR.PATCH</code>. A major bump may break your code. A caret <code>^</code> allows new minor and patch versions. A tilde <code>~</code> allows only new patches. No symbol means that exact version. Below 1.0.0 the caret is stricter: <code>^0.4.2</code> allows only <code>0.4.x</code>, because in a 0.x package every minor release may break things.</p>
 [[semver]]
@@ -469,5 +475,5 @@ T = {
     'summary': 'Named and default exports, dynamic import, JSON modules, CommonJS and how it mixes with ES modules, package.json scripts and dependencies, semantic version ranges, npm ci and the lock file, TypeScript types and the type checker, ESLint and Prettier on real code, environment variables with --env-file, and a test project with separate unit and API scripts.',
     'keywords': ['import', 'export', 'ES modules', 'CommonJS', 'require', 'npm', 'package.json', 'semver', 'package-lock.json', 'npm ci', 'TypeScript', 'tsc', 'ESLint', 'Prettier', 'process.env', '.env', 'project structure'],
     'qa_intro': 'Every automation framework is a Node.js project: modules, npm scripts, TypeScript, lint rules and environment config are what you touch on day one.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }
