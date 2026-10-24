@@ -2941,6 +2941,25 @@ function javaNewModules() {
         { id: "scenario", title: "Real world scenario: a retry helper", emoji: "🎬", group: "Chapter 20", keywords: ["retry", "flaky test", "Supplier", "Predicate", "FluentWait", "Awaitility", "generic helper", "higher order function"] },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "java-streams", title: "Streams, Collectors, Optional and Gatherers", emoji: "🌊", page: "content/java/java-streams.html",
+        summary: "What a stream pipeline is, laziness and short circuits with an interactive pipeline, creating streams, intermediate and terminal operations, toList versus collect, collectors for grouping and summarising, primitive streams, Optional and its traps, stream gatherers (Java 24) including your own, parallel streams, and a nightly test report built with collectors.",
+        keywords: ["stream", "Streams API", "filter", "map", "flatMap", "collect", "Collectors", "groupingBy", "Optional", "gatherers", "parallel stream", "IntStream", "Java 8", "Java 24"],
+        added: "2026-10-24",
+        sections: [
+        { id: "what", title: "What a stream is", emoji: "🌊", group: "Chapter 21", keywords: ["stream", "pipeline", "source", "intermediate operation", "terminal operation", "declarative", "internal iteration"] },
+        { id: "lazy", title: "Laziness and short circuits", emoji: "😴", group: "Chapter 21", keywords: ["lazy evaluation", "short circuit", "findFirst", "limit", "IllegalStateException", "stream has already been operated upon or closed", "vertical processing"] },
+        { id: "sources", title: "Creating streams", emoji: "🚰", group: "Chapter 21", keywords: ["Stream.of", "Arrays.stream", "IntStream.range", "rangeClosed", "Stream.iterate", "Stream.generate", "chars", "ofNullable", "infinite stream", "Files.lines"] },
+        { id: "intermediate", title: "Intermediate operations", emoji: "🔧", group: "Chapter 21", keywords: ["filter", "map", "flatMap", "mapMulti", "distinct", "sorted", "limit", "skip", "takeWhile", "dropWhile", "peek", "stateful operation"] },
+        { id: "terminal", title: "Terminal operations", emoji: "🏁", group: "Chapter 21", keywords: ["forEach", "collect", "toList", "reduce", "count", "min", "max", "anyMatch", "allMatch", "noneMatch", "findFirst", "findAny", "toArray", "UnsupportedOperationException"] },
+        { id: "collectors", title: "Collectors: grouping and summarising", emoji: "🧺", group: "Chapter 21", keywords: ["Collectors", "groupingBy", "counting", "partitioningBy", "mapping", "averagingInt", "joining", "toMap", "merge function", "IllegalStateException duplicate key", "summarizingInt", "teeing", "filtering", "TreeMap"] },
+        { id: "primitive", title: "Primitive streams", emoji: "🔢", group: "Chapter 21", keywords: ["IntStream", "LongStream", "DoubleStream", "mapToInt", "boxed", "sum", "average", "summaryStatistics", "boxing", "autoboxing cost"] },
+        { id: "optional", title: "Optional", emoji: "🎁", group: "Chapter 21", keywords: ["Optional", "Optional.of", "ofNullable", "empty", "orElse", "orElseGet", "orElseThrow", "ifPresentOrElse", "Optional.or", "NoSuchElementException", "null handling"] },
+        { id: "gatherers", title: "Stream gatherers (Java 24)", emoji: "🪣", group: "Chapter 21", keywords: ["gatherers", "Gatherer", "gather", "windowFixed", "windowSliding", "scan", "fold", "mapConcurrent", "JEP 485", "Java 24", "custom intermediate operation"] },
+        { id: "parallel", title: "Parallel streams", emoji: "⚡", group: "Chapter 21", keywords: ["parallel stream", "parallel()", "ForkJoinPool", "common pool", "thread safety", "side effects", "race condition", "forEachOrdered", "findAny"] },
+        { id: "scenario", title: "Real world scenario: a nightly test report", emoji: "🎬", group: "Chapter 21", keywords: ["test report", "flaky test detection", "groupingBy", "averagingInt", "pass rate", "analytics", "printf"] },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
