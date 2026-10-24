@@ -208,7 +208,7 @@ PARTS = [
     part('contexts', '🏗️', 'Creation phase, hoisting and the scope chain', '''
 <p>Before a function runs, the engine scans it and sets up its bindings. <code>var</code> names start as <code>undefined</code>, function declarations are ready to call, and <code>let</code>, <code>const</code> and <code>class</code> exist but sit in the <b>temporal dead zone</b> until their line runs. This scan is what people call <b>hoisting</b>.</p>
 [[contexts]]
-<p>Scope is <b>lexical</b>: a function looks up names in the place it was written, then outwards, never in the place it was called from. Closures (chapter 4) are this rule plus the fact that the outer variables stay alive as long as the inner function does.</p>
+<p>Scope is <b>lexical</b>: a function looks up names in the place it was written, then outwards, never in the place it was called from. Closures ({{ch:js-functions}}) are this rule plus the fact that the outer variables stay alive as long as the inner function does.</p>
 ''', kw=['creation phase', 'hoisting', 'temporal dead zone', 'TDZ', 'lexical scope', 'scope chain', 'lexical environment', 'var in loops', 'closure', 'let per iteration']),
     part('this', '👉', 'this in depth: five rules and a precedence', '''
 <p>The value of <code>this</code> is decided by <b>how a function is called</b>, not where it is written. Five rules cover every case, and when several apply, the one higher in this list wins.</p>
@@ -219,7 +219,7 @@ PARTS = [
 ''', qa=['Playwright', 'Selenium'], qa_why='Page object methods passed to forEach, retry helpers or event handlers lose this, which crashes the test.',
         kw=['this', 'default binding', 'implicit binding', 'explicit binding', 'call', 'apply', 'bind', 'new', 'arrow function this', 'class field arrow', 'lost this', 'strict mode']),
     part('loop', '🔄', 'The Node.js event loop, phase by phase', '''
-<p>Chapter 10 showed the browser view: microtasks first, then one task. Node.js splits the task side into <b>phases</b> that run in a fixed order on every turn: <b>timers</b> (setTimeout and setInterval), <b>poll</b> (finished I/O such as files and sockets) and <b>check</b> (setImmediate). Between every callback, Node.js empties the <code>process.nextTick</code> queue and then the promise microtask queue.</p>
+<p>{{Ch:js-async}} showed the browser view: microtasks first, then one task. Node.js splits the task side into <b>phases</b> that run in a fixed order on every turn: <b>timers</b> (setTimeout and setInterval), <b>poll</b> (finished I/O such as files and sockets) and <b>check</b> (setImmediate). Between every callback, Node.js empties the <code>process.nextTick</code> queue and then the promise microtask queue.</p>
 <div class="viz" data-viz="lanes" data-k="phases"></div>
 [[loop]]
 [[await-ticks]]
@@ -230,12 +230,12 @@ PARTS = [
 <p>V8, the engine in Chrome and Node.js, first turns your code into bytecode and runs it with the <b>Ignition</b> interpreter. Functions that run often are compiled to machine code by the optimising compilers (<b>Sparkplug</b>, <b>Maglev</b> and <b>TurboFan</b>). The optimised code makes guesses, such as "this object always has x then y". If a guess turns out wrong, V8 <b>deoptimises</b> and falls back to slower code.</p>
 [[shapes]]
 <p>Each property access remembers the shapes it has seen in an <b>inline cache</b>. One shape is monomorphic and fastest, a few is polymorphic, and many is megamorphic and slow. In practice: create objects with all their properties in the constructor, in the same order, and avoid <code>delete</code> on hot objects.</p>
-<div class="tip">Do not tune for the engine before you measure (chapter 27). Shapes matter in tight loops over millions of objects, such as parsing a large log file, and almost never in test code.</div>
+<div class="tip">Do not tune for the engine before you measure ({{ch:js-expert}}). Shapes matter in tight loops over millions of objects, such as parsing a large log file, and almost never in test code.</div>
 ''', kw=['V8', 'Ignition', 'TurboFan', 'Maglev', 'Sparkplug', 'JIT', 'bytecode', 'hidden class', 'shape', 'map', 'inline cache', 'monomorphic', 'megamorphic', 'deoptimisation', 'delete']),
     part('gc', '🧹', 'Garbage collection', '''
 <p>JavaScript frees memory for you. V8 uses a <b>generational</b> collector because most objects die young. New objects go into the small <b>young generation</b>, which is cleaned often with a fast copying "scavenge". Objects that survive twice move to the <b>old generation</b>, which is cleaned less often with <b>mark and sweep</b>: mark everything reachable from the roots (globals and the stack), then free the rest. Most of the work happens in parallel and in small steps, so pauses stay short.</p>
 [[gc]]
-<div class="qa-box">If memory keeps rising in a long test run, take two heap snapshots in Chrome DevTools (Memory tab) or with <code>v8.writeHeapSnapshot()</code> and compare them. The objects that grow between the snapshots, and the "retainers" that hold them, point to the leak (chapter 27).</div>
+<div class="qa-box">If memory keeps rising in a long test run, take two heap snapshots in Chrome DevTools (Memory tab) or with <code>v8.writeHeapSnapshot()</code> and compare them. The objects that grow between the snapshots, and the "retainers" that hold them, point to the leak ({{ch:js-expert}}).</div>
 ''', qa=True, qa_why='Soak tests and long UI sessions expose memory leaks, and heap snapshots are how testers report them precisely.',
         kw=['garbage collection', 'generational GC', 'young generation', 'old generation', 'scavenge', 'mark and sweep', 'roots', 'reachability', 'heap snapshot', 'v8.getHeapStatistics', 'memory']),
     part('scenario', '🎬', 'Real world scenario: a crash only in the retry helper', '''

@@ -218,12 +218,18 @@ for (const [kind, list] of Object.entries(report)) console.log(kind.padEnd(21), 
 ''', 'Triage failures by error type'),
 }
 
+LANES = {
+    'unwind': {'t': 'A thrown error travels down the call stack', 'code': 'function readConfig() { throw new ConfigError("missing url"); }\nfunction startSuite() {\n  try { readConfig(); }\n  finally { console.log("cleanup"); }\n}\ntry { startSuite(); }\ncatch (e) { console.log("caught", e.code); }', 'lanes': ['Call stack', 'Error in flight', 'Console'], 'tone': [2, 6, 4], 'steps': [{'l': 6, 'v': [['global', 'startSuite()'], [], []], 'm': 'The script calls startSuite inside a try block.'}, {'l': 3, 'v': [['global', 'startSuite()', 'readConfig()'], [], []], 'm': 'startSuite calls readConfig inside its own try block.'}, {'l': 1, 'v': [['global', 'startSuite()', 'readConfig()'], ['ConfigError: missing url'], []], 'm': 'throw creates the error and stops readConfig at once. No line after it runs.'}, {'l': 3, 'v': [['global', 'startSuite()'], ['ConfigError: missing url'], []], 'm': 'readConfig has no try, so its frame is removed and the error moves down to startSuite.'}, {'l': 4, 'v': [['global', 'startSuite()'], ['ConfigError: missing url'], ['cleanup']], 'm': 'startSuite has a try with only a finally. finally always runs, then the error keeps travelling.'}, {'l': 7, 'v': [['global'], [], ['cleanup', 'caught CONFIG']], 'm': 'The outer catch stops the error. The program carries on normally after it. With no catch at all, the error would reach the top and end the program.'}]},
+}
+
 PARTS = [
     part('types', '🧯', 'The error types and building your own', '''
 <p>Every error has a <code>name</code>, a <code>message</code> and a <code>stack</code>. The built in types tell you what kind of mistake happened, which narrows the search before you read a single line of code.</p>
 [[builtin]]
 <p>For your own code, a small hierarchy of error classes lets callers catch a whole family or one exact kind. Give each error a stable <code>code</code> for programs to check, a human <code>message</code>, and a <code>cause</code> when you wrap a lower level error.</p>
 [[custom]]
+<p>When an error is thrown, the engine stops the current function and looks for a <code>catch</code> in it. If there is none, it removes that function from the call stack and looks in the caller, and so on. This is called <b>unwinding</b> the stack. Every <code>finally</code> on the way still runs, which is why clean up code belongs there.</p>
+<div class="viz" data-viz="lanes" data-k="unwind"></div>
 <div class="tip">Check the <code>code</code> or the class, never the message text. Messages change with translations and wording fixes, codes do not.</div>
 ''', qa=True, qa_why='Test frameworks, HTTP clients and drivers all throw typed errors, and good helpers in a test framework do the same.',
         kw=['Error', 'TypeError', 'ReferenceError', 'RangeError', 'SyntaxError', 'URIError', 'AggregateError', 'custom error', 'extends Error', 'error code', 'cause', 'instanceof', 'new.target']),
@@ -394,5 +400,5 @@ T = {
     'summary': 'Built in error types and custom error classes with codes and causes, errors in callbacks and promises, unhandled rejections and global handlers, errors as values, inspecting values and starting the debuggers, JSON logs with a request id through AsyncLocalStorage, source maps for TypeScript stack traces, and sorting test failures by error type.',
     'keywords': ['errors', 'custom error', 'error cause', 'AggregateError', 'unhandled rejection', 'uncaughtException', 'debugging', 'debugger', 'trace viewer', 'util.inspect', 'structured logging', 'AsyncLocalStorage', 'source maps', 'triage', 'interview'],
     'qa_intro': 'A tester spends much of the day reading failures. This chapter shows how errors are built, how to debug them fast, and how to sort a red pipeline into product, test and environment problems.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

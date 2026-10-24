@@ -220,7 +220,7 @@ PARTS = [
     part('narrowing', '🔍', 'Unions and narrowing', '''
 <p>A <b>union</b> such as <code>string | number</code> means "one of these". Before you use a union, you <b>narrow</b> it with a check that TypeScript understands: <code>typeof</code>, <code>instanceof</code>, <code>in</code>, equality, or a shared literal field. Inside each branch, TypeScript knows the exact type.</p>
 [[narrowing]]
-<div class="note">A union of objects with a common literal field, such as <code>ok: true</code> or <code>ok: false</code>, is a <b>discriminated union</b>. It is the best way to type API results, test outcomes and state machines, and chapter 23 makes it exhaustive.</div>
+<div class="note">A union of objects with a common literal field, such as <code>ok: true</code> or <code>ok: false</code>, is a <b>discriminated union</b>. It is the best way to type API results, test outcomes and state machines, and {{ch:ts-advanced}} makes it exhaustive.</div>
 ''', qa=True, qa_why='API responses are usually "success or error", which discriminated unions model exactly.',
         kw=['union type', 'narrowing', 'typeof', 'instanceof', 'in operator', 'equality narrowing', 'discriminated union', 'control flow analysis', 'type guard']),
     part('enums', '🏷️', 'Enums and their modern alternative', '''
@@ -230,13 +230,13 @@ PARTS = [
     part('strict', '🛡️', 'Strict options', '''
 <p><code>"strict": true</code> turns on a family of checks. The two that catch the most bugs are <b>strictNullChecks</b>, which makes you handle <code>undefined</code> and <code>null</code>, and <b>noImplicitAny</b>, which stops untyped parameters. <code>noUncheckedIndexedAccess</code> goes further: reading an array element or a record key may give <code>undefined</code>.</p>
 [[strict]]
-<div class="warn">A project without <code>strict</code> lets most of these bugs through, so TypeScript gives a false sense of safety. Turn it on from day one. When moving an old JavaScript project, turn on <code>checkJs</code> and fix files one folder at a time (chapter 24).</div>
+<div class="warn">A project without <code>strict</code> lets most of these bugs through, so TypeScript gives a false sense of safety. Turn it on from day one. When moving an old JavaScript project, turn on <code>checkJs</code> and fix files one folder at a time ({{ch:ts-projects}}).</div>
 ''', qa=True, qa_why='Strict null checks catch the "cannot read properties of undefined" errors that make tests crash.',
         kw=['strict', 'strictNullChecks', 'noImplicitAny', 'noUncheckedIndexedAccess', 'exactOptionalPropertyTypes', 'tsconfig options', 'undefined', 'null']),
     part('scenario', '🎬', 'Real world scenario: typed results from untyped JSON', '''
 <div class="scenario"><b>The situation</b>A dashboard script reads test results from a JSON file written by another tool. Some rows have typos such as "pased" or a duration stored as a string.</div>
 [[scenario]]
-<p><code>JSON.parse</code> really returns unknown data, whatever its declared type. A <b>type predicate</b> such as <code>x is Result</code> checks it at run time and tells TypeScript the result, so everything after the filter is fully typed and the bad rows are counted instead of breaking the report. Chapter 25 does the same with Zod.</p>
+<p><code>JSON.parse</code> really returns unknown data, whatever its declared type. A <b>type predicate</b> such as <code>x is Result</code> checks it at run time and tells TypeScript the result, so everything after the filter is fully typed and the bad rows are counted instead of breaking the report. {{Ch:ts-testing}} does the same with Zod.</p>
 ''', qa=True, kw=['unknown', 'JSON.parse', 'type predicate', 'is', 'runtime validation', 'type guard', 'filter', 'test results']),
 ]
 
