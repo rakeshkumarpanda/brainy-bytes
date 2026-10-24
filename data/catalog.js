@@ -3013,6 +3013,21 @@ function javaNewModules() {
         { id: "scenario", title: "Real world scenario: a service that misbehaves in a small container", emoji: "🎬", group: "Chapter 24", keywords: ["container", "Docker", "MaxRAMPercentage", "JVM flags", "ManagementFactory", "GarbageCollectorMXBean", "HeapDumpOnOutOfMemoryError", "JVM tuning", "production troubleshooting"] },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "java-annotations-modules", title: "Annotations, reflection and modules", emoji: "🏷️", page: "content/java/java-annotations-modules.html",
+        summary: "Built in annotations, writing a custom @Test and a tiny test runner, reflection on records, InaccessibleObjectException, Java 26 and 27 final field warnings, a logging dynamic proxy, two real modules with exports, jdeps and jlink, import module in Java 25 and name clashes, and an annotation based validator.",
+        keywords: ["annotations", "custom annotation", "reflection", "dynamic proxy", "JPMS", "module-info", "jlink", "jdeps", "import module", "JEP 511", "JEP 500", "Bean Validation", "Java 25", "Java 26"],
+        added: "2026-10-24",
+        sections: [
+        { id: "builtin", title: "Annotations: labels the compiler and tools can read", emoji: "🏷️", group: "Chapter 25", keywords: ["annotation", "@Override", "@Deprecated", "forRemoval", "@SuppressWarnings", "@FunctionalInterface", "@SafeVarargs", "metadata"] },
+        { id: "custom", title: "Writing your own annotation", emoji: "🧪", group: "Chapter 25", keywords: ["@interface", "custom annotation", "@Retention", "RetentionPolicy.RUNTIME", "@Target", "ElementType", "annotation elements", "default values", "test runner", "JUnit"] },
+        { id: "reflection", title: "Reflection: looking at classes while the program runs", emoji: "🔍", group: "Chapter 25", keywords: ["reflection", "Class object", "getDeclaredMethods", "getDeclaredField", "Method.invoke", "getRecordComponents", "setAccessible", "InaccessibleObjectException", "final field mutation", "JEP 500", "--enable-final-field-mutation"] },
+        { id: "proxy", title: "Dynamic proxies: how mocks and frameworks wrap your objects", emoji: "🪞", group: "Chapter 25", keywords: ["dynamic proxy", "Proxy.newProxyInstance", "InvocationHandler", "AOP", "logging wrapper", "Mockito", "Spring", "@Transactional", "Class-File API"] },
+        { id: "modules", title: "The module system (Java 9)", emoji: "📦", group: "Chapter 25", keywords: ["JPMS", "module system", "module-info.java", "requires", "exports", "opens", "requires transitive", "module path", "jdeps", "jlink", "custom runtime", "ServiceLoader", "strong encapsulation"] },
+        { id: "importmodule", title: "Module import declarations (Java 25)", emoji: "📥", group: "Chapter 25", keywords: ["import module", "module import declaration", "JEP 511", "Java 25", "java.base", "ambiguous import", "single type import", "compact source files"] },
+        { id: "scenario", title: "Real world scenario: validating a sign up form", emoji: "🎬", group: "Chapter 25", keywords: ["validation", "Bean Validation", "Jakarta Validation", "@NotBlank", "record component annotations", "form validation", "API input checks"] },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
