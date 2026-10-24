@@ -272,13 +272,105 @@ def build_page(name, mod):
     return OUT / mod.FILE, t
 
 
+# ---------- the subject catalog (data/catalog.js) ----------
+CATALOG = ROOT / 'data' / 'catalog.js'
+NEW_MODULE = dict(id='mt-modern', title='Modern testing practice', emoji='🧭',
+                  blurb='How testing works in Agile and DevOps teams today, and how AI is changing the job.')
+# where each new page sits: after the topic whose page is named, or in the new module
+PLACE = {'static-testing.html': ('after', 'apps-environments.html'), 'specialised-testing.html': ('after', 'non-functional-testing.html'),
+         'test-metrics.html': ('after', 'test-plan.html'), 'agile-devops-testing.html': ('module', None), 'ai-in-testing.html': ('module', None)}
+INTRO_OLD = "intro: 'Ten chapters that follow the manual testing notes in order"
+INTRO_NEW = ("intro: 'Fifteen chapters, from what testing is to the test plan, followed by the newer practices every tester now needs: static testing and reviews, "
+             "security, accessibility, localization and mobile testing, estimation and metrics, Agile and DevOps testing, and AI in testing. Every diagram is an animation you can step through, "
+             "every idea has an everyday example, and each chapter has hands on labs, quizzes from easy to expert, number practice and a narrator in six languages. "
+             "The last chapter collects the interview questions asked most, with hints and full answers.',")
+
+
+def js(v):
+    return json.dumps(v, ensure_ascii=False)
+
+
+def kw_of(sec_):
+    words = [re.sub(r'<[^>]+>', '', b).strip() for b in re.findall(r'<b>(.*?)</b>', sec_['html'])]
+    out = []
+    for w in [sec_['title']] + words:
+        w = H.unescape(w).strip(' .:,"')
+        if 2 < len(w) <= 40 and w.lower() not in [x.lower() for x in out]:
+            out.append(w)
+    return out[:10]
+
+
+def sec_line(x):
+    return f"          {{ id: {js(x['id'])}, title: {js(H.unescape(x['title']))}, emoji: {js(x['emoji'])}, group: 'Lesson', keywords: {js(kw_of(x))} }}, // mt2"
+
+
+def topic_block(mod):
+    secs = mod.SECTIONS
+    kws = []
+    for x in secs:
+        for k in kw_of(x):
+            if k.lower() not in [y.lower() for y in kws]:
+                kws.append(k)
+    lines = ['      { /* mt2-block-start */', f'        id: {js(mod.TOPIC)}, title: {js(mod.TITLE)}, emoji: {js(mod.EMOJI)},',
+             f'        page: {js("content/manual-testing/" + mod.FILE)},', f'        summary: {js(mod.DESCRIPTION)},',
+             f'        keywords: {js(kws[:24])},', '        added: "2026-10-24",', '        sections: [']
+    lines += [sec_line(x).replace(' // mt2', '') for x in secs]
+    lines += ["          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },",
+              "          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }", '        ]', '      } /* mt2-block-end */']
+    return '\n'.join(lines)
+
+
+def topic_end(t, page):
+    i = t.find(f'page: "content/manual-testing/{page}"')
+    assert i > 0, page
+    j = t.find("{ id: 'numbers'", i)
+    k = t.find('\n      }', j) + len('\n      }')
+    return k
+
+
+def update_catalog(pages, adds):
+    t = CATALOG.read_text()
+    t = re.sub(r',\n    \{ /\* mt2-module-start \*/[\s\S]*?/\* mt2-module-end \*/', '', t)
+    t = re.sub(r'(,\n|\n)      \{ /\* mt2-block-start \*/[\s\S]*?\} /\* mt2-block-end \*/', '', t)
+    t = '\n'.join(l for l in t.split('\n') if not l.endswith('// mt2'))
+    for mod in adds:
+        i = t.find(f'page: "content/manual-testing/{mod.FILE}"')
+        j = t.find("          { id: 'quiz'", i)
+        t = t[:j] + '\n'.join(sec_line(x) for x in mod.SECTIONS) + '\n' + t[j:]
+    for mod in pages:
+        how, where = PLACE[mod.FILE]
+        if how != 'after':
+            continue
+        k = topic_end(t, where)
+        if t[k] == ',':
+            t = t[:k + 1] + '\n' + topic_block(mod) + ',' + t[k + 1:]
+        else:
+            t = t[:k] + ',\n' + topic_block(mod) + t[k:]
+    mods = [m for m in pages if PLACE[m.FILE][0] == 'module']
+    order = ['agile-devops-testing.html', 'ai-in-testing.html']
+    mods.sort(key=lambda m: order.index(m.FILE))
+    a = t.find('function mtModules()')
+    b = t.find('\n  ];', a)
+    block = (',\n    { /* mt2-module-start */\n'
+             f'      id: {js(NEW_MODULE["id"])}, title: {js(NEW_MODULE["title"])}, emoji: {js(NEW_MODULE["emoji"])}, blurb: {js(NEW_MODULE["blurb"])},\n'
+             '      topics: [\n' + ',\n'.join(topic_block(m) for m in mods) + '\n      ]\n    } /* mt2-module-end */')
+    t = t[:b] + block + t[b:]
+    if INTRO_OLD in t:
+        i = t.find(INTRO_OLD)
+        j = t.find("',\n", i) + 3
+        t = t[:i] + INTRO_NEW + '\n' + t[j:]
+    CATALOG.write_text(t)
+
+
 def main():
     only_check = '--check' in sys.argv
-    outs = []
+    outs, pmods, amods = [], [], []
     for p in sorted((HERE / 'pages').glob('*.py')):
-        outs.append(build_page(p.stem, load(p)))
+        pmods.append(load(p))
+        outs.append(build_page(p.stem, pmods[-1]))
     for p in sorted((HERE / 'adds').glob('*.py')):
-        outs.append(apply_add(p.stem, load(p)))
+        amods.append(load(p))
+        outs.append(apply_add(p.stem, amods[-1]))
     if '—' in (HERE / 'widgets.js').read_text():
         problems.append('widgets.js: em dash')
     if problems:
@@ -287,6 +379,8 @@ def main():
     if only_check:
         print('checks passed')
         return
+    update_catalog(pmods, amods)
+    print('wrote data/catalog.js')
     done = {}
     for path, s in outs:
         done[path] = s
