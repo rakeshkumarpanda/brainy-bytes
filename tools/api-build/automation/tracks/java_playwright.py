@@ -743,6 +743,218 @@ assertTrue(gql.path("errors").isMissingNode());
             ],
         },
         {
+            'id': 'essentials', 'title': 'Real project essentials: environments, secrets, test data, logging and cleanup', 'emoji': '🧳', 'level': 'Intermediate',
+            'blocks': [
+                ('p', 'A real Playwright for Java suite runs in several places, must not print secrets, creates unique data so parallel CI jobs never clash, says exactly what went wrong when it fails, and removes what it created. Playwright\'s context options also handle the awkward parts of real environments, such as self signed certificates and corporate proxies.'),
+                ('code', 'java', 'src/test/java/tests/EssentialsTest.java', '''
+package tests;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microsoft.playwright.APIRequest;
+import com.microsoft.playwright.APIRequestContext;
+import com.microsoft.playwright.APIResponse;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.options.RequestOptions;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class EssentialsTest {
+
+    private static final Logger LOG = Logger.getLogger("api");
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    private Playwright playwright;
+    private APIRequestContext api;
+    private String token;
+    private final List<Integer> created = new ArrayList<>();
+
+    static String setting(String property, String envVar, String fallback) {
+        return Optional.ofNullable(System.getProperty(property))
+            .or(() -> Optional.ofNullable(System.getenv(envVar)))
+            .filter(v -> !v.isBlank())
+            .orElse(fallback);
+    }
+
+    @BeforeAll
+    void start() throws Exception {
+        playwright = Playwright.create();
+        api = playwright.request().newContext(new APIRequest.NewContextOptions()
+            .setBaseURL(setting("baseUrl", "BASE_URL", "https://restful-booker.herokuapp.com"))
+            .setExtraHTTPHeaders(Map.of("Accept", "application/json",
+                                        "X-Test-Run", setting("runId", "GITHUB_RUN_ID", "local")))
+            .setIgnoreHTTPSErrors("1".equals(System.getenv("QA_SELF_SIGNED")))   // QA only, never production
+            .setTimeout(10_000));
+        APIResponse login = api.post("/auth", RequestOptions.create().setData(Map.of(
+            "username", setting("apiUser", "API_USER", "admin"),
+            "password", setting("apiPassword", "API_PASSWORD", "password123"))));   // practice API default only
+        token = JSON.readTree(login.text()).get("token").asText();
+    }
+
+    @AfterEach
+    void cleanUp() {
+        created.forEach(id -> api.delete("/booking/" + id, RequestOptions.create().setHeader("Cookie", "token=" + token)));
+        created.clear();
+    }
+
+    @AfterAll
+    void stop() {
+        api.dispose();
+        playwright.close();
+    }
+
+    /** Logs every call, and puts the whole response into the failure message when the status is wrong. */
+    private JsonNode expectStatus(APIResponse res, int status) throws Exception {
+        LOG.info(() -> res.url() + " -> " + res.status());
+        assertEquals(status, res.status(), () -> "Unexpected status from " + res.url() + "\\n" + res.text());
+        return JSON.readTree(res.text());
+    }
+
+    @Test
+    void uniqueGuestRoundTrip() throws Exception {
+        String guest = "Guest-" + UUID.randomUUID().toString().substring(0, 8);
+        int price = ThreadLocalRandom.current().nextInt(500, 25_000);
+        Map<String, Object> data = Map.of(
+            "firstname", guest, "lastname", "Essentials", "totalprice", price, "depositpaid", true,
+            "bookingdates", Map.of("checkin", "2026-12-20", "checkout", "2026-12-27"));
+
+        int id = expectStatus(api.post("/booking", RequestOptions.create().setData(data)), 200).get("bookingid").asInt();
+        created.add(id);
+
+        JsonNode stored = expectStatus(api.get("/booking/" + id), 200);
+        assertEquals(guest, stored.get("firstname").asText());
+        assertEquals(price, stored.get("totalprice").asInt());
+    }
+}
+''', {'save': 'src/test/java/tests/EssentialsTest.java'}),
+                ('code', 'bash', 'Run it', '''
+mvn test -Dtest=EssentialsTest -DbaseUrl=http://localhost:3001
+BASE_URL=https://qa.booker.example API_PASSWORD="$QA_PASSWORD" mvn test
+'''),
+                ('table', ['Context option', 'Real situation'], [
+                    ['<code>setBaseURL</code>', 'local, QA and staging from one suite'],
+                    ['<code>setExtraHTTPHeaders</code>', 'a run id so backend logs can be filtered by CI run'],
+                    ['<code>setIgnoreHTTPSErrors</code>', 'QA servers with self signed certificates'],
+                    ['<code>setHttpCredentials</code>', 'staging behind Basic auth'],
+                    ['<code>setProxy</code>', 'corporate networks that force a proxy'],
+                    ['<code>setClientCertificates</code>', 'partner and banking APIs with mutual TLS'],
+                    ['<code>setStorageStatePath</code>', 'reuse cookies from a login step instead of logging in for every class'],
+                ]),
+                ('tip', 'The lambda form <code>assertEquals(expected, actual, () -&gt; message)</code> builds the message only when the check fails, so reading the body costs nothing on passing tests.'),
+            ],
+        },
+        {
+            'id': 'latest', 'title': 'What is new in Java, JUnit 6 and Playwright, and how it helps at work', 'emoji': '🆕', 'level': 'Expert',
+            'blocks': [
+                ('table', ['Feature', 'Since', 'How it helps an API tester'], [
+                    ['Java 25 LTS', 'September 2025', 'The new long term support release. Compact source files and instance <code>main</code> methods make small API scripts much shorter'],
+                    ['Records and pattern matching for <code>switch</code>', 'Java 21', 'Model responses as records and branch on status codes cleanly'],
+                    ['JUnit 6', 'September 2025', 'One version number for all JUnit modules, Java 17 as the minimum, and nullness annotations on the API'],
+                    ['<code>@ParameterizedClass</code>', 'JUnit 5.13 and 6', 'Run a whole test class once per environment or per user role'],
+                    ['Playwright for Java 1.64', '2026', 'Keep the Java bindings in step with the Node, Python and .NET releases your UI team uses'],
+                ]),
+                ('code', 'java', 'src/test/java/tests/RoleMatrixTest.java', '''
+package tests;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.microsoft.playwright.APIRequest;
+import com.microsoft.playwright.APIRequestContext;
+import com.microsoft.playwright.APIResponse;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.options.RequestOptions;
+import java.util.Base64;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.EnumSource;
+
+@ParameterizedClass(name = "as {0}")
+@EnumSource(RoleMatrixTest.Role.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class RoleMatrixTest {
+
+    enum Role { ADMIN, WRONG_PASSWORD, ANONYMOUS }
+
+    sealed interface Outcome permits Allowed, Refused { }
+    record Allowed(int status) implements Outcome { }
+    record Refused(int status) implements Outcome { }
+
+    @Parameter
+    Role role;
+
+    private Playwright playwright;
+    private APIRequestContext api;
+
+    @BeforeAll
+    void start() {
+        playwright = Playwright.create();
+        api = playwright.request().newContext(new APIRequest.NewContextOptions()
+            .setBaseURL(System.getProperty("baseUrl", "https://restful-booker.herokuapp.com")));
+    }
+
+    @AfterAll
+    void stop() { api.dispose(); playwright.close(); }
+
+    private RequestOptions asRole() {
+        RequestOptions o = RequestOptions.create().setData(java.util.Map.of("additionalneeds", "Dinner"));
+        return switch (role) {
+            case ADMIN -> o.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin:password123".getBytes()));
+            case WRONG_PASSWORD -> o.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin:nope".getBytes()));
+            case ANONYMOUS -> o;
+        };
+    }
+
+    @Test
+    void patchIsOnlyAllowedForAdmin() {
+        APIResponse res = api.patch("/booking/1", asRole());
+        Outcome outcome = res.ok() ? new Allowed(res.status()) : new Refused(res.status());
+
+        String verdict = switch (outcome) {
+            case Allowed a when role == Role.ADMIN -> "ok";
+            case Refused r when role != Role.ADMIN && r.status() == 403 -> "ok";
+            case Allowed a -> "BUG: " + role + " was allowed with " + a.status();
+            case Refused r -> "unexpected " + r.status() + " for " + role;
+        };
+        assertEquals("ok", verdict);
+    }
+}
+''', {'save': 'src/test/java/tests/RoleMatrixTest.java'}),
+                ('code', 'java', 'Java 25: a whole health check script in one small file (run with: java Health.java)', '''
+import java.net.URI;
+import java.net.http.*;
+
+void main() throws Exception {
+    var res = HttpClient.newHttpClient().send(
+        HttpRequest.newBuilder(URI.create("https://restful-booker.herokuapp.com/ping")).build(),
+        HttpResponse.BodyHandlers.discarding());
+    IO.println("ping -> " + res.statusCode());
+}
+'''),
+                ('ul', [
+                    'The role matrix class runs three times, once per role, and the report shows <code>as ADMIN</code>, <code>as WRONG_PASSWORD</code> and <code>as ANONYMOUS</code>. Add a role and every test in the class runs for it.',
+                    'The sealed interface and record patterns make the compiler check that every outcome is handled.',
+                    'Compact source files need Java 25. On Java 21 keep the normal <code>class</code> with <code>public static void main</code>.',
+                ]),
+            ],
+        },
+        {
             'id': 'scenario', 'title': 'Real world scenario: a hotel front desk day', 'emoji': '🏨', 'level': 'Scenario',
             'blocks': [
                 ('p', 'The receptionist logs in, books a room, adds breakfast, and later cancels. The test follows the same steps and includes the check a hacker would try.'),

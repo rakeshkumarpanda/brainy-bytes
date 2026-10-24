@@ -798,6 +798,130 @@ def test_dispose_frees_the_context(playwright, base_url):
             ],
         },
         {
+            'id': 'essentials', 'title': 'Real project essentials: environments, secrets, fake data, logging and cleanup', 'emoji': '🧳', 'level': 'Intermediate',
+            'blocks': [
+                ('p', 'A company suite runs against several servers, keeps passwords out of Git, creates fresh data for every run, explains its own failures, and leaves the shared QA database tidy. Playwright\'s <code>new_context</code> options cover most of what a real environment throws at you, such as self signed certificates, proxies and client certificates.'),
+                ('code', 'bash', 'Choosing the server and passing secrets', '''
+pytest --base-url http://localhost:3001                  # pytest-playwright option, wins over pytest.ini
+BASE_URL=https://qa.booker.example API_PASSWORD="$QA_PASSWORD" pytest
+pytest -o log_cli=true --log-cli-level=INFO              # stream the API log while tests run
+'''),
+                ('code', 'py', 'tests/test_essentials.py', '''
+import logging
+import os
+from typing import Generator
+
+import pytest
+from faker import Faker
+from playwright.sync_api import APIRequestContext, APIResponse, Playwright
+
+log = logging.getLogger("api")
+fake = Faker("en_IN")
+
+
+@pytest.fixture(scope="module")
+def qa_api(playwright: Playwright, base_url: str) -> Generator[APIRequestContext, None, None]:
+    """A client set up the way real QA environments need it."""
+    ctx = playwright.request.new_context(
+        base_url=os.environ.get("BASE_URL", base_url),
+        extra_http_headers={"Accept": "application/json", "X-Test-Run": os.environ.get("GITHUB_RUN_ID", "local")},
+        ignore_https_errors=os.environ.get("QA_SELF_SIGNED") == "1",   # only for QA servers with self signed certificates
+        timeout=10_000,
+    )
+    yield ctx
+    ctx.dispose()
+
+
+def logged(res: APIResponse) -> APIResponse:
+    log.info("%s -> %s", res.url, res.status)
+    if not res.ok:
+        log.warning("body: %s", res.text()[:500])
+    return res
+
+
+@pytest.fixture
+def created(qa_api: APIRequestContext) -> Generator[list[int], None, None]:
+    ids: list[int] = []
+    yield ids
+    token = qa_api.post("/auth", data={"username": "admin", "password": os.environ.get("API_PASSWORD", "password123")}).json()["token"]
+    for booking_id in ids:
+        logged(qa_api.delete(f"/booking/{booking_id}", headers={"Cookie": f"token={token}"}))
+
+
+def test_realistic_guest_round_trip(qa_api: APIRequestContext, created: list[int]):
+    guest = {
+        "firstname": fake.first_name(),
+        "lastname": fake.last_name(),
+        "totalprice": fake.random_int(min=500, max=25000),
+        "depositpaid": fake.boolean(),
+        "bookingdates": {"checkin": "2026-12-20", "checkout": "2026-12-27"},
+        "additionalneeds": f"Call {fake.phone_number()}",
+    }
+    res = logged(qa_api.post("/booking", data=guest))
+    assert res.ok, res.text()
+    booking_id = res.json()["bookingid"]
+    created.append(booking_id)
+
+    assert logged(qa_api.get(f"/booking/{booking_id}")).json() == guest
+''', {'save': 'tests/test_essentials.py'}),
+                ('table', ['new_context option', 'Real situation it solves'], [
+                    ['<code>base_url</code>', 'the same tests against local, QA and staging'],
+                    ['<code>extra_http_headers</code>', 'a run id header so backend logs can be filtered by test run'],
+                    ['<code>ignore_https_errors</code>', 'QA servers with self signed certificates (never for production checks)'],
+                    ['<code>http_credentials</code>', 'staging sites behind Basic auth'],
+                    ['<code>proxy</code>', 'corporate networks that only allow traffic through a proxy'],
+                    ['<code>client_certificates</code>', 'banking and partner APIs that need mutual TLS'],
+                    ['<code>storage_state</code>', 'reuse cookies saved by a login step, so every test does not log in again'],
+                    ['<code>fail_on_status_code</code>', 'turn every 4xx and 5xx into an exception, handy for setup calls'],
+                ]),
+                ('warn', 'Faker data is random, so a failure might not repeat. Print the data in the log, or seed Faker with <code>Faker.seed(1234)</code> in a run you need to reproduce.'),
+            ],
+        },
+        {
+            'id': 'latest', 'title': 'What is new in Playwright and pytest, and how it helps at work', 'emoji': '🆕', 'level': 'Expert',
+            'blocks': [
+                ('table', ['Feature', 'Available in', 'How it helps an API tester'], [
+                    ['Tracing on an API request context', 'Playwright 1.64', 'Record every call of a pure API test into a trace file and open it in the trace viewer, with no browser'],
+                    ['Cookie methods on API contexts', 'Playwright 1.64', '<code>add_cookies</code>, <code>cookies</code> and <code>clear_cookies</code> to set or inspect a session without a browser'],
+                    ['<code>timedelta</code> timeouts', 'Playwright 1.64 for Python', '<code>timeout=timedelta(seconds=10)</code> reads better than a number of milliseconds'],
+                    ['<code>max_retries</code> per call', 'Playwright 1.46 and newer', 'retry connection resets on flaky test networks without retrying real 5xx bugs'],
+                    ['Built in <code>subtests</code>', 'pytest 9.0', 'check many fields in one test and see every failure'],
+                    ['Native TOML config', 'pytest 9.0', '<code>[tool.pytest]</code> in <code>pyproject.toml</code> with real lists and booleans'],
+                ]),
+                ('code', 'py', 'tests/test_latest.py', '''
+from datetime import timedelta
+from pathlib import Path
+
+from playwright.sync_api import Playwright
+
+
+def test_trace_a_pure_api_flow(playwright: Playwright, base_url: str, tmp_path: Path):
+    ctx = playwright.request.new_context(base_url=base_url, timeout=timedelta(seconds=10))
+    ctx.tracing.start()
+    try:
+        token = ctx.post("/auth", data={"username": "admin", "password": "password123"}).json()["token"]
+        ctx.add_cookies([{"name": "token", "value": token, "url": base_url}])
+        assert any(c["name"] == "token" for c in ctx.cookies())
+
+        res = ctx.get("/booking/1", max_retries=2)       # retries network errors only, never a 500
+        assert res.ok
+    finally:
+        trace = tmp_path / "api-trace.zip"
+        ctx.tracing.stop(path=trace)
+        ctx.dispose()
+    assert trace.stat().st_size > 0                       # open it with: playwright show-trace api-trace.zip
+
+
+def test_each_field_reported_on_its_own(subtests, api):
+    body = api.get("/booking/1").json()
+    for field, kind in {"firstname": str, "totalprice": int, "depositpaid": bool}.items():
+        with subtests.test(msg=field):
+            assert isinstance(body[field], kind)
+''', {'save': 'tests/test_latest.py'}),
+                ('tip', 'Keep a trace for failing CI tests only. Start tracing in a fixture, and save the file when <code>request.node</code> reports a failure, so CI artifacts stay small.'),
+            ],
+        },
+        {
             'id': 'scenario', 'title': 'Real world scenario: a hotel front desk day', 'emoji': '🏨', 'level': 'Scenario',
             'blocks': [
                 ('p', 'The receptionist logs in, books a room, adds breakfast, and the guest later cancels. Someone without a login also tries to cancel. Each step is a small function, so a failure names the exact step that broke.'),

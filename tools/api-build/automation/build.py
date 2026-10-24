@@ -20,7 +20,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 OUT = os.path.join(ROOT, 'content', 'api-automation', 'api-automation.html')
-ORDER = ['java-rest-assured', 'java-playwright', 'java-native', 'python', 'py-playwright', 'js-postman', 'js-playwright', 'js-native']
+ORDER = ['java-rest-assured', 'java-playwright', 'java-native', 'python', 'py-playwright', 'js-postman', 'js-playwright', 'js-native', 'ts-playwright']
 LEVELS = ['Basic', 'Intermediate', 'Advanced', 'Expert']
 HL = {'java', 'py', 'js'}
 esc = html.escape
@@ -66,7 +66,7 @@ def block(b, tid):
         return f'<{kind}>' + ''.join(f'<li>{x}</li>' for x in b[1]) + f'</{kind}>'
     if kind == 'code':
         lang, label, src = b[1], b[2], b[3].strip('\n')
-        hl = lang if lang in HL else ''
+        hl = 'js' if lang == 'ts' else lang if lang in HL else ''
         return (f'<figure class="cb"><figcaption><span class="cb-l">{esc(label)}</span>'
                 f'<button type="button" class="cb-copy">Copy</button></figcaption>'
                 f'<pre data-hl="{hl}"><code>{esc(src)}</code></pre></figure>')
