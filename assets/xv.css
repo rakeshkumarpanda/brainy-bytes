@@ -71,3 +71,5 @@
 .vz .vz-seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .vz button.vz-go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);margin:6px 0}
 .vz .vz-sl{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px;margin:4px 12px 4px 0;flex-wrap:wrap}
+@media (max-width:760px){.vz .jv-grid2{grid-template-columns:minmax(0,1fr)}}
+.vz pre.jv-code[data-a],.vz pre.jv-code[data-b]{white-space:pre-wrap;overflow-wrap:anywhere;padding:10px 12px}

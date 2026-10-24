@@ -415,10 +415,10 @@ def check_questions(T):
     jobs = []
     for q in T['quiz']:
         if q.get('run'):
-            jobs.append(('quiz', q, {'t': 'java', 'code': q['code'], 'jdk': q.get('_jdk', 25), 'preview': q.get('_preview', False)}, JSB.strip_tags(q['o'][q['a']])))
+            jobs.append(('quiz', q, {'t': 'java', 'code': q['code'], 'jdk': q.get('_jdk', 25), 'preview': q.get('_preview', False), 'h2': q.get('_h2', False)}, JSB.strip_tags(q['o'][q['a']])))
     for c in T['calc']:
         if c.get('run'):
-            jobs.append(('calc', c, {'t': 'java', 'code': c['code'], 'jdk': 25}, c['ans']))
+            jobs.append(('calc', c, {'t': 'java', 'code': c['code'], 'jdk': 25, 'h2': c.get('_h2', False)}, c['ans']))
     with cf.ThreadPoolExecutor(max_workers=6) as ex:
         res = list(ex.map(lambda x: run_spec(x[2]), jobs))
     for (kind, q, _, want), r in zip(jobs, res):
@@ -432,6 +432,8 @@ def check_questions(T):
     for q in T['quiz']:
         q.pop('_jdk', None)
         q.pop('_preview', None)
+    for q in T['quiz'] + T['calc']:
+        q.pop('_h2', None)
 
 
 def topic_files():

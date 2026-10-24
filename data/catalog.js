@@ -3028,6 +3028,21 @@ function javaNewModules() {
         { id: "scenario", title: "Real world scenario: validating a sign up form", emoji: "🎬", group: "Chapter 25", keywords: ["validation", "Bean Validation", "Jakarta Validation", "@NotBlank", "record component annotations", "form validation", "API input checks"] },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "java-jdbc-http", title: "Databases and web APIs: JDBC and HttpClient", emoji: "🔌", page: "content/java/java-jdbc-http.html",
+        summary: "Connecting to H2, SQL injection on a real database and the PreparedStatement fix, a money transfer with rollback, generated keys, batches and records, HttpClient GET and POST against a local server, status codes, timeouts and sendAsync, HTTP/3 opt in, and a JDK only API test suite.",
+        keywords: ["JDBC", "PreparedStatement", "SQL injection", "transaction", "commit", "rollback", "batch", "H2", "HttpClient", "REST API", "status codes", "sendAsync", "HTTP/3", "API testing", "Java 26"],
+        added: "2026-10-24",
+        sections: [
+        { id: "jdbc", title: "JDBC: talking to a database", emoji: "🗃️", group: "Chapter 26", keywords: ["JDBC", "java.sql", "DriverManager", "Connection", "Statement", "ResultSet", "executeQuery", "executeUpdate", "H2", "JDBC URL", "driver"] },
+        { id: "prepared", title: "PreparedStatement and SQL injection", emoji: "🛡️", group: "Chapter 26", keywords: ["PreparedStatement", "SQL injection", "placeholder", "setString", "bind parameters", "OWASP", "security testing", "query plan"] },
+        { id: "transactions", title: "Transactions: all or nothing", emoji: "🏦", group: "Chapter 26", keywords: ["transaction", "commit", "rollback", "setAutoCommit", "ACID", "atomic", "isolation", "CHECK constraint", "money transfer"] },
+        { id: "batch", title: "Generated keys, batches and records", emoji: "📦", group: "Chapter 26", keywords: ["getGeneratedKeys", "RETURN_GENERATED_KEYS", "addBatch", "executeBatch", "batch insert", "row mapping", "records", "DAO", "JPA", "Hibernate", "jOOQ", "HikariCP"] },
+        { id: "httpclient", title: "HttpClient: calling web APIs (Java 11)", emoji: "🌐", group: "Chapter 26", keywords: ["HttpClient", "HttpRequest", "HttpResponse", "BodyHandlers", "BodyPublishers", "GET", "POST", "headers", "status code", "JSON", "REST API", "com.sun.net.httpserver"] },
+        { id: "async", title: "Timeouts, async calls and HTTP/3", emoji: "⏱️", group: "Chapter 26", keywords: ["timeout", "HttpTimeoutException", "connectTimeout", "sendAsync", "CompletableFuture", "HTTP/2", "HTTP/3", "QUIC", "JEP 517", "Java 26", "H3_DISCOVERY"] },
+        { id: "scenario", title: "Real world scenario: an API test suite with only the JDK", emoji: "🎬", group: "Chapter 26", keywords: ["API testing", "smoke test", "status code assertion", "REST Assured", "contract checks", "HttpClient test", "post deployment check"] },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
