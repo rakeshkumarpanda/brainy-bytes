@@ -2978,6 +2978,23 @@ function pwModules() {
         { id: "lab-sharedlogin", title: "The login follows you to another page", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-pages", title: "Navigation, frames, dialogs, files and events", emoji: "🧭", page: "content/playwright/pw-pages.html",
+        summary: "What goto waits for, waiting for the URL after a click, back, forward and reload, a recorded walk through a payment iframe, frameLocator and contentFrame, alert, confirm and prompt with the default dismiss, downloads with suggestedFilename and saveAs, uploads from memory, console, pageerror and request events, evaluate and addInitScript, and locating inside shadow DOM.",
+        keywords: ["goto", "waitUntil", "waitForURL", "iframe", "frameLocator", "contentFrame", "dialog", "alert", "confirm", "prompt", "download", "upload", "setInputFiles", "console", "pageerror", "evaluate", "addInitScript", "shadow dom"],
+        added: "2026-10-24",
+        sections: [
+        { id: "navigate", title: "Going to pages and waiting for them", emoji: "🧭", group: "Beginner path", keywords: ["goto", "navigate", "waitUntil", "waitForURL", "goBack", "reload", "toHaveURL"] },
+        { id: "frames", title: "Iframes", emoji: "🖼️", group: "Beginner path", keywords: ["iframe", "frameLocator", "contentFrame", "frames", "payment form"] },
+        { id: "dialogs", title: "Alerts, confirms and prompts", emoji: "💬", group: "Lesson", keywords: ["dialog", "alert", "confirm", "prompt", "accept", "dismiss", "onDialog"] },
+        { id: "files", title: "Downloads and uploads", emoji: "📁", group: "Lesson", keywords: ["download", "upload", "setInputFiles", "suggestedFilename", "saveAs", "file chooser"] },
+        { id: "events", title: "Listening to what the page does", emoji: "📡", group: "Lesson", keywords: ["events", "console", "pageerror", "request", "response", "listener"] },
+        { id: "evaluate", title: "Running code inside the page", emoji: "🧪", group: "Lesson", keywords: ["evaluate", "addInitScript", "javascript", "evaluateHandle"] },
+        { id: "shadow", title: "Shadow DOM and web components", emoji: "🌑", group: "Lesson", keywords: ["shadow dom", "web components", "custom element", "xpath"] },
+        { id: "lab-pay", title: "Pay inside the iframe", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-confirm", title: "Accept a confirm dialog", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];

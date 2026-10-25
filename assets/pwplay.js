@@ -346,6 +346,7 @@ const PWPLAY = (() => {
     }
     return { root: cur, steps };
   }
+  let VARS = {};
   function owner(prev) { return prev === 'page' ? 'Page' : prev === 'frame' ? 'FrameLocator' : 'Locator'; }
   function gen(n, lang, ctx = { owner: 'page' }) {
     if (!n) return '';
@@ -435,7 +436,7 @@ const PWPLAY = (() => {
       return `await expect(${t})${neg ? '.not' : ''}.${m.name}(${a})`;
     }
     let out = gen(root, lang);
-    let own = root && root.k === 'id' && root.v === 'page' ? 'page' : 'loc';
+    let own = root && root.k === 'id' && root.v === 'page' ? 'page' : root && root.k === 'id' && VARS[root.v] === 'FrameLocator' ? 'frame' : 'loc';
     let awaited = false;
     steps.forEach((s, k) => {
       let name = s.name;
@@ -448,7 +449,7 @@ const PWPLAY = (() => {
       }
       const action = !/^(getBy\w+|locator|filter|nth|first|last|and|or|frameLocator|contentFrame|within|visible|describe|keyboard|mouse)$/.test(name);
       const a = genArgs(name, s.args || { pos: [], named: {} }, lang, owner(own === 'page' ? 'page' : own));
-      if (name === 'frameLocator') own = 'frame'; else if (/^(getBy|locator|filter|nth|first|last|and|or)/.test(name)) own = own === 'frame' && /^getBy|^locator/.test(name) ? 'loc' : own === 'page' ? 'loc' : own;
+      if (name === 'frameLocator' || name === 'contentFrame') own = 'frame'; else if (/^(getBy|locator|filter|nth|first|last|and|or)/.test(name)) own = own === 'frame' && /^getBy|^locator/.test(name) ? 'loc' : own === 'page' ? 'loc' : own;
       if (lang === 'py') {
         if (/^(first|last)$/.test(name)) out += '.' + name;
         else out += '.' + snake(name) + '(' + a + ')';
@@ -501,7 +502,7 @@ const PWPLAY = (() => {
       const last = steps.length ? steps[steps.length - 1].name : '';
       if (lang === 'py') return `${s.name} = ${rhs}`;
       if (lang === 'java') {
-        const type = isLocatorExpr(s.e) ? 'Locator' : STRINGY.test(last) ? 'String' : last === 'count' ? 'int' : BOOLY.test(last) ? 'boolean' : /allTextContents|allInnerTexts/.test(last) ? 'List<String>' : 'var';
+        const type = /^(frameLocator|contentFrame)$/.test(last) ? 'FrameLocator' : isLocatorExpr(s.e) ? 'Locator' : STRINGY.test(last) ? 'String' : last === 'count' ? 'int' : BOOLY.test(last) ? 'boolean' : /allTextContents|allInnerTexts/.test(last) ? 'List<String>' : 'var';
         vars[s.name] = type;
         return `${type} ${s.name} = ${rhs};`;
       }
@@ -526,7 +527,7 @@ const PWPLAY = (() => {
         if (lang === 'py') return `page.on("dialog", lambda ${p}: ${act})`;
         if (lang === 'java') return `page.onDialog(${p} -> ${act});`;
         if (lang === 'cs') return `Page.Dialog += async (_, ${p}) => ${act};`;
-        return `page.on('dialog', ${p} => ${act});`;
+        return `page.on('dialog', ${p} => ${act.replace(/^await /, '')});`;
       }
       const code = gen(e, lang);
       return lang === 'py' ? code : code + ';';
@@ -537,6 +538,7 @@ const PWPLAY = (() => {
   const isPrint = f => (f.k === 'id' && /^print$/.test(f.v)) || (f.k === 'get' && /^(log|println|WriteLine)$/.test(f.n));
   function genStatements(stmts, lang) {
     const vars = {};
+    VARS = vars;
     return stmts.filter(s => s.k === 'let' || s.k === 'expr' || s.k === 'assert').map(s => ({ line: s.line, code: genStatement(s, lang, vars) }));
   }
   const pascal = s => s.replace(/(^|[^A-Za-z0-9])([a-z])/g, (_, a, c) => c.toUpperCase()).replace(/[^A-Za-z0-9]/g, '');
@@ -1347,7 +1349,14 @@ const PWPLAY = (() => {
           switch (n.op) { case '+': return a + b; case '==': case '===': return a === b || a == b; case '!=': case '!==': return a !== b; case '>': return a > b; case '<': return a < b; case '>=': return a >= b; case '<=': return a <= b; case '&&': return a && b; case '||': return a || b; case 'in': return b != null && b.includes(a); }
           return null;
         }
-        case 'fn': return (...args) => { const saved = {}; n.ps.forEach((p, k) => { saved[p] = env[p]; env[p] = args[k]; }); const r = ev(n.body); r.finally(() => n.ps.forEach(p => { env[p] = saved[p]; })); return r; };
+        case 'fn': return (...args) => {
+          const saved = {};
+          n.ps.forEach((p, k) => { saved[p] = env[p]; env[p] = args[k]; });
+          const restore = () => n.ps.forEach(p => { env[p] = saved[p]; });
+          // Simple bodies such as dialog.accept() run at once, because a dialog must be answered before the page goes on.
+          if (canSync(n.body)) { try { return evSync(n.body); } finally { restore(); } }
+          const r = ev(n.body); r.finally(restore); return r;
+        };
         case 'new': {
           const name = n.name.split('.').pop();
           if (/^(Regex)$/.test(name)) { const a = await ev(n.args.pos[0]); return new RegExp(a, n.args.pos[1] ? 'i' : ''); }
@@ -1378,6 +1387,36 @@ const PWPLAY = (() => {
         }
         default: throw new Error('The playground cannot run this kind of code');
       }
+    }
+    function canSync(n) {
+      if (!n || typeof n !== 'object') return true;
+      if (!/^(lit|id|get|call|arr|bin|not)$/.test(n.k)) return false;
+      if (n.k === 'call') return canSync(n.f) && n.args.pos.every(canSync) && !Object.keys(n.args.named).length;
+      if (n.k === 'get') return canSync(n.o);
+      if (n.k === 'arr') return n.v.every(canSync);
+      if (n.k === 'bin') return canSync(n.a) && canSync(n.b);
+      if (n.k === 'not') return canSync(n.v);
+      return true;
+    }
+    function evSync(n) {
+      switch (n.k) {
+        case 'lit': return n.v;
+        case 'id':
+          if (n.v in env) return env[n.v];
+          if (n.v in builtins) return builtins[n.v];
+          throw new Error(`"${n.v}" is not defined here.`);
+        case 'arr': return n.v.map(evSync);
+        case 'not': return !evSync(n.v);
+        case 'bin': { const a = evSync(n.a), b = evSync(n.b); switch (n.op) { case '+': return a + b; case '==': case '===': return a === b; case '&&': return a && b; case '||': return a || b; } return null; }
+        case 'get': return getProp(evSync(n.o), n.n, false);
+        case 'call': {
+          let self = null, fn;
+          if (n.f.k === 'get') { self = evSync(n.f.o); fn = getProp(self, n.f.n, true); } else fn = evSync(n.f);
+          if (typeof fn !== 'function') throw new Error(`${n.f.n || n.f.v || 'This'} is not something you can call here`);
+          return fn.apply(self, n.args.pos.map(a => unwrap(evSync(a))));
+        }
+      }
+      throw new Error('The playground cannot run this kind of code');
     }
     function unwrap(v) { return v instanceof OptionsBuilder ? { ...v } : v && v.__call ? v : v; }
     function getProp(o, name, calling) {
