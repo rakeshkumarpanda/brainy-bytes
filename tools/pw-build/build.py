@@ -405,6 +405,9 @@ def check(T):
         for t in (lab['title'], lab['task'], lab.get('hint', '')):
             if re.search(r'[—–;]', re.sub(r'<code>[\s\S]*?</code>', '', t)):
                 errs.append(f'lab {lab["id"]}: an em dash, en dash or semicolon in its text')
+    for p in T['parts']:
+        if re.search(r'(?<![$])[{][{]|[}][}](?![}])', re.sub(r'[$][{][{][^}]*[}][}]', '', p['html'])):
+            errs.append(f'part {p["id"]}: doubled braces in the text, a plain string inside an f-string')
     if not any(p.get('easy') for p in T['parts']):
         errs.append('no part is marked easy=True')
     return errs

@@ -28,6 +28,8 @@ CLI_POM = '''<project xmlns="http://maven.apache.org/POM/4.0.0">
   </build>
 </project>'''
 
+NO_FALLBACK = [(r'(?m)^  Download fallback.*\n', '')]
+
 JAVA_CLI = 'mvn -q exec:java -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="{}"'
 
 # A small suite with two tests, used to show how to run only one of them.
@@ -128,9 +130,9 @@ CODES = {
                     js=js({}, config=None, cmd='npx playwright --version', show=[]),
                     result='The Java and Python packages carry the same driver as the npm package, so all three print the same Playwright version. In Java the command line tool is the class <code>com.microsoft.playwright.CLI</code>, which Maven runs for you.'),
     'browsers': four('Where the browsers live',
-                     java=jv({}, cmd=JAVA_CLI.format('install --dry-run chromium'), pom_xml=CLI_POM, options=False, show=[]),
-                     py=py({}, ini=None, cmd='playwright install --dry-run chromium', show=[]),
-                     js=js({}, config=None, cmd='npx playwright install --dry-run chromium', show=[]),
+                     java=jv({}, cmd=JAVA_CLI.format('install --dry-run chromium'), pom_xml=CLI_POM, options=False, show=[], replace=NO_FALLBACK),
+                     py=py({}, ini=None, cmd='playwright install --dry-run chromium', show=[], replace=NO_FALLBACK),
+                     js=js({}, config=None, cmd='npx playwright install --dry-run chromium', show=[], replace=NO_FALLBACK),
                      result='<code>--dry-run</code> shows what would be downloaded and where, without downloading. On this build machine the variable <code>PLAYWRIGHT_BROWSERS_PATH</code> points to <code>/opt/pw-browsers</code>. On your own computer the default is <code>~/.cache/ms-playwright</code> on Linux, <code>~/Library/Caches/ms-playwright</code> on macOS and <code>%USERPROFILE%\\AppData\\Local\\ms-playwright</code> on Windows. Since version 1.57, Chromium means a Chrome for Testing build, and headless runs use the smaller Chrome Headless Shell.'),
     'scaffold': one('The test that npm init playwright wrote, pointed at the shop',
                     ts({'example.spec.ts': SCAFFOLD_RUN_TS}, config=SCAFFOLD_CFG.replace("reporter: 'html'", "reporter: 'list'").replace(
@@ -315,7 +317,7 @@ playwright install --with-deps    # downloads the browsers and the system librar
     ['run one file', '<code>mvn test -Dtest=ShopTest</code>', '<code>pytest tests/test_shop.py</code>', '<code>npx playwright test tests/shop.spec.ts</code>'],
     ['run tests by name', '<code>-Dtest="ShopTest#signIn"</code>', '<code>-k sign_in</code>', '<code>-g "sign in"</code>'],
     ['see the browser', '<code>setHeadless(false)</code> in the options', '<code>--headed</code>', '<code>--headed</code>'],
-    ['slow every action down', '<code>setSlowMo(500)</code> in the launch options', '<code>--slowmo 500</code>', '<code>launchOptions: {{ slowMo: 500 }}</code> in the config'],
+    ['slow every action down', '<code>setSlowMo(500)</code> in the launch options', '<code>--slowmo 500</code>', '<code>launchOptions: { slowMo: 500 }</code> in the config'],
     ['pick a browser', '<code>setBrowserName("firefox")</code>', '<code>--browser firefox</code>', '<code>--project=firefox</code>'],
     ['debug step by step', '<code>PWDEBUG=1 mvn test</code>', '<code>PWDEBUG=1 pytest -s</code>', '<code>--debug</code> or <code>--ui</code>'],
     ['run 4 at a time', 'JUnit parallel settings', '<code>-n 4</code> (pytest-xdist)', '<code>--workers=4</code>'],

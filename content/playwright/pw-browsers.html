@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browsers, contexts, pages and devices · Playwright</title>
+<meta name="description" content="Browser, BrowserContext and Page, launch options, isolation with contexts, emulating locale, time zone, dark mode, location and devices, popups and tabs, cross browser projects and persistent profiles in four languages.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🌐 Browser handling</span><span>›</span><span>Chapter 3 of 3</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🌐</span><div><h1>Browsers, contexts, pages and devices</h1><p class="lead">Start browsers with the right options, keep tests apart with contexts, pretend to be a German phone user in India, handle new tabs and pop ups, and run in Chromium, Firefox and WebKit.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 28 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 2 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>A browser is the program, a context is a clean profile inside it, and a page is one tab. Each test gets its own clean profile, and you can make that profile look like any phone, country or language.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#levels" class="easy"><span>🏢</span>Browser, context and page</a><a href="#launch" class="easy"><span>🚀</span>Launching a browser</a><a href="#contexts"><span>🧳</span>Contexts keep tests apart</a><a href="#emulate"><span>🎭</span>Pretend to be another user</a><a href="#devices"><span>📱</span>Phones and tablets</a><a href="#tabs"><span>🗂️</span>New tabs and pop ups</a><a href="#browsers"><span>🦊</span>Chromium, Firefox and WebKit</a><a href="#lifecycle"><span>♻️</span>Profiles, closing and remote browsers</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="levels" data-say="levels"><div class="sec-num">Part 1</div><h2><span class="sec-em">🏢</span><span>Browser, context and page</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Playwright gives you three levels of objects, and it helps to picture them as real things:</p>
+<ul>
+<li><b>Browser</b>: the browser program that is running, such as Chromium. Starting it is slow, about half a second, so you start one and reuse it.</li>
+<li><b>Browser context</b>: a brand new, empty browser profile inside that browser. It has its own cookies, storage, cache and permissions, like a fresh incognito window. Creating one takes a few milliseconds.</li>
+<li><b>Page</b>: one tab inside a context. A context can have many pages, and they share the context's login.</li>
+</ul>
+<div class="pw-box pw-kid"><span class="pw-ic">🧒</span><div>Picture a shop with one building and many changing rooms. The building is the browser. Each changing room is a context: what one customer leaves in their room never appears in another room. The pages are the hangers in the room, all belonging to the same customer.</div></div>
+<p>Build them yourself below. Add contexts and pages, sign a context in, and watch what is shared and what is not.</p>
+<div class="viz" data-viz="pwctx"></div>
+<p>This is why test runners create a new context for every test. Two tests can never see each other's cookies, so they pass in any order and can run in parallel.</p>
+</section>
+<section class="card reveal jsec easy-part" id="launch" data-say="launch"><div class="sec-num">Part 2</div><h2><span class="sec-em">🚀</span><span>Launching a browser</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>In a script you launch the browser yourself. In a test runner the runner launches it for you, and you only set the options.</p>
+<div class="codewrap tests pw4" data-k="launch" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Launch a browser with options · <b class="pw-badge">✅ ran for real</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ ran for real"><div class="fname">📄 src/main/java/com/brainy/Main.java</div><pre class="src" data-file="src/main/java/com/brainy/Main.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.*;
+<span class="k">import</span> java.util.<span class="t">List</span>;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">Main</span> {
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+    <span class="k">try</span> (<span class="t">Playwright</span> playwright = <span class="t">Playwright</span>.create()) {
+      <span class="t">Browser</span> browser = playwright.chromium().launch(<span class="k">new</span> <span class="t">BrowserType</span>.<span class="t">LaunchOptions</span>()
+          .setHeadless(<span class="k">true</span>)          <span class="c">// no window. Use false to watch it work</span>
+          .setSlowMo(<span class="n">100</span>)             <span class="c">// wait 100 ms before every action</span>
+          .setArgs(<span class="t">List</span>.of(<span class="s">"--lang=en-GB"</span>)));
+      <span class="t">System</span>.out.println(<span class="s">"Browser type: "</span> + browser.browserType().name());
+      <span class="t">System</span>.out.println(<span class="s">"Version: "</span> + browser.version());
+      <span class="t">System</span>.out.println(<span class="s">"Connected: "</span> + browser.isConnected());
+      <span class="t">System</span>.out.println(<span class="s">"Contexts so far: "</span> + browser.contexts().size());
+      browser.close();
+      <span class="t">System</span>.out.println(<span class="s">"Connected after close: "</span> + browser.isConnected());
+    }
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn -q compile exec:java</pre></div><div class="out"><span>Terminal output</span><pre>Browser type: chromium
+Version: 153.0.8010.12
+Connected: true
+Contexts so far: 0
+Connected after close: false</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ ran for real"><div class="fname">📄 main.py</div><pre class="src" data-file="main.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> sync_playwright
+
+<span class="k">with</span> sync_playwright() <span class="k">as</span> p:
+    browser = p.chromium.launch(
+        headless=<span class="k">True</span>,      <span class="c"># no window. Use False to watch it work</span>
+        slow_mo=<span class="n">100</span>,        <span class="c"># wait 100 ms before every action</span>
+        args=[<span class="s">"--lang=en-GB"</span>],
+    )
+    print(<span class="s">"Browser type:"</span>, browser.browser_type.name)
+    print(<span class="s">"Version:"</span>, browser.version)
+    print(<span class="s">"Connected:"</span>, browser.is_connected())
+    print(<span class="s">"Contexts so far:"</span>, len(browser.contexts))
+    browser.close()
+    print(<span class="s">"Connected after close:"</span>, browser.is_connected())</pre><div class="cmd"><span>Terminal</span><pre>$ python main.py</pre></div><div class="out"><span>Terminal output</span><pre>Browser type: chromium
+Version: 153.0.8010.12
+Connected: True
+Contexts so far: 0
+Connected after close: False</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ ran for real"><div class="fname">📄 main.mjs</div><pre class="src" data-file="main.mjs"><span class="k">import</span> { chromium } <span class="k">from</span> <span class="s">'playwright'</span>;
+
+<span class="k">const</span> browser = <span class="k">await</span> chromium.launch({
+  headless: <span class="k">true</span>,      <span class="c">// no window. Use false to watch it work</span>
+  slowMo: <span class="n">100</span>,         <span class="c">// wait 100 ms before every action</span>
+  args: [<span class="s">'--lang=en-GB'</span>],
+});
+console.log(<span class="s">'Browser type:'</span>, browser.browserType().name());
+console.log(<span class="s">'Version:'</span>, browser.version());
+console.log(<span class="s">'Connected:'</span>, browser.isConnected());
+console.log(<span class="s">'Contexts so far:'</span>, browser.contexts().length);
+<span class="k">await</span> browser.close();
+console.log(<span class="s">'Connected after close:'</span>, browser.isConnected());</pre><div class="cmd"><span>Terminal</span><pre>$ node main.mjs</pre></div><div class="out"><span>Terminal output</span><pre>Browser type: chromium
+Version: 153.0.8010.12
+Connected: true
+Contexts so far: 0
+Connected after close: false</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ ran for real"><div class="fname">📄 main.ts</div><pre class="src" data-file="main.ts"><span class="k">import</span> { chromium, <span class="k">type</span> <span class="t">Browser</span> } <span class="k">from</span> <span class="s">'playwright'</span>;
+
+<span class="k">const</span> browser: <span class="t">Browser</span> = <span class="k">await</span> chromium.launch({
+  headless: <span class="k">true</span>,      <span class="c">// no window. Use false to watch it work</span>
+  slowMo: <span class="n">100</span>,         <span class="c">// wait 100 ms before every action</span>
+  args: [<span class="s">'--lang=en-GB'</span>],
+});
+console.log(<span class="s">'Browser type:'</span>, browser.browserType().name());
+console.log(<span class="s">'Version:'</span>, browser.version());
+console.log(<span class="s">'Connected:'</span>, browser.isConnected());
+console.log(<span class="s">'Contexts so far:'</span>, browser.contexts().length);
+<span class="k">await</span> browser.close();
+console.log(<span class="s">'Connected after close:'</span>, browser.isConnected());</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc -p . &amp;&amp; node main.ts</pre></div><div class="out"><span>Terminal output</span><pre>Browser type: chromium
+Version: 153.0.8010.12
+Connected: true
+Contexts so far: 0
+Connected after close: false</pre></div></div><div class="note-out"><span>What happens</span><p>The browser reports its type and its real version, here Chrome for Testing 153. After <code>close()</code> the connection is gone, and every page and context inside it is closed too.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Option</th><th>What it does</th><th>When you use it</th></tr><tr><td>headless</td><td>run without a window (the default)</td><td>always on CI, turn off to watch a test locally</td></tr><tr><td>slowMo</td><td>pause before each action</td><td>to follow a test with your eyes or record a demo</td></tr><tr><td>channel</td><td>use an installed branded browser: <code>chrome</code>, <code>msedge</code>, <code>chrome-beta</code></td><td>when the team must test the exact browser users have</td></tr><tr><td>args</td><td>extra command line switches for the browser</td><td>rare cases, such as a language or a fake camera</td></tr><tr><td>executablePath</td><td>start a browser from a path you give</td><td>company images with their own browser build</td></tr><tr><td>timeout</td><td>how long to wait for the browser to start</td><td>slow CI machines</td></tr></table></div>
+<p><span class="only-java">In JUnit with <code>@UsePlaywright</code>, set these in your options class with <code>setHeadless</code>, <code>setChannel</code>, <code>setBrowserName</code> and <code>setLaunchOptions</code>.</span><span class="only-py">With pytest-playwright, use <code>--headed</code>, <code>--slowmo</code>, <code>--browser</code> and <code>--browser-channel</code>, or override the <code>browser_type_launch_args</code> fixture in conftest.py.</span><span class="only-js">In Playwright Test, put them in <code>use</code> in the config: <code>headless</code>, <code>channel</code>, and <code>launchOptions: { slowMo, args }</code>.</span><span class="only-ts">In Playwright Test, put them in <code>use</code> in the config: <code>headless</code>, <code>channel</code>, and <code>launchOptions: { slowMo, args }</code>.</span></p>
+</section>
+<section class="card reveal jsec" id="contexts" data-say="contexts"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧳</span><span>Contexts keep tests apart</span></h2>
+
+<p>One browser can hold many contexts at the same time. This test signs Asha in inside one context and checks that a second context, in the same browser, is still a guest.</p>
+<div class="codewrap tests pw4" data-k="iso" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two shoppers in one browser, kept apart · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ContextTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ContextTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.*;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">ContextTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> twoShoppersInOneBrowser(<span class="t">Browser</span> browser) {
+    <span class="c">// Each context is a separate, empty browser profile.</span>
+    <span class="t">BrowserContext</span> ashaContext = browser.newContext();
+    <span class="t">BrowserContext</span> guestContext = browser.newContext();
+    <span class="t">Page</span> asha = ashaContext.newPage();
+    <span class="t">Page</span> guest = guestContext.newPage();
+
+    asha.navigate(<span class="s">"http://localhost:4173/login"</span>);
+    asha.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+    asha.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+    asha.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>)).click();
+    assertThat(asha.getByText(<span class="s">"Hello, Asha"</span>)).isVisible();
+
+    guest.navigate(<span class="s">"http://localhost:4173/products"</span>);
+    assertThat(guest.getByRole(<span class="t">AriaRole</span>.<span class="t">LINK</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>))).isVisible();
+    <span class="t">System</span>.out.println(<span class="s">"Asha cookies: "</span> + ashaContext.cookies().size());
+    <span class="t">System</span>.out.println(<span class="s">"Guest cookies: "</span> + guestContext.cookies().size());
+
+    ashaContext.close();
+    guestContext.close();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.ContextTest
+Asha cookies: 1
+Guest cookies: 0
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.164 s -- in com.brainy.ContextTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_contexts.py</div><pre class="src" data-file="tests/test_contexts.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> expect
+
+
+<span class="k">def</span> test_two_shoppers_in_one_browser(new_context):
+    <span class="c"># Each context is a separate, empty browser profile.</span>
+    asha_context = new_context()
+    guest_context = new_context()
+    asha = asha_context.new_page()
+    guest = guest_context.new_page()
+
+    asha.goto(<span class="s">"/login"</span>)
+    asha.get_by_label(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>)
+    asha.get_by_label(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>)
+    asha.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Sign in"</span>).click()
+    expect(asha.get_by_text(<span class="s">"Hello, Asha"</span>)).to_be_visible()
+
+    guest.goto(<span class="s">"/products"</span>)
+    expect(guest.get_by_role(<span class="s">"link"</span>, name=<span class="s">"Sign in"</span>)).to_be_visible()
+    print(<span class="s">"Asha cookies:"</span>, len(asha_context.cookies()))
+    print(<span class="s">"Guest cookies:"</span>, len(guest_context.cookies()))</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_contexts.py::test_two_shoppers_in_one_browser[chromium] Asha cookies: 1
+Guest cookies: 0
+PASSED
+
+============================== 1 passed in 3.73s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/contexts.spec.js</div><pre class="src" data-file="tests/contexts.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'two shoppers in one browser'</span>, <span class="k">async</span> ({ browser }) =&gt; {
+  <span class="c">// Each context is a separate, empty browser profile.</span>
+  <span class="k">const</span> ashaContext = <span class="k">await</span> browser.newContext();
+  <span class="k">const</span> guestContext = <span class="k">await</span> browser.newContext();
+  <span class="k">const</span> asha = <span class="k">await</span> ashaContext.newPage();
+  <span class="k">const</span> guest = <span class="k">await</span> guestContext.newPage();
+
+  <span class="k">await</span> asha.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> asha.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> asha.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> asha.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> expect(asha.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+
+  <span class="k">await</span> guest.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(guest.getByRole(<span class="s">'link'</span>, { name: <span class="s">'Sign in'</span> })).toBeVisible();
+  console.log(<span class="s">'Asha cookies:'</span>, (<span class="k">await</span> ashaContext.cookies()).length);
+  console.log(<span class="s">'Guest cookies:'</span>, (<span class="k">await</span> guestContext.cookies()).length);
+
+  <span class="k">await</span> ashaContext.close();
+  <span class="k">await</span> guestContext.close();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+Asha cookies: 1
+Guest cookies: 0
+  ✓  1 [chromium] › tests/contexts.spec.js:3:1 › two shoppers in one browser (925ms)
+
+  1 passed (2.3s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/contexts.spec.ts</div><pre class="src" data-file="tests/contexts.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'two shoppers in one browser'</span>, <span class="k">async</span> ({ browser }) =&gt; {
+  <span class="c">// Each context is a separate, empty browser profile.</span>
+  <span class="k">const</span> ashaContext = <span class="k">await</span> browser.newContext();
+  <span class="k">const</span> guestContext = <span class="k">await</span> browser.newContext();
+  <span class="k">const</span> asha = <span class="k">await</span> ashaContext.newPage();
+  <span class="k">const</span> guest = <span class="k">await</span> guestContext.newPage();
+
+  <span class="k">await</span> asha.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> asha.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> asha.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> asha.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> expect(asha.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+
+  <span class="k">await</span> guest.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(guest.getByRole(<span class="s">'link'</span>, { name: <span class="s">'Sign in'</span> })).toBeVisible();
+  console.log(<span class="s">'Asha cookies:'</span>, (<span class="k">await</span> ashaContext.cookies()).length);
+  console.log(<span class="s">'Guest cookies:'</span>, (<span class="k">await</span> guestContext.cookies()).length);
+
+  <span class="k">await</span> ashaContext.close();
+  <span class="k">await</span> guestContext.close();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+Asha cookies: 1
+Guest cookies: 0
+  ✓  1 [chromium] › tests/contexts.spec.ts:3:1 › two shoppers in one browser (686ms)
+
+  1 passed (1.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>Asha signed in inside her own context and got a session cookie. The guest context, in the same browser, has no cookie and still sees the Sign in link. In Playwright Test, a context you create from the <code>browser</code> fixture gets the same <code>use</code> options as the built in one, such as <code>baseURL</code>. The Python <code>new_context</code> fixture does the same and closes the contexts for you. In Java, a context you create yourself starts with default options, so the Java version uses full addresses.</p></div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Real projects use two contexts in one test for features with two people: a chat between a customer and a support agent, an admin approving an order while the customer waits, or two players in a game. Each person gets their own context.</div></div>
+</section>
+<section class="card reveal jsec" id="emulate" data-say="emulate"><div class="sec-num">Part 4</div><h2><span class="sec-em">🎭</span><span>Pretend to be another user</span></h2>
+
+<p>Context options change what the website sees about the browser. You can test a German user in India on a small screen in dark mode, without leaving your desk. The shop's <b>About you</b> page prints what it sees.</p>
+<div class="codewrap tests pw4" data-k="emu" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Pretend to be a German phone user in India · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/EmulationTest.java</div><pre class="src" data-file="src/test/java/com/brainy/EmulationTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.*;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">Options</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">OptionsFactory</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">ColorScheme</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">EmulationTest</span>.<span class="t">GermanPhone</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">EmulationTest</span> {
+  <span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="t">GermanPhone</span> <span class="k">implements</span> <span class="t">OptionsFactory</span> {
+    <span class="a">@Override</span>
+    <span class="k">public</span> <span class="t">Options</span> getOptions() {
+      <span class="k">return</span> <span class="k">new</span> <span class="t">Options</span>().setHeadless(<span class="k">true</span>).setBaseUrl(<span class="s">"http://localhost:4173"</span>)
+          .setContextOptions(<span class="k">new</span> <span class="t">Browser</span>.<span class="t">NewContextOptions</span>()
+              .setViewportSize(<span class="n">390</span>, <span class="n">844</span>)
+              .setLocale(<span class="s">"de-DE"</span>)
+              .setTimezoneId(<span class="s">"Asia/Kolkata"</span>)
+              .setColorScheme(<span class="t">ColorScheme</span>.<span class="t">DARK</span>)
+              .setHasTouch(<span class="k">true</span>));
+    }
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theShopSeesAGermanPhoneUserInIndia(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/about-you"</span>);
+    <span class="k">for</span> (<span class="t">String</span> id : <span class="k">new</span> <span class="t">String</span>[] {<span class="s">"width"</span>, <span class="s">"lang"</span>, <span class="s">"tz"</span>, <span class="s">"price"</span>, <span class="s">"touch"</span>}) {
+      <span class="t">System</span>.out.println(<span class="t">String</span>.format(<span class="s">"%-6s "</span>, id) + page.locator(<span class="s">"#"</span> + id).textContent());
+    }
+    <span class="t">Object</span> dark = page.evaluate(<span class="s">"matchMedia('(prefers-color-scheme: dark)').matches"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"dark   "</span> + dark);
+    assertThat(page.locator(<span class="s">"#lang"</span>)).hasText(<span class="s">"de-DE"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.EmulationTest
+width  390 px
+lang   de-DE
+tz     Asia/Calcutta
+price  1.299,50 €
+touch  yes
+dark   true
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.967 s -- in com.brainy.EmulationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_emulation.py</div><pre class="src" data-file="tests/test_emulation.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="a">@pytest</span>.mark.browser_context_args(
+    viewport={<span class="s">"width"</span>: <span class="n">390</span>, <span class="s">"height"</span>: <span class="n">844</span>},
+    locale=<span class="s">"de-DE"</span>,
+    timezone_id=<span class="s">"Asia/Kolkata"</span>,
+    color_scheme=<span class="s">"dark"</span>,
+    has_touch=<span class="k">True</span>,
+)
+<span class="k">def</span> test_the_shop_sees_a_german_phone_user_in_india(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/about-you"</span>)
+    <span class="k">for</span> id <span class="k">in</span> [<span class="s">"width"</span>, <span class="s">"lang"</span>, <span class="s">"tz"</span>, <span class="s">"price"</span>, <span class="s">"touch"</span>]:
+        print(id.ljust(<span class="n">6</span>), page.locator(<span class="s">"#"</span> + id).text_content())
+    dark = page.evaluate(<span class="s">"matchMedia('(prefers-color-scheme: dark)').matches"</span>)
+    print(<span class="s">"dark  "</span>, dark)
+    expect(page.locator(<span class="s">"#lang"</span>)).to_have_text(<span class="s">"de-DE"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_emulation.py::test_the_shop_sees_a_german_phone_user_in_india[chromium] width  390 px
+lang   de-DE
+tz     Asia/Calcutta
+price  1.299,50 €
+touch  yes
+dark   True
+PASSED
+
+============================== 1 passed in 1.09s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/emulation.spec.js</div><pre class="src" data-file="tests/emulation.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.use({
+  viewport: { width: <span class="n">390</span>, height: <span class="n">844</span> },
+  locale: <span class="s">'de-DE'</span>,
+  timezoneId: <span class="s">'Asia/Kolkata'</span>,
+  colorScheme: <span class="s">'dark'</span>,
+  hasTouch: <span class="k">true</span>,
+});
+
+test(<span class="s">'the shop sees a German phone user in India'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+  <span class="k">for</span> (<span class="k">const</span> id <span class="k">of</span> [<span class="s">'width'</span>, <span class="s">'lang'</span>, <span class="s">'tz'</span>, <span class="s">'price'</span>, <span class="s">'touch'</span>]) {
+    console.log(id.padEnd(<span class="n">6</span>), <span class="k">await</span> page.locator(<span class="s">'#'</span> + id).textContent());
+  }
+  <span class="k">const</span> dark = <span class="k">await</span> page.evaluate(() =&gt; matchMedia(<span class="s">'(prefers-color-scheme: dark)'</span>).matches);
+  console.log(<span class="s">'dark  '</span>, dark);
+  <span class="k">await</span> expect(page.locator(<span class="s">'#lang'</span>)).toHaveText(<span class="s">'de-DE'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+width  390 px
+lang   de-DE
+tz     Asia/Calcutta
+price  1.299,50 €
+touch  yes
+dark   true
+  ✓  1 [chromium] › tests/emulation.spec.js:11:1 › the shop sees a German phone user in India (459ms)
+
+  1 passed (2.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/emulation.spec.ts</div><pre class="src" data-file="tests/emulation.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.use({
+  viewport: { width: <span class="n">390</span>, height: <span class="n">844</span> },
+  locale: <span class="s">'de-DE'</span>,
+  timezoneId: <span class="s">'Asia/Kolkata'</span>,
+  colorScheme: <span class="s">'dark'</span>,
+  hasTouch: <span class="k">true</span>,
+});
+
+test(<span class="s">'the shop sees a German phone user in India'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+  <span class="k">for</span> (<span class="k">const</span> id <span class="k">of</span> [<span class="s">'width'</span>, <span class="s">'lang'</span>, <span class="s">'tz'</span>, <span class="s">'price'</span>, <span class="s">'touch'</span>]) {
+    console.log(id.padEnd(<span class="n">6</span>), <span class="k">await</span> page.locator(<span class="s">'#'</span> + id).textContent());
+  }
+  <span class="k">const</span> dark = <span class="k">await</span> page.evaluate(() =&gt; matchMedia(<span class="s">'(prefers-color-scheme: dark)'</span>).matches);
+  console.log(<span class="s">'dark  '</span>, dark);
+  <span class="k">await</span> expect(page.locator(<span class="s">'#lang'</span>)).toHaveText(<span class="s">'de-DE'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+width  390 px
+lang   de-DE
+tz     Asia/Calcutta
+price  1.299,50 €
+touch  yes
+dark   true
+  ✓  1 [chromium] › tests/emulation.spec.ts:11:1 › the shop sees a German phone user in India (373ms)
+
+  1 passed (1.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>The page read 390 px, de-DE, a touch screen and dark mode, and the time zone as Asia/Calcutta, which is the older name Chromium still reports for Asia/Kolkata. It also formatted the euro price the German way, with a comma for decimals. All of it came from the context options. Nothing on the computer changed.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Option</th><th>Example</th><th>What the page sees</th></tr><tr><td>viewport</td><td>390 × 844</td><td><code>innerWidth</code>, media queries</td></tr><tr><td>locale</td><td>de-DE</td><td><code>navigator.language</code>, number and date formats</td></tr><tr><td>timezoneId</td><td>Asia/Kolkata</td><td>dates and times</td></tr><tr><td>colorScheme</td><td>dark</td><td><code>prefers-color-scheme</code></td></tr><tr><td>hasTouch, isMobile</td><td>true</td><td>touch events, mobile layout</td></tr><tr><td>geolocation, permissions</td><td>New Delhi</td><td>the location API</td></tr><tr><td>userAgent</td><td>any string</td><td><code>navigator.userAgent</code></td></tr><tr><td>offline</td><td>true</td><td>no network at all</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="geo" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Location and permissions · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/LocationTest.java</div><pre class="src" data-file="src/test/java/com/brainy/LocationTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.*;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">LocationTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> findsStoresNearNewDelhi(<span class="t">Browser</span> browser) {
+    <span class="t">BrowserContext</span> context = browser.newContext(<span class="k">new</span> <span class="t">Browser</span>.<span class="t">NewContextOptions</span>()
+        .setGeolocation(<span class="n">28.6139</span>, <span class="n">77.209</span>)                 <span class="c">// New Delhi</span>
+        .setPermissions(java.util.<span class="t">List</span>.of(<span class="s">"geolocation"</span>)));
+    <span class="t">Page</span> page = context.newPage();
+    page.navigate(<span class="s">"http://localhost:4173/about-you"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Find stores near me"</span>)).click();
+    assertThat(page.locator(<span class="s">"#where"</span>)).hasText(<span class="s">"28.6139, 77.2090"</span>);
+    context.close();
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> locationBlockedWhenPermissionIsNotGranted(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/about-you"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Find stores near me"</span>)).click();
+    assertThat(page.locator(<span class="s">"#where"</span>)).containsText(<span class="s">"blocked"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.LocationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.691 s -- in com.brainy.LocationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_location.py</div><pre class="src" data-file="tests/test_location.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="a">@pytest</span>.mark.browser_context_args(
+    geolocation={<span class="s">"latitude"</span>: <span class="n">28.6139</span>, <span class="s">"longitude"</span>: <span class="n">77.209</span>},   <span class="c"># New Delhi</span>
+    permissions=[<span class="s">"geolocation"</span>],
+)
+<span class="k">def</span> test_finds_stores_near_new_delhi(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/about-you"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Find stores near me"</span>).click()
+    expect(page.locator(<span class="s">"#where"</span>)).to_have_text(<span class="s">"28.6139, 77.2090"</span>)
+
+
+<span class="k">def</span> test_location_blocked_when_permission_is_not_granted(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/about-you"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Find stores near me"</span>).click()
+    expect(page.locator(<span class="s">"#where"</span>)).to_contain_text(<span class="s">"blocked"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_location.py::test_finds_stores_near_new_delhi[chromium] PASSED [ 50%]
+tests/test_location.py::test_location_blocked_when_permission_is_not_granted[chromium] PASSED [100%]
+
+============================== 2 passed in 1.75s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/location.spec.js</div><pre class="src" data-file="tests/location.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.describe(<span class="s">'with the location shared'</span>, () =&gt; {
+  test.use({
+    geolocation: { latitude: <span class="n">28.6139</span>, longitude: <span class="n">77.209</span> },   <span class="c">// New Delhi</span>
+    permissions: [<span class="s">'geolocation'</span>],
+  });
+
+  test(<span class="s">'finds stores near New Delhi'</span>, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+    <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Find stores near me'</span> }).click();
+    <span class="k">await</span> expect(page.locator(<span class="s">'#where'</span>)).toHaveText(<span class="s">'28.6139, 77.2090'</span>);
+  });
+});
+
+test(<span class="s">'location blocked when permission is not granted'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Find stores near me'</span> }).click();
+  <span class="k">await</span> expect(page.locator(<span class="s">'#where'</span>)).toContainText(<span class="s">'blocked'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/location.spec.js:9:3 › with the location shared › finds stores near New Delhi (361ms)
+  ✓  2 [chromium] › tests/location.spec.js:16:1 › location blocked when permission is not granted (229ms)
+
+  2 passed (2.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/location.spec.ts</div><pre class="src" data-file="tests/location.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.describe(<span class="s">'with the location shared'</span>, () =&gt; {
+  test.use({
+    geolocation: { latitude: <span class="n">28.6139</span>, longitude: <span class="n">77.209</span> },   <span class="c">// New Delhi</span>
+    permissions: [<span class="s">'geolocation'</span>],
+  });
+
+  test(<span class="s">'finds stores near New Delhi'</span>, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+    <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Find stores near me'</span> }).click();
+    <span class="k">await</span> expect(page.locator(<span class="s">'#where'</span>)).toHaveText(<span class="s">'28.6139, 77.2090'</span>);
+  });
+});
+
+test(<span class="s">'location blocked when permission is not granted'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Find stores near me'</span> }).click();
+  <span class="k">await</span> expect(page.locator(<span class="s">'#where'</span>)).toContainText(<span class="s">'blocked'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/location.spec.ts:9:3 › with the location shared › finds stores near New Delhi (273ms)
+  ✓  2 [chromium] › tests/location.spec.ts:16:1 › location blocked when permission is not granted (200ms)
+
+  2 passed (1.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>With the <code>geolocation</code> permission granted, the browser answers with the fake position at once. Without it, the request is refused, so the same page also lets you test the unhappy path.</p></div></div>
+</section>
+<section class="card reveal jsec" id="devices" data-say="devices"><div class="sec-num">Part 5</div><h2><span class="sec-em">📱</span><span>Phones and tablets</span></h2>
+
+<p>Playwright ships a list of more than 200 device profiles, such as <b>iPhone 15</b>, <b>Pixel 7</b> and <b>Galaxy S24</b>. Each profile is a set of context options. This is emulation inside a desktop browser engine: it gets the size, the touch input and the user agent right, but it is not a real phone.</p>
+<div class="codewrap tests pw4" data-k="device" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Emulate a phone from the device list · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/DeviceTest.java</div><pre class="src" data-file="src/test/java/com/brainy/DeviceTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">Options</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">OptionsFactory</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">DeviceTest</span>.<span class="t">Pixel</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">DeviceTest</span> {
+  <span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="t">Pixel</span> <span class="k">implements</span> <span class="t">OptionsFactory</span> {
+    <span class="a">@Override</span>
+    <span class="k">public</span> <span class="t">Options</span> getOptions() {
+      <span class="k">return</span> <span class="k">new</span> <span class="t">Options</span>().setHeadless(<span class="k">true</span>).setBaseUrl(<span class="s">"http://localhost:4173"</span>).setDeviceName(<span class="s">"Pixel 7"</span>);
+    }
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theShopOnAPixel7(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/about-you"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"width  "</span> + page.locator(<span class="s">"#width"</span>).textContent());
+    <span class="t">System</span>.out.println(<span class="s">"touch  "</span> + page.locator(<span class="s">"#touch"</span>).textContent());
+    <span class="t">System</span>.out.println(<span class="s">"mobile "</span> + page.evaluate(<span class="s">"/Mobile/.test(navigator.userAgent)"</span>));
+    assertThat(page.locator(<span class="s">"#touch"</span>)).hasText(<span class="s">"yes"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.DeviceTest
+width  981 px
+touch  yes
+mobile true
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.196 s -- in com.brainy.DeviceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_device.py</div><pre class="src" data-file="tests/test_device.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_the_shop_on_a_pixel_7(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/about-you"</span>)
+    print(<span class="s">"width "</span>, page.locator(<span class="s">"#width"</span>).text_content())
+    print(<span class="s">"touch "</span>, page.locator(<span class="s">"#touch"</span>).text_content())
+    print(<span class="s">"mobile"</span>, page.evaluate(<span class="s">"/Mobile/.test(navigator.userAgent)"</span>))
+    expect(page.locator(<span class="s">"#touch"</span>)).to_have_text(<span class="s">"yes"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s --device &quot;Pixel 7&quot;</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_device.py::test_the_shop_on_a_pixel_7[chromium] width  981 px
+touch  yes
+mobile True
+PASSED
+
+============================== 1 passed in 1.10s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/device.spec.js</div><pre class="src" data-file="tests/device.spec.js"><span class="k">import</span> { test, expect, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.use({ ...devices[<span class="s">'Pixel 7'</span>] });
+
+test(<span class="s">'the shop on a Pixel 7'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+  console.log(<span class="s">'width '</span>, <span class="k">await</span> page.locator(<span class="s">'#width'</span>).textContent());
+  console.log(<span class="s">'touch '</span>, <span class="k">await</span> page.locator(<span class="s">'#touch'</span>).textContent());
+  console.log(<span class="s">'mobile'</span>, <span class="k">await</span> page.evaluate(() =&gt; /<span class="t">Mobile</span>/.test(navigator.userAgent)));
+  <span class="k">await</span> expect(page.locator(<span class="s">'#touch'</span>)).toHaveText(<span class="s">'yes'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+width  981 px
+touch  yes
+mobile true
+  ✓  1 [chromium] › tests/device.spec.js:5:1 › the shop on a Pixel 7 (294ms)
+
+  1 passed (1.5s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/device.spec.ts</div><pre class="src" data-file="tests/device.spec.ts"><span class="k">import</span> { test, expect, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.use({ ...devices[<span class="s">'Pixel 7'</span>] });
+
+test(<span class="s">'the shop on a Pixel 7'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+  console.log(<span class="s">'width '</span>, <span class="k">await</span> page.locator(<span class="s">'#width'</span>).textContent());
+  console.log(<span class="s">'touch '</span>, <span class="k">await</span> page.locator(<span class="s">'#touch'</span>).textContent());
+  console.log(<span class="s">'mobile'</span>, <span class="k">await</span> page.evaluate(() =&gt; /<span class="t">Mobile</span>/.test(navigator.userAgent)));
+  <span class="k">await</span> expect(page.locator(<span class="s">'#touch'</span>)).toHaveText(<span class="s">'yes'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+width  981 px
+touch  yes
+mobile true
+  ✓  1 [chromium] › tests/device.spec.ts:5:1 › the shop on a Pixel 7 (335ms)
+
+  1 passed (2.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>One name sets the screen size, the pixel ratio, the user agent, touch and the mobile flag. Look at the width: 981 px, not 412. The About you page has no <code>&lt;meta name="viewport"&gt;</code> tag, so the phone lays it out at desktop width and zooms out, exactly like a real phone does. Emulation found a real mobile bug in the practice shop. Python takes the device on the command line with <code>--device</code>, Java takes it with <code>setDeviceName</code> in the options, and JavaScript spreads it into <code>test.use</code>.</p></div></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Emulation catches most layout and touch bugs and costs nothing. Some bugs only show on real hardware, such as a keyboard covering a field or a slow phone. Many teams run emulated phones on every commit and real devices in a cloud service before a release.</div></div>
+</section>
+<section class="card reveal jsec" id="tabs" data-say="tabs"><div class="sec-num">Part 6</div><h2><span class="sec-em">🗂️</span><span>New tabs and pop ups</span></h2>
+
+<p>When a click opens a new tab or window, Playwright gives you a new page object for it. The trick is to start waiting <b>before</b> the click, so the event cannot be missed.</p>
+<div class="codewrap tests pw4" data-k="tabs" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">New tabs and pop up windows · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/TabsTest.java</div><pre class="src" data-file="src/test/java/com/brainy/TabsTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">TabsTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> helpOpensInANewTab(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    <span class="c">// waitForPopup runs the click and waits for the new tab it opens.</span>
+    <span class="t">Page</span> help = page.waitForPopup(() -&gt;
+        page.getByRole(<span class="t">AriaRole</span>.<span class="t">LINK</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Open help in a new tab"</span>)).click());
+
+    assertThat(help).hasTitle(<span class="s">"Help · Brainy Shop"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"Tabs open: "</span> + page.context().pages().size());
+    help.close();
+    <span class="t">System</span>.out.println(<span class="s">"Tabs open: "</span> + page.context().pages().size());
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theChatWindowIsAPopup(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    <span class="t">Page</span> chat = page.waitForPopup(() -&gt;
+        page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Open chat window"</span>)).click());
+    assertThat(chat.getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>)).hasText(<span class="s">"Chat with us"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.TabsTest
+Tabs open: 2
+Tabs open: 1
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.000 s -- in com.brainy.TabsTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_tabs.py</div><pre class="src" data-file="tests/test_tabs.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_help_opens_in_a_new_tab(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    <span class="c"># Start waiting for the new tab before the click that opens it.</span>
+    <span class="k">with</span> page.expect_popup() <span class="k">as</span> popup_info:
+        page.get_by_role(<span class="s">"link"</span>, name=<span class="s">"Open help in a new tab"</span>).click()
+    help = popup_info.value
+
+    expect(help).to_have_title(<span class="s">"Help · Brainy Shop"</span>)
+    print(<span class="s">"Tabs open:"</span>, len(page.context.pages))
+    help.close()
+    print(<span class="s">"Tabs open:"</span>, len(page.context.pages))
+
+
+<span class="k">def</span> test_the_chat_window_is_a_popup(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    <span class="k">with</span> page.expect_popup() <span class="k">as</span> popup_info:
+        page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Open chat window"</span>).click()
+    expect(popup_info.value.get_by_role(<span class="s">"heading"</span>)).to_have_text(<span class="s">"Chat with us"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_tabs.py::test_help_opens_in_a_new_tab[chromium] Tabs open: 2
+Tabs open: 1
+PASSED
+tests/test_tabs.py::test_the_chat_window_is_a_popup[chromium] PASSED
+
+============================== 2 passed in 3.39s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/tabs.spec.js</div><pre class="src" data-file="tests/tabs.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'help opens in a new tab'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="c">// Start waiting for the new tab before the click that opens it.</span>
+  <span class="k">const</span> popupPromise = page.waitForEvent(<span class="s">'popup'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'link'</span>, { name: <span class="s">'Open help in a new tab'</span> }).click();
+  <span class="k">const</span> help = <span class="k">await</span> popupPromise;
+
+  <span class="k">await</span> expect(help).toHaveTitle(<span class="s">'Help · Brainy Shop'</span>);
+  console.log(<span class="s">'Tabs open:'</span>, page.context().pages().length);
+  <span class="k">await</span> help.close();
+  console.log(<span class="s">'Tabs open:'</span>, page.context().pages().length);
+});
+
+test(<span class="s">'the chat window is a popup'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">const</span> popupPromise = page.waitForEvent(<span class="s">'popup'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Open chat window'</span> }).click();
+  <span class="k">const</span> chat = <span class="k">await</span> popupPromise;
+  <span class="k">await</span> expect(chat.getByRole(<span class="s">'heading'</span>)).toHaveText(<span class="s">'Chat with us'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+Tabs open: 2
+Tabs open: 1
+  ✓  1 [chromium] › tests/tabs.spec.js:3:1 › help opens in a new tab (1.6s)
+  ✓  2 [chromium] › tests/tabs.spec.js:16:1 › the chat window is a popup (1.3s)
+
+  2 passed (4.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/tabs.spec.ts</div><pre class="src" data-file="tests/tabs.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'help opens in a new tab'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="c">// Start waiting for the new tab before the click that opens it.</span>
+  <span class="k">const</span> popupPromise = page.waitForEvent(<span class="s">'popup'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'link'</span>, { name: <span class="s">'Open help in a new tab'</span> }).click();
+  <span class="k">const</span> help = <span class="k">await</span> popupPromise;
+
+  <span class="k">await</span> expect(help).toHaveTitle(<span class="s">'Help · Brainy Shop'</span>);
+  console.log(<span class="s">'Tabs open:'</span>, page.context().pages().length);
+  <span class="k">await</span> help.close();
+  console.log(<span class="s">'Tabs open:'</span>, page.context().pages().length);
+});
+
+test(<span class="s">'the chat window is a popup'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">const</span> popupPromise = page.waitForEvent(<span class="s">'popup'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Open chat window'</span> }).click();
+  <span class="k">const</span> chat = <span class="k">await</span> popupPromise;
+  <span class="k">await</span> expect(chat.getByRole(<span class="s">'heading'</span>)).toHaveText(<span class="s">'Chat with us'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+Tabs open: 2
+Tabs open: 1
+  ✓  1 [chromium] › tests/tabs.spec.ts:3:1 › help opens in a new tab (1.5s)
+  ✓  2 [chromium] › tests/tabs.spec.ts:16:1 › the chat window is a popup (1.3s)
+
+  2 passed (4.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>A link with <code>target="_blank"</code> and a <code>window.open</code> call both create a popup page. You start waiting before the click, then use the new page like any other. Both tabs live in the same context, so they share the login.</p></div></div>
+<p><span class="only-java">Java wraps the action in a lambda: <code>page.waitForPopup(() -&gt; ...click())</code> runs the click and returns the new page.</span><span class="only-py">Python uses a <code>with page.expect_popup() as info:</code> block around the click, then <code>info.value</code> is the new page.</span><span class="only-js">JavaScript stores the promise first, <code>const p = page.waitForEvent('popup')</code>, then clicks, then awaits the promise.</span><span class="only-ts">JavaScript stores the promise first, <code>const p = page.waitForEvent('popup')</code>, then clicks, then awaits the promise.</span></p>
+<p>To catch any new page in the context, not only popups of one page, wait for the context's <code>page</code> event instead.</p>
+</section>
+<section class="card reveal jsec" id="browsers" data-say="browsers"><div class="sec-num">Part 7</div><h2><span class="sec-em">🦊</span><span>Chromium, Firefox and WebKit</span></h2>
+
+<p>Each Playwright release is tested with its own builds of Chromium, Firefox and WebKit. Running the same tests in all three catches bugs that only one engine shows, such as a date picker that breaks in Safari.</p>
+<div class="codewrap tests pw4 pw-single" data-k="multi" data-langs="ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One suite, many browsers and devices · <b class="pw-badge">📄 Shown, not run here</b></span><button type="button" class="copy">Copy</button></div><div class="pw-pane" data-l="ts" data-badge="📄 Shown, not run here"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  use: { baseURL: <span class="s">'http://localhost:4173'</span> },
+  projects: [
+    { name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } },
+    { name: <span class="s">'firefox'</span>, use: { ...devices[<span class="s">'Desktop Firefox'</span>] } },
+    { name: <span class="s">'webkit'</span>, use: { ...devices[<span class="s">'Desktop Safari'</span>] } },
+    { name: <span class="s">'mobile'</span>, use: { ...devices[<span class="s">'iPhone 15'</span>] } },
+    { name: <span class="s">'edge'</span>, use: { ...devices[<span class="s">'Desktop Edge'</span>], channel: <span class="s">'msedge'</span> } },
+  ],
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --project=firefox</pre></div><div class="note-out"><span>What happens</span><p>Every test runs once per project, so this config runs each test five times. <code>--project</code> picks one. This file is shown and not run here, because only Chromium is installed on the build machine of this page.</p></div></div></div>
+<div class="tw"><table class="jt "><tr><th></th><th>☕ Java</th><th>🐍 Python</th><th>🟨🔷 Playwright Test</th></tr><tr><td>pick the engine</td><td><code>playwright.firefox()</code> or <code>setBrowserName("firefox")</code></td><td><code>--browser firefox</code></td><td>a project with <code>devices['Desktop Firefox']</code></td></tr><tr><td>all three in one run</td><td>a parameterized test or three Maven runs</td><td><code>--browser chromium --browser firefox --browser webkit</code></td><td>three projects in the config</td></tr><tr><td>branded Chrome or Edge</td><td><code>setChannel("chrome")</code></td><td><code>--browser-channel chrome</code></td><td><code>channel: 'chrome'</code></td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>WebKit on Windows and Linux is the engine of Safari, not Safari itself. It catches most Safari bugs. For the last few percent, teams run a small smoke suite on real Safari on a Mac.</div></div>
+</section>
+<section class="card reveal jsec" id="lifecycle" data-say="lifecycle"><div class="sec-num">Part 8</div><h2><span class="sec-em">♻️</span><span>Profiles, closing and remote browsers</span></h2>
+
+<p>Most of the time a fresh context per test is right. Two other ways to get a browser are worth knowing.</p>
+<div class="codewrap tests pw4" data-k="persist" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A persistent profile that survives a restart · <b class="pw-badge">✅ ran for real</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ ran for real"><div class="fname">📄 src/main/java/com/brainy/Main.java</div><pre class="src" data-file="src/main/java/com/brainy/Main.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.*;
+<span class="k">import</span> java.nio.file.<span class="t">Files</span>;
+<span class="k">import</span> java.nio.file.<span class="t">Path</span>;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">Main</span> {
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+    <span class="t">Path</span> profile = <span class="t">Files</span>.createTempDirectory(<span class="s">"shop-profile-"</span>);
+    <span class="k">try</span> (<span class="t">Playwright</span> playwright = <span class="t">Playwright</span>.create()) {
+      <span class="c">// First visit: a real profile folder on disk, like a person's Chrome profile.</span>
+      <span class="t">BrowserContext</span> context = playwright.chromium().launchPersistentContext(profile, <span class="k">new</span> <span class="t">BrowserType</span>.<span class="t">LaunchPersistentContextOptions</span>());
+      <span class="t">Page</span> page = context.pages().get(<span class="n">0</span>);
+      page.navigate(<span class="s">"http://localhost:4173/"</span>);
+      page.evaluate(<span class="s">"localStorage.setItem('theme', 'dark')"</span>);
+      context.close();
+
+      <span class="c">// Second visit with the same folder: the data is still there.</span>
+      context = playwright.chromium().launchPersistentContext(profile, <span class="k">new</span> <span class="t">BrowserType</span>.<span class="t">LaunchPersistentContextOptions</span>());
+      page = context.pages().get(<span class="n">0</span>);
+      page.navigate(<span class="s">"http://localhost:4173/"</span>);
+      <span class="t">System</span>.out.println(<span class="s">"theme = "</span> + page.evaluate(<span class="s">"localStorage.getItem('theme')"</span>));
+      context.close();
+    }
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn -q compile exec:java</pre></div><div class="out"><span>Terminal output</span><pre>theme = dark</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ ran for real"><div class="fname">📄 main.py</div><pre class="src" data-file="main.py"><span class="k">import</span> tempfile
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> sync_playwright
+
+profile = tempfile.mkdtemp(prefix=<span class="s">"shop-profile-"</span>)
+
+<span class="k">with</span> sync_playwright() <span class="k">as</span> p:
+    <span class="c"># First visit: a real profile folder on disk, like a person's Chrome profile.</span>
+    context = p.chromium.launch_persistent_context(profile)
+    page = context.pages[<span class="n">0</span>]
+    page.goto(<span class="s">"http://localhost:4173/"</span>)
+    page.evaluate(<span class="s">"localStorage.setItem('theme', 'dark')"</span>)
+    context.close()
+
+    <span class="c"># Second visit with the same folder: the data is still there.</span>
+    context = p.chromium.launch_persistent_context(profile)
+    page = context.pages[<span class="n">0</span>]
+    page.goto(<span class="s">"http://localhost:4173/"</span>)
+    print(<span class="s">"theme ="</span>, page.evaluate(<span class="s">"localStorage.getItem('theme')"</span>))
+    context.close()</pre><div class="cmd"><span>Terminal</span><pre>$ python main.py</pre></div><div class="out"><span>Terminal output</span><pre>theme = dark</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ ran for real"><div class="fname">📄 main.mjs</div><pre class="src" data-file="main.mjs"><span class="k">import</span> { chromium } <span class="k">from</span> <span class="s">'playwright'</span>;
+<span class="k">import</span> { mkdtempSync } <span class="k">from</span> <span class="s">'node:fs'</span>;
+<span class="k">import</span> { tmpdir } <span class="k">from</span> <span class="s">'node:os'</span>;
+<span class="k">import</span> { join } <span class="k">from</span> <span class="s">'node:path'</span>;
+
+<span class="k">const</span> profile = mkdtempSync(join(tmpdir(), <span class="s">'shop-profile-'</span>));
+
+<span class="c">// First visit: a real profile folder on disk, like a person's Chrome profile.</span>
+<span class="k">let</span> context = <span class="k">await</span> chromium.launchPersistentContext(profile);
+<span class="k">let</span> page = context.pages()[<span class="n">0</span>];
+<span class="k">await</span> page.goto(<span class="s">'http://localhost:4173/'</span>);
+<span class="k">await</span> page.evaluate(() =&gt; localStorage.setItem(<span class="s">'theme'</span>, <span class="s">'dark'</span>));
+<span class="k">await</span> context.close();
+
+<span class="c">// Second visit with the same folder: the data is still there.</span>
+context = <span class="k">await</span> chromium.launchPersistentContext(profile);
+page = context.pages()[<span class="n">0</span>];
+<span class="k">await</span> page.goto(<span class="s">'http://localhost:4173/'</span>);
+console.log(<span class="s">'theme ='</span>, <span class="k">await</span> page.evaluate(() =&gt; localStorage.getItem(<span class="s">'theme'</span>)));
+<span class="k">await</span> context.close();</pre><div class="cmd"><span>Terminal</span><pre>$ node main.mjs</pre></div><div class="out"><span>Terminal output</span><pre>theme = dark</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ ran for real"><div class="fname">📄 main.ts</div><pre class="src" data-file="main.ts"><span class="k">import</span> { chromium, <span class="k">type</span> <span class="t">BrowserContext</span> } <span class="k">from</span> <span class="s">'playwright'</span>;
+<span class="k">import</span> { mkdtempSync } <span class="k">from</span> <span class="s">'node:fs'</span>;
+<span class="k">import</span> { tmpdir } <span class="k">from</span> <span class="s">'node:os'</span>;
+<span class="k">import</span> { join } <span class="k">from</span> <span class="s">'node:path'</span>;
+
+<span class="k">const</span> profile = mkdtempSync(join(tmpdir(), <span class="s">'shop-profile-'</span>));
+
+<span class="c">// First visit: a real profile folder on disk, like a person's Chrome profile.</span>
+<span class="k">let</span> context: <span class="t">BrowserContext</span> = <span class="k">await</span> chromium.launchPersistentContext(profile);
+<span class="k">let</span> page = context.pages()[<span class="n">0</span>];
+<span class="k">await</span> page.goto(<span class="s">'http://localhost:4173/'</span>);
+<span class="k">await</span> page.evaluate(() =&gt; localStorage.setItem(<span class="s">'theme'</span>, <span class="s">'dark'</span>));
+<span class="k">await</span> context.close();
+
+<span class="c">// Second visit with the same folder: the data is still there.</span>
+context = <span class="k">await</span> chromium.launchPersistentContext(profile);
+page = context.pages()[<span class="n">0</span>];
+<span class="k">await</span> page.goto(<span class="s">'http://localhost:4173/'</span>);
+console.log(<span class="s">'theme ='</span>, <span class="k">await</span> page.evaluate(() =&gt; localStorage.getItem(<span class="s">'theme'</span>)));
+<span class="k">await</span> context.close();</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc -p . &amp;&amp; node main.ts</pre></div><div class="out"><span>Terminal output</span><pre>theme = dark</pre></div></div><div class="note-out"><span>What happens</span><p>A persistent context keeps cookies and storage in a folder on disk, like a real Chrome profile. Tests normally avoid this, because a fresh context per test is what keeps tests independent. It is useful for browser extensions and for scripts that must stay signed in.</p></div></div>
+<ul>
+<li><b>Connect to a browser that is already running.</b> <code>chromium.connectOverCDP(url)</code> attaches to a Chrome started with a remote debugging port, for example to automate a browser that a person already signed into.</li>
+<li><b>Run browsers on another machine.</b> <code>launchServer()</code> starts a browser that others connect to with <code>browserType.connect(wsEndpoint)</code>. Cloud grids and the Playwright Docker image use this.</li>
+</ul>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Close what you open. In a test runner the fixtures close contexts and pages for you. In a script, close the browser at the end, or use try with resources in Java and a with block in Python, so a crash does not leave browser processes running on the machine.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-setup.html" data-topic="pw-setup"><small>← Previous chapter</small><b>🧰 Install and set up</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "One browser, many clean rooms", "panels": [{"s": [["e", "🌐"], ["t", "browser", {"b": 1}]], "h": "Browser", "t": "Start once, about 0.5 s.", "more": "Shared by many tests."}, {"s": [["e", "🧳"], ["t", "context", {"b": 1}]], "h": "Context", "t": "A fresh, empty profile.", "more": "Its own cookies, storage and permissions."}, {"s": [["e", "📄"], ["t", "page", {"b": 1}]], "h": "Page", "t": "One tab.", "more": "Tabs in a context share the login."}, {"s": [["e", "📱"], ["t", "devices[...]", {"b": 1}]], "h": "Emulation", "t": "Size, locale, time zone, location.", "more": "Set on the context, nothing on your computer changes."}], "remember": "Start one browser, give every test a new context, and set what the site should see, such as a phone or a German user, with context options."}, "real": [["💬", "Support chat", "A test opens two contexts, one signed in as a customer and one as a support agent, and checks that a message typed by one appears for the other."], ["🌍", "A shop in five countries", "The same checkout test runs with five locales and time zones, and checks the currency format and the delivery date shown to each country."], ["📱", "Mobile first launch", "Before a mobile redesign goes live, the team adds Pixel 7 and iPhone 15 projects to the config, and the whole suite runs on both every night."]], "quiz": [{"lv": 1, "q": "What is a browser context?", "o": ["A new browser program", "A fresh, empty profile with its own cookies and storage", "One HTML element", "A test file"], "a": 1, "hint": "Think of an incognito window.", "why": "A context is an isolated profile inside a running browser. Creating one is fast."}, {"lv": 1, "q": "Why do test runners give each test a new context?", "o": ["It is faster than a new page", "So tests never share cookies or logins and can run in any order", "Browsers need it", "To use less memory"], "a": 1, "hint": "Independence.", "why": "A fresh context per test keeps tests independent and safe to run in parallel."}, {"lv": 1, "q": "Which option shows the browser window?", "o": ["slowMo", "headless: false", "channel", "devtools"], "a": 1, "hint": "Headless means no window.", "why": "Set <code>headless<\/code> to false (or pass <code>--headed<\/code>) to see the window."}, {"lv": 1, "q": "Two pages in the same context: what do they share?", "o": ["Nothing", "Cookies and storage, so the login", "Only the URL", "Only the title"], "a": 1, "hint": "They are tabs of the same profile.", "why": "Pages in one context share cookies and storage, like tabs of one browser window."}, {"lv": 2, "q": "How does a test check a German user without changing the computer?", "o": ["Install a German Windows", "Set locale to de-DE in the context options", "Use a VPN", "Change the server"], "a": 1, "hint": "The context controls what the page sees.", "why": "The <code>locale<\/code> option changes <code>navigator.language<\/code> and number and date formatting for that context."}, {"lv": 2, "q": "When must you start waiting for a popup?", "o": ["After the click", "Before the click that opens it", "Any time", "After the page loads"], "a": 1, "hint": "Events can fire very fast.", "why": "Start waiting first, then click, so the popup event cannot happen before you are listening."}, {"lv": 2, "q": "In Python, which fixture creates extra contexts that keep the base URL?", "o": ["context", "browser", "new_context", "make_context"], "a": 2, "hint": "It is a function you call.", "why": "<code>new_context()<\/code> uses the browser context args, including the base URL, and closes the contexts after the test."}, {"lv": 2, "q": "Without the geolocation permission, what did the About you page show after clicking Find stores near me?", "o": ["New Delhi", "blocked", "Nothing happens", "An error in the test"], "a": 1, "hint": "The browser refuses to share the position.", "why": "The location request is refused and the page shows that it was blocked."}, {"lv": 2, "q": "Which Java option emulates a Pixel 7 with @UsePlaywright?", "o": ["setDevice(\"Pixel 7\")", "setDeviceName(\"Pixel 7\")", "setMobile(true)", "devices.get(\"Pixel 7\")"], "a": 1, "hint": "It takes a device name.", "why": "The JUnit Options class has <code>setDeviceName<\/code>."}, {"lv": 3, "q": "What is a persistent context good for?", "o": ["Every normal test", "Browser extensions and scripts that must keep a real profile", "Faster tests", "Parallel runs"], "a": 1, "hint": "It keeps data on disk between runs.", "why": "Persistent contexts are for profiles that must survive, such as extension testing. Normal tests want a fresh context."}, {"lv": 3, "q": "In Playwright Test, a test creates its own context with <code>browser.newContext()<\/code>. Which settings does it get?", "o": ["None, always the defaults", "The use options from the config, such as baseURL and locale", "Only the viewport", "The settings of the last test"], "a": 1, "hint": "The build of this page checked this with a real run.", "why": "Playwright Test applies the <code>use<\/code> options to contexts created from the <code>browser<\/code> fixture too. In Java, a context you create yourself starts with default options."}, {"lv": 3, "q": "Which call attaches to a Chrome that is already running with a debugging port?", "o": ["chromium.launch()", "chromium.connectOverCDP(url)", "chromium.attach()", "browser.newContext()"], "a": 1, "hint": "CDP is the Chrome DevTools Protocol.", "why": "<code>connectOverCDP<\/code> connects to an existing Chromium based browser."}], "calc": [{"lv": 1, "q": "A config has 3 browser projects and 2 phone projects. A suite has 10 tests. How many test runs?", "ans": 50, "hint": "projects times tests", "steps": ["3 + 2 = 5 projects", "5 × 10 = 50 runs"]}, {"lv": 1, "q": "A context holds 3 pages. You close 1. How many pages are left?", "ans": 2, "hint": "3 minus 1", "steps": ["3 - 1 = 2 pages"]}, {"lv": 2, "q": "slowMo is 100 ms and a test has 12 actions. How many seconds of extra waiting does slowMo add?", "ans": 1.2, "hint": "12 × 100 ms", "steps": ["12 × 100 = 1200 ms", "1200 ms = 1.2 s"]}, {"lv": 2, "q": "A new context takes 8 ms and a new browser takes 600 ms. How many contexts can you create in the time of one browser start?", "ans": 75, "hint": "600 ÷ 8", "steps": ["600 ÷ 8 = 75 contexts"]}, {"lv": 2, "q": "A shop supports 4 locales and 3 screen sizes. A checkout test must run once for each pair. How many runs?", "ans": 12, "hint": "4 × 3", "steps": ["4 locales × 3 sizes = 12 runs"]}, {"lv": 3, "q": "The iPhone 15 profile has a viewport 393 px wide and a device scale factor of 3. How many real pixels wide is a screenshot?", "ans": 1179, "hint": "393 × 3", "steps": ["393 × 3 = 1179 pixels"]}, {"lv": 3, "q": "A chat test needs a customer and an agent. 6 chat tests each use 2 contexts. How many contexts are created?", "ans": 12, "hint": "6 × 2", "steps": ["6 tests × 2 contexts = 12 contexts"]}, {"lv": 3, "q": "Running 200 tests in 3 engines takes 30 minutes. Running only Chromium on each commit and all three at night: how many minutes does one commit run take?", "ans": 10, "hint": "one third of the time", "steps": ["3 engines take 30 minutes", "1 engine takes 30 ÷ 3 = 10 minutes"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers browsers, contexts and pages, launch options, emulating users and devices, new tabs and pop ups, the three browser engines, and persistent profiles.", "hi": "यह अध्याय browsers, contexts और pages, launch options, users और devices की नकल, नए tabs और pop ups, तीन browser engines और persistent profiles समझाता है।", "kn": "ಈ ಅಧ್ಯಾಯ browsers, contexts ಮತ್ತು pages, launch options, users ಮತ್ತು devices ಅನುಕರಣೆ, ಹೊಸ tabs ಮತ್ತು pop ups, ಮೂರು browser engines ಮತ್ತು persistent profiles ವಿವರಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ browsers, contexts ଓ pages, launch options, users ଓ devices ର ନକଲ, ନୂଆ tabs ଓ pop ups, ତିନୋଟି browser engines ଏବଂ persistent profiles ବୁଝାଏ।", "ar": "يغطي هذا الفصل المتصفحات والسياقات والصفحات وخيارات التشغيل ومحاكاة المستخدمين والأجهزة والتبويبات والنوافذ المنبثقة ومحركات المتصفح الثلاثة والملفات الشخصية الدائمة.", "de": "Dieses Kapitel behandelt Browser, Kontexte und Seiten, Startoptionen, die Emulation von Nutzern und Geräten, neue Tabs und Pop-ups, die drei Browser-Engines und dauerhafte Profile."}, {"id": "levels", "h": "Browser, context, page", "en": "A browser is the running program. A context is a fresh, empty profile with its own cookies and storage. A page is one tab. Test runners give every test a new context.", "hi": "Browser चलता हुआ program है। Context एक नया, खाली profile है जिसकी अपनी cookies और storage होती है। Page एक tab है। Test runners हर टेस्ट को नया context देते हैं।", "kn": "Browser ಚಲಿಸುತ್ತಿರುವ program. Context ತನ್ನದೇ cookies ಮತ್ತು storage ಇರುವ ಹೊಸ ಖಾಲಿ profile. Page ಒಂದು tab. Test runners ಪ್ರತಿ ಟೆಸ್ಟ್‌ಗೆ ಹೊಸ context ನೀಡುತ್ತವೆ.", "or": "Browser ଚାଲୁଥିବା program। Context ନିଜର cookies ଓ storage ଥିବା ଏକ ନୂଆ ଖାଲି profile। Page ଗୋଟିଏ tab। Test runners ପ୍ରତ୍ୟେକ ଟେଷ୍ଟକୁ ନୂଆ context ଦିଅନ୍ତି।", "ar": "المتصفح هو البرنامج العامل. السياق ملف شخصي جديد فارغ له ملفات تعريف الارتباط والتخزين الخاصة به. الصفحة تبويب واحد. تعطي مشغّلات الاختبار كل اختبار سياقًا جديدًا.", "de": "Der Browser ist das laufende Programm. Ein Kontext ist ein frisches, leeres Profil mit eigenen Cookies und eigenem Speicher. Eine Seite ist ein Tab. Test Runner geben jedem Test einen neuen Kontext."}, {"id": "launch", "h": "Launching", "en": "Launch options control the browser: headless, slow motion, a branded channel such as Chrome or Edge, extra arguments and the start timeout. In test runners you set them in the config or options.", "hi": "Launch options browser को नियंत्रित करते हैं: headless, slow motion, Chrome या Edge जैसा channel, extra arguments और start timeout। Test runners में इन्हें config या options में रखते हैं।", "kn": "Launch options browser ನಿಯಂತ್ರಿಸುತ್ತವೆ: headless, slow motion, Chrome ಅಥವಾ Edge ನಂತಹ channel, extra arguments ಮತ್ತು start timeout. Test runners ನಲ್ಲಿ ಇವುಗಳನ್ನು config ಅಥವಾ options ನಲ್ಲಿ ಇಡುತ್ತೇವೆ.", "or": "Launch options browser କୁ ନିୟନ୍ତ୍ରଣ କରନ୍ତି: headless, slow motion, Chrome ବା Edge ଭଳି channel, extra arguments ଓ start timeout। Test runners ରେ ଏଗୁଡ଼ିକ config ବା options ରେ ରଖାଯାଏ।", "ar": "تتحكم خيارات التشغيل بالمتصفح: الوضع بدون واجهة والحركة البطيئة والقناة مثل Chrome أو Edge والوسائط الإضافية ومهلة البدء. في مشغّلات الاختبار تضعها في الإعدادات أو الخيارات.", "de": "Startoptionen steuern den Browser: headless, Zeitlupe, ein Kanal wie Chrome oder Edge, zusätzliche Argumente und das Start-Timeout. In Test Runnern setzt du sie in der Konfiguration oder den Optionen."}, {"id": "contexts", "h": "Contexts keep tests apart", "en": "Two contexts in one browser share nothing. Asha signs in inside one context while the other stays a guest. Use this for features with two people, such as a chat.", "hi": "एक browser के दो contexts कुछ साझा नहीं करते। Asha एक context में sign in करती है जबकि दूसरा guest रहता है। दो लोगों वाली सुविधाओं जैसे chat के लिए इसका उपयोग करें।", "kn": "ಒಂದೇ browser ನ ಎರಡು contexts ಏನನ್ನೂ ಹಂಚಿಕೊಳ್ಳುವುದಿಲ್ಲ. Asha ಒಂದು context ನಲ್ಲಿ sign in ಮಾಡಿದರೆ ಇನ್ನೊಂದು guest ಆಗಿಯೇ ಇರುತ್ತದೆ. chat ನಂತಹ ಇಬ್ಬರ ಸೌಲಭ್ಯಗಳಿಗೆ ಇದನ್ನು ಬಳಸಿ.", "or": "ଗୋଟିଏ browser ର ଦୁଇଟି contexts କିଛି ବାଣ୍ଟନ୍ତି ନାହିଁ। Asha ଗୋଟିଏ context ରେ sign in କଲେ ଅନ୍ୟଟି guest ରହେ। chat ଭଳି ଦୁଇଜଣଙ୍କ ସୁବିଧା ପାଇଁ ଏହା ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "سياقان في متصفح واحد لا يتشاركان شيئًا. تسجّل Asha الدخول في سياق بينما يبقى الآخر ضيفًا. استخدم ذلك للميزات التي تحتاج شخصين مثل الدردشة.", "de": "Zwei Kontexte in einem Browser teilen nichts. Asha meldet sich in einem Kontext an, während der andere Gast bleibt. Nutze das für Funktionen mit zwei Personen, zum Beispiel einen Chat."}, {"id": "emulate", "h": "Emulation", "en": "Context options change what the site sees: screen size, language, time zone, dark mode, touch, location and permissions. Nothing on your computer changes.", "hi": "Context options बदलते हैं कि site क्या देखती है: screen size, भाषा, time zone, dark mode, touch, location और permissions। आपके computer पर कुछ नहीं बदलता।", "kn": "Context options site ನೋಡುವುದನ್ನು ಬದಲಾಯಿಸುತ್ತವೆ: screen size, ಭಾಷೆ, time zone, dark mode, touch, location ಮತ್ತು permissions. ನಿಮ್ಮ computer ನಲ್ಲಿ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ.", "or": "Context options site କଣ ଦେଖେ ତାହା ବଦଳାନ୍ତି: screen size, ଭାଷା, time zone, dark mode, touch, location ଓ permissions। ଆପଣଙ୍କ computer ରେ କିଛି ବଦଳେ ନାହିଁ।", "ar": "تغيّر خيارات السياق ما يراه الموقع: حجم الشاشة واللغة والمنطقة الزمنية والوضع الداكن واللمس والموقع والأذونات. لا يتغير شيء على حاسوبك.", "de": "Kontextoptionen ändern, was die Seite sieht: Bildschirmgröße, Sprache, Zeitzone, Dunkelmodus, Touch, Standort und Berechtigungen. Auf deinem Computer ändert sich nichts."}, {"id": "devices", "h": "Phones and tablets", "en": "Playwright has more than 200 device profiles such as iPhone 15 and Pixel 7. One name sets size, pixel ratio, user agent and touch. It is emulation, not a real phone.", "hi": "Playwright में 200 से ज़्यादा device profiles हैं जैसे iPhone 15 और Pixel 7। एक नाम size, pixel ratio, user agent और touch तय करता है। यह नकल है, असली phone नहीं।", "kn": "Playwright ನಲ್ಲಿ iPhone 15 ಮತ್ತು Pixel 7 ನಂತಹ 200 ಕ್ಕೂ ಹೆಚ್ಚು device profiles ಇವೆ. ಒಂದು ಹೆಸರು size, pixel ratio, user agent ಮತ್ತು touch ಹೊಂದಿಸುತ್ತದೆ. ಇದು ಅನುಕರಣೆ, ನಿಜವಾದ phone ಅಲ್ಲ.", "or": "Playwright ରେ iPhone 15 ଓ Pixel 7 ଭଳି 200 ରୁ ଅଧିକ device profiles ଅଛି। ଗୋଟିଏ ନାମ size, pixel ratio, user agent ଓ touch ସେଟ କରେ। ଏହା ନକଲ, ପ୍ରକୃତ phone ନୁହେଁ।", "ar": "يملك Playwright أكثر من 200 ملف جهاز مثل iPhone 15 وPixel 7. اسم واحد يضبط الحجم ونسبة البكسل ووكيل المستخدم واللمس. إنها محاكاة وليست هاتفًا حقيقيًا.", "de": "Playwright hat über 200 Geräteprofile wie iPhone 15 und Pixel 7. Ein Name setzt Größe, Pixeldichte, User Agent und Touch. Das ist Emulation, kein echtes Telefon."}, {"id": "tabs", "h": "New tabs and pop ups", "en": "When a click opens a new tab, start waiting for the popup before the click, then use the new page like any other. Tabs in one context share the login.", "hi": "जब click से नया tab खुले, तो click से पहले popup का इंतज़ार शुरू करें, फिर नए page को सामान्य page की तरह इस्तेमाल करें। एक context के tabs login साझा करते हैं।", "kn": "Click ನಿಂದ ಹೊಸ tab ತೆರೆದಾಗ, click ಗಿಂತ ಮೊದಲೇ popup ಗಾಗಿ ಕಾಯಲು ಆರಂಭಿಸಿ, ನಂತರ ಹೊಸ page ಅನ್ನು ಇತರ page ನಂತೆ ಬಳಸಿ. ಒಂದು context ನ tabs login ಹಂಚಿಕೊಳ್ಳುತ್ತವೆ.", "or": "Click ରେ ନୂଆ tab ଖୋଲିଲେ, click ପୂର୍ବରୁ popup ପାଇଁ ଅପେକ୍ଷା ଆରମ୍ଭ କରନ୍ତୁ, ତାପରେ ନୂଆ page କୁ ଅନ୍ୟ page ଭଳି ବ୍ୟବହାର କରନ୍ତୁ। ଗୋଟିଏ context ର tabs login ବାଣ୍ଟନ୍ତି।", "ar": "عندما تفتح نقرة تبويبًا جديدًا، ابدأ انتظار النافذة المنبثقة قبل النقر، ثم استخدم الصفحة الجديدة كأي صفحة. تتشارك تبويبات السياق الواحد تسجيل الدخول.", "de": "Wenn ein Klick einen neuen Tab öffnet, beginne vor dem Klick auf das Pop-up zu warten und nutze die neue Seite dann wie jede andere. Tabs in einem Kontext teilen die Anmeldung."}, {"id": "browsers", "h": "Three engines", "en": "Playwright tests Chromium, Firefox and WebKit. In Playwright Test each engine is a project in the config. Python uses minus minus browser and Java uses the browser name option.", "hi": "Playwright Chromium, Firefox और WebKit टेस्ट करता है। Playwright Test में हर engine config का एक project है। Python minus minus browser और Java browser name option इस्तेमाल करता है।", "kn": "Playwright Chromium, Firefox ಮತ್ತು WebKit ಪರೀಕ್ಷಿಸುತ್ತದೆ. Playwright Test ನಲ್ಲಿ ಪ್ರತಿ engine config ನ ಒಂದು project. Python minus minus browser ಮತ್ತು Java browser name option ಬಳಸುತ್ತದೆ.", "or": "Playwright Chromium, Firefox ଓ WebKit ପରୀକ୍ଷା କରେ। Playwright Test ରେ ପ୍ରତ୍ୟେକ engine config ର ଏକ project। Python minus minus browser ଓ Java browser name option ବ୍ୟବହାର କରେ।", "ar": "يختبر Playwright محركات Chromium وFirefox وWebKit. في Playwright Test كل محرك مشروع في الإعدادات. يستخدم Python الخيار ناقص ناقص browser وتستخدم Java خيار اسم المتصفح.", "de": "Playwright testet Chromium, Firefox und WebKit. In Playwright Test ist jede Engine ein Projekt in der Konfiguration. Python nutzt minus minus browser und Java die Option für den Browsernamen."}, {"id": "lifecycle", "h": "Profiles and remote browsers", "en": "A persistent context keeps data in a folder like a real profile. You can also connect to a running Chrome over CDP, or to a browser server on another machine. Always close what you open.", "hi": "Persistent context data को असली profile की तरह folder में रखता है। आप CDP से चल रहे Chrome से या दूसरी machine के browser server से भी जुड़ सकते हैं। जो खोलें उसे हमेशा बंद करें।", "kn": "Persistent context ನಿಜವಾದ profile ನಂತೆ data ಅನ್ನು folder ನಲ್ಲಿ ಇಡುತ್ತದೆ. CDP ಮೂಲಕ ಚಲಿಸುತ್ತಿರುವ Chrome ಗೆ ಅಥವಾ ಬೇರೆ machine ನ browser server ಗೆ ಸಂಪರ್ಕಿಸಬಹುದು. ತೆರೆದದ್ದನ್ನು ಯಾವಾಗಲೂ ಮುಚ್ಚಿ.", "or": "Persistent context ପ୍ରକୃତ profile ଭଳି data କୁ folder ରେ ରଖେ। CDP ଦ୍ୱାରା ଚାଲୁଥିବା Chrome କିମ୍ବା ଅନ୍ୟ machine ର browser server ସହ ମଧ୍ୟ ଯୋଡ଼ିହେବ। ଯାହା ଖୋଲନ୍ତି ସବୁବେଳେ ବନ୍ଦ କରନ୍ତୁ।", "ar": "يحفظ السياق الدائم البيانات في مجلد مثل ملف شخصي حقيقي. يمكنك أيضًا الاتصال بمتصفح Chrome يعمل عبر CDP أو بخادم متصفح على جهاز آخر. أغلق دائمًا ما تفتحه.", "de": "Ein dauerhafter Kontext speichert Daten in einem Ordner wie ein echtes Profil. Du kannst dich auch per CDP mit einem laufenden Chrome oder mit einem Browserserver auf einem anderen Rechner verbinden. Schließe immer, was du öffnest."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you make the page phone sized and check what the shop sees, and you sign in and check that the login reaches a second page in the same context.", "hi": "Labs में आप page को phone के आकार का बनाकर देखते हैं कि shop क्या देखती है, और sign in करके जाँचते हैं कि login उसी context के दूसरे page तक पहुँचता है।", "kn": "Labs ನಲ್ಲಿ ನೀವು page ಅನ್ನು phone ಗಾತ್ರಕ್ಕೆ ಮಾಡಿ shop ಏನು ನೋಡುತ್ತದೆ ಎಂದು ಪರಿಶೀಲಿಸುತ್ತೀರಿ, ಮತ್ತು sign in ಮಾಡಿ ಅದೇ context ನ ಇನ್ನೊಂದು page ಗೆ login ತಲುಪುತ್ತದೆಯೇ ಎಂದು ನೋಡುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ page କୁ phone ଆକାରର କରି shop କଣ ଦେଖେ ଯାଞ୍ଚ କରନ୍ତି, ଏବଂ sign in କରି ଦେଖନ୍ତି ଯେ login ସେହି context ର ଅନ୍ୟ page କୁ ପହଞ୍ଚେ।", "ar": "في المختبرات تجعل الصفحة بحجم الهاتف وتتحقق مما يراه المتجر، وتسجّل الدخول وتتحقق من أن تسجيل الدخول يصل إلى صفحة ثانية في السياق نفسه.", "de": "In den Labs machst du die Seite so groß wie ein Telefon und prüfst, was der Shop sieht, und du meldest dich an und prüfst, dass die Anmeldung eine zweite Seite im selben Kontext erreicht."}], "ex": [], "dg": {}, "lanes": {}, "play": {}, "labs": [{"id": "phone", "title": "A phone sized screen", "name": "the shop on a narrow screen", "task": "Make the page 390 pixels wide and 844 high with <code>setViewportSize<\/code>, open <code>/about-you<\/code>, and check that the shop reports a screen width of <b>390 px<\/b>.", "goal": "The shop sees a 390 px wide screen.", "start": "/about-you", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the shop on a narrow screen', async ({ page }) => {\n  // 1. set the viewport size\n  // 2. open /about-you\n  // 3. check the text of #width\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheShopOnANarrowScreenTest {\n  @Test\n  void theShopOnANarrowScreen(Page page) {\n    page.setViewportSize(390, 844);\n    page.navigate(\"/about-you\");\n    assertThat(page.locator(\"#width\")).hasText(\"390 px\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_shop_on_a_narrow_screen(page: Page):\n    page.set_viewport_size({\"width\": 390, \"height\": 844})\n    page.goto(\"/about-you\")\n    expect(page.locator(\"#width\")).to_have_text(\"390 px\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the shop on a narrow screen', async ({ page }) => {\n  await page.setViewportSize({ width: 390, height: 844 });\n  await page.goto('/about-you');\n  await expect(page.locator('#width')).toHaveText('390 px');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the shop on a narrow screen', async ({ page }) => {\n  await page.setViewportSize({ width: 390, height: 844 });\n  await page.goto('/about-you');\n  await expect(page.locator('#width')).toHaveText('390 px');\n});"}, "hint": "<code>page.setViewportSize({ width: 390, height: 844 })<\/code> in JavaScript, <code>page.set_viewport_size({\"width\": 390, \"height\": 844})<\/code> in Python and <code>page.setViewportSize(390, 844)<\/code> in Java.", "why": "Changing the size of one page is quick for a single check. For a whole suite on phones, set the viewport or a device in the context options instead.", "check": [["ctx.url.includes('/about-you')", "The test opened the About you page"], ["/390/.test(ctx.code)", "The test sets a 390 px wide viewport"]]}, {"id": "sharedlogin", "title": "The login follows you to another page", "name": "login is shared by the pages of a context", "task": "Sign in as Asha, then open <code>/cart<\/code> in the same page and check that the header still says <b>Hello, Asha<\/b>. The cookie lives in the context, so every page of it is signed in.", "goal": "Asha is still signed in on the cart page.", "start": "/login", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('login is shared by the pages of a context', async ({ page }) => {\n  await page.goto('/login');\n  // sign in, then go to /cart and check the greeting\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class LoginIsSharedByThePagesOfAContextTest {\n  @Test\n  void loginIsSharedByThePagesOfAContext(Page page) {\n    page.navigate(\"/login\");\n    page.getByLabel(\"Email\").fill(\"asha@shop.example\");\n    page.getByLabel(\"Password\").fill(\"s3cret\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Sign in\")).click();\n    assertThat(page.getByText(\"Hello, Asha\")).isVisible();\n    page.navigate(\"/cart\");\n    assertThat(page.getByText(\"Hello, Asha\")).isVisible();\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_login_is_shared_by_the_pages_of_a_context(page: Page):\n    page.goto(\"/login\")\n    page.get_by_label(\"Email\").fill(\"asha@shop.example\")\n    page.get_by_label(\"Password\").fill(\"s3cret\")\n    page.get_by_role(\"button\", name=\"Sign in\").click()\n    expect(page.get_by_text(\"Hello, Asha\")).to_be_visible()\n    page.goto(\"/cart\")\n    expect(page.get_by_text(\"Hello, Asha\")).to_be_visible()\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('login is shared by the pages of a context', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n  await page.goto('/cart');\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('login is shared by the pages of a context', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n  await page.goto('/cart');\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n});"}, "hint": "Sign in exactly like in chapter 1, then <code>page.goto('/cart')<\/code> and check the same greeting again.", "why": "The login is stored in the context, not in the page. This is also why a fresh context per test means every test starts signed out.", "check": [["ctx.loggedIn", "Asha is signed in"], ["ctx.url.includes('/cart')", "The test went to the cart"]]}], "trees": {}};
+JSPLAY.page({ title: "Browsers, contexts, pages and devices", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

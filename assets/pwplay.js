@@ -380,6 +380,7 @@ const PWPLAY = (() => {
     }
   }
   function genObjAsJs(n, lang) {
+    if (lang === 'py') return `{${Object.entries(n.v).map(([k, v]) => `"${k}": ${gen(v, lang)}`).join(', ')}}`;
     const kv = Object.entries(n.v).map(([k, v]) => `${k}: ${gen(v, lang)}`).join(', ');
     return `{ ${kv} }`;
   }
@@ -398,6 +399,11 @@ const PWPLAY = (() => {
   function genArgs(method, args, lang, own) {
     const pos = args.pos.slice();
     let opt = null;
+    if (method === 'setViewportSize' && pos.length === 1 && pos[0].k === 'obj') {
+      const v = pos[0].v;
+      if (lang === 'java' || lang === 'cs') return `${gen(v.width, lang)}, ${gen(v.height, lang)}`;
+      return gen(pos[0], lang);
+    }
     if (pos.length && pos[pos.length - 1].k === 'obj' && method !== 'fulfill' && method !== 'evaluate') opt = pos.pop();
     const parts = pos.map((a, k) => {
       if (method === 'getByRole' && k === 0 && a.k === 'lit') {
@@ -1221,7 +1227,7 @@ const PWPLAY = (() => {
       async waitForLoadState() { await sleep(50); rt.log('ok', '✓ page.waitForLoadState()'); },
       async waitForURL(want, o = {}) { const ok = () => { const u = page.url(); return want instanceof RegExp ? want.test(u) : (String(want).includes('*') ? new RegExp('^' + String(want).replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') + '$').test(u) : u === rt.abs(want)); }; return rt.poll(`waitForURL(${fmt(want)})`, ok, o.timeout); },
       async waitForSelector(sel, o) { return page.locator(sel).waitFor(o); },
-      async setViewportSize(s) { ui.frame.style.width = Math.min(s.width, ui.frame.parentElement.clientWidth) + 'px'; rt.log('ok', `✓ viewport ${s.width}×${s.height}`); },
+      async setViewportSize(s) { ui.frame.style.width = s.width + 'px'; await new Promise(r => setTimeout(r, 50)); rt.log('ok', `✓ viewport ${s.width}×${s.height}`); },
       async pause() { rt.log('wait', '⏸ page.pause() opens the Playwright Inspector in a real run. Here, press Step to go on.'); ui.pauseHere(); },
       async screenshot() { rt.log('dim', '📸 page.screenshot() saves a picture in a real run.'); },
       on(evt, fn) { (rt.handlers[evt] = rt.handlers[evt] || []).push(fn); rt.log('dim', `👂 listening for "${evt}" events`); },

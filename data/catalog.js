@@ -2959,6 +2959,26 @@ function pwModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "pw-browser", title: "Browser handling", emoji: "🌐", blurb: "Browsers, contexts, pages, devices and tabs, then navigation, frames, dialogs, downloads, uploads and events.", topics: [
+      { id: "pw-browsers", title: "Browsers, contexts, pages and devices", emoji: "🌐", page: "content/playwright/pw-browsers.html",
+        summary: "The browser, context and page levels with an interactive builder, launch options such as headless, slowMo and channel, two signed in users in one browser, context options for viewport, locale, time zone, colour scheme, touch, geolocation and permissions, device profiles, new tabs and popups, Chromium, Firefox and WebKit projects, persistent profiles, connectOverCDP and browser servers.",
+        keywords: ["browser", "browser context", "page", "launch options", "headless", "emulation", "devices", "locale", "timezone", "geolocation", "permissions", "popup", "new tab", "firefox", "webkit", "persistent context"],
+        added: "2026-10-24",
+        sections: [
+        { id: "levels", title: "Browser, context and page", emoji: "🏢", group: "Beginner path", keywords: ["browser", "context", "page", "isolation", "incognito"] },
+        { id: "launch", title: "Launching a browser", emoji: "🚀", group: "Beginner path", keywords: ["launch", "headless", "slowMo", "channel", "chrome", "msedge"] },
+        { id: "contexts", title: "Contexts keep tests apart", emoji: "🧳", group: "Lesson", keywords: ["newContext", "cookies", "isolation", "multiple users"] },
+        { id: "emulate", title: "Pretend to be another user", emoji: "🎭", group: "Lesson", keywords: ["emulation", "locale", "timezone", "viewport", "dark mode", "geolocation", "permissions"] },
+        { id: "devices", title: "Phones and tablets", emoji: "📱", group: "Lesson", keywords: ["devices", "mobile", "iPhone", "Pixel", "emulation"] },
+        { id: "tabs", title: "New tabs and pop ups", emoji: "🗂️", group: "Lesson", keywords: ["popup", "new tab", "waitForPopup", "expect_popup", "window.open"] },
+        { id: "browsers", title: "Chromium, Firefox and WebKit", emoji: "🦊", group: "Lesson", keywords: ["firefox", "webkit", "safari", "projects", "cross browser"] },
+        { id: "lifecycle", title: "Profiles, closing and remote browsers", emoji: "♻️", group: "Lesson", keywords: ["launchPersistentContext", "profile", "connectOverCDP", "launchServer", "close"] },
+        { id: "lab-phone", title: "A phone sized screen", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-sharedlogin", title: "The login follows you to another page", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

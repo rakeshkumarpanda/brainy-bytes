@@ -17,7 +17,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🚀 Getting started</span><span>›</span><span>Chapter 2 of 2</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🚀 Getting started</span><span>›</span><span>Chapter 2 of 3</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🧰</span><div><h1>Installing Playwright and your first project</h1><p class="lead">Install Playwright in Java, Python, JavaScript and TypeScript, walk through the files of a new project, record a test with codegen and run tests from the terminal like you will every day at work.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 23 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 5 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -94,8 +94,6 @@ Version 1.63.0</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅
 FFmpeg (playwright ffmpeg v1011)
   Install location:    /opt/pw-browsers/ffmpeg-1011
   Download url:        https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
-  Download fallback 1: https://playwright.download.prss.microsoft.com/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
-  Download fallback 2: https://cdn.playwright.dev/builds/ffmpeg/1011/ffmpeg-linux.zip
 
 Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243)
   Install location:    /opt/pw-browsers/chromium_headless_shell-1243
@@ -106,8 +104,6 @@ Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243)
 FFmpeg (playwright ffmpeg v1011)
   Install location:    /opt/pw-browsers/ffmpeg-1011
   Download url:        https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
-  Download fallback 1: https://playwright.download.prss.microsoft.com/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
-  Download fallback 2: https://cdn.playwright.dev/builds/ffmpeg/1011/ffmpeg-linux.zip
 
 Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243)
   Install location:    /opt/pw-browsers/chromium_headless_shell-1243
@@ -118,8 +114,6 @@ Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243)
 FFmpeg (playwright ffmpeg v1011)
   Install location:    /opt/pw-browsers/ffmpeg-1011
   Download url:        https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
-  Download fallback 1: https://playwright.download.prss.microsoft.com/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
-  Download fallback 2: https://cdn.playwright.dev/builds/ffmpeg/1011/ffmpeg-linux.zip
 
 Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243)
   Install location:    /opt/pw-browsers/chromium_headless_shell-1243
@@ -404,7 +398,7 @@ test(<span class="s">'a customer can sign in'</span>, <span class="k">async</spa
 <section class="card reveal jsec" id="run" data-say="run"><div class="sec-num">Part 5</div><h2><span class="sec-em">▶️</span><span>Running tests from the terminal</span></h2>
 
 <p>You will type these commands every day. Find your language in the table.</p>
-<div class="tw"><table class="jt "><tr><th>I want to</th><th>☕ Java (Maven)</th><th>🐍 Python (pytest)</th><th>🟨🔷 Playwright Test</th></tr><tr><td>run every test</td><td><code>mvn test</code></td><td><code>pytest</code></td><td><code>npx playwright test</code></td></tr><tr><td>run one file</td><td><code>mvn test -Dtest=ShopTest</code></td><td><code>pytest tests/test_shop.py</code></td><td><code>npx playwright test tests/shop.spec.ts</code></td></tr><tr><td>run tests by name</td><td><code>-Dtest="ShopTest#signIn"</code></td><td><code>-k sign_in</code></td><td><code>-g "sign in"</code></td></tr><tr><td>see the browser</td><td><code>setHeadless(false)</code> in the options</td><td><code>--headed</code></td><td><code>--headed</code></td></tr><tr><td>slow every action down</td><td><code>setSlowMo(500)</code> in the launch options</td><td><code>--slowmo 500</code></td><td><code>launchOptions: {{ slowMo: 500 }}</code> in the config</td></tr><tr><td>pick a browser</td><td><code>setBrowserName("firefox")</code></td><td><code>--browser firefox</code></td><td><code>--project=firefox</code></td></tr><tr><td>debug step by step</td><td><code>PWDEBUG=1 mvn test</code></td><td><code>PWDEBUG=1 pytest -s</code></td><td><code>--debug</code> or <code>--ui</code></td></tr><tr><td>run 4 at a time</td><td>JUnit parallel settings</td><td><code>-n 4</code> (pytest-xdist)</td><td><code>--workers=4</code></td></tr></table></div>
+<div class="tw"><table class="jt "><tr><th>I want to</th><th>☕ Java (Maven)</th><th>🐍 Python (pytest)</th><th>🟨🔷 Playwright Test</th></tr><tr><td>run every test</td><td><code>mvn test</code></td><td><code>pytest</code></td><td><code>npx playwright test</code></td></tr><tr><td>run one file</td><td><code>mvn test -Dtest=ShopTest</code></td><td><code>pytest tests/test_shop.py</code></td><td><code>npx playwright test tests/shop.spec.ts</code></td></tr><tr><td>run tests by name</td><td><code>-Dtest="ShopTest#signIn"</code></td><td><code>-k sign_in</code></td><td><code>-g "sign in"</code></td></tr><tr><td>see the browser</td><td><code>setHeadless(false)</code> in the options</td><td><code>--headed</code></td><td><code>--headed</code></td></tr><tr><td>slow every action down</td><td><code>setSlowMo(500)</code> in the launch options</td><td><code>--slowmo 500</code></td><td><code>launchOptions: { slowMo: 500 }</code> in the config</td></tr><tr><td>pick a browser</td><td><code>setBrowserName("firefox")</code></td><td><code>--browser firefox</code></td><td><code>--project=firefox</code></td></tr><tr><td>debug step by step</td><td><code>PWDEBUG=1 mvn test</code></td><td><code>PWDEBUG=1 pytest -s</code></td><td><code>--debug</code> or <code>--ui</code></td></tr><tr><td>run 4 at a time</td><td>JUnit parallel settings</td><td><code>-n 4</code> (pytest-xdist)</td><td><code>--workers=4</code></td></tr></table></div>
 <div class="codewrap tests pw4" data-k="pick" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Run only one test from a file · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ShopTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ShopTest.java"><span class="k">package</span> com.brainy;
 
 <span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
@@ -590,7 +584,7 @@ Total: 2 tests in 1 file</pre></div></div><div class="note-out"><span>What happe
   <section class="card reveal" id="quiz"></section>
   <section class="card reveal" id="numbers"></section>
   <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
-  <nav class="pager"><a class="prev" href="./pw-intro.html" data-topic="pw-intro"><small>← Previous chapter</small><b>🎭 What Playwright is</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+  <nav class="pager"><a class="prev" href="./pw-intro.html" data-topic="pw-intro"><small>← Previous chapter</small><b>🎭 What Playwright is</b></a><a class="next" href="./pw-browsers.html" data-topic="pw-browsers"><small>Next chapter →</small><b>🌐 Browsers and contexts</b></a></nav>
 </div>
 <script src="../../assets/fun.js"></script>
 <script src="../../assets/extras.js"></script>
