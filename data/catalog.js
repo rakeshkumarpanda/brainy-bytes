@@ -3043,6 +3043,21 @@ function javaNewModules() {
         { id: "scenario", title: "Real world scenario: an API test suite with only the JDK", emoji: "🎬", group: "Chapter 26", keywords: ["API testing", "smoke test", "status code assertion", "REST Assured", "contract checks", "HttpClient test", "post deployment check"] },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "java-whats-new", title: "What is new in Java: from Java 21 to Java 27", emoji: "🆕", page: "content/java/java-whats-new.html",
+        summary: "How releases and previews work, an upgrade planner from Java 8 to 27, sequenced collections, calling C with FFM, multi file programs, quantum safe key exchange and signatures, compact source files, constructors that check before super, key derivation, lazy constants and PEM previews, hybrid TLS by default, and a Java 17 to 25 upgrade checklist.",
+        keywords: ["Java 21", "Java 22", "Java 23", "Java 24", "Java 25", "Java 26", "Java 27", "new features", "LTS", "preview", "sequenced collections", "FFM API", "ML-KEM", "compact source files", "flexible constructor bodies", "lazy constants", "upgrade"],
+        added: "2026-10-24",
+        sections: [
+        { id: "train", title: "The release train, LTS and preview features", emoji: "🚆", group: "Chapter 27", keywords: ["release cadence", "six month release", "LTS", "long term support", "Java 25 LTS", "Java 26", "Java 27", "preview feature", "--enable-preview", "incubator", "upgrade plan"] },
+        { id: "j21", title: "Java 21 LTS: sequenced collections", emoji: "🧵", group: "Chapter 27", keywords: ["sequenced collections", "SequencedCollection", "getFirst", "getLast", "reversed", "addFirst", "putFirst", "firstEntry", "JEP 431", "Java 21"] },
+        { id: "j22", title: "Java 22 and 23: native code, multi file launch, Markdown docs", emoji: "🔗", group: "Chapter 27", keywords: ["foreign function and memory API", "FFM", "Panama", "Linker", "MemorySegment", "Arena", "JNI replacement", "JEP 454", "restricted methods", "enable-native-access", "multi file source launch", "JEP 458", "Markdown doc comments", "JEP 467"] },
+        { id: "j24", title: "Java 24: quantum safe cryptography", emoji: "🔐", group: "Chapter 27", keywords: ["post quantum cryptography", "ML-KEM", "ML-DSA", "KEM", "JEP 496", "JEP 497", "harvest now decrypt later", "Java 24", "Security Manager removed"] },
+        { id: "j25", title: "Java 25 LTS: simpler programs and safer constructors", emoji: "✨", group: "Chapter 27", keywords: ["Java 25", "compact source files", "instance main", "IO.println", "IO.readln", "JEP 512", "flexible constructor bodies", "statements before super", "JEP 513", "KDF", "HKDF", "JEP 510"] },
+        { id: "j26", title: "Java 26 and 27: what is final and what to try", emoji: "🧪", group: "Chapter 27", keywords: ["Java 26", "Java 27", "lazy constants", "LazyConstant", "JEP 531", "PEM", "PEMEncoder", "PEMDecoder", "JEP 538", "hybrid key exchange", "X25519MLKEM768", "JEP 527", "applet API removed", "JEP 504", "Vector API"] },
+        { id: "scenario", title: "Real world scenario: upgrading a service from Java 17 to Java 25", emoji: "🎬", group: "Chapter 27", keywords: ["Java upgrade", "migration", "Java 17 to Java 25", "jdeps", "jdeprscan", "sun.misc.Unsafe", "JDK internals", "release notes", "upgrade checklist"] },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
