@@ -181,7 +181,7 @@ window.CATALOG = {
       emoji: '🐞',
       color: '#f25da0',
       blurb: 'Find bugs before your users do: test design, life cycles, bug reports and test plans.',
-      intro: 'Ten chapters that follow the manual testing notes in order, from what testing is to the test plan. Every diagram is redrawn as an animation, every idea has an everyday example, and each chapter ends with practice programs in Java, Python and JavaScript, quizzes from easy to expert and a narrator in six languages. The last chapter collects the interview questions asked most, with hints and full answers.',
+      intro: 'Fifteen chapters, from what testing is to the test plan, followed by the newer practices every tester now needs: static testing and reviews, security, accessibility, localization and mobile testing, estimation and metrics, Agile and DevOps testing, and AI in testing. Every diagram is an animation you can step through, every idea has an everyday example, and each chapter has hands on labs, quizzes from easy to expert, number practice and a narrator in six languages. The last chapter collects the interview questions asked most, with hints and full answers.',
       tags: ['STLC', 'Test cases', 'Bug life cycle', 'Regression', 'Test plan'],
       modules: mtModules().concat(iqModule('manual-testing'))
     },
@@ -1305,6 +1305,8 @@ function mtModules() {
           { id: "principles", title: "The seven principles of testing", emoji: "📜", group: 'Lesson', keywords: ["seven testing principles", "ISTQB", "presence of defects", "exhaustive testing impossible", "early testing", "defect clustering", "pesticide paradox", "context dependent", "absence of errors fallacy"] },
           { id: "cost", title: "Why a late bug costs more", emoji: "💸", group: 'Lesson', keywords: ["cost of a bug", "shift left", "early testing", "requirement review", "rework", "phase", "production defect"] },
           { id: "roles", title: "Who does what in a software company", emoji: "👥", group: 'Lesson', keywords: ["business analyst", "product analyst", "architect", "development manager", "developer", "test engineer", "test lead", "test manager", "build team", "customer"] },
+          { id: "qa-qc", title: "QA, QC and testing: three different jobs", emoji: "🏭", group: 'Lesson', keywords: ["QA, QC and testing: three different jobs", "process", "product", "Testing"] }, // mt2
+          { id: "oracle-mindset", title: "Test oracles and the tester mindset", emoji: "🧠", group: 'Lesson', keywords: ["Test oracles and the tester mindset", "test oracle"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1326,6 +1328,8 @@ function mtModules() {
           { id: "vmodel", title: "The V and V model (V model)", emoji: "✌️", group: 'Lesson', keywords: ["V model", "verification and validation", "review", "CRS", "SRS", "HLD", "LLD", "acceptance test document", "system test document", "integration test document", "functional test document", "UAT", "system testing", "integration testing", "functional testing", "white box testing"] },
           { id: "agile", title: "Agile and Scrum", emoji: "🏃", group: 'Lesson', keywords: ["agile", "scrum", "iterative incremental", "user story", "sprint", "release", "scrum team", "scrum master", "product owner", "pigs and chickens", "product backlog", "sprint backlog", "carry forward", "sprint planning", "daily stand up", "retrospective", "kick off"] },
           { id: "choose", title: "Hybrid models and choosing a model", emoji: "🧭", group: 'Lesson', keywords: ["hybrid model", "spiral plus prototype", "prototype plus V", "choosing SDLC model", "comparison of models"] },
+          { id: "kanban-devops", title: "Kanban, scaled Agile and DevOps", emoji: "♾️", group: 'Lesson', keywords: ["Kanban, scaled Agile and DevOps", "WIP limit"] }, // mt2
+          { id: "testing-per-model", title: "Where testing happens in each model", emoji: "🧪", group: 'Lesson', keywords: ["Where testing happens in each model"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1354,6 +1358,7 @@ function mtModules() {
           { id: "statement-vs-branch", title: "Full statements, half the branches", emoji: '🏋️', group: "Hard practice" },
           { id: "dead-stores", title: "Find dead stores in a tiny program", emoji: '🏋️', group: "Expert practice" },
           { id: "cheapest-check-order", title: "Order checks for the lowest expected cost", emoji: '🏋️', group: "Expert practice" },
+          { id: "mcdc-mutation", title: "Stronger coverage: MC/DC and mutation testing", emoji: "🧬", group: 'Lesson', keywords: ["each single condition", "mutants", "killed", "survived"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1374,6 +1379,8 @@ function mtModules() {
           { id: "adhoc", title: "Ad hoc and exploratory testing", emoji: "🐒", group: 'Lesson', keywords: ["ad hoc testing", "monkey testing", "random testing", "negative scenarios", "exploratory testing", "requirement missing", "domain expert"] },
           { id: "uat", title: "User acceptance testing, alpha and beta", emoji: "🤝", group: 'Lesson', keywords: ["UAT", "user acceptance testing", "customer", "business scenarios", "domain expert", "alpha testing", "beta testing", "service based", "product based", "trial version"] },
           { id: "levels", title: "The levels of testing at a glance", emoji: "📶", group: 'Lesson', keywords: ["levels of testing", "unit", "integration", "system", "acceptance", "functional vs non functional"] },
+          { id: "pos-neg", title: "Positive, negative and end to end testing", emoji: "➕", group: 'Lesson', keywords: ["End to end (E2E) testing"] }, // mt2
+          { id: "api-level", title: "Testing below the screen: APIs and system integration", emoji: "🔌", group: 'Lesson', keywords: ["APIs"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1393,10 +1400,32 @@ function mtModules() {
           { id: "builds", title: "The build process", emoji: "📦", group: 'Lesson', keywords: ["build", "version control", "build tool", "compile", "compress", "zip", "war", "jar", "build number", "install on test server", "test cycle"] },
           { id: "respin", title: "Respin, patch and blocker", emoji: "🩹", group: 'Lesson', keywords: ["respin", "patch", "blocker bug", "hot fix", "test cycle", "temporary fix", "permanent fix", "tube puncture analogy"] },
           { id: "release", title: "Release, version and the road to production", emoji: "🚀", group: 'Lesson', keywords: ["release", "version", "release vs version", "final product", "UAT", "production", "Cheeta", "Tiger", "Lion"] },
+          { id: "test-data", title: "Test data: realistic, safe and ready", emoji: "🗃️", group: 'Lesson', keywords: ["Test data: realistic, safe and ready", "Test data management"] }, // mt2
+          { id: "cloud-envs", title: "Cloud, containers and environments on demand", emoji: "☁️", group: 'Lesson', keywords: [] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
-      }
+      },
+      { /* mt2-block-start */
+        id: "static-testing", title: "Static Testing and Reviews", emoji: "🔎",
+        page: "content/manual-testing/static-testing.html",
+        summary: "Testing without running the program: verification and validation, requirement reviews, the five step review process, review roles, informal reviews, walkthroughs, technical reviews and inspections, and static analysis tools.",
+        keywords: ["What static testing is", "Dynamic testing", "never", "Verification and validation", "Verification", "Validation", "Reviewing a requirement like a tester", "1. What is the input?", "2. What is the expected output?", "3. How do I know it passed?", "The review process in five steps", "Who does what in a review", "Static analysis: tools that read for you", "Making reviews work in a real team", "Review rate", "Defect density of a document", "Savings"],
+        added: "2026-10-24",
+        sections: [
+          { id: "what-static", title: "What static testing is", emoji: "📄", group: 'Lesson', keywords: ["What static testing is", "Dynamic testing", "never"] },
+          { id: "what-review", title: "What can be reviewed, and what reviews find", emoji: "🗂️", group: 'Lesson', keywords: [] },
+          { id: "verval", title: "Verification and validation", emoji: "✌️", group: 'Lesson', keywords: ["Verification and validation", "Verification", "Validation"] },
+          { id: "req-review", title: "Reviewing a requirement like a tester", emoji: "🕵️", group: 'Lesson', keywords: ["Reviewing a requirement like a tester", "1. What is the input?", "2. What is the expected output?", "3. How do I know it passed?"] },
+          { id: "process", title: "The review process in five steps", emoji: "🔁", group: 'Lesson', keywords: ["The review process in five steps"] },
+          { id: "roles", title: "Who does what in a review", emoji: "👥", group: 'Lesson', keywords: ["Who does what in a review"] },
+          { id: "types", title: "Four types of review, from a chat to an inspection", emoji: "🪜", group: 'Lesson', keywords: [] },
+          { id: "analysis", title: "Static analysis: tools that read for you", emoji: "🤖", group: 'Lesson', keywords: ["Static analysis: tools that read for you"] },
+          { id: "success", title: "Making reviews work in a real team", emoji: "🌱", group: 'Lesson', keywords: ["Making reviews work in a real team", "Review rate", "Defect density of a document", "Savings"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */
       ]
     },
     {
@@ -1419,6 +1448,8 @@ function mtModules() {
           { id: "rtm", title: "The repository and the RTM", emoji: "🧭", group: 'Lesson', keywords: ["test case repository", "baseline", "centralised", "smoke test cases", "requirement traceability matrix", "RTM", "CRM", "missing test case", "drawback"] },
           { id: "ter", title: "The test execution report", emoji: "📊", group: 'Lesson', keywords: ["test execution report", "TER", "pass percentage", "fail percentage", "modules", "exit criteria", "stability"] },
           { id: "stlc", title: "STLC: the software testing life cycle", emoji: "🔁", group: 'Lesson', keywords: ["STLC", "software testing life cycle", "system study", "test plan", "test documents", "RTM", "test execution", "defect tracking", "TER", "retrospect", "post mortem"] },
+          { id: "use-case", title: "Use case testing and checklist based testing", emoji: "🎭", group: 'Lesson', keywords: ["use case", "main flow", "alternative flows", "exception flows", "checklists"] }, // mt2
+          { id: "good-cases", title: "Writing test cases that others can run", emoji: "✨", group: 'Lesson', keywords: ["Writing test cases that others can run"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1439,6 +1470,8 @@ function mtModules() {
           { id: "severity", title: "Severity and priority", emoji: "🚦", group: 'Lesson', keywords: ["severity", "priority", "blocker", "critical", "major", "minor", "urgent", "P1", "P2", "P3", "P4", "impact", "which bug first", "examples"] },
           { id: "report", title: "Writing the bug report", emoji: "📝", group: 'Lesson', keywords: ["bug report template", "bug id", "test case name", "module", "status", "reporter", "assigned to", "CC", "release", "version", "severity", "priority", "test data", "server", "OS and browser", "build", "screenshot", "brief description", "steps to reproduce", "observation", "expected result"] },
           { id: "tools", title: "Bug tracking tools and queries", emoji: "🛠️", group: 'Lesson', keywords: ["bug tracking tool", "Jira", "Bugzilla", "Mantis", "Quality Center", "ALM", "manual bug report drawbacks", "logging a bug", "query", "search", "comments"] },
+          { id: "triage", title: "The defect triage meeting", emoji: "🚑", group: 'Lesson', keywords: ["The defect triage meeting", "Triage"] }, // mt2
+          { id: "rca", title: "Root cause analysis: 5 whys and the fishbone", emoji: "🌳", group: 'Lesson', keywords: ["root cause"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1463,6 +1496,8 @@ function mtModules() {
           { id: "auto-lc", title: "The automation life cycle", emoji: "⚙️", group: 'Lesson', keywords: ["automation life cycle", "manual team", "automation team", "test cases", "stable application", "tool", "script execution", "failed scripts", "manual retest"] },
           { id: "cant-automate", title: "What cannot be automated", emoji: "🚧", group: 'Lesson', keywords: ["cannot automate", "unstable features", "captcha", "virtual keyboard", "OTP", "complex", "human judgement", "usability"] },
           { id: "compare", title: "The classic comparisons", emoji: "⚖️", group: 'Lesson', keywords: ["smoke vs sanity", "static vs dynamic", "verification", "validation", "QA vs QC", "quality assurance", "quality control", "functional vs non-functional", "preventive", "detective"] },
+          { id: "what-first", title: "Choosing what to automate first", emoji: "🥇", group: 'Lesson', keywords: ["Choosing what to automate first", "test pyramid", "cost to build + cost to maintain", "manual time saved"] }, // mt2
+          { id: "flaky", title: "Flaky tests and why they matter", emoji: "🎲", group: 'Lesson', keywords: ["Flaky tests and why they matter", "flaky test"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1481,10 +1516,30 @@ function mtModules() {
           { id: "performance", title: "Performance testing", emoji: "🚀", group: 'Lesson', keywords: ["performance testing", "response time", "load", "stability", "virtual users", "LoadRunner", "JMeter", "script", "scenario", "distribute load", "result graph", "average", "maximum", "minimum", "percentile"] },
           { id: "bottleneck", title: "Bottlenecks and tuning", emoji: "🧪", group: 'Lesson', keywords: ["bottleneck", "tuning", "analyse results", "architect", "DBA", "network admin", "code", "database", "server", "hardware", "network", "re-execute"] },
           { id: "types", title: "Load, stress, scalability, volume and soak", emoji: "📈", group: 'Lesson', keywords: ["load testing", "stress testing", "scalability testing", "stability testing", "volume testing", "soak testing", "endurance testing", "desired load", "upward", "downward", "crash"] },
+          { id: "iso25010", title: "The quality model: ISO/IEC 25010:2023", emoji: "🏅", group: 'Lesson', keywords: ["The quality model: ISO/IEC 25010:2023", "ISO/IEC 25010"] }, // mt2
+          { id: "reliability", title: "Reliability, recovery and installation testing", emoji: "🛟", group: 'Lesson', keywords: ["MTBF", "MTTR"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
-      }
+      },
+      { /* mt2-block-start */
+        id: "specialised", title: "Security, Accessibility, Localization and Mobile Testing", emoji: "🛡️",
+        page: "content/manual-testing/specialised-testing.html",
+        summary: "The specialised checks every manual tester is now expected to know: security basics and the OWASP Top 10 2025, accessibility with WCAG 2.2 and the European Accessibility Act, globalization and localization, mobile app testing, and privacy testing.",
+        keywords: ["Security testing: what it protects", "CIA triad", "The OWASP Top 10 (2025) for testers", "OWASP Top 10:2025", "Accessibility: software for everyone", "WCAG", "2.2", "AAA", "How to test accessibility by hand", "4.5 : 1", "3 : 1", "can", "for one", "Mobile app testing", "Privacy and data protection testing"],
+        added: "2026-10-24",
+        sections: [
+          { id: "security", title: "Security testing: what it protects", emoji: "🔐", group: 'Lesson', keywords: ["Security testing: what it protects", "CIA triad"] },
+          { id: "owasp", title: "The OWASP Top 10 (2025) for testers", emoji: "🔟", group: 'Lesson', keywords: ["The OWASP Top 10 (2025) for testers", "OWASP Top 10:2025"] },
+          { id: "a11y", title: "Accessibility: software for everyone", emoji: "♿", group: 'Lesson', keywords: ["Accessibility: software for everyone", "WCAG", "2.2", "AAA"] },
+          { id: "a11y-how", title: "How to test accessibility by hand", emoji: "⌨️", group: 'Lesson', keywords: ["How to test accessibility by hand", "4.5 : 1", "3 : 1"] },
+          { id: "l10n", title: "Globalization: one product, many countries", emoji: "🌍", group: 'Lesson', keywords: ["can", "for one"] },
+          { id: "mobile", title: "Mobile app testing", emoji: "📱", group: 'Lesson', keywords: ["Mobile app testing"] },
+          { id: "privacy", title: "Privacy and data protection testing", emoji: "🔏", group: 'Lesson', keywords: ["Privacy and data protection testing"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */
       ]
     },
     {
@@ -1506,12 +1561,75 @@ function mtModules() {
           { id: "tools", title: "Tools", emoji: "🛠️", group: 'Lesson', keywords: ["tools", "functional testing tool", "performance testing tool", "test management tool", "licences", "UFT", "QTP", "Selenium", "LoadRunner", "JMeter", "Quality Center", "ALM", "Jira", "virtual users"] },
           { id: "criteria", title: "Entry and exit criteria", emoji: "🚦", group: 'Lesson', keywords: ["entry criteria", "exit criteria", "coding completed", "build installed", "test documents prepared", "resources ready", "executed percentage", "pass percentage", "blocker", "critical", "major", "minor", "release decision"] },
           { id: "more", title: "Parallel testing and the whole journey", emoji: "🧭", group: 'Lesson', keywords: ["parallel testing", "old and new version", "same inputs", "anomalies", "hot fix", "latent bug", "golden bug", "the testing journey", "STLC"] },
+          { id: "strategy", title: "Test strategy and test approaches", emoji: "♟️", group: 'Lesson', keywords: ["Test strategy and test approaches", "test strategy", "test plan", "test approaches"] }, // mt2
+          { id: "risk-based", title: "Risk based testing in practice", emoji: "🎯", group: 'Lesson', keywords: ["Risk based testing in practice", "Risk based testing", "likelihood", "impact", "risk level"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
-      }
+      },
+      { /* mt2-block-start */
+        id: "metrics", title: "Test Estimation, Metrics and Reporting", emoji: "📊",
+        page: "content/manual-testing/test-metrics.html",
+        summary: "How long testing will take and how to show where it stands: estimation techniques (work breakdown, three point, planning poker, Wideband Delphi), test progress metrics, defect metrics such as DRE, leakage and density, coverage, test status and completion reports, test closure, and the traps of measuring people.",
+        keywords: ["Why testers measure", "Goal, Question, Metric (GQM)", "Estimating test effort", "Measuring test progress", "burndown chart", "Coverage: what have we really checked", "Test status and completion reports", "test status report", "test completion report", "Test closure: finishing properly", "Test completion"],
+        added: "2026-10-24",
+        sections: [
+          { id: "why-measure", title: "Why testers measure", emoji: "🎯", group: 'Lesson', keywords: ["Why testers measure", "Goal, Question, Metric (GQM)"] },
+          { id: "estimation", title: "Estimating test effort", emoji: "⏳", group: 'Lesson', keywords: ["Estimating test effort"] },
+          { id: "progress", title: "Measuring test progress", emoji: "📈", group: 'Lesson', keywords: ["Measuring test progress", "burndown chart"] },
+          { id: "defect-metrics", title: "Defect metrics that show how good testing is", emoji: "🐞", group: 'Lesson', keywords: [] },
+          { id: "coverage", title: "Coverage: what have we really checked", emoji: "🧩", group: 'Lesson', keywords: ["Coverage: what have we really checked"] },
+          { id: "reporting", title: "Test status and completion reports", emoji: "📰", group: 'Lesson', keywords: ["Test status and completion reports", "test status report", "test completion report"] },
+          { id: "closure", title: "Test closure: finishing properly", emoji: "📦", group: 'Lesson', keywords: ["Test closure: finishing properly", "Test completion"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */
       ]
-    }
+    },
+    { /* mt2-module-start */
+      id: "mt-modern", title: "Modern testing practice", emoji: "🧭", blurb: "How testing works in Agile and DevOps teams today, and how AI is changing the job.",
+      topics: [
+      { /* mt2-block-start */
+        id: "agile-devops", title: "Agile, DevOps and Shift Left Testing", emoji: "🔄",
+        page: "content/manual-testing/agile-devops-testing.html",
+        summary: "How testers work in modern teams: the whole team approach, user stories and acceptance criteria, Given When Then and BDD, Definition of Ready and Done, the agile testing quadrants, the test pyramid, CI and CD pipelines with quality gates, shift left and shift right, canary releases, feature flags and monitoring.",
+        keywords: ["The whole team owns quality", "The whole team", "User stories and acceptance criteria", "user story", "bank customer", "set a daily transfer limit", "Acceptance criteria", "INVEST", "Given, When, Then", "Scenario", "Given", "And", "The agile testing quadrants", "agile testing quadrants", "business", "technology", "guide the team", "critique the product", "The test pyramid", "test pyramid", "ice cream cone", "CI, CD and quality gates", "Continuous integration (CI)", "Continuous delivery (CD)"],
+        added: "2026-10-24",
+        sections: [
+          { id: "whole-team", title: "The whole team owns quality", emoji: "🤝", group: 'Lesson', keywords: ["The whole team owns quality", "The whole team"] },
+          { id: "stories", title: "User stories and acceptance criteria", emoji: "📝", group: 'Lesson', keywords: ["User stories and acceptance criteria", "user story", "bank customer", "set a daily transfer limit", "Acceptance criteria", "INVEST", "Given, When, Then", "Scenario", "Given", "And"] },
+          { id: "dor-dod", title: "Definition of Ready and Definition of Done", emoji: "✅", group: 'Lesson', keywords: [] },
+          { id: "quadrants", title: "The agile testing quadrants", emoji: "🧭", group: 'Lesson', keywords: ["The agile testing quadrants", "agile testing quadrants", "business", "technology", "guide the team", "critique the product"] },
+          { id: "pyramid", title: "The test pyramid", emoji: "🔺", group: 'Lesson', keywords: ["The test pyramid", "test pyramid", "ice cream cone"] },
+          { id: "cicd", title: "CI, CD and quality gates", emoji: "🚦", group: 'Lesson', keywords: ["CI, CD and quality gates", "Continuous integration (CI)", "Continuous delivery (CD)", "Continuous deployment", "quality gate"] },
+          { id: "shift", title: "Shift left and shift right", emoji: "↔️", group: 'Lesson', keywords: ["Shift left and shift right", "Shift left", "Shift right"] },
+          { id: "sbtm", title: "Exploratory testing that the team can trust", emoji: "🧭", group: 'Lesson', keywords: ["Exploratory testing", "session based test management (SBTM)", "Explore", "with", "to discover"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */,
+      { /* mt2-block-start */
+        id: "ai-testing", title: "AI in Testing and Testing AI", emoji: "🤖",
+        page: "content/manual-testing/ai-in-testing.html",
+        summary: "The newest part of a tester's job: using generative AI as a testing assistant, writing good prompts, the risks of hallucination, bias and data leaks, AI features inside test tools, and how to test AI powered products with evaluation sets, rubrics and metamorphic testing. Includes the ISTQB CT-AI and CT-GenAI certifications.",
+        keywords: ["What generative AI is, in plain words", "large language model (LLM)", "AI as a testing assistant", "Writing prompts that give useful answers", "Weak prompt", "Strong prompt", "The risks of using AI in testing", "AI inside testing tools", "Testing a product that contains AI", "test oracle problem", "Quality risks special to AI", "EU AI Act", "Growing as a tester in the AI era"],
+        added: "2026-10-24",
+        sections: [
+          { id: "ai-basics", title: "What generative AI is, in plain words", emoji: "🧠", group: 'Lesson', keywords: ["What generative AI is, in plain words", "large language model (LLM)"] },
+          { id: "ai-assist", title: "AI as a testing assistant", emoji: "🧑‍💻", group: 'Lesson', keywords: ["AI as a testing assistant"] },
+          { id: "prompting", title: "Writing prompts that give useful answers", emoji: "✍️", group: 'Lesson', keywords: ["Writing prompts that give useful answers", "Weak prompt", "Strong prompt"] },
+          { id: "ai-risks", title: "The risks of using AI in testing", emoji: "⚠️", group: 'Lesson', keywords: ["The risks of using AI in testing"] },
+          { id: "ai-tools", title: "AI inside testing tools", emoji: "🛠️", group: 'Lesson', keywords: ["AI inside testing tools"] },
+          { id: "testing-ai", title: "Testing a product that contains AI", emoji: "🔬", group: 'Lesson', keywords: ["Testing a product that contains AI", "test oracle problem"] },
+          { id: "ai-quality", title: "Quality risks special to AI", emoji: "⚖️", group: 'Lesson', keywords: ["Quality risks special to AI", "EU AI Act"] },
+          { id: "ai-career", title: "Growing as a tester in the AI era", emoji: "🎓", group: 'Lesson', keywords: ["Growing as a tester in the AI era"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */
+      ]
+    } /* mt2-module-end */
   ];
 }
 
