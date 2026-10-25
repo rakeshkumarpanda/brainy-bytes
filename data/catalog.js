@@ -2316,7 +2316,7 @@ function jsModules() {
         added: "2026-10-20",
         sections: [
         { id: "classes", title: "Classes in TypeScript", emoji: "🏛️", group: "QA essential", keywords: ["class", "public", "private", "protected", "readonly", "abstract class", "abstract method", "implements", "override", "parameter properties", "#private", "access modifiers"] },
-        { id: "decorators", title: "Decorators", emoji: "🎀", group: "QA essential", keywords: ["decorators", "method decorator", "ClassMethodDecoratorContext", "stage 3 decorators", "experimentalDecorators", "test.step", "retry decorator"] },
+        { id: "decorators", title: "Decorators", emoji: "🎀", group: "QA essential", keywords: ["decorators", "method decorator", "ClassMethodDecoratorContext", "standard decorators", "experimentalDecorators", "test.step", "retry decorator"] },
         { id: "dts", title: "Declaration files and augmentation", emoji: "📜", group: "QA essential", keywords: ["declaration file", ".d.ts", "declare module", "declare global", "module augmentation", "@types", "DefinitelyTyped", "custom matchers", "Cypress.Chainable"] },
         { id: "jsdoc", title: "Checking JavaScript with JSDoc", emoji: "📝", group: "QA essential", keywords: ["JSDoc", "checkJs", "@ts-check", "allowJs", "@param", "@returns", "@typedef", "type checking JavaScript"] },
         { id: "migrate", title: "Moving a project to TypeScript, and the tools around it", emoji: "🚚", group: "QA essential", keywords: ["migration", "JavaScript to TypeScript", "allowJs", "tsc --noEmit", "tsx", "esbuild", "vite", "path aliases", "package imports", "CI type check"] },
@@ -2383,6 +2383,25 @@ function jsModules() {
         { id: "ext", title: "Add the missing extension", emoji: "🏋️", group: "Medium practice" },
         { id: "extends", title: "Merge extended configs", emoji: "🏋️", group: "Hard practice" },
         { id: "order", title: "Order project builds", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "ts-whats-new", title: "What is new in TypeScript: 5.0 to 7.0", emoji: "🆕", page: "content/javascript/ts-whats-new.html",
+        summary: "A release table from 5.0 to 7.0, const type parameters, using with an animated cleanup order, JSON import attributes, NoInfer and closure narrowing, inferred type predicates and regex checks, truthiness and never initialised checks, iterator helpers, import defer, 6.0 runtime types and deprecations, and the TypeScript 7 compiler with parallel checking.",
+        keywords: ["TypeScript 5.0", "TypeScript 5.5", "TypeScript 6.0", "TypeScript 7.0", "using", "Symbol.dispose", "import attributes", "NoInfer", "inferred type predicates", "Temporal", "getOrInsert", "RegExp.escape", "native compiler", "--checkers", "what is new"],
+        added: "2026-10-20",
+        sections: [
+        { id: "overview", title: "Three years of TypeScript in one page", emoji: "🗓️", group: "Lesson", keywords: ["TypeScript releases", "TypeScript 5", "TypeScript 6", "TypeScript 7", "release history", "what is new", "upgrade"] },
+        { id: "ts50", title: "TypeScript 5.0: const type parameters", emoji: "🔒", group: "Lesson", keywords: ["const type parameters", "TypeScript 5.0", "literal inference", "as const", "standard decorators"] },
+        { id: "ts52", title: "TypeScript 5.2 and 5.3: using and import attributes", emoji: "🧹", group: "QA essential", keywords: ["using", "await using", "Symbol.dispose", "Symbol.asyncDispose", "explicit resource management", "TypeScript 5.2", "import attributes", "with type json", "TypeScript 5.3"] },
+        { id: "ts54", title: "TypeScript 5.4 and 5.5: smarter inference", emoji: "🎯", group: "QA essential", keywords: ["NoInfer", "TypeScript 5.4", "closure narrowing", "inferred type predicates", "filter", "TypeScript 5.5", "regular expression checking", "named groups"] },
+        { id: "ts56", title: "TypeScript 5.6 to 5.9: fewer silent mistakes", emoji: "🚨", group: "Lesson", keywords: ["always truthy", "TypeScript 5.6", "iterator helpers", "never initialized", "TypeScript 5.7", "erasableSyntaxOnly", "TypeScript 5.8", "import defer", "TypeScript 5.9"] },
+        { id: "ts60", title: "TypeScript 6.0: the bridge release", emoji: "🌉", group: "QA essential", keywords: ["TypeScript 6.0", "es2025", "Temporal", "Map.getOrInsert", "upsert", "RegExp.escape", "deprecations", "ignoreDeprecations", "new defaults"] },
+        { id: "ts70", title: "TypeScript 7.0: the native compiler", emoji: "🚀", group: "Lesson", keywords: ["TypeScript 7", "native compiler", "Go port", "Project Corsa", "--checkers", "--builders", "--singleThreaded", "faster builds", "@typescript/typescript6"] },
+        { id: "stack", title: "A disposable stack", emoji: "🏋️", group: "Easy practice" },
+        { id: "upsert", title: "Count with getOrInsert", emoji: "🏋️", group: "Medium practice" },
+        { id: "escape", title: "Find text safely", emoji: "🏋️", group: "Hard practice" },
+        { id: "deprecated", title: "Find options TypeScript 7 removed", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }

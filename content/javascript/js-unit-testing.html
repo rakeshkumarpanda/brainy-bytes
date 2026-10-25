@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🧪 Testing with JavaScript</span><span>›</span><span>Chapter 19 of 27</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🧪 Testing with JavaScript</span><span>›</span><span>Chapter 19 of 30</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🧪</span><div><h1>Unit Testing: node:test, Jest, Vitest and Mocha</h1><p class="lead">Write, run and organise unit tests with the four most used JavaScript runners. Mocks, spies and fake timers, many ways to run a suite (filters, tags, shards, reporters, coverage, CI), unit tests for web UI code with jsdom and Testing Library, and for API code with supertest and nock.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 25 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 1 animations</span><span class="chip">🧪 13 real test runs</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 8 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -697,10 +697,10 @@ describe(<span class="s">"stockClient (outgoing HTTP, faked with nock)"</span>, 
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx vitest run --reporter=verbose</pre></div><div class="out"><span>Terminal output</span><pre>
  RUN  v5.0.5 project
 
+ ✓ test/stock-client.test.js &gt; stockClient (outgoing HTTP, faked with nock) &gt; reads the available quantity
  ✓ test/app.test.js &gt; GET /api/products/:sku/stock (route, fake service) &gt; 200 with the quantity
  ✓ test/app.test.js &gt; GET /api/products/:sku/stock (route, fake service) &gt; 404 for an unknown product
  ✓ test/app.test.js &gt; GET /api/products/:sku/stock (route, fake service) &gt; 503 when the stock service fails
- ✓ test/stock-client.test.js &gt; stockClient (outgoing HTTP, faked with nock) &gt; reads the available quantity
  ✓ test/stock-client.test.js &gt; stockClient (outgoing HTTP, faked with nock) &gt; returns null on 404
  ✓ test/stock-client.test.js &gt; stockClient (outgoing HTTP, faked with nock) &gt; throws on 500 so the route can answer 503
 

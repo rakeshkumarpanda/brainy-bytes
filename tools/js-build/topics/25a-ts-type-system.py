@@ -211,7 +211,7 @@ const p2: ConfigPath = "server.host";      // no such path
 
 LANES = {
     'excess': {'t': 'How tsc checks one assignment',
-               'code': 'interface Reporter { name: string; report(): string }\nconst slack = { name: "slack", channel: "#qa", report: () => "ok" };\nconst r1: Reporter = slack;\nconst r2: Reporter = { name: "email", to: "qa@x", report: () => "ok" };\nconst r3: Reporter = { name: "broken" };',
+               'code': 'interface Reporter { name: string; report(): string }\nconst slack = { name: "s", channel: "#qa", report: f };\nconst r1: Reporter = slack;\nconst r2: Reporter = { name: "e", to: "x", report: f };\nconst r3: Reporter = { name: "broken" };',
                'lanes': ['Value has', 'Reporter needs', 'Extra fields', 'tsc says'], 'tone': [1, 2, 3, 4],
                'steps': [{'l': 1, 'v': [[], ['name: string', 'report(): string'], [], []], 'm': 'The interface only lists what a Reporter must have. It says nothing about what it must not have.'},
                          {'l': 2, 'v': [['name', 'channel', 'report'], ['name: string', 'report(): string'], [], []], 'm': 'slack is an ordinary variable with three fields. Its type is inferred from the value.'},

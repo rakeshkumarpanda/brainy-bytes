@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 2 of 27</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 2 of 30</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🔢</span><div><h1>Variables, Types and Operators</h1><p class="lead">let and const, the seven primitive types, why 0.1 + 0.2 is not 0.3, how JavaScript converts values by itself, the three kinds of equality and every operator, including ?. and ??.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 13 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 7 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -46,7 +46,7 @@ user = {};                 // not allowed: const means this name always points a
 TypeError: Assignment to constant variable.
     at main.mjs:10:6
 
-Node.js v26.12.0</pre></div></div>
+Node.js v26.12.1</pre></div></div>
 <div class="exam"><code>const</code> does not freeze an object. It only stops the name from being reassigned. Use <code>Object.freeze(obj)</code> when the contents must not change either.</div>
 <h3>And var</h3>
 <p><code>var</code> is the original keyword from 1995. It ignores blocks and can be used before its line runs, which causes bugs. You will still see it in old code and old tutorials. Do not use it in new code.</p>
@@ -238,7 +238,7 @@ test(<span class="s">"toBeCloseTo is the right check for decimals"</span>, () =&
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx jest --verbose</pre></div><div class="err"><span>Terminal output</span><pre>FAIL ./cart.test.js
   ✕ toBe compares with Object.is, so two equal looking objects fail 
   ✓ toEqual compares the contents
-  ✓ toBeCloseTo is the right check for decimals
+  ✓ toBeCloseTo is the right check for decimals 
 
   ● toBe compares with Object.is, so two equal looking objects fail
 
