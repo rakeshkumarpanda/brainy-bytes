@@ -16,7 +16,7 @@
     if (!spec) { el.textContent = 'Missing animation ' + el.dataset.k; return; }
     const b = K.shell(el, spec.t, spec.s || 'Press Play, or step with the arrows, and watch each box change.');
     const lines = (spec.code || '').split('\n');
-    b.innerHTML = `<div class="${spec.code ? 'jv-grid2' : ''}">${spec.code ? `<pre class="jv-code">${lines.map((l, i) => `<div data-l="${i + 1}">${typeof LEARN !== 'undefined' ? LEARN.hl(l, 'js') : esc(l)}${l ? '' : ' '}</div>`).join('')}</pre>` : ''}<div class="jv-lanes">${spec.lanes.map((n, i) => `<div class="jv-lane"><b>${esc(n)}</b><div data-lane="${i}"></div></div>`).join('')}</div></div><div class="vz-msg" aria-live="polite"></div><div class="vz-p"></div>`;
+    b.innerHTML = `<div class="${spec.code ? 'jv-grid2' : ''}">${spec.code ? `<pre class="jv-code">${lines.map((l, i) => `<div data-l="${i + 1}">${typeof LEARN !== 'undefined' ? LEARN.hl(l, spec.lang || 'js') : esc(l)}${l ? '' : ' '}</div>`).join('')}</pre>` : ''}<div class="jv-lanes">${spec.lanes.map((n, i) => `<div class="jv-lane"><b>${esc(n)}</b><div data-lane="${i}"></div></div>`).join('')}</div></div><div class="vz-msg" aria-live="polite"></div><div class="vz-p"></div>`;
     const msg = $('.vz-msg', b);
     const show = f => {
       const st = f ? spec.steps[f - 1] : { v: spec.start || [], m: spec.m || 'Press ▶ Play to start.' };
