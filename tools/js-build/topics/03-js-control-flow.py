@@ -333,7 +333,7 @@ PARTS = [
 <div class="warn">A <code>while</code> loop whose condition never becomes false runs forever and freezes the page or the test. Every polling loop needs a timeout, as shown later in this chapter.</div>
 ''', kw=['for loop', 'while', 'do while', 'for...of', 'for...in', 'break', 'continue', 'label', 'Object.entries', 'infinite loop']),
     part('async-loops', '⏱️', 'Loops with async steps', '''
-<p>Test code is full of steps that take time: open a page, click, wait for a response. These steps return promises and are written with <code>await</code> (chapter 10 explains how they work). Loops and <code>await</code> have one trap that breaks many first test suites.</p>
+<p>Test code is full of steps that take time: open a page, click, wait for a response. These steps return promises and are written with <code>await</code> ({{ch:js-async}} explains how they work). Loops and <code>await</code> have one trap that breaks many first test suites.</p>
 [[foreach-await]]
 <ul>
 <li><code>array.forEach</code> calls the function for every item and does not wait for any of them. The loop is "finished" while the steps are still running.</li>

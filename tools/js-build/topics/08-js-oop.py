@@ -330,7 +330,7 @@ test("wrong password shows an error", async ({ page }) => {
   await login.loginAs("asha@shop.example", "wrong");
   await expect(login.error).toHaveText("Wrong email or password");
 });
-''', 'The same page object in Playwright', note='Runs for real in chapter 21', result='The test reads like the steps a manual tester writes. When the button text changes, only the page object changes.'),
+''', 'The same page object in Playwright', note='Runs for real in {{ch:js-ui-automation}}', result='The test reads like the steps a manual tester writes. When the button text changes, only the page object changes.'),
     'pom-selenium': show('''
 // pages/LoginPage.js (Selenium WebDriver)
 const { By, until } = require("selenium-webdriver");
@@ -357,7 +357,7 @@ class LoginPage {
   }
 }
 module.exports = { LoginPage };
-''', 'The same page object in Selenium', note='Runs for real in chapter 21', result='Locators live in static fields, and every method is async because each WebDriver call talks to the browser.'),
+''', 'The same page object in Selenium', note='Runs for real in {{ch:js-ui-automation}}', result='Locators live in static fields, and every method is async because each WebDriver call talks to the browser.'),
     'builder': run('''
 class UserBuilder {
   #data = { name: "Test User", email: "user@test.example", role: "customer", verified: true, address: { city: "Pune" } };
@@ -420,6 +420,10 @@ console.log(users.history);
 ''', 'An API client with a base class and an injected transport'),
 }
 
+LANES = {
+    'new': {'t': 'What new Cart("Asha") does, step by step', 'code': 'class Cart {\n  items = [];\n  constructor(owner) { this.owner = owner; }\n  add(name) { this.items.push(name); }\n}\nconst c = new Cart("Asha");\nc.add("pen");', 'lanes': ['Step', 'The new object', 'Cart.prototype'], 'tone': [2, 1, 3], 'steps': [{'l': 6, 'v': [['new Cart("Asha")'], [], ['add()', 'constructor']], 'm': 'new starts. The class body already put add on Cart.prototype, once, for every cart.'}, {'l': 6, 'v': [['1. create an empty object'], ['{ }', 'prototype link -> Cart.prototype'], ['add()', 'constructor']], 'm': 'Step 1: a fresh empty object is created and linked to Cart.prototype.'}, {'l': 2, 'v': [['2. run the field initialisers'], ['items: []', 'prototype link -> Cart.prototype'], ['add()', 'constructor']], 'm': 'Step 2: every field gets its own value. Each cart gets its own new items array.'}, {'l': 3, 'v': [['3. run the constructor, this = the new object'], ['items: []', 'owner: "Asha"', 'prototype link -> Cart.prototype'], ['add()', 'constructor']], 'm': 'Step 3: the constructor runs with this pointing at the new object.'}, {'l': 6, 'v': [['4. return the object'], ['items: []', 'owner: "Asha"', 'prototype link -> Cart.prototype'], ['add()', 'constructor']], 'm': 'Step 4: new returns the object and c refers to it.'}, {'l': 7, 'v': [['c.add("pen"): not on c, found on the prototype'], ['items: ["pen"]', 'owner: "Asha"', 'prototype link -> Cart.prototype'], ['add()', 'constructor']], 'm': 'Calling c.add looks on c first, does not find add, follows the prototype link and finds it there. Inside add, this is c.'}]},
+}
+
 PARTS = [
     part('prototypes', '🧬', 'Objects and prototypes', '''
 <p>Every object in JavaScript has a hidden link to another object called its <b>prototype</b>. When you read a property the object does not have, JavaScript follows that link and looks there, then on that object's prototype, and so on. This list of links is the <b>prototype chain</b>. It ends at <code>Object.prototype</code>, whose prototype is <code>null</code>.</p>
@@ -432,6 +436,8 @@ PARTS = [
     part('classes', '🏛️', 'Classes', '''
 <p>A <b>class</b> is a template for objects that share the same shape and methods. It has a <code>constructor</code> that sets up each new object, <b>methods</b> shared through the prototype, <b>fields</b> that every object gets, <b>getters and setters</b> that look like properties, and <b>static</b> members that belong to the class itself.</p>
 [[class]]
+<p>The keyword <code>new</code> does four things every time. Watching them explains why methods are shared but fields are not, and why a method called through the object sees that object as <code>this</code>.</p>
+<div class="viz" data-viz="lanes" data-k="new"></div>
 <div class="tw"><table class="jt"><tr><th>Member</th><th>Lives on</th><th>Example</th></tr>
 <tr><td>field</td><td>each object</td><td><code>items = []</code></td></tr>
 <tr><td>method</td><td>the prototype, shared</td><td><code>add(name, price)</code></td></tr>
@@ -626,6 +632,6 @@ T = {
     'desc': 'Prototypes, constructor functions, classes, getters, static members, private fields, extends, super, custom errors, mixins, composition and the Page Object Model.',
     'summary': 'The prototype chain, constructor functions and new, classes with fields, getters and static methods, lost this and other class traps, private fields and static blocks, inheritance with extends and super, custom error classes with cause, mixins and dependency injection, the Page Object Model in plain DOM, Playwright and Selenium, a test data builder and an API client class.',
     'keywords': ['prototype', 'class', 'constructor', 'getter', 'static', 'private field', 'extends', 'super', 'custom error', 'mixin', 'composition', 'dependency injection', 'Page Object Model', 'POM', 'builder pattern'],
-    'qa_intro': 'Page objects, API clients, test data builders and custom errors are all classes. This chapter is the base for the framework design in chapter 21.',
-    'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'qa_intro': 'Page objects, API clients, test data builders and custom errors are all classes. This chapter is the base for the framework design in {{ch:js-ui-automation}}.',
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }
