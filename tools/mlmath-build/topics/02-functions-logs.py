@@ -1,6 +1,6 @@
 # Chapter 2: functions, straight lines, quadratics, exponentials, logarithms, activation functions,
 # composition and inverses.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, deep
 
 K = Kit()
 
@@ -984,6 +984,182 @@ VIZ_JS = r'''
 })();
 '''
 
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'functions': deep('piecewise functions and functions you can undo', f'''
+<p>Many real rules change their formula part way along. These are <b>piecewise functions</b>: a different rule for each piece of the input. A mobile data plan that is free up to 2 GB and then charges per extra GB is one. So is ReLU, which is 0 for negative inputs and x for positive ones.</p>
+{fx('A piecewise function', 'f(x) = 0 if x &lt; 0, and f(x) = x if x ≥ 0', 'This is ReLU. Each piece is simple, and together they make a bend that a neural network can use to build curved shapes.')}
+<p>Two more words describe how a function behaves, and both matter later.</p>
+{table(['Word', 'Meaning', 'Example', 'Why ML cares'], [
+        ['increasing', 'a bigger input always gives a bigger (or equal) output', 'eˣ, the sigmoid, ln x', 'the order of scores is kept, so the biggest logit is still the biggest probability'],
+        ['one to one', 'no two inputs share an output', '2x + 1 yes, x² no (since 3² = (−3)² = 9)', 'only one to one functions can be undone exactly, which is why logit can undo sigmoid'],
+        ['bounded', 'outputs stay between two fixed numbers', 'sigmoid between 0 and 1', 'good for probabilities, but flat ends slow down learning'],
+    ])}
+<p>A useful way to think about any model: the input is the question, the function is the "rule of thumb" the model learned, and the output is its answer. Training only changes the rule, never the idea that one input gives one answer.</p>
+'''),
+    'lines': deep('building a line from what you know, and measuring how far off it is', f'''
+<p>There are three common ways to write the same straight line. Pick whichever matches the facts you have.</p>
+{table(['Form', 'Formula', 'Use it when you know'], [
+        ['slope intercept', 'y = mx + b', 'the slope and where it crosses the y axis'],
+        ['point slope', 'y − y₁ = m(x − x₁)', 'the slope and any one point on the line'],
+        ['two point', 'm = (y₂ − y₁) ÷ (x₂ − x₁), then point slope', 'two points on the line'],
+    ])}
+{worked('Line through (2, 7) and (5, 13), then a prediction', [
+        'Slope: <span class="eq">m = (13 − 7) ÷ (5 − 2) = 6 ÷ 3 = 2</span>',
+        'Point slope with (2, 7): <span class="eq">y − 7 = 2(x − 2)</span>',
+        'Tidy up: <span class="eq">y = 2x − 4 + 7 = 2x + 3</span>',
+        'Check with the other point: <span class="eq">2 × 5 + 3 = 13</span> ✓',
+        'Predict at x = 10: <span class="eq">y = 2 × 10 + 3 = 23</span>'])}
+<p>Real data never sits exactly on a line. The vertical gap between a data point and the line, actual minus predicted, is called the <b>residual</b>. A positive residual means the point is above the line (the model guessed too low). Linear regression picks the line that makes the sum of the squared residuals as small as possible, which Chapter 11 works out in full.</p>
+{life('A gym membership that costs 1000 to join and 500 a month is the line cost = 500 × months + 1000. After a year you have paid 500 × 12 + 1000 = 7000.')}
+'''),
+    'quadratic': deep('completing the square, and where the bottom of the U comes from', f'''
+<p>The vertex formula x = −b ÷ 2a is not magic. Rewrite the quadratic so the x appears only once, inside a square. This trick is called <b>completing the square</b>.</p>
+{worked('Find the lowest point of f(x) = x² − 6x + 11', [
+        'Take half of the middle number: half of −6 is −3, and (−3)² = 9.',
+        'Add and subtract 9: <span class="eq">x² − 6x + 9 − 9 + 11</span>',
+        'The first three terms form a perfect square: <span class="eq">(x − 3)² + 2</span>',
+        'A square is never negative, so the smallest it can be is 0, when x = 3.',
+        'So the vertex is <span class="eq">(3, 2)</span>. The formula agrees: <span class="eq">x = −(−6) ÷ (2 × 1) = 3</span>'])}
+{fx('Vertex form', 'f(x) = a(x − h)² + k', 'The vertex is (h, k). If a &gt; 0 the curve opens upward and k is the lowest value. If a &lt; 0 it opens downward and k is the highest.')}
+<p>Play with the three numbers a, b and c below. Watch how a controls the width and direction, how c lifts the whole curve, and how the roots appear and vanish as the discriminant changes sign.</p>
+{viz('quadplot')}
+{ml('The mean squared error of a one weight model, L(w) = average of (wxᵢ − yᵢ)², expands into a quadratic in w: (average of xᵢ²) w² − 2 (average of xᵢyᵢ) w + (average of yᵢ²). Its vertex gives the best weight directly: w = average of xᵢyᵢ ÷ average of xᵢ². That is linear regression without an intercept, solved by school algebra.')}
+'''),
+    'exponential': deep('doubling time, half life and the hunt for e', f'''
+<p>Exponential change has a fixed <b>doubling time</b> (for growth) or <b>half life</b> (for decay). It does not matter where you start: the time to double from 10 to 20 is the same as from 1000 to 2000.</p>
+{fxs(fx('Doubling time', f'T₂ = {frac("ln 2", "k")} ≈ {frac("0.693", "k")}', 'For growth A₀e^(kt). The "rule of 72" says money at r% a year doubles in about 72 ÷ r years.'),
+         fx('Half life', f'T½ = {frac("ln 2", "k")} for A₀e^(−kt)', 'Carbon 14 has a half life of about 5730 years, which is how old bones are dated.'))}
+<p>Now the hunt for e. Put 1 rupee in a bank that pays 100% interest a year, but split the year into n equal periods. Each period pays 100% ÷ n, so after a year you have (1 + 1/n)ⁿ. Press Play to split the year finer and finer and watch the amount creep up and then settle.</p>
+{viz('compound')}
+<p>It never passes 2.71828... however often the bank pays. That ceiling is e. It is the natural growth number because <b>eˣ grows at a rate equal to its own size</b>: at every moment its slope equals its height. No other base has that property, which is why calculus and probability formulas are written with e.</p>
+{ml('Exponential moving averages in optimisers such as Adam (Chapter 8) give older gradients weights that decay like 0.9, 0.9², 0.9³ and so on. The "memory" of the average is about 1 ÷ (1 − 0.9) = 10 steps.')}
+'''),
+    'logs': deep('reading log scales and living with tiny probabilities', f'''
+<p>On an ordinary scale, equal steps mean equal <b>differences</b>: 0, 10, 20, 30. On a log scale, equal steps mean equal <b>ratios</b>: 1, 10, 100, 1000. That is why log scales show things that span huge ranges, such as earthquake energy, sound, star brightness, the number of COVID cases, or the loss of a model during training.</p>
+{viz('logscale')}
+<p>Here is the probability problem in real numbers. Suppose a model gives each of 1000 training answers a probability of 0.9. The chance of getting them all is 0.9¹⁰⁰⁰. Work it out with logs: log₁₀(0.9¹⁰⁰⁰) = 1000 × log₁₀ 0.9 = 1000 × (−0.0458) = −45.8, so the product is about 10⁻⁴⁶. A float32 cannot even hold numbers below about 10⁻⁴⁵, so it would be stored as 0. In log form it is simply −45.8, a perfectly ordinary number.</p>
+{table(['Probability p', 'ln p', 'Reading'], [
+        ['1', '0', 'certain: no penalty'],
+        ['0.5', '−0.693', 'a coin flip'],
+        ['0.1', '−2.303', 'unlikely'],
+        ['0.001', '−6.908', 'very unlikely'],
+        ['→ 0', '→ −∞', 'impossible: an infinite penalty'],
+    ])}
+{trick('Log of a number between 0 and 1 is always negative. That is why losses are written as MINUS log probability, so that the loss is a positive number and smaller is better.')}
+'''),
+    'activation': deep('newer activations and why a network needs a bend at all', f'''
+<p>Suppose every layer of a network were a straight line with no activation. Layer 1 gives 2x + 1, and layer 2 applied to that gives 3(2x + 1) − 4 = 6x − 1, another straight line. However many layers you stack, a composition of linear functions is still linear. The network could never learn a curve. The activation function is the bend that makes depth worth having.</p>
+{table(['Activation', 'Formula', 'Where it is used'], [
+        ['Leaky ReLU', 'max(0.01x, x)', 'keeps a small slope for negatives so neurons never fully die'],
+        ['Softplus', 'ln(1 + eˣ)', 'a smooth ReLU whose slope is the sigmoid'],
+        ['GELU', 'x · Φ(x), Φ is the normal CDF', 'BERT, GPT style transformers'],
+        ['SiLU (Swish)', 'x · σ(x)', 'many modern networks, and inside the SwiGLU blocks of several large language models'],
+    ])}
+<p>GELU and SiLU look like ReLU from far away but are smooth near 0 and dip slightly below 0 for small negative inputs. That smoothness tends to make very deep networks train a little better, which is why newer models moved to them.</p>
+{worked('Sigmoid by hand at z = 2', [
+        '<span class="eq">e⁻² ≈ 0.1353</span>',
+        '<span class="eq">1 + 0.1353 = 1.1353</span>',
+        '<span class="eq">σ(2) = 1 ÷ 1.1353 ≈ 0.8808</span>',
+        'So a score of 2 becomes a probability of about 88%. A score of −2 gives 1 − 0.8808 = 0.1192, by symmetry.'])}
+'''),
+    'compose': deep('finding an inverse step by step', f'''
+<p>To find the inverse of a function, write y = f(x), swap the roles of x and y, and solve for y. Each step is plain algebra from Chapter 1.</p>
+{worked('Derive the logit from the sigmoid', [
+        'Start with <span class="eq">p = 1 ÷ (1 + e⁻ᶻ)</span>. We want z in terms of p.',
+        'Flip both sides: <span class="eq">1 ÷ p = 1 + e⁻ᶻ</span>',
+        'Subtract 1: <span class="eq">e⁻ᶻ = (1 − p) ÷ p</span>',
+        'Take ln of both sides: <span class="eq">−z = ln((1 − p) ÷ p)</span>',
+        'Multiply by −1 (the log of a flipped fraction changes sign): <span class="eq">z = ln(p ÷ (1 − p))</span>. That is the logit.'])}
+<p>Only one to one functions have an inverse. x² is not one to one (both 3 and −3 give 9), so we restrict it to x ≥ 0 before saying √x is its inverse. The sigmoid is one to one because it always increases, so every probability strictly between 0 and 1 has exactly one score.</p>
+{ml('In logistic regression the logit is linear in the inputs: ln(p ÷ (1 − p)) = w · x + b. So each weight wᵢ says how much the log odds change when feature i grows by 1. A weight of 0.693 doubles the odds, because e^0.693 = 2.')}
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+
+  /* ----- y = ax² + bx + c with roots, vertex and discriminant ----- */
+  W.quadplot = el => {
+    const b = shell(el, 'Shape a parabola', 'Move a, b and c. The orange dot is the vertex, green dots are the roots. Press Play to slide c downward and watch the roots appear.');
+    b.innerHTML = `<div class="mv-wrap"><div class="qp-plot"></div><div class="mv-side">${slider('a', 'a', -3, 3, 1, 0.1)}${slider('b', 'b', -6, 6, -2, 0.5)}${slider('c', 'c', -8, 8, 4, 0.5)}<div class="mv-read qp-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let A = 1, B = -2, C = 4;
+    const G = MV.frame(440, 330, [-6, 6], [-10, 10]);
+    function draw() {
+      let s = MV.axes(G, { xstep: 2, ystep: 2, xl: 'x', yl: 'y' }) + MV.curve(G, x => A * x * x + B * x + C);
+      const D = B * B - 4 * A * C, out = [`y = ${MV.num(A)}x² ${B < 0 ? '−' : '+'} ${MV.num(Math.abs(B))}x ${C < 0 ? '−' : '+'} ${MV.num(Math.abs(C))}`];
+      if (Math.abs(A) < 1e-9) out.push('a = 0, so this is a straight line, not a parabola.');
+      else {
+        const h = -B / (2 * A), k = A * h * h + B * h + C;
+        s += MV.dot(G, h, Math.max(-10, Math.min(10, k)), 'o', 7);
+        out.push(`vertex x = −b ÷ 2a = <b>${MV.num(h)}</b>, y = <b>${MV.num(k)}</b> (${A > 0 ? 'lowest point' : 'highest point'})`, `discriminant D = b² − 4ac = <b>${MV.num(D)}</b>`);
+        if (D > 1e-9) { const r1 = (-B - Math.sqrt(D)) / (2 * A), r2 = (-B + Math.sqrt(D)) / (2 * A); s += MV.dot(G, r1, 0, 'g', 6) + MV.dot(G, r2, 0, 'g', 6); out.push(`D &gt; 0: two roots, x = <b>${MV.num(Math.min(r1, r2))}</b> and <b>${MV.num(Math.max(r1, r2))}</b>`); }
+        else if (Math.abs(D) <= 1e-9) { s += MV.dot(G, h, 0, 'g', 6); out.push(`D = 0: one root, x = <b>${MV.num(h)}</b>`); }
+        else out.push('D &lt; 0: the curve never touches the x axis, so there are no real roots.');
+      }
+      $('.qp-plot', b).innerHTML = MV.svg(G, s, 'A parabola');
+      $('.qp-out', b).innerHTML = out.join('<br>');
+    }
+    const setC = v => { C = v; $('[data-sl="c"]', b).value = v; $('[data-slv="c"]', b).textContent = v; };
+    const P = Player($('.vz-p', b), t => { setC(4 - t * 0.5); draw(); }, 400);
+    wireSlider(b, 'a', v => { A = v; draw(); });
+    wireSlider(b, 'b', v => { B = v; draw(); });
+    wireSlider(b, 'c', v => { P.pause(); C = v; draw(); });
+    P.load(17, 0);
+  };
+
+  /* ----- compound interest creeping up to e ----- */
+  W.compound = el => {
+    const b = shell(el, 'Split the year finer and finer', 'Each step pays interest more often: once a year, twice, monthly, daily, every hour, every minute. Press Play or step through and watch (1 + 1/n)ⁿ settle at e.');
+    const NS = [1, 2, 3, 4, 6, 12, 52, 365, 8760, 525600];
+    const names = ['once a year', 'twice a year', 'three times', 'every quarter', 'every 2 months', 'every month', 'every week', 'every day', 'every hour', 'every minute'];
+    b.innerHTML = `<div class="mv-wrap"><div class="cp-plot"></div><div class="mv-side"><div class="mv-read cp-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    const G = MV.frame(440, 300, [0, NS.length + 0.5], [1.8, 2.85]);
+    function show(t) {
+      let s = MV.axes(G, { labels: false });
+      [2, 2.2, 2.4, 2.6, 2.8].forEach(y => { s += MV.text(G, 0, y, MV.num(y, 1), { dx: 2, dy: 4, cls: 'sm' }); });
+      s += MV.line(G, 0.3, Math.E, NS.length + 0.5, Math.E, 'mv-v r dash') + MV.text(G, NS.length + 0.4, Math.E, 'e = 2.71828', { dy: -6, anchor: 'end', cls: 'sm' });
+      for (let k = 0; k <= t; k++) { const v = (1 + 1 / NS[k]) ** NS[k]; s += `<rect class="mv-bar ${k === t ? 'o' : ''}" x="${G.sx(k + 0.65)}" y="${G.sy(v)}" width="${G.sx(1.3) - G.sx(0.65) - 4}" height="${G.sy(1.8) - G.sy(v)}" rx="4"/>`; }
+      $('.cp-plot', b).innerHTML = MV.svg(G, s, 'Amounts approaching e');
+      const n = NS[t], v = (1 + 1 / n) ** n;
+      $('.cp-out', b).innerHTML = `paid <b>${names[t]}</b><br>n = ${n.toLocaleString('en-US')}<br>each payment adds 1/${n.toLocaleString('en-US')} of the balance<br>amount = (1 + 1/n)ⁿ = <span class="big">${v.toFixed(6)}</span><br>gap to e: ${(Math.E - v).toFixed(6)}`;
+    }
+    const P = Player($('.vz-p', b), show, 1000);
+    P.load(NS.length, 0);
+  };
+
+  /* ----- linear scale versus log scale, and the logs of one number ----- */
+  W.logscale = el => {
+    const b = shell(el, 'Normal scale versus log scale', 'The dots are 1, 10, 100, 1000 and 10000. On a normal scale they crowd at the left. On a log scale they sit evenly. Move the power of 10 to pick x and read its logs in three bases.');
+    b.innerHTML = `<div class="vz-row">${seg('sc', [['lin', 'Normal scale'], ['log', 'Log scale']], 'log')}</div><div class="ls-plot"></div><div class="mv-wrap"><div class="mv-side">${slider('x', 'power of 10', 0, 4, 2, 0.05)}</div><div class="mv-read ls-out" aria-live="polite"></div></div><div class="vz-p"></div>`;
+    let sc = 'log', e10 = 2;
+    function draw() {
+      const x = 10 ** e10, Wd = 520, H = 112, L = 30, R = Wd - 30;
+      const pos = v => sc === 'log' ? L + Math.log10(v) / 4 * (R - L) : L + v / 10000 * (R - L);
+      let s = `<line class="mv-axis" x1="${L}" y1="55" x2="${R}" y2="55"/>`;
+      [1, 10, 100, 1000, 10000].forEach(v => { const p = pos(v); s += `<circle class="mv-pt" cx="${p}" cy="55" r="6"/>` + (sc === 'lin' && v < 1000 ? '' : `<text class="mv-tick" x="${p}" y="80" text-anchor="middle">${v.toLocaleString('en-US')}</text>`); });
+      if (sc === 'lin') s += `<text class="mv-tick" x="${L - 4}" y="100" text-anchor="start">1, 10, 100 (squashed together)</text>`;
+      s += `<circle class="mv-pt o big" cx="${pos(x)}" cy="55" r="8"/><text class="mv-lab" x="${pos(x)}" y="32" text-anchor="middle">x</text>`;
+      $('.ls-plot', b).innerHTML = `<svg class="mv-svg" viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Number line">${s}</svg>`;
+      $('.ls-out', b).innerHTML = `x = <b>${MV.num(x, 2)}</b><br>log₁₀ x = <b>${MV.num(Math.log10(x), 3)}</b> (powers of 10)<br>log₂ x = <b>${MV.num(Math.log2(x), 3)}</b> (doublings)<br>ln x = <b>${MV.num(Math.log(x), 3)}</b> (base e)<br>ratio check: ln x ÷ log₁₀ x = ${e10 > 0.01 ? MV.num(Math.log(x) / Math.log10(x), 3) : '?'} = ln 10`;
+    }
+    const P = Player($('.vz-p', b), t => { e10 = t * 0.25; $('[data-sl="x"]', b).value = e10; $('[data-slv="x"]', b).textContent = MV.num(e10); draw(); }, 450);
+    wireSeg(b, 'sc', v => { sc = v; draw(); });
+    wireSlider(b, 'x', v => { P.pause(); e10 = v; draw(); });
+    P.load(17, 8);
+  };
+})();
+'''
+CSS = r'''
+.ls-plot .mv-svg{max-height:140px}
+'''
+
 T = K.topic(
     slug='functions-logs', topic='functions-logs', prefix='mm02', short='Functions and logs', emoji='📈',
     title='Functions, Graphs, Exponents and Logarithms',
@@ -993,5 +1169,5 @@ T = K.topic(
     desc='Functions, straight lines, quadratics, exponentials, e, logarithms, sigmoid, tanh, ReLU, composition and inverses for machine learning.',
     summary='Domain and range, slope and intercept, the quadratic formula and the vertex, exponential growth and e, log rules and why ML adds log probabilities, sigmoid, tanh and ReLU, composition, shifts and inverse functions such as logit.',
     keywords=['function', 'graph', 'slope', 'intercept', 'quadratic', 'parabola', 'exponential', 'euler number', 'logarithm', 'ln', 'sigmoid', 'tanh', 'ReLU', 'logit', 'inverse function', 'composition'],
-    parts=PARTS, info=INFO, real=REAL, viz=VIZ_JS, css='', allow_diff={},
+    parts=PARTS, info=INFO, real=REAL, viz=VIZ_JS, css=CSS, allow_diff={},
 )

@@ -1,5 +1,5 @@
 # Chapter 1: numbers, order of operations, percentages, algebra, powers, sigma notation and absolute value.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, deep
 
 K = Kit()
 
@@ -625,7 +625,7 @@ PARTS = [
 </div>
 <p>This subject starts at school level and climbs to the level asked in machine learning interviews. Every idea comes with a picture or an animation, an everyday example, a program in four languages and problems with full working.</p>
 <div class="roadmap">
-<div>🌱 Numbers and algebra<small>Chapter 1</small></div><div>📈 Functions, exponents, logs<small>Chapter 2</small></div><div>➡️ Vectors<small>Chapter 3</small></div><div>🔢 Matrices<small>Chapter 4</small></div><div>🌀 Eigenvalues, SVD, PCA<small>Chapter 5</small></div><div>📉 Derivatives<small>Chapter 6</small></div><div>🧭 Gradients and chain rule<small>Chapter 7</small></div><div>⛰️ Gradient descent<small>Chapter 8</small></div><div>🎲 Probability and Bayes<small>Chapter 9</small></div><div>🔔 Distributions<small>Chapter 10</small></div><div>📊 Statistics<small>Chapter 11</small></div><div>🔥 Entropy and loss<small>Chapter 12</small></div>
+<div>🌱 Numbers and algebra<small>Chapter 1</small></div><div>📈 Functions, exponents, logs<small>Chapter 2</small></div><div>➡️ Vectors<small>Chapter 3</small></div><div>🔢 Matrices<small>Chapter 4</small></div><div>🌀 Eigenvalues, SVD, PCA<small>Chapter 5</small></div><div>📉 Derivatives<small>Chapter 6</small></div><div>🧭 Gradients and chain rule<small>Chapter 7</small></div><div>⛰️ Gradient descent<small>Chapter 8</small></div><div>🎲 Probability and Bayes<small>Chapter 9</small></div><div>🔔 Distributions<small>Chapter 10</small></div><div>📊 Statistics<small>Chapter 11</small></div><div>🔥 Entropy and loss<small>Chapter 12</small></div><div>🧱 Decompositions and tensors<small>Chapter 13</small></div><div>🧠 Taylor, Newton, autodiff<small>Chapter 14</small></div><div>🎰 Bayesian inference and sampling<small>Chapter 15</small></div>
 </div>
 {ml('Every model you will meet later (linear regression, logistic regression, neural networks, transformers) is built from the same pieces in this list. When a paper writes a scary formula, it is almost always these pieces glued together.')}
 ''', kw=['why maths', 'roadmap', 'model', 'parameters', 'weights']),
@@ -1076,6 +1076,183 @@ CSS = r'''
 .bal-pan{fill:var(--accent-soft); stroke:var(--accent); stroke-width:2}
 .bal-txt{fill:var(--ink); font-family:var(--font-mono); font-weight:800; font-size:18px}
 .nl-host .mv-svg{max-height:120px}
+'''
+
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'numbers': deep('what is really inside a 64 bit number', f'''
+<p>A computer does not store 0.1 as "zero point one". It stores three pieces, like a number written in scientific notation, but in base 2. This standard is called <b>IEEE 754</b>, and almost every chip in the world follows it.</p>
+{table(['Format', 'Sign', 'Exponent bits', 'Fraction bits', 'Correct decimal digits', 'Where you meet it'], [
+        ['float64 (double)', '1', '11', '52', 'about 15 to 16', 'Python float, JavaScript number, Java double'],
+        ['float32 (single)', '1', '8', '23', 'about 7', 'the default in PyTorch and on most GPUs'],
+        ['float16 (half)', '1', '5', '10', 'about 3', 'mixed precision training, largest value only 65504'],
+        ['bfloat16', '1', '8', '7', 'about 2 to 3', 'Google TPUs and modern GPUs, same range as float32'],
+    ])}
+<p>Think of the fraction bits as the number of digits on a calculator screen. With 52 bits you get roughly 16 decimal digits, so anything after that is rounded away. That is why <code>0.1 + 0.2</code> prints <code>0.30000000000000004</code> in Python and JavaScript: 0.1 and 0.2 were each rounded a tiny bit when they were stored, and the tiny errors add up.</p>
+{fx('Machine epsilon', 'ε = 2⁻⁵² ≈ 2.2 × 10⁻¹⁶ for float64', 'The gap between 1 and the next number a double can hold. Any relative error smaller than this is invisible to the computer.')}
+<p>Three practical rules follow from this.</p>
+<ol>
+<li><b>Never compare decimals with ==.</b> Compare with a tolerance, such as |a − b| &lt; 10⁻⁹.</li>
+<li><b>Adding a tiny number to a huge one can do nothing at all.</b> In float32, 100000000 + 1 is still 100000000, because 7 digits cannot show the 1. Summing millions of small losses in the wrong order can lose information this way.</li>
+<li><b>Fewer bits means a smaller range.</b> float16 cannot hold anything above 65504, so a large logit or a big gradient becomes infinity. Mixed precision training multiplies the loss by a scale factor to keep small gradients from rounding to zero, then divides it back.</li>
+</ol>
+{life('A bank never stores rupees and paise as floats. It stores whole paise as integers, because rounding even 0.000001 on millions of payments adds up to real money.')}
+'''),
+    'order': deep('percent versus percentage points, and chains of changes', f'''
+<p>Two words get mixed up in news headlines and in model reports all the time.</p>
+{table(['Phrase', 'What it measures', 'Example: accuracy goes from 80% to 92%'], [
+        ['percentage points', 'the plain difference between two percentages', '92 − 80 = 12 percentage points'],
+        ['percent change', 'the difference as a share of the starting value', '12 ÷ 80 × 100 = 15% better'],
+        ['error rate change', 'often the most honest view for good models', 'errors fell from 20% to 8%, a 60% cut in mistakes'],
+    ])}
+<p>The third row matters a lot in machine learning. Going from 98% to 99% accuracy sounds tiny, only 1 point. But the error rate falls from 2% to 1%, so the model makes <b>half as many mistakes</b>. For a fraud filter checking a million payments a day, that is 10000 fewer wrong answers every day.</p>
+<p>Percentage changes that follow each other <b>multiply</b>. A rise of r% multiplies by (1 + r ÷ 100) and a fall of r% multiplies by (1 − r ÷ 100). A share that rises 50% and then falls 50% ends at 1.5 × 0.5 = 0.75 of where it began, a 25% loss, even though "+50 then −50" looks like it should cancel. Try it below with your own numbers.</p>
+{viz('pctchain')}
+{ml('Learning rate decay works the same way. Multiplying the learning rate by 0.9 every epoch for 10 epochs leaves 0.9¹⁰ ≈ 0.35 of it, not 0. Repeated percentage changes are powers, which the next lesson covers.')}
+'''),
+    'algebra': deep('rearranging a formula to make any letter the subject', f'''
+<p>Most of the algebra used in machine learning is not "find x". It is "rearrange this formula so the thing I want is alone on one side". The balance rule is all you need. Here is the z-score formula from Chapter 10, rearranged to get back the original value.</p>
+{worked('Make x the subject of z = (x − μ) ÷ σ', [
+        'Start: <span class="eq">z = (x − μ) ÷ σ</span>. The last thing done to x was "divide by σ", so undo that first.',
+        'Multiply both sides by σ: <span class="eq">zσ = x − μ</span>',
+        'The first thing done to x was "subtract μ". Undo it by adding μ to both sides: <span class="eq">zσ + μ = x</span>',
+        'So <span class="eq">x = μ + zσ</span>. With μ = 170 cm, σ = 10 cm and z = 2, the person is 170 + 20 = 190 cm tall.'])}
+<p>A <b>linear</b> equation has the unknown only to the power 1 and never multiplied by itself, as in 3x + 5 = 20. Its graph is a straight line and it has one answer (or none, or infinitely many). A <b>non linear</b> equation, such as x² = 9 or eˣ = 5, can have several answers or need logs and roots to solve. Machine learning loves linear equations because they can be solved exactly and fast, even with millions of unknowns, which is why so many models start with a linear step.</p>
+{trick('Undo the operations in the reverse order they were done, like unwrapping a gift: the last layer of paper comes off first.')}
+'''),
+    'powers': deep('why the rules work, and how fast powers really grow', f'''
+<p>Every power rule comes from counting factors. 2³ × 2⁴ is (2 × 2 × 2) × (2 × 2 × 2 × 2), seven 2s in a row, so it is 2⁷. Dividing cancels factors, so 2⁵ ÷ 2³ leaves two 2s. Follow the pattern downwards and the strange rules explain themselves:</p>
+{table(['Power', '2⁴', '2³', '2²', '2¹', '2⁰', '2⁻¹', '2⁻²'], [
+        ['Value', '16', '8', '4', '2', '1', '½', '¼'],
+        ['How you got there', '', '÷ 2', '÷ 2', '÷ 2', '÷ 2', '÷ 2', '÷ 2'],
+    ])}
+<p>Each step left divides by 2, so 2⁰ must be 1 and 2⁻¹ must be one half. Nothing magic, just the pattern carried on. A fractional power is a root because (9^½)² = 9^(½ × 2) = 9¹ = 9, so 9^½ is the number whose square is 9.</p>
+<p>The animation below races four kinds of growth. A straight line n, a square n², a cube n³ and a doubling 2ⁿ. For small n the cube is ahead. Past n = 10 the doubling leaves everything behind, and by n = 30 it is over a billion. Switch to the log scale to see all four at once: on a log scale, doubling becomes a straight line.</p>
+{viz('powgrow')}
+{ml('The cost of some algorithms grows like a power of n, which is fine, and some grow like 2ⁿ, which is hopeless for large n. Trying every subset of 50 features means 2⁵⁰ ≈ 1.1 × 10¹⁵ models. That is why exhaustive search is never used for feature selection.')}
+'''),
+    'sigma': deep('the rules that let you move sums around', f'''
+<p>Formulas in papers often look scary only because a Σ was moved, split or combined. Three rules cover nearly all of it. Each one is just a fact about adding lists of numbers.</p>
+{table(['Rule', 'In symbols', 'Why it is true'], [
+        ['Split a sum', 'Σ (aᵢ + bᵢ) = Σ aᵢ + Σ bᵢ', 'you can add the numbers in any order'],
+        ['Pull out a constant', 'Σ c·aᵢ = c · Σ aᵢ', 'c(a₁ + a₂) = ca₁ + ca₂, the distributive law'],
+        ['Sum of a constant', 'Σ from 1 to n of c = n · c', 'adding c to itself n times'],
+        ['Sum of a log', 'Σ log aᵢ = log Π aᵢ', 'logs turn products into sums (Chapter 2)'],
+    ])}
+{worked('Show that the deviations from the mean always add to zero', [
+        'We want <span class="eq">Σ (xᵢ − x̄)</span> for any data.',
+        'Split the sum: <span class="eq">Σ xᵢ − Σ x̄</span>',
+        'x̄ is the same for every i, so the second sum is <span class="eq">n · x̄</span>',
+        'But <span class="eq">x̄ = Σ xᵢ ÷ n</span>, so <span class="eq">n · x̄ = Σ xᵢ</span>',
+        'Therefore <span class="eq">Σ (xᵢ − x̄) = Σ xᵢ − Σ xᵢ = 0</span>. This is why variance squares the deviations, otherwise they would always cancel.'])}
+<p>A <b>double sum</b> Σᵢ Σⱼ is two loops, one inside the other. Matrix multiplication (Chapter 4) is a double sum in disguise: entry (i, j) of AB is Σₖ aᵢₖbₖⱼ, and doing it for every i and j adds two more loops around it.</p>
+'''),
+    'abs': deep('distance rules and why the kink at zero matters', f'''
+<p>The absolute value obeys one famous rule, the <b>triangle inequality</b>: |a + b| ≤ |a| + |b|. In words, a detour is never shorter than the direct route. If you walk 3 km east and then 5 km west, you end up only 2 km from home, even though you walked 8 km. The same rule holds for vector lengths in Chapter 3, and it is what makes a distance a "proper" distance.</p>
+{fx('Triangle inequality', '|a + b| ≤ |a| + |b| &nbsp;&nbsp; and &nbsp;&nbsp; |a − c| ≤ |a − b| + |b − c|', 'Going from a to c directly is never longer than going through b.')}
+<p>The graph of |x| is a V with a sharp corner at 0. The slope is −1 on the left and +1 on the right, so at the corner there is no single slope. Calculus calls this <b>not differentiable at 0</b>. Gradient based training still works, because libraries simply pick a slope of 0 at the corner. But the corner has a useful side effect: L1 regularisation can push a weight to exactly 0 and keep it there, which squared penalties never do (Chapter 12).</p>
+<p>Use the widget to play with the most common shape in error bars and tolerances, |x − c| ≤ r. It always means "x is within r of c", which is the interval from c − r to c + r.</p>
+{viz('absline')}
+{life('A pharmacy label that says "500 mg ± 5%" means |dose − 500| ≤ 25, so any tablet from 475 mg to 525 mg passes the quality check.')}
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+
+  /* ----- two percentage changes in a row ----- */
+  W.pctchain = el => {
+    const b = shell(el, 'Two percentage changes in a row', 'Set a starting price and two changes, then press Play to apply them one at a time. Watch why +50% then −50% does not bring you back.');
+    b.innerHTML = `<div class="mv-wrap"><div class="pc-plot"></div><div class="mv-side">${slider('s', 'start', 100, 1000, 400, 50)}${slider('u', 'first change %', -90, 100, 50, 5)}${slider('d', 'second change %', -90, 100, -50, 5)}<div class="mv-read pc-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let s = 400, u = 50, d = -50;
+    function show(t) {
+      const v = [s, s * (1 + u / 100), s * (1 + u / 100) * (1 + d / 100)];
+      const top = Math.max(...v) * 1.15, Wd = 420, H = 260, bw = 90;
+      let g = `<line class="mv-axis" x1="30" y1="${H - 30}" x2="${Wd - 10}" y2="${H - 30}"/>`;
+      ['start', 'after change 1', 'after change 2'].forEach((lab, k) => {
+        const x = 50 + k * 125, h = k <= t ? v[k] / top * (H - 60) : 0;
+        g += `<rect class="mv-bar ${k === 0 ? '' : k === 1 ? 'o' : 'g'}" x="${x}" y="${H - 30 - h}" width="${bw}" height="${h}" rx="6"/>`;
+        g += `<text class="mv-lab sm" x="${x + bw / 2}" y="${H - 12}" text-anchor="middle">${lab}</text>`;
+        if (k <= t) g += `<text class="mv-lab" x="${x + bw / 2}" y="${H - 36 - h}" text-anchor="middle">${MV.num(v[k], 2)}</text>`;
+      });
+      $('.pc-plot', b).innerHTML = `<svg class="mv-svg" viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Bars for each price">${g}</svg>`;
+      const m1 = 1 + u / 100, m2 = 1 + d / 100, tot = (m1 * m2 - 1) * 100;
+      const lines = [`start = <b>${MV.num(s)}</b>`];
+      if (t >= 1) lines.push(`change 1: × ${MV.num(m1, 2)} gives <b>${MV.num(v[1], 2)}</b>`);
+      if (t >= 2) lines.push(`change 2: × ${MV.num(m2, 2)} gives <b>${MV.num(v[2], 2)}</b>`, `total multiplier ${MV.num(m1, 2)} × ${MV.num(m2, 2)} = <b>${MV.num(m1 * m2, 4)}</b>`, `overall change <b>${MV.num(tot, 2)}%</b>, not ${MV.num(u + d, 2)}%`);
+      $('.pc-out', b).innerHTML = lines.join('<br>');
+    }
+    const P = Player($('.vz-p', b), show, 1100);
+    const re = () => P.load(3, 2);
+    wireSlider(b, 's', v => { s = v; re(); });
+    wireSlider(b, 'u', v => { u = v; re(); });
+    wireSlider(b, 'd', v => { d = v; re(); });
+    re();
+  };
+
+  /* ----- n, n², n³ and 2ⁿ race ----- */
+  W.powgrow = el => {
+    const b = shell(el, 'The growth race: n, n², n³ and 2ⁿ', 'Move n or press Play to grow it from 1 to 30. Switch the scale to log to see all four curves at once.');
+    b.innerHTML = `<div class="vz-row">${seg('sc', [['lin', 'Normal scale'], ['log', 'Log scale']], 'lin')}</div><div class="mv-wrap"><div class="pg-plot"></div><div class="mv-side">${slider('n', 'n', 1, 30, 8, 1)}<div class="mv-read pg-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let n = 8, sc = 'lin';
+    const fs = [['n', k => k, 'a'], ['n²', k => k * k, 'o'], ['n³', k => k ** 3, 'g'], ['2ⁿ', k => 2 ** k, 'p']];
+    const sci = v => v < 1e5 ? MV.num(v, 0) : v.toExponential(2).replace('e+', ' × 10^');
+    function show() {
+      const top = Math.max(...fs.map(f => f[1](n)));
+      const G = sc === 'lin' ? MV.frame(440, 300, [0, n + 0.5], [0, top * 1.08]) : MV.frame(440, 300, [0, n + 0.5], [0, Math.log10(top) * 1.08 + 0.2]);
+      const tf = v => sc === 'lin' ? v : Math.log10(v);
+      let s = MV.axes(G, { labels: false, xl: 'n', yl: sc === 'lin' ? 'value' : 'log₁₀ of value' });
+      for (let k = 5; k <= n; k += 5) s += MV.text(G, k, 0, MV.num(k), { dy: 14, anchor: 'middle', cls: 'sm' });
+      if (sc === 'lin') s += MV.text(G, 0, top, 'top line = ' + sci(top), { dx: 56, dy: 4, cls: 'sm' });
+      fs.forEach(([lab, f, c]) => {
+        const pts = []; for (let k = 1; k <= n; k++) pts.push(G.sx(k).toFixed(1) + ',' + G.sy(tf(f(k))).toFixed(1));
+        s += `<polyline class="mv-v ${c}" stroke-width="2.5" points="${pts.join(' ')}"/>` + MV.dot(G, n, tf(f(n)), c, 5);
+      });
+      if (sc === 'log') for (let p = 1; p <= Math.log10(top) + 0.2; p++) s += MV.text(G, 0, p, '10^' + p, { dx: 2, dy: 4, cls: 'sm' });
+      $('.pg-plot', b).innerHTML = MV.svg(G, s, 'Four growth curves');
+      $('.pg-out', b).innerHTML = `<div class="mv-legend"><span><i></i>n</span><span><i class="o"></i>n²</span><span><i class="g"></i>n³</span><span><i class="p"></i>2ⁿ</span></div>` +
+        fs.map(([lab, f]) => `${lab} = <b>${sci(f(n))}</b>`).join('<br>') +
+        (2 ** n > n ** 3 ? '<br>🚀 2ⁿ is in the lead.' : '<br>n³ is still ahead, keep going past n = 10.');
+    }
+    const P = Player($('.vz-p', b), t => { n = t + 1; $('[data-sl="n"]', b).value = n; $('[data-slv="n"]', b).textContent = n; show(); }, 450);
+    wireSeg(b, 'sc', v => { sc = v; show(); });
+    wireSlider(b, 'n', v => { P.pause(); n = v; show(); });
+    P.load(30, 7);
+  };
+
+  /* ----- |x − c| ≤ r on the number line ----- */
+  W.absline = el => {
+    const b = shell(el, 'Within r of c: |x − c| ≤ r', 'Set the centre c and the allowed distance r. Move x yourself or press Play to sweep it from left to right, and watch the distance |x − c| and the verdict change.');
+    b.innerHTML = `<div class="nl2-plot"></div><div class="mv-wrap"><div class="mv-side">${slider('c', 'centre c', -8, 8, 2, 0.5)}${slider('r', 'distance r', 0, 6, 3, 0.5)}${slider('x', 'x', -12, 12, -4, 0.5)}</div><div class="mv-read al-out" aria-live="polite"></div></div><div class="vz-p"></div>`;
+    let c = 2, r = 3, x = -4;
+    const G = MV.frame(400, 120, [-12.5, 12.5], [-1, 1], 14);
+    function draw() {
+      let s = `<line class="mv-axis" x1="${G.sx(-12.5)}" y1="${G.sy(0)}" x2="${G.sx(12.5)}" y2="${G.sy(0)}"/>`;
+      for (let k = -12; k <= 12; k += 4) s += `<line class="mv-grid" x1="${G.sx(k)}" y1="${G.sy(0) - 5}" x2="${G.sx(k)}" y2="${G.sy(0) + 5}"/><text class="mv-tick" x="${G.sx(k)}" y="${G.sy(0) + 22}" text-anchor="middle">${MV.num(k)}</text>`;
+      s += `<rect x="${G.sx(c - r)}" y="${G.sy(0) - 12}" width="${Math.max(1, G.sx(c + r) - G.sx(c - r))}" height="24" rx="8" class="mv-fill c3"/>`;
+      s += MV.dot(G, c - r, 0, 'g', 6) + MV.dot(G, c + r, 0, 'g', 6) + MV.dot(G, c, 0, 'k', 5) + MV.text(G, c, 0, 'c', { dy: -18, anchor: 'middle' });
+      s += `<line class="mv-v o dash" x1="${G.sx(c)}" y1="${G.sy(0) - 30}" x2="${G.sx(x)}" y2="${G.sy(0) - 30}"/>` + MV.dot(G, x, 0, 'o', 8) + MV.text(G, x, 0, 'x', { dy: -38, anchor: 'middle' });
+      $('.nl2-plot', b).innerHTML = MV.svg(G, s, 'Number line with an interval');
+      const dist = Math.abs(x - c), ok = dist <= r + 1e-9;
+      $('.al-out', b).innerHTML = `interval: <b>[${MV.num(c - r)}, ${MV.num(c + r)}]</b><br>|x − c| = |${MV.num(x)} − ${MV.num(c)}| = <b>${MV.num(dist)}</b><br>` + (ok ? `✅ ${MV.num(dist)} ≤ ${MV.num(r)}, so x is inside.` : `❌ ${MV.num(dist)} &gt; ${MV.num(r)}, so x is outside.`);
+    }
+    const P = Player($('.vz-p', b), t => { x = -12 + t; $('[data-sl="x"]', b).value = x; $('[data-slv="x"]', b).textContent = x; draw(); }, 350);
+    wireSlider(b, 'c', v => { c = v; draw(); });
+    wireSlider(b, 'r', v => { r = v; draw(); });
+    wireSlider(b, 'x', v => { P.pause(); x = v; draw(); });
+    P.load(25, 8);
+  };
+})();
+'''
+CSS += r'''
+.nl2-plot .mv-svg{max-height:150px}
+.pc-plot .mv-svg,.pg-plot .mv-svg{max-height:340px}
 '''
 
 T = K.topic(

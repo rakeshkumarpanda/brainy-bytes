@@ -1,6 +1,6 @@
 # Chapter 6: rates of change, limits and the derivative, the differentiation rules, the chain rule,
 # maxima, minima and the second derivative, integrals as areas, and where derivatives drive learning.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, deep
 
 K = Kit()
 
@@ -988,6 +988,160 @@ VIZ_JS = r'''
 })();
 '''
 
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'limit': deep('one sided limits, gaps and the shrinking h experiment', f'''
+<p>A limit asks where a formula is heading, not what it equals at the point itself. Sometimes the formula cannot even be worked out at that point, and the limit still exists.</p>
+{worked('The limit of (x² − 1) ÷ (x − 1) as x → 1', [
+        'Plugging in x = 1 gives <span class="eq">0 ÷ 0</span>, which has no meaning.',
+        'Factor the top: <span class="eq">x² − 1 = (x − 1)(x + 1)</span>',
+        'For every x except 1 we can cancel: <span class="eq">(x − 1)(x + 1) ÷ (x − 1) = x + 1</span>',
+        'As x gets close to 1, x + 1 gets close to <span class="eq">2</span>. Try x = 1.001: 2.001. Try x = 0.999: 1.999.',
+        'So the limit is 2, even though the formula has a hole at exactly x = 1.'])}
+<p>A limit only exists if you get the same answer coming from the left and from the right. The step function "0 for negatives, 1 for x ≥ 0" heads to 0 from the left and 1 from the right, so it has no limit at 0. A function with no jumps and no holes is called <b>continuous</b>, and continuous functions are the ones whose derivatives we can usually trust.</p>
+<p>Now the computer experiment. The table below shrinks h by 10 each step and computes the derivative both ways, using real 64 bit numbers in your browser. At first the error falls, as calculus promises. Then, for very tiny h, rounding takes over (Chapter 1) and the error climbs again.</p>
+{viz('limtable')}
+{ml('This is exactly why gradient checking uses the central difference with h around 10⁻⁵. It is the sweet spot where the maths error is small and rounding has not yet wrecked the subtraction.')}
+'''),
+    'rules': deep('the rules at work: deriving the sigmoid slope', f'''
+<p>The single most used derivative in classic neural networks is the slope of the sigmoid. It has a beautiful short form, and getting there uses the rules from this lesson.</p>
+{worked('Show that σ′(z) = σ(z)(1 − σ(z))', [
+        'Write <span class="eq">σ(z) = (1 + e⁻ᶻ)⁻¹</span>, a power of an inside function.',
+        'Power rule and chain rule: <span class="eq">σ′(z) = −1 × (1 + e⁻ᶻ)⁻² × (−e⁻ᶻ) = e⁻ᶻ ÷ (1 + e⁻ᶻ)²</span>',
+        'Split the fraction into two factors: <span class="eq">[1 ÷ (1 + e⁻ᶻ)] × [e⁻ᶻ ÷ (1 + e⁻ᶻ)]</span>',
+        'The first factor is σ(z). The second is <span class="eq">1 − σ(z)</span>, because 1 − 1 ÷ (1 + e⁻ᶻ) = e⁻ᶻ ÷ (1 + e⁻ᶻ).',
+        'So <span class="eq">σ′(z) = σ(z)(1 − σ(z))</span>. At z = 0 it is 0.5 × 0.5 = 0.25, its largest value.'])}
+<p>Pick a function below and slide x along. The top picture shows f with its tangent line. The bottom picture draws the derivative f′. The height of the bottom curve at x is the slope of the top curve at x. Notice that f′ crosses zero exactly where f has a peak or a valley.</p>
+{viz('derivplot')}
+'''),
+    'chain': deep('the chain rule with real numbers, and why deep chains fade', f'''
+<p>The chain rule is easiest to trust once you have checked it with numbers. Take y = (3x + 1)³ at x = 1.</p>
+{worked('Chain rule, then a numerical check', [
+        'Inside: <span class="eq">u = 3x + 1 = 4</span>, with slope <span class="eq">du/dx = 3</span>',
+        'Outside: <span class="eq">y = u³ = 64</span>, with slope <span class="eq">dy/du = 3u² = 48</span>',
+        'Multiply: <span class="eq">dy/dx = 48 × 3 = 144</span>',
+        'Check with a tiny step: at x = 1.001, u = 4.003 and y = 4.003³ ≈ 64.144. The rise 0.144 over the run 0.001 is <span class="eq">144</span> ✓'])}
+<p>Now chain many links. If each link has slope 0.25 (the largest a sigmoid can give), ten links multiply to 0.25¹⁰ ≈ 0.00000095. A weight at the start of the chain gets almost no signal, so it barely learns. This is the <b>vanishing gradient</b> problem. If each link has slope 1.5 instead, ten links give 1.5¹⁰ ≈ 57.7, and the gradient <b>explodes</b>. Chapter 14 looks at the fixes.</p>
+<p>Pick a chain below and move x. The widget shows the inside value, both local slopes, their product, and a numerical check of the answer.</p>
+{viz('chainx')}
+'''),
+    'integral': deep('a full worked integral, negative areas and averages', f'''
+{worked('∫ from 0 to 2 of x² dx, two ways', [
+        'Antiderivative: raise the power and divide, <span class="eq">F(x) = x³ ÷ 3</span>',
+        'Fundamental theorem: <span class="eq">F(2) − F(0) = 8 ÷ 3 − 0 ≈ 2.667</span>',
+        'Strip check with 4 strips of width 0.5, heights at the midpoints 0.25, 0.75, 1.25, 1.75:',
+        '<span class="eq">0.5 × (0.0625 + 0.5625 + 1.5625 + 3.0625) = 0.5 × 5.25 = 2.625</span>, already close to 2.667',
+        'More strips get closer still. The animation above shows exactly this.'])}
+<p>Two details trip people up. First, area <b>below</b> the x axis counts as negative. ∫ from −1 to 1 of x dx is 0, because the triangle below cancels the triangle above. Second, dividing an integral by the width of the interval gives the <b>average value</b> of the function there.</p>
+{fx('Average value of f on [a, b]', f'{frac(1, "b − a")} ∫ₐᵇ f(x) dx', 'The average of x² from 0 to 2 is (8 ÷ 3) ÷ 2 = 4 ÷ 3 ≈ 1.333.')}
+{ml('Expected value is an average, so for a continuous random variable it is an integral: E[X] = ∫ x f(x) dx. Most of these integrals are too hard to do by hand, so machine learning estimates them by averaging random samples instead (Monte Carlo, Chapter 15).')}
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+  const sig = z => 1 / (1 + Math.exp(-z));
+
+  /* ----- shrink h by 10 each step: forward versus central difference ----- */
+  W.limtable = el => {
+    const b = shell(el, 'Shrink h and watch the error', 'Each step makes h ten times smaller. The table compares the forward difference and the central difference with the true derivative, computed with real 64 bit numbers.');
+    const FN = { sq: { f: x => x * x, a: 3, d: 6, n: 'x² at x = 3, true slope 6' }, ex: { f: Math.exp, a: 1, d: Math.E, n: 'eˣ at x = 1, true slope e' }, sn: { f: Math.sin, a: 1, d: Math.cos(1), n: 'sin x at x = 1, true slope cos 1' } };
+    b.innerHTML = `<div class="vz-row">${seg('f', [['ex', 'eˣ'], ['sq', 'x²'], ['sn', 'sin x']], 'ex')}</div><div class="mv-wrap"><div class="lt-plot"></div><div class="mv-side"><div class="mv-legend"><span><i class="o"></i>forward error</span><span><i class="g"></i>central error</span></div><div class="mv-read lt-out" aria-live="polite"></div></div></div><div class="tw lt-tw"><table class="jt lt-tab"></table></div><div class="vz-p"></div>`;
+    let F = FN.ex;
+    const rows = () => { const r = []; for (let k = 1; k <= 15; k++) { const h = 10 ** -k, fw = (F.f(F.a + h) - F.f(F.a)) / h, ce = (F.f(F.a + h) - F.f(F.a - h)) / (2 * h); r.push({ k, fw, ce, ef: Math.abs(fw - F.d), ec: Math.abs(ce - F.d) }); } return r; };
+    function show(t) {
+      const R = rows(), G = MV.frame(420, 280, [0, 15.5], [-17, 1]);
+      const lg = v => Math.max(-16.5, Math.log10(v || 1e-17));
+      let s = MV.axes(G, { labels: false, xl: 'k in h = 10⁻ᵏ', yl: 'log₁₀ error' });
+      for (let k = 3; k <= 12; k += 3) s += MV.text(G, k, 0, String(k), { dy: 14, anchor: 'middle', cls: 'sm' });
+      for (let y = -15; y < 0; y += 5) s += MV.text(G, 0, y, String(y), { dx: 3, dy: 4, cls: "sm" });
+      const pts = key => R.slice(0, t).map(r => G.sx(r.k).toFixed(1) + ',' + G.sy(lg(r[key])).toFixed(1)).join(' ');
+      if (t > 1) s += `<polyline class="mv-v o" points="${pts('ef')}"/><polyline class="mv-v g" points="${pts('ec')}"/>`;
+      R.slice(0, t).forEach(r => { s += MV.dot(G, r.k, lg(r.ef), 'o', 4) + MV.dot(G, r.k, lg(r.ec), 'g', 4); });
+      $('.lt-plot', b).innerHTML = MV.svg(G, s, 'Error against step size');
+      $('.lt-tab', b).innerHTML = '<tr><th>h</th><th>forward</th><th>central</th></tr>' + R.slice(0, t).map(r => `<tr><td>1e−${r.k}</td><td>${r.fw.toPrecision(10)}</td><td>${r.ce.toPrecision(10)}</td></tr>`).join('');
+      let best = R[0]; R.forEach(r => { if (r.ec < best.ec) best = r; });
+      $('.lt-out', b).innerHTML = `${F.n}<br>true value = <b>${F.d.toPrecision(10)}</b>` + (t ? `<br>now h = 1e−${t}` : '<br>Press Play to start.') + (t >= 15 ? `<br>best central h = 1e−${best.k}. Smaller h made it worse, because rounding swamped the tiny difference.` : '');
+    }
+    const P = Player($('.vz-p', b), show, 700);
+    wireSeg(b, 'f', k => { F = FN[k]; P.load(16, 0); });
+    P.load(16, 0);
+  };
+
+  /* ----- f on top, f′ underneath, sharing one x ----- */
+  W.derivplot = el => {
+    const b = shell(el, 'A function and its slope, side by side', 'Choose f. Move x or press Play. The tangent on the top graph has the slope shown by the dot on the bottom graph.');
+    const FN = {
+      cube: { f: x => x ** 3 - 3 * x, d: x => 3 * x * x - 3, xr: [-2.5, 2.5], yr: [-5, 5], dr: [-4, 12], n: 'x³ − 3x', dn: '3x² − 3' },
+      sq: { f: x => x * x, d: x => 2 * x, xr: [-3, 3], yr: [-1, 9], dr: [-6, 6], n: 'x²', dn: '2x' },
+      sin: { f: Math.sin, d: Math.cos, xr: [-6.3, 6.3], yr: [-1.5, 1.5], dr: [-1.5, 1.5], n: 'sin x', dn: 'cos x' },
+      exp: { f: Math.exp, d: Math.exp, xr: [-3, 2], yr: [-0.5, 7.5], dr: [-0.5, 7.5], n: 'eˣ', dn: 'eˣ (itself)' },
+      ln: { f: Math.log, d: x => 1 / x, xr: [0.05, 5], yr: [-3, 2], dr: [0, 5], n: 'ln x', dn: '1 ÷ x' },
+      sig: { f: sig, d: x => sig(x) * (1 - sig(x)), xr: [-6, 6], yr: [-0.1, 1.1], dr: [-0.02, 0.3], n: 'σ(x)', dn: 'σ(x)(1 − σ(x))' },
+    };
+    b.innerHTML = `<div class="vz-row">${seg('f', [['cube', 'x³ − 3x'], ['sq', 'x²'], ['sin', 'sin x'], ['exp', 'eˣ'], ['ln', 'ln x'], ['sig', 'sigmoid']], 'cube')}</div><div class="mv-wrap"><div><div class="dp-top"></div><div class="dp-bot"></div></div><div class="mv-side">${slider('x', 'x (% of the range)', 0, 100, 30, 1)}<div class="mv-read dp-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let F = FN.cube, pct = 30;
+    function draw() {
+      const x = F.xr[0] + (F.xr[1] - F.xr[0]) * pct / 100, y = F.f(x), m = F.d(x);
+      const G1 = MV.frame(440, 210, F.xr, F.yr), G2 = MV.frame(440, 170, F.xr, F.dr);
+      let s1 = MV.axes(G1, { labels: false, yl: 'f(x)' }) + MV.curve(G1, F.f) + MV.curve(G1, t => y + m * (t - x), 'c2 thin', { from: x - 1.2, to: x + 1.2 }) + MV.dot(G1, x, y, 'o', 6);
+      let s2 = MV.axes(G2, { labels: false, yl: 'f′(x)' }) + MV.curve(G2, F.d, 'c4') + MV.line(G2, x, F.dr[0], x, F.dr[1], 'mv-v k dash') + MV.dot(G2, x, Math.max(F.dr[0], Math.min(F.dr[1], m)), 'p', 6);
+      $('.dp-top', b).innerHTML = MV.svg(G1, s1, 'The function with a tangent');
+      $('.dp-bot', b).innerHTML = MV.svg(G2, s2, 'The derivative');
+      $('.dp-out', b).innerHTML = `f(x) = ${F.n}<br>f′(x) = ${F.dn}<br>x = <b>${MV.num(x, 2)}</b><br>f(x) = <b>${MV.num(y, 3)}</b><br>slope f′(x) = <b>${MV.num(m, 3)}</b><br>` + (Math.abs(m) < 0.06 ? '➡️ Flat: a peak, a valley or a pause.' : m > 0 ? '↗ Rising here.' : '↘ Falling here.');
+    }
+    const P = Player($('.vz-p', b), t => { pct = t * 5; $('[data-sl="x"]', b).value = pct; $('[data-slv="x"]', b).textContent = pct; draw(); }, 350);
+    wireSeg(b, 'f', k => { F = FN[k]; draw(); });
+    wireSlider(b, 'x', v => { P.pause(); pct = v; draw(); });
+    P.load(21, 6);
+  };
+
+  /* ----- the chain rule with numbers and a check ----- */
+  W.chainx = el => {
+    const b = shell(el, 'The chain rule, link by link', 'Choose a chain and an x. Press Play to reveal the inside value, the two local slopes, their product, and a numerical check.');
+    const CH = {
+      cube: { g: x => 3 * x + 1, dg: () => 3, f: u => u ** 3, df: u => 3 * u * u, n: 'y = (3x + 1)³', gn: 'u = 3x + 1', fn: 'y = u³', dgn: '3', dfn: '3u²' },
+      sinsq: { g: x => x * x, dg: x => 2 * x, f: Math.sin, df: Math.cos, n: 'y = sin(x²)', gn: 'u = x²', fn: 'y = sin u', dgn: '2x', dfn: 'cos u' },
+      sig: { g: x => 2 * x - 1, dg: () => 2, f: sig, df: u => sig(u) * (1 - sig(u)), n: 'y = σ(2x − 1)', gn: 'u = 2x − 1', fn: 'y = σ(u)', dgn: '2', dfn: 'σ(u)(1 − σ(u))' },
+    };
+    b.innerHTML = `<div class="vz-row">${seg('c', [['cube', '(3x + 1)³'], ['sinsq', 'sin(x²)'], ['sig', 'σ(2x − 1)']], 'cube')}</div><div class="mv-wrap"><div class="cx-plot"></div><div class="mv-side">${slider('x', 'x', -2, 2, 1, 0.1)}<div class="mv-read cx-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let C = CH.cube, x = 1, stage = 5;
+    function draw() {
+      const u = C.g(x), y = C.f(u), a = C.df(u), g = C.dg(x), d = a * g, h = 1e-5, num = (C.f(C.g(x + h)) - C.f(C.g(x - h))) / (2 * h);
+      const ys = []; for (let k = 0; k <= 80; k++) ys.push(C.f(C.g(-2 + k / 20)));
+      const lo = Math.min(...ys), hi = Math.max(...ys), pad = (hi - lo) * 0.1 || 1;
+      const G = MV.frame(420, 300, [-2, 2], [lo - pad, hi + pad]);
+      let s = MV.axes(G, { labels: false, xl: 'x', yl: 'y' }) + MV.curve(G, t => C.f(C.g(t)));
+      if (stage >= 4) s += MV.curve(G, t => y + d * (t - x), 'c2 thin', { from: x - 0.5, to: x + 0.5 });
+      s += MV.dot(G, x, y, 'o', 6);
+      $('.cx-plot', b).innerHTML = MV.svg(G, s, 'The chained function');
+      const L = [`${C.n}<br>x = <b>${MV.num(x, 2)}</b>`];
+      if (stage >= 1) L.push(`inside: ${C.gn} = <b>${MV.num(u, 4)}</b>, y = <b>${MV.num(y, 4)}</b>`);
+      if (stage >= 2) L.push(`outside slope dy/du = ${C.dfn} = <b>${MV.num(a, 4)}</b>`);
+      if (stage >= 3) L.push(`inside slope du/dx = ${C.dgn} = <b>${MV.num(g, 4)}</b>`);
+      if (stage >= 4) L.push(`chain: dy/dx = ${MV.num(a, 4)} × ${MV.num(g, 4)} = <span class="big">${MV.num(d, 4)}</span>`);
+      if (stage >= 5) L.push(`numerical check: <b>${MV.num(num, 4)}</b> ✓`);
+      $('.cx-out', b).innerHTML = L.join('<br>');
+    }
+    const P = Player($('.vz-p', b), t => { stage = t; draw(); }, 1000);
+    wireSeg(b, 'c', k => { C = CH[k]; P.load(6, 5); });
+    wireSlider(b, 'x', v => { x = v; draw(); });
+    P.load(6, 5);
+  };
+})();
+'''
+CSS = r'''
+.dp-top .mv-svg{max-height:240px; margin-bottom:6px} .dp-bot .mv-svg{max-height:200px}
+.lt-tw{max-height:280px; overflow:auto}
+.lt-tab td,.lt-tab th{font-family:var(--font-mono); font-size:13px}
+'''
+
 T = K.topic(
     slug='derivatives', topic='derivatives', prefix='mm06', short='Derivatives', emoji='📈',
     title='Derivatives and Integrals',
@@ -997,5 +1151,5 @@ T = K.topic(
     desc='Calculus for machine learning: rate of change, limits, the derivative from first principles, power, product, quotient and chain rules, the sigmoid derivative, maxima and minima, convexity, integrals and numerical integration.',
     summary='Average and instant rate of change, limits and the difference quotient, numerical derivatives and gradient checking, the differentiation rules and table, the chain rule and the sigmoid derivative, critical points and the second derivative, convexity, Riemann sums, the fundamental theorem and how derivatives drive learning.',
     keywords=['derivative', 'slope', 'tangent', 'limit', 'power rule', 'product rule', 'quotient rule', 'chain rule', 'sigmoid derivative', 'second derivative', 'maximum', 'minimum', 'convex', 'integral', 'riemann sum', 'newton method'],
-    parts=PARTS, info=INFO, real=REAL, viz=VIZ_JS, css='', allow_diff={},
+    parts=PARTS, info=INFO, real=REAL, viz=VIZ_JS, css=CSS, allow_diff={},
 )

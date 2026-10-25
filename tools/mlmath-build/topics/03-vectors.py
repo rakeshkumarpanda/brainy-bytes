@@ -1,6 +1,6 @@
 # Chapter 3: vectors, adding and scaling, norms and distances, the dot product, cosine similarity,
 # projection, and span, independence and basis.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, vec, mat
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, vec, mat, deep
 
 K = Kit()
 
@@ -1057,6 +1057,147 @@ VIZ_JS = r'''
 
 CSS = r'''
 @media (max-width:560px){ .cossim .mv-brow{grid-template-columns:110px 1fr 50px !important} }
+'''
+
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'what': deep('vectors as they appear in real code and data', f'''
+<p>When you start writing machine learning code, vectors show up in a few standard shapes. Knowing their names saves a lot of confusion.</p>
+{table(['Kind of vector', 'What it looks like', 'Example'], [
+        ['feature vector', 'one number per measured property', '[area 85, rooms 2, age 12] for one flat'],
+        ['one hot vector', 'all zeros except a single 1', 'colour "green" out of [red, green, blue] is [0, 1, 0]'],
+        ['embedding', 'a few hundred learned numbers, no single one has an obvious meaning', 'a 768 number vector for the word "river"'],
+        ['probability vector', 'non negative numbers that add up to 1', 'a classifier output [0.7, 0.2, 0.1]'],
+        ['weight vector', 'one learned number per input', 'the slopes of a linear model'],
+    ])}
+<p>A <b>one hot</b> vector is how a model reads a category. You cannot feed the word "green" into a formula, and numbering colours 1, 2, 3 would wrongly say blue is "bigger" than red. Giving each category its own position with a single 1 keeps every category equally far from every other.</p>
+<p>In code, a vector of n numbers usually has <b>shape (n,)</b>. Libraries also talk about a <b>row vector</b> of shape (1, n) and a <b>column vector</b> of shape (n, 1). They hold the same numbers but behave differently in matrix multiplication (Chapter 4), so mixing them up is one of the most common beginner bugs.</p>
+{life('A cricket player profile is a vector: [matches, runs, average, strike rate, wickets]. Two players with similar vectors have similar careers, which is exactly how sports apps suggest "players like this one".')}
+'''),
+    'ops': deep('the average of vectors and sliding between two vectors', f'''
+<p>Adding and scaling are enough to build two of the most useful tools in all of machine learning.</p>
+{fxs(fx('Centroid (average vector)', f'c = {frac(1, "n")} (v₁ + v₂ + … + vₙ)', 'Add the vectors, then scale by 1 ÷ n. The result sits in the middle of the cloud of points.'),
+         fx('Interpolation (lerp)', 'v(t) = (1 − t) a + t b, &nbsp; 0 ≤ t ≤ 1', 't = 0 gives a, t = 1 gives b, t = ½ gives the halfway point. Every point in between lies on the straight segment from a to b.'))}
+{worked('Centroid of three customers', [
+        'Customers as [age, visits per month]: <span class="eq">[20, 4], [30, 2], [40, 9]</span>',
+        'Add them part by part: <span class="eq">[20 + 30 + 40, 4 + 2 + 9] = [90, 15]</span>',
+        'Scale by 1 ÷ 3: <span class="eq">[30, 5]</span>',
+        'The "typical" customer of this group is 30 years old and visits 5 times a month. k means clustering (a popular grouping method) moves each cluster centre to exactly this average, over and over.'])}
+<p>Interpolation is how image generators "morph" one face into another. Each face is a vector of numbers inside the model, and stepping t from 0 to 1 walks along the straight line between them. Every step is a new face that blends the two.</p>
+{trick('Vector rules are the same as number rules you already know: a + b = b + a, (a + b) + c = a + (b + c), and k(a + b) = ka + kb. If a step would be fine with ordinary numbers, it is almost always fine with vectors of the same size.')}
+'''),
+    'norm': deep('the whole family of norms, and when to normalise', f'''
+<p>L1 and L2 are two members of one family, the <b>Lp norms</b>. Raise every absolute value to the power p, add, then take the p-th root.</p>
+{fx('Lp norm', '‖v‖ₚ = (|v₁|ᵖ + |v₂|ᵖ + … + |vₙ|ᵖ)^(1/p)', 'p = 1 gives Manhattan, p = 2 gives Euclidean, and as p grows huge the biggest component wins, giving L∞ = max |vᵢ|.')}
+{worked('All three norms of v = [3, −4, 12]', [
+        'L1: <span class="eq">3 + 4 + 12 = 19</span>',
+        'L2: <span class="eq">√(9 + 16 + 144) = √169 = 13</span>',
+        'L∞: the biggest absolute part, <span class="eq">12</span>',
+        'Always <span class="eq">L∞ ≤ L2 ≤ L1</span>: here 12 ≤ 13 ≤ 19. The more evenly the size is spread over the parts, the bigger the gap.'])}
+<p>Machine learning often uses the <b>squared</b> L2 norm, ‖v‖² = v₁² + … + vₙ², without the square root. It has the same smallest point, it is cheaper to compute, and its derivative is simply 2v, which makes the calculus in later chapters tidy.</p>
+<p><b>When to normalise.</b> Divide a vector by its length when only the direction matters, for example text embeddings for search, where a long document should not win just because it has more words. Do not normalise when the size itself carries meaning, such as a vector of prices or sensor readings.</p>
+'''),
+    'dot': deep('why the two formulas for the dot product agree', f'''
+<p>It is surprising that "multiply and add" gives the same number as "length times length times cos of the angle". Here is why, using only Pythagoras and the law of cosines from school geometry.</p>
+{worked('Linking the algebra form and the geometry form', [
+        'Draw a, b and the third side a − b of the triangle they make.',
+        'Law of cosines: <span class="eq">‖a − b‖² = ‖a‖² + ‖b‖² − 2‖a‖‖b‖cos θ</span>',
+        'Expand the left side part by part: <span class="eq">Σ(aᵢ − bᵢ)² = Σaᵢ² + Σbᵢ² − 2Σaᵢbᵢ</span>',
+        'That is <span class="eq">‖a‖² + ‖b‖² − 2(a · b)</span>',
+        'The two right sides must be equal, so <span class="eq">a · b = ‖a‖‖b‖cos θ</span>'])}
+<p>Two more facts make the dot product easy to work with.</p>
+<ul>
+<li><b>A vector dotted with itself is its squared length:</b> v · v = ‖v‖². So [3, 4] · [3, 4] = 9 + 16 = 25 = 5².</li>
+<li><b>It is a weighted sum.</b> If w = [0.5, 2, −1] are weights and x = [4, 1, 3] are inputs, w · x = 2 + 2 − 3 = 1. Each input is counted with its own importance, and a negative weight means "this feature lowers the score".</li>
+</ul>
+{life('Your shopping bill is a dot product: quantities [2 kg rice, 1 litre oil, 6 eggs] dotted with prices [60, 150, 7] gives 120 + 150 + 42 = 312.')}
+'''),
+    'cosine': deep('cosine distance, and when cosine and Euclidean disagree', f'''
+<p>Many libraries ask for a <b>distance</b>, where smaller means more alike. Cosine similarity is turned into one by subtracting it from 1.</p>
+{fx('Cosine distance', '1 − cos(a, b)', '0 for the same direction, 1 for perpendicular, 2 for opposite.')}
+{worked('Two documents as word counts', [
+        'Words [ball, goal, vote]. Document A = <span class="eq">[3, 2, 0]</span>, document B (twice as long, same topic) = <span class="eq">[6, 4, 0]</span>, document C = <span class="eq">[0, 1, 5]</span>',
+        'A · B = <span class="eq">18 + 8 + 0 = 26</span>, ‖A‖ = √13 ≈ 3.606, ‖B‖ = √52 ≈ 7.211, so cos(A, B) = <span class="eq">26 ÷ 26 = 1</span>',
+        'A · C = <span class="eq">0 + 2 + 0 = 2</span>, ‖C‖ = √26 ≈ 5.099, so cos(A, C) = <span class="eq">2 ÷ (3.606 × 5.099) ≈ 0.109</span>',
+        'Euclidean distance says A is far from B (‖A − B‖ = √13 ≈ 3.61) only because B is longer. Cosine correctly says A and B are about exactly the same topic.'])}
+<p>Rule of thumb: use <b>cosine</b> when size is an accident (document length, how many ratings a user gave) and <b>Euclidean</b> when size is real information (two houses with very different areas really are different).</p>
+'''),
+    'proj': deep('splitting a vector into "along" and "across"', f'''
+<p>Projection lets you split any vector a into two pieces that are perpendicular to each other: the part that runs along a direction b, and the part that is left over. This split is used again and again, in regression, in PCA and in the Gram Schmidt method of Chapter 13.</p>
+{fx('Decomposition', 'a = proj_b a + (a − proj_b a)', 'The first piece is parallel to b. The second piece is perpendicular to b, so its dot product with b is 0.')}
+{worked('Split a = [4, 3] along b = [2, 0]', [
+        'a · b = <span class="eq">4 × 2 + 3 × 0 = 8</span> and b · b = <span class="eq">4</span>',
+        'proj_b a = <span class="eq">(8 ÷ 4) × [2, 0] = [4, 0]</span>',
+        'Left over: <span class="eq">[4, 3] − [4, 0] = [0, 3]</span>',
+        'Check it is perpendicular: <span class="eq">[0, 3] · [2, 0] = 0</span> ✓',
+        'So a = [4, 0] + [0, 3]: 4 steps along b, 3 steps straight across it.'])}
+<p>If b is already a <b>unit</b> vector (length 1), the formula becomes very short: proj_b a = (a · b) b. That is why so many algorithms normalise directions first.</p>
+{life('Walking up a slope against the wind, only the part of the wind that blows straight down the slope slows you. The part blowing across the slope just pushes you sideways. That split is a projection.')}
+'''),
+    'span': deep('drag two vectors and see what they can reach', f'''
+<p>The best way to feel span and independence is to play. Below, a and b are the two building blocks. The faint grid shows every point you can reach with whole number amounts of a and b, such as 2a − b. Type a target and the widget works out exactly how much of a and b you need, using the two equation method from Chapter 1.</p>
+{viz('span2d')}
+<p>Drag b until it lies on the same line as a. The grid collapses onto a single line, the "area number" ad − bc becomes 0, and most targets can no longer be reached. That is linear dependence in one picture: two vectors that only reach a line instead of the whole plane.</p>
+{ml('In a dataset, if one column is (almost) a multiple of another, the data matrix behaves like the collapsed grid. The model cannot tell the two features apart, and their weights can swing wildly from one training run to the next. Dropping one of the pair, or adding L2 regularisation, fixes it.')}
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, Player } = VIZ.kit;
+  const W = VIZ.widgets;
+
+  /* ----- span of two draggable vectors, with a target written as x·a + y·b ----- */
+  W.span2d = el => {
+    const b = shell(el, 'What can a and b reach?', 'Drag the tips of a (blue) and b (orange). Set a target and press Play to build it step by step: first the a part, then the b part.');
+    b.innerHTML = `<div class="mv-wrap"><div class="sp-plot"></div><div class="mv-side"><div class="mv-inp">target [<input type="number" class="sp-tx" value="4" step="0.5" aria-label="target x">, <input type="number" class="sp-ty" value="3" step="0.5" aria-label="target y">]</div><div class="mv-read sp-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    const G = MV.frame(440, 440, [-6, 6], [-6, 6]);
+    const A = [2, 1], B = [-1, 2], T = [4, 3];
+    let stage = 2;
+    const host = $('.sp-plot', b);
+    host.innerHTML = MV.svg(G, '<g class="sp-g"></g>', 'Span of two vectors');
+    const svgEl = $('svg', host);
+    const n = v => MV.num(v, 2), V = v => `[${n(v[0])}, ${n(v[1])}]`;
+    function draw() {
+      let s = MV.axes(G, { labels: false });
+      const det = A[0] * B[1] - A[1] * B[0];
+      for (let i = -6; i <= 6; i++) {
+        s += MV.line(G, i * B[0] - 8 * A[0], i * B[1] - 8 * A[1], i * B[0] + 8 * A[0], i * B[1] + 8 * A[1], 'mv-grid');
+        s += MV.line(G, i * A[0] - 8 * B[0], i * A[1] - 8 * B[1], i * A[0] + 8 * B[0], i * A[1] + 8 * B[1], 'mv-grid');
+      }
+      const out = [`a = ${V(A)}, b = ${V(B)}`, `area number ad − bc = <b>${n(det)}</b>`];
+      s += MV.dot(G, T[0], T[1], 'r', 6) + MV.text(G, T[0], T[1], 'target', { dx: 8, dy: 14, cls: 'sm' });
+      if (Math.abs(det) < 1e-9) {
+        out.push('❌ a and b lie on one line (dependent). They only reach that line, not the whole plane.');
+        const on = Math.abs(A[0] * T[1] - A[1] * T[0]) < 1e-9 && Math.abs(B[0] * T[1] - B[1] * T[0]) < 1e-9;
+        out.push(on ? 'The target happens to lie on that line, so it can be reached in many ways.' : 'The target is off that line, so it cannot be reached.');
+      } else {
+        const x = (T[0] * B[1] - T[1] * B[0]) / det, y = (A[0] * T[1] - A[1] * T[0]) / det;
+        const P = [x * A[0], x * A[1]];
+        if (stage >= 1) s += MV.arrow(G, 0, 0, P[0], P[1], 'a', 'dash');
+        if (stage >= 2) s += MV.arrow(G, P[0], P[1], T[0], T[1], 'o', 'dash');
+        out.push('✅ independent: together they reach every point of the plane.', `target = <b>${n(x)}</b> · a + <b>${n(y)}</b> · b`);
+        if (stage >= 1) out.push(`step 1: ${n(x)} · a = ${V(P)}`);
+        if (stage >= 2) out.push(`step 2: add ${n(y)} · b = ${V([y * B[0], y * B[1]])} to land on ${V(T)}`);
+      }
+      s += MV.arrow(G, 0, 0, A[0], A[1], 'a') + MV.arrow(G, 0, 0, B[0], B[1], 'o');
+      s += `<circle class="mv-pt big mv-drag" data-h="0" cx="${G.sx(A[0])}" cy="${G.sy(A[1])}" r="10"/><circle class="mv-pt o big mv-drag" data-h="1" cx="${G.sx(B[0])}" cy="${G.sy(B[1])}" r="10"/>`;
+      $('.sp-g', svgEl).innerHTML = s;
+      $('.sp-out', b).innerHTML = out.join('<br>');
+    }
+    const snap = v => Math.round(v * 2) / 2;
+    MV.drag(svgEl, G, [{ set: (x, y) => { A[0] = snap(x); A[1] = snap(y); } }, { set: (x, y) => { B[0] = snap(x); B[1] = snap(y); } }], draw);
+    const P = Player($('.vz-p', b), t => { stage = t; draw(); }, 1100);
+    const readT = () => { T[0] = +$('.sp-tx', b).value || 0; T[1] = +$('.sp-ty', b).value || 0; draw(); };
+    $('.sp-tx', b).addEventListener('input', readT);
+    $('.sp-ty', b).addEventListener('input', readT);
+    P.load(3, 2);
+  };
+})();
 '''
 
 T = K.topic(

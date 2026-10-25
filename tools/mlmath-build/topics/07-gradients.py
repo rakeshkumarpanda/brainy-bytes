@@ -1,6 +1,6 @@
 # Chapter 7: functions of several variables, partial derivatives, the gradient, directional derivatives and
 # linear approximation, the Jacobian and Hessian, the multivariable chain rule and backpropagation.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, mat, vec
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, mat, vec, deep
 
 K = Kit()
 
@@ -1037,6 +1037,181 @@ CSS = r'''
 .bp-host .mv-lab{font-size:19px}
 .bp-val{fill:var(--accent); font-weight:800}
 .bp-grad{fill:var(--orange); font-weight:800}
+'''
+
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'partial': deep('a partial derivative worked slowly', f'''
+<p>The only new skill is discipline: when you differentiate with respect to x, every other letter is treated as an ordinary fixed number, exactly like 7 or 3.</p>
+{worked('f(x, y) = x²y + 3y at the point (2, 1)', [
+        'For ∂f/∂x, freeze y. Then x²y is "a number times x²", whose slope is <span class="eq">2xy</span>, and 3y is a constant, whose slope is 0.',
+        'So <span class="eq">∂f/∂x = 2xy</span>. At (2, 1): <span class="eq">2 × 2 × 1 = 4</span>',
+        'For ∂f/∂y, freeze x. Then x²y is "a number times y" with slope <span class="eq">x²</span>, and 3y has slope 3.',
+        'So <span class="eq">∂f/∂y = x² + 3</span>. At (2, 1): <span class="eq">4 + 3 = 7</span>',
+        'Meaning: from (2, 1), nudging y up raises f almost twice as fast as nudging x up by the same amount.'])}
+<p>A partial derivative is a slice. Cut the surface f(x, y) with a plane where y is fixed, and you get an ordinary curve in x. Its slope is ∂f/∂x. The animation at the top of this lesson shows exactly that slice.</p>
+{table(['Function', '∂/∂x', '∂/∂y'], [
+        ['3x + 5y', '3', '5'],
+        ['xy', 'y', 'x'],
+        ['x² + y²', '2x', '2y'],
+        ['e^(xy)', 'y e^(xy)', 'x e^(xy)'],
+        ['w₁x₁ + w₂x₂ + b (in w₁)', 'x₁ (the input that w₁ multiplies)', 'not used'],
+    ])}
+'''),
+    'gradient': deep('why the gradient is the steepest direction', f'''
+<p>The next lesson shows that the slope in a unit direction u is ∇f · u. From Chapter 3, a dot product equals ‖∇f‖ ‖u‖ cos θ, and ‖u‖ = 1. So the slope in direction u is simply <b>‖∇f‖ cos θ</b>, where θ is the angle between u and the gradient.</p>
+<ul>
+<li>cos θ is largest (equal to 1) when θ = 0, so the steepest climb is straight along ∇f, and its slope is ‖∇f‖.</li>
+<li>cos θ = −1 when θ = 180°, so the steepest descent is along −∇f, with slope −‖∇f‖.</li>
+<li>cos θ = 0 when θ = 90°, so walking at right angles to the gradient keeps you at the same height. That path is a contour line.</li>
+</ul>
+{worked('Steepest climb on f(x, y) = x² + 3y² at (1, 1)', [
+        'Gradient: <span class="eq">∇f = [2x, 6y] = [2, 6]</span>',
+        'Steepest slope: <span class="eq">‖∇f‖ = √(4 + 36) = √40 ≈ 6.32</span>',
+        'Unit direction of steepest climb: <span class="eq">[2, 6] ÷ 6.32 ≈ [0.32, 0.95]</span>, mostly along y because the bowl is steeper in y.',
+        'Walking along x only, u = [1, 0], gives slope <span class="eq">∇f · u = 2</span>, much gentler than 6.32.'])}
+{life('Water on a hillside always runs along minus the gradient. That is why streams cross contour lines on a map at right angles.')}
+'''),
+    'approx': deep('how good is the tangent line guess', f'''
+<p>The linear approximation replaces a curve by its tangent line. It is excellent very close to the point and gets worse as you move away. The error grows roughly with the <b>square</b> of the step: half the step, about a quarter of the error. That is why small learning rates make the "loss should drop by about η‖∇L‖²" promise come true.</p>
+{worked('Estimate √4.1 without a calculator', [
+        'f(x) = √x near a = 4, where we know f(4) = 2.',
+        'Slope: <span class="eq">f′(x) = 1 ÷ (2√x)</span>, so <span class="eq">f′(4) = 1 ÷ 4 = 0.25</span>',
+        'Tangent guess: <span class="eq">√4.1 ≈ 2 + 0.25 × 0.1 = 2.025</span>',
+        'True value: <span class="eq">2.02485…</span>. The error is only about 0.00015.',
+        'With a step of 1 instead (√5 ≈ 2 + 0.25 = 2.25, true 2.236) the error is about 0.014, roughly 100 times bigger for a 10 times bigger step.'])}
+{viz('linapprox')}
+{ml('Chapter 14 adds the next term, the curvature, to get a quadratic approximation. That is the idea behind Newton’s method, which can reach the bottom of a bowl in a single step.')}
+'''),
+    'jacobian': deep('the Jacobian is the local stretch of a map', f'''
+<p>A function that takes a point (x, y) to a new point (u, v) bends the whole plane. Zoom in close enough and the bending looks straight: a tiny square turns into a tiny parallelogram. The Jacobian matrix is that local straight move, and its determinant says how much tiny areas are scaled at that spot.</p>
+{worked('Jacobian of u = x + 0.5 sin y, v = y + 0.5 sin x at (0, 0)', [
+        '∂u/∂x = <span class="eq">1</span>, ∂u/∂y = <span class="eq">0.5 cos y = 0.5</span>',
+        '∂v/∂x = <span class="eq">0.5 cos x = 0.5</span>, ∂v/∂y = <span class="eq">1</span>',
+        'So <span class="eq">J = [[1, 0.5], [0.5, 1]]</span>',
+        'det J = <span class="eq">1 − 0.25 = 0.75</span>. Near the origin, small areas shrink to three quarters of their size.'])}
+<p>Move the probe point below and watch the small square (in orange) change shape across the warped grid. The numbers show J and its determinant at that point.</p>
+{viz('jacgrid')}
+{ml('Normalising flows, a family of generative models, transform simple noise into data with a chain of invertible maps. To keep track of probability, they add up log |det J| of every step, so they are designed to have Jacobians whose determinants are cheap to compute.')}
+'''),
+    'backprop': deep('train the neuron yourself', f'''
+<p>The worked example above computed one set of gradients. Training simply repeats it: compute the gradients, move every weight a little against its gradient, and go again. Each weight moves by <b>learning rate × gradient</b>.</p>
+{worked('One update with learning rate η = 1', [
+        'From above: <span class="eq">∂L/∂w₁ = −0.25</span>, <span class="eq">∂L/∂w₂ = −0.5</span>, <span class="eq">∂L/∂b = −0.25</span>',
+        'New w₁ = <span class="eq">0.5 − 1 × (−0.25) = 0.75</span>',
+        'New w₂ = <span class="eq">−0.3 − 1 × (−0.5) = 0.2</span>, new b = <span class="eq">0.1 + 0.25 = 0.35</span>',
+        'New z = <span class="eq">0.75 × 1 + 0.2 × 2 + 0.35 = 1.5</span>, so a = σ(1.5) ≈ 0.818',
+        'New loss = <span class="eq">(0.818 − 1)² ≈ 0.033</span>, down from 0.25 after a single step.'])}
+<p>Use the playground below to run many steps. Change the inputs, the target or the learning rate, then press Play and watch the loss fall. Try a target of 0 to make the neuron learn to say "no", and try a learning rate of 20 to see training overshoot.</p>
+{viz('neuron')}
+'''),
+    'ml': deep('the batch gradient in numbers', f'''
+<p>The formula ∇L = (2 ÷ n) Xᵀ(Xw − y) looks dense, but it is only three small steps: predict, find the errors, and let each feature collect its share of the blame.</p>
+{worked('Two examples, two weights', [
+        'X = <span class="eq">[[1, 2], [1, 3]]</span> (a column of 1s for the bias, then the feature), y = <span class="eq">[5, 7]</span>, w = <span class="eq">[0, 2]</span>',
+        'Predict: <span class="eq">Xw = [0 + 4, 0 + 6] = [4, 6]</span>',
+        'Errors: <span class="eq">Xw − y = [−1, −1]</span>. Both predictions are 1 too low.',
+        'Blame per feature: <span class="eq">Xᵀ[−1, −1] = [1×(−1) + 1×(−1), 2×(−1) + 3×(−1)] = [−2, −5]</span>',
+        'Average and double: <span class="eq">∇L = (2 ÷ 2) × [−2, −5] = [−2, −5]</span>. Both weights should go up, the feature weight more.'])}
+<p>Every deep learning library does exactly this, just with millions of rows and thousands of columns, and with the computational graph doing the bookkeeping instead of you.</p>
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+  const sig = z => 1 / (1 + Math.exp(-z));
+
+  /* ----- tangent line guess versus the true curve ----- */
+  W.linapprox = el => {
+    const b = shell(el, 'Tangent line guess for √x', 'Pick the point a you know well and how far away you want to guess. Press Play to grow the step and watch the error grow like the square of the step.');
+    b.innerHTML = `<div class="mv-wrap"><div class="la-plot"></div><div class="mv-side">${slider('a', 'a', 1, 9, 4, 1)}${slider('d', 'step Δ', -3, 4, 0.5, 0.1)}<div class="mv-read la-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let a = 4, d = 0.5;
+    const G = MV.frame(440, 300, [0, 13], [0, 4]);
+    function draw() {
+      const fa = Math.sqrt(a), m = 0.5 / fa, x = Math.max(0, a + d), guess = fa + m * d, tru = Math.sqrt(x);
+      let s = MV.axes(G, { xstep: 1, ystep: 1, xl: 'x', yl: '√x' }) + MV.curve(G, t => Math.sqrt(Math.max(0, t)), '', { from: 0 }) + MV.curve(G, t => fa + m * (t - a), 'c2 thin');
+      s += MV.line(G, x, Math.min(guess, tru), x, Math.max(guess, tru), 'mv-res');
+      s += MV.dot(G, a, fa, 'k', 5) + MV.dot(G, x, tru, '', 6) + MV.dot(G, x, guess, 'o', 6);
+      $('.la-plot', b).innerHTML = MV.svg(G, s, 'Square root and its tangent');
+      $('.la-out', b).innerHTML = `at a = ${a}: √a = ${MV.num(fa, 4)}, slope = ${MV.num(m, 4)}<br>x = a + Δ = <b>${MV.num(x, 2)}</b><br>tangent guess = <b>${MV.num(guess, 5)}</b><br>true √x = <b>${MV.num(tru, 5)}</b><br>error = <b>${MV.num(Math.abs(guess - tru), 5)}</b>`;
+    }
+    const P = Player($('.vz-p', b), t => { d = [0.1, 0.2, 0.5, 1, 2, 4][t]; $('[data-sl="d"]', b).value = d; $('[data-slv="d"]', b).textContent = d; draw(); }, 1100);
+    wireSlider(b, 'a', v => { a = v; draw(); });
+    wireSlider(b, 'd', v => { P.pause(); d = v; draw(); });
+    P.load(6, 2);
+  };
+
+  /* ----- a warped grid and the local parallelogram given by the Jacobian ----- */
+  W.jacgrid = el => {
+    const b = shell(el, 'The Jacobian as a local stretch', 'The map u = x + k sin y, v = y + k sin x bends the grid. Move the probe point and the bend strength k. Press Play to walk the probe across the plane.');
+    b.innerHTML = `<div class="mv-wrap"><div class="jg-plot"></div><div class="mv-side">${slider('k', 'bend k', 0, 0.9, 0.5, 0.05)}${slider('px', 'probe x', -3, 3, 0, 0.1)}${slider('py', 'probe y', -3, 3, 0, 0.1)}<div class="mv-read jg-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let k = 0.5, px = 0, py = 0;
+    const G = MV.frame(420, 420, [-4.2, 4.2], [-4.2, 4.2]);
+    const F = (x, y) => [x + k * Math.sin(y), y + k * Math.sin(x)];
+    function draw() {
+      let s = '';
+      for (let g = -3; g <= 3; g += 0.5) {
+        const p1 = [], p2 = [];
+        for (let t = -3; t <= 3.001; t += 0.1) { const A = F(g, t), B = F(t, g); p1.push(G.sx(A[0]).toFixed(1) + ',' + G.sy(A[1]).toFixed(1)); p2.push(G.sx(B[0]).toFixed(1) + ',' + G.sy(B[1]).toFixed(1)); }
+        s += `<polyline class="mv-cont" points="${p1.join(' ')}"/><polyline class="mv-cont" points="${p2.join(' ')}"/>`;
+      }
+      const J = [[1, k * Math.cos(py)], [k * Math.cos(px), 1]], det = J[0][0] * J[1][1] - J[0][1] * J[1][0], h = 0.5;
+      const c = F(px, py), sq = [[0, 0], [h, 0], [h, h], [0, h]].map(([dx, dy]) => F(px + dx, py + dy));
+      s += `<polygon class="mv-poly o" points="${sq.map(p => G.sx(p[0]).toFixed(1) + ',' + G.sy(p[1]).toFixed(1)).join(' ')}"/>`;
+      s += MV.arrow(G, c[0], c[1], c[0] + J[0][0] * h * 1.6, c[1] + J[1][0] * h * 1.6, 'a') + MV.arrow(G, c[0], c[1], c[0] + J[0][1] * h * 1.6, c[1] + J[1][1] * h * 1.6, 'g');
+      s += MV.dot(G, c[0], c[1], 'r', 5);
+      $('.jg-plot', b).innerHTML = MV.svg(G, s, 'Warped grid');
+      $('.jg-out', b).innerHTML = `probe (x, y) = (${MV.num(px)}, ${MV.num(py)})<br>J = [[${MV.num(J[0][0], 3)}, ${MV.num(J[0][1], 3)}], [${MV.num(J[1][0], 3)}, ${MV.num(J[1][1], 3)}]]<br>det J = <span class="big">${MV.num(det, 3)}</span><br>` +
+        (det > 1.02 ? 'Small areas grow here.' : det < 0.98 ? 'Small areas shrink here.' : 'Areas keep about the same size here.') + '<br><small>Blue arrow: where a step in x goes. Green: where a step in y goes.</small>';
+    }
+    const setS = (n, v) => { $(`[data-sl="${n}"]`, b).value = v; $(`[data-slv="${n}"]`, b).textContent = MV.num(v); };
+    const P = Player($('.vz-p', b), t => { px = -3 + t * 0.3; py = 2.5 * Math.sin(t * 0.3); setS('px', px); setS('py', py); draw(); }, 300);
+    wireSlider(b, 'k', v => { k = v; draw(); });
+    wireSlider(b, 'px', v => { P.pause(); px = v; draw(); });
+    wireSlider(b, 'py', v => { P.pause(); py = v; draw(); });
+    P.load(21, 10);
+  };
+
+  /* ----- train one sigmoid neuron with squared error ----- */
+  W.neuron = el => {
+    const b = shell(el, 'Neuron training playground', 'Inputs x₁ and x₂, a target y and a learning rate. Each Play step runs a forward pass, a backward pass and one update. The chart shows the loss after each step.');
+    b.innerHTML = `<div class="mv-wrap"><div class="nr-plot"></div><div class="mv-side">${slider('x1', 'x₁', -2, 2, 1, 0.5)}${slider('x2', 'x₂', -2, 2, 2, 0.5)}${slider('y', 'target y', 0, 1, 1, 1)}${slider('lr', 'learning rate η', 0.1, 20, 1, 0.1)}<div class="mv-read nr-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    const V = { x1: 1, x2: 2, y: 1, lr: 1 };
+    let hist = [];
+    function plan() {
+      let w1 = 0.5, w2 = -0.3, bb = 0.1;
+      hist = [];
+      for (let t = 0; t <= 25; t++) {
+        const z = w1 * V.x1 + w2 * V.x2 + bb, a = sig(z), L = (a - V.y) ** 2, dz = 2 * (a - V.y) * a * (1 - a);
+        hist.push({ w1, w2, b: bb, z, a, L, g: [dz * V.x1, dz * V.x2, dz] });
+        w1 -= V.lr * dz * V.x1; w2 -= V.lr * dz * V.x2; bb -= V.lr * dz;
+      }
+      P.load(hist.length, 0);
+    }
+    function show(t) {
+      const G = MV.frame(420, 280, [0, 25.5], [0, Math.max(0.3, Math.max(...hist.map(h => h.L)) * 1.1)]);
+      let s = MV.axes(G, { labels: false, xl: 'step', yl: 'loss' });
+      for (let k = 5; k <= 25; k += 5) s += MV.text(G, k, 0, String(k), { dy: 14, anchor: 'middle', cls: 'sm' });
+      const pts = hist.slice(0, t + 1).map((h, k) => G.sx(k).toFixed(1) + ',' + G.sy(h.L).toFixed(1)).join(' ');
+      s += `<polyline class="mv-v a" points="${pts}"/>` + MV.dot(G, t, hist[t].L, 'o', 6);
+      $('.nr-plot', b).innerHTML = MV.svg(G, s, 'Loss during training');
+      const h = hist[t], f = v => MV.num(v, 4);
+      $('.nr-out', b).innerHTML = `step <b>${t}</b><br>w = [${f(h.w1)}, ${f(h.w2)}], b = ${f(h.b)}<br>z = ${f(h.z)}, a = σ(z) = <b>${f(h.a)}</b><br>loss = (a − y)² = <span class="big">${f(h.L)}</span><br>gradients: ∂L/∂w = [${f(h.g[0])}, ${f(h.g[1])}], ∂L/∂b = ${f(h.g[2])}`;
+    }
+    const P = Player($('.vz-p', b), show, 450);
+    ['x1', 'x2', 'y', 'lr'].forEach(n => wireSlider(b, n, v => { V[n] = v; plan(); }));
+    plan();
+  };
+})();
+'''
+CSS += r'''
+.jg-plot .mv-svg{max-height:430px}
 '''
 
 T = K.topic(
