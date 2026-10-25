@@ -493,6 +493,108 @@ jobs:
             ],
         },
         {
+            'id': 'essentials', 'title': 'Real project essentials: environments, secrets, safe logging and cleanup', 'emoji': '🧳', 'level': 'Intermediate',
+            'blocks': [
+                ('p', 'When a whole team shares one workspace, a few habits keep it safe: one environment per server, secrets that never sync to the cloud or Git, a guard that stops destructive tests on production, logs that never print tokens, and a cleanup step that removes test data even when earlier requests failed.'),
+                ('table', ['Habit', 'How to do it in Postman'], [
+                    ['One environment per server', '<code>Local</code>, <code>QA</code>, <code>Staging</code>, each with the same variable names such as <code>baseUrl</code>'],
+                    ['Secrets out of sync and Git', 'Mark variables as <b>secret</b> type, keep values in the <b>current value</b> only, or store them in <b>Postman Vault</b> and use <code>{{vault:qa-password}}</code>'],
+                    ['Secrets in CI', 'Pass them at run time: <code>newman run ... --env-var "password=$QA_PASSWORD"</code>'],
+                    ['Guard production', 'A collection level pre-request script that skips risky requests when the environment is production'],
+                    ['Safe logs', 'Log status and timing to the Postman Console, never the token'],
+                    ['Cleanup', 'A last folder named <code>Teardown</code> that deletes what the run created'],
+                ]),
+                ('code', 'js', 'Collection Pre-request script: the production guard', '''
+// Requests whose name starts with [destructive] never run against production
+const env = pm.environment.name || pm.variables.get("envName") || "";
+if (/prod/i.test(env) && pm.info.requestName.startsWith("[destructive]")) {
+    console.warn(`Skipping "${pm.info.requestName}" on ${env}`);
+    pm.execution.skipRequest();
+}
+'''),
+                ('code', 'js', 'Collection Post-response script: safe logging', '''
+// Every response is logged with its timing. Tokens and cookies are never printed.
+console.log(`${pm.info.requestName}: ${pm.response.code} in ${pm.response.responseTime} ms`);
+if (pm.response.code >= 400) console.warn(pm.response.text().slice(0, 300));
+'''),
+                ('code', 'json', 'essentials.postman_collection.json', json.dumps({
+                    'info': {'name': 'Booker essentials', 'schema': 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'},
+                    'event': [
+                        {'listen': 'prerequest', 'script': {'type': 'text/javascript', 'exec': [
+                            'const env = pm.environment.name || pm.variables.get("envName") || "";',
+                            'if (/prod/i.test(env) && pm.info.requestName.startsWith("[destructive]")) {',
+                            '    console.warn(`Skipping "${pm.info.requestName}" on ${env}`);',
+                            '    pm.execution.skipRequest();',
+                            '}']}},
+                        {'listen': 'test', 'script': {'type': 'text/javascript', 'exec': [
+                            'console.log(`${pm.info.requestName}: ${pm.response.code} in ${pm.response.responseTime} ms`);']}},
+                    ],
+                    'variable': [{'key': 'baseUrl', 'value': 'https://restful-booker.herokuapp.com'}, {'key': 'envName', 'value': 'local'},
+                                 {'key': 'username', 'value': 'admin'}, {'key': 'password', 'value': ''}],
+                    'item': [
+                        {'name': 'Log in', 'event': [{'listen': 'test', 'script': {'type': 'text/javascript', 'exec': [
+                            'pm.test("token received", () => pm.expect(pm.response.json().token).to.be.a("string"));',
+                            'pm.collectionVariables.set("token", pm.response.json().token);']}}],
+                         'request': {'method': 'POST', 'header': [{'key': 'Content-Type', 'value': 'application/json'}],
+                                     'body': {'mode': 'raw', 'raw': '{"username": "{{username}}", "password": "{{password}}"}'},
+                                     'url': '{{baseUrl}}/auth'}},
+                        {'name': '[destructive] Create a booking', 'event': [
+                            {'listen': 'prerequest', 'script': {'type': 'text/javascript', 'exec': [
+                                'pm.collectionVariables.set("guest", "Guest-" + pm.variables.replaceIn("{{$guid}}").slice(0, 8));']}},
+                            {'listen': 'test', 'script': {'type': 'text/javascript', 'exec': [
+                                'pm.test("created", () => pm.response.to.have.status(200));',
+                                'pm.collectionVariables.set("bookingId", pm.response.json().bookingid);']}}],
+                         'request': {'method': 'POST', 'header': [{'key': 'Content-Type', 'value': 'application/json'}, {'key': 'Accept', 'value': 'application/json'}],
+                                     'body': {'mode': 'raw', 'raw': '{"firstname": "{{guest}}", "lastname": "Essentials", "totalprice": 420, "depositpaid": true, "bookingdates": {"checkin": "2026-12-20", "checkout": "2026-12-22"}}'},
+                                     'url': '{{baseUrl}}/booking'}},
+                        {'name': 'Teardown', 'item': [
+                            {'name': '[destructive] Delete the booking', 'event': [{'listen': 'test', 'script': {'type': 'text/javascript', 'exec': [
+                                'pm.test("deleted", () => pm.response.to.have.status(201));']}}],
+                             'request': {'method': 'DELETE', 'header': [{'key': 'Cookie', 'value': 'token={{token}}'}],
+                                         'url': '{{baseUrl}}/booking/{{bookingId}}'}}]},
+                    ],
+                }, indent=2), {'save': 'essentials.postman_collection.json'}),
+                ('code', 'bash', 'Run it the way CI does', '''
+newman run essentials.postman_collection.json \\
+  --env-var "baseUrl=http://localhost:3001" \\
+  --env-var "password=$API_PASSWORD"                # the secret never lives in the file
+
+newman run essentials.postman_collection.json --env-var "envName=prod" --env-var "password=$API_PASSWORD"
+# on "prod" both [destructive] requests are skipped and only the login runs
+'''),
+                ('warn', 'The <b>initial value</b> of a variable syncs to the Postman cloud and is shared with everyone in the workspace. Put real secrets only in the <b>current value</b>, in Vault, or in CI secrets.'),
+            ],
+        },
+        {
+            'id': 'latest', 'title': 'What is new in Postman, and how it helps at work', 'emoji': '🆕', 'level': 'Expert',
+            'blocks': [
+                ('table', ['Feature', 'What it is', 'How it helps an API tester'], [
+                    ['Postman 12, Git native', 'Collections, specs, flows and local mocks live in your Git repository, on the same branch as the code', 'An API change and its tests arrive in one pull request and are reviewed together'],
+                    ['Collection 3.0 format', 'YAML instead of one big JSON file, split into one file per request', 'Small, readable diffs in code review, and easy for AI tools to read and edit'],
+                    ['Code based local mock servers', 'Mocks that run on your laptop or in CI, versioned with the code', 'Test the frontend or a consumer before the real backend is ready'],
+                    ['Multi protocol collections', 'HTTP, GraphQL, gRPC, WebSocket, MQTT, MCP and AI requests in one collection', 'One test plan for a whole system, including MCP servers used by AI agents'],
+                    ['Agent Mode', 'An AI agent inside Postman that creates and edits collections, tests and mocks, and diagnoses failed tests', 'Faster first drafts of tests. You still review every assertion it writes'],
+                    ['Postman CLI', 'Postman\'s own command line runner, <code>postman collection run</code>', 'Runs collections from your workspace in CI and reports results back to Postman'],
+                    ['Package Library and <code>pm.require</code>', 'Reusable script packages shared across a team', 'One tested helper for auth or schema checks instead of copies in every request'],
+                ]),
+                ('code', 'bash', 'Postman CLI in a pipeline', '''
+npm install -g postman-cli                     # or the installer from Postman's site
+postman login --with-api-key "$POSTMAN_API_KEY"
+postman collection run "$COLLECTION_ID" -e "$ENVIRONMENT_ID" --reporters cli,junit
+'''),
+                ('code', 'js', 'A shared helper from the Package Library', '''
+// In the Package Library: a package named "booker-checks" exports helpers
+const checks = pm.require("@your-team/booker-checks");
+checks.expectBookingShape(pm.response.json());
+'''),
+                ('ul', [
+                    'Newman is still a good choice for exported Collection v2.1 JSON files and needs no Postman account. Postman\'s own CLI is where new features such as Git native collections arrive first.',
+                    'AI generated tests tend to assert whatever the API returns today, bugs included. Read each assertion and ask whether it checks the requirement or just the current behaviour.',
+                    'Before moving a big team to the Git native workflow, try it with one service and agree on folder names and review rules first.',
+                ]),
+            ],
+        },
+        {
             'id': 'scenario', 'title': 'Real world scenario: the front desk collection', 'emoji': '🏨', 'level': 'Scenario',
             'blocks': [
                 ('p', 'A receptionist logs in, books a room, the guest adds breakfast, someone without a login tries to cancel, and finally the booking is cancelled. Here is the full collection, built from the scripts in the earlier lessons. Save it as a file and run it with Newman.'),

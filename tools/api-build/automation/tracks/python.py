@@ -735,6 +735,177 @@ class Guest(HttpUser):
             ],
         },
         {
+            'id': 'essentials', 'title': 'Real project essentials: environments, secrets, fake data, logging and cleanup', 'emoji': '🧳', 'level': 'Intermediate',
+            'blocks': [
+                ('p', 'Tutorials talk to one server with one password. Real teams run the same suite against local, QA and staging, keep passwords out of Git, need fresh realistic data for every run, and want to see the exact request and response when a test fails at 2 am in CI. These five habits are what separate a demo from a suite a company trusts.'),
+                ('code', 'py', 'api/settings.py', '''
+import os
+from dataclasses import dataclass
+
+ENVIRONMENTS = {
+    "local": "http://localhost:3001",
+    "qa": "https://qa.booker.example",
+    "prod": "https://restful-booker.herokuapp.com",
+}
+
+
+@dataclass(frozen=True)
+class Settings:
+    env: str
+    base_url: str
+    username: str
+    password: str
+    timeout: float
+
+
+def load_settings() -> Settings:
+    env = os.environ.get("TEST_ENV", "prod")
+    if env not in ENVIRONMENTS:
+        raise ValueError(f"TEST_ENV must be one of {sorted(ENVIRONMENTS)}, got {env!r}")
+    return Settings(
+        env=env,
+        base_url=os.environ.get("BASE_URL", ENVIRONMENTS[env]),
+        username=os.environ.get("API_USER", "admin"),
+        password=os.environ.get("API_PASSWORD", "password123"),   # practice API only, real secrets come from CI
+        timeout=float(os.environ.get("API_TIMEOUT", "10")),
+    )
+''', {'save': 'api/settings.py'}),
+                ('code', 'py', 'tests/test_essentials.py', '''
+import logging
+
+import pytest
+import requests
+from faker import Faker
+
+from api.settings import load_settings
+
+log = logging.getLogger("api")
+fake = Faker("en_IN")          # Indian names, cities and phone numbers
+settings = load_settings()
+
+
+def log_exchange(res, *args, **kwargs):
+    """A requests hook: runs after every response and logs the full exchange."""
+    req = res.request
+    log.info("%s %s -> %s in %.0f ms", req.method, req.url, res.status_code, res.elapsed.total_seconds() * 1000)
+    log.debug("request body: %s", req.body)
+    log.debug("response body: %s", res.text[:500])
+
+
+@pytest.fixture
+def session():
+    s = requests.Session()
+    s.headers["Accept"] = "application/json"
+    s.hooks["response"].append(log_exchange)
+    yield s
+    s.close()
+
+
+@pytest.fixture
+def cleanup(session):
+    """Collects ids a test creates and deletes them afterwards, even when the test fails."""
+    created = []
+    yield created
+    token = session.post(f"{settings.base_url}/auth",
+                         json={"username": settings.username, "password": settings.password},
+                         timeout=settings.timeout).json()["token"]
+    for booking_id in created:
+        session.delete(f"{settings.base_url}/booking/{booking_id}", cookies={"token": token}, timeout=settings.timeout)
+
+
+def fake_booking():
+    checkin = fake.date_between(start_date="+1d", end_date="+60d")
+    return {
+        "firstname": fake.first_name(),
+        "lastname": fake.last_name(),
+        "totalprice": fake.random_int(min=500, max=25000),
+        "depositpaid": fake.boolean(),
+        "bookingdates": {"checkin": checkin.isoformat(),
+                         "checkout": fake.date_between(start_date=checkin, end_date="+90d").isoformat()},
+        "additionalneeds": fake.random_element(["Breakfast", "Airport pickup", "Late checkout"]),
+    }
+
+
+def test_realistic_booking_round_trip(session, cleanup, caplog):
+    caplog.set_level(logging.INFO, logger="api")
+    data = fake_booking()
+
+    res = session.post(f"{settings.base_url}/booking", json=data, timeout=settings.timeout)
+    assert res.status_code == 200, res.text
+    booking_id = res.json()["bookingid"]
+    cleanup.append(booking_id)
+
+    stored = session.get(f"{settings.base_url}/booking/{booking_id}", timeout=settings.timeout).json()
+    assert stored == data
+    assert any("POST" in m and "-> 200" in m for m in caplog.messages)
+''', {'save': 'tests/test_essentials.py'}),
+                ('code', 'bash', 'Running it in different places', '''
+TEST_ENV=local pytest tests/test_essentials.py -o log_cli=true --log-cli-level=INFO
+TEST_ENV=qa API_PASSWORD="$QA_PASSWORD" pytest            # the password comes from your shell or CI
+pytest --log-level=DEBUG                                   # full bodies in the failure report
+'''),
+                ('table', ['Habit', 'Why', 'Here'], [
+                    ['Config from the environment', 'One suite, many servers, no code changes', '<code>TEST_ENV</code> and <code>BASE_URL</code>'],
+                    ['Secrets never in Git', 'Leaked passwords are a security incident', 'Defaults only for the public practice API'],
+                    ['Fake but realistic data', 'Unique names avoid clashes between parallel runs and catch encoding bugs', '<code>Faker("en_IN")</code>'],
+                    ['Log every exchange', 'A failing CI test explains itself', 'a <code>requests</code> response hook'],
+                    ['Clean up what you create', 'Shared QA databases stay usable', 'a fixture with code after <code>yield</code>'],
+                ]),
+                ('tip', 'pytest shows captured log lines only for failing tests, so passing runs stay quiet and failing runs show the full request and response. That is exactly what you want in CI.'),
+            ],
+        },
+        {
+            'id': 'latest', 'title': 'What is new in pytest 9 and Python, and how it helps at work', 'emoji': '🆕', 'level': 'Expert',
+            'blocks': [
+                ('table', ['Feature', 'Since', 'How it helps an API tester'], [
+                    ['Built in <code>subtests</code> fixture', 'pytest 9.0', 'Check many fields of one response and see every failure, not only the first'],
+                    ['Native TOML config in <code>[tool.pytest]</code>', 'pytest 9.0', 'Real lists, numbers and booleans in <code>pyproject.toml</code> instead of strings'],
+                    ['<code>strict = true</code>', 'pytest 9.0', 'One switch for strict markers, strict config and strict xfail, so typos in marker names fail the run'],
+                    ['Python 3.14', 'October 2025', 'Template strings (t-strings, PEP 750) and the officially supported free threaded build for heavier parallel scripts'],
+                    ['requests 2.34 and httpx 0.28', '2025 and 2026', 'Current TLS defaults and security fixes. Keep them pinned and upgrade on purpose'],
+                ]),
+                ('code', 'toml', 'pyproject.toml (pytest 9 native TOML mode)', '''
+[tool.pytest]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["-ra"]
+strict = true
+markers = [
+    "smoke: quick checks that run on every commit",
+]
+'''),
+                ('code', 'py', 'tests/test_subtests.py', '''
+import requests
+
+from api.settings import load_settings
+
+settings = load_settings()
+
+EXPECTED_TYPES = {
+    "firstname": str,
+    "lastname": str,
+    "totalprice": int,
+    "depositpaid": bool,
+    "bookingdates": dict,
+}
+
+
+def test_every_field_has_the_right_type(subtests):
+    body = requests.get(f"{settings.base_url}/booking/1", timeout=settings.timeout).json()
+
+    for field, expected in EXPECTED_TYPES.items():
+        with subtests.test(msg=field):
+            assert field in body, f"{field} is missing"
+            assert isinstance(body[field], expected), f"{field} is {type(body[field]).__name__}"
+''', {'save': 'tests/test_subtests.py'}),
+                ('ul', [
+                    'Each <code>subtests.test()</code> block is reported on its own. If two fields are wrong you see both in one run, which saves a fix, rerun, fix, rerun cycle.',
+                    'The <code>[tool.pytest]</code> table uses real TOML types. The older <code>[tool.pytest.ini_options]</code> table still works, so you can move over gradually.',
+                    'Before upgrading at work, run the suite with <code>-W error::DeprecationWarning</code> on the old version. Anything it flags is what the new version will remove.',
+                ]),
+            ],
+        },
+        {
             'id': 'scenario', 'title': 'Real world scenario: a hotel front desk day', 'emoji': '🏨', 'level': 'Scenario',
             'blocks': [
                 ('p', 'A receptionist books a room for a guest, adds breakfast later, and then the guest cancels. Someone without a login also tries to cancel the booking. The test proves each step, using fixtures for login.'),

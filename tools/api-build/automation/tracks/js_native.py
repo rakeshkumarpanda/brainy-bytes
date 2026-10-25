@@ -593,6 +593,116 @@ assert.equal(res.headers.get('location'), '/new-path');
             ],
         },
         {
+            'id': 'essentials', 'title': 'Real project essentials: environments, secrets, fake data, logging and cleanup', 'emoji': '🧳', 'level': 'Intermediate',
+            'blocks': [
+                ('p', 'Node.js now ships most of what a professional API suite needs: <code>.env</code> loading, random ids, test hooks for cleanup, and a built in way to watch every <code>fetch</code> call without wrapping it. Here is how a real team uses them.'),
+                ('code', 'plain', '.env.example (commit this, never the real .env)', '''
+TEST_ENV=local
+BASE_URL=http://localhost:3001
+API_USER=admin
+API_PASSWORD=change-me
+LOG_HTTP=1
+''', {'save': '.env.example'}),
+                ('code', 'js', 'src/http-log.js', '''
+import diagnostics_channel from 'node:diagnostics_channel';
+
+// fetch in Node is built on undici, which reports every request on these channels.
+// Subscribing logs all traffic without touching the client code.
+export function enableHttpLog(write = console.log) {
+  const started = new WeakMap();
+  diagnostics_channel.subscribe('undici:request:create', ({ request }) => {
+    started.set(request, performance.now());
+  });
+  diagnostics_channel.subscribe('undici:request:headers', ({ request, response }) => {
+    const ms = Math.round(performance.now() - (started.get(request) ?? performance.now()));
+    write(`${request.method} ${request.origin}${request.path} -> ${response.statusCode} in ${ms} ms`);
+  });
+}
+''', {'save': 'src/http-log.js'}),
+                ('code', 'js', 'tests/essentials.test.js', '''
+import { test, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID, randomInt } from 'node:crypto';
+import { BASE } from '../src/config.js';
+import { BookingClient } from '../src/client.js';
+import { enableHttpLog } from '../src/http-log.js';
+
+const lines = [];
+if (process.env.LOG_HTTP !== '0') enableHttpLog(line => lines.push(line));
+
+const api = await new BookingClient(BASE).login(process.env.API_USER ?? 'admin', process.env.API_PASSWORD ?? 'password123');
+const created = [];
+
+after(async () => {                                  // runs once, even if a test failed
+  for (const id of created) await api.remove(id);
+});
+
+function guest() {
+  const tag = randomUUID().slice(0, 8);              // unique per run, safe for parallel CI jobs
+  return {
+    firstname: `Guest-${tag}`,
+    lastname: 'Essentials',
+    totalprice: randomInt(500, 25_000),
+    depositpaid: true,
+    bookingdates: { checkin: '2026-12-20', checkout: '2026-12-27' },
+    additionalneeds: 'Airport pickup',
+  };
+}
+
+test('a unique guest round trip leaves a clear log', async () => {
+  const data = guest();
+  const { status, body } = await api.create(data);
+  assert.equal(status, 200);
+  created.push(body.bookingid);
+
+  assert.deepEqual((await api.get(body.bookingid)).body, data);
+  assert.ok(lines.some(l => l.startsWith('POST') && l.includes('/booking -> 200')), lines.join('\\n'));
+});
+''', {'save': 'tests/essentials.test.js'}),
+                ('code', 'bash', 'Run it', '''
+cp .env.example .env                       # then put real values in .env, which is in .gitignore
+node --env-file-if-exists=.env --test tests/essentials.test.js
+API_PASSWORD="$QA_PASSWORD" node --test    # in CI the secret comes from the pipeline
+'''),
+                ('table', ['Need', 'Built in answer'], [
+                    ['Different servers', '<code>BASE_URL</code> read in <code>src/config.js</code>'],
+                    ['Secrets out of Git', '<code>--env-file-if-exists=.env</code> locally, CI secrets in pipelines'],
+                    ['Unique test data', '<code>crypto.randomUUID()</code> and <code>crypto.randomInt()</code>'],
+                    ['See every call', '<code>node:diagnostics_channel</code> with the undici channels'],
+                    ['Clean up', '<code>after()</code> in the file, or <code>t.after()</code> inside one test'],
+                ]),
+                ('tip', 'Logging through diagnostics channels also catches calls made by libraries you did not write, such as an SDK your client uses. That is often where the surprising requests are.'),
+            ],
+        },
+        {
+            'id': 'latest', 'title': 'What is new in Node.js for API tests, and how it helps at work', 'emoji': '🆕', 'level': 'Expert',
+            'blocks': [
+                ('table', ['Feature', 'Since', 'How it helps an API tester'], [
+                    ['Snapshot assertions <code>t.assert.snapshot()</code>', 'Node 22.3, no flag needed since 22.13 and 23.4', 'Save a known good response once, then catch any unexpected change in later runs'],
+                    ['<code>t.assert</code> on the test context', 'Node 22.2', 'Assertions tied to the test, so plans and snapshots know which test they belong to'],
+                    ['Type stripping, run <code>.ts</code> directly', 'on by default in Node 22.18 and 24', 'Write typed tests and scripts with no build step'],
+                    ['<code>URLPattern</code> global', 'Node 24', 'Match and extract ids from <code>Location</code> headers and links cleanly'],
+                    ['Node 24 LTS', 'October 2025', 'Long term support until 2028. A safe target for CI images'],
+                    ['<code>--env-file-if-exists</code>', 'Node 22.9', 'Load <code>.env</code> locally without failing in CI where the file does not exist'],
+                ]),
+                ('code', 'js', 'tests/snapshot.test.js', '''
+import { test } from 'node:test';
+import { BASE } from '../src/config.js';
+
+test('the shape of a booking has not changed', async (t) => {
+  const body = await (await fetch(`${BASE}/booking/1`)).json();
+  const shape = Object.fromEntries(Object.entries(body).map(([k, v]) => [k, typeof v]));
+  t.assert.snapshot(shape);                 // first run with --test-update-snapshots saves it
+});
+''', {'save': 'tests/snapshot.test.js'}),
+                ('code', 'bash', 'Create, then check, the snapshot', '''
+node --test --test-update-snapshots tests/snapshot.test.js   # writes tests/snapshot.test.js.snapshot
+node --test tests/snapshot.test.js                           # fails if the shape changes
+'''),
+                ('warn', 'Snapshot the <b>shape</b> or stable fields, not whole bodies with ids and timestamps. A snapshot that changes on every run trains the team to update it without reading it.'),
+            ],
+        },
+        {
             'id': 'scenario', 'title': 'Real world scenario: a hotel front desk day', 'emoji': '🏨', 'level': 'Scenario',
             'blocks': [
                 ('p', 'The receptionist logs in, books a room, adds breakfast, and the guest cancels. Someone without a login also tries to cancel. Using <code>t.test</code> subtests, each step appears as its own line in the report.'),
