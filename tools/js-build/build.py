@@ -411,7 +411,7 @@ def prose_pieces(T):
 
 
 def topic_files():
-    return sorted(f for f in os.listdir(os.path.join(HERE, 'topics')) if re.match(r'\d\d-.*\.py$', f))
+    return sorted(f for f in os.listdir(os.path.join(HERE, 'topics')) if re.match(r'\d\d[a-z]?-.*\.py$', f))
 
 
 def all_topics():

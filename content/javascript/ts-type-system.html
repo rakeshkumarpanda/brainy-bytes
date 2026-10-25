@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How the TypeScript type system decides · JavaScript</title>
+<meta name="description" content="The TypeScript type system in depth: structural typing, excess property checks, literal types, widening, as const, any vs unknown vs never, function compatibility, covariance and contravariance, in and out variance annotations, index signatures, noUncheckedIndexedAccess, exactOptionalPropertyTypes, variadic tuples, overloads, this types and recursive types.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔷 TypeScript</span><span>›</span><span>Chapter 26 of 28</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧠</span><div><h1>How the TypeScript type system decides</h1><p class="lead">Why does one object fit and an almost identical one fail? This chapter explains the rules the checker follows: structural typing and the excess property check, literal types and widening, any, unknown and never, function compatibility and variance, index signatures with the strictest options, tuples, overloads and this, and recursive types.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 2 animations</span><span class="chip">🔷 8 type checked examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 7 calculations</span><span class="chip">🧪 4 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Most confusing type errors in test code come from three rules in this chapter: excess property checks, widening of literals, and values that are any instead of unknown.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#structural" class="qa"><span>🧩</span>Structural typing: shapes, not names</a><a href="#widening"><span>📏</span>Literal types and widening</a><a href="#unknown" class="qa"><span>❓</span>any, unknown and never</a><a href="#functions"><span>🔁</span>Function compatibility and variance</a><a href="#index" class="qa"><span>🗂️</span>Index signatures and the strictest options</a><a href="#tuples"><span>📦</span>Tuples: fixed length arrays with names</a><a href="#overloads" class="qa"><span>🔀</span>Overloads and this</a><a href="#recursive"><span>🌳</span>Recursive types</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec qa-part" id="structural" data-say="structural"><div class="sec-num">Part 1</div><h2><span class="sec-em">🧩</span><span>Structural typing: shapes, not names</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Mocks and test doubles work because any object with the right shape fits, without extending real classes.</span></div>
+<p>In Java or C#, a class is a Reporter only if it says <code>implements Reporter</code>. TypeScript is <b>structural</b>: any value with the right members fits, whatever it is called. This matches how JavaScript code is really written, with plain objects passed around.</p>
+<div class="codewrap tests" data-k="structural"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Structural typing: the shape decides, not the name · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">interface</span> <span class="t">Reporter</span> {
+  name: <span class="k">string</span>;
+  report(passed: <span class="k">number</span>, failed: <span class="k">number</span>): <span class="k">string</span>;
+}
+
+<span class="c">// No "implements Reporter" anywhere: the shape is what counts</span>
+<span class="k">class</span> <span class="t">ConsoleReporter</span> {
+  name = <span class="s">"console"</span>;
+  colors = <span class="k">true</span>;                                  <span class="c">// extra members are fine</span>
+  report(passed: <span class="k">number</span>, failed: <span class="k">number</span>) { <span class="k">return</span> <span class="s">`${passed} passed, ${failed} failed`</span>; }
+}
+
+<span class="k">const</span> slackLike = { name: <span class="s">"slack"</span>, channel: <span class="s">"#qa"</span>, report: (p: <span class="k">number</span>, f: <span class="k">number</span>) =&gt; <span class="s">`:white_check_mark: ${p} :x: ${f}`</span> };
+
+<span class="k">function</span> publish(r: <span class="t">Reporter</span>) { console.log(<span class="s">`[${r.name}] ${r.report(41, 1)}`</span>); }
+publish(<span class="k">new</span> <span class="t">ConsoleReporter</span>());
+publish(slackLike);                               <span class="c">// a variable with extra fields: allowed</span>
+
+publish({ name: <span class="s">"email"</span>, to: <span class="s">"qa@shop.test"</span>, report: () =&gt; <span class="s">"sent"</span> });   <span class="c">// a fresh literal with an unknown field</span>
+<span class="k">try</span> {
+  publish({ name: <span class="s">"broken"</span> });                                           <span class="c">// report is missing</span>
+} <span class="k">catch</span> (e) {
+  console.log(<span class="s">"crashed:"</span>, (e <span class="k">as</span> <span class="t">Error</span>).message);
+}</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(19,26): error TS2353: Object literal may only specify known properties, and &#x27;to&#x27; does not exist in type &#x27;Reporter&#x27;.
+src/main.ts(21,11): error TS2741: Property &#x27;report&#x27; is missing in type &#x27;{ name: string; }&#x27; but required in type &#x27;Reporter&#x27;.
+
+$ node src/main.ts
+[console] 41 passed, 1 failed
+[slack] :white_check_mark: 41 :x: 1
+[email] sent
+crashed: r.report is not a function</pre></div></div>
+<div class="viz" data-viz="lanes" data-k="excess"></div>
+<div class="tip">The excess property check is a typo detector, not a security feature. As the advanced chapter showed with the leaked password, a value from a variable may carry extra fields. API tests must still check that secret fields are absent.</div>
+</section>
+<section class="card reveal jsec" id="widening" data-say="widening"><div class="sec-num">Part 2</div><h2><span class="sec-em">📏</span><span>Literal types and widening</span></h2>
+
+<p>A value can have a very exact type. <code>const m = "GET"</code> has the type <code>"GET"</code>, a <b>literal type</b>. A <code>let</code> may change later, so TypeScript <b>widens</b> it to <code>string</code>. Object properties are widened too. <code>as const</code> stops widening and makes everything readonly.</p>
+<div class="codewrap tests" data-k="widening"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Literal types, widening and as const · 🔷 tsc finds 3 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">type</span> <span class="t">Method</span> = <span class="s">"GET"</span> | <span class="s">"POST"</span> | <span class="s">"PUT"</span> | <span class="s">"DELETE"</span>;
+<span class="k">function</span> call(method: <span class="t">Method</span>, path: <span class="k">string</span>) { <span class="k">return</span> <span class="s">`${method} ${path}`</span>; }
+
+<span class="k">const</span> m1 = <span class="s">"GET"</span>;                 <span class="c">// const: the literal type "GET"</span>
+<span class="k">let</span> m2 = <span class="s">"GET"</span>;                   <span class="c">// let: widened to string, because it may change later</span>
+<span class="k">const</span> m3 = <span class="s">"POST"</span> <span class="k">as</span> <span class="t">Method</span>;
+<span class="k">const</span> req = { method: <span class="s">"PUT"</span>, path: <span class="s">"/cart"</span> };                 <span class="c">// method: string</span>
+<span class="k">const</span> fixed = { method: <span class="s">"DELETE"</span>, path: <span class="s">"/cart/1"</span> } <span class="k">as</span> <span class="k">const</span>; <span class="c">// method: "DELETE", and readonly</span>
+
+console.log(call(m1, <span class="s">"/products"</span>));
+console.log(call(m3, <span class="s">"/orders"</span>));
+console.log(call(fixed.method, fixed.path));
+
+console.log(call(m2, <span class="s">"/products"</span>));       <span class="c">// string is not assignable to Method</span>
+console.log(call(req.method, req.path));  <span class="c">// the same problem inside an object</span>
+fixed.path = <span class="s">"/other"</span>;                    <span class="c">// as const made it readonly</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(14,18): error TS2345: Argument of type &#x27;string&#x27; is not assignable to parameter of type &#x27;Method&#x27;.
+src/main.ts(15,18): error TS2345: Argument of type &#x27;string&#x27; is not assignable to parameter of type &#x27;Method&#x27;.
+src/main.ts(16,7): error TS2540: Cannot assign to &#x27;path&#x27; because it is a read-only property.
+
+$ node src/main.ts
+GET /products
+POST /orders
+DELETE /cart/1
+GET /products
+PUT /cart</pre></div></div>
+<div class="note">This is the most common surprise for beginners: a value that looks exactly right is "string" to TypeScript. Use <code>as const</code>, a type annotation, or <code>satisfies</code> to keep the literal.</div>
+</section>
+<section class="card reveal jsec qa-part" id="unknown" data-say="unknown"><div class="sec-num">Part 3</div><h2><span class="sec-em">❓</span><span>any, unknown and never</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Response bodies and test data files are unknown until checked. Using any there hides wrong field names until a test crashes.</span></div>
+<p><code>any</code> turns checking off for a value and everything you reach through it, so mistakes spread silently. <code>unknown</code> accepts any value too, but you must check it before use. <code>never</code> is the type with no values, used for functions that never return and for impossible cases.</p>
+<div class="codewrap tests" data-k="unknown"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">any, unknown and never · 🔷 tsc finds 1 error, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// any switches checking off. unknown means "we do not know yet, so check first".</span>
+<span class="k">const</span> fromAny: <span class="k">any</span> = <span class="t">JSON</span>.parse(<span class="s">'{"total": 42}'</span>);
+<span class="k">const</span> fromUnknown: <span class="k">unknown</span> = <span class="t">JSON</span>.parse(<span class="s">'{"total": 42}'</span>);
+
+<span class="k">if</span> (<span class="k">typeof</span> fromUnknown === <span class="s">"object"</span> &amp;&amp; fromUnknown !== <span class="k">null</span> &amp;&amp; <span class="s">"total"</span> <span class="k">in</span> fromUnknown &amp;&amp; <span class="k">typeof</span> fromUnknown.total === <span class="s">"number"</span>) {
+  console.log(<span class="s">"checked total:"</span>, fromUnknown.total.toFixed(<span class="n">2</span>));
+}
+
+console.log(fromUnknown.total);         <span class="c">// not allowed before a check</span>
+
+<span class="c">// never is the empty type: a function that always throws returns never</span>
+<span class="k">function</span> fail(message: <span class="k">string</span>): <span class="k">never</span> { <span class="k">throw</span> <span class="k">new</span> <span class="t">Error</span>(message); }
+<span class="k">const</span> port: <span class="k">number</span> = <span class="t">Number</span>(process.env.<span class="t">PORT</span> ?? <span class="s">"3000"</span>) || fail(<span class="s">"PORT is not a number"</span>);
+console.log(port);
+
+console.log(fromAny.totl.toFixed(<span class="n">2</span>));   <span class="c">// a typo that tsc cannot see through any: it crashes at run time</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="err"><span>Terminal output</span><pre>src/main.ts(9,13): error TS18046: &#x27;fromUnknown&#x27; is of type &#x27;unknown&#x27;.
+
+$ node src/main.ts
+checked total: 42.00
+42
+3000
+src/main.ts:16
+console.log(fromAny.totl.toFixed(2));   // a typo that tsc cannot see through any: it crashes at run time
+                         ^
+
+TypeError: Cannot read properties of undefined (reading &#x27;toFixed&#x27;)
+    at src/main.ts:16:26
+
+Node.js v26.12.1</pre></div></div>
+<p>The program compiled with <code>any</code> but crashed on the typo <code>totl</code>. With <code>unknown</code> the same mistake is impossible, because nothing can be read before a check.</p>
+<div class="tw"><table class="jt"><tr><th>Type</th><th>Accepts</th><th>You can use it as</th></tr>
+<tr><td><code>any</code></td><td>everything</td><td>anything, with no checks</td></tr>
+<tr><td><code>unknown</code></td><td>everything</td><td>nothing, until you narrow it</td></tr>
+<tr><td><code>never</code></td><td>nothing</td><td>anything, since it cannot happen</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="functions" data-say="functions"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔁</span><span>Function compatibility and variance</span></h2>
+
+<p>When is one function type usable as another? Fewer parameters is fine, because JavaScript ignores extra arguments. A callback that returns a value is fine where <code>void</code> is expected. Parameter types are where it gets subtle.</p>
+<div class="viz" data-viz="flow" data-k="variance"></div>
+<div class="codewrap tests" data-k="functions"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Function compatibility, variance and in/out · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="k">type</span> <span class="t">Listener</span> = (event: <span class="k">string</span>, at: <span class="k">number</span>) =&gt; <span class="k">void</span>;
+
+<span class="k">const</span> fewer: <span class="t">Listener</span> = (event) =&gt; console.log(<span class="s">"got"</span>, event);   <span class="c">// fewer parameters: fine</span>
+<span class="k">const</span> returns: <span class="t">Listener</span> = (event) =&gt; event.length;              <span class="c">// a value returned to a void callback: fine</span>
+fewer(<span class="s">"click"</span>, <span class="t">Date</span>.now());
+returns(<span class="s">"submit"</span>, <span class="t">Date</span>.now());
+
+<span class="k">class</span> <span class="t">Animal</span> { name = <span class="s">"any animal"</span>; }
+<span class="k">class</span> <span class="t">Dog</span> <span class="k">extends</span> <span class="t">Animal</span> { bark() { <span class="k">return</span> <span class="s">"woof"</span>; } }
+
+<span class="k">let</span> handleAnimal = (a: <span class="t">Animal</span>) =&gt; console.log(a.name);
+<span class="k">let</span> handleDog = (d: <span class="t">Dog</span>) =&gt; console.log(d.bark());
+
+handleDog = handleAnimal;     <span class="c">// safe: something that handles any animal can handle a dog</span>
+handleDog(<span class="k">new</span> <span class="t">Dog</span>());
+
+handleAnimal = handleDog;     <span class="c">// unsafe: it would call bark() on a cat (strictFunctionTypes)</span>
+
+<span class="c">// Variance annotations (TypeScript 4.7) document and check how T is used</span>
+<span class="k">interface</span> <span class="t">Producer</span>&lt;out <span class="t">T</span>&gt; { next(): <span class="t">T</span> }
+<span class="k">interface</span> <span class="t">Consumer</span>&lt;<span class="k">in</span> <span class="t">T</span>&gt; { accept(value: <span class="t">T</span>): <span class="k">void</span> }
+<span class="k">const</span> dogs: <span class="t">Producer</span>&lt;<span class="t">Dog</span>&gt; = { next: () =&gt; <span class="k">new</span> <span class="t">Dog</span>() };
+<span class="k">const</span> animals: <span class="t">Producer</span>&lt;<span class="t">Animal</span>&gt; = dogs;              <span class="c">// out: Producer&lt;Dog&gt; is a Producer&lt;Animal&gt;</span>
+<span class="k">const</span> anyAnimal: <span class="t">Consumer</span>&lt;<span class="t">Animal</span>&gt; = { accept: (a) =&gt; console.log(<span class="s">"accepted"</span>, a.name) };
+<span class="k">const</span> forDogs: <span class="t">Consumer</span>&lt;<span class="t">Dog</span>&gt; = anyAnimal;            <span class="c">// in: works the other way round</span>
+console.log(animals.next().name);
+forDogs.accept(<span class="k">new</span> <span class="t">Dog</span>());
+
+<span class="k">interface</span> <span class="t">Broken</span>&lt;<span class="k">in</span> <span class="t">T</span>&gt; { <span class="k">get</span>(): <span class="t">T</span> }                  <span class="c">// T is used as output, so "in" is wrong</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(17,1): error TS2322: Type &#x27;(d: Dog) =&gt; void&#x27; is not assignable to type &#x27;(a: Animal) =&gt; void&#x27;.
+  Types of parameters &#x27;d&#x27; and &#x27;a&#x27; are incompatible.
+    Property &#x27;bark&#x27; is missing in type &#x27;Animal&#x27; but required in type &#x27;Dog&#x27;.
+src/main.ts(29,18): error TS2636: Type &#x27;Broken&lt;super-T&gt;&#x27; is not assignable to type &#x27;Broken&lt;sub-T&gt;&#x27; as implied by variance annotation.
+  The types returned by &#x27;get()&#x27; are incompatible between these types.
+    Type &#x27;super-T&#x27; is not assignable to type &#x27;sub-T&#x27;.
+
+$ node src/main.ts
+got click
+any animal
+any animal
+accepted any animal</pre></div></div>
+<div class="tip">Methods written as <code>method(x: T): void</code> in an interface are still checked loosely (bivariantly) for compatibility with old code. Writing them as properties, <code>method: (x: T) =&gt; void</code>, gets the strict check.</div>
+</section>
+<section class="card reveal jsec qa-part" id="index" data-say="index"><div class="sec-num">Part 5</div><h2><span class="sec-em">🗂️</span><span>Index signatures and the strictest options</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Lookups in test data maps and table rows by index are exactly where undefined sneaks in.</span></div>
+<p>An <b>index signature</b>, <code>{ [key: string]: number }</code> or <code>Record&lt;string, number&gt;</code>, describes objects used as dictionaries. By default TypeScript pretends every key exists. Two options, not included in <code>strict</code>, make it honest.</p>
+<div class="codewrap tests" data-k="index"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Index signatures and the two strictest options · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// An index signature: any string key, number values</span>
+<span class="k">const</span> timings: <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="k">number</span>&gt; = { login: <span class="n">840</span>, search: <span class="n">312</span> };
+
+<span class="k">const</span> t1 = timings[<span class="s">"checkout"</span>];        <span class="c">// with noUncheckedIndexedAccess: number | undefined</span>
+console.log(t1 === <span class="k">undefined</span> ? <span class="s">"no timing for checkout"</span> : t1.toFixed(<span class="n">0</span>));
+
+<span class="k">const</span> t2: <span class="k">number</span> = timings[<span class="s">"login"</span>];   <span class="c">// might be undefined, so tsc refuses</span>
+
+<span class="k">const</span> steps = [<span class="s">"open"</span>, <span class="s">"login"</span>, <span class="s">"pay"</span>];
+<span class="k">const</span> last = steps[steps.length - <span class="n">1</span>];  <span class="c">// string | undefined too</span>
+console.log(last?.toUpperCase());
+
+<span class="k">for</span> (<span class="k">const</span> [name, ms] <span class="k">of</span> <span class="t">Object</span>.entries(timings)) console.log(name, ms.toFixed(<span class="n">0</span>));   <span class="c">// entries are safe</span>
+
+<span class="c">// exactOptionalPropertyTypes: "may be missing" is not the same as "may be undefined"</span>
+<span class="k">interface</span> <span class="t">RunOptions</span> { retries?: <span class="k">number</span> }
+<span class="k">const</span> ok: <span class="t">RunOptions</span> = {};
+<span class="k">const</span> notOk: <span class="t">RunOptions</span> = { retries: <span class="k">undefined</span> };
+console.log(ok, notOk);</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(7,7): error TS2322: Type &#x27;number | undefined&#x27; is not assignable to type &#x27;number&#x27;.
+  Type &#x27;undefined&#x27; is not assignable to type &#x27;number&#x27;.
+src/main.ts(18,7): error TS2375: Type &#x27;{ retries: undefined; }&#x27; is not assignable to type &#x27;RunOptions&#x27; with &#x27;exactOptionalPropertyTypes: true&#x27;. Consider adding &#x27;undefined&#x27; to the types of the target&#x27;s properties.
+  Types of property &#x27;retries&#x27; are incompatible.
+    Type &#x27;undefined&#x27; is not assignable to type &#x27;number&#x27;.
+
+$ node src/main.ts
+no timing for checkout
+PAY
+login 840
+search 312
+{} { retries: undefined }</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Option</th><th>Effect</th></tr>
+<tr><td><code>noUncheckedIndexedAccess</code></td><td><code>obj[key]</code> and <code>arr[i]</code> may be undefined</td></tr>
+<tr><td><code>exactOptionalPropertyTypes</code></td><td><code>retries?: number</code> may be missing, but not set to undefined</td></tr></table></div>
+<div class="note">Many teams turn on noUncheckedIndexedAccess in test code, where lookups by name ("the row for asha") are common and a missing row should be handled, not crash.</div>
+</section>
+<section class="card reveal jsec" id="tuples" data-say="tuples"><div class="sec-num">Part 6</div><h2><span class="sec-em">📦</span><span>Tuples: fixed length arrays with names</span></h2>
+
+<p>A <b>tuple</b> is an array with a fixed length and a type per position. Elements can have labels, be optional, or be a rest of many. <b>Variadic tuple types</b>, <code>[...A, ...B]</code>, keep exact shapes when functions combine or forward argument lists, which is how wrappers such as retry helpers stay fully typed.</p>
+<div class="codewrap tests" data-k="tuples"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Labeled, optional, rest and variadic tuples · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// Labeled, optional and rest elements</span>
+<span class="k">type</span> <span class="t">Range</span> = [start: <span class="k">number</span>, end: <span class="k">number</span>];
+<span class="k">type</span> <span class="t">Cell</span> = [row: <span class="k">number</span>, col: <span class="k">number</span>, note?: <span class="k">string</span>];
+<span class="k">type</span> <span class="t">Log</span> = [level: <span class="s">"info"</span> | <span class="s">"error"</span>, ...parts: <span class="k">string</span>[]];
+
+<span class="k">const</span> r: <span class="t">Range</span> = [<span class="n">10</span>, <span class="n">20</span>];
+<span class="k">const</span> c: <span class="t">Cell</span> = [<span class="n">1</span>, <span class="n">2</span>];
+<span class="k">const</span> l: <span class="t">Log</span> = [<span class="s">"error"</span>, <span class="s">"payment"</span>, <span class="s">"timeout"</span>];
+console.log(r, c, l);
+
+<span class="c">// Variadic tuple types keep the exact shape when joining tuples</span>
+<span class="k">function</span> concat&lt;<span class="t">A</span> <span class="k">extends</span> <span class="k">unknown</span>[], <span class="t">B</span> <span class="k">extends</span> <span class="k">unknown</span>[]&gt;(a: [...<span class="t">A</span>], b: [...<span class="t">B</span>]): [...<span class="t">A</span>, ...<span class="t">B</span>] {
+  <span class="k">return</span> [...a, ...b];
+}
+<span class="k">const</span> joined = concat([<span class="n">1</span>, <span class="s">"two"</span>], [<span class="k">true</span>]);     <span class="c">// [number, string, boolean]</span>
+<span class="k">const</span> [n, s, b] = joined;
+console.log(n.toFixed(<span class="n">1</span>), s.toUpperCase(), b);
+
+<span class="c">// Typing a function that forwards its arguments</span>
+<span class="k">function</span> withRetry&lt;<span class="t">Args</span> <span class="k">extends</span> <span class="k">unknown</span>[], <span class="t">R</span>&gt;(fn: (...args: <span class="t">Args</span>) =&gt; <span class="t">R</span>, times: <span class="k">number</span>) {
+  <span class="k">return</span> (...args: <span class="t">Args</span>): <span class="t">R</span> =&gt; { <span class="k">let</span> last: <span class="k">unknown</span>; <span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; times; i++) { <span class="k">try</span> { <span class="k">return</span> fn(...args); } <span class="k">catch</span> (e) { last = e; } } <span class="k">throw</span> last; };
+}
+<span class="k">const</span> <span class="k">get</span> = withRetry((path: <span class="k">string</span>, timeout: <span class="k">number</span>) =&gt; <span class="s">`GET ${path} in ${timeout} ms`</span>, <span class="n">3</span>);
+console.log(<span class="k">get</span>(<span class="s">"/health"</span>, <span class="n">500</span>));
+
+<span class="k">get</span>(<span class="s">"/health"</span>);                               <span class="c">// the timeout argument is missing</span>
+<span class="k">const</span> bad: <span class="t">Range</span> = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];                 <span class="c">// one too many</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(26,1): error TS2554: Expected 2 arguments, but got 1.
+src/main.ts(27,7): error TS2322: Type &#x27;[number, number, number]&#x27; is not assignable to type &#x27;Range&#x27;.
+  Source has 3 element(s) but target allows only 2.
+
+$ node src/main.ts
+[ 10, 20 ] [ 1, 2 ] [ &#x27;error&#x27;, &#x27;payment&#x27;, &#x27;timeout&#x27; ]
+1.0 TWO true
+GET /health in 500 ms</pre></div></div>
+</section>
+<section class="card reveal jsec qa-part" id="overloads" data-say="overloads"><div class="sec-num">Part 7</div><h2><span class="sec-em">🔀</span><span>Overloads and this</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-why">Page object and request builder chains keep their subclass methods thanks to this return types.</span></div>
+<p><b>Overloads</b> give one function several typed call signatures, so the return type follows the argument type. A <b>this parameter</b> says what <code>this</code> must be when the function runs, and a <code>this</code> return type lets builder methods keep the subclass type, so chained calls do not lose methods.</p>
+<div class="codewrap tests" data-k="overloads"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Overloads, this parameters and fluent this types · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// Overloads: several call signatures, one implementation</span>
+<span class="k">function</span> parse(input: <span class="k">string</span>): <span class="k">number</span>;
+<span class="k">function</span> parse(input: <span class="k">string</span>[]): <span class="k">number</span>[];
+<span class="k">function</span> parse(input: <span class="k">string</span> | <span class="k">string</span>[]): <span class="k">number</span> | <span class="k">number</span>[] {
+  <span class="k">return</span> <span class="t">Array</span>.isArray(input) ? input.map(<span class="t">Number</span>) : <span class="t">Number</span>(input);
+}
+<span class="k">const</span> one = parse(<span class="s">"42"</span>);              <span class="c">// number</span>
+<span class="k">const</span> many = parse([<span class="s">"1"</span>, <span class="s">"2"</span>]);       <span class="c">// number[]</span>
+console.log(one + <span class="n">1</span>, many.length);
+
+<span class="c">// A "this" parameter says what this must be. It is erased from the JavaScript.</span>
+<span class="k">interface</span> <span class="t">Button</span> { label: <span class="k">string</span>; clicks: <span class="k">number</span> }
+<span class="k">function</span> onClick(<span class="k">this</span>: <span class="t">Button</span>) { <span class="k">this</span>.clicks++; <span class="k">return</span> <span class="s">`${this.label} clicked ${this.clicks} times`</span>; }
+<span class="k">const</span> buy: <span class="t">Button</span> &amp; { click: <span class="k">typeof</span> onClick } = { label: <span class="s">"Buy"</span>, clicks: <span class="n">0</span>, click: onClick };
+console.log(buy.click());
+
+<span class="c">// this as a return type gives fluent builders that keep the subclass type</span>
+<span class="k">class</span> <span class="t">RequestBuilder</span> {
+  headers: <span class="t">Record</span>&lt;<span class="k">string</span>, <span class="k">string</span>&gt; = {};
+  header(k: <span class="k">string</span>, v: <span class="k">string</span>): <span class="k">this</span> { <span class="k">this</span>.headers[k] = v; <span class="k">return</span> <span class="k">this</span>; }
+}
+<span class="k">class</span> <span class="t">AuthRequestBuilder</span> <span class="k">extends</span> <span class="t">RequestBuilder</span> {
+  token(t: <span class="k">string</span>): <span class="k">this</span> { <span class="k">return</span> <span class="k">this</span>.header(<span class="s">"Authorization"</span>, <span class="s">`Bearer ${t}`</span>); }
+}
+<span class="k">const</span> built = <span class="k">new</span> <span class="t">AuthRequestBuilder</span>().header(<span class="s">"Accept"</span>, <span class="s">"application/json"</span>).token(<span class="s">"abc"</span>);
+console.log(built.headers);
+
+parse(<span class="n">42</span>);                            <span class="c">// no overload takes a number</span>
+<span class="k">try</span> {
+  onClick();                          <span class="c">// called without a Button as this</span>
+} <span class="k">catch</span> (e) {
+  console.log(<span class="s">"crashed:"</span>, (e <span class="k">as</span> <span class="t">Error</span>).message);
+}</pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(28,7): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type &#x27;number&#x27; is not assignable to parameter of type &#x27;string[]&#x27;.
+src/main.ts(30,3): error TS2684: The &#x27;this&#x27; context of type &#x27;void&#x27; is not assignable to method&#x27;s &#x27;this&#x27; of type &#x27;Button&#x27;.
+
+$ node src/main.ts
+43 2
+Buy clicked 1 times
+{ Accept: &#x27;application/json&#x27;, Authorization: &#x27;Bearer abc&#x27; }
+crashed: Cannot read properties of undefined (reading &#x27;clicks&#x27;)</pre></div></div>
+<div class="tip">Prefer a union parameter or a generic when they are enough. Overloads are best when different inputs give clearly different outputs, as in <code>parse</code> above or <code>document.createElement</code>.</div>
+</section>
+<section class="card reveal jsec" id="recursive" data-say="recursive"><div class="sec-num">Part 8</div><h2><span class="sec-em">🌳</span><span>Recursive types</span></h2>
+
+<p>A type may refer to itself. That is how trees are described: JSON, file systems, menus, nested config. Recursive conditional types go further and compute types such as every dot path in an object.</p>
+<div class="codewrap tests" data-k="recursive"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Recursive types: JSON and dot paths · 🔷 tsc finds 2 errors, then Node.js runs it</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/main.ts</div><pre class="src" data-file="src/main.ts"><span class="c">// A type can refer to itself: this describes every value JSON.parse can return</span>
+<span class="k">type</span> <span class="t">Json</span> = <span class="k">string</span> | <span class="k">number</span> | <span class="k">boolean</span> | <span class="k">null</span> | <span class="t">Json</span>[] | { [key: <span class="k">string</span>]: <span class="t">Json</span> };
+
+<span class="k">const</span> body: <span class="t">Json</span> = { order: { id: <span class="n">7</span>, items: [{ sku: <span class="s">"PEN-1"</span>, qty: <span class="n">2</span> }], paid: <span class="k">true</span>, note: <span class="k">null</span> } };
+
+<span class="c">// Count every leaf value in a JSON tree, typed all the way down</span>
+<span class="k">function</span> countLeaves(value: <span class="t">Json</span>): <span class="k">number</span> {
+  <span class="k">if</span> (value === <span class="k">null</span> || <span class="k">typeof</span> value !== <span class="s">"object"</span>) <span class="k">return</span> <span class="n">1</span>;
+  <span class="k">const</span> children = <span class="t">Array</span>.isArray(value) ? value : <span class="t">Object</span>.values(value);
+  <span class="k">return</span> children.reduce&lt;<span class="k">number</span>&gt;((sum, child) =&gt; sum + countLeaves(child), <span class="n">0</span>);
+}
+console.log(<span class="s">"leaf values:"</span>, countLeaves(body));
+
+<span class="c">// Recursive conditional type: all keys as dot paths, handy for typed config lookups</span>
+<span class="k">type</span> <span class="t">Paths</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> <span class="k">extends</span> object ? { [<span class="t">K</span> <span class="k">in</span> <span class="k">keyof</span> <span class="t">T</span> &amp; <span class="k">string</span>]: <span class="t">K</span> | <span class="s">`${K}.${Paths&lt;T[K]&gt;}`</span> }[<span class="k">keyof</span> <span class="t">T</span> &amp; <span class="k">string</span>] : <span class="k">never</span>;
+<span class="k">const</span> config = { server: { port: <span class="n">3000</span>, tls: { enabled: <span class="k">false</span> } }, retries: <span class="n">2</span> };
+<span class="k">type</span> <span class="t">ConfigPath</span> = <span class="t">Paths</span>&lt;<span class="k">typeof</span> config&gt;;
+<span class="k">const</span> p1: <span class="t">ConfigPath</span> = <span class="s">"server.tls.enabled"</span>;
+console.log(p1);
+
+<span class="k">const</span> date: <span class="t">Json</span> = <span class="k">new</span> <span class="t">Date</span>();             <span class="c">// a Date is not JSON</span>
+<span class="k">const</span> p2: <span class="t">ConfigPath</span> = <span class="s">"server.host"</span>;      <span class="c">// no such path</span></pre><div class="cmd"><span>Terminal</span><pre>$ npx tsc
+$ node src/main.ts</pre></div><div class="out"><span>Terminal output</span><pre>src/main.ts(21,7): error TS2322: Type &#x27;Date&#x27; is not assignable to type &#x27;Json&#x27;.
+  Type &#x27;Date&#x27; is not assignable to type &#x27;{ [key: string]: Json; }&#x27;.
+    Index signature for type &#x27;string&#x27; is missing in type &#x27;Date&#x27;.
+src/main.ts(22,7): error TS2820: Type &#x27;&quot;server.host&quot;&#x27; is not assignable to type &#x27;&quot;retries&quot; | &quot;server&quot; | &quot;server.port&quot; | &quot;server.tls&quot; | &quot;server.tls.enabled&quot;&#x27;. Did you mean &#x27;&quot;server.port&quot;&#x27;?
+
+$ node src/main.ts
+leaf values: 5
+server.tls.enabled</pre></div></div>
+<div class="note">Very deep recursive types make tsc slow and give long error messages. Keep them for shared building blocks, such as a typed config reader, not for every object.</div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./ts-testing.html" data-topic="ts-testing"><small>← Previous chapter</small><b>🧪 Testing in TypeScript</b></a><a class="next" href="./js-modern.html" data-topic="js-modern"><small>Next chapter →</small><b>🆕 Modern JavaScript</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "How the checker thinks", "panels": [{"s": [["e", "🧩"], ["t", "shape, not name", {"b": 1}]], "h": "Structural", "t": "Right members, right type.", "more": "Fresh literals also get a typo check."}, {"s": [["e", "📏"], ["t", "let m = \"GET\"  // string", {"b": 1, "size": 11}]], "h": "Widening", "t": "let and objects widen.", "more": "as const keeps the literal."}, {"s": [["e", "❓"], ["t", "unknown, not any", {"b": 1}]], "h": "Unknown", "t": "Check before you use.", "more": "any hides mistakes."}, {"s": [["e", "🔁"], ["t", "Producer<out T>", {"b": 1}]], "h": "Variance", "t": "Producers follow, consumers flip.", "more": "strictFunctionTypes keeps callbacks safe."}], "remember": "TypeScript compares shapes, widens let and object values, wants unknown checked before use, and compares function parameters in the opposite direction to return values."}, "real": [["🧪", "A test team", "Replaced a heavy mocking library with plain objects that match the interface. Structural typing made them valid test doubles with no casts."], ["🐛", "An API client", "Typed every response as unknown and checked it once. A renamed field in the backend became a clear error instead of an undefined value deep in a report."], ["🔁", "A retry helper", "Used variadic tuple types, so wrapping any function with retries kept its exact arguments and return type."]], "quiz": [{"lv": "e", "q": "A class has every member of an interface but does not say implements. Can it be used as that interface?", "o": ["Yes, TypeScript compares shapes", "No, implements is required", "Only with a cast", "Only at run time"], "a": 0, "hint": "Structural typing.", "why": "The name and the implements clause do not matter, the members do."}, {"lv": "e", "q": "What is the type of <code>let m = \"GET\"<\/code>?", "o": ["string", "\"GET\"", "any", "unknown"], "a": 0, "hint": "let may change.", "why": "let widens literals. const m = \"GET\" would keep \"GET\"."}, {"lv": "e", "q": "Which type must be checked before you can use the value?", "o": ["unknown", "any", "never", "object"], "a": 0, "hint": "The safe top type.", "why": "any allows everything without checks, which hides mistakes."}, {"lv": "m", "q": "Why does <code>{ name: \"x\", to: \"y\", report }<\/code> passed directly to a Reporter parameter fail, when the same object in a variable passes?", "o": ["Fresh object literals get an excess property check for typos", "Variables are not type checked", "Literals are always any", "to is a reserved word"], "a": 0, "hint": "Freshness.", "why": "Only a literal written in place is checked for unknown fields."}, {"lv": "m", "q": "What does <code>as const<\/code> do to <code>{ method: \"GET\" }<\/code>?", "o": ["Keeps method as the literal \"GET\" and makes it readonly", "Converts it to a string", "Freezes it at run time", "Removes the property"], "a": 0, "hint": "No widening.", "why": "It is compile time only, Object.freeze would be needed at run time."}, {"lv": "m", "q": "With noUncheckedIndexedAccess, what is the type of <code>arr[0]<\/code> for <code>arr: string[]<\/code>?", "o": ["string | undefined", "string", "never", "unknown"], "a": 0, "hint": "The index may not exist.", "why": "You must check it or use optional chaining."}, {"lv": "m", "q": "Can <code>(a: Animal) =&gt; void<\/code> be assigned to a variable of type <code>(d: Dog) =&gt; void<\/code>?", "o": ["Yes, a handler for any animal can handle a dog", "No, never", "Only with any", "Only for classes"], "a": 0, "hint": "Parameters flip.", "why": "That is contravariance of parameter types."}, {"lv": "h", "q": "What does <code>out T<\/code> in <code>interface Producer&lt;out T&gt;<\/code> declare?", "o": ["T is only produced, so Producer&lt;Dog> is assignable to Producer&lt;Animal>", "T is optional", "T is exported", "T is a return type of void"], "a": 0, "hint": "Covariance.", "why": "tsc reports an error if T is used as an input inside the interface."}, {"lv": "h", "q": "What does a return type of <code>this<\/code> in a builder method give?", "o": ["Chained calls keep the subclass type and its extra methods", "The method becomes static", "It returns a copy", "It prevents subclassing"], "a": 0, "hint": "Fluent subclasses.", "why": "header() on AuthRequestBuilder still returns AuthRequestBuilder."}, {"lv": "h", "q": "With exactOptionalPropertyTypes, is <code>{ retries: undefined }<\/code> a valid <code>{ retries?: number }<\/code>?", "o": ["No, the property may be missing but not undefined", "Yes, always", "Only in strict mode", "Only for numbers"], "a": 0, "hint": "Missing is not undefined.", "why": "This matters for APIs where sending a field as undefined differs from leaving it out."}, {"lv": "x", "q": "What is the type of <code>concat([1], [\"a\", true])<\/code> with <code>[...A, ...B]<\/code> as the return type?", "o": ["[number, string, boolean]", "(string | number | boolean)[]", "unknown[]", "never"], "a": 0, "hint": "Variadic tuples keep positions.", "why": "Each position keeps its own type."}, {"lv": "x", "q": "Which value is not a valid Json in the recursive Json type?", "o": ["new Date()", "null", "[1, \"a\"]", "{ \"a\": { \"b\": [] } }"], "a": 0, "hint": "Only JSON values.", "why": "A Date is an object with methods, not a plain JSON object of Json values."}], "calc": [{"lv": "e", "q": "An interface needs 2 members and an object has those plus 3 extra. How many extra members does tsc ignore when the object comes from a variable?", "ans": "3", "hint": "Extra members are ignored for variables.", "steps": ["Only fresh literals are checked for extras."]}, {"lv": "e", "q": "How many values does <code>\"GET\" | \"POST\" | \"PUT\" | \"DELETE\"<\/code> allow?", "ans": "4", "hint": "Count the literals.", "steps": ["One per member."]}, {"lv": "m", "q": "A tuple type <code>[row: number, col: number, note?: string]<\/code>. What is the largest allowed length?", "ans": "3", "hint": "The optional element counts when present.", "steps": ["Allowed lengths are 2 and 3."]}, {"lv": "m", "q": "A Log tuple is <code>[level, ...parts: string[]]<\/code>. How many parts does <code>[\"error\", \"payment\", \"timeout\"]<\/code> have?", "ans": "2", "hint": "Everything after the level.", "steps": ["<span class=\"eq\">3 − 1 = 2<\/span>"]}, {"lv": "h", "q": "How many leaf values does <code>{ a: 1, b: [true, null], c: { d: \"x\" } }<\/code> have?", "ans": "4", "hint": "Count values that are not arrays or objects.", "steps": ["1, true, null and \"x\"."]}, {"lv": "h", "q": "How many dot paths does Paths give for <code>{ server: { port: 3000 }, retries: 2 }<\/code>?", "ans": "3", "hint": "Each key, plus nested paths.", "steps": ["\"server\", \"server.port\" and \"retries\"."]}, {"lv": "x", "q": "A function has 2 overload signatures and 1 implementation signature. How many signatures can callers see?", "ans": "2", "hint": "The implementation signature is hidden.", "steps": ["Only the overloads are visible from outside."]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter explains how the TypeScript checker decides: structural typing, widening, unknown, variance, index signatures, tuples, overloads and recursive types.", "hi": "यह अध्याय बताता है कि TypeScript checker कैसे तय करता है: structural typing, widening, unknown, variance, index signatures, tuples, overloads और recursive types।", "kn": "TypeScript checker ಹೇಗೆ ನಿರ್ಧರಿಸುತ್ತದೆ ಎಂದು ಈ ಅಧ್ಯಾಯ ವಿವರಿಸುತ್ತದೆ.", "or": "TypeScript checker କିପରି ନିଷ୍ପତ୍ତି ନିଏ ଏହି ଅଧ୍ୟାୟ ବୁଝାଏ।", "ar": "يشرح هذا الفصل كيف يقرر مدقق TypeScript: الأنواع البنيوية والتوسيع وunknown والتباين والفهارس والصفوف والتحميل الزائد والأنواع العودية.", "de": "Dieses Kapitel erklärt, wie der TypeScript-Checker entscheidet: strukturelle Typen, Widening, unknown, Varianz, Index-Signaturen, Tupel, Überladungen und rekursive Typen."}, {"id": "structural", "h": "Structural typing", "en": "Any value with the right members fits a type, whatever its name. Only fresh object literals are checked for unknown extra fields.", "hi": "सही members वाली कोई भी value type में फिट होती है, नाम कुछ भी हो। केवल नए object literals में अनजान extra fields जांचे जाते हैं।", "kn": "ಸರಿಯಾದ members ಇರುವ ಯಾವುದೇ value type ಗೆ ಹೊಂದುತ್ತದೆ.", "or": "ଠିକ୍ members ଥିବା ଯେକୌଣସି value type ରେ ଫିଟ୍ ହୁଏ।", "ar": "أي قيمة تملك الأعضاء الصحيحة تناسب النوع مهما كان اسمها، ولا تُفحص الحقول الزائدة إلا في الكائنات الحرفية الجديدة.", "de": "Jeder Wert mit den richtigen Mitgliedern passt zu einem Typ, egal wie er heißt. Nur frische Objektliterale werden auf unbekannte Felder geprüft."}, {"id": "widening", "h": "Widening", "en": "const keeps a literal type, but let and object properties widen to string. as const keeps the exact values and makes them readonly.", "hi": "const literal type रखता है, लेकिन let और object properties string बन जाते हैं। as const सटीक values रखता है और readonly बनाता है।", "kn": "const literal type ಉಳಿಸುತ್ತದೆ, let string ಆಗುತ್ತದೆ. as const readonly.", "or": "const literal type ରଖେ, let string ହୁଏ। as const readonly।", "ar": "يحتفظ const بالنوع الحرفي، أما let وخصائص الكائنات فتتوسع إلى string، ويحفظ as const القيم الدقيقة ويجعلها للقراءة فقط.", "de": "const behält den Literaltyp, let und Objekteigenschaften werden zu string. as const behält die genauen Werte und macht sie readonly."}, {"id": "unknown", "h": "Unknown", "en": "any turns checking off. unknown accepts everything but must be checked before use. never has no values at all.", "hi": "any checking बंद कर देता है। unknown सब स्वीकार करता है पर इस्तेमाल से पहले जांचना पड़ता है। never की कोई value नहीं होती।", "kn": "any checking ನಿಲ್ಲಿಸುತ್ತದೆ. unknown ಬಳಸುವ ಮೊದಲು ಪರಿಶೀಲಿಸಬೇಕು.", "or": "any checking ବନ୍ଦ କରେ। unknown ବ୍ୟବହାର ପୂର୍ବରୁ ଯାଞ୍ଚ କରିବାକୁ ପଡ଼େ।", "ar": "يوقف any الفحص، ويقبل unknown كل شيء لكن يجب فحصه قبل الاستخدام، وليس لـ never أي قيم.", "de": "any schaltet die Prüfung ab. unknown nimmt alles an, muss aber vor Gebrauch geprüft werden. never hat gar keine Werte."}, {"id": "functions", "h": "Variance", "en": "A function with fewer parameters fits. A handler for any animal can replace a handler for dogs, but not the other way round.", "hi": "कम parameters वाला function फिट होता है। हर animal का handler dog handler की जगह ले सकता है, उल्टा नहीं।", "kn": "ಕಡಿಮೆ parameters ಇರುವ function ಹೊಂದುತ್ತದೆ. Animal handler dog handler ಬದಲು ಬರಬಹುದು.", "or": "କମ୍ parameters ଥିବା function ଫିଟ୍ ହୁଏ। Animal handler dog handler ବଦଳରେ ଆସିପାରେ।", "ar": "الدالة ذات المعاملات الأقل تناسب، ومعالج أي حيوان يمكن أن يحل محل معالج الكلاب، لا العكس.", "de": "Eine Funktion mit weniger Parametern passt. Ein Handler für jedes Tier kann einen Hunde-Handler ersetzen, aber nicht umgekehrt."}, {"id": "index", "h": "Index signatures", "en": "With noUncheckedIndexedAccess, reading a dictionary key or an array index may give undefined, so you must handle the missing case.", "hi": "noUncheckedIndexedAccess के साथ dictionary key या array index पढ़ने पर undefined मिल सकता है, इसलिए missing case संभालना पड़ता है।", "kn": "noUncheckedIndexedAccess ಜೊತೆ undefined ಸಿಗಬಹುದು.", "or": "noUncheckedIndexedAccess ସହ undefined ମିଳିପାରେ।", "ar": "مع noUncheckedIndexedAccess قد تعطي قراءة مفتاح أو فهرس القيمة undefined، فيجب التعامل مع الحالة المفقودة.", "de": "Mit noUncheckedIndexedAccess kann ein Schlüssel oder Index undefined liefern, also muss der fehlende Fall behandelt werden."}, {"id": "tuples", "h": "Tuples", "en": "A tuple has a fixed length and a type per position. Variadic tuples keep exact argument lists when wrapping functions.", "hi": "Tuple की लंबाई तय होती है और हर position का type। Variadic tuples functions लपेटते समय सटीक arguments रखते हैं।", "kn": "Tuple ನಿಗದಿತ ಉದ್ದ, ಪ್ರತಿ ಸ್ಥಾನಕ್ಕೆ type.", "or": "Tuple ନିର୍ଦ୍ଦିଷ୍ଟ ଲମ୍ବ, ପ୍ରତି ସ୍ଥାନ ପାଇଁ type।", "ar": "للصف طول ثابت ونوع لكل موضع، وتحفظ الصفوف المتغيرة قوائم الوسائط الدقيقة عند تغليف الدوال.", "de": "Ein Tupel hat feste Länge und einen Typ je Position. Variadische Tupel behalten genaue Argumentlisten beim Umhüllen von Funktionen."}, {"id": "overloads", "h": "Overloads", "en": "Overloads give one function several call signatures. A this return type keeps builder chains typed.", "hi": "Overloads एक function को कई call signatures देते हैं। this return type builder chains को typed रखता है।", "kn": "Overloads ಒಂದು function ಗೆ ಹಲವು signatures. this return type chains ಉಳಿಸುತ್ತದೆ.", "or": "Overloads ଗୋଟିଏ function କୁ ଅନେକ signatures। this return type chains ରଖେ।", "ar": "يعطي التحميل الزائد الدالة عدة تواقيع، ويحفظ نوع الإرجاع this سلاسل البناء مكتوبة الأنواع.", "de": "Überladungen geben einer Funktion mehrere Signaturen. Ein this-Rückgabetyp hält Builder-Ketten typisiert."}, {"id": "recursive", "h": "Recursive types", "en": "A type can refer to itself, which describes trees such as JSON. Recursive conditional types can list every dot path of an object.", "hi": "Type खुद को refer कर सकता है, जिससे JSON जैसे trees बनते हैं। Recursive conditional types object के सभी dot paths बता सकते हैं।", "kn": "Type ತನ್ನನ್ನೇ ಸೂಚಿಸಬಹುದು, JSON ನಂತಹ trees.", "or": "Type ନିଜକୁ refer କରିପାରେ, JSON ପରି trees।", "ar": "يمكن للنوع أن يشير إلى نفسه فيصف أشجارًا مثل JSON، ويمكن للأنواع الشرطية العودية سرد كل مسارات الكائن.", "de": "Ein Typ kann sich selbst referenzieren und so Bäume wie JSON beschreiben. Rekursive bedingte Typen listen alle Punkt-Pfade eines Objekts."}, {"id": "practice", "h": "Hands-on", "en": "Practise a structural check, a JSON leaf counter, a dot path reader and a safe dictionary lookup.", "hi": "Structural check, JSON leaf counter, dot path reader और सुरक्षित dictionary lookup का अभ्यास करें।", "kn": "Structural check, JSON leaf counter, dot path reader ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Structural check, JSON leaf counter, dot path reader ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرّب على فحص بنيوي وعداد أوراق JSON وقارئ مسارات وبحث آمن في القاموس.", "de": "Übe eine Strukturprüfung, einen JSON-Blattzähler, einen Pfadleser und einen sicheren Wörterbuchzugriff."}], "ex": [{"id": "fits", "lv": "e", "title": "Does it fit the shape?", "task": "<p>Write <code>fits(obj, keys)<\/code> that returns true when <code>obj<\/code> is a non null object that has every key in <code>keys<\/code>, like a structural type check at run time. Extra keys are fine.<\/p>", "starter": "function fits(obj, keys) {\n  \n}", "tests": [{"call": "fits({ name: \"x\", report() {}, channel: \"#qa\" }, [\"name\", \"report\"])", "want": true}, {"call": "fits({ name: \"x\" }, [\"name\", \"report\"])", "want": false}, {"call": "fits(null, [\"name\"])", "want": false}, {"call": "fits({}, [])", "want": true}], "solution": "function fits(obj, keys) {\n  return typeof obj === \"object\" && obj !== null && keys.every(k => k in obj);\n}", "hint": "Check for an object first, then use <code>every<\/code> with <code>in<\/code>.", "why": "This is what structural typing means: required members must be present, extras are allowed."}, {"id": "leaves", "lv": "m", "title": "Count JSON leaves", "task": "<p>Write <code>countLeaves(value)<\/code> that counts every value in a JSON tree that is not an array or an object. null counts as a leaf.<\/p>", "starter": "function countLeaves(value) {\n  \n}", "tests": [{"call": "countLeaves({ a: 1, b: [true, null], c: { d: \"x\" } })", "want": 4}, {"call": "countLeaves([])", "want": 0}, {"call": "countLeaves(5)", "want": 1}, {"call": "countLeaves({ order: { items: [{ qty: 2 }, { qty: 3 }] } })", "want": 2}], "solution": "function countLeaves(value) {\n  if (value === null || typeof value !== \"object\") return 1;\n  const children = Array.isArray(value) ? value : Object.values(value);\n  return children.reduce((sum, child) => sum + countLeaves(child), 0);\n}", "hint": "Recursion: a leaf is 1, a container is the sum of its children.", "why": "The recursive Json type and the recursive function have the same shape."}, {"id": "getpath", "lv": "h", "title": "Read a dot path", "task": "<p>Write <code>getPath(obj, path)<\/code> that follows a dot path such as <code>\"server.tls.enabled\"<\/code> and returns the value, or <code>undefined<\/code> if any step is missing.<\/p>", "starter": "function getPath(obj, path) {\n  \n}", "tests": [{"call": "getPath({ server: { tls: { enabled: false } } }, \"server.tls.enabled\")", "want": false}, {"call": "getPath({ server: { port: 3000 } }, \"server.host\") === undefined", "want": true}, {"call": "getPath({ a: { b: 0 } }, \"a.b\")", "want": 0}, {"call": "getPath({}, \"x.y.z\") === undefined", "want": true}], "solution": "function getPath(obj, path) {\n  return path.split(\".\").reduce((cur, key) => (cur == null ? undefined : cur[key]), obj);\n}", "hint": "Split on dots and walk with <code>reduce<\/code>, stopping at null or undefined.", "why": "With the Paths type, a wrong path is a compile error. At run time the function still handles missing steps safely."}, {"id": "lookup", "lv": "x", "title": "A safe dictionary lookup", "task": "<p>Write <code>lookup(map, key, fallback)<\/code> that returns <code>map[key]<\/code> only if the key is the object's own property, otherwise the fallback. Keys such as <code>\"toString\"<\/code> that come from the prototype must give the fallback.<\/p>", "starter": "function lookup(map, key, fallback) {\n  \n}", "tests": [{"call": "lookup({ login: 840 }, \"login\", 0)", "want": 840}, {"call": "lookup({ login: 840 }, \"pay\", -1)", "want": -1}, {"call": "lookup({}, \"toString\", \"none\")", "want": "none"}, {"call": "lookup({ zero: 0 }, \"zero\", 5)", "want": 0}], "solution": "function lookup(map, key, fallback) {\n  return Object.hasOwn(map, key) ? map[key] : fallback;\n}", "hint": "<code>Object.hasOwn<\/code> checks only the object's own keys.", "why": "This is the run time version of what noUncheckedIndexedAccess forces you to think about: a key may be missing."}], "dg": {"variance": {"t": "Which way can a type be swapped?", "w": 900, "h": 300, "mw": 640, "n": [["dog", 40, 40, 200, 60, "Dog", {"c": 1, "sub": "a special Animal"}], ["animal", 40, 190, 200, 60, "Animal", {"c": 2, "sub": "the general type"}], ["pd", 340, 40, 220, 60, "Producer<Dog>", {"c": 4, "sub": "gives dogs"}], ["pa", 340, 190, 220, 60, "Producer<Animal>", {"c": 4, "sub": "gives animals"}], ["ca", 650, 40, 220, 60, "Consumer<Animal>", {"c": 3, "sub": "takes any animal"}], ["cd", 650, 190, 220, 60, "Consumer<Dog>", {"c": 3, "sub": "takes only dogs"}]], "e": [["dog", "animal", {"t": "is an", "id": "v1"}], ["pd", "pa", {"t": "usable as (out)", "id": "v2"}], ["ca", "cd", {"t": "usable as (in)", "id": "v3"}]], "st": [[["dog", "animal", "v1"], "Every Dog is an Animal, so a Dog can go wherever an Animal is expected."], [["pd", "pa", "v2"], "Something that produces dogs can stand in for something that produces animals. The arrow points the same way. This is called covariance, marked out T."], [["ca", "cd", "v3"], "Something that accepts any animal can stand in for something that accepts dogs. The arrow flips. This is contravariance, marked in T."], [["cd", "ca"], "The reverse is unsafe: a dog only handler given a cat would call bark() on it. strictFunctionTypes makes tsc catch this for function types."]]}}, "lanes": {"excess": {"t": "How tsc checks one assignment", "code": "interface Reporter { name: string; report(): string }\nconst slack = { name: \"slack\", channel: \"#qa\", report: () => \"ok\" };\nconst r1: Reporter = slack;\nconst r2: Reporter = { name: \"email\", to: \"qa@x\", report: () => \"ok\" };\nconst r3: Reporter = { name: \"broken\" };", "lanes": ["Value has", "Reporter needs", "Extra fields", "tsc says"], "tone": [1, 2, 3, 4], "steps": [{"l": 1, "v": [[], ["name: string", "report(): string"], [], []], "m": "The interface only lists what a Reporter must have. It says nothing about what it must not have."}, {"l": 2, "v": [["name", "channel", "report"], ["name: string", "report(): string"], [], []], "m": "slack is an ordinary variable with three fields. Its type is inferred from the value."}, {"l": 3, "v": [["name", "channel", "report"], ["name: string", "report(): string"], ["channel"], ["OK"]], "m": "Every required member is there, so slack is a Reporter. The extra channel field is simply ignored. This is structural typing."}, {"l": 4, "v": [["name", "to", "report"], ["name: string", "report(): string"], ["to"], ["error: unknown property to"]], "m": "A fresh object literal written right where a Reporter is expected gets one extra check: unknown fields are probably typos, so tsc reports them."}, {"l": 5, "v": [["name"], ["name: string", "report(): string"], [], ["error: report is missing"]], "m": "A missing member is always an error, whether the value is fresh or not."}]}}, "play": {}};
+JSPLAY.page({ title: "How the TypeScript type system decides", subject: "javascript" });
+</script>
+</body>
+</html>
