@@ -1,0 +1,19 @@
+import com.microsoft.playwright.junit.UsePlaywright;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.*;
+
+import org.junit.jupiter.api.*;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.*;
+
+@UsePlaywright
+public class TestExample {
+  @Test
+  void test(Page page) {
+    page.navigate("http://localhost:4173/login");
+    page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Email")).click();
+    page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Email")).fill("asha@shop.example");
+    page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Password")).click();
+    page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Password")).fill("s3cret");
+    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Sign in")).click();
+  }
+}

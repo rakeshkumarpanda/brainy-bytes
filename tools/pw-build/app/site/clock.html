@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Flash sale · Brainy Shop</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<main>
+  <h1>Flash sale</h1>
+  <p>Now: <span id="now"></span></p>
+  <p id="sale" role="status"></p>
+  <p>You will be signed out in <span id="left">5:00</span> if you stay idle.</p>
+</main>
+<script src="/app.js"></script>
+<script>
+const end = new Date('2026-12-25T12:00:00Z').getTime();
+let idle = 300;
+function tick() {
+  const now = Date.now();
+  document.getElementById('now').textContent = new Date(now).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+  document.getElementById('sale').textContent = now < end ? 'The Christmas sale is coming soon' : 'The Christmas sale is live';
+}
+tick();
+setInterval(tick, 1000);
+setInterval(() => {
+  idle = Math.max(0, idle - 1);
+  document.getElementById('left').textContent = idle ? `${Math.floor(idle / 60)}:${String(idle % 60).padStart(2, '0')}` : 'now';
+  if (!idle) document.querySelector('main').insertAdjacentHTML('beforeend', '<p role="alert">You were signed out</p>'), idle = -1;
+}, 1000);
+</script>
+</body>
+</html>

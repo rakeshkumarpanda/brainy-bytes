@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Sign in · Brainy Shop</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<main>
+  <h1>Sign in</h1>
+  <form id="login" aria-label="Sign in">
+    <label>Email <input name="email" type="email" autocomplete="username" required></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <label class="row" style="display:flex"><input type="checkbox" name="remember"> Remember me</label>
+    <button type="submit">Sign in</button>
+    <p role="alert" hidden></p>
+  </form>
+</main>
+<script src="/app.js"></script>
+<script>
+document.getElementById('login').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, alert = f.querySelector('[role=alert]');
+  const r = await Shop.api('/api/login', { method: 'POST', body: { email: f.email.value, password: f.password.value } });
+  if (!r.ok) { alert.textContent = r.body.error; alert.hidden = false; return; }
+  localStorage.setItem('token', r.body.token);
+  location.href = '/products';
+});
+</script>
+</body>
+</html>

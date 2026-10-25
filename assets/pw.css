@@ -1,0 +1,193 @@
+/* ===== Playwright chapters: the language switch, four language code blocks, walks, labs and the playground =====
+   Built on jsplay.css and claude.css. Script: assets/pwviz.js and assets/pwplay.js. */
+
+/* language picker in the chapter header */
+.pw-pick{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:12px; padding:8px 10px; border-radius:14px; background:color-mix(in srgb, #2ead33 9%, var(--surface)); border:1.5px solid color-mix(in srgb, #2ead33 40%, var(--line))}
+.pw-pick>span{font-weight:800; margin-right:4px}
+.pw-pick button{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 12px; font:inherit; font-weight:800; font-size:14px; cursor:pointer}
+.pw-pick button.on{background:#2ead33; border-color:#2ead33; color:#fff}
+
+/* only-java, only-py, only-js, only-ts: text for one language */
+body[data-pwl] [class^="only-"], body[data-pwl] [class*=" only-"]{display:none}
+body[data-pwl="java"] .only-java, body[data-pwl="py"] .only-py, body[data-pwl="js"] .only-js, body[data-pwl="ts"] .only-ts{display:inline}
+body[data-pwl="java"] div.only-java, body[data-pwl="py"] div.only-py, body[data-pwl="js"] div.only-js, body[data-pwl="ts"] div.only-ts{display:block}
+
+/* four language code blocks */
+.pw-tabs{display:flex; flex-wrap:wrap; gap:4px; padding:6px 10px 0; background:color-mix(in srgb, var(--code-bg) 92%, #fff)}
+.pw-tab{border:0; border-radius:10px 10px 0 0; padding:6px 12px; background:transparent; color:#9fb3d1; font:inherit; font-size:13.5px; font-weight:800; cursor:pointer}
+.pw-tab.on{background:var(--code-bg); color:#fff; box-shadow:inset 0 2px 0 #2ead33}
+.pw-tab:focus-visible{outline:2px solid #2ead33}
+.pw4 .pw-pane{display:none}
+.pw4 .pw-pane.on{display:block}
+.pw4.pw-single .pw-pane{display:block}
+.pw-badge{font-weight:800}
+
+/* tip boxes */
+.pw-box{display:flex; gap:10px; align-items:flex-start; margin:12px 0; padding:10px 14px; border-radius:14px; border:1.5px solid var(--line); background:var(--surface2); font-size:15.5px}
+.pw-box .pw-ic{font-size:20px; line-height:1.3}
+.pw-box>div>p:first-child{margin-top:0}
+.pw-box>div>p:last-child{margin-bottom:0}
+.pw-tip{border-color:color-mix(in srgb, var(--blue) 45%, var(--line)); background:color-mix(in srgb, var(--blue) 7%, var(--surface))}
+.pw-warn{border-color:color-mix(in srgb, var(--orange) 55%, var(--line)); background:color-mix(in srgb, var(--orange) 9%, var(--surface))}
+.pw-life{border-color:color-mix(in srgb, var(--green) 50%, var(--line)); background:color-mix(in srgb, var(--green) 8%, var(--surface))}
+.pw-kid{border-color:color-mix(in srgb, var(--pink) 45%, var(--line)); background:color-mix(in srgb, var(--pink) 7%, var(--surface))}
+.pw-pro{border-color:color-mix(in srgb, var(--purple) 45%, var(--line)); background:color-mix(in srgb, var(--purple) 7%, var(--surface))}
+.pw-new{border-color:color-mix(in srgb, #2ead33 55%, var(--line)); background:color-mix(in srgb, #2ead33 8%, var(--surface))}
+
+/* walk: a recorded run, one line at a time */
+.pww{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1.25fr); gap:12px; align-items:start}
+.pww-code{margin:0; padding:10px 0; border-radius:12px; background:var(--code-bg); color:var(--code-ink); font-family:var(--font-mono); font-size:12.5px; line-height:1.55; overflow-x:auto; max-height:420px}
+.pww-code div{padding:1px 12px; white-space:pre; border-left:3px solid transparent; cursor:pointer}
+.pww-code div.on{background:color-mix(in srgb, var(--yellow) 22%, transparent); border-left-color:var(--yellow)}
+.pww-code div.done{opacity:.6}
+.pww-code div .ln{display:inline-block; width:22px; color:#6b7f9e; user-select:none}
+.pww-shot{border-radius:12px; border:1.5px solid var(--line); overflow:hidden; background:#fff}
+.pww-bar{display:flex; gap:6px; align-items:center; padding:6px 10px; background:var(--surface2); border-bottom:1px solid var(--line); font-size:12.5px; font-weight:700; color:var(--ink2)}
+.pww-bar i{width:10px; height:10px; border-radius:50%; background:var(--line); display:inline-block}
+.pww-shot img{display:block; width:100%; height:auto}
+.pww-shot .pww-empty{padding:40px 14px; text-align:center; color:var(--ink2); font-weight:700}
+.pww-langs{display:flex; gap:4px; flex-wrap:wrap; margin-bottom:6px}
+.pww-langs button{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:3px 10px; font:inherit; font-size:12.5px; font-weight:800; cursor:pointer}
+.pww-langs button.on{background:#2ead33; border-color:#2ead33; color:#fff}
+@media (max-width:760px){ .pww{grid-template-columns:1fr} }
+
+/* small widget pieces */
+.pwv-row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0}
+.pwv-in{font:inherit; font-family:var(--font-mono); font-size:13.5px; padding:6px 10px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); min-width:0; flex:1 1 260px}
+.pwv-btn{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 12px; font:inherit; font-size:13.5px; font-weight:800; cursor:pointer}
+.pwv-btn.on, .pwv-btn.go{background:#2ead33; border-color:#2ead33; color:#fff}
+.pwv-chip{display:inline-block; padding:2px 9px; border-radius:999px; font-size:12.5px; font-weight:800; background:var(--surface2); border:1px solid var(--line)}
+.pwv-ok{background:color-mix(in srgb, var(--green) 18%, var(--surface)); border-color:var(--green)}
+.pwv-bad{background:color-mix(in srgb, var(--red) 16%, var(--surface)); border-color:var(--red)}
+.pwv-wait{background:color-mix(in srgb, var(--yellow) 25%, var(--surface)); border-color:var(--hl-line)}
+.pwv-grid2{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:12px}
+@media (max-width:760px){ .pwv-grid2{grid-template-columns:1fr} }
+.pwv-log{margin:0; padding:10px 12px; border-radius:12px; background:var(--code-bg); color:var(--code-ink); font-family:var(--font-mono); font-size:12.5px; line-height:1.5; min-height:60px; max-height:260px; overflow:auto; white-space:pre-wrap}
+.pwv-log .ok{color:#7ee2a8}
+.pwv-log .bad{color:#ff9aa8}
+.pwv-log .dim{color:#8aa0c2}
+.pwv-log .wait{color:#ffd77a}
+
+/* the mock page used by the locator lab and the auto-wait lab */
+.pwv-page{border:1.5px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; color:#1f2937}
+.pwv-page .pwv-url{display:flex; gap:6px; align-items:center; padding:5px 10px; background:#eef2f7; border-bottom:1px solid #d8dee8; font-size:12px; color:#475569; font-family:var(--font-mono)}
+.pwv-page .pwv-url i{width:9px; height:9px; border-radius:50%; background:#cbd5e1}
+.pwv-page .pwv-doc{padding:12px; font-family:system-ui, sans-serif; font-size:14px; line-height:1.45}
+.pwv-doc h4{margin:0 0 8px; font-size:16px}
+.pwv-doc button{font:inherit; padding:5px 12px; border-radius:8px; border:0; background:#16a34a; color:#fff; font-weight:700}
+.pwv-doc button:disabled{background:#94a3b8}
+.pwv-doc input{font:inherit; padding:4px 8px; border:1px solid #94a3b8; border-radius:6px}
+.pwv-doc label{display:block; margin:4px 0}
+.pwv-doc ul{margin:6px 0; padding-left:0; list-style:none; display:grid; gap:6px}
+.pwv-doc li{border:1px solid #e2e8f0; border-radius:8px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center; gap:8px}
+.pwv-doc .pwv-match{outline:3px solid #f59e0b; outline-offset:2px; border-radius:6px; background:#fef3c7}
+.pwv-doc .pwv-one{outline:3px solid #16a34a; outline-offset:2px; border-radius:6px; background:#dcfce7}
+
+/* actionability checks */
+.pwv-checks{display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:6px; margin:8px 0}
+.pwv-check{padding:8px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface); text-align:center; font-weight:800; font-size:13px}
+.pwv-check small{display:block; font-weight:600; color:var(--ink2); font-size:11.5px}
+.pwv-check.ok{border-color:var(--green); background:color-mix(in srgb, var(--green) 12%, var(--surface))}
+.pwv-check.bad{border-color:var(--red); background:color-mix(in srgb, var(--red) 10%, var(--surface))}
+.pwv-check.na{opacity:.55}
+.pwv-time{position:relative; height:26px; border-radius:999px; background:var(--surface2); border:1px solid var(--line); overflow:hidden}
+.pwv-time b{position:absolute; left:0; top:0; bottom:0; background:color-mix(in srgb, var(--green) 45%, var(--surface)); transition:width .2s}
+.pwv-time span{position:relative; padding:0 10px; line-height:26px; font-size:12.5px; font-weight:800}
+
+/* contexts and pages */
+.pwv-browser{border:2px solid var(--blue); border-radius:16px; padding:10px; background:color-mix(in srgb, var(--blue) 5%, var(--surface))}
+.pwv-ctxs{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px}
+.pwv-ctx{flex:1 1 180px; border:2px dashed var(--purple); border-radius:14px; padding:8px; background:color-mix(in srgb, var(--purple) 6%, var(--surface)); min-width:0}
+.pwv-ctx h5, .pwv-browser h5{margin:0 0 4px; font-size:13.5px}
+.pwv-ctx .pwv-store{font-family:var(--font-mono); font-size:11.5px; color:var(--ink2); overflow-wrap:anywhere}
+.pwv-tabs{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
+.pwv-tabs span{padding:4px 8px; border-radius:8px; background:var(--surface); border:1.5px solid var(--green); font-size:12px; font-weight:800}
+.pwv-new{animation:fun-pop .45s ease}
+
+/* parallel runs */
+.pwv-lanes{display:grid; gap:6px; margin:8px 0}
+.pwv-lane{display:grid; grid-template-columns:90px 1fr; gap:8px; align-items:center; font-size:12.5px; font-weight:800}
+.pwv-track{position:relative; height:24px; border-radius:8px; background:var(--surface2); border:1px solid var(--line); overflow:hidden}
+.pwv-job{position:absolute; top:2px; bottom:2px; border-radius:6px; font-size:10.5px; line-height:20px; color:#0f2747; text-align:center; overflow:hidden; white-space:nowrap; border:1px solid rgba(0,0,0,.12)}
+
+/* folder explorer */
+.pwv-tree{display:grid; grid-template-columns:minmax(0, 0.9fr) minmax(0, 1.6fr); gap:10px}
+.pwv-tree ul{list-style:none; margin:0; padding:8px 0; border-radius:12px; background:#1e1e1e; color:#d4d4d4; font-family:var(--font-mono); font-size:12.5px; max-height:460px; overflow:auto}
+.pwv-tree li{padding:2px 10px; white-space:nowrap; cursor:pointer}
+.pwv-tree li.dir{color:#e8c07d; cursor:default}
+.pwv-tree li.on{background:#094771; color:#fff}
+.pwv-tree li .why{color:#7f8c9f; font-family:var(--font); font-size:11.5px; margin-left:6px}
+.pwv-tree .pwv-file{min-width:0}
+.pwv-tree .pwv-file pre{margin:0; max-height:420px; overflow:auto; padding:10px 12px; border-radius:0 0 12px 12px; background:var(--code-bg); color:var(--code-ink); font-family:var(--font-mono); font-size:12.5px}
+.pwv-tree .pwv-fh{padding:6px 12px; border-radius:12px 12px 0 0; background:#2d2d2d; color:#e5e5e5; font-family:var(--font-mono); font-size:12.5px; font-weight:700}
+.pwv-tree .pwv-fw{padding:6px 12px; font-size:13.5px; background:var(--surface2); border:1px solid var(--line); border-top:0}
+@media (max-width:760px){ .pwv-tree{grid-template-columns:1fr} }
+
+/* screenshots of folders and reports */
+.pw-shot{margin:12px 0; border-radius:14px; border:1.5px solid var(--line); overflow:hidden; background:var(--surface)}
+.pw-shot img{display:block; width:100%; height:auto}
+.pw-shot figcaption{padding:8px 12px; font-size:14px; color:var(--ink2); font-weight:700; border-top:1px solid var(--line)}
+
+/* playground */
+.pgx{border:2px solid #2ead33; border-radius:18px; overflow:hidden; background:var(--surface); margin:12px 0}
+.pgx-head{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:10px 14px; background:color-mix(in srgb, #2ead33 12%, var(--surface)); border-bottom:1.5px solid color-mix(in srgb, #2ead33 40%, var(--line))}
+.pgx-head h3{margin:0; font-size:18px}
+.pgx-langs{display:flex; flex-wrap:wrap; gap:4px}
+.pgx-langs button{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:4px 10px; font:inherit; font-size:12.5px; font-weight:800; cursor:pointer}
+.pgx-langs button.on{background:#2ead33; border-color:#2ead33; color:#fff}
+.pgx-task{padding:10px 14px; font-size:15px; border-bottom:1px solid var(--line)}
+.pgx-task p{margin:4px 0}
+.pgx-body{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:0}
+@media (max-width:860px){ .pgx-body{grid-template-columns:1fr} }
+.pgx-ed{position:relative; display:grid; grid-template-columns:auto 1fr; background:var(--code-bg); min-height:280px; border-right:1px solid var(--line)}
+.pgx-gut{margin:0; padding:10px 6px 10px 10px; color:#6b7f9e; font-family:var(--font-mono); font-size:13px; line-height:1.6; text-align:right; user-select:none; white-space:pre}
+.pgx-gut .on{color:#ffd77a; font-weight:700}
+.pgx-gut .ok{color:#7ee2a8}
+.pgx-gut .bad{color:#ff9aa8}
+.pgx-ta{display:block; width:100%; min-height:280px; padding:10px 12px 10px 4px; border:0; outline:0; resize:vertical; background:transparent; color:var(--code-ink); font-family:var(--font-mono); font-size:13px; line-height:1.6; white-space:pre; overflow:auto; tab-size:2}
+.pgx-ta:focus{box-shadow:inset 0 0 0 2px #2ead33}
+.pgx-side{display:grid; grid-template-rows:auto auto 1fr; min-width:0; overflow:hidden}
+.pgx-frame{display:block; width:150%; height:480px; border:0; background:#fff; transform:scale(.6667); transform-origin:0 0; margin-bottom:-160px}
+.pgx-url{display:flex; gap:6px; align-items:center; padding:5px 10px; background:#eef2f7; border-bottom:1px solid #d8dee8; font-size:12px; color:#475569; font-family:var(--font-mono); overflow:hidden; white-space:nowrap}
+.pgx-url i{width:9px; height:9px; border-radius:50%; background:#cbd5e1; flex:none}
+.pgx-bar{display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 12px; border-top:1px solid var(--line); background:var(--surface2)}
+.pgx-bar button{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 12px; font:inherit; font-size:13.5px; font-weight:800; cursor:pointer}
+.pgx-bar button.go{background:#2ead33; border-color:#2ead33; color:#fff}
+.pgx-bar button:disabled{opacity:.5; cursor:not-allowed}
+.pgx-bar label{font-size:13px; font-weight:700; display:flex; gap:4px; align-items:center}
+.pgx-log{margin:0; padding:10px 12px; background:#0b1322; color:#d6e2f5; font-family:var(--font-mono); font-size:12.5px; line-height:1.5; min-height:110px; max-height:240px; overflow:auto; white-space:pre-wrap; border-top:1px solid rgba(255,255,255,.08)}
+.pgx-log .ok{color:#7ee2a8}
+.pgx-log .bad{color:#ff9aa8}
+.pgx-log .dim{color:#8aa0c2}
+.pgx-log .wait{color:#ffd77a}
+.pgx-log .out{color:#fff}
+.pgx-goal{padding:8px 14px; border-top:1px solid var(--line); font-weight:800; font-size:14.5px}
+.pgx-goal.pass{background:color-mix(in srgb, var(--green) 14%, var(--surface))}
+.pgx-hint{padding:8px 14px; border-top:1px dashed var(--line); font-size:14.5px; background:color-mix(in srgb, var(--yellow) 10%, var(--surface))}
+.pgx-hint[hidden], .pgx-sol[hidden]{display:none}
+.pgx-sol pre{margin:0; padding:10px 14px; background:var(--code-bg); color:var(--code-ink); font-family:var(--font-mono); font-size:12.5px; overflow:auto}
+.pgx-hl{background:color-mix(in srgb, #f59e0b 25%, transparent) !important; outline:3px solid #f59e0b !important; outline-offset:2px}
+
+/* pwarch: one line of a test travelling through the layers */
+.pwa{display:flex; flex-direction:column; align-items:stretch; gap:0; max-width:640px; margin:8px auto}
+.pwa-n{border:2px solid color-mix(in srgb, var(--t) 45%, var(--line)); border-radius:14px; padding:8px 12px; background:var(--surface); transition:background .3s, box-shadow .3s, transform .3s; min-width:0}
+.pwa-n>b{display:block; color:var(--t); font-size:14.5px}
+.pwa-n>div{font-size:14px}
+.pwa-n pre{margin:6px 0 0; padding:6px 8px; border-radius:8px; background:var(--code-bg); color:#e6edf7; font:500 12.5px/1.45 'JetBrains Mono', monospace; white-space:pre-wrap; word-break:break-word}
+.pwa-n.on{background:color-mix(in srgb, var(--t) 12%, var(--surface)); box-shadow:0 0 0 3px color-mix(in srgb, var(--t) 30%, transparent); transform:scale(1.01)}
+.pwa-a{align-self:center; padding:3px 0; font-size:12.5px; font-weight:800; color:var(--ink2); transition:color .3s}
+.pwa-a.on{color:#2ead33}
+.pwa-a.on span{animation:pwaPulse 1s ease-in-out infinite}
+@keyframes pwaPulse{50%{opacity:.45}}
+.pwa-checks{display:flex; flex-wrap:wrap; gap:4px; margin-top:6px}
+.pwa-checks span{padding:2px 8px; border-radius:999px; font-size:12px; font-weight:800; background:color-mix(in srgb, var(--green) 14%, var(--surface)); border:1px solid color-mix(in srgb, var(--green) 40%, var(--line))}
+@media (prefers-reduced-motion: reduce){.pwa-n, .pwa-a{transition:none} .pwa-a.on span{animation:none}}
+
+/* segmented choices in the Playwright animations */
+.vz-seg button{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 12px; font:inherit; font-size:13.5px; font-weight:800; cursor:pointer}
+.vz-seg button.on{background:#2ead33; border-color:#2ead33; color:#fff}
+.vz-seg button:focus-visible{outline:2px solid #2ead33; outline-offset:2px}
+.pwv-row .vz-seg + .vz-seg{margin-left:10px; padding-left:10px; border-left:1.5px solid var(--line)}
+
+/* logs must show => and <= as typed, not as ligature arrows */
+.pw4 pre, .pww pre, .pgx pre, .pgx textarea, .pwa pre{font-variant-ligatures:none; font-feature-settings:"liga" 0, "calt" 0}

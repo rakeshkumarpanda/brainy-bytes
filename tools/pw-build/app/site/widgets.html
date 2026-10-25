@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Widgets · Brainy Shop</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<main>
+  <h1>Tricky widgets</h1>
+  <section class="box" aria-label="Dialogs">
+    <h2>Dialogs</h2>
+    <div class="row"><button type="button" id="alert">Show alert</button><button type="button" id="confirm">Delete account</button><button type="button" id="prompt">Rename list</button></div>
+    <p id="dialog-result" role="status"></p>
+  </section>
+  <section class="box" aria-label="Tabs and files">
+    <h2>New tabs and files</h2>
+    <div class="row"><a href="/help" target="_blank">Open help in a new tab</a><a href="/download/report.csv">Download report</a><button type="button" id="popup">Open chat window</button></div>
+  </section>
+  <section class="box" aria-label="Slow things">
+    <h2>Things that take time</h2>
+    <div class="row"><button type="button" id="load">Load offers</button><button type="button" id="pay" disabled>Pay now</button><span id="paid"></span></div>
+    <div id="offers"></div>
+    <p><button type="button" id="moving" class="mover">Catch me</button> <span id="caught"></span></p>
+  </section>
+  <section class="box" aria-label="Messages">
+    <h2>Console and errors</h2>
+    <div class="row"><button type="button" id="log">Write to the console</button><button type="button" id="boom">Break the page</button></div>
+  </section>
+</main>
+<div class="overlay" id="cover">Getting things ready…</div>
+<script src="/app.js"></script>
+<script>
+const out = document.getElementById('dialog-result');
+document.getElementById('alert').onclick = () => { alert('Your coupon is SAVE10'); out.textContent = 'Alert closed'; };
+document.getElementById('confirm').onclick = () => { out.textContent = confirm('Delete your account forever?') ? 'Account deleted' : 'Kept your account'; };
+document.getElementById('prompt').onclick = () => { const n = prompt('New name for the list', 'Groceries'); out.textContent = n === null ? 'Rename cancelled' : `List renamed to ${n}`; };
+document.getElementById('popup').onclick = () => window.open('/help?chat=1', 'chat', 'width=420,height=500');
+document.getElementById('load').onclick = () => setTimeout(() => {
+  document.getElementById('offers').innerHTML = '<p data-testid="offer">Buy 2 mugs, get 1 free</p>';
+}, 1200);
+setTimeout(() => { document.getElementById('pay').disabled = false; }, 1000);
+document.getElementById('pay').onclick = () => { document.getElementById('paid').textContent = 'Payment done'; };
+document.getElementById('moving').onclick = () => { document.getElementById('caught').textContent = 'Caught it'; };
+document.getElementById('log').onclick = () => { console.log('Cart saved with 2 items'); console.warn('Coupon expires soon'); };
+document.getElementById('boom').onclick = () => { setTimeout(() => { throw new Error('Price service is down'); }); };
+setTimeout(() => document.getElementById('cover').remove(), 800);
+</script>
+</body>
+</html>

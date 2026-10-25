@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Feedback · Brainy Shop</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<main>
+  <h1>Send feedback</h1>
+  <form id="fb" aria-label="Feedback">
+    <label>Your name <input name="name" placeholder="Full name" required></label>
+    <label>Topic
+      <select name="topic"><option value="">Choose a topic</option><option value="delivery">Delivery</option><option value="payment">Payment</option><option value="other">Something else</option></select>
+    </label>
+    <fieldset><legend>How happy are you?</legend>
+      <label style="display:inline"><input type="radio" name="mood" value="happy"> Happy</label>
+      <label style="display:inline"><input type="radio" name="mood" value="okay"> Okay</label>
+      <label style="display:inline"><input type="radio" name="mood" value="sad"> Sad</label>
+    </fieldset>
+    <label>Order date <input type="date" name="date"></label>
+    <label>Message <textarea name="message" rows="3"></textarea></label>
+    <label>Screenshots <input type="file" name="files" multiple></label>
+    <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="news"> Send me the newsletter</label>
+    <label>Volume <input type="range" name="volume" min="0" max="10" value="5"></label>
+    <div class="row">
+      <button type="submit">Send feedback</button>
+      <span class="tip" tabindex="0">❓ Help<span role="tooltip">We reply within two working days</span></span>
+    </div>
+  </form>
+  <p role="status" aria-live="polite"></p>
+  <h2>Sort your tasks</h2>
+  <div class="row" style="align-items:stretch">
+    <ul class="lane" aria-label="To do" data-lane="todo"><li draggable="true" id="t1">Pack the order</li><li draggable="true" id="t2">Print the label</li></ul>
+    <ul class="lane" aria-label="Done" data-lane="done"></ul>
+  </div>
+  <p>Shortcut: press <kbd>Control</kbd>+<kbd>K</kbd> to open search. <span id="shortcut"></span></p>
+</main>
+<script src="/app.js"></script>
+<script>
+const f = document.getElementById('fb');
+f.addEventListener('submit', e => {
+  e.preventDefault();
+  const files = [...f.files.files].map(x => x.name).join(', ') || 'no files';
+  document.querySelector('[role=status]').textContent =
+    `Thanks ${f.name.value}! Topic: ${f.topic.value || 'none'}, mood: ${(f.mood.value || 'not given')}, files: ${files}, newsletter: ${f.news.checked ? 'yes' : 'no'}`;
+});
+document.querySelectorAll('.lane li').forEach(li => li.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', li.id)));
+document.querySelectorAll('.lane').forEach(l => {
+  l.addEventListener('dragover', e => e.preventDefault());
+  l.addEventListener('drop', e => { e.preventDefault(); l.appendChild(document.getElementById(e.dataTransfer.getData('text/plain'))); });
+});
+document.addEventListener('keydown', e => { if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); document.getElementById('shortcut').textContent = 'Search opened'; } });
+</script>
+</body>
+</html>
