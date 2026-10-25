@@ -1018,7 +1018,7 @@ DEEPER = {
     'sgd': deep('watch full batch, mini batch and single example paths', f'''
 <p>All three methods head for the same valley, but they take very different routes. The animation fits y = w x + b to 40 noisy points. Each dot on the contour map is one update. Full batch gradient descent glides smoothly. Single example SGD stumbles around, because each step listens to only one point. Mini batches are in between.</p>
 {viz('sgdpath')}
-<p>Why is the noisy path still useful? Each SGD step costs 1 ÷ n of a full batch step, so in the time a full batch takes one careful step, SGD takes n quick ones. Early in training, when you are far from the valley, rough directions are good enough and speed wins. Near the bottom, the noise makes SGD jitter around the best point instead of landing on it, which is why the learning rate is usually lowered later in training.</p>
+<p>The noisy path is still useful for a simple reason. Each SGD step costs 1 ÷ n of a full batch step, so in the time a full batch takes one careful step, SGD takes n quick ones. Early in training, when you are far from the valley, rough directions are good enough and speed wins. Near the bottom, the noise makes SGD jitter around the best point instead of landing on it, which is why the learning rate is usually lowered later in training.</p>
 {fx('Noise in a mini batch gradient', f'spread ∝ {frac("σ", "√B")}', 'σ is how much the per example gradients disagree. Four times the batch size halves the noise, the same √n rule as the standard error in Chapter 10.')}
 '''),
     'landscape': deep('meeting a saddle point', f'''
@@ -1044,7 +1044,7 @@ DEEPER = {
 <p>A schedule is just a function η(t) of the step number. The most common one for large models has a short linear <b>warm up</b> followed by a <b>cosine decay</b>. Set the number of steps and the warm up below and press Play to move along the schedule.</p>
 {viz('sched')}
 {fx('Warm up then cosine', f'η(t) = η<sub>max</sub> × {frac("t", "T<sub>w</sub>")} for t &lt; T<sub>w</sub>, then η<sub>max</sub> × ½(1 + cos(π {frac("t − T<sub>w</sub>", "T − T<sub>w</sub>")}))', 'T<sub>w</sub> is the warm up length and T the total number of steps.')}
-<p>Why warm up at all? At step 1 the weights are random and Adam has not yet seen enough gradients to estimate their typical size, so its step sizes can be wild. A gentle start for the first few hundred or thousand steps lets those statistics settle before the full learning rate is used.</p>
+<p>Warm up exists because of the very first steps. At step 1 the weights are random and Adam has not yet seen enough gradients to estimate their typical size, so its step sizes can be wild. A gentle start for the first few hundred or thousand steps lets those statistics settle before the full learning rate is used.</p>
 '''),
 }
 for _p in PARTS:

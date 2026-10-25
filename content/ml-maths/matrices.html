@@ -3409,7 +3409,7 @@ const OUTS = {"mat_basics": {"py": "shape of A: 2 x 3\nA[1][2] = 6\nA + B = [[11
     const setS = (k, v) => { M[k] = v; $(`[data-sl="${k}"]`, b).value = v; $(`[data-slv="${k}"]`, b).textContent = MV.num(v); };
     const P = Player($('.vz-p', b), t => { setS('a', 2); setS('b', 1); setS('c', 0.5); setS('d', 1.5 - t * 0.125); draw(); }, 450);
     ['a', 'b', 'c', 'd'].forEach(k => wireSlider(b, k, v => { P.pause(); M[k] = v; draw(); }));
-    P.load(9, 0);
+    P.load(11, 0);
   };
 
   /* ----- Gaussian elimination on a 3 × 3 system the reader types ----- */

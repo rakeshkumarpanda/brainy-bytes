@@ -1197,7 +1197,7 @@ DEEPER = {
 {trick('The two rows of A − λI are always multiples of each other (that is what det = 0 means). So you only ever need to read one row to find v.')}
 '''),
     'power': deep('watch power iteration swing round', f'''
-<p>Why does power iteration work? Write the starting vector as a mix of eigenvectors: x = c₁v₁ + c₂v₂. Multiplying by A k times gives c₁λ₁ᵏv₁ + c₂λ₂ᵏv₂. If |λ₁| is bigger than |λ₂|, the first term grows faster and soon swamps the second. Scaling back to length 1 each time only keeps the numbers from overflowing.</p>
+<p>Here is why power iteration works. Write the starting vector as a mix of eigenvectors: x = c₁v₁ + c₂v₂. Multiplying by A k times gives c₁λ₁ᵏv₁ + c₂λ₂ᵏv₂. If |λ₁| is bigger than |λ₂|, the first term grows faster and soon swamps the second. Scaling back to length 1 each time only keeps the numbers from overflowing.</p>
 {fx('Speed of power iteration', 'error after k steps ≈ |λ₂ ÷ λ₁|ᵏ', 'With λ₁ = 5 and λ₂ = 2 the error shrinks by 0.4 each step. With λ₁ = 1 and λ₂ = 0.99 it shrinks by only 1% each step, which is very slow.')}
 <p>Press Play below. The orange arrow is the current guess. Each step multiplies by A (dashed) and then rescales. The guess swings round onto the blue eigenvector line, and the Rayleigh estimate of λ closes in on the true value.</p>
 {viz('poweriter')}

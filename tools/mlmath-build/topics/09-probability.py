@@ -940,14 +940,14 @@ CSS = r'''
 # animation) to the end of the lesson with the same id.
 DEEPER = {
     'rules': deep('the birthday problem, where the complement rule shines', f'''
-<p>How many people must be in a room before two of them probably share a birthday? Most people guess around 180. The real answer is 23. The trick is to work out the chance that <b>nobody</b> shares, using the AND rule, and then take the complement.</p>
+<p>Here is a famous puzzle: how many people must be in a room before two of them probably share a birthday. Most people guess around 180. The real answer is 23. The trick is to work out the chance that <b>nobody</b> shares, using the AND rule, and then take the complement.</p>
 {worked('Chance that at least two of 23 people share a birthday (365 equally likely days)', [
         'Person 1 can have any birthday: chance <span class="eq">365 ÷ 365</span>',
         'Person 2 must avoid that day: <span class="eq">364 ÷ 365</span>. Person 3 must avoid two days: <span class="eq">363 ÷ 365</span>',
         'Keep going to person 23, who must avoid 22 days: <span class="eq">343 ÷ 365</span>',
         'All different (AND, so multiply): <span class="eq">(365 × 364 × … × 343) ÷ 365²³ ≈ 0.493</span>',
         'At least one shared birthday (complement): <span class="eq">1 − 0.493 = 0.507</span>, just over half.'])}
-<p>Why so few? With 23 people there are C(23, 2) = 253 different <b>pairs</b>, and each pair is a fresh chance of a match. Counting pairs, not people, is what intuition misses.</p>
+<p>The number is small because of pairs. With 23 people there are C(23, 2) = 253 different <b>pairs</b>, and each pair is a fresh chance of a match. Counting pairs, not people, is what intuition misses.</p>
 {ml('The same maths decides how often two different items get the same hash code in a hash table or a data deduplication system. With about 1.2 × √N items you reach a 50% chance of at least one collision among N possible codes.')}
 '''),
     'counting': deep('see permutations collapse into combinations', f'''

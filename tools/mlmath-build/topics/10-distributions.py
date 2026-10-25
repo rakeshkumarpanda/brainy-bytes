@@ -1115,7 +1115,7 @@ DEEPER = {
     'expect': deep('the mean is a balance point, and a worked game', f'''
 <p>Picture the PMF bars standing on a see saw. The expected value is exactly the point where the see saw balances. Pull probability towards the right and the balance point moves right. Spread the bars out and the variance grows, even if the balance point stays put. Try it below.</p>
 {viz('balance')}
-{worked('Is this game worth playing? Pay 10 to roll one die and win 4 times the number shown if it is a 5 or 6, nothing otherwise.', [
+{worked('Deciding whether a game is worth it: pay 10 to roll one die and win 4 times the number shown if it is a 5 or 6, nothing otherwise.', [
         'Win amounts: 20 on a five, 24 on a six, 0 otherwise. Each face has chance 1 ÷ 6.',
         'Expected winnings: <span class="eq">(20 + 24) ÷ 6 ≈ 7.33</span>',
         'Expected profit: <span class="eq">7.33 − 10 = −2.67</span> per game',
@@ -1169,7 +1169,7 @@ VIZ_JS += r'''
         const prev = cum; cum += p[k];
         s2 += MV.line(G2, k, cum, k + 1, cum, `mv-v ${k <= x ? 'o' : 'a'}`) + MV.line(G2, k, prev, k, cum, 'mv-v k dash') + MV.dot(G2, k, cum, k <= x ? 'o' : '', 4);
       }
-      s2 += MV.line(G2, 1, 1, 13, 1, 'mv-grid') + MV.text(G2, 1, 1, '1', { dx: 4, dy: -4, cls: 'sm' });
+      s2 += MV.line(G2, 1, 1, 13, 1, 'mv-grid') + MV.text(G2, 13, 1, '1', { dx: -12, dy: -4, cls: 'sm' });
       $('.pc-top', b).innerHTML = MV.svg(G1, s1, 'PMF bars');
       $('.pc-bot', b).innerHTML = MV.svg(G2, s2, 'CDF staircase');
       let ways = 0; for (let k = 2; k <= x; k++) ways += 6 - Math.abs(k - 7);

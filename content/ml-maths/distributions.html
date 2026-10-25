@@ -1155,7 +1155,7 @@ sub,sup{line-height:0}
 <div class="deep"><div class="deep-h">🔍 Going deeper: the mean is a balance point, and a worked game</div>
 <p>Picture the PMF bars standing on a see saw. The expected value is exactly the point where the see saw balances. Pull probability towards the right and the balance point moves right. Spread the bars out and the variance grows, even if the balance point stays put. Try it below.</p>
 <div class="viz" data-viz="balance"></div>
-<div class="viz" data-viz="walk" data-title="Is this game worth playing? Pay 10 to roll one die and win 4 times the number shown if it is a 5 or 6, nothing otherwise." data-sub="Press Play, or step through it one line at a time." data-steps="[&quot;Win amounts: 20 on a five, 24 on a six, 0 otherwise. Each face has chance 1 ÷ 6.&quot;, &quot;Expected winnings: &lt;span class=\&quot;eq\&quot;&gt;(20 + 24) ÷ 6 ≈ 7.33&lt;/span&gt;&quot;, &quot;Expected profit: &lt;span class=\&quot;eq\&quot;&gt;7.33 − 10 = −2.67&lt;/span&gt; per game&quot;, &quot;E[W²] = &lt;span class=\&quot;eq\&quot;&gt;(400 + 576) ÷ 6 ≈ 162.67&lt;/span&gt;, so Var(W) = &lt;span class=\&quot;eq\&quot;&gt;162.67 − 7.33² ≈ 108.9&lt;/span&gt; and SD ≈ 10.4&quot;, &quot;Over 100 games you expect to lose about 267. Any single game is a big gamble (SD 10.4), but the average is predictable.&quot;]"></div>
+<div class="viz" data-viz="walk" data-title="Deciding whether a game is worth it: pay 10 to roll one die and win 4 times the number shown if it is a 5 or 6, nothing otherwise." data-sub="Press Play, or step through it one line at a time." data-steps="[&quot;Win amounts: 20 on a five, 24 on a six, 0 otherwise. Each face has chance 1 ÷ 6.&quot;, &quot;Expected winnings: &lt;span class=\&quot;eq\&quot;&gt;(20 + 24) ÷ 6 ≈ 7.33&lt;/span&gt;&quot;, &quot;Expected profit: &lt;span class=\&quot;eq\&quot;&gt;7.33 − 10 = −2.67&lt;/span&gt; per game&quot;, &quot;E[W²] = &lt;span class=\&quot;eq\&quot;&gt;(400 + 576) ÷ 6 ≈ 162.67&lt;/span&gt;, so Var(W) = &lt;span class=\&quot;eq\&quot;&gt;162.67 − 7.33² ≈ 108.9&lt;/span&gt; and SD ≈ 10.4&quot;, &quot;Over 100 games you expect to lose about 267. Any single game is a big gamble (SD 10.4), but the average is predictable.&quot;]"></div>
 <p>The expected value is also the best single guess if you are scored by squared error. That is why regression models trained with mean squared error learn to predict the conditional mean, E[Y | inputs].</p>
 </div>
 </section>
@@ -3405,13 +3405,13 @@ const OUTS = {"expectation": {"py": "E[X]   = 3.5000\nVar(X) = 2.9167\nSD(X)  = 
     let x = 7;
     function draw() {
       const G1 = MV.frame(440, 200, [1, 13], [0, 0.2]), G2 = MV.frame(440, 180, [1, 13], [0, 1.08]);
-      let s1 = MV.axes(G1, { labels: false, yl: 'P(X = x)' }), s2 = MV.axes(G2, { labels: false, yl: 'F(x) = P(X ≤ x)' }), cum = 0;
+      let s1 = MV.axes(G1, { labels: false, yl: 'P(X = x)' }), s2 = MV.axes(G2, { labels: false, yl: 'F(x)' }), cum = 0;
       for (let k = 2; k <= 12; k++) {
         s1 += `<rect class="mv-bar ${k <= x ? 'o' : ''}" x="${G1.sx(k - 0.38)}" y="${G1.sy(p[k])}" width="${G1.sx(0.76) - G1.sx(0)}" height="${G1.sy(0) - G1.sy(p[k])}" rx="3"/>` + MV.text(G1, k, 0, String(k), { dy: 14, anchor: 'middle', cls: 'sm' });
         const prev = cum; cum += p[k];
         s2 += MV.line(G2, k, cum, k + 1, cum, `mv-v ${k <= x ? 'o' : 'a'}`) + MV.line(G2, k, prev, k, cum, 'mv-v k dash') + MV.dot(G2, k, cum, k <= x ? 'o' : '', 4);
       }
-      s2 += MV.line(G2, 1, 1, 13, 1, 'mv-grid') + MV.text(G2, 1, 1, '1', { dx: 4, dy: -4, cls: 'sm' });
+      s2 += MV.line(G2, 1, 1, 13, 1, 'mv-grid') + MV.text(G2, 13, 1, '1', { dx: -12, dy: -4, cls: 'sm' });
       $('.pc-top', b).innerHTML = MV.svg(G1, s1, 'PMF bars');
       $('.pc-bot', b).innerHTML = MV.svg(G2, s2, 'CDF staircase');
       let ways = 0; for (let k = 2; k <= x; k++) ways += 6 - Math.abs(k - 7);
