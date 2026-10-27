@@ -3190,6 +3190,24 @@ function pwModules() {
         { id: "lab-noresults", title: "Write the search that finds nothing", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-ci", title: "CI/CD pipelines", emoji: "🚦", page: "content/playwright/pw-ci.html",
+        summary: "The framework ran with CI settings, a forgotten test.only failed the run, a wrong secret failed the sign in tests, shards merged into one report, and the smoke tests passed inside the official Docker images in all four languages.",
+        keywords: ["CI", "CD", "pipeline", "GitHub Actions", "workflow", "Jenkins", "GitLab", "Azure", "Docker", "shard", "matrix", "secrets", "artifact", "forbidOnly"],
+        added: "2026-10-24",
+        sections: [
+        { id: "what", title: "What CI does for your tests", emoji: "🚦", group: "Beginner path", keywords: ["CI", "CD", "continuous integration", "pipeline", "pull request", "runner"] },
+        { id: "cimode", title: "Running the suite the way the pipeline does", emoji: "🤖", group: "Lesson", keywords: ["CI=true", "forbidOnly", "retries", "workers", "junit", "junitxml", "surefire", "xdist"] },
+        { id: "github", title: "GitHub Actions, line by line", emoji: "🐙", group: "Lesson", keywords: ["GitHub Actions", "workflow", "yaml", "upload-artifact", "install --with-deps", "triggers", "cron", "required check"] },
+        { id: "secrets", title: "Secrets and settings per environment", emoji: "🔐", group: "Lesson", keywords: ["secrets", "variables", "vars", "environment", "BASE_URL", "masked", "credentials"] },
+        { id: "shards", title: "Shards with a matrix, and one merged report", emoji: "🧩", group: "Lesson", keywords: ["matrix", "shard", "blob", "merge-reports", "pytest-split", "fail-fast", "parallel jobs"] },
+        { id: "docker", title: "The official Docker images", emoji: "🐳", group: "Lesson", keywords: ["docker", "image", "container", "ipc=host", "init", "noble", "mcr.microsoft.com"] },
+        { id: "others", title: "Jenkins, GitLab and Azure DevOps", emoji: "🏭", group: "Lesson", keywords: ["Jenkins", "Jenkinsfile", "GitLab", "Azure DevOps", "Azure Pipelines", "CircleCI", "Bitbucket"] },
+        { id: "red", title: "When the pipeline goes red", emoji: "🧯", group: "Lesson", keywords: ["failure", "artifact", "trace", "last-failed", "flaky", "rerun"] },
+        { id: "lab-nowait", title: "Take out the fixed wait", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-relative", title: "Let the config choose the address", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];

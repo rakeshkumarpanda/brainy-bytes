@@ -16,6 +16,8 @@ PW = os.path.dirname(HERE)
 ROOT = os.path.dirname(os.path.dirname(PW))
 IMG = os.path.join(ROOT, 'content', 'playwright', 'img')
 FW = os.path.join(PW, 'frameworks')
+# folders that runs leave behind and Git ignores
+SKIP = ('__pycache__', 'node_modules', 'target', 'traces', 'test-results', 'playwright-report', 'blob-report', 'results', '.pytest_cache')
 
 NOTES = {
     'ts': {'.github/workflows': 'the CI pipeline', 'src': 'the framework code', 'src/api': 'fast set up through the API',
@@ -33,7 +35,8 @@ NOTES = {
 NOTES['js'] = NOTES['ts']
 FILE_NOTES = {'playwright.config.ts': 'runner settings', 'playwright.config.js': 'runner settings', 'conftest.py': 'fixtures',
               'pytest.ini': 'runner settings', 'testng.xml': 'the full suite', 'testng-smoke.xml': 'the smoke suite', 'pom.xml': 'dependencies',
-              '.env.example': 'settings to copy', 'requirements.txt': 'exact versions', 'package.json': 'dependencies and scripts'}
+              '.env.example': 'settings to copy', 'requirements.txt': 'exact versions', 'package.json': 'dependencies and scripts',
+              'package-lock.json': 'exact versions'}
 
 ICON = {'.ts': ('TS', '#3178c6'), '.js': ('JS', '#e8c400'), '.py': ('PY', '#3b7bbf'), '.java': ('J', '#e76f00'), '.json': ('{}', '#c9a227'),
         '.xml': ('<>', '#e37933'), '.yml': ('!', '#cb171e'), '.md': ('M', '#519aba'), '.properties': ('⚙', '#9aa4ae'),
@@ -51,7 +54,7 @@ def rows(base, rel='', depth=0):
     out = []
     full = os.path.join(base, rel)
     names = sorted(os.listdir(full), key=str.lower)
-    dirs = [n for n in names if os.path.isdir(os.path.join(full, n)) and n not in ('__pycache__', 'node_modules')]
+    dirs = [n for n in names if os.path.isdir(os.path.join(full, n)) and n not in SKIP]
     files = [n for n in names if os.path.isfile(os.path.join(full, n)) and n != '__init__.py']
     for d in dirs:
         r = f'{rel}/{d}'.lstrip('/')

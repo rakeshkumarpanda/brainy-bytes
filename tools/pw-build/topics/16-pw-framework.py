@@ -6,7 +6,11 @@ MODULE = ('🏗️', 'Framework design', 'pw-framework', 'Page objects and compo
 
 FW = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frameworks')
 LANGS = {'ts': 'TypeScript', 'js': 'JavaScript', 'python': 'Python', 'java': 'Java'}
-NOT_RUN = ('README.md', '.gitignore', '.env.example', 'requirements.txt')
+NOT_RUN = ('README.md', '.gitignore', '.env.example', 'requirements.txt', 'package-lock.json')
+
+
+# folders that runs leave behind and Git ignores
+SKIP_DIRS = ('__pycache__', 'node_modules', 'target', 'traces', 'test-results', 'playwright-report', 'blob-report', 'results', '.pytest_cache')
 
 
 def read_tree(lang):
@@ -14,7 +18,7 @@ def read_tree(lang):
     base = os.path.join(FW, lang)
     out = {}
     for d, dirs, files in os.walk(base):
-        dirs[:] = sorted(x for x in dirs if x not in ('__pycache__', 'node_modules'))
+        dirs[:] = sorted(x for x in dirs if x not in SKIP_DIRS)
         for f in sorted(files):
             rel = os.path.relpath(os.path.join(d, f), base).replace(os.sep, '/')
             out[rel] = open(os.path.join(d, f), encoding='utf-8').read().rstrip('\n')
@@ -111,7 +115,8 @@ WHY_TS = {'.github': 'GitHub settings', '.github/workflows': 'CI pipelines',
           'tests/cart/add-to-cart.spec.ts': 'Adding from the cards, then checking the cart page.',
           'tests/cart/checkout.spec.ts': 'A cart filled through the API, then an order placed in the UI.',
           '.env.example': 'The settings a new team member copies to .env. The real .env is never committed.',
-          '.gitignore': 'Keeps reports, results, packages and .env out of Git.', 'package.json': 'Exact versions and short npm scripts such as test:smoke.',
+          '.gitignore': 'Keeps reports, results, packages and .env out of Git.',
+          'package-lock.json': 'The exact version of every package and of the packages they need. npm ci installs exactly these.', 'package.json': 'Exact versions and short npm scripts such as test:smoke.',
           'playwright.config.ts': 'Runner settings: folders, parallel runs, retries and reporters on CI, traces and evidence.',
           'README.md': 'How to install and run, for the next person.', 'tsconfig.json': 'TypeScript settings for type checking.'}
 WHY_JS = {k.replace('.ts', '.js'): v for k, v in WHY_TS.items() if k != 'tsconfig.json'}

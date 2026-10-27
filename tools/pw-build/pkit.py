@@ -126,7 +126,7 @@ TSCONFIG = json.dumps({'compilerOptions': {'target': 'ES2022', 'module': 'ESNext
 
 def _files(name_or_files, code, folder):
     if isinstance(name_or_files, dict):
-        return {(k if '/' in k or k.startswith(('pom', 'playwright', 'pytest', 'conftest', 'package', 'tsconfig', 'testng', '.env')) else folder + k): v
+        return {(k if '/' in k or k.startswith(('pom', 'playwright', 'pytest', 'conftest', 'package', 'tsconfig', 'testng', '.env', 'requirements')) else folder + k): v
                 for k, v in name_or_files.items()}
     return {folder + name_or_files: code}
 

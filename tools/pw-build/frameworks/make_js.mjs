@@ -1,6 +1,6 @@
 // Writes frameworks/js from frameworks/ts: the same framework in plain JavaScript.
 // Node removes the TypeScript types, then this script tidies what is left and adds .js to local imports.
-// Run: node tools/pw-build/frameworks/make_js.mjs
+// Run: node tools/pw-build/frameworks/make_js.mjs, then npm install --package-lock-only in frameworks/js
 import { stripTypeScriptTypes } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,7 +22,7 @@ function convert(src) {
 
 for (const rel of fs.readdirSync(from, { recursive: true })) {
   const src = path.join(from, rel);
-  if (fs.statSync(src).isDirectory() || rel === 'tsconfig.json') continue;
+  if (fs.statSync(src).isDirectory() || rel === 'tsconfig.json' || rel === 'package-lock.json') continue;  // js gets its own lock file
   let out = rel.replace(/\.ts$/, '.js');
   let body = fs.readFileSync(src, 'utf8');
   if (rel.endsWith('.ts')) body = convert(body);
