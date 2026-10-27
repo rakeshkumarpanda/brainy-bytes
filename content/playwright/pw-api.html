@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API testing and signing in once · Playwright</title>
+<meta name="description" content="The request fixture, APIRequestContext and playwright.request, GET, POST, PATCH and DELETE, status codes and toBeOK, extraHTTPHeaders and Bearer tokens, page.request with shared cookies, addInitScript, storageState, setup projects, browser_context_args and multiple roles.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🛰️ Network and APIs</span><span>›</span><span>Chapter 12 of 12</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔑</span><div><h1>API testing and signing in once</h1><p class="lead">Test the server directly with the request client, send tokens in headers, set up data through the API before a short UI check, and sign in once so every test starts signed in.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 24 min read</span><span class="chip">📚 4 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 16 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 1 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>Many checks do not need a browser at all, and many tests only need a browser for the last step. Calling the API directly makes those tests fast, and saving the sign in once makes every other test faster.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#api" class="easy"><span>🔌</span>API tests without a browser</a><a href="#token"><span>🔑</span>Tokens and headers</a><a href="#mix"><span>🧩</span>API for set up, page for checks</a><a href="#state"><span>💾</span>Sign in once for the whole suite</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="api" data-say="api"><div class="sec-num">Part 1</div><h2><span class="sec-em">🔌</span><span>API tests without a browser</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Playwright can call an HTTP API directly, with no page at all. These tests are fast, and they check the rules of the server: status codes, data and error messages. Each language has a request client that remembers the base URL and the cookies.</p>
+<div class="tw"><table class="jt "><tr><th></th><th>Playwright Test</th><th>Python</th><th>Java</th></tr><tr><td>the client</td><td>the request fixture</td><td>playwright.request.new_context()</td><td>the APIRequestContext fixture, or playwright.request().newContext()</td></tr><tr><td>send JSON</td><td>request.post(url, { data })</td><td>api.post(url, data=...)</td><td>request.post(url, RequestOptions.create().setData(...))</td></tr><tr><td>check status 200 to 299</td><td>await expect(response).toBeOK()</td><td>expect(response).to_be_ok()</td><td>assertThat(response).isOK()</td></tr><tr><td>read JSON</td><td>await response.json()</td><td>response.json()</td><td>response.text() and a JSON library</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="crud" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Create, read, update and delete through the API · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/PeopleApiTest.java</div><pre class="src" data-file="src/test/java/com/brainy/PeopleApiTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.google.gson.<span class="t">JsonObject</span>;
+<span class="k">import</span> com.google.gson.<span class="t">JsonParser</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">APIRequestContext</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">APIResponse</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">RequestOptions</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.util.<span class="t">Map</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertEquals;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ApiOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">PeopleApiTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> createReadUpdateAndDeleteAPerson(<span class="t">APIRequestContext</span> request) {
+    <span class="t">APIResponse</span> created = request.post(<span class="s">"/api/people"</span>,
+        <span class="t">RequestOptions</span>.create().setData(<span class="t">Map</span>.of(<span class="s">"name"</span>, <span class="s">"Kiran"</span>, <span class="s">"email"</span>, <span class="s">"kiran@shop.example"</span>)));
+    assertEquals(<span class="n">201</span>, created.status());
+    <span class="k">int</span> id = <span class="t">JsonParser</span>.parseString(created.text()).getAsJsonObject().get(<span class="s">"id"</span>).getAsInt();
+    assertEquals(<span class="s">"/api/people/"</span> + id, created.headers().get(<span class="s">"location"</span>));
+
+    <span class="t">APIResponse</span> read = request.get(<span class="s">"/api/people/"</span> + id);
+    assertThat(read).isOK();
+    <span class="t">JsonObject</span> kiran = <span class="t">JsonParser</span>.parseString(read.text()).getAsJsonObject();
+    assertEquals(<span class="s">"Kiran"</span>, kiran.get(<span class="s">"name"</span>).getAsString());
+    assertEquals(<span class="s">"kiran@shop.example"</span>, kiran.get(<span class="s">"email"</span>).getAsString());
+
+    <span class="t">APIResponse</span> updated = request.patch(<span class="s">"/api/people/"</span> + id, <span class="t">RequestOptions</span>.create().setData(<span class="t">Map</span>.of(<span class="s">"city"</span>, <span class="s">"Pune"</span>)));
+    assertEquals(<span class="s">"Pune"</span>, <span class="t">JsonParser</span>.parseString(updated.text()).getAsJsonObject().get(<span class="s">"city"</span>).getAsString());
+
+    assertEquals(<span class="n">204</span>, request.delete(<span class="s">"/api/people/"</span> + id).status());
+    assertEquals(<span class="n">404</span>, request.get(<span class="s">"/api/people/"</span> + id).status());
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> aBadEmailIsRefused(<span class="t">APIRequestContext</span> request) {
+    <span class="t">APIResponse</span> response = request.post(<span class="s">"/api/people"</span>,
+        <span class="t">RequestOptions</span>.create().setData(<span class="t">Map</span>.of(<span class="s">"name"</span>, <span class="s">"Nobody"</span>, <span class="s">"email"</span>, <span class="s">"not-an-email"</span>)));
+    assertEquals(<span class="n">422</span>, response.status());
+    assertEquals(<span class="s">"{\"error\":\"name and a valid email are required\"}"</span>, response.text());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.PeopleApiTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.933 s -- in com.brainy.PeopleApiTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 conftest.py</div><pre class="src" data-file="conftest.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">APIRequestContext</span>, <span class="t">Playwright</span>
+
+
+<span class="a">@pytest</span>.fixture
+<span class="k">def</span> api(playwright: <span class="t">Playwright</span>, base_url: str) -&gt; <span class="t">APIRequestContext</span>:
+    context = playwright.request.new_context(base_url=base_url)
+    <span class="k">yield</span> context
+    context.dispose()</pre><div class="fname">📄 tests/test_people_api.py</div><pre class="src" data-file="tests/test_people_api.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">APIRequestContext</span>, expect
+
+
+<span class="k">def</span> test_create_read_update_and_delete_a_person(api: <span class="t">APIRequestContext</span>):
+    created = api.post(<span class="s">"/api/people"</span>, data={<span class="s">"name"</span>: <span class="s">"Kiran"</span>, <span class="s">"email"</span>: <span class="s">"kiran@shop.example"</span>})
+    <span class="k">assert</span> created.status == <span class="n">201</span>
+    kiran = created.json()
+    <span class="k">assert</span> created.headers[<span class="s">"location"</span>] == f<span class="s">"/api/people/{kiran['id']}"</span>
+
+    read = api.get(f<span class="s">"/api/people/{kiran['id']}"</span>)
+    expect(read).to_be_ok()
+    <span class="k">assert</span> read.json() == {<span class="s">"id"</span>: kiran[<span class="s">"id"</span>], <span class="s">"name"</span>: <span class="s">"Kiran"</span>, <span class="s">"email"</span>: <span class="s">"kiran@shop.example"</span>, <span class="s">"city"</span>: <span class="k">None</span>}
+
+    updated = api.patch(f<span class="s">"/api/people/{kiran['id']}"</span>, data={<span class="s">"city"</span>: <span class="s">"Pune"</span>})
+    <span class="k">assert</span> updated.json()[<span class="s">"city"</span>] == <span class="s">"Pune"</span>
+
+    <span class="k">assert</span> api.delete(f<span class="s">"/api/people/{kiran['id']}"</span>).status == <span class="n">204</span>
+    <span class="k">assert</span> api.get(f<span class="s">"/api/people/{kiran['id']}"</span>).status == <span class="n">404</span>
+
+
+<span class="k">def</span> test_a_bad_email_is_refused(api: <span class="t">APIRequestContext</span>):
+    response = api.post(<span class="s">"/api/people"</span>, data={<span class="s">"name"</span>: <span class="s">"Nobody"</span>, <span class="s">"email"</span>: <span class="s">"not-an-email"</span>})
+    <span class="k">assert</span> response.status == <span class="n">422</span>
+    <span class="k">assert</span> response.json() == {<span class="s">"error"</span>: <span class="s">"name and a valid email are required"</span>}</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_people_api.py::test_create_read_update_and_delete_a_person PASSED [ 50%]
+tests/test_people_api.py::test_a_bad_email_is_refused PASSED             [100%]
+
+============================== 2 passed in 0.70s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/people-api.spec.js</div><pre class="src" data-file="tests/people-api.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'create, read, update and delete a person'</span>, <span class="k">async</span> ({ request }) =&gt; {
+  <span class="k">const</span> created = <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Kiran'</span>, email: <span class="s">'kiran@shop.example'</span> } });
+  expect(created.status()).toBe(<span class="n">201</span>);
+  <span class="k">const</span> kiran = <span class="k">await</span> created.json();
+  expect(created.headers()[<span class="s">'location'</span>]).toBe(<span class="s">`/api/people/${kiran.id}`</span>);
+
+  <span class="k">const</span> read = <span class="k">await</span> request.<span class="k">get</span>(<span class="s">`/api/people/${kiran.id}`</span>);
+  <span class="k">await</span> expect(read).toBeOK();
+  expect(<span class="k">await</span> read.json()).toEqual({ id: kiran.id, name: <span class="s">'Kiran'</span>, email: <span class="s">'kiran@shop.example'</span>, city: <span class="k">null</span> });
+
+  <span class="k">const</span> updated = <span class="k">await</span> request.patch(<span class="s">`/api/people/${kiran.id}`</span>, { data: { city: <span class="s">'Pune'</span> } });
+  expect((<span class="k">await</span> updated.json()).city).toBe(<span class="s">'Pune'</span>);
+
+  expect((<span class="k">await</span> request.<span class="k">delete</span>(<span class="s">`/api/people/${kiran.id}`</span>)).status()).toBe(<span class="n">204</span>);
+  expect((<span class="k">await</span> request.<span class="k">get</span>(<span class="s">`/api/people/${kiran.id}`</span>)).status()).toBe(<span class="n">404</span>);
+});
+
+test(<span class="s">'a bad email is refused'</span>, <span class="k">async</span> ({ request }) =&gt; {
+  <span class="k">const</span> response = <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Nobody'</span>, email: <span class="s">'not-an-email'</span> } });
+  expect(response.status()).toBe(<span class="n">422</span>);
+  expect(<span class="k">await</span> response.json()).toEqual({ error: <span class="s">'name and a valid email are required'</span> });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/people-api.spec.js:3:1 › create, read, update and delete a person (80ms)
+  ✓  2 [chromium] › tests/people-api.spec.js:20:1 › a bad email is refused (39ms)
+
+  2 passed (1.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/people-api.spec.ts</div><pre class="src" data-file="tests/people-api.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'create, read, update and delete a person'</span>, <span class="k">async</span> ({ request }) =&gt; {
+  <span class="k">const</span> created = <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Kiran'</span>, email: <span class="s">'kiran@shop.example'</span> } });
+  expect(created.status()).toBe(<span class="n">201</span>);
+  <span class="k">const</span> kiran = <span class="k">await</span> created.json();
+  expect(created.headers()[<span class="s">'location'</span>]).toBe(<span class="s">`/api/people/${kiran.id}`</span>);
+
+  <span class="k">const</span> read = <span class="k">await</span> request.<span class="k">get</span>(<span class="s">`/api/people/${kiran.id}`</span>);
+  <span class="k">await</span> expect(read).toBeOK();
+  expect(<span class="k">await</span> read.json()).toEqual({ id: kiran.id, name: <span class="s">'Kiran'</span>, email: <span class="s">'kiran@shop.example'</span>, city: <span class="k">null</span> });
+
+  <span class="k">const</span> updated = <span class="k">await</span> request.patch(<span class="s">`/api/people/${kiran.id}`</span>, { data: { city: <span class="s">'Pune'</span> } });
+  expect((<span class="k">await</span> updated.json()).city).toBe(<span class="s">'Pune'</span>);
+
+  expect((<span class="k">await</span> request.<span class="k">delete</span>(<span class="s">`/api/people/${kiran.id}`</span>)).status()).toBe(<span class="n">204</span>);
+  expect((<span class="k">await</span> request.<span class="k">get</span>(<span class="s">`/api/people/${kiran.id}`</span>)).status()).toBe(<span class="n">404</span>);
+});
+
+test(<span class="s">'a bad email is refused'</span>, <span class="k">async</span> ({ request }) =&gt; {
+  <span class="k">const</span> response = <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Nobody'</span>, email: <span class="s">'not-an-email'</span> } });
+  expect(response.status()).toBe(<span class="n">422</span>);
+  expect(<span class="k">await</span> response.json()).toEqual({ error: <span class="s">'name and a valid email are required'</span> });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/people-api.spec.ts:3:1 › create, read, update and delete a person (86ms)
+  ✓  2 [chromium] › tests/people-api.spec.ts:20:1 › a bad email is refused (31ms)
+
+  2 passed (1.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>No browser page was opened. The test talked to the API directly: it created Kiran, read him back, moved him to Pune, deleted him, and checked that he was gone. The second test checked that the API refuses a bad email with 422 and a clear message.</p></div></div>
+</section>
+<section class="card reveal jsec" id="token" data-say="token"><div class="sec-num">Part 2</div><h2><span class="sec-em">🔑</span><span>Tokens and headers</span></h2>
+
+<p>Most APIs want proof of who is calling. The shop gives a token when you sign in, and accepts it in an <code>Authorization: Bearer</code> header. A request client can send that header with every call.</p>
+<div class="codewrap tests pw4" data-k="token" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Sign in through the API and send the token · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/TokenTest.java</div><pre class="src" data-file="src/test/java/com/brainy/TokenTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.google.gson.<span class="t">JsonObject</span>;
+<span class="k">import</span> com.google.gson.<span class="t">JsonParser</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">APIRequest</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">APIRequestContext</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Playwright</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">RequestOptions</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.util.<span class="t">Map</span>;
+
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertEquals;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ApiOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">TokenTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theTokenOpensTheCart(<span class="t">APIRequestContext</span> request, <span class="t">Playwright</span> playwright) {
+    assertEquals(<span class="n">401</span>, request.get(<span class="s">"/api/cart"</span>).status());      <span class="c">// nobody is signed in yet</span>
+
+    <span class="t">JsonObject</span> login = <span class="t">JsonParser</span>.parseString(request.post(<span class="s">"/api/login"</span>,
+        <span class="t">RequestOptions</span>.create().setData(<span class="t">Map</span>.of(<span class="s">"email"</span>, <span class="s">"asha@shop.example"</span>, <span class="s">"password"</span>, <span class="s">"s3cret"</span>))).text()).getAsJsonObject();
+    <span class="t">System</span>.out.println(<span class="s">"signed in as "</span> + login.get(<span class="s">"name"</span>).getAsString());
+
+    <span class="c">// A fresh client that sends the token with every call, and has no cookies.</span>
+    <span class="t">APIRequestContext</span> asha = playwright.request().newContext(<span class="k">new</span> <span class="t">APIRequest</span>.<span class="t">NewContextOptions</span>()
+        .setBaseURL(<span class="s">"http://localhost:4173"</span>)
+        .setExtraHTTPHeaders(<span class="t">Map</span>.of(<span class="s">"Authorization"</span>, <span class="s">"Bearer "</span> + login.get(<span class="s">"token"</span>).getAsString())));
+    asha.post(<span class="s">"/api/cart"</span>, <span class="t">RequestOptions</span>.create().setData(<span class="t">Map</span>.of(<span class="s">"productId"</span>, <span class="n">2</span>, <span class="s">"qty"</span>, <span class="n">2</span>)));
+    <span class="t">JsonObject</span> cart = <span class="t">JsonParser</span>.parseString(asha.get(<span class="s">"/api/cart"</span>).text()).getAsJsonObject();
+    <span class="t">System</span>.out.println(cart);
+    assertEquals(<span class="n">2</span>, cart.get(<span class="s">"count"</span>).getAsInt());
+    assertEquals(<span class="n">398</span>, cart.get(<span class="s">"total"</span>).getAsInt());
+    asha.dispose();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.TokenTest
+signed in as Asha
+{&quot;items&quot;:[{&quot;id&quot;:2,&quot;name&quot;:&quot;Coffee mug&quot;,&quot;price&quot;:199,&quot;qty&quot;:2}],&quot;count&quot;:2,&quot;total&quot;:398}
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.212 s -- in com.brainy.TokenTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_token.py</div><pre class="src" data-file="tests/test_token.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">APIRequestContext</span>, <span class="t">Playwright</span>
+
+
+<span class="k">def</span> test_the_token_opens_the_cart(api: <span class="t">APIRequestContext</span>, playwright: <span class="t">Playwright</span>, base_url: str):
+    <span class="k">assert</span> api.get(<span class="s">"/api/cart"</span>).status == <span class="n">401</span>          <span class="c"># nobody is signed in yet</span>
+
+    login = api.post(<span class="s">"/api/login"</span>, data={<span class="s">"email"</span>: <span class="s">"asha@shop.example"</span>, <span class="s">"password"</span>: <span class="s">"s3cret"</span>})
+    token, name = login.json()[<span class="s">"token"</span>], login.json()[<span class="s">"name"</span>]
+    print(f<span class="s">"\nsigned in as {name}"</span>)
+
+    <span class="c"># A fresh client that sends the token with every call, and has no cookies.</span>
+    asha = playwright.request.new_context(base_url=base_url, extra_http_headers={<span class="s">"Authorization"</span>: f<span class="s">"Bearer {token}"</span>})
+    asha.post(<span class="s">"/api/cart"</span>, data={<span class="s">"productId"</span>: <span class="n">2</span>, <span class="s">"qty"</span>: <span class="n">2</span>})
+    cart = asha.get(<span class="s">"/api/cart"</span>).json()
+    print(cart)
+    <span class="k">assert</span> cart[<span class="s">"count"</span>] == <span class="n">2</span>
+    <span class="k">assert</span> cart[<span class="s">"total"</span>] == <span class="n">398</span>
+    asha.dispose()</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -s -q</pre></div><div class="out"><span>Terminal output</span><pre>signed in as Asha
+{&#x27;items&#x27;: [{&#x27;id&#x27;: 2, &#x27;name&#x27;: &#x27;Coffee mug&#x27;, &#x27;price&#x27;: 199, &#x27;qty&#x27;: 2}], &#x27;count&#x27;: 2, &#x27;total&#x27;: 398}
+.
+1 passed in 0.94s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/token.spec.js</div><pre class="src" data-file="tests/token.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the token opens the cart'</span>, <span class="k">async</span> ({ request, playwright }) =&gt; {
+  expect((<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/cart'</span>)).status()).toBe(<span class="n">401</span>);      <span class="c">// nobody is signed in yet</span>
+
+  <span class="k">const</span> login = <span class="k">await</span> request.post(<span class="s">'/api/login'</span>, { data: { email: <span class="s">'asha@shop.example'</span>, password: <span class="s">'s3cret'</span> } });
+  <span class="k">const</span> { token, name } = <span class="k">await</span> login.json();
+  console.log(<span class="s">`signed in as ${name}`</span>);
+
+  <span class="c">// A fresh client that sends the token with every call, and has no cookies.</span>
+  <span class="k">const</span> asha = <span class="k">await</span> playwright.request.newContext({
+    baseURL: <span class="s">'http://localhost:4173'</span>,
+    extraHTTPHeaders: { <span class="t">Authorization</span>: <span class="s">`Bearer ${token}`</span> },
+  });
+  <span class="k">await</span> asha.post(<span class="s">'/api/cart'</span>, { data: { productId: <span class="n">2</span>, qty: <span class="n">2</span> } });
+  <span class="k">const</span> cart = <span class="k">await</span> (<span class="k">await</span> asha.<span class="k">get</span>(<span class="s">'/api/cart'</span>)).json();
+  console.log(cart);
+  expect(cart.count).toBe(<span class="n">2</span>);
+  expect(cart.total).toBe(<span class="n">398</span>);
+  <span class="k">await</span> asha.dispose();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+signed in as Asha
+{
+  items: [ { id: 2, name: &#x27;Coffee mug&#x27;, price: 199, qty: 2 } ],
+  count: 2,
+  total: 398
+}
+  ✓  1 [chromium] › tests/token.spec.js:3:1 › the token opens the cart (254ms)
+
+  1 passed (1.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/token.spec.ts</div><pre class="src" data-file="tests/token.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the token opens the cart'</span>, <span class="k">async</span> ({ request, playwright }) =&gt; {
+  expect((<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/cart'</span>)).status()).toBe(<span class="n">401</span>);      <span class="c">// nobody is signed in yet</span>
+
+  <span class="k">const</span> login = <span class="k">await</span> request.post(<span class="s">'/api/login'</span>, { data: { email: <span class="s">'asha@shop.example'</span>, password: <span class="s">'s3cret'</span> } });
+  <span class="k">const</span> { token, name } = <span class="k">await</span> login.json();
+  console.log(<span class="s">`signed in as ${name}`</span>);
+
+  <span class="c">// A fresh client that sends the token with every call, and has no cookies.</span>
+  <span class="k">const</span> asha = <span class="k">await</span> playwright.request.newContext({
+    baseURL: <span class="s">'http://localhost:4173'</span>,
+    extraHTTPHeaders: { <span class="t">Authorization</span>: <span class="s">`Bearer ${token}`</span> },
+  });
+  <span class="k">await</span> asha.post(<span class="s">'/api/cart'</span>, { data: { productId: <span class="n">2</span>, qty: <span class="n">2</span> } });
+  <span class="k">const</span> cart = <span class="k">await</span> (<span class="k">await</span> asha.<span class="k">get</span>(<span class="s">'/api/cart'</span>)).json();
+  console.log(cart);
+  expect(cart.count).toBe(<span class="n">2</span>);
+  expect(cart.total).toBe(<span class="n">398</span>);
+  <span class="k">await</span> asha.dispose();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+signed in as Asha
+{
+  items: [ { id: 2, name: &#x27;Coffee mug&#x27;, price: 199, qty: 2 } ],
+  count: 2,
+  total: 398
+}
+  ✓  1 [chromium] › tests/token.spec.ts:3:1 › the token opens the cart (273ms)
+
+  1 passed (1.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>Without signing in, the cart answered 401. After the login call, a new client sent the token in an Authorization header with every request, and two mugs went into Asha's cart for ₹398. The new client had no cookies, so the token alone was enough.</p></div></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Keep real passwords and tokens out of test code. Read them from environment variables, such as process.env.SHOP_PASSWORD, os.environ["SHOP_PASSWORD"] or System.getenv("SHOP_PASSWORD"), and set them as secrets in CI. The framework chapter shows a .env file for local runs.</div></div>
+</section>
+<section class="card reveal jsec" id="mix" data-say="mix"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧩</span><span>API for set up, page for checks</span></h2>
+
+<p>A UI test that clicks through sign in and three product pages to fill a cart is slow, and it fails when any of those pages has a problem. A common pattern is to set up through the API and use the page only for what the test is about.</p>
+<div class="codewrap tests pw4" data-k="mix" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Arrange through the API, check through the page · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/CartSetupTest.java</div><pre class="src" data-file="src/test/java/com/brainy/CartSetupTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.google.gson.<span class="t">JsonParser</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">RequestOptions</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.util.<span class="t">Map</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">CartSetupTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> aLampAddedThroughTheApiShowsInTheCartPage(<span class="t">Page</span> page) {
+    <span class="c">// Sign in through the API. page.request() shares cookies with the page.</span>
+    <span class="t">String</span> token = <span class="t">JsonParser</span>.parseString(page.request().post(<span class="s">"/api/login"</span>,
+        <span class="t">RequestOptions</span>.create().setData(<span class="t">Map</span>.of(<span class="s">"email"</span>, <span class="s">"asha@shop.example"</span>, <span class="s">"password"</span>, <span class="s">"s3cret"</span>))).text())
+        .getAsJsonObject().get(<span class="s">"token"</span>).getAsString();
+    page.addInitScript(<span class="s">"localStorage.setItem('token', '"</span> + token + <span class="s">"')"</span>);    <span class="c">// the shop keeps its token here</span>
+
+    page.request().post(<span class="s">"/api/cart"</span>, <span class="t">RequestOptions</span>.create().setData(<span class="t">Map</span>.of(<span class="s">"productId"</span>, <span class="n">3</span>)));   <span class="c">// arrange the cart without clicking</span>
+
+    page.navigate(<span class="s">"/cart"</span>);
+    assertThat(page.getByText(<span class="s">"Hello, Asha"</span>)).isVisible();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">ROW</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Desk lamp"</span>))).containsText(<span class="s">"₹1,299"</span>);
+    assertThat(page.getByTestId(<span class="s">"cart-count"</span>)).hasText(<span class="s">"1"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.CartSetupTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.003 s -- in com.brainy.CartSetupTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_cart_setup.py</div><pre class="src" data-file="tests/test_cart_setup.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_a_lamp_added_through_the_api_shows_in_the_cart_page(page: <span class="t">Page</span>):
+    <span class="c"># Sign in through the API. page.request shares cookies with the page.</span>
+    login = page.request.post(<span class="s">"/api/login"</span>, data={<span class="s">"email"</span>: <span class="s">"asha@shop.example"</span>, <span class="s">"password"</span>: <span class="s">"s3cret"</span>})
+    token = login.json()[<span class="s">"token"</span>]
+    page.add_init_script(f<span class="s">"localStorage.setItem('token', '{token}')"</span>)     <span class="c"># the shop keeps its token here</span>
+
+    page.request.post(<span class="s">"/api/cart"</span>, data={<span class="s">"productId"</span>: <span class="n">3</span>})                  <span class="c"># arrange the cart without clicking</span>
+
+    page.goto(<span class="s">"/cart"</span>)
+    expect(page.get_by_text(<span class="s">"Hello, Asha"</span>)).to_be_visible()
+    expect(page.get_by_role(<span class="s">"row"</span>, name=<span class="s">"Desk lamp"</span>)).to_contain_text(<span class="s">"₹1,299"</span>)
+    expect(page.get_by_test_id(<span class="s">"cart-count"</span>)).to_have_text(<span class="s">"1"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_cart_setup.py::test_a_lamp_added_through_the_api_shows_in_the_cart_page[chromium] PASSED [100%]
+
+============================== 1 passed in 1.39s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/cart-setup.spec.js</div><pre class="src" data-file="tests/cart-setup.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'a lamp added through the API shows in the cart page'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="c">// Sign in through the API. page.request shares cookies with the page.</span>
+  <span class="k">const</span> login = <span class="k">await</span> page.request.post(<span class="s">'/api/login'</span>, { data: { email: <span class="s">'asha@shop.example'</span>, password: <span class="s">'s3cret'</span> } });
+  <span class="k">const</span> { token } = <span class="k">await</span> login.json();
+  <span class="k">await</span> page.addInitScript(t =&gt; localStorage.setItem(<span class="s">'token'</span>, t), token);   <span class="c">// the shop keeps its token here</span>
+
+  <span class="k">await</span> page.request.post(<span class="s">'/api/cart'</span>, { data: { productId: <span class="n">3</span> } });         <span class="c">// arrange the cart without clicking</span>
+
+  <span class="k">await</span> page.goto(<span class="s">'/cart'</span>);
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'row'</span>, { name: /<span class="t">Desk</span> lamp/ })).toContainText(<span class="s">'₹1,299'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'1'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/cart-setup.spec.js:3:1 › a lamp added through the API shows in the cart page (605ms)
+
+  1 passed (2.5s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/cart-setup.spec.ts</div><pre class="src" data-file="tests/cart-setup.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'a lamp added through the API shows in the cart page'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="c">// Sign in through the API. page.request shares cookies with the page.</span>
+  <span class="k">const</span> login = <span class="k">await</span> page.request.post(<span class="s">'/api/login'</span>, { data: { email: <span class="s">'asha@shop.example'</span>, password: <span class="s">'s3cret'</span> } });
+  <span class="k">const</span> { token } = <span class="k">await</span> login.json();
+  <span class="k">await</span> page.addInitScript((t: <span class="k">string</span>) =&gt; localStorage.setItem(<span class="s">'token'</span>, t), token);   <span class="c">// the shop keeps its token here</span>
+
+  <span class="k">await</span> page.request.post(<span class="s">'/api/cart'</span>, { data: { productId: <span class="n">3</span> } });         <span class="c">// arrange the cart without clicking</span>
+
+  <span class="k">await</span> page.goto(<span class="s">'/cart'</span>);
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'row'</span>, { name: /<span class="t">Desk</span> lamp/ })).toContainText(<span class="s">'₹1,299'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'1'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/cart-setup.spec.ts:3:1 › a lamp added through the API shows in the cart page (594ms)
+
+  1 passed (2.3s)</pre></div></div><div class="note-out"><span>What happens</span><p>The test signed in and filled the cart with two API calls, then opened the cart page once and checked what a customer would see. The UI part is short and fast, and it tests only what the UI must show. Because the shop keeps its token in local storage, addInitScript puts it there before any shop script runs.</p></div></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>page.request (and context.request) share cookies with the browser context. A sign in through page.request signs in the page too, for apps that use cookies. The shop also keeps a token in local storage, which is why the example adds it with addInitScript.</div></div>
+</section>
+<section class="card reveal jsec" id="state" data-say="state"><div class="sec-num">Part 4</div><h2><span class="sec-em">💾</span><span>Sign in once for the whole suite</span></h2>
+
+<p>Signing in through the page in every test costs time, often seconds per test. Playwright can save the signed in state, the cookies and local storage of a context, to a file with <b>storageState</b>. New contexts created from that file start signed in.</p>
+<div class="viz" data-viz="flow" data-k="state"></div>
+<div class="codewrap tests pw4" data-k="state" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Sign in once, save the state, start every test signed in · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/SignedInOptions.java</div><pre class="src" data-file="src/test/java/com/brainy/SignedInOptions.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Browser</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">Options</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">OptionsFactory</span>;
+<span class="k">import</span> java.nio.file.<span class="t">Paths</span>;
+
+<span class="c">// Every test that uses these options starts signed in as Asha.</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">SignedInOptions</span> <span class="k">implements</span> <span class="t">OptionsFactory</span> {
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="t">Options</span> getOptions() {
+    <span class="k">return</span> <span class="k">new</span> <span class="t">Options</span>()
+        .setHeadless(<span class="k">true</span>)
+        .setBaseUrl(<span class="s">"http://localhost:4173"</span>)
+        .setContextOptions(<span class="k">new</span> <span class="t">Browser</span>.<span class="t">NewContextOptions</span>().setStorageStatePath(<span class="t">Paths</span>.get(<span class="s">"playwright/.auth/asha.json"</span>)));
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/SignedInTest.java</div><pre class="src" data-file="src/test/java/com/brainy/SignedInTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.*;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">BeforeAll</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.nio.file.<span class="t">Paths</span>;
+<span class="k">import</span> java.util.regex.<span class="t">Pattern</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">SignedInOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">SignedInTest</span> {
+  <span class="a">@BeforeAll</span>
+  <span class="k">static</span> <span class="k">void</span> signInOnce() {
+    <span class="c">// Sign in once, and save cookies and local storage for every test in the class.</span>
+    <span class="k">try</span> (<span class="t">Playwright</span> playwright = <span class="t">Playwright</span>.create()) {
+      <span class="t">BrowserContext</span> context = playwright.chromium().launch()
+          .newContext(<span class="k">new</span> <span class="t">Browser</span>.<span class="t">NewContextOptions</span>().setBaseURL(<span class="s">"http://localhost:4173"</span>));
+      <span class="t">Page</span> page = context.newPage();
+      page.navigate(<span class="s">"/login"</span>);
+      page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+      page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+      page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>)).click();
+      assertThat(page.getByText(<span class="s">"Hello, Asha"</span>)).isVisible();     <span class="c">// wait until signing in has finished</span>
+      context.storageState(<span class="k">new</span> <span class="t">BrowserContext</span>.<span class="t">StorageStateOptions</span>().setPath(<span class="t">Paths</span>.get(<span class="s">"playwright/.auth/asha.json"</span>)));
+    }
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theProductsPageGreetsAsha(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);                        <span class="c">// no sign in steps here</span>
+    assertThat(page.getByText(<span class="s">"Hello, Asha"</span>)).isVisible();
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theCartIsOpenToHer(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/cart"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Your cart"</span>))).isVisible();
+    assertThat(page).hasURL(<span class="t">Pattern</span>.compile(<span class="s">"/cart$"</span>));  <span class="c">// not sent to /login</span>
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.SignedInTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.346 s -- in com.brainy.SignedInTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 conftest.py</div><pre class="src" data-file="conftest.py"><span class="k">from</span> pathlib <span class="k">import</span> <span class="t">Path</span>
+<span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Browser</span>, expect
+
+<span class="t">STATE</span> = <span class="t">Path</span>(<span class="s">"playwright/.auth/asha.json"</span>)
+
+
+<span class="a">@pytest</span>.fixture(scope=<span class="s">"session"</span>)
+<span class="k">def</span> browser_context_args(browser_context_args, browser: <span class="t">Browser</span>, base_url: str):
+    <span class="c"># Sign in once for the whole run, and save cookies and local storage.</span>
+    context = browser.new_context(base_url=base_url)
+    page = context.new_page()
+    page.goto(<span class="s">"/login"</span>)
+    page.get_by_label(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>)
+    page.get_by_label(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Sign in"</span>).click()
+    expect(page.get_by_text(<span class="s">"Hello, Asha"</span>)).to_be_visible()     <span class="c"># wait until signing in has finished</span>
+    <span class="t">STATE</span>.parent.mkdir(parents=<span class="k">True</span>, exist_ok=<span class="k">True</span>)            <span class="c"># Python does not create the folder for you</span>
+    context.storage_state(path=<span class="t">STATE</span>)
+    context.close()
+    <span class="k">return</span> {**browser_context_args, <span class="s">"storage_state"</span>: <span class="t">STATE</span>}    <span class="c"># every test starts signed in</span></pre><div class="fname">📄 tests/test_signed_in.py</div><pre class="src" data-file="tests/test_signed_in.py"><span class="k">import</span> re
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_the_products_page_greets_asha(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)                            <span class="c"># no sign in steps here</span>
+    expect(page.get_by_text(<span class="s">"Hello, Asha"</span>)).to_be_visible()
+
+
+<span class="k">def</span> test_the_cart_is_open_to_her(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/cart"</span>)
+    expect(page.get_by_role(<span class="s">"heading"</span>, name=<span class="s">"Your cart"</span>)).to_be_visible()
+    expect(page).to_have_url(re.compile(r<span class="s">"/cart$"</span>))  <span class="c"># not sent to /login</span></pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_signed_in.py::test_the_products_page_greets_asha[chromium] PASSED [ 50%]
+tests/test_signed_in.py::test_the_cart_is_open_to_her[chromium] PASSED   [100%]
+
+============================== 2 passed in 1.35s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  reporter: <span class="s">'list'</span>,
+  use: { baseURL: <span class="s">'http://localhost:4173'</span> },
+  projects: [
+    { name: <span class="s">'setup'</span>, testMatch: /auth\.setup\.[jt]s/ },
+    {
+      name: <span class="s">'chromium'</span>,
+      use: { ...devices[<span class="s">'Desktop Chrome'</span>], storageState: <span class="s">'playwright/.auth/asha.json'</span> },   <span class="c">// every test starts signed in</span>
+      dependencies: [<span class="s">'setup'</span>],
+    },
+  ],
+});</pre><div class="fname">📄 tests/auth.setup.js</div><pre class="src" data-file="tests/auth.setup.js"><span class="k">import</span> { test <span class="k">as</span> setup, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+setup(<span class="s">'sign in as Asha'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();          <span class="c">// wait until signing in has finished</span>
+  <span class="k">await</span> page.context().storageState({ path: <span class="s">'playwright/.auth/asha.json'</span> });
+});</pre><div class="fname">📄 tests/signed-in.spec.js</div><pre class="src" data-file="tests/signed-in.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the products page greets Asha'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);                      <span class="c">// no sign in steps here</span>
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+});
+
+test(<span class="s">'the cart is open to her'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/cart'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'heading'</span>, { name: <span class="s">'Your cart'</span> })).toBeVisible();
+  <span class="k">await</span> expect(page).toHaveURL(/\/cart$/);           <span class="c">// not sent to /login</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 1 worker
+
+  ✓  1 [setup] › tests/auth.setup.js:3:1 › sign in as Asha (694ms)
+  ✓  2 [chromium] › tests/signed-in.spec.js:3:1 › the products page greets Asha (494ms)
+  ✓  3 [chromium] › tests/signed-in.spec.js:8:1 › the cart is open to her (368ms)
+
+  3 passed (4.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  reporter: <span class="s">'list'</span>,
+  use: { baseURL: <span class="s">'http://localhost:4173'</span> },
+  projects: [
+    { name: <span class="s">'setup'</span>, testMatch: /auth\.setup\.[jt]s/ },
+    {
+      name: <span class="s">'chromium'</span>,
+      use: { ...devices[<span class="s">'Desktop Chrome'</span>], storageState: <span class="s">'playwright/.auth/asha.json'</span> },   <span class="c">// every test starts signed in</span>
+      dependencies: [<span class="s">'setup'</span>],
+    },
+  ],
+});</pre><div class="fname">📄 tests/auth.setup.ts</div><pre class="src" data-file="tests/auth.setup.ts"><span class="k">import</span> { test <span class="k">as</span> setup, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+setup(<span class="s">'sign in as Asha'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();          <span class="c">// wait until signing in has finished</span>
+  <span class="k">await</span> page.context().storageState({ path: <span class="s">'playwright/.auth/asha.json'</span> });
+});</pre><div class="fname">📄 tests/signed-in.spec.ts</div><pre class="src" data-file="tests/signed-in.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the products page greets Asha'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);                      <span class="c">// no sign in steps here</span>
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+});
+
+test(<span class="s">'the cart is open to her'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/cart'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'heading'</span>, { name: <span class="s">'Your cart'</span> })).toBeVisible();
+  <span class="k">await</span> expect(page).toHaveURL(/\/cart$/);           <span class="c">// not sent to /login</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 1 worker
+
+  ✓  1 [setup] › tests/auth.setup.ts:3:1 › sign in as Asha (630ms)
+  ✓  2 [chromium] › tests/signed-in.spec.ts:3:1 › the products page greets Asha (457ms)
+  ✓  3 [chromium] › tests/signed-in.spec.ts:8:1 › the cart is open to her (406ms)
+
+  3 passed (4.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>Signing in ran once and saved its cookies and local storage to playwright/.auth/asha.json. Both tests then started already signed in, with no sign in steps of their own. In a suite of hundreds of tests, this saves one sign in per test. One difference showed up in our run: Python's storage_state does not create a missing folder, so the conftest creates playwright/.auth first, while JavaScript and Java create it themselves.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Need</th><th>Approach</th></tr><tr><td>all tests can share one account</td><td>one setup step and one state file, as above</td></tr><tr><td>tests change data of the account</td><td>one account per worker, named with the worker index</td></tr><tr><td>two roles, such as customer and admin</td><td>two state files, asha.json and ravi.json, and a project or fixture for each</td></tr><tr><td>the app keeps its session in sessionStorage</td><td>storageState does not save sessionStorage, so save it yourself and restore it with addInitScript</td></tr></table></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>The state file holds a live session that anyone could use. Add playwright/.auth to .gitignore, and let each run create it fresh.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-network.html" data-topic="pw-network"><small>← Previous chapter</small><b>🛰️ Network mocking</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Fast tests through the API", "panels": [{"s": [["e", "🔌"], ["t", "request", {"b": 1}]], "h": "API tests", "t": "No browser at all.", "more": "Status, data, errors."}, {"s": [["e", "🔑"], ["t", "Bearer", {"b": 1}]], "h": "Tokens", "t": "Proof of who calls.", "more": "Keep them in secrets."}, {"s": [["e", "🧩"], ["t", "arrange", {"b": 1}]], "h": "Mix", "t": "API for set up.", "more": "Page for the check."}, {"s": [["e", "💾"], ["t", "storageState", {"b": 1}]], "h": "Sign in once", "t": "Save the state.", "more": "Every test starts signed in."}], "remember": "Use the page for what the user sees. Use the API for everything you only need to get ready."}, "real": [["🏦", "Sign in once instead of 800 times", "A banking suite signs in once per run in a setup project and saves the state. Each test skips the sign in page and starts on the screen it is about."], ["🛒", "Carts filled by the API", "An online grocer fills carts with 30 items through one API call before each checkout test. Clicking 30 product pages would take most of a minute and add 30 chances to fail."], ["🔐", "Two roles, two files", "A support tool saves agent.json and admin.json in two setup steps. Tests for the admin screens use one file, and tests for the agent screens use the other."]], "quiz": [{"lv": 1, "q": "Which Playwright Test fixture calls an API without a page?", "o": ["page", "request", "api", "fetch"], "a": 1, "hint": "It sends requests.", "why": "The request fixture is an APIRequestContext that uses the baseURL from the config."}, {"lv": 1, "q": "Which status code means created?", "o": ["200", "201", "204", "404"], "a": 1, "hint": "Look at the POST in the CRUD example.", "why": "201 Created is the usual answer to a successful POST that makes something new."}, {"lv": 1, "q": "What does toBeOK check?", "o": ["the status is 200 only", "the status is from 200 to 299", "the body is not empty", "the page loaded"], "a": 1, "hint": "OK covers a range.", "why": "toBeOK, to_be_ok and isOK pass for any status from 200 to 299."}, {"lv": 1, "q": "What does storageState save?", "o": ["screenshots", "cookies and local storage", "the whole browser", "passwords"], "a": 1, "hint": "It is about being signed in.", "why": "It saves the cookies and local storage of the context, which is what keeps a user signed in."}, {"lv": 2, "q": "Why add playwright/.auth to .gitignore?", "o": ["it is large", "it holds a live session someone could use", "git cannot store JSON", "Playwright requires it"], "a": 1, "hint": "Think of what is inside.", "why": "The file holds session cookies and tokens that work like a signed in user."}, {"lv": 2, "q": "In Java with @UsePlaywright, why did the example need ApiOptions?", "o": ["to use Firefox", "setBaseUrl does not apply to the request fixture", "to run in parallel", "for headless mode"], "a": 1, "hint": "The request fixture has its own options.", "why": "setApiRequestOptions gives the APIRequestContext fixture its own base URL."}, {"lv": 2, "q": "Which header carries a token in the shop API?", "o": ["Cookie", "Authorization: Bearer ...", "X-Token", "Accept"], "a": 1, "hint": "Look at the token example.", "why": "The shop accepts Authorization: Bearer followed by the token."}, {"lv": 2, "q": "Why fill the cart through the API before a cart page test?", "o": ["APIs are prettier", "it is faster and the test fails only for cart page problems", "pages cannot add to cart", "it is required"], "a": 1, "hint": "Fewer steps, fewer reasons to fail.", "why": "Set up through the API is fast and keeps unrelated pages from failing the test."}, {"lv": 2, "q": "Do page.request calls share cookies with the page?", "o": ["no", "yes, they use the same context", "only in Java", "only with a flag"], "a": 1, "hint": "Read the tip in the mix part.", "why": "page.request and context.request share the cookie storage of the browser context."}, {"lv": 3, "q": "Your tests change account settings and run in parallel. What is the safer approach?", "o": ["one shared account", "one account per worker", "no sign in", "retries"], "a": 1, "hint": "Parallel tests must not share changing data.", "why": "One account per worker keeps parallel tests from changing each other's data."}, {"lv": 3, "q": "What does storageState not save?", "o": ["cookies", "local storage", "session storage", "the origin"], "a": 2, "hint": "Read the table in the last part.", "why": "sessionStorage is not saved. Save and restore it yourself when an app needs it."}, {"lv": 3, "q": "In pytest-playwright, how do all tests start signed in?", "o": ["a pytest.ini option", "browser_context_args returns storage_state", "a --signed-in flag", "conftest.py is not needed"], "a": 1, "hint": "Look at the conftest in the state example.", "why": "Overriding browser_context_args with storage_state makes every context start from the saved file."}], "calc": [{"lv": 1, "q": "Signing in through the page takes 3 s. How many seconds do 200 tests spend signing in when each signs in itself?", "ans": 600, "hint": "200 × 3", "steps": ["200 × 3 = 600 s"]}, {"lv": 1, "q": "With storageState, the same suite signs in once. How many seconds does it save?", "ans": 597, "hint": "600 - 3", "steps": ["600 s before, 3 s now", "600 - 3 = 597 s"]}, {"lv": 2, "q": "Two mugs cost ₹199 each. What total should the cart API report?", "ans": 398, "hint": "2 × 199", "steps": ["2 × 199 = 398"]}, {"lv": 2, "q": "A test creates 3 people and deletes 1. The list was empty. How many people are left?", "ans": 2, "hint": "3 - 1", "steps": ["3 - 1 = 2"]}, {"lv": 2, "q": "Clicking through 5 pages to set up a cart takes 2 s per page. One API call takes 1 s. How many seconds does the API save?", "ans": 9, "hint": "5 × 2 - 1", "steps": ["5 × 2 = 10 s", "10 - 1 = 9 s"]}, {"lv": 3, "q": "4 workers each need their own account, and 2 roles are tested. How many state files?", "ans": 8, "hint": "4 × 2", "steps": ["4 accounts per role", "4 × 2 = 8"]}, {"lv": 3, "q": "An API test takes 50 ms and the same check in the UI takes 2 s. How many API tests fit in the time of one UI test?", "ans": 40, "hint": "2000 / 50", "steps": ["2 s = 2000 ms", "2000 / 50 = 40"]}, {"lv": 3, "q": "The lamp costs ₹1,299 and a pen ₹20. The cart has 1 lamp and 3 pens. What is the total in rupees?", "ans": 1359, "hint": "1299 + 3 × 20", "steps": ["3 × 20 = 60", "1299 + 60 = 1359"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter tests the API directly, sends tokens in headers, sets up data through the API before a UI check, and signs in once so every test starts signed in.", "hi": "यह अध्याय API को सीधे test करता है, headers में tokens भेजता है, UI check से पहले API से data तैयार करता है, और एक बार sign in करता है ताकि हर test signed in शुरू हो।", "kn": "ಈ ಅಧ್ಯಾಯ API ಅನ್ನು ನೇರವಾಗಿ test ಮಾಡುತ್ತದೆ, headers ನಲ್ಲಿ tokens ಕಳುಹಿಸುತ್ತದೆ, UI check ಗೆ ಮೊದಲು API ಮೂಲಕ data ಸಿದ್ಧಪಡಿಸುತ್ತದೆ, ಮತ್ತು ಒಮ್ಮೆ sign in ಮಾಡಿ ಪ್ರತಿ test signed in ಆಗಿ ಶುರುವಾಗುವಂತೆ ಮಾಡುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ API କୁ ସିଧାସଳଖ test କରେ, headers ରେ tokens ପଠାଏ, UI check ପୂର୍ବରୁ API ରେ data ପ୍ରସ୍ତୁତ କରେ, ଏବଂ ଥରେ sign in କରେ ଯାହାଦ୍ୱାରା ପ୍ରତି test signed in ଆରମ୍ଭ ହୁଏ।", "ar": "يختبر هذا الفصل واجهة API مباشرة، ويرسل الرموز في الترويسات، ويجهّز البيانات عبر API قبل فحص الواجهة، ويسجّل الدخول مرة واحدة ليبدأ كل اختبار مسجّلًا.", "de": "Dieses Kapitel testet die API direkt, sendet Tokens in Headern, bereitet Daten über die API vor einer UI-Prüfung vor und meldet sich einmal an, damit jeder Test angemeldet startet."}, {"id": "api", "h": "API tests", "en": "The request client calls the API with no page. A test checks status codes, the data that comes back, and the error for bad input.", "hi": "Request client बिना page के API को call करता है। Test status codes, लौटे data और गलत input की error जाँचता है।", "kn": "Request client page ಇಲ್ಲದೆ API ಅನ್ನು call ಮಾಡುತ್ತದೆ. Test status codes, ಬಂದ data ಮತ್ತು ತಪ್ಪು input ನ error ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "Request client page ବିନା API କୁ call କରେ। Test status codes, ଫେରିଥିବା data ଓ ଭୁଲ input ର error ଯାଞ୍ଚ କରେ।", "ar": "يستدعي عميل الطلبات واجهة API دون صفحة. ويتحقق الاختبار من رموز الحالة والبيانات العائدة والخطأ عند الإدخال الخاطئ.", "de": "Der Request-Client ruft die API ohne Seite auf. Ein Test prüft Statuscodes, die zurückgegebenen Daten und den Fehler bei falscher Eingabe."}, {"id": "token", "h": "Tokens", "en": "After signing in, the API gives a token. A client with extra HTTP headers sends it with every call, in an Authorization header.", "hi": "Sign in के बाद API एक token देता है। Extra HTTP headers वाला client उसे हर call के साथ Authorization header में भेजता है।", "kn": "Sign in ನಂತರ API ಒಂದು token ಕೊಡುತ್ತದೆ. Extra HTTP headers ಇರುವ client ಅದನ್ನು ಪ್ರತಿ call ಜೊತೆ Authorization header ನಲ್ಲಿ ಕಳುಹಿಸುತ್ತದೆ.", "or": "Sign in ପରେ API ଏକ token ଦିଏ। Extra HTTP headers ଥିବା client ଏହାକୁ ପ୍ରତି call ସହ Authorization header ରେ ପଠାଏ।", "ar": "بعد تسجيل الدخول تعطي واجهة API رمزًا. ويرسله عميل له ترويسات إضافية مع كل اتصال في ترويسة Authorization.", "de": "Nach der Anmeldung gibt die API ein Token. Ein Client mit zusätzlichen HTTP-Headern sendet es bei jedem Aufruf im Authorization-Header."}, {"id": "mix", "h": "API for set up", "en": "Fill the cart through the API, then open the cart page and check it. The page part stays short and only tests what the page must show.", "hi": "API से cart भरें, फिर cart page खोलकर जाँचें। Page वाला हिस्सा छोटा रहता है और सिर्फ़ वही test करता है जो page को दिखाना है।", "kn": "API ಮೂಲಕ cart ತುಂಬಿಸಿ, ನಂತರ cart page ತೆರೆದು ಪರಿಶೀಲಿಸಿ. Page ಭಾಗ ಚಿಕ್ಕದಾಗಿರುತ್ತದೆ ಮತ್ತು page ತೋರಿಸಬೇಕಾದ್ದನ್ನು ಮಾತ್ರ test ಮಾಡುತ್ತದೆ.", "or": "API ରେ cart ଭରନ୍ତୁ, ତାପରେ cart page ଖୋଲି ଯାଞ୍ଚ କରନ୍ତୁ। Page ଅଂଶ ଛୋଟ ରହେ ଏବଂ page ଦେଖାଇବା ଉଚିତ ଜିନିଷ କେବଳ test କରେ।", "ar": "املأ السلة عبر API، ثم افتح صفحة السلة وتحقق منها. يبقى جزء الصفحة قصيرًا ولا يختبر إلا ما يجب أن تعرضه الصفحة.", "de": "Fülle den Warenkorb über die API, öffne dann die Warenkorbseite und prüfe sie. Der Seitenteil bleibt kurz und testet nur, was die Seite zeigen muss."}, {"id": "state", "h": "Sign in once", "en": "storageState saves cookies and local storage to a file. New contexts created from that file start signed in, so the sign in runs once for the whole suite.", "hi": "storageState cookies और local storage को file में save करता है। उस file से बने नए contexts signed in शुरू होते हैं, इसलिए sign in पूरे suite के लिए एक बार चलता है।", "kn": "storageState cookies ಮತ್ತು local storage ಅನ್ನು file ಗೆ save ಮಾಡುತ್ತದೆ. ಆ file ನಿಂದ ಮಾಡಿದ ಹೊಸ contexts signed in ಆಗಿ ಶುರುವಾಗುತ್ತವೆ, ಹಾಗಾಗಿ sign in ಸಂಪೂರ್ಣ suite ಗೆ ಒಮ್ಮೆ ನಡೆಯುತ್ತದೆ.", "or": "storageState cookies ଓ local storage କୁ file ରେ save କରେ। ସେହି file ରୁ ତିଆରି ନୂଆ contexts signed in ଆରମ୍ଭ ହୁଏ, ତେଣୁ sign in ପୂରା suite ପାଇଁ ଥରେ ଚାଲେ।", "ar": "يحفظ storageState ملفات تعريف الارتباط والتخزين المحلي في ملف. تبدأ السياقات الجديدة المنشأة منه مسجّلة الدخول، فيعمل تسجيل الدخول مرة واحدة للمجموعة كلها.", "de": "storageState speichert Cookies und Local Storage in einer Datei. Neue Kontexte aus dieser Datei starten angemeldet, sodass die Anmeldung einmal für die ganze Suite läuft."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you sign in as Ravi, the admin, and then place a real order as Asha from the cart page.", "hi": "Labs में आप admin Ravi के रूप में sign in करते हैं, फिर cart page से Asha के रूप में असली order देते हैं।", "kn": "Labs ನಲ್ಲಿ admin Ravi ಆಗಿ sign in ಮಾಡುತ್ತೀರಿ, ನಂತರ cart page ನಿಂದ Asha ಆಗಿ ನಿಜವಾದ order ಮಾಡುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ admin Ravi ଭାବେ sign in କରନ୍ତି, ତାପରେ cart page ରୁ Asha ଭାବେ ପ୍ରକୃତ order ଦିଅନ୍ତି।", "ar": "في المختبرات تسجّل الدخول باسم Ravi المسؤول، ثم تقدّم طلبًا حقيقيًا باسم Asha من صفحة السلة.", "de": "In den Labs meldest du dich als Admin Ravi an und gibst dann als Asha eine echte Bestellung auf der Warenkorbseite auf."}], "ex": [], "dg": {"state": {"t": "Sign in once, reuse everywhere", "w": 900, "h": 230, "n": [["setup", 20, 83, 150, 64, "setup step", {"c": 2, "sub": "signs in once", "i": "A setup project, a session fixture or a @BeforeAll method signs in through the real login page."}], ["file", 230, 83, 190, 64, "asha.json", {"c": 5, "sub": "cookies and local storage", "i": "storageState writes the cookies and the local storage of the signed in context to a file."}], ["t1", 490, 10, 170, 64, "test 1", {"c": 1, "sub": "starts signed in", "i": "Each new context is created from the file, so the test starts signed in."}], ["t2", 490, 83, 170, 64, "test 2", {"c": 1, "sub": "starts signed in", "i": "The same file serves every test."}], ["t3", 490, 156, 170, 64, "test 300", {"c": 1, "sub": "starts signed in", "i": "However many tests there are, the sign in ran once."}], ["git", 720, 83, 160, 64, ".gitignore", {"c": 3, "sub": "never commit it", "i": "The file holds a live session. Keep it out of the repository."}]], "e": [["setup", "file"], ["file", "t1"], ["file", "t2"], ["file", "t3"], ["t2", "git"]], "st": [[["setup"], "A setup step signs in once, through the real page."], [["file", "setup>file"], "storageState saves cookies and local storage to a file."], [["t1", "t2", "t3", "file>t1", "file>t2", "file>t3"], "Every test creates its context from that file and starts signed in."], [["git", "t2>git"], "The file is a live session, so it goes in .gitignore."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "ravi", "title": "Sign in as the admin", "name": "Ravi can sign in", "task": "Sign in on <code>/login<\/code> as <code>ravi@shop.example<\/code> with the password <code>admin123<\/code>, and check that the header says <b>Hello, Ravi<\/b>.", "goal": "Ravi is signed in.", "start": "/login", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('Ravi can sign in', async ({ page }) => {\n  await page.goto('/login');\n  // fill in Ravi's email and password, sign in, and check the greeting\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class RaviCanSignInTest {\n  @Test\n  void raviCanSignIn(Page page) {\n    page.navigate(\"/login\");\n    page.getByLabel(\"Email\").fill(\"ravi@shop.example\");\n    page.getByLabel(\"Password\").fill(\"admin123\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Sign in\")).click();\n    assertThat(page.getByText(\"Hello, Ravi\")).isVisible();\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_ravi_can_sign_in(page: Page):\n    page.goto(\"/login\")\n    page.get_by_label(\"Email\").fill(\"ravi@shop.example\")\n    page.get_by_label(\"Password\").fill(\"admin123\")\n    page.get_by_role(\"button\", name=\"Sign in\").click()\n    expect(page.get_by_text(\"Hello, Ravi\")).to_be_visible()\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('Ravi can sign in', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('ravi@shop.example');\n  await page.getByLabel('Password').fill('admin123');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Ravi')).toBeVisible();\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('Ravi can sign in', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('ravi@shop.example');\n  await page.getByLabel('Password').fill('admin123');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Ravi')).toBeVisible();\n});"}, "hint": "The same steps as for Asha, with Ravi's email and <code>admin123<\/code>.", "why": "In a real suite these steps run once in a setup step for each role, and save ravi.json next to asha.json. Admin tests then start from ravi.json.", "check": [["ctx.loggedIn", "Someone is signed in"], ["/Hello, Ravi/.test(ctx.text)", "The header greets Ravi"]]}, {"id": "order", "title": "Place a real order", "name": "Asha places an order", "task": "Sign in as Asha (<code>asha@shop.example<\/code>, <code>s3cret<\/code>), add the <b>Coffee mug<\/b>, open <code>/cart<\/code>, accept the confirmation dialog and click <b>Place order<\/b>. Check that the status says the order was <b>placed<\/b>.", "goal": "One order is placed.", "start": "/login", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('Asha places an order', async ({ page }) => {\n  await page.goto('/login');\n  // sign in, add the mug, open the cart, accept the dialog and place the order\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class AshaPlacesAnOrderTest {\n  @Test\n  void ashaPlacesAnOrder(Page page) {\n    page.navigate(\"/login\");\n    page.getByLabel(\"Email\").fill(\"asha@shop.example\");\n    page.getByLabel(\"Password\").fill(\"s3cret\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Sign in\")).click();\n    assertThat(page.getByText(\"Hello, Asha\")).isVisible();\n    page.getByTestId(\"product-2\").getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(\"Add to cart\")).click();\n    assertThat(page.getByTestId(\"cart-count\")).hasText(\"1\");\n    page.navigate(\"/cart\");\n    page.onDialog(dialog -> dialog.accept());\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Place order\")).click();\n    assertThat(page.getByRole(AriaRole.STATUS)).containsText(\"placed\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_asha_places_an_order(page: Page):\n    page.goto(\"/login\")\n    page.get_by_label(\"Email\").fill(\"asha@shop.example\")\n    page.get_by_label(\"Password\").fill(\"s3cret\")\n    page.get_by_role(\"button\", name=\"Sign in\").click()\n    expect(page.get_by_text(\"Hello, Asha\")).to_be_visible()\n    page.get_by_test_id(\"product-2\").get_by_role(\"button\", name=\"Add to cart\").click()\n    expect(page.get_by_test_id(\"cart-count\")).to_have_text(\"1\")\n    page.goto(\"/cart\")\n    page.on(\"dialog\", lambda dialog: dialog.accept())\n    page.get_by_role(\"button\", name=\"Place order\").click()\n    expect(page.get_by_role(\"status\")).to_contain_text(\"placed\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('Asha places an order', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n  await page.getByTestId('product-2').getByRole('button', { name: 'Add to cart' }).click();\n  await expect(page.getByTestId('cart-count')).toHaveText('1');\n  await page.goto('/cart');\n  page.on('dialog', dialog => dialog.accept());\n  await page.getByRole('button', { name: 'Place order' }).click();\n  await expect(page.getByRole('status')).toContainText('placed');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('Asha places an order', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n  await page.getByTestId('product-2').getByRole('button', { name: 'Add to cart' }).click();\n  await expect(page.getByTestId('cart-count')).toHaveText('1');\n  await page.goto('/cart');\n  page.on('dialog', dialog => dialog.accept());\n  await page.getByRole('button', { name: 'Place order' }).click();\n  await expect(page.getByRole('status')).toContainText('placed');\n});"}, "hint": "Register the dialog handler before the click: <code>page.on('dialog', dialog => dialog.accept());<\/code>", "why": "Everything before page.goto('/cart') is set up. In a real suite it would be one API call and a saved state, and the test would start on the cart page.", "check": [["ctx.orders === 1", "One order was placed"], ["/placed/.test(ctx.text)", "The page says the order was placed"]]}], "trees": {}};
+JSPLAY.page({ title: "API testing and signing in once", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

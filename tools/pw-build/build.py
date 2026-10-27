@@ -168,16 +168,18 @@ def clean(text, d, port, lang):
     if lang == 'py' and any(ln.startswith('collect') for ln in lines):
         lines = [ln for ln in lines if not re.match(r'(platform |cachedir|rootdir|configfile|plugins|base_url|=+ test session starts)', ln)]
     if lang == 'java':
-        keep, on = [], False
+        keep, on, done = [], False, False
         for ln in lines:
+            if done:                      # output of a command after mvn, such as ls
+                if not ln.startswith('['):
+                    keep.append(ln)
+                continue
             if 'T E S T S' in ln:
                 on = True
-                if keep and keep[-1].endswith('---'):
-                    pass
             if on:
                 keep.append(ln)
             if on and re.search(r'BUILD (SUCCESS|FAILURE)', ln):
-                break
+                done = True
         if keep:
             lines = ['[INFO] -------------------------------------------------------'] + keep
         lines = [ln for ln in lines if not re.search(r'\[ERROR\] (To see the full|Re-run Maven|For more information|$)|\[ERROR\] -> \[Help', ln)]

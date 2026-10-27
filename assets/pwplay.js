@@ -375,7 +375,7 @@ const PWPLAY = (() => {
         if (lang === 'py') return `lambda ${p}: ${gen(n.body, lang)}`;
         if (lang === 'java') return `${p} -> ${gen(n.body, lang)}`;
         const body = gen(n.body, lang).replace(/^await /, '');   // an arrow that returns the promise needs no await
-        if (lang === 'cs') return `async (_, ${p}) => await ${body}`;
+        if (lang === 'cs') return `async ${p} => await ${body}`;
         return `${p} => ${body}`;
       }
       case 'call': case 'get': return genChain(n, lang);

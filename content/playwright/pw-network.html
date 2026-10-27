@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network: watch, mock and change requests · Playwright</title>
+<meta name="description" content="page.on(&#x27;request&#x27;) and response, waitForResponse and expect_response, page.route with fulfill, abort, continue and fetch, glob patterns, context.route, error states, HAR recording and replay with routeFromHAR, and routeWebSocket.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🛰️ Network and APIs</span><span>›</span><span>Chapter 11 of 12</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🛰️</span><div><h1>Network: watch, mock and change requests</h1><p class="lead">Take control of what the page receives. Listen to every request, answer them with your own data, make them fail, change one field of a real answer, record an API into a HAR file and replay it, and mock a WebSocket feed.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 26 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 24 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 2 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>A page is only as good as the data it gets. Controlling the network lets you test the cases that are hard to create for real: empty lists, server errors, sold out products and a feed that says something new.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#watch" class="easy"><span>👀</span>Watch the traffic</a><a href="#mock" class="easy"><span>🎭</span>Mock an API</a><a href="#errors"><span>💥</span>Errors that are hard to cause</a><a href="#edit"><span>✏️</span>Change a real response</a><a href="#har"><span>📼</span>Record and replay with HAR</a><a href="#websocket"><span>🔌</span>WebSockets</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="watch" data-say="watch"><div class="sec-num">Part 1</div><h2><span class="sec-em">👀</span><span>Watch the traffic</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>A page talks to its server all the time. Playwright lets a test listen to every request and response, or wait for one in particular. This is how you check that the right call was made, or read the data the page received.</p>
+<div class="codewrap tests pw4" data-k="watch" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Listen to the traffic and wait for one response · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/WatchTest.java</div><pre class="src" data-file="src/test/java/com/brainy/WatchTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.google.gson.<span class="t">JsonParser</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Response</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.net.<span class="t">URI</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertTrue;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">WatchTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theProductsComeFromTheApi(<span class="t">Page</span> page) {
+    page.onRequest(request -&gt; {
+      <span class="k">if</span> (request.url().contains(<span class="s">"/api/"</span>)) <span class="t">System</span>.out.println(<span class="s">"&gt;&gt; "</span> + request.method() + <span class="s">" "</span> + <span class="t">URI</span>.create(request.url()).getPath());
+    });
+    page.onResponse(response -&gt; {
+      <span class="k">if</span> (response.url().contains(<span class="s">"/api/"</span>)) <span class="t">System</span>.out.println(<span class="s">"&lt;&lt; "</span> + response.status() + <span class="s">" "</span> + <span class="t">URI</span>.create(response.url()).getPath());
+    });
+
+    <span class="c">// run the navigation, and wait for the products call it causes</span>
+    <span class="t">Response</span> response = page.waitForResponse(<span class="s">"**/api/products"</span>, () -&gt; page.navigate(<span class="s">"/products"</span>));
+
+    assertTrue(response.ok());
+    <span class="k">int</span> count = <span class="t">JsonParser</span>.parseString(response.text()).getAsJsonArray().size();
+    <span class="t">System</span>.out.println(<span class="s">"the API sent "</span> + count + <span class="s">" products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(count);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.WatchTest
+&gt;&gt; GET /api/products
+&lt;&lt; 200 /api/products
+the API sent 5 products
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.526 s -- in com.brainy.WatchTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_watch.py</div><pre class="src" data-file="tests/test_watch.py"><span class="k">from</span> urllib.parse <span class="k">import</span> urlparse
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, <span class="t">Request</span>, <span class="t">Response</span>, expect
+
+
+<span class="k">def</span> show_request(request: <span class="t">Request</span>):
+    <span class="k">if</span> <span class="s">"/api/"</span> <span class="k">in</span> request.url:
+        print(<span class="s">"&gt;&gt;"</span>, request.method, urlparse(request.url).path)
+
+
+<span class="k">def</span> show_response(response: <span class="t">Response</span>):
+    <span class="k">if</span> <span class="s">"/api/"</span> <span class="k">in</span> response.url:
+        print(<span class="s">"&lt;&lt;"</span>, response.status, urlparse(response.url).path)
+
+
+<span class="k">def</span> test_the_products_come_from_the_api(page: <span class="t">Page</span>):
+    page.on(<span class="s">"request"</span>, show_request)
+    page.on(<span class="s">"response"</span>, show_response)
+
+    <span class="k">with</span> page.expect_response(<span class="s">"**/api/products"</span>) <span class="k">as</span> products_call:   <span class="c"># wait while the page loads</span>
+        page.goto(<span class="s">"/products"</span>)
+    response = products_call.value
+
+    <span class="k">assert</span> response.ok
+    products = response.json()
+    print(f<span class="s">"the API sent {len(products)} products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(len(products))</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -s -q</pre></div><div class="out"><span>Terminal output</span><pre>&gt;&gt; GET /api/products
+&lt;&lt; 200 /api/products
+the API sent 5 products
+.
+1 passed in 1.66s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/watch.spec.js</div><pre class="src" data-file="tests/watch.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the products come from the API'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  page.on(<span class="s">'request'</span>, request =&gt; {
+    <span class="k">if</span> (request.url().includes(<span class="s">'/api/'</span>)) console.log(<span class="s">'&gt;&gt;'</span>, request.method(), <span class="k">new</span> <span class="t">URL</span>(request.url()).pathname);
+  });
+  page.on(<span class="s">'response'</span>, response =&gt; {
+    <span class="k">if</span> (response.url().includes(<span class="s">'/api/'</span>)) console.log(<span class="s">'&lt;&lt;'</span>, response.status(), <span class="k">new</span> <span class="t">URL</span>(response.url()).pathname);
+  });
+
+  <span class="k">const</span> productsCall = page.waitForResponse(<span class="s">'**/api/products'</span>);   <span class="c">// start waiting before the page asks</span>
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> response = <span class="k">await</span> productsCall;
+
+  expect(response.ok()).toBeTruthy();
+  <span class="k">const</span> products = <span class="k">await</span> response.json();
+  console.log(<span class="s">`the API sent ${products.length} products`</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(products.length);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+&gt;&gt; GET /api/products
+&lt;&lt; 200 /api/products
+the API sent 5 products
+  ✓  1 [chromium] › tests/watch.spec.js:3:1 › the products come from the API (1.0s)
+
+  1 passed (2.5s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/watch.spec.ts</div><pre class="src" data-file="tests/watch.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the products come from the API'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  page.on(<span class="s">'request'</span>, request =&gt; {
+    <span class="k">if</span> (request.url().includes(<span class="s">'/api/'</span>)) console.log(<span class="s">'&gt;&gt;'</span>, request.method(), <span class="k">new</span> <span class="t">URL</span>(request.url()).pathname);
+  });
+  page.on(<span class="s">'response'</span>, response =&gt; {
+    <span class="k">if</span> (response.url().includes(<span class="s">'/api/'</span>)) console.log(<span class="s">'&lt;&lt;'</span>, response.status(), <span class="k">new</span> <span class="t">URL</span>(response.url()).pathname);
+  });
+
+  <span class="k">const</span> productsCall = page.waitForResponse(<span class="s">'**/api/products'</span>);   <span class="c">// start waiting before the page asks</span>
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> response = <span class="k">await</span> productsCall;
+
+  expect(response.ok()).toBeTruthy();
+  <span class="k">const</span> products = <span class="k">await</span> response.json();
+  console.log(<span class="s">`the API sent ${products.length} products`</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(products.length);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+&gt;&gt; GET /api/products
+&lt;&lt; 200 /api/products
+the API sent 5 products
+  ✓  1 [chromium] › tests/watch.spec.ts:3:1 › the products come from the API (963ms)
+
+  1 passed (2.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>Every API call of the page was printed as it went out and came back. The test also waited for the one response it cared about, read its JSON, and checked that the page shows as many products as the API sent. Start waiting before the action that causes the request, or the response may arrive before you listen.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>To</th><th>Playwright Test</th><th>Python</th><th>Java</th></tr><tr><td>log every request</td><td>page.on('request', ...)</td><td>page.on("request", ...)</td><td>page.onRequest(...)</td></tr><tr><td>log every response</td><td>page.on('response', ...)</td><td>page.on("response", ...)</td><td>page.onResponse(...)</td></tr><tr><td>wait for one response</td><td>page.waitForResponse('**/api/products')</td><td>with page.expect_response(...)</td><td>page.waitForResponse(..., () -> action)</td></tr><tr><td>wait for one request</td><td>page.waitForRequest(...)</td><td>with page.expect_request(...)</td><td>page.waitForRequest(..., () -> action)</td></tr><tr><td>see failed requests</td><td>page.on('requestfailed', ...)</td><td>page.on("requestfailed", ...)</td><td>page.onRequestFailed(...)</td></tr></table></div>
+</section>
+<section class="card reveal jsec easy-part" id="mock" data-say="mock"><div class="sec-num">Part 2</div><h2><span class="sec-em">🎭</span><span>Mock an API</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p><b>Mocking</b> means answering a request with data you choose, instead of the real server. It lets you test pages whose data you cannot control: an empty list, a product that costs ₹0, a name with 200 letters.</p>
+<div class="viz" data-viz="flow" data-k="route"></div>
+<div class="codewrap tests pw4" data-k="mock" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Answer the products API with your own data · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/MockTest.java</div><pre class="src" data-file="src/test/java/com/brainy/MockTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Route</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">MockTest</span> {
+  <span class="k">static</span> <span class="k">final</span> <span class="t">String</span> <span class="t">PRODUCTS</span> = <span class="s">""</span>"
+      [
+        { <span class="s">"id"</span>: <span class="n">7</span>, <span class="s">"name"</span>: <span class="s">"Tea kettle"</span>, <span class="s">"price"</span>: <span class="n">899</span>, <span class="s">"stock"</span>: <span class="n">4</span>, <span class="s">"category"</span>: <span class="s">"Kitchen"</span> },
+        { <span class="s">"id"</span>: <span class="n">8</span>, <span class="s">"name"</span>: <span class="s">"Pencil box"</span>, <span class="s">"price"</span>: <span class="n">150</span>, <span class="s">"stock"</span>: <span class="n">0</span>, <span class="s">"category"</span>: <span class="s">"Stationery"</span> }
+      ]<span class="s">""</span>";
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> showsTheProductsTheApiSends(<span class="t">Page</span> page) {
+    page.route(<span class="s">"**/api/products"</span>, route -&gt; route.fulfill(<span class="k">new</span> <span class="t">Route</span>.<span class="t">FulfillOptions</span>()
+        .setContentType(<span class="s">"application/json"</span>)
+        .setBody(<span class="t">PRODUCTS</span>)));
+
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">2</span>);
+    assertThat(page.getByTestId(<span class="s">"product-7"</span>)).containsText(<span class="s">"₹899"</span>);
+    assertThat(page.getByTestId(<span class="s">"product-8"</span>).getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>)).hasText(<span class="s">"Out of stock"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.MockTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.458 s -- in com.brainy.MockTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_mock.py</div><pre class="src" data-file="tests/test_mock.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, <span class="t">Route</span>, expect
+
+<span class="t">PRODUCTS</span> = [
+    {<span class="s">"id"</span>: <span class="n">7</span>, <span class="s">"name"</span>: <span class="s">"Tea kettle"</span>, <span class="s">"price"</span>: <span class="n">899</span>, <span class="s">"stock"</span>: <span class="n">4</span>, <span class="s">"category"</span>: <span class="s">"Kitchen"</span>},
+    {<span class="s">"id"</span>: <span class="n">8</span>, <span class="s">"name"</span>: <span class="s">"Pencil box"</span>, <span class="s">"price"</span>: <span class="n">150</span>, <span class="s">"stock"</span>: <span class="n">0</span>, <span class="s">"category"</span>: <span class="s">"Stationery"</span>},
+]
+
+
+<span class="k">def</span> test_shows_the_products_the_api_sends(page: <span class="t">Page</span>):
+    page.route(<span class="s">"**/api/products"</span>, <span class="k">lambda</span> route: route.fulfill(json=<span class="t">PRODUCTS</span>))
+
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">2</span>)
+    expect(page.get_by_test_id(<span class="s">"product-7"</span>)).to_contain_text(<span class="s">"₹899"</span>)
+    expect(page.get_by_test_id(<span class="s">"product-8"</span>).get_by_role(<span class="s">"button"</span>)).to_have_text(<span class="s">"Out of stock"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_mock.py::test_shows_the_products_the_api_sends[chromium] PASSED [100%]
+
+============================== 1 passed in 1.27s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/mock.spec.js</div><pre class="src" data-file="tests/mock.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'shows the products the API sends'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">'**/api/products'</span>, route =&gt; route.fulfill({
+    json: [
+      { id: <span class="n">7</span>, name: <span class="s">'Tea kettle'</span>, price: <span class="n">899</span>, stock: <span class="n">4</span>, category: <span class="s">'Kitchen'</span> },
+      { id: <span class="n">8</span>, name: <span class="s">'Pencil box'</span>, price: <span class="n">150</span>, stock: <span class="n">0</span>, category: <span class="s">'Stationery'</span> },
+    ],
+  }));
+
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">2</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-7'</span>)).toContainText(<span class="s">'₹899'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-8'</span>).getByRole(<span class="s">'button'</span>)).toHaveText(<span class="s">'Out of stock'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/mock.spec.js:3:1 › shows the products the API sends (430ms)
+
+  1 passed (2.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/mock.spec.ts</div><pre class="src" data-file="tests/mock.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'shows the products the API sends'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">'**/api/products'</span>, route =&gt; route.fulfill({
+    json: [
+      { id: <span class="n">7</span>, name: <span class="s">'Tea kettle'</span>, price: <span class="n">899</span>, stock: <span class="n">4</span>, category: <span class="s">'Kitchen'</span> },
+      { id: <span class="n">8</span>, name: <span class="s">'Pencil box'</span>, price: <span class="n">150</span>, stock: <span class="n">0</span>, category: <span class="s">'Stationery'</span> },
+    ],
+  }));
+
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">2</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-7'</span>)).toContainText(<span class="s">'₹899'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-8'</span>).getByRole(<span class="s">'button'</span>)).toHaveText(<span class="s">'Out of stock'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/mock.spec.ts:3:1 › shows the products the API sends (428ms)
+
+  1 passed (2.0s)</pre></div></div><div class="note-out"><span>What happens</span><p>The page showed two products that do not exist on the server. The request never left the browser: route.fulfill answered it. Java has no json option on fulfill, so it sets the body and the content type itself.</p></div></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>The pattern in page.route is a glob: ** matches any part of the address, including slashes, and * matches any part between two slashes. A regular expression works too. Routes added with context.route catch requests from every page of the context, including new tabs.</div></div>
+</section>
+<section class="card reveal jsec" id="errors" data-say="errors"><div class="sec-num">Part 3</div><h2><span class="sec-em">💥</span><span>Errors that are hard to cause</span></h2>
+
+<p>What does the shop do when the server answers 500, or the network drops? With a real server, that is hard to arrange. With route it is one line.</p>
+<div class="codewrap tests pw4" data-k="errors" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Make the API fail, and check the page copes · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ErrorsTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ErrorsTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Route</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">ErrorsTest</span> {
+  <span class="k">static</span> <span class="k">final</span> <span class="t">String</span> <span class="t">SORRY</span> = <span class="s">"Sorry, we could not load the products. Please try again."</span>;
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> aServerErrorShowsAFriendlyMessage(<span class="t">Page</span> page) {
+    page.route(<span class="s">"**/api/products"</span>, route -&gt; route.fulfill(<span class="k">new</span> <span class="t">Route</span>.<span class="t">FulfillOptions</span>()
+        .setStatus(<span class="n">500</span>).setContentType(<span class="s">"application/json"</span>).setBody(<span class="s">"{\"error\": \"Database is down\"}"</span>)));
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">ALERT</span>)).hasText(<span class="t">SORRY</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> aBrokenConnectionShowsTheSameMessage(<span class="t">Page</span> page) {
+    page.route(<span class="s">"**/api/products"</span>, route -&gt; route.abort());
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">ALERT</span>)).hasText(<span class="t">SORRY</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.ErrorsTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.912 s -- in com.brainy.ErrorsTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_errors.py</div><pre class="src" data-file="tests/test_errors.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+<span class="t">SORRY</span> = <span class="s">"Sorry, we could not load the products. Please try again."</span>
+
+
+<span class="k">def</span> test_a_server_error_shows_a_friendly_message(page: <span class="t">Page</span>):
+    page.route(<span class="s">"**/api/products"</span>, <span class="k">lambda</span> route: route.fulfill(status=<span class="n">500</span>, json={<span class="s">"error"</span>: <span class="s">"Database is down"</span>}))
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"alert"</span>)).to_have_text(<span class="t">SORRY</span>)
+
+
+<span class="k">def</span> test_a_broken_connection_shows_the_same_message(page: <span class="t">Page</span>):
+    page.route(<span class="s">"**/api/products"</span>, <span class="k">lambda</span> route: route.abort())
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"alert"</span>)).to_have_text(<span class="t">SORRY</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_errors.py::test_a_server_error_shows_a_friendly_message[chromium] PASSED [ 50%]
+tests/test_errors.py::test_a_broken_connection_shows_the_same_message[chromium] PASSED [100%]
+
+============================== 2 passed in 1.55s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/errors.spec.js</div><pre class="src" data-file="tests/errors.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">const</span> <span class="t">SORRY</span> = <span class="s">'Sorry, we could not load the products. Please try again.'</span>;
+
+test(<span class="s">'a server error shows a friendly message'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">'**/api/products'</span>, route =&gt; route.fulfill({ status: <span class="n">500</span>, json: { error: <span class="s">'Database is down'</span> } }));
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'alert'</span>)).toHaveText(<span class="t">SORRY</span>);
+});
+
+test(<span class="s">'a broken connection shows the same message'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">'**/api/products'</span>, route =&gt; route.abort());
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'alert'</span>)).toHaveText(<span class="t">SORRY</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/errors.spec.js:5:1 › a server error shows a friendly message (301ms)
+  ✓  2 [chromium] › tests/errors.spec.js:11:1 › a broken connection shows the same message (268ms)
+
+  2 passed (2.1s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/errors.spec.ts</div><pre class="src" data-file="tests/errors.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">const</span> <span class="t">SORRY</span> = <span class="s">'Sorry, we could not load the products. Please try again.'</span>;
+
+test(<span class="s">'a server error shows a friendly message'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">'**/api/products'</span>, route =&gt; route.fulfill({ status: <span class="n">500</span>, json: { error: <span class="s">'Database is down'</span> } }));
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'alert'</span>)).toHaveText(<span class="t">SORRY</span>);
+});
+
+test(<span class="s">'a broken connection shows the same message'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">'**/api/products'</span>, route =&gt; route.abort());
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'alert'</span>)).toHaveText(<span class="t">SORRY</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/errors.spec.ts:5:1 › a server error shows a friendly message (343ms)
+  ✓  2 [chromium] › tests/errors.spec.ts:11:1 › a broken connection shows the same message (228ms)
+
+  2 passed (2.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>A 500 answer and a broken connection both led to the same friendly message. These cases are hard to produce with a real server, and with route they take one line each.</p></div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Routes can also make tests faster. page.route('**/*.{png,jpg,jpeg}', route => route.abort()) stops images from loading in tests that do not need them.</div></div>
+</section>
+<section class="card reveal jsec" id="edit" data-say="edit"><div class="sec-num">Part 4</div><h2><span class="sec-em">✏️</span><span>Change a real response</span></h2>
+
+<p>Sometimes you want almost everything real, with one field changed. route.fetch sends the request to the real server and gives you its answer, which you change before the page sees it.</p>
+<div class="codewrap tests pw4" data-k="edit" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Keep the real answer, change one field · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/SoldOutTest.java</div><pre class="src" data-file="src/test/java/com/brainy/SoldOutTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.google.gson.<span class="t">JsonArray</span>;
+<span class="k">import</span> com.google.gson.<span class="t">JsonElement</span>;
+<span class="k">import</span> com.google.gson.<span class="t">JsonParser</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">APIResponse</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Route</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">SoldOutTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theLampShowsAsSoldOut(<span class="t">Page</span> page) {
+    page.route(<span class="s">"**/api/products"</span>, route -&gt; {
+      <span class="t">APIResponse</span> response = route.fetch();                    <span class="c">// ask the real server</span>
+      <span class="t">JsonArray</span> products = <span class="t">JsonParser</span>.parseString(response.text()).getAsJsonArray();
+      <span class="k">for</span> (<span class="t">JsonElement</span> product : products) {                   <span class="c">// then change one field</span>
+        <span class="k">if</span> (product.getAsJsonObject().get(<span class="s">"name"</span>).getAsString().equals(<span class="s">"Desk lamp"</span>))
+          product.getAsJsonObject().addProperty(<span class="s">"stock"</span>, <span class="n">0</span>);
+      }
+      route.fulfill(<span class="k">new</span> <span class="t">Route</span>.<span class="t">FulfillOptions</span>().setResponse(response).setBody(products.toString()));
+    });
+
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);   <span class="c">// the other products are real</span>
+    assertThat(page.getByTestId(<span class="s">"product-3"</span>).getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>)).hasText(<span class="s">"Out of stock"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.SoldOutTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.754 s -- in com.brainy.SoldOutTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_sold_out.py</div><pre class="src" data-file="tests/test_sold_out.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, <span class="t">Route</span>, expect
+
+
+<span class="k">def</span> sell_out_the_lamp(route: <span class="t">Route</span>):
+    response = route.fetch()                       <span class="c"># ask the real server</span>
+    products = response.json()
+    <span class="k">for</span> product <span class="k">in</span> products:                       <span class="c"># then change one field</span>
+        <span class="k">if</span> product[<span class="s">"name"</span>] == <span class="s">"Desk lamp"</span>:
+            product[<span class="s">"stock"</span>] = <span class="n">0</span>
+    route.fulfill(response=response, json=products)
+
+
+<span class="k">def</span> test_the_lamp_shows_as_sold_out(page: <span class="t">Page</span>):
+    page.route(<span class="s">"**/api/products"</span>, sell_out_the_lamp)
+
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)   <span class="c"># the other products are real</span>
+    expect(page.get_by_test_id(<span class="s">"product-3"</span>).get_by_role(<span class="s">"button"</span>)).to_have_text(<span class="s">"Out of stock"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_sold_out.py::test_the_lamp_shows_as_sold_out[chromium] PASSED [100%]
+
+============================== 1 passed in 2.13s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/sold-out.spec.js</div><pre class="src" data-file="tests/sold-out.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the lamp shows as sold out'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">'**/api/products'</span>, <span class="k">async</span> route =&gt; {
+    <span class="k">const</span> response = <span class="k">await</span> route.fetch();                  <span class="c">// ask the real server</span>
+    <span class="k">const</span> products = <span class="k">await</span> response.json();
+    products.find(p =&gt; p.name === <span class="s">'Desk lamp'</span>).stock = <span class="n">0</span>;  <span class="c">// then change one field</span>
+    <span class="k">await</span> route.fulfill({ response, json: products });
+  });
+
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);   <span class="c">// the other products are real</span>
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-3'</span>).getByRole(<span class="s">'button'</span>)).toHaveText(<span class="s">'Out of stock'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/sold-out.spec.js:3:1 › the lamp shows as sold out (1.2s)
+
+  1 passed (2.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/sold-out.spec.ts</div><pre class="src" data-file="tests/sold-out.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the lamp shows as sold out'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.route(<span class="s">'**/api/products'</span>, <span class="k">async</span> route =&gt; {
+    <span class="k">const</span> response = <span class="k">await</span> route.fetch();                  <span class="c">// ask the real server</span>
+    <span class="k">const</span> products = <span class="k">await</span> response.json();
+    products.find((p: { name: <span class="k">string</span> }) =&gt; p.name === <span class="s">'Desk lamp'</span>).stock = <span class="n">0</span>;  <span class="c">// then change one field</span>
+    <span class="k">await</span> route.fulfill({ response, json: products });
+  });
+
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);   <span class="c">// the other products are real</span>
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-3'</span>).getByRole(<span class="s">'button'</span>)).toHaveText(<span class="s">'Out of stock'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/sold-out.spec.ts:3:1 › the lamp shows as sold out (1.1s)
+
+  1 passed (2.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>route.fetch sent the request to the real server, the handler changed the stock of the lamp to 0, and route.fulfill passed the changed answer on. Four products are exactly as the server sent them, and only the lamp is sold out.</p></div></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>route.continue can change the request on its way out instead: a different header, method or body. For example, route.continue({ headers: { ...route.request().headers(), "x-test": "yes" } }).</div></div>
+</section>
+<section class="card reveal jsec" id="har" data-say="har"><div class="sec-num">Part 5</div><h2><span class="sec-em">📼</span><span>Record and replay with HAR</span></h2>
+
+<p>A <b>HAR</b> file (HTTP Archive) is a recording of network traffic. Playwright can record the answers of an API into a HAR file once, and replay them in later runs. Tests then get the same data every time, even when the real API changes or is down.</p>
+<div class="codewrap tests pw4" data-k="har" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Record the API into a HAR file, then replay it · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/HarTest.java</div><pre class="src" data-file="src/test/java/com/brainy/HarTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.*;
+<span class="k">import</span> java.nio.file.<span class="t">Paths</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="a">@TestMethodOrder</span>(<span class="t">MethodOrderer</span>.<span class="t">OrderAnnotation</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">HarTest</span> {
+  <span class="a">@Test</span>
+  <span class="a">@Order</span>(<span class="n">1</span>)
+  <span class="k">void</span> recordTheProductsApi(<span class="t">Page</span> page) {
+    page.routeFromHAR(<span class="t">Paths</span>.get(<span class="s">"hars/products.har"</span>), <span class="k">new</span> <span class="t">Page</span>.<span class="t">RouteFromHAROptions</span>().setUrl(<span class="s">"**/api/products"</span>).setUpdate(<span class="k">true</span>));
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Order</span>(<span class="n">2</span>)
+  <span class="k">void</span> replayItFromTheFile(<span class="t">Page</span> page) {
+    <span class="c">// no update: answers come from the file</span>
+    page.routeFromHAR(<span class="t">Paths</span>.get(<span class="s">"hars/products.har"</span>), <span class="k">new</span> <span class="t">Page</span>.<span class="t">RouteFromHAROptions</span>().setUrl(<span class="s">"**/api/products"</span>));
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test &amp;&amp; ls -1 hars</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.HarTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.647 s -- in com.brainy.HarTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+c5095825bcd689bd77e29c15924bb5ba81bc3c6d.json
+products.har</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_har.py</div><pre class="src" data-file="tests/test_har.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_record_the_products_api(page: <span class="t">Page</span>):
+    page.route_from_har(<span class="s">"hars/products.har"</span>, url=<span class="s">"**/api/products"</span>, update=<span class="k">True</span>)
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)
+
+
+<span class="k">def</span> test_replay_it_from_the_file(page: <span class="t">Page</span>):
+    page.route_from_har(<span class="s">"hars/products.har"</span>, url=<span class="s">"**/api/products"</span>)   <span class="c"># no update: answers come from the file</span>
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v &amp;&amp; ls hars</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_har.py::test_record_the_products_api[chromium] PASSED         [ 50%]
+tests/test_har.py::test_replay_it_from_the_file[chromium] PASSED         [100%]
+
+============================== 2 passed in 2.33s ===============================
+c5095825bcd689bd77e29c15924bb5ba81bc3c6d.json
+products.har</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/har.spec.js</div><pre class="src" data-file="tests/har.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'record the products API'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.routeFromHAR(<span class="s">'hars/products.har'</span>, { url: <span class="s">'**/api/products'</span>, update: <span class="k">true</span> });
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'replay it from the file'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.routeFromHAR(<span class="s">'hars/products.har'</span>, { url: <span class="s">'**/api/products'</span> });   <span class="c">// no update: answers come from the file</span>
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test &amp;&amp; ls hars</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/har.spec.js:3:1 › record the products API (1.1s)
+  ✓  2 [chromium] › tests/har.spec.js:9:1 › replay it from the file (318ms)
+
+  2 passed (3.1s)
+c5095825bcd689bd77e29c15924bb5ba81bc3c6d.json
+products.har</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/har.spec.ts</div><pre class="src" data-file="tests/har.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'record the products API'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.routeFromHAR(<span class="s">'hars/products.har'</span>, { url: <span class="s">'**/api/products'</span>, update: <span class="k">true</span> });
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'replay it from the file'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.routeFromHAR(<span class="s">'hars/products.har'</span>, { url: <span class="s">'**/api/products'</span> });   <span class="c">// no update: answers come from the file</span>
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test &amp;&amp; ls hars</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/har.spec.ts:3:1 › record the products API (1.1s)
+  ✓  2 [chromium] › tests/har.spec.ts:9:1 › replay it from the file (241ms)
+
+  2 passed (3.0s)
+c5095825bcd689bd77e29c15924bb5ba81bc3c6d.json
+products.har</pre></div></div><div class="note-out"><span>What happens</span><p>The first test called the real API and saved the answer into hars/products.har. The ls at the end shows the HAR file and a second file with the response body, named by a hash, which you can edit by hand. The second test was answered from those files, and it was faster, because the file answers at once while the real API waits 600 ms. Commit the folder, and the tests no longer depend on the live API.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Step</th><th>What you write</th></tr><tr><td>record</td><td>routeFromHAR(file, { url, update: true }) and run the test once</td></tr><tr><td>edit</td><td>change the JSON in the body file next to the HAR, if you want different data</td></tr><tr><td>replay</td><td>routeFromHAR(file, { url }) without update</td></tr><tr><td>refresh</td><td>run once more with update: true when the API changes</td></tr></table></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Replay matches the address and the method exactly, and for POST also the body. A request that matches nothing in the file is aborted, unless you pass notFound: fallback.</div></div>
+</section>
+<section class="card reveal jsec" id="websocket" data-say="websocket"><div class="sec-num">Part 6</div><h2><span class="sec-em">🔌</span><span>WebSockets</span></h2>
+
+<p>A <b>WebSocket</b> is a connection that stays open, so the server can send messages at any time, like the live stock on the widgets page. routeWebSocket lets a test act as the server.</p>
+<div class="codewrap tests pw4" data-k="ws" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Mock a WebSocket feed · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/LiveStockTest.java</div><pre class="src" data-file="src/test/java/com/brainy/LiveStockTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">LiveStockTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> showsTheLiveStockFromTheServer(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    assertThat(page.getByTestId(<span class="s">"live-stock"</span>)).hasText(<span class="s">"Desk lamp: 8 left"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> aMockedFeedSaysTheLampSoldOut(<span class="t">Page</span> page) {
+    page.routeWebSocket(<span class="s">"**/ws/stock"</span>, ws -&gt; {               <span class="c">// no real server is contacted</span>
+      ws.onMessage(frame -&gt; {
+        <span class="k">if</span> (<span class="s">"subscribe"</span>.equals(frame.text()))
+          ws.send(<span class="s">"{\"product\": \"Desk lamp\", \"left\": 0}"</span>);
+      });
+    });
+    page.navigate(<span class="s">"/widgets"</span>);
+    assertThat(page.getByTestId(<span class="s">"live-stock"</span>)).hasText(<span class="s">"Desk lamp: sold out"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.LiveStockTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.994 s -- in com.brainy.LiveStockTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_live_stock.py</div><pre class="src" data-file="tests/test_live_stock.py"><span class="k">import</span> json
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, <span class="t">WebSocketRoute</span>, expect
+
+
+<span class="k">def</span> test_shows_the_live_stock_from_the_server(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    expect(page.get_by_test_id(<span class="s">"live-stock"</span>)).to_have_text(<span class="s">"Desk lamp: 8 left"</span>)
+
+
+<span class="k">def</span> answer(ws: <span class="t">WebSocketRoute</span>, message):
+    <span class="k">if</span> message == <span class="s">"subscribe"</span>:
+        ws.send(json.dumps({<span class="s">"product"</span>: <span class="s">"Desk lamp"</span>, <span class="s">"left"</span>: <span class="n">0</span>}))
+
+
+<span class="k">def</span> test_a_mocked_feed_says_the_lamp_sold_out(page: <span class="t">Page</span>):
+    <span class="c"># no real server is contacted</span>
+    page.route_web_socket(<span class="s">"**/ws/stock"</span>, <span class="k">lambda</span> ws: ws.on_message(<span class="k">lambda</span> message: answer(ws, message)))
+    page.goto(<span class="s">"/widgets"</span>)
+    expect(page.get_by_test_id(<span class="s">"live-stock"</span>)).to_have_text(<span class="s">"Desk lamp: sold out"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_live_stock.py::test_shows_the_live_stock_from_the_server[chromium] PASSED [ 50%]
+tests/test_live_stock.py::test_a_mocked_feed_says_the_lamp_sold_out[chromium] PASSED [100%]
+
+============================== 2 passed in 1.62s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/live-stock.spec.js</div><pre class="src" data-file="tests/live-stock.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'shows the live stock from the server'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'live-stock'</span>)).toHaveText(<span class="s">'Desk lamp: 8 left'</span>);
+});
+
+test(<span class="s">'a mocked feed says the lamp sold out'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.routeWebSocket(<span class="s">'**/ws/stock'</span>, ws =&gt; {          <span class="c">// no real server is contacted</span>
+    ws.onMessage(message =&gt; {
+      <span class="k">if</span> (message === <span class="s">'subscribe'</span>)
+        ws.send(<span class="t">JSON</span>.stringify({ product: <span class="s">'Desk lamp'</span>, left: <span class="n">0</span> }));
+    });
+  });
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'live-stock'</span>)).toHaveText(<span class="s">'Desk lamp: sold out'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/live-stock.spec.js:3:1 › shows the live stock from the server (254ms)
+  ✓  2 [chromium] › tests/live-stock.spec.js:8:1 › a mocked feed says the lamp sold out (237ms)
+
+  2 passed (1.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/live-stock.spec.ts</div><pre class="src" data-file="tests/live-stock.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'shows the live stock from the server'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'live-stock'</span>)).toHaveText(<span class="s">'Desk lamp: 8 left'</span>);
+});
+
+test(<span class="s">'a mocked feed says the lamp sold out'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.routeWebSocket(<span class="s">'**/ws/stock'</span>, ws =&gt; {          <span class="c">// no real server is contacted</span>
+    ws.onMessage(message =&gt; {
+      <span class="k">if</span> (message === <span class="s">'subscribe'</span>)
+        ws.send(<span class="t">JSON</span>.stringify({ product: <span class="s">'Desk lamp'</span>, left: <span class="n">0</span> }));
+    });
+  });
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'live-stock'</span>)).toHaveText(<span class="s">'Desk lamp: sold out'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/live-stock.spec.ts:3:1 › shows the live stock from the server (301ms)
+  ✓  2 [chromium] › tests/live-stock.spec.ts:8:1 › a mocked feed says the lamp sold out (264ms)
+
+  2 passed (2.3s)</pre></div></div><div class="note-out"><span>What happens</span><p>The first test read the real feed: 8 lamps left. In the second, routeWebSocket took the place of the server. When the page sent subscribe, the handler answered with 0, and the page said sold out. To keep the real server and only change some messages, call connectToServer in the handler.</p></div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-parallel.html" data-topic="pw-parallel"><small>← Previous chapter</small><b>⚡ Parallel and retries</b></a><a class="next" href="./pw-api.html" data-topic="pw-api"><small>Next chapter →</small><b>🔑 API and auth</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "You control the network", "panels": [{"s": [["e", "👀"], ["t", "waitForResponse", {"b": 1}]], "h": "Watch", "t": "See every call.", "more": "Wait for the one you need."}, {"s": [["e", "🎭"], ["t", "fulfill", {"b": 1}]], "h": "Mock", "t": "Answer with your data.", "more": "No server needed."}, {"s": [["e", "✏️"], ["t", "fetch", {"b": 1}]], "h": "Change", "t": "Real answer, one field changed.", "more": "The rest stays real."}, {"s": [["e", "📼"], ["t", "HAR", {"b": 1}]], "h": "Replay", "t": "Record once.", "more": "Same data every run."}], "remember": "Mock what you do not own or cannot control. Keep a few tests against the real API, so the mocks do not drift away from it."}, "real": [["💳", "The payment provider that is never down in tests", "A shop mocks the answers of its payment provider: approved, declined and timed out. Each case takes one route, and no test charges a real card."], ["📉", "The empty state nobody had seen", "A dashboard team mocks an empty list and finds that the page shows a spinner forever instead of a message. Real data had always been there, so the bug had stayed hidden."], ["📼", "A demo that never changes", "A team records the answers of a slow partner API into HAR files. Their tests run in seconds and stay green on days when the partner is down."]], "quiz": [{"lv": 1, "q": "Which method answers a caught request with your own data?", "o": ["route.continue", "route.fulfill", "route.abort", "route.fetch"], "a": 1, "hint": "Fulfil means to complete.", "why": "route.fulfill sends your status, headers and body back to the page."}, {"lv": 1, "q": "What does route.abort do?", "o": ["skips the test", "makes the request fail", "closes the page", "waits longer"], "a": 1, "hint": "As if the network broke.", "why": "The request fails, as if the connection were lost."}, {"lv": 1, "q": "What is a HAR file?", "o": ["a test report", "a recording of network traffic", "a browser binary", "a config file"], "a": 1, "hint": "HTTP Archive.", "why": "A HAR file records requests and responses so they can be replayed."}, {"lv": 1, "q": "Which pattern matches http://localhost:4173/api/products?", "o": ["'/products'", "'**/api/products'", "'*api'", "'api/*/products'"], "a": 1, "hint": "** matches any part, slashes too.", "why": "'**/api/products' matches that address on any host."}, {"lv": 2, "q": "Why start waitForResponse before page.goto?", "o": ["it is faster", "the response might arrive before you start listening", "goto needs it", "it is required in TypeScript"], "a": 1, "hint": "Think about timing.", "why": "If you start listening after the action, the response may already be gone."}, {"lv": 2, "q": "How do you change one field of the real answer?", "o": ["route.continue with a body", "route.fetch, change it, route.fulfill", "route.abort", "edit the server"], "a": 1, "hint": "Get it first, then pass it on.", "why": "fetch gets the real answer, you change it, and fulfill passes it to the page."}, {"lv": 2, "q": "Which option does the Java fulfill lack, compared with JavaScript and Python?", "o": ["status", "json", "body", "contentType"], "a": 1, "hint": "Look at the Java mock example.", "why": "Java sets the body and the content type itself."}, {"lv": 2, "q": "Which route catches requests from every tab of a context?", "o": ["page.route", "context.route", "browser.route", "test.route"], "a": 1, "hint": "Context means all its pages.", "why": "context.route applies to every page in the context, including new tabs."}, {"lv": 2, "q": "What does update: true do in routeFromHAR?", "o": ["replays the file", "records real answers into the file", "deletes the file", "updates Playwright"], "a": 1, "hint": "It writes the file.", "why": "With update the real API is called and the file is written. Without it the file is replayed."}, {"lv": 3, "q": "During HAR replay, a request matches nothing in the file. What happens by default?", "o": ["it goes to the server", "it is aborted", "the test is skipped", "it waits forever"], "a": 1, "hint": "Read the HAR tip.", "why": "It is aborted, unless notFound is set to fallback."}, {"lv": 3, "q": "In routeWebSocket, how do you keep the real server and only change some messages?", "o": ["ws.continue()", "ws.connectToServer()", "ws.fetch()", "you cannot"], "a": 1, "hint": "Connect, then forward.", "why": "connectToServer opens the real connection, and the handler forwards or changes messages."}, {"lv": 3, "q": "Which is a good reason to keep some tests against the real API?", "o": ["mocks are slow", "so the mocks do not drift away from the real API", "routes are not allowed in CI", "HAR files expire"], "a": 1, "hint": "Mocks can go stale.", "why": "If the API changes and only mocks are tested, the tests keep passing while the real page breaks."}], "calc": [{"lv": 1, "q": "The products API waits 600 ms. A mocked answer takes about 0 ms. 50 tests load the products once each. How many seconds does mocking save?", "ans": 30, "hint": "50 × 0.6", "steps": ["50 × 600 ms = 30000 ms", "30000 ms = 30 s"]}, {"lv": 1, "q": "A mock sends 2 products. How many list items does the page show?", "ans": 2, "hint": "one item per product", "steps": ["2 products → 2 items"]}, {"lv": 2, "q": "The real API sends 5 products, and the handler sets the stock of 2 of them to 0. How many Add to cart buttons are left?", "ans": 2, "hint": "the Notebook is already out of stock", "steps": ["5 products, 1 already sold out: 4 buttons", "4 - 2 = 2"]}, {"lv": 2, "q": "A page makes 6 API calls, and 2 are caught by routes and fulfilled. How many reach the server?", "ans": 4, "hint": "6 - 2", "steps": ["6 - 2 = 4"]}, {"lv": 2, "q": "A HAR replay file has 3 recorded answers. The page makes 4 different calls, and no fallback is set. How many are aborted?", "ans": 1, "hint": "what is not in the file", "steps": ["4 - 3 = 1"]}, {"lv": 3, "q": "Images are 70 % of the bytes of a page of 2000 KB. How many KB load when images are aborted?", "ans": 600, "hint": "2000 × 0.3", "steps": ["100 - 70 = 30 %", "2000 × 0.3 = 600 KB"]}, {"lv": 3, "q": "A mocked WebSocket sends a stock message every 500 ms. How many messages in 3 seconds?", "ans": 6, "hint": "3000 / 500", "steps": ["3000 ms / 500 ms = 6"]}, {"lv": 3, "q": "A team has 120 tests and mocks the payment API in 30 of them. What percent use the real payment API?", "ans": 75, "hint": "90 / 120 × 100", "steps": ["120 - 30 = 90", "90 / 120 = 0.75", "× 100 = 75 %"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter is about the network: listening to requests, answering them with your own data, making them fail, changing real answers, recording them into HAR files, and mocking WebSockets.", "hi": "यह अध्याय network के बारे में है: requests सुनना, उन्हें अपने data से जवाब देना, उन्हें fail करना, असली जवाब बदलना, उन्हें HAR files में record करना, और WebSockets को mock करना।", "kn": "ಈ ಅಧ್ಯಾಯ network ಬಗ್ಗೆ: requests ಕೇಳುವುದು, ನಿಮ್ಮ data ದಿಂದ ಉತ್ತರಿಸುವುದು, fail ಮಾಡುವುದು, ನಿಜವಾದ ಉತ್ತರ ಬದಲಿಸುವುದು, HAR files ಗೆ record ಮಾಡುವುದು ಮತ್ತು WebSockets mock ಮಾಡುವುದು.", "or": "ଏହି ଅଧ୍ୟାୟ network ବିଷୟରେ: requests ଶୁଣିବା, ନିଜ data ରେ ଉତ୍ତର ଦେବା, fail କରିବା, ପ୍ରକୃତ ଉତ୍ତର ବଦଳାଇବା, HAR files ରେ record କରିବା ଏବଂ WebSockets mock କରିବା।", "ar": "يتناول هذا الفصل الشبكة: الاستماع إلى الطلبات، والرد عليها ببياناتك، وجعلها تفشل، وتعديل الردود الحقيقية، وتسجيلها في ملفات HAR، ومحاكاة WebSockets.", "de": "In diesem Kapitel geht es um das Netzwerk: Anfragen mithören, sie mit eigenen Daten beantworten, sie scheitern lassen, echte Antworten ändern, sie in HAR-Dateien aufnehmen und WebSockets simulieren."}, {"id": "watch", "h": "Watch the traffic", "en": "page.on request and response let you see every call. waitForResponse waits for one call. Start waiting before the action that causes it.", "hi": "page.on request और response से आप हर call देख सकते हैं। waitForResponse एक call का इंतज़ार करता है। उसे पैदा करने वाले action से पहले इंतज़ार शुरू करें।", "kn": "page.on request ಮತ್ತು response ಮೂಲಕ ಪ್ರತಿ call ನೋಡಬಹುದು. waitForResponse ಒಂದು call ಗಾಗಿ ಕಾಯುತ್ತದೆ. ಅದನ್ನು ಉಂಟುಮಾಡುವ action ಗಿಂತ ಮೊದಲು ಕಾಯಲು ಶುರುಮಾಡಿ.", "or": "page.on request ଓ response ରେ ପ୍ରତି call ଦେଖିହେବ। waitForResponse ଗୋଟିଏ call ପାଇଁ ଅପେକ୍ଷା କରେ। ତାକୁ ସୃଷ୍ଟି କରୁଥିବା action ପୂର୍ବରୁ ଅପେକ୍ଷା ଆରମ୍ଭ କରନ୍ତୁ।", "ar": "يتيح page.on للطلبات والردود رؤية كل اتصال. ينتظر waitForResponse اتصالًا واحدًا. ابدأ الانتظار قبل الفعل الذي يسببه.", "de": "Mit page.on für request und response siehst du jeden Aufruf. waitForResponse wartet auf einen bestimmten. Beginne zu warten, bevor die Aktion ihn auslöst."}, {"id": "mock", "h": "Mock an API", "en": "page.route catches requests that match a pattern. route.fulfill answers them with your own data, so the server never sees them.", "hi": "page.route pattern से मिलती requests पकड़ता है। route.fulfill उन्हें आपके data से जवाब देता है, इसलिए server उन्हें कभी नहीं देखता।", "kn": "page.route pattern ಗೆ ಹೊಂದುವ requests ಹಿಡಿಯುತ್ತದೆ. route.fulfill ನಿಮ್ಮ data ದಿಂದ ಉತ್ತರಿಸುತ್ತದೆ, ಹಾಗಾಗಿ server ಅವುಗಳನ್ನು ನೋಡುವುದೇ ಇಲ್ಲ.", "or": "page.route pattern ସହ ମେଳ ଖାଉଥିବା requests ଧରେ। route.fulfill ନିଜ data ରେ ଉତ୍ତର ଦିଏ, ତେଣୁ server ସେଗୁଡିକୁ କେବେ ଦେଖେ ନାହିଁ।", "ar": "يلتقط page.route الطلبات المطابقة لنمط. ويرد عليها route.fulfill ببياناتك، فلا يراها الخادم أبدًا.", "de": "page.route fängt Anfragen ab, die zu einem Muster passen. route.fulfill beantwortet sie mit eigenen Daten, sodass der Server sie nie sieht."}, {"id": "errors", "h": "Errors", "en": "A status of 500 or route.abort makes a request fail on purpose, so you can check the friendly message the page shows.", "hi": "Status 500 या route.abort request को जानबूझकर fail करता है, ताकि आप page का friendly message जाँच सकें।", "kn": "Status 500 ಅಥವಾ route.abort request ಅನ್ನು ಉದ್ದೇಶಪೂರ್ವಕ fail ಮಾಡುತ್ತದೆ, ಆಗ page ತೋರಿಸುವ friendly message ಪರಿಶೀಲಿಸಬಹುದು.", "or": "Status 500 ବା route.abort request କୁ ଜାଣିଶୁଣି fail କରେ, ଯାହାଦ୍ୱାରା page ର friendly message ଯାଞ୍ଚ କରିହେବ।", "ar": "تجعل الحالة 500 أو route.abort الطلب يفشل عمدًا، فتتحقق من الرسالة الودية التي تعرضها الصفحة.", "de": "Ein Status 500 oder route.abort lässt eine Anfrage absichtlich scheitern, damit du die freundliche Meldung der Seite prüfen kannst."}, {"id": "edit", "h": "Change a real response", "en": "route.fetch gets the real answer. Change what you need, then pass it on with route.fulfill.", "hi": "route.fetch असली जवाब लाता है। जो चाहिए वह बदलें, फिर route.fulfill से आगे भेजें।", "kn": "route.fetch ನಿಜವಾದ ಉತ್ತರ ತರುತ್ತದೆ. ಬೇಕಾದ್ದನ್ನು ಬದಲಿಸಿ, ನಂತರ route.fulfill ಮೂಲಕ ಮುಂದೆ ಕಳುಹಿಸಿ.", "or": "route.fetch ପ୍ରକୃତ ଉତ୍ତର ଆଣେ। ଦରକାରୀ ବଦଳାନ୍ତୁ, ତାପରେ route.fulfill ରେ ଆଗକୁ ପଠାନ୍ତୁ।", "ar": "يجلب route.fetch الرد الحقيقي. غيّر ما تحتاجه ثم مرّره عبر route.fulfill.", "de": "route.fetch holt die echte Antwort. Ändere, was du brauchst, und gib sie mit route.fulfill weiter."}, {"id": "har", "h": "HAR files", "en": "routeFromHAR with update records the API into a file. Without update it replays the file, so tests get the same data every run.", "hi": "update के साथ routeFromHAR API को file में record करता है। update के बिना वह file replay करता है, जिससे tests को हर run में वही data मिलता है।", "kn": "update ಜೊತೆ routeFromHAR API ಅನ್ನು file ಗೆ record ಮಾಡುತ್ತದೆ. update ಇಲ್ಲದೆ file replay ಮಾಡುತ್ತದೆ, ಆಗ tests ಪ್ರತಿ run ನಲ್ಲಿ ಅದೇ data ಪಡೆಯುತ್ತವೆ.", "or": "update ସହ routeFromHAR API କୁ file ରେ record କରେ। update ବିନା ଏହା file replay କରେ, ତେଣୁ tests ପ୍ରତି run ରେ ସେହି data ପାଆନ୍ତି।", "ar": "يسجّل routeFromHAR مع update واجهة API في ملف. وبدون update يعيد تشغيل الملف، فتحصل الاختبارات على البيانات نفسها في كل تشغيل.", "de": "routeFromHAR mit update nimmt die API in eine Datei auf. Ohne update spielt es die Datei ab, sodass Tests bei jedem Lauf dieselben Daten bekommen."}, {"id": "websocket", "h": "WebSockets", "en": "routeWebSocket lets the test act as the WebSocket server. The handler reads what the page sends and answers with its own messages.", "hi": "routeWebSocket से test WebSocket server की तरह काम करता है। handler page का भेजा पढ़ता है और अपने messages से जवाब देता है।", "kn": "routeWebSocket ಮೂಲಕ test WebSocket server ಆಗಿ ಕೆಲಸ ಮಾಡುತ್ತದೆ. handler page ಕಳುಹಿಸಿದ್ದನ್ನು ಓದಿ ತನ್ನ messages ನಿಂದ ಉತ್ತರಿಸುತ್ತದೆ.", "or": "routeWebSocket ରେ test WebSocket server ଭାବେ କାମ କରେ। handler page ପଠାଇଥିବା ପଢେ ଏବଂ ନିଜ messages ରେ ଉତ୍ତର ଦିଏ।", "ar": "يتيح routeWebSocket للاختبار أن يعمل كخادم WebSocket. يقرأ المعالج ما ترسله الصفحة ويرد برسائله.", "de": "Mit routeWebSocket spielt der Test den WebSocket-Server. Der Handler liest, was die Seite sendet, und antwortet mit eigenen Nachrichten."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you mock an empty product list, and then make the products API fail with status 503.", "hi": "Labs में आप खाली product list mock करते हैं, फिर products API को status 503 से fail करते हैं।", "kn": "Labs ನಲ್ಲಿ ಖಾಲಿ product list mock ಮಾಡುತ್ತೀರಿ, ನಂತರ products API ಅನ್ನು status 503 ಮೂಲಕ fail ಮಾಡುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ ଖାଲି product list mock କରନ୍ତି, ତାପରେ products API କୁ status 503 ରେ fail କରନ୍ତି।", "ar": "في المختبرات تحاكي قائمة منتجات فارغة، ثم تجعل واجهة المنتجات تفشل بالحالة 503.", "de": "In den Labs simulierst du eine leere Produktliste und lässt dann die Produkt-API mit Status 503 scheitern."}], "ex": [], "dg": {"route": {"t": "Where page.route sits", "w": 900, "h": 230, "n": [["pg", 20, 83, 140, 64, "the page", {"c": 5, "sub": "fetch('/api/products')", "i": "The shop page asks for the products, as it always does."}], ["rt", 220, 83, 150, 64, "page.route", {"c": 2, "sub": "your handler", "i": "Playwright catches every request that matches the pattern and calls your handler."}], ["ff", 440, 10, 170, 64, "route.fulfill", {"c": 1, "sub": "answer it yourself", "i": "The handler answers with your data. The server never sees the request."}], ["ab", 440, 156, 170, 64, "route.abort", {"c": 3, "sub": "fail the request", "i": "The request fails as if the network were down."}], ["ct", 440, 83, 170, 64, "route.continue", {"c": 0, "sub": "let it through", "i": "The request goes on to the server, changed or not."}], ["sv", 680, 83, 200, 64, "the server", {"c": 4, "sub": "or route.fetch first", "i": "With continue or fetch, the real server answers. fetch lets you change the answer before the page sees it."}]], "e": [["pg", "rt"], ["rt", "ff"], ["rt", "ab"], ["rt", "ct"], ["ct", "sv"]], "st": [[["pg"], "The page makes a request."], [["rt", "pg>rt"], "A matching route catches it before it leaves the browser."], [["ff", "rt>ff"], "Fulfill answers with your own data."], [["ab", "rt>ab"], "Abort makes it fail."], [["ct", "sv", "rt>ct", "ct>sv"], "Continue, or fetch, lets the real server answer."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "mockempty", "title": "Show an empty shop", "name": "shows a message when there are no products", "task": "Answer <code>**/api/products<\/code> with an empty list <code>[]<\/code> before opening <code>/products<\/code>. Then check that the page says <b>No products match your search<\/b>.", "goal": "The shop shows its empty message.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('shows a message when there are no products', async ({ page }) => {\n  // mock the products API with an empty list, then open /products\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class ShowsAMessageWhenThereAreNoProductsTest {\n  @Test\n  void showsAMessageWhenThereAreNoProducts(Page page) {\n    page.route(\"**/api/products\", route -> route.fulfill(new Route.FulfillOptions().setContentType(\"application/json\").setBody(\"[]\")));\n    page.navigate(\"/products\");\n    assertThat(page.getByText(\"No products match your search\")).isVisible();\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_shows_a_message_when_there_are_no_products(page: Page):\n    page.route(\"**/api/products\", lambda route: route.fulfill(json=[]))\n    page.goto(\"/products\")\n    expect(page.get_by_text(\"No products match your search\")).to_be_visible()\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('shows a message when there are no products', async ({ page }) => {\n  await page.route('**/api/products', route => route.fulfill({ json: [] }));\n  await page.goto('/products');\n  await expect(page.getByText('No products match your search')).toBeVisible();\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('shows a message when there are no products', async ({ page }) => {\n  await page.route('**/api/products', route => route.fulfill({ json: [] }));\n  await page.goto('/products');\n  await expect(page.getByText('No products match your search')).toBeVisible();\n});"}, "hint": "Add the route before goto: <code>await page.route('**/api/products', route => route.fulfill({ json: [] }));<\/code>", "why": "The route must exist before the page asks for the products, so it comes before goto. An empty list is a real case, for a new shop or a search with no hits, and the page should show a message, not an empty space.", "check": [["/No products match your search/.test(ctx.text)", "The empty message is on the page"], ["/fulfill|Fulfill/.test(ctx.code)", "The test answers the request itself"]]}, {"id": "mock503", "title": "Make the products API fail", "name": "shows a friendly error", "task": "Answer <code>**/api/products<\/code> with status <b>503<\/b>, open <code>/products<\/code>, and check that the alert says <b>Sorry, we could not load the products. Please try again.<\/b>", "goal": "The friendly error is on the page.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('shows a friendly error', async ({ page }) => {\n  // make the products API answer with status 503, then open /products\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class ShowsAFriendlyErrorTest {\n  @Test\n  void showsAFriendlyError(Page page) {\n    page.route(\"**/api/products\", route -> route.fulfill(new Route.FulfillOptions().setStatus(503)));\n    page.navigate(\"/products\");\n    assertThat(page.getByRole(AriaRole.ALERT)).hasText(\"Sorry, we could not load the products. Please try again.\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_shows_a_friendly_error(page: Page):\n    page.route(\"**/api/products\", lambda route: route.fulfill(status=503))\n    page.goto(\"/products\")\n    expect(page.get_by_role(\"alert\")).to_have_text(\"Sorry, we could not load the products. Please try again.\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('shows a friendly error', async ({ page }) => {\n  await page.route('**/api/products', route => route.fulfill({ status: 503 }));\n  await page.goto('/products');\n  await expect(page.getByRole('alert')).toHaveText('Sorry, we could not load the products. Please try again.');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('shows a friendly error', async ({ page }) => {\n  await page.route('**/api/products', route => route.fulfill({ status: 503 }));\n  await page.goto('/products');\n  await expect(page.getByRole('alert')).toHaveText('Sorry, we could not load the products. Please try again.');\n});"}, "hint": "Use <code>route.fulfill({ status: 503 })<\/code>, and find the message with <code>getByRole('alert')<\/code>.", "why": "503 means the service is not available right now. The page treats every answer that is not ok the same way, so 500, 503 and an aborted request all lead to the same message.", "check": [["/could not load the products/.test(ctx.text)", "The friendly error is on the page"], ["/503/.test(ctx.code)", "The API answered with 503"]]}], "trees": {}};
+JSPLAY.page({ title: "Network: watch, mock and change requests", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

@@ -3095,6 +3095,38 @@ function pwModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "pw-network", title: "Network and APIs", emoji: "🛰️", blurb: "Watching, mocking and changing network traffic, testing APIs directly, and signing in once for the whole suite.", topics: [
+      { id: "pw-network", title: "Network: watch, mock and change requests", emoji: "🛰️", page: "content/playwright/pw-network.html",
+        summary: "Logging API traffic and reading one response, mocking the products API, a 500 and a broken connection, selling out the lamp in a real answer, recording and replaying a HAR file, and mocking the live stock WebSocket.",
+        keywords: ["network", "mock", "route", "fulfill", "abort", "continue", "fetch", "waitForResponse", "expect_response", "HAR", "routeFromHAR", "WebSocket", "routeWebSocket", "glob"],
+        added: "2026-10-24",
+        sections: [
+        { id: "watch", title: "Watch the traffic", emoji: "👀", group: "Beginner path", keywords: ["network", "request", "response", "waitForResponse", "expect_response", "onRequest", "events"] },
+        { id: "mock", title: "Mock an API", emoji: "🎭", group: "Beginner path", keywords: ["mock", "route", "fulfill", "json", "glob", "context.route"] },
+        { id: "errors", title: "Errors that are hard to cause", emoji: "💥", group: "Lesson", keywords: ["error", "500", "abort", "offline", "friendly message"] },
+        { id: "edit", title: "Change a real response", emoji: "✏️", group: "Lesson", keywords: ["route.fetch", "modify response", "continue", "headers"] },
+        { id: "har", title: "Record and replay with HAR", emoji: "📼", group: "Lesson", keywords: ["HAR", "routeFromHAR", "record", "replay", "update", "notFound"] },
+        { id: "websocket", title: "WebSockets", emoji: "🔌", group: "Lesson", keywords: ["WebSocket", "routeWebSocket", "onMessage", "connectToServer", "live"] },
+        { id: "lab-mockempty", title: "Show an empty shop", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-mock503", title: "Make the products API fail", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-api", title: "API testing and signing in once", emoji: "🔑", page: "content/playwright/pw-api.html",
+        summary: "A full create, read, update and delete test of the people API with a validation error, a token sent in a header, a cart filled through the API and checked in the page, and a saved sign in reused by every test.",
+        keywords: ["API testing", "request", "APIRequestContext", "post", "patch", "delete", "toBeOK", "token", "Bearer", "extraHTTPHeaders", "storageState", "auth", "setup project", "browser_context_args", "roles"],
+        added: "2026-10-24",
+        sections: [
+        { id: "api", title: "API tests without a browser", emoji: "🔌", group: "Beginner path", keywords: ["API testing", "request", "APIRequestContext", "get", "post", "patch", "delete", "status", "toBeOK"] },
+        { id: "token", title: "Tokens and headers", emoji: "🔑", group: "Lesson", keywords: ["token", "Bearer", "Authorization", "extraHTTPHeaders", "401", "secrets"] },
+        { id: "mix", title: "API for set up, page for checks", emoji: "🧩", group: "Lesson", keywords: ["arrange", "page.request", "addInitScript", "set up through API", "cookies"] },
+        { id: "state", title: "Sign in once for the whole suite", emoji: "💾", group: "Lesson", keywords: ["storageState", "auth", "setup project", "signed in", "roles", ".auth", "sessionStorage"] },
+        { id: "lab-ravi", title: "Sign in as the admin", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-order", title: "Place a real order", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
