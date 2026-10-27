@@ -3127,6 +3127,24 @@ function pwModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "pw-quality", title: "Debugging and quality", emoji: "🔍", blurb: "Finding out why a test failed with errors, traces, reports, UI mode and the Inspector, then checking how pages look, read and behave on every device.", topics: [
+      { id: "pw-debug", title: "Debugging failed tests: errors, traces, reports and the Inspector", emoji: "🔍", page: "content/playwright/pw-debug.html",
+        summary: "A failed check read line by line in four languages, a failed click that leaves a screenshot, a video and a trace, a trace with named steps, verbose logs, and real screenshots of the trace viewer, the HTML report, UI mode and the Inspector.",
+        keywords: ["debug", "trace viewer", "trace.zip", "show-trace", "screenshot", "video", "retain-on-failure", "on-first-retry", "HTML report", "UI mode", "Inspector", "PWDEBUG", "page.pause", "DEBUG=pw:api", "test.step", "tracing.group"],
+        added: "2026-10-24",
+        sections: [
+        { id: "errors", title: "Read the error first", emoji: "📜", group: "Beginner path", keywords: ["error message", "expected", "received", "call log", "strict mode violation", "timeout exceeded", "failure"] },
+        { id: "evidence", title: "Screenshots, videos and traces on failure", emoji: "📸", group: "Lesson", keywords: ["screenshot only-on-failure", "video retain-on-failure", "trace retain-on-failure", "on-first-retry", "test-results", "evidence"] },
+        { id: "trace", title: "The trace viewer", emoji: "🧭", group: "Lesson", keywords: ["trace viewer", "trace.zip", "show-trace", "trace.playwright.dev", "snapshots", "test.step", "tracing.group", "tracing.start"] },
+        { id: "report", title: "The HTML report and UI mode", emoji: "📊", group: "Lesson", keywords: ["HTML report", "show-report", "UI mode", "--ui", "watch mode", "VS Code extension"] },
+        { id: "inspector", title: "Step through a test with the Inspector", emoji: "🕵️", group: "Lesson", keywords: ["Inspector", "PWDEBUG", "--debug", "page.pause", "step over", "slowMo", "headed", "PLAYWRIGHT_JAVA_SRC"] },
+        { id: "logs", title: "Verbose logs", emoji: "🧾", group: "Lesson", keywords: ["DEBUG=pw:api", "verbose logs", "pw:browser", "pw:protocol", "PWDEBUG=console", "CI logs"] },
+        { id: "lab-greeting", title: "Fix the check with the received value", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-soldout", title: "Test what the page really shows", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

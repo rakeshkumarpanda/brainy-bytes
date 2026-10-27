@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debugging failed tests: errors, traces, reports and the Inspector · Playwright</title>
+<meta name="description" content="Reading Playwright errors and call logs, screenshot, video and trace on failure, retain-on-failure and on-first-retry, the trace viewer, show-trace and trace.playwright.dev, test.step and tracing.group, the HTML report, UI mode, the Inspector with --debug, PWDEBUG and page.pause, and DEBUG=pw:api logs.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🔍 Debugging and quality</span><span>›</span><span>Chapter 13 of 13</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔍</span><div><h1>Debugging failed tests: errors, traces, reports and the Inspector</h1><p class="lead">Find out why a test failed, quickly and with proof. Read the error, keep a screenshot, a video and a trace for every failure, replay the trace, and step through the test in the Inspector when you need to.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 6 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 16 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 1 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>When a test fails, Playwright can show you exactly what happened: what it looked for, what it found, and a recording of the page at every step. Debugging means reading that evidence before guessing.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#errors" class="easy"><span>📜</span>Read the error first</a><a href="#evidence"><span>📸</span>Screenshots, videos and traces on failure</a><a href="#trace"><span>🧭</span>The trace viewer</a><a href="#report"><span>📊</span>The HTML report and UI mode</a><a href="#inspector"><span>🕵️</span>Step through a test with the Inspector</a><a href="#logs"><span>🧾</span>Verbose logs</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="errors" data-say="errors"><div class="sec-num">Part 1</div><h2><span class="sec-em">📜</span><span>Read the error first</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Most failures explain themselves. Before you open any tool, read what the runner printed. A Playwright error has four parts, and you will find them in every language.</p>
+<div class="tw"><table class="jt "><tr><th>Part</th><th>What it tells you</th></tr><tr><td>the locator</td><td>which element the check or action looked for</td></tr><tr><td>expected and received</td><td>what the test wanted and what the page had, side by side</td></tr><tr><td>the timeout</td><td>how long Playwright kept trying before it gave up</td></tr><tr><td>the call log</td><td>each try: did the locator find an element, was it visible, enabled and stable, what did it contain</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="error" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A failed check, and what the runner prints · <b class="pw-badge">💥 mvn test ran, fails on purpose</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="💥 mvn test ran, fails on purpose"><div class="fname">📄 src/test/java/com/brainy/GreetingTest.java</div><pre class="src" data-file="src/test/java/com/brainy/GreetingTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">GreetingTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> greetsAshaAfterSignIn(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/login"</span>);
+    page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+    page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>)).click();
+    assertThat(page.locator(<span class="s">"#hello"</span>)).hasText(<span class="s">"Hello, Asha!"</span>);   <span class="c">// the page says Hello, Asha</span>
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="err"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.GreetingTest
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 8.196 s &lt;&lt;&lt; FAILURE! -- in com.brainy.GreetingTest
+[ERROR] com.brainy.GreetingTest.greetsAshaAfterSignIn(Page) -- Time elapsed: 8.110 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: 
+Locator expected to have text
+Expected: Hello, Asha!
+Received: Hello, Asha
+
+Call log:
+  - Assert &quot;hasText&quot; locator(&quot;#hello&quot;) with timeout 5000ms
+  - waiting for locator(&quot;#hello&quot;)
+    3 × locator resolved to &lt;span id=&quot;hello&quot;&gt;&lt;/span&gt;
+      - unexpected value &quot;&quot;
+    11 × locator resolved to &lt;span id=&quot;hello&quot;&gt;Hello, Asha&lt;/span&gt;
+       - unexpected value &quot;Hello, Asha&quot;
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE</pre></div></div><div class="pw-pane" data-l="py" data-badge="💥 pytest ran, fails on purpose"><div class="fname">📄 tests/test_greeting.py</div><pre class="src" data-file="tests/test_greeting.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_greets_asha_after_sign_in(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/login"</span>)
+    page.get_by_label(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>)
+    page.get_by_label(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Sign in"</span>).click()
+    expect(page.locator(<span class="s">"#hello"</span>)).to_have_text(<span class="s">"Hello, Asha!"</span>)   <span class="c"># the page says Hello, Asha</span></pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="err"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_greeting.py::test_greets_asha_after_sign_in[chromium] FAILED  [100%]
+
+=================================== FAILURES ===================================
+___________________ test_greets_asha_after_sign_in[chromium] ___________________
+
+page = &lt;Page url=&#x27;http://localhost:4173/products&#x27;&gt;
+
+    def test_greets_asha_after_sign_in(page: Page):
+        page.goto(&quot;/login&quot;)
+        page.get_by_label(&quot;Email&quot;).fill(&quot;asha@shop.example&quot;)
+        page.get_by_label(&quot;Password&quot;).fill(&quot;s3cret&quot;)
+        page.get_by_role(&quot;button&quot;, name=&quot;Sign in&quot;).click()
+&gt;       expect(page.locator(&quot;#hello&quot;)).to_have_text(&quot;Hello, Asha!&quot;)   # the page says Hello, Asha
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Locator expected to have text &#x27;Hello, Asha!&#x27;
+E       Actual value: Hello, Asha 
+E       Call log:
+E         - Expect &quot;to_have_text&quot; locator(&quot;#hello&quot;) with timeout 5000ms
+E         - waiting for locator(&quot;#hello&quot;)
+E           3 × locator resolved to &lt;span id=&quot;hello&quot;&gt;&lt;/span&gt;
+E             - unexpected value &quot;&quot;
+E           10 × locator resolved to &lt;span id=&quot;hello&quot;&gt;Hello, Asha&lt;/span&gt;
+E              - unexpected value &quot;Hello, Asha&quot;
+E       
+E       Aria snapshot:
+E       - text: Hello, Asha
+
+tests/test_greeting.py:9: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_greeting.py::test_greets_asha_after_sign_in[chromium] - AssertionError: Locator expected to have text &#x27;Hello, Asha!&#x27;
+============================== 1 failed in 7.14s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 tests/greeting.spec.js</div><pre class="src" data-file="tests/greeting.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'greets Asha after sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> expect(page.locator(<span class="s">'#hello'</span>)).toHaveText(<span class="s">'Hello, Asha!'</span>);   <span class="c">// the page says Hello, Asha</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✘  1 [chromium] › tests/greeting.spec.js:3:1 › greets Asha after sign in (5.6s)
+
+
+  1) [chromium] › tests/greeting.spec.js:3:1 › greets Asha after sign in ───────────────────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator(&#x27;#hello&#x27;)
+    Expected: &quot;Hello, Asha!&quot;
+    Received: &quot;Hello, Asha&quot;
+    Timeout:  5000ms
+
+    Call log:
+      - Expect &quot;toHaveText&quot; locator(&#x27;#hello&#x27;) with timeout 5000ms
+      - waiting for locator(&#x27;#hello&#x27;)
+        3 × locator resolved to &lt;span id=&quot;hello&quot;&gt;&lt;/span&gt;
+          - unexpected value &quot;&quot;
+        11 × locator resolved to &lt;span id=&quot;hello&quot;&gt;Hello, Asha&lt;/span&gt;
+           - unexpected value &quot;Hello, Asha&quot;
+
+
+       6 |   await page.getByLabel(&#x27;Password&#x27;).fill(&#x27;s3cret&#x27;);
+       7 |   await page.getByRole(&#x27;button&#x27;, { name: &#x27;Sign in&#x27; }).click();
+    &gt;  8 |   await expect(page.locator(&#x27;#hello&#x27;)).toHaveText(&#x27;Hello, Asha!&#x27;);   // the page says Hello, Asha
+         |                                        ^
+       9 | });
+      10 |
+        at tests/greeting.spec.js:8:40
+
+    Error Context: test-results/greeting-greets-Asha-after-sign-in-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/greeting.spec.js:3:1 › greets Asha after sign in ────────────────────────────</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 tests/greeting.spec.ts</div><pre class="src" data-file="tests/greeting.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'greets Asha after sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> expect(page.locator(<span class="s">'#hello'</span>)).toHaveText(<span class="s">'Hello, Asha!'</span>);   <span class="c">// the page says Hello, Asha</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✘  1 [chromium] › tests/greeting.spec.ts:3:1 › greets Asha after sign in (5.5s)
+
+
+  1) [chromium] › tests/greeting.spec.ts:3:1 › greets Asha after sign in ───────────────────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator(&#x27;#hello&#x27;)
+    Expected: &quot;Hello, Asha!&quot;
+    Received: &quot;Hello, Asha&quot;
+    Timeout:  5000ms
+
+    Call log:
+      - Expect &quot;toHaveText&quot; locator(&#x27;#hello&#x27;) with timeout 5000ms
+      - waiting for locator(&#x27;#hello&#x27;)
+        3 × locator resolved to &lt;span id=&quot;hello&quot;&gt;&lt;/span&gt;
+          - unexpected value &quot;&quot;
+        11 × locator resolved to &lt;span id=&quot;hello&quot;&gt;Hello, Asha&lt;/span&gt;
+           - unexpected value &quot;Hello, Asha&quot;
+
+
+       6 |   await page.getByLabel(&#x27;Password&#x27;).fill(&#x27;s3cret&#x27;);
+       7 |   await page.getByRole(&#x27;button&#x27;, { name: &#x27;Sign in&#x27; }).click();
+    &gt;  8 |   await expect(page.locator(&#x27;#hello&#x27;)).toHaveText(&#x27;Hello, Asha!&#x27;);   // the page says Hello, Asha
+         |                                        ^
+       9 | });
+      10 |
+        at tests/greeting.spec.ts:8:40
+
+    Error Context: test-results/greeting-greets-Asha-after-sign-in-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/greeting.spec.ts:3:1 › greets Asha after sign in ────────────────────────────</pre></div></div><div class="note-out"><span>What happens</span><p>Every runner names the same four things: the locator it checked, the text it expected, the text it received and how long it kept trying. The difference is one exclamation mark. The call log underneath shows that the check found the element straight away and retried until the 5 s limit, so the element was there and only the text was wrong. Playwright Test also prints the source line with a marker under the failing call.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>The error says</th><th>It usually means</th></tr><tr><td>received a different text or count</td><td>the page changed, or the expected value in the test is out of date</td></tr><tr><td>element(s) not found, or waiting for locator</td><td>the locator is wrong, a step before it did not happen, or the page did not load</td></tr><tr><td>strict mode violation, resolved to 2 elements</td><td>the locator is too loose, so narrow it with a role, a name or a parent</td></tr><tr><td>element is not enabled, or is not visible</td><td>the app has not finished something, such as loading data or validating a form</td></tr><tr><td>Test timeout of 30000ms exceeded</td><td>one call waited for something that never happened, and the call log names it</td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Read the received value carefully. A missing full stop, an extra space or a different currency sign is the most common cause of a red check, and the error shows it to you directly.</div></div>
+</section>
+<section class="card reveal jsec" id="evidence" data-say="evidence"><div class="sec-num">Part 2</div><h2><span class="sec-em">📸</span><span>Screenshots, videos and traces on failure</span></h2>
+
+<p>A failure in CI happens on a machine you cannot watch. Turn on evidence so every failed test leaves behind what it saw. Keeping it only for failures saves disk space, because passing tests need none.</p>
+<div class="codewrap tests pw4" data-k="evidence" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A screenshot, a video and a trace when a test fails · <b class="pw-badge">💥 mvn test ran, fails on purpose</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="💥 mvn test ran, fails on purpose"><div class="fname">📄 src/test/java/com/brainy/EvidenceOptions.java</div><pre class="src" data-file="src/test/java/com/brainy/EvidenceOptions.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Browser</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">Options</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">OptionsFactory</span>;
+
+<span class="k">import</span> java.nio.file.<span class="t">Paths</span>;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">EvidenceOptions</span> <span class="k">implements</span> <span class="t">OptionsFactory</span> {
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="t">Options</span> getOptions() {
+    <span class="k">return</span> <span class="k">new</span> <span class="t">Options</span>()
+        .setHeadless(<span class="k">true</span>)
+        .setBaseUrl(<span class="s">"http://localhost:4173"</span>)
+        .setTrace(<span class="t">Options</span>.<span class="t">Trace</span>.<span class="t">RETAIN_ON_FAILURE</span>)          <span class="c">// keep the trace only when a test fails</span>
+        .setOutputDir(<span class="t">Paths</span>.get(<span class="s">"test-results"</span>))
+        .setContextOptions(<span class="k">new</span> <span class="t">Browser</span>.<span class="t">NewContextOptions</span>()
+            .setRecordVideoDir(<span class="t">Paths</span>.get(<span class="s">"videos"</span>)));       <span class="c">// a video of every test</span>
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/CartTest.java</div><pre class="src" data-file="src/test/java/com/brainy/CartTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">BeforeEach</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">EvidenceOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">CartTest</span> {
+  <span class="a">@BeforeEach</span>
+  <span class="k">void</span> signIn(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/login"</span>);
+    page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+    page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>)).click();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> addTheLampToTheCart(<span class="t">Page</span> page) {
+    page.getByTestId(<span class="s">"product-3"</span>).getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Locator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Add to cart"</span>)).click();
+    assertThat(page.getByTestId(<span class="s">"cart-count"</span>)).hasText(<span class="s">"1"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> addTheNotebookToTheCart(<span class="t">Page</span> page) {
+    <span class="c">// the Notebook is out of stock, so this button never appears</span>
+    page.getByTestId(<span class="s">"product-4"</span>).getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Locator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Add to cart"</span>))
+        .click(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">ClickOptions</span>().setTimeout(<span class="n">3000</span>));
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test ; find test-results videos -type f | sort</pre></div><div class="err"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.CartTest
+[ERROR] Tests run: 2, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 8.398 s &lt;&lt;&lt; FAILURE! -- in com.brainy.CartTest
+[ERROR] com.brainy.CartTest.addTheNotebookToTheCart(Page) -- Time elapsed: 4.620 s &lt;&lt;&lt; ERROR!
+com.microsoft.playwright.TimeoutError: 
+Error {
+  message=&#x27;Timeout 3000ms exceeded.
+  name=&#x27;TimeoutError
+  stack=&#x27;TimeoutError: Timeout 3000ms exceeded.
+}
+Call log:
+-   - waiting for getByTestId(&quot;product-4&quot;).getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(&quot;Add to cart&quot;))
+
+[ERROR] Tests run: 2, Failures: 0, Errors: 1, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+test-results/com.brainy.CartTest.addTheNotebookToTheCart-chromium/trace.zip
+videos/page@de937714c18e0e6574536f58fe8819fc.webm
+videos/page@f7dab86e262cfe1e6401994025f0950c.webm</pre></div></div><div class="pw-pane" data-l="py" data-badge="💥 pytest ran, fails on purpose"><div class="fname">📄 pytest.ini</div><pre class="src" data-file="pytest.ini"><span class="k">[pytest]</span>
+<span class="a">addopts </span>=<span class="s"> --base-url http://localhost:4173 --screenshot only-on-failure --video retain-on-failure --tracing retain-on-failure</span></pre><div class="fname">📄 tests/test_cart.py</div><pre class="src" data-file="tests/test_cart.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="a">@pytest</span>.fixture(autouse=<span class="k">True</span>)
+<span class="k">def</span> signed_in(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/login"</span>)
+    page.get_by_label(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>)
+    page.get_by_label(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Sign in"</span>).click()
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)
+
+
+<span class="k">def</span> test_add_the_lamp_to_the_cart(page: <span class="t">Page</span>):
+    page.get_by_test_id(<span class="s">"product-3"</span>).get_by_role(<span class="s">"button"</span>, name=<span class="s">"Add to cart"</span>).click()
+    expect(page.get_by_test_id(<span class="s">"cart-count"</span>)).to_have_text(<span class="s">"1"</span>)
+
+
+<span class="k">def</span> test_add_the_notebook_to_the_cart(page: <span class="t">Page</span>):
+    <span class="c"># the Notebook is out of stock, so this button never appears</span>
+    page.get_by_test_id(<span class="s">"product-4"</span>).get_by_role(<span class="s">"button"</span>, name=<span class="s">"Add to cart"</span>).click(timeout=<span class="n">3000</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v ; find test-results -type f | sort</pre></div><div class="err"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_cart.py::test_add_the_lamp_to_the_cart[chromium] PASSED       [ 50%]
+tests/test_cart.py::test_add_the_notebook_to_the_cart[chromium] FAILED   [100%]
+
+=================================== FAILURES ===================================
+_________________ test_add_the_notebook_to_the_cart[chromium] __________________
+
+page = &lt;Page url=&#x27;http://localhost:4173/products&#x27;&gt;
+
+    def test_add_the_notebook_to_the_cart(page: Page):
+        # the Notebook is out of stock, so this button never appears
+&gt;       page.get_by_test_id(&quot;product-4&quot;).get_by_role(&quot;button&quot;, name=&quot;Add to cart&quot;).click(timeout=3000)
+
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 3000ms exceeded.
+E           Call log:
+E             - waiting for get_by_test_id(&quot;product-4&quot;).get_by_role(&quot;button&quot;, name=&quot;Add to cart&quot;)
+
+tests/test_cart.py:21: TimeoutError
+=========================== short test summary info ============================
+FAILED tests/test_cart.py::test_add_the_notebook_to_the_cart[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 3000ms exceeded.
+========================= 1 failed, 1 passed in 7.13s ==========================
+test-results/tests-test-cart-py-test-add-the-notebook-to-the-cart-chromium/test-failed-1.png
+test-results/tests-test-cart-py-test-add-the-notebook-to-the-cart-chromium/trace.zip
+test-results/tests-test-cart-py-test-add-the-notebook-to-the-cart-chromium/video.webm</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  reporter: <span class="s">'list'</span>,
+  use: {
+    baseURL: <span class="s">'http://localhost:4173'</span>,
+    screenshot: <span class="s">'only-on-failure'</span>,   <span class="c">// a picture of the page when a test fails</span>
+    video: <span class="s">'retain-on-failure'</span>,      <span class="c">// a video of every test, kept only when it fails</span>
+    trace: <span class="s">'retain-on-failure'</span>,      <span class="c">// a trace of every test, kept only when it fails</span>
+  },
+  projects: [{ name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } }],
+});</pre><div class="fname">📄 tests/cart.spec.js</div><pre class="src" data-file="tests/cart.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.beforeEach(<span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'add the lamp to the cart'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.getByTestId(<span class="s">'product-3'</span>).getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'1'</span>);
+});
+
+test(<span class="s">'add the notebook to the cart'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="c">// the Notebook is out of stock, so this button never appears</span>
+  <span class="k">await</span> page.getByTestId(<span class="s">'product-4'</span>).getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click({ timeout: <span class="n">3000</span> });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test ; find test-results -type f | sort</pre></div><div class="err"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/cart.spec.js:11:1 › add the lamp to the cart (1.6s)
+  ✘  2 [chromium] › tests/cart.spec.js:16:1 › add the notebook to the cart (4.7s)
+
+
+  1) [chromium] › tests/cart.spec.js:16:1 › add the notebook to the cart ───────────────────────────
+
+    TimeoutError: locator.click: Timeout 3000ms exceeded.
+    Call log:
+      - waiting for getByTestId(&#x27;product-4&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; })
+
+
+      16 | test(&#x27;add the notebook to the cart&#x27;, async ({ page }) =&gt; {
+      17 |   // the Notebook is out of stock, so this button never appears
+    &gt; 18 |   await page.getByTestId(&#x27;product-4&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; }).click({ timeout: 3000 });
+         |                                                                                    ^
+      19 | });
+      20 |
+        at tests/cart.spec.js:18:84
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/cart-add-the-notebook-to-the-cart-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/cart-add-the-notebook-to-the-cart-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/cart-add-the-notebook-to-the-cart-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cart-add-the-notebook-to-the-cart-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/cart-add-the-notebook-to-the-cart-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › tests/cart.spec.js:16:1 › add the notebook to the cart ────────────────────────────
+  1 passed (8.3s)
+test-results/.last-run.json
+test-results/cart-add-the-notebook-to-the-cart-chromium/error-context.md
+test-results/cart-add-the-notebook-to-the-cart-chromium/test-failed-1.png
+test-results/cart-add-the-notebook-to-the-cart-chromium/trace.zip
+test-results/cart-add-the-notebook-to-the-cart-chromium/video.webm</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  reporter: <span class="s">'list'</span>,
+  use: {
+    baseURL: <span class="s">'http://localhost:4173'</span>,
+    screenshot: <span class="s">'only-on-failure'</span>,   <span class="c">// a picture of the page when a test fails</span>
+    video: <span class="s">'retain-on-failure'</span>,      <span class="c">// a video of every test, kept only when it fails</span>
+    trace: <span class="s">'retain-on-failure'</span>,      <span class="c">// a trace of every test, kept only when it fails</span>
+  },
+  projects: [{ name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } }],
+});</pre><div class="fname">📄 tests/cart.spec.ts</div><pre class="src" data-file="tests/cart.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.beforeEach(<span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'add the lamp to the cart'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.getByTestId(<span class="s">'product-3'</span>).getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'1'</span>);
+});
+
+test(<span class="s">'add the notebook to the cart'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="c">// the Notebook is out of stock, so this button never appears</span>
+  <span class="k">await</span> page.getByTestId(<span class="s">'product-4'</span>).getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click({ timeout: <span class="n">3000</span> });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test ; find test-results -type f | sort</pre></div><div class="err"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/cart.spec.ts:11:1 › add the lamp to the cart (1.7s)
+  ✘  2 [chromium] › tests/cart.spec.ts:16:1 › add the notebook to the cart (4.7s)
+
+
+  1) [chromium] › tests/cart.spec.ts:16:1 › add the notebook to the cart ───────────────────────────
+
+    TimeoutError: locator.click: Timeout 3000ms exceeded.
+    Call log:
+      - waiting for getByTestId(&#x27;product-4&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; })
+
+
+      16 | test(&#x27;add the notebook to the cart&#x27;, async ({ page }) =&gt; {
+      17 |   // the Notebook is out of stock, so this button never appears
+    &gt; 18 |   await page.getByTestId(&#x27;product-4&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; }).click({ timeout: 3000 });
+         |                                                                                    ^
+      19 | });
+      20 |
+        at tests/cart.spec.ts:18:84
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/cart-add-the-notebook-to-the-cart-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/cart-add-the-notebook-to-the-cart-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/cart-add-the-notebook-to-the-cart-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cart-add-the-notebook-to-the-cart-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/cart-add-the-notebook-to-the-cart-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › tests/cart.spec.ts:16:1 › add the notebook to the cart ────────────────────────────
+  1 passed (7.7s)
+test-results/.last-run.json
+test-results/cart-add-the-notebook-to-the-cart-chromium/error-context.md
+test-results/cart-add-the-notebook-to-the-cart-chromium/test-failed-1.png
+test-results/cart-add-the-notebook-to-the-cart-chromium/trace.zip
+test-results/cart-add-the-notebook-to-the-cart-chromium/video.webm</pre></div></div><div class="note-out"><span>What happens</span><p>The lamp test passed and left nothing behind. The notebook test failed, and its folder holds the evidence: a screenshot of the page at the moment of failure, a video of the whole test and a trace.zip to open in the trace viewer. pytest-playwright has the same three options as command line flags, so they sit in pytest.ini. The JUnit fixture keeps traces with setTrace, and records a video of every test, passed or failed, into the folder set by setRecordVideoDir. It has no screenshot on failure option.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Setting</th><th>Playwright Test</th><th>pytest-playwright</th><th>JUnit fixture</th></tr><tr><td>screenshot</td><td>screenshot: 'only-on-failure'</td><td>--screenshot only-on-failure</td><td>not built in, call page.screenshot() yourself</td></tr><tr><td>video</td><td>video: 'retain-on-failure'</td><td>--video retain-on-failure</td><td>setRecordVideoDir(...), every test</td></tr><tr><td>trace</td><td>trace: 'retain-on-failure'</td><td>--tracing retain-on-failure</td><td>setTrace(Options.Trace.RETAIN_ON_FAILURE)</td></tr><tr><td>where</td><td>test-results/</td><td>test-results/</td><td>setOutputDir(...)</td></tr><tr><td>other values</td><td>'on', 'off', 'on-first-retry', 'retain-on-first-failure'</td><td>on, off</td><td>ON, OFF</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Teams often use trace: 'on-first-retry' in CI. A first run that fails is retried with tracing on, so the trace is recorded only for tests that failed at least once.</div></div>
+</section>
+<section class="card reveal jsec" id="trace" data-say="trace"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧭</span><span>The trace viewer</span></h2>
+
+<p>A trace is a zip file with everything that happened in one test: each action, a copy of the page before and after it, the network calls, the console messages and the test source. The trace viewer plays it back. These screenshots come from the notebook test above.</p>
+<div class="viz" data-viz="flow" data-k="loop"></div>
+<figure class="pw-shot"><img src="img/debug-trace-log.jpg" alt="The trace viewer with the failed click selected, the page snapshot in the middle and the Log tab open below" loading="lazy"><figcaption>The trace of the failed notebook test. The left side lists every action, with the failed click marked in red. The middle shows the page at that moment. The Log tab shows the click waiting 8.8 s for an Add to cart button in the Notebook card, while the snapshot shows that card has an Out of stock button instead.</figcaption></figure>
+<figure class="pw-shot"><img src="img/debug-trace-network.jpg" alt="The trace viewer with the Network tab open, listing the requests the page made" loading="lazy"><figcaption>The Network tab lists every request the page made during the test, with its method, status, type and timing. Every request shown returned 200, so the page loaded fine and the button really was missing.</figcaption></figure>
+<div class="tw"><table class="jt "><tr><th>Open a trace</th><th>Command</th></tr><tr><td>JavaScript and TypeScript</td><td>npx playwright show-trace test-results/.../trace.zip</td></tr><tr><td>Python</td><td>playwright show-trace test-results/.../trace.zip</td></tr><tr><td>Java</td><td>mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="show-trace trace.zip"</td></tr><tr><td>any language, no install</td><td>drag the file onto trace.playwright.dev, which reads it in your browser</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="steps" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A trace with named steps · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/MugTest.java</div><pre class="src" data-file="src/test/java/com/brainy/MugTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">BrowserContext</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Tracing</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> java.nio.file.<span class="t">Paths</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">MugTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> buyAMug(<span class="t">BrowserContext</span> context, <span class="t">Page</span> page) {
+    context.tracing().start(<span class="k">new</span> <span class="t">Tracing</span>.<span class="t">StartOptions</span>().setScreenshots(<span class="k">true</span>).setSnapshots(<span class="k">true</span>));
+
+    context.tracing().group(<span class="s">"sign in"</span>);
+    page.navigate(<span class="s">"/login"</span>);
+    page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+    page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>)).click();
+    assertThat(page.locator(<span class="s">"#hello"</span>)).hasText(<span class="s">"Hello, Asha"</span>);
+    context.tracing().groupEnd();
+
+    context.tracing().group(<span class="s">"add the mug"</span>);
+    page.getByTestId(<span class="s">"product-2"</span>).getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Locator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Add to cart"</span>)).click();
+    assertThat(page.getByTestId(<span class="s">"cart-count"</span>)).hasText(<span class="s">"1"</span>);
+    context.tracing().groupEnd();
+
+    context.tracing().stop(<span class="k">new</span> <span class="t">Tracing</span>.<span class="t">StopOptions</span>().setPath(<span class="t">Paths</span>.get(<span class="s">"traces/buy-a-mug.zip"</span>)));
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test &amp;&amp; ls traces</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.MugTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.536 s -- in com.brainy.MugTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+buy-a-mug.zip</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_mug.py</div><pre class="src" data-file="tests/test_mug.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">BrowserContext</span>, <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_buy_a_mug(context: <span class="t">BrowserContext</span>, page: <span class="t">Page</span>):
+    context.tracing.start(screenshots=<span class="k">True</span>, snapshots=<span class="k">True</span>, sources=<span class="k">True</span>)
+
+    context.tracing.group(<span class="s">"sign in"</span>)
+    page.goto(<span class="s">"/login"</span>)
+    page.get_by_label(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>)
+    page.get_by_label(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Sign in"</span>).click()
+    expect(page.locator(<span class="s">"#hello"</span>)).to_have_text(<span class="s">"Hello, Asha"</span>)
+    context.tracing.group_end()
+
+    context.tracing.group(<span class="s">"add the mug"</span>)
+    page.get_by_test_id(<span class="s">"product-2"</span>).get_by_role(<span class="s">"button"</span>, name=<span class="s">"Add to cart"</span>).click()
+    expect(page.get_by_test_id(<span class="s">"cart-count"</span>)).to_have_text(<span class="s">"1"</span>)
+    context.tracing.group_end()
+
+    context.tracing.stop(path=<span class="s">"traces/buy-a-mug.zip"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v &amp;&amp; ls traces</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_mug.py::test_buy_a_mug[chromium] PASSED                       [100%]
+
+============================== 1 passed in 2.58s ===============================
+buy-a-mug.zip</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/mug.spec.js</div><pre class="src" data-file="tests/mug.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'buy a mug'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> test.step(<span class="s">'sign in'</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+    <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+    <span class="k">await</span> expect(page.locator(<span class="s">'#hello'</span>)).toHaveText(<span class="s">'Hello, Asha'</span>);
+  });
+  <span class="k">await</span> test.step(<span class="s">'add the mug'</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> page.getByTestId(<span class="s">'product-2'</span>).getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click();
+    <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'1'</span>);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test &amp;&amp; find test-results -name trace.zip</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/mug.spec.js:3:1 › buy a mug (1.6s)
+
+  1 passed (2.6s)
+test-results/mug-buy-a-mug-chromium/trace.zip</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/mug.spec.ts</div><pre class="src" data-file="tests/mug.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'buy a mug'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> test.step(<span class="s">'sign in'</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+    <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+    <span class="k">await</span> expect(page.locator(<span class="s">'#hello'</span>)).toHaveText(<span class="s">'Hello, Asha'</span>);
+  });
+  <span class="k">await</span> test.step(<span class="s">'add the mug'</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> page.getByTestId(<span class="s">'product-2'</span>).getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click();
+    <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'1'</span>);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test &amp;&amp; find test-results -name trace.zip</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/mug.spec.ts:3:1 › buy a mug (1.5s)
+
+  1 passed (2.6s)
+test-results/mug-buy-a-mug-chromium/trace.zip</pre></div></div><div class="note-out"><span>What happens</span><p>Each language saved a trace in which the actions sit under two names, sign in and add the mug, so a long test reads like a short list. Playwright Test does this with test.step, and the same steps also show up in the HTML report. In Python and Java the test starts and stops the trace itself with context.tracing, and tracing.group names the steps. Open any of the files with show-trace.</p></div></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Inside the trace viewer, click an action and then use the Before and After tabs to compare the page. The Pick locator button lets you try a new locator on the saved page.</div></div>
+</section>
+<section class="card reveal jsec" id="report" data-say="report"><div class="sec-num">Part 4</div><h2><span class="sec-em">📊</span><span>The HTML report and UI mode</span></h2>
+
+<p>Playwright Test writes an HTML report with every test, its steps, its errors and its evidence. It opens by itself after a failed local run, and <code>npx playwright show-report</code> opens it any time.</p>
+<figure class="pw-shot"><img src="img/report-html-list.jpg" alt="The Playwright HTML report listing two tests, one passed and one failed" loading="lazy"><figcaption>The HTML report for the cart tests: one passed and one failed, with filters for each result at the top.</figcaption></figure>
+<figure class="pw-shot"><img src="img/report-html-failed.jpg" alt="The failed test in the HTML report, with the error, the screenshot and the trace link" loading="lazy"><figcaption>Click the failed test to see its error with the source line, each step with its time, and a View Trace button. The screenshot taken at failure is further down the same page.</figcaption></figure>
+<p><b>UI mode</b> is a window for running and watching tests. You pick tests from a tree, run them, and step through each action with the same views as the trace viewer. It can also rerun tests when you save a file. Start it with <code>npx playwright test --ui</code>.</p>
+<figure class="pw-shot"><img src="img/debug-ui-mode.jpg" alt="Playwright UI mode with the test tree on the left and the failed notebook test open on the right" loading="lazy"><figcaption>UI mode after running both tests. The failed test is open, with its actions, the page snapshot and the error.</figcaption></figure>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>UI mode, the HTML report and the VS Code extension are part of Playwright Test, so they are there for JavaScript and TypeScript. Python teams usually add pytest-html, and Java teams add Allure or ExtentReports. The reporting chapter builds each of them.</div></div>
+</section>
+<section class="card reveal jsec" id="inspector" data-say="inspector"><div class="sec-num">Part 5</div><h2><span class="sec-em">🕵️</span><span>Step through a test with the Inspector</span></h2>
+
+<p>When the evidence is not enough, run the test yourself and stop it at the line that fails. In debug mode Playwright opens a real browser and the <b>Inspector</b>, which shows the test source, highlights the current line and lets you step one action at a time. Debug mode also turns off timeouts, so you can take as long as you need.</p>
+<figure class="pw-shot"><img src="img/debug-inspector.jpg" alt="A headed browser on the products page next to the Playwright Inspector paused at page.pause()" loading="lazy"><figcaption>A test stopped at page.pause() on line 8. The Inspector on the right highlights that line and lists the finished steps in its Log tab. The browser on the left marks the five list items the last locator found.</figcaption></figure>
+<div class="tw"><table class="jt "><tr><th></th><th>JavaScript and TypeScript</th><th>Python</th><th>Java</th></tr><tr><td>open the Inspector</td><td>npx playwright test --debug</td><td>PWDEBUG=1 pytest -s</td><td>PWDEBUG=1 mvn test</td></tr><tr><td>one test only</td><td>npx playwright test cart.spec.ts:12 --debug</td><td>PWDEBUG=1 pytest -s -k notebook</td><td>PWDEBUG=1 mvn test -Dtest=CartTest#addTheNotebookToTheCart</td></tr><tr><td>stop at a line</td><td>await page.pause()</td><td>page.pause()</td><td>page.pause()</td></tr><tr><td>see the source</td><td>shown by itself</td><td>shown by itself</td><td>PLAYWRIGHT_JAVA_SRC=src/test/java</td></tr><tr><td>watch slowly</td><td>launchOptions: { slowMo: 500 }</td><td>--headed --slowmo 500</td><td>setLaunchOptions(...setSlowMo(500))</td></tr></table></div>
+<p>Next to the toolbar is the locator field. Type a locator there and the matching elements light up in the browser, which is the quickest way to fix a locator that finds nothing or finds too much.</p>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Remove page.pause() before you commit. It needs a headed browser and is only useful while you debug.</div></div>
+</section>
+<section class="card reveal jsec" id="logs" data-say="logs"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧾</span><span>Verbose logs</span></h2>
+
+<p>On a CI machine there is no window to open. The <code>DEBUG</code> environment variable makes Playwright print what every call does, in any language, so the CI log shows the last thing a stuck test was doing.</p>
+<div class="codewrap tests pw4" data-k="logs" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Every Playwright call, written to the terminal · <b class="pw-badge">✅ ran for real</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ ran for real"><div class="fname">📄 src/test/java/com/brainy/LampTest.java</div><pre class="src" data-file="src/test/java/com/brainy/LampTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">LampTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> findTheLamp(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    page.getByPlaceholder(<span class="s">"Search products"</span>).fill(<span class="s">"lamp"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">1</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ DEBUG=pw:api mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.LampTest
+pw:api navigating to &quot;http://localhost:4173/products&quot;, waiting until &quot;load&quot;
+pw:api   locator resolved to &lt;input id=&quot;q&quot; type=&quot;search&quot; placeholder=&quot;Search products&quot;/&gt;
+pw:api   fill(&quot;lamp&quot;)
+pw:api attempting fill action
+pw:api Assert &quot;hasCount&quot; getByRole(AriaRole.LISTITEM) with timeout 5000ms
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.142 s -- in com.brainy.LampTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ ran for real"><div class="fname">📄 tests/test_lamp.py</div><pre class="src" data-file="tests/test_lamp.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_find_the_lamp(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    page.get_by_placeholder(<span class="s">"Search products"</span>).fill(<span class="s">"lamp"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">1</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ DEBUG=pw:api pytest -s</pre></div><div class="out"><span>Terminal output</span><pre>collected 1 item
+
+tests/test_lamp.py pw:api navigating to &quot;http://localhost:4173/products&quot;, waiting until &quot;load&quot;
+pw:api   locator resolved to &lt;input id=&quot;q&quot; type=&quot;search&quot; placeholder=&quot;Search products&quot;/&gt;
+pw:api   fill(&quot;lamp&quot;)
+pw:api attempting fill action
+pw:api Expect &quot;to_have_count&quot; get_by_role(&quot;listitem&quot;) with timeout 5000ms
+.
+
+============================== 1 passed in 0.98s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ ran for real"><div class="fname">📄 tests/lamp.spec.js</div><pre class="src" data-file="tests/lamp.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'find the lamp'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ DEBUG=pw:api npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  pw:api &lt;= browserType.launch succeeded +133ms
+  pw:api &lt;= browser.newContext succeeded +21ms
+  pw:api &lt;= browserContext.newPage succeeded +62ms
+  pw:api navigating to &quot;http://localhost:4173/products&quot;, waiting until &quot;load&quot; +2ms
+  pw:api &lt;= page.goto succeeded +1ms
+  pw:api   locator resolved to &lt;input id=&quot;q&quot; type=&quot;search&quot; placeholder=&quot;Search products&quot;/&gt; +54ms
+  pw:api   fill(&quot;lamp&quot;) +10ms
+  pw:api attempting fill action +0ms
+  pw:api &lt;= locator.fill succeeded +12ms
+  pw:api Expect &quot;toHaveCount&quot; getByRole(&#x27;listitem&#x27;) with timeout 5000ms +2ms
+  pw:api &lt;= Expect &quot;toHaveCount&quot; succeeded +18ms
+  pw:api &lt;= browserContext.close succeeded +18ms
+  ✓  1 [chromium] › tests/lamp.spec.js:3:1 › find the lamp (418ms)
+  pw:api &lt;= browser.close succeeded +37ms
+
+  1 passed (2.1s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ ran for real"><div class="fname">📄 tests/lamp.spec.ts</div><pre class="src" data-file="tests/lamp.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'find the lamp'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ DEBUG=pw:api npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  pw:api &lt;= browserType.launch succeeded +124ms
+  pw:api &lt;= browser.newContext succeeded +26ms
+  pw:api &lt;= browserContext.newPage succeeded +68ms
+  pw:api navigating to &quot;http://localhost:4173/products&quot;, waiting until &quot;load&quot; +6ms
+  pw:api &lt;= page.goto succeeded +1ms
+  pw:api   locator resolved to &lt;input id=&quot;q&quot; type=&quot;search&quot; placeholder=&quot;Search products&quot;/&gt; +41ms
+  pw:api   fill(&quot;lamp&quot;) +6ms
+  pw:api attempting fill action +1ms
+  pw:api &lt;= locator.fill succeeded +11ms
+  pw:api Expect &quot;toHaveCount&quot; getByRole(&#x27;listitem&#x27;) with timeout 5000ms +3ms
+  pw:api &lt;= Expect &quot;toHaveCount&quot; succeeded +4ms
+  pw:api &lt;= browserContext.close succeeded +13ms
+  ✓  1 [chromium] › tests/lamp.spec.ts:3:1 › find the lamp (380ms)
+  pw:api &lt;= browser.close succeeded +43ms
+
+  1 passed (1.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>With DEBUG=pw:api, Playwright writes a line for each step inside every call: the navigation, the element a locator found, the fill and the check. In JavaScript and TypeScript the client adds a line when each call ends, with the time since the line before, so you can see where the test spent its time. Python and Java run the same driver, so they print the same steps. The full log also has a line for every wait inside a call, which we cut here to keep it short.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Variable</th><th>What it prints</th></tr><tr><td>DEBUG=pw:api</td><td>every Playwright call and the steps inside it</td></tr><tr><td>DEBUG=pw:browser</td><td>what the browser process prints, useful when it will not start</td></tr><tr><td>DEBUG=pw:protocol</td><td>every message between Playwright and the browser, very long</td></tr><tr><td>PWDEBUG=console</td><td>a playwright object in the browser DevTools, to try locators in the console</td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Browser console messages and page errors are a different stream. Collect them with page.on("console") and page.on("pageerror"), as the fixtures chapter does, or read them in the Console tab of the trace.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-api.html" data-topic="pw-api"><small>← Previous chapter</small><b>🔑 API and auth</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Find the cause, not a workaround", "panels": [{"s": [["e", "📜"], ["t", "error", {"b": 1}]], "h": "Error", "t": "Expected and received.", "more": "Read it first."}, {"s": [["e", "📸"], ["t", "evidence", {"b": 1}]], "h": "Evidence", "t": "Screenshot, video, trace.", "more": "Kept on failure."}, {"s": [["e", "🧭"], ["t", "trace", {"b": 1}]], "h": "Trace", "t": "Every action replayed.", "more": "DOM, network, console."}, {"s": [["e", "🕵️"], ["t", "Inspector", {"b": 1}]], "h": "Inspector", "t": "Run it yourself.", "more": "One step at a time."}], "remember": "Read the error, then the trace, and only then run the test by hand. Most failures are solved at the first step."}, "real": [["🌙", "The test that failed only at night", "A nightly run fails on a test that always passes during the day. The trace shows a maintenance banner covering the button. The team adds a check for the banner and the mystery is gone."], ["🧾", "A trace attached to every bug", "A QA team attaches the trace.zip of the failed test to each bug report. Developers open it on trace.playwright.dev and see the exact page, request and response without setting anything up."], ["🐢", "Where did the minute go", "A checkout test takes over a minute. One run with DEBUG=pw:api shows a single navigation waiting 40 seconds for the load event because of a slow chat widget. Waiting for the page content instead fixes it."]], "quiz": [{"lv": 1, "q": "What should you look at first when a test fails?", "o": ["the video", "the error message", "the HTML source of the app", "the CI settings"], "a": 1, "hint": "It is printed right where the test failed.", "why": "The error names the locator, the expected and the received values, which often show the cause."}, {"lv": 1, "q": "What does screenshot: 'only-on-failure' do?", "o": ["takes a screenshot after every action", "saves a screenshot only when a test fails", "compares screenshots", "turns screenshots off"], "a": 1, "hint": "Read the name.", "why": "A screenshot is taken at the end of each test and kept only if the test failed."}, {"lv": 1, "q": "Which command opens a trace file in JavaScript?", "o": ["npx playwright open", "npx playwright show-trace trace.zip", "npx playwright trace", "npx playwright report"], "a": 1, "hint": "show-something.", "why": "npx playwright show-trace opens the trace viewer with the file."}, {"lv": 1, "q": "How do you open the Inspector for a Python test?", "o": ["pytest --inspect", "PWDEBUG=1 pytest -s", "pytest --ui", "DEBUG=1 pytest"], "a": 1, "hint": "An environment variable.", "why": "PWDEBUG=1 runs headed, turns off timeouts and opens the Inspector."}, {"lv": 2, "q": "Which value records a trace only when a failed test is retried?", "o": ["'on'", "'retain-on-failure'", "'on-first-retry'", "'off'"], "a": 2, "hint": "It needs retries to be on.", "why": "on-first-retry records the trace on the first retry of a failed test."}, {"lv": 2, "q": "What does page.pause() do in debug mode?", "o": ["ends the test", "stops the test at that line until you resume", "waits 1 second", "takes a screenshot"], "a": 1, "hint": "A breakpoint in the test.", "why": "The test stops and the Inspector waits for Resume or Step over."}, {"lv": 2, "q": "The error says \"strict mode violation: resolved to 2 elements\". What is the fix?", "o": ["add a timeout", "make the locator match only one element", "use force: true", "add a retry"], "a": 1, "hint": "The locator found too much.", "why": "Narrow it with a role and name, a test id, or a parent locator."}, {"lv": 2, "q": "Which tool runs tests in a window and reruns them when you save a file?", "o": ["the Inspector", "UI mode", "the trace viewer", "codegen"], "a": 1, "hint": "npx playwright test --ui", "why": "UI mode has a test tree, a watch option and the trace views."}, {"lv": 2, "q": "Where can you open a trace without installing anything?", "o": ["playwright.dev/report", "trace.playwright.dev", "github.com/microsoft/playwright", "localhost:9323"], "a": 1, "hint": "A static site that reads the file in your browser.", "why": "trace.playwright.dev opens trace files locally in the browser."}, {"lv": 3, "q": "What does DEBUG=pw:api print?", "o": ["browser console messages", "every Playwright call with its timing", "the HTML report", "only errors"], "a": 1, "hint": "It is about the API.", "why": "Each call is logged when it starts and when it ends."}, {"lv": 3, "q": "What does Java need so the Inspector can show the test source?", "o": ["PWDEBUG=source", "PLAYWRIGHT_JAVA_SRC set to the source folders", "a special Maven plugin", "nothing"], "a": 1, "hint": "The JVM runs compiled classes.", "why": "PLAYWRIGHT_JAVA_SRC lists the folders with the .java files."}, {"lv": 3, "q": "How does Playwright Test name groups of actions in a trace and report?", "o": ["tracing.group", "test.step", "test.describe", "page.group"], "a": 1, "hint": "tracing.group is the library way.", "why": "test.step groups actions in the trace and the HTML report. Python and Java use tracing.group."}], "calc": [{"lv": 1, "q": "A check retries every 100 ms for 5 s. About how many tries is that?", "ans": 50, "hint": "5000 / 100", "steps": ["5 s = 5000 ms", "5000 / 100 = 50 tries"]}, {"lv": 1, "q": "300 tests run, and 6 fail. With retain-on-failure, how many traces are kept?", "ans": 6, "hint": "only failures keep a trace", "steps": ["passing tests delete their trace", "6 traces are kept"]}, {"lv": 2, "q": "Each trace is 2 MB. With trace: on, how many MB do those 300 tests produce?", "ans": 600, "hint": "300 × 2", "steps": ["300 × 2 = 600 MB"]}, {"lv": 2, "q": "And with retain-on-failure, for the 6 failures?", "ans": 12, "hint": "6 × 2", "steps": ["6 × 2 = 12 MB"]}, {"lv": 2, "q": "A test has 20 actions and you step through each one in 15 s. How many minutes is that?", "ans": 5, "hint": "20 × 15 / 60", "steps": ["20 × 15 = 300 s", "300 / 60 = 5 minutes"]}, {"lv": 3, "q": "With slowMo 500, a test of 12 actions gets how many seconds slower?", "ans": 6, "hint": "12 × 0.5", "steps": ["slowMo adds 500 ms to each action", "12 × 0.5 = 6 s"]}, {"lv": 3, "q": "A run of 400 tests has 8 failures. What percent passed?", "ans": 98, "hint": "(400 - 8) / 400 × 100", "steps": ["400 - 8 = 392", "392 / 400 = 0.98", "× 100 = 98 %"]}, {"lv": 3, "q": "On first retry, 10 tests fail once, and 4 of them fail again. How many traces are recorded?", "ans": 10, "hint": "one per first retry", "steps": ["every test that is retried records a trace on its first retry", "10 traces"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter is about finding out why a test failed. You read the error, keep a screenshot, a video and a trace for every failure, replay the trace, look at the HTML report and UI mode, and step through a test in the Inspector.", "hi": "यह अध्याय यह जानने के बारे में है कि test क्यों fail हुआ। आप error पढ़ते हैं, हर failure के लिए screenshot, video और trace रखते हैं, trace को दोबारा चलाते हैं, HTML report और UI mode देखते हैं, और Inspector में test को कदम दर कदम चलाते हैं।", "kn": "ಈ ಅಧ್ಯಾಯ test ಏಕೆ fail ಆಯಿತು ಎಂದು ತಿಳಿಯುವುದರ ಬಗ್ಗೆ. ನೀವು error ಓದುತ್ತೀರಿ, ಪ್ರತಿ failure ಗೆ screenshot, video ಮತ್ತು trace ಇಡುತ್ತೀರಿ, trace ಅನ್ನು ಮತ್ತೆ ನೋಡುತ್ತೀರಿ, HTML report ಮತ್ತು UI mode ನೋಡುತ್ತೀರಿ, Inspector ನಲ್ಲಿ test ಅನ್ನು ಹೆಜ್ಜೆ ಹೆಜ್ಜೆಯಾಗಿ ನಡೆಸುತ್ತೀರಿ.", "or": "ଏହି ଅଧ୍ୟାୟ test କାହିଁକି fail ହେଲା ଜାଣିବା ବିଷୟରେ। ଆପଣ error ପଢନ୍ତି, ପ୍ରତି failure ପାଇଁ screenshot, video ଓ trace ରଖନ୍ତି, trace କୁ ପୁଣି ଦେଖନ୍ତି, HTML report ଓ UI mode ଦେଖନ୍ତି, ଏବଂ Inspector ରେ test କୁ ପାଦେ ପାଦେ ଚଳାନ୍ତି।", "ar": "يدور هذا الفصل حول معرفة سبب فشل الاختبار. تقرأ رسالة الخطأ، وتحتفظ بلقطة شاشة وفيديو وأثر لكل فشل، وتعيد تشغيل الأثر، وتنظر في تقرير HTML ووضع UI، وتتقدم في الاختبار خطوة بخطوة داخل Inspector.", "de": "In diesem Kapitel geht es darum, herauszufinden, warum ein Test fehlgeschlagen ist. Du liest die Fehlermeldung, behältst für jeden Fehler einen Screenshot, ein Video und einen Trace, spielst den Trace ab, schaust dir den HTML-Bericht und den UI-Modus an und gehst im Inspector Schritt für Schritt durch einen Test."}, {"id": "errors", "h": "The error", "en": "A Playwright error names the locator, the expected value, the received value, the timeout and a call log of every try. Compare expected and received first, because the cause is often right there.", "hi": "Playwright error में locator, expected value, received value, timeout और हर कोशिश का call log होता है। पहले expected और received की तुलना करें, क्योंकि कारण अक्सर वहीं होता है।", "kn": "Playwright error ನಲ್ಲಿ locator, expected value, received value, timeout ಮತ್ತು ಪ್ರತಿ ಪ್ರಯತ್ನದ call log ಇರುತ್ತದೆ. ಮೊದಲು expected ಮತ್ತು received ಹೋಲಿಸಿ, ಏಕೆಂದರೆ ಕಾರಣ ಹೆಚ್ಚಾಗಿ ಅಲ್ಲೇ ಇರುತ್ತದೆ.", "or": "Playwright error ରେ locator, expected value, received value, timeout ଓ ପ୍ରତି ଚେଷ୍ଟାର call log ଥାଏ। ପ୍ରଥମେ expected ଓ received ତୁଳନା କରନ୍ତୁ, କାରଣ କାରଣଟି ପ୍ରାୟତଃ ସେଠାରେ ଥାଏ।", "ar": "يذكر خطأ Playwright المحدد والقيمة المتوقعة والقيمة المستلمة والمهلة وسجل كل محاولة. قارن المتوقع بالمستلم أولًا، فالسبب غالبًا هناك.", "de": "Ein Playwright-Fehler nennt den Locator, den erwarteten Wert, den erhaltenen Wert, das Timeout und ein Protokoll jedes Versuchs. Vergleiche zuerst erwartet und erhalten, denn dort liegt oft schon die Ursache."}, {"id": "evidence", "h": "Evidence on failure", "en": "Turn on a screenshot, a video and a trace that are kept only when a test fails. Playwright Test and pytest-playwright have all three as settings. The JUnit fixture keeps traces and records videos.", "hi": "ऐसा screenshot, video और trace चालू करें जो केवल test fail होने पर रखा जाए। Playwright Test और pytest-playwright में तीनों settings हैं। JUnit fixture traces रखता है और videos record करता है।", "kn": "Test fail ಆದಾಗ ಮಾತ್ರ ಉಳಿಯುವ screenshot, video ಮತ್ತು trace ಆನ್ ಮಾಡಿ. Playwright Test ಮತ್ತು pytest-playwright ನಲ್ಲಿ ಮೂರೂ settings ಇವೆ. JUnit fixture traces ಇಡುತ್ತದೆ ಮತ್ತು videos record ಮಾಡುತ್ತದೆ.", "or": "କେବଳ test fail ହେଲେ ରହୁଥିବା screenshot, video ଓ trace ଚାଲୁ କରନ୍ତୁ। Playwright Test ଓ pytest-playwright ରେ ତିନୋଟି settings ଅଛି। JUnit fixture traces ରଖେ ଓ videos record କରେ।", "ar": "فعّل لقطة شاشة وفيديو وأثرًا لا تُحفظ إلا عند فشل الاختبار. في Playwright Test وpytest-playwright الثلاثة إعدادات جاهزة. ويحفظ مثبّت JUnit الآثار ويسجل الفيديو.", "de": "Schalte einen Screenshot, ein Video und einen Trace ein, die nur bei einem Fehlschlag behalten werden. Playwright Test und pytest-playwright haben alle drei als Einstellung. Die JUnit-Fixture behält Traces und nimmt Videos auf."}, {"id": "trace", "h": "The trace viewer", "en": "A trace holds every action, the page before and after it, the network, the console and the source. Open it with show-trace or on trace.playwright.dev. Named steps make long traces easy to read.", "hi": "Trace में हर action, उसके पहले और बाद का page, network, console और source होता है। इसे show-trace से या trace.playwright.dev पर खोलें। नाम वाले steps लंबे traces को पढ़ना आसान बनाते हैं।", "kn": "Trace ನಲ್ಲಿ ಪ್ರತಿ action, ಅದರ ಮೊದಲು ಮತ್ತು ನಂತರದ page, network, console ಮತ್ತು source ಇರುತ್ತವೆ. show-trace ಅಥವಾ trace.playwright.dev ನಲ್ಲಿ ತೆರೆಯಿರಿ. ಹೆಸರಿರುವ steps ಉದ್ದ traces ಓದಲು ಸುಲಭ ಮಾಡುತ್ತವೆ.", "or": "Trace ରେ ପ୍ରତି action, ତା ପୂର୍ବ ଓ ପରର page, network, console ଓ source ଥାଏ। ଏହାକୁ show-trace ରେ ବା trace.playwright.dev ରେ ଖୋଲନ୍ତୁ। ନାମ ଥିବା steps ଲମ୍ବା traces ପଢିବା ସହଜ କରେ।", "ar": "يحتوي الأثر على كل فعل، والصفحة قبله وبعده، والشبكة، والطرفية، والمصدر. افتحه بالأمر show-trace أو على trace.playwright.dev. الخطوات المسماة تجعل الآثار الطويلة سهلة القراءة.", "de": "Ein Trace enthält jede Aktion, die Seite davor und danach, das Netzwerk, die Konsole und den Quelltext. Öffne ihn mit show-trace oder auf trace.playwright.dev. Benannte Schritte machen lange Traces leicht lesbar."}, {"id": "report", "h": "Report and UI mode", "en": "Playwright Test writes an HTML report with errors, screenshots, videos and traces. UI mode runs tests in a window and lets you step through each action. Both come with Playwright Test for JavaScript and TypeScript.", "hi": "Playwright Test errors, screenshots, videos और traces के साथ HTML report लिखता है। UI mode tests को window में चलाता है और हर action से गुज़रने देता है। दोनों JavaScript और TypeScript के Playwright Test के साथ आते हैं।", "kn": "Playwright Test errors, screenshots, videos ಮತ್ತು traces ಇರುವ HTML report ಬರೆಯುತ್ತದೆ. UI mode tests ಅನ್ನು window ನಲ್ಲಿ ನಡೆಸಿ ಪ್ರತಿ action ನೋಡಲು ಬಿಡುತ್ತದೆ. ಎರಡೂ JavaScript ಮತ್ತು TypeScript ನ Playwright Test ಜೊತೆ ಬರುತ್ತವೆ.", "or": "Playwright Test errors, screenshots, videos ଓ traces ସହ HTML report ଲେଖେ। UI mode tests କୁ window ରେ ଚଳାଏ ଓ ପ୍ରତି action ଦେଖିବାକୁ ଦିଏ। ଦୁହେଁ JavaScript ଓ TypeScript ର Playwright Test ସହ ଆସନ୍ତି।", "ar": "يكتب Playwright Test تقرير HTML فيه الأخطاء ولقطات الشاشة والفيديو والآثار. ويشغّل وضع UI الاختبارات في نافذة ويتيح لك التنقل بين الأفعال. ويأتي الاثنان مع Playwright Test للغتي JavaScript وTypeScript.", "de": "Playwright Test schreibt einen HTML-Bericht mit Fehlern, Screenshots, Videos und Traces. Der UI-Modus führt Tests in einem Fenster aus und lässt dich jede Aktion durchgehen. Beides gehört zu Playwright Test für JavaScript und TypeScript."}, {"id": "inspector", "h": "The Inspector", "en": "Run with --debug in Playwright Test or PWDEBUG=1 in Python and Java. A browser and the Inspector open, and you step through the test. page.pause() stops it at the line you choose.", "hi": "Playwright Test में --debug या Python और Java में PWDEBUG=1 के साथ चलाएँ। Browser और Inspector खुलते हैं, और आप test को कदम दर कदम चलाते हैं। page.pause() उसे आपकी चुनी line पर रोकता है।", "kn": "Playwright Test ನಲ್ಲಿ --debug ಅಥವಾ Python ಮತ್ತು Java ನಲ್ಲಿ PWDEBUG=1 ಜೊತೆ ನಡೆಸಿ. Browser ಮತ್ತು Inspector ತೆರೆಯುತ್ತವೆ, ನೀವು test ಅನ್ನು ಹೆಜ್ಜೆ ಹೆಜ್ಜೆಯಾಗಿ ನಡೆಸುತ್ತೀರಿ. page.pause() ನೀವು ಆರಿಸಿದ line ನಲ್ಲಿ ನಿಲ್ಲಿಸುತ್ತದೆ.", "or": "Playwright Test ରେ --debug ବା Python ଓ Java ରେ PWDEBUG=1 ସହ ଚଳାନ୍ତୁ। Browser ଓ Inspector ଖୋଲେ, ଏବଂ ଆପଣ test କୁ ପାଦେ ପାଦେ ଚଳାନ୍ତି। page.pause() ଆପଣ ବାଛିଥିବା line ରେ ଅଟକାଏ।", "ar": "شغّل مع ‎--debug في Playwright Test أو PWDEBUG=1 في Python وJava. يفتح متصفح ومعه Inspector، وتتقدم في الاختبار خطوة بخطوة. ويوقفه page.pause()‎ عند السطر الذي تختاره.", "de": "Starte mit --debug in Playwright Test oder mit PWDEBUG=1 in Python und Java. Ein Browser und der Inspector öffnen sich, und du gehst Schritt für Schritt durch den Test. page.pause() hält ihn an der Zeile an, die du wählst."}, {"id": "logs", "h": "Verbose logs", "en": "DEBUG=pw:api prints a line for each step of every Playwright call. It works in every language and is the way to see what a test was doing on a CI machine.", "hi": "DEBUG=pw:api हर Playwright call के हर कदम के लिए एक line छापता है। यह हर भाषा में काम करता है और CI machine पर test क्या कर रहा था यह देखने का तरीका है।", "kn": "DEBUG=pw:api ಪ್ರತಿ Playwright call ನ ಪ್ರತಿ ಹಂತಕ್ಕೆ ಒಂದು line ಮುದ್ರಿಸುತ್ತದೆ. ಇದು ಎಲ್ಲಾ ಭಾಷೆಗಳಲ್ಲಿ ಕೆಲಸ ಮಾಡುತ್ತದೆ, CI machine ನಲ್ಲಿ test ಏನು ಮಾಡುತ್ತಿತ್ತು ಎಂದು ನೋಡುವ ದಾರಿ.", "or": "DEBUG=pw:api ପ୍ରତି Playwright call ର ପ୍ରତି ପଦକ୍ଷେପ ପାଇଁ ଏକ line ଛାପେ। ଏହା ସବୁ ଭାଷାରେ କାମ କରେ ଏବଂ CI machine ରେ test କଣ କରୁଥିଲା ଦେଖିବାର ଉପାୟ।", "ar": "يطبع DEBUG=pw:api سطرًا لكل خطوة داخل كل استدعاء في Playwright. يعمل في كل اللغات، وهو طريقتك لمعرفة ما كان الاختبار يفعله على جهاز CI.", "de": "DEBUG=pw:api schreibt eine Zeile für jeden Schritt in jedem Playwright-Aufruf. Das funktioniert in jeder Sprache und zeigt, was ein Test auf einer CI-Maschine gerade getan hat."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you fix a check whose expected text is wrong, using the received value from the error, and you rewrite a test for an out of stock product so it checks what the page really shows.", "hi": "Labs में आप error की received value से उस check को ठीक करते हैं जिसका expected text गलत है, और out of stock product वाले test को फिर से लिखते हैं ताकि वह वही जाँचे जो page सच में दिखाता है।", "kn": "Labs ನಲ್ಲಿ error ನ received value ಬಳಸಿ ತಪ್ಪು expected text ಇರುವ check ಸರಿಪಡಿಸುತ್ತೀರಿ, ಮತ್ತು out of stock product ನ test ಅನ್ನು page ನಿಜವಾಗಿ ತೋರಿಸುವುದನ್ನು ಪರಿಶೀಲಿಸುವಂತೆ ಮತ್ತೆ ಬರೆಯುತ್ತೀರಿ.", "or": "Labs ରେ error ର received value ବ୍ୟବହାର କରି ଭୁଲ expected text ଥିବା check ଠିକ କରନ୍ତି, ଏବଂ out of stock product ର test କୁ page ପ୍ରକୃତରେ ଦେଖାଉଥିବା ଜିନିଷ ଯାଞ୍ଚ କରିବା ପାଇଁ ପୁଣି ଲେଖନ୍ତି।", "ar": "في المختبرات تصلح فحصًا نصه المتوقع خاطئ مستعينًا بالقيمة المستلمة في الخطأ، وتعيد كتابة اختبار لمنتج نفد من المخزون كي يفحص ما تعرضه الصفحة فعلًا.", "de": "In den Labs reparierst du eine Prüfung mit falschem erwartetem Text anhand des erhaltenen Werts aus der Fehlermeldung, und du schreibst einen Test für ein ausverkauftes Produkt so um, dass er prüft, was die Seite wirklich zeigt."}], "ex": [], "dg": {"loop": {"t": "From a red test to a fix", "w": 900, "h": 240, "n": [["fail", 20, 88, 130, 64, "test fails", {"c": 5, "sub": "in CI or locally", "i": "A test fails, usually on a CI machine you cannot watch."}], ["err", 190, 88, 140, 64, "read the error", {"c": 2, "sub": "expected, received", "i": "The error names the locator, the expected value, the received value and the call log."}], ["trace", 370, 16, 150, 64, "open the trace", {"c": 1, "sub": "DOM, network, console", "i": "The trace shows the page before and after every action, with the network and the console."}], ["shot", 370, 160, 150, 64, "screenshot, video", {"c": 1, "sub": "what the page showed", "i": "The screenshot and the video show what a user would have seen."}], ["debug", 560, 88, 150, 64, "run it locally", {"c": 3, "sub": "Inspector or UI mode", "i": "Run the one test with the Inspector or UI mode and step through it."}], ["fix", 750, 88, 130, 64, "fix and rerun", {"c": 0, "sub": "test or app", "i": "Fix the test or report the bug in the app, then run the test again."}]], "e": [["fail", "err"], ["err", "trace"], ["err", "shot"], ["trace", "debug"], ["shot", "debug"], ["debug", "fix"]], "st": [[["fail"], "A test fails."], [["err", "fail>err"], "Read the error first. It often names the cause."], [["trace", "shot", "err>trace", "err>shot"], "Then look at the evidence: the trace, the screenshot and the video."], [["debug", "trace>debug", "shot>debug"], "If it is still not clear, run the one test locally and step through it."], [["fix", "debug>fix"], "Fix the test or the app, and run it again."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "greeting", "title": "Fix the check with the received value", "name": "greets Asha after sign in", "task": "This test fails with <b>Expected: \"Hello, Asha!\"<\/b> and <b>Received: \"Hello, Asha\"<\/b>. Run it to see the error, then fix the expected text so the test passes.", "goal": "Asha is signed in and the check passes.", "start": "/login", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('greets Asha after sign in', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.locator('#hello')).toHaveText('Hello, Asha!');\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class GreetsAshaAfterSignInTest {\n  @Test\n  void greetsAshaAfterSignIn(Page page) {\n    page.navigate(\"/login\");\n    page.getByLabel(\"Email\").fill(\"asha@shop.example\");\n    page.getByLabel(\"Password\").fill(\"s3cret\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Sign in\")).click();\n    assertThat(page.locator(\"#hello\")).hasText(\"Hello, Asha\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_greets_asha_after_sign_in(page: Page):\n    page.goto(\"/login\")\n    page.get_by_label(\"Email\").fill(\"asha@shop.example\")\n    page.get_by_label(\"Password\").fill(\"s3cret\")\n    page.get_by_role(\"button\", name=\"Sign in\").click()\n    expect(page.locator(\"#hello\")).to_have_text(\"Hello, Asha\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('greets Asha after sign in', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.locator('#hello')).toHaveText('Hello, Asha');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('greets Asha after sign in', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.locator('#hello')).toHaveText('Hello, Asha');\n});"}, "hint": "Compare the expected and the received values in the error. They differ by one character.", "why": "The page and the test disagreed on one exclamation mark. When the page is right, the test changes. When the page is wrong, the test stays and a bug is reported.", "check": [["ctx.loggedIn", "Asha is signed in"], ["/Hello, Asha['\"]/.test(ctx.code)", "The check expects Hello, Asha"]]}, {"id": "soldout", "title": "Test what the page really shows", "name": "the notebook is out of stock", "task": "The notebook test failed because the Notebook (<code>product-4<\/code>) has no <b>Add to cart<\/b> button. It is out of stock. Rewrite the test so it checks that the Notebook button says <b>Out of stock<\/b> and is disabled.", "goal": "The test checks the Out of stock button.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the notebook is out of stock', async ({ page }) => {\n  await page.goto('/products');\n  await page.getByTestId('product-4').getByRole('button', { name: 'Add to cart' }).click({ timeout: 3000 });\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheNotebookIsOutOfStockTest {\n  @Test\n  void theNotebookIsOutOfStock(Page page) {\n    page.navigate(\"/products\");\n    Locator button = page.getByTestId(\"product-4\").getByRole(AriaRole.BUTTON);\n    assertThat(button).hasText(\"Out of stock\");\n    assertThat(button).isDisabled();\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_notebook_is_out_of_stock(page: Page):\n    page.goto(\"/products\")\n    button = page.get_by_test_id(\"product-4\").get_by_role(\"button\")\n    expect(button).to_have_text(\"Out of stock\")\n    expect(button).to_be_disabled()\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the notebook is out of stock', async ({ page }) => {\n  await page.goto('/products');\n  const button = page.getByTestId('product-4').getByRole('button');\n  await expect(button).toHaveText('Out of stock');\n  await expect(button).toBeDisabled();\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the notebook is out of stock', async ({ page }) => {\n  await page.goto('/products');\n  const button = page.getByTestId('product-4').getByRole('button');\n  await expect(button).toHaveText('Out of stock');\n  await expect(button).toBeDisabled();\n});"}, "hint": "Find the button inside the card with <code>page.getByTestId('product-4').getByRole('button')<\/code>, then use <code>toHaveText<\/code> and <code>toBeDisabled<\/code>.", "why": "The trace showed the card with a disabled Out of stock button, which is the right behaviour for a product with no stock. The old test was wrong, so the new test checks that behaviour instead.", "check": [["/Out of stock/.test(ctx.text)", "The products are on the page"], ["/tobedisabled|to_be_disabled|isdisabled/i.test(ctx.code)", "The test checks the button is disabled"]]}], "trees": {}};
+JSPLAY.page({ title: "Debugging failed tests: errors, traces, reports and the Inspector", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>
