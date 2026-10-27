@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><script src="fakeapi.js"></script><meta charset="utf-8"><title>About you · Brainy Shop</title><link rel="stylesheet" href="style.css">
+<style>@media (prefers-color-scheme: dark) { body { background: #0f172a; color: #e2e8f0; } #scheme::after { content: 'dark'; } } @media (prefers-color-scheme: light) { #scheme::after { content: 'light'; } }</style></head>
+<body>
+<main>
+  <h1>What the shop knows about your browser</h1>
+  <dl>
+    <dt>Screen width</dt><dd id="width"></dd>
+    <dt>Language</dt><dd id="lang"></dd>
+    <dt>Time zone</dt><dd id="tz"></dd>
+    <dt>Price format</dt><dd id="price"></dd>
+    <dt>Colour scheme</dt><dd id="scheme"></dd>
+    <dt>Touch screen</dt><dd id="touch"></dd>
+    <dt>Online</dt><dd id="online"></dd>
+    <dt>Location</dt><dd id="where">not shared</dd>
+  </dl>
+  <button type="button" id="locate">Find stores near me</button>
+</main>
+<script src="app.js"></script>
+<script>
+const set = (id, v) => { document.getElementById(id).textContent = v; };
+set('width', innerWidth + ' px');
+set('lang', navigator.language);
+set('tz', Intl.DateTimeFormat().resolvedOptions().timeZone);
+set('price', new Intl.NumberFormat(navigator.language, { style: 'currency', currency: 'EUR' }).format(1299.5));
+set('touch', navigator.maxTouchPoints > 0 ? 'yes' : 'no');
+set('online', navigator.onLine ? 'yes' : 'no');
+document.getElementById('locate').onclick = () => navigator.geolocation.getCurrentPosition(
+  p => set('where', `${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`), e => set('where', 'blocked: ' + e.message));
+</script>
+</body>
+</html>

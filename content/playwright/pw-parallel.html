@@ -1,0 +1,1114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parallel runs, retries, timeouts and sharding · Playwright</title>
+<meta name="description" content="Workers, fullyParallel, pytest-xdist and JUnit parallel threads, test locks, @ResourceLock and xdist groups, retries with pytest-rerunfailures and Surefire, flaky tests, test, expect, action and navigation timeouts, test.slow, sharding with --shard and pytest-split.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🧪 The test runner</span><span>›</span><span>Chapter 10 of 10</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">⚡</span><div><h1>Parallel runs, retries, timeouts and sharding</h1><p class="lead">Run hundreds of tests in minutes without making them fragile. Workers run tests side by side, locks protect shared data, retries expose flaky tests, timeouts stop hanging ones, and shards split the run across machines.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 24 min read</span><span class="chip">📚 5 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 20 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 1 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>A big suite is slow when tests run one by one. Running them side by side, on one machine or many, makes it fast, as long as the tests do not get in each other's way.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#workers" class="easy"><span>👷</span>Workers: tests at the same time</a><a href="#isolation"><span>🧱</span>Parallel tests must not share data</a><a href="#retries"><span>🔁</span>Retries and flaky tests</a><a href="#timeouts"><span>⏱️</span>Timeouts</a><a href="#sharding"><span>🍕</span>Sharding across machines</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="workers" data-say="workers"><div class="sec-num">Part 1</div><h2><span class="sec-em">👷</span><span>Workers: tests at the same time</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>A suite of 400 tests that takes 2 seconds each needs over 13 minutes in a row. Run 4 at a time and it needs about 3. Each runner does this with <b>workers</b>: separate processes or threads, each with its own browser.</p>
+<div class="codewrap tests pw4" data-k="workers" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Four tests, two at a time · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/resources/junit-platform.properties</div><pre class="src" data-file="src/test/resources/junit-platform.properties"><span class="c"># Run test classes at the same time, on 2 threads. Tests inside one class stay in order.</span>
+<span class="a">junit.jupiter.execution.parallel.enabled </span>=<span class="s"> true</span>
+<span class="a">junit.jupiter.execution.parallel.mode.default </span>=<span class="s"> same_thread</span>
+<span class="a">junit.jupiter.execution.parallel.mode.classes.default </span>=<span class="s"> concurrent</span>
+<span class="a">junit.jupiter.execution.parallel.config.strategy </span>=<span class="s"> fixed</span>
+<span class="a">junit.jupiter.execution.parallel.config.fixed.parallelism </span>=<span class="s"> 2</span></pre><div class="fname">📄 src/test/java/com/brainy/ProductsTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ProductsTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">ProductsTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> showsFiveProducts(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"showsFiveProducts on "</span> + <span class="t">Thread</span>.currentThread().getName());
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> findsTheLamp(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"findsTheLamp on "</span> + <span class="t">Thread</span>.currentThread().getName());
+    page.navigate(<span class="s">"/products"</span>);
+    page.getByPlaceholder(<span class="s">"Search products"</span>).fill(<span class="s">"lamp"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">1</span>);
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/OrdersTest.java</div><pre class="src" data-file="src/test/java/com/brainy/OrdersTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">OrdersTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> pageOneShowsFiveOrders(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"pageOneShowsFiveOrders on "</span> + <span class="t">Thread</span>.currentThread().getName());
+    page.navigate(<span class="s">"/orders"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">ROW</span>)).hasCount(<span class="n">6</span>);        <span class="c">// a header row and five orders</span>
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> pageTwoIsTheLastPage(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"pageTwoIsTheLastPage on "</span> + <span class="t">Thread</span>.currentThread().getName());
+    page.navigate(<span class="s">"/orders"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Next"</span>)).click();
+    assertThat(page.getByText(<span class="s">"Page 2 of 2"</span>)).isVisible();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.ProductsTest
+[INFO] Running com.brainy.OrdersTest
+findsTheLamp on ForkJoinPool-1-worker-2
+pageTwoIsTheLastPage on ForkJoinPool-1-worker-1
+showsFiveProducts on ForkJoinPool-1-worker-2
+pageOneShowsFiveOrders on ForkJoinPool-1-worker-1
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.941 s -- in com.brainy.OrdersTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.707 s -- in com.brainy.ProductsTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_products.py</div><pre class="src" data-file="tests/test_products.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_shows_five_products(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)
+
+
+<span class="k">def</span> test_finds_the_lamp(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    page.get_by_placeholder(<span class="s">"Search products"</span>).fill(<span class="s">"lamp"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">1</span>)</pre><div class="fname">📄 tests/test_orders.py</div><pre class="src" data-file="tests/test_orders.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_page_1_shows_five_orders(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/orders"</span>)
+    expect(page.get_by_role(<span class="s">"row"</span>)).to_have_count(<span class="n">6</span>)        <span class="c"># a header row and five orders</span>
+
+
+<span class="k">def</span> test_page_2_is_the_last_page(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/orders"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Next"</span>).click()
+    expect(page.get_by_text(<span class="s">"Page 2 of 2"</span>)).to_be_visible()</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -n 2 -v</pre></div><div class="out"><span>Terminal output</span><pre>============================= test session starts ==============================
+platform linux -- Python 3.13.17, pytest-9.1.1, pluggy-1.7.0 -- .venv/bin/python3
+cachedir: .pytest_cache
+rootdir: project
+configfile: pytest.ini
+plugins: playwright-0.10.0, html-4.2.0, split-0.11.0, metadata-3.1.1, rerunfailures-16.7, xdist-3.8.0, allure-pytest-2.16.2
+created: 2/2 workers
+2 workers [4 items]
+
+scheduling tests via LoadScheduling
+
+tests/test_orders.py::test_page_1_shows_five_orders[chromium] 
+tests/test_products.py::test_shows_five_products[chromium] 
+[gw0] [ 25%] PASSED tests/test_orders.py::test_page_1_shows_five_orders[chromium] 
+tests/test_orders.py::test_page_2_is_the_last_page[chromium] 
+[gw0] [ 50%] PASSED tests/test_orders.py::test_page_2_is_the_last_page[chromium] 
+[gw1] [ 75%] PASSED tests/test_products.py::test_shows_five_products[chromium] 
+tests/test_products.py::test_finds_the_lamp[chromium] 
+[gw1] [100%] PASSED tests/test_products.py::test_finds_the_lamp[chromium] 
+
+============================== 4 passed in 4.07s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  reporter: <span class="s">'list'</span>,
+  fullyParallel: <span class="k">true</span>,              <span class="c">// every test can run at the same time as any other</span>
+  workers: <span class="n">2</span>,                       <span class="c">// two worker processes, each with its own browser</span>
+  use: { baseURL: <span class="s">'http://localhost:4173'</span> },
+  projects: [{ name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } }],
+});</pre><div class="fname">📄 tests/products.spec.js</div><pre class="src" data-file="tests/products.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'finds the lamp'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+});</pre><div class="fname">📄 tests/orders.spec.js</div><pre class="src" data-file="tests/orders.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'page 1 shows five orders'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'row'</span>)).toHaveCount(<span class="n">6</span>);        <span class="c">// a header row and five orders</span>
+});
+
+test(<span class="s">'page 2 is the last page'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Next'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Page 2 of 2'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 2 workers
+
+page 1 shows five orders on worker 0
+page 2 is the last page on worker 1
+  ✓  2 [chromium] › tests/orders.spec.js:3:1 › page 1 shows five orders (447ms)
+shows five products on worker 0
+  ✓  1 [chromium] › tests/orders.spec.js:9:1 › page 2 is the last page (534ms)
+finds the lamp on worker 1
+  ✓  4 [chromium] › tests/products.spec.js:9:1 › finds the lamp (248ms)
+  ✓  3 [chromium] › tests/products.spec.js:3:1 › shows five products (1.1s)
+
+  4 passed (3.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  reporter: <span class="s">'list'</span>,
+  fullyParallel: <span class="k">true</span>,              <span class="c">// every test can run at the same time as any other</span>
+  workers: <span class="n">2</span>,                       <span class="c">// two worker processes, each with its own browser</span>
+  use: { baseURL: <span class="s">'http://localhost:4173'</span> },
+  projects: [{ name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } }],
+});</pre><div class="fname">📄 tests/products.spec.ts</div><pre class="src" data-file="tests/products.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'finds the lamp'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+});</pre><div class="fname">📄 tests/orders.spec.ts</div><pre class="src" data-file="tests/orders.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'page 1 shows five orders'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'row'</span>)).toHaveCount(<span class="n">6</span>);        <span class="c">// a header row and five orders</span>
+});
+
+test(<span class="s">'page 2 is the last page'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Next'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Page 2 of 2'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 2 workers
+
+page 2 is the last page on worker 1
+  ✓  1 [chromium] › tests/orders.spec.ts:9:1 › page 2 is the last page (521ms)
+page 1 shows five orders on worker 0
+shows five products on worker 1
+  ✓  2 [chromium] › tests/orders.spec.ts:3:1 › page 1 shows five orders (611ms)
+finds the lamp on worker 0
+  ✓  4 [chromium] › tests/products.spec.ts:9:1 › finds the lamp (237ms)
+  ✓  3 [chromium] › tests/products.spec.ts:3:1 › shows five products (1.2s)
+
+  4 passed (3.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four tests ran on two workers at once, and the output shows which worker took which test. Each worker has its own browser, and each test still gets its own fresh page, so the tests cannot see each other. In Playwright Test the workers are separate processes. pytest-xdist also starts processes, named gw0 and gw1. JUnit uses threads inside one JVM, so each class gets its own Playwright on its own thread.</p></div></div>
+<div class="tw"><table class="jt "><tr><th></th><th>Playwright Test</th><th>pytest</th><th>JUnit 5</th></tr><tr><td>how</td><td>built in, worker processes</td><td>the pytest-xdist plugin, worker processes</td><td>built in, threads in one JVM</td></tr><tr><td>turn it on</td><td>on by default, per file</td><td>pytest -n 4, or -n auto</td><td>junit-platform.properties</td></tr><tr><td>how many</td><td>workers: 4, or --workers=4</td><td>-n 4</td><td>config.fixed.parallelism = 4</td></tr><tr><td>tests inside one file</td><td>in order, unless fullyParallel: true</td><td>spread over workers</td><td>in order, unless mode.default = concurrent</td></tr><tr><td>turn it off</td><td>--workers=1</td><td>leave out -n</td><td>parallel.enabled = false</td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Playwright Test runs files in parallel and the tests inside a file in order. fullyParallel: true lets every test run on any worker, which balances the load better.</div></div>
+</section>
+<section class="card reveal jsec" id="isolation" data-say="isolation"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧱</span><span>Parallel tests must not share data</span></h2>
+
+<p>Each test gets its own page and its own cookies, so the browser side is already separate. The danger is data outside the browser: the same user account, the same database row, the same file. Two tests that change it at the same time can break each other in ways that fail only sometimes.</p>
+<p>The best fix is to give each test its own data: a new person with a unique name, a fresh account, a test id in the file name. When a few tests really must share something, tell the runner they must not overlap.</p>
+<div class="codewrap tests pw4" data-k="lock" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two tests that must not run at the same time · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/AddMeeraTest.java</div><pre class="src" data-file="src/test/java/com/brainy/AddMeeraTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.google.gson.<span class="t">JsonParser</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">RequestOptions</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> org.junit.jupiter.api.parallel.<span class="t">ResourceLock</span>;
+<span class="k">import</span> java.util.<span class="t">Map</span>;
+
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertEquals;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">AddMeeraTest</span> {
+  <span class="a">@Test</span>
+  <span class="a">@ResourceLock</span>(<span class="s">"people"</span>)              <span class="c">// never at the same time as another test holding "people"</span>
+  <span class="k">void</span> addMeera(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"add Meera: start"</span>);
+    <span class="k">int</span> before = <span class="t">JsonParser</span>.parseString(page.request().get(<span class="s">"/api/people"</span>).text()).getAsJsonArray().size();
+    page.request().post(<span class="s">"/api/people"</span>, <span class="t">RequestOptions</span>.create().setData(<span class="t">Map</span>.of(<span class="s">"name"</span>, <span class="s">"Meera"</span>, <span class="s">"email"</span>, <span class="s">"meera@shop.example"</span>)));
+    <span class="k">int</span> after = <span class="t">JsonParser</span>.parseString(page.request().get(<span class="s">"/api/people"</span>).text()).getAsJsonArray().size();
+    assertEquals(before + <span class="n">1</span>, after);
+    <span class="t">System</span>.out.println(<span class="s">"add Meera: done"</span>);
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/ProductsTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ProductsTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">ProductsTest</span> {
+  <span class="a">@Test</span>                                <span class="c">// no lock, runs alongside</span>
+  <span class="k">void</span> showsFiveProducts(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"products: start"</span>);
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+    <span class="t">System</span>.out.println(<span class="s">"products: done"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.ProductsTest
+[INFO] Running com.brainy.AddChenTest
+[INFO] Running com.brainy.AddMeeraTest
+products: start
+add Chen: start
+add Chen: done
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.165 s -- in com.brainy.AddChenTest
+products: done
+add Meera: start
+add Meera: done
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.221 s -- in com.brainy.ProductsTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.398 s -- in com.brainy.AddMeeraTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_people.py</div><pre class="src" data-file="tests/test_people.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="c"># Both tests count the people in the shop. The same group keeps them on one worker, one after the other.</span>
+<span class="a">@pytest</span>.mark.xdist_group(<span class="s">"people"</span>)
+<span class="k">def</span> test_add_meera(page: <span class="t">Page</span>):
+    before = len(page.request.get(<span class="s">"/api/people"</span>).json())
+    page.request.post(<span class="s">"/api/people"</span>, data={<span class="s">"name"</span>: <span class="s">"Meera"</span>, <span class="s">"email"</span>: <span class="s">"meera@shop.example"</span>})
+    <span class="k">assert</span> len(page.request.get(<span class="s">"/api/people"</span>).json()) == before + <span class="n">1</span>
+
+
+<span class="a">@pytest</span>.mark.xdist_group(<span class="s">"people"</span>)
+<span class="k">def</span> test_add_chen(page: <span class="t">Page</span>):
+    before = len(page.request.get(<span class="s">"/api/people"</span>).json())
+    page.request.post(<span class="s">"/api/people"</span>, data={<span class="s">"name"</span>: <span class="s">"Chen"</span>, <span class="s">"email"</span>: <span class="s">"chen@shop.example"</span>})
+    <span class="k">assert</span> len(page.request.get(<span class="s">"/api/people"</span>).json()) == before + <span class="n">1</span>
+
+
+<span class="k">def</span> test_shows_five_products(page: <span class="t">Page</span>):          <span class="c"># no group, runs on any worker</span>
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -n 3 --dist loadgroup -v</pre></div><div class="out"><span>Terminal output</span><pre>============================= test session starts ==============================
+platform linux -- Python 3.13.17, pytest-9.1.1, pluggy-1.7.0 -- .venv/bin/python3
+cachedir: .pytest_cache
+rootdir: project
+configfile: pytest.ini
+plugins: playwright-0.10.0, html-4.2.0, split-0.11.0, metadata-3.1.1, rerunfailures-16.7, xdist-3.8.0, allure-pytest-2.16.2
+created: 3/3 workers
+3 workers [3 items]
+
+scheduling tests via LoadGroupScheduling
+
+tests/test_people.py::test_shows_five_products[chromium] 
+tests/test_people.py::test_add_meera[chromium]@people 
+[gw1] [ 33%] PASSED tests/test_people.py::test_add_meera[chromium]@people 
+tests/test_people.py::test_add_chen[chromium]@people 
+[gw1] [ 66%] PASSED tests/test_people.py::test_add_chen[chromium]@people 
+[gw0] [100%] PASSED tests/test_people.py::test_shows_five_products[chromium] 
+
+============================== 3 passed in 4.06s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/people.spec.js</div><pre class="src" data-file="tests/people.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="c">// Both tests count the people in the shop, so they must not run at the same time.</span>
+test(<span class="s">'add Meera'</span>, { lock: <span class="s">'people'</span> }, <span class="k">async</span> ({ request }) =&gt; {
+  console.log(<span class="s">'add Meera: start'</span>);
+  <span class="k">const</span> before = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Meera'</span>, email: <span class="s">'meera@shop.example'</span> } });
+  <span class="k">const</span> after = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  expect(after).toBe(before + <span class="n">1</span>);
+  console.log(<span class="s">'add Meera: done'</span>);
+});
+
+test(<span class="s">'add Chen'</span>, { lock: <span class="s">'people'</span> }, <span class="k">async</span> ({ request }) =&gt; {
+  console.log(<span class="s">'add Chen: start'</span>);
+  <span class="k">const</span> before = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Chen'</span>, email: <span class="s">'chen@shop.example'</span> } });
+  <span class="k">const</span> after = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  expect(after).toBe(before + <span class="n">1</span>);
+  console.log(<span class="s">'add Chen: done'</span>);
+});
+
+test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }) =&gt; {        <span class="c">// no lock, runs alongside</span>
+  console.log(<span class="s">'products: start'</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+  console.log(<span class="s">'products: done'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 3 workers
+
+add Meera: start
+products: start
+add Meera: done
+  ✓  2 [chromium] › tests/people.spec.js:4:1 › add Meera (232ms)
+add Chen: start
+add Chen: done
+  ✓  3 [chromium] › tests/people.spec.js:13:1 › add Chen (135ms)
+products: done
+  ✓  1 [chromium] › tests/people.spec.js:22:1 › shows five products (1.4s)
+
+  3 passed (4.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/people.spec.ts</div><pre class="src" data-file="tests/people.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="c">// Both tests count the people in the shop, so they must not run at the same time.</span>
+test(<span class="s">'add Meera'</span>, { lock: <span class="s">'people'</span> }, <span class="k">async</span> ({ request }) =&gt; {
+  console.log(<span class="s">'add Meera: start'</span>);
+  <span class="k">const</span> before = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Meera'</span>, email: <span class="s">'meera@shop.example'</span> } });
+  <span class="k">const</span> after = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  expect(after).toBe(before + <span class="n">1</span>);
+  console.log(<span class="s">'add Meera: done'</span>);
+});
+
+test(<span class="s">'add Chen'</span>, { lock: <span class="s">'people'</span> }, <span class="k">async</span> ({ request }) =&gt; {
+  console.log(<span class="s">'add Chen: start'</span>);
+  <span class="k">const</span> before = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Chen'</span>, email: <span class="s">'chen@shop.example'</span> } });
+  <span class="k">const</span> after = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  expect(after).toBe(before + <span class="n">1</span>);
+  console.log(<span class="s">'add Chen: done'</span>);
+});
+
+test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }) =&gt; {        <span class="c">// no lock, runs alongside</span>
+  console.log(<span class="s">'products: start'</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+  console.log(<span class="s">'products: done'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 3 workers
+
+add Meera: start
+add Meera: done
+  ✓  2 [chromium] › tests/people.spec.ts:4:1 › add Meera (121ms)
+add Chen: start
+add Chen: done
+  ✓  3 [chromium] › tests/people.spec.ts:13:1 › add Chen (133ms)
+products: start
+products: done
+  ✓  1 [chromium] › tests/people.spec.ts:22:1 › shows five products (1.3s)
+
+  3 passed (3.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>The two tests that count people never overlapped: one finished before the other started, while the products test ran next to them. Playwright Test calls this a test lock (new in version 1.63). JUnit has the same idea in @ResourceLock. pytest-xdist has no lock, but a group sends tests to one worker, which runs them one after the other.</p></div></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Playwright Test also has a serial mode, test.describe.configure({ mode: 'serial' }), where the tests in a file run in order and the rest are skipped after a failure. The Playwright docs advise against it: isolated tests are faster and easier to retry.</div></div>
+</section>
+<section class="card reveal jsec" id="retries" data-say="retries"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔁</span><span>Retries and flaky tests</span></h2>
+
+<p>A <b>flaky</b> test passes and fails on the same code. A retry runs a failed test again. If it passes the second time, the runner reports it as flaky, so the run stays green but the problem stays visible.</p>
+<div class="codewrap tests pw4" data-k="retry" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A flaky test that passes on the second try · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/OfferTest.java</div><pre class="src" data-file="src/test/java/com/brainy/OfferTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.*;
+<span class="k">import</span> com.microsoft.playwright.assertions.<span class="t">LocatorAssertions</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.*;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="c">// Surefire reruns this class from the start, so it opens and closes Playwright itself.</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">OfferTest</span> {
+  <span class="k">private</span> <span class="k">static</span> <span class="k">int</span> attempt = <span class="n">0</span>;      <span class="c">// the rerun happens in the same JVM</span>
+  <span class="k">static</span> <span class="t">Playwright</span> playwright;
+  <span class="k">static</span> <span class="t">Browser</span> browser;
+  <span class="t">BrowserContext</span> context;
+  <span class="t">Page</span> page;
+
+  <span class="a">@BeforeAll</span>
+  <span class="k">static</span> <span class="k">void</span> launch() {
+    playwright = <span class="t">Playwright</span>.create();
+    browser = playwright.chromium().launch();
+  }
+
+  <span class="a">@BeforeEach</span>
+  <span class="k">void</span> newPage() {
+    context = browser.newContext(<span class="k">new</span> <span class="t">Browser</span>.<span class="t">NewContextOptions</span>().setBaseURL(<span class="s">"http://localhost:4173"</span>));
+    page = context.newPage();
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theOfferShowsUp() {
+    attempt++;
+    <span class="t">System</span>.out.println(<span class="s">"attempt "</span> + attempt);
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Load offers"</span>)).click();
+    <span class="c">// Flaky on purpose: the first try waits only 0.5 s, but the offer needs 1.2 s.</span>
+    <span class="k">double</span> wait = attempt == <span class="n">1</span> ? <span class="n">500</span> : <span class="n">5_000</span>;
+    assertThat(page.getByTestId(<span class="s">"offer"</span>)).isVisible(<span class="k">new</span> <span class="t">LocatorAssertions</span>.<span class="t">IsVisibleOptions</span>().setTimeout(wait));
+  }
+
+  <span class="a">@AfterEach</span>
+  <span class="k">void</span> closeContext() {
+    context.close();
+  }
+
+  <span class="a">@AfterAll</span>
+  <span class="k">static</span> <span class="k">void</span> close() {
+    playwright.close();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test -Dsurefire.rerunFailingTestsCount=2</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.OfferTest
+attempt 1
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 4.556 s &lt;&lt;&lt; FAILURE! -- in com.brainy.OfferTest
+[ERROR] com.brainy.OfferTest.theOfferShowsUp -- Time elapsed: 2.005 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: 
+Locator expected to be visible
+Error: element(s) not found
+Call log:
+  - Assert &quot;isVisible&quot; getByTestId(&quot;offer&quot;) with timeout 500ms
+  - waiting for getByTestId(&quot;offer&quot;)
+[INFO] Running com.brainy.OfferTest
+attempt 2
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.527 s -- in com.brainy.OfferTest
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Flakes: 1
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_offer.py</div><pre class="src" data-file="tests/test_offer.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_the_offer_shows_up(page: <span class="t">Page</span>, request):
+    attempt = request.node.execution_count          <span class="c"># set by pytest-rerunfailures</span>
+    print(f<span class="s">"\nattempt {attempt}"</span>)
+    page.goto(<span class="s">"/widgets"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Load offers"</span>).click()
+    <span class="c"># Flaky on purpose: the first try waits only 0.5 s, but the offer needs 1.2 s.</span>
+    wait = <span class="n">500</span> <span class="k">if</span> attempt == <span class="n">1</span> <span class="k">else</span> <span class="n">5_000</span>
+    expect(page.get_by_test_id(<span class="s">"offer"</span>)).to_be_visible(timeout=wait)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s --reruns 2</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_offer.py::test_the_offer_shows_up[chromium] 
+attempt 1
+RERUN
+tests/test_offer.py::test_the_offer_shows_up[chromium] 
+attempt 2
+PASSED
+
+========================== 1 passed, 1 rerun in 6.18s ==========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/offer.spec.js</div><pre class="src" data-file="tests/offer.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the offer shows up'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`attempt ${testInfo.retry + 1}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Load offers'</span> }).click();
+  <span class="c">// Flaky on purpose: the first try waits only 0.5 s, but the offer needs 1.2 s.</span>
+  <span class="k">const</span> wait = testInfo.retry === <span class="n">0</span> ? <span class="n">500</span> : <span class="n">5_000</span>;
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'offer'</span>)).toBeVisible({ timeout: wait });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+attempt 1
+  ✘  1 [chromium] › tests/offer.spec.js:3:1 › the offer shows up (2.0s)
+attempt 2
+  ✓  2 [chromium] › tests/offer.spec.js:3:1 › the offer shows up (retry #1) (2.8s)
+
+
+  1) [chromium] › tests/offer.spec.js:3:1 › the offer shows up ─────────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId(&#x27;offer&#x27;)
+    Expected: visible
+    Timeout: 500ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect &quot;toBeVisible&quot; getByTestId(&#x27;offer&#x27;) with timeout 500ms
+      - waiting for getByTestId(&#x27;offer&#x27;)
+
+
+       7 |   // Flaky on purpose: the first try waits only 0.5 s, but the offer needs 1.2 s.
+       8 |   const wait = testInfo.retry === 0 ? 500 : 5_000;
+    &gt;  9 |   await expect(page.getByTestId(&#x27;offer&#x27;)).toBeVisible({ timeout: wait });
+         |                                           ^
+      10 | });
+      11 |
+        at tests/offer.spec.js:9:43
+
+    Error Context: test-results/offer-the-offer-shows-up-chromium/error-context.md
+
+  1 flaky
+    [chromium] › tests/offer.spec.js:3:1 › the offer shows up ──────────────────────────────────────</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/offer.spec.ts</div><pre class="src" data-file="tests/offer.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the offer shows up'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`attempt ${testInfo.retry + 1}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Load offers'</span> }).click();
+  <span class="c">// Flaky on purpose: the first try waits only 0.5 s, but the offer needs 1.2 s.</span>
+  <span class="k">const</span> wait = testInfo.retry === <span class="n">0</span> ? <span class="n">500</span> : <span class="n">5_000</span>;
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'offer'</span>)).toBeVisible({ timeout: wait });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+attempt 1
+  ✘  1 [chromium] › tests/offer.spec.ts:3:1 › the offer shows up (1.9s)
+attempt 2
+  ✓  2 [chromium] › tests/offer.spec.ts:3:1 › the offer shows up (retry #1) (2.6s)
+
+
+  1) [chromium] › tests/offer.spec.ts:3:1 › the offer shows up ─────────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId(&#x27;offer&#x27;)
+    Expected: visible
+    Timeout: 500ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect &quot;toBeVisible&quot; getByTestId(&#x27;offer&#x27;) with timeout 500ms
+      - waiting for getByTestId(&#x27;offer&#x27;)
+
+
+       7 |   // Flaky on purpose: the first try waits only 0.5 s, but the offer needs 1.2 s.
+       8 |   const wait = testInfo.retry === 0 ? 500 : 5_000;
+    &gt;  9 |   await expect(page.getByTestId(&#x27;offer&#x27;)).toBeVisible({ timeout: wait });
+         |                                           ^
+      10 | });
+      11 |
+        at tests/offer.spec.ts:9:43
+
+    Error Context: test-results/offer-the-offer-shows-up-chromium/error-context.md
+
+  1 flaky
+    [chromium] › tests/offer.spec.ts:3:1 › the offer shows up ──────────────────────────────────────</pre></div></div><div class="note-out"><span>What happens</span><p>The first try failed, the retry passed, and the run still passed. Each runner marks the test so you notice: Playwright Test says <b>1 flaky</b>, pytest says <b>1 rerun</b> and Surefire says <b>Flakes: 1</b>. A flaky test is a bug in the test or the app, and the retry only hides it until someone fixes it. In our run, a Surefire rerun of a class that uses @UsePlaywright failed with <b>Playwright connection closed</b>, so the Java version opens and closes Playwright in its own @BeforeAll and @AfterAll.</p></div></div>
+<div class="tw"><table class="jt "><tr><th></th><th>Playwright Test</th><th>pytest</th><th>JUnit 5 with Maven</th></tr><tr><td>set retries</td><td>retries: 2, or --retries=2</td><td>the pytest-rerunfailures plugin, --reruns 2</td><td>mvn test -Dsurefire.rerunFailingTestsCount=2</td></tr><tr><td>which try is this</td><td>testInfo.retry, starts at 0</td><td>request.node.execution_count, starts at 1</td><td>not given, count it yourself</td></tr><tr><td>how it is reported</td><td>flaky</td><td>rerun</td><td>Flakes</td></tr><tr><td>fail the run on flaky tests</td><td>--fail-on-flaky-tests</td><td>not built in</td><td>not built in</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Most teams turn retries on only in CI, for example retries: process.env.CI ? 2 : 0, and keep a list of flaky tests to fix. A retry also records a trace in Playwright Test when trace is on-first-retry, which is often the fastest way to find the cause.</div></div>
+</section>
+<section class="card reveal jsec" id="timeouts" data-say="timeouts"><div class="sec-num">Part 4</div><h2><span class="sec-em">⏱️</span><span>Timeouts</span></h2>
+
+<p>Every wait in Playwright has a limit, so a broken test fails instead of hanging forever. There are several limits, and each one has its own default.</p>
+<div class="tw"><table class="jt "><tr><th>Limit</th><th>Default</th><th>Playwright Test</th><th>Python</th><th>Java</th></tr><tr><td>one test</td><td>30 s</td><td>timeout: 30_000, test.setTimeout(), test.slow()</td><td>not built in (the pytest-timeout plugin adds it)</td><td>JUnit @Timeout(30)</td></tr><tr><td>one expect check</td><td>5 s</td><td>expect: { timeout: 5_000 }</td><td>expect.set_options(timeout=5_000)</td><td>PlaywrightAssertions.setDefaultAssertionTimeout(5_000)</td></tr><tr><td>one action</td><td>no limit in Playwright Test, 30 s in the libraries</td><td>use: { actionTimeout }</td><td>page.set_default_timeout()</td><td>page.setDefaultTimeout()</td></tr><tr><td>one navigation</td><td>no limit in Playwright Test, 30 s in the libraries</td><td>use: { navigationTimeout }</td><td>page.set_default_navigation_timeout()</td><td>page.setDefaultNavigationTimeout()</td></tr><tr><td>the whole run</td><td>no limit</td><td>globalTimeout</td><td>not built in</td><td>not built in</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="timeouts" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Timeouts that are long enough, and one that is too short · <b class="pw-badge">💥 mvn test ran, fails on purpose</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="💥 mvn test ran, fails on purpose"><div class="fname">📄 src/test/java/com/brainy/TimeoutsTest.java</div><pre class="src" data-file="src/test/java/com/brainy/TimeoutsTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.assertions.<span class="t">LocatorAssertions</span>;
+<span class="k">import</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.*;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="a">@TestMethodOrder</span>(<span class="t">MethodOrderer</span>.<span class="t">OrderAnnotation</span>.<span class="k">class</span>)
+<span class="a">@Timeout</span>(<span class="n">30</span>)                                          <span class="c">// each test, in seconds</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">TimeoutsTest</span> {
+  <span class="a">@BeforeAll</span>
+  <span class="k">static</span> <span class="k">void</span> expectTimeout() {
+    <span class="t">PlaywrightAssertions</span>.setDefaultAssertionTimeout(<span class="n">5_000</span>);   <span class="c">// each assertThat check</span>
+  }
+
+  <span class="a">@BeforeEach</span>
+  <span class="k">void</span> timeouts(<span class="t">Page</span> page) {
+    page.setDefaultTimeout(<span class="n">10_000</span>);                   <span class="c">// each click, fill, check and so on</span>
+    page.setDefaultNavigationTimeout(<span class="n">15_000</span>);         <span class="c">// each navigate</span>
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Order</span>(<span class="n">1</span>)
+  <span class="k">void</span> waitsLongEnoughForTheOffer(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Load offers"</span>)).click();
+    assertThat(page.getByTestId(<span class="s">"offer"</span>)).hasText(<span class="s">"Buy 2 mugs, get 1 free"</span>);   <span class="c">// the 5 s default is enough</span>
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Order</span>(<span class="n">2</span>)
+  <span class="k">void</span> givesUpTooEarly(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Load offers"</span>)).click();
+    assertThat(page.getByTestId(<span class="s">"offer"</span>)).isVisible(<span class="k">new</span> <span class="t">LocatorAssertions</span>.<span class="t">IsVisibleOptions</span>().setTimeout(<span class="n">1_000</span>));
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Order</span>(<span class="n">3</span>)
+  <span class="k">void</span> aClickWithItsOwnTimeout(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Pay now"</span>)).click(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">ClickOptions</span>().setTimeout(<span class="n">3_000</span>));
+    assertThat(page.getByText(<span class="s">"Payment done"</span>)).isVisible();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="err"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.TimeoutsTest
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 8.770 s &lt;&lt;&lt; FAILURE! -- in com.brainy.TimeoutsTest
+[ERROR] com.brainy.TimeoutsTest.givesUpTooEarly(Page) -- Time elapsed: 2.324 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: 
+Locator expected to be visible
+Error: element(s) not found
+Call log:
+  - Assert &quot;isVisible&quot; getByTestId(&quot;offer&quot;) with timeout 1000ms
+  - waiting for getByTestId(&quot;offer&quot;)
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE</pre></div></div><div class="pw-pane" data-l="py" data-badge="💥 pytest ran, fails on purpose"><div class="fname">📄 conftest.py</div><pre class="src" data-file="conftest.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+expect.set_options(timeout=<span class="n">5_000</span>)                   <span class="c"># each expect check</span>
+
+
+<span class="a">@pytest</span>.fixture(autouse=<span class="k">True</span>)
+<span class="k">def</span> timeouts(page: <span class="t">Page</span>):
+    page.set_default_timeout(<span class="n">10_000</span>)                <span class="c"># each click, fill, check and so on</span>
+    page.set_default_navigation_timeout(<span class="n">15_000</span>)     <span class="c"># each goto</span></pre><div class="fname">📄 tests/test_timeouts.py</div><pre class="src" data-file="tests/test_timeouts.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_waits_long_enough_for_the_offer(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Load offers"</span>).click()
+    expect(page.get_by_test_id(<span class="s">"offer"</span>)).to_have_text(<span class="s">"Buy 2 mugs, get 1 free"</span>)   <span class="c"># the 5 s default is enough</span>
+
+
+<span class="k">def</span> test_gives_up_too_early(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Load offers"</span>).click()
+    expect(page.get_by_test_id(<span class="s">"offer"</span>)).to_be_visible(timeout=<span class="n">1_000</span>)            <span class="c"># 1 s, but the offer needs 1.2 s</span>
+
+
+<span class="k">def</span> test_a_click_with_its_own_timeout(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Pay now"</span>).click(timeout=<span class="n">3_000</span>)              <span class="c"># this click only</span>
+    expect(page.get_by_text(<span class="s">"Payment done"</span>)).to_be_visible()</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="err"><span>Terminal output</span><pre>collecting ... collected 3 items
+
+tests/test_timeouts.py::test_waits_long_enough_for_the_offer[chromium] PASSED [ 33%]
+tests/test_timeouts.py::test_gives_up_too_early[chromium] FAILED         [ 66%]
+tests/test_timeouts.py::test_a_click_with_its_own_timeout[chromium] PASSED [100%]
+
+=================================== FAILURES ===================================
+______________________ test_gives_up_too_early[chromium] _______________________
+
+page = &lt;Page url=&#x27;http://localhost:4173/widgets&#x27;&gt;
+
+    def test_gives_up_too_early(page: Page):
+        page.goto(&quot;/widgets&quot;)
+        page.get_by_role(&quot;button&quot;, name=&quot;Load offers&quot;).click()
+&gt;       expect(page.get_by_test_id(&quot;offer&quot;)).to_be_visible(timeout=1_000)            # 1 s, but the offer needs 1.2 s
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Locator expected to be visible
+E       Actual value: None
+E       Error: element(s) not found 
+E       Call log:
+E         - Expect &quot;to_be_visible&quot; get_by_test_id(&quot;offer&quot;) with timeout 1000ms
+E         - waiting for get_by_test_id(&quot;offer&quot;)
+E       
+E       Aria snapshot:
+E       - banner:
+E         - link &quot;🛍️ Brainy Shop&quot;:
+E           - /url: /
+E         - navigation &quot;Main&quot;:
+E           - link &quot;Products&quot;:
+E             - /url: /products
+E           - link &quot;Feedback&quot;:
+E             - /url: /forms
+E           - link &quot;Widgets&quot;:
+E             - /url: /widgets
+E           - link &quot;Orders&quot;:
+E             - /url: /orders
+E         - link &quot;Cart&quot;:
+E           - /url: /cart
+E           - text: 🛒 0
+E         - link &quot;Sign in&quot;:
+E           - /url: /login
+E       - main:
+E         - heading &quot;Tricky widgets&quot; [level=1]
+E         - region &quot;Dialogs&quot;:
+E           - heading &quot;Dialogs&quot; [level=2]
+E           - button &quot;Show alert&quot;
+E           - button &quot;Delete account&quot;
+E           - button &quot;Rename list&quot;
+E           - status
+E         - region &quot;Tabs and files&quot;:
+E           - heading &quot;New tabs and files&quot; [level=2]
+E           - link &quot;Open help in a new tab&quot;:
+E             - /url: /help
+E           - link &quot;Download report&quot;:
+E             - /url: /download/report.csv
+E           - button &quot;Open chat window&quot;
+E         - region &quot;Slow things&quot;:
+E           - heading &quot;Things that take time&quot; [level=2]
+E           - button &quot;Load offers&quot;
+E           - button &quot;Pay now&quot;
+E           - paragraph:
+E             - button &quot;Catch me&quot;
+E         - region &quot;Live stock&quot;:
+E           - heading &quot;Live stock&quot; [level=2]
+E           - paragraph: &quot;Desk lamp: 8 left&quot;
+E         - region &quot;Messages&quot;:
+E           - heading &quot;Console and errors&quot; [level=2]
+E           - button &quot;Write to the console&quot;
+E           - button &quot;Break the page&quot;
+
+tests/test_timeouts.py:13: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_timeouts.py::test_gives_up_too_early[chromium] - AssertionError: Locator expected to be visible
+========================= 1 failed, 2 passed in 7.58s ==========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 tests/timeouts.spec.js</div><pre class="src" data-file="tests/timeouts.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'waits long enough for the offer'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Load offers'</span> }).click();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'offer'</span>)).toHaveText(<span class="s">'Buy 2 mugs, get 1 free'</span>);   <span class="c">// the 5 s default is enough</span>
+});
+
+test(<span class="s">'gives up too early'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Load offers'</span> }).click();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'offer'</span>)).toBeVisible({ timeout: <span class="n">1_000</span> });        <span class="c">// 1 s, but the offer needs 1.2 s</span>
+});
+
+test(<span class="s">'a slow test gets more time'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  test.slow();                                  <span class="c">// three times the test timeout: 90 s</span>
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay now'</span> }).click({ timeout: <span class="n">3_000</span> });  <span class="c">// this click only</span>
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Payment done'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › tests/timeouts.spec.js:3:1 › waits long enough for the offer (2.7s)
+  ✘  2 [chromium] › tests/timeouts.spec.js:9:1 › gives up too early (2.5s)
+  ✓  3 [chromium] › tests/timeouts.spec.js:15:1 › a slow test gets more time (2.0s)
+
+
+  1) [chromium] › tests/timeouts.spec.js:9:1 › gives up too early ──────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId(&#x27;offer&#x27;)
+    Expected: visible
+    Timeout: 1000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect &quot;toBeVisible&quot; getByTestId(&#x27;offer&#x27;) with timeout 1000ms
+      - waiting for getByTestId(&#x27;offer&#x27;)
+
+
+      10 |   await page.goto(&#x27;/widgets&#x27;);
+      11 |   await page.getByRole(&#x27;button&#x27;, { name: &#x27;Load offers&#x27; }).click();
+    &gt; 12 |   await expect(page.getByTestId(&#x27;offer&#x27;)).toBeVisible({ timeout: 1_000 });        // 1 s, but the offer needs 1.2 s
+         |                                           ^
+      13 | });
+      14 |
+      15 | test(&#x27;a slow test gets more time&#x27;, async ({ page }) =&gt; {
+        at tests/timeouts.spec.js:12:43
+
+    Error Context: test-results/timeouts-gives-up-too-early-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/timeouts.spec.js:9:1 › gives up too early ───────────────────────────────────
+  2 passed (10.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 tests/timeouts.spec.ts</div><pre class="src" data-file="tests/timeouts.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'waits long enough for the offer'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Load offers'</span> }).click();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'offer'</span>)).toHaveText(<span class="s">'Buy 2 mugs, get 1 free'</span>);   <span class="c">// the 5 s default is enough</span>
+});
+
+test(<span class="s">'gives up too early'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Load offers'</span> }).click();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'offer'</span>)).toBeVisible({ timeout: <span class="n">1_000</span> });        <span class="c">// 1 s, but the offer needs 1.2 s</span>
+});
+
+test(<span class="s">'a slow test gets more time'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  test.slow();                                  <span class="c">// three times the test timeout: 90 s</span>
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay now'</span> }).click({ timeout: <span class="n">3_000</span> });  <span class="c">// this click only</span>
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Payment done'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › tests/timeouts.spec.ts:3:1 › waits long enough for the offer (2.6s)
+  ✘  2 [chromium] › tests/timeouts.spec.ts:9:1 › gives up too early (2.3s)
+  ✓  3 [chromium] › tests/timeouts.spec.ts:15:1 › a slow test gets more time (1.4s)
+
+
+  1) [chromium] › tests/timeouts.spec.ts:9:1 › gives up too early ──────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId(&#x27;offer&#x27;)
+    Expected: visible
+    Timeout: 1000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect &quot;toBeVisible&quot; getByTestId(&#x27;offer&#x27;) with timeout 1000ms
+      - waiting for getByTestId(&#x27;offer&#x27;)
+
+
+      10 |   await page.goto(&#x27;/widgets&#x27;);
+      11 |   await page.getByRole(&#x27;button&#x27;, { name: &#x27;Load offers&#x27; }).click();
+    &gt; 12 |   await expect(page.getByTestId(&#x27;offer&#x27;)).toBeVisible({ timeout: 1_000 });        // 1 s, but the offer needs 1.2 s
+         |                                           ^
+      13 | });
+      14 |
+      15 | test(&#x27;a slow test gets more time&#x27;, async ({ page }) =&gt; {
+        at tests/timeouts.spec.ts:12:43
+
+    Error Context: test-results/timeouts-gives-up-too-early-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/timeouts.spec.ts:9:1 › gives up too early ───────────────────────────────────
+  2 passed (9.4s)</pre></div></div><div class="note-out"><span>What happens</span><p>The offer appears 1.2 s after the click. The default check waits up to 5 s, so the first test passed. The second test allowed only 1 s and failed, and the error names the timeout it used. The Pay now button is disabled for 1 s, and the click waited for it inside its own 3 s limit.</p></div></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>When a check times out, the fix is almost never a bigger number. Ask what the page was waiting for. A longer timeout is right only when the app really is that slow, such as a report that takes 20 s to build.</div></div>
+</section>
+<section class="card reveal jsec" id="sharding" data-say="sharding"><div class="sec-num">Part 5</div><h2><span class="sec-em">🍕</span><span>Sharding across machines</span></h2>
+
+<p>Workers split tests inside one machine. <b>Sharding</b> splits the suite between several machines, usually CI jobs that run at the same time. Each shard runs its own part, and the reports are joined at the end.</p>
+<div class="viz" data-viz="flow" data-k="split"></div>
+<div class="codewrap tests pw4" data-k="shard" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Split the suite in two, as two CI machines would · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ProductsTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ProductsTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">ProductsTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> showsFiveProducts(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"showsFiveProducts on "</span> + <span class="t">Thread</span>.currentThread().getName());
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> findsTheLamp(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"findsTheLamp on "</span> + <span class="t">Thread</span>.currentThread().getName());
+    page.navigate(<span class="s">"/products"</span>);
+    page.getByPlaceholder(<span class="s">"Search products"</span>).fill(<span class="s">"lamp"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">1</span>);
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/OrdersTest.java</div><pre class="src" data-file="src/test/java/com/brainy/OrdersTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">OrdersTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> pageOneShowsFiveOrders(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"pageOneShowsFiveOrders on "</span> + <span class="t">Thread</span>.currentThread().getName());
+    page.navigate(<span class="s">"/orders"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">ROW</span>)).hasCount(<span class="n">6</span>);        <span class="c">// a header row and five orders</span>
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> pageTwoIsTheLastPage(<span class="t">Page</span> page) {
+    <span class="t">System</span>.out.println(<span class="s">"pageTwoIsTheLastPage on "</span> + <span class="t">Thread</span>.currentThread().getName());
+    page.navigate(<span class="s">"/orders"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Next"</span>)).click();
+    assertThat(page.getByText(<span class="s">"Page 2 of 2"</span>)).isVisible();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test -Dtest=ProductsTest</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.ProductsTest
+findsTheLamp on main
+showsFiveProducts on main
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.835 s -- in com.brainy.ProductsTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_products.py</div><pre class="src" data-file="tests/test_products.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_shows_five_products(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)
+
+
+<span class="k">def</span> test_finds_the_lamp(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    page.get_by_placeholder(<span class="s">"Search products"</span>).fill(<span class="s">"lamp"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">1</span>)</pre><div class="fname">📄 tests/test_orders.py</div><pre class="src" data-file="tests/test_orders.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_page_1_shows_five_orders(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/orders"</span>)
+    expect(page.get_by_role(<span class="s">"row"</span>)).to_have_count(<span class="n">6</span>)        <span class="c"># a header row and five orders</span>
+
+
+<span class="k">def</span> test_page_2_is_the_last_page(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/orders"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Next"</span>).click()
+    expect(page.get_by_text(<span class="s">"Page 2 of 2"</span>)).to_be_visible()</pre><div class="cmd"><span>Terminal</span><pre>$ pytest --splits 2 --group 1 -v &amp;&amp; pytest --splits 2 --group 2 -v</pre></div><div class="out"><span>Terminal output</span><pre>[pytest-split] No test durations found. Pytest-split will split tests evenly when no durations are found. 
+[pytest-split] You can expect better results in consequent runs, when test timings have been documented.
+
+collecting ... 
+
+[pytest-split] Splitting tests with algorithm: duration_based_chunks
+[pytest-split] Running group 1/2 (estimated duration: 2.00s)
+
+collected 4 items / 2 deselected / 2 selected
+
+tests/test_orders.py::test_page_1_shows_five_orders[chromium] PASSED     [ 50%]
+tests/test_orders.py::test_page_2_is_the_last_page[chromium] PASSED      [100%]
+
+======================= 2 passed, 2 deselected in 1.89s ========================
+
+[pytest-split] No test durations found. Pytest-split will split tests evenly when no durations are found. 
+[pytest-split] You can expect better results in consequent runs, when test timings have been documented.
+
+collecting ... 
+
+[pytest-split] Splitting tests with algorithm: duration_based_chunks
+[pytest-split] Running group 2/2 (estimated duration: 2.00s)
+
+collected 4 items / 2 deselected / 2 selected
+
+tests/test_products.py::test_shows_five_products[chromium] PASSED        [ 50%]
+tests/test_products.py::test_finds_the_lamp[chromium] PASSED             [100%]
+
+======================= 2 passed, 2 deselected in 2.47s ========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products.spec.js</div><pre class="src" data-file="tests/products.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'finds the lamp'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+});</pre><div class="fname">📄 tests/orders.spec.js</div><pre class="src" data-file="tests/orders.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'page 1 shows five orders'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'row'</span>)).toHaveCount(<span class="n">6</span>);        <span class="c">// a header row and five orders</span>
+});
+
+test(<span class="s">'page 2 is the last page'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Next'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Page 2 of 2'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --shard=1/2 &amp;&amp; npx playwright test --shard=2/2</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker, shard 1 of 2
+
+page 1 shows five orders on worker 0
+  ✓  1 [chromium] › tests/orders.spec.js:3:1 › page 1 shows five orders (367ms)
+page 2 is the last page on worker 0
+  ✓  2 [chromium] › tests/orders.spec.js:9:1 › page 2 is the last page (369ms)
+
+  2 passed (2.7s)
+
+Running 2 tests using 1 worker, shard 2 of 2
+
+shows five products on worker 0
+  ✓  1 [chromium] › tests/products.spec.js:3:1 › shows five products (1.1s)
+finds the lamp on worker 0
+  ✓  2 [chromium] › tests/products.spec.js:9:1 › finds the lamp (293ms)
+
+  2 passed (3.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products.spec.ts</div><pre class="src" data-file="tests/products.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'finds the lamp'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+});</pre><div class="fname">📄 tests/orders.spec.ts</div><pre class="src" data-file="tests/orders.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'page 1 shows five orders'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'row'</span>)).toHaveCount(<span class="n">6</span>);        <span class="c">// a header row and five orders</span>
+});
+
+test(<span class="s">'page 2 is the last page'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Next'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Page 2 of 2'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --shard=1/2 &amp;&amp; npx playwright test --shard=2/2</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker, shard 1 of 2
+
+page 1 shows five orders on worker 0
+  ✓  1 [chromium] › tests/orders.spec.ts:3:1 › page 1 shows five orders (417ms)
+page 2 is the last page on worker 0
+  ✓  2 [chromium] › tests/orders.spec.ts:9:1 › page 2 is the last page (337ms)
+
+  2 passed (2.6s)
+
+Running 2 tests using 1 worker, shard 2 of 2
+
+shows five products on worker 0
+  ✓  1 [chromium] › tests/products.spec.ts:3:1 › shows five products (1.1s)
+finds the lamp on worker 0
+  ✓  2 [chromium] › tests/products.spec.ts:9:1 › finds the lamp (228ms)
+
+  2 passed (3.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>Each command ran half of the suite, the way two CI machines would, one command each. Playwright Test splits with --shard. pytest needs a plugin, and pytest-split is shown here. Maven has no shard option, so teams give each machine its own classes with -Dtest, or its own tags with -Dgroups. The other machine would run mvn test -Dtest=OrdersTest.</p></div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Shards are balanced by test count, not by time. With fullyParallel: true, Playwright Test splits single tests, so the shards come out even. Without it, whole files are split, so keep files a similar size. pytest-split can balance by recorded durations.</div></div>
+<p>The reporting chapter shows how the blob reports of each shard are merged into one HTML report, and the CI chapter shows the GitHub Actions matrix that starts the shards.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-fixtures.html" data-topic="pw-fixtures"><small>← Previous chapter</small><b>🧩 Fixtures and hooks</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Faster runs that stay honest", "panels": [{"s": [["e", "👷"], ["t", "workers", {"b": 1}]], "h": "Workers", "t": "Tests at the same time.", "more": "Each with its own browser."}, {"s": [["e", "🔒"], ["t", "lock", {"b": 1}]], "h": "Isolation", "t": "No shared data.", "more": "Lock what must be shared."}, {"s": [["e", "🔁"], ["t", "retries", {"b": 1}]], "h": "Retries", "t": "Try again on failure.", "more": "Flaky is still a bug."}, {"s": [["e", "🍕"], ["t", "shard", {"b": 1}]], "h": "Shards", "t": "Split across machines.", "more": "Merge the reports."}], "remember": "Parallel runs only work when every test can run alone, in any order, next to any other test."}, "real": [["⏩", "Minutes instead of an hour", "A retail team turns on fullyParallel with 4 workers on each CI machine and splits the run into 2 shards. A suite that took most of an hour now finishes in a few minutes."], ["🎲", "The test that failed now and then", "Two tests edit the same customer account. In order they pass, in parallel they fail now and then. Giving each test its own new customer removes the flake for good."], ["📋", "A flaky list, not a silent retry", "A payments team keeps retries at 2 in CI, but any test reported as flaky gets a ticket the same day, with the trace from the retry attached."]], "quiz": [{"lv": 1, "q": "What runs tests at the same time in Playwright Test?", "o": ["hooks", "workers", "fixtures", "shards only"], "a": 1, "hint": "Each has its own browser.", "why": "Workers are separate processes that run tests in parallel."}, {"lv": 1, "q": "How do you run pytest on 4 workers?", "o": ["pytest --workers 4", "pytest -n 4 with pytest-xdist", "pytest --parallel", "pytest -p 4"], "a": 1, "hint": "The plugin is pytest-xdist.", "why": "pytest-xdist adds -n, for example -n 4 or -n auto."}, {"lv": 1, "q": "What is a flaky test?", "o": ["a slow test", "a test that passes and fails on the same code", "a skipped test", "a test without checks"], "a": 1, "hint": "Same code, different result.", "why": "Flaky means the result changes between runs without any code change."}, {"lv": 1, "q": "What is the default expect timeout?", "o": ["1 s", "5 s", "30 s", "no limit"], "a": 1, "hint": "Look at the timeouts table.", "why": "Each expect check retries for up to 5 seconds by default."}, {"lv": 2, "q": "In Playwright Test, how do tests inside one file run by default?", "o": ["all at once", "in order, in one worker", "randomly", "one per machine"], "a": 1, "hint": "Files run in parallel, tests inside a file do not.", "why": "Without fullyParallel, a file runs its tests in order in one worker."}, {"lv": 2, "q": "Where does JUnit 5 turn on parallel runs?", "o": ["pom.xml only", "junit-platform.properties", "playwright.config", "@Parallel on each test"], "a": 1, "hint": "A properties file in src/test/resources.", "why": "junit.jupiter.execution.parallel.enabled = true in junit-platform.properties."}, {"lv": 2, "q": "How does Playwright Test report a test that failed and then passed on retry?", "o": ["passed", "failed", "flaky", "skipped"], "a": 2, "hint": "Read the retry example.", "why": "It is counted as flaky, and the run still passes."}, {"lv": 2, "q": "Two tests change the same customer and fail only in parallel. What is the best fix?", "o": ["more retries", "a longer timeout", "give each test its own customer", "run with one worker"], "a": 2, "hint": "Remove the shared data.", "why": "Isolated data removes the cause. Locks or one worker only hide it and slow the run."}, {"lv": 2, "q": "Which JUnit annotation stops two tests from running at the same time?", "o": ["@Order", "@ResourceLock", "@Timeout", "@Disabled"], "a": 1, "hint": "It names a shared resource.", "why": "@ResourceLock(\"people\") lets only one test at a time hold that resource."}, {"lv": 3, "q": "What does --shard=2/3 do?", "o": ["runs 2 of 3 retries", "runs the second third of the suite", "uses 2 workers out of 3", "runs every test twice"], "a": 1, "hint": "Index over total.", "why": "It runs shard 2 of 3, the second part of the suite."}, {"lv": 3, "q": "Which reporter do shards use so their results can be merged?", "o": ["list", "dot", "blob", "line"], "a": 2, "hint": "Then run merge-reports.", "why": "Each shard writes a blob report, and npx playwright merge-reports joins them."}, {"lv": 3, "q": "A check timed out waiting for a button. What should you do first?", "o": ["double every timeout", "find out why the button did not appear in time", "add retries", "add a sleep"], "a": 1, "hint": "A bigger number usually hides the cause.", "why": "Find the cause: a wrong locator, a missing step or a real slow page."}], "calc": [{"lv": 1, "q": "400 tests take 3 s each, one at a time. How many minutes is that?", "ans": 20, "hint": "400 × 3 / 60", "steps": ["400 × 3 = 1200 s", "1200 / 60 = 20 minutes"]}, {"lv": 1, "q": "The same 400 tests on 4 workers. About how many minutes now?", "ans": 5, "hint": "20 / 4", "steps": ["20 minutes / 4 workers = 5 minutes"]}, {"lv": 2, "q": "Split those 400 tests into 2 shards, each with 4 workers. About how many seconds?", "ans": 150, "hint": "400 × 3 / 8", "steps": ["2 × 4 = 8 workers in total", "1200 s / 8 = 150 s"]}, {"lv": 2, "q": "A test fails twice and passes on the third try. How many retries did it use?", "ans": 2, "hint": "tries minus the first", "steps": ["3 tries in total", "the first is not a retry: 3 - 1 = 2"]}, {"lv": 2, "q": "test.slow() triples the default test timeout of 30 s. How many seconds does the test get?", "ans": 90, "hint": "30 × 3", "steps": ["30 × 3 = 90 s"]}, {"lv": 3, "q": "200 tests, and 6 were flaky last week. What percent is that?", "ans": 3, "hint": "6 / 200 × 100", "steps": ["6 / 200 = 0.03", "× 100 = 3 %"]}, {"lv": 3, "q": "With --shard=3/4 and 100 tests split evenly, how many tests does shard 3 run?", "ans": 25, "hint": "100 / 4", "steps": ["100 / 4 = 25"]}, {"lv": 3, "q": "A check waits for an offer that appears after 1.2 s. What is the smallest whole number of seconds that works as its timeout?", "ans": 2, "hint": "more than 1.2", "steps": ["1 s is too short", "2 s is the smallest whole number above 1.2"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter makes a suite fast without making it fragile: workers run tests at the same time, locks and groups protect shared data, retries catch flaky tests, timeouts stop hanging tests, and shards split the run across machines.", "hi": "यह अध्याय suite को तेज़ बनाता है बिना उसे कमज़ोर किए: workers tests को एक साथ चलाते हैं, locks और groups साझा data बचाते हैं, retries flaky tests पकड़ते हैं, timeouts अटके tests रोकते हैं, और shards run को कई machines में बाँटते हैं।", "kn": "ಈ ಅಧ್ಯಾಯ suite ಅನ್ನು ದುರ್ಬಲಗೊಳಿಸದೆ ವೇಗಗೊಳಿಸುತ್ತದೆ: workers tests ಅನ್ನು ಒಟ್ಟಿಗೆ ನಡೆಸುತ್ತವೆ, locks ಮತ್ತು groups ಹಂಚಿದ data ರಕ್ಷಿಸುತ್ತವೆ, retries flaky tests ಹಿಡಿಯುತ್ತವೆ, timeouts ಸಿಲುಕಿದ tests ನಿಲ್ಲಿಸುತ್ತವೆ, shards run ಅನ್ನು machines ನಡುವೆ ಹಂಚುತ್ತವೆ.", "or": "ଏହି ଅଧ୍ୟାୟ suite କୁ ଦୁର୍ବଳ ନକରି ଦ୍ରୁତ କରେ: workers tests କୁ ଏକାସାଙ୍ଗରେ ଚଳାନ୍ତି, locks ଓ groups ବାଣ୍ଟିଥିବା data ରକ୍ଷା କରନ୍ତି, retries flaky tests ଧରନ୍ତି, timeouts ଅଟକିଥିବା tests ବନ୍ଦ କରନ୍ତି, ଏବଂ shards run କୁ machines ମଧ୍ୟରେ ବାଣ୍ଟନ୍ତି।", "ar": "يجعل هذا الفصل مجموعة الاختبارات سريعة دون أن تصبح هشة: العمال يشغلون الاختبارات معًا، والأقفال والمجموعات تحمي البيانات المشتركة، وإعادة المحاولة تكشف الاختبارات المتقلبة، والمهل توقف الاختبارات العالقة، والتقسيم يوزع التشغيل على عدة أجهزة.", "de": "Dieses Kapitel macht eine Testsuite schnell, ohne sie anfällig zu machen: Worker führen Tests gleichzeitig aus, Locks und Gruppen schützen geteilte Daten, Wiederholungen entdecken wackelige Tests, Timeouts stoppen hängende Tests und Shards verteilen den Lauf auf mehrere Maschinen."}, {"id": "workers", "h": "Workers", "en": "A worker is a process or thread with its own browser. Playwright Test has workers built in, pytest uses pytest-xdist with -n, and JUnit turns on parallel threads in junit-platform.properties.", "hi": "Worker एक process या thread है जिसका अपना browser होता है। Playwright Test में workers पहले से हैं, pytest में -n के साथ pytest-xdist, और JUnit में junit-platform.properties से parallel threads चालू होते हैं।", "kn": "Worker ಎಂದರೆ ತನ್ನದೇ browser ಇರುವ process ಅಥವಾ thread. Playwright Test ನಲ್ಲಿ workers ಮೊದಲೇ ಇವೆ, pytest ನಲ್ಲಿ -n ಜೊತೆ pytest-xdist, JUnit ನಲ್ಲಿ junit-platform.properties ಮೂಲಕ parallel threads.", "or": "Worker ହେଉଛି ନିଜ browser ଥିବା ଏକ process ବା thread। Playwright Test ରେ workers ପୂର୍ବରୁ ଅଛି, pytest ରେ -n ସହ pytest-xdist, ଏବଂ JUnit ରେ junit-platform.properties ରୁ parallel threads।", "ar": "العامل عملية أو خيط له متصفحه الخاص. العمال مدمجون في Playwright Test، ويستخدم pytest الإضافة pytest-xdist مع -n، ويشغّل JUnit الخيوط المتوازية من junit-platform.properties.", "de": "Ein Worker ist ein Prozess oder Thread mit eigenem Browser. Playwright Test hat Worker eingebaut, pytest nutzt pytest-xdist mit -n, und JUnit schaltet parallele Threads in junit-platform.properties ein."}, {"id": "isolation", "h": "Isolation", "en": "Tests in parallel must not share data. Give each test its own data. When two tests must share something, a lock in Playwright Test, a ResourceLock in JUnit or an xdist group in pytest keeps them apart.", "hi": "Parallel tests को data साझा नहीं करना चाहिए। हर test को उसका अपना data दें। जब दो tests को कुछ साझा करना ही हो, तो Playwright Test में lock, JUnit में ResourceLock या pytest में xdist group उन्हें अलग रखता है।", "kn": "Parallel tests data ಹಂಚಿಕೊಳ್ಳಬಾರದು. ಪ್ರತಿ test ಗೆ ಅದರದೇ data ಕೊಡಿ. ಎರಡು tests ಏನನ್ನಾದರೂ ಹಂಚಿಕೊಳ್ಳಲೇಬೇಕಾದರೆ, Playwright Test ನ lock, JUnit ನ ResourceLock ಅಥವಾ pytest ನ xdist group ಅವುಗಳನ್ನು ಬೇರೆ ಇಡುತ್ತದೆ.", "or": "Parallel tests data ବାଣ୍ଟିବା ଉଚିତ ନୁହେଁ। ପ୍ରତି test କୁ ତାର ନିଜ data ଦିଅନ୍ତୁ। ଦୁଇଟି tests କିଛି ବାଣ୍ଟିବାକୁ ପଡିଲେ, Playwright Test ର lock, JUnit ର ResourceLock ବା pytest ର xdist group ସେମାନଙ୍କୁ ଅଲଗା ରଖେ।", "ar": "يجب ألا تتشارك الاختبارات المتوازية البيانات. أعطِ كل اختبار بياناته الخاصة. وإذا اضطر اختباران إلى مشاركة شيء، فإن القفل في Playwright Test أو ResourceLock في JUnit أو مجموعة xdist في pytest يفصل بينهما.", "de": "Parallele Tests dürfen keine Daten teilen. Gib jedem Test eigene Daten. Wenn zwei Tests etwas teilen müssen, hält ein Lock in Playwright Test, ein ResourceLock in JUnit oder eine xdist-Gruppe in pytest sie auseinander."}, {"id": "retries", "h": "Retries", "en": "A retry runs a failed test again. If it passes, the runner calls it flaky. Retries keep the run green, but a flaky test is still a bug to fix.", "hi": "Retry fail हुए test को फिर चलाता है। अगर वह pass हो जाए, तो runner उसे flaky कहता है। Retries run को green रखते हैं, पर flaky test फिर भी ठीक करने वाला bug है।", "kn": "Retry fail ಆದ test ಅನ್ನು ಮತ್ತೆ ನಡೆಸುತ್ತದೆ. ಅದು pass ಆದರೆ runner ಅದನ್ನು flaky ಎನ್ನುತ್ತದೆ. Retries run ಅನ್ನು green ಆಗಿ ಇಡುತ್ತವೆ, ಆದರೆ flaky test ಇನ್ನೂ ಸರಿಪಡಿಸಬೇಕಾದ bug.", "or": "Retry fail ହୋଇଥିବା test କୁ ପୁଣି ଚଳାଏ। ଯଦି ଏହା pass ହୁଏ, runner ଏହାକୁ flaky କହେ। Retries run କୁ green ରଖେ, କିନ୍ତୁ flaky test ତଥାପି ଠିକ କରିବାକୁ ଥିବା bug।", "ar": "إعادة المحاولة تشغّل الاختبار الفاشل مرة أخرى. إذا نجح، يسميه المشغّل متقلبًا. تبقي إعادة المحاولة التشغيل ناجحًا، لكن الاختبار المتقلب يظل خطأ يجب إصلاحه.", "de": "Eine Wiederholung führt einen fehlgeschlagenen Test erneut aus. Besteht er dann, nennt der Runner ihn flaky. Wiederholungen halten den Lauf grün, aber ein wackeliger Test bleibt ein Fehler, den man beheben muss."}, {"id": "timeouts", "h": "Timeouts", "en": "Every wait has a limit: 30 seconds for a test in Playwright Test, 5 seconds for an expect check, and limits for actions and navigation. When a check times out, first ask what the page was waiting for.", "hi": "हर wait की एक सीमा है: Playwright Test में test के लिए 30 seconds, expect check के लिए 5 seconds, और actions व navigation की सीमाएँ। जब check का समय खत्म हो, पहले पूछें कि page किसका इंतज़ार कर रहा था।", "kn": "ಪ್ರತಿ wait ಗೆ ಮಿತಿ ಇದೆ: Playwright Test ನಲ್ಲಿ test ಗೆ 30 seconds, expect check ಗೆ 5 seconds, actions ಮತ್ತು navigation ಗೆ ಮಿತಿಗಳು. Check ಸಮಯ ಮೀರಿದಾಗ, page ಯಾವುದಕ್ಕಾಗಿ ಕಾಯುತ್ತಿತ್ತು ಎಂದು ಮೊದಲು ಕೇಳಿ.", "or": "ପ୍ରତି wait ର ଏକ ସୀମା ଅଛି: Playwright Test ରେ test ପାଇଁ 30 seconds, expect check ପାଇଁ 5 seconds, ଏବଂ actions ଓ navigation ପାଇଁ ସୀମା। Check ର ସମୟ ସରିଲେ, ପ୍ରଥମେ ପଚାରନ୍ତୁ page କାହା ପାଇଁ ଅପେକ୍ଷା କରୁଥିଲା।", "ar": "لكل انتظار حد: 30 ثانية للاختبار في Playwright Test، و5 ثوانٍ لفحص expect، وحدود للأفعال والتنقل. عندما تنتهي مهلة فحص، اسأل أولًا عمّا كانت الصفحة تنتظره.", "de": "Jedes Warten hat ein Limit: 30 Sekunden für einen Test in Playwright Test, 5 Sekunden für eine expect-Prüfung und Limits für Aktionen und Navigation. Läuft eine Prüfung ab, frag zuerst, worauf die Seite gewartet hat."}, {"id": "sharding", "h": "Sharding", "en": "Sharding splits the suite between machines. Playwright Test has --shard, pytest uses a plugin such as pytest-split, and Maven runs different classes or tags on each machine. The reports are merged at the end.", "hi": "Sharding suite को machines में बाँटता है। Playwright Test में --shard है, pytest में pytest-split जैसा plugin, और Maven हर machine पर अलग classes या tags चलाता है। आख़िर में reports जोड़े जाते हैं।", "kn": "Sharding suite ಅನ್ನು machines ನಡುವೆ ಹಂಚುತ್ತದೆ. Playwright Test ನಲ್ಲಿ --shard ಇದೆ, pytest ನಲ್ಲಿ pytest-split ನಂತಹ plugin, Maven ಪ್ರತಿ machine ನಲ್ಲಿ ಬೇರೆ classes ಅಥವಾ tags ನಡೆಸುತ್ತದೆ. ಕೊನೆಯಲ್ಲಿ reports ಸೇರಿಸಲಾಗುತ್ತದೆ.", "or": "Sharding suite କୁ machines ମଧ୍ୟରେ ବାଣ୍ଟେ। Playwright Test ରେ --shard ଅଛି, pytest ରେ pytest-split ପରି plugin, ଏବଂ Maven ପ୍ରତି machine ରେ ଅଲଗା classes ବା tags ଚଳାଏ। ଶେଷରେ reports ଯୋଡାଯାଏ।", "ar": "التقسيم يوزع مجموعة الاختبارات على الأجهزة. في Playwright Test يوجد ‎--shard، ويستخدم pytest إضافة مثل pytest-split، ويشغّل Maven فئات أو وسومًا مختلفة على كل جهاز. وتُدمج التقارير في النهاية.", "de": "Sharding verteilt die Suite auf mehrere Maschinen. Playwright Test hat --shard, pytest nutzt ein Plugin wie pytest-split, und Maven führt auf jeder Maschine andere Klassen oder Tags aus. Am Ende werden die Berichte zusammengeführt."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you fix a check whose timeout is too short, and give a click its own timeout while the Pay now button is still disabled.", "hi": "Labs में आप उस check को ठीक करते हैं जिसका timeout बहुत छोटा है, और Pay now button के disabled रहते click को उसका अपना timeout देते हैं।", "kn": "Labs ನಲ್ಲಿ ತುಂಬಾ ಚಿಕ್ಕ timeout ಇರುವ check ಅನ್ನು ಸರಿಪಡಿಸುತ್ತೀರಿ, ಮತ್ತು Pay now button disabled ಇರುವಾಗ click ಗೆ ಅದರದೇ timeout ಕೊಡುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ ବହୁତ ଛୋଟ timeout ଥିବା check ଠିକ କରନ୍ତି, ଏବଂ Pay now button disabled ଥିବାବେଳେ click କୁ ତାର ନିଜ timeout ଦିଅନ୍ତି।", "ar": "في المختبرات تصلح فحصًا مهلته قصيرة جدًا، وتعطي نقرة مهلتها الخاصة بينما زر Pay now ما زال معطلًا.", "de": "In den Labs reparierst du eine Prüfung mit zu kurzem Timeout und gibst einem Klick einen eigenen Timeout, solange der Pay-now-Knopf noch deaktiviert ist."}], "ex": [], "dg": {"split": {"t": "Shards on machines, workers inside each machine", "w": 900, "h": 250, "n": [["suite", 20, 93, 130, 64, "400 tests", {"c": 5, "sub": "the whole suite", "i": "The full suite, too slow to run on one machine."}], ["s1", 190, 20, 150, 64, "shard 1/2", {"c": 2, "sub": "machine A", "i": "One CI machine runs --shard=1/2, about half of the tests."}], ["s2", 190, 166, 150, 64, "shard 2/2", {"c": 2, "sub": "machine B", "i": "A second CI machine runs --shard=2/2 at the same time."}], ["w1", 380, 20, 160, 64, "4 workers", {"c": 1, "sub": "on machine A", "i": "Inside the machine, workers run tests in parallel, each with its own browser."}], ["w2", 380, 166, 160, 64, "4 workers", {"c": 1, "sub": "on machine B", "i": "The second machine has its own workers."}], ["blob", 580, 93, 140, 64, "blob reports", {"c": 3, "sub": "one per shard", "i": "Each shard saves its results as a blob report."}], ["one", 760, 93, 120, 64, "one report", {"c": 0, "sub": "merge-reports", "i": "A last job merges the blob reports into one HTML report."}]], "e": [["suite", "s1"], ["suite", "s2"], ["s1", "w1"], ["s2", "w2"], ["w1", "blob"], ["w2", "blob"], ["blob", "one"]], "st": [[["suite"], "The suite has 400 tests."], [["s1", "s2", "suite>s1", "suite>s2"], "Sharding splits it between two machines."], [["w1", "w2", "s1>w1", "s2>w2"], "Each machine runs its half on several workers at once."], [["blob", "w1>blob", "w2>blob"], "Each shard writes a blob report."], [["one", "blob>one"], "merge-reports joins them into one report for the whole run."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "offerwait", "title": "Fix a timeout that is too short", "name": "shows the offer", "task": "On <code>/widgets<\/code> the test clicks <b>Load offers<\/b>, but the check gives up after 1 second and the offer needs 1.2 seconds. Change the check so it waits long enough, and check the offer says <b>Buy 2 mugs, get 1 free<\/b>.", "goal": "The offer is on the page and the check passes.", "start": "/widgets", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('shows the offer', async ({ page }) => {\n  await page.goto('/widgets');\n  await page.getByRole('button', { name: 'Load offers' }).click();\n  await expect(page.getByTestId('offer')).toBeVisible({ timeout: 1000 });\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport com.microsoft.playwright.assertions.LocatorAssertions;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class ShowsTheOfferTest {\n  @Test\n  void showsTheOffer(Page page) {\n    page.navigate(\"/widgets\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Load offers\")).click();\n    assertThat(page.getByTestId(\"offer\")).hasText(\"Buy 2 mugs, get 1 free\", new LocatorAssertions.HasTextOptions().setTimeout(3000));\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_shows_the_offer(page: Page):\n    page.goto(\"/widgets\")\n    page.get_by_role(\"button\", name=\"Load offers\").click()\n    expect(page.get_by_test_id(\"offer\")).to_have_text(\"Buy 2 mugs, get 1 free\", timeout=3000)\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('shows the offer', async ({ page }) => {\n  await page.goto('/widgets');\n  await page.getByRole('button', { name: 'Load offers' }).click();\n  await expect(page.getByTestId('offer')).toHaveText('Buy 2 mugs, get 1 free', { timeout: 3000 });\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('shows the offer', async ({ page }) => {\n  await page.goto('/widgets');\n  await page.getByRole('button', { name: 'Load offers' }).click();\n  await expect(page.getByTestId('offer')).toHaveText('Buy 2 mugs, get 1 free', { timeout: 3000 });\n});"}, "hint": "Remove the timeout to use the 5 s default, or give a value above 1200, such as <code>{ timeout: 3000 }<\/code>. Then check the text with <code>toHaveText<\/code>.", "why": "The check retries until the offer appears or the time runs out. Any limit above 1.2 s passes. The default 5 s is the usual choice, and a custom value is for pages known to be slow.", "check": [["/Buy 2 mugs, get 1 free/.test(ctx.text)", "The offer is on the page"], ["/Buy 2 mugs, get 1 free/.test(ctx.code)", "The test checks the offer text"]]}, {"id": "paytimeout", "title": "Give one click its own timeout", "name": "pays when the button is ready", "task": "On <code>/widgets<\/code>, <b>Pay now<\/b> is disabled for the first second. Click it with its own timeout of 3 seconds, then check that <b>Payment done<\/b> appears.", "goal": "The payment is done.", "start": "/widgets", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('pays when the button is ready', async ({ page }) => {\n  await page.goto('/widgets');\n  // click Pay now with a 3 s timeout, then check the message\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class PaysWhenTheButtonIsReadyTest {\n  @Test\n  void paysWhenTheButtonIsReady(Page page) {\n    page.navigate(\"/widgets\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Pay now\")).click(new Locator.ClickOptions().setTimeout(3000));\n    assertThat(page.getByText(\"Payment done\")).isVisible();\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_pays_when_the_button_is_ready(page: Page):\n    page.goto(\"/widgets\")\n    page.get_by_role(\"button\", name=\"Pay now\").click(timeout=3000)\n    expect(page.get_by_text(\"Payment done\")).to_be_visible()\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('pays when the button is ready', async ({ page }) => {\n  await page.goto('/widgets');\n  await page.getByRole('button', { name: 'Pay now' }).click({ timeout: 3000 });\n  await expect(page.getByText('Payment done')).toBeVisible();\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('pays when the button is ready', async ({ page }) => {\n  await page.goto('/widgets');\n  await page.getByRole('button', { name: 'Pay now' }).click({ timeout: 3000 });\n  await expect(page.getByText('Payment done')).toBeVisible();\n});"}, "hint": "Actions take options too: <code>page.getByRole('button', { name: 'Pay now' }).click({ timeout: 3000 })<\/code>.", "why": "The click waits until the button is enabled, which takes 1 s, well inside its 3 s limit. No sleep is needed, because waiting for an enabled button is part of every click.", "check": [["/Payment done/.test(ctx.text)", "The payment is done"], ["/3000|3_000/.test(ctx.code)", "The click has a 3 s timeout"]]}], "trees": {}};
+JSPLAY.page({ title: "Parallel runs, retries, timeouts and sharding", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "shop-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.5",
+    "dotenv": "18.0.9",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Actions and auto-waiting · Playwright</title>
+<meta name="description" content="Auto-waiting and actionability checks, TimeoutError and the call log, force and trial, click options, hover, focus, fill, pressSequentially, press and keyboard shortcuts, check, selectOption, dates, dragTo, mouse, waitFor, waitForResponse and waitForFunction in Java, Python, JavaScript and TypeScript.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🎯 Finding and using elements</span><span>›</span><span>Chapter 6 of 10</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🖱️</span><div><h1>Actions and auto-waiting</h1><p class="lead">Click, type, pick, drag and hover like a person, while Playwright waits for every element to be ready. Learn to read a timeout, fill every kind of form control, and replace every sleep with a wait for the real thing.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 24 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 28 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 3 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>Tell Playwright what a person would do: click this, type that, pick this option. It waits for each element to be ready on its own, so a test needs no sleeps and does not break on a slow day.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#auto" class="easy"><span>⏳</span>Auto-waiting: no more sleeps</a><a href="#calllog"><span>🧾</span>When waiting is not enough</a><a href="#mouse" class="easy"><span>🖱️</span>Clicking, hovering and focusing</a><a href="#keys"><span>⌨️</span>Typing and keys</a><a href="#forms" class="easy"><span>📝</span>Checkboxes, radio buttons, drop downs and dates</a><a href="#drag"><span>🧲</span>Drag and drop and the mouse</a><a href="#wait"><span>🚫</span>Waiting without sleeping</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="auto" data-say="auto"><div class="sec-num">Part 1</div><h2><span class="sec-em">⏳</span><span>Auto-waiting: no more sleeps</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Pages are slow in many small ways. A button is disabled until a price loads, a cover hides the page while it gets ready, a panel slides in. Before every action, Playwright checks that the element is ready and waits until it is. You do not write any waiting code for this.</p>
+<div class="viz" data-viz="pwact"></div>
+<div class="codewrap tests pw4" data-k="auto" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Click a button that is covered, disabled and moving · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/AutoWaitTest.java</div><pre class="src" data-file="src/test/java/com/brainy/AutoWaitTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">AutoWaitTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> actionsWaitUntilTheElementIsReady(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    <span class="c">// A loading cover hides the page for 0.8 s, and Pay now is disabled for 1 s.</span>
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Pay now"</span>)).click();
+    assertThat(page.getByText(<span class="s">"Payment done"</span>)).isVisible();
+
+    <span class="c">// The offer appears 1.2 s after the click. The check waits for it.</span>
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Load offers"</span>)).click();
+    assertThat(page.getByTestId(<span class="s">"offer"</span>)).hasText(<span class="s">"Buy 2 mugs, get 1 free"</span>);
+
+    <span class="c">// This button slides in when the page opens. click waits until it stops moving.</span>
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Catch me"</span>)).click();
+    assertThat(page.getByText(<span class="s">"Caught it"</span>)).isVisible();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.AutoWaitTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.744 s -- in com.brainy.AutoWaitTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_auto_wait.py</div><pre class="src" data-file="tests/test_auto_wait.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_actions_wait_until_the_element_is_ready(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    <span class="c"># A loading cover hides the page for 0.8 s, and Pay now is disabled for 1 s.</span>
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Pay now"</span>).click()
+    expect(page.get_by_text(<span class="s">"Payment done"</span>)).to_be_visible()
+
+    <span class="c"># The offer appears 1.2 s after the click. The check waits for it.</span>
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Load offers"</span>).click()
+    expect(page.get_by_test_id(<span class="s">"offer"</span>)).to_have_text(<span class="s">"Buy 2 mugs, get 1 free"</span>)
+
+    <span class="c"># This button slides in when the page opens. click waits until it stops moving.</span>
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Catch me"</span>).click()
+    expect(page.get_by_text(<span class="s">"Caught it"</span>)).to_be_visible()</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_auto_wait.py::test_actions_wait_until_the_element_is_ready[chromium] PASSED [100%]
+
+============================== 1 passed in 3.71s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/auto-wait.spec.js</div><pre class="src" data-file="tests/auto-wait.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'actions wait until the element is ready'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="c">// A loading cover hides the page for 0.8 s, and Pay now is disabled for 1 s.</span>
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay now'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Payment done'</span>)).toBeVisible();
+
+  <span class="c">// The offer appears 1.2 s after the click. The check waits for it.</span>
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Load offers'</span> }).click();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'offer'</span>)).toHaveText(<span class="s">'Buy 2 mugs, get 1 free'</span>);
+
+  <span class="c">// This button slides in when the page opens. click waits until it stops moving.</span>
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Catch me'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Caught it'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/auto-wait.spec.js:3:1 › actions wait until the element is ready (3.3s)
+
+  1 passed (4.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/auto-wait.spec.ts</div><pre class="src" data-file="tests/auto-wait.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'actions wait until the element is ready'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="c">// A loading cover hides the page for 0.8 s, and Pay now is disabled for 1 s.</span>
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay now'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Payment done'</span>)).toBeVisible();
+
+  <span class="c">// The offer appears 1.2 s after the click. The check waits for it.</span>
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Load offers'</span> }).click();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'offer'</span>)).toHaveText(<span class="s">'Buy 2 mugs, get 1 free'</span>);
+
+  <span class="c">// This button slides in when the page opens. click waits until it stops moving.</span>
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Catch me'</span> }).click();
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Caught it'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/auto-wait.spec.ts:3:1 › actions wait until the element is ready (3.2s)
+
+  1 passed (4.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>The test has no sleep anywhere. Each click waited exactly as long as the page needed: until the cover was gone, the button was enabled, and the moving button stood still. A fixed wait would either be too short and fail, or too long and waste time on every run.</p></div></div>
+<p>The checks depend on the action. This table comes from the Playwright documentation. Click, check and fill also make sure the element is not inert, which means not blocked by an open modal dialog.</p>
+<div class="tw"><table class="jt "><tr><th>Action</th><th>Visible</th><th>Stable</th><th>Receives events</th><th>Enabled</th><th>Editable</th></tr><tr><td>click, dblclick, check, uncheck, setChecked, tap</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td></td></tr><tr><td>hover, dragTo</td><td>✓</td><td>✓</td><td>✓</td><td></td><td></td></tr><tr><td>screenshot</td><td>✓</td><td>✓</td><td></td><td></td><td></td></tr><tr><td>fill, clear</td><td>✓</td><td></td><td></td><td>✓</td><td>✓</td></tr><tr><td>selectOption</td><td>✓</td><td></td><td></td><td>✓</td><td></td></tr><tr><td>selectText</td><td>✓</td><td></td><td></td><td></td><td></td></tr><tr><td>scrollIntoViewIfNeeded</td><td></td><td>✓</td><td></td><td></td><td></td></tr><tr><td>focus, blur, press, pressSequentially, setInputFiles, dispatchEvent</td><td></td><td></td><td></td><td></td><td></td></tr></table></div>
+<div class="viz" data-viz="flow" data-k="click"></div>
+<div class="pw-box pw-life"><span class="pw-ic">🌍</span><div>Think of a lift. You press the button and wait until the doors open. You do not stand there counting to ten first. Playwright waits for the doors, not for the clock.</div></div>
+</section>
+<section class="card reveal jsec" id="calllog" data-say="calllog"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧾</span><span>When waiting is not enough</span></h2>
+
+<p>Sometimes the element never becomes ready, because of a real bug or a wrong locator. Then the action fails with a <b>TimeoutError</b> after its timeout, and the message includes a call log of every check it tried.</p>
+<div class="codewrap tests pw4" data-k="calllog" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A click that can never happen, and its call log · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/CallLogTest.java</div><pre class="src" data-file="src/test/java/com/brainy/CallLogTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">TimeoutError</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.util.stream.<span class="t">Collectors</span>;
+
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertThrows;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">CallLogTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> whenItNeverGetsReadyTheErrorSaysWhy(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    <span class="t">Locator</span> soldOut = page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Out of stock"</span>));
+
+    <span class="t">TimeoutError</span> error = assertThrows(<span class="t">TimeoutError</span>.<span class="k">class</span>, () -&gt; soldOut.click(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">ClickOptions</span>().setTimeout(<span class="n">2000</span>)));
+    <span class="t">System</span>.out.println(error.getClass().getSimpleName());
+    <span class="t">String</span> message = error.getMessage();
+    <span class="c">// Java wraps the driver error and its stack, so print from the call log on.</span>
+    <span class="t">System</span>.out.println(message.substring(message.indexOf(<span class="s">"Call log:"</span>)).lines().limit(<span class="n">6</span>).collect(<span class="t">Collectors</span>.joining(<span class="s">"\n"</span>)));
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.CallLogTest
+TimeoutError
+Call log:
+-   - waiting for getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(&quot;Out of stock&quot;))
+-     - locator resolved to &lt;button disabled type=&quot;button&quot;&gt;Out of stock&lt;/button&gt;
+-   - attempting click action
+-     2 × waiting for element to be visible, enabled and stable
+-       - element is not enabled
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.423 s -- in com.brainy.CallLogTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_call_log.py</div><pre class="src" data-file="tests/test_call_log.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, <span class="t">TimeoutError</span>
+
+
+<span class="k">def</span> test_when_it_never_gets_ready_the_error_says_why(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    sold_out = page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Out of stock"</span>)
+
+    <span class="k">with</span> pytest.raises(<span class="t">TimeoutError</span>) <span class="k">as</span> info:
+        sold_out.click(timeout=<span class="n">2000</span>)
+    print(type(info.value).__name__)
+    print(<span class="s">"\n"</span>.join(info.value.message.split(<span class="s">"\n"</span>)[:<span class="n">7</span>]))</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_call_log.py::test_when_it_never_gets_ready_the_error_says_why[chromium] TimeoutError
+Locator.click: Timeout 2000ms exceeded.
+Call log:
+  - waiting for get_by_role(&quot;button&quot;, name=&quot;Out of stock&quot;)
+    - locator resolved to &lt;button disabled type=&quot;button&quot;&gt;Out of stock&lt;/button&gt;
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not enabled
+PASSED
+
+============================== 1 passed in 2.91s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/call-log.spec.js</div><pre class="src" data-file="tests/call-log.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'when it never gets ready, the error says why'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> soldOut = page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Out of stock'</span> });
+
+  <span class="k">const</span> error = <span class="k">await</span> soldOut.click({ timeout: <span class="n">2000</span> }).<span class="k">catch</span>(e =&gt; e);
+  console.log(error.name);
+  console.log(error.message.split(<span class="s">'\n'</span>).slice(<span class="n">0</span>, <span class="n">7</span>).join(<span class="s">'\n'</span>));
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+TimeoutError
+locator.click: Timeout 2000ms exceeded.
+Call log:
+  - waiting for getByRole(&#x27;button&#x27;, { name: &#x27;Out of stock&#x27; })
+    - locator resolved to &lt;button disabled type=&quot;button&quot;&gt;Out of stock&lt;/button&gt;
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not enabled
+  ✓  1 [chromium] › tests/call-log.spec.js:3:1 › when it never gets ready, the error says why (2.3s)
+
+  1 passed (3.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/call-log.spec.ts</div><pre class="src" data-file="tests/call-log.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'when it never gets ready, the error says why'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> soldOut = page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Out of stock'</span> });
+
+  <span class="k">const</span> error = <span class="k">await</span> soldOut.click({ timeout: <span class="n">2000</span> }).<span class="k">catch</span>(e =&gt; e);
+  console.log(error.name);
+  console.log(error.message.split(<span class="s">'\n'</span>).slice(<span class="n">0</span>, <span class="n">7</span>).join(<span class="s">'\n'</span>));
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+TimeoutError
+locator.click: Timeout 2000ms exceeded.
+Call log:
+  - waiting for getByRole(&#x27;button&#x27;, { name: &#x27;Out of stock&#x27; })
+    - locator resolved to &lt;button disabled type=&quot;button&quot;&gt;Out of stock&lt;/button&gt;
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not enabled
+  ✓  1 [chromium] › tests/call-log.spec.ts:3:1 › when it never gets ready, the error says why (2.4s)
+
+  1 passed (4.0s)</pre></div></div><div class="note-out"><span>What happens</span><p>The button stays disabled, so the click gave up after the 2 second timeout. The call log under the message tells you which check kept failing: here, element is not enabled. When a test times out in your project, this log is the first thing to read. In Java the message also carries the stack of the driver, so the Java example prints from the call log on.</p></div></div>
+<p>Two options change the checks, and both are worth knowing even if you rarely use them.</p>
+<div class="tw"><table class="jt "><tr><th>Option</th><th>What it does</th><th>When to use it</th></tr><tr><td><span class="only-java">setForce(true)</span><span class="only-py">force=True</span><span class="only-js">force: true</span><span class="only-ts">force: true</span></td><td>skips the checks that are not essential, such as receives events</td><td>a custom widget that hides its real input under a styled label</td></tr><tr><td><span class="only-java">setTrial(true)</span><span class="only-py">trial=True</span><span class="only-js">trial: true</span><span class="only-ts">trial: true</span></td><td>runs every check but does not click</td><td>to wait until something could be clicked, without clicking it</td></tr><tr><td><span class="only-java">setTimeout(5000)</span><span class="only-py">timeout=5000</span><span class="only-js">timeout: 5000</span><span class="only-ts">timeout: 5000</span></td><td>a different timeout for this one action</td><td>one action that is known to be slow</td></tr></table></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Reaching for force is often a sign the test found the wrong element, or that a real user could not click it either. Read the call log first.</div></div>
+</section>
+<section class="card reveal jsec easy-part" id="mouse" data-say="mouse"><div class="sec-num">Part 3</div><h2><span class="sec-em">🖱️</span><span>Clicking, hovering and focusing</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>A click can be more than a plain left click. All of these are options of the same <code>click</code> method.</p>
+<div class="tw"><table class="jt "><tr><th>You want</th><th>Code</th></tr><tr><td>a double click</td><td><span class="only-java">dblclick()</span><span class="only-py">dblclick()</span><span class="only-js">dblclick()</span><span class="only-ts">dblclick()</span></td></tr><tr><td>a right click</td><td><span class="only-java">click(new Locator.ClickOptions().setButton(MouseButton.RIGHT))</span><span class="only-py">click(button="right")</span><span class="only-js">click({ button: 'right' })</span><span class="only-ts">click({ button: 'right' })</span></td></tr><tr><td>Shift and click</td><td><span class="only-java">setModifiers(Arrays.asList(KeyboardModifier.SHIFT))</span><span class="only-py">click(modifiers=["Shift"])</span><span class="only-js">click({ modifiers: ['Shift'] })</span><span class="only-ts">click({ modifiers: ['Shift'] })</span></td></tr><tr><td>Control on Windows and Linux, Command on macOS</td><td><span class="only-java">KeyboardModifier.CONTROL_OR_META</span><span class="only-py">modifiers=["ControlOrMeta"]</span><span class="only-js">modifiers: ['ControlOrMeta']</span><span class="only-ts">modifiers: ['ControlOrMeta']</span></td></tr><tr><td>a click at the top left corner</td><td><span class="only-java">setPosition(0, 0)</span><span class="only-py">position={"x": 0, "y": 0}</span><span class="only-js">position: { x: 0, y: 0 }</span><span class="only-ts">position: { x: 0, y: 0 }</span></td></tr><tr><td>the mouse resting on it</td><td><span class="only-java">hover()</span><span class="only-py">hover()</span><span class="only-js">hover()</span><span class="only-ts">hover()</span></td></tr><tr><td>a tap on a touch screen</td><td><span class="only-java">tap() with setHasTouch(true) on the context</span><span class="only-py">tap() with has_touch=True on the context</span><span class="only-js">tap() with hasTouch: true in use</span><span class="only-ts">tap() with hasTouch: true in use</span></td></tr></table></div>
+<div class="codewrap tests pw4" data-k="hover" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Hover and focus · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/HoverTest.java</div><pre class="src" data-file="src/test/java/com/brainy/HoverTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">HoverTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> hoverAndFocusShowTheTooltip(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/forms"</span>);
+    <span class="t">Locator</span> help = page.getByText(<span class="s">"❓ Help"</span>);
+    <span class="t">Locator</span> tooltip = page.getByRole(<span class="t">AriaRole</span>.<span class="t">TOOLTIP</span>);
+    assertThat(tooltip).isHidden();
+
+    help.hover();                            <span class="c">// the mouse rests on it</span>
+    assertThat(tooltip).hasText(<span class="s">"We reply within two working days"</span>);
+
+    page.mouse().move(<span class="n">0</span>, <span class="n">0</span>);                 <span class="c">// move the mouse away</span>
+    assertThat(tooltip).isHidden();
+
+    help.focus();                            <span class="c">// keyboard users reach it with Tab</span>
+    assertThat(tooltip).isVisible();
+    <span class="t">System</span>.out.println(<span class="s">"tooltip: "</span> + tooltip.textContent());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.HoverTest
+tooltip: We reply within two working days
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.672 s -- in com.brainy.HoverTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_hover.py</div><pre class="src" data-file="tests/test_hover.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_hover_and_focus_show_the_tooltip(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/forms"</span>)
+    help_icon = page.get_by_text(<span class="s">"❓ Help"</span>)
+    tooltip = page.get_by_role(<span class="s">"tooltip"</span>)
+    expect(tooltip).to_be_hidden()
+
+    help_icon.hover()                        <span class="c"># the mouse rests on it</span>
+    expect(tooltip).to_have_text(<span class="s">"We reply within two working days"</span>)
+
+    page.mouse.move(<span class="n">0</span>, <span class="n">0</span>)                    <span class="c"># move the mouse away</span>
+    expect(tooltip).to_be_hidden()
+
+    help_icon.focus()                        <span class="c"># keyboard users reach it with Tab</span>
+    expect(tooltip).to_be_visible()
+    print(<span class="s">"tooltip:"</span>, tooltip.text_content())</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_hover.py::test_hover_and_focus_show_the_tooltip[chromium] tooltip: We reply within two working days
+PASSED
+
+============================== 1 passed in 1.37s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/hover.spec.js</div><pre class="src" data-file="tests/hover.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'hover and focus show the tooltip'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">const</span> help = page.getByText(<span class="s">'❓ Help'</span>);
+  <span class="k">const</span> tooltip = page.getByRole(<span class="s">'tooltip'</span>);
+  <span class="k">await</span> expect(tooltip).toBeHidden();
+
+  <span class="k">await</span> help.hover();                        <span class="c">// the mouse rests on it</span>
+  <span class="k">await</span> expect(tooltip).toHaveText(<span class="s">'We reply within two working days'</span>);
+
+  <span class="k">await</span> page.mouse.move(<span class="n">0</span>, <span class="n">0</span>);               <span class="c">// move the mouse away</span>
+  <span class="k">await</span> expect(tooltip).toBeHidden();
+
+  <span class="k">await</span> help.focus();                        <span class="c">// keyboard users reach it with Tab</span>
+  <span class="k">await</span> expect(tooltip).toBeVisible();
+  console.log(<span class="s">'tooltip:'</span>, <span class="k">await</span> tooltip.textContent());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+tooltip: We reply within two working days
+  ✓  1 [chromium] › tests/hover.spec.js:3:1 › hover and focus show the tooltip (479ms)
+
+  1 passed (1.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/hover.spec.ts</div><pre class="src" data-file="tests/hover.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'hover and focus show the tooltip'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">const</span> help = page.getByText(<span class="s">'❓ Help'</span>);
+  <span class="k">const</span> tooltip = page.getByRole(<span class="s">'tooltip'</span>);
+  <span class="k">await</span> expect(tooltip).toBeHidden();
+
+  <span class="k">await</span> help.hover();                        <span class="c">// the mouse rests on it</span>
+  <span class="k">await</span> expect(tooltip).toHaveText(<span class="s">'We reply within two working days'</span>);
+
+  <span class="k">await</span> page.mouse.move(<span class="n">0</span>, <span class="n">0</span>);               <span class="c">// move the mouse away</span>
+  <span class="k">await</span> expect(tooltip).toBeHidden();
+
+  <span class="k">await</span> help.focus();                        <span class="c">// keyboard users reach it with Tab</span>
+  <span class="k">await</span> expect(tooltip).toBeVisible();
+  console.log(<span class="s">'tooltip:'</span>, <span class="k">await</span> tooltip.textContent());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+tooltip: We reply within two working days
+  ✓  1 [chromium] › tests/hover.spec.ts:3:1 › hover and focus show the tooltip (418ms)
+
+  1 passed (1.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>Hover moves the real mouse over the element, so CSS hover effects and menus react. Focus is what the Tab key does. Checking both makes sure the tooltip works for mouse users and keyboard users.</p></div></div>
+</section>
+<section class="card reveal jsec" id="keys" data-say="keys"><div class="sec-num">Part 4</div><h2><span class="sec-em">⌨️</span><span>Typing and keys</span></h2>
+
+<p>Most of the time you only need <code>fill</code>. It clears the box and puts the new text in, like pasting. Use the slower ways only when the page reacts to single key presses.</p>
+<div class="codewrap tests pw4" data-k="keys" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">fill, pressSequentially and keyboard shortcuts · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/KeysTest.java</div><pre class="src" data-file="src/test/java/com/brainy/KeysTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">KeysTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> fillTypeKeyByKeyAndPressShortcuts(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    <span class="t">Locator</span> search = page.getByPlaceholder(<span class="s">"Search products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+
+    search.fill(<span class="s">"desk"</span>);                                   <span class="c">// sets the whole value at once</span>
+    <span class="t">System</span>.out.println(<span class="s">"after fill: "</span> + search.inputValue() + <span class="s">" | "</span> + page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>).count() + <span class="s">" card"</span>);
+
+    search.clear();
+    search.pressSequentially(<span class="s">"mug"</span>, <span class="k">new</span> <span class="t">Locator</span>.<span class="t">PressSequentiallyOptions</span>().setDelay(<span class="n">50</span>));   <span class="c">// one key at a time</span>
+    <span class="t">System</span>.out.println(<span class="s">"after typing: "</span> + search.inputValue());
+
+    search.press(<span class="s">"Control+A"</span>);
+    search.press(<span class="s">"Backspace"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"after select all and delete: "</span> + search.inputValue().length() + <span class="s">" characters"</span>);
+
+    page.navigate(<span class="s">"/forms"</span>);
+    page.keyboard().press(<span class="s">"Control+K"</span>);                    <span class="c">// a shortcut for the whole page</span>
+    assertThat(page.getByText(<span class="s">"Search opened"</span>)).isVisible();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.KeysTest
+after fill: desk | 1 card
+after typing: mug
+after select all and delete: 0 characters
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.001 s -- in com.brainy.KeysTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_keys.py</div><pre class="src" data-file="tests/test_keys.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_fill_type_key_by_key_and_press_shortcuts(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    search = page.get_by_placeholder(<span class="s">"Search products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)
+
+    search.fill(<span class="s">"desk"</span>)                                   <span class="c"># sets the whole value at once</span>
+    print(<span class="s">"after fill:"</span>, search.input_value(), <span class="s">"|"</span>, page.get_by_role(<span class="s">"listitem"</span>).count(), <span class="s">"card"</span>)
+
+    search.clear()
+    search.press_sequentially(<span class="s">"mug"</span>, delay=<span class="n">50</span>)            <span class="c"># one key at a time, like a person</span>
+    print(<span class="s">"after typing:"</span>, search.input_value())
+
+    search.press(<span class="s">"Control+A"</span>)
+    search.press(<span class="s">"Backspace"</span>)
+    print(<span class="s">"after select all and delete:"</span>, len(search.input_value()), <span class="s">"characters"</span>)
+
+    page.goto(<span class="s">"/forms"</span>)
+    page.keyboard.press(<span class="s">"Control+K"</span>)                      <span class="c"># a shortcut for the whole page</span>
+    expect(page.get_by_text(<span class="s">"Search opened"</span>)).to_be_visible()</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_keys.py::test_fill_type_key_by_key_and_press_shortcuts[chromium] after fill: desk | 1 card
+after typing: mug
+after select all and delete: 0 characters
+PASSED
+
+============================== 1 passed in 2.55s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/keys.spec.js</div><pre class="src" data-file="tests/keys.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'fill, type key by key, and press shortcuts'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> search = page.getByPlaceholder(<span class="s">'Search products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+
+  <span class="k">await</span> search.fill(<span class="s">'desk'</span>);                              <span class="c">// sets the whole value at once</span>
+  console.log(<span class="s">'after fill:'</span>, <span class="k">await</span> search.inputValue(), <span class="s">'|'</span>, <span class="k">await</span> page.getByRole(<span class="s">'listitem'</span>).count(), <span class="s">'card'</span>);
+
+  <span class="k">await</span> search.clear();
+  <span class="k">await</span> search.pressSequentially(<span class="s">'mug'</span>, { delay: <span class="n">50</span> });   <span class="c">// one key at a time, like a person</span>
+  console.log(<span class="s">'after typing:'</span>, <span class="k">await</span> search.inputValue());
+
+  <span class="k">await</span> search.press(<span class="s">'Control+A'</span>);
+  <span class="k">await</span> search.press(<span class="s">'Backspace'</span>);
+  console.log(<span class="s">'after select all and delete:'</span>, (<span class="k">await</span> search.inputValue()).length, <span class="s">'characters'</span>);
+
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">await</span> page.keyboard.press(<span class="s">'Control+K'</span>);                 <span class="c">// a shortcut for the whole page</span>
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Search opened'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+after fill: desk | 1 card
+after typing: mug
+after select all and delete: 0 characters
+  ✓  1 [chromium] › tests/keys.spec.js:3:1 › fill, type key by key, and press shortcuts (1.7s)
+
+  1 passed (3.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/keys.spec.ts</div><pre class="src" data-file="tests/keys.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'fill, type key by key, and press shortcuts'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> search = page.getByPlaceholder(<span class="s">'Search products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+
+  <span class="k">await</span> search.fill(<span class="s">'desk'</span>);                              <span class="c">// sets the whole value at once</span>
+  console.log(<span class="s">'after fill:'</span>, <span class="k">await</span> search.inputValue(), <span class="s">'|'</span>, <span class="k">await</span> page.getByRole(<span class="s">'listitem'</span>).count(), <span class="s">'card'</span>);
+
+  <span class="k">await</span> search.clear();
+  <span class="k">await</span> search.pressSequentially(<span class="s">'mug'</span>, { delay: <span class="n">50</span> });   <span class="c">// one key at a time, like a person</span>
+  console.log(<span class="s">'after typing:'</span>, <span class="k">await</span> search.inputValue());
+
+  <span class="k">await</span> search.press(<span class="s">'Control+A'</span>);
+  <span class="k">await</span> search.press(<span class="s">'Backspace'</span>);
+  console.log(<span class="s">'after select all and delete:'</span>, (<span class="k">await</span> search.inputValue()).length, <span class="s">'characters'</span>);
+
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">await</span> page.keyboard.press(<span class="s">'Control+K'</span>);                 <span class="c">// a shortcut for the whole page</span>
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Search opened'</span>)).toBeVisible();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+after fill: desk | 1 card
+after typing: mug
+after select all and delete: 0 characters
+  ✓  1 [chromium] › tests/keys.spec.ts:3:1 › fill, type key by key, and press shortcuts (1.6s)
+
+  1 passed (3.3s)</pre></div></div><div class="note-out"><span>What happens</span><p><code>fill</code> sets the value in one go and fires the input event, which is enough for almost every box. <code>pressSequentially</code> sends one key at a time for boxes that react to each key, such as an auto complete list. <code>press</code> takes a key name or a combination such as Control+A.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Method</th><th>Sends</th><th>Use for</th></tr><tr><td>fill(text)</td><td>the whole value at once</td><td>almost every text box</td></tr><tr><td>pressSequentially(text)</td><td>one key event per character</td><td>auto complete, masks that format as you type</td></tr><tr><td>press(key)</td><td>one key or a combination</td><td>Enter, Tab, Escape, ArrowDown, Control+A</td></tr><tr><td>keyboard.press(key)</td><td>a key to whatever has focus</td><td>page shortcuts such as Control+K</td></tr><tr><td>clear()</td><td>an empty value</td><td>emptying a box</td></tr></table></div>
+<div class="pw-box pw-new"><span class="pw-ic">🆕</span><div>Old tutorials use type(). It was renamed pressSequentially in Playwright 1.38 and the old name is deprecated. If you see it in a code base, it does the same thing.</div></div>
+</section>
+<section class="card reveal jsec easy-part" id="forms" data-say="forms"><div class="sec-num">Part 5</div><h2><span class="sec-em">📝</span><span>Checkboxes, radio buttons, drop downs and dates</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>A form is a mix of controls. Each has its own method, and they all wait and check like click does.</p>
+<div class="viz" data-viz="pwwalk" data-sub="Each screen was recorded from a real run in Chromium when this page was built. Press Play, or step one line at a time, and switch the language to see the same line in Java, Python, JavaScript or TypeScript." data-walk="{&quot;title&quot;: &quot;Filling the feedback form&quot;, &quot;steps&quot;: [{&quot;cap&quot;: &quot;Open the feedback form.&quot;, &quot;img&quot;: &quot;walks/walkform-0.jpg&quot;, &quot;js&quot;: &quot;await page.goto(&#x27;http://localhost:4173/forms&#x27;);&quot;, &quot;ts&quot;: &quot;await page.goto(&#x27;http://localhost:4173/forms&#x27;);&quot;, &quot;py&quot;: &quot;page.goto(\&quot;http://localhost:4173/forms\&quot;)&quot;, &quot;java&quot;: &quot;page.navigate(\&quot;http://localhost:4173/forms\&quot;);&quot;}, {&quot;cap&quot;: &quot;Type the name into the box labelled Your name.&quot;, &quot;img&quot;: &quot;walks/walkform-1.jpg&quot;, &quot;js&quot;: &quot;await page.getByLabel(&#x27;Your name&#x27;).fill(&#x27;Asha&#x27;);&quot;, &quot;ts&quot;: &quot;await page.getByLabel(&#x27;Your name&#x27;).fill(&#x27;Asha&#x27;);&quot;, &quot;py&quot;: &quot;page.get_by_label(\&quot;Your name\&quot;).fill(\&quot;Asha\&quot;)&quot;, &quot;java&quot;: &quot;page.getByLabel(\&quot;Your name\&quot;).fill(\&quot;Asha\&quot;);&quot;}, {&quot;cap&quot;: &quot;Choose Delivery in the Topic drop down.&quot;, &quot;img&quot;: &quot;walks/walkform-2.jpg&quot;, &quot;js&quot;: &quot;await page.getByLabel(&#x27;Topic&#x27;).selectOption(&#x27;delivery&#x27;);&quot;, &quot;ts&quot;: &quot;await page.getByLabel(&#x27;Topic&#x27;).selectOption(&#x27;delivery&#x27;);&quot;, &quot;py&quot;: &quot;page.get_by_label(\&quot;Topic\&quot;).select_option(\&quot;delivery\&quot;)&quot;, &quot;java&quot;: &quot;page.getByLabel(\&quot;Topic\&quot;).selectOption(\&quot;delivery\&quot;);&quot;}, {&quot;cap&quot;: &quot;Pick the Happy radio button.&quot;, &quot;img&quot;: &quot;walks/walkform-3.jpg&quot;, &quot;js&quot;: &quot;await page.getByLabel(&#x27;Happy&#x27;).check();&quot;, &quot;ts&quot;: &quot;await page.getByLabel(&#x27;Happy&#x27;).check();&quot;, &quot;py&quot;: &quot;page.get_by_label(\&quot;Happy\&quot;).check()&quot;, &quot;java&quot;: &quot;page.getByLabel(\&quot;Happy\&quot;).check();&quot;}, {&quot;cap&quot;: &quot;Write a short message.&quot;, &quot;img&quot;: &quot;walks/walkform-4.jpg&quot;, &quot;js&quot;: &quot;await page.getByLabel(&#x27;Message&#x27;).fill(&#x27;The parcel came a day early.&#x27;);&quot;, &quot;ts&quot;: &quot;await page.getByLabel(&#x27;Message&#x27;).fill(&#x27;The parcel came a day early.&#x27;);&quot;, &quot;py&quot;: &quot;page.get_by_label(\&quot;Message\&quot;).fill(\&quot;The parcel came a day early.\&quot;)&quot;, &quot;java&quot;: &quot;page.getByLabel(\&quot;Message\&quot;).fill(\&quot;The parcel came a day early.\&quot;);&quot;}, {&quot;cap&quot;: &quot;Tick the newsletter box.&quot;, &quot;img&quot;: &quot;walks/walkform-5.jpg&quot;, &quot;js&quot;: &quot;await page.getByLabel(&#x27;Send me the newsletter&#x27;).check();&quot;, &quot;ts&quot;: &quot;await page.getByLabel(&#x27;Send me the newsletter&#x27;).check();&quot;, &quot;py&quot;: &quot;page.get_by_label(\&quot;Send me the newsletter\&quot;).check()&quot;, &quot;java&quot;: &quot;page.getByLabel(\&quot;Send me the newsletter\&quot;).check();&quot;}, {&quot;cap&quot;: &quot;Send the form. Playwright scrolls the button into view by itself.&quot;, &quot;img&quot;: &quot;walks/walkform-6.jpg&quot;, &quot;js&quot;: &quot;await page.getByRole(&#x27;button&#x27;, { name: &#x27;Send feedback&#x27; }).click();&quot;, &quot;ts&quot;: &quot;await page.getByRole(&#x27;button&#x27;, { name: &#x27;Send feedback&#x27; }).click();&quot;, &quot;py&quot;: &quot;page.get_by_role(\&quot;button\&quot;, name=\&quot;Send feedback\&quot;).click()&quot;, &quot;java&quot;: &quot;page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\&quot;Send feedback\&quot;)).click();&quot;}, {&quot;cap&quot;: &quot;The thank you line shows every value the page received.&quot;, &quot;img&quot;: &quot;walks/walkform-7.jpg&quot;, &quot;js&quot;: &quot;await expect(page.getByRole(&#x27;status&#x27;)).toContainText(&#x27;Topic: delivery, mood: happy&#x27;);&quot;, &quot;ts&quot;: &quot;await expect(page.getByRole(&#x27;status&#x27;)).toContainText(&#x27;Topic: delivery, mood: happy&#x27;);&quot;, &quot;py&quot;: &quot;expect(page.get_by_role(\&quot;status\&quot;)).to_contain_text(\&quot;Topic: delivery, mood: happy\&quot;)&quot;, &quot;java&quot;: &quot;assertThat(page.getByRole(AriaRole.STATUS)).containsText(\&quot;Topic: delivery, mood: happy\&quot;);&quot;}], &quot;w&quot;: 900, &quot;h&quot;: 620}"></div>
+<div class="codewrap tests pw4" data-k="form" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Text boxes, drop downs, radio buttons, checkboxes, dates and sliders · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/FormTest.java</div><pre class="src" data-file="src/test/java/com/brainy/FormTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">SelectOption</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">FormTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> fillEveryKindOfFormControl(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/forms"</span>);
+    page.getByLabel(<span class="s">"Your name"</span>).fill(<span class="s">"Asha"</span>);
+    page.getByLabel(<span class="s">"Topic"</span>).selectOption(<span class="s">"delivery"</span>);                         <span class="c">// by value</span>
+    page.getByLabel(<span class="s">"Topic"</span>).selectOption(<span class="k">new</span> <span class="t">SelectOption</span>().setLabel(<span class="s">"Payment"</span>));  <span class="c">// or by the text you see</span>
+    page.getByLabel(<span class="s">"Happy"</span>).check();                                          <span class="c">// a radio button</span>
+    page.getByLabel(<span class="s">"Order date"</span>).fill(<span class="s">"2026-10-01"</span>);                          <span class="c">// dates use yyyy-mm-dd</span>
+    page.getByLabel(<span class="s">"Message"</span>).fill(<span class="s">"The parcel came a day early."</span>);
+    page.getByLabel(<span class="s">"Send me the newsletter"</span>).setChecked(<span class="k">true</span>);
+    page.getByLabel(<span class="s">"Volume"</span>).fill(<span class="s">"8"</span>);                                       <span class="c">// a slider</span>
+
+    <span class="t">System</span>.out.println(<span class="s">"topic: "</span> + page.getByLabel(<span class="s">"Topic"</span>).inputValue());
+    <span class="t">System</span>.out.println(<span class="s">"happy checked: "</span> + page.getByLabel(<span class="s">"Happy"</span>).isChecked());
+    <span class="t">System</span>.out.println(<span class="s">"date: "</span> + page.getByLabel(<span class="s">"Order date"</span>).inputValue());
+    <span class="t">System</span>.out.println(<span class="s">"volume: "</span> + page.getByLabel(<span class="s">"Volume"</span>).inputValue());
+
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Send feedback"</span>)).click();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).hasText(
+        <span class="s">"Thanks Asha! Topic: payment, mood: happy, files: no files, newsletter: yes"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.FormTest
+topic: payment
+happy checked: true
+date: 2026-10-01
+volume: 8
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.128 s -- in com.brainy.FormTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_form.py</div><pre class="src" data-file="tests/test_form.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_fill_every_kind_of_form_control(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/forms"</span>)
+    page.get_by_label(<span class="s">"Your name"</span>).fill(<span class="s">"Asha"</span>)
+    page.get_by_label(<span class="s">"Topic"</span>).select_option(<span class="s">"delivery"</span>)            <span class="c"># by value</span>
+    page.get_by_label(<span class="s">"Topic"</span>).select_option(label=<span class="s">"Payment"</span>)       <span class="c"># or by the text you see</span>
+    page.get_by_label(<span class="s">"Happy"</span>).check()                              <span class="c"># a radio button</span>
+    page.get_by_label(<span class="s">"Order date"</span>).fill(<span class="s">"2026-10-01"</span>)              <span class="c"># dates use yyyy-mm-dd</span>
+    page.get_by_label(<span class="s">"Message"</span>).fill(<span class="s">"The parcel came a day early."</span>)
+    page.get_by_label(<span class="s">"Send me the newsletter"</span>).set_checked(<span class="k">True</span>)
+    page.get_by_label(<span class="s">"Volume"</span>).fill(<span class="s">"8"</span>)                           <span class="c"># a slider</span>
+
+    print(<span class="s">"topic:"</span>, page.get_by_label(<span class="s">"Topic"</span>).input_value())
+    print(<span class="s">"happy checked:"</span>, page.get_by_label(<span class="s">"Happy"</span>).is_checked())
+    print(<span class="s">"date:"</span>, page.get_by_label(<span class="s">"Order date"</span>).input_value())
+    print(<span class="s">"volume:"</span>, page.get_by_label(<span class="s">"Volume"</span>).input_value())
+
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Send feedback"</span>).click()
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_have_text(
+        <span class="s">"Thanks Asha! Topic: payment, mood: happy, files: no files, newsletter: yes"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_form.py::test_fill_every_kind_of_form_control[chromium] topic: payment
+happy checked: True
+date: 2026-10-01
+volume: 8
+PASSED
+
+============================== 1 passed in 1.55s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/form.spec.js</div><pre class="src" data-file="tests/form.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'fill every kind of form control'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Your name'</span>).fill(<span class="s">'Asha'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Topic'</span>).selectOption(<span class="s">'delivery'</span>);            <span class="c">// by value</span>
+  <span class="k">await</span> page.getByLabel(<span class="s">'Topic'</span>).selectOption({ label: <span class="s">'Payment'</span> });  <span class="c">// or by the text you see</span>
+  <span class="k">await</span> page.getByLabel(<span class="s">'Happy'</span>).check();                             <span class="c">// a radio button</span>
+  <span class="k">await</span> page.getByLabel(<span class="s">'Order date'</span>).fill(<span class="s">'2026-10-01'</span>);             <span class="c">// dates use yyyy-mm-dd</span>
+  <span class="k">await</span> page.getByLabel(<span class="s">'Message'</span>).fill(<span class="s">'The parcel came a day early.'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Send me the newsletter'</span>).setChecked(<span class="k">true</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Volume'</span>).fill(<span class="s">'8'</span>);                          <span class="c">// a slider</span>
+
+  console.log(<span class="s">'topic:'</span>, <span class="k">await</span> page.getByLabel(<span class="s">'Topic'</span>).inputValue());
+  console.log(<span class="s">'happy checked:'</span>, <span class="k">await</span> page.getByLabel(<span class="s">'Happy'</span>).isChecked());
+  console.log(<span class="s">'date:'</span>, <span class="k">await</span> page.getByLabel(<span class="s">'Order date'</span>).inputValue());
+  console.log(<span class="s">'volume:'</span>, <span class="k">await</span> page.getByLabel(<span class="s">'Volume'</span>).inputValue());
+
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Send feedback'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(
+    <span class="s">'Thanks Asha! Topic: payment, mood: happy, files: no files, newsletter: yes'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+topic: payment
+happy checked: true
+date: 2026-10-01
+volume: 8
+  ✓  1 [chromium] › tests/form.spec.js:3:1 › fill every kind of form control (635ms)
+
+  1 passed (2.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/form.spec.ts</div><pre class="src" data-file="tests/form.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'fill every kind of form control'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Your name'</span>).fill(<span class="s">'Asha'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Topic'</span>).selectOption(<span class="s">'delivery'</span>);            <span class="c">// by value</span>
+  <span class="k">await</span> page.getByLabel(<span class="s">'Topic'</span>).selectOption({ label: <span class="s">'Payment'</span> });  <span class="c">// or by the text you see</span>
+  <span class="k">await</span> page.getByLabel(<span class="s">'Happy'</span>).check();                             <span class="c">// a radio button</span>
+  <span class="k">await</span> page.getByLabel(<span class="s">'Order date'</span>).fill(<span class="s">'2026-10-01'</span>);             <span class="c">// dates use yyyy-mm-dd</span>
+  <span class="k">await</span> page.getByLabel(<span class="s">'Message'</span>).fill(<span class="s">'The parcel came a day early.'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Send me the newsletter'</span>).setChecked(<span class="k">true</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Volume'</span>).fill(<span class="s">'8'</span>);                          <span class="c">// a slider</span>
+
+  console.log(<span class="s">'topic:'</span>, <span class="k">await</span> page.getByLabel(<span class="s">'Topic'</span>).inputValue());
+  console.log(<span class="s">'happy checked:'</span>, <span class="k">await</span> page.getByLabel(<span class="s">'Happy'</span>).isChecked());
+  console.log(<span class="s">'date:'</span>, <span class="k">await</span> page.getByLabel(<span class="s">'Order date'</span>).inputValue());
+  console.log(<span class="s">'volume:'</span>, <span class="k">await</span> page.getByLabel(<span class="s">'Volume'</span>).inputValue());
+
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Send feedback'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(
+    <span class="s">'Thanks Asha! Topic: payment, mood: happy, files: no files, newsletter: yes'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+topic: payment
+happy checked: true
+date: 2026-10-01
+volume: 8
+  ✓  1 [chromium] › tests/form.spec.ts:3:1 › fill every kind of form control (707ms)
+
+  1 passed (2.1s)</pre></div></div><div class="note-out"><span>What happens</span><p>Every control on the form is found by its label. <code>selectOption</code> takes the value or the visible label, and the last call wins, so the topic is payment. Dates are filled in the yyyy-mm-dd format whatever the browser shows. The status line proves the page received every value.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Control</th><th>Method</th><th>Read it back</th></tr><tr><td>text box, text area</td><td>fill</td><td>inputValue</td></tr><tr><td>checkbox, radio button</td><td>check, uncheck, setChecked</td><td>isChecked or toBeChecked</td></tr><tr><td>drop down (select)</td><td>selectOption by value, label or index, or a list for multi select</td><td>inputValue or toHaveValue</td></tr><tr><td>date, time, color, range</td><td>fill with the standard format, such as 2026-10-01</td><td>inputValue</td></tr><tr><td>file input</td><td>setInputFiles</td><td>the files list</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="drag" data-say="drag"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧲</span><span>Drag and drop and the mouse</span></h2>
+
+<p>Kanban boards, sliders, sortable lists and file drop zones all need dragging. <code>dragTo</code> does it in one line. The mouse object gives you every step for widgets that need more control.</p>
+<div class="codewrap tests pw4" data-k="drag" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Drag and drop with dragTo, and by hand with the mouse · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/DragTest.java</div><pre class="src" data-file="src/test/java/com/brainy/DragTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">DragTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> dragTasksToTheDoneLane(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/forms"</span>);
+    <span class="t">Locator</span> todo = page.getByRole(<span class="t">AriaRole</span>.<span class="t">LIST</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"To do"</span>));
+    <span class="t">Locator</span> done = page.getByRole(<span class="t">AriaRole</span>.<span class="t">LIST</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Done"</span>));
+
+    todo.getByText(<span class="s">"Pack the order"</span>).dragTo(done);
+    assertThat(done.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasText(<span class="k">new</span> <span class="t">String</span>[] {<span class="s">"Pack the order"</span>});
+
+    <span class="c">// The same by hand with the mouse, for widgets that need finer control.</span>
+    todo.getByText(<span class="s">"Print the label"</span>).hover();
+    page.mouse().down();
+    done.hover();
+    done.hover();            <span class="c">// a second move, so the page gets its dragover event</span>
+    page.mouse().up();
+
+    assertThat(done.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">2</span>);
+    <span class="t">System</span>.out.println(<span class="s">"Done lane: "</span> + done.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>).allTextContents());
+    <span class="t">System</span>.out.println(<span class="s">"To do lane: "</span> + todo.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>).count() + <span class="s">" tasks"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.DragTest
+Done lane: [Pack the order, Print the label]
+To do lane: 0 tasks
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.961 s -- in com.brainy.DragTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_drag.py</div><pre class="src" data-file="tests/test_drag.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_drag_tasks_to_the_done_lane(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/forms"</span>)
+    todo = page.get_by_role(<span class="s">"list"</span>, name=<span class="s">"To do"</span>)
+    done = page.get_by_role(<span class="s">"list"</span>, name=<span class="s">"Done"</span>)
+
+    todo.get_by_text(<span class="s">"Pack the order"</span>).drag_to(done)
+    expect(done.get_by_role(<span class="s">"listitem"</span>)).to_have_text([<span class="s">"Pack the order"</span>])
+
+    <span class="c"># The same by hand with the mouse, for widgets that need finer control.</span>
+    todo.get_by_text(<span class="s">"Print the label"</span>).hover()
+    page.mouse.down()
+    done.hover()
+    done.hover()            <span class="c"># a second move, so the page gets its dragover event</span>
+    page.mouse.up()
+
+    expect(done.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">2</span>)
+    print(<span class="s">"Done lane:"</span>, done.get_by_role(<span class="s">"listitem"</span>).all_text_contents())
+    print(<span class="s">"To do lane:"</span>, todo.get_by_role(<span class="s">"listitem"</span>).count(), <span class="s">"tasks"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_drag.py::test_drag_tasks_to_the_done_lane[chromium] Done lane: [&#x27;Pack the order&#x27;, &#x27;Print the label&#x27;]
+To do lane: 0 tasks
+PASSED
+
+============================== 1 passed in 1.59s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/drag.spec.js</div><pre class="src" data-file="tests/drag.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'drag tasks to the Done lane'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">const</span> todo = page.getByRole(<span class="s">'list'</span>, { name: <span class="s">'To do'</span> });
+  <span class="k">const</span> done = page.getByRole(<span class="s">'list'</span>, { name: <span class="s">'Done'</span> });
+
+  <span class="k">await</span> todo.getByText(<span class="s">'Pack the order'</span>).dragTo(done);
+  <span class="k">await</span> expect(done.getByRole(<span class="s">'listitem'</span>)).toHaveText([<span class="s">'Pack the order'</span>]);
+
+  <span class="c">// The same by hand with the mouse, for widgets that need finer control.</span>
+  <span class="k">await</span> todo.getByText(<span class="s">'Print the label'</span>).hover();
+  <span class="k">await</span> page.mouse.down();
+  <span class="k">await</span> done.hover();
+  <span class="k">await</span> done.hover();            <span class="c">// a second move, so the page gets its dragover event</span>
+  <span class="k">await</span> page.mouse.up();
+
+  <span class="k">await</span> expect(done.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">2</span>);
+  console.log(<span class="s">'Done lane:'</span>, <span class="k">await</span> done.getByRole(<span class="s">'listitem'</span>).allTextContents());
+  console.log(<span class="s">'To do lane:'</span>, <span class="k">await</span> todo.getByRole(<span class="s">'listitem'</span>).count(), <span class="s">'tasks'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+Done lane: [ &#x27;Pack the order&#x27;, &#x27;Print the label&#x27; ]
+To do lane: 0 tasks
+  ✓  1 [chromium] › tests/drag.spec.js:3:1 › drag tasks to the Done lane (625ms)
+
+  1 passed (2.3s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/drag.spec.ts</div><pre class="src" data-file="tests/drag.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'drag tasks to the Done lane'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">const</span> todo = page.getByRole(<span class="s">'list'</span>, { name: <span class="s">'To do'</span> });
+  <span class="k">const</span> done = page.getByRole(<span class="s">'list'</span>, { name: <span class="s">'Done'</span> });
+
+  <span class="k">await</span> todo.getByText(<span class="s">'Pack the order'</span>).dragTo(done);
+  <span class="k">await</span> expect(done.getByRole(<span class="s">'listitem'</span>)).toHaveText([<span class="s">'Pack the order'</span>]);
+
+  <span class="c">// The same by hand with the mouse, for widgets that need finer control.</span>
+  <span class="k">await</span> todo.getByText(<span class="s">'Print the label'</span>).hover();
+  <span class="k">await</span> page.mouse.down();
+  <span class="k">await</span> done.hover();
+  <span class="k">await</span> done.hover();            <span class="c">// a second move, so the page gets its dragover event</span>
+  <span class="k">await</span> page.mouse.up();
+
+  <span class="k">await</span> expect(done.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">2</span>);
+  console.log(<span class="s">'Done lane:'</span>, <span class="k">await</span> done.getByRole(<span class="s">'listitem'</span>).allTextContents());
+  console.log(<span class="s">'To do lane:'</span>, <span class="k">await</span> todo.getByRole(<span class="s">'listitem'</span>).count(), <span class="s">'tasks'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+Done lane: [ &#x27;Pack the order&#x27;, &#x27;Print the label&#x27; ]
+To do lane: 0 tasks
+  ✓  1 [chromium] › tests/drag.spec.ts:3:1 › drag tasks to the Done lane (715ms)
+
+  1 passed (2.1s)</pre></div></div><div class="note-out"><span>What happens</span><p><code>dragTo</code> hovers the task, presses the mouse button, moves to the lane and releases it. The manual version does the same steps one by one. The Playwright docs advise moving twice over the target when the page listens for dragover, which this page does.</p></div></div>
+</section>
+<section class="card reveal jsec" id="wait" data-say="wait"><div class="sec-num">Part 7</div><h2><span class="sec-em">🚫</span><span>Waiting without sleeping</span></h2>
+
+<p>Fixed waits such as <span class="only-java"><code>page.waitForTimeout(3000)</code> or <code>Thread.sleep(3000)</code></span><span class="only-py"><code>page.wait_for_timeout(3000)</code> or <code>time.sleep(3)</code></span><span class="only-js"><code>page.waitForTimeout(3000)</code></span><span class="only-ts"><code>page.waitForTimeout(3000)</code></span> are the most common reason for slow and flaky tests. When an action or a check is not enough, wait for the exact thing you need.</p>
+<div class="codewrap tests pw4" data-k="wait" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Wait for a response, an element or a condition · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/WaitTest.java</div><pre class="src" data-file="src/test/java/com/brainy/WaitTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Response</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">WaitForSelectorState</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">WaitTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> waitForWhatYouNeedNeverForAFixedTime(<span class="t">Page</span> page) {
+    <span class="c">// Start waiting for the API answer before the page asks for it.</span>
+    <span class="t">Response</span> answer = page.waitForResponse(r -&gt; r.url().contains(<span class="s">"/api/products"</span>), () -&gt; page.navigate(<span class="s">"/products"</span>));
+    <span class="t">System</span>.out.println(<span class="s">"API answered with status "</span> + answer.status());
+
+    page.getByText(<span class="s">"Loading products…"</span>).waitFor(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">WaitForOptions</span>().setState(<span class="t">WaitForSelectorState</span>.<span class="t">DETACHED</span>));
+    <span class="t">System</span>.out.println(<span class="s">"cards now: "</span> + page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>).count());
+
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.waitForFunction(<span class="s">"() =&gt; !document.querySelector('#cover')"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"loading cover left: "</span> + page.locator(<span class="s">"#cover"</span>).count());
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Pay now"</span>))).isEnabled();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.WaitTest
+API answered with status 200
+cards now: 5
+loading cover left: 0
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.270 s -- in com.brainy.WaitTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_wait.py</div><pre class="src" data-file="tests/test_wait.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_wait_for_what_you_need_never_for_a_fixed_time(page: <span class="t">Page</span>):
+    <span class="c"># Start waiting for the API answer before the page asks for it.</span>
+    <span class="k">with</span> page.expect_response(<span class="k">lambda</span> r: <span class="s">"/api/products"</span> <span class="k">in</span> r.url) <span class="k">as</span> answer:
+        page.goto(<span class="s">"/products"</span>)
+    print(<span class="s">"API answered with status"</span>, answer.value.status)
+
+    page.get_by_text(<span class="s">"Loading products…"</span>).wait_for(state=<span class="s">"detached"</span>)
+    print(<span class="s">"cards now:"</span>, page.get_by_role(<span class="s">"listitem"</span>).count())
+
+    page.goto(<span class="s">"/widgets"</span>)
+    page.wait_for_function(<span class="s">"() =&gt; !document.querySelector('#cover')"</span>)
+    print(<span class="s">"loading cover left:"</span>, page.locator(<span class="s">"#cover"</span>).count())
+    expect(page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Pay now"</span>)).to_be_enabled()</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_wait.py::test_wait_for_what_you_need_never_for_a_fixed_time[chromium] API answered with status 200
+cards now: 5
+loading cover left: 0
+PASSED
+
+============================== 1 passed in 3.02s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/wait.spec.js</div><pre class="src" data-file="tests/wait.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'wait for what you need, never for a fixed time'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="c">// Start waiting for the API answer before the page asks for it.</span>
+  <span class="k">const</span> answer = page.waitForResponse(r =&gt; r.url().includes(<span class="s">'/api/products'</span>));
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  console.log(<span class="s">'API answered with status'</span>, (<span class="k">await</span> answer).status());
+
+  <span class="k">await</span> page.getByText(<span class="s">'Loading products…'</span>).waitFor({ state: <span class="s">'detached'</span> });
+  console.log(<span class="s">'cards now:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'listitem'</span>).count());
+
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.waitForFunction(() =&gt; !document.querySelector(<span class="s">'#cover'</span>));
+  console.log(<span class="s">'loading cover left:'</span>, <span class="k">await</span> page.locator(<span class="s">'#cover'</span>).count());
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay now'</span> })).toBeEnabled();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+API answered with status 200
+cards now: 5
+loading cover left: 0
+  ✓  1 [chromium] › tests/wait.spec.js:3:1 › wait for what you need, never for a fixed time (2.2s)
+
+  1 passed (3.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/wait.spec.ts</div><pre class="src" data-file="tests/wait.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'wait for what you need, never for a fixed time'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="c">// Start waiting for the API answer before the page asks for it.</span>
+  <span class="k">const</span> answer = page.waitForResponse(r =&gt; r.url().includes(<span class="s">'/api/products'</span>));
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  console.log(<span class="s">'API answered with status'</span>, (<span class="k">await</span> answer).status());
+
+  <span class="k">await</span> page.getByText(<span class="s">'Loading products…'</span>).waitFor({ state: <span class="s">'detached'</span> });
+  console.log(<span class="s">'cards now:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'listitem'</span>).count());
+
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.waitForFunction(() =&gt; !document.querySelector(<span class="s">'#cover'</span>));
+  console.log(<span class="s">'loading cover left:'</span>, <span class="k">await</span> page.locator(<span class="s">'#cover'</span>).count());
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay now'</span> })).toBeEnabled();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+API answered with status 200
+cards now: 5
+loading cover left: 0
+  ✓  1 [chromium] › tests/wait.spec.ts:3:1 › wait for what you need, never for a fixed time (2.0s)
+
+  1 passed (3.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>Each wait names the thing the test needs: the API answer, the loading message going away, the cover being removed. Each one returns the moment that happens. In Python and Java the wait wraps the action that causes it, so the answer cannot be missed.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Wait for</th><th>Method</th></tr><tr><td>an element to appear, hide or go away</td><td><span class="only-java">locator.waitFor(new Locator.WaitForOptions().setState(...))</span><span class="only-py">locator.wait_for(state=...)</span><span class="only-js">locator.waitFor({ state })</span><span class="only-ts">locator.waitFor({ state })</span></td></tr><tr><td>a new URL</td><td><span class="only-java">page.waitForURL</span><span class="only-py">page.wait_for_url</span><span class="only-js">page.waitForURL</span><span class="only-ts">page.waitForURL</span></td></tr><tr><td>a network response</td><td><span class="only-java">page.waitForResponse(predicate, action)</span><span class="only-py">with page.expect_response(...)</span><span class="only-js">page.waitForResponse(...)</span><span class="only-ts">page.waitForResponse(...)</span></td></tr><tr><td>anything the page can compute</td><td><span class="only-java">page.waitForFunction</span><span class="only-py">page.wait_for_function</span><span class="only-js">page.waitForFunction</span><span class="only-ts">page.waitForFunction</span></td></tr><tr><td>a popup, download or dialog</td><td><span class="only-java">page.waitForPopup and friends</span><span class="only-py">with page.expect_popup() and friends</span><span class="only-js">page.waitForEvent('popup')</span><span class="only-ts">page.waitForEvent('popup')</span></td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Many teams add a lint rule or a code review check that rejects waitForTimeout. A suite with 200 tests and a 2 second sleep in each spends almost 7 minutes doing nothing on every run.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-locators.html" data-topic="pw-locators"><small>← Previous chapter</small><b>🎯 Locators</b></a><a class="next" href="./pw-assertions.html" data-topic="pw-assertions"><small>Next chapter →</small><b>✅ Assertions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Act like a person, wait like a machine", "panels": [{"s": [["e", "⏳"], ["t", "auto-wait", {"b": 1}]], "h": "Auto-waiting", "t": "Checks before every action.", "more": "No sleeps needed."}, {"s": [["e", "🧾"], ["t", "call log", {"b": 1}]], "h": "Timeouts", "t": "The error says which check failed.", "more": "Read it before using force."}, {"s": [["e", "⌨️"], ["t", "fill", {"b": 1}]], "h": "Typing", "t": "fill for most boxes.", "more": "pressSequentially for key by key."}, {"s": [["e", "📝"], ["t", "selectOption", {"b": 1}]], "h": "Forms", "t": "check, selectOption, dragTo.", "more": "Found by their labels."}], "remember": "Never sleep. Every action waits until the element is ready, and when you need more, wait for the exact thing you need."}, "real": [["🧾", "Insurance quote forms", "An insurance company tests a 40 field quote form with drop downs, dates and radio buttons. The tests fill every control by its label and check the price summary at the end."], ["⏱️", "A suite that got 5 times faster", "A team removed every fixed sleep from 300 tests and let auto-waiting do the work. The run went from 50 minutes to 10, and the random failures went away with the sleeps."], ["🗂️", "A project board", "A task tracking product tests that cards can be dragged between columns, using dragTo for the normal case and the mouse steps for a custom sortable list."]], "quiz": [{"lv": 1, "q": "What does Playwright do before it clicks a button?", "o": ["Nothing, it clicks at once", "Waits a fixed 1 second", "Checks the button is ready and retries until it is", "Reloads the page"], "a": 2, "hint": "Look at the auto-waiting table.", "why": "It checks visible, stable, receives events and enabled, and retries until they pass or the timeout ends."}, {"lv": 1, "q": "Which method fills a text box in one go?", "o": ["type", "fill", "pressSequentially", "press"], "a": 1, "hint": "It is the one you use most.", "why": "<code>fill<\/code> sets the whole value at once."}, {"lv": 1, "q": "How do you pick the Happy radio button labelled Happy?", "o": ["click the label text twice", "getByLabel('Happy').check()", "selectOption('Happy')", "fill('Happy')"], "a": 1, "hint": "Radio buttons are checked.", "why": "<code>check()<\/code> works for checkboxes and radio buttons."}, {"lv": 1, "q": "Which line is a bad idea in a test?", "o": ["await expect(x).toBeVisible()", "await page.waitForTimeout(3000)", "await x.click()", "await x.fill('a')"], "a": 1, "hint": "It waits for the clock.", "why": "A fixed sleep is either too short or wastes time. Wait for the thing you need."}, {"lv": 2, "q": "A click times out. What tells you why?", "o": ["The test name", "The call log in the error message", "The browser version", "Nothing"], "a": 1, "hint": "Look at the call log output.", "why": "The call log lists each check it tried, such as element is not enabled."}, {"lv": 2, "q": "Which check does fill do that click does not?", "o": ["visible", "editable", "stable", "receives events"], "a": 1, "hint": "A read only box can be clicked but not typed into.", "why": "fill checks the element is editable. Click checks stable and receives events instead."}, {"lv": 2, "q": "When should you use pressSequentially instead of fill?", "o": ["Always", "When the box reacts to each key, like an auto complete", "For passwords", "Never"], "a": 1, "hint": "What is different about key by key?", "why": "It sends one key event per character, which some boxes need to react."}, {"lv": 2, "q": "In which format do you fill a date input?", "o": ["01/10/2026", "1 Oct 2026", "2026-10-01", "any format"], "a": 2, "hint": "Look at the form example.", "why": "Date inputs take the standard yyyy-mm-dd format, whatever the browser shows."}, {"lv": 2, "q": "What does trial: true do on a click?", "o": ["Clicks twice", "Runs the checks but does not click", "Skips the checks", "Retries the test"], "a": 1, "hint": "It is a rehearsal.", "why": "Trial runs every actionability check without performing the click."}, {"lv": 3, "q": "Why do the docs suggest hovering the drop target twice when dragging by hand?", "o": ["To be safe", "Some pages need a dragover event, which needs at least two mouse moves", "Java needs it", "To scroll"], "a": 1, "hint": "Read the drag example comment.", "why": "The dragover event needs at least two mouse moves in all browsers."}, {"lv": 3, "q": "In Python, how do you wait for the products API answer around a goto?", "o": ["page.wait_for_response() after goto", "with page.expect_response(...) as answer: page.goto(...)", "time.sleep(1)", "page.on(\"response\")"], "a": 1, "hint": "Python waits around the action.", "why": "The with block starts waiting before goto, so the answer cannot be missed."}, {"lv": 3, "q": "Which actions do no actionability checks at all?", "o": ["click and fill", "focus, press and setInputFiles", "hover and dragTo", "check and uncheck"], "a": 1, "hint": "Look at the last row of the table.", "why": "focus, blur, press, pressSequentially, setInputFiles and dispatchEvent do no checks."}], "calc": [{"lv": 1, "q": "Pay now is disabled for 1000 ms and the cover is gone after 800 ms. After about how many ms can the click happen?", "ans": 1000, "hint": "Both must be true", "steps": ["The cover goes at 800 ms", "The button is enabled at 1000 ms", "The later of the two: 1000 ms"]}, {"lv": 1, "q": "The To do lane has 2 tasks. You drag 1 to Done. How many are left in To do?", "ans": 1, "hint": "2 - 1", "steps": ["2 - 1 = 1"]}, {"lv": 2, "q": "200 tests each have a 3 second sleep. How many minutes are spent sleeping?", "ans": 10, "hint": "200 × 3 / 60", "steps": ["200 × 3 = 600 s", "600 / 60 = 10 minutes"]}, {"lv": 2, "q": "pressSequentially types \"mug\" with a delay of 50 ms between keys. About how many ms does it take at least?", "ans": 150, "hint": "3 keys × 50 ms", "steps": ["3 characters", "3 × 50 = 150 ms"]}, {"lv": 2, "q": "A click with a 2000 ms timeout retries a check about every 100 ms. About how many tries fit in?", "ans": 20, "hint": "2000 / 100", "steps": ["2000 / 100 = 20"]}, {"lv": 3, "q": "A suite of 300 tests took 50 minutes. Removing sleeps saved 40 minutes. How many seconds did each test save on average?", "ans": 8, "hint": "40 × 60 / 300", "steps": ["40 minutes = 2400 s", "2400 / 300 = 8 s per test"]}, {"lv": 3, "q": "The slider goes from 0 to 10 and you fill 8. What percent of the way is that?", "ans": 80, "hint": "8 / 10 × 100", "steps": ["8 / 10 = 0.8", "0.8 × 100 = 80 %"]}, {"lv": 3, "q": "The offer appears 1200 ms after the click, and the default expect timeout is 5000 ms. How many ms of the timeout are left when it appears?", "ans": 3800, "hint": "5000 - 1200", "steps": ["5000 - 1200 = 3800 ms"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter is about actions: how Playwright waits before every click, what to read when it times out, clicking, hovering, typing, filling forms, dragging, and waiting without sleeps.", "hi": "यह अध्याय actions के बारे में है: Playwright हर click से पहले कैसे इंतज़ार करता है, timeout होने पर क्या पढ़ें, click, hover, typing, forms भरना, drag करना और sleep के बिना इंतज़ार।", "kn": "ಈ ಅಧ್ಯಾಯ actions ಬಗ್ಗೆ: Playwright ಪ್ರತಿ click ಗೆ ಮೊದಲು ಹೇಗೆ ಕಾಯುತ್ತದೆ, timeout ಆದಾಗ ಏನು ಓದಬೇಕು, click, hover, typing, forms ತುಂಬುವುದು, drag ಮತ್ತು sleep ಇಲ್ಲದೆ ಕಾಯುವುದು.", "or": "ଏହି ଅଧ୍ୟାୟ actions ବିଷୟରେ: Playwright ପ୍ରତି click ପୂର୍ବରୁ କିପରି ଅପେକ୍ଷା କରେ, timeout ହେଲେ କଣ ପଢ଼ିବେ, click, hover, typing, forms ଭରିବା, drag ଏବଂ sleep ବିନା ଅପେକ୍ଷା।", "ar": "يتناول هذا الفصل الإجراءات: كيف ينتظر Playwright قبل كل نقرة، وماذا تقرأ عند انتهاء المهلة، والنقر والتمرير والكتابة وملء النماذج والسحب والانتظار دون توقف ثابت.", "de": "Dieses Kapitel behandelt Aktionen: wie Playwright vor jedem Klick wartet, was du bei einem Timeout liest, Klicken, Hovern, Tippen, Formulare ausfüllen, Ziehen und Warten ohne Sleep."}, {"id": "auto", "h": "Auto-waiting", "en": "Before every action Playwright checks that the element is visible, stable, receives events and is enabled, and it retries until all pass. You never need a fixed sleep.", "hi": "हर action से पहले Playwright जाँचता है कि element दिख रहा है, स्थिर है, events लेता है और enabled है, और सब पास होने तक दोबारा कोशिश करता है। Fixed sleep की कभी ज़रूरत नहीं।", "kn": "ಪ್ರತಿ action ಗೆ ಮೊದಲು Playwright element ಕಾಣುತ್ತಿದೆಯೇ, ಸ್ಥಿರವಾಗಿದೆಯೇ, events ಪಡೆಯುತ್ತದೆಯೇ ಮತ್ತು enabled ಆಗಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸಿ, ಎಲ್ಲವೂ ಪಾಸ್ ಆಗುವವರೆಗೆ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸುತ್ತದೆ. Fixed sleep ಬೇಕಿಲ್ಲ.", "or": "ପ୍ରତି action ପୂର୍ବରୁ Playwright ଯାଞ୍ଚ କରେ element ଦେଖାଯାଉଛି, ସ୍ଥିର ଅଛି, events ପାଉଛି ଓ enabled ଅଛି, ଏବଂ ସବୁ ପାସ୍ ହେବା ପର୍ଯ୍ୟନ୍ତ ପୁଣି ଚେଷ୍ଟା କରେ। Fixed sleep ଦରକାର ନାହିଁ।", "ar": "قبل كل إجراء يتحقق Playwright من أن العنصر ظاهر ومستقر ويستقبل الأحداث ومفعّل، ويعيد المحاولة حتى تنجح كل الفحوص. لا تحتاج أبدًا إلى انتظار ثابت.", "de": "Vor jeder Aktion prüft Playwright, ob das Element sichtbar, stabil, für Ereignisse erreichbar und aktiviert ist, und wiederholt das, bis alles passt. Ein festes Sleep brauchst du nie."}, {"id": "calllog", "h": "Timeouts", "en": "If an element never becomes ready, the action fails with a timeout error. The call log in the message names the check that kept failing. Read it before you reach for force.", "hi": "अगर element कभी तैयार न हो तो action timeout error के साथ fail होता है। संदेश का call log बताता है कि कौन सी जाँच बार बार fail हुई। force से पहले इसे पढ़ें।", "kn": "Element ಎಂದಿಗೂ ಸಿದ್ಧವಾಗದಿದ್ದರೆ action timeout error ನೊಂದಿಗೆ fail ಆಗುತ್ತದೆ. ಸಂದೇಶದ call log ಯಾವ ಪರಿಶೀಲನೆ ವಿಫಲವಾಯಿತು ಎಂದು ಹೇಳುತ್ತದೆ. force ಗೆ ಮೊದಲು ಅದನ್ನು ಓದಿ.", "or": "Element କେବେ ପ୍ରସ୍ତୁତ ନ ହେଲେ action timeout error ସହ fail ହୁଏ। ସନ୍ଦେଶର call log କହେ କେଉଁ ଯାଞ୍ଚ ବାରମ୍ବାର fail ହେଲା। force ପୂର୍ବରୁ ଏହାକୁ ପଢ଼ନ୍ତୁ।", "ar": "إذا لم يصبح العنصر جاهزًا أبدًا، يفشل الإجراء بخطأ انتهاء المهلة. يذكر سجل الاستدعاء في الرسالة الفحص الذي ظل يفشل. اقرأه قبل استخدام force.", "de": "Wird ein Element nie bereit, scheitert die Aktion mit einem Timeout-Fehler. Das Call Log in der Meldung nennt die Prüfung, die immer wieder fehlschlug. Lies es, bevor du zu force greifst."}, {"id": "mouse", "h": "Mouse", "en": "Click has options for double click, right click, modifier keys and position. Hover rests the mouse on an element and focus does what the Tab key does.", "hi": "Click में double click, right click, modifier keys और position के options हैं। Hover माउस को element पर रखता है और focus वही करता है जो Tab key करती है।", "kn": "Click ನಲ್ಲಿ double click, right click, modifier keys ಮತ್ತು position options ಇವೆ. Hover mouse ಅನ್ನು element ಮೇಲೆ ಇರಿಸುತ್ತದೆ, focus Tab key ಮಾಡುವುದನ್ನೇ ಮಾಡುತ್ತದೆ.", "or": "Click ରେ double click, right click, modifier keys ଓ position options ଅଛି। Hover mouse କୁ element ଉପରେ ରଖେ ଏବଂ focus Tab key ଯାହା କରେ ତାହା କରେ।", "ar": "للنقر خيارات للنقر المزدوج والنقر الأيمن ومفاتيح التعديل والموضع. يضع hover الفأرة فوق العنصر ويفعل focus ما يفعله مفتاح Tab.", "de": "Click hat Optionen für Doppelklick, Rechtsklick, Zusatztasten und Position. Hover lässt die Maus auf einem Element ruhen, und focus macht, was die Tab-Taste tut."}, {"id": "keys", "h": "Typing", "en": "fill puts the whole text in at once and is right for almost every box. pressSequentially sends one key at a time, and press sends a key or a shortcut such as Control A.", "hi": "fill पूरा text एक बार में डालता है और लगभग हर box के लिए सही है। pressSequentially एक एक key भेजता है, और press एक key या Control A जैसा shortcut भेजता है।", "kn": "fill ಸಂಪೂರ್ಣ text ಅನ್ನು ಒಮ್ಮೆಗೇ ಹಾಕುತ್ತದೆ ಮತ್ತು ಬಹುತೇಕ ಎಲ್ಲಾ box ಗಳಿಗೆ ಸರಿ. pressSequentially ಒಂದೊಂದೇ key ಕಳುಹಿಸುತ್ತದೆ, press ಒಂದು key ಅಥವಾ Control A ನಂತಹ shortcut ಕಳುಹಿಸುತ್ತದೆ.", "or": "fill ପୂରା text ଥରେ ଦିଏ ଏବଂ ପ୍ରାୟ ସବୁ box ପାଇଁ ଠିକ୍। pressSequentially ଗୋଟିଏ ଗୋଟିଏ key ପଠାଏ, ଏବଂ press ଗୋଟିଏ key ବା Control A ପରି shortcut ପଠାଏ।", "ar": "يضع fill النص كاملًا دفعة واحدة وهو مناسب لكل الحقول تقريبًا. يرسل pressSequentially مفتاحًا واحدًا في كل مرة، ويرسل press مفتاحًا أو اختصارًا مثل Control A.", "de": "fill setzt den ganzen Text auf einmal und passt für fast jedes Feld. pressSequentially sendet eine Taste nach der anderen, und press sendet eine Taste oder ein Kürzel wie Control A."}, {"id": "forms", "h": "Forms", "en": "check and uncheck tick boxes and radio buttons, selectOption picks from a drop down by value or label, and dates are filled in the year month day format.", "hi": "check और uncheck boxes और radio buttons को tick करते हैं, selectOption drop down से value या label से चुनता है, और dates साल महीना दिन format में भरी जाती हैं।", "kn": "check ಮತ್ತು uncheck boxes ಮತ್ತು radio buttons ಅನ್ನು tick ಮಾಡುತ್ತವೆ, selectOption drop down ನಿಂದ value ಅಥವಾ label ಮೂಲಕ ಆರಿಸುತ್ತದೆ, dates ವರ್ಷ ತಿಂಗಳು ದಿನ format ನಲ್ಲಿ ತುಂಬಲಾಗುತ್ತದೆ.", "or": "check ଓ uncheck boxes ଓ radio buttons tick କରନ୍ତି, selectOption drop down ରୁ value ବା label ଦ୍ୱାରା ବାଛେ, ଏବଂ dates ବର୍ଷ ମାସ ଦିନ format ରେ ଭରାଯାଏ।", "ar": "يضع check وuncheck علامة في المربعات وأزرار الاختيار، ويختار selectOption من قائمة منسدلة بالقيمة أو التسمية، وتُملأ التواريخ بصيغة السنة ثم الشهر ثم اليوم.", "de": "check und uncheck setzen Häkchen bei Kästchen und Optionsfeldern, selectOption wählt aus einer Liste nach Wert oder Beschriftung, und Daten werden im Format Jahr Monat Tag eingetragen."}, {"id": "drag", "h": "Drag and drop", "en": "dragTo drags one element onto another in one line. For finer control, hover, press the mouse, move over the target twice and release.", "hi": "dragTo एक element को दूसरे पर एक line में खींचता है। ज़्यादा नियंत्रण के लिए hover करें, mouse दबाएँ, target पर दो बार ले जाएँ और छोड़ें।", "kn": "dragTo ಒಂದು element ಅನ್ನು ಇನ್ನೊಂದರ ಮೇಲೆ ಒಂದೇ line ನಲ್ಲಿ ಎಳೆಯುತ್ತದೆ. ಹೆಚ್ಚು ನಿಯಂತ್ರಣಕ್ಕೆ hover ಮಾಡಿ, mouse ಒತ್ತಿ, target ಮೇಲೆ ಎರಡು ಬಾರಿ ಸರಿಸಿ ಮತ್ತು ಬಿಡಿ.", "or": "dragTo ଗୋଟିଏ element କୁ ଅନ୍ୟ ଉପରକୁ ଗୋଟିଏ line ରେ ଟାଣେ। ଅଧିକ ନିୟନ୍ତ୍ରଣ ପାଇଁ hover କରନ୍ତୁ, mouse ଦବାନ୍ତୁ, target ଉପରେ ଦୁଇଥର ନିଅନ୍ତୁ ଏବଂ ଛାଡନ୍ତୁ।", "ar": "يسحب dragTo عنصرًا فوق آخر في سطر واحد. للتحكم الأدق مرّر الفأرة واضغط زرها وحرّكها فوق الهدف مرتين ثم أفلتها.", "de": "dragTo zieht ein Element in einer Zeile auf ein anderes. Für mehr Kontrolle: hovern, Maustaste drücken, zweimal über das Ziel bewegen und loslassen."}, {"id": "wait", "h": "Waiting", "en": "Do not use fixed sleeps. Wait for the exact thing you need: an element state, a URL, a network response, or a condition in the page.", "hi": "Fixed sleep इस्तेमाल न करें। ठीक उसी चीज़ का इंतज़ार करें जो चाहिए: element की स्थिति, URL, network response, या page में कोई शर्त।", "kn": "Fixed sleep ಬಳಸಬೇಡಿ. ನಿಮಗೆ ಬೇಕಾದದ್ದಕ್ಕೇ ಕಾಯಿರಿ: element ಸ್ಥಿತಿ, URL, network response ಅಥವಾ page ನಲ್ಲಿ ಒಂದು ಷರತ್ತು.", "or": "Fixed sleep ବ୍ୟବହାର କରନ୍ତୁ ନାହିଁ। ଯାହା ଦରକାର ଠିକ୍ ତାହା ପାଇଁ ଅପେକ୍ଷା କରନ୍ତୁ: element ସ୍ଥିତି, URL, network response ବା page ରେ ଏକ ସର୍ତ୍ତ।", "ar": "لا تستخدم الانتظار الثابت. انتظر الشيء الذي تحتاجه بالضبط: حالة عنصر أو عنوان URL أو استجابة شبكة أو شرطًا داخل الصفحة.", "de": "Nutze keine festen Sleeps. Warte auf genau das, was du brauchst: einen Elementzustand, eine URL, eine Netzwerkantwort oder eine Bedingung in der Seite."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you send the feedback form as Ravi with a topic and a mood, and you drag a task into the Done lane.", "hi": "Labs में आप Ravi के रूप में topic और mood के साथ feedback form भेजते हैं, और एक task को Done lane में खींचते हैं।", "kn": "Labs ನಲ್ಲಿ ನೀವು Ravi ಆಗಿ topic ಮತ್ತು mood ಜೊತೆ feedback form ಕಳುಹಿಸುತ್ತೀರಿ, ಮತ್ತು ಒಂದು task ಅನ್ನು Done lane ಗೆ ಎಳೆಯುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ Ravi ଭାବେ topic ଓ mood ସହ feedback form ପଠାନ୍ତି, ଏବଂ ଗୋଟିଏ task କୁ Done lane କୁ ଟାଣନ୍ତି।", "ar": "في المختبرات ترسل نموذج الملاحظات باسم Ravi مع موضوع ومزاج، وتسحب مهمة إلى عمود Done.", "de": "In den Labs sendest du das Feedback-Formular als Ravi mit Thema und Stimmung und ziehst eine Aufgabe in die Spalte Done."}], "ex": [], "dg": {"click": {"t": "What happens inside one click()", "w": 900, "h": 220, "n": [["find", 20, 80, 130, 64, "find", {"c": 5, "sub": "exactly one", "i": "The locator must match exactly one element, or the click fails with strict mode."}], ["checks", 170, 80, 160, 64, "checks", {"c": 2, "sub": "retry until ready", "i": "Visible, stable, receives events, enabled, not inert. Each failed check is retried."}], ["scroll", 350, 80, 140, 64, "scroll", {"c": 3, "sub": "into view", "i": "The element is scrolled into view if it is not on screen."}], ["mouse", 510, 80, 160, 64, "mouse", {"c": 1, "sub": "move, down, up", "i": "The mouse moves to the middle of the element, presses and releases."}], ["nav", 690, 80, 190, 64, "after the click", {"c": 0, "sub": "navigation started", "i": "If the click starts a navigation, Playwright waits for it to start before returning."}]], "e": [["find", "checks"], ["checks", "scroll"], ["scroll", "mouse"], ["mouse", "nav"]], "st": [[["find"], "First the locator is resolved. It must find exactly one element."], [["checks", "find>checks"], "Then the actionability checks run, and any that fail are retried until they pass or the timeout ends."], [["scroll", "checks>scroll"], "The element is scrolled into view, so you never need to scroll by hand."], [["mouse", "scroll>mouse"], "A real mouse moves to the middle of the element and clicks, so the page sees the same events as with a person."], [["nav", "mouse>nav"], "If the click started a navigation, click waits for it to start. Then your next line runs."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "feedback", "title": "Send the feedback form", "name": "send feedback as Ravi", "task": "On <code>/forms<\/code>, type <b>Ravi<\/b> as the name, choose the topic <b>Payment<\/b>, pick the mood <b>Okay<\/b>, click <b>Send feedback<\/b>, and check that the status contains <b>Topic: payment, mood: okay<\/b>.", "goal": "The thank you line shows Ravi, payment and okay.", "start": "/forms", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('send feedback as Ravi', async ({ page }) => {\n  await page.goto('/forms');\n  // fill the name, choose the topic, pick the mood, then send\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class SendFeedbackAsRaviTest {\n  @Test\n  void sendFeedbackAsRavi(Page page) {\n    page.navigate(\"/forms\");\n    page.getByLabel(\"Your name\").fill(\"Ravi\");\n    page.getByLabel(\"Topic\").selectOption(\"payment\");\n    page.getByLabel(\"Okay\").check();\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Send feedback\")).click();\n    assertThat(page.getByRole(AriaRole.STATUS)).containsText(\"Topic: payment, mood: okay\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_send_feedback_as_ravi(page: Page):\n    page.goto(\"/forms\")\n    page.get_by_label(\"Your name\").fill(\"Ravi\")\n    page.get_by_label(\"Topic\").select_option(\"payment\")\n    page.get_by_label(\"Okay\").check()\n    page.get_by_role(\"button\", name=\"Send feedback\").click()\n    expect(page.get_by_role(\"status\")).to_contain_text(\"Topic: payment, mood: okay\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('send feedback as Ravi', async ({ page }) => {\n  await page.goto('/forms');\n  await page.getByLabel('Your name').fill('Ravi');\n  await page.getByLabel('Topic').selectOption('payment');\n  await page.getByLabel('Okay').check();\n  await page.getByRole('button', { name: 'Send feedback' }).click();\n  await expect(page.getByRole('status')).toContainText('Topic: payment, mood: okay');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('send feedback as Ravi', async ({ page }) => {\n  await page.goto('/forms');\n  await page.getByLabel('Your name').fill('Ravi');\n  await page.getByLabel('Topic').selectOption('payment');\n  await page.getByLabel('Okay').check();\n  await page.getByRole('button', { name: 'Send feedback' }).click();\n  await expect(page.getByRole('status')).toContainText('Topic: payment, mood: okay');\n});"}, "hint": "Use <code>getByLabel('Topic').selectOption('payment')<\/code> for the drop down and <code>getByLabel('Okay').check()<\/code> for the radio button.", "why": "Every control is found by its label, and each has its own method: fill for text, selectOption for the drop down and check for the radio button.", "check": [["/Thanks Ravi/.test(ctx.text)", "The form was sent as Ravi"], ["/Topic: payment, mood: okay/.test(ctx.text)", "The topic and mood are right"]]}, {"id": "dragdone", "title": "Drag a task to Done", "name": "move a task to done", "task": "On <code>/forms<\/code>, drag <b>Print the label<\/b> from the To do lane into the <b>Done<\/b> lane, then check that the Done lane contains it.", "goal": "Print the label sits in the Done lane.", "start": "/forms", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('move a task to done', async ({ page }) => {\n  await page.goto('/forms');\n  const done = page.getByRole('list', { name: 'Done' });\n  // drag the task onto the Done lane, then check it is there\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class MoveATaskToDoneTest {\n  @Test\n  void moveATaskToDone(Page page) {\n    page.navigate(\"/forms\");\n    Locator done = page.getByRole(AriaRole.LIST, new Page.GetByRoleOptions().setName(\"Done\"));\n    page.getByText(\"Print the label\").dragTo(done);\n    assertThat(done).containsText(\"Print the label\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_move_a_task_to_done(page: Page):\n    page.goto(\"/forms\")\n    done = page.get_by_role(\"list\", name=\"Done\")\n    page.get_by_text(\"Print the label\").drag_to(done)\n    expect(done).to_contain_text(\"Print the label\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('move a task to done', async ({ page }) => {\n  await page.goto('/forms');\n  const done = page.getByRole('list', { name: 'Done' });\n  await page.getByText('Print the label').dragTo(done);\n  await expect(done).toContainText('Print the label');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('move a task to done', async ({ page }) => {\n  await page.goto('/forms');\n  const done = page.getByRole('list', { name: 'Done' });\n  await page.getByText('Print the label').dragTo(done);\n  await expect(done).toContainText('Print the label');\n});"}, "hint": "<code>page.getByText('Print the label').dragTo(done)<\/code>, then <code>expect(done).toContainText(...)<\/code>.", "why": "dragTo presses the mouse on the task, moves it over the lane and releases it, so the page receives the same drag events as with a person.", "check": [["/dragTo|drag_to|DragTo|mouse/.test(ctx.code)", "The test drags the task"], ["/Done/.test(ctx.code)", "The test checks the Done lane"]]}], "trees": {}};
+JSPLAY.page({ title: "Actions and auto-waiting", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+import pytest
+import re
+from playwright.sync_api import Page, expect
+
+
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args, playwright):
+    return {"viewport": {"width":800,"height":600}}
+
+
+def test_example(page: Page) -> None:
+    page.goto("http://localhost:4173/login")
+    page.get_by_role("textbox", name="Email").click()
+    page.get_by_role("textbox", name="Email").fill("asha@shop.example")
+    page.get_by_role("textbox", name="Password").click()
+    page.get_by_role("textbox", name="Password").fill("s3cret")
+    page.get_by_role("button", name="Sign in").click()

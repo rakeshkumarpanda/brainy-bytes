@@ -1,0 +1,12 @@
+# Python packages the Playwright chapter builder runs the Python examples with. Not part of the website.
+playwright==1.63.0
+pytest==9.1.1
+pytest-playwright==0.10.0
+pytest-xdist==3.8.0
+pytest-html==4.2.0
+pytest-rerunfailures==16.7
+pytest-split==0.11.0
+allure-pytest==2.16.2
+python-dotenv==1.2.4
+axe-playwright-python==0.1.8
+python-xlib==0.33

@@ -1,0 +1,14 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Only the tests in the smoke group, for every commit -->
+<suite name="Brainy Shop smoke" parallel="classes" thread-count="2">
+  <test name="Smoke">
+    <groups>
+      <run>
+        <include name="smoke"/>
+      </run>
+    </groups>
+    <packages>
+      <package name="com.brainy.shop.tests.*"/>
+    </packages>
+  </test>
+</suite>

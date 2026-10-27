@@ -1,0 +1,7 @@
+box/node_modules/
+box/.venv/
+box/runs/
+.cache/
+__pycache__/
+screens/__pycache__/
+box/vendor/

@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><script src="fakeapi.js"></script><meta charset="utf-8"><title>Payment · Brainy Shop</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<main>
+  <h1>Checkout</h1>
+  <p>The card form below comes from a payment company, so it lives inside an iframe.</p>
+  <iframe title="Payment form" src="payment.html" style="width:100%;height:260px;border:1px solid #cbd5e1;border-radius:12px"></iframe>
+  <p role="status" aria-live="polite"></p>
+</main>
+<script src="app.js"></script>
+<script>window.addEventListener('message', e => { if (e.data && e.data.paid) document.querySelector('[role=status]').textContent = `Paid with card ending ${e.data.last4}`; });</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head><script src="fakeapi.js"></script><meta charset="utf-8"><title>Cart · Brainy Shop</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<main>
+  <h1>Your cart</h1>
+  <table aria-label="Cart items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead><tbody></tbody></table>
+  <p>Total: <strong id="total" data-testid="total">₹0</strong></p>
+  <div class="row"><button type="button" id="place" disabled>Place order</button><button type="button" class="secondary" id="empty">Empty cart</button></div>
+  <p role="status" aria-live="polite"></p>
+</main>
+<script src="app.js"></script>
+<script>
+const body = document.querySelector('tbody'), place = document.getElementById('place'), status = document.querySelector('[role=status]');
+async function load() {
+  if (!Shop.token()) { location.href = 'login.html'; return; }
+  const c = (await Shop.api('/api/cart')).body;
+  body.innerHTML = c.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${Shop.rupees(i.price * i.qty)}</td></tr>`).join('') || '<tr><td colspan="3">Your cart is empty</td></tr>';
+  document.getElementById('total').textContent = Shop.rupees(c.total);
+  place.disabled = !c.count;
+  return c;
+}
+place.addEventListener('click', async () => {
+  const total = document.getElementById('total').textContent;
+  if (!confirm(`Place this order for ${total}?`)) { status.textContent = 'Order cancelled'; return; }
+  const r = await Shop.api('/api/orders', { method: 'POST' });
+  status.textContent = r.ok ? `Order #${r.body.id} placed` : r.body.error;
+  await load();
+  Shop.refreshCount();
+});
+document.getElementById('empty').addEventListener('click', async () => { await Shop.api('/api/cart', { method: 'DELETE' }); await load(); Shop.refreshCount(); });
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CI/CD pipelines · Playwright</title>
+<meta name="description" content="Playwright in continuous integration for TypeScript, JavaScript, Python and Java: CI=true settings, forbidOnly, GitHub Actions workflows, secrets and variables, matrix sharding with blob reports and merge-reports, pytest-split, Maven per package jobs, the official Docker images with ipc host and init, Jenkinsfiles, GitLab CI, Azure Pipelines and what to do when a pipeline fails.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🏗️ Framework design</span><span>›</span><span>Chapter 17 of 18</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🚦</span><div><h1>CI/CD pipelines</h1><p class="lead">Run the framework on every push. CI settings, GitHub Actions files for each language, secrets, shards with one merged report, the official Docker images, and Jenkins, GitLab and Azure DevOps.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 30 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 17 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 1 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>CI is a server that runs your tests every time code changes. It starts a fresh machine, installs everything, runs the tests with settings and passwords from its own settings, and keeps the reports so you can see why something failed.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#what" class="easy"><span>🚦</span>What CI does for your tests</a><a href="#cimode"><span>🤖</span>Running the suite the way the pipeline does</a><a href="#github"><span>🐙</span>GitHub Actions, line by line</a><a href="#secrets"><span>🔐</span>Secrets and settings per environment</a><a href="#shards"><span>🧩</span>Shards with a matrix, and one merged report</a><a href="#docker"><span>🐳</span>The official Docker images</a><a href="#others"><span>🏭</span>Jenkins, GitLab and Azure DevOps</a><a href="#red"><span>🧯</span>When the pipeline goes red</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="what" data-say="what"><div class="sec-num">Part 1</div><h2><span class="sec-em">🚦</span><span>What CI does for your tests</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p><b>Continuous integration</b>, CI for short, means a server runs your tests every time someone pushes code or opens a pull request. Nobody has to remember to run them, and a change that breaks the shop is caught before it is merged. <b>Continuous delivery</b>, the CD, goes on to deploy the change when the checks are green.</p>
+<div class="viz" data-viz="flow" data-k="pipe"></div>
+<div class="tw"><table class="jt "><tr><th></th><th>On your laptop</th><th>On CI</th></tr><tr><td>the machine</td><td>yours, with everything already installed</td><td>a fresh machine for every run</td></tr><tr><td>the browser</td><td>installed once</td><td>installed in every run, or already in a Docker image</td></tr><tr><td>the settings</td><td>a local .env file</td><td>variables and secrets in the CI settings</td></tr><tr><td>a failure</td><td>you watch it happen</td><td>you read the report, the logs and the trace afterwards</td></tr><tr><td>test.only</td><td>handy while debugging</td><td>must fail the run</td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>The Playwright documentation sums CI up in three steps: make sure the machine can run browsers, install the packages and browsers, then run the tests. Everything in this chapter is a version of those three steps.</div></div>
+</section>
+<section class="card reveal jsec" id="cimode" data-say="cimode"><div class="sec-num">Part 2</div><h2><span class="sec-em">🤖</span><span>Running the suite the way the pipeline does</span></h2>
+
+<p>Most CI services set the environment variable <code>CI=true</code>. GitHub Actions and GitLab do it on every job. Jenkins and Azure Pipelines do not, so their pipeline files set it. The config reads it and changes a few settings:</p>
+<div class="tw"><table class="jt "><tr><th>Setting on CI</th><th>Why</th></tr><tr><td>forbidOnly: true</td><td>a forgotten test.only stops the run instead of skipping the rest</td></tr><tr><td>retries: 2</td><td>a test that fails once and then passes is reported as flaky, not hidden</td></tr><tr><td>a fixed number of workers</td><td>CI machines are smaller than laptops. The Playwright docs suggest 1 for the most stable runs, or sharding for speed</td></tr><tr><td>JUnit XML and HTML reporters</td><td>the CI server reads the XML, and people read the HTML</td></tr><tr><td>trace: on-first-retry</td><td>every retried test leaves a trace to open later</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="cimode" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Run the suite the way the pipeline runs it · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 pom.xml</div><pre class="src" data-file="pom.xml">&lt;<span class="k">project</span> <span class="a">xmlns</span>=<span class="s">"http://maven.apache.org/POM/4.0.0"</span>&gt;
+  &lt;<span class="k">modelVersion</span>&gt;4.0.0&lt;/<span class="k">modelVersion</span>&gt;
+  &lt;<span class="k">groupId</span>&gt;com.brainy&lt;/<span class="k">groupId</span>&gt;
+  &lt;<span class="k">artifactId</span>&gt;shop-tests&lt;/<span class="k">artifactId</span>&gt;
+  &lt;<span class="k">version</span>&gt;1.0.0&lt;/<span class="k">version</span>&gt;
+
+  &lt;<span class="k">properties</span>&gt;
+    &lt;<span class="k">maven</span><span class="a">.compiler.release</span>&gt;21&lt;/<span class="k">maven</span><span class="a">.compiler.release</span>&gt;
+    &lt;<span class="k">project</span><span class="a">.build.sourceEncoding</span>&gt;UTF-8&lt;/<span class="k">project</span><span class="a">.build.sourceEncoding</span>&gt;
+    &lt;<span class="k">suite</span>&gt;testng.xml&lt;/<span class="k">suite</span>&gt;                 <span class="c">&lt;!-- mvn test -Dsuite=testng-smoke.xml runs another suite --&gt;</span>
+  &lt;/<span class="k">properties</span>&gt;
+
+  &lt;<span class="k">dependencies</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;com.microsoft.playwright&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;playwright&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;1.63.0&lt;/<span class="k">version</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;org.testng&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;testng&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;7.11.0&lt;/<span class="k">version</span>&gt;
+      &lt;<span class="k">scope</span>&gt;test&lt;/<span class="k">scope</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+  &lt;/<span class="k">dependencies</span>&gt;
+
+  &lt;<span class="k">build</span>&gt;
+    &lt;<span class="k">plugins</span>&gt;
+      &lt;<span class="k">plugin</span>&gt;
+        &lt;<span class="k">groupId</span>&gt;org.apache.maven.plugins&lt;/<span class="k">groupId</span>&gt;
+        &lt;<span class="k">artifactId</span>&gt;maven-surefire-plugin&lt;/<span class="k">artifactId</span>&gt;
+        &lt;<span class="k">version</span>&gt;3.5.4&lt;/<span class="k">version</span>&gt;
+        &lt;<span class="k">configuration</span>&gt;
+          &lt;<span class="k">suiteXmlFiles</span>&gt;
+            &lt;<span class="k">suiteXmlFile</span>&gt;${suite}&lt;/<span class="k">suiteXmlFile</span>&gt;
+          &lt;/<span class="k">suiteXmlFiles</span>&gt;
+        &lt;/<span class="k">configuration</span>&gt;
+      &lt;/<span class="k">plugin</span>&gt;
+    &lt;/<span class="k">plugins</span>&gt;
+  &lt;/<span class="k">build</span>&gt;
+&lt;/<span class="k">project</span>&gt;</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test &amp;&amp; ls target/surefire-reports | grep xml</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running TestSuite
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.369 s -- in TestSuite
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+TEST-TestSuite.xml
+testng-results.xml</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 pytest.ini</div><pre class="src" data-file="pytest.ini"><span class="k">[pytest]</span>
+<span class="a">testpaths </span>=<span class="s"> tests</span>
+<span class="a">pythonpath </span>=<span class="s"> .</span>
+<span class="a">addopts </span>=<span class="s"> --browser chromium --tracing retain-on-failure --screenshot only-on-failure</span>
+<span class="a">markers </span>=<span class="s"></span>
+    smoke: quick checks that run on every commit
+    cart: the cart and checkout</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -n 2 --junitxml=results/junit.xml &amp;&amp; ls results</pre></div><div class="out"><span>Terminal output</span><pre>testpaths: tests
+created: 2/2 workers
+2 workers [7 items]
+
+.......                                                                  [100%]
+- generated xml file: results/junit.xml -
+============================== 7 passed in 10.41s ==============================
+junit.xml</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ ran for real"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> <span class="s">'dotenv/config'</span>;
+<span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { env } <span class="k">from</span> <span class="s">'./src/config/env.js'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  fullyParallel: <span class="k">true</span>,
+  forbidOnly: !!process.env.<span class="t">CI</span>,                 <span class="c">// a forgotten test.only fails the CI run</span>
+  retries: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="n">0</span>,
+  workers: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="k">undefined</span>,
+  reporter: process.env.<span class="t">CI</span>
+    ? [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }], [<span class="s">'junit'</span>, { outputFile: <span class="s">'results/junit.xml'</span> }]]
+    : [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }]],
+  use: {
+    baseURL: env.baseURL,
+    trace: <span class="s">'on-first-retry'</span>,
+    screenshot: <span class="s">'only-on-failure'</span>,
+    video: <span class="s">'retain-on-failure'</span>,
+  },
+  projects: [
+    { name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } },
+    <span class="c">// { name: 'firefox', use: { ...devices['Desktop Firefox'] } },</span>
+    <span class="c">// { name: 'webkit', use: { ...devices['Desktop Safari'] } },</span>
+  ],
+});</pre><div class="cmd"><span>Terminal</span><pre>$ CI=true npx playwright test &amp;&amp; ls results</pre></div><div class="out"><span>Terminal output</span><pre>Running 7 tests using 2 workers
+
+  ✓  2 [chromium] › tests/cart/checkout.spec.js:5:3 › checkout › places an order for a cart filled through the API @cart @smoke (1.3s)
+  ✓  1 [chromium] › tests/cart/add-to-cart.spec.js:5:3 › cart › adds two products from their cards @cart (2.5s)
+  ✓  3 [chromium] › tests/products/search.spec.js:5:3 › product search › finds the lamp by name (1.3s)
+  ✓  4 [chromium] › tests/products/search.spec.js:12:3 › product search › says so when nothing matches (782ms)
+  ✓  6 [chromium] › tests/smoke/sign-in.spec.js:5:3 › sign in › Asha signs in with the right password @smoke (895ms)
+  ✓  5 [chromium] › tests/products/search.spec.js:18:3 › product search › the notebook cannot be added (1.7s)
+  ✓  7 [chromium] › tests/smoke/sign-in.spec.js:11:3 › sign in › a wrong password shows an error @smoke (1.0s)
+
+  7 passed (8.8s)
+junit.xml</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ ran for real"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> <span class="s">'dotenv/config'</span>;
+<span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { env } <span class="k">from</span> <span class="s">'./src/config/env'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  fullyParallel: <span class="k">true</span>,
+  forbidOnly: !!process.env.<span class="t">CI</span>,                 <span class="c">// a forgotten test.only fails the CI run</span>
+  retries: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="n">0</span>,
+  workers: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="k">undefined</span>,
+  reporter: process.env.<span class="t">CI</span>
+    ? [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }], [<span class="s">'junit'</span>, { outputFile: <span class="s">'results/junit.xml'</span> }]]
+    : [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }]],
+  use: {
+    baseURL: env.baseURL,
+    trace: <span class="s">'on-first-retry'</span>,
+    screenshot: <span class="s">'only-on-failure'</span>,
+    video: <span class="s">'retain-on-failure'</span>,
+  },
+  projects: [
+    { name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } },
+    <span class="c">// { name: 'firefox', use: { ...devices['Desktop Firefox'] } },</span>
+    <span class="c">// { name: 'webkit', use: { ...devices['Desktop Safari'] } },</span>
+  ],
+});</pre><div class="cmd"><span>Terminal</span><pre>$ CI=true npx playwright test &amp;&amp; ls results</pre></div><div class="out"><span>Terminal output</span><pre>Running 7 tests using 2 workers
+
+  ✓  1 [chromium] › tests/cart/checkout.spec.ts:5:3 › checkout › places an order for a cart filled through the API @cart @smoke (1.3s)
+  ✓  2 [chromium] › tests/cart/add-to-cart.spec.ts:5:3 › cart › adds two products from their cards @cart (2.2s)
+  ✓  3 [chromium] › tests/products/search.spec.ts:5:3 › product search › finds the lamp by name (1.6s)
+  ✓  4 [chromium] › tests/products/search.spec.ts:12:3 › product search › says so when nothing matches (693ms)
+  ✓  6 [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke (1.1s)
+  ✓  5 [chromium] › tests/products/search.spec.ts:18:3 › product search › the notebook cannot be added (2.0s)
+  ✓  7 [chromium] › tests/smoke/sign-in.spec.ts:11:3 › sign in › a wrong password shows an error @smoke (1.6s)
+
+  7 passed (10.1s)
+junit.xml</pre></div></div><div class="note-out"><span>What happens</span><p>The same seven tests passed, this time with the settings a pipeline uses. <code>CI=true</code> is what GitHub Actions and GitLab set on every job, and the config reads it: two workers, two retries, forbidOnly, and a JUnit XML file next to the HTML report. pytest wrote its JUnit file with <code>--junitxml</code> and spread the tests over two processes with <code>-n 2</code> from pytest-xdist. Surefire writes its XML files for every run. Every CI server can read JUnit XML, which is why all four runs leave one behind.</p></div></div>
+<div class="codewrap tests pw4 pw-single" data-k="forbid" data-langs="ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A forgotten test.only fails the pipeline · <b class="pw-badge">💥 ran for real, fails on purpose</b></span><button type="button" class="copy">Copy</button></div><div class="pw-pane" data-l="ts" data-badge="💥 ran for real, fails on purpose"><div class="fname">📄 tests/products/sort.spec.ts</div><pre class="src" data-file="tests/products/sort.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'../../src/fixtures/index'</span>;
+
+test.describe(<span class="s">'product sort'</span>, () =&gt; {
+  test.only(<span class="s">'the cheapest product comes first'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {   <span class="c">// left behind after debugging</span>
+    <span class="k">await</span> productsPage.open();
+    <span class="k">await</span> expect(productsPage.cards.first()).toContainText(<span class="s">'Gel pen'</span>);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ CI=true npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Error: item focused with &#x27;.only&#x27; is not allowed due to the &#x27;forbidOnly&#x27; option in &#x27;../playwright.config.ts&#x27;: &quot;products/sort.spec.ts product sort the cheapest product comes first&quot;
+
+   at products/sort.spec.ts:4
+</pre></div></div><div class="note-out"><span>What happens</span><p>On a laptop, test.only would quietly run one test and report success. With <code>CI=true</code> the config turns on forbidOnly, and the whole run stops before any test starts. Without it, a pull request could pass CI having run one test out of seven.</p></div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>pytest and TestNG have no test.only, so there is nothing to forbid. In pytest the closest mistake is leaving <code>-k</code> or a single file in the CI command, so keep the command in the workflow file and review changes to it.</div></div>
+</section>
+<section class="card reveal jsec" id="github" data-say="github"><div class="sec-num">Part 3</div><h2><span class="sec-em">🐙</span><span>GitHub Actions, line by line</span></h2>
+
+<p>A GitHub Actions workflow is a YAML file in <code>.github/workflows/</code>. Each framework project from the last chapter already has one. Pick your language at the top of the page.</p>
+<div class="codewrap tests pw4" data-k="gha" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The workflow file each project keeps in .github/workflows · <b class="pw-badge">📄 Runs on GitHub, shown here</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="📄 Runs on GitHub, shown here"><div class="fname">📄 .github/workflows/tests.yml</div><pre class="src" data-file=".github/workflows/tests.yml"><span class="a">name</span>:<span class="s"> Playwright tests</span>
+<span class="a">on</span>:
+  <span class="a">push</span>:
+    <span class="a">branches</span>:<span class="s"> [main]</span>
+  <span class="a">pull_request</span>:
+
+<span class="a">jobs</span>:
+  <span class="a">test</span>:
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">timeout-minutes</span>:<span class="s"> 30</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-java@v5</span>
+        <span class="a">with</span>:
+          <span class="a">distribution</span>:<span class="s"> temurin</span>
+          <span class="a">java-version</span>:<span class="s"> "21"</span>
+          <span class="a">cache</span>:<span class="s"> maven</span>
+      - <span class="a">run</span>:<span class="s"> mvn -B test-compile</span>
+      - <span class="a">run</span>:<span class="s"> mvn -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.classpathScope=test -Dexec.args="install --with-deps chromium"</span>
+      - <span class="a">run</span>:<span class="s"> mvn -B test</span>
+        <span class="a">env</span>:
+          <span class="a">BASE_URL</span>:<span class="s"> ${{ vars.BASE_URL }}</span>
+          <span class="a">ASHA_PASSWORD</span>:<span class="s"> ${{ secrets.ASHA_PASSWORD }}</span>
+          <span class="a">RAVI_PASSWORD</span>:<span class="s"> ${{ secrets.RAVI_PASSWORD }}</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> test-results</span>
+          <span class="a">path</span>:<span class="s"> |</span>
+            target/surefire-reports/
+            traces/</pre><div class="cmd"><span>Terminal</span><pre>$ git push</pre></div></div><div class="pw-pane" data-l="py" data-badge="📄 Runs on GitHub, shown here"><div class="fname">📄 .github/workflows/tests.yml</div><pre class="src" data-file=".github/workflows/tests.yml"><span class="a">name</span>:<span class="s"> Playwright tests</span>
+<span class="a">on</span>:
+  <span class="a">push</span>:
+    <span class="a">branches</span>:<span class="s"> [main]</span>
+  <span class="a">pull_request</span>:
+
+<span class="a">jobs</span>:
+  <span class="a">test</span>:
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">timeout-minutes</span>:<span class="s"> 30</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-python@v6</span>
+        <span class="a">with</span>:
+          <span class="a">python-version</span>:<span class="s"> "3.13"</span>
+      - <span class="a">run</span>:<span class="s"> pip install -r requirements.txt</span>
+      - <span class="a">run</span>:<span class="s"> python -m playwright install --with-deps chromium</span>
+      - <span class="a">run</span>:<span class="s"> pytest -n 2 --junitxml=results/junit.xml</span>
+        <span class="a">env</span>:
+          <span class="a">BASE_URL</span>:<span class="s"> ${{ vars.BASE_URL }}</span>
+          <span class="a">ASHA_PASSWORD</span>:<span class="s"> ${{ secrets.ASHA_PASSWORD }}</span>
+          <span class="a">RAVI_PASSWORD</span>:<span class="s"> ${{ secrets.RAVI_PASSWORD }}</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> test-results</span>
+          <span class="a">path</span>:<span class="s"> |</span>
+            results/
+            test-results/</pre><div class="cmd"><span>Terminal</span><pre>$ git push</pre></div></div><div class="pw-pane" data-l="js" data-badge="📄 Runs on GitHub, shown here"><div class="fname">📄 .github/workflows/playwright.yml</div><pre class="src" data-file=".github/workflows/playwright.yml"><span class="a">name</span>:<span class="s"> Playwright tests</span>
+<span class="a">on</span>:
+  <span class="a">push</span>:
+    <span class="a">branches</span>:<span class="s"> [main]</span>
+  <span class="a">pull_request</span>:
+
+<span class="a">jobs</span>:
+  <span class="a">test</span>:
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">timeout-minutes</span>:<span class="s"> 30</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-node@v6</span>
+        <span class="a">with</span>:
+          <span class="a">node-version</span>:<span class="s"> 22</span>
+      - <span class="a">run</span>:<span class="s"> npm ci</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright install --with-deps chromium</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright test</span>
+        <span class="a">env</span>:
+          <span class="a">BASE_URL</span>:<span class="s"> ${{ vars.BASE_URL }}</span>
+          <span class="a">ASHA_PASSWORD</span>:<span class="s"> ${{ secrets.ASHA_PASSWORD }}</span>
+          <span class="a">RAVI_PASSWORD</span>:<span class="s"> ${{ secrets.RAVI_PASSWORD }}</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> playwright-report</span>
+          <span class="a">path</span>:<span class="s"> playwright-report/</span>
+          <span class="a">retention-days</span>:<span class="s"> 14</span></pre><div class="cmd"><span>Terminal</span><pre>$ git push</pre></div></div><div class="pw-pane" data-l="ts" data-badge="📄 Runs on GitHub, shown here"><div class="fname">📄 .github/workflows/playwright.yml</div><pre class="src" data-file=".github/workflows/playwright.yml"><span class="a">name</span>:<span class="s"> Playwright tests</span>
+<span class="a">on</span>:
+  <span class="a">push</span>:
+    <span class="a">branches</span>:<span class="s"> [main]</span>
+  <span class="a">pull_request</span>:
+
+<span class="a">jobs</span>:
+  <span class="a">test</span>:
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">timeout-minutes</span>:<span class="s"> 30</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-node@v6</span>
+        <span class="a">with</span>:
+          <span class="a">node-version</span>:<span class="s"> 22</span>
+      - <span class="a">run</span>:<span class="s"> npm ci</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright install --with-deps chromium</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright test</span>
+        <span class="a">env</span>:
+          <span class="a">BASE_URL</span>:<span class="s"> ${{ vars.BASE_URL }}</span>
+          <span class="a">ASHA_PASSWORD</span>:<span class="s"> ${{ secrets.ASHA_PASSWORD }}</span>
+          <span class="a">RAVI_PASSWORD</span>:<span class="s"> ${{ secrets.RAVI_PASSWORD }}</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> playwright-report</span>
+          <span class="a">path</span>:<span class="s"> playwright-report/</span>
+          <span class="a">retention-days</span>:<span class="s"> 14</span></pre><div class="cmd"><span>Terminal</span><pre>$ git push</pre></div></div><div class="note-out"><span>What happens</span><p>These are the real workflow files of the four framework projects. GitHub runs them on every push to main and on every pull request. The steps are always the same five: get the code, install the language, install the packages, install the browser with its system libraries, run the tests, and keep the results even when tests fail.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Line</th><th>What it does</th></tr><tr><td>on: push / pull_request</td><td>when the workflow runs</td></tr><tr><td>runs-on: ubuntu-latest</td><td>a fresh Linux machine from GitHub</td></tr><tr><td>timeout-minutes: 30</td><td>stops a job that hangs. Keep it above any global timeout in the test config</td></tr><tr><td>actions/checkout</td><td>gets the code of the commit</td></tr><tr><td>setup-node, setup-python, setup-java</td><td>installs the language version</td></tr><tr><td>npm ci, pip install -r, mvn</td><td>installs the exact package versions from the lock or requirements file</td></tr><tr><td>playwright install --with-deps chromium</td><td>downloads Chromium and installs the Linux libraries it needs</td></tr><tr><td>env: with secrets. and vars.</td><td>hands settings and passwords to the tests</td></tr><tr><td>if: ${{ !cancelled() }}</td><td>uploads the results even when tests failed, which is when you need them most</td></tr><tr><td>upload-artifact</td><td>keeps the report as a download on the run page</td></tr></table></div>
+<div class="tw"><table class="jt "><tr><th>Trigger</th><th>Use it for</th></tr><tr><td>push to main</td><td>checking what was merged</td></tr><tr><td>pull_request</td><td>checking a change before it is merged</td></tr><tr><td>schedule with cron</td><td>a nightly run of the full suite, for example in every browser</td></tr><tr><td>workflow_dispatch</td><td>a Run workflow button for runs by hand</td></tr><tr><td>deployment_status</td><td>testing a preview or staging deployment once it is ready</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>In the repository settings, a branch rule can make this workflow a required check. Then a pull request cannot be merged while its tests are red.</div></div>
+</section>
+<section class="card reveal jsec" id="secrets" data-say="secrets"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔐</span><span>Secrets and settings per environment</span></h2>
+
+<p>A pipeline needs the same settings as your laptop: the address of the app and the test passwords. They come from the CI settings, never from the code.</p>
+<div class="tw"><table class="jt "><tr><th>Kind</th><th>In GitHub</th><th>In the workflow</th><th>Seen in logs</th></tr><tr><td>a setting such as BASE_URL</td><td>Settings, Secrets and variables, Actions, Variables</td><td>${{ vars.BASE_URL }}</td><td>yes</td></tr><tr><td>a password</td><td>the same page, Secrets</td><td>${{ secrets.ASHA_PASSWORD }}</td><td>no, GitHub masks it as ***</td></tr></table></div>
+<p>The framework reads both from the environment, with a local default. Here is what happens when the secret is wrong:</p>
+<div class="codewrap tests pw4" data-k="secret" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">What a run looks like when a secret is wrong · <b class="pw-badge">💥 ran for real, fails on purpose</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="💥 ran for real, fails on purpose"><div class="fname">📄 src/main/java/com/brainy/shop/data/Users.java</div><pre class="src" data-file="src/main/java/com/brainy/shop/data/Users.java"><span class="k">package</span> com.brainy.shop.data;
+
+<span class="c">// Test accounts. Real projects read passwords from CI secrets, never from the repository.</span>
+<span class="k">public</span> <span class="k">final</span> <span class="k">class</span> <span class="t">Users</span> {
+  <span class="k">public</span> <span class="k">static</span> <span class="k">final</span> <span class="t">User</span> <span class="t">ASHA</span> = <span class="k">new</span> <span class="t">User</span>(<span class="s">"asha@shop.example"</span>, secret(<span class="s">"ASHA_PASSWORD"</span>, <span class="s">"s3cret"</span>), <span class="s">"Asha"</span>);
+  <span class="k">public</span> <span class="k">static</span> <span class="k">final</span> <span class="t">User</span> <span class="t">RAVI</span> = <span class="k">new</span> <span class="t">User</span>(<span class="s">"ravi@shop.example"</span>, secret(<span class="s">"RAVI_PASSWORD"</span>, <span class="s">"admin123"</span>), <span class="s">"Ravi"</span>);
+
+  <span class="k">private</span> <span class="t">Users</span>() {}
+
+  <span class="k">private</span> <span class="k">static</span> <span class="t">String</span> secret(<span class="t">String</span> name, <span class="t">String</span> fallback) {
+    <span class="t">String</span> value = <span class="t">System</span>.getenv(name);
+    <span class="k">return</span> value == <span class="k">null</span> || value.isEmpty() ? fallback : value;
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ ASHA_PASSWORD=wrong mvn test -Dtest=&quot;com.brainy.shop.tests.smoke.*Test&quot;</pre></div><div class="err"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.shop.tests.smoke.SignInTest
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 8.614 s &lt;&lt;&lt; FAILURE! -- in com.brainy.shop.tests.smoke.SignInTest
+[ERROR] com.brainy.shop.tests.smoke.SignInTest.ashaSignsInWithTheRightPassword -- Time elapsed: 5.250 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: 
+Locator expected to have text
+Expected: Hello, Asha
+Received: 
+
+Call log:
+  - Assert &quot;hasText&quot; getByRole(AriaRole.BANNER).locator(&quot;#hello&quot;) with timeout 5000ms
+  - waiting for getByRole(AriaRole.BANNER).locator(&quot;#hello&quot;)
+    14 × locator resolved to &lt;span id=&quot;hello&quot;&gt;&lt;/span&gt;
+       - unexpected value &quot;&quot;
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   SignInTest.ashaSignsInWithTheRightPassword:15 Locator expected to have text
+Expected: Hello, Asha
+Received: 
+
+Call log:
+  - Assert &quot;hasText&quot; getByRole(AriaRole.BANNER).locator(&quot;#hello&quot;) with timeout 5000ms
+  - waiting for getByRole(AriaRole.BANNER).locator(&quot;#hello&quot;)
+    14 × locator resolved to &lt;span id=&quot;hello&quot;&gt;&lt;/span&gt;
+       - unexpected value &quot;&quot;
+[INFO] 
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE</pre></div></div><div class="pw-pane" data-l="py" data-badge="💥 ran for real, fails on purpose"><div class="fname">📄 framework/data/users.py</div><pre class="src" data-file="framework/data/users.py"><span class="k">import</span> os
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+
+
+<span class="a">@dataclass</span>(frozen=<span class="k">True</span>)
+<span class="k">class</span> <span class="t">User</span>:
+    email: str
+    password: str
+    name: str
+
+
+<span class="c"># Test accounts. Real projects read passwords from CI secrets, never from the repository.</span>
+<span class="t">ASHA</span> = <span class="t">User</span>(<span class="s">"asha@shop.example"</span>, os.getenv(<span class="s">"ASHA_PASSWORD"</span>) <span class="k">or</span> <span class="s">"s3cret"</span>, <span class="s">"Asha"</span>)
+<span class="t">RAVI</span> = <span class="t">User</span>(<span class="s">"ravi@shop.example"</span>, os.getenv(<span class="s">"RAVI_PASSWORD"</span>) <span class="k">or</span> <span class="s">"admin123"</span>, <span class="s">"Ravi"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ ASHA_PASSWORD=wrong pytest tests/smoke -q --tb=line</pre></div><div class="err"><span>Terminal output</span><pre>F.                                                                       [100%]
+=================================== FAILURES ===================================
+E   AssertionError: Locator expected to have text &#x27;Hello, Asha&#x27;
+    Actual value:  
+    Call log:
+      - Expect &quot;to_have_text&quot; get_by_role(&quot;banner&quot;).locator(&quot;#hello&quot;) with timeout 5000ms
+      - waiting for get_by_role(&quot;banner&quot;).locator(&quot;#hello&quot;)
+        13 × locator resolved to &lt;span id=&quot;hello&quot;&gt;&lt;/span&gt;
+           - unexpected value &quot;&quot;
+    
+    Aria snapshot:
+    - banner:
+      - link &quot;🛍️ Brainy Shop&quot;:
+        - /url: /
+      - navigation &quot;Main&quot;:
+        - link &quot;Products&quot;:
+          - /url: /products
+        - link &quot;Feedback&quot;:
+          - /url: /forms
+        - link &quot;Widgets&quot;:
+          - /url: /widgets
+        - link &quot;Orders&quot;:
+          - /url: /orders
+      - link &quot;Cart&quot;:
+        - /url: /cart
+        - text: 🛒 0
+      - link &quot;Sign in&quot;:
+        - /url: /login
+    - main:
+      - heading &quot;Sign in&quot; [level=1]
+      - form &quot;Sign in&quot;:
+        - text: Email
+        - textbox &quot;Email&quot;: asha@shop.example
+        - text: Password
+        - textbox &quot;Password&quot;: wrong
+        - checkbox &quot;Remember me&quot;
+        - text: Remember me
+        - button &quot;Sign in&quot;
+        - alert: Wrong email or password
+tests/smoke/test_sign_in.py:16: AssertionError: Locator expected to have text &#x27;Hello, Asha&#x27;
+=========================== short test summary info ============================
+FAILED tests/smoke/test_sign_in.py::test_asha_signs_in_with_the_right_password[chromium] - AssertionError: Locator expected to have text &#x27;Hello, Asha&#x27;
+1 failed, 1 passed in 8.26s</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 ran for real, fails on purpose"><div class="fname">📄 src/data/users.js</div><pre class="src" data-file="src/data/users.js"><span class="c">// Test accounts. Real projects read passwords from CI secrets, never from the repository.</span>
+<span class="k">export</span> <span class="k">const</span> users = {
+  asha: { email: <span class="s">'asha@shop.example'</span>, password: process.env.<span class="t">ASHA_PASSWORD</span> || <span class="s">'s3cret'</span>, name: <span class="s">'Asha'</span> },
+  ravi: { email: <span class="s">'ravi@shop.example'</span>, password: process.env.<span class="t">RAVI_PASSWORD</span> || <span class="s">'admin123'</span>, name: <span class="s">'Ravi'</span> },
+};</pre><div class="cmd"><span>Terminal</span><pre>$ ASHA_PASSWORD=wrong npx playwright test tests/smoke --reporter=line</pre></div><div class="err"><span>Terminal output</span><pre>Running 2 tests using 2 workers
+
+[1/2] [chromium] › tests/smoke/sign-in.spec.js:11:3 › sign in › a wrong password shows an error @smoke
+[2/2] [chromium] › tests/smoke/sign-in.spec.js:5:3 › sign in › Asha signs in with the right password @smoke
+  1) [chromium] › tests/smoke/sign-in.spec.js:5:3 › sign in › Asha signs in with the right password @smoke 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;banner&#x27;).locator(&#x27;#hello&#x27;)
+    Expected: &quot;Hello, Asha&quot;
+    Received: &quot;&quot;
+    Timeout:  5000ms
+
+    Call log:
+      - Expect &quot;toHaveText&quot; getByRole(&#x27;banner&#x27;).locator(&#x27;#hello&#x27;) with timeout 5000ms
+      - waiting for getByRole(&#x27;banner&#x27;).locator(&#x27;#hello&#x27;)
+        13 × locator resolved to &lt;span id=&quot;hello&quot;&gt;&lt;/span&gt;
+           - unexpected value &quot;&quot;
+        at tests/smoke/sign-in.spec.js:8:48
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/smoke-sign-in-sign-in-Asha-signs-in-with-the-right-password-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/smoke-sign-in-sign-in-Asha-signs-in-with-the-right-password-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [chromium] › tests/smoke/sign-in.spec.js:5:3 › sign in › Asha signs in with the right password @smoke 
+  1 passed (8.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 ran for real, fails on purpose"><div class="fname">📄 src/data/users.ts</div><pre class="src" data-file="src/data/users.ts"><span class="k">export</span> <span class="k">type</span> <span class="t">User</span> = { email: <span class="k">string</span>; password: <span class="k">string</span>; name: <span class="k">string</span> };
+
+<span class="c">// Test accounts. Real projects read passwords from CI secrets, never from the repository.</span>
+<span class="k">export</span> <span class="k">const</span> users: { asha: <span class="t">User</span>; ravi: <span class="t">User</span> } = {
+  asha: { email: <span class="s">'asha@shop.example'</span>, password: process.env.<span class="t">ASHA_PASSWORD</span> || <span class="s">'s3cret'</span>, name: <span class="s">'Asha'</span> },
+  ravi: { email: <span class="s">'ravi@shop.example'</span>, password: process.env.<span class="t">RAVI_PASSWORD</span> || <span class="s">'admin123'</span>, name: <span class="s">'Ravi'</span> },
+};</pre><div class="cmd"><span>Terminal</span><pre>$ ASHA_PASSWORD=wrong npx playwright test tests/smoke --reporter=line</pre></div><div class="err"><span>Terminal output</span><pre>Running 2 tests using 2 workers
+
+[1/2] [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke
+[2/2] [chromium] › tests/smoke/sign-in.spec.ts:11:3 › sign in › a wrong password shows an error @smoke
+  1) [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;banner&#x27;).locator(&#x27;#hello&#x27;)
+    Expected: &quot;Hello, Asha&quot;
+    Received: &quot;&quot;
+    Timeout:  5000ms
+
+    Call log:
+      - Expect &quot;toHaveText&quot; getByRole(&#x27;banner&#x27;).locator(&#x27;#hello&#x27;) with timeout 5000ms
+      - waiting for getByRole(&#x27;banner&#x27;).locator(&#x27;#hello&#x27;)
+        14 × locator resolved to &lt;span id=&quot;hello&quot;&gt;&lt;/span&gt;
+           - unexpected value &quot;&quot;
+        at tests/smoke/sign-in.spec.ts:8:48
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/smoke-sign-in-sign-in-Asha-signs-in-with-the-right-password-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/smoke-sign-in-sign-in-Asha-signs-in-with-the-right-password-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke 
+  1 passed (8.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>The password came from the environment variable, so the framework signed in with the wrong one and the greeting never appeared. The wrong password test still passed, because it sets its own password. This is exactly what a team sees when a secret is missing or out of date in the CI settings: the sign in tests fail and everything else is fine. The fix is in the CI settings, not in the code.</p></div></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Secrets are not given to workflows that run for pull requests from forks, so a fork cannot read your passwords. Tests that need them are skipped or fail there, which is expected.</div></div>
+</section>
+<section class="card reveal jsec" id="shards" data-say="shards"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧩</span><span>Shards with a matrix, and one merged report</span></h2>
+
+<p>A <b>matrix</b> starts the same job several times with different values. Give each copy a different shard and the suite runs on several machines at once. For Playwright Test, each shard saves a <b>blob report</b>, and a last job merges them into one HTML report.</p>
+<div class="codewrap tests pw4" data-k="matrix" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Each matrix job runs its own part of the suite · <b class="pw-badge">✅ ran for real</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ ran for real"><div class="fname">📄 .github/workflows/tests.yml</div><pre class="src" data-file=".github/workflows/tests.yml"><span class="a">name</span>:<span class="s"> Playwright tests (by feature)</span>
+<span class="a">on</span>:
+  <span class="a">push</span>:
+    <span class="a">branches</span>:<span class="s"> [main]</span>
+  <span class="a">pull_request</span>:
+
+<span class="a">jobs</span>:
+  <span class="a">test</span>:
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">strategy</span>:
+      <span class="a">fail-fast</span>:<span class="s"> false</span>
+      <span class="a">matrix</span>:
+        <span class="a">feature</span>:<span class="s"> [smoke, products, cart]</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-java@v5</span>
+        <span class="a">with</span>:
+          <span class="a">distribution</span>:<span class="s"> temurin</span>
+          <span class="a">java-version</span>:<span class="s"> "21"</span>
+          <span class="a">cache</span>:<span class="s"> maven</span>
+      - <span class="a">run</span>:<span class="s"> mvn -B test-compile</span>
+      - <span class="a">run</span>:<span class="s"> mvn -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.classpathScope=test -Dexec.args="install --with-deps chromium"</span>
+      - <span class="a">run</span>:<span class="s"> mvn -B test -Dtest="com.brainy.shop.tests.${{ matrix.feature }}.*Test"</span>
+        <span class="a">env</span>:
+          <span class="a">BASE_URL</span>:<span class="s"> ${{ vars.BASE_URL }}</span>
+          <span class="a">ASHA_PASSWORD</span>:<span class="s"> ${{ secrets.ASHA_PASSWORD }}</span>
+          <span class="a">RAVI_PASSWORD</span>:<span class="s"> ${{ secrets.RAVI_PASSWORD }}</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> surefire-${{ matrix.feature }}</span>
+          <span class="a">path</span>:<span class="s"> target/surefire-reports/</span></pre><div class="cmd"><span>Terminal</span><pre>$ for f in smoke products cart; do echo &quot;== job $f&quot;; mvn test -Dtest=&quot;com.brainy.shop.tests.$f.*Test&quot;; done</pre></div><div class="out"><span>Terminal output</span><pre>== job smoke
+Running com.brainy.shop.tests.smoke.SignInTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+== job products
+Running com.brainy.shop.tests.products.SearchTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+== job cart
+Running TestSuite
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ ran for real"><div class="fname">📄 .github/workflows/tests.yml</div><pre class="src" data-file=".github/workflows/tests.yml"><span class="a">name</span>:<span class="s"> Playwright tests (split)</span>
+<span class="a">on</span>:
+  <span class="a">push</span>:
+    <span class="a">branches</span>:<span class="s"> [main]</span>
+  <span class="a">pull_request</span>:
+
+<span class="a">jobs</span>:
+  <span class="a">test</span>:
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">strategy</span>:
+      <span class="a">fail-fast</span>:<span class="s"> false</span>
+      <span class="a">matrix</span>:
+        <span class="a">group</span>:<span class="s"> [1, 2]</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-python@v6</span>
+        <span class="a">with</span>:
+          <span class="a">python-version</span>:<span class="s"> "3.13"</span>
+      - <span class="a">run</span>:<span class="s"> pip install -r requirements.txt</span>
+      - <span class="a">run</span>:<span class="s"> python -m playwright install --with-deps chromium</span>
+      - <span class="a">run</span>:<span class="s"> pytest --splits 2 --group ${{ matrix.group }} --junitxml=results/junit-${{ matrix.group }}.xml</span>
+        <span class="a">env</span>:
+          <span class="a">BASE_URL</span>:<span class="s"> ${{ vars.BASE_URL }}</span>
+          <span class="a">ASHA_PASSWORD</span>:<span class="s"> ${{ secrets.ASHA_PASSWORD }}</span>
+          <span class="a">RAVI_PASSWORD</span>:<span class="s"> ${{ secrets.RAVI_PASSWORD }}</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> results-${{ matrix.group }}</span>
+          <span class="a">path</span>:<span class="s"> results/</span></pre><div class="cmd"><span>Terminal</span><pre>$ for i in 1 2; do echo &quot;== job group $i of 2&quot;; pytest --splits 2 --group $i -q; done</pre></div><div class="out"><span>Terminal output</span><pre>== job group 1 of 2
+
+[pytest-split] No test durations found. Pytest-split will split tests evenly when no durations are found. 
+[pytest-split] You can expect better results in consequent runs, when test timings have been documented.
+
+[pytest-split] Splitting tests with algorithm: duration_based_chunks
+[pytest-split] Running group 1/2 (estimated duration: 4.00s)
+
+....                                                                     [100%]
+4 passed, 3 deselected in 7.32s
+== job group 2 of 2
+
+[pytest-split] No test durations found. Pytest-split will split tests evenly when no durations are found. 
+[pytest-split] You can expect better results in consequent runs, when test timings have been documented.
+
+[pytest-split] Splitting tests with algorithm: duration_based_chunks
+[pytest-split] Running group 2/2 (estimated duration: 3.00s)
+
+...                                                                      [100%]
+3 passed, 4 deselected in 4.41s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ ran for real"><div class="fname">📄 .github/workflows/playwright.yml</div><pre class="src" data-file=".github/workflows/playwright.yml"><span class="a">name</span>:<span class="s"> Playwright tests (sharded)</span>
+<span class="a">on</span>:
+  <span class="a">push</span>:
+    <span class="a">branches</span>:<span class="s"> [main]</span>
+  <span class="a">pull_request</span>:
+
+<span class="a">jobs</span>:
+  <span class="a">test</span>:
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">strategy</span>:
+      <span class="a">fail-fast</span>:<span class="s"> false                # let every shard finish, even if one fails</span>
+      <span class="a">matrix</span>:
+        <span class="a">shardIndex</span>:<span class="s"> [1, 2]</span>
+        <span class="a">shardTotal</span>:<span class="s"> [2]</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-node@v6</span>
+        <span class="a">with</span>:
+          <span class="a">node-version</span>:<span class="s"> 22</span>
+      - <span class="a">run</span>:<span class="s"> npm ci</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright install --with-deps chromium</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=blob</span>
+        <span class="a">env</span>:
+          <span class="a">BASE_URL</span>:<span class="s"> ${{ vars.BASE_URL }}</span>
+          <span class="a">ASHA_PASSWORD</span>:<span class="s"> ${{ secrets.ASHA_PASSWORD }}</span>
+          <span class="a">RAVI_PASSWORD</span>:<span class="s"> ${{ secrets.RAVI_PASSWORD }}</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> blob-report-${{ matrix.shardIndex }}</span>
+          <span class="a">path</span>:<span class="s"> blob-report</span>
+          <span class="a">retention-days</span>:<span class="s"> 1</span>
+
+  <span class="a">merge-reports</span>:
+    <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}           # merge even when a shard failed</span>
+    <span class="a">needs</span>:<span class="s"> [test]</span>
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-node@v6</span>
+        <span class="a">with</span>:
+          <span class="a">node-version</span>:<span class="s"> 22</span>
+      - <span class="a">run</span>:<span class="s"> npm ci</span>
+      - <span class="a">uses</span>:<span class="s"> actions/download-artifact@v5</span>
+        <span class="a">with</span>:
+          <span class="a">path</span>:<span class="s"> all-blob-reports</span>
+          <span class="a">pattern</span>:<span class="s"> blob-report-*</span>
+          <span class="a">merge-multiple</span>:<span class="s"> true</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright merge-reports --reporter html ./all-blob-reports</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> html-report--attempt-${{ github.run_attempt }}</span>
+          <span class="a">path</span>:<span class="s"> playwright-report</span>
+          <span class="a">retention-days</span>:<span class="s"> 14</span></pre><div class="cmd"><span>Terminal</span><pre>$ for i in 1 2; do echo &quot;== job shard $i of 2&quot;; npx playwright test --shard=$i/2 --reporter=blob; mkdir -p all-blob-reports; mv blob-report/*.zip all-blob-reports/; done; echo &quot;== job merge-reports&quot;; npx playwright merge-reports --reporter=list ./all-blob-reports</pre></div><div class="out"><span>Terminal output</span><pre>== job shard 1 of 2
+
+Running 4 tests using 2 workers, shard 1 of 2
+
+[1/4] [chromium] › tests/cart/checkout.spec.js:5:3 › checkout › places an order for a cart filled through the API @cart @smoke
+[2/4] [chromium] › tests/cart/add-to-cart.spec.js:5:3 › cart › adds two products from their cards @cart
+[3/4] [chromium] › tests/products/search.spec.js:5:3 › product search › finds the lamp by name
+[4/4] [chromium] › tests/products/search.spec.js:12:3 › product search › says so when nothing matches
+  4 passed (5.9s)
+== job shard 2 of 2
+
+Running 3 tests using 2 workers, shard 2 of 2
+
+[1/3] [chromium] › tests/smoke/sign-in.spec.js:5:3 › sign in › Asha signs in with the right password @smoke
+[2/3] [chromium] › tests/products/search.spec.js:18:3 › product search › the notebook cannot be added
+[3/3] [chromium] › tests/smoke/sign-in.spec.js:11:3 › sign in › a wrong password shows an error @smoke
+  3 passed (6.2s)
+== job merge-reports
+
+Running 7 tests using 4 workers
+
+  ✓  1 [chromium] › tests/cart/checkout.spec.js:5:3 › checkout › places an order for a cart filled through the API @cart @smoke (1.6s)
+  ✓  2 [chromium] › tests/cart/add-to-cart.spec.js:5:3 › cart › adds two products from their cards @cart (2.2s)
+  ✓  4 [chromium] › tests/products/search.spec.js:12:3 › product search › says so when nothing matches (434ms)
+  ✓  3 [chromium] › tests/products/search.spec.js:5:3 › product search › finds the lamp by name (1.6s)
+  ✓  5 [chromium] › tests/smoke/sign-in.spec.js:5:3 › sign in › Asha signs in with the right password @smoke (1.6s)
+  ✓  6 [chromium] › tests/products/search.spec.js:18:3 › product search › the notebook cannot be added (2.1s)
+  ✓  7 [chromium] › tests/smoke/sign-in.spec.js:11:3 › sign in › a wrong password shows an error @smoke (1.5s)
+
+  7 passed (14.3s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ ran for real"><div class="fname">📄 .github/workflows/playwright.yml</div><pre class="src" data-file=".github/workflows/playwright.yml"><span class="a">name</span>:<span class="s"> Playwright tests (sharded)</span>
+<span class="a">on</span>:
+  <span class="a">push</span>:
+    <span class="a">branches</span>:<span class="s"> [main]</span>
+  <span class="a">pull_request</span>:
+
+<span class="a">jobs</span>:
+  <span class="a">test</span>:
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">strategy</span>:
+      <span class="a">fail-fast</span>:<span class="s"> false                # let every shard finish, even if one fails</span>
+      <span class="a">matrix</span>:
+        <span class="a">shardIndex</span>:<span class="s"> [1, 2]</span>
+        <span class="a">shardTotal</span>:<span class="s"> [2]</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-node@v6</span>
+        <span class="a">with</span>:
+          <span class="a">node-version</span>:<span class="s"> 22</span>
+      - <span class="a">run</span>:<span class="s"> npm ci</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright install --with-deps chromium</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=blob</span>
+        <span class="a">env</span>:
+          <span class="a">BASE_URL</span>:<span class="s"> ${{ vars.BASE_URL }}</span>
+          <span class="a">ASHA_PASSWORD</span>:<span class="s"> ${{ secrets.ASHA_PASSWORD }}</span>
+          <span class="a">RAVI_PASSWORD</span>:<span class="s"> ${{ secrets.RAVI_PASSWORD }}</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> blob-report-${{ matrix.shardIndex }}</span>
+          <span class="a">path</span>:<span class="s"> blob-report</span>
+          <span class="a">retention-days</span>:<span class="s"> 1</span>
+
+  <span class="a">merge-reports</span>:
+    <span class="a">if</span>:<span class="s"> ${{ !cancelled() }}           # merge even when a shard failed</span>
+    <span class="a">needs</span>:<span class="s"> [test]</span>
+    <span class="a">runs-on</span>:<span class="s"> ubuntu-latest</span>
+    <span class="a">steps</span>:
+      - <span class="a">uses</span>:<span class="s"> actions/checkout@v6</span>
+      - <span class="a">uses</span>:<span class="s"> actions/setup-node@v6</span>
+        <span class="a">with</span>:
+          <span class="a">node-version</span>:<span class="s"> 22</span>
+      - <span class="a">run</span>:<span class="s"> npm ci</span>
+      - <span class="a">uses</span>:<span class="s"> actions/download-artifact@v5</span>
+        <span class="a">with</span>:
+          <span class="a">path</span>:<span class="s"> all-blob-reports</span>
+          <span class="a">pattern</span>:<span class="s"> blob-report-*</span>
+          <span class="a">merge-multiple</span>:<span class="s"> true</span>
+      - <span class="a">run</span>:<span class="s"> npx playwright merge-reports --reporter html ./all-blob-reports</span>
+      - <span class="a">uses</span>:<span class="s"> actions/upload-artifact@v5</span>
+        <span class="a">with</span>:
+          <span class="a">name</span>:<span class="s"> html-report--attempt-${{ github.run_attempt }}</span>
+          <span class="a">path</span>:<span class="s"> playwright-report</span>
+          <span class="a">retention-days</span>:<span class="s"> 14</span></pre><div class="cmd"><span>Terminal</span><pre>$ for i in 1 2; do echo &quot;== job shard $i of 2&quot;; npx playwright test --shard=$i/2 --reporter=blob; mkdir -p all-blob-reports; mv blob-report/*.zip all-blob-reports/; done; echo &quot;== job merge-reports&quot;; npx playwright merge-reports --reporter=list ./all-blob-reports</pre></div><div class="out"><span>Terminal output</span><pre>== job shard 1 of 2
+
+Running 4 tests using 2 workers, shard 1 of 2
+
+[1/4] [chromium] › tests/cart/checkout.spec.ts:5:3 › checkout › places an order for a cart filled through the API @cart @smoke
+[2/4] [chromium] › tests/cart/add-to-cart.spec.ts:5:3 › cart › adds two products from their cards @cart
+[3/4] [chromium] › tests/products/search.spec.ts:5:3 › product search › finds the lamp by name
+[4/4] [chromium] › tests/products/search.spec.ts:12:3 › product search › says so when nothing matches
+  4 passed (6.6s)
+== job shard 2 of 2
+
+Running 3 tests using 2 workers, shard 2 of 2
+
+[1/3] [chromium] › tests/products/search.spec.ts:18:3 › product search › the notebook cannot be added
+[2/3] [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke
+[3/3] [chromium] › tests/smoke/sign-in.spec.ts:11:3 › sign in › a wrong password shows an error @smoke
+  3 passed (4.9s)
+== job merge-reports
+
+Running 7 tests using 4 workers
+
+  ✓  1 [chromium] › tests/cart/checkout.spec.ts:5:3 › checkout › places an order for a cart filled through the API @cart @smoke (2.2s)
+  ✓  2 [chromium] › tests/cart/add-to-cart.spec.ts:5:3 › cart › adds two products from their cards @cart (2.6s)
+  ✓  3 [chromium] › tests/products/search.spec.ts:5:3 › product search › finds the lamp by name (1.3s)
+  ✓  4 [chromium] › tests/products/search.spec.ts:12:3 › product search › says so when nothing matches (811ms)
+  ✓  6 [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke (1.2s)
+  ✓  5 [chromium] › tests/products/search.spec.ts:18:3 › product search › the notebook cannot be added (1.9s)
+  ✓  7 [chromium] › tests/smoke/sign-in.spec.ts:11:3 › sign in › a wrong password shows an error @smoke (962ms)
+
+  7 passed (14.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>The loop does here, one after another, what the matrix does on GitHub at the same time on separate machines. Playwright Test split the seven tests into four and three, each shard saved a blob report, and merge-reports joined them into one result for the whole run. pytest-split split the tests into two groups. Maven has no shard option, so the Java matrix runs one test package per job with <code>-Dtest</code>, which also overrides the suite file.</p></div></div>
+<div class="tw"><table class="jt "><tr><th></th><th>Playwright Test</th><th>pytest</th><th>Maven with TestNG</th></tr><tr><td>split the suite</td><td>--shard=1/2</td><td>--splits 2 --group 1 (pytest-split)</td><td>one package or suite per job</td></tr><tr><td>balance</td><td>by test count, with fullyParallel</td><td>by stored durations with --store-durations</td><td>by hand</td></tr><tr><td>one report</td><td>blob reports, then merge-reports</td><td>one JUnit file per job</td><td>one Surefire folder per job</td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>fail-fast: false keeps the other shards running when one fails, so you see every failure in one run. The merge job uses if: !cancelled() for the same reason.</div></div>
+</section>
+<section class="card reveal jsec" id="docker" data-say="docker"><div class="sec-num">Part 6</div><h2><span class="sec-em">🐳</span><span>The official Docker images</span></h2>
+
+<p>Microsoft publishes Docker images with the browsers and all their system libraries already installed. A job that runs inside one skips the browser install step, and every run uses exactly the same machine.</p>
+<div class="tw"><table class="jt "><tr><th>Language</th><th>Image</th></tr><tr><td>JavaScript and TypeScript</td><td>mcr.microsoft.com/playwright:v1.63.0-noble</td></tr><tr><td>Python</td><td>mcr.microsoft.com/playwright/python:v1.63.0-noble</td></tr><tr><td>Java</td><td>mcr.microsoft.com/playwright/java:v1.63.0-noble</td></tr><tr><td>.NET</td><td>mcr.microsoft.com/playwright/dotnet:v1.63.0-noble</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="docker" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The framework inside the official Playwright image · <b class="pw-badge">✅ ran for real</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ ran for real"><div class="fname">📄 pom.xml</div><pre class="src" data-file="pom.xml">&lt;<span class="k">project</span> <span class="a">xmlns</span>=<span class="s">"http://maven.apache.org/POM/4.0.0"</span>&gt;
+  &lt;<span class="k">modelVersion</span>&gt;4.0.0&lt;/<span class="k">modelVersion</span>&gt;
+  &lt;<span class="k">groupId</span>&gt;com.brainy&lt;/<span class="k">groupId</span>&gt;
+  &lt;<span class="k">artifactId</span>&gt;shop-tests&lt;/<span class="k">artifactId</span>&gt;
+  &lt;<span class="k">version</span>&gt;1.0.0&lt;/<span class="k">version</span>&gt;
+
+  &lt;<span class="k">properties</span>&gt;
+    &lt;<span class="k">maven</span><span class="a">.compiler.release</span>&gt;21&lt;/<span class="k">maven</span><span class="a">.compiler.release</span>&gt;
+    &lt;<span class="k">project</span><span class="a">.build.sourceEncoding</span>&gt;UTF-8&lt;/<span class="k">project</span><span class="a">.build.sourceEncoding</span>&gt;
+    &lt;<span class="k">suite</span>&gt;testng.xml&lt;/<span class="k">suite</span>&gt;                 <span class="c">&lt;!-- mvn test -Dsuite=testng-smoke.xml runs another suite --&gt;</span>
+  &lt;/<span class="k">properties</span>&gt;
+
+  &lt;<span class="k">dependencies</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;com.microsoft.playwright&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;playwright&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;1.63.0&lt;/<span class="k">version</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;org.testng&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;testng&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;7.11.0&lt;/<span class="k">version</span>&gt;
+      &lt;<span class="k">scope</span>&gt;test&lt;/<span class="k">scope</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+  &lt;/<span class="k">dependencies</span>&gt;
+
+  &lt;<span class="k">build</span>&gt;
+    &lt;<span class="k">plugins</span>&gt;
+      &lt;<span class="k">plugin</span>&gt;
+        &lt;<span class="k">groupId</span>&gt;org.apache.maven.plugins&lt;/<span class="k">groupId</span>&gt;
+        &lt;<span class="k">artifactId</span>&gt;maven-surefire-plugin&lt;/<span class="k">artifactId</span>&gt;
+        &lt;<span class="k">version</span>&gt;3.5.4&lt;/<span class="k">version</span>&gt;
+        &lt;<span class="k">configuration</span>&gt;
+          &lt;<span class="k">suiteXmlFiles</span>&gt;
+            &lt;<span class="k">suiteXmlFile</span>&gt;${suite}&lt;/<span class="k">suiteXmlFile</span>&gt;
+          &lt;/<span class="k">suiteXmlFiles</span>&gt;
+        &lt;/<span class="k">configuration</span>&gt;
+      &lt;/<span class="k">plugin</span>&gt;
+    &lt;/<span class="k">plugins</span>&gt;
+  &lt;/<span class="k">build</span>&gt;
+&lt;/<span class="k">project</span>&gt;</pre><div class="cmd"><span>Terminal</span><pre>$ docker run --rm --init --ipc=host --network host -v &quot;$PWD&quot;:/work -w /work -v &quot;$HOME/.m2&quot;:/root/.m2 mcr.microsoft.com/playwright/java:v1.63.0-noble mvn -B test -Dsuite=testng-smoke.xml</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running TestSuite
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.918 s -- in TestSuite
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ ran for real"><div class="fname">📄 requirements.txt</div><pre class="src" data-file="requirements.txt">playwright==1.63.0
+pytest==9.1.1
+pytest-playwright==0.10.0
+pytest-split==0.11.0
+pytest-xdist==3.8.0
+python-dotenv==1.2.4</pre><div class="cmd"><span>Terminal</span><pre>$ docker run --rm --init --ipc=host --network host -v &quot;$PWD&quot;:/work -w /work mcr.microsoft.com/playwright/python:v1.63.0-noble /bin/bash -c &quot;pip install -q -r requirements.txt &amp;&amp; pytest -m smoke&quot;</pre></div><div class="out"><span>Terminal output</span><pre>testpaths: tests
+collected 7 items / 4 deselected / 3 selected
+
+tests/cart/test_checkout.py .                                            [ 33%]
+tests/smoke/test_sign_in.py ..                                           [100%]
+
+======================= 3 passed, 4 deselected in 2.97s ========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ ran for real"><div class="fname">📄 package.json</div><pre class="src" data-file="package.json">{
+  <span class="s">"name"</span>: <span class="s">"shop-tests"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"type"</span>: <span class="s">"module"</span>,
+  <span class="s">"scripts"</span>: {
+    <span class="s">"test"</span>: <span class="s">"playwright test"</span>,
+    <span class="s">"test:smoke"</span>: <span class="s">"playwright test --grep @smoke"</span>,
+    <span class="s">"report"</span>: <span class="s">"playwright show-report"</span>
+  },
+  <span class="s">"devDependencies"</span>: {
+    <span class="s">"@playwright/test"</span>: <span class="s">"1.63.0"</span>,
+    <span class="s">"dotenv"</span>: <span class="s">"18.0.9"</span>
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ docker run --rm --init --ipc=host --network host -v &quot;$PWD&quot;:/work -w /work mcr.microsoft.com/playwright:v1.63.0-noble /bin/bash -c &quot;npm ci &amp;&amp; npx playwright test --grep @smoke&quot;</pre></div><div class="out"><span>Terminal output</span><pre>added 4 packages in 1s
+
+Running 3 tests using 2 workers
+
+  ✓  1 [chromium] › tests/smoke/sign-in.spec.js:5:3 › sign in › Asha signs in with the right password @smoke (1.5s)
+  ✓  2 [chromium] › tests/cart/checkout.spec.js:5:3 › checkout › places an order for a cart filled through the API @cart @smoke (2.0s)
+  ✓  3 [chromium] › tests/smoke/sign-in.spec.js:11:3 › sign in › a wrong password shows an error @smoke (911ms)
+
+  3 passed (4.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ ran for real"><div class="fname">📄 package.json</div><pre class="src" data-file="package.json">{
+  <span class="s">"name"</span>: <span class="s">"shop-tests"</span>,
+  <span class="s">"private"</span>: <span class="k">true</span>,
+  <span class="s">"type"</span>: <span class="s">"module"</span>,
+  <span class="s">"scripts"</span>: {
+    <span class="s">"test"</span>: <span class="s">"playwright test"</span>,
+    <span class="s">"test:smoke"</span>: <span class="s">"playwright test --grep @smoke"</span>,
+    <span class="s">"report"</span>: <span class="s">"playwright show-report"</span>
+  },
+  <span class="s">"devDependencies"</span>: {
+    <span class="s">"@playwright/test"</span>: <span class="s">"1.63.0"</span>,
+    <span class="s">"@types/node"</span>: <span class="s">"22.20.5"</span>,
+    <span class="s">"dotenv"</span>: <span class="s">"18.0.9"</span>,
+    <span class="s">"typescript"</span>: <span class="s">"5.9.3"</span>
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ docker run --rm --init --ipc=host --network host -v &quot;$PWD&quot;:/work -w /work mcr.microsoft.com/playwright:v1.63.0-noble /bin/bash -c &quot;npm ci &amp;&amp; npx playwright test --grep @smoke&quot;</pre></div><div class="out"><span>Terminal output</span><pre>added 7 packages in 2s
+
+Running 3 tests using 2 workers
+
+  ✓  1 [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke (1.1s)
+  ✓  2 [chromium] › tests/cart/checkout.spec.ts:5:3 › checkout › places an order for a cart filled through the API @cart @smoke (1.6s)
+  ✓  3 [chromium] › tests/smoke/sign-in.spec.ts:11:3 › sign in › a wrong password shows an error @smoke (859ms)
+
+  3 passed (3.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>The smoke tests passed inside the official images, which already hold Chromium, Firefox, WebKit and every system library they need. The image does not hold your packages, so npm ci, pip install or Maven still install them. The image tag v1.63.0 matches the Playwright version in the project. If the two differ, Playwright cannot find its browsers. <code>--network host</code> lets the container reach the shop running on this machine. Against a staging server it is not needed.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Flag</th><th>Why the Playwright docs recommend it</th></tr><tr><td>--ipc=host</td><td>without it Chromium can run out of memory and crash</td></tr><tr><td>--init</td><td>avoids special treatment of the process with id 1, a common cause of leftover processes</td></tr><tr><td>a fixed tag such as v1.63.0-noble</td><td>the image must match the Playwright version in the project. noble means Ubuntu 24.04</td></tr><tr><td>--user pwuser with a seccomp profile</td><td>only when the tests visit sites you do not trust</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>In GitHub Actions, the same image goes under <code>container: image:</code> in the job, with <code>options: --user 1001</code>, and the browser install step is left out.</div></div>
+</section>
+<section class="card reveal jsec" id="others" data-say="others"><div class="sec-num">Part 7</div><h2><span class="sec-em">🏭</span><span>Jenkins, GitLab and Azure DevOps</span></h2>
+
+<p>Many companies use Jenkins, GitLab or Azure DevOps instead of GitHub Actions. The steps stay the same. Only the file and a few names change.</p>
+<div class="codewrap tests pw4" data-k="jenkins" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A Jenkinsfile for each project · <b class="pw-badge">📄 Runs on Jenkins, shown here</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="📄 Runs on Jenkins, shown here"><div class="fname">📄 Jenkinsfile</div><pre class="src" data-file="Jenkinsfile">pipeline {
+  agent { docker { image <span class="s">'mcr.microsoft.com/playwright/java:v1.63.0-noble'</span> } }
+  environment {
+    <span class="t">BASE_URL</span> = <span class="s">'https://staging.shop.example'</span>
+    <span class="t">ASHA_PASSWORD</span> = credentials(<span class="s">'asha-password'</span>)
+  }
+  stages {
+    stage(<span class="s">'Test'</span>) {
+      steps { sh <span class="s">'mvn -B test'</span> }
+    }
+  }
+  post {
+    always {
+      junit <span class="s">'target/surefire-reports/*.xml'</span>
+      archiveArtifacts artifacts: <span class="s">'traces/**'</span>, allowEmptyArchive: <span class="k">true</span>
+    }
+  }
+}</pre></div><div class="pw-pane" data-l="py" data-badge="📄 Runs on Jenkins, shown here"><div class="fname">📄 Jenkinsfile</div><pre class="src" data-file="Jenkinsfile">pipeline {
+  agent {
+    docker {
+      image <span class="s">'mcr.microsoft.com/playwright/python:v1.63.0-noble'</span>
+      args <span class="s">'-u root'</span>                              <span class="c">// so pip may install into the image</span>
+    }
+  }
+  environment {
+    <span class="t">BASE_URL</span> = <span class="s">'https://staging.shop.example'</span>
+    <span class="t">ASHA_PASSWORD</span> = credentials(<span class="s">'asha-password'</span>)
+  }
+  stages {
+    stage(<span class="s">'Install'</span>) {
+      steps { sh <span class="s">'pip install -r requirements.txt'</span> }
+    }
+    stage(<span class="s">'Test'</span>) {
+      steps { sh <span class="s">'pytest -n 2 --junitxml=results/junit.xml'</span> }
+    }
+  }
+  post {
+    always {
+      junit <span class="s">'results/junit.xml'</span>
+      archiveArtifacts artifacts: <span class="s">'test-results/**'</span>, allowEmptyArchive: <span class="k">true</span>
+    }
+  }
+}</pre></div><div class="pw-pane" data-l="js" data-badge="📄 Runs on Jenkins, shown here"><div class="fname">📄 Jenkinsfile</div><pre class="src" data-file="Jenkinsfile">pipeline {
+  agent { docker { image <span class="s">'mcr.microsoft.com/playwright:v1.63.0-noble'</span> } }
+  environment {
+    <span class="t">CI</span> = <span class="s">'true'</span>                                   <span class="c">// Jenkins does not set CI by itself</span>
+    <span class="t">BASE_URL</span> = <span class="s">'https://staging.shop.example'</span>
+    <span class="t">ASHA_PASSWORD</span> = credentials(<span class="s">'asha-password'</span>)  <span class="c">// a Secret text credential in Jenkins</span>
+  }
+  stages {
+    stage(<span class="s">'Install'</span>) {
+      steps { sh <span class="s">'npm ci'</span> }
+    }
+    stage(<span class="s">'Test'</span>) {
+      steps { sh <span class="s">'npx playwright test'</span> }
+    }
+  }
+  post {
+    always {
+      junit <span class="s">'results/junit.xml'</span>
+      archiveArtifacts artifacts: <span class="s">'playwright-report/**'</span>, allowEmptyArchive: <span class="k">true</span>
+    }
+  }
+}</pre></div><div class="pw-pane" data-l="ts" data-badge="📄 Runs on Jenkins, shown here"><div class="fname">📄 Jenkinsfile</div><pre class="src" data-file="Jenkinsfile">pipeline {
+  agent { docker { image <span class="s">'mcr.microsoft.com/playwright:v1.63.0-noble'</span> } }
+  environment {
+    <span class="t">CI</span> = <span class="s">'true'</span>                                   <span class="c">// Jenkins does not set CI by itself</span>
+    <span class="t">BASE_URL</span> = <span class="s">'https://staging.shop.example'</span>
+    <span class="t">ASHA_PASSWORD</span> = credentials(<span class="s">'asha-password'</span>)  <span class="c">// a Secret text credential in Jenkins</span>
+  }
+  stages {
+    stage(<span class="s">'Install'</span>) {
+      steps { sh <span class="s">'npm ci'</span> }
+    }
+    stage(<span class="s">'Test'</span>) {
+      steps { sh <span class="s">'npx playwright test'</span> }
+    }
+  }
+  post {
+    always {
+      junit <span class="s">'results/junit.xml'</span>
+      archiveArtifacts artifacts: <span class="s">'playwright-report/**'</span>, allowEmptyArchive: <span class="k">true</span>
+    }
+  }
+}</pre></div><div class="note-out"><span>What happens</span><p>Jenkins starts the job inside the same official image, so nothing has to be installed on the Jenkins machine except Docker. credentials() reads a secret stored in Jenkins. The junit step reads the JUnit XML and shows passed and failed tests on the build page, and archiveArtifacts keeps the report.</p></div></div>
+<div class="codewrap tests pw4 pw-single" data-k="gitlab" data-langs="ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">GitLab CI with two parallel jobs · <b class="pw-badge">📄 Runs on GitLab, shown here</b></span><button type="button" class="copy">Copy</button></div><div class="pw-pane" data-l="ts" data-badge="📄 Runs on GitLab, shown here"><div class="fname">📄 .gitlab-ci.yml</div><pre class="src" data-file=".gitlab-ci.yml"><span class="a">stages</span>:
+  - test
+
+<span class="a">e2e</span>:
+  <span class="a">stage</span>:<span class="s"> test</span>
+  <span class="a">image</span>:<span class="s"> mcr.microsoft.com/playwright:v1.63.0-noble</span>
+  <span class="a">parallel</span>:<span class="s"> 2                    # two jobs, CI_NODE_INDEX is 1 and 2</span>
+  <span class="a">script</span>:
+    - npm ci
+    - npx playwright test --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL
+  <span class="a">artifacts</span>:
+    <span class="a">when</span>:<span class="s"> always</span>
+    <span class="a">paths</span>:
+      - playwright-report/
+    <span class="a">reports</span>:
+      <span class="a">junit</span>:<span class="s"> results/junit.xml</span></pre></div><div class="note-out"><span>What happens</span><p>GitLab starts two copies of the job because of <code>parallel: 2</code>, and gives each one CI_NODE_INDEX and CI_NODE_TOTAL, which fit straight into --shard. The JUnit report appears in the merge request.</p></div></div>
+<div class="codewrap tests pw4 pw-single" data-k="azure" data-langs="ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Azure Pipelines · <b class="pw-badge">📄 Runs on Azure DevOps, shown here</b></span><button type="button" class="copy">Copy</button></div><div class="pw-pane" data-l="ts" data-badge="📄 Runs on Azure DevOps, shown here"><div class="fname">📄 azure-pipelines.yml</div><pre class="src" data-file="azure-pipelines.yml"><span class="a">trigger</span>:
+  - main
+
+<span class="a">pool</span>:
+  <span class="a">vmImage</span>:<span class="s"> ubuntu-latest</span>
+
+<span class="a">steps</span>:
+  - <span class="a">task</span>:<span class="s"> UseNode@1</span>
+    <span class="a">inputs</span>:
+      <span class="a">version</span>:<span class="s"> '22'</span>
+    <span class="a">displayName</span>:<span class="s"> Install Node.js</span>
+  - <span class="a">script</span>:<span class="s"> npm ci</span>
+    <span class="a">displayName</span>:<span class="s"> npm ci</span>
+  - <span class="a">script</span>:<span class="s"> npx playwright install --with-deps chromium</span>
+    <span class="a">displayName</span>:<span class="s"> Install Chromium</span>
+  - <span class="a">script</span>:<span class="s"> npx playwright test</span>
+    <span class="a">displayName</span>:<span class="s"> Run Playwright tests</span>
+    <span class="a">env</span>:
+      <span class="a">CI</span>:<span class="s"> 'true'</span>
+      <span class="a">ASHA_PASSWORD</span>:<span class="s"> $(ASHA_PASSWORD)</span>
+  - <span class="a">task</span>:<span class="s"> PublishTestResults@2</span>
+    <span class="a">condition</span>:<span class="s"> succeededOrFailed()</span>
+    <span class="a">inputs</span>:
+      <span class="a">testResultsFormat</span>:<span class="s"> JUnit</span>
+      <span class="a">testResultsFiles</span>:<span class="s"> results/junit.xml</span>
+  - <span class="a">task</span>:<span class="s"> PublishPipelineArtifact@1</span>
+    <span class="a">condition</span>:<span class="s"> succeededOrFailed()</span>
+    <span class="a">inputs</span>:
+      <span class="a">targetPath</span>:<span class="s"> playwright-report</span>
+      <span class="a">artifact</span>:<span class="s"> playwright-report</span></pre></div><div class="note-out"><span>What happens</span><p>Azure Pipelines does not set CI, so the step sets it, and the config switches to its CI settings. PublishTestResults shows the JUnit results in the Tests tab, and PublishPipelineArtifact keeps the HTML report.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>CI service</th><th>File</th><th>Sets CI=true</th><th>Secrets</th></tr><tr><td>GitHub Actions</td><td>.github/workflows/*.yml</td><td>yes</td><td>secrets.NAME</td></tr><tr><td>GitLab CI</td><td>.gitlab-ci.yml</td><td>yes</td><td>CI/CD variables, marked masked</td></tr><tr><td>Jenkins</td><td>Jenkinsfile</td><td>no, set it yourself</td><td>credentials('id')</td></tr><tr><td>Azure Pipelines</td><td>azure-pipelines.yml</td><td>no, set it yourself</td><td>secret pipeline variables, $(NAME)</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="red" data-say="red"><div class="sec-num">Part 8</div><h2><span class="sec-em">🧯</span><span>When the pipeline goes red</span></h2>
+
+<p>A failed run is only useful if someone can find out why quickly. Work through it in this order.</p>
+<div class="tw"><table class="jt "><tr><th>Step</th><th>Playwright Test</th><th>pytest</th><th>Java</th></tr><tr><td>1. read the failure in the job log</td><td>the list reporter output</td><td>the short summary at the end</td><td>the Surefire summary</td></tr><tr><td>2. download the artifact</td><td>playwright-report</td><td>test-results</td><td>target/surefire-reports and traces</td></tr><tr><td>3. open the trace</td><td>npx playwright show-report, then the trace</td><td>playwright show-trace trace.zip</td><td>mvn exec:java with show-trace</td></tr><tr><td>4. run only the failures again</td><td>npx playwright test --last-failed</td><td>pytest --lf</td><td>mvn test -Dtest=CheckoutTest</td></tr></table></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Never fix a red pipeline by adding a skip or a longer sleep. Find out whether the app or the test is wrong. The trace from the debugging chapter shows the page at every step of the failed run.</div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>A test marked flaky in the report passed on a retry. Treat it as a bug to fix this week, not as a pass.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-framework.html" data-topic="pw-framework"><small>← Previous chapter</small><b>🏗️ Framework design</b></a><a class="next" href="./pw-reports.html" data-topic="pw-reports"><small>Next chapter →</small><b>📊 Reporting labs</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "A pipeline in four ideas", "panels": [{"s": [["e", "🚀"], ["t", "git push", {"b": 1}]], "h": "Every push", "t": "Tests run by themselves.", "more": "Nobody has to remember."}, {"s": [["e", "🖥️"], ["t", "fresh", {"b": 1}]], "h": "Fresh machine", "t": "Install everything each time.", "more": "Or use the Docker image."}, {"s": [["e", "🔐"], ["t", "secrets", {"b": 1}]], "h": "Secrets", "t": "From the CI settings.", "more": "Masked in the logs."}, {"s": [["e", "📦"], ["t", "artifacts", {"b": 1}]], "h": "Evidence", "t": "Reports kept, pass or fail.", "more": "Traces explain failures."}], "remember": "CI runs the same three steps everywhere: a machine that can run browsers, the packages and browsers installed, then the tests with CI settings and secrets."}, "real": [["🛒", "A sale day saved", "A developer changes the cart total for a festival discount. The checkout test fails on the pull request with ₹698 expected and ₹0 shown. The bug never reaches customers."], ["⏱️", "Forty minutes to twelve", "A suite of 600 tests takes forty minutes on one CI machine. A matrix of four shards brings each pull request check down to about twelve minutes, and one merged report still shows the whole run."], ["🔑", "The password that expired", "Every sign in test fails on Monday morning. The trace shows the error message for a wrong password. The staging password had been changed, and updating one CI secret fixes the whole suite."]], "quiz": [{"lv": 1, "q": "What does continuous integration do with your tests?", "o": ["deletes them", "runs them on every push and pull request", "writes them", "runs them once a year"], "a": 1, "hint": "Every change.", "why": "A CI server runs the suite for every push and pull request, so problems are caught before merging."}, {"lv": 1, "q": "Which command installs Chromium together with the Linux libraries it needs?", "o": ["npm install chromium", "npx playwright install --with-deps chromium", "apt install chrome", "npx playwright test --deps"], "a": 1, "hint": "with deps.", "why": "--with-deps also installs the system packages the browser needs on Linux."}, {"lv": 1, "q": "Where should the staging password for CI live?", "o": ["in the workflow file", "in the CI secrets", "in users.ts", "in the README"], "a": 1, "hint": "Not in Git.", "why": "Secrets live in the CI settings and reach the job as environment variables."}, {"lv": 1, "q": "Why does the upload step use if: !cancelled()?", "o": ["to save space", "so results are kept even when tests failed", "to skip uploads", "it is required syntax"], "a": 1, "hint": "Failures need evidence.", "why": "Without it, a failed test step would skip the upload, and the report you need would be lost."}, {"lv": 2, "q": "What happens to a test.only when CI is true in the framework config?", "o": ["it runs alone", "the run fails because forbidOnly is on", "it is ignored", "it is retried"], "a": 1, "hint": "forbidOnly.", "why": "forbidOnly makes Playwright stop the run when any test.only is found."}, {"lv": 2, "q": "Which CI services set CI=true by themselves?", "o": ["Jenkins and Azure Pipelines", "GitHub Actions and GitLab", "none", "only Jenkins"], "a": 1, "hint": "Two of them do.", "why": "GitHub Actions and GitLab set it. In Jenkins and Azure Pipelines the pipeline file sets it."}, {"lv": 2, "q": "What does --ipc=host prevent in the Playwright Docker image?", "o": ["slow downloads", "Chromium running out of memory and crashing", "wrong time zones", "missing fonts"], "a": 1, "hint": "Shared memory.", "why": "The Playwright docs recommend it because Chromium can run out of memory without it."}, {"lv": 2, "q": "What happens when the Docker image tag does not match the Playwright version in the project?", "o": ["nothing", "Playwright cannot find its browsers", "tests run twice", "the image updates itself"], "a": 1, "hint": "Versions must match.", "why": "Each Playwright version expects its own browser builds, which the matching image holds."}, {"lv": 2, "q": "How does pytest split a suite across two CI jobs in this chapter?", "o": ["--shard=1/2", "pytest-split with --splits 2 --group 1", "-n 2", "-m smoke"], "a": 1, "hint": "A plugin.", "why": "pytest-split adds --splits and --group. -n 2 only uses two processes on one machine."}, {"lv": 3, "q": "Why does the merge-reports job need blob reports instead of HTML reports?", "o": ["blob is smaller to type", "blob reports hold the raw results that can be merged into one report", "HTML cannot be uploaded", "GitHub needs blob"], "a": 1, "hint": "Merging needs raw data.", "why": "Each shard writes a blob report, and merge-reports builds one HTML report from all of them."}, {"lv": 3, "q": "Which Surefire option overrides the TestNG suite file to run one package?", "o": ["-Dsuite", "-Dtest", "-Dgroups", "-Dparallel"], "a": 1, "hint": "test wins.", "why": "-Dtest picks the test classes, and Surefire then ignores the suite file."}, {"lv": 3, "q": "Why do the Playwright docs not recommend caching browsers in CI?", "o": ["it is not allowed", "restoring the cache takes about as long as downloading, and system libraries cannot be cached", "browsers change every day", "caches are unsafe"], "a": 1, "hint": "No time saved.", "why": "Restoring takes about as long as the download, and the Linux libraries still need installing."}], "calc": [{"lv": 1, "q": "A suite takes 40 minutes on one CI machine. With 4 equal shards, about how many minutes does each shard take?", "ans": 10, "hint": "40 / 4", "steps": ["40 / 4 = 10 minutes"]}, {"lv": 1, "q": "The matrix has shardIndex [1, 2, 3] and shardTotal [3]. How many test jobs start?", "ans": 3, "hint": "3 × 1", "steps": ["3 values × 1 value = 3 jobs"]}, {"lv": 2, "q": "The framework has 7 tests and the run used 2 shards. Shard 1 ran 4 tests. How many did shard 2 run?", "ans": 3, "hint": "7 - 4", "steps": ["7 - 4 = 3"]}, {"lv": 2, "q": "A test fails twice, then passes on the last retry with retries: 2. How many times did it run?", "ans": 3, "hint": "1 + 2", "steps": ["first run + 2 retries = 3"]}, {"lv": 2, "q": "A team has 30 pull requests a week and each check takes 12 minutes. How many CI minutes a week is that?", "ans": 360, "hint": "30 × 12", "steps": ["30 × 12 = 360"]}, {"lv": 3, "q": "The Java matrix has the features smoke, products and cart, in 2 browsers. How many jobs start?", "ans": 6, "hint": "3 × 2", "steps": ["3 features × 2 browsers = 6 jobs"]}, {"lv": 3, "q": "Shards take 9, 11, 10 and 14 minutes, then the merge job takes 2. How many minutes until the merged report is ready?", "ans": 16, "hint": "slowest shard + merge", "steps": ["the shards run at the same time, so the slowest one decides: 14", "14 + 2 = 16"]}, {"lv": 3, "q": "An artifact is kept 14 days and one run makes 25 MB. With 20 runs a day, how many MB are stored at most?", "ans": 7000, "hint": "25 × 20 × 14", "steps": ["25 × 20 = 500 MB a day", "500 × 14 = 7000 MB"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter runs the framework the way a CI pipeline does: CI settings, GitHub Actions files, secrets, shards with a merged report, the official Docker images, and Jenkins, GitLab and Azure DevOps.", "hi": "यह अध्याय framework को वैसे चलाता है जैसे CI pipeline चलाती है: CI settings, GitHub Actions files, secrets, merged report के साथ shards, official Docker images, और Jenkins, GitLab और Azure DevOps।", "kn": "ಈ ಅಧ್ಯಾಯ framework ಅನ್ನು CI pipeline ನಡೆಸುವಂತೆ ನಡೆಸುತ್ತದೆ: CI settings, GitHub Actions files, secrets, merged report ಜೊತೆ shards, official Docker images, ಮತ್ತು Jenkins, GitLab, Azure DevOps.", "or": "ଏହି ଅଧ୍ୟାୟ framework କୁ CI pipeline ପରି ଚଳାଏ: CI settings, GitHub Actions files, secrets, merged report ସହ shards, official Docker images, ଏବଂ Jenkins, GitLab ଓ Azure DevOps।", "ar": "يشغّل هذا الفصل الإطار كما يشغّله خط CI: إعدادات CI، وملفات GitHub Actions، والأسرار، والتقسيم مع تقرير مدمج، وصور Docker الرسمية، وJenkins وGitLab وAzure DevOps.", "de": "Dieses Kapitel führt das Framework so aus wie eine CI-Pipeline: CI-Einstellungen, GitHub-Actions-Dateien, Secrets, Shards mit einem zusammengeführten Bericht, die offiziellen Docker-Images sowie Jenkins, GitLab und Azure DevOps."}, {"id": "what", "h": "What CI does", "en": "CI runs your tests on a fresh machine every time someone pushes code or opens a pull request. A broken change is caught before it is merged.", "hi": "CI हर बार किसी के code push करने या pull request खोलने पर एक नई machine पर आपके tests चलाता है। टूटा हुआ बदलाव merge से पहले पकड़ा जाता है।", "kn": "ಯಾರಾದರೂ code push ಮಾಡಿದಾಗ ಅಥವಾ pull request ತೆರೆದಾಗ CI ಹೊಸ machine ನಲ್ಲಿ ನಿಮ್ಮ tests ನಡೆಸುತ್ತದೆ. ಮುರಿದ ಬದಲಾವಣೆ merge ಮೊದಲು ಸಿಗುತ್ತದೆ.", "or": "କେହି code push କଲେ ବା pull request ଖୋଲିଲେ CI ନୂଆ machine ରେ ଆପଣଙ୍କ tests ଚଳାଏ। ଭଙ୍ଗା ପରିବର୍ତ୍ତନ merge ପୂର୍ବରୁ ଧରାପଡେ।", "ar": "يشغّل CI اختباراتك على جهاز جديد في كل مرة يدفع فيها أحد كودًا أو يفتح طلب دمج. فيُكتشف التغيير المعطوب قبل دمجه.", "de": "CI führt deine Tests auf einer frischen Maschine aus, sobald jemand Code pusht oder einen Pull Request öffnet. Eine fehlerhafte Änderung wird vor dem Mergen entdeckt."}, {"id": "cimode", "h": "CI settings", "en": "Most CI services set CI to true. The config reads it and turns on forbidOnly, retries, a fixed number of workers and JUnit XML reports.", "hi": "ज़्यादातर CI services CI को true करती हैं। Config इसे पढ़कर forbidOnly, retries, तय workers और JUnit XML reports चालू करता है।", "kn": "ಹೆಚ್ಚಿನ CI services CI ಅನ್ನು true ಮಾಡುತ್ತವೆ. Config ಅದನ್ನು ಓದಿ forbidOnly, retries, ನಿಗದಿತ workers ಮತ್ತು JUnit XML reports ಆನ್ ಮಾಡುತ್ತದೆ.", "or": "ଅଧିକାଂଶ CI services CI କୁ true କରନ୍ତି। Config ଏହାକୁ ପଢି forbidOnly, retries, ନିର୍ଦ୍ଦିଷ୍ଟ workers ଓ JUnit XML reports ଚାଲୁ କରେ।", "ar": "تضبط معظم خدمات CI المتغير CI على true. ويقرؤه الإعداد فيفعّل forbidOnly وإعادة المحاولة وعددًا ثابتًا من العمال وتقارير JUnit XML.", "de": "Die meisten CI-Dienste setzen CI auf true. Die Konfiguration liest das und schaltet forbidOnly, Wiederholungen, eine feste Zahl von Workern und JUnit-XML-Berichte ein."}, {"id": "github", "h": "GitHub Actions", "en": "A workflow file in .github/workflows gets the code, installs the language, the packages and the browser, runs the tests, and uploads the report even when tests fail.", "hi": ".github/workflows की workflow file code लेती है, language, packages और browser install करती है, tests चलाती है, और tests fail होने पर भी report upload करती है।", "kn": ".github/workflows ನ workflow file code ಪಡೆಯುತ್ತದೆ, language, packages, browser install ಮಾಡುತ್ತದೆ, tests ನಡೆಸುತ್ತದೆ, tests fail ಆದರೂ report upload ಮಾಡುತ್ತದೆ.", "or": ".github/workflows ର workflow file code ଆଣେ, language, packages ଓ browser install କରେ, tests ଚଳାଏ, ଏବଂ tests fail ହେଲେ ମଧ୍ୟ report upload କରେ।", "ar": "ملف سير العمل في ‎.github/workflows يجلب الكود، ويثبّت اللغة والحزم والمتصفح، ويشغّل الاختبارات، ويرفع التقرير حتى عند فشلها.", "de": "Eine Workflow-Datei in .github/workflows holt den Code, installiert Sprache, Pakete und Browser, führt die Tests aus und lädt den Bericht auch bei Fehlern hoch."}, {"id": "secrets", "h": "Secrets", "en": "Settings and passwords live in the CI settings and reach the tests as environment variables. A wrong or missing secret makes the sign in tests fail, and the fix is in the settings.", "hi": "Settings और passwords CI settings में रहते हैं और environment variables के रूप में tests तक पहुँचते हैं। गलत या गायब secret से sign in tests fail होते हैं, और सुधार settings में होता है।", "kn": "Settings ಮತ್ತು passwords CI settings ನಲ್ಲಿ ಇರುತ್ತವೆ, environment variables ಆಗಿ tests ಗೆ ತಲುಪುತ್ತವೆ. ತಪ್ಪು ಅಥವಾ ಇಲ್ಲದ secret ನಿಂದ sign in tests fail ಆಗುತ್ತವೆ, ಸರಿಪಡಿಸುವುದು settings ನಲ್ಲಿ.", "or": "Settings ଓ passwords CI settings ରେ ରହେ ଏବଂ environment variables ଭାବେ tests ପାଖରେ ପହଞ୍ଚେ। ଭୁଲ ବା ନଥିବା secret ରେ sign in tests fail ହୁଏ, ଏବଂ ସମାଧାନ settings ରେ।", "ar": "تعيش الإعدادات وكلمات المرور في إعدادات CI وتصل إلى الاختبارات كمتغيرات بيئة. والسر الخاطئ أو المفقود يُفشل اختبارات تسجيل الدخول، وإصلاحه في الإعدادات.", "de": "Einstellungen und Passwörter liegen in den CI-Einstellungen und erreichen die Tests als Umgebungsvariablen. Ein falsches oder fehlendes Secret lässt die Anmeldetests scheitern, und die Lösung liegt in den Einstellungen."}, {"id": "shards", "h": "Shards", "en": "A matrix starts the same job several times, each with its own shard. Playwright Test saves a blob report per shard and merges them into one report at the end.", "hi": "Matrix एक ही job को कई बार चलाता है, हर बार अपने shard के साथ। Playwright Test हर shard का blob report बचाता है और आख़िर में उन्हें एक report में जोड़ता है।", "kn": "Matrix ಒಂದೇ job ಅನ್ನು ಹಲವು ಬಾರಿ ಆರಂಭಿಸುತ್ತದೆ, ಪ್ರತಿಯೊಂದಕ್ಕೂ ತನ್ನ shard. Playwright Test ಪ್ರತಿ shard ಗೆ blob report ಉಳಿಸಿ ಕೊನೆಯಲ್ಲಿ ಒಂದು report ಆಗಿ ಸೇರಿಸುತ್ತದೆ.", "or": "Matrix ସେହି job କୁ ଅନେକ ଥର ଆରମ୍ଭ କରେ, ପ୍ରତ୍ୟେକର ନିଜ shard ସହ। Playwright Test ପ୍ରତି shard ର blob report ସଞ୍ଚୟ କରି ଶେଷରେ ଗୋଟିଏ report ରେ ଯୋଡେ।", "ar": "تبدأ المصفوفة المهمة نفسها عدة مرات، لكل نسخة جزؤها. ويحفظ Playwright Test تقرير blob لكل جزء ثم يدمجها في تقرير واحد في النهاية.", "de": "Eine Matrix startet denselben Job mehrmals, jeden mit seinem eigenen Shard. Playwright Test speichert pro Shard einen Blob-Bericht und führt sie am Ende zu einem Bericht zusammen."}, {"id": "docker", "h": "Docker", "en": "The official Playwright images already hold the browsers and their system libraries. Use the tag that matches your Playwright version, and run with ipc host and init.", "hi": "Official Playwright images में browsers और उनकी system libraries पहले से होती हैं। अपने Playwright version वाला tag इस्तेमाल करें, और ipc host और init के साथ चलाएँ।", "kn": "Official Playwright images ನಲ್ಲಿ browsers ಮತ್ತು system libraries ಮೊದಲೇ ಇವೆ. ನಿಮ್ಮ Playwright version ಗೆ ಹೊಂದುವ tag ಬಳಸಿ, ipc host ಮತ್ತು init ಜೊತೆ ನಡೆಸಿ.", "or": "Official Playwright images ରେ browsers ଓ system libraries ଆଗରୁ ଅଛି। ଆପଣଙ୍କ Playwright version ସହ ମେଳ ଖାଉଥିବା tag ବ୍ୟବହାର କରନ୍ତୁ, ଏବଂ ipc host ଓ init ସହ ଚଳାନ୍ତୁ।", "ar": "تحتوي صور Playwright الرسمية على المتصفحات ومكتباتها مسبقًا. استخدم الوسم المطابق لإصدار Playwright لديك، وشغّلها مع ipc host وinit.", "de": "Die offiziellen Playwright-Images enthalten die Browser und ihre Systembibliotheken bereits. Nimm das Tag, das zu deiner Playwright-Version passt, und starte mit ipc host und init."}, {"id": "others", "h": "Other CI services", "en": "Jenkins, GitLab and Azure DevOps run the same steps from their own files. Jenkins and Azure do not set CI, so their files set it.", "hi": "Jenkins, GitLab और Azure DevOps अपनी files से वही steps चलाते हैं। Jenkins और Azure CI set नहीं करते, इसलिए उनकी files इसे set करती हैं।", "kn": "Jenkins, GitLab ಮತ್ತು Azure DevOps ತಮ್ಮ files ನಿಂದ ಅದೇ steps ನಡೆಸುತ್ತವೆ. Jenkins ಮತ್ತು Azure CI set ಮಾಡುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಅವರ files ಅದನ್ನು set ಮಾಡುತ್ತವೆ.", "or": "Jenkins, GitLab ଓ Azure DevOps ନିଜ files ରୁ ସେହି steps ଚଳାନ୍ତି। Jenkins ଓ Azure CI set କରନ୍ତି ନାହିଁ, ତେଣୁ ସେମାନଙ୍କ files ଏହାକୁ set କରେ।", "ar": "تشغّل Jenkins وGitLab وAzure DevOps الخطوات نفسها من ملفاتها. ولا تضبط Jenkins وAzure المتغير CI، لذا تضبطه ملفاتها.", "de": "Jenkins, GitLab und Azure DevOps führen dieselben Schritte aus eigenen Dateien aus. Jenkins und Azure setzen CI nicht, also setzen ihre Dateien es."}, {"id": "red", "h": "A red pipeline", "en": "Read the failure in the log, download the report, open the trace, then run only the failed tests again. Never hide a failure with a skip or a longer sleep.", "hi": "Log में failure पढ़ें, report download करें, trace खोलें, फिर सिर्फ fail हुए tests दोबारा चलाएँ। Failure को skip या लंबे sleep से कभी न छिपाएँ।", "kn": "Log ನಲ್ಲಿ failure ಓದಿ, report download ಮಾಡಿ, trace ತೆರೆಯಿರಿ, ನಂತರ fail ಆದ tests ಮಾತ್ರ ಮತ್ತೆ ನಡೆಸಿ. Failure ಅನ್ನು skip ಅಥವಾ ಉದ್ದ sleep ನಿಂದ ಮರೆಮಾಡಬೇಡಿ.", "or": "Log ରେ failure ପଢନ୍ତୁ, report download କରନ୍ତୁ, trace ଖୋଲନ୍ତୁ, ତାପରେ କେବଳ fail ହୋଇଥିବା tests ପୁଣି ଚଳାନ୍ତୁ। Failure କୁ skip ବା ଲମ୍ବା sleep ରେ କେବେ ଲୁଚାନ୍ତୁ ନାହିଁ।", "ar": "اقرأ الفشل في السجل، ونزّل التقرير، وافتح الأثر، ثم أعد تشغيل الاختبارات الفاشلة فقط. ولا تُخفِ الفشل أبدًا بتخطٍّ أو انتظار أطول.", "de": "Lies den Fehler im Log, lade den Bericht herunter, öffne den Trace und führe dann nur die fehlgeschlagenen Tests erneut aus. Verstecke einen Fehler nie mit einem Skip oder einem längeren Sleep."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you make two tests safe for CI: one without a fixed wait, and one that takes the shop address from the config instead of the code.", "hi": "Labs में आप दो tests को CI के लिए सुरक्षित बनाते हैं: एक बिना fixed wait के, और एक जो shop address code की जगह config से लेता है।", "kn": "Labs ನಲ್ಲಿ ಎರಡು tests ಅನ್ನು CI ಗೆ ಸುರಕ್ಷಿತ ಮಾಡುತ್ತೀರಿ: ಒಂದು fixed wait ಇಲ್ಲದೆ, ಇನ್ನೊಂದು shop address ಅನ್ನು code ಬದಲು config ನಿಂದ ಪಡೆಯುತ್ತದೆ.", "or": "Labs ରେ ଆପଣ ଦୁଇଟି tests କୁ CI ପାଇଁ ସୁରକ୍ଷିତ କରନ୍ତି: ଗୋଟିଏ fixed wait ବିନା, ଏବଂ ଗୋଟିଏ ଯାହା shop address code ବଦଳରେ config ରୁ ନିଏ।", "ar": "في المختبرات تجعل اختبارين آمنين لـ CI: أحدهما بلا انتظار ثابت، والآخر يأخذ عنوان المتجر من الإعداد بدل الكود.", "de": "In den Labs machst du zwei Tests CI-sicher: einen ohne feste Wartezeit und einen, der die Shop-Adresse aus der Konfiguration statt aus dem Code nimmt."}], "ex": [], "dg": {"pipe": {"t": "What happens after git push", "w": 900, "h": 230, "n": [["push", 20, 85, 120, 56, "git push", {"c": 0, "sub": "or a pull request", "i": "A push or a pull request starts the workflow."}], ["vm", 170, 85, 130, 56, "fresh machine", {"c": 5, "sub": "runner", "i": "CI gives the job a clean machine or container every time."}], ["inst", 330, 20, 140, 56, "install", {"c": 1, "sub": "packages, browser", "i": "npm ci, pip install or Maven, then the browser with its system libraries."}], ["test", 330, 150, 140, 56, "run tests", {"c": 2, "sub": "CI settings", "i": "Retries, workers and reporters for CI, with secrets from the CI settings."}], ["rep", 510, 85, 140, 56, "keep results", {"c": 3, "sub": "reports, traces", "i": "Reports and traces are uploaded even when tests fail."}], ["gate", 690, 85, 170, 56, "merge allowed?", {"c": 4, "sub": "required check", "i": "A pull request can only be merged when the check is green."}]], "e": [["push", "vm"], ["vm", "inst"], ["inst", "test"], ["test", "rep"], ["rep", "gate"]], "st": [[["push"], "A developer pushes code or opens a pull request."], [["vm", "push>vm"], "The CI service starts a fresh machine for the job."], [["inst", "vm>inst"], "It installs the packages and the browser."], [["test", "inst>test"], "It runs the tests with the CI settings and secrets."], [["rep", "test>rep"], "It keeps the reports and traces, pass or fail."], [["gate", "rep>gate"], "The result decides whether the pull request can be merged."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "nowait", "title": "Take out the fixed wait", "name": "search finds the lamp", "task": "This test waits three seconds before it checks, which slows CI and still fails on a busy machine. On <code>/products<\/code>, search for <code>lamp<\/code> and check that exactly <b>one<\/b> card is in the list named <b>Products<\/b>, with no fixed wait at all.", "goal": "One card is shown and the test has no fixed wait.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('search finds the lamp', async ({ page }) => {\n  await page.goto('/products');\n  await page.getByPlaceholder('Search products').fill('lamp');\n  await page.waitForTimeout(3000);\n  // replace the wait with a check that waits by itself\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class SearchFindsTheLampTest {\n  @Test\n  void searchFindsTheLamp(Page page) {\n    page.navigate(\"/products\");\n    page.getByPlaceholder(\"Search products\").fill(\"lamp\");\n    assertThat(page.getByRole(AriaRole.LIST, new Page.GetByRoleOptions().setName(\"Products\")).getByRole(AriaRole.LISTITEM)).hasCount(1);\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_search_finds_the_lamp(page: Page):\n    page.goto(\"/products\")\n    page.get_by_placeholder(\"Search products\").fill(\"lamp\")\n    expect(page.get_by_role(\"list\", name=\"Products\").get_by_role(\"listitem\")).to_have_count(1)\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('search finds the lamp', async ({ page }) => {\n  await page.goto('/products');\n  await page.getByPlaceholder('Search products').fill('lamp');\n  await expect(page.getByRole('list', { name: 'Products' }).getByRole('listitem')).toHaveCount(1);\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('search finds the lamp', async ({ page }) => {\n  await page.goto('/products');\n  await page.getByPlaceholder('Search products').fill('lamp');\n  await expect(page.getByRole('list', { name: 'Products' }).getByRole('listitem')).toHaveCount(1);\n});"}, "hint": "A web first check waits by itself: <code>await expect(page.getByRole('list', { name: 'Products' }).getByRole('listitem')).toHaveCount(1)<\/code>.", "why": "The check retries until the list has one card or the timeout runs out. It is as fast as the page allows on a laptop and still patient on a slow CI machine.", "check": [["!/wait_?for_?timeout/i.test(ctx.code)", "No fixed wait is left"], ["/count(Async)?\\(1\\)/i.test(ctx.code)", "The test checks for one card"], ["/'lamp'|\"lamp\"/.test(ctx.code)", "The test searches for lamp"]]}, {"id": "relative", "title": "Let the config choose the address", "name": "the water bottle is listed", "task": "This test has the shop address written into it, so it can never run against staging. Open <code>/products<\/code> with a <b>relative<\/b> address and check that the card with the test id <code>product-5<\/code> contains <b>Water bottle<\/b>.", "goal": "The products page is open through the base URL and the bottle is listed.", "start": "", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the water bottle is listed', async ({ page }) => {\n  await page.goto('http://localhost:4173/products');\n  // use a relative address, then check the card product-5\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheWaterBottleIsListedTest {\n  @Test\n  void theWaterBottleIsListed(Page page) {\n    page.navigate(\"/products\");\n    assertThat(page.getByTestId(\"product-5\")).containsText(\"Water bottle\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_water_bottle_is_listed(page: Page):\n    page.goto(\"/products\")\n    expect(page.get_by_test_id(\"product-5\")).to_contain_text(\"Water bottle\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the water bottle is listed', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByTestId('product-5')).toContainText('Water bottle');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the water bottle is listed', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByTestId('product-5')).toContainText('Water bottle');\n});"}, "hint": "Start the address with a slash: <code>page.goto('/products')<\/code>. The base URL from the config, or BASE_URL on CI, is put in front.", "why": "With a relative address, the same test runs against a laptop, a Docker container or staging. Only BASE_URL changes, in the CI settings.", "check": [["!/https?:\\/\\//.test(ctx.code)", "No full address in the test"], ["ctx.url.includes('/products')", "The products page is open"], ["/Water bottle/.test(ctx.text)", "The bottle is on the page"]]}], "trees": {}};
+JSPLAY.page({ title: "CI/CD pipelines", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

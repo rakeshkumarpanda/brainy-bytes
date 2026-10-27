@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixtures, hooks and set up once · Playwright</title>
+<meta name="description" content="beforeEach, afterEach, beforeAll and afterAll, pytest fixtures with yield, JUnit @BeforeEach and @AfterAll, built in fixtures, test.extend, conftest.py, base classes, auto and autouse fixtures, setup projects with dependencies, session fixtures and fixture scopes.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🧪 The test runner</span><span>›</span><span>Chapter 9 of 10</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧩</span><div><h1>Fixtures, hooks and set up once</h1><p class="lead">Share set up without copy and paste. Hooks run around tests, fixtures prepare exactly what a test asks for and clean up after it, automatic fixtures guard every test, and set up steps run once for the whole run.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 4 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 16 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 2 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>Most tests need something ready before they start: a signed in user, some data, a page. Fixtures and hooks prepare it in one place and clean up after, so each test only says what it checks.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#hooks" class="easy"><span>🪝</span>Before and after hooks</a><a href="#fixtures" class="easy"><span>🧩</span>Fixtures: set up on demand</a><a href="#auto"><span>🛡️</span>Automatic fixtures</a><a href="#global"><span>🌍</span>Set up once for the whole run</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="hooks" data-say="hooks"><div class="sec-num">Part 1</div><h2><span class="sec-em">🪝</span><span>Before and after hooks</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Hooks run code around your tests: before and after each test, or once before and after all the tests in a file or class. They are the simplest way to share set up.</p>
+<div class="codewrap tests pw4" data-k="hooks" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Before and after hooks, and the order they run in · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/HooksTest.java</div><pre class="src" data-file="src/test/java/com/brainy/HooksTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.*;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="a">@TestMethodOrder</span>(<span class="t">MethodOrderer</span>.<span class="t">OrderAnnotation</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">HooksTest</span> {
+  <span class="a">@BeforeAll</span>
+  <span class="k">static</span> <span class="k">void</span> onceForThisClass() {
+    <span class="t">System</span>.out.println(<span class="s">"@BeforeAll: once for this class"</span>);
+  }
+
+  <span class="a">@BeforeEach</span>
+  <span class="k">void</span> openProducts(<span class="t">Page</span> page, <span class="t">TestInfo</span> info) {
+    <span class="t">System</span>.out.println(<span class="s">"@BeforeEach: open the products page for "</span> + info.getDisplayName());
+    page.navigate(<span class="s">"/products"</span>);
+  }
+
+  <span class="a">@AfterEach</span>
+  <span class="k">void</span> done(<span class="t">TestInfo</span> info) {
+    <span class="t">System</span>.out.println(<span class="s">"@AfterEach: "</span> + info.getDisplayName() + <span class="s">" done"</span>);
+  }
+
+  <span class="a">@AfterAll</span>
+  <span class="k">static</span> <span class="k">void</span> atTheEnd() {
+    <span class="t">System</span>.out.println(<span class="s">"@AfterAll: once at the end"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Order</span>(<span class="n">1</span>)
+  <span class="k">void</span> showsFiveProducts(<span class="t">Page</span> page) {
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Order</span>(<span class="n">2</span>)
+  <span class="k">void</span> findsTheLamp(<span class="t">Page</span> page) {
+    page.getByPlaceholder(<span class="s">"Search products"</span>).fill(<span class="s">"lamp"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">1</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.HooksTest
+@BeforeAll: once for this class
+@BeforeEach: open the products page for showsFiveProducts(Page)
+@AfterEach: showsFiveProducts(Page) done
+@BeforeEach: open the products page for findsTheLamp(Page)
+@AfterEach: findsTheLamp(Page) done
+@AfterAll: once at the end
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.968 s -- in com.brainy.HooksTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_hooks.py</div><pre class="src" data-file="tests/test_hooks.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="a">@pytest</span>.fixture(scope=<span class="s">"module"</span>, autouse=<span class="k">True</span>)
+<span class="k">def</span> once_for_this_file():
+    print(<span class="s">"\nbefore all: once for this file"</span>)
+    <span class="k">yield</span>
+    print(<span class="s">"\nafter all: once at the end"</span>)
+
+
+<span class="a">@pytest</span>.fixture(autouse=<span class="k">True</span>)
+<span class="k">def</span> open_products(page: <span class="t">Page</span>, request):
+    print(f<span class="s">"\nbefore each: open the products page for {request.node.originalname}"</span>)
+    page.goto(<span class="s">"/products"</span>)
+    <span class="k">yield</span>
+    print(f<span class="s">"\nafter each: {request.node.originalname} done"</span>)
+
+
+<span class="k">def</span> test_shows_five_products(page: <span class="t">Page</span>):
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)
+
+
+<span class="k">def</span> test_finds_the_lamp(page: <span class="t">Page</span>):
+    page.get_by_placeholder(<span class="s">"Search products"</span>).fill(<span class="s">"lamp"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">1</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -s -q</pre></div><div class="out"><span>Terminal output</span><pre>before all: once for this file
+
+before each: open the products page for test_shows_five_products
+.
+after each: test_shows_five_products done
+
+before each: open the products page for test_finds_the_lamp
+.
+after each: test_finds_the_lamp done
+
+after all: once at the end
+
+2 passed in 2.01s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/hooks.spec.js</div><pre class="src" data-file="tests/hooks.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.beforeAll(<span class="k">async</span> () =&gt; {
+  console.log(<span class="s">'beforeAll: once for this file'</span>);
+});
+
+test.beforeEach(<span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`beforeEach: open the products page for "${testInfo.title}"`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+});
+
+test.afterEach(<span class="k">async</span> ({}, testInfo) =&gt; {
+  console.log(<span class="s">`afterEach: "${testInfo.title}" ${testInfo.status}`</span>);
+});
+
+test.afterAll(<span class="k">async</span> () =&gt; {
+  console.log(<span class="s">'afterAll: once at the end'</span>);
+});
+
+test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'finds the lamp'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+beforeAll: once for this file
+beforeEach: open the products page for &quot;shows five products&quot;
+afterEach: &quot;shows five products&quot; passed
+  ✓  1 [chromium] › tests/hooks.spec.js:20:1 › shows five products (1.2s)
+beforeEach: open the products page for &quot;finds the lamp&quot;
+afterEach: &quot;finds the lamp&quot; passed
+afterAll: once at the end
+  ✓  2 [chromium] › tests/hooks.spec.js:24:1 › finds the lamp (224ms)
+
+  2 passed (3.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/hooks.spec.ts</div><pre class="src" data-file="tests/hooks.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.beforeAll(<span class="k">async</span> () =&gt; {
+  console.log(<span class="s">'beforeAll: once for this file'</span>);
+});
+
+test.beforeEach(<span class="k">async</span> ({ page }, testInfo) =&gt; {
+  console.log(<span class="s">`beforeEach: open the products page for "${testInfo.title}"`</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+});
+
+test.afterEach(<span class="k">async</span> ({}, testInfo) =&gt; {
+  console.log(<span class="s">`afterEach: "${testInfo.title}" ${testInfo.status}`</span>);
+});
+
+test.afterAll(<span class="k">async</span> () =&gt; {
+  console.log(<span class="s">'afterAll: once at the end'</span>);
+});
+
+test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'finds the lamp'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+beforeAll: once for this file
+beforeEach: open the products page for &quot;shows five products&quot;
+afterEach: &quot;shows five products&quot; passed
+  ✓  1 [chromium] › tests/hooks.spec.ts:20:1 › shows five products (1.2s)
+beforeEach: open the products page for &quot;finds the lamp&quot;
+afterEach: &quot;finds the lamp&quot; passed
+afterAll: once at the end
+  ✓  2 [chromium] › tests/hooks.spec.ts:24:1 › finds the lamp (292ms)
+
+  2 passed (3.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>The once per file hook ran before the first test and after the last one. The each hooks wrapped every test, so both tests started on the products page without a goto of their own. In pytest the same thing is written as fixtures that yield: the code before yield is the set up, the code after it is the tear down.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>When</th><th>Playwright Test</th><th>pytest</th><th>JUnit 5</th></tr><tr><td>before each test</td><td>test.beforeEach</td><td>a fixture, code before yield</td><td>@BeforeEach</td></tr><tr><td>after each test</td><td>test.afterEach</td><td>a fixture, code after yield</td><td>@AfterEach</td></tr><tr><td>once before all</td><td>test.beforeAll</td><td>a fixture with scope="module" or "session"</td><td>@BeforeAll (static)</td></tr><tr><td>once after all</td><td>test.afterAll</td><td>the same fixture, after yield</td><td>@AfterAll (static)</td></tr></table></div>
+</section>
+<section class="card reveal jsec easy-part" id="fixtures" data-say="fixtures"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧩</span><span>Fixtures: set up on demand</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>A fixture gives a test something it needs, sets it up before the test and cleans it up after. You have used fixtures since the first chapter: <code>page</code> is one.</p>
+<div class="tw"><table class="jt "><tr><th>Fixture</th><th>Playwright Test</th><th>pytest-playwright</th><th>Java @UsePlaywright</th></tr><tr><td>a fresh page</td><td>page</td><td>page</td><td>Page page</td></tr><tr><td>its browser context</td><td>context</td><td>context</td><td>BrowserContext browserContext</td></tr><tr><td>the shared browser</td><td>browser</td><td>browser</td><td>Browser browser</td></tr><tr><td>an API client</td><td>request</td><td>page.request, or playwright.request.new_context()</td><td>APIRequestContext request</td></tr><tr><td>which browser</td><td>browserName</td><td>browser_name</td><td>browser.browserType().name()</td></tr><tr><td>Playwright itself</td><td>playwright</td><td>playwright</td><td>Playwright playwright</td></tr></table></div>
+<div class="viz" data-viz="flow" data-k="life"></div>
+<p>You can write your own. A signed in page is the classic first one.</p>
+<div class="codewrap tests pw4" data-k="fixture" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A signed in page for every test that asks for it · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/SignedInTest.java</div><pre class="src" data-file="src/test/java/com/brainy/SignedInTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">AfterEach</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">BeforeEach</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="c">// Every test class that extends this one starts signed in as Asha.</span>
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">abstract</span> <span class="k">class</span> <span class="t">SignedInTest</span> {
+  <span class="a">@BeforeEach</span>
+  <span class="k">void</span> signIn(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/login"</span>);
+    page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+    page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>)).click();
+    assertThat(page.getByText(<span class="s">"Hello, Asha"</span>)).isVisible();
+    <span class="t">System</span>.out.println(<span class="s">"set up: signed in"</span>);
+  }
+
+  <span class="a">@AfterEach</span>
+  <span class="k">void</span> emptyCart(<span class="t">Page</span> page) {
+    page.request().delete(<span class="s">"/api/cart"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"tear down: cart emptied"</span>);
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/CartTest.java</div><pre class="src" data-file="src/test/java/com/brainy/CartTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">CartTest</span> <span class="k">extends</span> <span class="t">SignedInTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> addAMugToTheCart(<span class="t">Page</span> page) {
+    page.getByTestId(<span class="s">"product-2"</span>).getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Locator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Add to cart"</span>)).click();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).hasText(<span class="s">"Coffee mug added to your cart"</span>);
+    assertThat(page.getByTestId(<span class="s">"cart-count"</span>)).hasText(<span class="s">"1"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"test: the mug is in the cart"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.CartTest
+set up: signed in
+test: the mug is in the cart
+tear down: cart emptied
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.914 s -- in com.brainy.CartTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 conftest.py</div><pre class="src" data-file="conftest.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="a">@pytest</span>.fixture
+<span class="k">def</span> signed_in_page(page: <span class="t">Page</span>):
+    <span class="c"># Set up: sign in as Asha.</span>
+    page.goto(<span class="s">"/login"</span>)
+    page.get_by_label(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>)
+    page.get_by_label(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Sign in"</span>).click()
+    expect(page.get_by_text(<span class="s">"Hello, Asha"</span>)).to_be_visible()
+    print(<span class="s">"\nfixture set up: signed in"</span>)
+
+    <span class="k">yield</span> page                                <span class="c"># the test runs here</span>
+
+    <span class="c"># Tear down: leave the cart empty for the next test.</span>
+    page.request.delete(<span class="s">"/api/cart"</span>)
+    print(<span class="s">"\nfixture tear down: cart emptied"</span>)</pre><div class="fname">📄 tests/test_cart.py</div><pre class="src" data-file="tests/test_cart.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_add_a_mug_to_the_cart(signed_in_page: <span class="t">Page</span>):
+    page = signed_in_page
+    page.get_by_test_id(<span class="s">"product-2"</span>).get_by_role(<span class="s">"button"</span>, name=<span class="s">"Add to cart"</span>).click()
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_have_text(<span class="s">"Coffee mug added to your cart"</span>)
+    expect(page.get_by_test_id(<span class="s">"cart-count"</span>)).to_have_text(<span class="s">"1"</span>)
+    print(<span class="s">"test: the mug is in the cart"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -s -q</pre></div><div class="out"><span>Terminal output</span><pre>fixture set up: signed in
+test: the mug is in the cart
+.
+fixture tear down: cart emptied
+
+1 passed in 2.59s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/fixtures.js</div><pre class="src" data-file="tests/fixtures.js"><span class="k">import</span> { test <span class="k">as</span> base, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">const</span> test = base.extend({
+  signedInPage: <span class="k">async</span> ({ page }, use) =&gt; {
+    <span class="c">// Set up: sign in as Asha.</span>
+    <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+    <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+    <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+    console.log(<span class="s">'fixture set up: signed in'</span>);
+
+    <span class="k">await</span> use(page);                          <span class="c">// the test runs here</span>
+
+    <span class="c">// Tear down: leave the cart empty for the next test.</span>
+    <span class="k">await</span> page.request.<span class="k">delete</span>(<span class="s">'/api/cart'</span>);
+    console.log(<span class="s">'fixture tear down: cart emptied'</span>);
+  },
+});
+
+<span class="k">export</span> { expect };</pre><div class="fname">📄 tests/cart.spec.js</div><pre class="src" data-file="tests/cart.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'./fixtures.js'</span>;
+
+test(<span class="s">'add a mug to the cart'</span>, <span class="k">async</span> ({ signedInPage: page }) =&gt; {
+  <span class="k">await</span> page.getByTestId(<span class="s">'product-2'</span>).getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Coffee mug added to your cart'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'1'</span>);
+  console.log(<span class="s">'test: the mug is in the cart'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+fixture set up: signed in
+test: the mug is in the cart
+fixture tear down: cart emptied
+  ✓  1 [chromium] › tests/cart.spec.js:3:1 › add a mug to the cart (1.6s)
+
+  1 passed (3.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/fixtures.ts</div><pre class="src" data-file="tests/fixtures.ts"><span class="k">import</span> { test <span class="k">as</span> base, expect, <span class="k">type</span> <span class="t">Page</span> } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">type</span> <span class="t">ShopFixtures</span> = { signedInPage: <span class="t">Page</span> };
+
+<span class="k">export</span> <span class="k">const</span> test = base.extend&lt;<span class="t">ShopFixtures</span>&gt;({
+  signedInPage: <span class="k">async</span> ({ page }, use) =&gt; {
+    <span class="c">// Set up: sign in as Asha.</span>
+    <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+    <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+    <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+    console.log(<span class="s">'fixture set up: signed in'</span>);
+
+    <span class="k">await</span> use(page);                          <span class="c">// the test runs here</span>
+
+    <span class="c">// Tear down: leave the cart empty for the next test.</span>
+    <span class="k">await</span> page.request.<span class="k">delete</span>(<span class="s">'/api/cart'</span>);
+    console.log(<span class="s">'fixture tear down: cart emptied'</span>);
+  },
+});
+
+<span class="k">export</span> { expect };</pre><div class="fname">📄 tests/cart.spec.ts</div><pre class="src" data-file="tests/cart.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'./fixtures'</span>;
+
+test(<span class="s">'add a mug to the cart'</span>, <span class="k">async</span> ({ signedInPage: page }) =&gt; {
+  <span class="k">await</span> page.getByTestId(<span class="s">'product-2'</span>).getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Coffee mug added to your cart'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'1'</span>);
+  console.log(<span class="s">'test: the mug is in the cart'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+fixture set up: signed in
+test: the mug is in the cart
+fixture tear down: cart emptied
+  ✓  1 [chromium] › tests/cart.spec.ts:3:1 › add a mug to the cart (1.6s)
+
+  1 passed (2.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>The test only says what it checks. Signing in happened in the fixture before it, and emptying the cart happened after it, even though the test never mentioned either. Any test that asks for the signed in page gets the same set up, and a test that does not ask for it pays nothing. Java has no custom fixtures in the same sense, so the common pattern is a base class with @BeforeEach and @AfterEach.</p></div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Hooks run for every test in the file. Fixtures run only for tests that ask for them, and they can depend on other fixtures. As a suite grows, teams move set up from hooks into fixtures.</div></div>
+</section>
+<section class="card reveal jsec" id="auto" data-say="auto"><div class="sec-num">Part 3</div><h2><span class="sec-em">🛡️</span><span>Automatic fixtures</span></h2>
+
+<p>An automatic fixture runs for every test without being asked. It is the right place for checks and recordings that every test should have, such as failing on JavaScript errors.</p>
+<div class="codewrap tests pw4" data-k="auto" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An automatic fixture that fails a test when the page throws an error · <b class="pw-badge">💥 mvn test ran, fails on purpose</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="💥 mvn test ran, fails on purpose"><div class="fname">📄 src/test/java/com/brainy/NoPageErrorsTest.java</div><pre class="src" data-file="src/test/java/com/brainy/NoPageErrorsTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">AfterEach</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">BeforeEach</span>;
+<span class="k">import</span> java.util.<span class="t">ArrayList</span>;
+<span class="k">import</span> java.util.<span class="t">List</span>;
+
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertEquals;
+
+<span class="c">// Every test class that extends this one fails when its page throws an error.</span>
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">abstract</span> <span class="k">class</span> <span class="t">NoPageErrorsTest</span> {
+  <span class="k">private</span> <span class="k">final</span> <span class="t">List</span>&lt;<span class="t">String</span>&gt; errors = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();
+
+  <span class="a">@BeforeEach</span>
+  <span class="k">void</span> listen(<span class="t">Page</span> page) {
+    page.onPageError(error -&gt; errors.add(error.split(<span class="s">"\n"</span>)[<span class="n">0</span>]));
+  }
+
+  <span class="a">@AfterEach</span>
+  <span class="k">void</span> noErrors(<span class="t">Page</span> page) {
+    page.waitForTimeout(<span class="n">100</span>);   <span class="c">// Java hands over browser events only while a Playwright call runs</span>
+    assertEquals(<span class="t">List</span>.of(), errors, <span class="s">"the page threw errors"</span>);
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/PagesTest.java</div><pre class="src" data-file="src/test/java/com/brainy/PagesTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">PagesTest</span> <span class="k">extends</span> <span class="t">NoPageErrorsTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theProductsPageHasNoErrors(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theWidgetsPageBreaks(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Break the page"</span>)).click();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Console and errors"</span>))).isVisible();
+    <span class="c">// the test itself passes, the check after it finds the error</span>
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="err"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.PagesTest
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 5.320 s &lt;&lt;&lt; FAILURE! -- in com.brainy.PagesTest
+[ERROR] com.brainy.PagesTest.theWidgetsPageBreaks(Page) -- Time elapsed: 1.454 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: the page threw errors ==&gt; expected: &lt;[]&gt; but was: &lt;[Error: Price service is down]&gt;
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE</pre></div></div><div class="pw-pane" data-l="py" data-badge="💥 pytest ran, fails on purpose"><div class="fname">📄 conftest.py</div><pre class="src" data-file="conftest.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+
+<span class="a">@pytest</span>.fixture(autouse=<span class="k">True</span>)       <span class="c"># every test gets it, without asking for it</span>
+<span class="k">def</span> fail_on_page_errors(page: <span class="t">Page</span>):
+    errors = []
+    page.on(<span class="s">"pageerror"</span>, <span class="k">lambda</span> error: errors.append(error.message))
+    <span class="k">yield</span>
+    <span class="k">assert</span> errors == [], f<span class="s">"the page threw errors: {errors}"</span></pre><div class="fname">📄 tests/test_pages.py</div><pre class="src" data-file="tests/test_pages.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_the_products_page_has_no_errors(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)
+
+
+<span class="k">def</span> test_the_widgets_page_breaks(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Break the page"</span>).click()
+    expect(page.get_by_role(<span class="s">"heading"</span>, name=<span class="s">"Console and errors"</span>)).to_be_visible()
+    <span class="c"># the test itself passes, the fixture finds the error afterwards</span></pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="err"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_pages.py::test_the_products_page_has_no_errors[chromium] PASSED [ 50%]
+tests/test_pages.py::test_the_widgets_page_breaks[chromium] PASSED       [100%]
+tests/test_pages.py::test_the_widgets_page_breaks[chromium] ERROR        [100%]
+
+==================================== ERRORS ====================================
+_________ ERROR at teardown of test_the_widgets_page_breaks[chromium] __________
+
+page = &lt;Page url=&#x27;http://localhost:4173/widgets&#x27;&gt;
+
+    @pytest.fixture(autouse=True)       # every test gets it, without asking for it
+    def fail_on_page_errors(page: Page):
+        errors = []
+        page.on(&quot;pageerror&quot;, lambda error: errors.append(error.message))
+        yield
+&gt;       assert errors == [], f&quot;the page threw errors: {errors}&quot;
+E       AssertionError: the page threw errors: [&#x27;Price service is down&#x27;]
+E       assert [&#x27;Price service is down&#x27;] == []
+E         
+E         Left contains one more item: &#x27;Price service is down&#x27;
+E         
+E         Full diff:
+E         - []
+E         + [
+E         +     &#x27;Price service is down&#x27;,
+E         + ]
+
+conftest.py:10: AssertionError
+=========================== short test summary info ============================
+ERROR tests/test_pages.py::test_the_widgets_page_breaks[chromium] - AssertionError: the page threw errors: [&#x27;Price service is down&#x27;]
+========================== 2 passed, 1 error in 3.37s ==========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 tests/fixtures.js</div><pre class="src" data-file="tests/fixtures.js"><span class="k">import</span> { test <span class="k">as</span> base, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">const</span> test = base.extend({
+  failOnPageErrors: [<span class="k">async</span> ({ page }, use) =&gt; {
+    <span class="k">const</span> errors = [];
+    page.on(<span class="s">'pageerror'</span>, error =&gt; errors.push(error.message));
+    <span class="k">await</span> use();
+    expect(errors, <span class="s">'the page threw errors'</span>).toEqual([]);
+  }, { auto: <span class="k">true</span> }],       <span class="c">// every test gets it, without asking for it</span>
+});
+
+<span class="k">export</span> { expect };</pre><div class="fname">📄 tests/pages.spec.js</div><pre class="src" data-file="tests/pages.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'./fixtures.js'</span>;
+
+test(<span class="s">'the products page has no errors'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'the widgets page breaks'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Break the page'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'heading'</span>, { name: <span class="s">'Console and errors'</span> })).toBeVisible();
+  <span class="c">// the test itself passes, the fixture finds the error afterwards</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/pages.spec.js:3:1 › the products page has no errors (1.1s)
+  ✘  2 [chromium] › tests/pages.spec.js:8:1 › the widgets page breaks (1.3s)
+
+
+  1) [chromium] › tests/pages.spec.js:8:1 › the widgets page breaks ────────────────────────────────
+
+    Error: the page threw errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   &quot;Price service is down&quot;,
+    + ]
+
+       at fixtures.js:8
+
+       6 |     page.on(&#x27;pageerror&#x27;, error =&gt; errors.push(error.message));
+       7 |     await use();
+    &gt;  8 |     expect(errors, &#x27;the page threw errors&#x27;).toEqual([]);
+         |                                             ^
+       9 |   }, { auto: true }],       // every test gets it, without asking for it
+      10 | });
+      11 |
+        at Object.base.extend.failOnPageErrors.auto (tests/fixtures.js:8:45)
+
+    Error Context: test-results/pages-the-widgets-page-breaks-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/pages.spec.js:8:1 › the widgets page breaks ─────────────────────────────────
+  1 passed (4.1s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 tests/fixtures.ts</div><pre class="src" data-file="tests/fixtures.ts"><span class="k">import</span> { test <span class="k">as</span> base, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">const</span> test = base.extend&lt;{ failOnPageErrors: <span class="k">void</span> }&gt;({
+  failOnPageErrors: [<span class="k">async</span> ({ page }, use) =&gt; {
+    <span class="k">const</span> errors: <span class="k">string</span>[] = [];
+    page.on(<span class="s">'pageerror'</span>, error =&gt; errors.push(error.message));
+    <span class="k">await</span> use();
+    expect(errors, <span class="s">'the page threw errors'</span>).toEqual([]);
+  }, { auto: <span class="k">true</span> }],       <span class="c">// every test gets it, without asking for it</span>
+});
+
+<span class="k">export</span> { expect };</pre><div class="fname">📄 tests/pages.spec.ts</div><pre class="src" data-file="tests/pages.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'./fixtures'</span>;
+
+test(<span class="s">'the products page has no errors'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+});
+
+test(<span class="s">'the widgets page breaks'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Break the page'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'heading'</span>, { name: <span class="s">'Console and errors'</span> })).toBeVisible();
+  <span class="c">// the test itself passes, the fixture finds the error afterwards</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/pages.spec.ts:3:1 › the products page has no errors (1.3s)
+  ✘  2 [chromium] › tests/pages.spec.ts:8:1 › the widgets page breaks (1.3s)
+
+
+  1) [chromium] › tests/pages.spec.ts:8:1 › the widgets page breaks ────────────────────────────────
+
+    Error: the page threw errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   &quot;Price service is down&quot;,
+    + ]
+
+       at fixtures.ts:8
+
+       6 |     page.on(&#x27;pageerror&#x27;, error =&gt; errors.push(error.message));
+       7 |     await use();
+    &gt;  8 |     expect(errors, &#x27;the page threw errors&#x27;).toEqual([]);
+         |                                             ^
+       9 |   }, { auto: true }],       // every test gets it, without asking for it
+      10 | });
+      11 |
+        at Object.base.extend.failOnPageErrors.auto (tests/fixtures.ts:8:45)
+
+    Error Context: test-results/pages-the-widgets-page-breaks-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/pages.spec.ts:8:1 › the widgets page breaks ─────────────────────────────────
+  1 passed (4.1s)</pre></div></div><div class="note-out"><span>What happens</span><p>Neither test asked for the fixture, yet both got it. The products page had no errors and passed. The widgets test did everything right, but the page threw <b>Price service is down</b>, so the fixture failed it after the test body finished. pytest reports this as an error in the tear down, which still fails the run. The Java check calls page.waitForTimeout first, because the synchronous Java API delivers browser events only while a Playwright method is running.</p></div></div>
+</section>
+<section class="card reveal jsec" id="global" data-say="global"><div class="sec-num">Part 4</div><h2><span class="sec-em">🌍</span><span>Set up once for the whole run</span></h2>
+
+<p>Some work should happen once, not once per test: checking the application is up, creating test data, or signing in and saving the session (the API testing chapter shows that one).</p>
+<div class="codewrap tests pw4" data-k="global" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Set up once: check the shop and create test data · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ApiOptions.java</div><pre class="src" data-file="src/test/java/com/brainy/ApiOptions.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">APIRequest</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">Options</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">OptionsFactory</span>;
+
+<span class="c">// setBaseUrl is for pages. The request fixture reads its own options.</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">ApiOptions</span> <span class="k">implements</span> <span class="t">OptionsFactory</span> {
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="t">Options</span> getOptions() {
+    <span class="k">return</span> <span class="k">new</span> <span class="t">Options</span>()
+        .setHeadless(<span class="k">true</span>)
+        .setBaseUrl(<span class="s">"http://localhost:4173"</span>)
+        .setApiRequestOptions(<span class="k">new</span> <span class="t">APIRequest</span>.<span class="t">NewContextOptions</span>().setBaseURL(<span class="s">"http://localhost:4173"</span>));
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/PeopleTest.java</div><pre class="src" data-file="src/test/java/com/brainy/PeopleTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.google.gson.<span class="t">JsonParser</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">APIRequest</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">APIRequestContext</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">APIResponse</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Playwright</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">RequestOptions</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">BeforeAll</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.util.<span class="t">Map</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertEquals;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ApiOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">PeopleTest</span> {
+  <span class="a">@BeforeAll</span>                                          <span class="c">// once for this class</span>
+  <span class="k">static</span> <span class="k">void</span> shopData() {
+    <span class="k">try</span> (<span class="t">Playwright</span> playwright = <span class="t">Playwright</span>.create()) {
+      <span class="t">APIRequestContext</span> api = playwright.request().newContext(
+          <span class="k">new</span> <span class="t">APIRequest</span>.<span class="t">NewContextOptions</span>().setBaseURL(<span class="s">"http://localhost:4173"</span>));
+      assertThat(api.get(<span class="s">"/api/health"</span>)).isOK();
+      <span class="t">APIResponse</span> response = api.post(<span class="s">"/api/people"</span>,
+          <span class="t">RequestOptions</span>.create().setData(<span class="t">Map</span>.of(<span class="s">"name"</span>, <span class="s">"Test Customer"</span>, <span class="s">"email"</span>, <span class="s">"test@shop.example"</span>)));
+      assertEquals(<span class="n">201</span>, response.status());
+      <span class="t">System</span>.out.println(<span class="s">"setup: created person "</span> + <span class="t">JsonParser</span>.parseString(response.text()).getAsJsonObject().get(<span class="s">"id"</span>));
+    }
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theTestDataIsThere(<span class="t">APIRequestContext</span> request) {
+    <span class="k">var</span> people = <span class="t">JsonParser</span>.parseString(request.get(<span class="s">"/api/people"</span>).text()).getAsJsonArray();
+    <span class="t">System</span>.out.println(<span class="s">"test: people in the shop: "</span> + people);
+    assertEquals(<span class="n">1</span>, people.size());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.PeopleTest
+setup: created person 1
+test: people in the shop: [{&quot;id&quot;:1,&quot;name&quot;:&quot;Test Customer&quot;,&quot;email&quot;:&quot;test@shop.example&quot;,&quot;city&quot;:null}]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.046 s -- in com.brainy.PeopleTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 conftest.py</div><pre class="src" data-file="conftest.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Playwright</span>, expect
+
+
+<span class="a">@pytest</span>.fixture(scope=<span class="s">"session"</span>, autouse=<span class="k">True</span>)      <span class="c"># once for the whole run</span>
+<span class="k">def</span> shop_data(playwright: <span class="t">Playwright</span>, base_url: str):
+    api = playwright.request.new_context(base_url=base_url)
+    expect(api.get(<span class="s">"/api/health"</span>)).to_be_ok()
+    response = api.post(<span class="s">"/api/people"</span>, data={<span class="s">"name"</span>: <span class="s">"Test Customer"</span>, <span class="s">"email"</span>: <span class="s">"test@shop.example"</span>})
+    <span class="k">assert</span> response.status == <span class="n">201</span>
+    print(<span class="s">"\nsetup: created person"</span>, response.json()[<span class="s">"id"</span>])
+    <span class="k">yield</span>
+    api.dispose()</pre><div class="fname">📄 tests/test_people.py</div><pre class="src" data-file="tests/test_people.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+
+<span class="k">def</span> test_the_test_data_is_there(page: <span class="t">Page</span>):
+    people = page.request.get(<span class="s">"/api/people"</span>).json()
+    print(<span class="s">"test: people in the shop:"</span>, [p[<span class="s">"name"</span>] <span class="k">for</span> p <span class="k">in</span> people])
+    <span class="k">assert</span> len(people) == <span class="n">1</span></pre><div class="cmd"><span>Terminal</span><pre>$ pytest -s -q</pre></div><div class="out"><span>Terminal output</span><pre>setup: created person 1
+test: people in the shop: [&#x27;Test Customer&#x27;]
+.
+1 passed in 1.00s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  reporter: <span class="s">'list'</span>,
+  use: { baseURL: <span class="s">'http://localhost:4173'</span> },
+  projects: [
+    { name: <span class="s">'setup'</span>, testMatch: /global\.setup\.[jt]s/ },                <span class="c">// runs first</span>
+    { name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] }, dependencies: [<span class="s">'setup'</span>] },
+  ],
+});</pre><div class="fname">📄 tests/global.setup.js</div><pre class="src" data-file="tests/global.setup.js"><span class="k">import</span> { test <span class="k">as</span> setup, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+setup(<span class="s">'the shop is up and has test data'</span>, <span class="k">async</span> ({ request }) =&gt; {
+  <span class="k">await</span> expect(<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/health'</span>)).toBeOK();
+  <span class="k">const</span> response = <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, {
+    data: { name: <span class="s">'Test Customer'</span>, email: <span class="s">'test@shop.example'</span> },
+  });
+  expect(response.status()).toBe(<span class="n">201</span>);
+  console.log(<span class="s">'setup: created person'</span>, (<span class="k">await</span> response.json()).id);
+});</pre><div class="fname">📄 tests/people.spec.js</div><pre class="src" data-file="tests/people.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the test data is there'</span>, <span class="k">async</span> ({ request }) =&gt; {
+  <span class="k">const</span> people = <span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json();
+  console.log(<span class="s">'test: people in the shop:'</span>, people.map(p =&gt; p.name));
+  expect(people).toHaveLength(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+setup: created person 1
+  ✓  1 [setup] › tests/global.setup.js:3:1 › the shop is up and has test data (105ms)
+test: people in the shop: [ &#x27;Test Customer&#x27; ]
+  ✓  2 [chromium] › tests/people.spec.js:3:1 › the test data is there (61ms)
+
+  2 passed (2.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  reporter: <span class="s">'list'</span>,
+  use: { baseURL: <span class="s">'http://localhost:4173'</span> },
+  projects: [
+    { name: <span class="s">'setup'</span>, testMatch: /global\.setup\.[jt]s/ },                <span class="c">// runs first</span>
+    { name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] }, dependencies: [<span class="s">'setup'</span>] },
+  ],
+});</pre><div class="fname">📄 tests/global.setup.ts</div><pre class="src" data-file="tests/global.setup.ts"><span class="k">import</span> { test <span class="k">as</span> setup, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+setup(<span class="s">'the shop is up and has test data'</span>, <span class="k">async</span> ({ request }) =&gt; {
+  <span class="k">await</span> expect(<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/health'</span>)).toBeOK();
+  <span class="k">const</span> response = <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, {
+    data: { name: <span class="s">'Test Customer'</span>, email: <span class="s">'test@shop.example'</span> },
+  });
+  expect(response.status()).toBe(<span class="n">201</span>);
+  console.log(<span class="s">'setup: created person'</span>, (<span class="k">await</span> response.json()).id);
+});</pre><div class="fname">📄 tests/people.spec.ts</div><pre class="src" data-file="tests/people.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the test data is there'</span>, <span class="k">async</span> ({ request }) =&gt; {
+  <span class="k">const</span> people = <span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json();
+  console.log(<span class="s">'test: people in the shop:'</span>, people.map((p: { name: <span class="k">string</span> }) =&gt; p.name));
+  expect(people).toHaveLength(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+setup: created person 1
+  ✓  1 [setup] › tests/global.setup.ts:3:1 › the shop is up and has test data (63ms)
+test: people in the shop: [ &#x27;Test Customer&#x27; ]
+  ✓  2 [chromium] › tests/people.spec.ts:3:1 › the test data is there (56ms)
+
+  2 passed (2.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>The set up ran once, before the tests, and created one person through the API. In Playwright Test it is a project that the other projects depend on, so it shows up in the report and the trace like any test. pytest uses a session fixture, and JUnit a static @BeforeAll method. For a whole Maven run, JUnit also offers a LauncherSessionListener. Note ApiOptions in the Java version: setBaseUrl only covers pages, so the request fixture gets its own base URL through setApiRequestOptions.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Scope</th><th>Playwright Test</th><th>pytest</th><th>JUnit 5</th></tr><tr><td>each test</td><td>test fixture (the default)</td><td>scope="function" (the default)</td><td>@BeforeEach</td></tr><tr><td>each worker process</td><td>{ scope: 'worker' }</td><td>not built in (pytest-xdist workers use session)</td><td>not built in</td></tr><tr><td>the file or class</td><td>test.beforeAll</td><td>scope="module" or "class"</td><td>@BeforeAll</td></tr><tr><td>the whole run</td><td>a setup project with dependencies, or globalSetup</td><td>scope="session"</td><td>LauncherSessionListener, or @BeforeAll in a base class</td></tr></table></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-runner.html" data-topic="pw-runner"><small>← Previous chapter</small><b>🏃 Test runner</b></a><a class="next" href="./pw-parallel.html" data-topic="pw-parallel"><small>Next chapter →</small><b>⚡ Parallel and retries</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Set up once, use everywhere", "panels": [{"s": [["e", "🪝"], ["t", "beforeEach", {"b": 1}]], "h": "Hooks", "t": "Around every test.", "more": "Simple and visible."}, {"s": [["e", "🧩"], ["t", "fixture", {"b": 1}]], "h": "Fixtures", "t": "Only when asked for.", "more": "Set up, use, tear down."}, {"s": [["e", "🛡️"], ["t", "auto", {"b": 1}]], "h": "Automatic", "t": "Every test gets it.", "more": "Guards and recordings."}, {"s": [["e", "🌍"], ["t", "setup", {"b": 1}]], "h": "Once per run", "t": "Health check, data.", "more": "Before any test."}], "remember": "Put set up where it belongs: in the test if one test needs it, in a fixture if several do, and in a setup step if the whole run does."}, "real": [["🛡️", "JavaScript errors found for free", "A travel site adds one automatic fixture that fails on page errors. From then on, a broken script fails a test even on pages nobody wrote checks for."], ["🔐", "One sign in fixture for 400 tests", "A banking team moves copy pasted sign in steps from hundreds of tests into one fixture. When the sign in page changes, they fix one file."], ["🧹", "Tests that clean up after themselves", "A shop test suite empties the cart in a fixture tear down, so a failed test never leaves items that break the next one."]], "quiz": [{"lv": 1, "q": "Which hook runs before every test in Playwright Test?", "o": ["test.beforeAll", "test.beforeEach", "test.setup", "test.first"], "a": 1, "hint": "Each means every test.", "why": "test.beforeEach runs before every test in its scope."}, {"lv": 1, "q": "In pytest, where does the tear down code of a fixture go?", "o": ["before yield", "after yield", "in a separate file", "in teardown()"], "a": 1, "hint": "yield hands over the value.", "why": "Code after yield runs after the test, even when it failed."}, {"lv": 1, "q": "What is page in async ({ page }) => ...?", "o": ["a global variable", "a built in fixture", "a hook", "a config option"], "a": 1, "hint": "It is passed in by the runner.", "why": "page is a built in fixture: a fresh page for each test."}, {"lv": 1, "q": "Which JUnit 5 annotation runs once before all tests in a class?", "o": ["@BeforeEach", "@BeforeAll", "@Before", "@Setup"], "a": 1, "hint": "All means once.", "why": "@BeforeAll runs once, and the method is static."}, {"lv": 2, "q": "When does a custom fixture run?", "o": ["for every test", "only for tests that ask for it", "once per file", "never"], "a": 1, "hint": "Look at how the test names it.", "why": "A normal fixture runs only for tests that list it, unless it is automatic."}, {"lv": 2, "q": "How do you make a Playwright Test fixture run for every test without being asked?", "o": ["scope: worker", "auto: true", "global: true", "always: true"], "a": 1, "hint": "Look at the automatic fixture.", "why": "Pass { auto: true } in the fixture tuple."}, {"lv": 2, "q": "In pytest, how do you make a fixture run for every test without being asked?", "o": ["scope=\"session\"", "autouse=True", "auto=True", "always=True"], "a": 1, "hint": "Use it automatically.", "why": "autouse=True makes pytest use the fixture in every test in its scope."}, {"lv": 2, "q": "Why empty the cart in the fixture tear down, not at the end of the test?", "o": ["It is faster", "Tear down runs even when the test failed", "Tests cannot call APIs", "It is required"], "a": 1, "hint": "What if the test fails halfway?", "why": "A failed test stops early, but the tear down still runs, so the next test starts clean."}, {"lv": 2, "q": "The widgets test passed its own checks but failed. Why?", "o": ["a timeout", "the automatic fixture found a page error after the test", "a strict mode violation", "it was skipped"], "a": 1, "hint": "Read the auto example result.", "why": "The page threw an error, and the automatic fixture failed the test after its body finished."}, {"lv": 3, "q": "What is the recommended way to run set up once before all tests in Playwright Test?", "o": ["a beforeAll in every file", "a setup project that other projects depend on", "a sleep", "a shell script"], "a": 1, "hint": "It shows up in the report too.", "why": "A setup project with dependencies runs first and appears in reports and traces."}, {"lv": 3, "q": "Which pytest fixture scope runs once for the whole run?", "o": ["function", "module", "class", "session"], "a": 3, "hint": "The widest scope.", "why": "scope=\"session\" means once per test session."}, {"lv": 3, "q": "Java has no custom fixtures like test.extend. What do teams usually use?", "o": ["static variables only", "a base class with @BeforeEach and @AfterEach", "nothing", "Python"], "a": 1, "hint": "Look at SignedInTest.", "why": "A base class with hooks that test classes extend is the common Java pattern."}], "calc": [{"lv": 1, "q": "A file has 2 tests. How many times does beforeEach run?", "ans": 2, "hint": "once per test", "steps": ["2 tests × 1 = 2"]}, {"lv": 1, "q": "A file has 2 tests. How many times does beforeAll run?", "ans": 1, "hint": "once per file in one worker", "steps": ["beforeAll runs once: 1"]}, {"lv": 2, "q": "Signing in takes 3 s. 400 tests sign in through the UI. How many minutes does signing in cost?", "ans": 20, "hint": "400 × 3 / 60", "steps": ["400 × 3 = 1200 s", "1200 / 60 = 20 minutes"]}, {"lv": 2, "q": "A fixture is used by 30 of 100 tests. How many times does it set up?", "ans": 30, "hint": "only tests that ask", "steps": ["30 tests ask for it", "30 set ups"]}, {"lv": 2, "q": "An automatic fixture in a suite of 100 tests. How many times does it set up?", "ans": 100, "hint": "every test", "steps": ["auto: every test gets it", "100"]}, {"lv": 3, "q": "A session fixture creates 1 person and 3 tests each create 2 more. How many people at the end?", "ans": 7, "hint": "1 + 3 × 2", "steps": ["3 × 2 = 6", "1 + 6 = 7"]}, {"lv": 3, "q": "The automatic fixture found errors on 4 of 50 pages. What percent had errors?", "ans": 8, "hint": "4 / 50 × 100", "steps": ["4 / 50 = 0.08", "× 100 = 8 %"]}, {"lv": 3, "q": "A worker fixture takes 3 s and there are 4 workers running 200 tests. How many seconds go to that fixture in total?", "ans": 12, "hint": "once per worker", "steps": ["4 workers × 3 s = 12 s", "not 200 × 3, because it is per worker"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter is about sharing set up: hooks around tests, fixtures that set up only what a test asks for, automatic fixtures for every test, and set up that runs once for the whole run.", "hi": "यह अध्याय set up साझा करने के बारे में है: tests के चारों ओर hooks, fixtures जो सिर्फ़ वही तैयार करते हैं जो test माँगता है, हर test के लिए automatic fixtures, और पूरे run के लिए एक बार चलने वाला set up।", "kn": "ಈ ಅಧ್ಯಾಯ set up ಹಂಚಿಕೊಳ್ಳುವುದರ ಬಗ್ಗೆ: tests ಸುತ್ತಲಿನ hooks, test ಕೇಳಿದ್ದನ್ನು ಮಾತ್ರ ಸಿದ್ಧಪಡಿಸುವ fixtures, ಪ್ರತಿ test ಗೆ automatic fixtures, ಮತ್ತು ಸಂಪೂರ್ಣ run ಗೆ ಒಮ್ಮೆ ನಡೆಯುವ set up.", "or": "ଏହି ଅଧ୍ୟାୟ set up ବାଣ୍ଟିବା ବିଷୟରେ: tests ଚାରିପାଖରେ hooks, test ମାଗୁଥିବା ଜିନିଷ କେବଳ ପ୍ରସ୍ତୁତ କରୁଥିବା fixtures, ପ୍ରତି test ପାଇଁ automatic fixtures, ଏବଂ ପୂରା run ପାଇଁ ଥରେ ଚାଲୁଥିବା set up।", "ar": "يتناول هذا الفصل مشاركة التهيئة: خطافات حول الاختبارات، وتجهيزات تعدّ فقط ما يطلبه الاختبار، وتجهيزات تلقائية لكل اختبار، وتهيئة تعمل مرة واحدة للتشغيل كله.", "de": "Dieses Kapitel behandelt gemeinsames Setup: Hooks rund um Tests, Fixtures, die nur vorbereiten, was ein Test verlangt, automatische Fixtures für jeden Test und Setup, das einmal pro Lauf läuft."}, {"id": "hooks", "h": "Hooks", "en": "Before each and after each run around every test, before all and after all run once. In pytest the same idea is a fixture with code before and after yield.", "hi": "Before each और after each हर test के चारों ओर चलते हैं, before all और after all एक बार। pytest में यही विचार yield से पहले और बाद के code वाला fixture है।", "kn": "Before each ಮತ್ತು after each ಪ್ರತಿ test ಸುತ್ತ ನಡೆಯುತ್ತವೆ, before all ಮತ್ತು after all ಒಮ್ಮೆ. pytest ನಲ್ಲಿ ಇದೇ ಆಲೋಚನೆ yield ಮುಂಚೆ ಮತ್ತು ನಂತರದ code ಇರುವ fixture.", "or": "Before each ଓ after each ପ୍ରତି test ଚାରିପାଖରେ ଚାଲେ, before all ଓ after all ଥରେ। pytest ରେ ସେହି ଧାରଣା yield ପୂର୍ବ ଓ ପର code ଥିବା fixture।", "ar": "يعمل before each وafter each حول كل اختبار، ويعمل before all وafter all مرة واحدة. في pytest الفكرة نفسها هي تجهيز فيه شيفرة قبل yield وبعده.", "de": "Before each und after each laufen um jeden Test, before all und after all einmal. In pytest ist dieselbe Idee eine Fixture mit Code vor und nach yield."}, {"id": "fixtures", "h": "Fixtures", "en": "A fixture sets up what a test needs, hands it over, and cleans up afterwards. Only tests that ask for a fixture run it. A signed in page is a classic custom fixture.", "hi": "Fixture वह तैयार करता है जो test को चाहिए, उसे सौंपता है, और बाद में साफ़ करता है। सिर्फ़ fixture माँगने वाले tests उसे चलाते हैं। Signed in page एक जाना माना custom fixture है।", "kn": "Fixture test ಗೆ ಬೇಕಾದದ್ದನ್ನು ಸಿದ್ಧಪಡಿಸಿ, ಹಸ್ತಾಂತರಿಸಿ, ನಂತರ ಸ್ವಚ್ಛಗೊಳಿಸುತ್ತದೆ. Fixture ಕೇಳಿದ tests ಮಾತ್ರ ಅದನ್ನು ನಡೆಸುತ್ತವೆ. Signed in page ಒಂದು ಪ್ರಸಿದ್ಧ custom fixture.", "or": "Fixture test ପାଇଁ ଦରକାରୀ ଜିନିଷ ପ୍ରସ୍ତୁତ କରେ, ହସ୍ତାନ୍ତର କରେ ଏବଂ ପରେ ସଫା କରେ। କେବଳ fixture ମାଗୁଥିବା tests ଏହାକୁ ଚଳାନ୍ତି। Signed in page ଏକ ଜଣାଶୁଣା custom fixture।", "ar": "التجهيز يعدّ ما يحتاجه الاختبار ويسلّمه ثم ينظف بعده. لا يشغله إلا الاختبار الذي يطلبه. الصفحة المسجّل دخولها مثال شائع لتجهيز مخصص.", "de": "Eine Fixture bereitet vor, was ein Test braucht, übergibt es und räumt danach auf. Nur Tests, die sie verlangen, führen sie aus. Eine angemeldete Seite ist die klassische eigene Fixture."}, {"id": "auto", "h": "Automatic fixtures", "en": "An automatic fixture runs for every test without being asked. A common one fails any test whose page threw a JavaScript error.", "hi": "Automatic fixture बिना माँगे हर test के लिए चलता है। एक आम उदाहरण वह है जो हर उस test को fail करता है जिसके page ने JavaScript error दिया।", "kn": "Automatic fixture ಕೇಳದೆಯೇ ಪ್ರತಿ test ಗೆ ನಡೆಯುತ್ತದೆ. ಸಾಮಾನ್ಯ ಉದಾಹರಣೆ: page JavaScript error ನೀಡಿದ test ಅನ್ನು fail ಮಾಡುವುದು.", "or": "Automatic fixture ନ ମାଗିଲେ ବି ପ୍ରତି test ପାଇଁ ଚାଲେ। ସାଧାରଣ ଉଦାହରଣ: page JavaScript error ଦେଲେ test କୁ fail କରିବା।", "ar": "يعمل التجهيز التلقائي لكل اختبار دون أن يُطلب. ومن أشهرها تجهيز يُفشل أي اختبار رمت صفحته خطأ JavaScript.", "de": "Eine automatische Fixture läuft für jeden Test, ohne angefordert zu werden. Eine verbreitete lässt jeden Test scheitern, dessen Seite einen JavaScript-Fehler warf."}, {"id": "global", "h": "Once per run", "en": "Work that should happen once goes in a setup step: a setup project in Playwright Test, a session fixture in pytest, or a static before all method in JUnit.", "hi": "जो काम एक बार होना चाहिए वह setup step में जाता है: Playwright Test में setup project, pytest में session fixture, या JUnit में static before all method।", "kn": "ಒಮ್ಮೆ ಆಗಬೇಕಾದ ಕೆಲಸ setup step ಗೆ ಹೋಗುತ್ತದೆ: Playwright Test ನಲ್ಲಿ setup project, pytest ನಲ್ಲಿ session fixture, ಅಥವಾ JUnit ನಲ್ಲಿ static before all method.", "or": "ଥରେ ହେବା ଉଚିତ କାମ setup step ରେ ଯାଏ: Playwright Test ରେ setup project, pytest ରେ session fixture, ବା JUnit ରେ static before all method।", "ar": "العمل الذي يجب أن يحدث مرة واحدة يوضع في خطوة تهيئة: مشروع setup في Playwright Test، أو تجهيز session في pytest، أو دالة before all ثابتة في JUnit.", "de": "Arbeit, die einmal passieren soll, gehört in einen Setup-Schritt: ein Setup-Projekt in Playwright Test, eine Session-Fixture in pytest oder eine statische before-all-Methode in JUnit."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you write the steps a signed in fixture would do and add a lamp to the cart, then you empty the cart the way a tear down would.", "hi": "Labs में आप वे steps लिखते हैं जो signed in fixture करता और cart में lamp जोड़ते हैं, फिर tear down की तरह cart खाली करते हैं।", "kn": "Labs ನಲ್ಲಿ signed in fixture ಮಾಡುವ steps ಬರೆದು cart ಗೆ lamp ಸೇರಿಸುತ್ತೀರಿ, ನಂತರ tear down ರೀತಿ cart ಖಾಲಿ ಮಾಡುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ signed in fixture କରୁଥିବା steps ଲେଖି cart ରେ lamp ଯୋଡନ୍ତି, ତାପରେ tear down ପରି cart ଖାଲି କରନ୍ତି।", "ar": "في المختبرات تكتب الخطوات التي يقوم بها تجهيز تسجيل الدخول وتضيف مصباحًا إلى السلة، ثم تفرغ السلة كما يفعل التنظيف.", "de": "In den Labs schreibst du die Schritte einer Anmelde-Fixture und legst eine Lampe in den Warenkorb, danach leerst du den Warenkorb wie ein Teardown."}], "ex": [], "dg": {"life": {"t": "The life of one fixture", "w": 900, "h": 200, "n": [["ask", 20, 70, 150, 64, "test asks", {"c": 5, "sub": "({ signedInPage })", "i": "The test names the fixture in its parameters. Only fixtures that are asked for run."}], ["up", 200, 70, 160, 64, "set up", {"c": 2, "sub": "code before use", "i": "The fixture prepares what the test needs, such as signing in."}], ["run", 390, 70, 150, 64, "the test", {"c": 1, "sub": "use(value)", "i": "The test body runs with the value the fixture handed over."}], ["down", 570, 70, 160, 64, "tear down", {"c": 3, "sub": "code after use", "i": "The fixture cleans up, even when the test failed."}], ["next", 760, 70, 120, 64, "next test", {"c": 0, "sub": "fresh again", "i": "The next test gets its own fresh fixture."}]], "e": [["ask", "up"], ["up", "run"], ["run", "down"], ["down", "next"]], "st": [[["ask"], "A test asks for a fixture by naming it."], [["up", "ask>up"], "The fixture runs its set up code."], [["run", "up>run"], "It hands its value to the test, and the test runs."], [["down", "run>down"], "After the test, passed or failed, the fixture runs its tear down code."], [["next", "down>next"], "The next test starts from a clean state with its own fixture."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "signinadd", "title": "Sign in, then add the lamp", "name": "add the desk lamp as Asha", "task": "Do what a signed in fixture does: on <code>/login<\/code> sign in as <code>asha@shop.example<\/code> with <code>s3cret<\/code> and wait for <b>Hello, Asha<\/b>. Then add the <b>Desk lamp<\/b> to the cart and check the cart counter shows <b>1<\/b>.", "goal": "Asha is signed in and has the lamp in her cart.", "start": "/login", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('add the desk lamp as Asha', async ({ page }) => {\n  await page.goto('/login');\n  // sign in, wait for the greeting, then add the Desk lamp\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class AddTheDeskLampAsAshaTest {\n  @Test\n  void addTheDeskLampAsAsha(Page page) {\n    page.navigate(\"/login\");\n    page.getByLabel(\"Email\").fill(\"asha@shop.example\");\n    page.getByLabel(\"Password\").fill(\"s3cret\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Sign in\")).click();\n    assertThat(page.getByText(\"Hello, Asha\")).isVisible();\n    page.getByTestId(\"product-3\").getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(\"Add to cart\")).click();\n    assertThat(page.getByTestId(\"cart-count\")).hasText(\"1\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_add_the_desk_lamp_as_asha(page: Page):\n    page.goto(\"/login\")\n    page.get_by_label(\"Email\").fill(\"asha@shop.example\")\n    page.get_by_label(\"Password\").fill(\"s3cret\")\n    page.get_by_role(\"button\", name=\"Sign in\").click()\n    expect(page.get_by_text(\"Hello, Asha\")).to_be_visible()\n    page.get_by_test_id(\"product-3\").get_by_role(\"button\", name=\"Add to cart\").click()\n    expect(page.get_by_test_id(\"cart-count\")).to_have_text(\"1\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('add the desk lamp as Asha', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n  await page.getByTestId('product-3').getByRole('button', { name: 'Add to cart' }).click();\n  await expect(page.getByTestId('cart-count')).toHaveText('1');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('add the desk lamp as Asha', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n  await page.getByTestId('product-3').getByRole('button', { name: 'Add to cart' }).click();\n  await expect(page.getByTestId('cart-count')).toHaveText('1');\n});"}, "hint": "The Desk lamp card has the test id <code>product-3<\/code>. Its button: <code>page.getByTestId('product-3').getByRole('button', { name: 'Add to cart' })<\/code>.", "why": "The first five lines are exactly what the signedInPage fixture does. In a real suite they move into the fixture, and the test keeps only the last two lines.", "check": [["ctx.loggedIn", "Asha is signed in"], ["ctx.cartCount === 1", "One item is in the cart"]]}, {"id": "emptycart", "title": "Empty the cart like a tear down", "name": "empty the cart", "task": "Sign in as Asha, add the <b>Coffee mug<\/b>, then go to <code>/cart<\/code>, click <b>Empty cart<\/b> and check the table says <b>Your cart is empty<\/b>.", "goal": "The cart is empty again, ready for the next test.", "start": "/login", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('empty the cart', async ({ page }) => {\n  await page.goto('/login');\n  // sign in, add the mug, then empty the cart on /cart\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class EmptyTheCartTest {\n  @Test\n  void emptyTheCart(Page page) {\n    page.navigate(\"/login\");\n    page.getByLabel(\"Email\").fill(\"asha@shop.example\");\n    page.getByLabel(\"Password\").fill(\"s3cret\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Sign in\")).click();\n    assertThat(page.getByText(\"Hello, Asha\")).isVisible();\n    page.getByTestId(\"product-2\").getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(\"Add to cart\")).click();\n    assertThat(page.getByTestId(\"cart-count\")).hasText(\"1\");\n    page.navigate(\"/cart\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Empty cart\")).click();\n    assertThat(page.getByRole(AriaRole.CELL, new Page.GetByRoleOptions().setName(\"Your cart is empty\"))).isVisible();\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_empty_the_cart(page: Page):\n    page.goto(\"/login\")\n    page.get_by_label(\"Email\").fill(\"asha@shop.example\")\n    page.get_by_label(\"Password\").fill(\"s3cret\")\n    page.get_by_role(\"button\", name=\"Sign in\").click()\n    expect(page.get_by_text(\"Hello, Asha\")).to_be_visible()\n    page.get_by_test_id(\"product-2\").get_by_role(\"button\", name=\"Add to cart\").click()\n    expect(page.get_by_test_id(\"cart-count\")).to_have_text(\"1\")\n    page.goto(\"/cart\")\n    page.get_by_role(\"button\", name=\"Empty cart\").click()\n    expect(page.get_by_role(\"cell\", name=\"Your cart is empty\")).to_be_visible()\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('empty the cart', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n  await page.getByTestId('product-2').getByRole('button', { name: 'Add to cart' }).click();\n  await expect(page.getByTestId('cart-count')).toHaveText('1');\n  await page.goto('/cart');\n  await page.getByRole('button', { name: 'Empty cart' }).click();\n  await expect(page.getByRole('cell', { name: 'Your cart is empty' })).toBeVisible();\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('empty the cart', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  await expect(page.getByText('Hello, Asha')).toBeVisible();\n  await page.getByTestId('product-2').getByRole('button', { name: 'Add to cart' }).click();\n  await expect(page.getByTestId('cart-count')).toHaveText('1');\n  await page.goto('/cart');\n  await page.getByRole('button', { name: 'Empty cart' }).click();\n  await expect(page.getByRole('cell', { name: 'Your cart is empty' })).toBeVisible();\n});"}, "hint": "On <code>/cart<\/code>, the button is <code>getByRole('button', { name: 'Empty cart' })<\/code>, and the message is a table cell.", "why": "Wait for the counter to show 1 before leaving the page, or the cart page may load before the item is saved. A tear down that empties the cart keeps one test from changing the next.", "check": [["ctx.url.includes('/cart')", "The test is on the cart page"], ["ctx.loggedIn && ctx.cartCount === 0", "The cart is empty"]]}], "trees": {}};
+JSPLAY.page({ title: "Fixtures, hooks and set up once", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

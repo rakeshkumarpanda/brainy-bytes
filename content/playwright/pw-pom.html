@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page objects and components · Playwright</title>
+<meta name="description" content="The page object model in Java, Python, JavaScript and TypeScript: LoginPage and ProductsPage, Header and ProductCard components scoped with a root locator and filter, page objects as fixtures with test.extend, conftest.py and a JUnit base class, and the rules teams follow.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🏗️ Framework design</span><span>›</span><span>Chapter 15 of 15</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧱</span><div><h1>Page objects and components</h1><p class="lead">Keep tests readable and cheap to change. Put the locators and steps of each screen in a page object, the parts that repeat in components, and hand them to tests through fixtures.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 4 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 12 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 1 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>A page object is a class that knows one screen of the app. Tests ask it to sign in or add to cart, so when the screen changes, only the class changes.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#why" class="easy"><span>🤔</span>Why page objects</a><a href="#components"><span>🧩</span>Components for repeated parts</a><a href="#fixtures"><span>🔧</span>Handing out page objects</a><a href="#rules"><span>📏</span>Rules teams follow</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="why" data-say="why"><div class="sec-num">Part 1</div><h2><span class="sec-em">🤔</span><span>Why page objects</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Picture 200 tests that all sign in by filling the Email field. One day the label changes to Email address, and 200 tests fail. A <b>page object</b> is a class that holds the locators and steps for one screen. Tests call its methods, so a change to the screen means a change in one file.</p>
+<div class="viz" data-viz="flow" data-k="layers"></div>
+<div class="tw"><table class="jt "><tr><th>Without page objects</th><th>With page objects</th></tr><tr><td>locators copied into every test</td><td>each locator written once</td></tr><tr><td>a UI change breaks many files</td><td>a UI change is fixed in one class</td></tr><tr><td>tests read as clicks and fills</td><td>tests read as steps: signIn, addToCart</td></tr><tr><td>new team members copy old tests</td><td>new tests reuse a small, named set of methods</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="page" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Step 1: one page object for the sign in page · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/pages/LoginPage.java</div><pre class="src" data-file="src/test/java/com/brainy/pages/LoginPage.java"><span class="k">package</span> com.brainy.pages;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+
+<span class="c">// Everything a test needs to know about the sign in page, in one place</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">LoginPage</span> {
+  <span class="k">private</span> <span class="k">final</span> <span class="t">Page</span> page;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> email;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> password;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> signInButton;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> error;
+
+  <span class="k">public</span> <span class="t">LoginPage</span>(<span class="t">Page</span> page) {
+    <span class="k">this</span>.page = page;
+    <span class="k">this</span>.email = page.getByLabel(<span class="s">"Email"</span>);
+    <span class="k">this</span>.password = page.getByLabel(<span class="s">"Password"</span>);
+    <span class="k">this</span>.signInButton = page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>));
+    <span class="k">this</span>.error = page.getByRole(<span class="t">AriaRole</span>.<span class="t">ALERT</span>);
+  }
+
+  <span class="k">public</span> <span class="k">void</span> navigate() {
+    page.navigate(<span class="s">"/login"</span>);
+  }
+
+  <span class="k">public</span> <span class="k">void</span> signIn(<span class="t">String</span> email, <span class="t">String</span> password) {
+    <span class="k">this</span>.email.fill(email);
+    <span class="k">this</span>.password.fill(password);
+    signInButton.click();
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/LoginTest.java</div><pre class="src" data-file="src/test/java/com/brainy/LoginTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.brainy.pages.<span class="t">LoginPage</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">LoginTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> ashaCanSignIn(<span class="t">Page</span> page) {
+    <span class="t">LoginPage</span> loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+    loginPage.navigate();
+    loginPage.signIn(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>);
+    assertThat(page.getByText(<span class="s">"Hello, Asha"</span>)).isVisible();
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> aWrongPasswordIsRefused(<span class="t">Page</span> page) {
+    <span class="t">LoginPage</span> loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+    loginPage.navigate();
+    loginPage.signIn(<span class="s">"asha@shop.example"</span>, <span class="s">"wrong"</span>);
+    assertThat(loginPage.error).hasText(<span class="s">"Wrong email or password"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.LoginTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.668 s -- in com.brainy.LoginTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 pages/login_page.py</div><pre class="src" data-file="pages/login_page.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+
+<span class="c"># Everything a test needs to know about the sign in page, in one place</span>
+<span class="k">class</span> <span class="t">LoginPage</span>:
+    <span class="k">def</span> __init__(self, page: <span class="t">Page</span>):
+        self.page = page
+        self.email = page.get_by_label(<span class="s">"Email"</span>)
+        self.password = page.get_by_label(<span class="s">"Password"</span>)
+        self.sign_in_button = page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Sign in"</span>)
+        self.error = page.get_by_role(<span class="s">"alert"</span>)
+
+    <span class="k">def</span> goto(self):
+        self.page.goto(<span class="s">"/login"</span>)
+
+    <span class="k">def</span> sign_in(self, email: str, password: str):
+        self.email.fill(email)
+        self.password.fill(password)
+        self.sign_in_button.click()</pre><div class="fname">📄 tests/test_login.py</div><pre class="src" data-file="tests/test_login.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+<span class="k">from</span> pages.login_page <span class="k">import</span> <span class="t">LoginPage</span>
+
+
+<span class="k">def</span> test_asha_can_sign_in(page: <span class="t">Page</span>):
+    login_page = <span class="t">LoginPage</span>(page)
+    login_page.goto()
+    login_page.sign_in(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>)
+    expect(page.get_by_text(<span class="s">"Hello, Asha"</span>)).to_be_visible()
+
+
+<span class="k">def</span> test_a_wrong_password_is_refused(page: <span class="t">Page</span>):
+    login_page = <span class="t">LoginPage</span>(page)
+    login_page.goto()
+    login_page.sign_in(<span class="s">"asha@shop.example"</span>, <span class="s">"wrong"</span>)
+    expect(login_page.error).to_have_text(<span class="s">"Wrong email or password"</span>)</pre><div class="fname">📄 pytest.ini</div><pre class="src" data-file="pytest.ini"><span class="k">[pytest]</span>
+<span class="a">addopts </span>=<span class="s"> --base-url http://localhost:4173</span>
+<span class="a">pythonpath </span>=<span class="s"> .</span></pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_login.py::test_asha_can_sign_in[chromium] PASSED              [ 50%]
+tests/test_login.py::test_a_wrong_password_is_refused[chromium] PASSED   [100%]
+
+============================== 2 passed in 1.89s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 pages/LoginPage.js</div><pre class="src" data-file="pages/LoginPage.js"><span class="c">// Everything a test needs to know about the sign in page, in one place</span>
+<span class="k">export</span> <span class="k">class</span> <span class="t">LoginPage</span> {
+  constructor(page) {
+    <span class="k">this</span>.page = page;
+    <span class="k">this</span>.email = page.getByLabel(<span class="s">'Email'</span>);
+    <span class="k">this</span>.password = page.getByLabel(<span class="s">'Password'</span>);
+    <span class="k">this</span>.signInButton = page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> });
+    <span class="k">this</span>.error = page.getByRole(<span class="s">'alert'</span>);
+  }
+
+  <span class="k">async</span> goto() {
+    <span class="k">await</span> <span class="k">this</span>.page.goto(<span class="s">'/login'</span>);
+  }
+
+  <span class="k">async</span> signIn(email, password) {
+    <span class="k">await</span> <span class="k">this</span>.email.fill(email);
+    <span class="k">await</span> <span class="k">this</span>.password.fill(password);
+    <span class="k">await</span> <span class="k">this</span>.signInButton.click();
+  }
+}</pre><div class="fname">📄 tests/login.spec.js</div><pre class="src" data-file="tests/login.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { <span class="t">LoginPage</span> } <span class="k">from</span> <span class="s">'../pages/LoginPage.js'</span>;
+
+test(<span class="s">'Asha can sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+  <span class="k">await</span> loginPage.goto();
+  <span class="k">await</span> loginPage.signIn(<span class="s">'asha@shop.example'</span>, <span class="s">'s3cret'</span>);
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+});
+
+test(<span class="s">'a wrong password is refused'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+  <span class="k">await</span> loginPage.goto();
+  <span class="k">await</span> loginPage.signIn(<span class="s">'asha@shop.example'</span>, <span class="s">'wrong'</span>);
+  <span class="k">await</span> expect(loginPage.error).toHaveText(<span class="s">'Wrong email or password'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/login.spec.js:4:1 › Asha can sign in (791ms)
+  ✓  2 [chromium] › tests/login.spec.js:11:1 › a wrong password is refused (542ms)
+
+  2 passed (2.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 pages/LoginPage.ts</div><pre class="src" data-file="pages/LoginPage.ts"><span class="k">import</span> <span class="k">type</span> { <span class="t">Page</span>, <span class="t">Locator</span> } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="c">// Everything a test needs to know about the sign in page, in one place</span>
+<span class="k">export</span> <span class="k">class</span> <span class="t">LoginPage</span> {
+  <span class="k">private</span> <span class="k">readonly</span> page: <span class="t">Page</span>;
+  <span class="k">readonly</span> email: <span class="t">Locator</span>;
+  <span class="k">readonly</span> password: <span class="t">Locator</span>;
+  <span class="k">readonly</span> signInButton: <span class="t">Locator</span>;
+  <span class="k">readonly</span> error: <span class="t">Locator</span>;
+
+  constructor(page: <span class="t">Page</span>) {
+    <span class="k">this</span>.page = page;
+    <span class="k">this</span>.email = page.getByLabel(<span class="s">'Email'</span>);
+    <span class="k">this</span>.password = page.getByLabel(<span class="s">'Password'</span>);
+    <span class="k">this</span>.signInButton = page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> });
+    <span class="k">this</span>.error = page.getByRole(<span class="s">'alert'</span>);
+  }
+
+  <span class="k">async</span> goto() {
+    <span class="k">await</span> <span class="k">this</span>.page.goto(<span class="s">'/login'</span>);
+  }
+
+  <span class="k">async</span> signIn(email: <span class="k">string</span>, password: <span class="k">string</span>) {
+    <span class="k">await</span> <span class="k">this</span>.email.fill(email);
+    <span class="k">await</span> <span class="k">this</span>.password.fill(password);
+    <span class="k">await</span> <span class="k">this</span>.signInButton.click();
+  }
+}</pre><div class="fname">📄 tests/login.spec.ts</div><pre class="src" data-file="tests/login.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { <span class="t">LoginPage</span> } <span class="k">from</span> <span class="s">'../pages/LoginPage'</span>;
+
+test(<span class="s">'Asha can sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+  <span class="k">await</span> loginPage.goto();
+  <span class="k">await</span> loginPage.signIn(<span class="s">'asha@shop.example'</span>, <span class="s">'s3cret'</span>);
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+});
+
+test(<span class="s">'a wrong password is refused'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+  <span class="k">await</span> loginPage.goto();
+  <span class="k">await</span> loginPage.signIn(<span class="s">'asha@shop.example'</span>, <span class="s">'wrong'</span>);
+  <span class="k">await</span> expect(loginPage.error).toHaveText(<span class="s">'Wrong email or password'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/login.spec.ts:4:1 › Asha can sign in (714ms)
+  ✓  2 [chromium] › tests/login.spec.ts:11:1 › a wrong password is refused (604ms)
+
+  2 passed (3.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>Both tests passed. The tests now say what happens, sign in with these details, and the page object knows how: which fields, which button. If the Sign in button is renamed tomorrow, one line in LoginPage changes and every test keeps working. The check stays in the test, so a reader sees what is being proved. Python needs pythonpath = . in pytest.ini so the tests can import the pages folder.</p></div></div>
+</section>
+<section class="card reveal jsec" id="components" data-say="components"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧩</span><span>Components for repeated parts</span></h2>
+
+<p>Some parts are not a page: the header on every screen, a product card shown five times, a date picker used in three forms. Give each one its own class, a <b>component</b>, and let page objects create them. A component takes a root locator and finds everything inside it.</p>
+<div class="codewrap tests pw4" data-k="component" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Step 2: components for parts that repeat · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/components/ProductCard.java</div><pre class="src" data-file="src/test/java/com/brainy/components/ProductCard.java"><span class="k">package</span> com.brainy.components;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+
+<span class="c">// One product card. Every locator starts from the card, so it never finds another product's button.</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">ProductCard</span> {
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> root;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> price;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> button;
+
+  <span class="k">public</span> <span class="t">ProductCard</span>(<span class="t">Locator</span> root) {
+    <span class="k">this</span>.root = root;
+    <span class="k">this</span>.price = root.locator(<span class="s">".price"</span>);
+    <span class="k">this</span>.button = root.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>);
+  }
+
+  <span class="k">public</span> <span class="k">void</span> addToCart() {
+    root.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Locator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Add to cart"</span>)).click();
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/components/Header.java</div><pre class="src" data-file="src/test/java/com/brainy/components/Header.java"><span class="k">package</span> com.brainy.components;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+
+<span class="c">// The header is on every page, so it is a component, not a page</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">Header</span> {
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> greeting;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> cartCount;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> signOut;
+
+  <span class="k">public</span> <span class="t">Header</span>(<span class="t">Page</span> page) {
+    <span class="t">Locator</span> root = page.getByRole(<span class="t">AriaRole</span>.<span class="t">BANNER</span>);
+    <span class="k">this</span>.greeting = root.locator(<span class="s">"#hello"</span>);
+    <span class="k">this</span>.cartCount = root.getByTestId(<span class="s">"cart-count"</span>);
+    <span class="k">this</span>.signOut = root.getByRole(<span class="t">AriaRole</span>.<span class="t">LINK</span>, <span class="k">new</span> <span class="t">Locator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign out"</span>));
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/pages/ProductsPage.java</div><pre class="src" data-file="src/test/java/com/brainy/pages/ProductsPage.java"><span class="k">package</span> com.brainy.pages;
+
+<span class="k">import</span> com.brainy.components.<span class="t">Header</span>;
+<span class="k">import</span> com.brainy.components.<span class="t">ProductCard</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">ProductsPage</span> {
+  <span class="k">private</span> <span class="k">final</span> <span class="t">Page</span> page;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Header</span> header;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> search;
+  <span class="k">public</span> <span class="k">final</span> <span class="t">Locator</span> cards;
+
+  <span class="k">public</span> <span class="t">ProductsPage</span>(<span class="t">Page</span> page) {
+    <span class="k">this</span>.page = page;
+    <span class="k">this</span>.header = <span class="k">new</span> <span class="t">Header</span>(page);
+    <span class="k">this</span>.search = page.getByPlaceholder(<span class="s">"Search products"</span>);
+    <span class="k">this</span>.cards = page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>);
+  }
+
+  <span class="k">public</span> <span class="k">void</span> navigate() {
+    page.navigate(<span class="s">"/products"</span>);
+  }
+
+  <span class="k">public</span> <span class="t">ProductCard</span> card(<span class="t">String</span> name) {
+    <span class="k">return</span> <span class="k">new</span> <span class="t">ProductCard</span>(cards.filter(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">FilterOptions</span>()
+        .setHas(page.getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(name)))));
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/CartTest.java</div><pre class="src" data-file="src/test/java/com/brainy/CartTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.brainy.components.<span class="t">ProductCard</span>;
+<span class="k">import</span> com.brainy.pages.<span class="t">LoginPage</span>;
+<span class="k">import</span> com.brainy.pages.<span class="t">ProductsPage</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">CartTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> ashaAddsTheLampAndTheMug(<span class="t">Page</span> page) {
+    <span class="t">LoginPage</span> loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+    loginPage.navigate();
+    loginPage.signIn(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>);
+
+    <span class="t">ProductsPage</span> products = <span class="k">new</span> <span class="t">ProductsPage</span>(page);
+    assertThat(products.header.greeting).hasText(<span class="s">"Hello, Asha"</span>);
+    products.card(<span class="s">"Desk lamp"</span>).addToCart();
+    assertThat(products.header.cartCount).hasText(<span class="s">"1"</span>);
+    products.card(<span class="s">"Coffee mug"</span>).addToCart();
+    assertThat(products.header.cartCount).hasText(<span class="s">"2"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theNotebookIsOutOfStock(<span class="t">Page</span> page) {
+    <span class="t">ProductsPage</span> products = <span class="k">new</span> <span class="t">ProductsPage</span>(page);
+    products.navigate();
+    <span class="t">ProductCard</span> notebook = products.card(<span class="s">"Notebook"</span>);
+    assertThat(notebook.price).hasText(<span class="s">"₹60"</span>);
+    assertThat(notebook.button).hasText(<span class="s">"Out of stock"</span>);
+    assertThat(notebook.button).isDisabled();
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.CartTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.359 s -- in com.brainy.CartTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 components/product_card.py</div><pre class="src" data-file="components/product_card.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Locator</span>
+
+
+<span class="c"># One product card. Every locator starts from the card, so it never finds another product's button.</span>
+<span class="k">class</span> <span class="t">ProductCard</span>:
+    <span class="k">def</span> __init__(self, root: <span class="t">Locator</span>):
+        self.root = root
+        self.price = root.locator(<span class="s">".price"</span>)
+        self.button = root.get_by_role(<span class="s">"button"</span>)
+
+    <span class="k">def</span> add_to_cart(self):
+        self.root.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Add to cart"</span>).click()</pre><div class="fname">📄 components/header.py</div><pre class="src" data-file="components/header.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+
+<span class="c"># The header is on every page, so it is a component, not a page</span>
+<span class="k">class</span> <span class="t">Header</span>:
+    <span class="k">def</span> __init__(self, page: <span class="t">Page</span>):
+        root = page.get_by_role(<span class="s">"banner"</span>)
+        self.greeting = root.locator(<span class="s">"#hello"</span>)
+        self.cart_count = root.get_by_test_id(<span class="s">"cart-count"</span>)
+        self.sign_out = root.get_by_role(<span class="s">"link"</span>, name=<span class="s">"Sign out"</span>)</pre><div class="fname">📄 pages/products_page.py</div><pre class="src" data-file="pages/products_page.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+<span class="k">from</span> components.header <span class="k">import</span> <span class="t">Header</span>
+<span class="k">from</span> components.product_card <span class="k">import</span> <span class="t">ProductCard</span>
+
+
+<span class="k">class</span> <span class="t">ProductsPage</span>:
+    <span class="k">def</span> __init__(self, page: <span class="t">Page</span>):
+        self.page = page
+        self.header = <span class="t">Header</span>(page)
+        self.search = page.get_by_placeholder(<span class="s">"Search products"</span>)
+        self.cards = page.get_by_role(<span class="s">"listitem"</span>)
+
+    <span class="k">def</span> goto(self):
+        self.page.goto(<span class="s">"/products"</span>)
+
+    <span class="k">def</span> card(self, name: str) -&gt; <span class="t">ProductCard</span>:
+        <span class="k">return</span> <span class="t">ProductCard</span>(self.cards.filter(has=self.page.get_by_role(<span class="s">"heading"</span>, name=name)))</pre><div class="fname">📄 tests/test_cart.py</div><pre class="src" data-file="tests/test_cart.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+<span class="k">from</span> pages.login_page <span class="k">import</span> <span class="t">LoginPage</span>
+<span class="k">from</span> pages.products_page <span class="k">import</span> <span class="t">ProductsPage</span>
+
+
+<span class="k">def</span> test_asha_adds_the_lamp_and_the_mug(page: <span class="t">Page</span>):
+    login_page = <span class="t">LoginPage</span>(page)
+    login_page.goto()
+    login_page.sign_in(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>)
+
+    products = <span class="t">ProductsPage</span>(page)
+    expect(products.header.greeting).to_have_text(<span class="s">"Hello, Asha"</span>)
+    products.card(<span class="s">"Desk lamp"</span>).add_to_cart()
+    expect(products.header.cart_count).to_have_text(<span class="s">"1"</span>)
+    products.card(<span class="s">"Coffee mug"</span>).add_to_cart()
+    expect(products.header.cart_count).to_have_text(<span class="s">"2"</span>)
+
+
+<span class="k">def</span> test_the_notebook_is_out_of_stock(page: <span class="t">Page</span>):
+    products = <span class="t">ProductsPage</span>(page)
+    products.goto()
+    notebook = products.card(<span class="s">"Notebook"</span>)
+    expect(notebook.price).to_have_text(<span class="s">"₹60"</span>)
+    expect(notebook.button).to_have_text(<span class="s">"Out of stock"</span>)
+    expect(notebook.button).to_be_disabled()</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_cart.py::test_asha_adds_the_lamp_and_the_mug[chromium] PASSED [ 50%]
+tests/test_cart.py::test_the_notebook_is_out_of_stock[chromium] PASSED   [100%]
+
+============================== 2 passed in 3.67s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 components/ProductCard.js</div><pre class="src" data-file="components/ProductCard.js"><span class="c">// One product card. Every locator starts from the card, so it never finds another product's button.</span>
+<span class="k">export</span> <span class="k">class</span> <span class="t">ProductCard</span> {
+  constructor(root) {
+    <span class="k">this</span>.root = root;
+    <span class="k">this</span>.price = root.locator(<span class="s">'.price'</span>);
+    <span class="k">this</span>.button = root.getByRole(<span class="s">'button'</span>);
+  }
+
+  <span class="k">async</span> addToCart() {
+    <span class="k">await</span> <span class="k">this</span>.root.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click();
+  }
+}</pre><div class="fname">📄 components/Header.js</div><pre class="src" data-file="components/Header.js"><span class="c">// The header is on every page, so it is a component, not a page</span>
+<span class="k">export</span> <span class="k">class</span> <span class="t">Header</span> {
+  constructor(page) {
+    <span class="k">const</span> root = page.getByRole(<span class="s">'banner'</span>);
+    <span class="k">this</span>.greeting = root.locator(<span class="s">'#hello'</span>);
+    <span class="k">this</span>.cartCount = root.getByTestId(<span class="s">'cart-count'</span>);
+    <span class="k">this</span>.signOut = root.getByRole(<span class="s">'link'</span>, { name: <span class="s">'Sign out'</span> });
+  }
+}</pre><div class="fname">📄 pages/ProductsPage.js</div><pre class="src" data-file="pages/ProductsPage.js"><span class="k">import</span> { <span class="t">Header</span> } <span class="k">from</span> <span class="s">'../components/Header.js'</span>;
+<span class="k">import</span> { <span class="t">ProductCard</span> } <span class="k">from</span> <span class="s">'../components/ProductCard.js'</span>;
+
+<span class="k">export</span> <span class="k">class</span> <span class="t">ProductsPage</span> {
+  constructor(page) {
+    <span class="k">this</span>.page = page;
+    <span class="k">this</span>.header = <span class="k">new</span> <span class="t">Header</span>(page);
+    <span class="k">this</span>.search = page.getByPlaceholder(<span class="s">'Search products'</span>);
+    <span class="k">this</span>.cards = page.getByRole(<span class="s">'listitem'</span>);
+  }
+
+  <span class="k">async</span> goto() {
+    <span class="k">await</span> <span class="k">this</span>.page.goto(<span class="s">'/products'</span>);
+  }
+
+  card(name) {
+    <span class="k">return</span> <span class="k">new</span> <span class="t">ProductCard</span>(<span class="k">this</span>.cards.filter({ has: <span class="k">this</span>.page.getByRole(<span class="s">'heading'</span>, { name }) }));
+  }
+}</pre><div class="fname">📄 tests/cart.spec.js</div><pre class="src" data-file="tests/cart.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { <span class="t">LoginPage</span> } <span class="k">from</span> <span class="s">'../pages/LoginPage.js'</span>;
+<span class="k">import</span> { <span class="t">ProductsPage</span> } <span class="k">from</span> <span class="s">'../pages/ProductsPage.js'</span>;
+
+test(<span class="s">'Asha adds the lamp and the mug'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+  <span class="k">await</span> loginPage.goto();
+  <span class="k">await</span> loginPage.signIn(<span class="s">'asha@shop.example'</span>, <span class="s">'s3cret'</span>);
+
+  <span class="k">const</span> products = <span class="k">new</span> <span class="t">ProductsPage</span>(page);
+  <span class="k">await</span> expect(products.header.greeting).toHaveText(<span class="s">'Hello, Asha'</span>);
+  <span class="k">await</span> products.card(<span class="s">'Desk lamp'</span>).addToCart();
+  <span class="k">await</span> expect(products.header.cartCount).toHaveText(<span class="s">'1'</span>);
+  <span class="k">await</span> products.card(<span class="s">'Coffee mug'</span>).addToCart();
+  <span class="k">await</span> expect(products.header.cartCount).toHaveText(<span class="s">'2'</span>);
+});
+
+test(<span class="s">'the notebook is out of stock'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> products = <span class="k">new</span> <span class="t">ProductsPage</span>(page);
+  <span class="k">await</span> products.goto();
+  <span class="k">const</span> notebook = products.card(<span class="s">'Notebook'</span>);
+  <span class="k">await</span> expect(notebook.price).toHaveText(<span class="s">'₹60'</span>);
+  <span class="k">await</span> expect(notebook.button).toHaveText(<span class="s">'Out of stock'</span>);
+  <span class="k">await</span> expect(notebook.button).toBeDisabled();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/cart.spec.js:5:1 › Asha adds the lamp and the mug (1.9s)
+  ✓  2 [chromium] › tests/cart.spec.js:18:1 › the notebook is out of stock (1.1s)
+
+  2 passed (4.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 components/ProductCard.ts</div><pre class="src" data-file="components/ProductCard.ts"><span class="k">import</span> <span class="k">type</span> { <span class="t">Locator</span> } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="c">// One product card. Every locator starts from the card, so it never finds another product's button.</span>
+<span class="k">export</span> <span class="k">class</span> <span class="t">ProductCard</span> {
+  <span class="k">readonly</span> root: <span class="t">Locator</span>;
+  <span class="k">readonly</span> price: <span class="t">Locator</span>;
+  <span class="k">readonly</span> button: <span class="t">Locator</span>;
+
+  constructor(root: <span class="t">Locator</span>) {
+    <span class="k">this</span>.root = root;
+    <span class="k">this</span>.price = root.locator(<span class="s">'.price'</span>);
+    <span class="k">this</span>.button = root.getByRole(<span class="s">'button'</span>);
+  }
+
+  <span class="k">async</span> addToCart() {
+    <span class="k">await</span> <span class="k">this</span>.root.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).click();
+  }
+}</pre><div class="fname">📄 components/Header.ts</div><pre class="src" data-file="components/Header.ts"><span class="k">import</span> <span class="k">type</span> { <span class="t">Page</span>, <span class="t">Locator</span> } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="c">// The header is on every page, so it is a component, not a page</span>
+<span class="k">export</span> <span class="k">class</span> <span class="t">Header</span> {
+  <span class="k">readonly</span> greeting: <span class="t">Locator</span>;
+  <span class="k">readonly</span> cartCount: <span class="t">Locator</span>;
+  <span class="k">readonly</span> signOut: <span class="t">Locator</span>;
+
+  constructor(page: <span class="t">Page</span>) {
+    <span class="k">const</span> root = page.getByRole(<span class="s">'banner'</span>);
+    <span class="k">this</span>.greeting = root.locator(<span class="s">'#hello'</span>);
+    <span class="k">this</span>.cartCount = root.getByTestId(<span class="s">'cart-count'</span>);
+    <span class="k">this</span>.signOut = root.getByRole(<span class="s">'link'</span>, { name: <span class="s">'Sign out'</span> });
+  }
+}</pre><div class="fname">📄 pages/ProductsPage.ts</div><pre class="src" data-file="pages/ProductsPage.ts"><span class="k">import</span> <span class="k">type</span> { <span class="t">Page</span>, <span class="t">Locator</span> } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { <span class="t">Header</span> } <span class="k">from</span> <span class="s">'../components/Header'</span>;
+<span class="k">import</span> { <span class="t">ProductCard</span> } <span class="k">from</span> <span class="s">'../components/ProductCard'</span>;
+
+<span class="k">export</span> <span class="k">class</span> <span class="t">ProductsPage</span> {
+  <span class="k">private</span> <span class="k">readonly</span> page: <span class="t">Page</span>;
+  <span class="k">readonly</span> header: <span class="t">Header</span>;
+  <span class="k">readonly</span> search: <span class="t">Locator</span>;
+  <span class="k">readonly</span> cards: <span class="t">Locator</span>;
+
+  constructor(page: <span class="t">Page</span>) {
+    <span class="k">this</span>.page = page;
+    <span class="k">this</span>.header = <span class="k">new</span> <span class="t">Header</span>(page);
+    <span class="k">this</span>.search = page.getByPlaceholder(<span class="s">'Search products'</span>);
+    <span class="k">this</span>.cards = page.getByRole(<span class="s">'listitem'</span>);
+  }
+
+  <span class="k">async</span> goto() {
+    <span class="k">await</span> <span class="k">this</span>.page.goto(<span class="s">'/products'</span>);
+  }
+
+  card(name: <span class="k">string</span>) {
+    <span class="k">return</span> <span class="k">new</span> <span class="t">ProductCard</span>(<span class="k">this</span>.cards.filter({ has: <span class="k">this</span>.page.getByRole(<span class="s">'heading'</span>, { name }) }));
+  }
+}</pre><div class="fname">📄 tests/cart.spec.ts</div><pre class="src" data-file="tests/cart.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { <span class="t">LoginPage</span> } <span class="k">from</span> <span class="s">'../pages/LoginPage'</span>;
+<span class="k">import</span> { <span class="t">ProductsPage</span> } <span class="k">from</span> <span class="s">'../pages/ProductsPage'</span>;
+
+test(<span class="s">'Asha adds the lamp and the mug'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+  <span class="k">await</span> loginPage.goto();
+  <span class="k">await</span> loginPage.signIn(<span class="s">'asha@shop.example'</span>, <span class="s">'s3cret'</span>);
+
+  <span class="k">const</span> products = <span class="k">new</span> <span class="t">ProductsPage</span>(page);
+  <span class="k">await</span> expect(products.header.greeting).toHaveText(<span class="s">'Hello, Asha'</span>);
+  <span class="k">await</span> products.card(<span class="s">'Desk lamp'</span>).addToCart();
+  <span class="k">await</span> expect(products.header.cartCount).toHaveText(<span class="s">'1'</span>);
+  <span class="k">await</span> products.card(<span class="s">'Coffee mug'</span>).addToCart();
+  <span class="k">await</span> expect(products.header.cartCount).toHaveText(<span class="s">'2'</span>);
+});
+
+test(<span class="s">'the notebook is out of stock'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> products = <span class="k">new</span> <span class="t">ProductsPage</span>(page);
+  <span class="k">await</span> products.goto();
+  <span class="k">const</span> notebook = products.card(<span class="s">'Notebook'</span>);
+  <span class="k">await</span> expect(notebook.price).toHaveText(<span class="s">'₹60'</span>);
+  <span class="k">await</span> expect(notebook.button).toHaveText(<span class="s">'Out of stock'</span>);
+  <span class="k">await</span> expect(notebook.button).toBeDisabled();
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/cart.spec.ts:5:1 › Asha adds the lamp and the mug (1.7s)
+  ✓  2 [chromium] › tests/cart.spec.ts:18:1 › the notebook is out of stock (1.0s)
+
+  2 passed (4.3s)</pre></div></div><div class="note-out"><span>What happens</span><p>Both tests passed. The header appears on every page and a product card appears five times, so each is a component that pages reuse. products.card("Desk lamp") returns a card whose locators all start inside that card, so its Add to cart button can never be confused with the button of another product. The test reads almost like the steps a person would write down.</p></div></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Return locators, or small components, and leave the checks in the test. A test that says expect(notebook.button).toBeDisabled() shows what it proves. A page object method called checkNotebook() hides it.</div></div>
+</section>
+<section class="card reveal jsec" id="fixtures" data-say="fixtures"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔧</span><span>Handing out page objects</span></h2>
+
+<p>Creating page objects and signing in at the top of every test is repetition again. Move it to the place each runner provides for set up.</p>
+<div class="codewrap tests pw4" data-k="fixture" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Step 3: page objects as fixtures · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ShopTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ShopTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.brainy.pages.<span class="t">LoginPage</span>;
+<span class="k">import</span> com.brainy.pages.<span class="t">ProductsPage</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">BeforeEach</span>;
+
+<span class="c">// Every test class that extends ShopTest gets signed in page objects</span>
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">abstract</span> <span class="k">class</span> <span class="t">ShopTest</span> {
+  <span class="k">protected</span> <span class="t">LoginPage</span> loginPage;
+  <span class="k">protected</span> <span class="t">ProductsPage</span> productsPage;
+
+  <span class="a">@BeforeEach</span>
+  <span class="k">void</span> createPages(<span class="t">Page</span> page) {
+    loginPage = <span class="k">new</span> <span class="t">LoginPage</span>(page);
+    productsPage = <span class="k">new</span> <span class="t">ProductsPage</span>(page);
+    loginPage.navigate();
+    loginPage.signIn(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>);
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/MugTest.java</div><pre class="src" data-file="src/test/java/com/brainy/MugTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.brainy.components.<span class="t">ProductCard</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">MugTest</span> <span class="k">extends</span> <span class="t">ShopTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theMugCosts199RupeesAndCanBeAdded() {
+    <span class="t">ProductCard</span> mug = productsPage.card(<span class="s">"Coffee mug"</span>);
+    assertThat(mug.price).hasText(<span class="s">"₹199"</span>);
+    mug.addToCart();
+    assertThat(productsPage.header.cartCount).hasText(<span class="s">"1"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theSearchFindsOneLamp() {
+    productsPage.search.fill(<span class="s">"lamp"</span>);
+    assertThat(productsPage.cards).hasCount(<span class="n">1</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.MugTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.918 s -- in com.brainy.MugTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 conftest.py</div><pre class="src" data-file="conftest.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+<span class="k">from</span> pages.login_page <span class="k">import</span> <span class="t">LoginPage</span>
+<span class="k">from</span> pages.products_page <span class="k">import</span> <span class="t">ProductsPage</span>
+
+
+<span class="c"># Tests ask for login_page or products_page by name, like they ask for page</span>
+<span class="a">@pytest</span>.fixture
+<span class="k">def</span> login_page(page: <span class="t">Page</span>) -&gt; <span class="t">LoginPage</span>:
+    <span class="k">return</span> <span class="t">LoginPage</span>(page)
+
+
+<span class="a">@pytest</span>.fixture
+<span class="k">def</span> products_page(page: <span class="t">Page</span>, login_page: <span class="t">LoginPage</span>) -&gt; <span class="t">ProductsPage</span>:
+    login_page.goto()
+    login_page.sign_in(<span class="s">"asha@shop.example"</span>, <span class="s">"s3cret"</span>)   <span class="c"># products_page always starts signed in</span>
+    <span class="k">return</span> <span class="t">ProductsPage</span>(page)</pre><div class="fname">📄 tests/test_mug.py</div><pre class="src" data-file="tests/test_mug.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> expect
+
+<span class="k">from</span> pages.products_page <span class="k">import</span> <span class="t">ProductsPage</span>
+
+
+<span class="k">def</span> test_the_mug_costs_199_rupees_and_can_be_added(products_page: <span class="t">ProductsPage</span>):
+    mug = products_page.card(<span class="s">"Coffee mug"</span>)
+    expect(mug.price).to_have_text(<span class="s">"₹199"</span>)
+    mug.add_to_cart()
+    expect(products_page.header.cart_count).to_have_text(<span class="s">"1"</span>)
+
+
+<span class="k">def</span> test_the_search_finds_one_lamp(products_page: <span class="t">ProductsPage</span>):
+    products_page.search.fill(<span class="s">"lamp"</span>)
+    expect(products_page.cards).to_have_count(<span class="n">1</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_mug.py::test_the_mug_costs_199_rupees_and_can_be_added[chromium] PASSED [ 50%]
+tests/test_mug.py::test_the_search_finds_one_lamp[chromium] PASSED       [100%]
+
+============================== 2 passed in 2.76s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 fixtures/pages.js</div><pre class="src" data-file="fixtures/pages.js"><span class="k">import</span> { test <span class="k">as</span> base } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { <span class="t">LoginPage</span> } <span class="k">from</span> <span class="s">'../pages/LoginPage.js'</span>;
+<span class="k">import</span> { <span class="t">ProductsPage</span> } <span class="k">from</span> <span class="s">'../pages/ProductsPage.js'</span>;
+
+<span class="c">// Tests ask for loginPage or productsPage by name, like they ask for page</span>
+<span class="k">export</span> <span class="k">const</span> test = base.extend({
+  loginPage: <span class="k">async</span> ({ page }, use) =&gt; {
+    <span class="k">await</span> use(<span class="k">new</span> <span class="t">LoginPage</span>(page));
+  },
+  productsPage: <span class="k">async</span> ({ page, loginPage }, use) =&gt; {
+    <span class="k">await</span> loginPage.goto();
+    <span class="k">await</span> loginPage.signIn(<span class="s">'asha@shop.example'</span>, <span class="s">'s3cret'</span>);   <span class="c">// productsPage always starts signed in</span>
+    <span class="k">await</span> use(<span class="k">new</span> <span class="t">ProductsPage</span>(page));
+  },
+});
+
+<span class="k">export</span> { expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;</pre><div class="fname">📄 tests/mug.spec.js</div><pre class="src" data-file="tests/mug.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'../fixtures/pages.js'</span>;
+
+test(<span class="s">'the mug costs 199 rupees and can be added'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {
+  <span class="k">const</span> mug = productsPage.card(<span class="s">'Coffee mug'</span>);
+  <span class="k">await</span> expect(mug.price).toHaveText(<span class="s">'₹199'</span>);
+  <span class="k">await</span> mug.addToCart();
+  <span class="k">await</span> expect(productsPage.header.cartCount).toHaveText(<span class="s">'1'</span>);
+});
+
+test(<span class="s">'the search finds one lamp'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {
+  <span class="k">await</span> productsPage.search.fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(productsPage.cards).toHaveCount(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/mug.spec.js:3:1 › the mug costs 199 rupees and can be added (1.4s)
+  ✓  2 [chromium] › tests/mug.spec.js:10:1 › the search finds one lamp (559ms)
+
+  2 passed (3.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 fixtures/pages.ts</div><pre class="src" data-file="fixtures/pages.ts"><span class="k">import</span> { test <span class="k">as</span> base } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { <span class="t">LoginPage</span> } <span class="k">from</span> <span class="s">'../pages/LoginPage'</span>;
+<span class="k">import</span> { <span class="t">ProductsPage</span> } <span class="k">from</span> <span class="s">'../pages/ProductsPage'</span>;
+
+<span class="k">type</span> <span class="t">Pages</span> = { loginPage: <span class="t">LoginPage</span>; productsPage: <span class="t">ProductsPage</span> };
+
+<span class="c">// Tests ask for loginPage or productsPage by name, like they ask for page</span>
+<span class="k">export</span> <span class="k">const</span> test = base.extend&lt;<span class="t">Pages</span>&gt;({
+  loginPage: <span class="k">async</span> ({ page }, use) =&gt; {
+    <span class="k">await</span> use(<span class="k">new</span> <span class="t">LoginPage</span>(page));
+  },
+  productsPage: <span class="k">async</span> ({ page, loginPage }, use) =&gt; {
+    <span class="k">await</span> loginPage.goto();
+    <span class="k">await</span> loginPage.signIn(<span class="s">'asha@shop.example'</span>, <span class="s">'s3cret'</span>);   <span class="c">// productsPage always starts signed in</span>
+    <span class="k">await</span> use(<span class="k">new</span> <span class="t">ProductsPage</span>(page));
+  },
+});
+
+<span class="k">export</span> { expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;</pre><div class="fname">📄 tests/mug.spec.ts</div><pre class="src" data-file="tests/mug.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'../fixtures/pages'</span>;
+
+test(<span class="s">'the mug costs 199 rupees and can be added'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {
+  <span class="k">const</span> mug = productsPage.card(<span class="s">'Coffee mug'</span>);
+  <span class="k">await</span> expect(mug.price).toHaveText(<span class="s">'₹199'</span>);
+  <span class="k">await</span> mug.addToCart();
+  <span class="k">await</span> expect(productsPage.header.cartCount).toHaveText(<span class="s">'1'</span>);
+});
+
+test(<span class="s">'the search finds one lamp'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {
+  <span class="k">await</span> productsPage.search.fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> expect(productsPage.cards).toHaveCount(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/mug.spec.ts:3:1 › the mug costs 199 rupees and can be added (1.2s)
+  ✓  2 [chromium] › tests/mug.spec.ts:10:1 › the search finds one lamp (415ms)
+
+  2 passed (2.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>All tests passed, and none of them creates a page object or signs in. Playwright Test builds productsPage on demand with test.extend, pytest does the same with fixtures in conftest.py, and JUnit uses a base class with a @BeforeEach method. @UsePlaywright is inherited, so the subclass needs no annotation of its own.</p></div></div>
+<div class="tw"><table class="jt "><tr><th></th><th>Playwright Test</th><th>pytest</th><th>JUnit 5</th></tr><tr><td>where page objects are created</td><td>test.extend in a fixtures file</td><td>@pytest.fixture in conftest.py</td><td>a base class with @BeforeEach</td></tr><tr><td>how a test gets one</td><td>by name: { productsPage }</td><td>by name: products_page</td><td>a field of the base class</td></tr><tr><td>only built when used</td><td>yes</td><td>yes</td><td>no, for every test in the class</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="rules" data-say="rules"><div class="sec-num">Part 4</div><h2><span class="sec-em">📏</span><span>Rules teams follow</span></h2>
+
+<p>Page objects can grow into a second, harder copy of the app. These rules keep them small and useful.</p>
+<div class="tw"><table class="jt "><tr><th>Rule</th><th>Why</th></tr><tr><td>one class per screen or component</td><td>easy to find, small enough to read</td></tr><tr><td>locators by role, label or test id</td><td>they survive style changes, as the locators chapter showed</td></tr><tr><td>methods are user actions: signIn, addToCart</td><td>tests read like steps, not clicks</td></tr><tr><td>checks live in tests</td><td>the test shows what it proves</td></tr><tr><td>no sleeps and no waits for timeouts</td><td>Playwright actions and checks already wait</td></tr><tr><td>no test data inside the class</td><td>pass it in, so one page object serves many tests</td></tr><tr><td>a method returns the next page object when the screen changes</td><td>signIn() can return ProductsPage, so the flow is clear</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Large suites sometimes add one more layer of business steps, such as checkout(user, items), built from page objects. Add it when you notice the same five page object calls in many tests, not before.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-visual.html" data-topic="pw-visual"><small>← Previous chapter</small><b>🖼️ Visual and a11y</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Tests that survive change", "panels": [{"s": [["e", "📄"], ["t", "page", {"b": 1}]], "h": "Page object", "t": "One class per screen.", "more": "Locators in one place."}, {"s": [["e", "🧩"], ["t", "component", {"b": 1}]], "h": "Component", "t": "Parts that repeat.", "more": "Root locator first."}, {"s": [["e", "🔧"], ["t", "fixture", {"b": 1}]], "h": "Fixtures", "t": "Hand them out.", "more": "No set up in tests."}, {"s": [["e", "✅"], ["t", "expect", {"b": 1}]], "h": "Checks", "t": "Stay in the test.", "more": "Easy to read."}], "remember": "The test says what, the page object says how. A change to the screen is fixed in one class."}, "real": [["🏦", "A renamed button, one line changed", "A bank renames Sign in to Log in across its site. Its 600 tests use a LoginPage, so one locator changes and the whole suite is green again in minutes."], ["🛍️", "One card component, three pages", "A shop shows the same product card on search, category and wish list pages. One ProductCard component serves all three, and its tests did not change when the card got a new layout."], ["👥", "New testers write tests on day two", "A team keeps a small set of page objects with clear method names. New testers write their first tests by combining signIn, search and addToCart, without learning every locator first."]], "quiz": [{"lv": 1, "q": "What is a page object?", "o": ["a browser tab", "a class with the locators and steps of one screen", "a test file", "a fixture"], "a": 1, "hint": "One class per screen.", "why": "It keeps the knowledge about one screen in one place."}, {"lv": 1, "q": "The Sign in button is renamed. With page objects, how many files change?", "o": ["every test", "one page object", "the config", "none"], "a": 1, "hint": "The locator lives in one place.", "why": "Only LoginPage changes, and every test keeps working."}, {"lv": 1, "q": "Where should the checks (expect, assertThat) usually be?", "o": ["in page objects", "in the tests", "in the config", "in fixtures"], "a": 1, "hint": "A reader should see what is proved.", "why": "Keeping checks in tests shows what each test proves."}, {"lv": 1, "q": "What is a component?", "o": ["a test runner", "a class for a part that repeats, such as a header", "a browser", "a report"], "a": 1, "hint": "Header, product card, date picker.", "why": "A component covers a part that many pages share."}, {"lv": 2, "q": "Why does ProductCard start every locator from its root?", "o": ["it is faster", "so it only finds elements inside its own card", "Playwright requires it", "for the report"], "a": 1, "hint": "There are five Add to cart buttons.", "why": "Scoping to the root means card(\"Desk lamp\") finds only the lamp's button."}, {"lv": 2, "q": "How does a Playwright Test test receive a page object as a fixture?", "o": ["new LoginPage() in each test", "test.extend, then by name in the test arguments", "a global variable", "an environment variable"], "a": 1, "hint": "Like page itself.", "why": "test.extend defines it, and the test asks for it by name."}, {"lv": 2, "q": "What does Python need so tests in tests/ can import pages/login_page.py?", "o": ["nothing", "pythonpath = . in pytest.ini, or an installed package", "a JSON file", "a symlink"], "a": 1, "hint": "Python looks up imports on a path.", "why": "pythonpath = . adds the project folder to the import path."}, {"lv": 2, "q": "Why can a JUnit subclass of ShopTest skip @UsePlaywright?", "o": ["it is optional everywhere", "the annotation is inherited", "JUnit ignores it", "Maven adds it"], "a": 1, "hint": "Look at how it is declared.", "why": "@UsePlaywright is marked @Inherited, so subclasses get it."}, {"lv": 2, "q": "Which method name follows the rules?", "o": ["clickButton2", "signIn", "fillField", "doStuff"], "a": 1, "hint": "Name the user action.", "why": "signIn describes what the user does, not how."}, {"lv": 3, "q": "What should a page object do instead of waitForTimeout(2000)?", "o": ["a longer sleep", "rely on actions and checks that already wait", "retry the test", "add a loop"], "a": 1, "hint": "Auto waiting.", "why": "Playwright actions and web-first checks wait for the right state."}, {"lv": 3, "q": "signIn() takes the user to the products page. What can it return?", "o": ["nothing ever", "a ProductsPage", "a string", "the browser"], "a": 1, "hint": "The next screen.", "why": "Returning the next page object makes the flow clear."}, {"lv": 3, "q": "When is a business layer, such as checkout(user, items), worth adding?", "o": ["always, from day one", "when the same page object calls repeat in many tests", "never", "only in Java"], "a": 1, "hint": "Add it when you see repetition.", "why": "A layer earns its place when it removes real repetition."}], "calc": [{"lv": 1, "q": "200 tests each sign in with 3 locators. Without page objects, how many locator lines is that?", "ans": 600, "hint": "200 × 3", "steps": ["200 × 3 = 600"]}, {"lv": 1, "q": "With a LoginPage, how many locator lines for the same 3 locators?", "ans": 3, "hint": "written once", "steps": ["each locator is written once in LoginPage"]}, {"lv": 2, "q": "A label change touches 1 locator used by 200 tests. Without page objects, how many lines change?", "ans": 200, "hint": "one per test", "steps": ["200 tests × 1 line = 200 lines"]}, {"lv": 2, "q": "A shop has 12 screens and 4 shared parts. One class each: how many classes?", "ans": 16, "hint": "12 + 4", "steps": ["12 page objects + 4 components = 16"]}, {"lv": 2, "q": "The products page shows 5 cards with 1 button each. How many Add to cart or Out of stock buttons?", "ans": 5, "hint": "5 × 1", "steps": ["5 × 1 = 5"]}, {"lv": 3, "q": "Signing in takes 2 s. A products_page fixture serves 30 tests. How many seconds of signing in is that?", "ans": 60, "hint": "30 × 2", "steps": ["the fixture runs once per test", "30 × 2 = 60 s"]}, {"lv": 3, "q": "Saving the sign in with storage state cuts that to one 2 s sign in. How many seconds are saved?", "ans": 58, "hint": "60 - 2", "steps": ["60 - 2 = 58 s"]}, {"lv": 3, "q": "A page object has 8 methods and 5 are used by fewer than 2 tests. What percent are used by 2 or more?", "ans": 37, "hint": "3 / 8 × 100, rounded down", "steps": ["8 - 5 = 3", "3 / 8 = 0.375", "37.5 %, so 37 rounded down"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter starts the framework module. You build a page object for the sign in page, components for the header and the product card, and fixtures that hand page objects to every test, in all four languages.", "hi": "यह अध्याय framework module शुरू करता है। आप sign in page के लिए page object, header और product card के लिए components, और हर test को page objects देने वाले fixtures बनाते हैं, चारों भाषाओं में।", "kn": "ಈ ಅಧ್ಯಾಯ framework module ಆರಂಭಿಸುತ್ತದೆ. ನೀವು sign in page ಗೆ page object, header ಮತ್ತು product card ಗೆ components, ಪ್ರತಿ test ಗೆ page objects ಕೊಡುವ fixtures ನಾಲ್ಕೂ ಭಾಷೆಗಳಲ್ಲಿ ಮಾಡುತ್ತೀರಿ.", "or": "ଏହି ଅଧ୍ୟାୟ framework module ଆରମ୍ଭ କରେ। ଆପଣ sign in page ପାଇଁ page object, header ଓ product card ପାଇଁ components, ଏବଂ ପ୍ରତି test କୁ page objects ଦେଉଥିବା fixtures ଚାରି ଭାଷାରେ ତିଆରି କରନ୍ତି।", "ar": "يبدأ هذا الفصل وحدة بناء إطار العمل. تبني كائن صفحة لصفحة تسجيل الدخول، ومكونات للترويسة وبطاقة المنتج، ومثبتات تسلّم كائنات الصفحات لكل اختبار، باللغات الأربع.", "de": "Dieses Kapitel beginnt das Framework-Modul. Du baust ein Page Object für die Anmeldeseite, Komponenten für die Kopfzeile und die Produktkarte und Fixtures, die jedem Test Page Objects geben, in allen vier Sprachen."}, {"id": "why", "h": "Page objects", "en": "A page object is a class with the locators and steps of one screen. Tests call its methods, so a change to the screen is fixed in one place, and tests read like steps.", "hi": "Page object एक class है जिसमें एक screen के locators और steps होते हैं। Tests उसके methods बुलाते हैं, इसलिए screen का बदलाव एक जगह ठीक होता है, और tests steps जैसे पढ़े जाते हैं।", "kn": "Page object ಎಂದರೆ ಒಂದು screen ನ locators ಮತ್ತು steps ಇರುವ class. Tests ಅದರ methods ಕರೆಯುತ್ತವೆ, ಆದ್ದರಿಂದ screen ಬದಲಾವಣೆ ಒಂದೇ ಕಡೆ ಸರಿಯಾಗುತ್ತದೆ, tests steps ನಂತೆ ಓದುತ್ತವೆ.", "or": "Page object ହେଉଛି ଏକ screen ର locators ଓ steps ଥିବା class। Tests ତାର methods ଡାକନ୍ତି, ତେଣୁ screen ର ପରିବର୍ତ୍ତନ ଗୋଟିଏ ଜାଗାରେ ଠିକ ହୁଏ, ଏବଂ tests steps ପରି ପଢାଯାଏ।", "ar": "كائن الصفحة صنف يحمل محددات شاشة واحدة وخطواتها. تستدعي الاختبارات توابعه، فيُصلح أي تغيير في الشاشة في مكان واحد، وتُقرأ الاختبارات كخطوات.", "de": "Ein Page Object ist eine Klasse mit den Locatoren und Schritten eines Bildschirms. Tests rufen seine Methoden auf, also wird eine Änderung am Bildschirm an einer Stelle behoben, und Tests lesen sich wie Schritte."}, {"id": "components", "h": "Components", "en": "A component is a class for a part that repeats, such as the header or a product card. It starts from a root locator, so it never finds a button that belongs to another card.", "hi": "Component दोहराए जाने वाले हिस्से की class है, जैसे header या product card। यह root locator से शुरू होता है, इसलिए किसी दूसरे card का button कभी नहीं पकड़ता।", "kn": "Component ಎಂದರೆ header ಅಥವಾ product card ನಂತೆ ಮತ್ತೆ ಬರುವ ಭಾಗದ class. ಅದು root locator ನಿಂದ ಆರಂಭವಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಬೇರೆ card ನ button ಎಂದೂ ಹಿಡಿಯುವುದಿಲ್ಲ.", "or": "Component ହେଉଛି header ବା product card ପରି ପୁନରାବୃତ୍ତି ହେଉଥିବା ଅଂଶର class। ଏହା root locator ରୁ ଆରମ୍ଭ ହୁଏ, ତେଣୁ ଅନ୍ୟ card ର button କେବେ ଧରେ ନାହିଁ।", "ar": "المكوّن صنف لجزء يتكرر، مثل الترويسة أو بطاقة المنتج. يبدأ من محدد جذر، فلا يجد أبدًا زرًا يخص بطاقة أخرى.", "de": "Eine Komponente ist eine Klasse für einen Teil, der sich wiederholt, etwa die Kopfzeile oder eine Produktkarte. Sie beginnt bei einem Wurzel-Locator und findet daher nie den Knopf einer anderen Karte."}, {"id": "fixtures", "h": "Fixtures", "en": "Fixtures create page objects and sign in before the test. Playwright Test uses test.extend, pytest uses conftest.py, and JUnit uses a base class with @BeforeEach.", "hi": "Fixtures test से पहले page objects बनाते हैं और sign in करते हैं। Playwright Test test.extend, pytest conftest.py, और JUnit @BeforeEach वाली base class इस्तेमाल करता है।", "kn": "Fixtures test ಮೊದಲು page objects ಮಾಡಿ sign in ಮಾಡುತ್ತವೆ. Playwright Test test.extend, pytest conftest.py, JUnit @BeforeEach ಇರುವ base class ಬಳಸುತ್ತದೆ.", "or": "Fixtures test ପୂର୍ବରୁ page objects ତିଆରି କରନ୍ତି ଓ sign in କରନ୍ତି। Playwright Test test.extend, pytest conftest.py, ଏବଂ JUnit @BeforeEach ଥିବା base class ବ୍ୟବହାର କରେ।", "ar": "تنشئ المثبتات كائنات الصفحات وتسجل الدخول قبل الاختبار. يستخدم Playwright Test الدالة test.extend، ويستخدم pytest الملف conftest.py، ويستخدم JUnit صنفًا أساسيًا مع ‎@BeforeEach.", "de": "Fixtures erstellen Page Objects und melden sich vor dem Test an. Playwright Test nutzt test.extend, pytest nutzt conftest.py und JUnit eine Basisklasse mit @BeforeEach."}, {"id": "rules", "h": "Rules", "en": "Keep one class per screen, use role and label locators, name methods after user actions, keep checks in tests, and pass test data in instead of storing it in the class.", "hi": "हर screen के लिए एक class रखें, role और label locators इस्तेमाल करें, methods के नाम user actions पर रखें, checks tests में रखें, और test data class में रखने के बजाय भेजें।", "kn": "ಪ್ರತಿ screen ಗೆ ಒಂದು class ಇಡಿ, role ಮತ್ತು label locators ಬಳಸಿ, methods ಗೆ user actions ಹೆಸರು ಕೊಡಿ, checks tests ನಲ್ಲಿ ಇಡಿ, test data class ನಲ್ಲಿ ಇಡದೆ ಕಳುಹಿಸಿ.", "or": "ପ୍ରତି screen ପାଇଁ ଗୋଟିଏ class ରଖନ୍ତୁ, role ଓ label locators ବ୍ୟବହାର କରନ୍ତୁ, methods ର ନାମ user actions ଅନୁସାରେ ଦିଅନ୍ତୁ, checks tests ରେ ରଖନ୍ତୁ, ଏବଂ test data class ରେ ନରଖି ପଠାନ୍ତୁ।", "ar": "أبقِ صنفًا واحدًا لكل شاشة، واستخدم محددات الدور والتسمية، وسمِّ التوابع بأفعال المستخدم، وأبقِ الفحوص في الاختبارات، ومرّر بيانات الاختبار بدل تخزينها في الصنف.", "de": "Halte eine Klasse pro Bildschirm, nutze Rollen- und Label-Locatoren, benenne Methoden nach Nutzeraktionen, lass Prüfungen in den Tests und übergib Testdaten, statt sie in der Klasse zu speichern."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you work the way a component does: find one product card by its heading, then use only locators inside that card.", "hi": "Labs में आप component की तरह काम करते हैं: heading से एक product card ढूँढते हैं, फिर केवल उस card के अंदर के locators इस्तेमाल करते हैं।", "kn": "Labs ನಲ್ಲಿ component ನಂತೆ ಕೆಲಸ ಮಾಡುತ್ತೀರಿ: heading ನಿಂದ ಒಂದು product card ಹುಡುಕಿ, ನಂತರ ಆ card ಒಳಗಿನ locators ಮಾತ್ರ ಬಳಸುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ component ପରି କାମ କରନ୍ତି: heading ରୁ ଗୋଟିଏ product card ଖୋଜନ୍ତି, ତାପରେ କେବଳ ସେହି card ଭିତରର locators ବ୍ୟବହାର କରନ୍ତି।", "ar": "في المختبرات تعمل كما يعمل المكوّن: تجد بطاقة منتج واحدة بعنوانها، ثم تستخدم المحددات داخل تلك البطاقة فقط.", "de": "In den Labs arbeitest du wie eine Komponente: Du findest eine Produktkarte über ihre Überschrift und nutzt dann nur Locatoren innerhalb dieser Karte."}], "ex": [], "dg": {"layers": {"t": "The layers of a page object test", "w": 900, "h": 220, "n": [["test", 20, 78, 140, 64, "test", {"c": 2, "sub": "what to prove", "i": "The test says what happens and what must be true. It holds the checks."}], ["fix", 200, 78, 140, 64, "fixtures", {"c": 5, "sub": "hand out objects", "i": "Fixtures or a base class create page objects and sign in, so tests do not repeat it."}], ["pages", 380, 78, 150, 64, "page objects", {"c": 1, "sub": "one per screen", "i": "LoginPage and ProductsPage know the locators and steps of one screen each."}], ["comp", 570, 78, 150, 64, "components", {"c": 3, "sub": "parts that repeat", "i": "Header and ProductCard are reused by many pages."}], ["loc", 760, 78, 120, 64, "locators", {"c": 0, "sub": "Playwright", "i": "In the end every action runs on a Playwright locator, with auto waiting."}]], "e": [["test", "fix"], ["fix", "pages"], ["pages", "comp"], ["comp", "loc"]], "st": [[["test"], "The test describes the behaviour and holds the checks."], [["fix", "test>fix"], "Fixtures hand it ready page objects."], [["pages", "fix>pages"], "Page objects know one screen each."], [["comp", "pages>comp"], "Components cover the parts that appear on many screens."], [["loc", "comp>loc"], "Underneath, Playwright locators do the work."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "gelpen", "title": "Add the gel pen from its own card", "name": "Asha adds the gel pen", "task": "Sign in as Asha (<code>asha@shop.example<\/code>, <code>s3cret<\/code>). Then find the card whose heading is <b>Gel pen<\/b>, click the <b>Add to cart<\/b> button inside that card, and check the cart count is <b>1<\/b>.", "goal": "The gel pen is in the cart.", "start": "/login", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('Asha adds the gel pen', async ({ page }) => {\n  await page.goto('/login');\n  // sign in, find the Gel pen card, add it, check the cart count\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class AshaAddsTheGelPenTest {\n  @Test\n  void ashaAddsTheGelPen(Page page) {\n    page.navigate(\"/login\");\n    page.getByLabel(\"Email\").fill(\"asha@shop.example\");\n    page.getByLabel(\"Password\").fill(\"s3cret\");\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Sign in\")).click();\n    Locator card = page.getByRole(AriaRole.LISTITEM).filter(new Locator.FilterOptions().setHas(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(\"Gel pen\"))));\n    card.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(\"Add to cart\")).click();\n    assertThat(page.getByTestId(\"cart-count\")).hasText(\"1\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_asha_adds_the_gel_pen(page: Page):\n    page.goto(\"/login\")\n    page.get_by_label(\"Email\").fill(\"asha@shop.example\")\n    page.get_by_label(\"Password\").fill(\"s3cret\")\n    page.get_by_role(\"button\", name=\"Sign in\").click()\n    card = page.get_by_role(\"listitem\").filter(has=page.get_by_role(\"heading\", name=\"Gel pen\"))\n    card.get_by_role(\"button\", name=\"Add to cart\").click()\n    expect(page.get_by_test_id(\"cart-count\")).to_have_text(\"1\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('Asha adds the gel pen', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  const card = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Gel pen' }) });\n  await card.getByRole('button', { name: 'Add to cart' }).click();\n  await expect(page.getByTestId('cart-count')).toHaveText('1');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('Asha adds the gel pen', async ({ page }) => {\n  await page.goto('/login');\n  await page.getByLabel('Email').fill('asha@shop.example');\n  await page.getByLabel('Password').fill('s3cret');\n  await page.getByRole('button', { name: 'Sign in' }).click();\n  const card = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Gel pen' }) });\n  await card.getByRole('button', { name: 'Add to cart' }).click();\n  await expect(page.getByTestId('cart-count')).toHaveText('1');\n});"}, "hint": "Find the card with <code>page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Gel pen' }) })<\/code>, then look for the button inside it.", "why": "This is what the ProductCard component does inside: a root locator for one card, and every other locator starting from it.", "check": [["ctx.loggedIn", "Asha is signed in"], ["ctx.cartCount === 1", "One item is in the cart"], ["/filter/i.test(ctx.code)", "The card is found with filter"]]}, {"id": "bottleprice", "title": "Read a price from one card", "name": "the water bottle costs 349 rupees", "task": "On <code>/products<\/code>, find the card whose heading is <b>Water bottle<\/b> and check that the price inside it is <b>₹349<\/b>.", "goal": "The price of the water bottle is checked.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the water bottle costs 349 rupees', async ({ page }) => {\n  await page.goto('/products');\n  // find the Water bottle card and check its price\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheWaterBottleCosts349RupeesTest {\n  @Test\n  void theWaterBottleCosts349Rupees(Page page) {\n    page.navigate(\"/products\");\n    Locator card = page.getByRole(AriaRole.LISTITEM).filter(new Locator.FilterOptions().setHas(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(\"Water bottle\"))));\n    assertThat(card.locator(\".price\")).hasText(\"₹349\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_water_bottle_costs_349_rupees(page: Page):\n    page.goto(\"/products\")\n    card = page.get_by_role(\"listitem\").filter(has=page.get_by_role(\"heading\", name=\"Water bottle\"))\n    expect(card.locator(\".price\")).to_have_text(\"₹349\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the water bottle costs 349 rupees', async ({ page }) => {\n  await page.goto('/products');\n  const card = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Water bottle' }) });\n  await expect(card.locator('.price')).toHaveText('₹349');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the water bottle costs 349 rupees', async ({ page }) => {\n  await page.goto('/products');\n  const card = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Water bottle' }) });\n  await expect(card.locator('.price')).toHaveText('₹349');\n});"}, "hint": "Use the same filter as before with the heading <b>Water bottle<\/b>, then <code>card.locator('.price')<\/code>.", "why": "Scoping to the card means the check reads the bottle price and never the price of another product.", "check": [["/Water bottle/.test(ctx.code)", "The card is found by its heading"], ["/349/.test(ctx.code)", "The test checks ₹349"]]}], "trees": {}};
+JSPLAY.page({ title: "Page objects and components", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

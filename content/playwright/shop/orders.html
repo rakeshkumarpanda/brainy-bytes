@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head><script src="fakeapi.js"></script><meta charset="utf-8"><title>Orders · Brainy Shop</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<main>
+  <h1>Past orders</h1>
+  <table aria-label="Orders">
+    <thead><tr><th><button type="button" data-k="id">Order</button></th><th><button type="button" data-k="customer">Customer</button></th><th><button type="button" data-k="total">Total</button></th><th>Status</th><th>Action</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="row" style="margin-top:10px"><button type="button" class="secondary" id="prev">Previous</button><span id="page">Page 1 of 2</span><button type="button" class="secondary" id="next">Next</button></div>
+  <p role="status" aria-live="polite"></p>
+</main>
+<script src="app.js"></script>
+<script>
+let rows = [
+  { id: 1001, customer: 'Asha', total: 219, status: 'Delivered' }, { id: 1002, customer: 'Ravi', total: 1299, status: 'Shipped' },
+  { id: 1003, customer: 'Meera', total: 60, status: 'Cancelled' }, { id: 1004, customer: 'John', total: 349, status: 'Delivered' },
+  { id: 1005, customer: 'Fatima', total: 698, status: 'Packed' }, { id: 1006, customer: 'Chen', total: 20, status: 'Shipped' },
+  { id: 1007, customer: 'Asha', total: 1648, status: 'Packed' }];
+let page = 0, key = 'id', dir = 1;
+const per = 5;
+function draw() {
+  const sorted = [...rows].sort((a, b) => (a[key] > b[key] ? 1 : a[key] < b[key] ? -1 : 0) * dir);
+  const pages = Math.max(1, Math.ceil(sorted.length / per));
+  page = Math.min(page, pages - 1);
+  document.querySelector('tbody').innerHTML = sorted.slice(page * per, page * per + per).map(r =>
+    `<tr><td>#${r.id}</td><td>${r.customer}</td><td>${Shop.rupees(r.total)}</td><td>${r.status}</td><td><button type="button" class="secondary" aria-label="Delete order ${r.id}" data-del="${r.id}">Delete</button></td></tr>`).join('');
+  document.getElementById('page').textContent = `Page ${page + 1} of ${pages}`;
+  document.getElementById('prev').disabled = page === 0;
+  document.getElementById('next').disabled = page >= pages - 1;
+}
+document.querySelector('thead').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; dir = key === b.dataset.k ? -dir : 1; key = b.dataset.k; draw(); });
+document.querySelector('tbody').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (!b) return; rows = rows.filter(r => r.id !== Number(b.dataset.del)); document.querySelector('[role=status]').textContent = `Order #${b.dataset.del} deleted`; draw(); });
+document.getElementById('prev').onclick = () => { page--; draw(); };
+document.getElementById('next').onclick = () => { page++; draw(); };
+draw();
+</script>
+</body>
+</html>

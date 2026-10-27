@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Locators: finding elements · Playwright</title>
+<meta name="description" content="getByRole, getByLabel, getByPlaceholder, getByText, getByAltText, getByTitle, getByTestId, CSS and XPath, filter with hasText, has and hasNot, nth, first, last, and, or, strict mode and tables in Java, Python, JavaScript and TypeScript.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🎯 Finding and using elements</span><span>›</span><span>Chapter 5 of 10</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🎯</span><div><h1>Locators: finding elements</h1><p class="lead">Find any element the way a person would: by its role and name, its label, its text or a test id. Then narrow down with filters, keep strict mode on your side, and work through lists and tables.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 24 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 28 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 3 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>A locator is how a test says which element it means. The best ones read like an instruction to a person: the Sign in button, the Email box, the Delete button in Meera's row.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#what" class="easy"><span>🎯</span>What a locator is</a><a href="#role" class="easy"><span>🧑‍🦯</span>getByRole: the first choice</a><a href="#getby" class="easy"><span>🏷️</span>Labels, placeholders, text, alt text, titles and test ids</a><a href="#css"><span>🧩</span>CSS and XPath</a><a href="#filter"><span>🔎</span>Filtering and chaining</a><a href="#strict"><span>🚦</span>Strict mode</a><a href="#lists"><span>📋</span>Lists and tables</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="what" data-say="what"><div class="sec-num">Part 1</div><h2><span class="sec-em">🎯</span><span>What a locator is</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>A locator is a way to find an element on the page, written as a short description such as <i>the button called Sign in</i>. It does not hold the element. Every time you use it, Playwright searches the page again, at that moment. This is why a locator never goes stale when the page changes, which was a common problem in older tools.</p>
+<div class="codewrap tests pw4" data-k="lazy" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A locator is found again every time you use it · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/LazyTest.java</div><pre class="src" data-file="src/test/java/com/brainy/LazyTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">LazyTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> aLocatorIsARecipeNotAnElement(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    <span class="t">Locator</span> cards = page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>);          <span class="c">// nothing is searched yet</span>
+    assertThat(cards).hasCount(<span class="n">5</span>);
+    <span class="t">System</span>.out.println(<span class="s">"before search: "</span> + cards.count());
+
+    page.getByPlaceholder(<span class="s">"Search products"</span>).fill(<span class="s">"o"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"after \"o\": "</span> + cards.count());       <span class="c">// the same locator, found again</span>
+
+    page.getByPlaceholder(<span class="s">"Search products"</span>).fill(<span class="s">"bottle"</span>);
+    assertThat(cards).hasCount(<span class="n">1</span>);
+    <span class="t">System</span>.out.println(<span class="s">"after \"bottle\": "</span> + cards.count());
+    <span class="t">System</span>.out.println(cards.describe(<span class="s">"product cards"</span>));
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.LazyTest
+before search: 5
+after &quot;o&quot;: 3
+after &quot;bottle&quot;: 1
+product cards
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.957 s -- in com.brainy.LazyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_lazy.py</div><pre class="src" data-file="tests/test_lazy.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_a_locator_is_a_recipe_not_an_element(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    cards = page.get_by_role(<span class="s">"listitem"</span>)          <span class="c"># nothing is searched yet</span>
+    expect(cards).to_have_count(<span class="n">5</span>)
+    print(<span class="s">"before search:"</span>, cards.count())
+
+    page.get_by_placeholder(<span class="s">"Search products"</span>).fill(<span class="s">"o"</span>)
+    print(<span class="s">'after "o":'</span>, cards.count())            <span class="c"># the same locator, found again</span>
+
+    page.get_by_placeholder(<span class="s">"Search products"</span>).fill(<span class="s">"bottle"</span>)
+    expect(cards).to_have_count(<span class="n">1</span>)
+    print(<span class="s">'after "bottle":'</span>, cards.count())
+    print(cards.describe(<span class="s">"product cards"</span>))</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_lazy.py::test_a_locator_is_a_recipe_not_an_element[chromium] before search: 5
+after &quot;o&quot;: 3
+after &quot;bottle&quot;: 1
+&lt;Locator frame=&lt;Frame name= url=&#x27;http://localhost:4173/products&#x27;&gt; selector=&#x27;internal:role=listitem &gt;&gt; internal:describe=&quot;product cards&quot;&#x27;&gt;
+PASSED
+
+============================== 1 passed in 2.02s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/lazy.spec.js</div><pre class="src" data-file="tests/lazy.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'a locator is a recipe, not an element'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> cards = page.getByRole(<span class="s">'listitem'</span>);          <span class="c">// nothing is searched yet</span>
+  <span class="k">await</span> expect(cards).toHaveCount(<span class="n">5</span>);
+  console.log(<span class="s">'before search:'</span>, <span class="k">await</span> cards.count());
+
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'o'</span>);
+  console.log(<span class="s">'after "o":'</span>, <span class="k">await</span> cards.count());    <span class="c">// the same locator, found again</span>
+
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'bottle'</span>);
+  <span class="k">await</span> expect(cards).toHaveCount(<span class="n">1</span>);
+  console.log(<span class="s">'after "bottle":'</span>, <span class="k">await</span> cards.count());
+  console.log(cards.describe(<span class="s">'product cards'</span>).toString());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+before search: 5
+after &quot;o&quot;: 3
+after &quot;bottle&quot;: 1
+product cards
+  ✓  1 [chromium] › tests/lazy.spec.js:3:1 › a locator is a recipe, not an element (1.2s)
+
+  1 passed (2.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/lazy.spec.ts</div><pre class="src" data-file="tests/lazy.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'a locator is a recipe, not an element'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> cards = page.getByRole(<span class="s">'listitem'</span>);          <span class="c">// nothing is searched yet</span>
+  <span class="k">await</span> expect(cards).toHaveCount(<span class="n">5</span>);
+  console.log(<span class="s">'before search:'</span>, <span class="k">await</span> cards.count());
+
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'o'</span>);
+  console.log(<span class="s">'after "o":'</span>, <span class="k">await</span> cards.count());    <span class="c">// the same locator, found again</span>
+
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'bottle'</span>);
+  <span class="k">await</span> expect(cards).toHaveCount(<span class="n">1</span>);
+  console.log(<span class="s">'after "bottle":'</span>, <span class="k">await</span> cards.count());
+  console.log(cards.describe(<span class="s">'product cards'</span>).toString());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+before search: 5
+after &quot;o&quot;: 3
+after &quot;bottle&quot;: 1
+product cards
+  ✓  1 [chromium] › tests/lazy.spec.ts:3:1 › a locator is a recipe, not an element (1.2s)
+
+  1 passed (2.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>One locator gave three different counts, because it searches the page again at the moment it is used. A search for the letter o keeps the three products whose names contain it. <code>describe</code> gives the locator a readable name that shows up in reports and in the trace viewer. Python prints the whole locator, with the name inside the selector.</p></div></div>
+<p>Playwright gives you locators that describe what a person sees: a role and a name, a label, a placeholder, some text. Try them in the locator lab. Type your own in any of the four languages.</p>
+<div class="viz" data-viz="pwloc"></div>
+<div class="viz" data-viz="flow" data-k="prio"></div>
+<div class="pw-box pw-life"><span class="pw-ic">🌍</span><div>A real life example: you tell a friend <i>press the green Pay button</i>, not <i>press the third button in the second box</i>. The first instruction still works when the page is redesigned. Good locators work the same way.</div></div>
+</section>
+<section class="card reveal jsec easy-part" id="role" data-say="role"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧑‍🦯</span><span>getByRole: the first choice</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Every element has a role that tells assistive technology what it is: <code>button</code>, <code>link</code>, <code>heading</code>, <code>textbox</code>, <code>checkbox</code>, <code>row</code> and many more. Most of them come from the HTML tag itself, so developers get them for free. The name is what a person reads: the button text, the label of a box, or an <code>aria-label</code>.</p>
+<div class="codewrap tests pw4" data-k="role" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">getByRole with names, levels and states · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/RoleTest.java</div><pre class="src" data-file="src/test/java/com/brainy/RoleTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">RoleTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> findThingsTheWayAUserSeesThem(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);   <span class="c">// waits for the list</span>
+
+    <span class="t">System</span>.out.println(<span class="s">"headings: "</span> + page.getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>).allTextContents());
+    <span class="t">System</span>.out.println(<span class="s">"level 1 heading: "</span> + page.getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setLevel(<span class="n">1</span>)).textContent());
+
+    <span class="c">// The name is matched ignoring case, and part of the name is enough.</span>
+    <span class="t">System</span>.out.println(<span class="s">"\"add to cart\": "</span> + page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"add to cart"</span>)).count());
+    <span class="c">// setExact(true) wants the whole name with the same case.</span>
+    <span class="t">System</span>.out.println(<span class="s">"\"add to cart\" exact: "</span> + page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>,
+        <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"add to cart"</span>).setExact(<span class="k">true</span>)).count());
+    <span class="t">System</span>.out.println(<span class="s">"disabled buttons: "</span> + page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setDisabled(<span class="k">true</span>)).count());
+
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">SEARCHBOX</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Search"</span>)).fill(<span class="s">"lamp"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">COMBOBOX</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sort by"</span>)).selectOption(<span class="s">"high"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">1</span>);
+    <span class="t">System</span>.out.println(<span class="s">"left after search: "</span> + page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>).getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>).textContent());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.RoleTest
+headings: [Products, Coffee mug, Desk lamp, Gel pen, Notebook, Water bottle]
+level 1 heading: Products
+&quot;add to cart&quot;: 4
+&quot;add to cart&quot; exact: 0
+disabled buttons: 1
+left after search: Desk lamp
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.449 s -- in com.brainy.RoleTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_roles.py</div><pre class="src" data-file="tests/test_roles.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_find_things_the_way_a_user_sees_them(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)   <span class="c"># waits for the list</span>
+
+    print(<span class="s">"headings:"</span>, page.get_by_role(<span class="s">"heading"</span>).all_text_contents())
+    print(<span class="s">"level 1 heading:"</span>, page.get_by_role(<span class="s">"heading"</span>, level=<span class="n">1</span>).text_content())
+
+    <span class="c"># The name is matched ignoring case, and part of the name is enough.</span>
+    print(<span class="s">'"add to cart":'</span>, page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"add to cart"</span>).count())
+    <span class="c"># exact=True wants the whole name with the same case.</span>
+    print(<span class="s">'"add to cart" exact:'</span>, page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"add to cart"</span>, exact=<span class="k">True</span>).count())
+    print(<span class="s">"disabled buttons:"</span>, page.get_by_role(<span class="s">"button"</span>, disabled=<span class="k">True</span>).count())
+
+    page.get_by_role(<span class="s">"searchbox"</span>, name=<span class="s">"Search"</span>).fill(<span class="s">"lamp"</span>)
+    page.get_by_role(<span class="s">"combobox"</span>, name=<span class="s">"Sort by"</span>).select_option(<span class="s">"high"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">1</span>)
+    print(<span class="s">"left after search:"</span>, page.get_by_role(<span class="s">"listitem"</span>).get_by_role(<span class="s">"heading"</span>).text_content())</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_roles.py::test_find_things_the_way_a_user_sees_them[chromium] headings: [&#x27;Products&#x27;, &#x27;Coffee mug&#x27;, &#x27;Desk lamp&#x27;, &#x27;Gel pen&#x27;, &#x27;Notebook&#x27;, &#x27;Water bottle&#x27;]
+level 1 heading: Products
+&quot;add to cart&quot;: 4
+&quot;add to cart&quot; exact: 0
+disabled buttons: 1
+left after search: Desk lamp
+PASSED
+
+============================== 1 passed in 2.34s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/roles.spec.js</div><pre class="src" data-file="tests/roles.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'find things the way a user sees them'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);   <span class="c">// waits for the list</span>
+
+  console.log(<span class="s">'headings:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'heading'</span>).allTextContents());
+  console.log(<span class="s">'level 1 heading:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'heading'</span>, { level: <span class="n">1</span> }).textContent());
+
+  <span class="c">// The name is matched ignoring case, and part of the name is enough.</span>
+  console.log(<span class="s">'"add to cart":'</span>, <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'add to cart'</span> }).count());
+  <span class="c">// exact: true wants the whole name with the same case.</span>
+  console.log(<span class="s">'"add to cart" exact:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'add to cart'</span>, exact: <span class="k">true</span> }).count());
+  console.log(<span class="s">'disabled buttons:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { disabled: <span class="k">true</span> }).count());
+
+  <span class="k">await</span> page.getByRole(<span class="s">'searchbox'</span>, { name: <span class="s">'Search'</span> }).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'combobox'</span>, { name: <span class="s">'Sort by'</span> }).selectOption(<span class="s">'high'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+  console.log(<span class="s">'left after search:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'listitem'</span>).getByRole(<span class="s">'heading'</span>).textContent());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+headings: [
+  &#x27;Products&#x27;,
+  &#x27;Coffee mug&#x27;,
+  &#x27;Desk lamp&#x27;,
+  &#x27;Gel pen&#x27;,
+  &#x27;Notebook&#x27;,
+  &#x27;Water bottle&#x27;
+]
+level 1 heading: Products
+&quot;add to cart&quot;: 4
+&quot;add to cart&quot; exact: 0
+disabled buttons: 1
+left after search: Desk lamp
+  ✓  1 [chromium] › tests/roles.spec.js:3:1 › find things the way a user sees them (1.2s)
+
+  1 passed (2.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/roles.spec.ts</div><pre class="src" data-file="tests/roles.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'find things the way a user sees them'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);   <span class="c">// waits for the list</span>
+
+  console.log(<span class="s">'headings:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'heading'</span>).allTextContents());
+  console.log(<span class="s">'level 1 heading:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'heading'</span>, { level: <span class="n">1</span> }).textContent());
+
+  <span class="c">// The name is matched ignoring case, and part of the name is enough.</span>
+  console.log(<span class="s">'"add to cart":'</span>, <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'add to cart'</span> }).count());
+  <span class="c">// exact: true wants the whole name with the same case.</span>
+  console.log(<span class="s">'"add to cart" exact:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'add to cart'</span>, exact: <span class="k">true</span> }).count());
+  console.log(<span class="s">'disabled buttons:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { disabled: <span class="k">true</span> }).count());
+
+  <span class="k">await</span> page.getByRole(<span class="s">'searchbox'</span>, { name: <span class="s">'Search'</span> }).fill(<span class="s">'lamp'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'combobox'</span>, { name: <span class="s">'Sort by'</span> }).selectOption(<span class="s">'high'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">1</span>);
+  console.log(<span class="s">'left after search:'</span>, <span class="k">await</span> page.getByRole(<span class="s">'listitem'</span>).getByRole(<span class="s">'heading'</span>).textContent());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+headings: [
+  &#x27;Products&#x27;,
+  &#x27;Coffee mug&#x27;,
+  &#x27;Desk lamp&#x27;,
+  &#x27;Gel pen&#x27;,
+  &#x27;Notebook&#x27;,
+  &#x27;Water bottle&#x27;
+]
+level 1 heading: Products
+&quot;add to cart&quot;: 4
+&quot;add to cart&quot; exact: 0
+disabled buttons: 1
+left after search: Desk lamp
+  ✓  1 [chromium] › tests/roles.spec.ts:3:1 › find things the way a user sees them (1.3s)
+
+  1 passed (2.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>The list is sorted by name, so Coffee mug comes first. A search box has the role searchbox, a drop down list has the role combobox, and a heading knows its level. By default the name matches ignoring case and part of it is enough, so <b>add to cart</b> finds all four buttons. With exact it finds none, because the real name starts with a capital A.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>HTML</th><th>Role</th><th>Example locator</th></tr><tr><td>&lt;button&gt;, &lt;input type=submit&gt;</td><td>button</td><td>getByRole('button', { name: 'Sign in' })</td></tr><tr><td>&lt;a href&gt;</td><td>link</td><td>getByRole('link', { name: 'Orders' })</td></tr><tr><td>&lt;h1&gt; to &lt;h6&gt;</td><td>heading</td><td>getByRole('heading', { level: 1 })</td></tr><tr><td>&lt;input type=text&gt;, &lt;textarea&gt;</td><td>textbox</td><td>getByRole('textbox', { name: 'Email' })</td></tr><tr><td>&lt;input type=search&gt;</td><td>searchbox</td><td>getByRole('searchbox')</td></tr><tr><td>&lt;select&gt;</td><td>combobox</td><td>getByRole('combobox', { name: 'Sort by' })</td></tr><tr><td>&lt;input type=checkbox&gt; and radio</td><td>checkbox, radio</td><td>getByRole('checkbox', { checked: true })</td></tr><tr><td>&lt;li&gt;, &lt;tr&gt;, &lt;td&gt;</td><td>listitem, row, cell</td><td>getByRole('row').filter(...)</td></tr></table></div>
+<p>Options narrow it further: <span class="only-java"><code>setName</code>, <code>setExact</code>, <code>setLevel</code>, <code>setChecked</code>, <code>setDisabled</code>, <code>setExpanded</code>, <code>setPressed</code>, <code>setSelected</code> and <code>setIncludeHidden</code> on <code>GetByRoleOptions</code></span><span class="only-py"><code>name</code>, <code>exact</code>, <code>level</code>, <code>checked</code>, <code>disabled</code>, <code>expanded</code>, <code>pressed</code>, <code>selected</code> and <code>include_hidden</code></span><span class="only-js"><code>name</code>, <code>exact</code>, <code>level</code>, <code>checked</code>, <code>disabled</code>, <code>expanded</code>, <code>pressed</code>, <code>selected</code> and <code>includeHidden</code></span><span class="only-ts"><code>name</code>, <code>exact</code>, <code>level</code>, <code>checked</code>, <code>disabled</code>, <code>expanded</code>, <code>pressed</code>, <code>selected</code> and <code>includeHidden</code></span>. The name can also be a regular expression.</p>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>If getByRole cannot find a button that you can see, the page is probably missing a role or a name, and a screen reader user cannot use it either. That is a real accessibility bug worth reporting.</div></div>
+</section>
+<section class="card reveal jsec easy-part" id="getby" data-say="getby"><div class="sec-num">Part 3</div><h2><span class="sec-em">🏷️</span><span>Labels, placeholders, text, alt text, titles and test ids</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>The other built in locators cover the cases where a role is not enough.</p>
+<div class="tw"><table class="jt "><tr><th>Locator</th><th>Finds</th><th>Good for</th></tr><tr><td>getByLabel</td><td>a form box by its &lt;label&gt; or aria-label</td><td>every form</td></tr><tr><td>getByPlaceholder</td><td>a box by its hint text</td><td>boxes with no label</td></tr><tr><td>getByText</td><td>the smallest element that contains the text</td><td>messages, paragraphs, labels</td></tr><tr><td>getByAltText</td><td>an image by its alt text</td><td>logos, product pictures</td></tr><tr><td>getByTitle</td><td>an element by its title attribute</td><td>icons, iframes</td></tr><tr><td>getByTestId</td><td>an element by data-testid</td><td>text that changes or is translated</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="getby" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Labels, placeholders, text, titles and test ids · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/GetByTest.java</div><pre class="src" data-file="src/test/java/com/brainy/GetByTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.util.regex.<span class="t">Pattern</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">GetByTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> labelsPlaceholdersTextTitlesAndTestIds(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/login"</span>);
+    page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+    page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+    page.getByText(<span class="s">"Remember me"</span>).click();          <span class="c">// clicking a label ticks its box</span>
+    assertThat(page.getByLabel(<span class="s">"Remember me"</span>)).isChecked();
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>)).click();
+
+    assertThat(page.getByText(<span class="s">"Hello, Asha"</span>)).isVisible();
+    assertThat(page.getByTestId(<span class="s">"cart-count"</span>)).hasText(<span class="s">"0"</span>);
+    assertThat(page.getByPlaceholder(<span class="s">"Search products"</span>)).isEditable();
+    assertThat(page.getByTestId(<span class="t">Pattern</span>.compile(<span class="s">"^product-"</span>))).hasCount(<span class="n">5</span>);   <span class="c">// all product cards</span>
+
+    page.navigate(<span class="s">"/frames"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"iframes by title: "</span> + page.getByTitle(<span class="s">"Payment form"</span>).count());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.GetByTest
+iframes by title: 1
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.312 s -- in com.brainy.GetByTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_getby.py</div><pre class="src" data-file="tests/test_getby.py"><span class="k">import</span> re
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_labels_placeholders_text_titles_and_test_ids(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/login"</span>)
+    page.get_by_label(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>)
+    page.get_by_label(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>)
+    page.get_by_text(<span class="s">"Remember me"</span>).click()          <span class="c"># clicking a label ticks its box</span>
+    expect(page.get_by_label(<span class="s">"Remember me"</span>)).to_be_checked()
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Sign in"</span>).click()
+
+    expect(page.get_by_text(<span class="s">"Hello, Asha"</span>)).to_be_visible()
+    expect(page.get_by_test_id(<span class="s">"cart-count"</span>)).to_have_text(<span class="s">"0"</span>)
+    expect(page.get_by_placeholder(<span class="s">"Search products"</span>)).to_be_editable()
+    expect(page.get_by_test_id(re.compile(r<span class="s">"^product-"</span>))).to_have_count(<span class="n">5</span>)   <span class="c"># all product cards</span>
+
+    page.goto(<span class="s">"/frames"</span>)
+    print(<span class="s">"iframes by title:"</span>, page.get_by_title(<span class="s">"Payment form"</span>).count())</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_getby.py::test_labels_placeholders_text_titles_and_test_ids[chromium] iframes by title: 1
+PASSED
+
+============================== 1 passed in 2.51s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/getby.spec.js</div><pre class="src" data-file="tests/getby.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'labels, placeholders, text, titles and test ids'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByText(<span class="s">'Remember me'</span>).click();          <span class="c">// clicking a label ticks its box</span>
+  <span class="k">await</span> expect(page.getByLabel(<span class="s">'Remember me'</span>)).toBeChecked();
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'0'</span>);
+  <span class="k">await</span> expect(page.getByPlaceholder(<span class="s">'Search products'</span>)).toBeEditable();
+  <span class="k">await</span> expect(page.getByTestId(/^product-/)).toHaveCount(<span class="n">5</span>);   <span class="c">// all product cards</span>
+
+  <span class="k">await</span> page.goto(<span class="s">'/frames'</span>);
+  console.log(<span class="s">'iframes by title:'</span>, <span class="k">await</span> page.getByTitle(<span class="s">'Payment form'</span>).count());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+iframes by title: 1
+  ✓  1 [chromium] › tests/getby.spec.js:3:1 › labels, placeholders, text, titles and test ids (1.8s)
+
+  1 passed (3.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/getby.spec.ts</div><pre class="src" data-file="tests/getby.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'labels, placeholders, text, titles and test ids'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByText(<span class="s">'Remember me'</span>).click();          <span class="c">// clicking a label ticks its box</span>
+  <span class="k">await</span> expect(page.getByLabel(<span class="s">'Remember me'</span>)).toBeChecked();
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+
+  <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'cart-count'</span>)).toHaveText(<span class="s">'0'</span>);
+  <span class="k">await</span> expect(page.getByPlaceholder(<span class="s">'Search products'</span>)).toBeEditable();
+  <span class="k">await</span> expect(page.getByTestId(/^product-/)).toHaveCount(<span class="n">5</span>);   <span class="c">// all product cards</span>
+
+  <span class="k">await</span> page.goto(<span class="s">'/frames'</span>);
+  console.log(<span class="s">'iframes by title:'</span>, <span class="k">await</span> page.getByTitle(<span class="s">'Payment form'</span>).count());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+iframes by title: 1
+  ✓  1 [chromium] › tests/getby.spec.ts:3:1 › labels, placeholders, text, titles and test ids (2.0s)
+
+  1 passed (3.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>The form boxes are found by the words of their labels. Clicking the text <b>Remember me</b> clicks its label, and the browser ticks the box, just as it would for a person. The cart counter has a <code>data-testid</code>, and a regular expression finds all five product cards by theirs.</p></div></div>
+<p>Text matching works like names: ignoring case, part of the text is enough, and runs of spaces count as one. Use exact for a full, case sensitive match, or a regular expression.</p>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Many companies use another attribute for test ids, such as data-qa or data-test. Tell Playwright once: <span class="only-java"><code>playwright.selectors().setTestIdAttribute("data-qa")</code></span><span class="only-py"><code>playwright.selectors.set_test_id_attribute("data-qa")</code>, or in pytest a fixture that calls it</span><span class="only-js"><code>use: { testIdAttribute: 'data-qa' }</code> in playwright.config</span><span class="only-ts"><code>use: { testIdAttribute: 'data-qa' }</code> in playwright.config</span>. After that, getByTestId reads the new attribute.</div></div>
+</section>
+<section class="card reveal jsec" id="css" data-say="css"><div class="sec-num">Part 4</div><h2><span class="sec-em">🧩</span><span>CSS and XPath</span></h2>
+
+<p><code>locator()</code> takes a CSS selector or an XPath. They are useful for old pages without good labels, but they describe how the page is built, not what the user sees.</p>
+<div class="codewrap tests pw4" data-k="css" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">CSS and XPath · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/CssTest.java</div><pre class="src" data-file="src/test/java/com/brainy/CssTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">CssTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> cssAndXpathWhenNothingBetterFits(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.locator(<span class="s">"li.card"</span>)).hasCount(<span class="n">5</span>);
+
+    <span class="t">System</span>.out.println(<span class="s">"CSS prices: "</span> + page.locator(<span class="s">"li.card .price"</span>).allTextContents());
+    <span class="t">System</span>.out.println(<span class="s">"CSS attribute: "</span> + page.locator(<span class="s">"[data-testid=\"product-3\"] h3"</span>).textContent());
+    <span class="t">System</span>.out.println(<span class="s">"CSS :has-text(): "</span> + page.locator(<span class="s">"li.card:has-text(\"mug\") h3"</span>).textContent());
+    <span class="t">System</span>.out.println(<span class="s">"XPath: "</span> + page.locator(<span class="s">"//li[h3=\"Desk lamp\"]//span[@class=\"price\"]"</span>).textContent());
+    <span class="t">System</span>.out.println(<span class="s">"id: "</span> + page.locator(<span class="s">"#sort"</span>).inputValue());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.CssTest
+CSS prices: [₹199, ₹1,299, ₹20, ₹60, ₹349]
+CSS attribute: Desk lamp
+CSS :has-text(): Coffee mug
+XPath: ₹1,299
+id: name
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.903 s -- in com.brainy.CssTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_css.py</div><pre class="src" data-file="tests/test_css.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_css_and_xpath_when_nothing_better_fits(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.locator(<span class="s">"li.card"</span>)).to_have_count(<span class="n">5</span>)
+
+    print(<span class="s">"CSS prices:"</span>, page.locator(<span class="s">"li.card .price"</span>).all_text_contents())
+    print(<span class="s">"CSS attribute:"</span>, page.locator(<span class="s">'[data-testid="product-3"] h3'</span>).text_content())
+    print(<span class="s">"CSS :has-text():"</span>, page.locator(<span class="s">'li.card:has-text("mug") h3'</span>).text_content())
+    print(<span class="s">"XPath:"</span>, page.locator(<span class="s">'//li[h3="Desk lamp"]//span[@class="price"]'</span>).text_content())
+    print(<span class="s">"id:"</span>, page.locator(<span class="s">"#sort"</span>).input_value())</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_css.py::test_css_and_xpath_when_nothing_better_fits[chromium] CSS prices: [&#x27;₹199&#x27;, &#x27;₹1,299&#x27;, &#x27;₹20&#x27;, &#x27;₹60&#x27;, &#x27;₹349&#x27;]
+CSS attribute: Desk lamp
+CSS :has-text(): Coffee mug
+XPath: ₹1,299
+id: name
+PASSED
+
+============================== 1 passed in 2.19s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/css.spec.js</div><pre class="src" data-file="tests/css.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'CSS and XPath when nothing better fits'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.locator(<span class="s">'li.card'</span>)).toHaveCount(<span class="n">5</span>);
+
+  console.log(<span class="s">'CSS prices:'</span>, <span class="k">await</span> page.locator(<span class="s">'li.card .price'</span>).allTextContents());
+  console.log(<span class="s">'CSS attribute:'</span>, <span class="k">await</span> page.locator(<span class="s">'[data-testid="product-3"] h3'</span>).textContent());
+  console.log(<span class="s">'CSS :has-text():'</span>, <span class="k">await</span> page.locator(<span class="s">'li.card:has-text("mug") h3'</span>).textContent());
+  console.log(<span class="s">'XPath:'</span>, <span class="k">await</span> page.locator(<span class="s">'//li[h3="Desk lamp"]//span[@class="price"]'</span>).textContent());
+  console.log(<span class="s">'id:'</span>, <span class="k">await</span> page.locator(<span class="s">'#sort'</span>).inputValue());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+CSS prices: [ &#x27;₹199&#x27;, &#x27;₹1,299&#x27;, &#x27;₹20&#x27;, &#x27;₹60&#x27;, &#x27;₹349&#x27; ]
+CSS attribute: Desk lamp
+CSS :has-text(): Coffee mug
+XPath: ₹1,299
+id: name
+  ✓  1 [chromium] › tests/css.spec.js:3:1 › CSS and XPath when nothing better fits (1.2s)
+
+  1 passed (2.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/css.spec.ts</div><pre class="src" data-file="tests/css.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'CSS and XPath when nothing better fits'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.locator(<span class="s">'li.card'</span>)).toHaveCount(<span class="n">5</span>);
+
+  console.log(<span class="s">'CSS prices:'</span>, <span class="k">await</span> page.locator(<span class="s">'li.card .price'</span>).allTextContents());
+  console.log(<span class="s">'CSS attribute:'</span>, <span class="k">await</span> page.locator(<span class="s">'[data-testid="product-3"] h3'</span>).textContent());
+  console.log(<span class="s">'CSS :has-text():'</span>, <span class="k">await</span> page.locator(<span class="s">'li.card:has-text("mug") h3'</span>).textContent());
+  console.log(<span class="s">'XPath:'</span>, <span class="k">await</span> page.locator(<span class="s">'//li[h3="Desk lamp"]//span[@class="price"]'</span>).textContent());
+  console.log(<span class="s">'id:'</span>, <span class="k">await</span> page.locator(<span class="s">'#sort'</span>).inputValue());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+CSS prices: [ &#x27;₹199&#x27;, &#x27;₹1,299&#x27;, &#x27;₹20&#x27;, &#x27;₹60&#x27;, &#x27;₹349&#x27; ]
+CSS attribute: Desk lamp
+CSS :has-text(): Coffee mug
+XPath: ₹1,299
+id: name
+  ✓  1 [chromium] › tests/css.spec.ts:3:1 › CSS and XPath when nothing better fits (1.2s)
+
+  1 passed (2.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>Playwright decides by the first characters: a string that starts with <code>//</code> or <code>..</code> is XPath, everything else is CSS. CSS also gets extras such as <code>:has-text()</code>. These locators work, but they break when a developer renames a class or moves a tag, which a user never notices.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>You want</th><th>Better choice</th><th>Fragile choice</th></tr><tr><td>the Sign in button</td><td>getByRole('button', { name: 'Sign in' })</td><td>locator('#login > button.btn-primary')</td></tr><tr><td>the email box</td><td>getByLabel('Email')</td><td>locator('//form/div[1]/input')</td></tr><tr><td>the price of the mug</td><td>getByRole('listitem').filter({ hasText: 'Coffee mug' }).getByText(/₹/)</td><td>locator('li:nth-child(1) span:nth-child(3)')</td></tr></table></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Long XPaths copied from the browser tools, such as /html/body/div[2]/div/form/input, break as soon as one box is added to the page. Recorded tests from older tools are full of them, and they are the first thing to replace when a team moves to Playwright.</div></div>
+</section>
+<section class="card reveal jsec" id="filter" data-say="filter"><div class="sec-num">Part 5</div><h2><span class="sec-em">🔎</span><span>Filtering and chaining</span></h2>
+
+<p>Real pages repeat things: five product cards, each with an Add to cart button. Find the right card first, then the button inside it. That is how you would describe it to a person: <i>the Add to cart button of the Coffee mug card</i>.</p>
+<div class="codewrap tests pw4" data-k="filter" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">filter, first, nth, last, and, or · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/FilterTest.java</div><pre class="src" data-file="src/test/java/com/brainy/FilterTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">FilterTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> narrowDownWithFilterChainingAndAndOr(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    <span class="t">Locator</span> cards = page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>);
+    assertThat(cards).hasCount(<span class="n">5</span>);
+
+    <span class="t">Locator</span> mug = cards.filter(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">FilterOptions</span>().setHasText(<span class="s">"Coffee mug"</span>));
+    <span class="t">System</span>.out.println(<span class="s">"mug price: "</span> + mug.locator(<span class="s">".price"</span>).textContent());
+
+    <span class="t">Locator</span> kitchen = cards.filter(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">FilterOptions</span>().setHasText(<span class="s">"Kitchen"</span>));
+    <span class="t">System</span>.out.println(<span class="s">"kitchen: "</span> + kitchen.getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>).allTextContents());
+
+    <span class="t">Locator</span> soldOut = cards.filter(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">FilterOptions</span>()
+        .setHas(page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Out of stock"</span>))));
+    <span class="t">System</span>.out.println(<span class="s">"sold out: "</span> + soldOut.getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>).textContent());
+
+    <span class="t">Locator</span> inStock = cards.filter(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">FilterOptions</span>()
+        .setHasNot(page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setDisabled(<span class="k">true</span>))));
+    <span class="t">System</span>.out.println(<span class="s">"in stock: "</span> + inStock.count());
+
+    <span class="t">System</span>.out.println(<span class="s">"first: "</span> + cards.first().getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>).textContent());
+    <span class="t">System</span>.out.println(<span class="s">"nth(2): "</span> + cards.nth(<span class="n">2</span>).getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>).textContent());
+    <span class="t">System</span>.out.println(<span class="s">"last: "</span> + cards.last().getByRole(<span class="t">AriaRole</span>.<span class="t">HEADING</span>).textContent());
+
+    <span class="t">Locator</span> anyButton = page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Add to cart"</span>))
+        .or(page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Out of stock"</span>)));
+    <span class="t">System</span>.out.println(<span class="s">"or: "</span> + anyButton.count());
+    <span class="t">Locator</span> disabledButton = page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>).and(page.locator(<span class="s">"[disabled]"</span>));
+    <span class="t">System</span>.out.println(<span class="s">"and: "</span> + disabledButton.textContent());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.FilterTest
+mug price: ₹199
+kitchen: [Coffee mug, Water bottle]
+sold out: Notebook
+in stock: 4
+first: Coffee mug
+nth(2): Gel pen
+last: Water bottle
+or: 5
+and: Out of stock
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.731 s -- in com.brainy.FilterTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_filter.py</div><pre class="src" data-file="tests/test_filter.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_narrow_down_with_filter_chaining_and_and_or(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    cards = page.get_by_role(<span class="s">"listitem"</span>)
+    expect(cards).to_have_count(<span class="n">5</span>)
+
+    mug = cards.filter(has_text=<span class="s">"Coffee mug"</span>)
+    print(<span class="s">"mug price:"</span>, mug.locator(<span class="s">".price"</span>).text_content())
+
+    kitchen = cards.filter(has_text=<span class="s">"Kitchen"</span>)
+    print(<span class="s">"kitchen:"</span>, kitchen.get_by_role(<span class="s">"heading"</span>).all_text_contents())
+
+    sold_out = cards.filter(has=page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Out of stock"</span>))
+    print(<span class="s">"sold out:"</span>, sold_out.get_by_role(<span class="s">"heading"</span>).text_content())
+
+    in_stock = cards.filter(has_not=page.get_by_role(<span class="s">"button"</span>, disabled=<span class="k">True</span>))
+    print(<span class="s">"in stock:"</span>, in_stock.count())
+
+    print(<span class="s">"first:"</span>, cards.first.get_by_role(<span class="s">"heading"</span>).text_content())
+    print(<span class="s">"nth(2):"</span>, cards.nth(<span class="n">2</span>).get_by_role(<span class="s">"heading"</span>).text_content())
+    print(<span class="s">"last:"</span>, cards.last.get_by_role(<span class="s">"heading"</span>).text_content())
+
+    any_button = page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Add to cart"</span>).or_(page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Out of stock"</span>))
+    print(<span class="s">"or:"</span>, any_button.count())
+    disabled_button = page.get_by_role(<span class="s">"button"</span>).and_(page.locator(<span class="s">"[disabled]"</span>))
+    print(<span class="s">"and:"</span>, disabled_button.text_content())</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_filter.py::test_narrow_down_with_filter_chaining_and_and_or[chromium] mug price: ₹199
+kitchen: [&#x27;Coffee mug&#x27;, &#x27;Water bottle&#x27;]
+sold out: Notebook
+in stock: 4
+first: Coffee mug
+nth(2): Gel pen
+last: Water bottle
+or: 5
+and: Out of stock
+PASSED
+
+============================== 1 passed in 2.08s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/filter.spec.js</div><pre class="src" data-file="tests/filter.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'narrow down with filter, chaining, and and or'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> cards = page.getByRole(<span class="s">'listitem'</span>);
+  <span class="k">await</span> expect(cards).toHaveCount(<span class="n">5</span>);
+
+  <span class="k">const</span> mug = cards.filter({ hasText: <span class="s">'Coffee mug'</span> });
+  console.log(<span class="s">'mug price:'</span>, <span class="k">await</span> mug.locator(<span class="s">'.price'</span>).textContent());
+
+  <span class="k">const</span> kitchen = cards.filter({ hasText: <span class="s">'Kitchen'</span> });
+  console.log(<span class="s">'kitchen:'</span>, <span class="k">await</span> kitchen.getByRole(<span class="s">'heading'</span>).allTextContents());
+
+  <span class="k">const</span> soldOut = cards.filter({ has: page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Out of stock'</span> }) });
+  console.log(<span class="s">'sold out:'</span>, <span class="k">await</span> soldOut.getByRole(<span class="s">'heading'</span>).textContent());
+
+  <span class="k">const</span> inStock = cards.filter({ hasNot: page.getByRole(<span class="s">'button'</span>, { disabled: <span class="k">true</span> }) });
+  console.log(<span class="s">'in stock:'</span>, <span class="k">await</span> inStock.count());
+
+  console.log(<span class="s">'first:'</span>, <span class="k">await</span> cards.first().getByRole(<span class="s">'heading'</span>).textContent());
+  console.log(<span class="s">'nth(2):'</span>, <span class="k">await</span> cards.nth(<span class="n">2</span>).getByRole(<span class="s">'heading'</span>).textContent());
+  console.log(<span class="s">'last:'</span>, <span class="k">await</span> cards.last().getByRole(<span class="s">'heading'</span>).textContent());
+
+  <span class="k">const</span> anyButton = page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).or(page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Out of stock'</span> }));
+  console.log(<span class="s">'or:'</span>, <span class="k">await</span> anyButton.count());
+  <span class="k">const</span> disabledButton = page.getByRole(<span class="s">'button'</span>).and(page.locator(<span class="s">'[disabled]'</span>));
+  console.log(<span class="s">'and:'</span>, <span class="k">await</span> disabledButton.textContent());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+mug price: ₹199
+kitchen: [ &#x27;Coffee mug&#x27;, &#x27;Water bottle&#x27; ]
+sold out: Notebook
+in stock: 4
+first: Coffee mug
+nth(2): Gel pen
+last: Water bottle
+or: 5
+and: Out of stock
+  ✓  1 [chromium] › tests/filter.spec.js:3:1 › narrow down with filter, chaining, and and or (1.3s)
+
+  1 passed (2.6s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/filter.spec.ts</div><pre class="src" data-file="tests/filter.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'narrow down with filter, chaining, and and or'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> cards = page.getByRole(<span class="s">'listitem'</span>);
+  <span class="k">await</span> expect(cards).toHaveCount(<span class="n">5</span>);
+
+  <span class="k">const</span> mug = cards.filter({ hasText: <span class="s">'Coffee mug'</span> });
+  console.log(<span class="s">'mug price:'</span>, <span class="k">await</span> mug.locator(<span class="s">'.price'</span>).textContent());
+
+  <span class="k">const</span> kitchen = cards.filter({ hasText: <span class="s">'Kitchen'</span> });
+  console.log(<span class="s">'kitchen:'</span>, <span class="k">await</span> kitchen.getByRole(<span class="s">'heading'</span>).allTextContents());
+
+  <span class="k">const</span> soldOut = cards.filter({ has: page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Out of stock'</span> }) });
+  console.log(<span class="s">'sold out:'</span>, <span class="k">await</span> soldOut.getByRole(<span class="s">'heading'</span>).textContent());
+
+  <span class="k">const</span> inStock = cards.filter({ hasNot: page.getByRole(<span class="s">'button'</span>, { disabled: <span class="k">true</span> }) });
+  console.log(<span class="s">'in stock:'</span>, <span class="k">await</span> inStock.count());
+
+  console.log(<span class="s">'first:'</span>, <span class="k">await</span> cards.first().getByRole(<span class="s">'heading'</span>).textContent());
+  console.log(<span class="s">'nth(2):'</span>, <span class="k">await</span> cards.nth(<span class="n">2</span>).getByRole(<span class="s">'heading'</span>).textContent());
+  console.log(<span class="s">'last:'</span>, <span class="k">await</span> cards.last().getByRole(<span class="s">'heading'</span>).textContent());
+
+  <span class="k">const</span> anyButton = page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> }).or(page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Out of stock'</span> }));
+  console.log(<span class="s">'or:'</span>, <span class="k">await</span> anyButton.count());
+  <span class="k">const</span> disabledButton = page.getByRole(<span class="s">'button'</span>).and(page.locator(<span class="s">'[disabled]'</span>));
+  console.log(<span class="s">'and:'</span>, <span class="k">await</span> disabledButton.textContent());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+mug price: ₹199
+kitchen: [ &#x27;Coffee mug&#x27;, &#x27;Water bottle&#x27; ]
+sold out: Notebook
+in stock: 4
+first: Coffee mug
+nth(2): Gel pen
+last: Water bottle
+or: 5
+and: Out of stock
+  ✓  1 [chromium] › tests/filter.spec.ts:3:1 › narrow down with filter, chaining, and and or (1.2s)
+
+  1 passed (2.5s)</pre></div></div><div class="note-out"><span>What happens</span><p><code>filter</code> keeps the cards that contain some text, or that contain (or do not contain) another locator. Chaining, such as <code>soldOut.getByRole('heading')</code>, searches only inside the cards that are left. <code>nth</code> counts from 0, so <code>nth(2)</code> is the third card. <code>or</code> matches either locator, and <code>and</code> keeps only elements both locators match.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Method</th><th>Keeps</th></tr><tr><td><span class="only-java">filter(new FilterOptions().setHasText("x"))</span><span class="only-py">filter(has_text="x")</span><span class="only-js">filter({ hasText: 'x' })</span><span class="only-ts">filter({ hasText: 'x' })</span></td><td>elements that contain the text somewhere inside</td></tr><tr><td><span class="only-java">setHasNotText("x")</span><span class="only-py">has_not_text="x"</span><span class="only-js">hasNotText: 'x'</span><span class="only-ts">hasNotText: 'x'</span></td><td>elements that do not contain the text</td></tr><tr><td><span class="only-java">setHas(locator)</span><span class="only-py">has=locator</span><span class="only-js">has: locator</span><span class="only-ts">has: locator</span></td><td>elements that contain an element the locator finds</td></tr><tr><td><span class="only-java">setHasNot(locator)</span><span class="only-py">has_not=locator</span><span class="only-js">hasNot: locator</span><span class="only-ts">hasNot: locator</span></td><td>elements that do not contain it</td></tr><tr><td><span class="only-java">setVisible(true)</span><span class="only-py">visible=True</span><span class="only-js">visible: true</span><span class="only-ts">visible: true</span></td><td>only visible elements</td></tr><tr><td><span class="only-java">first(), last(), nth(i)</span><span class="only-py">first, last, nth(i)</span><span class="only-js">first(), last(), nth(i)</span><span class="only-ts">first(), last(), nth(i)</span></td><td>one element by position, nth counts from 0</td></tr><tr><td><span class="only-java">a.and(b), a.or(b)</span><span class="only-py">a.and_(b), a.or_(b)</span><span class="only-js">a.and(b), a.or(b)</span><span class="only-ts">a.and(b), a.or(b)</span></td><td>elements both match, or either matches</td></tr></table></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>first(), last() and nth() depend on the order of the page. When the order changes, they quietly pick another element. Prefer a filter by text when you can.</div></div>
+</section>
+<section class="card reveal jsec" id="strict" data-say="strict"><div class="sec-num">Part 6</div><h2><span class="sec-em">🚦</span><span>Strict mode</span></h2>
+
+<p>When a locator finds more than one element, an action such as click or fill does not pick one for you. It fails with a <b>strict mode violation</b>. This protects you from a test that clicks the wrong button and still passes.</p>
+<div class="codewrap tests pw4" data-k="strict" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Strict mode: one action, one element · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/StrictTest.java</div><pre class="src" data-file="src/test/java/com/brainy/StrictTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">PlaywrightException</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertThrows;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">StrictTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> strictModeRefusesToGuess(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    <span class="t">Locator</span> add = page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Add to cart"</span>));
+    assertThat(add).hasCount(<span class="n">4</span>);              <span class="c">// counting many is fine</span>
+
+    <span class="t">PlaywrightException</span> error = assertThrows(<span class="t">PlaywrightException</span>.<span class="k">class</span>, () -&gt; add.click());   <span class="c">// acting on many is not</span>
+    <span class="t">System</span>.out.println(<span class="t">String</span>.join(<span class="s">"\n"</span>, java.util.<span class="t">Arrays</span>.asList(error.getMessage().split(<span class="s">"\n"</span>)).subList(<span class="n">0</span>, <span class="n">5</span>)));
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.StrictTest
+Error {
+  message=&#x27;Error: strict mode violation: getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(&quot;Add to cart&quot;)) resolved to 4 elements:
+    1) &lt;button data-id=&quot;2&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka getByTestId(&quot;product-2&quot;).getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(&quot;Add to cart&quot;))
+    2) &lt;button data-id=&quot;3&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka getByTestId(&quot;product-3&quot;).getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(&quot;Add to cart&quot;))
+    3) &lt;button data-id=&quot;1&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka getByTestId(&quot;product-1&quot;).getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(&quot;Add to cart&quot;))
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.491 s -- in com.brainy.StrictTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_strict.py</div><pre class="src" data-file="tests/test_strict.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, <span class="t">Error</span>, expect
+
+
+<span class="k">def</span> test_strict_mode_refuses_to_guess(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    add = page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Add to cart"</span>)
+    expect(add).to_have_count(<span class="n">4</span>)              <span class="c"># counting many is fine</span>
+
+    <span class="k">with</span> pytest.raises(<span class="t">Error</span>) <span class="k">as</span> info:        <span class="c"># acting on many is not</span>
+        add.click()
+    print(<span class="s">"\n"</span>.join(info.value.message.split(<span class="s">"\n"</span>)[:<span class="n">4</span>]))</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_strict.py::test_strict_mode_refuses_to_guess[chromium] Locator.click: Error: strict mode violation: get_by_role(&quot;button&quot;, name=&quot;Add to cart&quot;) resolved to 4 elements:
+    1) &lt;button data-id=&quot;2&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka get_by_test_id(&quot;product-2&quot;).get_by_role(&quot;button&quot;, name=&quot;Add to cart&quot;)
+    2) &lt;button data-id=&quot;3&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka get_by_test_id(&quot;product-3&quot;).get_by_role(&quot;button&quot;, name=&quot;Add to cart&quot;)
+    3) &lt;button data-id=&quot;1&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka get_by_test_id(&quot;product-1&quot;).get_by_role(&quot;button&quot;, name=&quot;Add to cart&quot;)
+PASSED
+
+============================== 1 passed in 1.84s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/strict.spec.js</div><pre class="src" data-file="tests/strict.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'strict mode refuses to guess'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> add = page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> });
+  <span class="k">await</span> expect(add).toHaveCount(<span class="n">4</span>);              <span class="c">// counting many is fine</span>
+
+  <span class="k">const</span> error = <span class="k">await</span> add.click().<span class="k">catch</span>(e =&gt; e);  <span class="c">// acting on many is not</span>
+  console.log(error.message.split(<span class="s">'\n'</span>).slice(<span class="n">0</span>, <span class="n">4</span>).join(<span class="s">'\n'</span>));
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+locator.click: Error: strict mode violation: getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; }) resolved to 4 elements:
+    1) &lt;button data-id=&quot;2&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka getByTestId(&#x27;product-2&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; })
+    2) &lt;button data-id=&quot;3&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka getByTestId(&#x27;product-3&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; })
+    3) &lt;button data-id=&quot;1&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka getByTestId(&#x27;product-1&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; })
+  ✓  1 [chromium] › tests/strict.spec.js:3:1 › strict mode refuses to guess (1.2s)
+
+  1 passed (2.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/strict.spec.ts</div><pre class="src" data-file="tests/strict.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'strict mode refuses to guess'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">const</span> add = page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> });
+  <span class="k">await</span> expect(add).toHaveCount(<span class="n">4</span>);              <span class="c">// counting many is fine</span>
+
+  <span class="k">const</span> error = <span class="k">await</span> add.click().<span class="k">catch</span>(e =&gt; e);  <span class="c">// acting on many is not</span>
+  console.log(error.message.split(<span class="s">'\n'</span>).slice(<span class="n">0</span>, <span class="n">4</span>).join(<span class="s">'\n'</span>));
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+locator.click: Error: strict mode violation: getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; }) resolved to 4 elements:
+    1) &lt;button data-id=&quot;2&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka getByTestId(&#x27;product-2&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; })
+    2) &lt;button data-id=&quot;3&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka getByTestId(&#x27;product-3&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; })
+    3) &lt;button data-id=&quot;1&quot; type=&quot;button&quot;&gt;Add to cart&lt;/button&gt; aka getByTestId(&#x27;product-1&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Add to cart&#x27; })
+  ✓  1 [chromium] › tests/strict.spec.ts:3:1 › strict mode refuses to guess (1.1s)
+
+  1 passed (2.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>The click failed at once instead of picking a button at random. The message lists the elements it found, and for each one it suggests a locator that finds only that one, written in your language. Counting and checking a count are fine with many elements, actions are not.</p></div></div>
+<p>The message is also a helper. It shows each element it found and a locator for each that finds only that one. Pick the one you meant, or better, add a name or a filter.</p>
+</section>
+<section class="card reveal jsec" id="lists" data-say="lists"><div class="sec-num">Part 7</div><h2><span class="sec-em">📋</span><span>Lists and tables</span></h2>
+
+<p>Tables are where locators earn their keep. Find the row by something unique in it, such as a name or an order number, then act inside that row.</p>
+<div class="viz" data-viz="pwwalk" data-sub="Each screen was recorded from a real run in Chromium when this page was built. Press Play, or step one line at a time, and switch the language to see the same line in Java, Python, JavaScript or TypeScript." data-walk="{&quot;title&quot;: &quot;Working on one row of the orders table&quot;, &quot;steps&quot;: [{&quot;cap&quot;: &quot;Open the orders page. It shows 5 of 7 orders per page.&quot;, &quot;img&quot;: &quot;walks/walkloc-0.jpg&quot;, &quot;js&quot;: &quot;await page.goto(&#x27;http://localhost:4173/orders&#x27;);&quot;, &quot;ts&quot;: &quot;await page.goto(&#x27;http://localhost:4173/orders&#x27;);&quot;, &quot;py&quot;: &quot;page.goto(\&quot;http://localhost:4173/orders\&quot;)&quot;, &quot;java&quot;: &quot;page.navigate(\&quot;http://localhost:4173/orders\&quot;);&quot;}, {&quot;cap&quot;: &quot;Click the Total column header to sort by total, smallest first.&quot;, &quot;img&quot;: &quot;walks/walkloc-1.jpg&quot;, &quot;js&quot;: &quot;await page.getByRole(&#x27;button&#x27;, { name: &#x27;Total&#x27; }).click();&quot;, &quot;ts&quot;: &quot;await page.getByRole(&#x27;button&#x27;, { name: &#x27;Total&#x27; }).click();&quot;, &quot;py&quot;: &quot;page.get_by_role(\&quot;button\&quot;, name=\&quot;Total\&quot;).click()&quot;, &quot;java&quot;: &quot;page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\&quot;Total\&quot;)).click();&quot;}, {&quot;cap&quot;: &quot;Find the row that mentions John, then the Delete button inside that row only.&quot;, &quot;img&quot;: &quot;walks/walkloc-2.jpg&quot;, &quot;js&quot;: &quot;await page.getByRole(&#x27;row&#x27;).filter({ hasText: &#x27;John&#x27; }).getByRole(&#x27;button&#x27;, { name: &#x27;Delete&#x27; }).click();&quot;, &quot;ts&quot;: &quot;await page.getByRole(&#x27;row&#x27;).filter({ hasText: &#x27;John&#x27; }).getByRole(&#x27;button&#x27;, { name: &#x27;Delete&#x27; }).click();&quot;, &quot;py&quot;: &quot;page.get_by_role(\&quot;row\&quot;).filter(has_text=\&quot;John\&quot;).get_by_role(\&quot;button\&quot;, name=\&quot;Delete\&quot;).click()&quot;, &quot;java&quot;: &quot;page.getByRole(AriaRole.ROW).filter(new Locator.FilterOptions().setHasText(\&quot;John\&quot;))\n    .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(\&quot;Delete\&quot;)).click();&quot;}, {&quot;cap&quot;: &quot;The status message confirms which order went away.&quot;, &quot;img&quot;: &quot;walks/walkloc-3.jpg&quot;, &quot;js&quot;: &quot;await expect(page.getByRole(&#x27;status&#x27;)).toHaveText(&#x27;Order #1004 deleted&#x27;);&quot;, &quot;ts&quot;: &quot;await expect(page.getByRole(&#x27;status&#x27;)).toHaveText(&#x27;Order #1004 deleted&#x27;);&quot;, &quot;py&quot;: &quot;expect(page.get_by_role(\&quot;status\&quot;)).to_have_text(\&quot;Order #1004 deleted\&quot;)&quot;, &quot;java&quot;: &quot;assertThat(page.getByRole(AriaRole.STATUS)).hasText(\&quot;Order #1004 deleted\&quot;);&quot;}, {&quot;cap&quot;: &quot;Go to the next page of the table.&quot;, &quot;img&quot;: &quot;walks/walkloc-4.jpg&quot;, &quot;js&quot;: &quot;await page.getByRole(&#x27;button&#x27;, { name: &#x27;Next&#x27; }).click();&quot;, &quot;ts&quot;: &quot;await page.getByRole(&#x27;button&#x27;, { name: &#x27;Next&#x27; }).click();&quot;, &quot;py&quot;: &quot;page.get_by_role(\&quot;button\&quot;, name=\&quot;Next\&quot;).click()&quot;, &quot;java&quot;: &quot;page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\&quot;Next\&quot;)).click();&quot;}, {&quot;cap&quot;: &quot;Check the page counter by its text.&quot;, &quot;img&quot;: &quot;walks/walkloc-5.jpg&quot;, &quot;js&quot;: &quot;await expect(page.getByText(&#x27;Page 2 of 2&#x27;)).toBeVisible();&quot;, &quot;ts&quot;: &quot;await expect(page.getByText(&#x27;Page 2 of 2&#x27;)).toBeVisible();&quot;, &quot;py&quot;: &quot;expect(page.get_by_text(\&quot;Page 2 of 2\&quot;)).to_be_visible()&quot;, &quot;java&quot;: &quot;assertThat(page.getByText(\&quot;Page 2 of 2\&quot;)).isVisible();&quot;}], &quot;w&quot;: 900, &quot;h&quot;: 560}"></div>
+<div class="codewrap tests pw4" data-k="table" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Read every row of a table, then act on one row · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/TableTest.java</div><pre class="src" data-file="src/test/java/com/brainy/TableTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">TableTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> readATableAndActOnOneRow(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/orders"</span>);
+    <span class="t">Locator</span> rows = page.getByRole(<span class="t">AriaRole</span>.<span class="t">ROW</span>)
+        .filter(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">FilterOptions</span>().setHas(page.getByRole(<span class="t">AriaRole</span>.<span class="t">CELL</span>)));   <span class="c">// skip the header row</span>
+    assertThat(rows).hasCount(<span class="n">5</span>);
+
+    <span class="k">for</span> (<span class="t">Locator</span> row : rows.all()) {
+      <span class="t">System</span>.out.println(row.getByRole(<span class="t">AriaRole</span>.<span class="t">CELL</span>).allTextContents());
+    }
+
+    <span class="t">Locator</span> meera = rows.filter(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">FilterOptions</span>().setHasText(<span class="s">"Meera"</span>));
+    meera.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Locator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Delete"</span>)).click();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).hasText(<span class="s">"Order #1003 deleted"</span>);
+    assertThat(rows.filter(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">FilterOptions</span>().setHasText(<span class="s">"Meera"</span>))).hasCount(<span class="n">0</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.TableTest
+[#1001, Asha, ₹219, Delivered, Delete]
+[#1002, Ravi, ₹1,299, Shipped, Delete]
+[#1003, Meera, ₹60, Cancelled, Delete]
+[#1004, John, ₹349, Delivered, Delete]
+[#1005, Fatima, ₹698, Packed, Delete]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.236 s -- in com.brainy.TableTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_table.py</div><pre class="src" data-file="tests/test_table.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_read_a_table_and_act_on_one_row(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/orders"</span>)
+    rows = page.get_by_role(<span class="s">"row"</span>).filter(has=page.get_by_role(<span class="s">"cell"</span>))   <span class="c"># skip the header row</span>
+    expect(rows).to_have_count(<span class="n">5</span>)
+
+    <span class="k">for</span> row <span class="k">in</span> rows.all():
+        print(row.get_by_role(<span class="s">"cell"</span>).all_text_contents())
+
+    meera = rows.filter(has_text=<span class="s">"Meera"</span>)
+    meera.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Delete"</span>).click()
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_have_text(<span class="s">"Order #1003 deleted"</span>)
+    expect(rows.filter(has_text=<span class="s">"Meera"</span>)).to_have_count(<span class="n">0</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_table.py::test_read_a_table_and_act_on_one_row[chromium] [&#x27;#1001&#x27;, &#x27;Asha&#x27;, &#x27;₹219&#x27;, &#x27;Delivered&#x27;, &#x27;Delete&#x27;]
+[&#x27;#1002&#x27;, &#x27;Ravi&#x27;, &#x27;₹1,299&#x27;, &#x27;Shipped&#x27;, &#x27;Delete&#x27;]
+[&#x27;#1003&#x27;, &#x27;Meera&#x27;, &#x27;₹60&#x27;, &#x27;Cancelled&#x27;, &#x27;Delete&#x27;]
+[&#x27;#1004&#x27;, &#x27;John&#x27;, &#x27;₹349&#x27;, &#x27;Delivered&#x27;, &#x27;Delete&#x27;]
+[&#x27;#1005&#x27;, &#x27;Fatima&#x27;, &#x27;₹698&#x27;, &#x27;Packed&#x27;, &#x27;Delete&#x27;]
+PASSED
+
+============================== 1 passed in 1.26s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/table.spec.js</div><pre class="src" data-file="tests/table.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'read a table and act on one row'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">const</span> rows = page.getByRole(<span class="s">'row'</span>).filter({ has: page.getByRole(<span class="s">'cell'</span>) });   <span class="c">// skip the header row</span>
+  <span class="k">await</span> expect(rows).toHaveCount(<span class="n">5</span>);
+
+  <span class="k">for</span> (<span class="k">const</span> row <span class="k">of</span> <span class="k">await</span> rows.all()) {
+    console.log(<span class="k">await</span> row.getByRole(<span class="s">'cell'</span>).allTextContents());
+  }
+
+  <span class="k">const</span> meera = rows.filter({ hasText: <span class="s">'Meera'</span> });
+  <span class="k">await</span> meera.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Delete'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Order #1003 deleted'</span>);
+  <span class="k">await</span> expect(rows.filter({ hasText: <span class="s">'Meera'</span> })).toHaveCount(<span class="n">0</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+[ &#x27;#1001&#x27;, &#x27;Asha&#x27;, &#x27;₹219&#x27;, &#x27;Delivered&#x27;, &#x27;Delete&#x27; ]
+[ &#x27;#1002&#x27;, &#x27;Ravi&#x27;, &#x27;₹1,299&#x27;, &#x27;Shipped&#x27;, &#x27;Delete&#x27; ]
+[ &#x27;#1003&#x27;, &#x27;Meera&#x27;, &#x27;₹60&#x27;, &#x27;Cancelled&#x27;, &#x27;Delete&#x27; ]
+[ &#x27;#1004&#x27;, &#x27;John&#x27;, &#x27;₹349&#x27;, &#x27;Delivered&#x27;, &#x27;Delete&#x27; ]
+[ &#x27;#1005&#x27;, &#x27;Fatima&#x27;, &#x27;₹698&#x27;, &#x27;Packed&#x27;, &#x27;Delete&#x27; ]
+  ✓  1 [chromium] › tests/table.spec.js:3:1 › read a table and act on one row (596ms)
+
+  1 passed (3.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/table.spec.ts</div><pre class="src" data-file="tests/table.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'read a table and act on one row'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/orders'</span>);
+  <span class="k">const</span> rows = page.getByRole(<span class="s">'row'</span>).filter({ has: page.getByRole(<span class="s">'cell'</span>) });   <span class="c">// skip the header row</span>
+  <span class="k">await</span> expect(rows).toHaveCount(<span class="n">5</span>);
+
+  <span class="k">for</span> (<span class="k">const</span> row <span class="k">of</span> <span class="k">await</span> rows.all()) {
+    console.log(<span class="k">await</span> row.getByRole(<span class="s">'cell'</span>).allTextContents());
+  }
+
+  <span class="k">const</span> meera = rows.filter({ hasText: <span class="s">'Meera'</span> });
+  <span class="k">await</span> meera.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Delete'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Order #1003 deleted'</span>);
+  <span class="k">await</span> expect(rows.filter({ hasText: <span class="s">'Meera'</span> })).toHaveCount(<span class="n">0</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+[ &#x27;#1001&#x27;, &#x27;Asha&#x27;, &#x27;₹219&#x27;, &#x27;Delivered&#x27;, &#x27;Delete&#x27; ]
+[ &#x27;#1002&#x27;, &#x27;Ravi&#x27;, &#x27;₹1,299&#x27;, &#x27;Shipped&#x27;, &#x27;Delete&#x27; ]
+[ &#x27;#1003&#x27;, &#x27;Meera&#x27;, &#x27;₹60&#x27;, &#x27;Cancelled&#x27;, &#x27;Delete&#x27; ]
+[ &#x27;#1004&#x27;, &#x27;John&#x27;, &#x27;₹349&#x27;, &#x27;Delivered&#x27;, &#x27;Delete&#x27; ]
+[ &#x27;#1005&#x27;, &#x27;Fatima&#x27;, &#x27;₹698&#x27;, &#x27;Packed&#x27;, &#x27;Delete&#x27; ]
+  ✓  1 [chromium] › tests/table.spec.ts:3:1 › read a table and act on one row (705ms)
+
+  1 passed (2.3s)</pre></div></div><div class="note-out"><span>What happens</span><p>Table cells have the role <code>cell</code> and header cells have the role <code>columnheader</code>, so filtering rows that have a cell skips the header. <code>all()</code> turns the locator into a list you can loop over. It does not wait, so the count check comes first. The Delete button of Meera's row is found inside that row only.</p></div></div>
+<div class="pw-box pw-life"><span class="pw-ic">🌍</span><div>A bank or an admin portal often has tables with paging and sorting. A test that finds a row by position breaks the day someone adds an order. A test that finds the row by its order number keeps working.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-pages.html" data-topic="pw-pages"><small>← Previous chapter</small><b>🧭 Frames, dialogs and files</b></a><a class="next" href="./pw-actions.html" data-topic="pw-actions"><small>Next chapter →</small><b>🖱️ Actions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Find it like a person would", "panels": [{"s": [["e", "🧑‍🦯"], ["t", "getByRole", {"b": 1}]], "h": "Role and name", "t": "What the user sees.", "more": "The first choice."}, {"s": [["e", "🏷️"], ["t", "getByLabel", {"b": 1}]], "h": "Forms", "t": "Boxes by their label.", "more": "Placeholder when there is none."}, {"s": [["e", "🔎"], ["t", "filter", {"b": 1}]], "h": "Narrow down", "t": "Card first, then button.", "more": "hasText, has, hasNot."}, {"s": [["e", "🚦"], ["t", "strict", {"b": 1}]], "h": "One element", "t": "Actions need exactly one.", "more": "The error lists them all."}], "remember": "A locator is searched again every time you use it, and an action needs exactly one match."}, "real": [["🏦", "A redesign that broke nothing", "A bank moved its login form into a new layout. Tests that used getByLabel and getByRole kept passing, while old XPath tests in another team failed by the hundred."], ["🌍", "A site in twelve languages", "A travel site runs the same tests in every language. Buttons are found by test id, because their text changes with the language."], ["🛒", "The wrong Add to cart", "A test clicked the first Add to cart button on the page. When the product order changed, it bought the wrong item and still passed. A filter by product name fixed it."]], "quiz": [{"lv": 1, "q": "Which locator does Playwright recommend trying first?", "o": ["locator(css)", "getByRole", "getByTestId", "XPath"], "a": 1, "hint": "It is about what the user sees.", "why": "getByRole with a name matches how people and assistive technology find things, so it rarely breaks."}, {"lv": 1, "q": "When does a locator search the page?", "o": ["When it is created", "Every time it is used", "Only once per test", "When the page loads"], "a": 1, "hint": "Look at the three counts from one locator.", "why": "A locator is searched again at the moment you use it, so it never goes stale."}, {"lv": 1, "q": "How do you find the Email box of a form with a label Email?", "o": ["getByText('Email')", "getByLabel('Email')", "getByTitle('Email')", "locator('Email')"], "a": 1, "hint": "Form boxes have labels.", "why": "getByLabel finds the input that the label belongs to."}, {"lv": 1, "q": "What role does a &lt;select&gt; drop down have?", "o": ["select", "listbox", "combobox", "menu"], "a": 2, "hint": "Look at the role table.", "why": "A single choice &lt;select&gt; has the role combobox."}, {"lv": 2, "q": "getByRole('button', { name: 'add to cart' }) on a page with four \"Add to cart\" buttons finds how many?", "o": ["0", "1", "4", "an error"], "a": 2, "hint": "Name matching ignores case by default.", "why": "By default the name is matched ignoring case and as a part, so all four match."}, {"lv": 2, "q": "A locator finds 4 buttons and you call click(). What happens?", "o": ["It clicks the first", "It clicks all four", "It fails with a strict mode violation", "It waits forever"], "a": 2, "hint": "Actions need one element.", "why": "Strict mode makes an action fail when the locator finds more than one element."}, {"lv": 2, "q": "Which keeps only the product cards that contain a disabled button?", "o": ["filter({ hasText: 'disabled' })", "filter({ has: page.getByRole('button', { disabled: true }) })", "nth(3)", "and('disabled')"], "a": 1, "hint": "has takes another locator.", "why": "filter with has keeps elements that contain an element the inner locator finds."}, {"lv": 2, "q": "nth(2) gives which element?", "o": ["the second", "the third", "the last", "two elements"], "a": 1, "hint": "Counting starts at 0.", "why": "nth counts from 0, so nth(2) is the third."}, {"lv": 2, "q": "Why can locator.all() give a wrong result when the list is still loading?", "o": ["It is slow", "It does not wait for elements", "It only works in Java", "It returns strings"], "a": 1, "hint": "Compare it with toHaveCount.", "why": "all() returns what is there right now. Check the count first, then loop."}, {"lv": 3, "q": "In Python, how do you combine two locators so that either one matches?", "o": ["a.or(b)", "a | b", "a.or_(b)", "a.either(b)"], "a": 2, "hint": "or is a keyword in Python.", "why": "Python uses or_ and and_ because or and and are reserved words."}, {"lv": 3, "q": "How does locator() decide between CSS and XPath?", "o": ["It tries both", "A string starting with // or .. is XPath, otherwise CSS", "XPath needs xpath= always", "It asks the browser"], "a": 1, "hint": "Look at the CSS example result.", "why": "Playwright treats a selector starting with // or .. as XPath. You can also write xpath= or css= in front."}, {"lv": 3, "q": "Your site is translated into many languages. Which locator keeps one test working in all of them?", "o": ["getByText", "getByRole with a name", "getByTestId", "getByPlaceholder"], "a": 2, "hint": "Which one does not depend on the words?", "why": "A test id stays the same in every language, while names and text change."}], "calc": [{"lv": 1, "q": "The products page shows 5 cards. 1 is out of stock. How many Add to cart buttons are there?", "ans": 4, "hint": "5 - 1", "steps": ["5 cards - 1 out of stock = 4 buttons"]}, {"lv": 1, "q": "cards.nth(i) is the fourth card. What is i?", "ans": 3, "hint": "nth counts from 0", "steps": ["first is 0, second 1, third 2, fourth 3"]}, {"lv": 1, "q": "The shop has Gel pen, Coffee mug, Desk lamp, Notebook and Water bottle. You search for the letter o. How many cards are left?", "ans": 3, "hint": "Count the names that contain the letter o", "steps": ["Gel pen: no", "Coffee mug: yes", "Desk lamp: no", "Notebook: yes", "Water bottle: yes", "3 cards"]}, {"lv": 2, "q": "The orders table shows 5 rows per page and has 7 orders. How many pages?", "ans": 2, "hint": "7 / 5, rounded up", "steps": ["7 / 5 = 1.4", "rounded up: 2 pages"]}, {"lv": 2, "q": "getByRole('row') on a page of 5 orders. The header row counts too. How many rows?", "ans": 6, "hint": "5 + 1", "steps": ["5 data rows + 1 header row = 6"]}, {"lv": 2, "q": "Kitchen has Coffee mug (₹199) and Water bottle (₹349). What do they cost together?", "ans": 548, "hint": "199 + 349", "steps": ["199 + 349 = 548"]}, {"lv": 3, "q": "After deleting 1 order from 7, the table shows 5 per page. How many rows are on page 2?", "ans": 1, "hint": "7 - 1 = 6", "steps": ["6 orders", "page 1 shows 5", "page 2 shows 1"]}, {"lv": 3, "q": "An old suite has 120 tests with copied XPaths. A redesign breaks 3 of every 4 of them. How many fail?", "ans": 90, "hint": "120 × 3 / 4", "steps": ["120 / 4 = 30", "30 × 3 = 90 tests fail"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter is about locators: how Playwright finds elements by role, label, text and test id, how to filter and chain them, strict mode, and working with lists and tables.", "hi": "यह अध्याय locators के बारे में है: Playwright role, label, text और test id से elements कैसे ढूँढता है, उन्हें filter और chain कैसे करें, strict mode, और lists व tables के साथ काम।", "kn": "ಈ ಅಧ್ಯಾಯ locators ಬಗ್ಗೆ: Playwright role, label, text ಮತ್ತು test id ಮೂಲಕ elements ಹೇಗೆ ಹುಡುಕುತ್ತದೆ, filter ಮತ್ತು chain ಹೇಗೆ ಮಾಡುವುದು, strict mode, ಮತ್ತು lists ಹಾಗೂ tables ಜೊತೆ ಕೆಲಸ.", "or": "ଏହି ଅଧ୍ୟାୟ locators ବିଷୟରେ: Playwright role, label, text ଓ test id ଦ୍ୱାରା elements କିପରି ଖୋଜେ, filter ଓ chain କିପରି କରିବେ, strict mode, ଏବଂ lists ଓ tables ସହ କାମ।", "ar": "يتناول هذا الفصل المحددات: كيف يجد Playwright العناصر بالدور والتسمية والنص ومعرّف الاختبار، وكيف تصفّيها وتسلسلها، والوضع الصارم، والعمل مع القوائم والجداول.", "de": "Dieses Kapitel behandelt Locators: wie Playwright Elemente über Rolle, Label, Text und Test-ID findet, wie man sie filtert und verkettet, den Strict Mode und die Arbeit mit Listen und Tabellen."}, {"id": "what", "h": "What a locator is", "en": "A locator describes how to find an element. It does not hold the element. Playwright searches the page again every time you use it, so it never goes stale.", "hi": "Locator बताता है कि element कैसे ढूँढें। वह element को पकड़कर नहीं रखता। हर इस्तेमाल पर Playwright page को फिर से खोजता है, इसलिए वह कभी पुराना नहीं होता।", "kn": "Locator ಒಂದು element ಅನ್ನು ಹೇಗೆ ಹುಡುಕಬೇಕು ಎಂದು ವಿವರಿಸುತ್ತದೆ. ಅದು element ಅನ್ನು ಹಿಡಿದಿಡುವುದಿಲ್ಲ. ಪ್ರತಿ ಬಳಕೆಯಲ್ಲೂ Playwright page ಅನ್ನು ಮತ್ತೆ ಹುಡುಕುತ್ತದೆ, ಆದ್ದರಿಂದ ಅದು ಹಳೆಯದಾಗುವುದಿಲ್ಲ.", "or": "Locator element କିପରି ଖୋଜିବେ ତାହା ବର୍ଣ୍ଣନା କରେ। ଏହା element କୁ ଧରି ରଖେ ନାହିଁ। ପ୍ରତି ବ୍ୟବହାରରେ Playwright page କୁ ପୁଣି ଖୋଜେ, ତେଣୁ ଏହା କେବେ ପୁରୁଣା ହୁଏ ନାହିଁ।", "ar": "المحدد يصف كيفية العثور على عنصر ولا يحتفظ بالعنصر نفسه. يبحث Playwright في الصفحة من جديد في كل استخدام، لذلك لا يصبح قديمًا أبدًا.", "de": "Ein Locator beschreibt, wie ein Element gefunden wird. Er hält das Element nicht fest. Playwright durchsucht die Seite bei jeder Verwendung neu, deshalb veraltet er nie."}, {"id": "role", "h": "getByRole", "en": "getByRole finds elements by their role, such as button, link or heading, and their name, the words a person reads. The name matches ignoring case unless you ask for exact.", "hi": "getByRole elements को उनके role, जैसे button, link या heading, और उनके name से ढूँढता है, यानी वे शब्द जो व्यक्ति पढ़ता है। exact न कहें तो name बिना case देखे मिलाया जाता है।", "kn": "getByRole elements ಅನ್ನು ಅವುಗಳ role, ಉದಾಹರಣೆಗೆ button, link ಅಥವಾ heading, ಮತ್ತು name ಮೂಲಕ ಹುಡುಕುತ್ತದೆ, ಅಂದರೆ ವ್ಯಕ್ತಿ ಓದುವ ಪದಗಳು. exact ಕೇಳದಿದ್ದರೆ name ಅನ್ನು case ನೋಡದೆ ಹೋಲಿಸಲಾಗುತ್ತದೆ.", "or": "getByRole elements କୁ ସେମାନଙ୍କ role, ଯେପରି button, link ବା heading, ଏବଂ name ଦ୍ୱାରା ଖୋଜେ, ଅର୍ଥାତ୍ ବ୍ୟକ୍ତି ପଢ଼ୁଥିବା ଶବ୍ଦ। exact ନ କହିଲେ name case ନ ଦେଖି ମେଳ ହୁଏ।", "ar": "يجد getByRole العناصر حسب دورها مثل زر أو رابط أو عنوان، وحسب اسمها وهو الكلمات التي يقرؤها الشخص. تتم مطابقة الاسم دون مراعاة حالة الأحرف ما لم تطلب المطابقة التامة.", "de": "getByRole findet Elemente über ihre Rolle, etwa Button, Link oder Überschrift, und ihren Namen, also die Wörter, die ein Mensch liest. Der Name wird ohne Beachtung der Groß- und Kleinschreibung verglichen, außer du verlangst exact."}, {"id": "getby", "h": "Other locators", "en": "getByLabel finds form boxes by their label, getByPlaceholder by hint text, getByText by visible text, getByAltText and getByTitle by attributes, and getByTestId by an id agreed with developers.", "hi": "getByLabel form boxes को label से, getByPlaceholder hint text से, getByText दिखने वाले text से, getByAltText और getByTitle attributes से, और getByTestId developers के साथ तय id से ढूँढता है।", "kn": "getByLabel form boxes ಅನ್ನು label ಮೂಲಕ, getByPlaceholder hint text ಮೂಲಕ, getByText ಕಾಣುವ text ಮೂಲಕ, getByAltText ಮತ್ತು getByTitle attributes ಮೂಲಕ, ಮತ್ತು getByTestId developers ಜೊತೆ ಒಪ್ಪಿದ id ಮೂಲಕ ಹುಡುಕುತ್ತದೆ.", "or": "getByLabel form boxes କୁ label ଦ୍ୱାରା, getByPlaceholder hint text ଦ୍ୱାରା, getByText ଦେଖାଯାଉଥିବା text ଦ୍ୱାରା, getByAltText ଓ getByTitle attributes ଦ୍ୱାରା, ଏବଂ getByTestId developers ସହ ସ୍ଥିର id ଦ୍ୱାରା ଖୋଜେ।", "ar": "يجد getByLabel حقول النماذج بتسميتها، وgetByPlaceholder بنص التلميح، وgetByText بالنص الظاهر، وgetByAltText وgetByTitle بالسمات، وgetByTestId بمعرّف متفق عليه مع المطورين.", "de": "getByLabel findet Formularfelder über ihr Label, getByPlaceholder über den Hinweistext, getByText über sichtbaren Text, getByAltText und getByTitle über Attribute und getByTestId über eine mit den Entwicklern vereinbarte ID."}, {"id": "css", "h": "CSS and XPath", "en": "locator takes CSS or XPath. They work, but they describe how the page is built, so they break when the code changes. Use them as the last resort.", "hi": "locator CSS या XPath लेता है। ये काम करते हैं, पर page की बनावट बताते हैं, इसलिए code बदलने पर टूट जाते हैं। इन्हें आख़िरी विकल्प रखें।", "kn": "locator CSS ಅಥವಾ XPath ತೆಗೆದುಕೊಳ್ಳುತ್ತದೆ. ಅವು ಕೆಲಸ ಮಾಡುತ್ತವೆ, ಆದರೆ page ರಚನೆಯನ್ನು ವಿವರಿಸುತ್ತವೆ, ಆದ್ದರಿಂದ code ಬದಲಾದಾಗ ಮುರಿಯುತ್ತವೆ. ಕೊನೆಯ ಆಯ್ಕೆಯಾಗಿ ಬಳಸಿ.", "or": "locator CSS ବା XPath ନିଏ। ଏଗୁଡ଼ିକ କାମ କରେ, କିନ୍ତୁ page ର ଗଠନ ବର୍ଣ୍ଣନା କରେ, ତେଣୁ code ବଦଳିଲେ ଭାଙ୍ଗିଯାଏ। ଶେଷ ବିକଳ୍ପ ଭାବେ ବ୍ୟବହାର କରନ୍ତୁ।", "ar": "تقبل locator محددات CSS أو XPath. إنها تعمل لكنها تصف بنية الصفحة، لذلك تنكسر عندما تتغير الشيفرة. استخدمها كخيار أخير.", "de": "locator nimmt CSS oder XPath. Das funktioniert, beschreibt aber den Aufbau der Seite und bricht, wenn sich der Code ändert. Nutze es als letzten Ausweg."}, {"id": "filter", "h": "Filtering", "en": "filter keeps elements that contain some text or another locator. Chain locators to search inside the elements that are left. first, last and nth pick by position, and and or combine two locators.", "hi": "filter उन elements को रखता है जिनमें कुछ text या दूसरा locator हो। बचे elements के अंदर खोजने के लिए locators को chain करें। first, last और nth स्थिति से चुनते हैं, और and व or दो locators जोड़ते हैं।", "kn": "filter ಕೆಲವು text ಅಥವಾ ಇನ್ನೊಂದು locator ಇರುವ elements ಅನ್ನು ಉಳಿಸುತ್ತದೆ. ಉಳಿದ elements ಒಳಗೆ ಹುಡುಕಲು locators ಅನ್ನು chain ಮಾಡಿ. first, last ಮತ್ತು nth ಸ್ಥಾನದಿಂದ ಆರಿಸುತ್ತವೆ, and ಮತ್ತು or ಎರಡು locators ಸೇರಿಸುತ್ತವೆ.", "or": "filter ସେହି elements ରଖେ ଯେଉଁଥିରେ କିଛି text ବା ଅନ୍ୟ locator ଅଛି। ବାକି elements ଭିତରେ ଖୋଜିବାକୁ locators chain କରନ୍ତୁ। first, last ଓ nth ସ୍ଥାନ ଅନୁସାରେ ବାଛନ୍ତି, and ଓ or ଦୁଇ locators ଯୋଡନ୍ତି।", "ar": "يحتفظ filter بالعناصر التي تحتوي على نص معين أو على محدد آخر. سلسل المحددات للبحث داخل العناصر المتبقية. تختار first وlast وnth حسب الموضع، وتجمع and وor بين محددين.", "de": "filter behält Elemente, die einen Text oder einen anderen Locator enthalten. Verkette Locators, um in den verbleibenden Elementen zu suchen. first, last und nth wählen nach Position, and und or verbinden zwei Locators."}, {"id": "strict", "h": "Strict mode", "en": "An action needs exactly one element. If a locator finds several, click and fill fail with a strict mode violation that lists every match and suggests a locator for each.", "hi": "Action को ठीक एक element चाहिए। अगर locator कई ढूँढे तो click और fill strict mode violation के साथ fail होते हैं, जो हर match दिखाता है और हर एक के लिए locator सुझाता है।", "kn": "Action ಗೆ ನಿಖರವಾಗಿ ಒಂದು element ಬೇಕು. Locator ಹಲವು ಕಂಡರೆ click ಮತ್ತು fill strict mode violation ನೊಂದಿಗೆ fail ಆಗುತ್ತವೆ, ಅದು ಪ್ರತಿ match ತೋರಿಸಿ ಪ್ರತಿಯೊಂದಕ್ಕೂ locator ಸೂಚಿಸುತ್ತದೆ.", "or": "Action ପାଇଁ ଠିକ୍ ଗୋଟିଏ element ଦରକାର। Locator ଅନେକ ପାଇଲେ click ଓ fill strict mode violation ସହ fail ହୁଏ, ଯାହା ପ୍ରତି match ଦେଖାଏ ଓ ପ୍ରତିଟି ପାଇଁ locator ପରାମର୍ଶ ଦିଏ।", "ar": "يحتاج الإجراء إلى عنصر واحد بالضبط. إذا وجد المحدد عدة عناصر، يفشل click وfill بخطأ strict mode violation الذي يسرد كل تطابق ويقترح محددًا لكل منها.", "de": "Eine Aktion braucht genau ein Element. Findet ein Locator mehrere, scheitern click und fill mit einer Strict-Mode-Verletzung, die jeden Treffer auflistet und für jeden einen Locator vorschlägt."}, {"id": "lists", "h": "Lists and tables", "en": "Find the row by something unique in it, such as a name or an order number, then act inside that row. all turns a locator into a list you can loop over, but it does not wait.", "hi": "Row को उसमें मौजूद किसी अनोखी चीज़, जैसे नाम या order number, से ढूँढें, फिर उसी row के अंदर काम करें। all locator को loop करने लायक list बनाता है, पर इंतज़ार नहीं करता।", "kn": "Row ಅನ್ನು ಅದರಲ್ಲಿರುವ ವಿಶಿಷ್ಟ ವಿಷಯ, ಉದಾಹರಣೆಗೆ ಹೆಸರು ಅಥವಾ order number, ಮೂಲಕ ಹುಡುಕಿ, ನಂತರ ಆ row ಒಳಗೆ ಕೆಲಸ ಮಾಡಿ. all locator ಅನ್ನು loop ಮಾಡಬಹುದಾದ list ಆಗಿ ಮಾಡುತ್ತದೆ, ಆದರೆ ಕಾಯುವುದಿಲ್ಲ.", "or": "Row କୁ ସେଥିରେ ଥିବା ଅନନ୍ୟ କିଛି, ଯେପରି ନାମ ବା order number, ଦ୍ୱାରା ଖୋଜନ୍ତୁ, ତାପରେ ସେହି row ଭିତରେ କାମ କରନ୍ତୁ। all locator କୁ loop କରିହେବା list କରେ, କିନ୍ତୁ ଅପେକ୍ଷା କରେ ନାହିଁ।", "ar": "ابحث عن الصف بشيء فريد فيه مثل اسم أو رقم طلب، ثم نفّذ الإجراء داخل ذلك الصف. يحوّل all المحدد إلى قائمة يمكنك المرور عليها، لكنه لا ينتظر.", "de": "Finde die Zeile über etwas Eindeutiges darin, etwa einen Namen oder eine Bestellnummer, und handle dann innerhalb dieser Zeile. all macht aus einem Locator eine Liste zum Durchlaufen, wartet aber nicht."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you find the price of the coffee mug inside its card, and you delete one order from the orders table by its customer name.", "hi": "Labs में आप coffee mug के card के अंदर उसकी कीमत ढूँढते हैं, और orders table से एक order को customer के नाम से हटाते हैं।", "kn": "Labs ನಲ್ಲಿ ನೀವು coffee mug card ಒಳಗೆ ಅದರ ಬೆಲೆ ಹುಡುಕುತ್ತೀರಿ, ಮತ್ತು orders table ನಿಂದ customer ಹೆಸರಿನ ಮೂಲಕ ಒಂದು order ಅಳಿಸುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ coffee mug card ଭିତରେ ତାର ଦାମ ଖୋଜନ୍ତି, ଏବଂ orders table ରୁ customer ନାମ ଦ୍ୱାରା ଗୋଟିଏ order ହଟାନ୍ତି।", "ar": "في المختبرات تجد سعر كوب القهوة داخل بطاقته، وتحذف طلبًا واحدًا من جدول الطلبات باسم العميل.", "de": "In den Labs findest du den Preis der Kaffeetasse in ihrer Karte und löschst eine Bestellung aus der Tabelle über den Kundennamen."}], "ex": [], "dg": {"prio": {"t": "Which locator to try first", "w": 900, "h": 210, "n": [["role", 20, 70, 140, 64, "getByRole", {"c": 1, "sub": "first choice", "i": "Buttons, links, headings, boxes, rows. What a user and a screen reader see."}], ["label", 180, 70, 130, 64, "getByLabel", {"c": 1, "sub": "form boxes", "i": "A form box found by the words of its label."}], ["ph", 330, 70, 150, 64, "getByPlaceholder", {"c": 2, "sub": "no label", "i": "For a box that only has hint text inside."}], ["text", 500, 70, 120, 64, "getByText", {"c": 2, "sub": "plain text", "i": "For text that is not a button or link, such as a message."}], ["tid", 640, 70, 120, 64, "getByTestId", {"c": 3, "sub": "agreed id", "i": "A data-testid the developers promise to keep."}], ["css", 780, 70, 100, 64, "CSS, XPath", {"c": 0, "sub": "last resort", "i": "Tied to how the page is built, so it breaks when the code changes."}]], "e": [["role", "label"], ["label", "ph"], ["ph", "text"], ["text", "tid"], ["tid", "css"]], "st": [[["role"], "Start with the role and the visible name. It is how people find things, so it rarely breaks and it checks accessibility for free."], [["label", "role>label"], "Form boxes are best found by their label, the words a user reads next to the box."], [["ph", "text", "label>ph", "ph>text"], "Placeholder and text cover boxes without labels and plain messages."], [["tid", "text>tid"], "When the visible text changes often, for example in many languages, agree on a test id with the developers."], [["css", "tid>css"], "CSS and XPath are the last resort, because they depend on how the page is built."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "mug", "title": "Find the price inside one card", "name": "the coffee mug costs 199", "task": "On <code>/products<\/code>, find the list item that contains <b>Coffee mug<\/b> with a filter, then check that the price <b>₹199<\/b> is visible inside that card.", "goal": "The check passes on the price inside the Coffee mug card.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the coffee mug costs 199', async ({ page }) => {\n  await page.goto('/products');\n  // find the Coffee mug card, then the price inside it\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheCoffeeMugCosts199Test {\n  @Test\n  void theCoffeeMugCosts199(Page page) {\n    page.navigate(\"/products\");\n    Locator mug = page.getByRole(AriaRole.LISTITEM).filter(new Locator.FilterOptions().setHasText(\"Coffee mug\"));\n    assertThat(mug.getByText(\"₹199\")).isVisible();\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_coffee_mug_costs_199(page: Page):\n    page.goto(\"/products\")\n    mug = page.get_by_role(\"listitem\").filter(has_text=\"Coffee mug\")\n    expect(mug.get_by_text(\"₹199\")).to_be_visible()\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the coffee mug costs 199', async ({ page }) => {\n  await page.goto('/products');\n  const mug = page.getByRole('listitem').filter({ hasText: 'Coffee mug' });\n  await expect(mug.getByText('₹199')).toBeVisible();\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the coffee mug costs 199', async ({ page }) => {\n  await page.goto('/products');\n  const mug = page.getByRole('listitem').filter({ hasText: 'Coffee mug' });\n  await expect(mug.getByText('₹199')).toBeVisible();\n});"}, "hint": "<code>page.getByRole('listitem').filter({ hasText: 'Coffee mug' })<\/code> is the card. Chain <code>.getByText('₹199')<\/code> on it.", "why": "The filter picks one card out of five, and the chained getByText searches only inside it. The same price on another card would not count.", "check": [["/filter|Filter/.test(ctx.code)", "The test filters the cards"], ["/199/.test(ctx.code)", "The test checks the price"]]}, {"id": "delrow", "title": "Delete one order by its customer", "name": "delete the order of Meera", "task": "On <code>/orders<\/code>, find the row that contains <b>Meera<\/b>, click the <b>Delete<\/b> button in that row, and check that the status says <b>Order #1003 deleted<\/b>.", "goal": "Meera's order is deleted, and only hers.", "start": "/orders", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('delete the order of Meera', async ({ page }) => {\n  await page.goto('/orders');\n  // find Meera's row, then the Delete button inside it\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class DeleteTheOrderOfMeeraTest {\n  @Test\n  void deleteTheOrderOfMeera(Page page) {\n    page.navigate(\"/orders\");\n    Locator row = page.getByRole(AriaRole.ROW).filter(new Locator.FilterOptions().setHasText(\"Meera\"));\n    row.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(\"Delete\")).click();\n    assertThat(page.getByRole(AriaRole.STATUS)).hasText(\"Order #1003 deleted\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_delete_the_order_of_meera(page: Page):\n    page.goto(\"/orders\")\n    row = page.get_by_role(\"row\").filter(has_text=\"Meera\")\n    row.get_by_role(\"button\", name=\"Delete\").click()\n    expect(page.get_by_role(\"status\")).to_have_text(\"Order #1003 deleted\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('delete the order of Meera', async ({ page }) => {\n  await page.goto('/orders');\n  const row = page.getByRole('row').filter({ hasText: 'Meera' });\n  await row.getByRole('button', { name: 'Delete' }).click();\n  await expect(page.getByRole('status')).toHaveText('Order #1003 deleted');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('delete the order of Meera', async ({ page }) => {\n  await page.goto('/orders');\n  const row = page.getByRole('row').filter({ hasText: 'Meera' });\n  await row.getByRole('button', { name: 'Delete' }).click();\n  await expect(page.getByRole('status')).toHaveText('Order #1003 deleted');\n});"}, "hint": "Try <code>page.getByRole('button', { name: 'Delete' }).click()<\/code> first and read the strict mode error. Then start from <code>page.getByRole('row').filter({ hasText: 'Meera' })<\/code>.", "why": "There are five Delete buttons. The row filter narrows the search to Meera's row, so exactly one button is left and the click is allowed.", "check": [["/Order #1003 deleted/.test(ctx.text)", "Order 1003 was deleted"], ["/filter|Filter/.test(ctx.code)", "The test finds the row with a filter"]]}], "trees": {}};
+JSPLAY.page({ title: "Locators: finding elements", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

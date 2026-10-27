@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navigation, frames, dialogs, files and events · Playwright</title>
+<meta name="description" content="goto and waitUntil, waitForURL, back and reload, frameLocator and contentFrame, dialogs, downloads, setInputFiles, console and pageerror events, evaluate and addInitScript, and shadow DOM in Java, Python, JavaScript and TypeScript.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🌐 Browser handling</span><span>›</span><span>Chapter 4 of 10</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🧭</span><div><h1>Navigation, frames, dialogs, files and events</h1><p class="lead">Handle everything a real page throws at a test: navigation and redirects, payment iframes, alerts and prompts, downloads and uploads, console errors, code that runs inside the page, and shadow DOM.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 32 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 2 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>Real pages open new addresses, hide forms inside other pages, pop up questions and give you files. Playwright has a simple tool for each, and the rule is the same: start waiting before the click that causes it.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#navigate" class="easy"><span>🧭</span>Going to pages and waiting for them</a><a href="#frames" class="easy"><span>🖼️</span>Iframes</a><a href="#dialogs"><span>💬</span>Alerts, confirms and prompts</a><a href="#files"><span>📁</span>Downloads and uploads</a><a href="#events"><span>📡</span>Listening to what the page does</a><a href="#evaluate"><span>🧪</span>Running code inside the page</a><a href="#shadow"><span>🌑</span>Shadow DOM and web components</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="navigate" data-say="navigate"><div class="sec-num">Part 1</div><h2><span class="sec-em">🧭</span><span>Going to pages and waiting for them</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p><code><span class="only-java">page.navigate(url)</span><span class="only-py">page.goto(url)</span><span class="only-js">page.goto(url)</span><span class="only-ts">page.goto(url)</span></code> opens an address and waits until the page has loaded. You can say how far it should wait with the <code>waitUntil</code> option.</p>
+<div class="viz" data-viz="flow" data-k="load"></div>
+<p>A relative address such as <code>/login</code> is joined to the base URL from the config. Many pages also move on by themselves after a click, for example after signing in. Then you wait for the new address.</p>
+<div class="codewrap tests pw4" data-k="nav" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Go, wait for the address, go back and reload · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/NavigationTest.java</div><pre class="src" data-file="src/test/java/com/brainy/NavigationTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">WaitUntilState</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.util.regex.<span class="t">Pattern</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">NavigationTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> movingAroundTheShop(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/login"</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">NavigateOptions</span>().setWaitUntil(<span class="t">WaitUntilState</span>.<span class="t">DOMCONTENTLOADED</span>));
+    <span class="t">System</span>.out.println(<span class="s">"1. "</span> + page.url());
+
+    page.getByLabel(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>);
+    page.getByLabel(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Sign in"</span>)).click();
+    page.waitForURL(<span class="s">"**/products"</span>);                 <span class="c">// the app moves on by itself</span>
+    <span class="t">System</span>.out.println(<span class="s">"2. "</span> + page.url());
+
+    page.goBack();
+    assertThat(page).hasURL(<span class="t">Pattern</span>.compile(<span class="s">"/login$"</span>));
+    <span class="t">System</span>.out.println(<span class="s">"3. "</span> + page.url());
+
+    page.goForward();
+    page.reload();
+    assertThat(page).hasURL(<span class="t">Pattern</span>.compile(<span class="s">"/products$"</span>));
+    <span class="t">System</span>.out.println(<span class="s">"4. "</span> + page.url() + <span class="s">" | "</span> + page.title());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.NavigationTest
+1. http://localhost:4173/login
+2. http://localhost:4173/products
+3. http://localhost:4173/login
+4. http://localhost:4173/products | Products · Brainy Shop
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.572 s -- in com.brainy.NavigationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_navigation.py</div><pre class="src" data-file="tests/test_navigation.py"><span class="k">import</span> re
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_moving_around_the_shop(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/login"</span>, wait_until=<span class="s">"domcontentloaded"</span>)
+    print(<span class="s">"1."</span>, page.url)
+
+    page.get_by_label(<span class="s">"Email"</span>).fill(<span class="s">"asha@shop.example"</span>)
+    page.get_by_label(<span class="s">"Password"</span>).fill(<span class="s">"s3cret"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Sign in"</span>).click()
+    page.wait_for_url(<span class="s">"**/products"</span>)              <span class="c"># the app moves on by itself</span>
+    print(<span class="s">"2."</span>, page.url)
+
+    page.go_back()
+    expect(page).to_have_url(re.compile(r<span class="s">"/login$"</span>))
+    print(<span class="s">"3."</span>, page.url)
+
+    page.go_forward()
+    page.reload()
+    expect(page).to_have_url(re.compile(r<span class="s">"/products$"</span>))
+    print(<span class="s">"4."</span>, page.url, <span class="s">"|"</span>, page.title())</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_navigation.py::test_moving_around_the_shop[chromium] 1. http://localhost:4173/login
+2. http://localhost:4173/products
+3. http://localhost:4173/login
+4. http://localhost:4173/products | Products · Brainy Shop
+PASSED
+
+============================== 1 passed in 1.65s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/navigation.spec.js</div><pre class="src" data-file="tests/navigation.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'moving around the shop'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>, { waitUntil: <span class="s">'domcontentloaded'</span> });
+  console.log(<span class="s">'1.'</span>, page.url());
+
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> page.waitForURL(<span class="s">'**/products'</span>);            <span class="c">// the app moves on by itself</span>
+  console.log(<span class="s">'2.'</span>, page.url());
+
+  <span class="k">await</span> page.goBack();
+  <span class="k">await</span> expect(page).toHaveURL(/\/login$/);
+  console.log(<span class="s">'3.'</span>, page.url());
+
+  <span class="k">await</span> page.goForward();
+  <span class="k">await</span> page.reload();
+  <span class="k">await</span> expect(page).toHaveURL(/\/products$/);
+  console.log(<span class="s">'4.'</span>, page.url(), <span class="s">'|'</span>, <span class="k">await</span> page.title());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+1. http://localhost:4173/login
+2. http://localhost:4173/products
+3. http://localhost:4173/login
+4. http://localhost:4173/products | Products · Brainy Shop
+  ✓  1 [chromium] › tests/navigation.spec.js:3:1 › moving around the shop (963ms)
+
+  1 passed (2.6s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/navigation.spec.ts</div><pre class="src" data-file="tests/navigation.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'moving around the shop'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/login'</span>, { waitUntil: <span class="s">'domcontentloaded'</span> });
+  console.log(<span class="s">'1.'</span>, page.url());
+
+  <span class="k">await</span> page.getByLabel(<span class="s">'Email'</span>).fill(<span class="s">'asha@shop.example'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Password'</span>).fill(<span class="s">'s3cret'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
+  <span class="k">await</span> page.waitForURL(<span class="s">'**/products'</span>);            <span class="c">// the app moves on by itself</span>
+  console.log(<span class="s">'2.'</span>, page.url());
+
+  <span class="k">await</span> page.goBack();
+  <span class="k">await</span> expect(page).toHaveURL(/\/login$/);
+  console.log(<span class="s">'3.'</span>, page.url());
+
+  <span class="k">await</span> page.goForward();
+  <span class="k">await</span> page.reload();
+  <span class="k">await</span> expect(page).toHaveURL(/\/products$/);
+  console.log(<span class="s">'4.'</span>, page.url(), <span class="s">'|'</span>, <span class="k">await</span> page.title());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+1. http://localhost:4173/login
+2. http://localhost:4173/products
+3. http://localhost:4173/login
+4. http://localhost:4173/products | Products · Brainy Shop
+  ✓  1 [chromium] › tests/navigation.spec.ts:3:1 › moving around the shop (1.0s)
+
+  1 passed (3.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>After the click, the shop changes the address with its own script, so the test waits for the new URL with <code>waitForURL</code>. Back, forward and reload work like the browser buttons. The checks on the URL use a regular expression so they do not depend on the port.</p></div></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Do not wait for the network to go quiet. A chat widget or analytics script can keep it busy forever. Wait for what the user is waiting for: a URL, a heading or a message. Every check with expect already waits.</div></div>
+</section>
+<section class="card reveal jsec easy-part" id="frames" data-say="frames"><div class="sec-num">Part 2</div><h2><span class="sec-em">🖼️</span><span>Iframes</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>An iframe is a web page inside a web page. Payment forms, maps, videos and chat windows often live in iframes, because another company serves them. A locator on the main page does not see inside an iframe, so you step into it first.</p>
+<div class="viz" data-viz="pwwalk" data-sub="Each screen was recorded from a real run in Chromium when this page was built. Press Play, or step one line at a time, and switch the language to see the same line in Java, Python, JavaScript or TypeScript." data-walk="{&quot;title&quot;: &quot;Paying inside an iframe&quot;, &quot;steps&quot;: [{&quot;cap&quot;: &quot;Open the checkout page. The card form is an iframe from the payment company.&quot;, &quot;img&quot;: &quot;walks/walkframe-0.jpg&quot;, &quot;js&quot;: &quot;await page.goto(&#x27;http://localhost:4173/frames&#x27;);&quot;, &quot;ts&quot;: &quot;await page.goto(&#x27;http://localhost:4173/frames&#x27;);&quot;, &quot;py&quot;: &quot;page.goto(\&quot;http://localhost:4173/frames\&quot;)&quot;, &quot;java&quot;: &quot;page.navigate(\&quot;http://localhost:4173/frames\&quot;);&quot;}, {&quot;cap&quot;: &quot;Step into the iframe and type the card number.&quot;, &quot;img&quot;: &quot;walks/walkframe-1.jpg&quot;, &quot;js&quot;: &quot;await page.frameLocator(&#x27;iframe[title=\&quot;Payment form\&quot;]&#x27;).getByLabel(&#x27;Card number&#x27;).fill(&#x27;4111 1111 1111 1111&#x27;);&quot;, &quot;ts&quot;: &quot;await page.frameLocator(&#x27;iframe[title=\&quot;Payment form\&quot;]&#x27;).getByLabel(&#x27;Card number&#x27;).fill(&#x27;4111 1111 1111 1111&#x27;);&quot;, &quot;py&quot;: &quot;page.frame_locator(&#x27;iframe[title=\&quot;Payment form\&quot;]&#x27;).get_by_label(\&quot;Card number\&quot;).fill(\&quot;4111 1111 1111 1111\&quot;)&quot;, &quot;java&quot;: &quot;page.frameLocator(\&quot;iframe[title=\\\&quot;Payment form\\\&quot;]\&quot;).getByLabel(\&quot;Card number\&quot;).fill(\&quot;4111 1111 1111 1111\&quot;);&quot;}, {&quot;cap&quot;: &quot;Type the expiry date.&quot;, &quot;img&quot;: &quot;walks/walkframe-2.jpg&quot;, &quot;js&quot;: &quot;await page.frameLocator(&#x27;iframe[title=\&quot;Payment form\&quot;]&#x27;).getByLabel(&#x27;Expiry&#x27;).fill(&#x27;12/29&#x27;);&quot;, &quot;ts&quot;: &quot;await page.frameLocator(&#x27;iframe[title=\&quot;Payment form\&quot;]&#x27;).getByLabel(&#x27;Expiry&#x27;).fill(&#x27;12/29&#x27;);&quot;, &quot;py&quot;: &quot;page.frame_locator(&#x27;iframe[title=\&quot;Payment form\&quot;]&#x27;).get_by_label(\&quot;Expiry\&quot;).fill(\&quot;12/29\&quot;)&quot;, &quot;java&quot;: &quot;page.frameLocator(\&quot;iframe[title=\\\&quot;Payment form\\\&quot;]\&quot;).getByLabel(\&quot;Expiry\&quot;).fill(\&quot;12/29\&quot;);&quot;}, {&quot;cap&quot;: &quot;Click Pay inside the iframe.&quot;, &quot;img&quot;: &quot;walks/walkframe-3.jpg&quot;, &quot;js&quot;: &quot;await page.frameLocator(&#x27;iframe[title=\&quot;Payment form\&quot;]&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Pay ₹219&#x27; }).click();&quot;, &quot;ts&quot;: &quot;await page.frameLocator(&#x27;iframe[title=\&quot;Payment form\&quot;]&#x27;).getByRole(&#x27;button&#x27;, { name: &#x27;Pay ₹219&#x27; }).click();&quot;, &quot;py&quot;: &quot;page.frame_locator(&#x27;iframe[title=\&quot;Payment form\&quot;]&#x27;).get_by_role(\&quot;button\&quot;, name=\&quot;Pay ₹219\&quot;).click()&quot;, &quot;java&quot;: &quot;page.frameLocator(\&quot;iframe[title=\\\&quot;Payment form\\\&quot;]\&quot;).getByRole(AriaRole.BUTTON, new FrameLocator.GetByRoleOptions().setName(\&quot;Pay ₹219\&quot;)).click();&quot;}, {&quot;cap&quot;: &quot;Back in the main page, the shop shows the result.&quot;, &quot;img&quot;: &quot;walks/walkframe-4.jpg&quot;, &quot;js&quot;: &quot;await expect(page.getByRole(&#x27;status&#x27;)).toHaveText(&#x27;Paid with card ending 1111&#x27;);&quot;, &quot;ts&quot;: &quot;await expect(page.getByRole(&#x27;status&#x27;)).toHaveText(&#x27;Paid with card ending 1111&#x27;);&quot;, &quot;py&quot;: &quot;expect(page.get_by_role(\&quot;status\&quot;)).to_have_text(\&quot;Paid with card ending 1111\&quot;)&quot;, &quot;java&quot;: &quot;assertThat(page.getByRole(AriaRole.STATUS)).hasText(\&quot;Paid with card ending 1111\&quot;);&quot;}], &quot;w&quot;: 900, &quot;h&quot;: 560}"></div>
+<div class="codewrap tests pw4" data-k="frame" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Fill a card form that lives inside an iframe · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/FrameTest.java</div><pre class="src" data-file="src/test/java/com/brainy/FrameTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">FrameLocator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">FrameTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> payInsideThePaymentIframe(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/frames"</span>);
+    <span class="t">FrameLocator</span> payment = page.frameLocator(<span class="s">"iframe[title=\"Payment form\"]"</span>);
+
+    payment.getByLabel(<span class="s">"Card number"</span>).fill(<span class="s">"4111 1111 1111 1111"</span>);
+    payment.getByLabel(<span class="s">"Expiry"</span>).fill(<span class="s">"12/29"</span>);
+    payment.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">FrameLocator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Pay ₹219"</span>)).click();
+
+    <span class="c">// The message appears in the main page, outside the iframe.</span>
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).hasText(<span class="s">"Paid with card ending 1111"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"Frames on the page: "</span> + page.frames().size());
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> aShortCardNumberIsRefused(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/frames"</span>);
+    <span class="c">// Another way in: find the iframe element, then step into it.</span>
+    <span class="t">FrameLocator</span> payment = page.getByTitle(<span class="s">"Payment form"</span>).contentFrame();
+    payment.getByLabel(<span class="s">"Card number"</span>).fill(<span class="s">"4111"</span>);
+    payment.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">FrameLocator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Pay ₹219"</span>)).click();
+    assertThat(payment.getByRole(<span class="t">AriaRole</span>.<span class="t">ALERT</span>)).hasText(<span class="s">"Card number must have 16 digits"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.FrameTest
+Frames on the page: 2
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.819 s -- in com.brainy.FrameTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_frames.py</div><pre class="src" data-file="tests/test_frames.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_pay_inside_the_payment_iframe(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/frames"</span>)
+    payment = page.frame_locator(<span class="s">'iframe[title="Payment form"]'</span>)
+
+    payment.get_by_label(<span class="s">"Card number"</span>).fill(<span class="s">"4111 1111 1111 1111"</span>)
+    payment.get_by_label(<span class="s">"Expiry"</span>).fill(<span class="s">"12/29"</span>)
+    payment.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Pay ₹219"</span>).click()
+
+    <span class="c"># The message appears in the main page, outside the iframe.</span>
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_have_text(<span class="s">"Paid with card ending 1111"</span>)
+    print(<span class="s">"Frames on the page:"</span>, len(page.frames))
+
+
+<span class="k">def</span> test_a_short_card_number_is_refused(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/frames"</span>)
+    <span class="c"># Another way in: find the iframe element, then step into it.</span>
+    payment = page.get_by_title(<span class="s">"Payment form"</span>).content_frame
+    payment.get_by_label(<span class="s">"Card number"</span>).fill(<span class="s">"4111"</span>)
+    payment.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Pay ₹219"</span>).click()
+    expect(payment.get_by_role(<span class="s">"alert"</span>)).to_have_text(<span class="s">"Card number must have 16 digits"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_frames.py::test_pay_inside_the_payment_iframe[chromium] Frames on the page: 2
+PASSED
+tests/test_frames.py::test_a_short_card_number_is_refused[chromium] PASSED
+
+============================== 2 passed in 2.32s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/frames.spec.js</div><pre class="src" data-file="tests/frames.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'pay inside the payment iframe'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/frames'</span>);
+  <span class="k">const</span> payment = page.frameLocator(<span class="s">'iframe[title="Payment form"]'</span>);
+
+  <span class="k">await</span> payment.getByLabel(<span class="s">'Card number'</span>).fill(<span class="s">'4111 1111 1111 1111'</span>);
+  <span class="k">await</span> payment.getByLabel(<span class="s">'Expiry'</span>).fill(<span class="s">'12/29'</span>);
+  <span class="k">await</span> payment.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay ₹219'</span> }).click();
+
+  <span class="c">// The message appears in the main page, outside the iframe.</span>
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Paid with card ending 1111'</span>);
+  console.log(<span class="s">'Frames on the page:'</span>, page.frames().length);
+});
+
+test(<span class="s">'a short card number is refused'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/frames'</span>);
+  <span class="c">// Another way in: find the iframe element, then step into it.</span>
+  <span class="k">const</span> payment = page.getByTitle(<span class="s">'Payment form'</span>).contentFrame();
+  <span class="k">await</span> payment.getByLabel(<span class="s">'Card number'</span>).fill(<span class="s">'4111'</span>);
+  <span class="k">await</span> payment.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay ₹219'</span> }).click();
+  <span class="k">await</span> expect(payment.getByRole(<span class="s">'alert'</span>)).toHaveText(<span class="s">'Card number must have 16 digits'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+Frames on the page: 2
+  ✓  1 [chromium] › tests/frames.spec.js:3:1 › pay inside the payment iframe (741ms)
+  ✓  2 [chromium] › tests/frames.spec.js:16:1 › a short card number is refused (367ms)
+
+  2 passed (2.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/frames.spec.ts</div><pre class="src" data-file="tests/frames.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'pay inside the payment iframe'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/frames'</span>);
+  <span class="k">const</span> payment = page.frameLocator(<span class="s">'iframe[title="Payment form"]'</span>);
+
+  <span class="k">await</span> payment.getByLabel(<span class="s">'Card number'</span>).fill(<span class="s">'4111 1111 1111 1111'</span>);
+  <span class="k">await</span> payment.getByLabel(<span class="s">'Expiry'</span>).fill(<span class="s">'12/29'</span>);
+  <span class="k">await</span> payment.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay ₹219'</span> }).click();
+
+  <span class="c">// The message appears in the main page, outside the iframe.</span>
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Paid with card ending 1111'</span>);
+  console.log(<span class="s">'Frames on the page:'</span>, page.frames().length);
+});
+
+test(<span class="s">'a short card number is refused'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/frames'</span>);
+  <span class="c">// Another way in: find the iframe element, then step into it.</span>
+  <span class="k">const</span> payment = page.getByTitle(<span class="s">'Payment form'</span>).contentFrame();
+  <span class="k">await</span> payment.getByLabel(<span class="s">'Card number'</span>).fill(<span class="s">'4111'</span>);
+  <span class="k">await</span> payment.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Pay ₹219'</span> }).click();
+  <span class="k">await</span> expect(payment.getByRole(<span class="s">'alert'</span>)).toHaveText(<span class="s">'Card number must have 16 digits'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+Frames on the page: 2
+  ✓  1 [chromium] › tests/frames.spec.ts:3:1 › pay inside the payment iframe (485ms)
+  ✓  2 [chromium] › tests/frames.spec.ts:16:1 › a short card number is refused (363ms)
+
+  2 passed (2.8s)</pre></div></div><div class="note-out"><span>What happens</span><p><code>frameLocator</code> and <code>contentFrame()</code> both give you a way into the iframe, and every locator after it searches only inside. The page has two frames: the main page and the payment iframe.</p></div></div>
+<div class="pw-box pw-life"><span class="pw-ic">🌍</span><div>Most real payment iframes come from another domain. Playwright handles that the same way, which older tools could not do easily. In tests, many teams use the payment company test card numbers, such as 4111 1111 1111 1111, in their sandbox.</div></div>
+</section>
+<section class="card reveal jsec" id="dialogs" data-say="dialogs"><div class="sec-num">Part 3</div><h2><span class="sec-em">💬</span><span>Alerts, confirms and prompts</span></h2>
+
+<p>Browser dialogs stop the page until someone answers. Playwright answers for you: with no handler, it dismisses them. To accept or to type an answer, register a handler <b>before</b> the click that opens the dialog.</p>
+<div class="codewrap tests pw4" data-k="dialog" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Alerts, confirms and prompts · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/DialogTest.java</div><pre class="src" data-file="src/test/java/com/brainy/DialogTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">DialogTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> withNoHandlerDialogsAreDismissed(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Delete account"</span>)).click();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).hasText(<span class="s">"Kept your account"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> acceptAConfirmAndReadItsMessage(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.onDialog(dialog -&gt; {
+      <span class="t">System</span>.out.println(dialog.type() + <span class="s">" | "</span> + dialog.message());
+      dialog.accept();
+    });
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Delete account"</span>)).click();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).hasText(<span class="s">"Account deleted"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> typeAnAnswerIntoAPrompt(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.onceDialog(dialog -&gt; dialog.accept(<span class="s">"Weekly shop"</span>));
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Rename list"</span>)).click();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).hasText(<span class="s">"List renamed to Weekly shop"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.DialogTest
+confirm | Delete your account forever?
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.329 s -- in com.brainy.DialogTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_dialogs.py</div><pre class="src" data-file="tests/test_dialogs.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_with_no_handler_dialogs_are_dismissed(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Delete account"</span>).click()
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_have_text(<span class="s">"Kept your account"</span>)
+
+
+<span class="k">def</span> test_accept_a_confirm_and_read_its_message(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+
+    <span class="k">def</span> handle(dialog):
+        print(dialog.type, <span class="s">"|"</span>, dialog.message)
+        dialog.accept()
+
+    page.on(<span class="s">"dialog"</span>, handle)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Delete account"</span>).click()
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_have_text(<span class="s">"Account deleted"</span>)
+
+
+<span class="k">def</span> test_type_an_answer_into_a_prompt(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    page.once(<span class="s">"dialog"</span>, <span class="k">lambda</span> dialog: dialog.accept(<span class="s">"Weekly shop"</span>))
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Rename list"</span>).click()
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_have_text(<span class="s">"List renamed to Weekly shop"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 3 items
+
+tests/test_dialogs.py::test_with_no_handler_dialogs_are_dismissed[chromium] PASSED
+tests/test_dialogs.py::test_accept_a_confirm_and_read_its_message[chromium] confirm | Delete your account forever?
+PASSED
+tests/test_dialogs.py::test_type_an_answer_into_a_prompt[chromium] PASSED
+
+============================== 3 passed in 5.08s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/dialogs.spec.js</div><pre class="src" data-file="tests/dialogs.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'with no handler, dialogs are dismissed'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Delete account'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Kept your account'</span>);
+});
+
+test(<span class="s">'accept a confirm and read its message'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  page.on(<span class="s">'dialog'</span>, <span class="k">async</span> dialog =&gt; {
+    console.log(dialog.type(), <span class="s">'|'</span>, dialog.message());
+    <span class="k">await</span> dialog.accept();
+  });
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Delete account'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Account deleted'</span>);
+});
+
+test(<span class="s">'type an answer into a prompt'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  page.once(<span class="s">'dialog'</span>, dialog =&gt; dialog.accept(<span class="s">'Weekly shop'</span>));
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Rename list'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'List renamed to Weekly shop'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › tests/dialogs.spec.js:3:1 › with no handler, dialogs are dismissed (1.4s)
+confirm | Delete your account forever?
+  ✓  2 [chromium] › tests/dialogs.spec.js:9:1 › accept a confirm and read its message (1.3s)
+  ✓  3 [chromium] › tests/dialogs.spec.js:19:1 › type an answer into a prompt (1.4s)
+
+  3 passed (5.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/dialogs.spec.ts</div><pre class="src" data-file="tests/dialogs.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'with no handler, dialogs are dismissed'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Delete account'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Kept your account'</span>);
+});
+
+test(<span class="s">'accept a confirm and read its message'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  page.on(<span class="s">'dialog'</span>, <span class="k">async</span> dialog =&gt; {
+    console.log(dialog.<span class="k">type</span>(), <span class="s">'|'</span>, dialog.message());
+    <span class="k">await</span> dialog.accept();
+  });
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Delete account'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'Account deleted'</span>);
+});
+
+test(<span class="s">'type an answer into a prompt'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  page.once(<span class="s">'dialog'</span>, dialog =&gt; dialog.accept(<span class="s">'Weekly shop'</span>));
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Rename list'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'List renamed to Weekly shop'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › tests/dialogs.spec.ts:3:1 › with no handler, dialogs are dismissed (1.4s)
+confirm | Delete your account forever?
+  ✓  2 [chromium] › tests/dialogs.spec.ts:9:1 › accept a confirm and read its message (1.2s)
+  ✓  3 [chromium] › tests/dialogs.spec.ts:19:1 › type an answer into a prompt (1.1s)
+
+  3 passed (5.1s)</pre></div></div><div class="note-out"><span>What happens</span><p>With no handler, Playwright dismisses every dialog so the test never hangs, which is why the first test sees <b>Kept your account</b>. A handler can read the type and the message, then accept, dismiss, or type an answer into a prompt.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Dialog</th><th>Opened by</th><th>accept()</th><th>dismiss()</th></tr><tr><td>alert</td><td><code>alert(msg)</code></td><td>closes it</td><td>closes it</td></tr><tr><td>confirm</td><td><code>confirm(msg)</code></td><td>the page gets true</td><td>the page gets false</td></tr><tr><td>prompt</td><td><code>prompt(msg, default)</code></td><td>the page gets your text</td><td>the page gets null</td></tr><tr><td>beforeunload</td><td>leaving a page with unsaved changes</td><td>leave the page</td><td>stay on the page</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="files" data-say="files"><div class="sec-num">Part 4</div><h2><span class="sec-em">📁</span><span>Downloads and uploads</span></h2>
+
+<p>A download is an event, like a popup. Start waiting first, then click, then use the download object.</p>
+<div class="codewrap tests pw4" data-k="download" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Catch a download and read the file · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/DownloadTest.java</div><pre class="src" data-file="src/test/java/com/brainy/DownloadTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Download</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.nio.file.<span class="t">Files</span>;
+<span class="k">import</span> java.nio.file.<span class="t">Paths</span>;
+
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertEquals;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">DownloadTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> downloadTheOrdersReport(<span class="t">Page</span> page) <span class="k">throws</span> <span class="t">Exception</span> {
+    page.navigate(<span class="s">"/widgets"</span>);
+    <span class="t">Download</span> download = page.waitForDownload(() -&gt;
+        page.getByRole(<span class="t">AriaRole</span>.<span class="t">LINK</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Download report"</span>)).click());
+
+    <span class="t">System</span>.out.println(<span class="s">"File name: "</span> + download.suggestedFilename());
+    <span class="t">String</span> text = <span class="t">Files</span>.readString(download.path());
+    <span class="t">System</span>.out.println(text.trim());
+    assertEquals(<span class="s">"order,total"</span>, text.split(<span class="s">"\n"</span>)[<span class="n">0</span>]);
+    download.saveAs(<span class="t">Paths</span>.get(<span class="s">"reports"</span>, download.suggestedFilename()));   <span class="c">// keep a copy</span>
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.DownloadTest
+File name: orders-report.csv
+order,total
+1001,219
+1002,1299
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.384 s -- in com.brainy.DownloadTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_download.py</div><pre class="src" data-file="tests/test_download.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+
+<span class="k">def</span> test_download_the_orders_report(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    <span class="k">with</span> page.expect_download() <span class="k">as</span> download_info:
+        page.get_by_role(<span class="s">"link"</span>, name=<span class="s">"Download report"</span>).click()
+    download = download_info.value
+
+    print(<span class="s">"File name:"</span>, download.suggested_filename)
+    text = download.path().read_text()
+    print(text.strip())
+    <span class="k">assert</span> text.split(<span class="s">"\n"</span>)[<span class="n">0</span>] == <span class="s">"order,total"</span>
+    download.save_as(<span class="s">"reports/"</span> + download.suggested_filename)   <span class="c"># keep a copy</span></pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_download.py::test_download_the_orders_report[chromium] File name: orders-report.csv
+order,total
+1001,219
+1002,1299
+PASSED
+
+============================== 1 passed in 2.04s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/download.spec.js</div><pre class="src" data-file="tests/download.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { readFileSync } <span class="k">from</span> <span class="s">'node:fs'</span>;
+
+test(<span class="s">'download the orders report'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">const</span> downloadPromise = page.waitForEvent(<span class="s">'download'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'link'</span>, { name: <span class="s">'Download report'</span> }).click();
+  <span class="k">const</span> download = <span class="k">await</span> downloadPromise;
+
+  console.log(<span class="s">'File name:'</span>, download.suggestedFilename());
+  <span class="k">const</span> text = readFileSync(<span class="k">await</span> download.path(), <span class="s">'utf8'</span>);
+  console.log(text.trim());
+  expect(text.split(<span class="s">'\n'</span>)[<span class="n">0</span>]).toBe(<span class="s">'order,total'</span>);
+  <span class="k">await</span> download.saveAs(<span class="s">'reports/'</span> + download.suggestedFilename());   <span class="c">// keep a copy</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+File name: orders-report.csv
+order,total
+1001,219
+1002,1299
+  ✓  1 [chromium] › tests/download.spec.js:4:1 › download the orders report (1.4s)
+
+  1 passed (2.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/download.spec.ts</div><pre class="src" data-file="tests/download.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { readFileSync } <span class="k">from</span> <span class="s">'node:fs'</span>;
+
+test(<span class="s">'download the orders report'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">const</span> downloadPromise = page.waitForEvent(<span class="s">'download'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'link'</span>, { name: <span class="s">'Download report'</span> }).click();
+  <span class="k">const</span> download = <span class="k">await</span> downloadPromise;
+
+  console.log(<span class="s">'File name:'</span>, download.suggestedFilename());
+  <span class="k">const</span> text = readFileSync(<span class="k">await</span> download.path(), <span class="s">'utf8'</span>);
+  console.log(text.trim());
+  expect(text.split(<span class="s">'\n'</span>)[<span class="n">0</span>]).toBe(<span class="s">'order,total'</span>);
+  <span class="k">await</span> download.saveAs(<span class="s">'reports/'</span> + download.suggestedFilename());   <span class="c">// keep a copy</span>
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+File name: orders-report.csv
+order,total
+1001,219
+1002,1299
+  ✓  1 [chromium] › tests/download.spec.ts:4:1 › download the orders report (1.3s)
+
+  1 passed (3.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>The browser saved the file in a temporary folder that Playwright deletes when the context closes. <code>suggestedFilename</code> is the name the server asked for, and <code>saveAs</code> keeps a copy where you want it.</p></div></div>
+<p>For uploads, put the files straight into the file input. You never deal with the operating system file window.</p>
+<div class="codewrap tests pw4" data-k="upload" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Upload files without touching the disk · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/UploadTest.java</div><pre class="src" data-file="src/test/java/com/brainy/UploadTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">FilePayload</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">UploadTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> sendFeedbackWithTwoScreenshots(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/forms"</span>);
+    page.getByPlaceholder(<span class="s">"Full name"</span>).fill(<span class="s">"Asha"</span>);
+    page.getByLabel(<span class="s">"Screenshots"</span>).setInputFiles(<span class="k">new</span> <span class="t">FilePayload</span>[] {
+        <span class="k">new</span> <span class="t">FilePayload</span>(<span class="s">"cart.png"</span>, <span class="s">"image/png"</span>, <span class="s">"fake picture 1"</span>.getBytes()),
+        <span class="k">new</span> <span class="t">FilePayload</span>(<span class="s">"error.png"</span>, <span class="s">"image/png"</span>, <span class="s">"fake picture 2"</span>.getBytes())});
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Send feedback"</span>)).click();
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).containsText(<span class="s">"files: cart.png, error.png"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.UploadTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.781 s -- in com.brainy.UploadTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_upload.py</div><pre class="src" data-file="tests/test_upload.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_send_feedback_with_two_screenshots(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/forms"</span>)
+    page.get_by_placeholder(<span class="s">"Full name"</span>).fill(<span class="s">"Asha"</span>)
+    page.get_by_label(<span class="s">"Screenshots"</span>).set_input_files([
+        {<span class="s">"name"</span>: <span class="s">"cart.png"</span>, <span class="s">"mimeType"</span>: <span class="s">"image/png"</span>, <span class="s">"buffer"</span>: b<span class="s">"fake picture 1"</span>},
+        {<span class="s">"name"</span>: <span class="s">"error.png"</span>, <span class="s">"mimeType"</span>: <span class="s">"image/png"</span>, <span class="s">"buffer"</span>: b<span class="s">"fake picture 2"</span>},
+    ])
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Send feedback"</span>).click()
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_contain_text(<span class="s">"files: cart.png, error.png"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_upload.py::test_send_feedback_with_two_screenshots[chromium] PASSED [100%]
+
+============================== 1 passed in 1.16s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/upload.spec.js</div><pre class="src" data-file="tests/upload.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'send feedback with two screenshots'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Full name'</span>).fill(<span class="s">'Asha'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Screenshots'</span>).setInputFiles([
+    { name: <span class="s">'cart.png'</span>, mimeType: <span class="s">'image/png'</span>, buffer: <span class="t">Buffer</span>.<span class="k">from</span>(<span class="s">'fake picture 1'</span>) },
+    { name: <span class="s">'error.png'</span>, mimeType: <span class="s">'image/png'</span>, buffer: <span class="t">Buffer</span>.<span class="k">from</span>(<span class="s">'fake picture 2'</span>) },
+  ]);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Send feedback'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toContainText(<span class="s">'files: cart.png, error.png'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/upload.spec.js:3:1 › send feedback with two screenshots (411ms)
+
+  1 passed (1.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/upload.spec.ts</div><pre class="src" data-file="tests/upload.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'send feedback with two screenshots'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
+  <span class="k">await</span> page.getByPlaceholder(<span class="s">'Full name'</span>).fill(<span class="s">'Asha'</span>);
+  <span class="k">await</span> page.getByLabel(<span class="s">'Screenshots'</span>).setInputFiles([
+    { name: <span class="s">'cart.png'</span>, mimeType: <span class="s">'image/png'</span>, buffer: <span class="t">Buffer</span>.<span class="k">from</span>(<span class="s">'fake picture 1'</span>) },
+    { name: <span class="s">'error.png'</span>, mimeType: <span class="s">'image/png'</span>, buffer: <span class="t">Buffer</span>.<span class="k">from</span>(<span class="s">'fake picture 2'</span>) },
+  ]);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Send feedback'</span> }).click();
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toContainText(<span class="s">'files: cart.png, error.png'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/upload.spec.ts:3:1 › send feedback with two screenshots (484ms)
+
+  1 passed (2.1s)</pre></div></div><div class="note-out"><span>What happens</span><p><code>setInputFiles</code> fills a file input directly. Here the files are made in memory, so the test needs no sample files. You can also pass real file paths, and an empty list clears the input.</p></div></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Some pages hide the real file input and open the file window from a pretty button. Then wait for the file chooser event: <code>page.waitForEvent('filechooser')</code> in JavaScript, <code>page.expect_file_chooser()</code> in Python or <code>page.waitForFileChooser(...)</code> in Java, and call <code>setFiles</code> on it.</div></div>
+</section>
+<section class="card reveal jsec" id="events" data-say="events"><div class="sec-num">Part 5</div><h2><span class="sec-em">📡</span><span>Listening to what the page does</span></h2>
+
+<p>A page fires events while you test it: console messages, uncaught errors, network requests and responses, new popups, dialogs and downloads. Listening to them lets a test notice problems the screen does not show.</p>
+<div class="codewrap tests pw4" data-k="events" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Listen to console messages, page errors and requests · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/EventsTest.java</div><pre class="src" data-file="src/test/java/com/brainy/EventsTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.util.<span class="t">ArrayList</span>;
+<span class="k">import</span> java.util.<span class="t">List</span>;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">EventsTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> catchConsoleMessagesAndPageErrors(<span class="t">Page</span> page) {
+    <span class="t">List</span>&lt;<span class="t">String</span>&gt; messages = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();
+    <span class="t">List</span>&lt;<span class="t">String</span>&gt; errors = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();
+    page.onConsoleMessage(msg -&gt; messages.add(msg.type() + <span class="s">": "</span> + msg.text()));
+    page.onPageError(errors::add);
+    page.onRequest(request -&gt; {
+      <span class="k">if</span> (request.url().contains(<span class="s">"/api/"</span>)) <span class="t">System</span>.out.println(<span class="s">"request -&gt; "</span> + request.method() + <span class="s">" "</span> + request.url());
+    });
+    page.navigate(<span class="s">"/widgets"</span>);
+
+    page.waitForConsoleMessage(<span class="k">new</span> <span class="t">Page</span>.<span class="t">WaitForConsoleMessageOptions</span>().setPredicate(m -&gt; m.type().equals(<span class="s">"warning"</span>)),
+        () -&gt; page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Write to the console"</span>)).click());
+    <span class="t">System</span>.out.println(messages);
+
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Break the page"</span>)).click();
+    page.waitForCondition(() -&gt; !errors.isEmpty());
+    <span class="t">System</span>.out.println(<span class="s">"Page error: "</span> + errors.get(<span class="n">0</span>));
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.EventsTest
+[log: Cart saved with 2 items, warning: Coupon expires soon]
+Page error: Error: Price service is down
+Error: Price service is down
+    at http://localhost:4173/widgets:46:76
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.785 s -- in com.brainy.EventsTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_events.py</div><pre class="src" data-file="tests/test_events.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+
+<span class="k">def</span> test_catch_console_messages_and_page_errors(page: <span class="t">Page</span>):
+    messages = []
+    page.on(<span class="s">"console"</span>, <span class="k">lambda</span> msg: messages.append(f<span class="s">"{msg.type}: {msg.text}"</span>))
+    page.on(<span class="s">"request"</span>, <span class="k">lambda</span> request: print(<span class="s">"request -&gt;"</span>, request.method, request.url)
+            <span class="k">if</span> <span class="s">"/api/"</span> <span class="k">in</span> request.url <span class="k">else</span> <span class="k">None</span>)
+    page.goto(<span class="s">"/widgets"</span>)
+
+    <span class="k">with</span> page.expect_console_message(<span class="k">lambda</span> msg: msg.type == <span class="s">"warning"</span>):
+        page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Write to the console"</span>).click()
+    print(messages)
+
+    <span class="k">with</span> page.expect_event(<span class="s">"pageerror"</span>) <span class="k">as</span> error_info:
+        page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Break the page"</span>).click()
+    print(<span class="s">"Page error:"</span>, error_info.value.message)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_events.py::test_catch_console_messages_and_page_errors[chromium] [&#x27;log: Cart saved with 2 items&#x27;, &#x27;warning: Coupon expires soon&#x27;]
+Page error: Price service is down
+PASSED
+
+============================== 1 passed in 2.32s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/events.spec.js</div><pre class="src" data-file="tests/events.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'catch console messages and page errors'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> messages = [];
+  page.on(<span class="s">'console'</span>, msg =&gt; messages.push(<span class="s">`${msg.type()}: ${msg.text()}`</span>));
+  page.on(<span class="s">'request'</span>, request =&gt; {
+    <span class="k">if</span> (request.url().includes(<span class="s">'/api/'</span>)) console.log(<span class="s">'request -&gt;'</span>, request.method(), request.url());
+  });
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+
+  <span class="k">const</span> warning = page.waitForEvent(<span class="s">'console'</span>, msg =&gt; msg.type() === <span class="s">'warning'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Write to the console'</span> }).click();
+  <span class="k">await</span> warning;
+  console.log(messages);
+
+  <span class="k">const</span> pageError = page.waitForEvent(<span class="s">'pageerror'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Break the page'</span> }).click();
+  console.log(<span class="s">'Page error:'</span>, (<span class="k">await</span> pageError).message);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+[ &#x27;log: Cart saved with 2 items&#x27;, &#x27;warning: Coupon expires soon&#x27; ]
+Page error: Price service is down
+  ✓  1 [chromium] › tests/events.spec.js:3:1 › catch console messages and page errors (1.4s)
+
+  1 passed (3.6s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/events.spec.ts</div><pre class="src" data-file="tests/events.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'catch console messages and page errors'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">const</span> messages: <span class="k">string</span>[] = [];
+  page.on(<span class="s">'console'</span>, msg =&gt; messages.push(<span class="s">`${msg.type()}: ${msg.text()}`</span>));
+  page.on(<span class="s">'request'</span>, request =&gt; {
+    <span class="k">if</span> (request.url().includes(<span class="s">'/api/'</span>)) console.log(<span class="s">'request -&gt;'</span>, request.method(), request.url());
+  });
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+
+  <span class="k">const</span> warning = page.waitForEvent(<span class="s">'console'</span>, msg =&gt; msg.<span class="k">type</span>() === <span class="s">'warning'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Write to the console'</span> }).click();
+  <span class="k">await</span> warning;
+  console.log(messages);
+
+  <span class="k">const</span> pageError = page.waitForEvent(<span class="s">'pageerror'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Break the page'</span> }).click();
+  console.log(<span class="s">'Page error:'</span>, (<span class="k">await</span> pageError).message);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+[ &#x27;log: Cart saved with 2 items&#x27;, &#x27;warning: Coupon expires soon&#x27; ]
+Page error: Price service is down
+  ✓  1 [chromium] › tests/events.spec.ts:3:1 › catch console messages and page errors (1.6s)
+
+  1 passed (3.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>The page wrote one log and one warning, then threw an error that nothing caught. A test can fail on any page error, which catches broken JavaScript that the screen does not show. The widgets page makes no API calls, so the request listener printed nothing. In Java the error arrives as text that includes the stack trace, while JavaScript and Python give an error object with a <code>message</code>.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Event</th><th>Tells you</th><th>Typical use</th></tr><tr><td>console</td><td>a message the page logged</td><td>fail on <code>console.error</code>, debug a test</td></tr><tr><td>pageerror</td><td>an error nothing caught</td><td>fail the test on broken JavaScript</td></tr><tr><td>request and response</td><td>every network call</td><td>check an API was called, count calls</td></tr><tr><td>popup, download, dialog</td><td>a new tab, a file, a dialog</td><td>handle it in the test</td></tr><tr><td>close, crash</td><td>the page closed or crashed</td><td>clean up, report a crash</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Many companies add one shared fixture that collects page errors and fails any test that had one. It finds JavaScript bugs on pages nobody wrote a check for.</div></div>
+</section>
+<section class="card reveal jsec" id="evaluate" data-say="evaluate"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧪</span><span>Running code inside the page</span></h2>
+
+<p>Sometimes you need something the page knows but does not show: a value in storage, a count, a computed style. <code>evaluate</code> runs a JavaScript function inside the page and brings the result back to your language. <code>addInitScript</code> runs code before the page's own scripts, which is useful to set a flag or fake something before the app starts.</p>
+<div class="codewrap tests pw4" data-k="eval" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Run JavaScript inside the page · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/EvaluateTest.java</div><pre class="src" data-file="src/test/java/com/brainy/EvaluateTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+<span class="k">import</span> java.util.<span class="t">List</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">EvaluateTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> runCodeInsideThePage(<span class="t">Page</span> page) {
+    <span class="c">// Runs in the page before any of its own scripts, on every navigation.</span>
+    page.addInitScript(<span class="s">"window.testMode = true"</span>);
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);   <span class="c">// wait for the list</span>
+
+    <span class="t">Object</span> info = page.evaluate(<span class="s">"() =&gt; ({"</span> +
+        <span class="s">" title: document.title,"</span> +
+        <span class="s">" cards: document.querySelectorAll('li.card').length,"</span> +
+        <span class="s">" testMode: window.testMode })"</span>);
+    <span class="t">System</span>.out.println(info);
+
+    <span class="t">Object</span> sum = page.evaluate(<span class="s">"([a, b]) =&gt; a + b"</span>, <span class="t">List</span>.of(<span class="n">20</span>, <span class="n">199</span>));   <span class="c">// pass values in</span>
+    <span class="t">System</span>.out.println(<span class="s">"sum = "</span> + sum);
+
+    <span class="t">Object</span> tag = page.getByPlaceholder(<span class="s">"Search products"</span>).evaluate(<span class="s">"el =&gt; el.tagName"</span>);
+    <span class="t">System</span>.out.println(<span class="s">"tag = "</span> + tag);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.EvaluateTest
+{title=Products · Brainy Shop, cards=5, testMode=true}
+sum = 219
+tag = INPUT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.340 s -- in com.brainy.EvaluateTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_evaluate.py</div><pre class="src" data-file="tests/test_evaluate.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_run_code_inside_the_page(page: <span class="t">Page</span>):
+    <span class="c"># Runs in the page before any of its own scripts, on every navigation.</span>
+    page.add_init_script(<span class="s">"window.testMode = true"</span>)
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)   <span class="c"># wait for the list</span>
+
+    info = page.evaluate(<span class="s">""</span>"() =&gt; ({
+        title: document.title,
+        cards: document.querySelectorAll(<span class="s">'li.card'</span>).length,
+        testMode: window.testMode,
+    })<span class="s">""</span>")
+    print(info)
+
+    total = page.evaluate(<span class="s">"([a, b]) =&gt; a + b"</span>, [<span class="n">20</span>, <span class="n">199</span>])   <span class="c"># pass values in</span>
+    print(<span class="s">"sum ="</span>, total)
+
+    tag = page.get_by_placeholder(<span class="s">"Search products"</span>).evaluate(<span class="s">"el =&gt; el.tagName"</span>)
+    print(<span class="s">"tag ="</span>, tag)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_evaluate.py::test_run_code_inside_the_page[chromium] {&#x27;title&#x27;: &#x27;Products · Brainy Shop&#x27;, &#x27;cards&#x27;: 5, &#x27;testMode&#x27;: True}
+sum = 219
+tag = INPUT
+PASSED
+
+============================== 1 passed in 2.37s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/evaluate.spec.js</div><pre class="src" data-file="tests/evaluate.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'run code inside the page'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="c">// Runs in the page before any of its own scripts, on every navigation.</span>
+  <span class="k">await</span> page.addInitScript(() =&gt; { window.testMode = <span class="k">true</span>; });
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);   <span class="c">// wait for the list</span>
+
+  <span class="k">const</span> info = <span class="k">await</span> page.evaluate(() =&gt; ({
+    title: document.title,
+    cards: document.querySelectorAll(<span class="s">'li.card'</span>).length,
+    testMode: window.testMode,
+  }));
+  console.log(info);
+
+  <span class="k">const</span> sum = <span class="k">await</span> page.evaluate(([a, b]) =&gt; a + b, [<span class="n">20</span>, <span class="n">199</span>]);   <span class="c">// pass values in</span>
+  console.log(<span class="s">'sum ='</span>, sum);
+
+  <span class="k">const</span> tag = <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).evaluate(el =&gt; el.tagName);
+  console.log(<span class="s">'tag ='</span>, tag);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+{ title: &#x27;Products · Brainy Shop&#x27;, cards: 5, testMode: true }
+sum = 219
+tag = INPUT
+  ✓  1 [chromium] › tests/evaluate.spec.js:3:1 › run code inside the page (1.2s)
+
+  1 passed (2.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/evaluate.spec.ts</div><pre class="src" data-file="tests/evaluate.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'run code inside the page'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="c">// Runs in the page before any of its own scripts, on every navigation.</span>
+  <span class="k">await</span> page.addInitScript(() =&gt; { (window <span class="k">as</span> <span class="k">any</span>).testMode = <span class="k">true</span>; });
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);   <span class="c">// wait for the list</span>
+
+  <span class="k">const</span> info = <span class="k">await</span> page.evaluate(() =&gt; ({
+    title: document.title,
+    cards: document.querySelectorAll(<span class="s">'li.card'</span>).length,
+    testMode: (window <span class="k">as</span> <span class="k">any</span>).testMode,
+  }));
+  console.log(info);
+
+  <span class="k">const</span> sum = <span class="k">await</span> page.evaluate(([a, b]) =&gt; a + b, [<span class="n">20</span>, <span class="n">199</span>]);   <span class="c">// pass values in</span>
+  console.log(<span class="s">'sum ='</span>, sum);
+
+  <span class="k">const</span> tag = <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).evaluate(el =&gt; el.tagName);
+  console.log(<span class="s">'tag ='</span>, tag);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+{ title: &#x27;Products · Brainy Shop&#x27;, cards: 5, testMode: true }
+sum = 219
+tag = INPUT
+  ✓  1 [chromium] › tests/evaluate.spec.ts:3:1 › run code inside the page (1.3s)
+
+  1 passed (2.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>The function runs in the browser and its result comes back to your language: a JavaScript object becomes a dictionary in Python and a Map in Java. Values travel in as an argument, because the function cannot see the variables of your test.</p></div></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Use evaluate to read and to prepare, not to click. A click done with JavaScript skips the waiting and the visibility checks that make Playwright tests reliable, and it can pass on a button a real user could never press.</div></div>
+</section>
+<section class="card reveal jsec" id="shadow" data-say="shadow"><div class="sec-num">Part 7</div><h2><span class="sec-em">🌑</span><span>Shadow DOM and web components</span></h2>
+
+<p>Web components hide their insides in a shadow root, so <code>document.querySelector</code> cannot find them. Design systems such as Salesforce Lightning and many company component libraries use them. Playwright locators look inside open shadow roots automatically.</p>
+<div class="codewrap tests pw4" data-k="shadow" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Click a button inside a shadow DOM component · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ShadowTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ShadowTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">ShadowTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> voteInsideAShadowDomComponent(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/shadow"</span>);
+    <span class="t">Locator</span> ashaReview = page.locator(<span class="s">"review-card"</span>).filter(<span class="k">new</span> <span class="t">Locator</span>.<span class="t">FilterOptions</span>().setHasText(<span class="s">"Asha"</span>));
+
+    <span class="c">// getByRole and CSS look inside open shadow roots by themselves.</span>
+    ashaReview.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Locator</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Helpful"</span>)).click();
+    assertThat(ashaReview.getByText(<span class="s">"found this helpful"</span>)).hasText(<span class="s">"1 person found this helpful"</span>);
+
+    <span class="t">System</span>.out.println(<span class="s">"CSS sees the buttons: "</span> + page.locator(<span class="s">"review-card button"</span>).count());
+    <span class="t">System</span>.out.println(<span class="s">"XPath sees the buttons: "</span> + page.locator(<span class="s">"//review-card//button"</span>).count());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.ShadowTest
+CSS sees the buttons: 2
+XPath sees the buttons: 0
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.246 s -- in com.brainy.ShadowTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_shadow.py</div><pre class="src" data-file="tests/test_shadow.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_vote_inside_a_shadow_dom_component(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/shadow"</span>)
+    asha_review = page.locator(<span class="s">"review-card"</span>).filter(has_text=<span class="s">"Asha"</span>)
+
+    <span class="c"># get_by_role and CSS look inside open shadow roots by themselves.</span>
+    asha_review.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Helpful"</span>).click()
+    expect(asha_review.get_by_text(<span class="s">"found this helpful"</span>)).to_have_text(<span class="s">"1 person found this helpful"</span>)
+
+    print(<span class="s">"CSS sees the buttons:"</span>, page.locator(<span class="s">"review-card button"</span>).count())
+    print(<span class="s">"XPath sees the buttons:"</span>, page.locator(<span class="s">"//review-card//button"</span>).count())</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_shadow.py::test_vote_inside_a_shadow_dom_component[chromium] CSS sees the buttons: 2
+XPath sees the buttons: 0
+PASSED
+
+============================== 1 passed in 1.15s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/shadow.spec.js</div><pre class="src" data-file="tests/shadow.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'vote inside a shadow DOM component'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/shadow'</span>);
+  <span class="k">const</span> ashaReview = page.locator(<span class="s">'review-card'</span>).filter({ hasText: <span class="s">'Asha'</span> });
+
+  <span class="c">// getByRole and CSS look inside open shadow roots by themselves.</span>
+  <span class="k">await</span> ashaReview.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Helpful'</span> }).click();
+  <span class="k">await</span> expect(ashaReview.getByText(<span class="s">'found this helpful'</span>)).toHaveText(<span class="s">'1 person found this helpful'</span>);
+
+  console.log(<span class="s">'CSS sees the buttons:'</span>, <span class="k">await</span> page.locator(<span class="s">'review-card button'</span>).count());
+  console.log(<span class="s">'XPath sees the buttons:'</span>, <span class="k">await</span> page.locator(<span class="s">'//review-card//button'</span>).count());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+CSS sees the buttons: 2
+XPath sees the buttons: 0
+  ✓  1 [chromium] › tests/shadow.spec.js:3:1 › vote inside a shadow DOM component (441ms)
+
+  1 passed (1.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/shadow.spec.ts</div><pre class="src" data-file="tests/shadow.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'vote inside a shadow DOM component'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/shadow'</span>);
+  <span class="k">const</span> ashaReview = page.locator(<span class="s">'review-card'</span>).filter({ hasText: <span class="s">'Asha'</span> });
+
+  <span class="c">// getByRole and CSS look inside open shadow roots by themselves.</span>
+  <span class="k">await</span> ashaReview.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Helpful'</span> }).click();
+  <span class="k">await</span> expect(ashaReview.getByText(<span class="s">'found this helpful'</span>)).toHaveText(<span class="s">'1 person found this helpful'</span>);
+
+  console.log(<span class="s">'CSS sees the buttons:'</span>, <span class="k">await</span> page.locator(<span class="s">'review-card button'</span>).count());
+  console.log(<span class="s">'XPath sees the buttons:'</span>, <span class="k">await</span> page.locator(<span class="s">'//review-card//button'</span>).count());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+CSS sees the buttons: 2
+XPath sees the buttons: 0
+  ✓  1 [chromium] › tests/shadow.spec.ts:3:1 › vote inside a shadow DOM component (424ms)
+
+  1 passed (1.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>Playwright locators go into open shadow roots with no extra work. XPath does not, which is one more reason to prefer role, text and CSS locators.</p></div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-browsers.html" data-topic="pw-browsers"><small>← Previous chapter</small><b>🌐 Browsers and contexts</b></a><a class="next" href="./pw-locators.html" data-topic="pw-locators"><small>Next chapter →</small><b>🎯 Locators</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Everything a page can throw at you", "panels": [{"s": [["e", "🧭"], ["t", "waitForURL", {"b": 1}]], "h": "Navigation", "t": "goto waits for load.", "more": "After a click, wait for the new URL."}, {"s": [["e", "🖼️"], ["t", "frameLocator", {"b": 1}]], "h": "Iframes", "t": "Step in first.", "more": "Then locate as usual."}, {"s": [["e", "💬"], ["t", "dialog.accept()", {"b": 1}]], "h": "Dialogs", "t": "Dismissed by default.", "more": "Handle them before the click."}, {"s": [["e", "📁"], ["t", "setInputFiles", {"b": 1}]], "h": "Files", "t": "Wait for downloads.", "more": "Fill file inputs directly."}], "remember": "Start waiting before the click for anything the click creates: a new URL, a popup, a dialog or a download."}, "real": [["💳", "Payment testing", "A shop checks every release that a test card pays inside the payment iframe and that a short card number is refused with the right message."], ["📊", "Monthly reports", "An admin portal test downloads the monthly CSV report, reads it, and checks that the totals match the numbers on the screen."], ["🐞", "A hidden JavaScript error", "A shared fixture fails any test that had a page error. It found a broken coupon script on a page that no test checked directly."]], "quiz": [{"lv": 1, "q": "What does goto wait for by default?", "o": ["commit", "domcontentloaded", "load", "networkidle"], "a": 2, "hint": "It is the classic page load event.", "why": "By default <code>goto<\/code> waits for the <code>load<\/code> event."}, {"lv": 1, "q": "A payment form lives in an iframe. How do you reach its Card number box?", "o": ["page.getByLabel directly", "Step in with frameLocator or contentFrame, then getByLabel", "Use evaluate", "It cannot be reached"], "a": 1, "hint": "Locators on the main page do not see inside iframes.", "why": "Step into the iframe first, then locate inside it."}, {"lv": 1, "q": "What does Playwright do with a confirm dialog if the test has no handler?", "o": ["Accepts it", "Dismisses it", "Waits forever", "Fails the test"], "a": 1, "hint": "Look at the first dialog test.", "why": "Dialogs are dismissed by default so a test never hangs. The page got false and showed Kept your account."}, {"lv": 1, "q": "Which call puts files into a file input?", "o": ["fill", "setInputFiles", "upload", "type"], "a": 1, "hint": "It sets the files of an input.", "why": "<code>setInputFiles<\/code> (or <code>set_input_files<\/code>) fills the input with paths or in memory files."}, {"lv": 2, "q": "Why start waiting for a download before the click?", "o": ["It is required by Java", "So the event cannot fire before you listen", "Downloads are slow", "To rename the file"], "a": 1, "hint": "The click can be very fast.", "why": "If the download starts before you listen, you miss the event and the test times out."}, {"lv": 2, "q": "After signing in, the app moves to /products by itself. What should the test do?", "o": ["Sleep 2 seconds", "waitForURL('**/products') or check toHaveURL", "Call goto again", "Nothing"], "a": 1, "hint": "Wait for what the user waits for.", "why": "Wait for the URL. A check such as <code>toHaveURL<\/code> also waits."}, {"lv": 2, "q": "Why is waitUntil networkidle not recommended?", "o": ["It is too fast", "Pages with polling or analytics may never go quiet, and it is slow", "It only works in Java", "It skips scripts"], "a": 1, "hint": "Think of a chat widget.", "why": "Networkidle waits for 500 ms of no traffic, which some pages never reach. Check the element you need instead."}, {"lv": 2, "q": "How does a test notice an uncaught JavaScript error on the page?", "o": ["It cannot", "Listen to the pageerror event", "Read the title", "Use goBack"], "a": 1, "hint": "The event is named after it.", "why": "The <code>pageerror<\/code> event fires for every error that nothing in the page caught."}, {"lv": 2, "q": "In Python, how do you catch a download?", "o": ["page.on_download()", "with page.expect_download() as info:", "page.download()", "page.wait_download()"], "a": 1, "hint": "Python uses a with block.", "why": "The <code>expect_download<\/code> block waits around the click, and <code>info.value<\/code> is the download."}, {"lv": 3, "q": "Why should you not click buttons with evaluate?", "o": ["It is slower", "It skips the actionability checks, so a button a user cannot press can still be clicked", "It does not work in Java", "It opens dialogs"], "a": 1, "hint": "What does a real click check first?", "why": "Playwright clicks check visibility, stability and that nothing covers the element. A JavaScript click checks none of that."}, {"lv": 3, "q": "Which locator does NOT go into a shadow root?", "o": ["getByRole", "CSS", "XPath", "getByText"], "a": 2, "hint": "Look at the shadow DOM output.", "why": "Role, text and CSS locators pierce open shadow roots. XPath does not."}, {"lv": 3, "q": "A function passed to evaluate cannot see the variables of your test. How do you give it a value?", "o": ["Use a global variable", "Pass it as the argument of evaluate", "Write it to a file", "It is not possible"], "a": 1, "hint": "The function runs in another process.", "why": "Pass values as the argument. They are serialized and sent into the page."}], "calc": [{"lv": 1, "q": "A page has 1 main frame and 2 iframes. How many frames does page.frames() return?", "ans": 3, "hint": "1 + 2", "steps": ["1 main frame + 2 iframes = 3 frames"]}, {"lv": 1, "q": "The feedback form got 2 screenshots and then 1 more in a second call that replaced them. How many files does the input hold?", "ans": 1, "hint": "setInputFiles replaces the files", "steps": ["The second call replaces the first list", "1 file"]}, {"lv": 2, "q": "networkidle waits for 500 ms of silence. A page polls the server every 400 ms. How many times will networkidle be reached?", "ans": 0, "hint": "Is there ever 500 ms of silence?", "steps": ["A request every 400 ms", "The longest quiet gap is under 400 ms", "networkidle is never reached: 0"]}, {"lv": 2, "q": "A suite has 30 tests and each one used a fixed wait of 2 s instead of waiting for the URL, which takes 0.3 s. How many seconds are wasted?", "ans": 51, "hint": "30 × (2 - 0.3)", "steps": ["2 - 0.3 = 1.7 s per test", "30 × 1.7 = 51 s"]}, {"lv": 2, "q": "The CSV report has a header line and 2 order lines. How many lines does it have?", "ans": 3, "hint": "1 + 2", "steps": ["1 header + 2 orders = 3 lines"]}, {"lv": 3, "q": "The report shows totals 219 and 1299. What is the sum of all orders?", "ans": 1518, "hint": "219 + 1299", "steps": ["219 + 1299 = 1518"]}, {"lv": 3, "q": "A test counts page errors. The page throws 1 error each time Break the page is clicked. The test clicks it 3 times. How many pageerror events?", "ans": 3, "hint": "1 per click", "steps": ["3 clicks × 1 error = 3 events"]}, {"lv": 3, "q": "The card number 4111 1111 1111 1111 has spaces. After the page removes them, how many digits are left?", "ans": 16, "hint": "four groups of four", "steps": ["4 × 4 = 16 digits"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter covers navigation and waiting for pages, iframes, dialogs, downloads and uploads, page events, running code in the page, and shadow DOM.", "hi": "यह अध्याय navigation और pages का इंतज़ार, iframes, dialogs, downloads और uploads, page events, page में code चलाना और shadow DOM समझाता है।", "kn": "ಈ ಅಧ್ಯಾಯ navigation ಮತ್ತು pages ಗಾಗಿ ಕಾಯುವುದು, iframes, dialogs, downloads ಮತ್ತು uploads, page events, page ನಲ್ಲಿ code ನಡೆಸುವುದು ಮತ್ತು shadow DOM ವಿವರಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ navigation ଓ pages ପାଇଁ ଅପେକ୍ଷା, iframes, dialogs, downloads ଓ uploads, page events, page ରେ code ଚଳାଇବା ଏବଂ shadow DOM ବୁଝାଏ।", "ar": "يغطي هذا الفصل التنقل وانتظار الصفحات والإطارات المضمنة ومربعات الحوار والتنزيلات والرفع وأحداث الصفحة وتشغيل الشيفرة داخل الصفحة وshadow DOM.", "de": "Dieses Kapitel behandelt Navigation und das Warten auf Seiten, Iframes, Dialoge, Downloads und Uploads, Seitenereignisse, Code in der Seite ausführen und Shadow DOM."}, {"id": "navigate", "h": "Navigation", "en": "goto opens an address and waits for the load event by default. When the app moves to a new page after a click, wait for the new URL. Avoid waiting for the network to go quiet.", "hi": "goto एक address खोलता है और default रूप से load event का इंतज़ार करता है। Click के बाद app नए page पर जाए तो नए URL का इंतज़ार करें। Network के शांत होने का इंतज़ार न करें।", "kn": "goto ಒಂದು address ತೆರೆಯುತ್ತದೆ ಮತ್ತು default ಆಗಿ load event ಗಾಗಿ ಕಾಯುತ್ತದೆ. Click ನಂತರ app ಹೊಸ page ಗೆ ಹೋದರೆ ಹೊಸ URL ಗಾಗಿ ಕಾಯಿರಿ. Network ಶಾಂತವಾಗುವುದಕ್ಕೆ ಕಾಯಬೇಡಿ.", "or": "goto ଏକ address ଖୋଲେ ଏବଂ default ଭାବେ load event ପାଇଁ ଅପେକ୍ଷା କରେ। Click ପରେ app ନୂଆ page କୁ ଗଲେ ନୂଆ URL ପାଇଁ ଅପେକ୍ଷା କରନ୍ତୁ। Network ଶାନ୍ତ ହେବା ପାଇଁ ଅପେକ୍ଷା କରନ୍ତୁ ନାହିଁ।", "ar": "يفتح goto عنوانًا وينتظر حدث التحميل افتراضيًا. عندما ينتقل التطبيق إلى صفحة جديدة بعد نقرة، انتظر العنوان الجديد. تجنب انتظار هدوء الشبكة.", "de": "goto öffnet eine Adresse und wartet standardmäßig auf das Load-Ereignis. Wenn die App nach einem Klick zu einer neuen Seite wechselt, warte auf die neue URL. Warte nicht darauf, dass das Netzwerk ruhig wird."}, {"id": "frames", "h": "Iframes", "en": "An iframe is a page inside a page, such as a payment form. Step into it with frame locator or content frame, then use locators as usual. The result may appear in the main page.", "hi": "Iframe एक page के अंदर दूसरा page है, जैसे payment form। frame locator या content frame से उसमें जाएँ, फिर सामान्य locators इस्तेमाल करें। नतीजा main page में दिख सकता है।", "kn": "Iframe ಎಂದರೆ page ಒಳಗಿನ page, ಉದಾಹರಣೆಗೆ payment form. frame locator ಅಥವಾ content frame ಮೂಲಕ ಒಳಗೆ ಹೋಗಿ ನಂತರ ಸಾಮಾನ್ಯ locators ಬಳಸಿ. ಫಲಿತಾಂಶ main page ನಲ್ಲಿ ಕಾಣಬಹುದು.", "or": "Iframe ହେଉଛି page ଭିତରେ page, ଯେପରି payment form। frame locator ବା content frame ଦ୍ୱାରା ଭିତରକୁ ଯାଆନ୍ତୁ, ତାପରେ ସାଧାରଣ locators ବ୍ୟବହାର କରନ୍ତୁ। ଫଳାଫଳ main page ରେ ଦେଖାଯାଇପାରେ।", "ar": "الإطار المضمن صفحة داخل صفحة مثل نموذج الدفع. ادخل إليه باستخدام frame locator أو content frame ثم استخدم المحددات كالمعتاد. قد تظهر النتيجة في الصفحة الرئيسية.", "de": "Ein Iframe ist eine Seite in einer Seite, etwa ein Zahlungsformular. Gehe mit frame locator oder content frame hinein und nutze dann Locators wie gewohnt. Das Ergebnis kann in der Hauptseite erscheinen."}, {"id": "dialogs", "h": "Dialogs", "en": "Without a handler Playwright dismisses alerts, confirms and prompts. Register a dialog handler before the click to read the message, accept, dismiss or type an answer.", "hi": "Handler के बिना Playwright alerts, confirms और prompts को dismiss करता है। संदेश पढ़ने, accept, dismiss या जवाब लिखने के लिए click से पहले dialog handler लगाएँ।", "kn": "Handler ಇಲ್ಲದಿದ್ದರೆ Playwright alerts, confirms ಮತ್ತು prompts ಅನ್ನು dismiss ಮಾಡುತ್ತದೆ. ಸಂದೇಶ ಓದಲು, accept, dismiss ಅಥವಾ ಉತ್ತರ ಬರೆಯಲು click ಗಿಂತ ಮೊದಲು dialog handler ಸೇರಿಸಿ.", "or": "Handler ବିନା Playwright alerts, confirms ଓ prompts କୁ dismiss କରେ। ସନ୍ଦେଶ ପଢ଼ିବା, accept, dismiss ବା ଉତ୍ତର ଲେଖିବା ପାଇଁ click ପୂର୍ବରୁ dialog handler ଯୋଡନ୍ତୁ।", "ar": "بدون معالج يرفض Playwright التنبيهات والتأكيدات والمطالبات. سجّل معالج الحوار قبل النقر لقراءة الرسالة أو القبول أو الرفض أو كتابة إجابة.", "de": "Ohne Handler schließt Playwright Alerts, Bestätigungen und Eingabeaufforderungen ab. Registriere vor dem Klick einen Dialog-Handler, um die Nachricht zu lesen, anzunehmen, abzulehnen oder eine Antwort einzugeben."}, {"id": "files", "h": "Downloads and uploads", "en": "Wait for the download event before the click, then read the file or save a copy. For uploads, fill the file input directly with real paths or files made in memory.", "hi": "Click से पहले download event का इंतज़ार शुरू करें, फिर file पढ़ें या copy सेव करें। Uploads के लिए file input में सीधे असली paths या memory में बनी files भरें।", "kn": "Click ಗಿಂತ ಮೊದಲು download event ಗಾಗಿ ಕಾಯಿರಿ, ನಂತರ file ಓದಿ ಅಥವಾ copy ಉಳಿಸಿ. Uploads ಗೆ file input ನಲ್ಲಿ ನೇರವಾಗಿ ನಿಜವಾದ paths ಅಥವಾ memory ಯಲ್ಲಿ ಮಾಡಿದ files ತುಂಬಿ.", "or": "Click ପୂର୍ବରୁ download event ପାଇଁ ଅପେକ୍ଷା କରନ୍ତୁ, ତାପରେ file ପଢ଼ନ୍ତୁ ବା copy ସେଭ୍ କରନ୍ତୁ। Uploads ପାଇଁ file input ରେ ସିଧାସଳଖ ପ୍ରକୃତ paths ବା memory ରେ ତିଆରି files ଭରନ୍ତୁ।", "ar": "انتظر حدث التنزيل قبل النقر ثم اقرأ الملف أو احفظ نسخة. للرفع املأ حقل الملف مباشرة بمسارات حقيقية أو بملفات منشأة في الذاكرة.", "de": "Warte vor dem Klick auf das Download-Ereignis, lies dann die Datei oder speichere eine Kopie. Für Uploads füllst du das Dateifeld direkt mit echten Pfaden oder im Speicher erzeugten Dateien."}, {"id": "events", "h": "Page events", "en": "Pages fire console, page error, request, response, popup, download and dialog events. Listening to them lets a test catch JavaScript errors that the screen does not show.", "hi": "Pages console, page error, request, response, popup, download और dialog events भेजते हैं। इन्हें सुनकर टेस्ट वे JavaScript errors पकड़ सकता है जो screen पर नहीं दिखते।", "kn": "Pages console, page error, request, response, popup, download ಮತ್ತು dialog events ಕಳುಹಿಸುತ್ತವೆ. ಇವುಗಳನ್ನು ಕೇಳುವುದರಿಂದ screen ನಲ್ಲಿ ಕಾಣದ JavaScript errors ಅನ್ನು ಟೆಸ್ಟ್ ಹಿಡಿಯಬಹುದು.", "or": "Pages console, page error, request, response, popup, download ଓ dialog events ପଠାନ୍ତି। ଏଗୁଡ଼ିକୁ ଶୁଣି ଟେଷ୍ଟ screen ରେ ନ ଦେଖାଯାଉଥିବା JavaScript errors ଧରିପାରେ।", "ar": "تطلق الصفحات أحداث console وpage error وrequest وresponse وpopup وdownload وdialog. الاستماع إليها يتيح للاختبار التقاط أخطاء JavaScript التي لا تظهر على الشاشة.", "de": "Seiten feuern Ereignisse für Konsole, Seitenfehler, Anfragen, Antworten, Pop-ups, Downloads und Dialoge. Wer zuhört, findet JavaScript-Fehler, die der Bildschirm nicht zeigt."}, {"id": "evaluate", "h": "Running code in the page", "en": "evaluate runs a JavaScript function inside the page and returns the result to your language. add init script runs before the page scripts. Use them to read and prepare, not to click.", "hi": "evaluate page के अंदर JavaScript function चलाकर नतीजा आपकी भाषा में लौटाता है। add init script page scripts से पहले चलता है। इन्हें पढ़ने और तैयारी के लिए इस्तेमाल करें, click के लिए नहीं।", "kn": "evaluate page ಒಳಗೆ JavaScript function ನಡೆಸಿ ಫಲಿತಾಂಶವನ್ನು ನಿಮ್ಮ ಭಾಷೆಗೆ ಹಿಂದಿರುಗಿಸುತ್ತದೆ. add init script page scripts ಗಿಂತ ಮೊದಲು ನಡೆಯುತ್ತದೆ. ಓದಲು ಮತ್ತು ತಯಾರಿಗೆ ಬಳಸಿ, click ಗೆ ಅಲ್ಲ.", "or": "evaluate page ଭିତରେ JavaScript function ଚଳାଇ ଫଳାଫଳ ଆପଣଙ୍କ ଭାଷାକୁ ଫେରାଏ। add init script page scripts ପୂର୍ବରୁ ଚାଲେ। ପଢ଼ିବା ଓ ପ୍ରସ୍ତୁତି ପାଇଁ ବ୍ୟବହାର କରନ୍ତୁ, click ପାଇଁ ନୁହେଁ।", "ar": "يشغّل evaluate دالة JavaScript داخل الصفحة ويعيد النتيجة إلى لغتك. يعمل add init script قبل سكربتات الصفحة. استخدمهما للقراءة والتحضير وليس للنقر.", "de": "evaluate führt eine JavaScript-Funktion in der Seite aus und gibt das Ergebnis an deine Sprache zurück. add init script läuft vor den Skripten der Seite. Nutze beides zum Lesen und Vorbereiten, nicht zum Klicken."}, {"id": "shadow", "h": "Shadow DOM", "en": "Web components hide their insides in a shadow root. Playwright role, text and CSS locators look inside open shadow roots automatically. XPath does not.", "hi": "Web components अपने अंदर का हिस्सा shadow root में छिपाते हैं। Playwright के role, text और CSS locators open shadow roots के अंदर अपने आप देखते हैं। XPath नहीं देखता।", "kn": "Web components ತಮ್ಮ ಒಳಭಾಗವನ್ನು shadow root ನಲ್ಲಿ ಮರೆಮಾಡುತ್ತವೆ. Playwright role, text ಮತ್ತು CSS locators open shadow roots ಒಳಗೆ ತಾನಾಗಿಯೇ ನೋಡುತ್ತವೆ. XPath ನೋಡುವುದಿಲ್ಲ.", "or": "Web components ନିଜ ଭିତର ଭାଗକୁ shadow root ରେ ଲୁଚାନ୍ତି। Playwright role, text ଓ CSS locators open shadow roots ଭିତରେ ନିଜେ ଦେଖନ୍ତି। XPath ଦେଖେ ନାହିଁ।", "ar": "تخفي مكونات الويب أجزاءها الداخلية في shadow root. محددات Playwright للدور والنص وCSS تبحث داخل جذور الظل المفتوحة تلقائيًا، أما XPath فلا.", "de": "Web Components verstecken ihr Inneres in einem Shadow Root. Rollen-, Text- und CSS-Locators von Playwright schauen automatisch in offene Shadow Roots. XPath nicht."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you pay inside the payment iframe and you accept a confirm dialog to delete an account.", "hi": "Labs में आप payment iframe के अंदर भुगतान करते हैं और account हटाने के लिए confirm dialog accept करते हैं।", "kn": "Labs ನಲ್ಲಿ ನೀವು payment iframe ಒಳಗೆ ಪಾವತಿಸುತ್ತೀರಿ ಮತ್ತು account ಅಳಿಸಲು confirm dialog accept ಮಾಡುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ payment iframe ଭିତରେ ପେମେଣ୍ଟ କରନ୍ତି ଏବଂ account ହଟାଇବା ପାଇଁ confirm dialog accept କରନ୍ତି।", "ar": "في المختبرات تدفع داخل إطار الدفع المضمن وتقبل مربع تأكيد لحذف حساب.", "de": "In den Labs bezahlst du im Zahlungs-Iframe und bestätigst einen Dialog, um ein Konto zu löschen."}], "ex": [], "dg": {"load": {"t": "What goto waits for", "w": 900, "h": 200, "n": [["go", 20, 70, 120, 60, "goto(url)", {"c": 5, "sh": "pill"}], ["commit", 170, 70, 150, 60, "commit", {"c": 3, "sub": "the answer starts", "i": "The server started sending the page."}], ["dcl", 350, 70, 170, 60, "domcontentloaded", {"c": 2, "sub": "HTML is read", "i": "The HTML is parsed and deferred scripts ran. Images may still load."}], ["load", 550, 70, 140, 60, "load", {"c": 1, "sub": "the default", "i": "Images, styles and scripts of the page have loaded."}], ["idle", 720, 70, 160, 60, "networkidle", {"c": 0, "sub": "not recommended", "i": "No network traffic for 500 ms. Pages with polling never reach it, so prefer a check on what you need."}]], "e": [["go", "commit"], ["commit", "dcl"], ["dcl", "load"], ["load", "idle"]], "st": [[["go", "commit", "go>commit"], "goto sends the request and can return as soon as the answer starts, with waitUntil commit."], [["dcl", "commit>dcl"], "domcontentloaded: the HTML is ready. Good for slow pages with many images."], [["load", "dcl>load"], "load is the default. Everything the page needs has loaded."], [["idle", "load>idle"], "networkidle waits for 500 ms of silence. It is slow and unreliable, so check the element you need instead."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "pay", "title": "Pay inside the iframe", "name": "pay inside the payment iframe", "task": "On <code>/frames<\/code>, step into the iframe with the title <b>Payment form<\/b>, type the card <code>4111 1111 1111 1111<\/code> and expiry <code>12/29<\/code>, click <b>Pay ₹219<\/b>, and check that the main page says <b>Paid with card ending 1111<\/b>.", "goal": "The payment goes through and the main page shows it.", "start": "/frames", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('pay inside the payment iframe', async ({ page }) => {\n  await page.goto('/frames');\n  const payment = page.frameLocator('iframe[title=\"Payment form\"]');\n  // fill the card number and expiry inside the iframe, then pay\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class PayInsideThePaymentIframeTest {\n  @Test\n  void payInsideThePaymentIframe(Page page) {\n    page.navigate(\"/frames\");\n    FrameLocator payment = page.frameLocator(\"iframe[title=\\\"Payment form\\\"]\");\n    payment.getByLabel(\"Card number\").fill(\"4111 1111 1111 1111\");\n    payment.getByLabel(\"Expiry\").fill(\"12/29\");\n    payment.getByRole(AriaRole.BUTTON, new FrameLocator.GetByRoleOptions().setName(\"Pay ₹219\")).click();\n    assertThat(page.getByRole(AriaRole.STATUS)).hasText(\"Paid with card ending 1111\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_pay_inside_the_payment_iframe(page: Page):\n    page.goto(\"/frames\")\n    payment = page.frame_locator(\"iframe[title=\\\"Payment form\\\"]\")\n    payment.get_by_label(\"Card number\").fill(\"4111 1111 1111 1111\")\n    payment.get_by_label(\"Expiry\").fill(\"12/29\")\n    payment.get_by_role(\"button\", name=\"Pay ₹219\").click()\n    expect(page.get_by_role(\"status\")).to_have_text(\"Paid with card ending 1111\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('pay inside the payment iframe', async ({ page }) => {\n  await page.goto('/frames');\n  const payment = page.frameLocator('iframe[title=\"Payment form\"]');\n  await payment.getByLabel('Card number').fill('4111 1111 1111 1111');\n  await payment.getByLabel('Expiry').fill('12/29');\n  await payment.getByRole('button', { name: 'Pay ₹219' }).click();\n  await expect(page.getByRole('status')).toHaveText('Paid with card ending 1111');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('pay inside the payment iframe', async ({ page }) => {\n  await page.goto('/frames');\n  const payment = page.frameLocator('iframe[title=\"Payment form\"]');\n  await payment.getByLabel('Card number').fill('4111 1111 1111 1111');\n  await payment.getByLabel('Expiry').fill('12/29');\n  await payment.getByRole('button', { name: 'Pay ₹219' }).click();\n  await expect(page.getByRole('status')).toHaveText('Paid with card ending 1111');\n});"}, "hint": "Use <code>payment.getByLabel(...)<\/code> for the boxes inside the iframe, and <code>page.getByRole('status')<\/code> for the message outside it.", "why": "Locators that start from the frame search inside the iframe only. The result message is in the main page, so that check starts from page again.", "check": [["/Paid with card ending 1111/.test(ctx.text)", "The main page shows the payment"], ["/frameLocator|frame_locator|FrameLocator|contentFrame|content_frame|ContentFrame/.test(ctx.code)", "The test steps into the iframe"]]}, {"id": "confirm", "title": "Accept a confirm dialog", "name": "delete the account", "task": "On <code>/widgets<\/code>, the <b>Delete account<\/b> button asks for confirmation. Accept the dialog and check that the status says <b>Account deleted<\/b>. Try it first without a handler to see what happens.", "goal": "The dialog is accepted and the account is deleted.", "start": "/widgets", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('delete the account', async ({ page }) => {\n  await page.goto('/widgets');\n  // add a dialog handler here, before the click\n  await page.getByRole('button', { name: 'Delete account' }).click();\n  await expect(page.getByRole('status')).toHaveText('Account deleted');\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class DeleteTheAccountTest {\n  @Test\n  void deleteTheAccount(Page page) {\n    page.navigate(\"/widgets\");\n    page.onDialog(dialog -> dialog.accept());\n    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\"Delete account\")).click();\n    assertThat(page.getByRole(AriaRole.STATUS)).hasText(\"Account deleted\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_delete_the_account(page: Page):\n    page.goto(\"/widgets\")\n    page.on(\"dialog\", lambda dialog: dialog.accept())\n    page.get_by_role(\"button\", name=\"Delete account\").click()\n    expect(page.get_by_role(\"status\")).to_have_text(\"Account deleted\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('delete the account', async ({ page }) => {\n  await page.goto('/widgets');\n  page.on('dialog', dialog => dialog.accept());\n  await page.getByRole('button', { name: 'Delete account' }).click();\n  await expect(page.getByRole('status')).toHaveText('Account deleted');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('delete the account', async ({ page }) => {\n  await page.goto('/widgets');\n  page.on('dialog', dialog => dialog.accept());\n  await page.getByRole('button', { name: 'Delete account' }).click();\n  await expect(page.getByRole('status')).toHaveText('Account deleted');\n});"}, "hint": "Before the click: <code>page.on('dialog', dialog =&gt; dialog.accept())<\/code>. In Java: <code>page.onDialog(dialog -&gt; dialog.accept())<\/code>.", "why": "Without a handler the dialog is dismissed, so the page shows Kept your account and the check fails. The handler must exist before the click that opens the dialog.", "check": [["/Account deleted/.test(ctx.text)", "The account was deleted"], ["/dialog|Dialog/.test(ctx.code)", "The test handles the dialog"]]}], "trees": {}};
+JSPLAY.page({ title: "Navigation, frames, dialogs, files and events", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>
