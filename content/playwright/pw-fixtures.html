@@ -85,7 +85,7 @@
 @BeforeEach: open the products page for findsTheLamp(Page)
 @AfterEach: findsTheLamp(Page) done
 @AfterAll: once at the end
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.765 s -- in com.brainy.HooksTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.968 s -- in com.brainy.HooksTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -129,7 +129,7 @@ after each: test_finds_the_lamp done
 
 after all: once at the end
 
-2 passed in 2.66s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/hooks.spec.js</div><pre class="src" data-file="tests/hooks.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+2 passed in 2.01s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/hooks.spec.js</div><pre class="src" data-file="tests/hooks.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test.beforeAll(<span class="k">async</span> () =&gt; {
   console.log(<span class="s">'beforeAll: once for this file'</span>);
@@ -164,9 +164,9 @@ afterEach: &quot;shows five products&quot; passed
 beforeEach: open the products page for &quot;finds the lamp&quot;
 afterEach: &quot;finds the lamp&quot; passed
 afterAll: once at the end
-  ✓  2 [chromium] › tests/hooks.spec.js:24:1 › finds the lamp (290ms)
+  ✓  2 [chromium] › tests/hooks.spec.js:24:1 › finds the lamp (224ms)
 
-  2 passed (3.1s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/hooks.spec.ts</div><pre class="src" data-file="tests/hooks.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  2 passed (3.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/hooks.spec.ts</div><pre class="src" data-file="tests/hooks.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test.beforeAll(<span class="k">async</span> () =&gt; {
   console.log(<span class="s">'beforeAll: once for this file'</span>);
@@ -197,13 +197,13 @@ test(<span class="s">'finds the lamp'</span>, <span class="k">async</span> ({ pa
 beforeAll: once for this file
 beforeEach: open the products page for &quot;shows five products&quot;
 afterEach: &quot;shows five products&quot; passed
-  ✓  1 [chromium] › tests/hooks.spec.ts:20:1 › shows five products (1.1s)
+  ✓  1 [chromium] › tests/hooks.spec.ts:20:1 › shows five products (1.2s)
 beforeEach: open the products page for &quot;finds the lamp&quot;
 afterEach: &quot;finds the lamp&quot; passed
 afterAll: once at the end
-  ✓  2 [chromium] › tests/hooks.spec.ts:24:1 › finds the lamp (235ms)
+  ✓  2 [chromium] › tests/hooks.spec.ts:24:1 › finds the lamp (292ms)
 
-  2 passed (3.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>The once per file hook ran before the first test and after the last one. The each hooks wrapped every test, so both tests started on the products page without a goto of their own. In pytest the same thing is written as fixtures that yield: the code before yield is the set up, the code after it is the tear down.</p></div></div>
+  2 passed (3.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>The once per file hook ran before the first test and after the last one. The each hooks wrapped every test, so both tests started on the products page without a goto of their own. In pytest the same thing is written as fixtures that yield: the code before yield is the set up, the code after it is the tear down.</p></div></div>
 <div class="tw"><table class="jt "><tr><th>When</th><th>Playwright Test</th><th>pytest</th><th>JUnit 5</th></tr><tr><td>before each test</td><td>test.beforeEach</td><td>a fixture, code before yield</td><td>@BeforeEach</td></tr><tr><td>after each test</td><td>test.afterEach</td><td>a fixture, code after yield</td><td>@AfterEach</td></tr><tr><td>once before all</td><td>test.beforeAll</td><td>a fixture with scope="module" or "session"</td><td>@BeforeAll (static)</td></tr><tr><td>once after all</td><td>test.afterAll</td><td>the same fixture, after yield</td><td>@AfterAll (static)</td></tr></table></div>
 </section>
 <section class="card reveal jsec easy-part" id="fixtures" data-say="fixtures"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧩</span><span>Fixtures: set up on demand</span></h2>
@@ -264,7 +264,7 @@ afterAll: once at the end
 set up: signed in
 test: the mug is in the cart
 tear down: cart emptied
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.647 s -- in com.brainy.CartTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.914 s -- in com.brainy.CartTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -302,7 +302,7 @@ test: the mug is in the cart
 .
 fixture tear down: cart emptied
 
-1 passed in 2.41s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/fixtures.js</div><pre class="src" data-file="tests/fixtures.js"><span class="k">import</span> { test <span class="k">as</span> base, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+1 passed in 2.59s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/fixtures.js</div><pre class="src" data-file="tests/fixtures.js"><span class="k">import</span> { test <span class="k">as</span> base, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">export</span> <span class="k">const</span> test = base.extend({
   signedInPage: <span class="k">async</span> ({ page }, use) =&gt; {
@@ -336,7 +336,7 @@ test: the mug is in the cart
 fixture tear down: cart emptied
   ✓  1 [chromium] › tests/cart.spec.js:3:1 › add a mug to the cart (1.6s)
 
-  1 passed (2.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/fixtures.ts</div><pre class="src" data-file="tests/fixtures.ts"><span class="k">import</span> { test <span class="k">as</span> base, expect, <span class="k">type</span> <span class="t">Page</span> } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (3.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/fixtures.ts</div><pre class="src" data-file="tests/fixtures.ts"><span class="k">import</span> { test <span class="k">as</span> base, expect, <span class="k">type</span> <span class="t">Page</span> } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">type</span> <span class="t">ShopFixtures</span> = { signedInPage: <span class="t">Page</span> };
 
@@ -370,9 +370,9 @@ test(<span class="s">'add a mug to the cart'</span>, <span class="k">async</span
 fixture set up: signed in
 test: the mug is in the cart
 fixture tear down: cart emptied
-  ✓  1 [chromium] › tests/cart.spec.ts:3:1 › add a mug to the cart (1.5s)
+  ✓  1 [chromium] › tests/cart.spec.ts:3:1 › add a mug to the cart (1.6s)
 
-  1 passed (2.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>The test only says what it checks. Signing in happened in the fixture before it, and emptying the cart happened after it, even though the test never mentioned either. Any test that asks for the signed in page gets the same set up, and a test that does not ask for it pays nothing. Java has no custom fixtures in the same sense, so the common pattern is a base class with @BeforeEach and @AfterEach.</p></div></div>
+  1 passed (2.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>The test only says what it checks. Signing in happened in the fixture before it, and emptying the cart happened after it, even though the test never mentioned either. Any test that asks for the signed in page gets the same set up, and a test that does not ask for it pays nothing. Java has no custom fixtures in the same sense, so the common pattern is a base class with @BeforeEach and @AfterEach.</p></div></div>
 <div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Hooks run for every test in the file. Fixtures run only for tests that ask for them, and they can depend on other fixtures. As a suite grows, teams move set up from hooks into fixtures.</div></div>
 </section>
 <section class="card reveal jsec" id="auto" data-say="auto"><div class="sec-num">Part 3</div><h2><span class="sec-em">🛡️</span><span>Automatic fixtures</span></h2>
@@ -430,8 +430,8 @@ fixture tear down: cart emptied
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.brainy.PagesTest
-[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 3.690 s &lt;&lt;&lt; FAILURE! -- in com.brainy.PagesTest
-[ERROR] com.brainy.PagesTest.theWidgetsPageBreaks(Page) -- Time elapsed: 1.165 s &lt;&lt;&lt; FAILURE!
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 5.320 s &lt;&lt;&lt; FAILURE! -- in com.brainy.PagesTest
+[ERROR] com.brainy.PagesTest.theWidgetsPageBreaks(Page) -- Time elapsed: 1.454 s &lt;&lt;&lt; FAILURE!
 org.opentest4j.AssertionFailedError: the page threw errors ==&gt; expected: &lt;[]&gt; but was: &lt;[Error: Price service is down]&gt;
 [ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0
 [INFO] 
@@ -488,7 +488,7 @@ E         + ]
 conftest.py:10: AssertionError
 =========================== short test summary info ============================
 ERROR tests/test_pages.py::test_the_widgets_page_breaks[chromium] - AssertionError: the page threw errors: [&#x27;Price service is down&#x27;]
-========================== 2 passed, 1 error in 3.25s ==========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 tests/fixtures.js</div><pre class="src" data-file="tests/fixtures.js"><span class="k">import</span> { test <span class="k">as</span> base, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+========================== 2 passed, 1 error in 3.37s ==========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 tests/fixtures.js</div><pre class="src" data-file="tests/fixtures.js"><span class="k">import</span> { test <span class="k">as</span> base, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">export</span> <span class="k">const</span> test = base.extend({
   failOnPageErrors: [<span class="k">async</span> ({ page }, use) =&gt; {
@@ -546,7 +546,7 @@ test(<span class="s">'the widgets page breaks'</span>, <span class="k">async</sp
 
   1 failed
     [chromium] › tests/pages.spec.js:8:1 › the widgets page breaks ─────────────────────────────────
-  1 passed (3.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 tests/fixtures.ts</div><pre class="src" data-file="tests/fixtures.ts"><span class="k">import</span> { test <span class="k">as</span> base, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (4.1s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 tests/fixtures.ts</div><pre class="src" data-file="tests/fixtures.ts"><span class="k">import</span> { test <span class="k">as</span> base, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">export</span> <span class="k">const</span> test = base.extend&lt;{ failOnPageErrors: <span class="k">void</span> }&gt;({
   failOnPageErrors: [<span class="k">async</span> ({ page }, use) =&gt; {
@@ -571,7 +571,7 @@ test(<span class="s">'the widgets page breaks'</span>, <span class="k">async</sp
   <span class="c">// the test itself passes, the fixture finds the error afterwards</span>
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 2 tests using 1 worker
 
-  ✓  1 [chromium] › tests/pages.spec.ts:3:1 › the products page has no errors (1.1s)
+  ✓  1 [chromium] › tests/pages.spec.ts:3:1 › the products page has no errors (1.3s)
   ✘  2 [chromium] › tests/pages.spec.ts:8:1 › the widgets page breaks (1.3s)
 
 
@@ -604,7 +604,7 @@ test(<span class="s">'the widgets page breaks'</span>, <span class="k">async</sp
 
   1 failed
     [chromium] › tests/pages.spec.ts:8:1 › the widgets page breaks ─────────────────────────────────
-  1 passed (4.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>Neither test asked for the fixture, yet both got it. The products page had no errors and passed. The widgets test did everything right, but the page threw <b>Price service is down</b>, so the fixture failed it after the test body finished. pytest reports this as an error in the tear down, which still fails the run. The Java check calls page.waitForTimeout first, because the synchronous Java API delivers browser events only while a Playwright method is running.</p></div></div>
+  1 passed (4.1s)</pre></div></div><div class="note-out"><span>What happens</span><p>Neither test asked for the fixture, yet both got it. The products page had no errors and passed. The widgets test did everything right, but the page threw <b>Price service is down</b>, so the fixture failed it after the test body finished. pytest reports this as an error in the tear down, which still fails the run. The Java check calls page.waitForTimeout first, because the synchronous Java API delivers browser events only while a Playwright method is running.</p></div></div>
 </section>
 <section class="card reveal jsec" id="global" data-say="global"><div class="sec-num">Part 4</div><h2><span class="sec-em">🌍</span><span>Set up once for the whole run</span></h2>
 
@@ -667,7 +667,7 @@ test(<span class="s">'the widgets page breaks'</span>, <span class="k">async</sp
 [INFO] Running com.brainy.PeopleTest
 setup: created person 1
 test: people in the shop: [{&quot;id&quot;:1,&quot;name&quot;:&quot;Test Customer&quot;,&quot;email&quot;:&quot;test@shop.example&quot;,&quot;city&quot;:null}]
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.770 s -- in com.brainy.PeopleTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.046 s -- in com.brainy.PeopleTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -695,7 +695,7 @@ test: people in the shop: [{&quot;id&quot;:1,&quot;name&quot;:&quot;Test Custome
     <span class="k">assert</span> len(people) == <span class="n">1</span></pre><div class="cmd"><span>Terminal</span><pre>$ pytest -s -q</pre></div><div class="out"><span>Terminal output</span><pre>setup: created person 1
 test: people in the shop: [&#x27;Test Customer&#x27;]
 .
-1 passed in 1.07s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+1 passed in 1.00s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">export</span> <span class="k">default</span> defineConfig({
   testDir: <span class="s">'./tests'</span>,
@@ -723,11 +723,11 @@ test(<span class="s">'the test data is there'</span>, <span class="k">async</spa
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
 
 setup: created person 1
-  ✓  1 [setup] › tests/global.setup.js:3:1 › the shop is up and has test data (58ms)
+  ✓  1 [setup] › tests/global.setup.js:3:1 › the shop is up and has test data (105ms)
 test: people in the shop: [ &#x27;Test Customer&#x27; ]
-  ✓  2 [chromium] › tests/people.spec.js:3:1 › the test data is there (47ms)
+  ✓  2 [chromium] › tests/people.spec.js:3:1 › the test data is there (61ms)
 
-  2 passed (2.6s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  2 passed (2.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">export</span> <span class="k">default</span> defineConfig({
   testDir: <span class="s">'./tests'</span>,
@@ -755,11 +755,11 @@ test(<span class="s">'the test data is there'</span>, <span class="k">async</spa
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
 
 setup: created person 1
-  ✓  1 [setup] › tests/global.setup.ts:3:1 › the shop is up and has test data (54ms)
+  ✓  1 [setup] › tests/global.setup.ts:3:1 › the shop is up and has test data (63ms)
 test: people in the shop: [ &#x27;Test Customer&#x27; ]
-  ✓  2 [chromium] › tests/people.spec.ts:3:1 › the test data is there (60ms)
+  ✓  2 [chromium] › tests/people.spec.ts:3:1 › the test data is there (56ms)
 
-  2 passed (2.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>The set up ran once, before the tests, and created one person through the API. In Playwright Test it is a project that the other projects depend on, so it shows up in the report and the trace like any test. pytest uses a session fixture, and JUnit a static @BeforeAll method. For a whole Maven run, JUnit also offers a LauncherSessionListener. Note ApiOptions in the Java version: setBaseUrl only covers pages, so the request fixture gets its own base URL through setApiRequestOptions.</p></div></div>
+  2 passed (2.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>The set up ran once, before the tests, and created one person through the API. In Playwright Test it is a project that the other projects depend on, so it shows up in the report and the trace like any test. pytest uses a session fixture, and JUnit a static @BeforeAll method. For a whole Maven run, JUnit also offers a LauncherSessionListener. Note ApiOptions in the Java version: setBaseUrl only covers pages, so the request fixture gets its own base URL through setApiRequestOptions.</p></div></div>
 <div class="tw"><table class="jt "><tr><th>Scope</th><th>Playwright Test</th><th>pytest</th><th>JUnit 5</th></tr><tr><td>each test</td><td>test fixture (the default)</td><td>scope="function" (the default)</td><td>@BeforeEach</td></tr><tr><td>each worker process</td><td>{ scope: 'worker' }</td><td>not built in (pytest-xdist workers use session)</td><td>not built in</td></tr><tr><td>the file or class</td><td>test.beforeAll</td><td>scope="module" or "class"</td><td>@BeforeAll</td></tr><tr><td>the whole run</td><td>a setup project with dependencies, or globalSetup</td><td>scope="session"</td><td>LauncherSessionListener, or @BeforeAll in a base class</td></tr></table></div>
 </section>
 

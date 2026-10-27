@@ -19,6 +19,10 @@
     <div id="offers"></div>
     <p><button type="button" id="moving" class="mover">Catch me</button> <span id="caught"></span></p>
   </section>
+  <section class="box" aria-label="Live stock">
+    <h2>Live stock</h2>
+    <p id="live" data-testid="live-stock" aria-live="polite">Connecting…</p>
+  </section>
   <section class="box" aria-label="Messages">
     <h2>Console and errors</h2>
     <div class="row"><button type="button" id="log">Write to the console</button><button type="button" id="boom">Break the page</button></div>
@@ -41,6 +45,13 @@ document.getElementById('moving').onclick = () => { document.getElementById('cau
 document.getElementById('log').onclick = () => { console.log('Cart saved with 2 items'); console.warn('Coupon expires soon'); };
 document.getElementById('boom').onclick = () => { setTimeout(() => { throw new Error('Price service is down'); }); };
 setTimeout(() => document.getElementById('cover').remove(), 800);
+const live = document.getElementById('live');
+try {
+  const feed = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/stock`);
+  feed.onopen = () => feed.send('subscribe');
+  feed.onmessage = e => { const m = JSON.parse(e.data); live.textContent = m.left ? `${m.product}: ${m.left} left` : `${m.product}: sold out`; };
+  feed.onerror = () => { live.textContent = 'Live stock is offline'; };
+} catch { live.textContent = 'Live stock is offline'; }
 </script>
 </body>
 </html>

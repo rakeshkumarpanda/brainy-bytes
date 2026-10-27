@@ -17,7 +17,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🚀 Getting started</span><span>›</span><span>Chapter 1 of 7</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🚀 Getting started</span><span>›</span><span>Chapter 1 of 10</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🎭</span><div><h1>What Playwright is and how it works</h1><p class="lead">Meet Playwright, the free tool that drives real Chromium, Firefox and WebKit browsers from Java, Python, JavaScript and TypeScript. See how one line of a test travels to the browser, with real logs from a real run.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 16 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 4 animations</span><span class="chip">▶ 14 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 5 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -308,7 +308,7 @@ SEND ► {&quot;id&quot;:45,&quot;method&quot;:&quot;Input.dispatchMouseEvent&qu
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.brainy.SignInTest
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.447 s -- in com.brainy.SignInTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.772 s -- in com.brainy.SignInTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -327,7 +327,7 @@ SEND ► {&quot;id&quot;:45,&quot;method&quot;:&quot;Input.dispatchMouseEvent&qu
 
 tests/test_sign_in.py::test_a_customer_can_sign_in[chromium] PASSED      [100%]
 
-============================== 1 passed in 1.31s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/sign-in.spec.js</div><pre class="src" data-file="tests/sign-in.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 1.50s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/sign-in.spec.js</div><pre class="src" data-file="tests/sign-in.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'a customer can sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
@@ -337,9 +337,9 @@ test(<span class="s">'a customer can sign in'</span>, <span class="k">async</spa
   <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/sign-in.spec.js:3:1 › a customer can sign in (627ms)
+  ✓  1 [chromium] › tests/sign-in.spec.js:3:1 › a customer can sign in (800ms)
 
-  1 passed (2.5s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/sign-in.spec.ts</div><pre class="src" data-file="tests/sign-in.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (2.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/sign-in.spec.ts</div><pre class="src" data-file="tests/sign-in.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'a customer can sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
@@ -349,9 +349,9 @@ test(<span class="s">'a customer can sign in'</span>, <span class="k">async</spa
   <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/sign-in.spec.ts:3:1 › a customer can sign in (567ms)
+  ✓  1 [chromium] › tests/sign-in.spec.ts:3:1 › a customer can sign in (879ms)
 
-  1 passed (1.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>All four are the same test. Each test runner gives the test a fresh page, opens the shop, signs in and checks the greeting. Java uses JUnit 5 with the <code>@UsePlaywright</code> annotation, Python uses pytest with the pytest-playwright plugin, and JavaScript and TypeScript use Playwright Test, the runner made by the Playwright team.</p></div></div>
+  1 passed (2.3s)</pre></div></div><div class="note-out"><span>What happens</span><p>All four are the same test. Each test runner gives the test a fresh page, opens the shop, signs in and checks the greeting. Java uses JUnit 5 with the <code>@UsePlaywright</code> annotation, Python uses pytest with the pytest-playwright plugin, and JavaScript and TypeScript use Playwright Test, the runner made by the Playwright team.</p></div></div>
 <p>Step through the same test below. Each picture was taken from a real Chromium run when this page was built.</p>
 <div class="viz" data-viz="pwwalk" data-sub="Each screen was recorded from a real run in Chromium when this page was built. Press Play, or step one line at a time, and switch the language to see the same line in Java, Python, JavaScript or TypeScript." data-walk="{&quot;title&quot;: &quot;A customer signs in&quot;, &quot;steps&quot;: [{&quot;cap&quot;: &quot;Open the sign in page.&quot;, &quot;img&quot;: &quot;walks/walk1-0.jpg&quot;, &quot;js&quot;: &quot;await page.goto(&#x27;http://localhost:4173/login&#x27;);&quot;, &quot;ts&quot;: &quot;await page.goto(&#x27;http://localhost:4173/login&#x27;);&quot;, &quot;py&quot;: &quot;page.goto(\&quot;http://localhost:4173/login\&quot;)&quot;, &quot;java&quot;: &quot;page.navigate(\&quot;http://localhost:4173/login\&quot;);&quot;}, {&quot;cap&quot;: &quot;Type the email into the box labelled Email.&quot;, &quot;img&quot;: &quot;walks/walk1-1.jpg&quot;, &quot;js&quot;: &quot;await page.getByLabel(&#x27;Email&#x27;).fill(&#x27;asha@shop.example&#x27;);&quot;, &quot;ts&quot;: &quot;await page.getByLabel(&#x27;Email&#x27;).fill(&#x27;asha@shop.example&#x27;);&quot;, &quot;py&quot;: &quot;page.get_by_label(\&quot;Email\&quot;).fill(\&quot;asha@shop.example\&quot;)&quot;, &quot;java&quot;: &quot;page.getByLabel(\&quot;Email\&quot;).fill(\&quot;asha@shop.example\&quot;);&quot;}, {&quot;cap&quot;: &quot;Type the password.&quot;, &quot;img&quot;: &quot;walks/walk1-2.jpg&quot;, &quot;js&quot;: &quot;await page.getByLabel(&#x27;Password&#x27;).fill(&#x27;s3cret&#x27;);&quot;, &quot;ts&quot;: &quot;await page.getByLabel(&#x27;Password&#x27;).fill(&#x27;s3cret&#x27;);&quot;, &quot;py&quot;: &quot;page.get_by_label(\&quot;Password\&quot;).fill(\&quot;s3cret\&quot;)&quot;, &quot;java&quot;: &quot;page.getByLabel(\&quot;Password\&quot;).fill(\&quot;s3cret\&quot;);&quot;}, {&quot;cap&quot;: &quot;Click the button called Sign in. The shop signs Asha in and opens the products page.&quot;, &quot;img&quot;: &quot;walks/walk1-3.jpg&quot;, &quot;js&quot;: &quot;await page.getByRole(&#x27;button&#x27;, { name: &#x27;Sign in&#x27; }).click();&quot;, &quot;ts&quot;: &quot;await page.getByRole(&#x27;button&#x27;, { name: &#x27;Sign in&#x27; }).click();&quot;, &quot;py&quot;: &quot;page.get_by_role(\&quot;button\&quot;, name=\&quot;Sign in\&quot;).click()&quot;, &quot;java&quot;: &quot;page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(\&quot;Sign in\&quot;)).click();&quot;}, {&quot;cap&quot;: &quot;Check that the greeting says Hello, Asha. The check waits until it appears.&quot;, &quot;img&quot;: &quot;walks/walk1-4.jpg&quot;, &quot;js&quot;: &quot;await expect(page.getByText(&#x27;Hello, Asha&#x27;)).toBeVisible();&quot;, &quot;ts&quot;: &quot;await expect(page.getByText(&#x27;Hello, Asha&#x27;)).toBeVisible();&quot;, &quot;py&quot;: &quot;expect(page.get_by_text(\&quot;Hello, Asha\&quot;)).to_be_visible()&quot;, &quot;java&quot;: &quot;assertThat(page.getByText(\&quot;Hello, Asha\&quot;)).isVisible();&quot;}], &quot;w&quot;: 900, &quot;h&quot;: 520}"></div>
 <p>Notice what the test does <b>not</b> do. It never waits for a number of seconds and never looks for an element by its position on the screen. It finds things the way a person does, by their label and their role, and it lets Playwright wait.</p>

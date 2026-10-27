@@ -17,7 +17,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🎯 Finding and using elements</span><span>›</span><span>Chapter 6 of 7</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🎯 Finding and using elements</span><span>›</span><span>Chapter 6 of 10</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🖱️</span><div><h1>Actions and auto-waiting</h1><p class="lead">Click, type, pick, drag and hover like a person, while Playwright waits for every element to be ready. Learn to read a timeout, fill every kind of form control, and replace every sleep with a wait for the real thing.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 24 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 28 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 3 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -61,7 +61,7 @@
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.brainy.AutoWaitTest
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.710 s -- in com.brainy.AutoWaitTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.744 s -- in com.brainy.AutoWaitTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -87,7 +87,7 @@
 
 tests/test_auto_wait.py::test_actions_wait_until_the_element_is_ready[chromium] PASSED [100%]
 
-============================== 1 passed in 4.86s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/auto-wait.spec.js</div><pre class="src" data-file="tests/auto-wait.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 3.71s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/auto-wait.spec.js</div><pre class="src" data-file="tests/auto-wait.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'actions wait until the element is ready'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
@@ -104,9 +104,9 @@ test(<span class="s">'actions wait until the element is ready'</span>, <span cla
   <span class="k">await</span> expect(page.getByText(<span class="s">'Caught it'</span>)).toBeVisible();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/auto-wait.spec.js:3:1 › actions wait until the element is ready (2.7s)
+  ✓  1 [chromium] › tests/auto-wait.spec.js:3:1 › actions wait until the element is ready (3.3s)
 
-  1 passed (4.1s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/auto-wait.spec.ts</div><pre class="src" data-file="tests/auto-wait.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (4.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/auto-wait.spec.ts</div><pre class="src" data-file="tests/auto-wait.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'actions wait until the element is ready'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
@@ -125,7 +125,7 @@ test(<span class="s">'actions wait until the element is ready'</span>, <span cla
 
   ✓  1 [chromium] › tests/auto-wait.spec.ts:3:1 › actions wait until the element is ready (3.2s)
 
-  1 passed (4.4s)</pre></div></div><div class="note-out"><span>What happens</span><p>The test has no sleep anywhere. Each click waited exactly as long as the page needed: until the cover was gone, the button was enabled, and the moving button stood still. A fixed wait would either be too short and fail, or too long and waste time on every run.</p></div></div>
+  1 passed (4.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>The test has no sleep anywhere. Each click waited exactly as long as the page needed: until the cover was gone, the button was enabled, and the moving button stood still. A fixed wait would either be too short and fail, or too long and waste time on every run.</p></div></div>
 <p>The checks depend on the action. This table comes from the Playwright documentation. Click, check and fill also make sure the element is not inert, which means not blocked by an open modal dialog.</p>
 <div class="tw"><table class="jt "><tr><th>Action</th><th>Visible</th><th>Stable</th><th>Receives events</th><th>Enabled</th><th>Editable</th></tr><tr><td>click, dblclick, check, uncheck, setChecked, tap</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td></td></tr><tr><td>hover, dragTo</td><td>✓</td><td>✓</td><td>✓</td><td></td><td></td></tr><tr><td>screenshot</td><td>✓</td><td>✓</td><td></td><td></td><td></td></tr><tr><td>fill, clear</td><td>✓</td><td></td><td></td><td>✓</td><td>✓</td></tr><tr><td>selectOption</td><td>✓</td><td></td><td></td><td>✓</td><td></td></tr><tr><td>selectText</td><td>✓</td><td></td><td></td><td></td><td></td></tr><tr><td>scrollIntoViewIfNeeded</td><td></td><td>✓</td><td></td><td></td><td></td></tr><tr><td>focus, blur, press, pressSequentially, setInputFiles, dispatchEvent</td><td></td><td></td><td></td><td></td><td></td></tr></table></div>
 <div class="viz" data-viz="flow" data-k="click"></div>
@@ -170,7 +170,7 @@ Call log:
 -   - attempting click action
 -     2 × waiting for element to be visible, enabled and stable
 -       - element is not enabled
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.549 s -- in com.brainy.CallLogTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.423 s -- in com.brainy.CallLogTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -200,7 +200,7 @@ Call log:
       - element is not enabled
 PASSED
 
-============================== 1 passed in 2.96s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/call-log.spec.js</div><pre class="src" data-file="tests/call-log.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 2.91s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/call-log.spec.js</div><pre class="src" data-file="tests/call-log.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'when it never gets ready, the error says why'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
@@ -219,9 +219,9 @@ Call log:
   - attempting click action
     2 × waiting for element to be visible, enabled and stable
       - element is not enabled
-  ✓  1 [chromium] › tests/call-log.spec.js:3:1 › when it never gets ready, the error says why (2.2s)
+  ✓  1 [chromium] › tests/call-log.spec.js:3:1 › when it never gets ready, the error says why (2.3s)
 
-  1 passed (3.6s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/call-log.spec.ts</div><pre class="src" data-file="tests/call-log.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (3.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/call-log.spec.ts</div><pre class="src" data-file="tests/call-log.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'when it never gets ready, the error says why'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
@@ -240,9 +240,9 @@ Call log:
   - attempting click action
     2 × waiting for element to be visible, enabled and stable
       - element is not enabled
-  ✓  1 [chromium] › tests/call-log.spec.ts:3:1 › when it never gets ready, the error says why (2.2s)
+  ✓  1 [chromium] › tests/call-log.spec.ts:3:1 › when it never gets ready, the error says why (2.4s)
 
-  1 passed (3.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>The button stays disabled, so the click gave up after the 2 second timeout. The call log under the message tells you which check kept failing: here, element is not enabled. When a test times out in your project, this log is the first thing to read. In Java the message also carries the stack of the driver, so the Java example prints from the call log on.</p></div></div>
+  1 passed (4.0s)</pre></div></div><div class="note-out"><span>What happens</span><p>The button stays disabled, so the click gave up after the 2 second timeout. The call log under the message tells you which check kept failing: here, element is not enabled. When a test times out in your project, this log is the first thing to read. In Java the message also carries the stack of the driver, so the Java example prints from the call log on.</p></div></div>
 <p>Two options change the checks, and both are worth knowing even if you rarely use them.</p>
 <div class="tw"><table class="jt "><tr><th>Option</th><th>What it does</th><th>When to use it</th></tr><tr><td><span class="only-java">setForce(true)</span><span class="only-py">force=True</span><span class="only-js">force: true</span><span class="only-ts">force: true</span></td><td>skips the checks that are not essential, such as receives events</td><td>a custom widget that hides its real input under a styled label</td></tr><tr><td><span class="only-java">setTrial(true)</span><span class="only-py">trial=True</span><span class="only-js">trial: true</span><span class="only-ts">trial: true</span></td><td>runs every check but does not click</td><td>to wait until something could be clicked, without clicking it</td></tr><tr><td><span class="only-java">setTimeout(5000)</span><span class="only-py">timeout=5000</span><span class="only-js">timeout: 5000</span><span class="only-ts">timeout: 5000</span></td><td>a different timeout for this one action</td><td>one action that is known to be slow</td></tr></table></div>
 <div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Reaching for force is often a sign the test found the wrong element, or that a real user could not click it either. Read the call log first.</div></div>
@@ -285,7 +285,7 @@ Call log:
 [INFO] -------------------------------------------------------
 [INFO] Running com.brainy.HoverTest
 tooltip: We reply within two working days
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.871 s -- in com.brainy.HoverTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.672 s -- in com.brainy.HoverTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -314,7 +314,7 @@ tooltip: We reply within two working days
 tests/test_hover.py::test_hover_and_focus_show_the_tooltip[chromium] tooltip: We reply within two working days
 PASSED
 
-============================== 1 passed in 1.09s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/hover.spec.js</div><pre class="src" data-file="tests/hover.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 1.37s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/hover.spec.js</div><pre class="src" data-file="tests/hover.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'hover and focus show the tooltip'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
@@ -334,9 +334,9 @@ test(<span class="s">'hover and focus show the tooltip'</span>, <span class="k">
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
 tooltip: We reply within two working days
-  ✓  1 [chromium] › tests/hover.spec.js:3:1 › hover and focus show the tooltip (542ms)
+  ✓  1 [chromium] › tests/hover.spec.js:3:1 › hover and focus show the tooltip (479ms)
 
-  1 passed (2.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/hover.spec.ts</div><pre class="src" data-file="tests/hover.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (1.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/hover.spec.ts</div><pre class="src" data-file="tests/hover.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'hover and focus show the tooltip'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
@@ -356,9 +356,9 @@ test(<span class="s">'hover and focus show the tooltip'</span>, <span class="k">
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
 tooltip: We reply within two working days
-  ✓  1 [chromium] › tests/hover.spec.ts:3:1 › hover and focus show the tooltip (452ms)
+  ✓  1 [chromium] › tests/hover.spec.ts:3:1 › hover and focus show the tooltip (418ms)
 
-  1 passed (2.0s)</pre></div></div><div class="note-out"><span>What happens</span><p>Hover moves the real mouse over the element, so CSS hover effects and menus react. Focus is what the Tab key does. Checking both makes sure the tooltip works for mouse users and keyboard users.</p></div></div>
+  1 passed (1.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>Hover moves the real mouse over the element, so CSS hover effects and menus react. Focus is what the Tab key does. Checking both makes sure the tooltip works for mouse users and keyboard users.</p></div></div>
 </section>
 <section class="card reveal jsec" id="keys" data-say="keys"><div class="sec-num">Part 4</div><h2><span class="sec-em">⌨️</span><span>Typing and keys</span></h2>
 
@@ -403,7 +403,7 @@ tooltip: We reply within two working days
 after fill: desk | 1 card
 after typing: mug
 after select all and delete: 0 characters
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.985 s -- in com.brainy.KeysTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.001 s -- in com.brainy.KeysTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -438,7 +438,7 @@ after typing: mug
 after select all and delete: 0 characters
 PASSED
 
-============================== 1 passed in 2.40s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/keys.spec.js</div><pre class="src" data-file="tests/keys.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 2.55s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/keys.spec.js</div><pre class="src" data-file="tests/keys.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'fill, type key by key, and press shortcuts'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
@@ -464,9 +464,9 @@ test(<span class="s">'fill, type key by key, and press shortcuts'</span>, <span 
 after fill: desk | 1 card
 after typing: mug
 after select all and delete: 0 characters
-  ✓  1 [chromium] › tests/keys.spec.js:3:1 › fill, type key by key, and press shortcuts (1.5s)
+  ✓  1 [chromium] › tests/keys.spec.js:3:1 › fill, type key by key, and press shortcuts (1.7s)
 
-  1 passed (3.3s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/keys.spec.ts</div><pre class="src" data-file="tests/keys.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (3.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/keys.spec.ts</div><pre class="src" data-file="tests/keys.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'fill, type key by key, and press shortcuts'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
@@ -492,9 +492,9 @@ test(<span class="s">'fill, type key by key, and press shortcuts'</span>, <span 
 after fill: desk | 1 card
 after typing: mug
 after select all and delete: 0 characters
-  ✓  1 [chromium] › tests/keys.spec.ts:3:1 › fill, type key by key, and press shortcuts (1.5s)
+  ✓  1 [chromium] › tests/keys.spec.ts:3:1 › fill, type key by key, and press shortcuts (1.6s)
 
-  1 passed (3.1s)</pre></div></div><div class="note-out"><span>What happens</span><p><code>fill</code> sets the value in one go and fires the input event, which is enough for almost every box. <code>pressSequentially</code> sends one key at a time for boxes that react to each key, such as an auto complete list. <code>press</code> takes a key name or a combination such as Control+A.</p></div></div>
+  1 passed (3.3s)</pre></div></div><div class="note-out"><span>What happens</span><p><code>fill</code> sets the value in one go and fires the input event, which is enough for almost every box. <code>pressSequentially</code> sends one key at a time for boxes that react to each key, such as an auto complete list. <code>press</code> takes a key name or a combination such as Control+A.</p></div></div>
 <div class="tw"><table class="jt "><tr><th>Method</th><th>Sends</th><th>Use for</th></tr><tr><td>fill(text)</td><td>the whole value at once</td><td>almost every text box</td></tr><tr><td>pressSequentially(text)</td><td>one key event per character</td><td>auto complete, masks that format as you type</td></tr><tr><td>press(key)</td><td>one key or a combination</td><td>Enter, Tab, Escape, ArrowDown, Control+A</td></tr><tr><td>keyboard.press(key)</td><td>a key to whatever has focus</td><td>page shortcuts such as Control+K</td></tr><tr><td>clear()</td><td>an empty value</td><td>emptying a box</td></tr></table></div>
 <div class="pw-box pw-new"><span class="pw-ic">🆕</span><div>Old tutorials use type(). It was renamed pressSequentially in Playwright 1.38 and the old name is deprecated. If you see it in a code base, it does the same thing.</div></div>
 </section>
@@ -543,7 +543,7 @@ topic: payment
 happy checked: true
 date: 2026-10-01
 volume: 8
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.166 s -- in com.brainy.FormTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.128 s -- in com.brainy.FormTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -579,7 +579,7 @@ date: 2026-10-01
 volume: 8
 PASSED
 
-============================== 1 passed in 1.50s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/form.spec.js</div><pre class="src" data-file="tests/form.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 1.55s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/form.spec.js</div><pre class="src" data-file="tests/form.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'fill every kind of form control'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
@@ -606,9 +606,9 @@ topic: payment
 happy checked: true
 date: 2026-10-01
 volume: 8
-  ✓  1 [chromium] › tests/form.spec.js:3:1 › fill every kind of form control (783ms)
+  ✓  1 [chromium] › tests/form.spec.js:3:1 › fill every kind of form control (635ms)
 
-  1 passed (2.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/form.spec.ts</div><pre class="src" data-file="tests/form.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (2.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/form.spec.ts</div><pre class="src" data-file="tests/form.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'fill every kind of form control'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
@@ -635,9 +635,9 @@ topic: payment
 happy checked: true
 date: 2026-10-01
 volume: 8
-  ✓  1 [chromium] › tests/form.spec.ts:3:1 › fill every kind of form control (672ms)
+  ✓  1 [chromium] › tests/form.spec.ts:3:1 › fill every kind of form control (707ms)
 
-  1 passed (2.4s)</pre></div></div><div class="note-out"><span>What happens</span><p>Every control on the form is found by its label. <code>selectOption</code> takes the value or the visible label, and the last call wins, so the topic is payment. Dates are filled in the yyyy-mm-dd format whatever the browser shows. The status line proves the page received every value.</p></div></div>
+  1 passed (2.1s)</pre></div></div><div class="note-out"><span>What happens</span><p>Every control on the form is found by its label. <code>selectOption</code> takes the value or the visible label, and the last call wins, so the topic is payment. Dates are filled in the yyyy-mm-dd format whatever the browser shows. The status line proves the page received every value.</p></div></div>
 <div class="tw"><table class="jt "><tr><th>Control</th><th>Method</th><th>Read it back</th></tr><tr><td>text box, text area</td><td>fill</td><td>inputValue</td></tr><tr><td>checkbox, radio button</td><td>check, uncheck, setChecked</td><td>isChecked or toBeChecked</td></tr><tr><td>drop down (select)</td><td>selectOption by value, label or index, or a list for multi select</td><td>inputValue or toHaveValue</td></tr><tr><td>date, time, color, range</td><td>fill with the standard format, such as 2026-10-01</td><td>inputValue</td></tr><tr><td>file input</td><td>setInputFiles</td><td>the files list</td></tr></table></div>
 </section>
 <section class="card reveal jsec" id="drag" data-say="drag"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧲</span><span>Drag and drop and the mouse</span></h2>
@@ -681,7 +681,7 @@ volume: 8
 [INFO] Running com.brainy.DragTest
 Done lane: [Pack the order, Print the label]
 To do lane: 0 tasks
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.061 s -- in com.brainy.DragTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.961 s -- in com.brainy.DragTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -714,7 +714,7 @@ tests/test_drag.py::test_drag_tasks_to_the_done_lane[chromium] Done lane: [&#x27
 To do lane: 0 tasks
 PASSED
 
-============================== 1 passed in 1.38s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/drag.spec.js</div><pre class="src" data-file="tests/drag.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 1.59s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/drag.spec.js</div><pre class="src" data-file="tests/drag.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'drag tasks to the Done lane'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/forms'</span>);
@@ -738,7 +738,7 @@ test(<span class="s">'drag tasks to the Done lane'</span>, <span class="k">async
 
 Done lane: [ &#x27;Pack the order&#x27;, &#x27;Print the label&#x27; ]
 To do lane: 0 tasks
-  ✓  1 [chromium] › tests/drag.spec.js:3:1 › drag tasks to the Done lane (687ms)
+  ✓  1 [chromium] › tests/drag.spec.js:3:1 › drag tasks to the Done lane (625ms)
 
   1 passed (2.3s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/drag.spec.ts</div><pre class="src" data-file="tests/drag.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
@@ -764,9 +764,9 @@ test(<span class="s">'drag tasks to the Done lane'</span>, <span class="k">async
 
 Done lane: [ &#x27;Pack the order&#x27;, &#x27;Print the label&#x27; ]
 To do lane: 0 tasks
-  ✓  1 [chromium] › tests/drag.spec.ts:3:1 › drag tasks to the Done lane (557ms)
+  ✓  1 [chromium] › tests/drag.spec.ts:3:1 › drag tasks to the Done lane (715ms)
 
-  1 passed (1.9s)</pre></div></div><div class="note-out"><span>What happens</span><p><code>dragTo</code> hovers the task, presses the mouse button, moves to the lane and releases it. The manual version does the same steps one by one. The Playwright docs advise moving twice over the target when the page listens for dragover, which this page does.</p></div></div>
+  1 passed (2.1s)</pre></div></div><div class="note-out"><span>What happens</span><p><code>dragTo</code> hovers the task, presses the mouse button, moves to the lane and releases it. The manual version does the same steps one by one. The Playwright docs advise moving twice over the target when the page listens for dragover, which this page does.</p></div></div>
 </section>
 <section class="card reveal jsec" id="wait" data-say="wait"><div class="sec-num">Part 7</div><h2><span class="sec-em">🚫</span><span>Waiting without sleeping</span></h2>
 
@@ -806,7 +806,7 @@ To do lane: 0 tasks
 API answered with status 200
 cards now: 5
 loading cover left: 0
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.140 s -- in com.brainy.WaitTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.270 s -- in com.brainy.WaitTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -835,7 +835,7 @@ cards now: 5
 loading cover left: 0
 PASSED
 
-============================== 1 passed in 2.78s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/wait.spec.js</div><pre class="src" data-file="tests/wait.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 3.02s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/wait.spec.js</div><pre class="src" data-file="tests/wait.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'wait for what you need, never for a fixed time'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="c">// Start waiting for the API answer before the page asks for it.</span>
@@ -855,9 +855,9 @@ test(<span class="s">'wait for what you need, never for a fixed time'</span>, <s
 API answered with status 200
 cards now: 5
 loading cover left: 0
-  ✓  1 [chromium] › tests/wait.spec.js:3:1 › wait for what you need, never for a fixed time (2.0s)
+  ✓  1 [chromium] › tests/wait.spec.js:3:1 › wait for what you need, never for a fixed time (2.2s)
 
-  1 passed (4.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/wait.spec.ts</div><pre class="src" data-file="tests/wait.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (3.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/wait.spec.ts</div><pre class="src" data-file="tests/wait.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'wait for what you need, never for a fixed time'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="c">// Start waiting for the API answer before the page asks for it.</span>
@@ -879,7 +879,7 @@ cards now: 5
 loading cover left: 0
   ✓  1 [chromium] › tests/wait.spec.ts:3:1 › wait for what you need, never for a fixed time (2.0s)
 
-  1 passed (3.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>Each wait names the thing the test needs: the API answer, the loading message going away, the cover being removed. Each one returns the moment that happens. In Python and Java the wait wraps the action that causes it, so the answer cannot be missed.</p></div></div>
+  1 passed (3.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>Each wait names the thing the test needs: the API answer, the loading message going away, the cover being removed. Each one returns the moment that happens. In Python and Java the wait wraps the action that causes it, so the answer cannot be missed.</p></div></div>
 <div class="tw"><table class="jt "><tr><th>Wait for</th><th>Method</th></tr><tr><td>an element to appear, hide or go away</td><td><span class="only-java">locator.waitFor(new Locator.WaitForOptions().setState(...))</span><span class="only-py">locator.wait_for(state=...)</span><span class="only-js">locator.waitFor({ state })</span><span class="only-ts">locator.waitFor({ state })</span></td></tr><tr><td>a new URL</td><td><span class="only-java">page.waitForURL</span><span class="only-py">page.wait_for_url</span><span class="only-js">page.waitForURL</span><span class="only-ts">page.waitForURL</span></td></tr><tr><td>a network response</td><td><span class="only-java">page.waitForResponse(predicate, action)</span><span class="only-py">with page.expect_response(...)</span><span class="only-js">page.waitForResponse(...)</span><span class="only-ts">page.waitForResponse(...)</span></td></tr><tr><td>anything the page can compute</td><td><span class="only-java">page.waitForFunction</span><span class="only-py">page.wait_for_function</span><span class="only-js">page.waitForFunction</span><span class="only-ts">page.waitForFunction</span></td></tr><tr><td>a popup, download or dialog</td><td><span class="only-java">page.waitForPopup and friends</span><span class="only-py">with page.expect_popup() and friends</span><span class="only-js">page.waitForEvent('popup')</span><span class="only-ts">page.waitForEvent('popup')</span></td></tr></table></div>
 <div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Many teams add a lint rule or a code review check that rejects waitForTimeout. A suite with 200 tests and a 2 second sleep in each spends almost 7 minutes doing nothing on every run.</div></div>
 </section>

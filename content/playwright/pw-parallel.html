@@ -88,14 +88,14 @@
 }</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
-[INFO] Running com.brainy.OrdersTest
 [INFO] Running com.brainy.ProductsTest
-pageTwoIsTheLastPage on ForkJoinPool-1-worker-1
+[INFO] Running com.brainy.OrdersTest
 findsTheLamp on ForkJoinPool-1-worker-2
+pageTwoIsTheLastPage on ForkJoinPool-1-worker-1
 showsFiveProducts on ForkJoinPool-1-worker-2
 pageOneShowsFiveOrders on ForkJoinPool-1-worker-1
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.672 s -- in com.brainy.OrdersTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.422 s -- in com.brainy.ProductsTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.941 s -- in com.brainy.OrdersTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.707 s -- in com.brainy.ProductsTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -137,14 +137,14 @@ scheduling tests via LoadScheduling
 
 tests/test_orders.py::test_page_1_shows_five_orders[chromium] 
 tests/test_products.py::test_shows_five_products[chromium] 
-[gw1] [ 25%] PASSED tests/test_orders.py::test_page_1_shows_five_orders[chromium] 
+[gw0] [ 25%] PASSED tests/test_orders.py::test_page_1_shows_five_orders[chromium] 
 tests/test_orders.py::test_page_2_is_the_last_page[chromium] 
-[gw1] [ 50%] PASSED tests/test_orders.py::test_page_2_is_the_last_page[chromium] 
-[gw0] [ 75%] PASSED tests/test_products.py::test_shows_five_products[chromium] 
+[gw0] [ 50%] PASSED tests/test_orders.py::test_page_2_is_the_last_page[chromium] 
+[gw1] [ 75%] PASSED tests/test_products.py::test_shows_five_products[chromium] 
 tests/test_products.py::test_finds_the_lamp[chromium] 
-[gw0] [100%] PASSED tests/test_products.py::test_finds_the_lamp[chromium] 
+[gw1] [100%] PASSED tests/test_products.py::test_finds_the_lamp[chromium] 
 
-============================== 4 passed in 3.98s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 4 passed in 4.07s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">export</span> <span class="k">default</span> defineConfig({
   testDir: <span class="s">'./tests'</span>,
@@ -181,16 +181,16 @@ test(<span class="s">'page 2 is the last page'</span>, <span class="k">async</sp
   <span class="k">await</span> expect(page.getByText(<span class="s">'Page 2 of 2'</span>)).toBeVisible();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 2 workers
 
-page 2 is the last page on worker 1
 page 1 shows five orders on worker 0
-  ✓  1 [chromium] › tests/orders.spec.js:9:1 › page 2 is the last page (458ms)
-shows five products on worker 1
-  ✓  2 [chromium] › tests/orders.spec.js:3:1 › page 1 shows five orders (507ms)
-finds the lamp on worker 0
-  ✓  4 [chromium] › tests/products.spec.js:9:1 › finds the lamp (286ms)
-  ✓  3 [chromium] › tests/products.spec.js:3:1 › shows five products (1.0s)
+page 2 is the last page on worker 1
+  ✓  2 [chromium] › tests/orders.spec.js:3:1 › page 1 shows five orders (447ms)
+shows five products on worker 0
+  ✓  1 [chromium] › tests/orders.spec.js:9:1 › page 2 is the last page (534ms)
+finds the lamp on worker 1
+  ✓  4 [chromium] › tests/products.spec.js:9:1 › finds the lamp (248ms)
+  ✓  3 [chromium] › tests/products.spec.js:3:1 › shows five products (1.1s)
 
-  4 passed (3.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  4 passed (3.8s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">export</span> <span class="k">default</span> defineConfig({
   testDir: <span class="s">'./tests'</span>,
@@ -227,16 +227,16 @@ test(<span class="s">'page 2 is the last page'</span>, <span class="k">async</sp
   <span class="k">await</span> expect(page.getByText(<span class="s">'Page 2 of 2'</span>)).toBeVisible();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 2 workers
 
-page 1 shows five orders on worker 0
-  ✓  1 [chromium] › tests/orders.spec.ts:3:1 › page 1 shows five orders (417ms)
-shows five products on worker 0
 page 2 is the last page on worker 1
-  ✓  2 [chromium] › tests/orders.spec.ts:9:1 › page 2 is the last page (657ms)
-finds the lamp on worker 1
-  ✓  4 [chromium] › tests/products.spec.ts:9:1 › finds the lamp (344ms)
+  ✓  1 [chromium] › tests/orders.spec.ts:9:1 › page 2 is the last page (521ms)
+page 1 shows five orders on worker 0
+shows five products on worker 1
+  ✓  2 [chromium] › tests/orders.spec.ts:3:1 › page 1 shows five orders (611ms)
+finds the lamp on worker 0
+  ✓  4 [chromium] › tests/products.spec.ts:9:1 › finds the lamp (237ms)
   ✓  3 [chromium] › tests/products.spec.ts:3:1 › shows five products (1.2s)
 
-  4 passed (3.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four tests ran on two workers at once, and the output shows which worker took which test. Each worker has its own browser, and each test still gets its own fresh page, so the tests cannot see each other. In Playwright Test the workers are separate processes. pytest-xdist also starts processes, named gw0 and gw1. JUnit uses threads inside one JVM, so each class gets its own Playwright on its own thread.</p></div></div>
+  4 passed (3.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four tests ran on two workers at once, and the output shows which worker took which test. Each worker has its own browser, and each test still gets its own fresh page, so the tests cannot see each other. In Playwright Test the workers are separate processes. pytest-xdist also starts processes, named gw0 and gw1. JUnit uses threads inside one JVM, so each class gets its own Playwright on its own thread.</p></div></div>
 <div class="tw"><table class="jt "><tr><th></th><th>Playwright Test</th><th>pytest</th><th>JUnit 5</th></tr><tr><td>how</td><td>built in, worker processes</td><td>the pytest-xdist plugin, worker processes</td><td>built in, threads in one JVM</td></tr><tr><td>turn it on</td><td>on by default, per file</td><td>pytest -n 4, or -n auto</td><td>junit-platform.properties</td></tr><tr><td>how many</td><td>workers: 4, or --workers=4</td><td>-n 4</td><td>config.fixed.parallelism = 4</td></tr><tr><td>tests inside one file</td><td>in order, unless fullyParallel: true</td><td>spread over workers</td><td>in order, unless mode.default = concurrent</td></tr><tr><td>turn it off</td><td>--workers=1</td><td>leave out -n</td><td>parallel.enabled = false</td></tr></table></div>
 <div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Playwright Test runs files in parallel and the tests inside a file in order. fullyParallel: true lets every test run on any worker, which balances the load better.</div></div>
 </section>
@@ -290,17 +290,17 @@ finds the lamp on worker 1
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.brainy.ProductsTest
-[INFO] Running com.brainy.AddMeeraTest
 [INFO] Running com.brainy.AddChenTest
-add Chen: start
+[INFO] Running com.brainy.AddMeeraTest
 products: start
+add Chen: start
 add Chen: done
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.655 s -- in com.brainy.AddChenTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.165 s -- in com.brainy.AddChenTest
+products: done
 add Meera: start
 add Meera: done
-products: done
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.543 s -- in com.brainy.AddMeeraTest
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.573 s -- in com.brainy.ProductsTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.221 s -- in com.brainy.ProductsTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.398 s -- in com.brainy.AddMeeraTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -339,52 +339,14 @@ created: 3/3 workers
 
 scheduling tests via LoadGroupScheduling
 
-tests/test_people.py::test_add_meera[chromium]@people 
 tests/test_people.py::test_shows_five_products[chromium] 
-[gw0] [ 33%] PASSED tests/test_people.py::test_add_meera[chromium]@people 
+tests/test_people.py::test_add_meera[chromium]@people 
+[gw1] [ 33%] PASSED tests/test_people.py::test_add_meera[chromium]@people 
 tests/test_people.py::test_add_chen[chromium]@people 
-[gw0] [ 66%] PASSED tests/test_people.py::test_add_chen[chromium]@people 
-[gw1] [100%] PASSED tests/test_people.py::test_shows_five_products[chromium] 
+[gw1] [ 66%] PASSED tests/test_people.py::test_add_chen[chromium]@people 
+[gw0] [100%] PASSED tests/test_people.py::test_shows_five_products[chromium] 
 
-============================== 3 passed in 4.27s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/people.spec.js</div><pre class="src" data-file="tests/people.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
-
-<span class="c">// Both tests count the people in the shop, so they must not run at the same time.</span>
-test(<span class="s">'add Meera'</span>, { lock: <span class="s">'people'</span> }, <span class="k">async</span> ({ request }) =&gt; {
-  console.log(<span class="s">'add Meera: start'</span>);
-  <span class="k">const</span> before = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
-  <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Meera'</span>, email: <span class="s">'meera@shop.example'</span> } });
-  <span class="k">const</span> after = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
-  expect(after).toBe(before + <span class="n">1</span>);
-  console.log(<span class="s">'add Meera: done'</span>);
-});
-
-test(<span class="s">'add Chen'</span>, { lock: <span class="s">'people'</span> }, <span class="k">async</span> ({ request }) =&gt; {
-  console.log(<span class="s">'add Chen: start'</span>);
-  <span class="k">const</span> before = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
-  <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Chen'</span>, email: <span class="s">'chen@shop.example'</span> } });
-  <span class="k">const</span> after = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
-  expect(after).toBe(before + <span class="n">1</span>);
-  console.log(<span class="s">'add Chen: done'</span>);
-});
-
-test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }) =&gt; {        <span class="c">// no lock, runs alongside</span>
-  console.log(<span class="s">'products: start'</span>);
-  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
-  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
-  console.log(<span class="s">'products: done'</span>);
-});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 3 workers
-
-products: start
-add Meera: start
-add Meera: done
-  ✓  2 [chromium] › tests/people.spec.js:4:1 › add Meera (104ms)
-add Chen: start
-add Chen: done
-  ✓  3 [chromium] › tests/people.spec.js:13:1 › add Chen (47ms)
-products: done
-  ✓  1 [chromium] › tests/people.spec.js:22:1 › shows five products (1.1s)
-
-  3 passed (3.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/people.spec.ts</div><pre class="src" data-file="tests/people.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 3 passed in 4.06s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/people.spec.js</div><pre class="src" data-file="tests/people.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="c">// Both tests count the people in the shop, so they must not run at the same time.</span>
 test(<span class="s">'add Meera'</span>, { lock: <span class="s">'people'</span> }, <span class="k">async</span> ({ request }) =&gt; {
@@ -412,17 +374,55 @@ test(<span class="s">'shows five products'</span>, <span class="k">async</span> 
   console.log(<span class="s">'products: done'</span>);
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 3 workers
 
-products: start
 add Meera: start
+products: start
 add Meera: done
-  ✓  2 [chromium] › tests/people.spec.ts:4:1 › add Meera (110ms)
+  ✓  2 [chromium] › tests/people.spec.js:4:1 › add Meera (232ms)
 add Chen: start
 add Chen: done
-  ✓  3 [chromium] › tests/people.spec.ts:13:1 › add Chen (84ms)
+  ✓  3 [chromium] › tests/people.spec.js:13:1 › add Chen (135ms)
 products: done
-  ✓  1 [chromium] › tests/people.spec.ts:22:1 › shows five products (1.1s)
+  ✓  1 [chromium] › tests/people.spec.js:22:1 › shows five products (1.4s)
 
-  3 passed (2.8s)</pre></div></div><div class="note-out"><span>What happens</span><p>The two tests that count people never overlapped: one finished before the other started, while the products test ran next to them. Playwright Test calls this a test lock (new in version 1.63). JUnit has the same idea in @ResourceLock. pytest-xdist has no lock, but a group sends tests to one worker, which runs them one after the other.</p></div></div>
+  3 passed (4.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/people.spec.ts</div><pre class="src" data-file="tests/people.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="c">// Both tests count the people in the shop, so they must not run at the same time.</span>
+test(<span class="s">'add Meera'</span>, { lock: <span class="s">'people'</span> }, <span class="k">async</span> ({ request }) =&gt; {
+  console.log(<span class="s">'add Meera: start'</span>);
+  <span class="k">const</span> before = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Meera'</span>, email: <span class="s">'meera@shop.example'</span> } });
+  <span class="k">const</span> after = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  expect(after).toBe(before + <span class="n">1</span>);
+  console.log(<span class="s">'add Meera: done'</span>);
+});
+
+test(<span class="s">'add Chen'</span>, { lock: <span class="s">'people'</span> }, <span class="k">async</span> ({ request }) =&gt; {
+  console.log(<span class="s">'add Chen: start'</span>);
+  <span class="k">const</span> before = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  <span class="k">await</span> request.post(<span class="s">'/api/people'</span>, { data: { name: <span class="s">'Chen'</span>, email: <span class="s">'chen@shop.example'</span> } });
+  <span class="k">const</span> after = (<span class="k">await</span> (<span class="k">await</span> request.<span class="k">get</span>(<span class="s">'/api/people'</span>)).json()).length;
+  expect(after).toBe(before + <span class="n">1</span>);
+  console.log(<span class="s">'add Chen: done'</span>);
+});
+
+test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }) =&gt; {        <span class="c">// no lock, runs alongside</span>
+  console.log(<span class="s">'products: start'</span>);
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+  console.log(<span class="s">'products: done'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 3 workers
+
+add Meera: start
+add Meera: done
+  ✓  2 [chromium] › tests/people.spec.ts:4:1 › add Meera (121ms)
+add Chen: start
+add Chen: done
+  ✓  3 [chromium] › tests/people.spec.ts:13:1 › add Chen (133ms)
+products: start
+products: done
+  ✓  1 [chromium] › tests/people.spec.ts:22:1 › shows five products (1.3s)
+
+  3 passed (3.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>The two tests that count people never overlapped: one finished before the other started, while the products test ran next to them. Playwright Test calls this a test lock (new in version 1.63). JUnit has the same idea in @ResourceLock. pytest-xdist has no lock, but a group sends tests to one worker, which runs them one after the other.</p></div></div>
 <div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>Playwright Test also has a serial mode, test.describe.configure({ mode: 'serial' }), where the tests in a file run in order and the rest are skipped after a failure. The Playwright docs advise against it: isolated tests are faster and easier to retry.</div></div>
 </section>
 <section class="card reveal jsec" id="retries" data-say="retries"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔁</span><span>Retries and flaky tests</span></h2>
@@ -482,8 +482,8 @@ products: done
 [INFO] -------------------------------------------------------
 [INFO] Running com.brainy.OfferTest
 attempt 1
-[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 3.115 s &lt;&lt;&lt; FAILURE! -- in com.brainy.OfferTest
-[ERROR] com.brainy.OfferTest.theOfferShowsUp -- Time elapsed: 1.710 s &lt;&lt;&lt; FAILURE!
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 4.556 s &lt;&lt;&lt; FAILURE! -- in com.brainy.OfferTest
+[ERROR] com.brainy.OfferTest.theOfferShowsUp -- Time elapsed: 2.005 s &lt;&lt;&lt; FAILURE!
 org.opentest4j.AssertionFailedError: 
 Locator expected to be visible
 Error: element(s) not found
@@ -492,7 +492,7 @@ Call log:
   - waiting for getByTestId(&quot;offer&quot;)
 [INFO] Running com.brainy.OfferTest
 attempt 2
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.897 s -- in com.brainy.OfferTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.527 s -- in com.brainy.OfferTest
 [WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Flakes: 1
 [INFO] 
 [INFO] ------------------------------------------------------------------------
@@ -515,7 +515,7 @@ tests/test_offer.py::test_the_offer_shows_up[chromium]
 attempt 2
 PASSED
 
-========================== 1 passed, 1 rerun in 5.28s ==========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/offer.spec.js</div><pre class="src" data-file="tests/offer.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+========================== 1 passed, 1 rerun in 6.18s ==========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/offer.spec.js</div><pre class="src" data-file="tests/offer.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'the offer shows up'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
   console.log(<span class="s">`attempt ${testInfo.retry + 1}`</span>);
@@ -527,9 +527,9 @@ test(<span class="s">'the offer shows up'</span>, <span class="k">async</span> (
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
 attempt 1
-  ✘  1 [chromium] › tests/offer.spec.js:3:1 › the offer shows up (1.8s)
+  ✘  1 [chromium] › tests/offer.spec.js:3:1 › the offer shows up (2.0s)
 attempt 2
-  ✓  2 [chromium] › tests/offer.spec.js:3:1 › the offer shows up (retry #1) (2.7s)
+  ✓  2 [chromium] › tests/offer.spec.js:3:1 › the offer shows up (retry #1) (2.8s)
 
 
   1) [chromium] › tests/offer.spec.js:3:1 › the offer shows up ─────────────────────────────────────
@@ -569,7 +569,7 @@ test(<span class="s">'the offer shows up'</span>, <span class="k">async</span> (
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
 attempt 1
-  ✘  1 [chromium] › tests/offer.spec.ts:3:1 › the offer shows up (1.8s)
+  ✘  1 [chromium] › tests/offer.spec.ts:3:1 › the offer shows up (1.9s)
 attempt 2
   ✓  2 [chromium] › tests/offer.spec.ts:3:1 › the offer shows up (retry #1) (2.6s)
 
@@ -661,8 +661,8 @@ attempt 2
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.brainy.TimeoutsTest
-[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 8.013 s &lt;&lt;&lt; FAILURE! -- in com.brainy.TimeoutsTest
-[ERROR] com.brainy.TimeoutsTest.givesUpTooEarly(Page) -- Time elapsed: 2.200 s &lt;&lt;&lt; FAILURE!
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 8.770 s &lt;&lt;&lt; FAILURE! -- in com.brainy.TimeoutsTest
+[ERROR] com.brainy.TimeoutsTest.givesUpTooEarly(Page) -- Time elapsed: 2.324 s &lt;&lt;&lt; FAILURE!
 org.opentest4j.AssertionFailedError: 
 Locator expected to be visible
 Error: element(s) not found
@@ -761,6 +761,9 @@ E           - button &quot;Load offers&quot;
 E           - button &quot;Pay now&quot;
 E           - paragraph:
 E             - button &quot;Catch me&quot;
+E         - region &quot;Live stock&quot;:
+E           - heading &quot;Live stock&quot; [level=2]
+E           - paragraph: &quot;Desk lamp: 8 left&quot;
 E         - region &quot;Messages&quot;:
 E           - heading &quot;Console and errors&quot; [level=2]
 E           - button &quot;Write to the console&quot;
@@ -769,7 +772,7 @@ E           - button &quot;Break the page&quot;
 tests/test_timeouts.py:13: AssertionError
 =========================== short test summary info ============================
 FAILED tests/test_timeouts.py::test_gives_up_too_early[chromium] - AssertionError: Locator expected to be visible
-========================= 1 failed, 2 passed in 7.15s ==========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 tests/timeouts.spec.js</div><pre class="src" data-file="tests/timeouts.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+========================= 1 failed, 2 passed in 7.58s ==========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 tests/timeouts.spec.js</div><pre class="src" data-file="tests/timeouts.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'waits long enough for the offer'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
@@ -791,8 +794,8 @@ test(<span class="s">'a slow test gets more time'</span>, <span class="k">async<
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 3 tests using 1 worker
 
   ✓  1 [chromium] › tests/timeouts.spec.js:3:1 › waits long enough for the offer (2.7s)
-  ✘  2 [chromium] › tests/timeouts.spec.js:9:1 › gives up too early (2.1s)
-  ✓  3 [chromium] › tests/timeouts.spec.js:15:1 › a slow test gets more time (1.8s)
+  ✘  2 [chromium] › tests/timeouts.spec.js:9:1 › gives up too early (2.5s)
+  ✓  3 [chromium] › tests/timeouts.spec.js:15:1 › a slow test gets more time (2.0s)
 
 
   1) [chromium] › tests/timeouts.spec.js:9:1 › gives up too early ──────────────────────────────────
@@ -822,7 +825,7 @@ test(<span class="s">'a slow test gets more time'</span>, <span class="k">async<
 
   1 failed
     [chromium] › tests/timeouts.spec.js:9:1 › gives up too early ───────────────────────────────────
-  2 passed (9.3s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 tests/timeouts.spec.ts</div><pre class="src" data-file="tests/timeouts.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  2 passed (10.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 tests/timeouts.spec.ts</div><pre class="src" data-file="tests/timeouts.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'waits long enough for the offer'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
@@ -843,9 +846,9 @@ test(<span class="s">'a slow test gets more time'</span>, <span class="k">async<
   <span class="k">await</span> expect(page.getByText(<span class="s">'Payment done'</span>)).toBeVisible();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 3 tests using 1 worker
 
-  ✓  1 [chromium] › tests/timeouts.spec.ts:3:1 › waits long enough for the offer (2.8s)
+  ✓  1 [chromium] › tests/timeouts.spec.ts:3:1 › waits long enough for the offer (2.6s)
   ✘  2 [chromium] › tests/timeouts.spec.ts:9:1 › gives up too early (2.3s)
-  ✓  3 [chromium] › tests/timeouts.spec.ts:15:1 › a slow test gets more time (1.8s)
+  ✓  3 [chromium] › tests/timeouts.spec.ts:15:1 › a slow test gets more time (1.4s)
 
 
   1) [chromium] › tests/timeouts.spec.ts:9:1 › gives up too early ──────────────────────────────────
@@ -938,7 +941,7 @@ test(<span class="s">'a slow test gets more time'</span>, <span class="k">async<
 [INFO] Running com.brainy.ProductsTest
 findsTheLamp on main
 showsFiveProducts on main
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.329 s -- in com.brainy.ProductsTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.835 s -- in com.brainy.ProductsTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -980,7 +983,7 @@ collected 4 items / 2 deselected / 2 selected
 tests/test_orders.py::test_page_1_shows_five_orders[chromium] PASSED     [ 50%]
 tests/test_orders.py::test_page_2_is_the_last_page[chromium] PASSED      [100%]
 
-======================= 2 passed, 2 deselected in 1.36s ========================
+======================= 2 passed, 2 deselected in 1.89s ========================
 
 [pytest-split] No test durations found. Pytest-split will split tests evenly when no durations are found. 
 [pytest-split] You can expect better results in consequent runs, when test timings have been documented.
@@ -995,7 +998,7 @@ collected 4 items / 2 deselected / 2 selected
 tests/test_products.py::test_shows_five_products[chromium] PASSED        [ 50%]
 tests/test_products.py::test_finds_the_lamp[chromium] PASSED             [100%]
 
-======================= 2 passed, 2 deselected in 1.90s ========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products.spec.js</div><pre class="src" data-file="tests/products.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+======================= 2 passed, 2 deselected in 2.47s ========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products.spec.js</div><pre class="src" data-file="tests/products.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
   console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
@@ -1024,20 +1027,20 @@ test(<span class="s">'page 2 is the last page'</span>, <span class="k">async</sp
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --shard=1/2 &amp;&amp; npx playwright test --shard=2/2</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker, shard 1 of 2
 
 page 1 shows five orders on worker 0
-  ✓  1 [chromium] › tests/orders.spec.js:3:1 › page 1 shows five orders (304ms)
+  ✓  1 [chromium] › tests/orders.spec.js:3:1 › page 1 shows five orders (367ms)
 page 2 is the last page on worker 0
-  ✓  2 [chromium] › tests/orders.spec.js:9:1 › page 2 is the last page (288ms)
+  ✓  2 [chromium] › tests/orders.spec.js:9:1 › page 2 is the last page (369ms)
 
-  2 passed (2.1s)
+  2 passed (2.7s)
 
 Running 2 tests using 1 worker, shard 2 of 2
 
 shows five products on worker 0
-  ✓  1 [chromium] › tests/products.spec.js:3:1 › shows five products (1.0s)
+  ✓  1 [chromium] › tests/products.spec.js:3:1 › shows five products (1.1s)
 finds the lamp on worker 0
-  ✓  2 [chromium] › tests/products.spec.js:9:1 › finds the lamp (207ms)
+  ✓  2 [chromium] › tests/products.spec.js:9:1 › finds the lamp (293ms)
 
-  2 passed (2.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products.spec.ts</div><pre class="src" data-file="tests/products.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  2 passed (3.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products.spec.ts</div><pre class="src" data-file="tests/products.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'shows five products'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
   console.log(<span class="s">`${testInfo.title} on worker ${testInfo.parallelIndex}`</span>);
@@ -1066,20 +1069,20 @@ test(<span class="s">'page 2 is the last page'</span>, <span class="k">async</sp
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --shard=1/2 &amp;&amp; npx playwright test --shard=2/2</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker, shard 1 of 2
 
 page 1 shows five orders on worker 0
-  ✓  1 [chromium] › tests/orders.spec.ts:3:1 › page 1 shows five orders (326ms)
+  ✓  1 [chromium] › tests/orders.spec.ts:3:1 › page 1 shows five orders (417ms)
 page 2 is the last page on worker 0
-  ✓  2 [chromium] › tests/orders.spec.ts:9:1 › page 2 is the last page (328ms)
+  ✓  2 [chromium] › tests/orders.spec.ts:9:1 › page 2 is the last page (337ms)
 
-  2 passed (1.9s)
+  2 passed (2.6s)
 
 Running 2 tests using 1 worker, shard 2 of 2
 
 shows five products on worker 0
   ✓  1 [chromium] › tests/products.spec.ts:3:1 › shows five products (1.1s)
 finds the lamp on worker 0
-  ✓  2 [chromium] › tests/products.spec.ts:9:1 › finds the lamp (230ms)
+  ✓  2 [chromium] › tests/products.spec.ts:9:1 › finds the lamp (228ms)
 
-  2 passed (2.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>Each command ran half of the suite, the way two CI machines would, one command each. Playwright Test splits with --shard. pytest needs a plugin, and pytest-split is shown here. Maven has no shard option, so teams give each machine its own classes with -Dtest, or its own tags with -Dgroups. The other machine would run mvn test -Dtest=OrdersTest.</p></div></div>
+  2 passed (3.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>Each command ran half of the suite, the way two CI machines would, one command each. Playwright Test splits with --shard. pytest needs a plugin, and pytest-split is shown here. Maven has no shard option, so teams give each machine its own classes with -Dtest, or its own tags with -Dgroups. The other machine would run mvn test -Dtest=OrdersTest.</p></div></div>
 <div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Shards are balanced by test count, not by time. With fullyParallel: true, Playwright Test splits single tests, so the shards come out even. Without it, whole files are split, so keep files a similar size. pytest-split can balance by recorded durations.</div></div>
 <p>The reporting chapter shows how the blob reports of each shard are merged into one HTML report, and the CI chapter shows the GitHub Actions matrix that starts the shards.</p>
 </section>

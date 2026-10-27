@@ -374,8 +374,9 @@ const PWPLAY = (() => {
         const p = n.ps[0] || 'x';
         if (lang === 'py') return `lambda ${p}: ${gen(n.body, lang)}`;
         if (lang === 'java') return `${p} -> ${gen(n.body, lang)}`;
-        if (lang === 'cs') return `async (_, ${p}) => await ${gen(n.body, lang)}`;
-        return `${p} => ${gen(n.body, lang)}`;
+        const body = gen(n.body, lang).replace(/^await /, '');   // an arrow that returns the promise needs no await
+        if (lang === 'cs') return `async (_, ${p}) => await ${body}`;
+        return `${p} => ${body}`;
       }
       case 'call': case 'get': return genChain(n, lang);
       default: return '/* ? */';
@@ -391,6 +392,12 @@ const PWPLAY = (() => {
     const ent = Object.entries(optNode.v);
     if (!ent.length) return null;
     if (lang === 'py') return ent.map(([k, v]) => `${snake(k)}=${gen(v, lang)}`).join(', ');
+    if (lang === 'java' && method === 'fulfill') {   // Java has no json option: send the JSON text as the body
+      const plain = n => n.k === 'arr' ? n.v.map(plain) : n.k === 'obj' ? Object.fromEntries(Object.entries(n.v).map(([k, v]) => [k, plain(v)])) : n.v;
+      return 'new Route.FulfillOptions()' + ent.map(([k, v]) => k === 'json'
+        ? `.setContentType("application/json").setBody(${quote(JSON.stringify(plain(v)), lang)})`
+        : `.set${k[0].toUpperCase()}${k.slice(1)}(${gen(v, lang)})`).join('');
+    }
     if (lang === 'java') {
       const cls = JAVA_AOPT[method] ? `LocatorAssertions.${JAVA_AOPT[method]}` : `${own}.${JAVA_OPT[method] || (method[0].toUpperCase() + method.slice(1) + 'Options')}`;
       return `new ${cls}()` + ent.map(([k, v]) => `.set${k[0].toUpperCase()}${k.slice(1)}(${gen(v, lang)})`).join('');
@@ -406,7 +413,7 @@ const PWPLAY = (() => {
       if (lang === 'java' || lang === 'cs') return `${gen(v.width, lang)}, ${gen(v.height, lang)}`;
       return gen(pos[0], lang);
     }
-    if (pos.length && pos[pos.length - 1].k === 'obj' && method !== 'fulfill' && method !== 'evaluate') opt = pos.pop();
+    if (pos.length && pos[pos.length - 1].k === 'obj' && method !== 'evaluate') opt = pos.pop();
     const parts = pos.map((a, k) => {
       if (method === 'getByRole' && k === 0 && a.k === 'lit') {
         if (lang === 'java') return 'AriaRole.' + String(a.v).toUpperCase();
@@ -416,7 +423,6 @@ const PWPLAY = (() => {
     });
     const o = optsFor(method, opt, lang, own);
     if (o) parts.push(o);
-    if (opt && method === 'fulfill') parts.push(gen(opt, lang));
     return parts.join(', ');
   }
   function genChain(n, lang) {

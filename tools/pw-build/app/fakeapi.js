@@ -90,6 +90,20 @@
     return res;
   };
 
+  // The /ws/stock feed, answered in the browser like the server does: "subscribe" gets the stock of the lamp.
+  window.WebSocket = class {
+    constructor(url) {
+      this.url = String(url);
+      setTimeout(() => (this.url.endsWith('/ws/stock') ? this.onopen && this.onopen({}) : this.onerror && this.onerror({})), 0);
+    }
+    send(text) {
+      if (text !== 'subscribe') return;
+      const lamp = PRODUCTS.find(x => x.id === 3);
+      setTimeout(() => this.onmessage && this.onmessage({ data: JSON.stringify({ product: lamp.name, left: lamp.stock }) }), 0);
+    }
+    close() {}
+  };
+
   // Dialogs go to the playground, which accepts or dismisses them like Playwright does.
   if (host) {
     window.alert = m => { host.dialog('alert', String(m), null); };

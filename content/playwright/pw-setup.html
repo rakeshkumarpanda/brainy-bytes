@@ -17,7 +17,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🚀 Getting started</span><span>›</span><span>Chapter 2 of 7</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🚀 Getting started</span><span>›</span><span>Chapter 2 of 10</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🧰</span><div><h1>Installing Playwright and your first project</h1><p class="lead">Install Playwright in Java, Python, JavaScript and TypeScript, walk through the files of a new project, record a test with codegen and run tests from the terminal like you will every day at work.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 23 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 5 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -215,10 +215,10 @@ test(<span class="s">'get started link'</span>, <span class="k">async</span> ({ 
   <span class="c">// },</span>
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 2 workers
 
-  ✓  1 [chromium] › tests/example.spec.ts:10:1 › get started link (649ms)
-  ✓  2 [chromium] › tests/example.spec.ts:3:1 › has title (462ms)
+  ✓  1 [chromium] › tests/example.spec.ts:10:1 › get started link (505ms)
+  ✓  2 [chromium] › tests/example.spec.ts:3:1 › has title (435ms)
 
-  2 passed (2.2s)</pre></div></div><div class="note-out"><span>What happens</span><p>The two starter tests visit playwright.dev, so here they were changed to visit the shop, and the config got a <code>baseURL</code>. The Firefox and WebKit projects were removed for this run because only Chromium is installed on the build machine. With all three projects, each test runs three times, once per browser.</p></div></div>
+  2 passed (2.3s)</pre></div></div><div class="note-out"><span>What happens</span><p>The two starter tests visit playwright.dev, so here they were changed to visit the shop, and the config got a <code>baseURL</code>. The Firefox and WebKit projects were removed for this run because only Chromium is installed on the build machine. With all three projects, each test runs three times, once per browser.</p></div></div>
 <p>Three ideas are the same in every language:</p>
 <ul>
 <li><b>Tests live in their own folder</b>: <code>tests/</code>, or <code>src/test/java</code> in Maven.</li>
@@ -257,7 +257,7 @@ test(<span class="s">'get started link'</span>, <span class="k">async</span> ({ 
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running TestExample
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.988 s -- in TestExample
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.070 s -- in TestExample
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -284,7 +284,7 @@ test(<span class="s">'get started link'</span>, <span class="k">async</span> ({ 
 
 tests/test_example.py::test_example[chromium] PASSED                     [100%]
 
-============================== 1 passed in 1.79s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/example.spec.js</div><pre class="src" data-file="tests/example.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 1.37s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/example.spec.js</div><pre class="src" data-file="tests/example.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test.use({
   viewport: {
@@ -302,9 +302,9 @@ test(<span class="s">'test'</span>, <span class="k">async</span> ({ page }) =&gt
   <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/example.spec.js:10:1 › test (575ms)
+  ✓  1 [chromium] › tests/example.spec.js:10:1 › test (545ms)
 
-  1 passed (2.1s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/example.spec.ts</div><pre class="src" data-file="tests/example.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (2.6s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/example.spec.ts</div><pre class="src" data-file="tests/example.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test.use({
   viewport: {
@@ -322,9 +322,9 @@ test(<span class="s">'test'</span>, <span class="k">async</span> ({ page }) =&gt
   <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Sign in'</span> }).click();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/example.spec.ts:10:1 › test (618ms)
+  ✓  1 [chromium] › tests/example.spec.ts:10:1 › test (596ms)
 
-  1 passed (2.0s)</pre></div></div><div class="note-out"><span>What happens</span><p>This is exactly the code codegen wrote while the build clicked and typed into the recording browser. It runs and passes, but it has no check at the end. A test without a check only proves that nothing crashed.</p></div></div>
+  1 passed (2.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>This is exactly the code codegen wrote while the build clicked and typed into the recording browser. It runs and passes, but it has no check at the end. A test without a check only proves that nothing crashed.</p></div></div>
 <p>Treat recorded code as a first draft. Clean it up before you commit it:</p>
 <div class="codewrap tests pw4" data-k="clean" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same test after a clean up · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/SignInTest.java</div><pre class="src" data-file="src/test/java/com/brainy/SignInTest.java"><span class="k">package</span> com.brainy;
 
@@ -349,7 +349,7 @@ test(<span class="s">'test'</span>, <span class="k">async</span> ({ page }) =&gt
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.brainy.SignInTest
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.952 s -- in com.brainy.SignInTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.273 s -- in com.brainy.SignInTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -368,7 +368,7 @@ test(<span class="s">'test'</span>, <span class="k">async</span> ({ page }) =&gt
 
 tests/test_sign_in.py::test_a_customer_can_sign_in[chromium] PASSED      [100%]
 
-============================== 1 passed in 1.47s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/sign-in.spec.js</div><pre class="src" data-file="tests/sign-in.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 1 passed in 1.88s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/sign-in.spec.js</div><pre class="src" data-file="tests/sign-in.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'a customer can sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
@@ -378,9 +378,9 @@ test(<span class="s">'a customer can sign in'</span>, <span class="k">async</spa
   <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/sign-in.spec.js:3:1 › a customer can sign in (566ms)
+  ✓  1 [chromium] › tests/sign-in.spec.js:3:1 › a customer can sign in (794ms)
 
-  1 passed (2.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/sign-in.spec.ts</div><pre class="src" data-file="tests/sign-in.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (2.6s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/sign-in.spec.ts</div><pre class="src" data-file="tests/sign-in.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'a customer can sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
@@ -390,9 +390,9 @@ test(<span class="s">'a customer can sign in'</span>, <span class="k">async</spa
   <span class="k">await</span> expect(page.getByText(<span class="s">'Hello, Asha'</span>)).toBeVisible();
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/sign-in.spec.ts:3:1 › a customer can sign in (600ms)
+  ✓  1 [chromium] › tests/sign-in.spec.ts:3:1 › a customer can sign in (709ms)
 
-  1 passed (2.1s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four changes: a clear test name, a relative address that uses the base URL from the config, no extra <code>click</code> before <code>fill</code> (fill focuses the box by itself), and a check at the end.</p></div></div>
+  1 passed (2.6s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four changes: a clear test name, a relative address that uses the base URL from the config, no extra <code>click</code> before <code>fill</code> (fill focuses the box by itself), and a check at the end.</p></div></div>
 <div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Codegen picks locators the same way you should: role and accessible name first, then label, placeholder or text, and a test id only when nothing better exists. When the recorded locator looks odd, the page itself is often missing a label, which is worth reporting to the developers.</div></div>
 </section>
 <section class="card reveal jsec" id="run" data-say="run"><div class="sec-num">Part 5</div><h2><span class="sec-em">▶️</span><span>Running tests from the terminal</span></h2>
@@ -428,7 +428,7 @@ test(<span class="s">'a customer can sign in'</span>, <span class="k">async</spa
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running com.brainy.ShopTest
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.086 s -- in com.brainy.ShopTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.044 s -- in com.brainy.ShopTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -452,7 +452,7 @@ test(<span class="s">'a customer can sign in'</span>, <span class="k">async</spa
 
 tests/test_shop.py::test_a_customer_can_sign_in[chromium] PASSED         [100%]
 
-======================= 1 passed, 1 deselected in 1.28s ========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/shop.spec.js</div><pre class="src" data-file="tests/shop.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+======================= 1 passed, 1 deselected in 1.48s ========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/shop.spec.js</div><pre class="src" data-file="tests/shop.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'a customer can sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
@@ -467,9 +467,9 @@ test(<span class="s">'the products page has a title'</span>, <span class="k">asy
   <span class="k">await</span> expect(page).toHaveTitle(<span class="s">'Products · Brainy Shop'</span>);
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test -g &quot;sign in&quot;</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/shop.spec.js:3:1 › a customer can sign in (643ms)
+  ✓  1 [chromium] › tests/shop.spec.js:3:1 › a customer can sign in (692ms)
 
-  1 passed (2.1s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/shop.spec.ts</div><pre class="src" data-file="tests/shop.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (2.3s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/shop.spec.ts</div><pre class="src" data-file="tests/shop.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test(<span class="s">'a customer can sign in'</span>, <span class="k">async</span> ({ page }) =&gt; {
   <span class="k">await</span> page.goto(<span class="s">'/login'</span>);
@@ -484,9 +484,9 @@ test(<span class="s">'the products page has a title'</span>, <span class="k">asy
   <span class="k">await</span> expect(page).toHaveTitle(<span class="s">'Products · Brainy Shop'</span>);
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test -g &quot;sign in&quot;</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/shop.spec.ts:3:1 › a customer can sign in (654ms)
+  ✓  1 [chromium] › tests/shop.spec.ts:3:1 › a customer can sign in (761ms)
 
-  1 passed (2.1s)</pre></div></div><div class="note-out"><span>What happens</span><p>Each runner picks tests by name. Playwright Test uses <code>-g</code> (grep) with part of the title. pytest uses <code>-k</code> with part of the function name, and reports the other test as deselected. Maven Surefire uses <code>-Dtest=Class#method</code>.</p></div></div>
+  1 passed (2.4s)</pre></div></div><div class="note-out"><span>What happens</span><p>Each runner picks tests by name. Playwright Test uses <code>-g</code> (grep) with part of the title. pytest uses <code>-k</code> with part of the function name, and reports the other test as deselected. Maven Surefire uses <code>-Dtest=Class#method</code>.</p></div></div>
 <div class="codewrap tests pw4" data-k="list" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">List the tests without running them · <b class="pw-badge">✅ ran for real</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ ran for real"><div class="fname">📄 src/test/java/com/brainy/ShopTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ShopTest.java"><span class="k">package</span> com.brainy;
 
 <span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;

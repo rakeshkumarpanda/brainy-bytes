@@ -4,6 +4,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const SITE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'site');
@@ -160,5 +161,28 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' });
     res.end(data);
   });
+});
+// A tiny WebSocket feed at /ws/stock for the network chapter. The page sends "subscribe" and gets the stock of the lamp.
+function wsSend(socket, text) {
+  const data = Buffer.from(text);
+  const head = data.length < 126 ? Buffer.from([0x81, data.length]) : Buffer.from([0x81, 126, data.length >> 8, data.length & 255]);
+  socket.write(Buffer.concat([head, data]));
+}
+server.on('upgrade', (req, socket) => {
+  if (new URL(req.url, 'http://localhost').pathname !== '/ws/stock') return socket.destroy();
+  const accept = crypto.createHash('sha1').update(req.headers['sec-websocket-key'] + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
+  socket.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${accept}\r\n\r\n`);
+  socket.on('data', buf => {
+    const op = buf[0] & 15;
+    let len = buf[1] & 127, at = 2;
+    if (len === 126) { len = buf.readUInt16BE(2); at = 4; }
+    const mask = buf.subarray(at, at + 4), body = buf.subarray(at + 4, at + 4 + len).map((b, i) => b ^ mask[i % 4]);
+    if (op === 8) { socket.end(Buffer.from([0x88, 0])); return; }
+    if (op === 1 && body.toString() === 'subscribe') {
+      const lamp = PRODUCTS.find(x => x.id === 3);
+      wsSend(socket, JSON.stringify({ product: lamp.name, left: lamp.stock }));
+    }
+  });
+  socket.on('error', () => {});
 });
 server.listen(PORT, () => console.log(`Brainy Shop on http://localhost:${PORT}`));

@@ -17,7 +17,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🧪 The test runner</span><span>›</span><span>Chapter 8 of 8</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🧪 The test runner</span><span>›</span><span>Chapter 8 of 10</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🏃</span><div><h1>The test runner: organise, tag, parameterise and configure</h1><p class="lead">Let the runner do the heavy lifting. Group and tag tests, skip and mark known failures, run a slice of the suite, feed one test many rows of data, and keep every setting in one configuration.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 5 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 16 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 3 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -79,7 +79,7 @@
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running Products page
-[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 4.668 s -- in Products page
+[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 4.386 s -- in Products page
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -118,7 +118,7 @@ tests/test_products_page.py::TestProductsPage::test_sorts_by_price[chromium] PAS
 tests/test_products_page.py::TestProductsPage::test_adds_a_product_to_the_wish_list[chromium] SKIPPED [ 75%]
 tests/test_products_page.py::TestProductsPage::test_sells_phones[chromium] XFAIL [100%]
 
-=================== 2 passed, 1 skipped, 1 xfailed in 4.90s ====================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products-page.spec.js</div><pre class="src" data-file="tests/products-page.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+=================== 2 passed, 1 skipped, 1 xfailed in 4.14s ====================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products-page.spec.js</div><pre class="src" data-file="tests/products-page.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test.describe(<span class="s">'products page'</span>, () =&gt; {
   test(<span class="s">'shows five products'</span>, { tag: <span class="s">'@smoke'</span> }, <span class="k">async</span> ({ page }) =&gt; {
@@ -147,13 +147,13 @@ test.describe(<span class="s">'products page'</span>, () =&gt; {
   });
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 1 worker
 
-  ✓  1 [chromium] › tests/products-page.spec.js:4:3 › products page › shows five products @smoke (1.2s)
-  ✓  2 [chromium] › tests/products-page.spec.js:9:3 › products page › sorts by price @regression (1.1s)
+  ✓  1 [chromium] › tests/products-page.spec.js:4:3 › products page › shows five products @smoke (1.1s)
+  ✓  2 [chromium] › tests/products-page.spec.js:9:3 › products page › sorts by price @regression (1.0s)
   -  3 [chromium] › tests/products-page.spec.js:15:8 › products page › adds a product to the wish list
   ✘  4 [chromium] › tests/products-page.spec.js:19:3 › products page › sells phones @regression (1.3s)
 
   1 skipped
-  3 passed (5.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products-page.spec.ts</div><pre class="src" data-file="tests/products-page.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  3 passed (4.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products-page.spec.ts</div><pre class="src" data-file="tests/products-page.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test.describe(<span class="s">'products page'</span>, () =&gt; {
   test(<span class="s">'shows five products'</span>, { tag: <span class="s">'@smoke'</span> }, <span class="k">async</span> ({ page }) =&gt; {
@@ -182,13 +182,13 @@ test.describe(<span class="s">'products page'</span>, () =&gt; {
   });
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 1 worker
 
-  ✓  1 [chromium] › tests/products-page.spec.ts:4:3 › products page › shows five products @smoke (1.0s)
+  ✓  1 [chromium] › tests/products-page.spec.ts:4:3 › products page › shows five products @smoke (1.2s)
   ✓  2 [chromium] › tests/products-page.spec.ts:9:3 › products page › sorts by price @regression (1.1s)
   -  3 [chromium] › tests/products-page.spec.ts:15:8 › products page › adds a product to the wish list
   ✘  4 [chromium] › tests/products-page.spec.ts:19:3 › products page › sells phones @regression (1.3s)
 
   1 skipped
-  3 passed (4.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four tests, one result each: two passed, one skipped, and one failed as expected. The test that is known to fail keeps the run green: Playwright Test shows its cross but counts it as passed, and pytest calls it xfailed. The day phones arrive it turns red, which reminds the team to remove the mark. JUnit has no such mark, so the Java class skips that case.</p></div></div>
+  3 passed (5.0s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four tests, one result each: two passed, one skipped, and one failed as expected. The test that is known to fail keeps the run green: Playwright Test shows its cross but counts it as passed, and pytest calls it xfailed. The day phones arrive it turns red, which reminds the team to remove the mark. JUnit has no such mark, so the Java class skips that case.</p></div></div>
 <div class="tw"><table class="jt "><tr><th>You want</th><th>JavaScript and TypeScript</th><th>Python (pytest)</th><th>Java (JUnit 5)</th></tr><tr><td>a group</td><td>test.describe()</td><td>a class TestSomething</td><td>a test class with @DisplayName</td></tr><tr><td>a tag</td><td>{ tag: '@smoke' }</td><td>@pytest.mark.smoke</td><td>@Tag("smoke")</td></tr><tr><td>skip</td><td>test.skip()</td><td>@pytest.mark.skip(reason=...)</td><td>@Disabled("why")</td></tr><tr><td>skip on a condition</td><td>test.skip(condition, reason)</td><td>@pytest.mark.skipif(condition, reason=...)</td><td>@EnabledOnOs, @DisabledIf...</td></tr><tr><td>known to fail</td><td>test.fail()</td><td>@pytest.mark.xfail(strict=True)</td><td>not built in, @Disabled with the ticket</td></tr><tr><td>broken, fix later</td><td>test.fixme()</td><td>@pytest.mark.skip with a reason</td><td>@Disabled</td></tr><tr><td>give it more time</td><td>test.slow()</td><td>a timeout marker from a plugin</td><td>@Timeout</td></tr><tr><td>run only this one</td><td>test.only()</td><td>-k name on the command line</td><td>-Dtest=Class#method</td></tr></table></div>
 <div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>A test.only left in the code silently skips every other test. Set forbidOnly in the CI config so such a run fails instead.</div></div>
 </section>
@@ -235,7 +235,7 @@ test.describe(<span class="s">'products page'</span>, () =&gt; {
   <span class="c">// JUnit has no "expected to fail". Teams disable the test and name the ticket: SHOP-42.</span>
 }</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test -Dgroups=smoke</pre></div><div class="out"><span>Terminal output</span><pre>[INFO]  T E S T S
 [INFO] Running Products page
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.154 s -- in Products page
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.759 s -- in Products page
 [INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_products_page.py</div><pre class="src" data-file="tests/test_products_page.py"><span class="k">import</span> pytest
 <span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
@@ -266,7 +266,7 @@ test.describe(<span class="s">'products page'</span>, () =&gt; {
 
 tests/test_products_page.py::TestProductsPage::test_shows_five_products[chromium] PASSED [100%]
 
-======================= 1 passed, 3 deselected in 2.14s ========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products-page.spec.js</div><pre class="src" data-file="tests/products-page.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+======================= 1 passed, 3 deselected in 2.22s ========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products-page.spec.js</div><pre class="src" data-file="tests/products-page.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test.describe(<span class="s">'products page'</span>, () =&gt; {
   test(<span class="s">'shows five products'</span>, { tag: <span class="s">'@smoke'</span> }, <span class="k">async</span> ({ page }) =&gt; {
@@ -295,9 +295,9 @@ test.describe(<span class="s">'products page'</span>, () =&gt; {
   });
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --grep @smoke</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/products-page.spec.js:4:3 › products page › shows five products @smoke (1.2s)
+  ✓  1 [chromium] › tests/products-page.spec.js:4:3 › products page › shows five products @smoke (1.3s)
 
-  1 passed (2.5s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products-page.spec.ts</div><pre class="src" data-file="tests/products-page.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  1 passed (3.1s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products-page.spec.ts</div><pre class="src" data-file="tests/products-page.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 test.describe(<span class="s">'products page'</span>, () =&gt; {
   test(<span class="s">'shows five products'</span>, { tag: <span class="s">'@smoke'</span> }, <span class="k">async</span> ({ page }) =&gt; {
@@ -326,9 +326,9 @@ test.describe(<span class="s">'products page'</span>, () =&gt; {
   });
 });</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --grep @smoke</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
 
-  ✓  1 [chromium] › tests/products-page.spec.ts:4:3 › products page › shows five products @smoke (1.2s)
+  ✓  1 [chromium] › tests/products-page.spec.ts:4:3 › products page › shows five products @smoke (1.1s)
 
-  1 passed (2.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>The same file, but only the smoke test ran. Playwright Test matches the tag in the title and tag list with <code>--grep</code>, pytest selects markers with <code>-m</code>, and Maven Surefire passes JUnit tags with <code>-Dgroups</code>. All three accept expressions, such as <code>--grep-invert @slow</code>, <code>-m "smoke and not slow"</code> or <code>-Dgroups="smoke &amp; !slow"</code>.</p></div></div>
+  1 passed (2.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>The same file, but only the smoke test ran. Playwright Test matches the tag in the title and tag list with <code>--grep</code>, pytest selects markers with <code>-m</code>, and Maven Surefire passes JUnit tags with <code>-Dgroups</code>. All three accept expressions, such as <code>--grep-invert @slow</code>, <code>-m "smoke and not slow"</code> or <code>-Dgroups="smoke &amp; !slow"</code>.</p></div></div>
 </section>
 <section class="card reveal jsec easy-part" id="param" data-say="param"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔁</span><span>Parameterised tests</span></h2>
 <div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
@@ -362,7 +362,7 @@ test.describe(<span class="s">'products page'</span>, () =&gt; {
   }
 }</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO]  T E S T S
 [INFO] Running com.brainy.SearchTest
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.708 s -- in com.brainy.SearchTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.978 s -- in com.brainy.SearchTest
 [INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_search.py</div><pre class="src" data-file="tests/test_search.py"><span class="k">import</span> pytest
 <span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
@@ -386,7 +386,7 @@ tests/test_search.py::test_search[chromium-o-3-Coffee mug] PASSED        [ 50%]
 tests/test_search.py::test_search[chromium-pen-1-Gel pen] PASSED         [ 75%]
 tests/test_search.py::test_search[chromium-BOTTLE-1-Water bottle] PASSED [100%]
 
-============================== 4 passed in 5.26s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/search.spec.js</div><pre class="src" data-file="tests/search.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+============================== 4 passed in 5.28s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/search.spec.js</div><pre class="src" data-file="tests/search.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">const</span> searches = [
   { term: <span class="s">'mug'</span>, count: <span class="n">1</span>, first: <span class="s">'Coffee mug'</span> },
@@ -405,12 +405,12 @@ tests/test_search.py::test_search[chromium-BOTTLE-1-Water bottle] PASSED [100%]
   });
 }</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 1 worker
 
-  ✓  1 [chromium] › tests/search.spec.js:11:3 › search for &quot;mug&quot; finds 1 (1.1s)
+  ✓  1 [chromium] › tests/search.spec.js:11:3 › search for &quot;mug&quot; finds 1 (1.2s)
   ✓  2 [chromium] › tests/search.spec.js:11:3 › search for &quot;o&quot; finds 3 (1.1s)
   ✓  3 [chromium] › tests/search.spec.js:11:3 › search for &quot;pen&quot; finds 1 (1.1s)
   ✓  4 [chromium] › tests/search.spec.js:11:3 › search for &quot;BOTTLE&quot; finds 1 (1.1s)
 
-  4 passed (5.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/search.spec.ts</div><pre class="src" data-file="tests/search.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  4 passed (6.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/search.spec.ts</div><pre class="src" data-file="tests/search.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">const</span> searches = [
   { term: <span class="s">'mug'</span>, count: <span class="n">1</span>, first: <span class="s">'Coffee mug'</span> },
@@ -429,12 +429,12 @@ tests/test_search.py::test_search[chromium-BOTTLE-1-Water bottle] PASSED [100%]
   });
 }</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 1 worker
 
-  ✓  1 [chromium] › tests/search.spec.ts:11:3 › search for &quot;mug&quot; finds 1 (1.3s)
+  ✓  1 [chromium] › tests/search.spec.ts:11:3 › search for &quot;mug&quot; finds 1 (1.2s)
   ✓  2 [chromium] › tests/search.spec.ts:11:3 › search for &quot;o&quot; finds 3 (1.1s)
-  ✓  3 [chromium] › tests/search.spec.ts:11:3 › search for &quot;pen&quot; finds 1 (1.0s)
+  ✓  3 [chromium] › tests/search.spec.ts:11:3 › search for &quot;pen&quot; finds 1 (1.1s)
   ✓  4 [chromium] › tests/search.spec.ts:11:3 › search for &quot;BOTTLE&quot; finds 1 (1.0s)
 
-  4 passed (6.0s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four rows of data became four separate tests, each with its own name and its own fresh page. A failure names the row that failed. The search ignores case, so BOTTLE finds the Water bottle.</p></div></div>
+  4 passed (5.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four rows of data became four separate tests, each with its own name and its own fresh page. A failure names the row that failed. The search ignores case, so BOTTLE finds the Water bottle.</p></div></div>
 <div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>In real projects the rows often come from a CSV or JSON file, for example 50 postcodes for a delivery check. Read the file at the top of the test file and loop over it, or use @CsvFileSource in JUnit and a list built from the file in pytest.</div></div>
 </section>
 <section class="card reveal jsec" id="config" data-say="config"><div class="sec-num">Part 5</div><h2><span class="sec-em">⚙️</span><span>Configuration in one place</span></h2>
@@ -512,10 +512,10 @@ tests/test_search.py::test_search[chromium-BOTTLE-1-Water bottle] PASSED [100%]
 }</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO]  T E S T S
 [INFO] Running com.brainy.PhoneTest
 phone   | viewport 412 | language en-IN | time zone Asia/Calcutta
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.674 s -- in com.brainy.PhoneTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.136 s -- in com.brainy.PhoneTest
 [INFO] Running com.brainy.DesktopTest
 desktop | viewport 1280 | language en-IN | time zone Asia/Calcutta
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.249 s -- in com.brainy.DesktopTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.567 s -- in com.brainy.DesktopTest
 [INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 pytest.ini</div><pre class="src" data-file="pytest.ini"><span class="k">[pytest]</span>
 <span class="a">addopts </span>=<span class="s"></span>
@@ -538,10 +538,10 @@ desktop | viewport 1280 | language en-IN | time zone Asia/Calcutta
           <span class="s">"| time zone"</span>, page.locator(<span class="s">"#tz"</span>).text_content())</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -s -q
 pytest -s -q --device &quot;Pixel 7&quot;</pre></div><div class="out"><span>Terminal output</span><pre>| viewport 1280 | language en-IN | time zone Asia/Calcutta
 .
-1 passed in 1.45s
+1 passed in 1.36s
 | viewport 412 | language en-IN | time zone Asia/Calcutta
 .
-1 passed in 1.33s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+1 passed in 1.69s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">export</span> <span class="k">default</span> defineConfig({
   testDir: <span class="s">'./tests'</span>,
@@ -575,10 +575,10 @@ test(<span class="s">'the config reaches every test'</span>, <span class="k">asy
 
 desktop  | viewport 1280 | language en-IN | time zone Asia/Calcutta
 phone    | viewport 412 | language en-IN | time zone Asia/Calcutta
-  ✓  1 [desktop] › tests/config.spec.js:3:1 › the config reaches every test (442ms)
-  ✓  2 [phone] › tests/config.spec.js:3:1 › the config reaches every test (411ms)
+  ✓  1 [desktop] › tests/config.spec.js:3:1 › the config reaches every test (578ms)
+  ✓  2 [phone] › tests/config.spec.js:3:1 › the config reaches every test (595ms)
 
-  2 passed (2.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+  2 passed (2.4s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
 
 <span class="k">export</span> <span class="k">default</span> defineConfig({
   testDir: <span class="s">'./tests'</span>,
@@ -612,10 +612,10 @@ test(<span class="s">'the config reaches every test'</span>, <span class="k">asy
 
 phone    | viewport 412 | language en-IN | time zone Asia/Calcutta
 desktop  | viewport 1280 | language en-IN | time zone Asia/Calcutta
-  ✓  1 [desktop] › tests/config.spec.ts:3:1 › the config reaches every test (573ms)
-  ✓  2 [phone] › tests/config.spec.ts:3:1 › the config reaches every test (570ms)
+  ✓  1 [phone] › tests/config.spec.ts:3:1 › the config reaches every test (591ms)
+  ✓  2 [desktop] › tests/config.spec.ts:3:1 › the config reaches every test (404ms)
 
-  2 passed (3.1s)</pre></div></div><div class="note-out"><span>What happens</span><p>One test ran as a desktop browser and as a phone, and both got the language and time zone from the configuration, not from the test. Chromium reports the time zone Asia/Kolkata by its older name Asia/Calcutta, which is the same zone. In Playwright Test, projects run the same tests with different settings. pytest-playwright takes the device from the command line, and Java uses one options class per setup.</p></div></div>
+  2 passed (2.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>One test ran as a desktop browser and as a phone, and both got the language and time zone from the configuration, not from the test. Chromium reports the time zone Asia/Kolkata by its older name Asia/Calcutta, which is the same zone. In Playwright Test, projects run the same tests with different settings. pytest-playwright takes the device from the command line, and Java uses one options class per setup.</p></div></div>
 <div class="tw"><table class="jt "><tr><th>Setting</th><th>Playwright Test</th><th>pytest-playwright</th><th>Java JUnit</th></tr><tr><td>base URL</td><td>use: { baseURL }</td><td>--base-url</td><td>setBaseUrl</td></tr><tr><td>browser</td><td>projects with devices['Desktop Firefox']</td><td>--browser firefox</td><td>setBrowserName("firefox")</td></tr><tr><td>headed</td><td>--headed or use: { headless: false }</td><td>--headed</td><td>setHeadless(false)</td></tr><tr><td>device</td><td>use: { ...devices['Pixel 7'] }</td><td>--device "Pixel 7"</td><td>setDeviceName("Pixel 7")</td></tr><tr><td>locale and other context options</td><td>use: { locale }</td><td>browser_context_args fixture</td><td>setContextOptions(...)</td></tr><tr><td>test timeout</td><td>timeout</td><td>a plugin such as pytest-timeout</td><td>@Timeout or junit.jupiter.execution.timeout</td></tr><tr><td>screenshots, video, trace</td><td>use: { screenshot, video, trace }</td><td>--screenshot, --video, --tracing</td><td>setTrace(...) and your own hooks</td></tr></table></div>
 </section>
 
@@ -624,7 +624,7 @@ desktop  | viewport 1280 | language en-IN | time zone Asia/Calcutta
   <section class="card reveal" id="quiz"></section>
   <section class="card reveal" id="numbers"></section>
   <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
-  <nav class="pager"><a class="prev" href="./pw-assertions.html" data-topic="pw-assertions"><small>← Previous chapter</small><b>✅ Assertions</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+  <nav class="pager"><a class="prev" href="./pw-assertions.html" data-topic="pw-assertions"><small>← Previous chapter</small><b>✅ Assertions</b></a><a class="next" href="./pw-fixtures.html" data-topic="pw-fixtures"><small>Next chapter →</small><b>🧩 Fixtures and hooks</b></a></nav>
 </div>
 <script src="../../assets/fun.js"></script>
 <script src="../../assets/extras.js"></script>

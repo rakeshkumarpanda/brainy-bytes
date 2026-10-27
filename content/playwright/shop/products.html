@@ -35,7 +35,10 @@ list.addEventListener('click', async e => {
 });
 document.getElementById('q').addEventListener('input', draw);
 document.getElementById('sort').addEventListener('change', draw);
-fetch('/api/products').then(r => r.json()).then(p => { all = p; document.getElementById('loading').remove(); draw(); });
+fetch('/api/products')
+  .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+  .then(p => { all = p; document.getElementById('loading').remove(); draw(); })
+  .catch(() => { const l = document.getElementById('loading'); l.textContent = 'Sorry, we could not load the products. Please try again.'; l.setAttribute('role', 'alert'); });
 </script>
 </body>
 </html>
