@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What&#x27;s new, and AI test agents · Playwright</title>
+<meta name="description" content="Playwright release highlights from 1.56 to 1.64, updating Playwright in each language, page.consoleMessages, page.pageErrors and page.requests, the planner, generator and healer agents with npx playwright init-agents, the seed test and specs folder, Playwright MCP and its configuration, Copy prompt, and a checklist for reviewing AI-written tests.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🏗️ Framework design</span><span>›</span><span>Chapter 19 of 19</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🤖</span><div><h1>What&#x27;s new, and AI test agents</h1><p class="lead">Keep up with Playwright: recent releases, a new feature in all four languages, the Playwright Test Agents set up for real in the framework, Playwright MCP for any assistant, and how to review tests that AI writes.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 25 min read</span><span class="chip">📚 5 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 5 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 1 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>Playwright keeps adding features, such as pages that remember their console messages and errors, and AI agents that plan, write and repair tests. They help, but a person still reviews every test.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#versions" class="easy"><span>🆕</span>How Playwright changes, and how to keep up</a><a href="#collect"><span>🧾</span>A new feature in all four languages</a><a href="#agents"><span>🤖</span>Playwright Test Agents</a><a href="#mcp"><span>🔌</span>Playwright MCP: a browser for AI assistants</a><a href="#review"><span>🧐</span>Using AI-written tests safely</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="versions" data-say="versions"><div class="sec-num">Part 1</div><h2><span class="sec-em">🆕</span><span>How Playwright changes, and how to keep up</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Playwright ships a new version roughly every month or two. Each version comes with its own browser builds, so updating Playwright also updates the browsers you test with. This course uses <b>1.63</b>.</p>
+<div class="tw"><table class="jt "><tr><th>Version</th><th>Highlights for testers</th></tr><tr><td>1.56</td><td>Playwright Test Agents: planner, generator and healer. page.consoleMessages(), page.pageErrors() and page.requests()</td></tr><tr><td>1.57</td><td>a Speedboard tab in the HTML report that shows the slowest tests, and Chrome for Testing builds instead of Chromium</td></tr><tr><td>1.58</td><td>a timeline chart for merged reports, and old selectors such as _react removed</td></tr><tr><td>1.59</td><td>page.screencast for videos with chapters and overlays, page.ariaSnapshot(), and npx playwright trace on the command line</td></tr><tr><td>1.60</td><td>test.abort(), locator.drop() and HAR recording through tracing</td></tr><tr><td>1.61</td><td>passkeys through browserContext.credentials, page.localStorage, and -G as a short form of --grep-invert</td></tr><tr><td>1.62</td><td>retryStrategy, WebP screenshots, and npx playwright mcp bundled with Playwright</td></tr><tr><td>1.63</td><td>test locks, locator.visible(), --add-reporter and a perfetto reporter</td></tr><tr><td>1.64</td><td>page.webmcp, --shuffle, locator.within() and page.getByRef()</td></tr></table></div>
+<div class="tw"><table class="jt "><tr><th>Language</th><th>Update the package</th><th>Then</th></tr><tr><td>TypeScript and JavaScript</td><td>npm install -D @playwright/test@latest</td><td>npx playwright install --with-deps</td></tr><tr><td>Python</td><td>pip install -U playwright pytest-playwright</td><td>playwright install --with-deps</td></tr><tr><td>Java</td><td>change the version of com.microsoft.playwright in pom.xml</td><td>Playwright downloads the matching browsers on first run</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Read the release notes before updating, and update on a branch so CI shows what changed. Each release lists its breaking changes, such as page.accessibility removed in 1.57 and Node.js 16 support removed in 1.54.</div></div>
+</section>
+<section class="card reveal jsec" id="collect" data-say="collect"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧾</span><span>A new feature in all four languages</span></h2>
+
+<p>Many new features arrive in every language at once. Here is one from 1.56 that makes debugging easier: the page remembers its recent console messages, errors and network requests, so a test can read them after the fact.</p>
+<div class="codewrap tests pw4" data-k="collect" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">New in 1.56: read console messages, errors and requests at any time · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/CollectTest.java</div><pre class="src" data-file="src/test/java/com/brainy/CollectTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">ConsoleMessage</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertEquals;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">CollectTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> readsConsoleMessagesAndPageErrorsAfterTheFact(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/widgets"</span>);
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Write to the console"</span>)).click();
+    page.getByRole(<span class="t">AriaRole</span>.<span class="t">BUTTON</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Break the page"</span>)).click();
+    page.waitForCondition(() -&gt; !page.pageErrors().isEmpty());
+
+    <span class="c">// New in 1.56: the page keeps its recent console messages, errors and requests, no listener needed</span>
+    <span class="k">for</span> (<span class="t">ConsoleMessage</span> m : page.consoleMessages()) <span class="t">System</span>.out.println(<span class="s">"console."</span> + m.type() + <span class="s">": "</span> + m.text());
+    <span class="k">for</span> (<span class="t">String</span> e : page.pageErrors()) <span class="t">System</span>.out.println(<span class="s">"page error: "</span> + e);
+    <span class="t">System</span>.out.println(<span class="s">"requests so far: "</span> + page.requests().size());
+    assertEquals(<span class="n">1</span>, page.pageErrors().size());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.CollectTest
+console.log: Cart saved with 2 items
+console.warning: Coupon expires soon
+page error: Error: Price service is down
+Error: Price service is down
+    at http://localhost:4173/widgets:46:76
+requests so far: 3
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.573 s -- in com.brainy.CollectTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_collect.py</div><pre class="src" data-file="tests/test_collect.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+
+<span class="k">def</span> test_reads_console_messages_and_page_errors_after_the_fact(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/widgets"</span>)
+    page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Write to the console"</span>).click()
+    <span class="k">with</span> page.expect_event(<span class="s">"pageerror"</span>):
+        page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Break the page"</span>).click()
+
+    <span class="c"># New in 1.56: the page keeps its recent console messages, errors and requests, no listener needed</span>
+    <span class="k">for</span> m <span class="k">in</span> page.console_messages():
+        print(f<span class="s">"console.{m.type}: {m.text}"</span>)
+    <span class="k">for</span> e <span class="k">in</span> page.page_errors():
+        print(f<span class="s">"page error: {e.message}"</span>)
+    print(f<span class="s">"requests so far: {len(page.requests())}"</span>)
+    <span class="k">assert</span> len(page.page_errors()) == <span class="n">1</span></pre><div class="cmd"><span>Terminal</span><pre>$ pytest -s -q</pre></div><div class="out"><span>Terminal output</span><pre>console.log: Cart saved with 2 items
+console.warning: Coupon expires soon
+page error: Price service is down
+requests so far: 3
+.
+1 passed in 2.27s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/collect.spec.js</div><pre class="src" data-file="tests/collect.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'reads console messages and page errors after the fact'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Write to the console'</span> }).click();
+  <span class="k">await</span> <span class="t">Promise</span>.all([
+    page.waitForEvent(<span class="s">'pageerror'</span>),
+    page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Break the page'</span> }).click(),
+  ]);
+
+  <span class="c">// New in 1.56: the page keeps its recent console messages, errors and requests, no listener needed</span>
+  <span class="k">for</span> (<span class="k">const</span> m <span class="k">of</span> <span class="k">await</span> page.consoleMessages()) console.log(<span class="s">`console.${m.type()}: ${m.text()}`</span>);
+  <span class="k">for</span> (<span class="k">const</span> e <span class="k">of</span> <span class="k">await</span> page.pageErrors()) console.log(<span class="s">`page error: ${e.message}`</span>);
+  console.log(<span class="s">`requests so far: ${(await page.requests()).length}`</span>);
+  expect(<span class="k">await</span> page.pageErrors()).toHaveLength(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+console.log: Cart saved with 2 items
+console.warning: Coupon expires soon
+page error: Price service is down
+requests so far: 3
+  ✓  1 [chromium] › tests/collect.spec.js:3:1 › reads console messages and page errors after the fact (1.6s)
+
+  1 passed (3.5s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/collect.spec.ts</div><pre class="src" data-file="tests/collect.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'reads console messages and page errors after the fact'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/widgets'</span>);
+  <span class="k">await</span> page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Write to the console'</span> }).click();
+  <span class="k">await</span> <span class="t">Promise</span>.all([
+    page.waitForEvent(<span class="s">'pageerror'</span>),
+    page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Break the page'</span> }).click(),
+  ]);
+
+  <span class="c">// New in 1.56: the page keeps its recent console messages, errors and requests, no listener needed</span>
+  <span class="k">for</span> (<span class="k">const</span> m <span class="k">of</span> <span class="k">await</span> page.consoleMessages()) console.log(<span class="s">`console.${m.type()}: ${m.text()}`</span>);
+  <span class="k">for</span> (<span class="k">const</span> e <span class="k">of</span> <span class="k">await</span> page.pageErrors()) console.log(<span class="s">`page error: ${e.message}`</span>);
+  console.log(<span class="s">`requests so far: ${(await page.requests()).length}`</span>);
+  expect(<span class="k">await</span> page.pageErrors()).toHaveLength(<span class="n">1</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+console.log: Cart saved with 2 items
+console.warning: Coupon expires soon
+page error: Price service is down
+requests so far: 3
+  ✓  1 [chromium] › tests/collect.spec.ts:3:1 › reads console messages and page errors after the fact (1.6s)
+
+  1 passed (3.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>The page kept the console messages and the error without any listener set up before. Earlier versions only offered page.on('console') and page.on('pageerror'), which miss anything that happened before the listener was added. The same three methods exist in every language: consoleMessages, pageErrors and requests. In Java a page error comes back as its message text.</p></div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Use pageErrors() at the end of a test to fail it when the page threw an error that the user never saw. It is a cheap check that catches broken scripts early.</div></div>
+</section>
+<section class="card reveal jsec" id="agents" data-say="agents"><div class="sec-num">Part 3</div><h2><span class="sec-em">🤖</span><span>Playwright Test Agents</span></h2>
+
+<p>Since 1.56, Playwright ships three <b>agent definitions</b>: instructions plus Playwright tools that an AI coding assistant follows to write and maintain tests. You bring the assistant, such as Claude Code, VS Code with Copilot, Codex or OpenCode. Playwright provides the agents.</p>
+<div class="viz" data-viz="flow" data-k="agents"></div>
+<div class="tw"><table class="jt "><tr><th>Agent</th><th>Reads</th><th>Writes</th></tr><tr><td>planner</td><td>your running app, starting from the seed test</td><td>a Markdown plan in specs/</td></tr><tr><td>generator</td><td>a plan from specs/</td><td>test files in tests/, with each locator and check tried live</td></tr><tr><td>healer</td><td>a failing test</td><td>a fixed test, or a skipped one when it believes the app itself is broken</td></tr></table></div>
+<div class="codewrap tests pw4 pw-single" data-k="agents" data-langs="ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Set up the Playwright Test Agents in the framework · <b class="pw-badge">✅ ran for real</b></span><button type="button" class="copy">Copy</button></div><div class="pw-pane" data-l="ts" data-badge="✅ ran for real"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> <span class="s">'dotenv/config'</span>;
+<span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { env } <span class="k">from</span> <span class="s">'./src/config/env'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  fullyParallel: <span class="k">true</span>,
+  forbidOnly: !!process.env.<span class="t">CI</span>,                 <span class="c">// a forgotten test.only fails the CI run</span>
+  retries: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="n">0</span>,
+  workers: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="k">undefined</span>,
+  reporter: process.env.<span class="t">CI</span>
+    ? [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }], [<span class="s">'junit'</span>, { outputFile: <span class="s">'results/junit.xml'</span> }]]
+    : [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }]],
+  use: {
+    baseURL: env.baseURL,
+    trace: <span class="s">'on-first-retry'</span>,
+    screenshot: <span class="s">'only-on-failure'</span>,
+    video: <span class="s">'retain-on-failure'</span>,
+  },
+  projects: [
+    { name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } },
+    <span class="c">// { name: 'firefox', use: { ...devices['Desktop Firefox'] } },</span>
+    <span class="c">// { name: 'webkit', use: { ...devices['Desktop Safari'] } },</span>
+  ],
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright init-agents --loop=claude &amp;&amp; echo &amp;&amp; find .claude specs tests/seed.spec.ts .mcp.json -type f | sort &amp;&amp; echo &amp;&amp; cat tests/seed.spec.ts &amp;&amp; echo &amp;&amp; cat .mcp.json</pre></div><div class="out"><span>Terminal output</span><pre> 🎭 Using project &quot;chromium&quot; as a primary project
+ 📝 specs/README.md - directory for test plans
+ 🌱 tests/seed.spec.ts - default environment seed file
+ 🤖 .claude/agents/playwright-test-generator.md - agent definition
+ 🤖 .claude/agents/playwright-test-healer.md - agent definition
+ 🤖 .claude/agents/playwright-test-planner.md - agent definition
+ 🔧 .mcp.json - mcp configuration
+ ✅ Done.
+
+.claude/agents/playwright-test-generator.md
+.claude/agents/playwright-test-healer.md
+.claude/agents/playwright-test-planner.md
+.mcp.json
+specs/README.md
+tests/seed.spec.ts
+
+import { test, expect } from &#x27;@playwright/test&#x27;;
+
+test.describe(&#x27;Test group&#x27;, () =&gt; {
+  test(&#x27;seed&#x27;, async ({ page }) =&gt; {
+    // generate code here.
+  });
+});
+
+{
+  &quot;mcpServers&quot;: {
+    &quot;playwright-test&quot;: {
+      &quot;command&quot;: &quot;npx&quot;,
+      &quot;args&quot;: [
+        &quot;playwright&quot;,
+        &quot;run-test-mcp-server&quot;
+      ]
+    }
+  }
+}</pre></div></div><div class="note-out"><span>What happens</span><p>This ran for real in the TypeScript framework. init-agents found the chromium project, wrote three agent definitions for Claude Code, a seed test, a specs folder for plans and an MCP configuration. The agents talk to Playwright through the test MCP server, started with npx playwright run-test-mcp-server. --loop also accepts vscode, copilot, codex and opencode. Run it again after every Playwright update, as the docs advise, so the agents get the new tools.</p></div></div>
+<div class="codewrap tests pw4 pw-single" data-k="plan" data-langs="ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A plan in specs/, the kind the planner writes · <b class="pw-badge">📄 A Markdown file, shown here</b></span><button type="button" class="copy">Copy</button></div><div class="pw-pane" data-l="ts" data-badge="📄 A Markdown file, shown here"><div class="fname">📄 specs/product-search.md</div><pre class="src" data-file="specs/product-search.md"># Product search
+
+## 1. Search finds one product
+Steps:
+1. Open /products
+2. Type "mug" into the search box
+Expected: only the Coffee mug card is shown, priced ₹199
+
+## 2. Search finds nothing
+Steps:
+1. Open /products
+2. Type "piano" into the search box
+Expected: "No products match your search" is shown</pre></div><div class="note-out"><span>What happens</span><p>A plan is plain Markdown that a person can review before any test exists. The generator turns each scenario into a test, and the labs below ask you to do the same by hand for the first scenario.</p></div></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>The agents write Playwright Test code in TypeScript or JavaScript. For Python and Java there are no ready made agents, but the Playwright MCP server below lets an assistant drive the browser while it writes pytest or Java tests.</div></div>
+</section>
+<section class="card reveal jsec" id="mcp" data-say="mcp"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔌</span><span>Playwright MCP: a browser for AI assistants</span></h2>
+
+<p><b>MCP</b>, the Model Context Protocol, is a standard way to give an AI assistant tools. The Playwright MCP server gives it a real browser: open a page, read its accessibility snapshot, click, type and take screenshots. The assistant can then write a test in whatever language your project uses.</p>
+<div class="codewrap tests pw4 pw-single" data-k="mcp" data-langs="ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Playwright MCP for any assistant and any language · <b class="pw-badge">📄 A configuration file, shown here</b></span><button type="button" class="copy">Copy</button></div><div class="pw-pane" data-l="ts" data-badge="📄 A configuration file, shown here"><div class="fname">📄 .mcp.json</div><pre class="src" data-file=".mcp.json">{
+  <span class="s">"mcpServers"</span>: {
+    <span class="s">"playwright"</span>: {
+      <span class="s">"command"</span>: <span class="s">"npx"</span>,
+      <span class="s">"args"</span>: [<span class="s">"@playwright/mcp@latest"</span>]
+    }
+  }
+}</pre></div><div class="note-out"><span>What happens</span><p>This is the configuration from the Playwright MCP README. Claude Code can also add it with <code>claude mcp add playwright npx @playwright/mcp@latest</code>. Since 1.62 the same server also ships inside Playwright as <code>npx playwright mcp</code>. The server works on the accessibility tree of the page, not on pixels, so the assistant sees roles and names, the same things good locators use.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Tool</th><th>Use it for</th></tr><tr><td>Playwright MCP</td><td>any assistant that speaks MCP, exploring an app and writing tests in any language</td></tr><tr><td>Playwright Test Agents</td><td>planning, generating and healing Playwright Test files in TypeScript or JavaScript</td></tr><tr><td>Copy prompt in the HTML report, trace viewer and UI mode</td><td>pasting a failed test with its error and page snapshot into any assistant, since 1.51</td></tr><tr><td>the Playwright CLI with skills</td><td>coding agents. The MCP README notes that the CLI uses fewer tokens</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="review" data-say="review"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧐</span><span>Using AI-written tests safely</span></h2>
+
+<p>An assistant can write a test in seconds, but the team still owns it. Review AI-written tests with the same rules as tests written by people.</p>
+<div class="tw"><table class="jt "><tr><th>Check</th><th>Why</th></tr><tr><td>the test uses the framework: page objects, fixtures, test data</td><td>otherwise every generated test adds locators that someone must maintain</td></tr><tr><td>every check is meaningful</td><td>a test that only checks that a heading is visible passes even when the feature is broken</td></tr><tr><td>no fixed waits and no force: true</td><td>they hide timing problems that real users meet</td></tr><tr><td>the healer did not hide a bug</td><td>it may skip a test when the app looks broken. A skipped test needs a person to decide</td></tr><tr><td>the test fails when the feature breaks</td><td>break the feature on purpose once, or change an expected value, and watch it go red</td></tr><tr><td>secrets stay out of prompts and plans</td><td>plans and prompts are files and messages that other people and tools can read</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Give the agents a seed test that signs in through your own fixtures. Generated tests then start from the same state as the rest of your suite.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-reports.html" data-topic="pw-reports"><small>← Previous chapter</small><b>📊 Reporting labs</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "What is new, in four ideas", "panels": [{"s": [["e", "🆕"], ["t", "monthly", {"b": 1}]], "h": "Releases", "t": "New browsers each time.", "more": "Read the notes first."}, {"s": [["e", "🧾"], ["t", "pageErrors", {"b": 1}]], "h": "New APIs", "t": "In every language.", "more": "Like consoleMessages."}, {"s": [["e", "🤖"], ["t", "agents", {"b": 1}]], "h": "Test Agents", "t": "Plan, generate, heal.", "more": "For Playwright Test."}, {"s": [["e", "🔌"], ["t", "MCP", {"b": 1}]], "h": "Playwright MCP", "t": "A browser for assistants.", "more": "Any language."}], "remember": "Update on a branch and read the release notes. Let AI write tests, but review them like any other code, and make sure each one can fail."}, "real": [["🧭", "A plan before the code", "A team asks the planner to explore a new checkout page. The Markdown plan lists twelve scenarios, the product owner removes two and adds one, and only then does the generator write the tests."], ["🩹", "The healer that found a real bug", "After a release the healer cannot repair a cart test and skips it, saying the Add to cart button no longer works. A person checks, and the button really is broken. The skip pointed straight at the bug."], ["⬆️", "An update that caught a crash", "A team updates Playwright on a branch. A test with a pageErrors() check fails in the new Chromium, and the trace shows a script error in the app that had gone unseen for weeks."]], "quiz": [{"lv": 1, "q": "Which version introduced the Playwright Test Agents?", "o": ["1.40", "1.56", "1.62", "1.64"], "a": 1, "hint": "Mid 1.5x.", "why": "The planner, generator and healer arrived in Playwright 1.56."}, {"lv": 1, "q": "What does the planner agent write?", "o": ["test files", "a Markdown test plan in specs/", "a CI file", "a bug report"], "a": 1, "hint": "A plan first.", "why": "The planner explores the app and saves a Markdown plan in specs/."}, {"lv": 1, "q": "Which command adds the agent definitions to a project?", "o": ["npx playwright agents", "npx playwright init-agents --loop=claude", "npm init agents", "npx playwright codegen --agents"], "a": 1, "hint": "init.", "why": "init-agents with a --loop for your assistant writes the definitions, a seed test and the MCP config."}, {"lv": 1, "q": "What does page.pageErrors() return?", "o": ["console warnings", "recent errors thrown in the page", "failed network requests", "test failures"], "a": 1, "hint": "Errors in the page.", "why": "It returns the most recent uncaught errors from the page, up to 200."}, {"lv": 2, "q": "What does the healer do when it believes the app itself is broken?", "o": ["deletes the test", "marks the test as skipped", "changes the app", "retries forever"], "a": 1, "hint": "It does not hide it silently.", "why": "It skips the test, so a person must look and decide."}, {"lv": 2, "q": "What does the Playwright MCP server use to understand a page?", "o": ["screenshots and pixels", "the accessibility tree", "the page source only", "OCR"], "a": 1, "hint": "Roles and names.", "why": "The README says it uses the accessibility tree, not pixel input."}, {"lv": 2, "q": "Why update Playwright on a branch?", "o": ["it is faster", "so CI shows what the new version and browsers change before merging", "branches get newer browsers", "it is required"], "a": 1, "hint": "See before merging.", "why": "New browsers and breaking changes show up as CI results on the branch."}, {"lv": 2, "q": "Which file did init-agents create for the agents' tools?", "o": ["package.json", ".mcp.json", "tsconfig.json", "pytest.ini"], "a": 1, "hint": "MCP.", "why": ".mcp.json starts the Playwright test MCP server that the agents use."}, {"lv": 3, "q": "What should you do with a test an assistant wrote that only checks a heading is visible?", "o": ["merge it", "make it check what the feature really does", "add a sleep", "delete the feature"], "a": 1, "hint": "Meaningful checks.", "why": "A check that passes when the feature is broken gives false confidence."}, {"lv": 3, "q": "After updating Playwright, what should you do with the agent definitions?", "o": ["nothing", "regenerate them with init-agents", "delete them", "move them to specs/"], "a": 1, "hint": "The docs say so.", "why": "The docs advise regenerating them so the agents get new tools and instructions."}, {"lv": 3, "q": "Which release added a Copy prompt button to the HTML report?", "o": ["1.51", "1.40", "1.60", "1.64"], "a": 0, "hint": "Early 1.5x.", "why": "Copy prompt arrived in 1.51 in the HTML report, the trace viewer and UI mode."}, {"lv": 3, "q": "Why might a team pick Playwright MCP over the Test Agents for a Java project?", "o": ["MCP is newer", "the agents write Playwright Test code, MCP lets an assistant write tests in any language", "Java cannot run agents", "MCP is faster"], "a": 1, "hint": "Languages.", "why": "The agents generate TypeScript or JavaScript tests. MCP only drives the browser."}], "calc": [{"lv": 1, "q": "Playwright went from 1.56 to 1.64. How many minor versions is that?", "ans": 8, "hint": "64 - 56", "steps": ["64 - 56 = 8"]}, {"lv": 1, "q": "init-agents wrote 3 agent definitions, 1 seed test, 1 specs README and 1 MCP config. How many files?", "ans": 6, "hint": "3 + 1 + 1 + 1", "steps": ["3 + 1 + 1 + 1 = 6"]}, {"lv": 2, "q": "page.consoleMessages() keeps up to 200 messages. A page logged 230. How many of the oldest are dropped?", "ans": 30, "hint": "230 - 200", "steps": ["230 - 200 = 30"]}, {"lv": 2, "q": "A plan has 12 scenarios and the product owner removes 2 and adds 1. How many does the generator turn into tests?", "ans": 11, "hint": "12 - 2 + 1", "steps": ["12 - 2 = 10", "10 + 1 = 11"]}, {"lv": 2, "q": "The healer fixes 7 of 9 failing tests and skips the rest. How many need a person to look?", "ans": 2, "hint": "9 - 7", "steps": ["9 - 7 = 2"]}, {"lv": 3, "q": "A team updates every second release. With 8 releases a year, how many updates is that?", "ans": 4, "hint": "8 / 2", "steps": ["8 / 2 = 4"]}, {"lv": 3, "q": "Reviewing a generated test takes 6 minutes and writing it by hand takes 20. How many minutes do 10 tests save?", "ans": 140, "hint": "10 × (20 - 6)", "steps": ["20 - 6 = 14 minutes per test", "10 × 14 = 140"]}, {"lv": 3, "q": "A suite has 150 tests and 3 fail after an update. What percentage still pass?", "ans": 98, "hint": "(150 - 3) / 150 × 100", "steps": ["150 - 3 = 147", "147 / 150 = 0.98", "0.98 × 100 = 98"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter shows how Playwright keeps changing and how to keep up: recent releases, a new feature in all four languages, the Playwright Test Agents, Playwright MCP, and how to review tests that AI writes.", "hi": "यह अध्याय दिखाता है कि Playwright कैसे बदलता रहता है और साथ कैसे चलें: हाल के releases, चारों भाषाओं में एक नया feature, Playwright Test Agents, Playwright MCP, और AI के लिखे tests की समीक्षा कैसे करें।", "kn": "ಈ ಅಧ್ಯಾಯ Playwright ಹೇಗೆ ಬದಲಾಗುತ್ತದೆ ಮತ್ತು ಹೇಗೆ ಹಿಂದೆ ಬೀಳದಿರುವುದು ಎಂದು ತೋರಿಸುತ್ತದೆ: ಇತ್ತೀಚಿನ releases, ನಾಲ್ಕೂ ಭಾಷೆಗಳಲ್ಲಿ ಹೊಸ feature, Playwright Test Agents, Playwright MCP, ಮತ್ತು AI ಬರೆದ tests ಪರಿಶೀಲನೆ.", "or": "ଏହି ଅଧ୍ୟାୟ ଦେଖାଏ Playwright କିପରି ବଦଳୁଛି ଏବଂ ସାଙ୍ଗରେ କିପରି ଚାଲିବେ: ନିକଟ releases, ଚାରି ଭାଷାରେ ଏକ ନୂଆ feature, Playwright Test Agents, Playwright MCP, ଏବଂ AI ଲେଖିଥିବା tests ର ସମୀକ୍ଷା।", "ar": "يعرض هذا الفصل كيف يتغير Playwright باستمرار وكيف تواكبه: الإصدارات الأخيرة، وميزة جديدة في اللغات الأربع، ووكلاء Playwright Test، وPlaywright MCP، وكيف تراجع الاختبارات التي يكتبها الذكاء الاصطناعي.", "de": "Dieses Kapitel zeigt, wie sich Playwright laufend ändert und wie du Schritt hältst: neue Versionen, eine neue Funktion in allen vier Sprachen, die Playwright Test Agents, Playwright MCP und wie du von KI geschriebene Tests prüfst."}, {"id": "versions", "h": "Keeping up", "en": "Playwright ships a new version every month or two, each with its own browsers. Read the release notes, update on a branch, and let CI show what changed.", "hi": "Playwright हर एक या दो महीने में नया version देता है, हर एक के अपने browsers के साथ। Release notes पढ़ें, branch पर update करें, और CI को दिखाने दें कि क्या बदला।", "kn": "Playwright ಪ್ರತಿ ಒಂದು ಅಥವಾ ಎರಡು ತಿಂಗಳಿಗೆ ಹೊಸ version ಕೊಡುತ್ತದೆ, ಪ್ರತಿಯೊಂದಕ್ಕೂ ತನ್ನ browsers. Release notes ಓದಿ, branch ನಲ್ಲಿ update ಮಾಡಿ, ಏನು ಬದಲಾಯಿತು ಎಂದು CI ತೋರಿಸಲಿ.", "or": "Playwright ପ୍ରତି ଏକ ବା ଦୁଇ ମାସରେ ନୂଆ version ଦିଏ, ପ୍ରତ୍ୟେକର ନିଜ browsers ସହ। Release notes ପଢନ୍ତୁ, branch ରେ update କରନ୍ତୁ, ଏବଂ CI କୁ ଦେଖାଇବାକୁ ଦିଅନ୍ତୁ କଣ ବଦଳିଲା।", "ar": "يصدر Playwright نسخة جديدة كل شهر أو شهرين، لكل منها متصفحاتها. اقرأ ملاحظات الإصدار، وحدّث على فرع، ودع CI يُظهر ما تغيّر.", "de": "Playwright bringt alle ein bis zwei Monate eine neue Version mit eigenen Browsern. Lies die Release Notes, aktualisiere auf einem Branch und lass CI zeigen, was sich geändert hat."}, {"id": "collect", "h": "A new feature", "en": "Since 1.56 a page keeps its recent console messages, errors and requests. A test can read them at any time with consoleMessages, pageErrors and requests, in every language.", "hi": "1.56 से page अपने हाल के console messages, errors और requests याद रखता है। Test उन्हें कभी भी consoleMessages, pageErrors और requests से पढ़ सकता है, हर भाषा में।", "kn": "1.56 ರಿಂದ page ತನ್ನ ಇತ್ತೀಚಿನ console messages, errors ಮತ್ತು requests ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. Test ಅವನ್ನು ಯಾವಾಗ ಬೇಕಾದರೂ consoleMessages, pageErrors, requests ಮೂಲಕ ಓದಬಹುದು, ಎಲ್ಲಾ ಭಾಷೆಗಳಲ್ಲಿ.", "or": "1.56 ରୁ page ନିଜର ନିକଟ console messages, errors ଓ requests ମନେ ରଖେ। Test ସେଗୁଡିକୁ ଯେକୌଣସି ସମୟରେ consoleMessages, pageErrors ଓ requests ରେ ପଢିପାରେ, ପ୍ରତି ଭାଷାରେ।", "ar": "منذ 1.56 تحتفظ الصفحة برسائل وحدة التحكم والأخطاء والطلبات الأخيرة. ويستطيع الاختبار قراءتها في أي وقت عبر consoleMessages وpageErrors وrequests، في كل لغة.", "de": "Seit 1.56 merkt sich eine Seite ihre letzten Konsolenmeldungen, Fehler und Anfragen. Ein Test kann sie jederzeit mit consoleMessages, pageErrors und requests lesen, in jeder Sprache."}, {"id": "agents", "h": "Test Agents", "en": "Three agent definitions help an AI assistant: the planner writes a plan, the generator turns it into tests, and the healer repairs failing tests or skips them when the app looks broken.", "hi": "तीन agent definitions AI assistant की मदद करती हैं: planner योजना लिखता है, generator उसे tests में बदलता है, और healer fail होते tests ठीक करता है या app टूटा लगे तो उन्हें skip करता है।", "kn": "ಮೂರು agent definitions AI assistant ಗೆ ಸಹಾಯ ಮಾಡುತ್ತವೆ: planner ಯೋಜನೆ ಬರೆಯುತ್ತದೆ, generator ಅದನ್ನು tests ಆಗಿ ಮಾಡುತ್ತದೆ, healer fail ಆಗುವ tests ಸರಿಪಡಿಸುತ್ತದೆ ಅಥವಾ app ಮುರಿದಂತೆ ಕಂಡರೆ skip ಮಾಡುತ್ತದೆ.", "or": "ତିନୋଟି agent definitions AI assistant କୁ ସାହାଯ୍ୟ କରନ୍ତି: planner ଯୋଜନା ଲେଖେ, generator ତାକୁ tests କରେ, ଏବଂ healer fail ହେଉଥିବା tests ଠିକ୍ କରେ ବା app ଭଙ୍ଗା ଲାଗିଲେ skip କରେ।", "ar": "تساعد ثلاثة تعريفات وكلاء مساعد الذكاء الاصطناعي: المخطِّط يكتب خطة، والمولِّد يحوّلها إلى اختبارات، والمعالِج يصلح الاختبارات الفاشلة أو يتخطاها حين يبدو التطبيق معطوبًا.", "de": "Drei Agentendefinitionen helfen einem KI-Assistenten: Der Planner schreibt einen Plan, der Generator macht daraus Tests, und der Healer repariert fehlschlagende Tests oder überspringt sie, wenn die App kaputt wirkt."}, {"id": "mcp", "h": "Playwright MCP", "en": "The Playwright MCP server gives an AI assistant a real browser that it reads through the accessibility tree. The assistant can then write tests in any language.", "hi": "Playwright MCP server AI assistant को एक असली browser देता है जिसे वह accessibility tree से पढ़ता है। फिर assistant किसी भी भाषा में tests लिख सकता है।", "kn": "Playwright MCP server AI assistant ಗೆ ನಿಜವಾದ browser ಕೊಡುತ್ತದೆ, ಅದನ್ನು accessibility tree ಮೂಲಕ ಓದುತ್ತದೆ. ನಂತರ assistant ಯಾವುದೇ ಭಾಷೆಯಲ್ಲಿ tests ಬರೆಯಬಹುದು.", "or": "Playwright MCP server AI assistant କୁ ଏକ ପ୍ରକୃତ browser ଦିଏ ଯାହାକୁ ସେ accessibility tree ରେ ପଢେ। ତାପରେ assistant ଯେକୌଣସି ଭାଷାରେ tests ଲେଖିପାରେ।", "ar": "يمنح خادم Playwright MCP مساعد الذكاء الاصطناعي متصفحًا حقيقيًا يقرؤه عبر شجرة إمكانية الوصول. ثم يستطيع المساعد كتابة الاختبارات بأي لغة.", "de": "Der Playwright-MCP-Server gibt einem KI-Assistenten einen echten Browser, den er über den Barrierefreiheitsbaum liest. Danach kann der Assistent Tests in jeder Sprache schreiben."}, {"id": "review", "h": "Reviewing AI tests", "en": "Review tests that AI writes like any other code: they must use the framework, check something meaningful, avoid fixed waits, and fail when the feature breaks.", "hi": "AI के लिखे tests की समीक्षा किसी भी दूसरे code की तरह करें: वे framework इस्तेमाल करें, कुछ सार्थक जाँचें, fixed waits से बचें, और feature टूटने पर fail हों।", "kn": "AI ಬರೆದ tests ಅನ್ನು ಬೇರೆ code ನಂತೆ ಪರಿಶೀಲಿಸಿ: framework ಬಳಸಬೇಕು, ಅರ್ಥಪೂರ್ಣವಾದದ್ದನ್ನು check ಮಾಡಬೇಕು, fixed waits ಬೇಡ, feature ಮುರಿದಾಗ fail ಆಗಬೇಕು.", "or": "AI ଲେଖିଥିବା tests କୁ ଅନ୍ୟ code ପରି ସମୀକ୍ଷା କରନ୍ତୁ: ସେଗୁଡିକ framework ବ୍ୟବହାର କରିବେ, କିଛି ଅର୍ଥପୂର୍ଣ୍ଣ ଯାଞ୍ଚ କରିବେ, fixed waits ଏଡାଇବେ, ଏବଂ feature ଭାଙ୍ଗିଲେ fail ହେବେ।", "ar": "راجع الاختبارات التي يكتبها الذكاء الاصطناعي كأي كود آخر: يجب أن تستخدم الإطار، وتفحص شيئًا ذا معنى، وتتجنب الانتظار الثابت، وتفشل حين تتعطل الميزة.", "de": "Prüfe von KI geschriebene Tests wie jeden anderen Code: Sie müssen das Framework nutzen, etwas Sinnvolles prüfen, feste Wartezeiten vermeiden und fehlschlagen, wenn die Funktion kaputt ist."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you write the seed test the agents start from, and turn the first scenario of a plan into a test yourself.", "hi": "Labs में आप वह seed test लिखते हैं जिससे agents शुरू करते हैं, और योजना के पहले scenario को खुद test में बदलते हैं।", "kn": "Labs ನಲ್ಲಿ agents ಆರಂಭಿಸುವ seed test ಬರೆಯುತ್ತೀರಿ, ಮತ್ತು ಯೋಜನೆಯ ಮೊದಲ scenario ಅನ್ನು ನೀವೇ test ಆಗಿ ಮಾಡುತ್ತೀರಿ.", "or": "Labs ରେ ଆପଣ agents ଆରମ୍ଭ କରୁଥିବା seed test ଲେଖନ୍ତି, ଏବଂ ଯୋଜନାର ପ୍ରଥମ scenario କୁ ନିଜେ test କରନ୍ତି।", "ar": "في المختبرات تكتب اختبار البذرة الذي يبدأ منه الوكلاء، وتحوّل بنفسك السيناريو الأول من الخطة إلى اختبار.", "de": "In den Labs schreibst du den Seed-Test, mit dem die Agenten starten, und machst selbst aus dem ersten Szenario eines Plans einen Test."}], "ex": [], "dg": {"agents": {"t": "Planner, generator and healer", "w": 900, "h": 230, "n": [["app", 20, 85, 110, 56, "your app", {"c": 5, "sub": "running", "i": "The agents explore the real app in a browser."}], ["plan", 170, 20, 150, 56, "planner", {"c": 3, "sub": "specs/*.md", "i": "Explores the app and writes a Markdown test plan."}], ["gen", 370, 20, 150, 56, "generator", {"c": 1, "sub": "tests/*.spec.ts", "i": "Turns the plan into test files and checks each locator live."}], ["heal", 570, 20, 150, 56, "healer", {"c": 0, "sub": "fix or skip", "i": "Runs failing tests, inspects the page and patches the test, or skips it when the app looks broken."}], ["you", 470, 150, 170, 56, "you review", {"c": 2, "sub": "pull request", "i": "A person reads the plan and the tests before they are merged."}], ["ci", 740, 150, 140, 56, "CI", {"c": 4, "sub": "every push", "i": "The reviewed tests run in the pipeline like any other test."}]], "e": [["app", "plan"], ["plan", "gen"], ["gen", "heal"], ["plan", "you"], ["heal", "you"], ["you", "ci"]], "st": [[["app"], "The app runs, and the seed test opens it."], [["plan", "app>plan"], "The planner explores it and writes a plan in specs/."], [["gen", "plan>gen"], "The generator turns the plan into tests."], [["heal", "gen>heal"], "The healer runs them and repairs what fails."], [["you", "plan>you", "heal>you"], "A person reviews the plan and the tests."], [["ci", "you>ci"], "Reviewed tests run in CI like every other test."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "seed", "title": "Write the seed test", "name": "seed", "task": "The agents start every exploration from a seed test. Write one that opens <code>/products<\/code> and checks that the heading <b>Products<\/b> is visible, so the planner knows the shop is up.", "goal": "The products page is open and its heading is checked.", "start": "", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('seed', async ({ page }) => {\n  // open the products page and check its heading\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class SeedTest {\n  @Test\n  void seed(Page page) {\n    page.navigate(\"/products\");\n    assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(\"Products\"))).isVisible();\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_seed(page: Page):\n    page.goto(\"/products\")\n    expect(page.get_by_role(\"heading\", name=\"Products\")).to_be_visible()\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('seed', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible();\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('seed', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible();\n});"}, "hint": "Use <code>page.getByRole('heading', { name: 'Products' })<\/code> with <code>toBeVisible()<\/code>.", "why": "A seed test that reaches a known page in a known state lets the planner and the generator start from the same place as your suite.", "check": [["ctx.url.includes('/products')", "The products page is open"], ["/heading/i.test(ctx.code)", "The test checks the heading"]]}, {"id": "planstep", "title": "Turn a plan scenario into a test", "name": "search finds one product", "task": "Scenario 1 of the plan: open <code>/products<\/code>, type <code>mug<\/code> into the search box, and expect only the <b>Coffee mug<\/b> card, priced <b>₹199<\/b>. Check the card with the test id <code>product-2<\/code>.", "goal": "The search shows the mug with its price.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('search finds one product', async ({ page }) => {\n  await page.goto('/products');\n  // follow the steps of scenario 1 and check the expected result\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class SearchFindsOneProductTest {\n  @Test\n  void searchFindsOneProduct(Page page) {\n    page.navigate(\"/products\");\n    page.getByPlaceholder(\"Search products\").fill(\"mug\");\n    assertThat(page.getByRole(AriaRole.LIST, new Page.GetByRoleOptions().setName(\"Products\")).getByRole(AriaRole.LISTITEM)).hasCount(1);\n    assertThat(page.getByTestId(\"product-2\")).containsText(\"₹199\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_search_finds_one_product(page: Page):\n    page.goto(\"/products\")\n    page.get_by_placeholder(\"Search products\").fill(\"mug\")\n    expect(page.get_by_role(\"list\", name=\"Products\").get_by_role(\"listitem\")).to_have_count(1)\n    expect(page.get_by_test_id(\"product-2\")).to_contain_text(\"₹199\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('search finds one product', async ({ page }) => {\n  await page.goto('/products');\n  await page.getByPlaceholder('Search products').fill('mug');\n  await expect(page.getByRole('list', { name: 'Products' }).getByRole('listitem')).toHaveCount(1);\n  await expect(page.getByTestId('product-2')).toContainText('₹199');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('search finds one product', async ({ page }) => {\n  await page.goto('/products');\n  await page.getByPlaceholder('Search products').fill('mug');\n  await expect(page.getByRole('list', { name: 'Products' }).getByRole('listitem')).toHaveCount(1);\n  await expect(page.getByTestId('product-2')).toContainText('₹199');\n});"}, "hint": "Fill <code>page.getByPlaceholder('Search products')<\/code>, then check the count of list items and the text of <code>product-2<\/code>.", "why": "This is what the generator does with each scenario: one step becomes one action, and each expected result becomes a check.", "check": [["/mug/.test(ctx.code)", "The test searches for mug"], ["/product-2/.test(ctx.code) && /199/.test(ctx.code)", "The test checks the mug and its price"], ["/Coffee mug/.test(ctx.text)", "The mug is on the page"]]}], "trees": {}};
+JSPLAY.page({ title: "What's new, and AI test agents", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

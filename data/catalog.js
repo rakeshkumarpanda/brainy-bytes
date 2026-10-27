@@ -3225,6 +3225,21 @@ function pwModules() {
         { id: "lab-precise", title: "Make a weak check precise", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-new", title: "What's new, and AI test agents", emoji: "🤖", page: "content/playwright/pw-new.html",
+        summary: "A 1.56 feature ran in all four languages, the agent definitions were created for real in the TypeScript framework, and a checklist shows how to keep AI-written tests honest.",
+        keywords: ["what's new", "release notes", "AI", "agents", "test agents", "planner", "generator", "healer", "MCP", "Playwright MCP", "init-agents", "consoleMessages", "pageErrors", "upgrade"],
+        added: "2026-10-24",
+        sections: [
+        { id: "versions", title: "How Playwright changes, and how to keep up", emoji: "🆕", group: "Beginner path", keywords: ["release notes", "new features", "update", "upgrade", "version", "1.56", "1.63", "1.64"] },
+        { id: "collect", title: "A new feature in all four languages", emoji: "🧾", group: "Lesson", keywords: ["consoleMessages", "pageErrors", "requests", "console", "page errors", "1.56"] },
+        { id: "agents", title: "Playwright Test Agents", emoji: "🤖", group: "Lesson", keywords: ["AI", "agents", "test agents", "planner", "generator", "healer", "init-agents", "seed", "specs", "Claude Code", "Copilot"] },
+        { id: "mcp", title: "Playwright MCP: a browser for AI assistants", emoji: "🔌", group: "Lesson", keywords: ["MCP", "Model Context Protocol", "Playwright MCP", "assistant", "Copy prompt", "accessibility snapshot"] },
+        { id: "review", title: "Using AI-written tests safely", emoji: "🧐", group: "Lesson", keywords: ["review", "AI tests", "quality", "healer", "skip", "safety", "secrets"] },
+        { id: "lab-seed", title: "Write the seed test", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-planstep", title: "Turn a plan scenario into a test", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
