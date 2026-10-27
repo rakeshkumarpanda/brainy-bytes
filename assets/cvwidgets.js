@@ -2046,4 +2046,167 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 14: training and evaluating segmentation */
+  def('pixloss', {
+    title: 'Pixel losses: plain, weighted, focal, and the ignore label',
+    sub: 'Each line is one pixel: its true class and the probability the model gives to that class. Pixels marked ignore are skipped. Compare how much each pixel adds to the loss.',
+    W: 560, H: 290,
+    params: [
+      { k: 'px', label: 'Pixels: true class, p of the true class', type: 'area', v: 'road 0.99\nroad 0.90\ncar 0.50\ncar 0.45\nperson 0.10\nignore 0.20' },
+      { k: 'mode', label: 'Loss', type: 'select', v: 'ce', opts: [['ce', 'Cross-entropy'], ['wce', 'Weighted cross-entropy'], ['fl', 'Focal loss']] },
+      { k: 'w', label: 'Class weights (for weighted CE)', type: 'text', v: 'road 0.5 car 2 person 5', show: p => p.mode === 'wce' },
+      { k: 'gam', label: 'Focusing parameter γ', type: 'range', min: 0, max: 5, step: 0.5, v: 2, show: p => p.mode === 'fl' }
+    ],
+    tips: [
+      { t: 'Plain cross-entropy. The confident road pixel adds only 0.010, the badly predicted person adds 2.303 and dominates.', set: { mode: 'ce' } },
+      { t: 'Weighted CE with the slide weights. The person pixel is multiplied by 5. The mean is divided by the total weight of the valid pixels.', set: { mode: 'wce', w: 'road 0.5 car 2 person 5' } },
+      { t: 'Focal loss with γ = 2. Easy pixels near 1 almost vanish, so the boundary pixels and the person carry nearly all of the loss.', set: { mode: 'fl', gam: 2 } },
+      { t: 'Look at the bottom line. Dividing by all pixels, including the ignored one, gives a lower and wrong mean.', set: { mode: 'ce' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let px = String(p.px).split('\n').map(l => l.trim().split(/\s+/)).filter(a => a.length >= 2 && isFinite(+a[1])).map(a => ({ c: a[0].toLowerCase(), p: clamp(+a[1], 1e-4, 1) })).slice(0, 8);
+      if (!px.length) px = [{ c: 'road', p: 0.9 }];
+      const wt = {}; String(p.w).trim().split(/\s+/).forEach((t, i, a) => { if (i % 2 === 0 && isFinite(+a[i + 1])) wt[t.toLowerCase()] = +a[i + 1]; });
+      const L = px.map(q => {
+        if (q.c === 'ignore') return { ...q, l: 0, wgt: 0, ign: true };
+        const ce = -Math.log(q.p);
+        if (p.mode === 'wce') { const w = wt[q.c] ?? 1; return { ...q, l: w * ce, wgt: w }; }
+        if (p.mode === 'fl') return { ...q, l: Math.pow(1 - q.p, p.gam) * ce, wgt: 1 };
+        return { ...q, l: ce, wgt: 1 };
+      });
+      const mx = Math.max(0.5, ...L.map(q => q.l)), valid = L.filter(q => !q.ign);
+      const tot = valid.reduce((s, q) => s + q.l, 0), wsum = valid.reduce((s, q) => s + q.wgt, 0);
+      D.text(g, 'pixel    class    p(true)   loss', 14, 22, { s: 12, mono: true, b: true, c: z.col.ink });
+      L.forEach((q, i) => {
+        const y = 46 + i * 28;
+        D.text(g, `${String(i + 1).padStart(3)}      ${q.c.slice(0, 7).padEnd(7)}  ${q.p.toFixed(2)}`, 14, y, { s: 12, mono: true, c: q.ign ? z.col.ink2 : z.col.ink });
+        if (q.ign) D.text(g, 'skipped', 290, y, { s: 12, b: true, c: z.col.ink2 });
+        else { D.rect(g, 290, y - 12, 190 * q.l / mx, 14, { fill: q.l / tot > 0.4 ? z.col.red : z.col.cv }); D.text(g, q.l < 0.001 ? q.l.toExponential(1) : q.l.toFixed(3), 486, y, { s: 11.5, mono: true, c: z.col.ink }); }
+      });
+      const y0 = 56 + L.length * 28;
+      const mean = tot / (p.mode === 'wce' ? wsum : valid.length), wrong = tot / L.length;
+      D.text(g, `mean over ${valid.length} valid pixels = ${mean.toFixed(3)}`, 14, y0, { s: 12.5, b: true, c: z.col.green });
+      if (valid.length < L.length) D.text(g, `wrong: divide by all ${L.length} pixels = ${wrong.toFixed(3)}`, 14, y0 + 20, { s: 12, c: z.col.red });
+      const f1 = p.mode === 'wce' ? 'L = Σ w<sub>y</sub> · (−ln p<sub>y</sub>) ÷ Σ w<sub>y</sub>' : p.mode === 'fl' ? 'FL = −(1 − p<sub>t</sub>)<sup>γ</sup> ln p<sub>t</sub>' : 'L = −(1 ÷ |Ω|) Σ<sub>i ∈ Ω</sub> ln p<sub>i, y<sub>i</sub></sub>';
+      return `<span class="big">${f1}</span><br>Ω is the set of valid (not ignored) pixels. ${p.mode === 'fl' ? 'Focal loss scales by difficulty, weighted CE scales by class.' : p.mode === 'wce' ? 'Very large weights can make training unstable or add false positives.' : 'The loss is small when the model is confident and right, and grows sharply as p of the true class falls.'}`;
+    }
+  });
+
+  def('overlap', {
+    title: 'Dice and IoU for one predicted mask',
+    sub: 'G is the true region and P the predicted one. Set their sizes and their overlap. Both scores measure the same overlap, on different scales.',
+    W: 560, H: 270,
+    params: [
+      { k: 'G', label: 'True pixels |G|', type: 'range', min: 10, max: 300, step: 5, v: 100 },
+      { k: 'P', label: 'Predicted pixels |P|', type: 'range', min: 0, max: 300, step: 5, v: 120 },
+      { k: 'I', label: 'Overlap |P ∩ G|', type: 'range', min: 0, max: 300, step: 5, v: 80 }
+    ],
+    tips: [
+      { t: 'The lecture tumour: |G| = 100, |P| = 120, overlap 80. Dice 0.727, IoU 0.571. Same prediction, two numbers.', set: { G: 100, P: 120, I: 80 } },
+      { t: 'Predict nothing at all. Both scores are 0, even though most pixels of the image would still be correct.', set: { P: 0, I: 0 } },
+      { t: 'Predict a huge region that covers the tumour: |P| = 300, overlap 100. Recall is perfect, but IoU falls to 0.333.', set: { G: 100, P: 300, I: 100 } },
+      { t: 'Practice problem: |P| = 200, |G| = 250, overlap 150. Dice 0.667 and IoU exactly 0.5.', set: { G: 250, P: 200, I: 150 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const I = Math.min(p.I, p.G, p.P), TP = I, FP = p.P - I, FN = p.G - I;
+      const dice = p.P + p.G ? 2 * I / (p.P + p.G) : 1, iou = TP + FP + FN ? TP / (TP + FP + FN) : 1;
+      const R = v => Math.sqrt(v / Math.PI) * 6.5;
+      const rg = R(p.G), rp = R(Math.max(p.P, 0.01));
+      const dist = (r1, r2, a) => { if (a <= 0) return r1 + r2 + 4; let lo = Math.abs(r1 - r2), hi = r1 + r2; const ar = d => { if (d >= r1 + r2) return 0; if (d <= Math.abs(r1 - r2)) return Math.PI * Math.min(r1, r2) ** 2; const a1 = r1 * r1 * Math.acos((d * d + r1 * r1 - r2 * r2) / (2 * d * r1)), a2 = r2 * r2 * Math.acos((d * d + r2 * r2 - r1 * r1) / (2 * d * r2)); return a1 + a2 - 0.5 * Math.sqrt((-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2)); }; const target = a * 42.25; for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2; if (ar(m) > target) lo = m; else hi = m; } return (lo + hi) / 2; };
+      const d = dist(rg, rp, I), cx = 150, cy = 125;
+      g.save(); g.globalAlpha = 0.35;
+      D.circle(g, cx - d / 2, cy, rg, { fill: z.col.green });
+      if (p.P > 0) D.circle(g, cx + d / 2, cy, rp, { fill: z.col.cv });
+      g.restore();
+      D.circle(g, cx - d / 2, cy, rg, { stroke: z.col.green, w: 2 });
+      if (p.P > 0) D.circle(g, cx + d / 2, cy, rp, { stroke: z.col.cv, w: 2 });
+      D.text(g, 'G (truth)', cx - d / 2, cy + rg + 18, { a: 'center', s: 12, b: true, c: z.col.green });
+      if (p.P > 0) D.text(g, 'P (prediction)', cx + d / 2, cy - rp - 8, { a: 'center', s: 12, b: true, c: z.col.cv });
+      D.text(g, `TP = ${TP}, FP = ${FP}, FN = ${FN}`, 14, 258, { s: 12, mono: true, c: z.col.ink });
+      const m = D.axes(g, z, [370, 20, 160, 160], [0, 1], [0, 1], { xl: 'IoU', yl: 'Dice', nx: 2, ny: 2 });
+      D.curve(g, j => 2 * j / (1 + j), [0, 1], m, z.col.purple, 2);
+      D.line(g, m.sx(0), m.sy(0), m.sx(1), m.sy(1), z.col.line, 1, [4, 4]);
+      D.circle(g, m.sx(iou), m.sy(dice), 6, { fill: z.col.orange });
+      D.text(g, `Dice ${dice.toFixed(3)}`, 370, 236, { s: 13, b: true, c: z.col.ink });
+      D.text(g, `IoU  ${iou.toFixed(3)}`, 370, 256, { s: 13, b: true, c: z.col.ink });
+      return `<span class="big">Dice = 2|P ∩ G| ÷ (|P| + |G|) = 2TP ÷ (2TP + FP + FN), &nbsp; IoU = TP ÷ (TP + FP + FN), &nbsp; Dice = 2·IoU ÷ (1 + IoU)</span><br>Dice is never below IoU, and they agree only at 0 and 1. Never compare a Dice from one paper with an IoU from another.${p.I > Math.min(p.G, p.P) ? ' The overlap cannot exceed the smaller region, so it was capped.' : ''}`;
+    }
+  });
+
+  def('confmat', {
+    title: 'From a confusion matrix to mIoU',
+    sub: 'Rows are the true class, columns the predicted class, values are pixel counts. Every class gets its own IoU from its row, its column and the diagonal.',
+    W: 560, H: 280,
+    params: [
+      { k: 'm', label: 'Matrix rows (truth), comma or space separated', type: 'area', v: '900 20 5\n30 140 10\n15 5 30' },
+      { k: 'names', label: 'Class names', type: 'text', v: 'road car person' }
+    ],
+    tips: [
+      { t: 'The lecture matrix. Pixel accuracy is 0.926 but mIoU is only 0.691, because person scores 0.462.', set: { m: '900 20 5\n30 140 10\n15 5 30', names: 'road car person' } },
+      { t: 'Practice problem 15: classes A, B, C. IoU 0.667, 0.667 and 0.600, mIoU 0.644, accuracy 0.792.', set: { m: '50 5 5\n10 30 0\n5 0 15', names: 'A B C' } },
+      { t: 'The accuracy trap: 9,000 background and 1,000 tumour pixels, all predicted background. Accuracy 0.900, mIoU 0.450.', set: { m: '9000 0\n1000 0', names: 'background tumour' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let M = parseGrid(p.m, [[900, 20, 5], [30, 140, 10], [15, 5, 30]]);
+      if (M.length !== M[0].length || M.length > 5) M = [[900, 20, 5], [30, 140, 10], [15, 5, 30]];
+      const n = M.length, names = String(p.names).trim().split(/\s+/);
+      while (names.length < n) names.push('class ' + (names.length + 1));
+      const row = M.map(r => r.reduce((a, b) => a + b, 0)), col = M[0].map((_, j) => M.reduce((a, r) => a + r[j], 0)), N = row.reduce((a, b) => a + b, 0);
+      const st = M.map((r, i) => { const tp = r[i], fn = row[i] - tp, fp = col[i] - tp, u = tp + fp + fn; return { tp, fn, fp, iou: u ? tp / u : NaN, dice: 2 * tp + fp + fn ? 2 * tp / (2 * tp + fp + fn) : NaN, rec: row[i] ? tp / row[i] : NaN }; });
+      const okI = st.filter(s => isFinite(s.iou)), miou = okI.reduce((a, s) => a + s.iou, 0) / okI.length;
+      const pa = M.reduce((a, r, i) => a + r[i], 0) / N, mca = st.filter(s => isFinite(s.rec)).reduce((a, s) => a + s.rec, 0) / st.filter(s => isFinite(s.rec)).length;
+      const fw = st.reduce((a, s, i) => a + (isFinite(s.iou) ? row[i] / N * s.iou : 0), 0);
+      const cell = Math.min(52, 190 / n), X = 70, Y = 40, mx = Math.max(...M.flat(), 1);
+      D.text(g, 'predicted →', X, 18, { s: 11, b: true, c: z.col.ink2 });
+      names.slice(0, n).forEach((nm, i) => { D.text(g, nm.slice(0, 7), X + (i + 0.5) * cell, 34, { a: 'center', s: 10.5, b: true, c: z.col.ink2 }); D.text(g, nm.slice(0, 8), X - 6, Y + (i + 0.5) * cell + 4, { a: 'right', s: 10.5, b: true, c: z.col.ink2 }); });
+      M.forEach((r, i) => r.forEach((v, j) => {
+        D.rect(g, X + j * cell, Y + i * cell, cell, cell, { fill: i === j ? `rgba(40,160,100,${0.15 + 0.6 * v / mx})` : `rgba(220,70,70,${0.08 + 0.6 * v / mx})`, stroke: z.col.line, w: 1 });
+        D.text(g, String(v), X + (j + 0.5) * cell, Y + (i + 0.5) * cell + 4, { a: 'center', s: cell < 40 ? 10 : 12, mono: true, b: i === j, c: z.col.ink });
+      }));
+      const tx = 300;
+      D.text(g, 'class      TP    FP    FN   IoU', tx, 24, { s: 11.5, mono: true, b: true, c: z.col.ink });
+      st.forEach((s, i) => D.text(g, `${names[i].slice(0, 8).padEnd(9)} ${String(s.tp).padStart(4)}  ${String(s.fp).padStart(4)}  ${String(s.fn).padStart(4)}  ${isFinite(s.iou) ? s.iou.toFixed(3) : ' n/a'}`, tx, 46 + i * 20, { s: 11.5, mono: true, c: s.iou < 0.5 ? z.col.red : z.col.ink }));
+      const y2 = 66 + n * 20;
+      [['mIoU', miou], ['pixel accuracy', pa], ['mean class accuracy', mca], ['frequency weighted IoU', fw]].forEach(([k, v], i) => D.text(g, `${k.padEnd(23)}${v.toFixed(3)}`, tx, y2 + i * 20, { s: 11.5, mono: true, b: i === 0, c: i === 0 ? z.col.cv : z.col.ink }));
+      return `<span class="big">IoU<sub>c</sub> = TP ÷ (TP + FP + FN), &nbsp; FP = column sum − TP, &nbsp; FN = row sum − TP, &nbsp; mIoU = mean over classes</span><br>Pixel accuracy and frequency weighted IoU follow the big classes. mIoU gives every class one equal vote, so a weak rare class shows up. Benchmarks add up one matrix over the whole dataset before computing IoU.`;
+    }
+  });
+
+  def('leak', {
+    title: 'Data leakage through normalisation',
+    sub: 'Min-max scaling maps the training range to 0 to 1. Fit it on the training data only, or the scaler quietly learns the range of the test data.',
+    W: 560, H: 230,
+    params: [
+      { k: 'tr', label: 'Training values', type: 'text', v: '10 20 30' },
+      { k: 'te', label: 'A test value', type: 'range', min: 0, max: 120, step: 1, v: 100 },
+      { k: 'fit', label: 'Fit min and max on', type: 'select', v: 'train', opts: [['train', 'Training data only (right)'], ['all', 'All data, train and test (leak)']] }
+    ],
+    tips: [
+      { t: 'Fit on training only. The test value maps to 4.5, far outside 0 to 1. The shift is visible, which is the honest result.', set: { tr: '10 20 30', te: 100, fit: 'train' } },
+      { t: 'Fit on all data. Everything squeezes into 0 to 1, the test point lands at exactly 1, and the shift is hidden. Validation scores will look better than reality.', set: { fit: 'all' } },
+      { t: 'Bring the test value to 25, inside the training range. Both fits now agree closely. Leakage hurts most when the test data really is different.', set: { te: 25, fit: 'all' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let tr = String(p.tr).trim().split(/[\s,]+/).map(Number).filter(isFinite); if (tr.length < 2) tr = [10, 20, 30];
+      const all = p.fit === 'all' ? tr.concat([p.te]) : tr, lo = Math.min(...all), hi = Math.max(...all), sc = v => hi > lo ? (v - lo) / (hi - lo) : 0;
+      const raw = D.axes(g, z, [40, 44, 480, 0.001], [0, Math.max(120, ...tr)], [0, 1], { nx: 6, ny: 1, fy: () => '' });
+      D.text(g, 'raw values', 40, 22, { s: 12, b: true, c: z.col.ink });
+      tr.forEach(v => D.circle(g, raw.sx(v), 44, 6, { fill: z.col.cv }));
+      D.circle(g, raw.sx(p.te), 44, 7, { fill: z.col.orange });
+      const mxs = Math.max(1, sc(p.te)) * 1.05;
+      const s = D.axes(g, z, [40, 150, 480, 0.001], [Math.min(0, sc(p.te)) - 0.05, mxs], [0, 1], { nx: 5, ny: 1, fy: () => '', fx: v => v.toFixed(1) });
+      D.text(g, `scaled with min ${lo}, max ${hi}`, 40, 112, { s: 12, b: true, c: z.col.ink });
+      g.save(); g.fillStyle = z.col.green; g.globalAlpha = 0.12; g.fillRect(s.sx(0), 136, s.sx(1) - s.sx(0), 28); g.restore();
+      tr.forEach(v => D.circle(g, s.sx(sc(v)), 150, 6, { fill: z.col.cv }));
+      D.circle(g, s.sx(sc(p.te)), 150, 7, { fill: z.col.orange });
+      D.text(g, `test → ${sc(p.te).toFixed(3)}`, s.sx(sc(p.te)), 134, { a: 'center', s: 12, b: true, c: z.col.orange });
+      D.text(g, 'blue: training values, orange: the test value, green band: 0 to 1', 40, 205, { s: 12, c: z.col.ink2 });
+      return `<b>${p.fit === 'all' ? 'Leak: the scaler has seen the test value, so nothing looks unusual.' : sc(p.te) > 1 || sc(p.te) < 0 ? 'Honest: the test value falls outside the training range, so you know the model faces new data.' : 'The test value lies inside the training range.'}</b> Split first, then fit every statistic on the training split. In segmentation, also split by patient, scene or video, never by random image, or near copies leak across.`;
+    }
+  });
+
 })();

@@ -3919,6 +3919,22 @@ function cvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "seg-training", title: "Training and evaluating segmentation", emoji: "6.3", page: "content/computer-vision/segmentation-training.html",
+        summary: "Pixel cross-entropy, weighted CE, focal and Dice losses, Dice, IoU and mIoU, the accuracy trap, augmentation, leakage and debugging.",
+        keywords: ["cross-entropy", "ignore label", "weighted cross-entropy", "focal loss", "Dice loss", "Dice", "IoU", "mIoU", "confusion matrix", "pixel accuracy", "augmentation", "data leakage", "failure modes"],
+        minutes: 60, counts: {"lessons": 5, "problems": 12, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "loss", title: "Masks, logits and the pixel loss", emoji: "", group: "Lesson", keywords: ["ground truth mask", "ignore label", "ignore_index", "logit", "log-odds", "pixel-wise cross-entropy", "valid pixels", "binary cross-entropy", "categorical cross-entropy"] },
+        { id: "imbalance", title: "Class imbalance: weighted CE, focal and Dice", emoji: "", group: "Lesson", keywords: ["class imbalance", "weighted cross-entropy", "inverse frequency", "focal loss", "gamma", "hard pixels", "Dice loss", "soft Dice", "combined loss", "V-Net"] },
+        { id: "metrics", title: "Metrics: accuracy, Dice, IoU and mIoU", emoji: "", group: "Lesson", keywords: ["pixel accuracy", "accuracy trap", "Dice", "IoU", "Jaccard", "Dice IoU relation", "mIoU", "confusion matrix", "frequency weighted IoU", "mean class accuracy", "boundary F-score", "Hausdorff distance", "HD95"] },
+        { id: "pipeline", title: "The training pipeline and data leakage", emoji: "", group: "Lesson", keywords: ["augmentation", "aligned transforms", "albumentations", "mask resizing", "nearest neighbour", "training loop", "train validation test", "data leakage", "min-max normalisation", "patient level split", "overfitting"] },
+        { id: "debug", title: "Failure modes and debugging", emoji: "", group: "Lesson", keywords: ["failure modes", "boundary errors", "small objects", "class confusion", "domain shift", "occlusion", "over-smoothing", "debugging checklist", "case questions", "model selection", "perception planning control"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
