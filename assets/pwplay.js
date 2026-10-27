@@ -296,8 +296,9 @@ const PWPLAY = (() => {
   }
 
   /* ================= 3. names: every language maps onto one set of Playwright names ================= */
-  const camel = s => s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-  const snake = s => s.replace(/([A-Z])/g, '_$1').toLowerCase();
+  const ACRONYM = { Url: 'URL', Ok: 'OK', Css: 'CSS', Js: 'JS', Html: 'HTML' };   // Python to_have_url is toHaveURL
+  const camel = s => s.replace(/_([a-z])([a-z]*)/g, (_, c, rest) => { const w = c.toUpperCase() + rest; return ACRONYM[w] || w; });
+  const snake = s => s.replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').toLowerCase();
   const JAVA_ASSERT = { hasText: 'toHaveText', containsText: 'toContainText', isVisible: 'toBeVisible', isHidden: 'toBeHidden', isEnabled: 'toBeEnabled',
     isDisabled: 'toBeDisabled', isChecked: 'toBeChecked', hasCount: 'toHaveCount', hasValue: 'toHaveValue', hasValues: 'toHaveValues', hasAttribute: 'toHaveAttribute',
     hasClass: 'toHaveClass', containsClass: 'toContainClass', hasURL: 'toHaveURL', hasTitle: 'toHaveTitle', isEditable: 'toBeEditable', isFocused: 'toBeFocused', isEmpty: 'toBeEmpty',

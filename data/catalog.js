@@ -3031,6 +3031,23 @@ function pwModules() {
         { id: "lab-dragdone", title: "Drag a task to Done", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-assertions", title: "Assertions that wait for the page", emoji: "✅", page: "content/playwright/pw-assertions.html",
+        summary: "How a web-first assertion retries, a plain read against a retrying check, fifteen checks on one page, text and list checks for sorting, negative checks, a real failure report, soft assertions in all four languages, plain value checks on API data, expect.poll and toPass, and a recorded walk through a search.",
+        keywords: ["assertion", "expect", "assertThat", "web-first", "toHaveText", "toContainText", "toBeVisible", "toHaveCount", "not", "soft assertion", "assertAll", "expect.poll", "toPass", "timeout"],
+        added: "2026-10-24",
+        sections: [
+        { id: "webfirst", title: "Web-first assertions retry", emoji: "✅", group: "Beginner path", keywords: ["assertion", "expect", "assertThat", "web-first", "retry", "isVisible"] },
+        { id: "kinds", title: "The assertions you will use every day", emoji: "📚", group: "Beginner path", keywords: ["toHaveText", "toBeVisible", "toHaveCount", "toHaveValue", "toHaveAttribute", "toHaveCSS", "toHaveURL", "toHaveTitle", "toHaveRole"] },
+        { id: "text", title: "Checking text and lists", emoji: "🔤", group: "Beginner path", keywords: ["toHaveText", "toContainText", "ignoreCase", "regex", "list", "order"] },
+        { id: "negative", title: "Checking that something is not there", emoji: "🙅", group: "Lesson", keywords: ["not", "toBeHidden", "toHaveCount(0)", "toBeAttached", "negative"] },
+        { id: "failing", title: "Reading a failure", emoji: "💥", group: "Lesson", keywords: ["failure", "error message", "custom message", "timeout", "call log", "diff"] },
+        { id: "soft", title: "Soft assertions", emoji: "🧽", group: "Lesson", keywords: ["soft assertion", "expect.soft", "assertAll", "multiple failures"] },
+        { id: "values", title: "Plain values, polling and blocks", emoji: "🔢", group: "Lesson", keywords: ["toEqual", "toBe", "assert", "assertEquals", "expect.poll", "toPass", "expect.configure"] },
+        { id: "lab-wrongpw", title: "Check the error for a wrong password", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-sorthigh", title: "Check the order after sorting", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
