@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Every test, two classes at a time. Each class gets its own browser on its own thread. -->
+<suite name="Brainy Shop" parallel="classes" thread-count="2">
+  <test name="All tests">
+    <packages>
+      <package name="com.brainy.shop.tests.*"/>
+    </packages>
+  </test>
+</suite>

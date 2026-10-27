@@ -3174,6 +3174,22 @@ function pwModules() {
         { id: "lab-bottleprice", title: "Read a price from one card", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-framework", title: "Framework design, step by step", emoji: "🏗️", page: "content/playwright/pw-framework.html",
+        summary: "The same framework built and run in TypeScript, JavaScript, Python and Java: the runner finds the tests, the full suite passes, the smoke set runs alone, and every file is shown with why it is there.",
+        keywords: ["framework", "folder structure", "project structure", "architecture", "page object", "fixtures", "BaseTest", "TestNG", "pytest", "conftest", "env", "secrets", "smoke", "tags", "company"],
+        added: "2026-10-24",
+        sections: [
+        { id: "what", title: "What a framework is, and the finished result", emoji: "🗺️", group: "Beginner path", keywords: ["framework", "folder structure", "project layout", "architecture", "layers", "hierarchy"] },
+        { id: "step1", title: "Step 1: project, settings and runner config", emoji: "1️⃣", group: "Lesson", keywords: ["config", "environment variables", "dotenv", ".env", "BASE_URL", "secrets", "pom.xml", "testng.xml", "pytest.ini"] },
+        { id: "step2", title: "Step 2: data, API helpers, page objects and fixtures", emoji: "2️⃣", group: "Lesson", keywords: ["test data", "API helper", "BasePage", "fixtures", "BaseTest", "TestNG", "isolation", "session"] },
+        { id: "step3", title: "Step 3: tests by feature, with tags", emoji: "3️⃣", group: "Lesson", keywords: ["tags", "smoke", "grep", "markers", "groups", "testng.xml", "feature folders"] },
+        { id: "files", title: "Every file, explained", emoji: "📂", group: "Lesson", keywords: ["files", "project tree", "explorer"] },
+        { id: "grow", title: "How the framework grows", emoji: "📈", group: "Lesson", keywords: ["scaling", "environments", "roles", "factories", "lint", "maintenance"] },
+        { id: "lab-wrongpw", title: "Write the wrong password test", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-noresults", title: "Write the search that finds nothing", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
