@@ -2996,6 +2996,25 @@ function pwModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "pw-elements", title: "Finding and using elements", emoji: "🎯", blurb: "Locators, actions with auto-waiting, and assertions that retry by themselves.", topics: [
+      { id: "pw-locators", title: "Locators: finding elements", emoji: "🎯", page: "content/playwright/pw-locators.html",
+        summary: "Why a locator is searched again every time, a live locator lab, which locator to try first, getByRole with names, levels and states, labels, placeholders, text, titles and test ids, custom test id attributes, CSS and XPath and why they break, filter, chaining, nth, and, or, strict mode violations, and a recorded walk through a sortable, paged table.",
+        keywords: ["locator", "getByRole", "getByLabel", "getByText", "getByPlaceholder", "getByTestId", "getByAltText", "getByTitle", "css", "xpath", "filter", "hasText", "nth", "strict mode", "table", "and", "or"],
+        added: "2026-10-24",
+        sections: [
+        { id: "what", title: "What a locator is", emoji: "🎯", group: "Beginner path", keywords: ["locator", "lazy", "stale element", "describe", "priority"] },
+        { id: "role", title: "getByRole: the first choice", emoji: "🧑‍🦯", group: "Beginner path", keywords: ["getByRole", "role", "name", "exact", "aria", "accessibility", "AriaRole"] },
+        { id: "getby", title: "Labels, placeholders, text, alt text, titles and test ids", emoji: "🏷️", group: "Beginner path", keywords: ["getByLabel", "getByPlaceholder", "getByText", "getByAltText", "getByTitle", "getByTestId", "testIdAttribute", "data-testid"] },
+        { id: "css", title: "CSS and XPath", emoji: "🧩", group: "Lesson", keywords: ["css", "xpath", "locator", "has-text", "selector"] },
+        { id: "filter", title: "Filtering and chaining", emoji: "🔎", group: "Lesson", keywords: ["filter", "hasText", "has", "hasNot", "nth", "first", "last", "and", "or", "chaining"] },
+        { id: "strict", title: "Strict mode", emoji: "🚦", group: "Lesson", keywords: ["strict mode", "strict mode violation", "count", "multiple elements"] },
+        { id: "lists", title: "Lists and tables", emoji: "📋", group: "Lesson", keywords: ["table", "row", "cell", "all", "allTextContents", "loop", "list"] },
+        { id: "lab-mug", title: "Find the price inside one card", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-delrow", title: "Delete one order by its customer", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
