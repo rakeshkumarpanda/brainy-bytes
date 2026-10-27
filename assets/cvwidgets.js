@@ -1300,13 +1300,14 @@
       const X = 10, Y = 10, S = 0.78;
       D.rect(g, X, Y, 340 * S, 260 * S, { fill: z.col.bg, stroke: z.col.line });
       const r = b => [X + b[0] * S, Y + b[1] * S, (b[2] - b[0]) * S, (b[3] - b[1]) * S];
-      GT.forEach(([n, b]) => { D.rect(g, ...r(b), { stroke: z.col.green, w: 3 }); D.text(g, n, X + b[0] * S + 2, Y + b[1] * S - 4, { s: 11, b: true, c: z.col.green }); });
+      GT.forEach(([n, b]) => D.rect(g, ...r(b), { stroke: z.col.green, w: 3 }));
+      D.text(g, 'green: true boxes, person on the left, dog on the right', X, Y + 260 * S + 18, { s: 11, b: true, c: z.col.green });
       const rows = AN.map((a, i) => {
         const ious = GT.map(([, b]) => iouC(a, b)), best = Math.max(...ious), j = ious.indexOf(best);
         const lab = best >= hi ? 'positive, ' + GT[j][0] : best < lo ? 'background' : 'ignored';
         const col = best >= hi ? z.col.cv : best < lo ? z.col.ink2 : z.col.orange;
         D.rect(g, ...r(a), { stroke: col, w: 1.8, dash: best >= hi ? null : [5, 3] });
-        D.text(g, 'A' + (i + 1), X + a[2] * S - 3, Y + a[3] * S - 4, { s: 11, b: true, c: col, a: 'right' });
+        D.text(g, 'A' + (i + 1), X + a[2] * S - 3, Y + (i === 4 ? a[1] * S + 13 : a[3] * S - 4), { s: 11, b: true, c: col, a: 'right' });
         return [i, best, lab, col];
       });
       D.text(g, 'anchor   best IoU   label', 290, 24, { s: 11.5, mono: true, b: true, c: z.col.ink });
