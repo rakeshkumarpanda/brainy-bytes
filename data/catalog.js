@@ -3014,6 +3014,23 @@ function pwModules() {
         { id: "lab-delrow", title: "Delete one order by its customer", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-actions", title: "Actions and auto-waiting", emoji: "🖱️", page: "content/playwright/pw-actions.html",
+        summary: "An interactive auto-waiting lab, a real click on a covered, disabled and moving button, the actionability table from the docs, the call log of a timeout, force and trial, click options and hover, fill versus pressSequentially, a recorded walk through a feedback form, every form control, drag and drop by dragTo and by hand, and waits that replace sleeps.",
+        keywords: ["auto-waiting", "actionability", "click", "fill", "pressSequentially", "press", "keyboard", "hover", "check", "selectOption", "dragTo", "mouse", "waitFor", "waitForResponse", "TimeoutError", "force", "sleep"],
+        added: "2026-10-24",
+        sections: [
+        { id: "auto", title: "Auto-waiting: no more sleeps", emoji: "⏳", group: "Beginner path", keywords: ["auto-waiting", "actionability", "visible", "stable", "enabled", "editable", "flaky", "sleep"] },
+        { id: "calllog", title: "When waiting is not enough", emoji: "🧾", group: "Lesson", keywords: ["TimeoutError", "call log", "force", "trial", "timeout"] },
+        { id: "mouse", title: "Clicking, hovering and focusing", emoji: "🖱️", group: "Beginner path", keywords: ["click", "dblclick", "right click", "hover", "focus", "modifiers", "tap", "ControlOrMeta"] },
+        { id: "keys", title: "Typing and keys", emoji: "⌨️", group: "Lesson", keywords: ["fill", "pressSequentially", "type", "press", "keyboard", "shortcut", "clear"] },
+        { id: "forms", title: "Checkboxes, radio buttons, drop downs and dates", emoji: "📝", group: "Beginner path", keywords: ["check", "uncheck", "setChecked", "selectOption", "radio", "checkbox", "select", "date", "range", "form"] },
+        { id: "drag", title: "Drag and drop and the mouse", emoji: "🧲", group: "Lesson", keywords: ["dragTo", "drag and drop", "mouse", "mouse.down", "mouse.up", "mouse.move", "kanban"] },
+        { id: "wait", title: "Waiting without sleeping", emoji: "🚫", group: "Lesson", keywords: ["waitForTimeout", "sleep", "waitFor", "waitForResponse", "waitForFunction", "flaky"] },
+        { id: "lab-feedback", title: "Send the feedback form", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-dragdone", title: "Drag a task to Done", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
