@@ -256,7 +256,7 @@ PARTS = [
 [[decorators]]
 <div class="tip">This is how some frameworks add steps to reports. In Playwright the built in way is <code>await test.step("Pay with card", async () => …)</code>, and a decorator like <code>@step</code> can call it for you so every page object method shows up as a step in the HTML report and the trace viewer.</div>
 ''', qa=['Playwright'], qa_why='Step decorators put every page object action into the test report without extra code in each method.',
-        kw=['decorators', 'method decorator', 'ClassMethodDecoratorContext', 'stage 3 decorators', 'experimentalDecorators', 'test.step', 'retry decorator']),
+        kw=['decorators', 'method decorator', 'ClassMethodDecoratorContext', 'standard decorators', 'experimentalDecorators', 'test.step', 'retry decorator']),
     part('dts', '📜', 'Declaration files and augmentation', '''
 <p>A <b>declaration file</b> (<code>.d.ts</code>) contains only types. It describes JavaScript code that has no types of its own. Most npm packages ship one, and others have one in <code>@types/…</code>. <b>Module augmentation</b> adds to existing types, such as a field on <code>Window</code> or a custom matcher on <code>expect</code>.</p>
 [[dts]]

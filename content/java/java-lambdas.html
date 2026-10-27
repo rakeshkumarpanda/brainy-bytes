@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lambdas, functional interfaces and method references · Java</title>
+<meta name="description" content="Java lambdas from zero to expert: lambda syntax, target types, functional interfaces, java.util.function, method references, composing Predicate, Function and Comparator, effectively final capture, checked exceptions, invokedynamic and LambdaMetafactory.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/xv.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🚀 Modern Java</span><span>›</span><span>Chapter 20 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">➡️</span><div><h1>Lambdas, functional interfaces and method references</h1><p class="lead">Lambdas let you hand a small piece of behaviour to another method: how to compare, what to keep, what to do with each item. This chapter goes from your first arrow to functional interfaces, method references, composing functions, captured variables, checked exceptions and the invokedynamic machinery the JVM uses to run them.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 9 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 14 examples run on a real JDK</span><span class="chip">👣 10 line by line replays</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="jdk-note">Every example below was compiled and run on java version &quot;25.0.5.0.2&quot; 2026-10-21 LTS when this page was built, so each output is real. Press <b>👣 Run line by line</b> on an example to replay that run one line at a time.</div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#why"><span>💡</span>Why lambdas exist</a><a href="#syntax"><span>✍️</span>Lambda syntax</a><a href="#functional"><span>🧰</span>Functional interfaces</a><a href="#method-refs"><span>🔗</span>Method references</a><a href="#compose"><span>🧩</span>Composing functions</a><a href="#capture"><span>📦</span>Capturing variables and this</a><a href="#exceptions"><span>⚠️</span>Lambdas and checked exceptions</a><a href="#inside"><span>🔬</span>How a lambda runs inside the JVM</a><a href="#scenario"><span>🎬</span>Real world scenario: a retry helper</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="why" data-say="why"><div class="sec-num">Part 1</div><h2><span class="sec-em">💡</span><span>Why lambdas exist</span></h2>
+<p>Before Java 8, passing a small piece of <b>behaviour</b> (how to compare, what to do on a click, which items to keep) meant writing a whole anonymous class. Most of those lines were ceremony. A <b>lambda</b> is the same behaviour written as just the inputs, an arrow and the result.</p>
+<div class="codewrap" data-k="anon" data-trace="anon"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An anonymous class and the lambda that replaces it · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">List</span>&lt;<span class="t">String</span>&gt; tests = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;(<span class="t">List</span>.of(<span class="s">"checkout"</span>, <span class="s">"login"</span>, <span class="s">"search"</span>, <span class="s">"cart"</span>));
+
+        <span class="c">// Before Java 8: an anonymous class just to say "compare by length"</span>
+        <span class="t">Collections</span>.sort(tests, <span class="k">new</span> <span class="t">Comparator</span>&lt;<span class="t">String</span>&gt;() {
+            <span class="a">@Override</span>
+            <span class="k">public</span> <span class="k">int</span> compare(<span class="t">String</span> a, <span class="t">String</span> b) {
+                <span class="k">return</span> <span class="t">Integer</span>.compare(a.length(), b.length());
+            }
+        });
+        <span class="t">System</span>.out.println(tests);
+
+        <span class="c">// Java 8: the same behaviour as a lambda</span>
+        tests.sort((a, b) -&gt; b.length() - a.length());
+        <span class="t">System</span>.out.println(tests);
+    }
+}</pre><div class="out"><span>Output</span><pre>[cart, login, search, checkout]
+[checkout, search, login, cart]</pre></div></div>
+<p>Think of a lambda as a sticky note with instructions that you hand to someone else. <code>sort</code> does the sorting work, and your lambda only answers the one question it needs answered: "which of these two comes first?"</p>
+<div class="fun">Java 8 (2014) added lambdas, method references, streams, Optional and java.time in one release. It is still the biggest change the language has ever had, and almost every modern Java API, from Selenium waits to Spring, expects you to pass lambdas.</div>
+</section>
+<section class="card reveal jsec" id="syntax" data-say="syntax"><div class="sec-num">Part 2</div><h2><span class="sec-em">✍️</span><span>Lambda syntax</span></h2>
+<p>A lambda is <code>(parameters) -&gt; body</code>. The compiler works out the parameter types from the context, so you rarely write them.</p>
+<div class="tw"><table class="jt"><tr><th>Form</th><th>Example</th><th>When</th></tr>
+<tr><td>No input</td><td><code>() -&gt; System.out.println("hi")</code></td><td>Runnable, Supplier</td></tr>
+<tr><td>One input</td><td><code>s -&gt; s.length()</code></td><td>brackets are optional</td></tr>
+<tr><td>Several inputs</td><td><code>(a, b) -&gt; a + b</code></td><td>brackets are required</td></tr>
+<tr><td>Block body</td><td><code>x -&gt; { int y = x * 2; return y; }</code></td><td>more than one statement, needs return</td></tr>
+<tr><td>Typed or var</td><td><code>(var s) -&gt; s.isBlank()</code></td><td>to add annotations such as @NonNull</td></tr></table></div>
+<div class="codewrap" data-k="syntax" data-trace="syntax"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The five shapes a lambda can take · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.function.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Runnable</span> hello = () -&gt; <span class="t">System</span>.out.println(<span class="s">"no inputs"</span>);
+        <span class="t">Function</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; len = s -&gt; s.length();               <span class="c">// one input, no brackets needed</span>
+        <span class="t">BinaryOperator</span>&lt;<span class="t">Integer</span>&gt; add = (a, b) -&gt; a + b;                  <span class="c">// two inputs</span>
+        <span class="t">BiFunction</span>&lt;<span class="t">Integer</span>, <span class="t">Integer</span>, <span class="t">Integer</span>&gt; max = (<span class="t">Integer</span> a, <span class="t">Integer</span> b) -&gt; {
+            <span class="k">if</span> (a &gt; b) <span class="k">return</span> a;                                       <span class="c">// a block body needs return</span>
+            <span class="k">return</span> b;
+        };
+        <span class="t">Predicate</span>&lt;<span class="t">String</span>&gt; empty = (<span class="k">var</span> s) -&gt; s.isBlank();               <span class="c">// var in lambda parameters, Java 11</span>
+
+        hello.run();
+        <span class="t">System</span>.out.println(len.apply(<span class="s">"Brainy"</span>));
+        <span class="t">System</span>.out.println(add.apply(<span class="n">40</span>, <span class="n">2</span>));
+        <span class="t">System</span>.out.println(max.apply(<span class="n">7</span>, <span class="n">3</span>));
+        <span class="t">System</span>.out.println(empty.test(<span class="s">"   "</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>no inputs
+6
+42
+7
+true</pre></div></div>
+<p>A lambda has no type of its own. Its type comes from where you put it, called the <b>target type</b>. The same text can become a Supplier or a Callable, but never a plain Object.</p>
+<div class="codewrap" data-k="target"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A lambda needs a target type · ❌ Does not compile · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.<span class="t">Callable</span>;
+<span class="k">import</span> java.util.function.<span class="t">Supplier</span>;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="c">// The same lambda text becomes different types, decided by where it is used (the target type)</span>
+        <span class="t">Supplier</span>&lt;<span class="t">String</span>&gt; s = () -&gt; <span class="s">"ready"</span>;
+        <span class="t">Callable</span>&lt;<span class="t">String</span>&gt; c = () -&gt; <span class="s">"ready"</span>;
+        <span class="t">System</span>.out.println(s.get() + <span class="s">" "</span> + c.call());
+
+        <span class="t">Object</span> o = () -&gt; <span class="s">"ready"</span>;        <span class="c">// Object is not a functional interface</span>
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Line 11: incompatible types: Object is not a functional interface</pre></div></div>
+</section>
+<section class="card reveal jsec" id="functional" data-say="functional"><div class="sec-num">Part 3</div><h2><span class="sec-em">🧰</span><span>Functional interfaces</span></h2>
+<p>A <b>functional interface</b> is an interface with exactly <b>one abstract method</b>. A lambda is simply a short way to create an object of such an interface: the lambda body becomes that method. Default and static methods do not count, so an interface can have many of those and still be functional.</p>
+<div class="viz" data-viz="jlambda"></div>
+<div class="tw"><table class="jt"><tr><th>Interface</th><th>Method</th><th>Shape</th><th>Typical use in tests</th></tr>
+<tr><td><code>Predicate&lt;T&gt;</code></td><td><code>test</code></td><td>T to boolean</td><td>filter results, wait conditions</td></tr>
+<tr><td><code>Function&lt;T,R&gt;</code></td><td><code>apply</code></td><td>T to R</td><td>map a response to a field</td></tr>
+<tr><td><code>Consumer&lt;T&gt;</code></td><td><code>accept</code></td><td>T to nothing</td><td>log, click, fill each item</td></tr>
+<tr><td><code>Supplier&lt;T&gt;</code></td><td><code>get</code></td><td>nothing to T</td><td>create test data lazily</td></tr>
+<tr><td><code>UnaryOperator&lt;T&gt;</code> <code>BinaryOperator&lt;T&gt;</code></td><td><code>apply</code></td><td>T to T, (T,T) to T</td><td>clean up a value, add two totals</td></tr>
+<tr><td><code>BiFunction</code> <code>BiConsumer</code> <code>BiPredicate</code></td><td>two inputs</td><td>(T,U) to ...</td><td>Map.forEach((k, v) -&gt; ...)</td></tr>
+<tr><td><code>IntPredicate</code> <code>ToIntFunction</code> <code>IntSupplier</code> ...</td><td>primitive versions</td><td>no boxing</td><td>fast number work</td></tr></table></div>
+<div class="codewrap" data-k="builtins" data-trace="builtins"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The everyday interfaces in java.util.function · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.function.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Predicate</span>&lt;<span class="t">Integer</span>&gt; passed = code -&gt; code &gt;= <span class="n">200</span> &amp;&amp; code &lt; <span class="n">300</span>;   <span class="c">// T -&gt; boolean</span>
+        <span class="t">Function</span>&lt;<span class="t">String</span>, <span class="t">String</span>&gt; slug = t -&gt; t.toLowerCase().replace(<span class="s">' '</span>, <span class="s">'-'</span>);  <span class="c">// T -&gt; R</span>
+        <span class="t">Consumer</span>&lt;<span class="t">String</span>&gt; log = msg -&gt; <span class="t">System</span>.out.println(<span class="s">"[LOG] "</span> + msg); <span class="c">// T -&gt; nothing</span>
+        <span class="t">Supplier</span>&lt;<span class="t">String</span>&gt; email = () -&gt; <span class="s">"user"</span> + <span class="k">new</span> <span class="t">Random</span>(<span class="n">7</span>).nextInt(<span class="n">1000</span>) + <span class="s">"@shop.test"</span>; <span class="c">// nothing -&gt; T</span>
+        <span class="t">UnaryOperator</span>&lt;<span class="t">String</span>&gt; trim = <span class="t">String</span>::strip;                       <span class="c">// T -&gt; T</span>
+        <span class="t">BiFunction</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>, <span class="t">String</span>&gt; pad = (s, n) -&gt; s + <span class="s">"."</span>.repeat(n);
+        <span class="t">IntPredicate</span> even = n -&gt; n % <span class="n">2</span> == <span class="n">0</span>;                              <span class="c">// primitive version, no boxing</span>
+
+        <span class="t">System</span>.out.println(passed.test(<span class="n">201</span>) + <span class="s">" "</span> + passed.test(<span class="n">404</span>));
+        <span class="t">System</span>.out.println(slug.apply(<span class="s">"Add To Cart"</span>));
+        log.accept(<span class="s">"suite started"</span>);
+        <span class="t">System</span>.out.println(email.get());
+        <span class="t">System</span>.out.println(<span class="s">"["</span> + trim.apply(<span class="s">"  hi  "</span>) + <span class="s">"]"</span>);
+        <span class="t">System</span>.out.println(pad.apply(<span class="s">"Loading"</span>, <span class="n">3</span>));
+        <span class="t">System</span>.out.println(even.test(<span class="n">10</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>true false
+add-to-cart
+[LOG] suite started
+user236@shop.test
+[hi]
+Loading...
+true</pre></div></div>
+<p>You can write your own. Add <code>@FunctionalInterface</code> so the compiler checks that it really has one abstract method.</p>
+<div class="codewrap" data-k="custom" data-trace="custom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Your own functional interface with default and static methods · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="a">@FunctionalInterface</span>
+<span class="k">interface</span> <span class="t">Discount</span> {
+    <span class="k">double</span> apply(<span class="k">double</span> price);                       <span class="c">// exactly one abstract method</span>
+
+    <span class="k">default</span> <span class="t">Discount</span> then(<span class="t">Discount</span> next) {            <span class="c">// default methods are allowed</span>
+        <span class="k">return</span> p -&gt; next.apply(apply(p));
+    }
+
+    <span class="k">static</span> <span class="t">Discount</span> percent(<span class="k">double</span> pct) {             <span class="c">// static factory methods too</span>
+        <span class="k">return</span> p -&gt; p - p * pct / <span class="n">100</span>;
+    }
+}
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Discount</span> festive = <span class="t">Discount</span>.percent(<span class="n">10</span>);
+        <span class="t">Discount</span> coupon = p -&gt; p - <span class="n">50</span>;
+        <span class="t">Discount</span> both = festive.then(coupon);
+        <span class="t">System</span>.out.println(festive.apply(<span class="n">1000</span>));
+        <span class="t">System</span>.out.println(both.apply(<span class="n">1000</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>900.0
+850.0</pre></div></div>
+<div class="codewrap" data-k="notfi"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">@FunctionalInterface catches a second abstract method · ❌ Does not compile · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="a">@FunctionalInterface</span>
+<span class="k">interface</span> <span class="t">Broken</span> {
+    <span class="k">void</span> first();
+    <span class="k">void</span> second();
+}
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Line 1: Unexpected @FunctionalInterface annotation
+Broken is not a functional interface
+multiple non-overriding abstract methods found in interface Broken</pre></div></div>
+<div class="tip">Selenium's <code>wait.until(driver -&gt; driver.findElement(By.id("total")).isDisplayed())</code> takes a <code>Function&lt;WebDriver, T&gt;</code>. Now you know why a lambda fits there.</div>
+</section>
+<section class="card reveal jsec" id="method-refs" data-say="method-refs"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔗</span><span>Method references</span></h2>
+<p>When a lambda only calls one existing method, a <b>method reference</b> says the same thing even shorter, with <code>::</code>. <code>s -&gt; s.toUpperCase()</code> becomes <code>String::toUpperCase</code>.</p>
+<div class="tw"><table class="jt"><tr><th>Kind</th><th>Method reference</th><th>Same as the lambda</th></tr>
+<tr><td>Static method</td><td><code>Integer::parseInt</code></td><td><code>s -&gt; Integer.parseInt(s)</code></td></tr>
+<tr><td>Method of a given object</td><td><code>System.out::println</code></td><td><code>x -&gt; System.out.println(x)</code></td></tr>
+<tr><td>Method of the incoming object</td><td><code>String::length</code></td><td><code>s -&gt; s.length()</code></td></tr>
+<tr><td>Constructor</td><td><code>ArrayList::new</code></td><td><code>() -&gt; new ArrayList&lt;&gt;()</code></td></tr></table></div>
+<div class="codewrap" data-k="refs" data-trace="refs"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The four kinds of method reference · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.function.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">record</span> <span class="t">User</span>(<span class="t">String</span> name) {}
+
+    <span class="k">static</span> <span class="k">boolean</span> isAdmin(<span class="t">String</span> n) { <span class="k">return</span> n.startsWith(<span class="s">"admin"</span>); }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">List</span>&lt;<span class="t">String</span>&gt; names = <span class="t">List</span>.of(<span class="s">"admin_asha"</span>, <span class="s">"ravi"</span>, <span class="s">"admin_meera"</span>);
+
+        <span class="c">// 1. Static method: ClassName::staticMethod</span>
+        <span class="t">Predicate</span>&lt;<span class="t">String</span>&gt; admin = <span class="t">Main</span>::isAdmin;
+        <span class="c">// 2. Method of one particular object: object::method</span>
+        <span class="t">String</span> prefix = <span class="s">"Hello, "</span>;
+        <span class="t">Function</span>&lt;<span class="t">String</span>, <span class="t">String</span>&gt; greet = prefix::concat;
+        <span class="c">// 3. Instance method of whatever object comes in: ClassName::instanceMethod</span>
+        <span class="t">Function</span>&lt;<span class="t">String</span>, <span class="t">String</span>&gt; upper = <span class="t">String</span>::toUpperCase;
+        <span class="c">// 4. Constructor: ClassName::new</span>
+        <span class="t">Function</span>&lt;<span class="t">String</span>, <span class="t">User</span>&gt; make = <span class="t">User</span>::<span class="k">new</span>;
+
+        names.stream().filter(admin).map(upper).forEach(<span class="t">System</span>.out::println);
+        <span class="t">System</span>.out.println(greet.apply(<span class="s">"Ravi"</span>));
+        <span class="t">System</span>.out.println(make.apply(<span class="s">"Meera"</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>ADMIN_ASHA
+ADMIN_MEERA
+Hello, Ravi
+User[name=Meera]</pre></div></div>
+<div class="note">Use a method reference when it reads better. <code>map(User::name)</code> is clearer than <code>map(u -&gt; u.name())</code>, but a lambda with a little logic should stay a lambda.</div>
+</section>
+<section class="card reveal jsec" id="compose" data-say="compose"><div class="sec-num">Part 5</div><h2><span class="sec-em">🧩</span><span>Composing functions</span></h2>
+<p>Functional interfaces come with default methods that join small pieces into bigger ones, like Lego bricks. <code>Predicate</code> has <code>and</code>, <code>or</code> and <code>negate</code>. <code>Function</code> has <code>andThen</code> and <code>compose</code>. <code>Comparator</code> has <code>comparing</code>, <code>thenComparing</code> and <code>reversed</code>.</p>
+<div class="codewrap" data-k="compose" data-trace="compose"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">and, or, negate, andThen and Comparator chains · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.function.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">record</span> <span class="t">Result</span>(<span class="t">String</span> name, <span class="t">String</span> status, <span class="k">int</span> ms) {}
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Predicate</span>&lt;<span class="t">Result</span>&gt; failed = r -&gt; r.status().equals(<span class="s">"FAIL"</span>);
+        <span class="t">Predicate</span>&lt;<span class="t">Result</span>&gt; slow = r -&gt; r.ms() &gt; <span class="n">1000</span>;
+        <span class="t">Function</span>&lt;<span class="t">String</span>, <span class="t">String</span>&gt; trim = <span class="t">String</span>::strip;
+        <span class="t">Function</span>&lt;<span class="t">String</span>, <span class="t">String</span>&gt; clean = trim.andThen(<span class="t">String</span>::toLowerCase).andThen(s -&gt; s.replace(<span class="s">' '</span>, <span class="s">'_'</span>));
+
+        <span class="t">List</span>&lt;<span class="t">Result</span>&gt; results = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;(<span class="t">List</span>.of(
+            <span class="k">new</span> <span class="t">Result</span>(<span class="s">"login"</span>, <span class="s">"PASS"</span>, <span class="n">420</span>), <span class="k">new</span> <span class="t">Result</span>(<span class="s">"checkout"</span>, <span class="s">"FAIL"</span>, <span class="n">2300</span>),
+            <span class="k">new</span> <span class="t">Result</span>(<span class="s">"search"</span>, <span class="s">"PASS"</span>, <span class="n">1800</span>), <span class="k">new</span> <span class="t">Result</span>(<span class="s">"cart"</span>, <span class="s">"FAIL"</span>, <span class="n">300</span>)));
+
+        <span class="t">System</span>.out.println(results.stream().filter(failed.or(slow)).map(<span class="t">Result</span>::name).toList());
+        <span class="t">System</span>.out.println(results.stream().filter(failed.negate().and(slow)).map(<span class="t">Result</span>::name).toList());
+        <span class="t">System</span>.out.println(clean.apply(<span class="s">"  Add To Cart "</span>));
+
+        <span class="c">// Comparators compose too: by status, then slowest first</span>
+        results.sort(<span class="t">Comparator</span>.comparing(<span class="t">Result</span>::status).thenComparing(<span class="t">Result</span>::ms, <span class="t">Comparator</span>.reverseOrder()));
+        results.forEach(r -&gt; <span class="t">System</span>.out.println(r.status() + <span class="s">" "</span> + r.ms() + <span class="s">" "</span> + r.name()));
+    }
+}</pre><div class="out"><span>Output</span><pre>[checkout, search, cart]
+[search]
+add_to_cart
+FAIL 2300 checkout
+FAIL 300 cart
+PASS 1800 search
+PASS 420 login</pre></div></div>
+<p>Real reports sort by several keys at once: failures first, then the slowest. A comparator chain says exactly that, in the order a person would say it.</p>
+</section>
+<section class="card reveal jsec" id="capture" data-say="capture"><div class="sec-num">Part 6</div><h2><span class="sec-em">📦</span><span>Capturing variables and this</span></h2>
+<p>A lambda can read local variables from the code around it, but only if they are <b>effectively final</b>: assigned once and never changed. The lambda may run later, maybe on another thread, so Java copies the value in and forbids changes that would make the copy wrong.</p>
+<div class="codewrap" data-k="capture"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lambdas capture effectively final variables only · ❌ Does not compile · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.function.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">String</span> env = <span class="s">"staging"</span>;                         <span class="c">// effectively final: never changed</span>
+        <span class="t">Supplier</span>&lt;<span class="t">String</span>&gt; url = () -&gt; <span class="s">"https://"</span> + env + <span class="s">".shop.test"</span>;
+        <span class="t">System</span>.out.println(url.get());
+
+        <span class="k">int</span> count = <span class="n">0</span>;
+        <span class="t">Runnable</span> r = () -&gt; count++;                     <span class="c">// a lambda may not change a local variable</span>
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Line 10: local variables referenced from a lambda expression must be final or effectively final</pre></div></div>
+<p>If you truly need a changing counter, use an object such as <code>AtomicInteger</code>. The variable still points to the same object, only the object's contents change.</p>
+<div class="codewrap" data-k="counter" data-trace="counter"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Changing state from a lambda the safe way · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.concurrent.atomic.<span class="t">AtomicInteger</span>;
+<span class="k">import</span> java.util.stream.<span class="t">IntStream</span>;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="c">// Need a counter inside a lambda? Use an object whose contents can change.</span>
+        <span class="t">AtomicInteger</span> attempts = <span class="k">new</span> <span class="t">AtomicInteger</span>();
+        <span class="t">IntStream</span>.range(<span class="n">0</span>, <span class="n">3</span>).forEach(i -&gt; attempts.incrementAndGet());
+        <span class="t">System</span>.out.println(<span class="s">"attempts = "</span> + attempts.get());
+
+        <span class="k">int</span>[] box = {<span class="n">0</span>};                                <span class="c">// the array reference is final, its slot is not</span>
+        <span class="t">IntStream</span>.range(<span class="n">0</span>, <span class="n">5</span>).forEach(i -&gt; box[<span class="n">0</span>] += i);
+        <span class="t">System</span>.out.println(<span class="s">"sum = "</span> + box[<span class="n">0</span>]);
+    }
+}</pre><div class="out"><span>Output</span><pre>attempts = 3
+sum = 10</pre></div></div>
+<p>One more difference from anonymous classes: inside a lambda, <code>this</code> means the surrounding object. A lambda does not create a new scope for <code>this</code>.</p>
+<div class="codewrap" data-k="thisref" data-trace="thisref"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">this means different things in a lambda and an anonymous class · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="t">String</span> name = <span class="s">"outer object"</span>;
+
+    <span class="k">void</span> demo() {
+        <span class="t">Runnable</span> anon = <span class="k">new</span> <span class="t">Runnable</span>() {
+            <span class="t">String</span> name = <span class="s">"anonymous object"</span>;
+            <span class="k">public</span> <span class="k">void</span> run() { <span class="t">System</span>.out.println(<span class="s">"anonymous class: this.name = "</span> + <span class="k">this</span>.name); }
+        };
+        <span class="t">Runnable</span> lambda = () -&gt; <span class="t">System</span>.out.println(<span class="s">"lambda:          this.name = "</span> + <span class="k">this</span>.name);
+        anon.run();
+        lambda.run();
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">new</span> <span class="t">Main</span>().demo();
+    }
+}</pre><div class="out"><span>Output</span><pre>anonymous class: this.name = anonymous object
+lambda:          this.name = outer object</pre></div></div>
+</section>
+<section class="card reveal jsec" id="exceptions" data-say="exceptions"><div class="sec-num">Part 7</div><h2><span class="sec-em">⚠️</span><span>Lambdas and checked exceptions</span></h2>
+<p>The methods of <code>Function</code>, <code>Consumer</code> and friends do not declare <code>throws</code>, so a lambda passed to them cannot throw a checked exception such as <code>IOException</code>. The usual fix is a small wrapper that turns it into an unchecked exception, keeping the original as the cause.</p>
+<div class="codewrap" data-k="checked" data-trace="checked"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Checked exceptions and lambdas · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.nio.file.*;
+<span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.function.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="a">@FunctionalInterface</span>
+    <span class="k">interface</span> <span class="t">ThrowingFunction</span>&lt;<span class="t">T</span>, <span class="t">R</span>&gt; { <span class="t">R</span> apply(<span class="t">T</span> t) <span class="k">throws</span> <span class="t">Exception</span>; }
+
+    <span class="c">// Wrap a function that may throw a checked exception into a plain Function</span>
+    <span class="k">static</span> &lt;<span class="t">T</span>, <span class="t">R</span>&gt; <span class="t">Function</span>&lt;<span class="t">T</span>, <span class="t">R</span>&gt; unchecked(<span class="t">ThrowingFunction</span>&lt;<span class="t">T</span>, <span class="t">R</span>&gt; f) {
+        <span class="k">return</span> t -&gt; {
+            <span class="k">try</span> { <span class="k">return</span> f.apply(t); }
+            <span class="k">catch</span> (<span class="t">Exception</span> e) { <span class="k">throw</span> <span class="k">new</span> <span class="t">RuntimeException</span>(e.getMessage(), e); }
+        };
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Path</span> dir = <span class="t">Files</span>.createTempDirectory(<span class="s">"data"</span>);
+        <span class="t">Files</span>.writeString(dir.resolve(<span class="s">"a.txt"</span>), <span class="s">"alpha"</span>);
+        <span class="t">Files</span>.writeString(dir.resolve(<span class="s">"b.txt"</span>), <span class="s">"beta"</span>);
+
+        <span class="c">// Files.readString throws IOException, so it cannot be used directly in map(...)</span>
+        <span class="t">List</span>&lt;<span class="t">String</span>&gt; texts = <span class="t">List</span>.of(<span class="s">"a.txt"</span>, <span class="s">"b.txt"</span>).stream()
+            .map(dir::resolve)
+            .map(unchecked(<span class="t">Files</span>::readString))
+            .toList();
+        <span class="t">System</span>.out.println(texts);
+    }
+}</pre><div class="out"><span>Output</span><pre>[alpha, beta]</pre></div></div>
+<div class="warn">Do not hide exceptions with an empty catch inside a lambda. A test that swallows an IOException will pass with wrong data, which is worse than a clear failure.</div>
+</section>
+<section class="card reveal jsec" id="inside" data-say="inside"><div class="sec-num">Part 8</div><h2><span class="sec-em">🔬</span><span>How a lambda runs inside the JVM</span></h2>
+<p>An anonymous class becomes its own <code>.class</code> file (<code>Main$1.class</code>). A lambda does not. javac turns its body into a private method and leaves a single <code>invokedynamic</code> instruction where the lambda was. The first time that line runs, the JVM builds the object.</p>
+<div class="viz" data-viz="flow" data-k="lambda-inside"></div>
+<div class="codewrap tests" data-k="javap"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">What javac really produces for a lambda · 🖥️ Run in a terminal · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 Main.java</div><pre class="src" data-file="Main.java"><span class="k">import</span> java.util.function.<span class="t">Function</span>;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Function</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; len = s -&gt; s.length();
+        <span class="t">System</span>.out.println(len.apply(<span class="s">"lambda"</span>));
+    }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ javac Main.java &amp;&amp; java Main
+$ javap -p Main
+$ javap -c -p Main | grep invokedynamic</pre></div><div class="out"><span>Terminal output</span><pre>6
+--- members of Main ---
+Compiled from &quot;Main.java&quot;
+class Main {
+  Main();
+  public static void main(java.lang.String[]);
+  private static java.lang.Integer lambda$main$0(java.lang.String);
+}
+--- the lambda line in main ---
+         0: invokedynamic #n,  0  // InvokeDynamic #n:apply:()Ljava/util/function/Function;</pre></div></div>
+<p>This design (Java 8, JSR 335) lets the JVM choose the best way to make lambdas without changing your class files, and it is why a lambda that captures nothing costs almost nothing after the first call.</p>
+</section>
+<section class="card reveal jsec" id="scenario" data-say="scenario"><div class="sec-num">Part 9</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a retry helper</span></h2>
+<div class="scenario"><b>The situation</b>A payment sandbox sometimes answers 503 for a second or two. Tests fail at random, and people add <code>Thread.sleep</code> everywhere.</div>
+<div class="codewrap" data-k="retry" data-trace="retry"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Real world: a retry helper for a flaky service · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.function.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="c">// A retry helper for flaky calls: the work and the success check are passed in as lambdas</span>
+    <span class="k">static</span> &lt;<span class="t">T</span>&gt; <span class="t">T</span> retry(<span class="t">Supplier</span>&lt;<span class="t">T</span>&gt; call, <span class="t">Predicate</span>&lt;<span class="t">T</span>&gt; ok, <span class="k">int</span> times) {
+        <span class="t">T</span> last = <span class="k">null</span>;
+        <span class="k">for</span> (<span class="k">int</span> attempt = <span class="n">1</span>; attempt &lt;= times; attempt++) {
+            last = call.get();
+            <span class="t">System</span>.out.println(<span class="s">"attempt "</span> + attempt + <span class="s">" -&gt; "</span> + last);
+            <span class="k">if</span> (ok.test(last)) <span class="k">return</span> last;
+        }
+        <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalStateException</span>(<span class="s">"still failing after "</span> + times + <span class="s">" attempts: "</span> + last);
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span>[] calls = {<span class="n">0</span>};
+        <span class="t">Supplier</span>&lt;<span class="t">Integer</span>&gt; flakyStatus = () -&gt; ++calls[<span class="n">0</span>] &lt; <span class="n">3</span> ? <span class="n">503</span> : <span class="n">200</span>;   <span class="c">// fails twice, then works</span>
+        <span class="k">int</span> status = retry(flakyStatus, code -&gt; code == <span class="n">200</span>, <span class="n">5</span>);
+        <span class="t">System</span>.out.println(<span class="s">"final status "</span> + status);
+    }
+}</pre><div class="out"><span>Output</span><pre>attempt 1 -&gt; 503
+attempt 2 -&gt; 503
+attempt 3 -&gt; 200
+final status 200</pre></div></div>
+<p>The helper does not know what it is retrying. The <b>work</b> arrives as a <code>Supplier</code>, and the meaning of "success" arrives as a <code>Predicate</code>. The same helper now retries API calls, database checks or UI conditions, and it reports every attempt. This is the idea behind Awaitility's <code>await().until(...)</code> and Selenium's <code>FluentWait</code>.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./development.html" data-topic="development"><small>← Previous chapter</small><b>🛠️ Development Tools</b></a><a class="next" href="./java-streams.html" data-topic="java-streams"><small>Next chapter →</small><b>🌊 Streams</b></a></nav>
+</div>
+<script type="application/json" id="traces">{"anon": {"steps": [{"l": 5, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 8, "d": {"L.tests": "[checkout, login, search, cart]"}}, {"l": 8, "s": ["main()", "1()"], "d": {"L.args": null, "L.tests": null}}, {"l": 8, "s": ["main()"], "d": {"L.args": "[]", "L.tests": "[checkout, login, search, cart]"}}, {"l": 11, "s": ["main()", "compare()"], "d": {"L.a": "\"login\"", "L.b": "\"checkout\"", "L.args": null, "L.tests": null}}, {"l": 11, "d": {"L.a": "\"search\"", "L.b": "\"login\""}}, {"l": 11, "d": {"L.b": "\"checkout\""}}, {"l": 11, "d": {"L.b": "\"login\""}}, {"l": 11, "d": {"L.a": "\"cart\"", "L.b": "\"search\""}}, {"l": 11, "d": {"L.b": "\"login\""}}, {"l": 14, "s": ["main()"], "d": {"L.args": "[]", "L.tests": "[cart, login, search, checkout]", "L.a": null, "L.b": null}}, {"l": 17, "o": "[cart, login, search, checkout]\n"}, {"l": 17, "s": ["main()", "lambda in main()"], "d": {"L.a": "\"login\"", "L.b": "\"cart\"", "L.args": null, "L.tests": null}}, {"l": 17, "d": {"L.a": "\"search\"", "L.b": "\"login\""}}, {"l": 17, "d": {"L.a": "\"checkout\"", "L.b": "\"search\""}}, {"l": 18, "s": ["main()"], "d": {"L.args": "[]", "L.tests": "[checkout, search, login, cart]", "L.a": null, "L.b": null}}, {"l": 19, "o": "[checkout, search, login, cart]\n"}], "end": {"o": "", "t": false}}, "syntax": {"steps": [{"l": 5, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 6, "d": {"L.hello": "(lambda)"}}, {"l": 7, "d": {"L.len": "(lambda)"}}, {"l": 8, "d": {"L.add": "(lambda)"}}, {"l": 12, "d": {"L.max": "(lambda)"}}, {"l": 14, "d": {"L.empty": "(lambda)"}}, {"l": 5, "s": ["main()", "lambda in main()"], "d": {"L.args": null, "L.hello": null, "L.len": null, "L.add": null, "L.max": null, "L.empty": null}}, {"l": 15, "s": ["main()"], "d": {"L.args": "[]", "L.hello": "(lambda)", "L.len": "(lambda)", "L.add": "(lambda)", "L.max": "(lambda)", "L.empty": "(lambda)"}, "o": "no inputs\n"}, {"l": 6, "s": ["main()", "lambda in main()"], "d": {"L.s": "\"Brainy\"", "L.args": null, "L.hello": null, "L.len": null, "L.add": null, "L.max": null, "L.empty": null}}, {"l": 15, "s": ["main()"], "d": {"L.args": "[]", "L.hello": "(lambda)", "L.len": "(lambda)", "L.add": "(lambda)", "L.max": "(lambda)", "L.empty": "(lambda)", "L.s": null}}, {"l": 16, "o": "6\n"}, {"l": 7, "s": ["main()", "lambda in main()"], "d": {"L.a": "40", "L.b": "2", "L.args": null, "L.hello": null, "L.len": null, "L.add": null, "L.max": null, "L.empty": null}}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.hello": "(lambda)", "L.len": "(lambda)", "L.add": "(lambda)", "L.max": "(lambda)", "L.empty": "(lambda)", "L.a": null, "L.b": null}}, {"l": 17, "o": "42\n"}, {"l": 9, "s": ["main()", "lambda in main()"], "d": {"L.a": "7", "L.b": "3", "L.args": null, "L.hello": null, "L.len": null, "L.add": null, "L.max": null, "L.empty": null}}, {"l": 17, "s": ["main()"], "d": {"L.args": "[]", "L.hello": "(lambda)", "L.len": "(lambda)", "L.add": "(lambda)", "L.max": "(lambda)", "L.empty": "(lambda)", "L.a": null, "L.b": null}}, {"l": 18, "o": "7\n"}, {"l": 12, "s": ["main()", "lambda in main()"], "d": {"L.s": "\"   \"", "L.args": null, "L.hello": null, "L.len": null, "L.add": null, "L.max": null, "L.empty": null}}, {"l": 18, "s": ["main()"], "d": {"L.args": "[]", "L.hello": "(lambda)", "L.len": "(lambda)", "L.add": "(lambda)", "L.max": "(lambda)", "L.empty": "(lambda)", "L.s": null}}, {"l": 19, "o": "true\n"}], "end": {"o": "", "t": false}}, "builtins": {"steps": [{"l": 6, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 7, "d": {"L.passed": "(lambda)"}}, {"l": 8, "d": {"L.slug": "(lambda)"}}, {"l": 9, "d": {"L.log": "(lambda)"}}, {"l": 10, "d": {"L.email": "(lambda)"}}, {"l": 11, "d": {"L.trim": "(lambda)"}}, {"l": 12, "d": {"L.pad": "(lambda)"}}, {"l": 14, "d": {"L.even": "(lambda)"}}, {"l": 6, "s": ["main()", "lambda in main()"], "d": {"L.code": "201", "L.args": null, "L.passed": null, "L.slug": null, "L.log": null, "L.email": null, "L.trim": null, "L.pad": null, "L.even": null}}, {"l": 14, "s": ["main()"], "d": {"L.args": "[]", "L.passed": "(lambda)", "L.slug": "(lambda)", "L.log": "(lambda)", "L.email": "(lambda)", "L.trim": "(lambda)", "L.pad": "(lambda)", "L.even": "(lambda)", "L.code": null}}, {"l": 6, "s": ["main()", "lambda in main()"], "d": {"L.code": "404", "L.args": null, "L.passed": null, "L.slug": null, "L.log": null, "L.email": null, "L.trim": null, "L.pad": null, "L.even": null}}, {"l": 14, "s": ["main()"], "d": {"L.args": "[]", "L.passed": "(lambda)", "L.slug": "(lambda)", "L.log": "(lambda)", "L.email": "(lambda)", "L.trim": "(lambda)", "L.pad": "(lambda)", "L.even": "(lambda)", "L.code": null}}, {"l": 15, "o": "true false\n"}, {"l": 7, "s": ["main()", "lambda in main()"], "d": {"L.t": "\"Add To Cart\"", "L.args": null, "L.passed": null, "L.slug": null, "L.log": null, "L.email": null, "L.trim": null, "L.pad": null, "L.even": null}}, {"l": 15, "s": ["main()"], "d": {"L.args": "[]", "L.passed": "(lambda)", "L.slug": "(lambda)", "L.log": "(lambda)", "L.email": "(lambda)", "L.trim": "(lambda)", "L.pad": "(lambda)", "L.even": "(lambda)", "L.t": null}}, {"l": 16, "o": "add-to-cart\n"}, {"l": 8, "s": ["main()", "lambda in main()"], "d": {"L.msg": "\"suite started\"", "L.args": null, "L.passed": null, "L.slug": null, "L.log": null, "L.email": null, "L.trim": null, "L.pad": null, "L.even": null}}, {"l": 17, "s": ["main()"], "d": {"L.args": "[]", "L.passed": "(lambda)", "L.slug": "(lambda)", "L.log": "(lambda)", "L.email": "(lambda)", "L.trim": "(lambda)", "L.pad": "(lambda)", "L.even": "(lambda)", "L.msg": null}, "o": "[LOG] suite started\n"}, {"l": 18, "o": "user236@shop.test\n"}, {"l": 19, "o": "[hi]\n"}, {"l": 11, "s": ["main()", "lambda in main()"], "d": {"L.s": "\"Loading\"", "L.n": "3", "L.args": null, "L.passed": null, "L.slug": null, "L.log": null, "L.email": null, "L.trim": null, "L.pad": null, "L.even": null}}, {"l": 19, "s": ["main()"], "d": {"L.args": "[]", "L.passed": "(lambda)", "L.slug": "(lambda)", "L.log": "(lambda)", "L.email": "(lambda)", "L.trim": "(lambda)", "L.pad": "(lambda)", "L.even": "(lambda)", "L.s": null, "L.n": null}}, {"l": 20, "o": "Loading...\n"}, {"l": 12, "s": ["main()", "lambda in main()"], "d": {"L.n": "10", "L.args": null, "L.passed": null, "L.slug": null, "L.log": null, "L.email": null, "L.trim": null, "L.pad": null, "L.even": null}}, {"l": 20, "s": ["main()"], "d": {"L.args": "[]", "L.passed": "(lambda)", "L.slug": "(lambda)", "L.log": "(lambda)", "L.email": "(lambda)", "L.trim": "(lambda)", "L.pad": "(lambda)", "L.even": "(lambda)", "L.n": null}}, {"l": 21, "o": "true\n"}], "end": {"o": "", "t": false}}, "custom": {"steps": [{"l": 16, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 10, "s": ["main()", "percent()"], "d": {"L.pct": "10.0", "L.args": null}}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.pct": null}}, {"l": 17, "d": {"L.festive": "(lambda)"}}, {"l": 18, "d": {"L.coupon": "(lambda)"}}, {"l": 6, "s": ["main()", "then()"], "d": {"L.next": "(lambda)", "L.args": null, "L.festive": null, "L.coupon": null}}, {"l": 18, "s": ["main()"], "d": {"L.args": "[]", "L.festive": "(lambda)", "L.coupon": "(lambda)", "L.next": null}}, {"l": 19, "d": {"L.both": "(lambda)"}}, {"l": 10, "s": ["main()", "lambda in percent()"], "d": {"L.pct": "10.0", "L.p": "1000.0", "L.args": null, "L.festive": null, "L.coupon": null, "L.both": null}}, {"l": 19, "s": ["main()"], "d": {"L.args": "[]", "L.festive": "(lambda)", "L.coupon": "(lambda)", "L.both": "(lambda)", "L.pct": null, "L.p": null}}, {"l": 20, "o": "900.0\n"}, {"l": 6, "s": ["main()", "lambda in then()"], "d": {"L.next": "(lambda)", "L.p": "1000.0", "L.args": null, "L.festive": null, "L.coupon": null, "L.both": null}}, {"l": 10, "s": ["main()", "lambda in then()", "lambda in percent()"], "d": {"L.pct": "10.0", "L.next": null}}, {"l": 6, "s": ["main()", "lambda in then()"], "d": {"L.next": "(lambda)", "L.pct": null}}, {"l": 17, "s": ["main()", "lambda in then()", "lambda in main()"], "d": {"L.p": "900.0", "L.next": null}}, {"l": 6, "s": ["main()", "lambda in then()"], "d": {"L.next": "(lambda)", "L.p": "1000.0"}}, {"l": 20, "s": ["main()"], "d": {"L.args": "[]", "L.festive": "(lambda)", "L.coupon": "(lambda)", "L.both": "(lambda)", "L.next": null, "L.p": null}}, {"l": 21, "o": "850.0\n"}], "end": {"o": "", "t": false}}, "refs": {"steps": [{"l": 10, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 13, "d": {"L.names": "[admin_asha, ravi, admin_meera]"}}, {"l": 15, "d": {"L.admin": "(lambda)"}}, {"l": 16, "d": {"L.prefix": "\"Hello, \""}}, {"l": 18, "d": {"L.greet": "(lambda)"}}, {"l": 20, "d": {"L.upper": "(lambda)"}}, {"l": 22, "d": {"L.make": "(lambda)"}}, {"l": 7, "s": ["main()", "isAdmin()"], "d": {"L.n": "\"admin_asha\"", "L.args": null, "L.names": null, "L.admin": null, "L.prefix": null, "L.greet": null, "L.upper": null, "L.make": null}}, {"l": 7, "d": {"L.n": "\"ravi\""}, "o": "ADMIN_ASHA\n"}, {"l": 7, "d": {"L.n": "\"admin_meera\""}}, {"l": 23, "s": ["main()"], "d": {"L.args": "[]", "L.names": "[admin_asha, ravi, admin_meera]", "L.admin": "(lambda)", "L.prefix": "\"Hello, \"", "L.greet": "(lambda)", "L.upper": "(lambda)", "L.make": "(lambda)", "L.n": null}, "o": "ADMIN_MEERA\n"}, {"l": 24, "o": "Hello, Ravi\n"}, {"l": 25, "o": "User[name=Meera]\n"}], "end": {"o": "", "t": false}}, "compose": {"steps": [{"l": 8, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 9, "d": {"L.failed": "(lambda)"}}, {"l": 10, "d": {"L.slow": "(lambda)"}}, {"l": 11, "d": {"L.trim": "(lambda)"}}, {"l": 13, "d": {"L.clean": "(lambda)"}}, {"l": 17, "d": {"L.results": "[Result[name=login, status=PASS, ms=420], Result[name=checkout, status=FAIL, ms=2300], Result[name=search, status=PASS,…"}}, {"l": 8, "s": ["main()", "lambda in main()"], "d": {"L.r": "Result[name=login, status=PASS, ms=420]", "L.args": null, "L.failed": null, "L.slow": null, "L.trim": null, "L.clean": null, "L.results": null}}, {"l": 9}, {"l": 8, "d": {"L.r": "Result[name=checkout, status=FAIL, ms=2300]"}}, {"l": 8, "d": {"L.r": "Result[name=search, status=PASS, ms=1800]"}}, {"l": 9}, {"l": 8, "d": {"L.r": "Result[name=cart, status=FAIL, ms=300]"}}, {"l": 17, "s": ["main()"], "d": {"L.args": "[]", "L.failed": "(lambda)", "L.slow": "(lambda)", "L.trim": "(lambda)", "L.clean": "(lambda)", "L.results": "[Result[name=login, status=PASS, ms=420], Result[name=checkout, status=FAIL, ms=2300], Result[name=search, status=PASS,…", "L.r": null}}, {"l": 18, "o": "[checkout, search, cart]\n"}, {"l": 8, "s": ["main()", "lambda in main()"], "d": {"L.r": "Result[name=login, status=PASS, ms=420]", "L.args": null, "L.failed": null, "L.slow": null, "L.trim": null, "L.clean": null, "L.results": null}}, {"l": 9}, {"l": 8, "d": {"L.r": "Result[name=checkout, status=FAIL, ms=2300]"}}, {"l": 8, "d": {"L.r": "Result[name=search, status=PASS, ms=1800]"}}, {"l": 9}, {"l": 8, "d": {"L.r": "Result[name=cart, status=FAIL, ms=300]"}}, {"l": 18, "s": ["main()"], "d": {"L.args": "[]", "L.failed": "(lambda)", "L.slow": "(lambda)", "L.trim": "(lambda)", "L.clean": "(lambda)", "L.results": "[Result[name=login, status=PASS, ms=420], Result[name=checkout, status=FAIL, ms=2300], Result[name=search, status=PASS,…", "L.r": null}}, {"l": 19, "o": "[search]\n"}, {"l": 11, "s": ["main()", "lambda in main()"], "d": {"L.s": "\"add to cart\"", "L.args": null, "L.failed": null, "L.slow": null, "L.trim": null, "L.clean": null, "L.results": null}}, {"l": 19, "s": ["main()"], "d": {"L.args": "[]", "L.failed": "(lambda)", "L.slow": "(lambda)", "L.trim": "(lambda)", "L.clean": "(lambda)", "L.results": "[Result[name=login, status=PASS, ms=420], Result[name=checkout, status=FAIL, ms=2300], Result[name=search, status=PASS,…", "L.s": null}}, {"l": 22, "o": "add_to_cart\n"}, {"l": 23, "d": {"L.results": "[Result[name=checkout, status=FAIL, ms=2300], Result[name=cart, status=FAIL, ms=300], Result[name=search, status=PASS, …"}}, {"l": 23, "s": ["main()", "lambda in main()"], "d": {"L.r": "Result[name=checkout, status=FAIL, ms=2300]", "L.args": null, "L.failed": null, "L.slow": null, "L.trim": null, "L.clean": null, "L.results": null}}, {"l": 23, "d": {"L.r": "Result[name=cart, status=FAIL, ms=300]"}, "o": "FAIL 2300 checkout\n"}, {"l": 23, "d": {"L.r": "Result[name=search, status=PASS, ms=1800]"}, "o": "FAIL 300 cart\n"}, {"l": 23, "d": {"L.r": "Result[name=login, status=PASS, ms=420]"}, "o": "PASS 1800 search\n"}, {"l": 24, "s": ["main()"], "d": {"L.args": "[]", "L.failed": "(lambda)", "L.slow": "(lambda)", "L.trim": "(lambda)", "L.clean": "(lambda)", "L.results": "[Result[name=checkout, status=FAIL, ms=2300], Result[name=cart, status=FAIL, ms=300], Result[name=search, status=PASS, …", "L.r": null}, "o": "PASS 420 login\n"}], "end": {"o": "", "t": false}}, "counter": {"steps": [{"l": 7, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 8, "d": {"L.attempts": "0"}}, {"l": 8, "s": ["main()", "lambda in main()"], "d": {"L.i": "0", "L.args": null}}, {"l": 8, "d": {"L.attempts": "1", "L.i": "1"}}, {"l": 8, "d": {"L.attempts": "2", "L.i": "2"}}, {"l": 9, "s": ["main()"], "d": {"L.args": "[]", "L.attempts": "3", "L.i": null}}, {"l": 11, "o": "attempts = 3\n"}, {"l": 12, "d": {"L.box": "[0]"}}, {"l": 12, "s": ["main()", "lambda in main()"], "d": {"L.i": "0", "L.args": null, "L.attempts": null}}, {"l": 12, "d": {"L.i": "1"}}, {"l": 12, "d": {"L.box": "[1]", "L.i": "2"}}, {"l": 12, "d": {"L.box": "[3]", "L.i": "3"}}, {"l": 12, "d": {"L.box": "[6]", "L.i": "4"}}, {"l": 13, "s": ["main()"], "d": {"L.args": "[]", "L.attempts": "3", "L.box": "[10]", "L.i": null}}, {"l": 14, "o": "sum = 10\n"}], "end": {"o": "", "t": false}}, "thisref": {"steps": [{"l": 15, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 1, "s": ["main()", "Main()"], "d": {"L.this.name": "null", "L.args": null}}, {"l": 2}, {"l": 15, "s": ["main()"], "d": {"L.args": "[]", "L.this.name": null}}, {"l": 5, "s": ["main()", "demo()"], "d": {"L.this.name": "\"outer object\"", "L.args": null}}, {"l": 5, "s": ["main()", "demo()", "1()"], "d": {"L.this.name": "null"}}, {"l": 6}, {"l": 5, "d": {"L.this.name": "\"anonymous object\""}}, {"l": 5, "s": ["main()", "demo()"], "d": {"L.this.name": "\"outer object\""}}, {"l": 9, "d": {"L.anon": "1{name=\"anonymous object\"}"}}, {"l": 10, "d": {"L.lambda": "(lambda)"}}, {"l": 7, "s": ["main()", "demo()", "run()"], "d": {"L.this.name": "\"anonymous object\"", "L.anon": null, "L.lambda": null}}, {"l": 11, "s": ["main()", "demo()"], "d": {"L.anon": "1{name=\"anonymous object\"}", "L.lambda": "(lambda)", "L.this.name": "\"outer object\""}, "o": "anonymous class: this.name = anonymous object\n"}, {"l": 9, "s": ["main()", "demo()", "lambda in demo()"], "d": {"L.anon": null, "L.lambda": null}}, {"l": 12, "s": ["main()", "demo()"], "d": {"L.anon": "1{name=\"anonymous object\"}", "L.lambda": "(lambda)"}, "o": "lambda:          this.name = outer object\n"}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.anon": null, "L.lambda": null, "L.this.name": null}}], "end": {"o": "", "t": false}}, "checked": {"steps": [{"l": 18, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 19, "d": {"L.dir": "/tmp/data3648944392535803576"}}, {"l": 20}, {"l": 23}, {"l": 24}, {"l": 25}, {"l": 11, "s": ["main()", "unchecked()"], "d": {"L.f": "(lambda)", "L.args": null, "L.dir": null}}, {"l": 25, "s": ["main()"], "d": {"L.args": "[]", "L.dir": "/tmp/data3648944392535803576", "L.f": null}}, {"l": 26}, {"l": 12, "s": ["main()", "lambda in unchecked()"], "d": {"L.f": "(lambda)", "L.t": "/tmp/data3648944392535803576/a.txt", "L.args": null, "L.dir": null}}, {"l": 12, "d": {"L.t": "/tmp/data3648944392535803576/b.txt"}}, {"l": 26, "s": ["main()"], "d": {"L.args": "[]", "L.dir": "/tmp/data3648944392535803576", "L.f": null, "L.t": null}}, {"l": 27, "d": {"L.texts": "[alpha, beta]"}}, {"l": 28, "o": "[alpha, beta]\n"}], "end": {"o": "", "t": false}}, "retry": {"steps": [{"l": 16, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 17, "d": {"L.calls": "[0]"}}, {"l": 18, "d": {"L.flakyStatus": "(lambda)"}}, {"l": 6, "s": ["main()", "retry()"], "d": {"L.call": "(lambda)", "L.ok": "(lambda)", "L.times": "5", "L.args": null, "L.calls": null, "L.flakyStatus": null}}, {"l": 7, "d": {"L.last": "null"}}, {"l": 8, "d": {"L.attempt": "1"}}, {"l": 17, "s": ["main()", "retry()", "lambda in main()"], "d": {"L.calls": "[0]", "L.call": null, "L.ok": null, "L.times": null, "L.last": null, "L.attempt": null}}, {"l": 8, "s": ["main()", "retry()"], "d": {"L.call": "(lambda)", "L.ok": "(lambda)", "L.times": "5", "L.last": "null", "L.attempt": "1", "L.calls": null}}, {"l": 9, "d": {"L.last": "503"}}, {"l": 10, "o": "attempt 1 -> 503\n"}, {"l": 18, "s": ["main()", "retry()", "lambda in main()"], "d": {"L.code": "503", "L.call": null, "L.ok": null, "L.times": null, "L.last": null, "L.attempt": null}}, {"l": 10, "s": ["main()", "retry()"], "d": {"L.call": "(lambda)", "L.ok": "(lambda)", "L.times": "5", "L.last": "503", "L.attempt": "1", "L.code": null}}, {"l": 7}, {"l": 8, "d": {"L.attempt": "2"}}, {"l": 17, "s": ["main()", "retry()", "lambda in main()"], "d": {"L.calls": "[1]", "L.call": null, "L.ok": null, "L.times": null, "L.last": null, "L.attempt": null}}, {"l": 8, "s": ["main()", "retry()"], "d": {"L.call": "(lambda)", "L.ok": "(lambda)", "L.times": "5", "L.last": "503", "L.attempt": "2", "L.calls": null}}, {"l": 9}, {"l": 10, "o": "attempt 2 -> 503\n"}, {"l": 18, "s": ["main()", "retry()", "lambda in main()"], "d": {"L.code": "503", "L.call": null, "L.ok": null, "L.times": null, "L.last": null, "L.attempt": null}}, {"l": 10, "s": ["main()", "retry()"], "d": {"L.call": "(lambda)", "L.ok": "(lambda)", "L.times": "5", "L.last": "503", "L.attempt": "2", "L.code": null}}, {"l": 7}, {"l": 8, "d": {"L.attempt": "3"}}, {"l": 17, "s": ["main()", "retry()", "lambda in main()"], "d": {"L.calls": "[2]", "L.call": null, "L.ok": null, "L.times": null, "L.last": null, "L.attempt": null}}, {"l": 8, "s": ["main()", "retry()"], "d": {"L.call": "(lambda)", "L.ok": "(lambda)", "L.times": "5", "L.last": "503", "L.attempt": "3", "L.calls": null}}, {"l": 9, "d": {"L.last": "200"}}, {"l": 10, "o": "attempt 3 -> 200\n"}, {"l": 18, "s": ["main()", "retry()", "lambda in main()"], "d": {"L.code": "200", "L.call": null, "L.ok": null, "L.times": null, "L.last": null, "L.attempt": null}}, {"l": 10, "s": ["main()", "retry()"], "d": {"L.call": "(lambda)", "L.ok": "(lambda)", "L.times": "5", "L.last": "200", "L.attempt": "3", "L.code": null}}, {"l": 18, "s": ["main()"], "d": {"L.args": "[]", "L.calls": "[3]", "L.flakyStatus": "(lambda)", "L.call": null, "L.ok": null, "L.times": null, "L.last": null, "L.attempt": null}}, {"l": 19, "d": {"L.status": "200"}}, {"l": 20, "o": "final status 200\n"}], "end": {"o": "", "t": false}}}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/javaviz.js"></script>
+<script src="../../assets/xv.js"></script>
+<script>
+const PAGE = {"info": {"title": "Behaviour you can pass around", "panels": [{"s": [["e", "📝"], ["t", "new Comparator<>() { ... }", {"b": 1, "size": 11}]], "h": "Before Java 8", "t": "Six lines to say one thing.", "more": "An anonymous class for every small piece of behaviour."}, {"s": [["e", "➡️"], ["t", "(a, b) -> a.length() - b.length()", {"b": 1, "size": 10}]], "h": "A lambda", "t": "Inputs, arrow, result.", "more": "The compiler fills in the types from the target."}, {"s": [["e", "🔗"], ["t", "String::length", {"b": 1}]], "h": "Method reference", "t": "Name the method, done.", "more": "Static, bound, unbound or constructor."}, {"s": [["e", "🧩"], ["t", "failed.or(slow)", {"b": 1}]], "h": "Compose", "t": "Small pieces join up.", "more": "and, or, andThen, thenComparing."}], "remember": "A lambda is an object of a functional interface, one abstract method, created with the lambda body as that method. It can read effectively final variables, and it runs through invokedynamic."}, "real": [["🛵", "A food delivery app", "Sorts restaurants with Comparator.comparing(Restaurant::rating).reversed().thenComparing(Restaurant::distance). Changing the sort order is a one word change."], ["🧪", "A Selenium framework", "Waits with wait.until(d -> cart.count() == 2). The wait loop is written once, and every test passes its own condition as a lambda."], ["🏦", "A bank batch job", "Keeps validation rules as a List of Predicate objects loaded from configuration, so a new rule is added without touching the loop that applies them."]], "quiz": [{"lv": "e", "q": "What makes an interface a functional interface?", "o": ["Exactly one abstract method", "The @FunctionalInterface annotation", "Only static methods", "No methods at all"], "a": 0, "hint": "Count the abstract ones.", "why": "The annotation is optional. It only asks the compiler to check the rule."}, {"lv": "e", "q": "Which interface fits a lambda that takes nothing and returns a value?", "o": ["Supplier", "Consumer", "Predicate", "Function"], "a": 0, "hint": "It supplies.", "why": "Supplier&lt;T&gt; has T get()."}, {"lv": "e", "q": "What does this print?", "o": ["6", "BRAINY", "true", "Compile error"], "a": 0, "hint": "Function from String to Integer.", "why": "apply calls s.length() on \"Brainy\", which has 6 letters.", "code": "Function<String, Integer> len = s -> s.length();\nSystem.out.println(len.apply(\"Brainy\"));", "run": 1}, {"lv": "m", "q": "What does this print?", "o": ["[cart, login]", "[login, cart]", "[cart]", "[login]"], "a": 0, "hint": "Keep words shorter than 6, then sort.", "why": "checkout and search have 6 or more letters, so cart and login remain, and natural order puts cart first.", "code": "List<String> t = new ArrayList<>(List.of(\"login\", \"checkout\", \"cart\", \"search\"));\nt.removeIf(s -> s.length() >= 6);\nt.sort(Comparator.naturalOrder());\nSystem.out.println(t);", "run": 1}, {"lv": "m", "q": "Which method reference is the same as <code>s -&gt; s.toUpperCase()<\/code>?", "o": ["String::toUpperCase", "s::toUpperCase", "String.toUpperCase", "toUpperCase::String"], "a": 0, "hint": "ClassName::method for the incoming object.", "why": "It is an unbound instance method reference. The incoming String becomes the object the method runs on."}, {"lv": "m", "q": "Why does <code>int n = 0; Runnable r = () -&gt; n++;<\/code> not compile?", "o": ["Lambdas can only use effectively final local variables", "Runnable cannot have a body", "n must be static", "Lambdas cannot use int"], "a": 0, "hint": "Captured values are copies.", "why": "Changing n would make the copy inside the lambda wrong, so Java forbids it."}, {"lv": "m", "q": "What does this print?", "o": ["true false", "false true", "true true", "false false"], "a": 0, "hint": "Combine the two checks.", "why": "15 is above 10 and odd, so the first is true. 12 is above 10 but even, so the second is false.", "code": "Predicate<Integer> big = n -> n > 10;\nPredicate<Integer> odd = n -> n % 2 == 1;\nSystem.out.println(big.and(odd).test(15) + \" \" + big.and(odd).test(12));", "run": 1}, {"lv": "h", "q": "What does this print?", "o": ["12", "7", "16", "9"], "a": 0, "hint": "andThen runs the second function after the first.", "why": "(5 + 1) is 6, then 6 × 2 is 12. With compose the order would flip, giving 5 × 2 + 1 = 11.", "code": "Function<Integer, Integer> plus1 = x -> x + 1;\nFunction<Integer, Integer> times2 = x -> x * 2;\nSystem.out.println(plus1.andThen(times2).apply(5));", "run": 1}, {"lv": "h", "q": "Inside a lambda written in an instance method, what does <code>this<\/code> refer to?", "o": ["The object whose method contains the lambda", "The lambda object", "The functional interface", "Nothing, this is not allowed"], "a": 0, "hint": "Lambdas do not add a scope for this.", "why": "An anonymous class would make this refer to the anonymous object instead."}, {"lv": "h", "q": "How many .class files does javac write for a class with three lambdas and no other nested classes?", "o": ["1", "3", "4", "0"], "a": 0, "hint": "Lambdas use invokedynamic.", "why": "Lambda bodies become private methods of the same class. Classes for them are made in memory at run time."}, {"lv": "x", "q": "What does this print?", "o": ["[cart, login, search]", "[search, login, cart]", "[login, cart, search]", "[cart, search, login]"], "a": 0, "hint": "Shortest first, then alphabetical for ties.", "why": "cart has 4 letters. login and search are 5 and 6. So the order is by length.", "code": "List<String> t = new ArrayList<>(List.of(\"search\", \"login\", \"cart\"));\nt.sort(Comparator.comparing(String::length).thenComparing(Comparator.naturalOrder()));\nSystem.out.println(t);", "run": 1}, {"lv": "x", "q": "Which of these does not compile?", "o": ["<code>Object o = () -&gt; 1;<\/code>", "<code>Supplier&lt;Integer&gt; s = () -&gt; 1;<\/code>", "<code>Callable&lt;Integer&gt; c = () -&gt; 1;<\/code>", "<code>IntSupplier i = () -&gt; 1;<\/code>"], "a": 0, "hint": "A lambda needs a functional interface as its target.", "why": "Object is a class, not a functional interface, so the compiler has nothing to turn the lambda into. A cast such as (Supplier&lt;Integer&gt;) would fix it."}], "calc": [{"lv": "e", "q": "What does this print?", "ans": "12", "hint": "Apply the operator.", "steps": ["<span class=\"eq\">(3 + 1) × 3 = 12<\/span>"], "code": "BinaryOperator<Integer> f = (a, b) -> (a + 1) * b;\nSystem.out.println(f.apply(3, 3));", "run": 1}, {"lv": "e", "q": "How many names does the filter keep?", "ans": "2", "hint": "Starts with \"a\".", "steps": ["asha and arun start with a.", "So 2 are kept."], "code": "System.out.println(List.of(\"asha\", \"ravi\", \"arun\", \"meera\").stream().filter(s -> s.startsWith(\"a\")).count());", "run": 1}, {"lv": "m", "q": "What does this print?", "ans": "22", "hint": "andThen: first add 1, then times 2.", "steps": ["<span class=\"eq\">10 + 1 = 11<\/span>", "<span class=\"eq\">11 × 2 = 22<\/span>"], "code": "Function<Integer, Integer> f = x -> x + 1;\nSystem.out.println(f.andThen(x -> x * 2).apply(10));", "run": 1}, {"lv": "m", "q": "What does this print?", "ans": "21", "hint": "compose runs the argument function first.", "steps": ["compose(x -> x * 2) runs first: <span class=\"eq\">10 × 2 = 20<\/span>", "then x + 1: <span class=\"eq\">20 + 1 = 21<\/span>"], "code": "Function<Integer, Integer> f = x -> x + 1;\nSystem.out.println(f.compose((Integer x) -> x * 2).apply(10));", "run": 1}, {"lv": "m", "q": "A discount lambda takes 10 percent off, then a coupon takes 50 off. What is the final price of 1000?", "ans": "850.0", "hint": "Percent first.", "steps": ["<span class=\"eq\">1000 − 1000 × 10 ÷ 100 = 900<\/span>", "<span class=\"eq\">900 − 50 = 850.0<\/span>"]}, {"lv": "h", "q": "What does this print?", "ans": "10", "hint": "Sum 0 to 4 into the array slot.", "steps": ["<span class=\"eq\">0 + 1 + 2 + 3 + 4 = 10<\/span>"], "code": "int[] box = {0};\nIntStream.range(0, 5).forEach(i -> box[0] += i);\nSystem.out.println(box[0]);", "run": 1}, {"lv": "h", "q": "The retry helper succeeds on attempt 3 of at most 5, and each attempt waits 200 ms before the next. How many ms are spent waiting?", "ans": "400", "hint": "Waits happen between attempts.", "steps": ["Attempts 1 and 2 fail, so there are 2 waits.", "<span class=\"eq\">2 × 200 = 400<\/span>"]}, {"lv": "x", "q": "What does this print?", "ans": "3", "hint": "Count results that failed or were slow.", "steps": ["checkout failed, search was slow, cart failed.", "login passed and was fast.", "So 3."], "code": "record R(String s, int ms) {}\nPredicate<R> failed = r -> r.s().equals(\"FAIL\");\nPredicate<R> slow = r -> r.ms() > 1000;\nvar rs = List.of(new R(\"PASS\", 420), new R(\"FAIL\", 2300), new R(\"PASS\", 1800), new R(\"FAIL\", 300));\nSystem.out.println(rs.stream().filter(failed.or(slow)).count());", "run": 1}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to lambdas. A lambda is a small piece of behaviour you can pass to another method, written as inputs, an arrow and a result.", "hi": "Lambdas में आपका स्वागत है। Lambda व्यवहार का एक छोटा टुकड़ा है जिसे आप किसी दूसरे method को दे सकते हैं, इसे inputs, एक तीर और result के रूप में लिखा जाता है।", "kn": "Lambdas ಗೆ ಸ್ವಾಗತ. Lambda ಎಂದರೆ ಇನ್ನೊಂದು method ಗೆ ಕೊಡಬಹುದಾದ ಸಣ್ಣ ನಡವಳಿಕೆ, inputs, ಬಾಣ ಮತ್ತು result ಆಗಿ ಬರೆಯಲಾಗುತ್ತದೆ.", "or": "Lambdas କୁ ସ୍ୱାଗତ। Lambda ହେଉଛି ଏକ ଛୋଟ ବ୍ୟବହାର ଯାହା ଅନ୍ୟ method କୁ ଦିଆଯାଇପାରେ, inputs, ତୀର ଏବଂ result ଭାବେ ଲେଖାଯାଏ।", "ar": "مرحبًا بك في تعبيرات لامدا. لامدا جزء صغير من السلوك تمرره إلى دالة أخرى، ويُكتب كمدخلات ثم سهم ثم نتيجة.", "de": "Willkommen bei Lambdas. Ein Lambda ist ein kleines Stück Verhalten, das du an eine andere Methode übergibst, geschrieben als Eingaben, Pfeil und Ergebnis."}, {"id": "why", "h": "Why lambdas", "en": "Before Java 8 every small piece of behaviour needed an anonymous class. A lambda keeps only the part that matters.", "hi": "Java 8 से पहले हर छोटे व्यवहार के लिए anonymous class चाहिए थी। Lambda सिर्फ़ ज़रूरी हिस्सा रखता है।", "kn": "Java 8 ಮೊದಲು ಪ್ರತಿಯೊಂದು ಸಣ್ಣ ನಡವಳಿಕೆಗೆ anonymous class ಬೇಕಿತ್ತು. Lambda ಮುಖ್ಯ ಭಾಗವನ್ನು ಮಾತ್ರ ಇಡುತ್ತದೆ.", "or": "Java 8 ପୂର୍ବରୁ ପ୍ରତ୍ୟେକ ଛୋଟ ବ୍ୟବହାର ପାଇଁ anonymous class ଦରକାର ହେଉଥିଲା। Lambda କେବଳ ଜରୁରୀ ଅଂଶ ରଖେ।", "ar": "قبل Java 8 كان كل سلوك صغير يحتاج صنفًا مجهولًا كاملًا. أما لامدا فتحتفظ بالجزء المهم فقط.", "de": "Vor Java 8 brauchte jedes kleine Verhalten eine anonyme Klasse. Ein Lambda behält nur das Wesentliche."}, {"id": "syntax", "h": "Syntax", "en": "A lambda is parameters, an arrow and a body. Its type comes from where it is used, called the target type.", "hi": "Lambda में parameters, एक तीर और body होती है। इसका type वहाँ से आता है जहाँ इसे इस्तेमाल किया जाता है, इसे target type कहते हैं।", "kn": "Lambda ಎಂದರೆ parameters, ಬಾಣ ಮತ್ತು body. ಅದರ type ಬಳಸುವ ಸ್ಥಳದಿಂದ ಬರುತ್ತದೆ, ಅದನ್ನು target type ಎನ್ನುತ್ತಾರೆ.", "or": "Lambda ରେ parameters, ତୀର ଏବଂ body ଥାଏ। ଏହାର type ବ୍ୟବହାର ସ୍ଥାନରୁ ଆସେ, ଯାହାକୁ target type କୁହାଯାଏ।", "ar": "لامدا هي معاملات ثم سهم ثم جسم. ويأتي نوعها من مكان استخدامها، ويسمى النوع الهدف.", "de": "Ein Lambda besteht aus Parametern, Pfeil und Rumpf. Sein Typ kommt vom Verwendungsort, dem Zieltyp."}, {"id": "functional", "h": "Functional interfaces", "en": "A functional interface has exactly one abstract method. Predicate tests, Function maps, Consumer uses and Supplier creates.", "hi": "Functional interface में ठीक एक abstract method होता है। Predicate जाँचता है, Function बदलता है, Consumer इस्तेमाल करता है और Supplier बनाता है।", "kn": "Functional interface ನಲ್ಲಿ ಒಂದೇ abstract method ಇರುತ್ತದೆ. Predicate ಪರೀಕ್ಷಿಸುತ್ತದೆ, Function ಬದಲಿಸುತ್ತದೆ, Consumer ಬಳಸುತ್ತದೆ, Supplier ರಚಿಸುತ್ತದೆ.", "or": "Functional interface ରେ ଠିକ୍ ଗୋଟିଏ abstract method ଥାଏ। Predicate ଯାଞ୍ଚ କରେ, Function ବଦଳାଏ, Consumer ବ୍ୟବହାର କରେ, Supplier ତିଆରି କରେ।", "ar": "الواجهة الوظيفية لها دالة مجردة واحدة فقط. Predicate يختبر، وFunction يحوّل، وConsumer يستخدم، وSupplier ينشئ.", "de": "Ein funktionales Interface hat genau eine abstrakte Methode. Predicate prüft, Function wandelt um, Consumer verbraucht, Supplier erzeugt."}, {"id": "method-refs", "h": "Method references", "en": "When a lambda only calls one method, a method reference with two colons says the same thing, for example String colon colon length.", "hi": "जब lambda सिर्फ़ एक method बुलाता है, तो दो colon वाला method reference वही बात कहता है, जैसे String colon colon length।", "kn": "Lambda ಒಂದೇ method ಕರೆಯುವಾಗ, ಎರಡು colon ಇರುವ method reference ಅದೇ ಹೇಳುತ್ತದೆ, ಉದಾಹರಣೆ String colon colon length.", "or": "ଯେତେବେଳେ lambda କେବଳ ଗୋଟିଏ method ଡାକେ, ଦୁଇ colon ଥିବା method reference ସେହି କଥା କହେ, ଯେପରି String colon colon length।", "ar": "عندما تستدعي لامدا دالة واحدة فقط، يقول مرجع الدالة بنقطتين مزدوجتين الشيء نفسه، مثل String::length.", "de": "Ruft ein Lambda nur eine Methode auf, sagt eine Methodenreferenz mit zwei Doppelpunkten dasselbe, etwa String::length."}, {"id": "compose", "h": "Composing", "en": "Predicates join with and, or and negate. Functions join with andThen. Comparators chain with comparing and thenComparing.", "hi": "Predicates and, or और negate से जुड़ते हैं। Functions andThen से जुड़ते हैं। Comparators comparing और thenComparing से जुड़ते हैं।", "kn": "Predicates and, or, negate ಮೂಲಕ ಸೇರುತ್ತವೆ. Functions andThen ಮೂಲಕ. Comparators comparing ಮತ್ತು thenComparing ಮೂಲಕ.", "or": "Predicates and, or ଓ negate ଦ୍ୱାରା ଯୋଡ଼ନ୍ତି। Functions andThen ଦ୍ୱାରା। Comparators comparing ଓ thenComparing ଦ୍ୱାରା।", "ar": "تتحد المحمولات بـ and وor وnegate، والدوال بـ andThen، والمقارنات بـ comparing وthenComparing.", "de": "Predicates verbinden sich mit and, or und negate, Functions mit andThen, Comparators mit comparing und thenComparing."}, {"id": "capture", "h": "Capturing", "en": "A lambda can read local variables only if they are effectively final. Inside a lambda, this means the surrounding object.", "hi": "Lambda local variables तभी पढ़ सकता है जब वे effectively final हों। Lambda के अंदर this का मतलब बाहर वाला object है।", "kn": "Lambda local variables ಅನ್ನು effectively final ಆಗಿದ್ದರೆ ಮಾತ್ರ ಓದಬಹುದು. Lambda ಒಳಗೆ this ಎಂದರೆ ಹೊರಗಿನ object.", "or": "Lambda local variables କେବଳ effectively final ହେଲେ ପଢ଼ିପାରେ। Lambda ଭିତରେ this ର ଅର୍ଥ ବାହାର object।", "ar": "تقرأ لامدا المتغيرات المحلية فقط إذا كانت نهائية فعليًا. وداخل لامدا تعني this الكائن المحيط.", "de": "Ein Lambda liest lokale Variablen nur, wenn sie effektiv final sind. Im Lambda bedeutet this das umgebende Objekt."}, {"id": "exceptions", "h": "Checked exceptions", "en": "Function and Consumer cannot throw checked exceptions, so wrap the call and rethrow it as an unchecked exception with the cause.", "hi": "Function और Consumer checked exceptions नहीं फेंक सकते, इसलिए call को wrap करके cause के साथ unchecked exception फेंकिए।", "kn": "Function ಮತ್ತು Consumer checked exceptions ಎಸೆಯಲಾರವು, ಆದ್ದರಿಂದ call ಅನ್ನು wrap ಮಾಡಿ cause ಜೊತೆ unchecked ಆಗಿ ಎಸೆಯಿರಿ.", "or": "Function ଓ Consumer checked exceptions ଫିଙ୍ଗିପାରନ୍ତି ନାହିଁ, ତେଣୁ call କୁ wrap କରି cause ସହ unchecked ଭାବେ ଫିଙ୍ଗନ୍ତୁ।", "ar": "لا تستطيع Function وConsumer رمي الاستثناءات المفحوصة، لذا غلّف الاستدعاء وأعد رميه كاستثناء غير مفحوص مع السبب.", "de": "Function und Consumer dürfen keine geprüften Ausnahmen werfen, also umhülle den Aufruf und wirf eine ungeprüfte Ausnahme mit Ursache."}, {"id": "inside", "h": "Inside the JVM", "en": "javac turns the lambda body into a private method and writes one invokedynamic instruction. On first use, LambdaMetafactory builds the object.", "hi": "javac lambda body को private method बनाता है और एक invokedynamic instruction लिखता है। पहली बार LambdaMetafactory object बनाता है।", "kn": "javac lambda body ಅನ್ನು private method ಮಾಡಿ ಒಂದು invokedynamic instruction ಬರೆಯುತ್ತದೆ. ಮೊದಲ ಬಳಕೆಯಲ್ಲಿ LambdaMetafactory object ರಚಿಸುತ್ತದೆ.", "or": "javac lambda body କୁ private method କରେ ଏବଂ ଗୋଟିଏ invokedynamic instruction ଲେଖେ। ପ୍ରଥମ ଥର LambdaMetafactory object ତିଆରି କରେ।", "ar": "يحول javac جسم لامدا إلى دالة خاصة ويكتب تعليمة invokedynamic واحدة، وعند أول استخدام يبني LambdaMetafactory الكائن.", "de": "javac macht aus dem Rumpf eine private Methode und schreibt eine invokedynamic-Anweisung. Beim ersten Aufruf baut die LambdaMetafactory das Objekt."}, {"id": "scenario", "h": "Scenario", "en": "A retry helper takes the work as a Supplier and the meaning of success as a Predicate, so one helper retries any flaky call.", "hi": "Retry helper काम को Supplier और सफलता के अर्थ को Predicate के रूप में लेता है, इसलिए एक ही helper किसी भी flaky call को दोबारा चलाता है।", "kn": "Retry helper ಕೆಲಸವನ್ನು Supplier ಆಗಿ ಮತ್ತು ಯಶಸ್ಸನ್ನು Predicate ಆಗಿ ಪಡೆಯುತ್ತದೆ, ಆದ್ದರಿಂದ ಒಂದೇ helper ಯಾವುದೇ flaky call ಮರುಪ್ರಯತ್ನಿಸುತ್ತದೆ.", "or": "Retry helper କାମକୁ Supplier ଏବଂ ସଫଳତାକୁ Predicate ଭାବେ ନିଏ, ତେଣୁ ଗୋଟିଏ helper ଯେକୌଣସି flaky call ପୁଣି ଚଲାଏ।", "ar": "يأخذ مساعد إعادة المحاولة العمل كـ Supplier ومعنى النجاح كـ Predicate، فيعيد مساعد واحد أي استدعاء غير مستقر.", "de": "Ein Retry-Helfer nimmt die Arbeit als Supplier und den Erfolg als Predicate, so wiederholt ein Helfer jeden wackligen Aufruf."}], "dg": {"lambda-inside": {"t": "What happens when a lambda line runs", "w": 900, "h": 300, "mw": 640, "n": [["src", 20, 30, 190, 70, "Main.java", {"c": 0, "sh": "doc", "sub": "s -> s.length()"}], ["javac", 250, 30, 160, 70, "javac", {"c": 2, "sub": "body becomes a\nprivate method"}], ["cls", 450, 30, 190, 70, "Main.class", {"c": 3, "sh": "doc", "sub": "lambda$main$0 +\ninvokedynamic"}], ["indy", 680, 30, 200, 70, "First run of the line", {"c": 5, "sub": "bootstrap method called"}], ["meta", 680, 180, 200, 80, "LambdaMetafactory", {"c": 1, "sub": "spins a small hidden class\nthat implements Function"}], ["obj", 400, 190, 230, 70, "Function object", {"c": 4, "sub": "apply() calls lambda$main$0"}], ["next", 40, 190, 300, 70, "Every later run", {"c": 7, "sub": "reuses the linked call site,\nno new class is made"}]], "e": [["src", "javac"], ["javac", "cls"], ["cls", "indy"], ["indy", "meta"], ["meta", "obj"], ["obj", "next", {"d": 1}]], "st": [[["src"], "You write a lambda. It has no class of its own in the source."], [["javac", "src>javac"], "javac moves the lambda body into a private method of Main, named something like lambda$main$0."], [["cls", "javac>cls"], "Where the lambda was, javac writes one invokedynamic instruction. No extra .class file is created, unlike an anonymous class (Main$1.class)."], [["indy", "cls>indy"], "The first time that line runs, the JVM calls a bootstrap method to decide what the instruction should do."], [["meta", "indy>meta"], "LambdaMetafactory creates a tiny hidden class at run time that implements Function and forwards apply() to lambda$main$0."], [["obj", "meta>obj"], "An object of that class is returned. A lambda that captures nothing is created once and shared."], [["next", "obj>next"], "The call site is now linked. Later runs skip all of this, which is why lambdas are cheap after the first call."]]}}, "lanes": {}, "jv": {}};
+JAVAPAGE.start({ title: "Lambdas, functional interfaces and method references" });
+</script>
+</body>
+</html>

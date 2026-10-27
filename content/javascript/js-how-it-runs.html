@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 2 of 28</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 2 of 31</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">⚙️</span><div><h1>How a JavaScript Program Runs Inside the Engine</h1><p class="lead">Follow one program from a text file to the output: loading, the scanner and its tokens, the parser and its syntax tree, the creation phase and hoisting, Ignition bytecode, the call stack and the heap, the JIT compilers Sparkplug, Maglev and TurboFan, the event loop and how modules are linked. Type your own code into two step by step simulators.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 25 min read</span><span class="chip">📚 11 parts</span><span class="chip">🎬 5 animations</span><span class="chip">▶ 13 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 4 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -42,7 +42,7 @@ console.log(<span class="s">"loop/io  libuv"</span>, uv);
 <span class="c">// The engine gives the language. The runtime adds the extras.</span>
 console.log(<span class="k">typeof</span> <span class="t">Array</span>, <span class="k">typeof</span> <span class="t">Promise</span>, <span class="k">typeof</span> <span class="t">JSON</span>);          <span class="c">// from the engine</span>
 console.log(<span class="k">typeof</span> setTimeout, <span class="k">typeof</span> fetch, <span class="k">typeof</span> process);     <span class="c">// from the runtime</span>
-console.log(<span class="k">typeof</span> document);                                      <span class="c">// only a browser runtime has a page</span></pre><div class="out"><span>Output</span><pre>runtime  Node.js 26.12.0
+console.log(<span class="k">typeof</span> document);                                      <span class="c">// only a browser runtime has a page</span></pre><div class="out"><span>Output</span><pre>runtime  Node.js 26.12.1
 engine   V8 14.6.202.34
 loop/io  libuv 1.52.1
 function function object
@@ -133,7 +133,7 @@ if (user.name === &quot;Asha&quot; {
 
 SyntaxError: Unexpected token &#x27;{&#x27;
 
-Node.js v26.12.0</pre></div></div>
+Node.js v26.12.1</pre></div></div>
 <p>Some mistakes are grammatically fine but forbidden anyway. The specification calls them <b>early errors</b>, and the parser reports them before anything runs too: declaring the same <code>let</code> twice, a <code>const</code> with no value, or a <code>return</code> outside a function. Other problems, such as calling a function that does not exist, can only be found when the line actually runs.</p>
 <div class="codewrap" data-k="lazy"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Early errors against runtime errors · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> vm <span class="k">from</span> <span class="s">"node:vm"</span>;
 
@@ -269,7 +269,7 @@ cart = <span class="k">null</span>;                               <span class="c
 gc();
 console.log(<span class="s">"after gc:"</span>, watch.deref());</pre><div class="cmd"><span>Terminal</span><pre>$ node --expose-gc main.mjs</pre></div><div class="out"><span>Output</span><pre>still reachable: true
 after gc: undefined</pre></div></div>
-<div class="qa-box">A memory leak in JavaScript means something still <b>reaches</b> an object you no longer need: a global array that keeps growing, a listener that was never removed, or a cache with no limit. In long UI test runs, watch the memory graph in Chrome DevTools or compare two heap snapshots (chapter 28).</div>
+<div class="qa-box">A memory leak in JavaScript means something still <b>reaches</b> an object you no longer need: a global array that keeps growing, a listener that was never removed, or a cache with no limit. In long UI test runs, watch the memory graph in Chrome DevTools or compare two heap snapshots (chapter 31).</div>
 </section>
 <section class="card reveal jsec" id="jit" data-say="jit"><div class="sec-num">Part 8</div><h2><span class="sec-em">🚀</span><span>Step 7: hot code gets compiled: Sparkplug, Maglev and TurboFan</span></h2>
 
@@ -399,7 +399,7 @@ price after bump is 110</pre></div></div>
 }
 <span class="k">await</span> measure(<span class="s">"chunked 20 x 20 ms"</span>, () =&gt; { chunked(<span class="n">400</span>, <span class="n">20</span>); });</pre><div class="out"><span>Output</span><pre>blocking 400 ms          timer was late by more than 200 ms: true
 chunked 20 x 20 ms       timer was late by more than 200 ms: false</pre></div></div>
-<p>The fix does the same total work in small chunks and gives the event loop a turn between them. Clicks and paints now get in between the chunks, so the page feels responsive. In a browser, the newer <code>scheduler.yield()</code> does the same job in Chrome and Edge, and very heavy work can move to a Web Worker on another thread (chapter 28).</p>
+<p>The fix does the same total work in small chunks and gives the event loop a turn between them. Clicks and paints now get in between the chunks, so the page feels responsive. In a browser, the newer <code>scheduler.yield()</code> does the same job in Chrome and Edge, and very heavy work can move to a Web Worker on another thread (chapter 31).</p>
 <div class="qa-box">Lighthouse and the Performance panel in DevTools mark any task over 50 ms as a <b>long task</b>, and the Interaction to Next Paint (INP) metric shows how long users waited after a tap. Both are good evidence to attach to a bug report about a slow page.</div>
 </section>
 

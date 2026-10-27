@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Annotations, reflection and modules · Java</title>
+<meta name="description" content="Java annotations, custom annotations with Retention and Target, reflection, Method.invoke, record components, strong encapsulation, final field mutation warnings (JEP 500), dynamic proxies, the module system with module-info, exports and requires, jdeps, jlink and module import declarations (JEP 511).">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/xv.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🚀 Modern Java</span><span>›</span><span>Chapter 25 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🏷️</span><div><h1>Annotations, reflection and modules</h1><p class="lead">Frameworks such as JUnit and Spring seem to call your code by magic. This chapter shows the real mechanism: annotations as labels, reflection to read them, and proxies to wrap objects. Then it covers the module system that protects code from misuse, jlink for small runtimes, module imports from Java 25, and the Java 26 warning about changing final fields.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 24 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 14 examples run on a real JDK</span><span class="chip">👣 2 line by line replays</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 7 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="jdk-note">Every example below was compiled and run on java version &quot;25.0.5.0.2&quot; 2026-10-21 LTS and java version &quot;27.0.1.0.2&quot; 2026-10-21 when this page was built, so each output is real. Press <b>👣 Run line by line</b> on an example to replay that run one line at a time.</div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#builtin"><span>🏷️</span>Annotations: labels the compiler and tools can read</a><a href="#custom"><span>🧪</span>Writing your own annotation</a><a href="#reflection"><span>🔍</span>Reflection: looking at classes while the program runs</a><a href="#proxy"><span>🪞</span>Dynamic proxies: how mocks and frameworks wrap your objects</a><a href="#modules"><span>📦</span>The module system (Java 9)</a><a href="#importmodule"><span>📥</span>Module import declarations (Java 25)</a><a href="#scenario"><span>🎬</span>Real world scenario: validating a sign up form</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="builtin" data-say="builtin"><div class="sec-num">Part 1</div><h2><span class="sec-em">🏷️</span><span>Annotations: labels the compiler and tools can read</span></h2>
+<p>An <b>annotation</b> is a label that starts with <code>@</code>. It does not change what your code does by itself. The compiler, build tools or frameworks read the label and act on it, like a "fragile" sticker on a parcel that tells the courier how to handle it.</p>
+<div class="codewrap" data-k="override"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">@Override catches a misspelled method · ❌ Does not compile · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">class</span> <span class="t">Product</span> {
+        <span class="t">String</span> name = <span class="s">"pen"</span>;
+        <span class="a">@Override</span>
+        <span class="k">public</span> <span class="t">String</span> toString() { <span class="k">return</span> <span class="s">"Product "</span> + name; }
+
+        <span class="a">@Override</span>
+        <span class="k">public</span> <span class="k">boolean</span> equal(<span class="t">Object</span> o) { <span class="k">return</span> o == <span class="k">this</span>; }     <span class="c">// typo: equals is spelled wrong</span>
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="k">new</span> <span class="t">Product</span>());
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Line 7: method does not override or implement a method from a supertype</pre></div></div>
+<p>Without <code>@Override</code> that typo would compile and silently create a new method that nothing ever calls. With it, the compiler catches the mistake at once.</p>
+<div class="codewrap" data-k="deprecated" data-trace="deprecated"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Deprecated, SuppressWarnings and FunctionalInterface · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">class</span> <span class="t">Payments</span> {
+        <span class="c">/** @deprecated use {@link #pay(String, long)} with the amount in paise */</span>
+        <span class="a">@Deprecated</span>(since = <span class="s">"2.0"</span>, forRemoval = <span class="k">true</span>)
+        <span class="k">static</span> <span class="k">void</span> pay(<span class="t">String</span> user, <span class="k">double</span> rupees) { pay(user, <span class="t">Math</span>.round(rupees * <span class="n">100</span>)); }
+
+        <span class="k">static</span> <span class="k">void</span> pay(<span class="t">String</span> user, <span class="k">long</span> paise) { <span class="t">System</span>.out.println(user + <span class="s">" paid "</span> + paise + <span class="s">" paise"</span>); }
+    }
+
+    <span class="a">@SuppressWarnings</span>(<span class="s">"removal"</span>)
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Payments</span>.pay(<span class="s">"asha"</span>, <span class="n">49.5</span>);          <span class="c">// old call, warning silenced on purpose</span>
+        <span class="t">Payments</span>.pay(<span class="s">"ravi"</span>, <span class="n">4950L</span>);
+        <span class="t">System</span>.out.println(<span class="s">"@FunctionalInterface on Runnable? "</span> + <span class="t">Runnable</span>.<span class="k">class</span>.isAnnotationPresent(<span class="t">FunctionalInterface</span>.<span class="k">class</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>asha paid 4950 paise
+ravi paid 4950 paise
+@FunctionalInterface on Runnable? true</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Annotation</th><th>What it tells the compiler</th></tr>
+<tr><td><code>@Override</code></td><td>this must override or implement a method, or fail</td></tr>
+<tr><td><code>@Deprecated(since, forRemoval)</code></td><td>warn everyone who still uses this</td></tr>
+<tr><td><code>@SuppressWarnings("...")</code></td><td>I know, stop warning me about this here</td></tr>
+<tr><td><code>@FunctionalInterface</code></td><td>this interface must have exactly one abstract method</td></tr>
+<tr><td><code>@SafeVarargs</code></td><td>this generic varargs method does not misuse its array</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="custom" data-say="custom"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧪</span><span>Writing your own annotation</span></h2>
+<p>You declare an annotation with <code>@interface</code>. Two meta annotations decide how it behaves. <code>@Retention</code> says how long it lives: only in the source (SOURCE), in the class file (CLASS, the default), or also at run time (RUNTIME). <code>@Target</code> says where it may be written, such as on methods, fields, classes or record components.</p>
+<div class="codewrap" data-k="custom"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A tiny test runner built from a custom annotation · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.lang.annotation.*;
+<span class="k">import</span> java.lang.reflect.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="a">@Retention</span>(<span class="t">RetentionPolicy</span>.<span class="t">RUNTIME</span>)      <span class="c">// keep it in the class file and visible to reflection</span>
+    <span class="a">@Target</span>(<span class="t">ElementType</span>.<span class="t">METHOD</span>)              <span class="c">// only allowed on methods</span>
+    <span class="a">@interface</span> <span class="t">Test</span> {
+        <span class="t">String</span> name() <span class="k">default</span> <span class="s">""</span>;
+        <span class="k">boolean</span> skip() <span class="k">default</span> <span class="k">false</span>;
+    }
+
+    <span class="k">static</span> <span class="k">class</span> <span class="t">CartTests</span> {
+        <span class="a">@Test</span>(name = <span class="s">"empty cart has total 0"</span>)
+        <span class="k">void</span> emptyCart() { check(<span class="n">0</span> == <span class="n">0</span>); }
+
+        <span class="a">@Test</span>
+        <span class="k">void</span> addItem() { check(<span class="n">2</span> + <span class="n">2</span> == <span class="n">4</span>); }
+
+        <span class="a">@Test</span>(name = <span class="s">"discount above 100 percent"</span>, skip = <span class="k">true</span>)
+        <span class="k">void</span> hugeDiscount() { check(<span class="k">false</span>); }
+
+        <span class="a">@Test</span>(name = <span class="s">"tax is added"</span>)
+        <span class="k">void</span> tax() { check(<span class="n">100</span> * <span class="n">1.18</span> == <span class="n">118</span>); }
+
+        <span class="k">void</span> helper() { }                       <span class="c">// no @Test, so the runner ignores it</span>
+
+        <span class="k">static</span> <span class="k">void</span> check(<span class="k">boolean</span> ok) { <span class="k">if</span> (!ok) <span class="k">throw</span> <span class="k">new</span> <span class="t">AssertionError</span>(<span class="s">"check failed"</span>); }
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">CartTests</span> suite = <span class="k">new</span> <span class="t">CartTests</span>();
+        <span class="k">int</span> pass = <span class="n">0</span>, fail = <span class="n">0</span>, skip = <span class="n">0</span>;
+        <span class="t">Method</span>[] methods = <span class="t">CartTests</span>.<span class="k">class</span>.getDeclaredMethods();
+        java.util.<span class="t">Arrays</span>.sort(methods, java.util.<span class="t">Comparator</span>.comparing(<span class="t">Method</span>::getName));
+        <span class="k">for</span> (<span class="t">Method</span> m : methods) {
+            <span class="t">Test</span> t = m.getAnnotation(<span class="t">Test</span>.<span class="k">class</span>);
+            <span class="k">if</span> (t == <span class="k">null</span>) <span class="k">continue</span>;
+            <span class="t">String</span> name = t.name().isEmpty() ? m.getName() : t.name();
+            <span class="k">if</span> (t.skip()) { <span class="t">System</span>.out.println(<span class="s">"SKIP "</span> + name); skip++; <span class="k">continue</span>; }
+            <span class="k">try</span> {
+                m.invoke(suite);
+                <span class="t">System</span>.out.println(<span class="s">"PASS "</span> + name); pass++;
+            } <span class="k">catch</span> (<span class="t">InvocationTargetException</span> e) {
+                <span class="t">System</span>.out.println(<span class="s">"FAIL "</span> + name + <span class="s">": "</span> + e.getCause().getMessage()); fail++;
+            }
+        }
+        <span class="t">System</span>.out.println(pass + <span class="s">" passed, "</span> + fail + <span class="s">" failed, "</span> + skip + <span class="s">" skipped"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>PASS addItem
+PASS empty cart has total 0
+SKIP discount above 100 percent
+PASS tax is added
+3 passed, 0 failed, 1 skipped</pre></div></div>
+<div class="viz" data-viz="flow" data-k="reflect"></div>
+<div class="note">JUnit 5's <code>@Test</code>, <code>@DisplayName</code> and <code>@Disabled</code> work exactly like this, with many more features. So do Spring's <code>@GetMapping</code> and Jackson's <code>@JsonProperty</code>.</div>
+</section>
+<section class="card reveal jsec" id="reflection" data-say="reflection"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔍</span><span>Reflection: looking at classes while the program runs</span></h2>
+<p><b>Reflection</b> lets code examine and use classes it did not know about when it was compiled. Every loaded class has a <code>Class</code> object that lists its fields, methods, constructors and, for records, its components. Frameworks use it to create objects, fill fields from JSON and call methods by name.</p>
+<div class="codewrap" data-k="reflect"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Looking inside a class at run time · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.lang.reflect.*;
+<span class="k">import</span> java.util.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">record</span> <span class="t">Order</span>(<span class="t">String</span> id, <span class="k">int</span> qty, <span class="k">double</span> price) {
+        <span class="k">double</span> total() { <span class="k">return</span> qty * price; }
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Class</span>&lt;?&gt; c = <span class="t">Order</span>.<span class="k">class</span>;                          <span class="c">// or Class.forName("Main$Order")</span>
+        <span class="t">System</span>.out.println(<span class="s">"name: "</span> + c.getSimpleName() + <span class="s">", record? "</span> + c.isRecord());
+
+        <span class="k">for</span> (<span class="t">RecordComponent</span> rc : c.getRecordComponents()) {
+            <span class="t">System</span>.out.println(<span class="s">"component "</span> + rc.getName() + <span class="s">" : "</span> + rc.getType().getSimpleName());
+        }
+
+        <span class="t">Order</span> o = (<span class="t">Order</span>) c.getDeclaredConstructor(<span class="t">String</span>.<span class="k">class</span>, <span class="k">int</span>.<span class="k">class</span>, <span class="k">double</span>.<span class="k">class</span>).newInstance(<span class="s">"A-1"</span>, <span class="n">3</span>, <span class="n">49.5</span>);
+        <span class="t">Method</span> total = c.getDeclaredMethod(<span class="s">"total"</span>);
+        <span class="t">System</span>.out.println(<span class="s">"total() called by name: "</span> + total.invoke(o));
+
+        <span class="t">Field</span> qty = c.getDeclaredField(<span class="s">"qty"</span>);
+        <span class="t">System</span>.out.println(<span class="s">"field qty is "</span> + <span class="t">Modifier</span>.toString(qty.getModifiers()));
+    }
+}</pre><div class="out"><span>Output</span><pre>name: Order, record? true
+component id : String
+component qty : int
+component price : double
+total() called by name: 148.5
+field qty is private final</pre></div></div>
+<p>Reflection is powerful but has a cost. Calls are checked at run time instead of compile time, so a typo in a method name becomes a <code>NoSuchMethodException</code>, and the code is harder to read. Use it in libraries and tools, not in everyday business logic.</p>
+<p>Since Java 9 the JDK protects its own internals. Reflection may not open private parts of a module that does not allow it.</p>
+<div class="codewrap" data-k="opens"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Strong encapsulation: the JDK keeps its private parts private · 💥 Crashes at run time · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.lang.reflect.<span class="t">Field</span>;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Field</span> value = <span class="t">String</span>.<span class="k">class</span>.getDeclaredField(<span class="s">"value"</span>);
+        <span class="t">System</span>.out.println(<span class="s">"found the private field: "</span> + value.getName());
+        value.setAccessible(<span class="k">true</span>);            <span class="c">// java.base does not open java.lang to us</span>
+        <span class="t">System</span>.out.println(<span class="s">"never printed"</span>);
+    }
+}</pre><div class="out"><span>Output before the crash</span><pre>found the private field: value</pre></div><div class="err"><span>💥 Runtime error</span><pre>Exception in thread &quot;main&quot; java.lang.reflect.InaccessibleObjectException: Unable to make field private final byte[] java.lang.String.value accessible: module java.base does not &quot;opens java.lang&quot; to unnamed module @1dbd16a6</pre></div></div>
+<p>Changing a <code>final</code> field with reflection still works in your own code, but Java 26 started warning about it (JEP 500, "prepare to make final mean final"). A future release will block it unless you allow it with <code>--enable-final-field-mutation</code>. The JVM can then trust that final fields never change and optimise better.</p>
+<div class="codewrap tests" data-k="final"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Java 26 and 27 warn when reflection changes a final field (JEP 500) · 🖥️ Run in a terminal · ☕ JDK 27</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 Main.java</div><pre class="src" data-file="Main.java"><span class="k">import</span> java.lang.reflect.<span class="t">Field</span>;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">class</span> <span class="t">Config</span> {
+        <span class="k">private</span> <span class="k">final</span> <span class="t">String</span> env = <span class="k">new</span> <span class="t">String</span>(<span class="s">"prod"</span>);
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Config</span> c = <span class="k">new</span> <span class="t">Config</span>();
+        <span class="t">Field</span> f = <span class="t">Config</span>.<span class="k">class</span>.getDeclaredField(<span class="s">"env"</span>);
+        f.setAccessible(<span class="k">true</span>);
+        f.set(c, <span class="s">"test"</span>);                     <span class="c">// changing a final field</span>
+        <span class="t">System</span>.out.println(<span class="s">"env is now "</span> + f.get(c));
+    }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ java Main
+$ java --illegal-final-field-mutation=deny Main</pre></div><div class="out"><span>Terminal output</span><pre>--- Java 27, default ---
+WARNING: Final field env in class Main$Config has been mutated reflectively by class Main in unnamed module @5a07e868 (file:/app/)
+WARNING: Use --enable-final-field-mutation=ALL-UNNAMED to avoid a warning
+WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled
+env is now test
+--- Java 27, --illegal-final-field-mutation=deny ---
+Exception in thread &quot;main&quot; java.lang.IllegalAccessException: class Main (in unnamed module @5a07e868) cannot set final field Main$Config.env (in unnamed module @5a07e868), unnamed module @5a07e868 is not allowed to mutate final fields</pre></div></div>
+</section>
+<section class="card reveal jsec" id="proxy" data-say="proxy"><div class="sec-num">Part 4</div><h2><span class="sec-em">🪞</span><span>Dynamic proxies: how mocks and frameworks wrap your objects</span></h2>
+<p>A <b>dynamic proxy</b> is an object the JVM creates at run time that implements one or more interfaces. Every call on it goes to one handler method, which can log, time, check permissions or forward the call. Spring uses proxies for <code>@Transactional</code>, and older mocking libraries used them for mocks.</p>
+<div class="codewrap" data-k="proxy"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A dynamic proxy that logs every call · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.lang.reflect.*;
+<span class="k">import</span> java.util.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">interface</span> <span class="t">PaymentService</span> {
+        <span class="t">String</span> pay(<span class="t">String</span> user, <span class="k">int</span> amount);
+        <span class="k">int</span> balance(<span class="t">String</span> user);
+    }
+
+    <span class="k">static</span> <span class="k">class</span> <span class="t">RealPayments</span> <span class="k">implements</span> <span class="t">PaymentService</span> {
+        <span class="k">public</span> <span class="t">String</span> pay(<span class="t">String</span> user, <span class="k">int</span> amount) { <span class="k">return</span> <span class="s">"paid "</span> + amount + <span class="s">" for "</span> + user; }
+        <span class="k">public</span> <span class="k">int</span> balance(<span class="t">String</span> user) { <span class="k">return</span> <span class="n">500</span>; }
+    }
+
+    <span class="a">@SuppressWarnings</span>(<span class="s">"unchecked"</span>)
+    <span class="k">static</span> &lt;<span class="t">T</span>&gt; <span class="t">T</span> logged(<span class="t">T</span> target, <span class="t">Class</span>&lt;<span class="t">T</span>&gt; type) {
+        <span class="t">InvocationHandler</span> h = (proxy, method, args) -&gt; {
+            <span class="t">System</span>.out.println(<span class="s">"-&gt; "</span> + method.getName() + <span class="t">Arrays</span>.toString(args));
+            <span class="t">Object</span> result = method.invoke(target, args);
+            <span class="t">System</span>.out.println(<span class="s">"&lt;- "</span> + result);
+            <span class="k">return</span> result;
+        };
+        <span class="k">return</span> (<span class="t">T</span>) <span class="t">Proxy</span>.newProxyInstance(type.getClassLoader(), <span class="k">new</span> <span class="t">Class</span>&lt;?&gt;[] { type }, h);
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">PaymentService</span> svc = logged(<span class="k">new</span> <span class="t">RealPayments</span>(), <span class="t">PaymentService</span>.<span class="k">class</span>);
+        svc.pay(<span class="s">"asha"</span>, <span class="n">120</span>);
+        svc.balance(<span class="s">"asha"</span>);
+        <span class="t">System</span>.out.println(<span class="s">"is a proxy: "</span> + <span class="t">Proxy</span>.isProxyClass(svc.getClass()));
+    }
+}</pre><div class="out"><span>Output</span><pre>-&gt; pay[asha, 120]
+&lt;- paid 120 for asha
+-&gt; balance[asha]
+&lt;- 500
+is a proxy: true</pre></div></div>
+<div class="tip">java.lang.reflect.Proxy only works with interfaces. Libraries such as Mockito and Spring generate subclasses with bytecode tools when they need to wrap plain classes, which is one reason the Class-File API (final in Java 24) was added to the JDK.</div>
+</section>
+<section class="card reveal jsec" id="modules" data-say="modules"><div class="sec-num">Part 5</div><h2><span class="sec-em">📦</span><span>The module system (Java 9)</span></h2>
+<p>Before Java 9, a <code>public</code> class in any JAR could be used by any other JAR. Big programs ended up depending on each other's internals. A <b>module</b> fixes this. It is a named group of packages with a <code>module-info.java</code> file that says which packages it <b>exports</b> and which modules it <b>requires</b>.</p>
+<div class="viz" data-viz="flow" data-k="modules"></div>
+<div class="codewrap tests" data-k="modules"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two modules: a core library and an app · 🖥️ Run in a terminal · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/com.shop.core/module-info.java</div><pre class="src" data-file="src/com.shop.core/module-info.java"><span class="k">module</span> com.shop.core {
+    <span class="k">exports</span> com.shop.core.api;      <span class="c">// other modules may use this package</span>
+    <span class="c">// com.shop.core.internal is not exported, so it stays private to this module</span>
+}</pre><div class="fname">📄 src/com.shop.core/com/shop/core/api/Prices.java</div><pre class="src" data-file="src/com.shop.core/com/shop/core/api/Prices.java"><span class="k">package</span> com.shop.core.api;
+
+<span class="k">import</span> com.shop.core.internal.<span class="t">TaxTable</span>;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">Prices</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">double</span> withTax(<span class="k">double</span> amount) {
+        <span class="k">return</span> amount + amount * <span class="t">TaxTable</span>.rate();
+    }
+}</pre><div class="fname">📄 src/com.shop.core/com/shop/core/internal/TaxTable.java</div><pre class="src" data-file="src/com.shop.core/com/shop/core/internal/TaxTable.java"><span class="k">package</span> com.shop.core.internal;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">TaxTable</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">double</span> rate() { <span class="k">return</span> <span class="n">0.18</span>; }
+}</pre><div class="fname">📄 src/com.shop.app/module-info.java</div><pre class="src" data-file="src/com.shop.app/module-info.java"><span class="k">module</span> com.shop.app {
+    <span class="k">requires</span> com.shop.core;
+}</pre><div class="fname">📄 src/com.shop.app/com/shop/app/Main.java</div><pre class="src" data-file="src/com.shop.app/com/shop/app/Main.java"><span class="k">package</span> com.shop.app;
+
+<span class="k">import</span> com.shop.core.api.<span class="t">Prices</span>;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="s">"100 with tax = "</span> + <span class="t">Prices</span>.withTax(<span class="n">100</span>));
+        <span class="t">System</span>.out.println(<span class="s">"running in module "</span> + <span class="t">Main</span>.<span class="k">class</span>.getModule().getName());
+    }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ javac -d out --module-source-path src -m com.shop.app
+$ java -p out -m com.shop.app/com.shop.app.Main     # -p is the module path
+$ jdeps --module-path out -s -m com.shop.app</pre></div><div class="out"><span>Terminal output</span><pre>100 with tax = 118.0
+running in module com.shop.app
+--- what depends on what (jdeps) ---
+com.shop.app -&gt; com.shop.core
+com.shop.app -&gt; java.base</pre></div></div>
+<div class="codewrap tests" data-k="notexported"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Using a package that is not exported · 🖥️ Run in a terminal · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/com.shop.app/com/shop/app/Main.java</div><pre class="src" data-file="src/com.shop.app/com/shop/app/Main.java"><span class="k">package</span> com.shop.app;
+
+<span class="k">import</span> com.shop.core.internal.<span class="t">TaxTable</span>;     <span class="c">// not exported by com.shop.core</span>
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="t">TaxTable</span>.rate());
+    }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ javac -d out --module-source-path src -m com.shop.app</pre></div><div class="out"><span>Terminal output</span><pre>src/com.shop.app/com/shop/app/Main.java:3: error: package com.shop.core.internal does not exist</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>module-info line</th><th>Meaning</th></tr>
+<tr><td><code>requires m;</code></td><td>I use module m</td></tr>
+<tr><td><code>requires transitive m;</code></td><td>I use m, and so does anyone who requires me</td></tr>
+<tr><td><code>exports p;</code></td><td>other modules may use package p at compile and run time</td></tr>
+<tr><td><code>opens p;</code></td><td>frameworks may use deep reflection on p, for example JSON mapping</td></tr>
+<tr><td><code>uses S;</code> and <code>provides S with Impl;</code></td><td>plug in implementations with ServiceLoader</td></tr></table></div>
+<p>The JDK itself is split into about 70 modules. That lets <b>jlink</b> build a runtime with only the modules an app needs, which makes container images much smaller.</p>
+<div class="codewrap tests" data-k="jlink"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">jlink builds a small runtime with only the modules you need · 🖥️ Run in a terminal · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 src/com.shop.app/module-info.java</div><pre class="src" data-file="src/com.shop.app/module-info.java"><span class="k">module</span> com.shop.app {
+    <span class="k">requires</span> com.shop.core;
+}</pre><div class="fname">📄 src/com.shop.app/com/shop/app/Main.java</div><pre class="src" data-file="src/com.shop.app/com/shop/app/Main.java"><span class="k">package</span> com.shop.app;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(<span class="s">"hello from a custom runtime: "</span> + com.shop.core.api.<span class="t">Prices</span>.withTax(<span class="n">100</span>));
+    }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ jlink -p out --add-modules com.shop.app --strip-debug --no-header-files --no-man-pages --output shopjre
+$ ./shopjre/bin/java --list-modules
+$ ./shopjre/bin/java -m com.shop.app/com.shop.app.Main
+$ du -sm shopjre</pre></div><div class="out"><span>Terminal output</span><pre>com.shop.app
+com.shop.core
+java.base@25.0.5.0.2
+hello from a custom runtime: 118.0
+size of the custom runtime: 53 MB
+size of the full JDK: 377 MB</pre></div></div>
+</section>
+<section class="card reveal jsec" id="importmodule" data-say="importmodule"><div class="sec-num">Part 6</div><h2><span class="sec-em">📥</span><span>Module import declarations (Java 25)</span></h2>
+<p>A long list of imports at the top of a file is noise, especially for beginners and small scripts. Java 25 made <b>module import declarations</b> final (JEP 511). <code>import module java.sql;</code> imports every public type from every package that the java.sql module exports, and from the modules it requires transitively. Compact source files, the ones with a bare <code>void main()</code>, import <code>java.base</code> this way automatically.</p>
+<div class="codewrap" data-k="importmodule"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">import module brings in a whole module at once · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> <span class="k">module</span> java.sql;            <span class="c">// Java 25: every exported package of java.sql, plus java.xml and java.logging</span>
+
+<span class="k">void</span> main() <span class="k">throws</span> <span class="t">Exception</span> {
+    <span class="c">// Connection, DriverManager and SQLException come from java.sql</span>
+    <span class="c">// List and Map come from java.base, which compact source files import automatically</span>
+    <span class="t">List</span>&lt;<span class="t">String</span>&gt; drivers = <span class="t">DriverManager</span>.drivers().map(d -&gt; d.getClass().getSimpleName()).toList();
+    <span class="t">System</span>.out.println(<span class="s">"JDBC drivers on the classpath: "</span> + drivers.size());
+    <span class="t">Map</span>&lt;<span class="t">String</span>, <span class="t">Class</span>&lt;?&gt;&gt; types = <span class="t">Map</span>.of(<span class="s">"Connection"</span>, <span class="t">Connection</span>.<span class="k">class</span>, <span class="s">"SQLException"</span>, <span class="t">SQLException</span>.<span class="k">class</span>);
+    types.forEach((k, v) -&gt; <span class="t">System</span>.out.println(k + <span class="s">" lives in "</span> + v.getPackageName()));
+}</pre><div class="out"><span>Output</span><pre>JDBC drivers on the classpath: 0
+Connection lives in java.sql
+SQLException lives in java.sql</pre></div></div>
+<p>If two imported modules export a class with the same simple name, using that name is an error. The fix is one ordinary import, which always beats a module import.</p>
+<div class="codewrap" data-k="ambiguous"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Two modules export a class with the same name · ❌ Does not compile · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> <span class="k">module</span> java.sql;
+
+<span class="k">void</span> main() {
+    <span class="t">Date</span> today = <span class="k">new</span> <span class="t">Date</span>(<span class="n">0</span>);       <span class="c">// java.util.Date or java.sql.Date?</span>
+    <span class="t">System</span>.out.println(today);
+}</pre><div class="err"><span>❌ Compile error</span><pre>Line 4: reference to Date is ambiguous
+both class java.sql.Date in java.sql and class java.util.Date in java.util match
+Line 4: reference to Date is ambiguous
+both class java.sql.Date in java.sql and class java.util.Date in java.util match</pre></div></div>
+<div class="codewrap" data-k="fixambiguous" data-trace="fixambiguous"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A single type import settles it · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> <span class="k">module</span> java.sql;
+<span class="k">import</span> java.sql.<span class="t">Date</span>;               <span class="c">// a single type import wins over module imports</span>
+
+<span class="k">void</span> main() {
+    <span class="t">Date</span> day = <span class="t">Date</span>.valueOf(<span class="s">"2026-10-24"</span>);
+    <span class="t">System</span>.out.println(day + <span class="s">" is a "</span> + day.getClass().getName());
+}</pre><div class="out"><span>Output</span><pre>2026-10-24 is a java.sql.Date</pre></div></div>
+<div class="note">Your code does not need to be a module to use <code>import module</code>. It works in ordinary classes on the classpath too.</div>
+</section>
+<section class="card reveal jsec" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: validating a sign up form</span></h2>
+<div class="scenario"><b>The situation</b>A sign up API receives a name, an email and an age. Every endpoint repeats the same if statements to check them, and the rules drift apart.</div>
+<div class="codewrap" data-k="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A validator in 30 lines, the idea behind Bean Validation · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.lang.annotation.*;
+<span class="k">import</span> java.lang.reflect.*;
+<span class="k">import</span> java.util.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="a">@Retention</span>(<span class="t">RetentionPolicy</span>.<span class="t">RUNTIME</span>) <span class="a">@Target</span>(<span class="t">ElementType</span>.<span class="t">RECORD_COMPONENT</span>) <span class="a">@interface</span> <span class="t">NotBlank</span> { }
+    <span class="a">@Retention</span>(<span class="t">RetentionPolicy</span>.<span class="t">RUNTIME</span>) <span class="a">@Target</span>(<span class="t">ElementType</span>.<span class="t">RECORD_COMPONENT</span>) <span class="a">@interface</span> <span class="t">Range</span> { <span class="k">int</span> min(); <span class="k">int</span> max(); }
+
+    <span class="k">record</span> <span class="t">SignUp</span>(<span class="a">@NotBlank</span> <span class="t">String</span> name, <span class="a">@NotBlank</span> <span class="t">String</span> email, <span class="a">@Range</span>(min = <span class="n">13</span>, max = <span class="n">120</span>) <span class="k">int</span> age) { }
+
+    <span class="k">static</span> <span class="t">List</span>&lt;<span class="t">String</span>&gt; validate(<span class="t">Record</span> r) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">List</span>&lt;<span class="t">String</span>&gt; errors = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();
+        <span class="k">for</span> (<span class="t">RecordComponent</span> rc : r.getClass().getRecordComponents()) {
+            <span class="t">Object</span> value = rc.getAccessor().invoke(r);
+            <span class="k">if</span> (rc.isAnnotationPresent(<span class="t">NotBlank</span>.<span class="k">class</span>) &amp;&amp; (value == <span class="k">null</span> || value.toString().isBlank())) {
+                errors.add(rc.getName() + <span class="s">" must not be blank"</span>);
+            }
+            <span class="t">Range</span> range = rc.getAnnotation(<span class="t">Range</span>.<span class="k">class</span>);
+            <span class="k">if</span> (range != <span class="k">null</span> &amp;&amp; ((<span class="k">int</span>) value &lt; range.min() || (<span class="k">int</span>) value &gt; range.max())) {
+                errors.add(rc.getName() + <span class="s">" must be between "</span> + range.min() + <span class="s">" and "</span> + range.max());
+            }
+        }
+        <span class="k">return</span> errors;
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">System</span>.out.println(validate(<span class="k">new</span> <span class="t">SignUp</span>(<span class="s">"Asha"</span>, <span class="s">"asha@shop.test"</span>, <span class="n">29</span>)));
+        <span class="t">System</span>.out.println(validate(<span class="k">new</span> <span class="t">SignUp</span>(<span class="s">" "</span>, <span class="s">"ravi@shop.test"</span>, <span class="n">9</span>)));
+    }
+}</pre><div class="out"><span>Output</span><pre>[]
+[name must not be blank, age must be between 13 and 120]</pre></div></div>
+<p>The rules now live next to the data as annotations, and one generic method checks any record. This is the same idea as Jakarta Bean Validation (<code>@NotBlank</code>, <code>@Min</code>, <code>@Max</code>), which Spring runs automatically on request bodies.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./java-jvm-internals.html" data-topic="java-jvm-internals"><small>← Previous chapter</small><b>⚙️ Inside the JVM</b></a><a class="next" href="./java-jdbc-http.html" data-topic="java-jdbc-http"><small>Next chapter →</small><b>🔌 JDBC and HTTP</b></a></nav>
+</div>
+<script type="application/json" id="traces">{"deprecated": {"steps": [{"l": 12, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 5, "s": ["main()", "pay()"], "d": {"L.user": "\"asha\"", "L.rupees": "49.5", "L.args": null}}, {"l": 7, "s": ["main()", "pay()", "pay()"], "d": {"L.paise": "4950", "L.rupees": null}}, {"l": 5, "s": ["main()", "pay()"], "d": {"L.rupees": "49.5", "L.paise": null}, "o": "asha paid 4950 paise\n"}, {"l": 13, "s": ["main()"], "d": {"L.args": "[]", "L.user": null, "L.rupees": null}}, {"l": 7, "s": ["main()", "pay()"], "d": {"L.user": "\"ravi\"", "L.paise": "4950", "L.args": null}}, {"l": 14, "s": ["main()"], "d": {"L.args": "[]", "L.user": null, "L.paise": null}, "o": "ravi paid 4950 paise\n"}, {"l": 15, "o": "@FunctionalInterface on Runnable? true\n"}], "end": {"o": "", "t": false}}, "fixambiguous": {"steps": [{"l": 5, "s": ["main()"]}, {"l": 6, "d": {"L.day": "2026-10-24"}}, {"l": 7, "o": "2026-10-24 is a java.sql.Date\n"}], "end": {"o": "", "t": false}}}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/javaviz.js"></script>
+<script src="../../assets/xv.js"></script>
+<script>
+const PAGE = {"info": {"title": "Labels, mirrors and fences", "panels": [{"s": [["e", "🏷️"], ["t", "@Override", {"b": 1}]], "h": "Annotations", "t": "Labels that tools read.", "more": "RUNTIME retention keeps them for reflection."}, {"s": [["e", "🔍"], ["t", "m.invoke(obj)", {"b": 1}]], "h": "Reflection", "t": "Look inside classes while running.", "more": "This is how frameworks find your code."}, {"s": [["e", "📦"], ["t", "exports com.shop.api", {"b": 1, "size": 11}]], "h": "Modules", "t": "Only exported packages are visible.", "more": "jlink builds a smaller runtime."}, {"s": [["e", "📥"], ["t", "import module java.sql;", {"b": 1, "size": 11}]], "h": "Java 25", "t": "One line imports a whole module.", "more": "A single type import settles name clashes."}], "remember": "Annotations are labels, reflection reads them at run time, proxies wrap interfaces, and modules decide which packages other code may see. Java 25 adds import module, and Java 26 warns before final fields can be changed by reflection."}, "real": [["🧪", "JUnit", "Finds your tests by scanning classes for <code>@Test<\/code> with reflection, then calls each method by name and reports the result."], ["🌱", "Spring Boot", "Reads <code>@RestController<\/code> and <code>@GetMapping<\/code> to build its routes, and wraps <code>@Transactional<\/code> beans in proxies that start and commit transactions."], ["🐳", "A team shipping containers", "Used jdeps and jlink to build a runtime with only six modules, so their image shrank by more than half."]], "quiz": [{"lv": "e", "q": "What does <code>@Override<\/code> do?", "o": ["Makes the compiler fail if the method does not really override one", "Makes the method run faster", "Hides the parent method at run time", "Makes the method final"], "a": 0, "hint": "A safety check.", "why": "It turns a silent typo into a compile error."}, {"lv": "e", "q": "Which retention keeps an annotation available to reflection?", "o": ["RetentionPolicy.RUNTIME", "RetentionPolicy.SOURCE", "RetentionPolicy.CLASS", "No retention is needed"], "a": 0, "hint": "How long it lives.", "why": "CLASS is the default and is not visible through reflection."}, {"lv": "e", "q": "Which file declares a Java module?", "o": ["module-info.java", "pom.xml", "MANIFEST.MF", "package-info.java"], "a": 0, "hint": "At the root of the module source.", "why": "It lists requires, exports, opens, uses and provides."}, {"lv": "m", "q": "Module core exports <code>core.api<\/code> but not <code>core.internal<\/code>. What happens when another module imports a public class from core.internal?", "o": ["A compile error, because the package cannot be seen from outside", "It works because the class is public", "It works but prints a warning", "It fails only at run time"], "a": 0, "hint": "Exports decide.", "why": "public now means public inside the module, plus whatever is exported."}, {"lv": "m", "q": "What does <code>import module java.sql;<\/code> import?", "o": ["Every public type in every package exported by java.sql and the modules it requires transitively", "Only java.sql.Connection", "Every class in the JDK", "Nothing, it is a comment"], "a": 0, "hint": "JEP 511.", "why": "java.sql requires java.xml and java.logging transitively, so those come too."}, {"lv": "m", "q": "Why can java.lang.reflect.Proxy not wrap a plain class without an interface?", "o": ["It creates a class that implements interfaces, it cannot extend a given class", "Classes are final by default", "Reflection cannot see classes", "It can, there is no limit"], "a": 0, "hint": "Proxy implements interfaces.", "why": "Libraries generate subclasses with bytecode tools for that case."}, {"lv": "m", "q": "Why does <code>String.class.getDeclaredField(\"value\").setAccessible(true)<\/code> fail?", "o": ["java.base does not open java.lang to your code", "The field does not exist", "Strings are immutable", "setAccessible was removed"], "a": 0, "hint": "Strong encapsulation.", "why": "Only --add-opens on the command line could allow it, and that should be a last resort."}, {"lv": "h", "q": "What changes in Java 26 when reflection sets a final field?", "o": ["It still works but prints a warning, as a step before blocking it", "It is blocked with an exception by default", "Nothing changes", "The field becomes non final"], "a": 0, "hint": "JEP 500.", "why": "Use --enable-final-field-mutation to allow it without warnings, or --illegal-final-field-mutation=deny to try the future behaviour."}, {"lv": "h", "q": "Two module imports both export a class named Date. How do you use java.sql.Date?", "o": ["Add <code>import java.sql.Date;<\/code>, which beats module imports", "Remove one of the module imports, nothing else works", "Rename the class", "Use import static"], "a": 0, "hint": "Single type imports win.", "why": "That is the rule in JEP 511."}, {"lv": "h", "q": "What does jlink produce?", "o": ["A runtime image with only the modules your app needs", "A native executable without a JVM", "A fat JAR", "A Docker image"], "a": 0, "hint": "Smaller runtime.", "why": "The image still contains a JVM, but only the listed modules."}, {"lv": "x", "q": "What does this print?", "o": ["2", "3", "0", "1"], "a": 0, "hint": "Count methods with the annotation.", "why": "Only a and c carry @Deprecated, which has RUNTIME retention.", "code": "class Api {\n    @Deprecated void a() { }\n    void b() { }\n    @Deprecated void c() { }\n}\n\nvoid main() {\n    long n = java.util.Arrays.stream(Api.class.getDeclaredMethods()).filter(m -> m.isAnnotationPresent(Deprecated.class)).count();\n    System.out.println(n);\n}", "run": 1}, {"lv": "x", "q": "What does this print?", "o": ["java.base", "java.lang", "unnamed", "null"], "a": 0, "hint": "Which module holds String?", "why": "Every core class lives in a named module of the JDK.", "code": "System.out.println(String.class.getModule().getName());", "run": 1}], "calc": [{"lv": "e", "q": "A class has 3 methods marked @Test, one of them with skip = true. How many tests run?", "ans": "2", "hint": "Skipped tests do not run.", "steps": ["<span class=\"eq\">3 − 1 = 2<\/span>"]}, {"lv": "e", "q": "How many record components does <code>record SignUp(String name, String email, int age)<\/code> have?", "ans": "3", "hint": "Count the parameters in the header.", "steps": ["name, email and age."]}, {"lv": "m", "q": "A full JDK is 380 MB and a jlink runtime is 50 MB. What percent of the size is saved, to the nearest whole number?", "ans": "87", "hint": "Saved divided by the original.", "steps": ["<span class=\"eq\"><span class=\"fr\"><i>380 − 50<\/i><i>380<\/i><\/span> = <span class=\"fr\"><i>330<\/i><i>380<\/i><\/span> ≈ 0.868<\/span>", "That is about 87 percent."]}, {"lv": "m", "q": "What does this print?", "ans": "3", "hint": "Count the components with reflection.", "steps": ["RecordComponent[] has one entry per component."], "code": "record Point3(int x, int y, int z) { }\n\nvoid main() {\n    System.out.println(Point3.class.getRecordComponents().length);\n}", "run": 1}, {"lv": "h", "q": "A logging proxy prints 2 lines per call. A test makes 15 calls. How many log lines appear?", "ans": "30", "hint": "Two per call.", "steps": ["<span class=\"eq\">15 × 2 = 30<\/span>"]}, {"lv": "h", "q": "What does this print?", "ans": "pay", "hint": "The handler sees the method name.", "steps": ["The proxy sends the call to the handler, which returns the name of the method that was called."], "code": "interface Svc { String pay(); }\n\nvoid main() {\n    Svc s = (Svc) java.lang.reflect.Proxy.newProxyInstance(Svc.class.getClassLoader(), new Class<?>[] { Svc.class }, (p, m, a) -> m.getName());\n    System.out.println(s.pay());\n}", "run": 1}, {"lv": "x", "q": "What does this print?", "ans": "true", "hint": "Which module are you in?", "steps": ["Code on the classpath belongs to the unnamed module, which has no name."], "code": "System.out.println(getClass().getModule().getName() == null);", "run": 1}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to annotations, reflection, dynamic proxies and the module system, including module imports from Java 25.", "hi": "Annotations, reflection, dynamic proxies और module system में स्वागत है, Java 25 के module imports सहित।", "kn": "Annotations, reflection, proxies ಮತ್ತು module system ಗೆ ಸ್ವಾಗತ.", "or": "Annotations, reflection, proxies ଏବଂ module system କୁ ସ୍ୱାଗତ।", "ar": "مرحبًا بك في التعليقات التوضيحية والانعكاس والوكلاء الديناميكيين ونظام الوحدات، ومنها استيراد الوحدات في Java 25.", "de": "Willkommen zu Annotationen, Reflection, dynamischen Proxys und dem Modulsystem, einschließlich Modul-Importen aus Java 25."}, {"id": "builtin", "h": "Annotations", "en": "An annotation is a label. Override makes the compiler check that a method really overrides one, and Deprecated warns users of old code.", "hi": "Annotation एक label है। Override से compiler जाँचता है कि method सच में override करता है, और Deprecated पुराने code के users को चेतावनी देता है।", "kn": "Annotation ಒಂದು label. Override compiler ಪರಿಶೀಲನೆ ಮಾಡಿಸುತ್ತದೆ, Deprecated ಎಚ್ಚರಿಸುತ್ತದೆ.", "or": "Annotation ଏକ label। Override compiler ଯାଞ୍ଚ କରାଏ, Deprecated ଚେତାବନୀ ଦିଏ।", "ar": "التعليق التوضيحي ملصق، فيجعل Override المترجم يتحقق من أن الدالة تتجاوز فعلًا، ويحذر Deprecated مستخدمي الشيفرة القديمة.", "de": "Eine Annotation ist ein Etikett. Override lässt den Compiler prüfen, ob wirklich überschrieben wird, und Deprecated warnt Nutzer alten Codes."}, {"id": "custom", "h": "Custom annotations", "en": "Declare your own with at interface. Retention RUNTIME keeps it for reflection, and Target says where it may be used.", "hi": "at interface से अपना annotation बनाएँ। Retention RUNTIME उसे reflection के लिए रखता है, और Target बताता है कि कहाँ लगाया जा सकता है।", "kn": "at interface ಮೂಲಕ ನಿಮ್ಮದೇ annotation. Retention RUNTIME reflection ಗೆ ಉಳಿಸುತ್ತದೆ.", "or": "at interface ଦ୍ୱାରା ନିଜ annotation। Retention RUNTIME reflection ପାଇଁ ରଖେ।", "ar": "عرّف تعليقك الخاص باستخدام @interface، فيبقيه Retention RUNTIME للانعكاس، ويحدد Target أماكن استخدامه.", "de": "Eigene Annotationen deklarierst du mit @interface. Retention RUNTIME behält sie für Reflection, Target legt fest, wo sie stehen dürfen."}, {"id": "reflection", "h": "Reflection", "en": "Reflection reads fields and methods at run time and can call a method by name. The JDK blocks access to its own private parts, and Java 26 warns when final fields are changed.", "hi": "Reflection run time पर fields और methods पढ़ता है और नाम से method बुला सकता है। JDK अपने private हिस्से बंद रखता है, और Java 26 final fields बदलने पर चेतावनी देता है।", "kn": "Reflection run time ನಲ್ಲಿ fields, methods ಓದುತ್ತದೆ. Java 26 final fields ಬದಲಾದರೆ ಎಚ್ಚರಿಸುತ್ತದೆ.", "or": "Reflection run time ରେ fields, methods ପଢ଼େ। Java 26 final fields ବଦଳିଲେ ଚେତାବନୀ ଦିଏ।", "ar": "يقرأ الانعكاس الحقول والدوال وقت التشغيل ويستدعي دالة باسمها، وتمنع JDK الوصول إلى أجزائها الخاصة، وتحذر Java 26 عند تغيير الحقول النهائية.", "de": "Reflection liest Felder und Methoden zur Laufzeit und ruft Methoden per Name auf. Das JDK schützt seine Interna, und Java 26 warnt beim Ändern finaler Felder."}, {"id": "proxy", "h": "Dynamic proxies", "en": "A dynamic proxy implements an interface at run time and sends every call to one handler, which is how logging and transactions are added around your code.", "hi": "Dynamic proxy run time पर interface implement करता है और हर call एक handler को भेजता है, ऐसे ही logging और transactions जोड़े जाते हैं।", "kn": "Dynamic proxy run time ನಲ್ಲಿ interface implement ಮಾಡಿ ಪ್ರತಿ call ಒಂದು handler ಗೆ ಕಳುಹಿಸುತ್ತದೆ.", "or": "Dynamic proxy run time ରେ interface implement କରି ପ୍ରତି call ଗୋଟିଏ handler କୁ ପଠାଏ।", "ar": "الوكيل الديناميكي ينفذ واجهة وقت التشغيل ويرسل كل استدعاء إلى معالج واحد، وهكذا تُضاف السجلات والمعاملات حول شيفرتك.", "de": "Ein dynamischer Proxy implementiert zur Laufzeit ein Interface und leitet jeden Aufruf an einen Handler, so kommen Logging und Transaktionen dazu."}, {"id": "modules", "h": "Modules", "en": "A module lists the packages it exports and the modules it requires. Packages that are not exported cannot be used from outside, even if their classes are public.", "hi": "Module बताता है कि वह कौन से packages export करता है और किन modules को require करता है। जो export नहीं हैं, वे बाहर से इस्तेमाल नहीं हो सकते।", "kn": "Module exports ಮತ್ತು requires ಪಟ್ಟಿ ಮಾಡುತ್ತದೆ. Export ಆಗದ packages ಹೊರಗಿನಿಂದ ಬಳಸಲಾಗದು.", "or": "Module exports ଏବଂ requires ତାଲିକା କରେ। Export ନଥିବା packages ବାହାରୁ ବ୍ୟବହାର ହୁଏ ନାହିଁ।", "ar": "تذكر الوحدة الحزم التي تصدّرها والوحدات التي تحتاجها، ولا يمكن استخدام الحزم غير المصدّرة من الخارج حتى لو كانت أصنافها عامة.", "de": "Ein Modul nennt die exportierten Pakete und benötigten Module. Nicht exportierte Pakete sind von außen unbenutzbar, auch wenn ihre Klassen public sind."}, {"id": "importmodule", "h": "Module imports", "en": "In Java 25, import module java dot sql imports every exported type of that module. If two names clash, one normal import decides.", "hi": "Java 25 में import module java dot sql उस module के सभी exported types import करता है। नाम टकराएँ तो एक सामान्य import तय करता है।", "kn": "Java 25 ನಲ್ಲಿ import module ಒಂದೇ ಸಾಲಿನಲ್ಲಿ module ಅನ್ನು import ಮಾಡುತ್ತದೆ.", "or": "Java 25 ରେ import module ଗୋଟିଏ ଧାଡ଼ିରେ module import କରେ।", "ar": "في Java 25 يستورد import module java.sql كل الأنواع المصدّرة من تلك الوحدة، وإذا تعارض اسمان يحسم الأمر استيراد عادي واحد.", "de": "In Java 25 importiert import module java.sql alle exportierten Typen des Moduls. Bei Namenskonflikten entscheidet ein normaler Import."}, {"id": "scenario", "h": "Scenario", "en": "Validation rules are written as annotations on a record, and one method checks any record with reflection.", "hi": "Validation के नियम record पर annotations के रूप में लिखे जाते हैं, और एक method reflection से किसी भी record को जाँचता है।", "kn": "Validation ನಿಯಮಗಳು record ಮೇಲೆ annotations ಆಗಿ, ಒಂದು method reflection ನಿಂದ ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "Validation ନିୟମ record ଉପରେ annotations ଭାବେ, ଗୋଟିଏ method reflection ଦ୍ୱାରା ଯାଞ୍ଚ କରେ।", "ar": "تُكتب قواعد التحقق تعليقات على السجل، وتفحص دالة واحدة أي سجل بالانعكاس.", "de": "Validierungsregeln stehen als Annotationen am Record, und eine Methode prüft jeden Record per Reflection."}], "dg": {"reflect": {"t": "How a framework uses annotations and reflection", "w": 900, "h": 280, "mw": 640, "n": [["src", 30, 40, 200, 60, "@Test void addItem()", {"c": 1, "sub": "you write this"}], ["cls", 30, 170, 200, 60, "CartTests.class", {"c": 2, "sub": "annotation kept (RUNTIME)"}], ["scan", 340, 40, 220, 60, "getDeclaredMethods()", {"c": 3, "sub": "the framework looks around"}], ["ann", 340, 170, 220, 60, "getAnnotation(Test)", {"c": 3, "sub": "is this a test?"}], ["inv", 660, 40, 210, 60, "method.invoke(obj)", {"c": 4, "sub": "call it by name"}], ["rep", 660, 170, 210, 60, "PASS or FAIL", {"c": 5, "sub": "the report"}]], "e": [["src", "cls", {"t": "javac", "id": "a1"}], ["cls", "scan", {"t": "load", "id": "a2"}], ["scan", "ann", {"id": "a3"}], ["ann", "inv", {"t": "yes", "id": "a4"}], ["inv", "rep", {"id": "a5"}]], "st": [[["src"], "You only add an annotation. It does nothing by itself, it is a label."], [["cls", "a1"], "javac stores the label in the class file because the annotation has RUNTIME retention."], [["scan", "a2"], "At run time the framework, such as JUnit, Spring or Jackson, asks the Class object for its methods or fields."], [["ann", "a3"], "For each method it asks: does this have @Test? Methods without the label are ignored."], [["inv", "a4"], "It calls the labelled method by name with Method.invoke, without your code ever calling it."], [["rep", "a5"], "Exceptions thrown inside are caught and turned into a report. This is the whole trick behind most Java frameworks."]]}, "modules": {"t": "Modules decide what other code may see", "w": 900, "h": 300, "mw": 640, "g": [[20, 20, 380, 260, "module com.shop.core", 2], [500, 20, 380, 260, "module com.shop.app", 1]], "n": [["api", 50, 60, 320, 60, "com.shop.core.api", {"c": 4, "sub": "exported"}], ["int", 50, 180, 320, 60, "com.shop.core.internal", {"c": 5, "sub": "not exported"}], ["main", 530, 60, 320, 60, "com.shop.app.Main", {"c": 1, "sub": "requires com.shop.core"}], ["bad", 530, 180, 320, 60, "import ...internal.TaxTable", {"c": 5, "sub": "compile error: package does not exist"}]], "e": [["main", "api", {"t": "allowed", "id": "ok"}], ["api", "int", {"t": "inside the module", "id": "in"}], ["bad", "int", {"t": "not visible", "id": "no", "d": 1}]], "st": [[["api", "int"], "A module is a group of packages with a name and a module-info.java file."], [["main", "api", "ok"], "com.shop.app says requires com.shop.core, and core exports its api package, so Main can use Prices."], [["api", "int", "in"], "Inside its own module, Prices may use the internal package freely."], [["bad", "int", "no"], "Outside the module, the internal package does not exist, even though TaxTable is public. public no longer means public to the whole world."]]}}, "lanes": {}, "jv": {}};
+JAVAPAGE.start({ title: "Annotations, reflection and modules" });
+</script>
+</body>
+</html>

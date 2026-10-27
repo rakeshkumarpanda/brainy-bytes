@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 14 of 28</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 14 of 31</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🔬</span><div><h1>How JavaScript really works</h1><p class="lead">What the engine does with your code: execution contexts and the call stack, hoisting and the scope chain, the five rules of this, the Node.js event loop phase by phase, V8 hidden classes and inline caches, and generational garbage collection.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 9 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 5 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -198,7 +198,7 @@ extra property: false
 different order: false
 after delete: false | dictionary mode: true</pre></div></div>
 <p>Each property access remembers the shapes it has seen in an <b>inline cache</b>. One shape is monomorphic and fastest, a few is polymorphic, and many is megamorphic and slow. In practice: create objects with all their properties in the constructor, in the same order, and avoid <code>delete</code> on hot objects.</p>
-<div class="tip">Do not tune for the engine before you measure (chapter 28). Shapes matter in tight loops over millions of objects, such as parsing a large log file, and almost never in test code.</div>
+<div class="tip">Do not tune for the engine before you measure (chapter 31). Shapes matter in tight loops over millions of objects, such as parsing a large log file, and almost never in test code.</div>
 </section>
 <section class="card reveal jsec qa-part" id="gc" data-say="gc"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧹</span><span>Garbage collection</span></h2>
 <div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Soak tests and long UI sessions expose memory leaks, and heap snapshots are how testers report them precisely.</span></div>
@@ -219,7 +219,7 @@ console.log(<span class="s">"kept"</span>, kept.length, <span class="s">"objects
 console.log(<span class="s">"heap limit is a few GB:"</span>, v8.getHeapStatistics().heap_size_limit &gt; <span class="n">1e9</span>);</pre><div class="out"><span>Output</span><pre>young: true | old: true | big objects: true
 kept 10 objects out of 100000
 heap limit is a few GB: true</pre></div></div>
-<div class="qa-box">If memory keeps rising in a long test run, take two heap snapshots in Chrome DevTools (Memory tab) or with <code>v8.writeHeapSnapshot()</code> and compare them. The objects that grow between the snapshots, and the "retainers" that hold them, point to the leak (chapter 28).</div>
+<div class="qa-box">If memory keeps rising in a long test run, take two heap snapshots in Chrome DevTools (Memory tab) or with <code>v8.writeHeapSnapshot()</code> and compare them. The objects that grow between the snapshots, and the "retainers" that hold them, point to the leak (chapter 31).</div>
 </section>
 <section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: a crash only in the retry helper</span></h2>
 <div class="qa-tag"><span class="qa-badge">🧪 QA essential</span></div>

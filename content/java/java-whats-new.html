@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What is new in Java: from Java 21 to Java 27 · Java</title>
+<meta name="description" content="What is new in Java 21 to 27: the release train, LTS and preview features, sequenced collections, the foreign function and memory API, multi file launch, Markdown docs, ML-KEM and ML-DSA, compact source files and IO, flexible constructor bodies, the KDF API, lazy constants, the PEM API, hybrid post quantum TLS, and how to plan an upgrade.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/xv.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🚀 Modern Java</span><span>›</span><span>Chapter 27 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🆕</span><div><h1>What is new in Java: from Java 21 to Java 27</h1><p class="lead">Java moves fast: a release every six months and a long term support version every two years. This chapter walks through what changed from the Java 21 LTS to Java 27, runs every feature on a real JDK, and explains where each one helps at work, from sequenced collections and native calls to quantum safe cryptography and simpler programs.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 25 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 12 examples run on a real JDK</span><span class="chip">👣 2 line by line replays</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 7 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="jdk-note">Every example below was compiled and run on java version &quot;25.0.5.0.2&quot; 2026-10-21 LTS and java version &quot;27.0.1.0.2&quot; 2026-10-21 when this page was built, so each output is real. Press <b>👣 Run line by line</b> on an example to replay that run one line at a time.</div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#train"><span>🚆</span>The release train, LTS and preview features</a><a href="#j21"><span>🧵</span>Java 21 LTS: sequenced collections</a><a href="#j22"><span>🔗</span>Java 22 and 23: native code, multi file launch, Markdown docs</a><a href="#j24"><span>🔐</span>Java 24: quantum safe cryptography</a><a href="#j25"><span>✨</span>Java 25 LTS: simpler programs and safer constructors</a><a href="#j26"><span>🧪</span>Java 26 and 27: what is final and what to try</a><a href="#scenario"><span>🎬</span>Real world scenario: upgrading a service from Java 17 to Java 25</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="train" data-say="train"><div class="sec-num">Part 1</div><h2><span class="sec-em">🚆</span><span>The release train, LTS and preview features</span></h2>
+<p>Java ships a new version every six months, in March and September. Java 25 (September 2025) is the latest <b>long term support</b> (LTS) release, Java 26 came in March 2026 and Java 27 in September 2026. Most companies run an LTS in production and try the newer releases in CI.</p>
+<div class="viz" data-viz="jrelease"></div>
+<div class="viz" data-viz="flow" data-k="train"></div>
+<p>A <b>preview</b> feature is complete but may still change, so javac and java refuse it unless you pass <code>--enable-preview</code>. Use previews to learn and give feedback, not in production code.</p>
+<div class="codewrap tests" data-k="preview"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Preview features need a flag at compile time and at run time · 🖥️ Run in a terminal · ☕ JDK 27</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 Main.java</div><pre class="src" data-file="Main.java"><span class="k">void</span> main() {
+    <span class="c">// Java 27 preview (JEP 531): computed once, on first use, then treated as a constant by the JVM</span>
+    <span class="t">LazyConstant</span>&lt;<span class="t">String</span>&gt; config = <span class="t">LazyConstant</span>.of(() -&gt; {
+        <span class="t">IO</span>.println(<span class="s">"reading config file..."</span>);
+        <span class="k">return</span> <span class="s">"env=prod"</span>;
+    });
+    <span class="t">IO</span>.println(<span class="s">"app started"</span>);
+    <span class="t">IO</span>.println(config.get());
+    <span class="t">IO</span>.println(config.get());
+}</pre><div class="cmd"><span>Terminal</span><pre>$ javac --release 27 Main.java
+$ javac --release 27 --enable-preview Main.java
+$ java --enable-preview Main</pre></div><div class="out"><span>Terminal output</span><pre>--- without the flag ---
+Main.java:3: error: LazyConstant is a preview API and is disabled by default.
+--- with --enable-preview ---
+app started
+reading config file...
+env=prod
+env=prod</pre></div></div>
+</section>
+<section class="card reveal jsec" id="j21" data-say="j21"><div class="sec-num">Part 2</div><h2><span class="sec-em">🧵</span><span>Java 21 LTS: sequenced collections</span></h2>
+<p>Java 21 brought virtual threads, record patterns and pattern matching for switch, each covered in its own chapter. One small change you will use daily is <b>sequenced collections</b>. Before Java 21, getting the last element of a list was <code>list.get(list.size() - 1)</code>, and for a LinkedHashSet there was no simple way at all.</p>
+<div class="codewrap" data-k="sequenced" data-trace="sequenced"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Sequenced collections: getFirst, getLast and reversed (Java 21) · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">void</span> main() {
+    <span class="c">// Java 21 (JEP 431): one set of methods for every ordered collection</span>
+    <span class="t">List</span>&lt;<span class="t">String</span>&gt; queue = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;(<span class="t">List</span>.of(<span class="s">"login"</span>, <span class="s">"search"</span>, <span class="s">"cart"</span>));
+    queue.addFirst(<span class="s">"health"</span>);
+    queue.addLast(<span class="s">"pay"</span>);
+    <span class="t">IO</span>.println(queue.getFirst() + <span class="s">" ... "</span> + queue.getLast());
+    <span class="t">IO</span>.println(<span class="s">"reversed view: "</span> + queue.reversed());
+
+    <span class="t">LinkedHashMap</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; visits = <span class="k">new</span> <span class="t">LinkedHashMap</span>&lt;&gt;();
+    visits.put(<span class="s">"home"</span>, <span class="n">10</span>);
+    visits.put(<span class="s">"cart"</span>, <span class="n">4</span>);
+    visits.putFirst(<span class="s">"landing"</span>, <span class="n">25</span>);              <span class="c">// insert at the front</span>
+    <span class="t">IO</span>.println(<span class="s">"first entry: "</span> + visits.firstEntry() + <span class="s">", last: "</span> + visits.lastEntry());
+
+    <span class="t">LinkedHashSet</span>&lt;<span class="t">String</span>&gt; tags = <span class="k">new</span> <span class="t">LinkedHashSet</span>&lt;&gt;(<span class="t">List</span>.of(<span class="s">"new"</span>, <span class="s">"sale"</span>, <span class="s">"eco"</span>));
+    <span class="t">IO</span>.println(<span class="s">"removed last tag: "</span> + tags.removeLast() + <span class="s">", left: "</span> + tags);
+}</pre><div class="out"><span>Output</span><pre>health ... pay
+reversed view: [pay, cart, search, login, health]
+first entry: landing=25, last: cart=4
+removed last tag: eco, left: [new, sale]</pre></div></div>
+<p>At work: reading the latest event from an ordered log, showing recent searches newest first with <code>reversed()</code>, or evicting the oldest entry from a LinkedHashMap cache with <code>pollFirstEntry()</code>.</p>
+</section>
+<section class="card reveal jsec" id="j22" data-say="j22"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔗</span><span>Java 22 and 23: native code, multi file launch, Markdown docs</span></h2>
+<p>The <b>foreign function and memory API</b> (JEP 454, final in Java 22) lets Java call C libraries and work with memory outside the heap safely, replacing most JNI code. Database drivers, machine learning libraries and image tools use it to reach native code.</p>
+<div class="codewrap tests" data-k="ffm"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The foreign function and memory API calls C directly (Java 22) · 🖥️ Run in a terminal · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 Main.java</div><pre class="src" data-file="Main.java"><span class="k">import</span> java.lang.foreign.*;
+<span class="k">import</span> java.lang.invoke.<span class="t">MethodHandle</span>;
+
+<span class="k">void</span> main() <span class="k">throws</span> <span class="t">Throwable</span> {
+    <span class="c">// Java 22 (JEP 454): call the C library function strlen without writing any C or JNI code</span>
+    <span class="t">Linker</span> linker = <span class="t">Linker</span>.nativeLinker();
+    <span class="t">MethodHandle</span> strlen = linker.downcallHandle(
+            linker.defaultLookup().find(<span class="s">"strlen"</span>).orElseThrow(),
+            <span class="t">FunctionDescriptor</span>.of(<span class="t">ValueLayout</span>.<span class="t">JAVA_LONG</span>, <span class="t">ValueLayout</span>.<span class="t">ADDRESS</span>));
+
+    <span class="k">try</span> (<span class="t">Arena</span> arena = <span class="t">Arena</span>.ofConfined()) {               <span class="c">// native memory, freed when the block ends</span>
+        <span class="t">MemorySegment</span> text = arena.allocateFrom(<span class="s">"Hello from C"</span>);
+        <span class="t">IO</span>.println(<span class="s">"strlen says "</span> + (<span class="k">long</span>) strlen.invokeExact(text));
+    }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ java Main.java
+$ java --enable-native-access=ALL-UNNAMED Main.java</pre></div><div class="out"><span>Terminal output</span><pre>--- default ---
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by Main in an unnamed module (file:/app/Main.java)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+strlen says 12
+--- with native access allowed ---
+strlen says 12</pre></div></div>
+<p>Calling native code can crash the JVM, so it counts as a <b>restricted</b> operation. Today it prints a warning. A future release will block it unless the application allows it with <code>--enable-native-access</code>.</p>
+<p>Java 11 could already run one source file with <code>java Hello.java</code>. Java 22 (JEP 458) extends that to programs made of several files, which is handy for scripts and small tools that grow.</p>
+<div class="codewrap tests" data-k="multifile"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Run a small program of several files without javac (Java 22) · 🖥️ Run in a terminal · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 Main.java</div><pre class="src" data-file="Main.java"><span class="k">void</span> main() {
+    <span class="t">IO</span>.println(<span class="t">Prices</span>.withTax(<span class="n">200</span>));
+}</pre><div class="fname">📄 Prices.java</div><pre class="src" data-file="Prices.java"><span class="k">class</span> <span class="t">Prices</span> {
+    <span class="k">static</span> <span class="k">double</span> withTax(<span class="k">double</span> amount) {
+        <span class="k">return</span> amount * <span class="n">1.18</span>;
+    }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ java Main.java     # Prices.java is found and compiled in memory</pre></div><div class="out"><span>Terminal output</span><pre>236.0</pre></div></div>
+<p>Java 23 (JEP 467) lets documentation comments be written in Markdown with <code>///</code> instead of HTML inside <code>/** */</code>, so API docs are easier to read in the source.</p>
+</section>
+<section class="card reveal jsec" id="j24" data-say="j24"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔐</span><span>Java 24: quantum safe cryptography</span></h2>
+<p>Big quantum computers could one day break RSA and elliptic curve keys. Attackers can record encrypted traffic today and decrypt it later. Java 24 added the NIST standard algorithms that resist this: <b>ML-KEM</b> for agreeing on keys (JEP 496) and <b>ML-DSA</b> for signatures (JEP 497).</p>
+<div class="codewrap" data-k="pqc"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Post quantum key exchange and signatures (Java 24) · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> javax.crypto.*;
+<span class="k">import</span> java.security.*;
+<span class="k">import</span> java.util.*;
+
+<span class="k">void</span> main() <span class="k">throws</span> <span class="t">Exception</span> {
+    <span class="c">// Java 24 (JEP 496): ML-KEM agrees on a secret key in a way quantum computers cannot break</span>
+    <span class="t">KeyPair</span> server = <span class="t">KeyPairGenerator</span>.getInstance(<span class="s">"ML-KEM"</span>).generateKeyPair();
+    <span class="t">KEM</span> kem = <span class="t">KEM</span>.getInstance(<span class="s">"ML-KEM"</span>);
+    <span class="t">KEM</span>.<span class="t">Encapsulated</span> sent = kem.newEncapsulator(server.getPublic()).encapsulate();   <span class="c">// client side</span>
+    <span class="t">SecretKey</span> clientKey = sent.key();
+    <span class="t">SecretKey</span> serverKey = kem.newDecapsulator(server.getPrivate()).decapsulate(sent.encapsulation());   <span class="c">// server side</span>
+    <span class="t">IO</span>.println(<span class="s">"bytes sent over the network: "</span> + sent.encapsulation().length);
+    <span class="t">IO</span>.println(<span class="s">"both sides got the same AES key? "</span> + <span class="t">Arrays</span>.equals(clientKey.getEncoded(), serverKey.getEncoded()));
+
+    <span class="c">// Java 24 (JEP 497): ML-DSA signatures</span>
+    <span class="t">KeyPair</span> signer = <span class="t">KeyPairGenerator</span>.getInstance(<span class="s">"ML-DSA"</span>).generateKeyPair();
+    <span class="t">Signature</span> sig = <span class="t">Signature</span>.getInstance(<span class="s">"ML-DSA"</span>);
+    sig.initSign(signer.getPrivate());
+    sig.update(<span class="s">"invoice 42: 1500 rupees"</span>.getBytes());
+    <span class="k">byte</span>[] signature = sig.sign();
+    sig.initVerify(signer.getPublic());
+    sig.update(<span class="s">"invoice 42: 9500 rupees"</span>.getBytes());         <span class="c">// someone changed the amount</span>
+    <span class="t">IO</span>.println(<span class="s">"signature of "</span> + signature.length + <span class="s">" bytes still valid after tampering? "</span> + sig.verify(signature));
+}</pre><div class="out"><span>Output</span><pre>bytes sent over the network: 1088
+both sides got the same AES key? true
+signature of 3309 bytes still valid after tampering? false</pre></div></div>
+<p>Java 24 also brought stream gatherers and virtual threads that no longer get pinned by <code>synchronized</code>, both covered in earlier chapters, the ahead of time cache from the JVM chapter, and the final removal of the Security Manager's ability to be turned on (JEP 486).</p>
+</section>
+<section class="card reveal jsec" id="j25" data-say="j25"><div class="sec-num">Part 5</div><h2><span class="sec-em">✨</span><span>Java 25 LTS: simpler programs and safer constructors</span></h2>
+<p>Java 25 made starting with Java much simpler. <b>Compact source files</b> and <b>instance main methods</b> (JEP 512) remove the class, <code>static</code> and <code>String[] args</code> ceremony, and the new <code>IO</code> class reads and prints text without <code>System.out</code> or a Scanner.</p>
+<div class="codewrap tests" data-k="compact"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Compact source files, instance main and IO (Java 25) · 🖥️ Run in a terminal · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 Hello.java</div><pre class="src" data-file="Hello.java"><span class="k">void</span> main() {
+    <span class="t">String</span> name = <span class="t">IO</span>.readln(<span class="s">"Your name: "</span>);
+    <span class="t">IO</span>.println(<span class="s">"Hello, "</span> + name + <span class="s">"! This is the whole program."</span>);
+}</pre><div class="cmd"><span>Terminal</span><pre>$ java Hello.java</pre></div><div class="out"><span>Terminal output</span><pre>Your name: Hello, Asha! This is the whole program.</pre></div></div>
+<p><b>Flexible constructor bodies</b> (JEP 513) allow statements before <code>super(...)</code>. Arguments can now be checked before the parent class does any work, and fields can be set early so the parent never sees them half initialised.</p>
+<div class="codewrap" data-k="flexible" data-trace="flexible"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Flexible constructor bodies: check arguments before super (Java 25) · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Person</span> {
+    <span class="k">final</span> <span class="t">String</span> name;
+    <span class="t">Person</span>(<span class="t">String</span> name) {
+        <span class="t">System</span>.out.println(<span class="s">"Person stores the name"</span>);
+        <span class="k">this</span>.name = name;
+    }
+}
+
+<span class="k">class</span> <span class="t">Employee</span> <span class="k">extends</span> <span class="t">Person</span> {
+    <span class="k">final</span> <span class="k">int</span> age;
+
+    <span class="t">Employee</span>(<span class="t">String</span> name, <span class="k">int</span> age) {
+        <span class="k">if</span> (age &lt; <span class="n">18</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalArgumentException</span>(<span class="s">"too young: "</span> + age);   <span class="c">// Java 25: allowed before super</span>
+        <span class="k">this</span>.age = age;                    <span class="c">// fields of this class may be set before super too</span>
+        <span class="k">super</span>(name.strip());
+    }
+}
+
+<span class="k">void</span> main() {
+    <span class="t">IO</span>.println(<span class="k">new</span> <span class="t">Employee</span>(<span class="s">"  Asha "</span>, <span class="n">29</span>).name);
+    <span class="k">try</span> {
+        <span class="k">new</span> <span class="t">Employee</span>(<span class="s">"Ravi"</span>, <span class="n">15</span>);
+    } <span class="k">catch</span> (<span class="t">IllegalArgumentException</span> e) {
+        <span class="t">IO</span>.println(<span class="s">"rejected before Person ran: "</span> + e.getMessage());
+    }
+}</pre><div class="out"><span>Output</span><pre>Person stores the name
+Asha
+rejected before Person ran: too young: 15</pre></div></div>
+<p>The <b>Key Derivation Function API</b> (JEP 510) turns one master secret into many separate keys, one per tenant or per purpose, which is how modern TLS and secret managers work.</p>
+<div class="codewrap" data-k="kdf"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Deriving keys with the KDF API (Java 25) · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> javax.crypto.*;
+<span class="k">import</span> javax.crypto.spec.<span class="t">HKDFParameterSpec</span>;
+<span class="k">import</span> java.util.<span class="t">HexFormat</span>;
+
+<span class="k">void</span> main() <span class="k">throws</span> <span class="t">Exception</span> {
+    <span class="c">// Java 25 (JEP 510): the Key Derivation Function API, here with HKDF</span>
+    <span class="t">KDF</span> hkdf = <span class="t">KDF</span>.getInstance(<span class="s">"HKDF-SHA256"</span>);
+    <span class="k">var</span> spec = <span class="t">HKDFParameterSpec</span>.ofExtract()
+            .addIKM(<span class="s">"master-secret-from-the-vault"</span>.getBytes())
+            .addSalt(<span class="s">"tenant-42"</span>.getBytes())
+            .thenExpand(<span class="s">"orders-db-encryption"</span>.getBytes(), <span class="n">16</span>);   <span class="c">// 16 bytes = an AES-128 key</span>
+    <span class="t">SecretKey</span> key = hkdf.deriveKey(<span class="s">"AES"</span>, spec);
+    <span class="t">IO</span>.println(key.getAlgorithm() + <span class="s">" key: "</span> + <span class="t">HexFormat</span>.of().formatHex(key.getEncoded()));
+    <span class="t">IO</span>.println(<span class="s">"same inputs always give the same key, so it never needs to be stored"</span>);
+}</pre><div class="out"><span>Output</span><pre>AES key: cdef4f32b574c5cb632b4566d6bd4fbe
+same inputs always give the same key, so it never needs to be stored</pre></div></div>
+<p>Java 25 also made scoped values (concurrency chapter), module import declarations (modules chapter) and compact object headers (JVM chapter) final.</p>
+</section>
+<section class="card reveal jsec" id="j26" data-say="j26"><div class="sec-num">Part 6</div><h2><span class="sec-em">🧪</span><span>Java 26 and 27: what is final and what to try</span></h2>
+<p>Java 26 added HTTP/3 to HttpClient (JDBC and HTTP chapter), warns before final fields can be changed by reflection (modules chapter), removed the old Applet API (JEP 504) and let the AOT cache work with every garbage collector (JVM chapter). Java 27 made G1 the default everywhere and compact object headers the default (JVM chapter), and switched TLS to a quantum safe hybrid key exchange:</p>
+<div class="codewrap" data-k="tls"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Hybrid post quantum TLS is on by default (Java 27) · ▶ Runs · ☕ JDK 27</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> javax.net.ssl.<span class="t">SSLContext</span>;
+<span class="k">import</span> java.util.<span class="t">List</span>;
+
+<span class="k">void</span> main() <span class="k">throws</span> <span class="t">Exception</span> {
+    <span class="c">// Java 27 (JEP 527): TLS 1.3 offers a hybrid of X25519 and ML-KEM first</span>
+    <span class="t">List</span>&lt;<span class="t">String</span>&gt; groups = <span class="t">List</span>.of(<span class="t">SSLContext</span>.getDefault().getDefaultSSLParameters().getNamedGroups());
+    <span class="t">IO</span>.println(<span class="s">"first choice: "</span> + groups.getFirst());
+    <span class="t">IO</span>.println(<span class="s">"all groups offered: "</span> + groups);
+}</pre><div class="out"><span>Output</span><pre>first choice: X25519MLKEM768
+all groups offered: [X25519MLKEM768, x25519, secp256r1, secp384r1, secp521r1, x448, ffdhe2048, ffdhe3072, ffdhe4096]</pre></div></div>
+<p><code>X25519MLKEM768</code> combines a classic elliptic curve exchange with ML-KEM, so the connection stays safe if either one is broken. Servers that do not support it simply pick the next group, so nothing breaks. The Java 25 update used to build this page offers it first too, as Oracle has brought it to recent Java 25 updates.</p>
+<p>Two previews worth trying. <b>Lazy constants</b> (third preview, JEP 531) hold a value that is computed once on first use, such as a config file or a client object, and then trusted by the JIT like a <code>final</code> field.</p>
+<div class="codewrap" data-k="lazy"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lazy constants: expensive values computed once (Java 27 preview) · ▶ Runs · ☕ JDK 27 preview</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">void</span> main() {
+    <span class="c">// Java 27 preview (JEP 531): computed once, on first use, then treated as a constant by the JVM</span>
+    <span class="t">LazyConstant</span>&lt;<span class="t">String</span>&gt; config = <span class="t">LazyConstant</span>.of(() -&gt; {
+        <span class="t">IO</span>.println(<span class="s">"reading config file..."</span>);
+        <span class="k">return</span> <span class="s">"env=prod"</span>;
+    });
+    <span class="t">IO</span>.println(<span class="s">"app started"</span>);
+    <span class="t">IO</span>.println(config.get());
+    <span class="t">IO</span>.println(config.get());
+}</pre><div class="cmd"><span>Terminal</span><pre>$ java --enable-preview Main.java</pre></div><div class="out"><span>Output</span><pre>app started
+reading config file...
+env=prod
+env=prod</pre></div></div>
+<p>The <b>PEM API</b> (third preview, JEP 538) reads and writes the text format of keys and certificates that every server uses, a job that needed Bouncy Castle or hand written Base64 code before.</p>
+<div class="codewrap" data-k="pem"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">PEM encoding without Bouncy Castle (Java 27 preview) · ▶ Runs · ☕ JDK 27 preview</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.security.*;
+
+<span class="k">void</span> main() <span class="k">throws</span> <span class="t">Exception</span> {
+    <span class="c">// Java 27 preview (JEP 538): read and write the PEM text format used by certificates and keys</span>
+    <span class="t">KeyPair</span> kp = <span class="t">KeyPairGenerator</span>.getInstance(<span class="s">"EC"</span>).generateKeyPair();
+    <span class="t">String</span> pem = <span class="t">PEMEncoder</span>.of().encodeToString(kp.getPublic());
+    <span class="t">List</span>&lt;<span class="t">String</span>&gt; lines = pem.lines().toList();
+    <span class="t">IO</span>.println(lines.getFirst());
+    <span class="t">IO</span>.println(<span class="s">"... "</span> + (lines.size() - <span class="n">2</span>) + <span class="s">" lines of Base64 ..."</span>);
+    <span class="t">IO</span>.println(lines.getLast());
+
+    <span class="t">PublicKey</span> back = <span class="t">PEMDecoder</span>.of().decode(pem, <span class="t">PublicKey</span>.<span class="k">class</span>);
+    <span class="t">IO</span>.println(<span class="s">"same key after the round trip? "</span> + back.equals(kp.getPublic()));
+}</pre><div class="cmd"><span>Terminal</span><pre>$ java --enable-preview Main.java</pre></div><div class="out"><span>Output</span><pre>-----BEGIN PUBLIC KEY-----
+... 3 lines of Base64 ...
+-----END PUBLIC KEY-----
+same key after the round trip? true</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Still in preview or incubator in Java 27</th><th>Round</th></tr>
+<tr><td>Structured concurrency (JEP 533)</td><td>7th preview</td></tr>
+<tr><td>Primitive types in patterns (JEP 532)</td><td>5th preview</td></tr>
+<tr><td>Lazy constants (JEP 531)</td><td>3rd preview</td></tr>
+<tr><td>PEM encodings (JEP 538)</td><td>3rd preview</td></tr>
+<tr><td>Vector API (JEP 537)</td><td>12th incubator</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: upgrading a service from Java 17 to Java 25</span></h2>
+<div class="scenario"><b>The situation</b>A payments service runs on Java 17. The team wants virtual threads, sequenced collections and the startup gains of Java 25, without surprises in production.</div>
+<p>Step one is finding code that relies on JDK internals, because strong encapsulation and the removal of old APIs are what usually break upgrades.</p>
+<div class="codewrap tests" data-k="jdeps"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Finding uses of JDK internals before an upgrade · 🖥️ Run in a terminal · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 Main.java</div><pre class="src" data-file="Main.java"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">var</span> f = sun.misc.<span class="t">Unsafe</span>.<span class="k">class</span>.getDeclaredField(<span class="s">"theUnsafe"</span>);   <span class="c">// an old trick many libraries used</span>
+        <span class="t">System</span>.out.println(<span class="s">"found "</span> + f.getName());
+    }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ javac Main.java
+$ jdeps --jdk-internals Main.class</pre></div><div class="out"><span>Terminal output</span><pre>Main.java:3: warning: Unsafe is internal proprietary API and may be removed in a future release
+Main.class -&gt; jdk.unsupported
+   Main                                               -&gt; sun.misc.Unsafe                                    JDK internal API (jdk.unsupported)</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Step</th><th>Why</th></tr>
+<tr><td>Run <code>jdeps --jdk-internals</code> and <code>jdeprscan</code></td><td>find internal and deprecated API use early</td></tr>
+<tr><td>Upgrade build plugins, Lombok, Mockito, ByteBuddy, Spring</td><td>libraries that generate bytecode must know the new class file version</td></tr>
+<tr><td>Build and test with the new JDK in CI first</td><td>catch behaviour changes before production</td></tr>
+<tr><td>Read the release notes for removed options</td><td>for example the Security Manager can no longer be enabled since Java 24</td></tr>
+<tr><td>Then adopt features one by one</td><td>virtual threads for blocking I/O, records for DTOs, pattern matching for parsing</td></tr></table></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./java-jdbc-http.html" data-topic="java-jdbc-http"><small>← Previous chapter</small><b>🔌 JDBC and HTTP</b></a><span></span></nav>
+</div>
+<script type="application/json" id="traces">{"sequenced": {"steps": [{"l": 3, "s": ["main()"]}, {"l": 4, "d": {"L.queue": "[login, search, cart]"}}, {"l": 5, "d": {"L.queue": "[health, login, search, cart]"}}, {"l": 6, "d": {"L.queue": "[health, login, search, cart, pay]"}}, {"l": 7, "o": "health ... pay\n"}, {"l": 9, "o": "reversed view: [pay, cart, search, login, health]\n"}, {"l": 10, "d": {"L.visits": "{}"}}, {"l": 11, "d": {"L.visits": "{home=10}"}}, {"l": 12, "d": {"L.visits": "{home=10, cart=4}"}}, {"l": 13, "d": {"L.visits": "{landing=25, home=10, cart=4}"}}, {"l": 15, "o": "first entry: landing=25, last: cart=4\n"}, {"l": 16, "d": {"L.tags": "[new, sale, eco]"}}, {"l": 17, "d": {"L.tags": "[new, sale]"}, "o": "removed last tag: eco, left: [new, sale]\n"}], "end": {"o": "", "t": false}}, "flexible": {"steps": [{"l": 20, "s": ["main()"]}, {"l": 13, "s": ["main()", "Employee()"], "d": {"L.name": "\"  Asha \"", "L.age": "29", "L.this.age": "0", "L.this.name": "null"}}, {"l": 14}, {"l": 12, "d": {"L.this.age": "29"}}, {"l": 15}, {"l": 3, "s": ["main()", "Employee()", "Person()"], "d": {"L.name": "\"Asha\"", "L.age": null}}, {"l": 4}, {"l": 5, "o": "Person stores the name\n"}, {"l": 6, "d": {"L.this.name": "\"Asha\""}}, {"l": 16, "s": ["main()", "Employee()"], "d": {"L.name": "\"  Asha \"", "L.age": "29"}}, {"l": 20, "s": ["main()"], "d": {"L.name": null, "L.age": null, "L.this.age": null, "L.this.name": null}}, {"l": 22, "o": "Asha\n"}, {"l": 13, "s": ["main()", "Employee()"], "d": {"L.name": "\"Ravi\"", "L.age": "15", "L.this.age": "0", "L.this.name": "null"}}, {"l": 23, "s": ["main()"], "d": {"L.name": null, "L.age": null, "L.this.age": null, "L.this.name": null}}, {"l": 24, "d": {"L.e": "java.lang.IllegalArgumentException: too young: 15"}}, {"l": 26, "d": {"L.e": null}, "o": "rejected before Person ran: too young: 15\n"}], "end": {"o": "", "t": false}}}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/javaviz.js"></script>
+<script src="../../assets/xv.js"></script>
+<script>
+const PAGE = {"info": {"title": "Java keeps getting newer", "panels": [{"s": [["e", "🚆"], ["t", "March and September", {"b": 1, "size": 11}]], "h": "Release train", "t": "Two releases a year.", "more": "An LTS every two years: 21, 25 ..."}, {"s": [["e", "📚"], ["t", "list.getLast()", {"b": 1}]], "h": "Java 21", "t": "Sequenced collections.", "more": "First, last and reversed for every ordered collection."}, {"s": [["e", "🔐"], ["t", "KEM.getInstance(\"ML-KEM\")", {"b": 1, "size": 10}]], "h": "Java 24 to 27", "t": "Quantum safe crypto.", "more": "Now on by default in TLS."}, {"s": [["e", "✨"], ["t", "void main() { IO.println(\"hi\"); }", {"b": 1, "size": 9}]], "h": "Java 25", "t": "Simple programs, safe constructors.", "more": "Checks can come before super()."}], "remember": "Run an LTS in production, try new releases in CI, and use previews only to learn. Java 21 to 27 bring sequenced collections, native calls without JNI, quantum safe crypto, compact source files, flexible constructors and safer TLS by default."}, "real": [["🏦", "A bank", "Switched internal TLS to a hybrid post quantum key exchange to protect recorded traffic from future quantum attacks, with no code change after moving to a new JDK."], ["🧠", "A machine learning team", "Replaced a fragile JNI wrapper with the FFM API to call a C inference library, and deleted all their C glue code."], ["🎓", "A coding school", "Teaches first programs as compact source files with <code>void main()<\/code> and <code>IO.println<\/code>, and introduces classes only once students need them."]], "quiz": [{"lv": "e", "q": "Which of these is a long term support (LTS) release?", "o": ["Java 25", "Java 26", "Java 27", "Java 23"], "a": 0, "hint": "Every two years.", "why": "The LTS releases are 8, 11, 17, 21 and 25."}, {"lv": "e", "q": "What does <code>list.getLast()<\/code> replace?", "o": ["list.get(list.size() - 1)", "list.remove(0)", "list.clear()", "list.size()"], "a": 0, "hint": "Java 21.", "why": "Sequenced collections give every ordered collection getFirst and getLast."}, {"lv": "e", "q": "What do you need to compile code that uses a preview feature?", "o": ["--enable-preview together with --release", "Nothing special", "A special JDK download", "An annotation on the class"], "a": 0, "hint": "Opt in.", "why": "The same flag is needed again when running with java."}, {"lv": "m", "q": "What may a Java 25 constructor do before calling <code>super(...)<\/code>?", "o": ["Check arguments and assign its own fields", "Call instance methods of the object", "Read fields of the parent class", "Nothing, super must be first"], "a": 0, "hint": "JEP 513.", "why": "It may not use this before super, apart from assigning fields."}, {"lv": "m", "q": "Which algorithm in Java 24 agrees on a shared key in a quantum safe way?", "o": ["ML-KEM", "ML-DSA", "RSA", "SHA-256"], "a": 0, "hint": "KEM means key encapsulation.", "why": "ML-DSA is for signatures."}, {"lv": "m", "q": "What does the FFM API replace in most cases?", "o": ["JNI glue code written in C", "The garbage collector", "JDBC drivers", "The HttpClient"], "a": 0, "hint": "Native calls.", "why": "You describe the C function in Java and call it through a MethodHandle."}, {"lv": "m", "q": "How often does a new Java version come out?", "o": ["Every six months, in March and September", "Every year in January", "Every three years", "Whenever it is ready"], "a": 0, "hint": "The release train.", "why": "Java 26 came in March 2026 and Java 27 in September 2026."}, {"lv": "h", "q": "What does <code>X25519MLKEM768<\/code> in the TLS groups of Java 27 mean?", "o": ["A hybrid key exchange that combines X25519 with ML-KEM", "A new cipher for files", "A certificate format", "A random number generator"], "a": 0, "hint": "JEP 527.", "why": "The connection is safe as long as either part holds."}, {"lv": "h", "q": "How many times is the supplier of a LazyConstant called if get() is called five times?", "o": ["Once", "Five times", "Never", "Twice"], "a": 0, "hint": "Computed once.", "why": "After the first call the value is stored and trusted like a constant."}, {"lv": "h", "q": "What prints a warning in Java 22 to 25 when you call <code>Linker.downcallHandle<\/code> without extra flags?", "o": ["It is a restricted method, so the JVM warns unless native access is enabled", "The method is deprecated", "The C library is missing", "Nothing prints a warning"], "a": 0, "hint": "--enable-native-access.", "why": "A future release will block restricted methods unless native access is enabled."}, {"lv": "x", "q": "What does this print?", "o": ["c", "a", "[c, b, a]", "b"], "a": 0, "hint": "reversed is a view in the opposite order.", "why": "The first element of the reversed view is the last element, c.", "code": "System.out.println(List.of(\"a\", \"b\", \"c\").reversed().getFirst());", "run": 1}, {"lv": "x", "q": "What does this print?", "o": ["3", "2", "0", "Compile error"], "a": 0, "hint": "putFirst adds a new entry at the front.", "why": "The map now has three entries: z, x and y.", "code": "var m = new LinkedHashMap<String, Integer>();\nm.put(\"x\", 1);\nm.put(\"y\", 2);\nm.putFirst(\"z\", 0);\nSystem.out.println(m.size());", "run": 1}], "calc": [{"lv": "e", "q": "LTS releases come every two years. Java 25 came in 2025. In which year is the next LTS, Java 29, expected?", "ans": "2027", "hint": "Two years later.", "steps": ["<span class=\"eq\">2025 + 2 = 2027<\/span>"]}, {"lv": "e", "q": "Java 26 came in March 2026. Releases are 6 months apart. How many months after Java 26 does Java 28 come?", "ans": "12", "hint": "Two steps of six.", "steps": ["<span class=\"eq\">2 × 6 = 12 months<\/span>"]}, {"lv": "m", "q": "A team moves from Java 17 to Java 25. How many feature releases do they gain?", "ans": "8", "hint": "Count 18 to 25.", "steps": ["<span class=\"eq\">25 − 17 = 8<\/span>"]}, {"lv": "m", "q": "What does this print?", "ans": "pay", "hint": "getLast of the list after addLast.", "steps": ["addLast puts pay at the end."], "code": "var l = new ArrayList<>(List.of(\"login\", \"cart\"));\nl.addLast(\"pay\");\nSystem.out.println(l.getLast());", "run": 1}, {"lv": "h", "q": "An ML-KEM-768 exchange sends 1088 bytes. How many bytes do 1000 TLS handshakes send for it?", "ans": "1088000", "hint": "Multiply.", "steps": ["<span class=\"eq\">1088 × 1000 = 1,088,000 bytes<\/span>", "That is about 1 MB, a small price for quantum safety."]}, {"lv": "h", "q": "Structured concurrency was first previewed in Java 21 and is in its seventh preview in Java 27. Counting both, in how many releases has it been a preview?", "ans": "7", "hint": "From 21 to 27.", "steps": ["<span class=\"eq\">27 − 21 + 1 = 7<\/span>"]}, {"lv": "x", "q": "What does this print?", "ans": "12", "hint": "strlen counts characters, without the hidden zero at the end.", "steps": ["\"Hello from C\" has 12 characters."], "code": "System.out.println(\"Hello from C\".length());", "run": 1}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to what is new in Java, from the Java 21 LTS to Java 27, with a real run for every feature.", "hi": "Java में क्या नया है, Java 21 LTS से Java 27 तक, हर feature के असली run के साथ, उसमें स्वागत है।", "kn": "Java 21 LTS ನಿಂದ Java 27 ವರೆಗೆ ಹೊಸದು ಏನು ಎಂಬುದಕ್ಕೆ ಸ್ವಾಗತ.", "or": "Java 21 LTS ରୁ Java 27 ପର୍ଯ୍ୟନ୍ତ ନୂଆ କଣ, ତାକୁ ସ୍ୱାଗତ।", "ar": "مرحبًا بك في الجديد في Java من الإصدار 21 طويل الدعم حتى Java 27، مع تشغيل حقيقي لكل ميزة.", "de": "Willkommen zu den Neuerungen in Java, vom LTS Java 21 bis Java 27, mit einem echten Lauf für jedes Feature."}, {"id": "train", "h": "Release train", "en": "A new Java comes every March and September. Every two years one is a long term support release. Preview features need the enable preview flag.", "hi": "हर मार्च और सितंबर में नया Java आता है। हर दो साल में एक long term support release होता है। Preview features के लिए enable preview flag चाहिए।", "kn": "ಪ್ರತಿ ಮಾರ್ಚ್ ಮತ್ತು ಸೆಪ್ಟೆಂಬರ್ ಹೊಸ Java. ಎರಡು ವರ್ಷಕ್ಕೊಮ್ಮೆ LTS.", "or": "ପ୍ରତି ମାର୍ଚ୍ଚ ଏବଂ ସେପ୍ଟେମ୍ବରରେ ନୂଆ Java। ଦୁଇ ବର୍ଷରେ ଥରେ LTS।", "ar": "يصدر Java جديد كل مارس وسبتمبر، وكل سنتين يكون أحدها إصدارًا طويل الدعم، وتحتاج الميزات التجريبية إلى خيار enable preview.", "de": "Jeden März und September erscheint ein neues Java. Alle zwei Jahre ist eines ein LTS-Release. Preview-Features brauchen die Option enable preview."}, {"id": "j21", "h": "Java 21", "en": "Sequenced collections add getFirst, getLast, addFirst and reversed to lists, ordered sets and ordered maps.", "hi": "Sequenced collections lists, ordered sets और ordered maps में getFirst, getLast, addFirst और reversed जोड़ते हैं।", "kn": "Sequenced collections getFirst, getLast, reversed ಸೇರಿಸುತ್ತವೆ.", "or": "Sequenced collections getFirst, getLast, reversed ଯୋଡ଼ନ୍ତି।", "ar": "تضيف المجموعات المتسلسلة getFirst وgetLast وaddFirst وreversed إلى القوائم والمجموعات والخرائط المرتبة.", "de": "Sequenced Collections bringen getFirst, getLast, addFirst und reversed für Listen, geordnete Sets und Maps."}, {"id": "j22", "h": "Java 22 and 23", "en": "The foreign function and memory API calls C code without JNI. Programs of several files run with java Main dot java, and docs can be written in Markdown.", "hi": "Foreign function and memory API बिना JNI के C code बुलाता है। कई files के programs java Main dot java से चलते हैं, और docs Markdown में लिखे जा सकते हैं।", "kn": "FFM API JNI ಇಲ್ಲದೆ C code ಕರೆಯುತ್ತದೆ. ಹಲವು files ನ program ನೇರವಾಗಿ ಓಡುತ್ತದೆ.", "or": "FFM API JNI ବିନା C code ଡାକେ। ଅନେକ files program ସିଧା ଚାଲେ।", "ar": "تستدعي واجهة الدوال والذاكرة الخارجية شيفرة C دون JNI، وتعمل البرامج متعددة الملفات مباشرة، ويمكن كتابة التوثيق بـ Markdown.", "de": "Die Foreign Function and Memory API ruft C-Code ohne JNI auf. Programme aus mehreren Dateien laufen direkt, und Doku geht in Markdown."}, {"id": "j24", "h": "Java 24", "en": "Java 24 adds ML-KEM for key exchange and ML-DSA for signatures, which stay safe against future quantum computers.", "hi": "Java 24 key exchange के लिए ML-KEM और signatures के लिए ML-DSA जोड़ता है, जो भविष्य के quantum computers से सुरक्षित हैं।", "kn": "Java 24 ML-KEM ಮತ್ತು ML-DSA ಸೇರಿಸುತ್ತದೆ, quantum ವಿರುದ್ಧ ಸುರಕ್ಷಿತ.", "or": "Java 24 ML-KEM ଏବଂ ML-DSA ଯୋଡ଼େ, quantum ବିରୁଦ୍ଧରେ ସୁରକ୍ଷିତ।", "ar": "تضيف Java 24 خوارزمية ML-KEM لتبادل المفاتيح وML-DSA للتوقيعات، وهما آمنتان أمام الحواسيب الكمومية المستقبلية.", "de": "Java 24 bringt ML-KEM für Schlüsseltausch und ML-DSA für Signaturen, sicher auch gegen künftige Quantencomputer."}, {"id": "j25", "h": "Java 25", "en": "Java 25 allows a program that is just void main, adds the IO class, lets constructors check arguments before super, and adds a key derivation API.", "hi": "Java 25 सिर्फ void main वाला program, IO class, super से पहले arguments की जाँच, और key derivation API लाता है।", "kn": "Java 25 void main program, IO class, super ಮೊದಲು ಪರಿಶೀಲನೆ, KDF API.", "or": "Java 25 void main program, IO class, super ପୂର୍ବରୁ ଯାଞ୍ଚ, KDF API।", "ar": "تسمح Java 25 ببرنامج من void main فقط، وتضيف الصنف IO، وتسمح للبانيات بفحص الوسائط قبل super، وتضيف واجهة اشتقاق المفاتيح.", "de": "Java 25 erlaubt Programme nur aus void main, bringt die Klasse IO, Prüfungen vor super und eine API zur Schlüsselableitung."}, {"id": "j26", "h": "Java 26 and 27", "en": "TLS now offers a hybrid quantum safe key exchange by default. Lazy constants and the PEM API are previews worth trying.", "hi": "TLS अब default रूप से hybrid quantum safe key exchange देता है। Lazy constants और PEM API आज़माने लायक previews हैं।", "kn": "TLS ಈಗ hybrid quantum safe key exchange ನೀಡುತ್ತದೆ. Lazy constants ಮತ್ತು PEM previews.", "or": "TLS ବର୍ତ୍ତମାନ hybrid quantum safe key exchange ଦିଏ। Lazy constants ଏବଂ PEM previews।", "ar": "يعرض TLS الآن تبادل مفاتيح هجينًا آمنًا كموميًا افتراضيًا، والثوابت الكسولة وواجهة PEM ميزات تجريبية تستحق التجربة.", "de": "TLS bietet jetzt standardmäßig einen hybriden, quantensicheren Schlüsseltausch. Lazy Constants und die PEM-API sind lohnende Previews."}, {"id": "scenario", "h": "Scenario", "en": "Before an upgrade, find uses of JDK internals with jdeps, upgrade bytecode libraries, test in CI, then adopt new features one by one.", "hi": "Upgrade से पहले jdeps से JDK internals का इस्तेमाल खोजें, bytecode libraries upgrade करें, CI में test करें, फिर नए features एक एक करके अपनाएँ।", "kn": "Upgrade ಮೊದಲು jdeps ಬಳಸಿ, CI ನಲ್ಲಿ test ಮಾಡಿ.", "or": "Upgrade ପୂର୍ବରୁ jdeps ବ୍ୟବହାର କରି CI ରେ test କରନ୍ତୁ।", "ar": "قبل الترقية ابحث عن استخدام الأجزاء الداخلية بأداة jdeps، وحدّث مكتبات البايت كود، واختبر في CI، ثم اعتمد الميزات الجديدة واحدة تلو الأخرى.", "de": "Vor einem Upgrade findest du JDK-Interna mit jdeps, aktualisierst Bytecode-Bibliotheken, testest in CI und führst Neuerungen schrittweise ein."}], "dg": {"train": {"t": "How a feature travels to final", "w": 900, "h": 300, "mw": 640, "n": [["inc", 30, 40, 200, 60, "Incubator", {"c": 5, "sub": "jdk.incubator module"}], ["pre", 30, 180, 200, 60, "Preview", {"c": 3, "sub": "--enable-preview"}], ["fin", 340, 110, 200, 60, "Final", {"c": 4, "sub": "usable everywhere"}], ["lts", 650, 40, 220, 60, "Next LTS", {"c": 1, "sub": "every two years: 21, 25, 29"}], ["ex", 650, 180, 220, 60, "Example", {"c": 2, "sub": "virtual threads: 19, 20, then 21"}]], "e": [["inc", "pre", {"t": "API settles", "id": "t1"}], ["pre", "fin", {"t": "feedback done", "id": "t2"}], ["fin", "lts", {"id": "t3"}], ["fin", "ex", {"id": "t4", "d": 1}]], "st": [[["inc"], "Some APIs start as incubators in a jdk.incubator module, such as the Vector API, now in its 12th incubator round in Java 27."], [["pre", "t1"], "Language and API features usually start as previews. They are complete but may still change, so they are off unless you ask for them."], [["pre"], "A preview can repeat. Structured concurrency is in its seventh preview in Java 27, and lazy constants in their third."], [["fin", "t2"], "When the feedback is in, the feature becomes final and works in every program with no flags."], [["lts", "t3"], "A new release comes every six months, in March and September. Every fourth one, every two years, is a long term support release that companies standardise on."], [["ex", "t4"], "Virtual threads were a preview in Java 19 and 20, final in 21, and fixed for synchronized blocks in 24."]]}}, "lanes": {}, "jv": {}};
+JAVAPAGE.start({ title: "What is new in Java: from Java 21 to Java 27" });
+</script>
+</body>
+</html>

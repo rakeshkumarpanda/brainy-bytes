@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 15 of 28</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🔬 JavaScript in depth</span><span>›</span><span>Chapter 15 of 31</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🧯</span><div><h1>Errors, debugging and logging</h1><p class="lead">Handle failure like an expert: the built in error types, custom errors with codes and causes, errors in async code and unhandled rejections, when to return a result instead of throwing, real debuggers and the Playwright trace viewer, structured logs with request ids, and source maps.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 9 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 5 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -128,7 +128,7 @@ Error: DB down
     at save (main.mjs:1:31)
     at main.mjs:2:1
 
-Node.js v26.12.0</pre></div></div>
+Node.js v26.12.1</pre></div></div>
 <div class="codewrap" data-k="handlers"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Global handlers for the errors nobody caught · 💥 Throws</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Last line of defence: log, then exit with a failure code so CI notices</span>
 process.on(<span class="s">"unhandledRejection"</span>, (reason) =&gt; {
   console.log(<span class="s">"unhandledRejection:"</span>, reason.message);
