@@ -750,4 +750,409 @@
       return `<span class="big">sharpened = f + k (f − G<sub>σ<sub>d</sub></sub> ∗ f)</span><br>Dashed: the true edge. Blue: what the camera saw. Orange: after sharpening. Overshoot above the bright side ${f(Math.max(0, over), 1)}, below the dark side ${f(Math.max(0, under), 1)}. Noise in the flat part: ${f(flatN(seen), 2)} before, ${f(flatN(sharp), 2)} after.`;
     }
   });
+  /* ---------------------------------------------------------------- Chapter 6: motion and video */
+  const hueOf = (u, v) => ((Math.atan2(v, u) * 180 / Math.PI) + 360) % 360;
+  def('flow', {
+    title: 'Optical flow between frame T and frame T + 1',
+    sub: 'The car moves between two frames. Each arrow is a flow vector (u, v): how far that point moved. Up is positive v. Arrows are drawn 3 times longer than the real motion so they are easy to see.',
+    W: 560, H: 250,
+    params: [
+      { k: 'u', label: 'Car motion u (pixels per frame, right is +)', type: 'range', min: -8, max: 8, v: 3 },
+      { k: 'v', label: 'Car motion v (pixels per frame, up is +)', type: 'range', min: -8, max: 8, v: 4 },
+      { k: 'pan', label: 'Camera pans right by', type: 'range', min: -6, max: 6, v: 0 },
+      { k: 'fps', label: 'Frame rate (fps)', type: 'select', v: 30, num: true, opts: [[24, '24'], [30, '30'], [60, '60']] },
+      { k: 'mode', label: 'Show flow as', type: 'select', v: 'arrows', opts: [['arrows', 'Arrows'], ['colour', 'Colour (hue = direction, strength = speed)']] },
+      { k: 'dense', label: 'Points tracked', type: 'select', v: 'dense', opts: [['dense', 'Dense: every grid point'], ['sparse', 'Sparse: a few corners only']] }
+    ],
+    tips: [
+      { t: 'The default is the lecture problem: (u, v) = (3, 4). The magnitude is √(9 + 16) = 5 pixels per frame, which is 150 pixels per second at 30 fps.', set: { u: 3, v: 4, pan: 0, fps: 30 } },
+      { t: 'Switch to Colour. Every direction gets its own hue, and a stronger colour means faster motion. This is how dense flow is usually shown.', set: { mode: 'colour' } },
+      { t: 'Set the car still (u = 0, v = 0) and pan the camera by 4. Now the whole background seems to move left, although nothing in the world moved.', set: { u: 0, v: 0, pan: 4, mode: 'arrows' } },
+      { t: 'Choose Sparse. Only a handful of corners are tracked, so the cost drops a lot. That is enough when the background is still and you follow one object.', set: { dense: 'sparse', pan: 0, u: 3, v: 4 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const X = 10, Y = 10, CW = 300, CH = 200, step = 20;
+      const bu = -p.pan, ou = p.u - p.pan, ov = p.v;
+      const car = [110, 80, 70, 40];
+      const inCar = (x, y) => x >= car[0] && x <= car[0] + car[2] && y >= car[1] && y <= car[1] + car[3];
+      D.rect(g, X, Y, CW, CH, { fill: z.col.bg, stroke: z.col.line });
+      g.save(); g.beginPath(); g.rect(X, Y, CW, CH); g.clip();
+      for (let i = -2; i < 9; i++) { const x0 = X + 15 + i * 40 + bu * 3; D.rect(g, x0, Y + 140, 8, 60, { fill: z.col.dark ? '#3b4b5e' : '#c9d6e3' }); D.circle(g, x0 + 4, Y + 136, 12, { fill: z.col.dark ? '#2f6b4f' : '#a7d7b8' }); }
+      D.rect(g, X + car[0], Y + car[1], car[2], car[3], { stroke: z.col.ink2, w: 1.5, dash: [4, 3] });
+      D.rect(g, X + car[0] + ou * 3, Y + car[1] - ov * 3, car[2], car[3], { fill: z.col.dark ? 'rgba(255,255,255,.25)' : 'rgba(14,116,144,.25)', stroke: z.col.cv, w: 2 });
+      const pts = [];
+      if (p.dense === 'dense') { for (let y = step / 2; y < CH; y += step) for (let x = step / 2; x < CW; x += step) pts.push([x, y]); }
+      else { pts.push([car[0], car[1]], [car[0] + car[2], car[1]], [car[0], car[1] + car[3]], [car[0] + car[2], car[1] + car[3]]); for (let i = 0; i < 6; i++) pts.push([15 + i * 40 + 8, 140]); }
+      pts.forEach(([x, y]) => {
+        const [fu, fv] = inCar(x, y) ? [ou, ov] : [bu, 0];
+        const m = Math.hypot(fu, fv);
+        if (p.mode === 'colour') {
+          const L = 100 - 50 * Math.min(1, m / 8);
+          g.fillStyle = `hsl(${hueOf(fu, fv)},85%,${L}%)`;
+          if (p.dense === 'dense') g.fillRect(X + x - step / 2, Y + y - step / 2, step, step);
+          else D.circle(g, X + x, Y + y, 7, { fill: g.fillStyle, stroke: z.col.ink2, w: 1 });
+        } else {
+          D.circle(g, X + x, Y + y, 2, { fill: z.col.ink2 });
+          D.arrow(g, X + x, Y + y, X + x + fu * 3, Y + y - fv * 3, inCar(x, y) ? z.col.red : z.col.cv, 1.6, 6);
+        }
+      });
+      g.restore();
+      D.text(g, 'dashed: car in frame T, filled: frame T + 1', X, Y + CH + 18, { s: 11, c: z.col.ink2 });
+      const cx = 440, cy = 70, R = 46;
+      for (let a = 0; a < 360; a += 6) { g.save(); g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, R, -(a + 3.5) * Math.PI / 180, -(a - 3.5) * Math.PI / 180); g.closePath(); g.fillStyle = `hsl(${a},85%,55%)`; g.fill(); g.restore(); }
+      D.circle(g, cx, cy, 14, { fill: '#fff' });
+      D.text(g, 'right', cx + R + 4, cy + 4, { s: 10, c: z.col.ink2 }); D.text(g, 'up', cx, cy - R - 4, { s: 10, c: z.col.ink2, a: 'center' });
+      D.text(g, 'left', cx - R - 4, cy + 4, { s: 10, c: z.col.ink2, a: 'right' }); D.text(g, 'down', cx, cy + R + 12, { s: 10, c: z.col.ink2, a: 'center' });
+      const m = Math.hypot(ou, ov), ang = hueOf(ou, ov);
+      [`car flow (u, v) = (${ou}, ${ov})`, `magnitude √(u² + v²) = ${f(m, 2)}`, `direction ${m ? f(ang, 1) + '°' : 'none'}`, `speed ${f(m * p.fps, 1)} px per second`, `vectors computed: ${pts.length}`].forEach((t, i) => D.text(g, t, 336, 152 + i * 19, { s: 12, mono: true, c: z.col.ink }));
+      return `<span class="big">magnitude = √(u² + v²), &nbsp; direction θ = atan2(v, u), &nbsp; speed = magnitude × fps</span><br>${p.pan ? `The camera pan adds (${-p.pan}, 0) to every pixel, so the car's flow in the image is its own motion plus the pan. Separating the two is the job of MBH, later in this chapter.` : 'With a still camera, only the moving car produces flow.'} ${p.dense === 'sparse' ? 'Sparse flow tracks only well textured corners.' : 'Dense flow estimates a vector at every grid point (every pixel in a real system).'}`;
+    }
+  });
+
+  def('aperture', {
+    title: 'The aperture problem',
+    sub: 'A long edge moves behind a small round window. Inside the window you can only measure the motion across the edge, not along it. Press Play to move the edge.',
+    W: 560, H: 240,
+    params: [
+      { k: 'th', label: 'Edge angle (degrees)', type: 'range', min: 0, max: 175, step: 5, v: 45 },
+      { k: 'phi', label: 'True motion direction (degrees)', type: 'range', min: 0, max: 355, step: 5, v: 0 },
+      { k: 's', label: 'True speed (pixels per frame)', type: 'range', min: 1, max: 6, v: 4 },
+      { k: 'corner', label: 'Let a corner of the shape enter the window', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'A 45° edge moving straight right. Through the window it seems to move diagonally, down and to the right, at only about 70% of its true speed.', set: { th: 45, phi: 0, s: 4, corner: false }, play: true },
+      { t: 'Make the motion run along the edge (edge angle 45°, motion 45°). Inside the window nothing seems to move at all.', set: { th: 45, phi: 45, corner: false }, play: true },
+      { t: 'Tick the corner. A corner has edges in two directions, so the true motion becomes measurable. This is why sparse trackers pick corners.', set: { corner: true }, play: true }
+    ],
+    startAtZero: true,
+    steps: () => 12,
+    speed: () => 160,
+    draw(z) {
+      const { g, p, step } = z;
+      const rad = d => d * Math.PI / 180;
+      const dx = Math.cos(rad(p.phi)), dy = -Math.sin(rad(p.phi));
+      const ex = Math.cos(rad(p.th)), ey = -Math.sin(rad(p.th));
+      const nAng = p.th + 90, nx = Math.cos(rad(nAng)), ny = -Math.sin(rad(nAng));
+      const normal = p.s * Math.cos(rad(p.phi - nAng));
+      const drawEdge = (cx, cy, t, col, w, clipR) => {
+        const ox = cx + dx * p.s * t * 1.6, oy = cy + dy * p.s * t * 1.6;
+        g.save(); g.strokeStyle = col; g.lineWidth = w; g.beginPath();
+        if (p.corner) { g.moveTo(ox + ex * 200, oy + ey * 200); g.lineTo(ox, oy); g.lineTo(ox + nx * 200, oy + ny * 200); }
+        else { g.moveTo(ox - ex * 300, oy - ey * 300); g.lineTo(ox + ex * 300, oy + ey * 300); }
+        g.stroke(); g.restore();
+      };
+      D.rect(g, 10, 10, 250, 210, { fill: z.col.bg, stroke: z.col.line });
+      g.save(); g.beginPath(); g.rect(10, 10, 250, 210); g.clip();
+      drawEdge(110, 120, 0, z.col.line, 3); drawEdge(110, 120, step, z.col.ink, 3);
+      D.arrow(g, 110, 120, 110 + dx * p.s * 14, 120 + dy * p.s * 14, z.col.red, 2.5, 9);
+      g.restore();
+      D.text(g, 'Whole scene: true motion in red', 14, 236, { s: 11, c: z.col.ink2, b: true });
+      const cx = 400, cy = 115, R = 80;
+      g.save(); g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fillStyle = z.col.bg; g.fill(); g.clip();
+      drawEdge(cx - (p.corner ? 10 : 0), cy - (p.corner ? 10 : 0), step, z.col.ink, 3);
+      g.restore();
+      D.circle(g, cx, cy, R, { stroke: z.col.ink2, w: 2 });
+      if (p.corner) D.arrow(g, cx, cy, cx + dx * p.s * 14, cy + dy * p.s * 14, z.col.red, 2.5, 9);
+      else D.arrow(g, cx, cy, cx + nx * normal * 14, cy + ny * normal * 14, z.col.orange, 2.5, 9);
+      D.text(g, p.corner ? 'Window: the corner reveals the true motion' : 'Window: only the normal motion is visible', 400, 236, { s: 11, c: z.col.ink2, b: true, a: 'center' });
+      return `<span class="big">I<sub>x</sub> u + I<sub>y</sub> v + I<sub>t</sub> = 0</span><br>This brightness constancy equation is one equation with two unknowns, u and v. It fixes only the part of the motion across the edge: here ${f(Math.abs(normal), 2)} of the true ${p.s} pixels per frame. ${p.corner ? 'At a corner the gradients point two ways, so two independent equations pin down both u and v.' : 'Lucas and Kanade solve this by assuming every pixel in a small window shares one (u, v) and solving the equations together, which works when the window holds gradients in two directions.'}`;
+    }
+  });
+
+  const DIRS = ['→', '↗', '↑', '↖', '←', '↙', '↓', '↘'];
+  def('hofmbh', {
+    title: 'HOF and MBH on the same flow field',
+    sub: 'Left: the flow of each cell. Middle: motion boundaries, where the flow changes from one cell to the next. Bottom: the HOF and MBH histograms over 8 directions, weighted by strength.',
+    W: 560, H: 305,
+    params: [
+      { k: 'scene', label: 'Scene', type: 'select', v: 'walk', opts: [['walk', 'Person walking'], ['two', 'Two people walking in opposite directions'], ['ball', 'Ball moving up in front of a wall'], ['cycle', 'Cyclist (legs pedal, torso steady)']] },
+      { k: 'sp', label: 'Body speed (right or up is +)', type: 'range', min: -4, max: 4, step: 0.5, v: 2 },
+      { k: 'limb', label: 'Arm and leg swing', type: 'range', min: 0, max: 4, step: 0.5, v: 1.5 },
+      { k: 'pan', label: 'Camera pans right by', type: 'range', min: -4, max: 4, step: 0.5, v: 0 }
+    ],
+    tips: [
+      { t: 'Person walking right, camera fixed. HOF has one strong → bar: the dominant direction.', set: { scene: 'walk', sp: 2, pan: 0 } },
+      { t: 'Now pan the camera by 3. The background floods HOF with ← votes and the walker is lost. MBH ignores the uniform background and still outlines the person.', set: { scene: 'walk', sp: 2, pan: 3 } },
+      { t: 'Two people in opposite directions: HOF shows two peaks, → and ←. Their HOF features are different, as the lecture concluded.', set: { scene: 'two', sp: 2, pan: 0 } },
+      { t: 'A ball moving up with a fixed camera. HOF alone shows the ↑ direction clearly, so MBH adds little here.', set: { scene: 'ball', sp: 3, pan: 0 } },
+      { t: 'Cyclist with speed 2 and swing 3. HOF says right. MBH lights up the pedalling legs, where motion differs from the steady torso.', set: { scene: 'cycle', sp: 2, limb: 3, pan: 0 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const NX = 24, NY = 16;
+      const U = [], V = [], who = [];
+      for (let r = 0; r < NY; r++) { U.push(new Array(NX).fill(-p.pan)); V.push(new Array(NX).fill(0)); who.push(new Array(NX).fill(0)); }
+      const put = (c0, c1, r0, r1, u, v, id) => { for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (r >= 0 && r < NY && c >= 0 && c < NX) { U[r][c] = u - p.pan; V[r][c] = v; who[r][c] = id; } };
+      const person = (c, sp, id) => {
+        put(c, c, 1, 2, sp, 0, id); put(c - 1, c + 1, 3, 8, sp, 0, id);
+        put(c - 2, c - 2, 4, 7, sp + p.limb, 0, id); put(c + 2, c + 2, 4, 7, sp - p.limb, 0, id);
+        put(c - 1, c - 1, 9, 14, sp - p.limb, 0, id); put(c + 1, c + 1, 9, 14, sp + p.limb, 0, id);
+      };
+      if (p.scene === 'walk') person(11, p.sp, 1);
+      else if (p.scene === 'two') { person(6, p.sp, 1); person(17, -p.sp, 2); }
+      else if (p.scene === 'ball') put(10, 13, 6, 9, 0, p.sp, 1);
+      else { put(11, 11, 1, 2, p.sp, 0, 1); put(10, 12, 3, 8, p.sp, 0, 1); put(10, 10, 9, 13, p.sp, p.limb, 1); put(12, 12, 9, 13, p.sp, -p.limb, 1); put(8, 9, 12, 14, p.sp, 0, 1); put(13, 14, 12, 14, p.sp, 0, 1); }
+      const cell = 11, X = 10, Y = 22;
+      D.text(g, 'Flow field', X, 14, { b: true, s: 12, c: z.col.ink });
+      for (let r = 0; r < NY; r++) for (let c = 0; c < NX; c++) D.rect(g, X + c * cell, Y + r * cell, cell, cell, { fill: who[r][c] ? (who[r][c] === 2 ? z.col.purple : z.col.ink2) : z.col.bg });
+      for (let r = 0; r < NY; r++) for (let c = 0; c < NX; c++) {
+        if (!who[r][c] && (r % 2 || c % 2)) continue;
+        const x = X + (c + 0.5) * cell, y = Y + (r + 0.5) * cell;
+        D.arrow(g, x, y, x + U[r][c] * 4, y - V[r][c] * 4, who[r][c] ? z.col.orange : z.col.cv, 1.3, 5);
+      }
+      const at = (A, r, c) => A[clamp(r, 0, NY - 1)][clamp(c, 0, NX - 1)];
+      const hof = new Array(8).fill(0), mbh = new Array(8).fill(0), M = [];
+      let hofBg = 0, hofAll = 0, mbhNear = 0, mbhAll = 0;
+      const near = (r, c) => { for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (at(who, r + a, c + b)) return true; return false; };
+      const bin = (x, y) => ((Math.round(Math.atan2(y, x) / (Math.PI / 4)) % 8) + 8) % 8;
+      for (let r = 0; r < NY; r++) {
+        M.push([]);
+        for (let c = 0; c < NX; c++) {
+          const u = U[r][c], v = V[r][c], m = Math.hypot(u, v);
+          if (m > 1e-6) { hof[bin(u, v)] += m; hofAll += m; if (!who[r][c]) hofBg += m; }
+          const ux = (at(U, r, c + 1) - at(U, r, c - 1)) / 2, uy = (at(U, r - 1, c) - at(U, r + 1, c)) / 2;
+          const vx = (at(V, r, c + 1) - at(V, r, c - 1)) / 2, vy = (at(V, r - 1, c) - at(V, r + 1, c)) / 2;
+          const mu = Math.hypot(ux, uy), mv = Math.hypot(vx, vy);
+          if (mu > 1e-6) mbh[bin(ux, uy)] += mu;
+          if (mv > 1e-6) mbh[bin(vx, vy)] += mv;
+          M[r].push(mu + mv); mbhAll += mu + mv; if (near(r, c)) mbhNear += mu + mv;
+        }
+      }
+      const mM = Math.max(1e-9, ...M.flat()), c2 = 7, X2 = 300;
+      D.text(g, 'Motion boundaries |∇u| + |∇v|', X2, 14, { b: true, s: 12, c: z.col.ink });
+      for (let r = 0; r < NY; r++) for (let c = 0; c < NX; c++) {
+        const a = M[r][c] / mM;
+        D.rect(g, X2 + c * c2, Y + r * c2, c2, c2, { fill: z.col.bg });
+        if (a > 0) { g.save(); g.globalAlpha = 0.15 + 0.85 * a; D.rect(g, X2 + c * c2, Y + r * c2, c2, c2, { fill: z.col.red }); g.restore(); }
+      }
+      D.rect(g, X2, Y, NX * c2, NY * c2, { stroke: z.col.line, w: 1 });
+      [`HOF from background: ${hofAll ? f(100 * hofBg / hofAll, 0) : 0}%`, `MBH at the moving parts: ${mbhAll ? f(100 * mbhNear / mbhAll, 0) : 0}%`].forEach((t, i) => D.text(g, t, X2, Y + NY * c2 + 22 + i * 18, { s: 11.5, mono: true, c: z.col.ink }));
+      const hb = [X, 226, 250, 52], mb = [X2, 226, 250, 52];
+      D.text(g, 'HOF (flow directions)', X, 218, { b: true, s: 12, c: z.col.ink });
+      D.text(g, 'MBH (directions of flow change)', X2, 218, { b: true, s: 12, c: z.col.ink });
+      D.bars(g, z, hb, hof, { gap: 4 }); D.bars(g, z, mb, mbh, { gap: 4, colour: () => z.col.red });
+      DIRS.forEach((d, i) => { D.text(g, d, hb[0] + (i + 0.5) * 250 / 8, 296, { a: 'center', s: 13, c: z.col.ink2 }); D.text(g, d, mb[0] + (i + 0.5) * 250 / 8, 296, { a: 'center', s: 13, c: z.col.ink2 }); });
+      const top = hof.indexOf(Math.max(...hof));
+      return `HOF = how things move. MBH = where motion differs. ${hofAll ? `The tallest HOF bar is ${DIRS[top]}.` : 'Nothing moves, so HOF is empty.'} ${p.pan ? 'Camera motion adds the same vector everywhere. That shifts every HOF vote but leaves the flow gradients, and so MBH, unchanged.' : ''}`;
+    }
+  });
+
+  def('bovw', {
+    title: 'A vocabulary of visual words with k-means',
+    sub: 'Each dot is one descriptor (in reality a long HOG, HOF or MBH vector, shown here in 2D). Circles come from a walking clip, triangles from a jumping clip. Step through k-means, then read each clip as a histogram of words.',
+    W: 560, H: 280,
+    params: [
+      { k: 'k', label: 'Vocabulary size k', type: 'range', min: 2, max: 6, v: 4 },
+      { k: 'seed', label: 'Starting centres (seed)', type: 'range', min: 1, max: 20, v: 3 }
+    ],
+    tips: [
+      { t: 'Press Play with k = 4. Each round first assigns every dot to its nearest centre, then moves each centre to the mean of its dots. The total squared distance falls every round.', set: { k: 4, seed: 3 }, play: true },
+      { t: 'Set k = 2 and press Play, then compare with k = 4. Fewer words give a coarser description, so different actions are more likely to share the same words.', set: { k: 2 }, play: true },
+      { t: 'Change the seed. k-means can settle on different answers from different starts, which is why libraries run it several times and keep the best.', set: { k: 4, seed: 11 }, play: true }
+    ],
+    startAtZero: true,
+    steps: () => 12,
+    speed: () => 700,
+    draw(z) {
+      const { g, p, step } = z;
+      const r = CVZ.rng(42), blobs = [[0.2, 0.3], [0.3, 0.75], [0.75, 0.25], [0.8, 0.72]];
+      const mk = (counts, clip) => counts.flatMap((n, b) => Array.from({ length: n }, () => ({ x: blobs[b][0] + CVZ.gauss(r) * 0.07, y: blobs[b][1] + CVZ.gauss(r) * 0.07, clip })));
+      const pts = mk([14, 12, 2, 2], 0).concat(mk([2, 3, 13, 12], 1));
+      const rs = CVZ.rng(p.seed * 131), K = p.k;
+      let C = []; const used = new Set();
+      while (C.length < K) { const i = Math.floor(rs() * pts.length); if (!used.has(i)) { used.add(i); C.push([pts[i].x, pts[i].y]); } }
+      let lab = pts.map(() => -1);
+      const assign = () => { lab = pts.map(q => { let b = 0, bd = Infinity; C.forEach((c, j) => { const d = (q.x - c[0]) ** 2 + (q.y - c[1]) ** 2; if (d < bd) { bd = d; b = j; } }); return b; }); };
+      const update = () => { C = C.map((c, j) => { const m = pts.filter((_, i) => lab[i] === j); return m.length ? [m.reduce((s, q) => s + q.x, 0) / m.length, m.reduce((s, q) => s + q.y, 0) / m.length] : c; }); };
+      for (let s = 1; s <= step; s++) { if (s % 2) assign(); else update(); }
+      const cols = [z.col.cv, z.col.orange, z.col.purple, z.col.green, z.col.red, z.col.pink];
+      const box = [10, 10, 290, 240], sx = v => box[0] + v * box[2], sy = v => box[1] + box[3] - v * box[3];
+      D.rect(g, ...box, { fill: z.col.bg, stroke: z.col.line });
+      pts.forEach((q, i) => {
+        const c = lab[i] < 0 ? z.col.ink2 : cols[lab[i]], x = sx(q.x), y = sy(q.y);
+        if (q.clip === 0) D.circle(g, x, y, 4.5, { fill: c });
+        else { g.save(); g.fillStyle = c; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 5.5, y + 4); g.lineTo(x - 5.5, y + 4); g.closePath(); g.fill(); g.restore(); }
+      });
+      C.forEach((c, j) => { const x = sx(c[0]), y = sy(c[1]); D.line(g, x - 8, y - 8, x + 8, y + 8, cols[j], 3.5); D.line(g, x - 8, y + 8, x + 8, y - 8, cols[j], 3.5); D.text(g, 'w' + (j + 1), x + 10, y - 6, { s: 11, b: true, c: cols[j] }); });
+      D.text(g, 'descriptor space (2D sketch)', 14, 268, { s: 11, c: z.col.ink2 });
+      const hist = clip => C.map((_, j) => pts.filter((q, i) => q.clip === clip && lab[i] === j).length);
+      ['Walking clip', 'Jumping clip'].forEach((t, ci) => {
+        const y0 = 22 + ci * 128;
+        D.text(g, t + ' as a histogram of words', 320, y0, { b: true, s: 12, c: z.col.ink });
+        if (step === 0) { D.text(g, 'appears after the first assignment', 320, y0 + 40, { s: 11, c: z.col.ink2 }); return; }
+        const h = hist(ci);
+        D.bars(g, z, [320, y0 + 8, 220, 80], h, { max: 30, gap: 6, colour: i => cols[i] });
+        h.forEach((v, j) => D.text(g, 'w' + (j + 1) + ': ' + v, 320 + (j + 0.5) * 220 / K, y0 + 104, { a: 'center', s: 10, c: z.col.ink2 }));
+      });
+      let J = 0; if (step) pts.forEach((q, i) => { const c = C[lab[i]]; J += (q.x - c[0]) ** 2 + (q.y - c[1]) ** 2; });
+      const what = step === 0 ? 'Start: k centres are picked at random from the dots. Press Play or Step.' : step % 2 ? `Round ${(step + 1) / 2}, assign: each dot joins its nearest centre.` : `Round ${step / 2}, update: each centre moves to the mean of its dots.`;
+      return `<b>${what}</b> ${step ? `Total squared distance J = ${f(J, 3)}.` : ''}<br><span class="big">J = Σ<sub>i</sub> ‖x<sub>i</sub> − μ<sub>c(i)</sub>‖²</span><br>Each clip becomes one fixed length vector of k counts, whatever its length. That vector is what the SVM classifies.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- Chapter 7: classification and CNNs */
+  const FILTERS = {
+    vert: [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]],
+    horz: [[-1, -2, -1], [0, 0, 0], [1, 2, 1]],
+    diag: [[0, 1, 2], [-1, 0, 1], [-2, -1, 0]],
+    spot: [[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]],
+    blur: [[1, 1, 1], [1, 1, 1], [1, 1, 1]].map(r => r.map(v => v / 9))
+  };
+  def('convlayer', {
+    title: 'Inside one convolution layer: filter, ReLU, pooling',
+    sub: 'A CNN layer slides a small filter over the image, keeps only positive responses with ReLU, then shrinks the map with pooling. In a real network the filter numbers are learned. Here you pick them.',
+    W: 560, H: 245,
+    params: [
+      { k: 'filt', label: 'Filter', type: 'select', v: 'vert', opts: [['vert', 'Vertical edges (Sobel x)'], ['horz', 'Horizontal edges (Sobel y)'], ['diag', 'Diagonal edges'], ['spot', 'Spots and corners (centre minus surround)'], ['blur', 'Blur (average)']] },
+      { k: 'act', label: 'Activation', type: 'select', v: 'relu', opts: [['none', 'None (negative values kept)'], ['relu', 'ReLU: max(0, x)']] },
+      { k: 'pool', label: 'Pooling', type: 'select', v: 'max', opts: [['none', 'None'], ['max', 'Max pooling 2 × 2, stride 2'], ['avg', 'Average pooling 2 × 2, stride 2']] },
+      { k: 'flip', label: 'Flip the filter sign', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'Vertical edges with ReLU: only edges of one polarity survive, so the house, tree and sun show on one side only. The other sides gave negative responses, which ReLU set to 0.', set: { filt: 'vert', act: 'relu', flip: false } },
+      { t: 'Now tick Flip the filter sign. The opposite edges light up. A real layer learns both versions as separate channels.', set: { filt: 'vert', act: 'relu', flip: true } },
+      { t: 'Set Activation to None. Grey means 0, darker means negative, brighter means positive. ReLU throws away the negative half.', set: { act: 'none' } },
+      { t: 'Compare Max and Average pooling. Max keeps the strongest response in each 2 × 2 block, so thin edges survive. Average dilutes them.', set: { pool: 'avg', act: 'relu' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const img = CVZ.sceneGray(64, 44);
+      const k = FILTERS[p.filt].map(r => r.map(v => p.flip ? -v : v));
+      const raw = CVZ.convolve(img, k, 'replicate', true);
+      const act = raw.map(r => r.map(v => p.act === 'relu' ? Math.max(0, v) : v));
+      let out = act;
+      if (p.pool !== 'none') {
+        out = [];
+        for (let y = 0; y + 1 < act.length; y += 2) { const row = []; for (let x = 0; x + 1 < act[0].length; x += 2) { const q = [act[y][x], act[y][x + 1], act[y + 1][x], act[y + 1][x + 1]]; row.push(p.pool === 'max' ? Math.max(...q) : q.reduce((a, b) => a + b, 0) / 4); } out.push(row); }
+      }
+      const blurish = p.filt === 'blur';
+      const show = m => m.map(r => r.map(v => blurish ? clamp(Math.round(v)) : (p.act === 'relu' ? clamp(Math.round(v * 1.2)) : clamp(Math.round(128 + v * 0.6)))));
+      const S = 2.6;
+      D.image(g, img, 10, 10, S);
+      D.image(g, show(act), 196, 10, S);
+      D.image(g, show(out), 382, 10, S * 64 / out[0].length);
+      D.text(g, 'Input 64 × 44', 10, 140, { b: true, s: 12, c: z.col.ink });
+      D.text(g, `After filter${p.act === 'relu' ? ' + ReLU' : ''} 64 × 44`, 196, 140, { b: true, s: 12, c: z.col.ink });
+      D.text(g, p.pool === 'none' ? 'No pooling 64 × 44' : `After ${p.pool} pool ${out[0].length} × ${out.length}`, 382, 140, { b: true, s: 12, c: z.col.ink });
+      D.text(g, 'Filter', 10, 168, { b: true, s: 12, c: z.col.ink });
+      k.forEach((r, i) => D.text(g, r.map(v => f(v, 2).padStart(5)).join(' '), 10, 186 + i * 16, { mono: true, s: 11.5, c: z.col.ink2 }));
+      const flat = raw.flat(), neg = flat.filter(v => v < 0).length;
+      [`weights in this filter: 3 × 3 × 1 + 1 bias = 10`, `negative responses: ${f(100 * neg / flat.length, 0)}%${p.act === 'relu' ? ', all set to 0 by ReLU' : ''}`, `values after pooling: ${out.length * out[0].length} (was ${flat.length})`].forEach((t, i) => D.text(g, t, 196, 186 + i * 18, { s: 11.5, mono: true, c: z.col.ink }));
+      return `<span class="big">feature map = ReLU(w ∗ x + b), &nbsp; ReLU(x) = max(0, x)</span><br>A real first layer has many filters, for example 64, each producing its own map, and later layers combine those maps into textures, parts and objects.`;
+    }
+  });
+
+  def('softmax', {
+    title: 'From scores to probabilities: SoftMax and sigmoid',
+    sub: 'The network outputs one raw score (logit) per class. SoftMax turns them into probabilities that compete and add up to 1. Independent sigmoids give each class its own yes or no probability.',
+    W: 560, H: 240,
+    params: [
+      { k: 'z1', label: 'Logit for dog', type: 'range', min: -4, max: 6, step: 0.1, v: 2 },
+      { k: 'z2', label: 'Logit for cat', type: 'range', min: -4, max: 6, step: 0.1, v: 1 },
+      { k: 'z3', label: 'Logit for wolf', type: 'range', min: -4, max: 6, step: 0.1, v: 0.1 },
+      { k: 'T', label: 'Temperature T (divide logits by T)', type: 'range', min: 0.2, max: 5, step: 0.1, v: 1 },
+      { k: 'y', label: 'True class', type: 'select', v: 0, num: true, opts: [[0, 'Dog'], [1, 'Cat'], [2, 'Wolf']] }
+    ],
+    tips: [
+      { t: 'The default is the lecture example: logits 2.0, 1.0, 0.1 give probabilities 0.659, 0.242 and 0.099.', set: { z1: 2, z2: 1, z3: 0.1, T: 1 } },
+      { t: 'Add 3 to every logit (5, 4, 3.1). The SoftMax bars do not move at all, only differences matter. The sigmoids all rise.', set: { z1: 5, z2: 4, z3: 3.1, T: 1 } },
+      { t: 'Raise the temperature to 4. The probabilities flatten and the model looks unsure. Lower it to 0.3 and the top class takes almost everything.', set: { z1: 2, z2: 1, z3: 0.1, T: 4 } },
+      { t: 'Set the true class to Wolf. The loss jumps, and the gradient p − y pushes the wolf logit up and the others down.', set: { z1: 2, z2: 1, z3: 0.1, T: 1, y: 2 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const L = [p.z1, p.z2, p.z3], names = ['dog', 'cat', 'wolf'];
+      const s = L.map(v => v / p.T), mx = Math.max(...s), e = s.map(v => Math.exp(v - mx)), S = e.reduce((a, b) => a + b, 0);
+      const P = e.map(v => v / S), sig = L.map(v => 1 / (1 + Math.exp(-v)));
+      const cols = [z.col.cv, z.col.orange, z.col.purple];
+      const bar = (x0, title, vals, note) => {
+        D.text(g, title, x0, 16, { b: true, s: 12, c: z.col.ink });
+        D.rect(g, x0, 26, 240, 150, { stroke: z.col.line, w: 1 });
+        vals.forEach((v, i) => {
+          const h = v * 140, x = x0 + 18 + i * 76;
+          D.rect(g, x, 176 - h, 52, h, { fill: cols[i] });
+          D.text(g, f(v, 3), x + 26, 170 - h, { a: 'center', s: 12, mono: true, c: z.col.ink, b: i === p.y });
+          D.text(g, names[i] + (i === p.y ? ' (true)' : ''), x + 26, 194, { a: 'center', s: 11.5, c: i === p.y ? z.col.ink : z.col.ink2, b: i === p.y });
+        });
+        D.text(g, note, x0, 216, { s: 11.5, mono: true, c: z.col.ink2 });
+      };
+      bar(10, 'SoftMax (they compete)', P, `sum = ${f(P.reduce((a, b) => a + b, 0), 3)}`);
+      bar(300, 'Independent sigmoids', sig, `sum = ${f(sig.reduce((a, b) => a + b, 0), 3)}`);
+      const loss = -Math.log(P[p.y]), grad = P.map((v, i) => v - (i === p.y ? 1 : 0));
+      return `<span class="big">p<sub>i</sub> = e<sup>z<sub>i</sub>/T</sup> ÷ Σ<sub>j</sub> e<sup>z<sub>j</sub>/T</sup>, &nbsp; σ(z) = 1 ÷ (1 + e<sup>−z</sup>), &nbsp; loss = −ln p<sub>true</sub></span><br>Cross entropy loss = −ln ${f(P[p.y], 3)} = <b>${f(loss, 3)}</b>. Gradient p − y = [${grad.map(v => f(v, 3)).join(', ')}]. Use SoftMax when exactly one class is right, sigmoids when several labels can be true at once.`;
+    }
+  });
+
+  def('receptive', {
+    title: 'How far each neuron can see: the receptive field',
+    sub: 'Each row is one layer, drawn in input pixel positions. The red neuron at the top depends on the blue neurons in each layer below it. Stacking layers, and especially striding or pooling, makes that region grow.',
+    W: 560, H: 260,
+    params: [
+      { k: 'n', label: 'Number of layers', type: 'range', min: 1, max: 5, v: 3 },
+      { k: 'k', label: 'Kernel size k', type: 'select', v: 3, num: true, opts: [[3, '3'], [5, '5'], [7, '7']] },
+      { k: 's', label: 'Stride of every layer', type: 'select', v: 1, num: true, opts: [[1, '1'], [2, '2 (like pooling)']] }
+    ],
+    tips: [
+      { t: 'Three 3 × 3 layers with stride 1 see a 7 pixel wide region, the same as one 7 × 7 layer, with fewer weights and three ReLUs instead of one. This is the VGG idea.', set: { n: 3, k: 3, s: 1 } },
+      { t: 'Switch the stride to 2. The receptive field now grows much faster, because each unit in a deeper layer sits further apart in the input.', set: { n: 3, k: 3, s: 2 } },
+      { t: 'One layer with k = 7 has the same reach as three layers with k = 3. Compare the weight counts in the readout.', set: { n: 1, k: 7, s: 1 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let r = 1, j = 1; const R = [1], J = [1];
+      for (let l = 0; l < p.n; l++) { r += (p.k - 1) * j; j *= p.s; R.push(r); J.push(j); }
+      const cnt = new Array(p.n + 1); cnt[p.n] = 1;
+      for (let l = p.n; l > 0; l--) cnt[l - 1] = (cnt[l] - 1) * p.s + p.k;
+      const N = Math.max(23, r + 8) | 1, cw = Math.min(16, 480 / N), X0 = 60 + (480 - cw * N) / 2, mid = (N - 1) / 2;
+      const rowH = Math.min(44, 200 / (p.n + 1)), Y0 = 16;
+      for (let l = p.n; l >= 0; l--) {
+        const y = Y0 + (p.n - l) * rowH, J0 = J[l];
+        const first = mid - (cnt[l] - 1) / 2 * J0;
+        for (let i = -40; i <= 40; i++) {
+          const pos = mid + i * J0;
+          if (pos < 0 || pos > N - 1) continue;
+          const t = (pos - first) / J0, inside = t >= -1e-9 && t <= cnt[l] - 1 + 1e-9;
+          D.rect(g, X0 + pos * cw, y, Math.max(2, cw - 1), rowH * 0.55, { fill: inside ? (l === p.n ? z.col.red : z.col.cv) : z.col.bg, stroke: z.col.line, w: 0.6 });
+        }
+        D.text(g, l === 0 ? 'input' : 'layer ' + l, X0 - 8, y + rowH * 0.42, { a: 'right', s: 11, c: z.col.ink2 });
+      }
+      const w1 = p.n * p.k * p.k, w2 = r * r;
+      return `<span class="big">r<sub>l</sub> = r<sub>l−1</sub> + (k − 1) × j<sub>l−1</sub>, &nbsp; j<sub>l</sub> = j<sub>l−1</sub> × s, &nbsp; r<sub>0</sub> = j<sub>0</sub> = 1</span><br>Receptive field after each layer: ${R.slice(1).join(', ')} input pixels wide. The top neuron sees <b>${r} × ${r}</b> pixels. Weights per input and output channel pair: ${p.n} × ${p.k}² = ${w1}, against ${w2} for one ${r} × ${r} filter${p.s > 1 ? ' (with stride the two are not equivalent, so this is only a rough comparison)' : ' with the same reach'}.`;
+    }
+  });
+
+  def('residual', {
+    title: 'Why very deep networks need shortcuts',
+    sub: 'During training the error signal flows backwards through every layer and is multiplied by each layer\'s local slope. Without a shortcut it can shrink to almost nothing. With H(x) = F(x) + x, each block multiplies it by 1 plus a small slope instead.',
+    W: 560, H: 250,
+    params: [
+      { k: 'depth', label: 'Number of layers', type: 'range', min: 5, max: 60, v: 30 },
+      { k: 'gain', label: 'Slope of each plain layer', type: 'range', min: 0.3, max: 1.3, step: 0.05, v: 0.8 },
+      { k: 'eps', label: 'Slope of each residual branch ∂F/∂x', type: 'range', min: -0.05, max: 0.05, step: 0.01, v: 0.01 },
+      { k: 'res', label: 'Show the residual network', type: 'check', v: true }
+    ],
+    tips: [
+      { t: 'With slope 0.8 and 30 layers, the plain network passes back 0.8³⁰ ≈ 0.0012 of the signal to the first layer. Its early layers barely learn.', set: { depth: 30, gain: 0.8, res: true } },
+      { t: 'Set the plain slope to 1.2. Now the signal explodes instead, about 237 times over 30 layers. Both extremes make training unstable.', set: { depth: 30, gain: 1.2 } },
+      { t: 'Use 60 layers and a residual branch slope of −0.03. The residual signal is 0.97⁶⁰ ≈ 0.16, while the plain one at slope 0.8 is about 0.0000015.', set: { depth: 60, gain: 0.8, eps: -0.03, res: true } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const plain = [], resid = [];
+      for (let l = 0; l <= p.depth; l++) { plain.push(Math.pow(p.gain, l)); resid.push(Math.pow(1 + p.eps, l)); }
+      const lg = v => Math.log10(Math.max(1e-12, v));
+      const m = D.axes(g, z, [70, 14, 460, 180], [0, p.depth], [-8, 4], { nx: 5, ny: 6, xl: 'layers travelled backwards from the loss', yl: 'signal size', fx: v => Math.round(v), fy: v => '1e' + Math.round(v) });
+      D.line(g, m.sx(0), m.sy(0), m.sx(p.depth), m.sy(0), z.col.line, 1, [4, 4]);
+      const plot = (arr, c) => { g.save(); g.strokeStyle = c; g.lineWidth = 2.4; g.beginPath(); arr.forEach((v, i) => { const y = m.sy(clamp(lg(v), -8, 4)); if (i) g.lineTo(m.sx(i), y); else g.moveTo(m.sx(i), y); }); g.stroke(); g.restore(); };
+      plot(plain, z.col.red);
+      if (p.res) plot(resid, z.col.green);
+      const yP = m.sy(clamp(lg(plain[p.depth]), -8, 4)), yR = m.sy(clamp(lg(resid[p.depth]), -8, 4));
+      D.text(g, 'plain', m.sx(p.depth) - 4, yP + (yP < yR ? -6 : 16), { a: 'right', s: 12, b: true, c: z.col.red });
+      if (p.res) D.text(g, 'residual', m.sx(p.depth) - 4, yR + (yR <= yP ? -6 : 16), { a: 'right', s: 12, b: true, c: z.col.green });
+      const fm = v => v < 1e-3 || v > 1e3 ? v.toExponential(2) : f(v, 4);
+      return `<span class="big">plain: signal = g<sup>L</sup>, &nbsp; residual: H(x) = F(x) + x, so ∂H/∂x = ∂F/∂x + 1</span><br>After ${p.depth} plain layers with slope ${f(p.gain, 2)} the signal is ${fm(plain[p.depth])}.${p.res ? ` With shortcuts it is (1 ${p.eps < 0 ? '−' : '+'} ${f(Math.abs(p.eps), 2)})<sup>${p.depth}</sup> = ${fm(resid[p.depth])}.` : ''} This is a one number sketch of the vanishing and exploding gradient problem. Real gradients are matrices, but the multiplying effect is the same.`;
+    }
+  });
+
 })();

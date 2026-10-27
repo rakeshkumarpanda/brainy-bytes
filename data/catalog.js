@@ -3781,6 +3781,44 @@ function cvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cv-motion", title: "Motion and video", emoji: "3", step: 3, level: "College", blurb: "Adding time: how pixels move between frames, how motion is described, and how actions were recognised before and after deep learning.", topics: [
+      { id: "motion", title: "Optical flow, HOF, MBH and video tasks", emoji: "3.1", page: "content/computer-vision/motion-video.html",
+        summary: "Optical flow and the aperture problem, HOF versus MBH with every lecture scenario, the bag of visual words pipeline and modern video tasks.",
+        keywords: ["optical flow", "flow magnitude", "sparse flow", "dense flow", "aperture problem", "Lucas Kanade", "HOF", "MBH", "action recognition", "visual words", "k-means", "SVM", "two stream", "frame interpolation", "re-identification", "video RAG"],
+        minutes: 50, counts: {"lessons": 6, "problems": 12, "quiz": 12, "assign": 4},
+        added: "2026-10-27",
+        sections: [
+        { id: "flow", title: "Video and optical flow", emoji: "", group: "Lesson", keywords: ["video", "time", "optical flow", "flow vector", "magnitude", "direction", "atan2", "speed", "fps", "sparse flow", "dense flow", "colour wheel"] },
+        { id: "constancy", title: "How flow is measured: brightness constancy", emoji: "", group: "Lesson", keywords: ["brightness constancy", "optical flow constraint", "aperture problem", "Lucas Kanade", "Horn Schunck", "least squares", "structure tensor", "image pyramid", "FlowNet", "RAFT"] },
+        { id: "hof", title: "HOF and MBH: describing motion", emoji: "", group: "Lesson", keywords: ["HOF", "histogram of oriented optical flow", "MBH", "motion boundary histogram", "HOG", "motion descriptor", "dominant direction", "camera motion", "flow gradient"] },
+        { id: "scenarios", title: "Which descriptor? The lecture scenarios", emoji: "", group: "Lesson", keywords: ["scenario", "camera panning", "opposite directions", "cheetah", "cyclist", "ball moving up", "which descriptor", "camera motion combinations"] },
+        { id: "pipeline", title: "The traditional action recognition pipeline", emoji: "", group: "Lesson", keywords: ["action recognition", "space time interest points", "STIP", "visual words", "bag of visual words", "k-means", "SVM", "support vector machine", "3D CNN", "two stream network", "video transformer"] },
+        { id: "tasks", title: "Modern video tasks", emoji: "", group: "Lesson", keywords: ["frame interpolation", "Super SloMo", "latent space", "stabilisation", "video denoising", "person re-identification", "re-ID", "object propagation", "graph neural network", "context", "video RAG", "retrieval augmented generation"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cv-recognition", title: "Recognising what is in an image", emoji: "4", step: 4, level: "College", blurb: "From hand made features to learned ones: how convolutional networks classify images and how confident they really are.", topics: [
+      { id: "cnns", title: "Image classification and convolutional networks", emoji: "4.1", page: "content/computer-vision/classification-cnns.html",
+        summary: "Classification datasets, CNN layers and receptive fields, SoftMax and cross entropy, confidence and calibration, and AlexNet to ViT.",
+        keywords: ["image classification", "ImageNet", "CNN", "convolution layer", "ReLU", "pooling", "receptive field", "SoftMax", "sigmoid", "cross entropy", "calibration", "inductive bias", "AlexNet", "VGG", "ResNet", "Vision Transformer", "1x1 convolution"],
+        minutes: 55, counts: {"lessons": 6, "problems": 12, "quiz": 12, "assign": 4},
+        added: "2026-10-27",
+        sections: [
+        { id: "classify", title: "Image classification and its datasets", emoji: "", group: "Lesson", keywords: ["image classification", "class probabilities", "ImageNet", "ILSVRC", "PASCAL VOC", "Caltech 101", "inter-class variation", "intra-class variation", "underfitting", "overfitting", "capacity"] },
+        { id: "cnn", title: "Convolutional neural networks", emoji: "", group: "Lesson", keywords: ["CNN", "convolutional neural network", "convolution layer", "filter", "feature map", "ReLU", "activation", "pooling", "max pooling", "average pooling", "parameters", "receptive field", "feature hierarchy"] },
+        { id: "softmax", title: "SoftMax, sigmoid and cross entropy", emoji: "", group: "Lesson", keywords: ["SoftMax", "softmax", "sigmoid", "logit", "cross entropy", "one hot", "gradient", "p minus y", "multi-label", "temperature", "numerical stability"] },
+        { id: "confidence", title: "Confidence, inductive bias and calibration", emoji: "", group: "Lesson", keywords: ["confidence", "inductive bias", "2 4 6", "spurious correlation", "background bias", "calibration", "overconfident", "temperature scaling", "ECE", "reliability diagram", "uncertainty"] },
+        { id: "architectures", title: "From AlexNet to Vision Transformers", emoji: "", group: "Lesson", keywords: ["AlexNet", "VGG", "GoogLeNet", "Inception", "ResNet", "residual", "skip connection", "degradation problem", "vanishing gradient", "1x1 convolution", "Network in Network", "Vision Transformer", "ViT", "patches", "tokens", "attention"] },
+        { id: "design", title: "Designing a model: architecture, loss, optimisation", emoji: "", group: "Lesson", keywords: ["architecture", "loss function", "optimisation", "gradient descent", "learning rate", "SGD", "Adam", "regularisation", "weight decay", "dropout", "data augmentation", "early stopping"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
