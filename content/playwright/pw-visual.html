@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual, accessibility and time checks · Playwright</title>
+<meta name="description" content="toHaveScreenshot, baselines, --update-snapshots, maxDiffPixels and mask, aria snapshots with toMatchAriaSnapshot and ariaSnapshot, accessibility scans with axe in every language, WCAG rules, page.clock with setFixedTime, install, runFor and fastForward.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🔍 Debugging and quality</span><span>›</span><span>Chapter 14 of 14</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🖼️</span><div><h1>Visual, accessibility and time checks</h1><p class="lead">Catch the bugs that click tests miss. Compare screenshots with a baseline, check the structure with aria snapshots, scan for accessibility problems with axe, and test dates and timers with a fake clock.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 4 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 14 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 1 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>Some bugs are about how a page looks, who can use it, or what it does on a certain day. Playwright has a check for each: a picture comparison, an accessibility tree check, an accessibility scan and a fake clock.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#visual"><span>🖼️</span>Visual comparisons</a><a href="#aria" class="easy"><span>🌳</span>Aria snapshots</a><a href="#a11y"><span>♿</span>Accessibility scans with axe</a><a href="#clock"><span>⏰</span>Fake time with page.clock</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="visual" data-say="visual"><div class="sec-num">Part 1</div><h2><span class="sec-em">🖼️</span><span>Visual comparisons</span></h2>
+
+<p>A test can click every button and still miss that the buttons turned red. A <b>visual comparison</b> takes a screenshot and compares it, pixel by pixel, with a picture saved earlier, called the <b>baseline</b>. Playwright Test has this built in as <code>toHaveScreenshot</code>.</p>
+<div class="viz" data-viz="flow" data-k="layers"></div>
+<div class="codewrap tests pw4" data-k="screenshot" data-langs="js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Compare the page with a saved picture · <b class="pw-badge">💥 Playwright Test ran, fails on purpose</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 tests/look.spec.js</div><pre class="src" data-file="tests/look.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the products page looks right'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+  <span class="k">await</span> expect(page).toHaveScreenshot(<span class="s">'products.png'</span>, { fullPage: <span class="k">true</span> });
+});
+
+test(<span class="s">'the lamp card looks right'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-3'</span>)).toHaveScreenshot(<span class="s">'lamp-card.png'</span>);
+});
+
+test(<span class="s">'a button colour changed by mistake'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> page.addStyleTag({ content: <span class="s">'.card button { background: #b91c1c; }'</span> });   <span class="c">// a style bug, on purpose</span>
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-3'</span>)).toHaveScreenshot(<span class="s">'lamp-card.png'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test -g &quot;looks right&quot; --update-snapshots
+$ npx playwright test
+$ find tests test-results -name &quot;*.png&quot;</pre></div><div class="err"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+A snapshot doesn&#x27;t exist at tests/look.spec.js-snapshots/products-chromium-linux.png, writing actual.
+  ✓  1 [chromium] › tests/look.spec.js:3:1 › the products page looks right (1.7s)
+A snapshot doesn&#x27;t exist at tests/look.spec.js-snapshots/lamp-card-chromium-linux.png, writing actual.
+  ✓  2 [chromium] › tests/look.spec.js:9:1 › the lamp card looks right (1.4s)
+
+  2 passed (4.4s)
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › tests/look.spec.js:3:1 › the products page looks right (1.3s)
+  ✓  2 [chromium] › tests/look.spec.js:9:1 › the lamp card looks right (1.1s)
+  ✘  3 [chromium] › tests/look.spec.js:14:1 › a button colour changed by mistake (1.4s)
+
+
+  1) [chromium] › tests/look.spec.js:14:1 › a button colour changed by mistake ─────────────────────
+
+    Error: expect(locator).toHaveScreenshot(expected) failed
+
+    Locator: getByTestId(&#x27;product-3&#x27;)
+      5891 pixels (ratio 0.19 of all image pixels) are different.
+
+      Snapshot: lamp-card.png
+
+    Call log:
+      - Expect &quot;toHaveScreenshot(lamp-card.png)&quot; getByTestId(&#x27;product-3&#x27;) with timeout 5000ms
+        - verifying given screenshot expectation
+      - waiting for getByTestId(&#x27;product-3&#x27;)
+        - locator resolved to &lt;li class=&quot;card&quot; data-testid=&quot;product-3&quot;&gt;…&lt;/li&gt;
+      - taking element screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - attempting scroll into view action
+        - waiting for element to be stable
+      - 5891 pixels (ratio 0.19 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - waiting for getByTestId(&#x27;product-3&#x27;)
+        - locator resolved to &lt;li class=&quot;card&quot; data-testid=&quot;product-3&quot;&gt;…&lt;/li&gt;
+      - taking element screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - attempting scroll into view action
+        - waiting for element to be stable
+      - captured a stable screenshot
+      - 5891 pixels (ratio 0.19 of all image pixels) are different.
+
+
+      15 |   await page.goto(&#x27;/products&#x27;);
+      16 |   await page.addStyleTag({ content: &#x27;.card button { background: #b91c1c; }&#x27; });   // a style bug, on purpose
+    &gt; 17 |   await expect(page.getByTestId(&#x27;product-3&#x27;)).toHaveScreenshot(&#x27;lamp-card.png&#x27;);
+         |                                               ^
+      18 | });
+      19 |
+        at tests/look.spec.js:17:47
+
+  1 failed
+    [chromium] › tests/look.spec.js:14:1 › a button colour changed by mistake ──────────────────────
+  2 passed (5.6s)
+test-results/look-a-button-colour-changed-by-mistake-chromium/lamp-card-actual.png
+test-results/look-a-button-colour-changed-by-mistake-chromium/lamp-card-diff.png
+test-results/look-a-button-colour-changed-by-mistake-chromium/lamp-card-expected.png
+tests/look.spec.js-snapshots/lamp-card-chromium-linux.png
+tests/look.spec.js-snapshots/products-chromium-linux.png</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 tests/look.spec.ts</div><pre class="src" data-file="tests/look.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the products page looks right'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+  <span class="k">await</span> expect(page).toHaveScreenshot(<span class="s">'products.png'</span>, { fullPage: <span class="k">true</span> });
+});
+
+test(<span class="s">'the lamp card looks right'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-3'</span>)).toHaveScreenshot(<span class="s">'lamp-card.png'</span>);
+});
+
+test(<span class="s">'a button colour changed by mistake'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> page.addStyleTag({ content: <span class="s">'.card button { background: #b91c1c; }'</span> });   <span class="c">// a style bug, on purpose</span>
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-3'</span>)).toHaveScreenshot(<span class="s">'lamp-card.png'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test -g &quot;looks right&quot; --update-snapshots
+$ npx playwright test
+$ find tests test-results -name &quot;*.png&quot;</pre></div><div class="err"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+A snapshot doesn&#x27;t exist at tests/look.spec.ts-snapshots/products-chromium-linux.png, writing actual.
+  ✓  1 [chromium] › tests/look.spec.ts:3:1 › the products page looks right (1.8s)
+A snapshot doesn&#x27;t exist at tests/look.spec.ts-snapshots/lamp-card-chromium-linux.png, writing actual.
+  ✓  2 [chromium] › tests/look.spec.ts:9:1 › the lamp card looks right (1.4s)
+
+  2 passed (5.1s)
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › tests/look.spec.ts:3:1 › the products page looks right (1.4s)
+  ✓  2 [chromium] › tests/look.spec.ts:9:1 › the lamp card looks right (1.2s)
+  ✘  3 [chromium] › tests/look.spec.ts:14:1 › a button colour changed by mistake (1.5s)
+
+
+  1) [chromium] › tests/look.spec.ts:14:1 › a button colour changed by mistake ─────────────────────
+
+    Error: expect(locator).toHaveScreenshot(expected) failed
+
+    Locator: getByTestId(&#x27;product-3&#x27;)
+      5891 pixels (ratio 0.19 of all image pixels) are different.
+
+      Snapshot: lamp-card.png
+
+    Call log:
+      - Expect &quot;toHaveScreenshot(lamp-card.png)&quot; getByTestId(&#x27;product-3&#x27;) with timeout 5000ms
+        - verifying given screenshot expectation
+      - waiting for getByTestId(&#x27;product-3&#x27;)
+        - locator resolved to &lt;li class=&quot;card&quot; data-testid=&quot;product-3&quot;&gt;…&lt;/li&gt;
+      - taking element screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - attempting scroll into view action
+        - waiting for element to be stable
+      - 5891 pixels (ratio 0.19 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - waiting for getByTestId(&#x27;product-3&#x27;)
+        - locator resolved to &lt;li class=&quot;card&quot; data-testid=&quot;product-3&quot;&gt;…&lt;/li&gt;
+      - taking element screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - attempting scroll into view action
+        - waiting for element to be stable
+      - captured a stable screenshot
+      - 5891 pixels (ratio 0.19 of all image pixels) are different.
+
+
+      15 |   await page.goto(&#x27;/products&#x27;);
+      16 |   await page.addStyleTag({ content: &#x27;.card button { background: #b91c1c; }&#x27; });   // a style bug, on purpose
+    &gt; 17 |   await expect(page.getByTestId(&#x27;product-3&#x27;)).toHaveScreenshot(&#x27;lamp-card.png&#x27;);
+         |                                               ^
+      18 | });
+      19 |
+        at tests/look.spec.ts:17:47
+
+  1 failed
+    [chromium] › tests/look.spec.ts:14:1 › a button colour changed by mistake ──────────────────────
+  2 passed (6.0s)
+test-results/look-a-button-colour-changed-by-mistake-chromium/lamp-card-actual.png
+test-results/look-a-button-colour-changed-by-mistake-chromium/lamp-card-diff.png
+test-results/look-a-button-colour-changed-by-mistake-chromium/lamp-card-expected.png
+tests/look.spec.ts-snapshots/lamp-card-chromium-linux.png
+tests/look.spec.ts-snapshots/products-chromium-linux.png</pre></div></div><div class="note-out"><span>What happens</span><p>The first command saved two pictures, products-chromium-linux.png and lamp-card-chromium-linux.png, next to the test file. The second run compared the page with them. The two tests that changed nothing passed. The third test made the buttons red, the way a bad style change would, and failed with the number of pixels that differ. Playwright saved the expected picture, the actual picture and a diff for the report.</p></div></div>
+<figure class="pw-shot"><img src="img/visual-lamp-diff.jpg" alt="Three images of the Desk lamp card: the expected one with a green button, the actual one with a red button, and the diff with the changed pixels in red" loading="lazy"><figcaption>The pictures from the failed comparison above: expected, actual and the diff, where every changed pixel is marked in red. The HTML report shows them with a slider to compare.</figcaption></figure>
+<div class="tw"><table class="jt "><tr><th>Option</th><th>What it does</th></tr><tr><td>--update-snapshots</td><td>saves new baselines instead of comparing, after a change you meant to make</td></tr><tr><td>maxDiffPixels, maxDiffPixelRatio</td><td>how many pixels, or what share of them, may differ</td></tr><tr><td>threshold</td><td>how different one pixel may be before it counts, from 0 to 1, default 0.2</td></tr><tr><td>mask: [locator]</td><td>covers parts that change every run, such as a date or an advert, with a box</td></tr><tr><td>animations: "disabled"</td><td>stops CSS animations so the picture is the same every time (the default)</td></tr><tr><td>stylePath</td><td>adds a style sheet only while taking the picture, for example to hide a clock</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Baselines depend on the operating system and the browser, which is why the file name ends in chromium-linux. Make them on the same system that runs the tests, usually the CI image or the Playwright Docker image, and commit them to the repository.</div></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>toHaveScreenshot is part of Playwright Test. Python and Java have page.screenshot() to save a picture, but no comparison built in. Teams add a library for it or use a visual testing service. The aria snapshot below works in every language.</div></div>
+</section>
+<section class="card reveal jsec easy-part" id="aria" data-say="aria"><div class="sec-num">Part 2</div><h2><span class="sec-em">🌳</span><span>Aria snapshots</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>An <b>aria snapshot</b> describes a part of the page the way assistive technology sees it: each element's role, its name and its state, nested in YAML. Compare it with a saved version and you check the structure, not the pixels, so a new font or colour does not break it.</p>
+<div class="codewrap tests pw4" data-k="aria" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Check the structure of the page with an aria snapshot · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/StructureTest.java</div><pre class="src" data-file="src/test/java/com/brainy/StructureTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">StructureTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theMainMenuHasFourLinks(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">NAVIGATION</span>, <span class="k">new</span> <span class="t">Page</span>.<span class="t">GetByRoleOptions</span>().setName(<span class="s">"Main"</span>))).matchesAriaSnapshot(<span class="s">""</span>"
+        - navigation <span class="s">"Main"</span>:
+          - link <span class="s">"Products"</span>
+          - link <span class="s">"Feedback"</span>
+          - link <span class="s">"Widgets"</span>
+          - link <span class="s">"Orders"</span>
+        <span class="s">""</span>");
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theNotebookCardSaysItIsOutOfStock(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    <span class="t">System</span>.out.println(page.getByTestId(<span class="s">"product-4"</span>).ariaSnapshot());   <span class="c">// print it once, then paste it below</span>
+    assertThat(page.getByTestId(<span class="s">"product-4"</span>)).matchesAriaSnapshot(<span class="s">""</span>"
+        - listitem:
+          - heading <span class="s">"Notebook"</span> [level=<span class="n">3</span>]
+          - text: <span class="t">Stationery</span> ₹<span class="n">60</span>
+          - button <span class="s">"Out of stock"</span> [disabled]
+        <span class="s">""</span>");
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.StructureTest
+- listitem:
+  - heading &quot;Notebook&quot; [level=3]
+  - text: Stationery ₹60
+  - button &quot;Out of stock&quot; [disabled]
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.043 s -- in com.brainy.StructureTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_structure.py</div><pre class="src" data-file="tests/test_structure.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_the_main_menu_has_four_links(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    expect(page.get_by_role(<span class="s">"navigation"</span>, name=<span class="s">"Main"</span>)).to_match_aria_snapshot(<span class="s">""</span>"
+        - navigation <span class="s">"Main"</span>:
+          - link <span class="s">"Products"</span>
+          - link <span class="s">"Feedback"</span>
+          - link <span class="s">"Widgets"</span>
+          - link <span class="s">"Orders"</span>
+    <span class="s">""</span>")
+
+
+<span class="k">def</span> test_the_notebook_card_says_it_is_out_of_stock(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/products"</span>)
+    print(page.get_by_test_id(<span class="s">"product-4"</span>).aria_snapshot())   <span class="c"># print it once, then paste it below</span>
+    expect(page.get_by_test_id(<span class="s">"product-4"</span>)).to_match_aria_snapshot(<span class="s">""</span>"
+        - listitem:
+          - heading <span class="s">"Notebook"</span> [level=<span class="n">3</span>]
+          - text: <span class="t">Stationery</span> ₹<span class="n">60</span>
+          - button <span class="s">"Out of stock"</span> [disabled]
+    <span class="s">""</span>")</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 2 items
+
+tests/test_structure.py::test_the_main_menu_has_four_links[chromium] PASSED
+tests/test_structure.py::test_the_notebook_card_says_it_is_out_of_stock[chromium] - listitem:
+  - heading &quot;Notebook&quot; [level=3]
+  - text: Stationery ₹60
+  - button &quot;Out of stock&quot; [disabled]
+PASSED
+
+============================== 2 passed in 2.48s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/structure.spec.js</div><pre class="src" data-file="tests/structure.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the main menu has four links'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'navigation'</span>, { name: <span class="s">'Main'</span> })).toMatchAriaSnapshot(<span class="s">`
+    - navigation "Main":
+      - link "Products"
+      - link "Feedback"
+      - link "Widgets"
+      - link "Orders"
+  `</span>);
+});
+
+test(<span class="s">'the notebook card says it is out of stock'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  console.log(<span class="k">await</span> page.getByTestId(<span class="s">'product-4'</span>).ariaSnapshot());   <span class="c">// print it once, then paste it below</span>
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-4'</span>)).toMatchAriaSnapshot(<span class="s">`
+    - listitem:
+      - heading "Notebook" [level=3]
+      - text: Stationery ₹60
+      - button "Out of stock" [disabled]
+  `</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/structure.spec.js:3:1 › the main menu has four links (426ms)
+- listitem:
+  - heading &quot;Notebook&quot; [level=3]
+  - text: Stationery ₹60
+  - button &quot;Out of stock&quot; [disabled]
+  ✓  2 [chromium] › tests/structure.spec.js:14:1 › the notebook card says it is out of stock (1.3s)
+
+  2 passed (3.7s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/structure.spec.ts</div><pre class="src" data-file="tests/structure.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the main menu has four links'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'navigation'</span>, { name: <span class="s">'Main'</span> })).toMatchAriaSnapshot(<span class="s">`
+    - navigation "Main":
+      - link "Products"
+      - link "Feedback"
+      - link "Widgets"
+      - link "Orders"
+  `</span>);
+});
+
+test(<span class="s">'the notebook card says it is out of stock'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+  console.log(<span class="k">await</span> page.getByTestId(<span class="s">'product-4'</span>).ariaSnapshot());   <span class="c">// print it once, then paste it below</span>
+  <span class="k">await</span> expect(page.getByTestId(<span class="s">'product-4'</span>)).toMatchAriaSnapshot(<span class="s">`
+    - listitem:
+      - heading "Notebook" [level=3]
+      - text: Stationery ₹60
+      - button "Out of stock" [disabled]
+  `</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/structure.spec.ts:3:1 › the main menu has four links (384ms)
+- listitem:
+  - heading &quot;Notebook&quot; [level=3]
+  - text: Stationery ₹60
+  - button &quot;Out of stock&quot; [disabled]
+  ✓  2 [chromium] › tests/structure.spec.ts:14:1 › the notebook card says it is out of stock (1.1s)
+
+  2 passed (2.9s)</pre></div></div><div class="note-out"><span>What happens</span><p>Both checks passed in every language. An aria snapshot is the page as a screen reader sees it: roles, names and states, written as YAML. The printed snapshot of the notebook card is the one pasted into the check, which is how most snapshots are written. Leaving out a part, such as the /url of each link, still matches, so a check only states what matters.</p></div></div>
+<div class="tw"><table class="jt "><tr><th></th><th>Playwright Test</th><th>Python</th><th>Java</th></tr><tr><td>print a snapshot</td><td>await locator.ariaSnapshot()</td><td>locator.aria_snapshot()</td><td>locator.ariaSnapshot()</td></tr><tr><td>check a snapshot</td><td>toMatchAriaSnapshot(`...`)</td><td>to_match_aria_snapshot("""...""")</td><td>matchesAriaSnapshot("""...""")</td></tr><tr><td>keep it in a file</td><td>toMatchAriaSnapshot({ name: "menu.aria.yml" })</td><td>not built in</td><td>not built in</td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Codegen can record aria snapshots too: use the Assert snapshot button in the toolbar while recording, and the snapshot of the element you click is added to the test.</div></div>
+</section>
+<section class="card reveal jsec" id="a11y" data-say="a11y"><div class="sec-num">Part 3</div><h2><span class="sec-em">♿</span><span>Accessibility scans with axe</span></h2>
+
+<p>Many people use a screen reader, a keyboard only or high contrast. <b>axe</b> is an open source engine from Deque that checks a page against rules from WCAG, the web accessibility guidelines. Playwright runs it inside the page and gives you the list of problems.</p>
+<div class="codewrap tests pw4" data-k="axe" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Scan a page for accessibility problems with axe · <b class="pw-badge">💥 mvn test ran, fails on purpose</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="💥 mvn test ran, fails on purpose"><div class="fname">📄 src/test/java/com/brainy/OffersAccessibilityTest.java</div><pre class="src" data-file="src/test/java/com/brainy/OffersAccessibilityTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.deque.html.axecore.playwright.<span class="t">AxeBuilder</span>;
+<span class="k">import</span> com.deque.html.axecore.results.<span class="t">AxeResults</span>;
+<span class="k">import</span> com.deque.html.axecore.results.<span class="t">Rule</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> java.util.<span class="t">List</span>;
+
+<span class="k">import</span> <span class="k">static</span> org.junit.jupiter.api.<span class="t">Assertions</span>.assertEquals;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">OffersAccessibilityTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theOffersPageHasNoAccessibilityProblems(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/a11y"</span>);
+    <span class="t">AxeResults</span> results = <span class="k">new</span> <span class="t">AxeBuilder</span>(page)
+        .withTags(<span class="t">List</span>.of(<span class="s">"wcag2a"</span>, <span class="s">"wcag2aa"</span>))      <span class="c">// the WCAG 2 A and AA rules</span>
+        .analyze();
+    <span class="k">for</span> (<span class="t">Rule</span> v : results.getViolations()) {
+      <span class="t">System</span>.out.println(v.getId() + <span class="s">" ("</span> + v.getImpact() + <span class="s">"): "</span> + v.getNodes().size() + <span class="s">" element(s). "</span> + v.getHelp());
+    }
+    assertEquals(<span class="t">List</span>.of(), results.getViolations().stream().map(<span class="t">Rule</span>::getId).toList());
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="err"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.OffersAccessibilityTest
+color-contrast (serious): 1 element(s). Elements must meet minimum color contrast ratio thresholds
+image-alt (critical): 1 element(s). Images must have alternative text
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 4.529 s &lt;&lt;&lt; FAILURE! -- in com.brainy.OffersAccessibilityTest
+[ERROR] com.brainy.OffersAccessibilityTest.theOffersPageHasNoAccessibilityProblems(Page) -- Time elapsed: 4.424 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: expected: &lt;[]&gt; but was: &lt;[color-contrast, image-alt]&gt;
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE</pre></div></div><div class="pw-pane" data-l="py" data-badge="💥 pytest ran, fails on purpose"><div class="fname">📄 tests/test_offers.py</div><pre class="src" data-file="tests/test_offers.py"><span class="k">from</span> axe_playwright_python.sync_playwright <span class="k">import</span> <span class="t">Axe</span>
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+
+<span class="k">def</span> test_the_offers_page_has_no_accessibility_problems(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/a11y"</span>)
+    results = <span class="t">Axe</span>().run(page, options={<span class="s">"runOnly"</span>: [<span class="s">"wcag2a"</span>, <span class="s">"wcag2aa"</span>]})   <span class="c"># the WCAG 2 A and AA rules</span>
+    <span class="k">for</span> v <span class="k">in</span> results.response[<span class="s">"violations"</span>]:
+        print(f<span class="s">"{v['id']} ({v['impact']}): {len(v['nodes'])} element(s). {v['help']}"</span>)
+    <span class="k">assert</span> [v[<span class="s">"id"</span>] <span class="k">for</span> v <span class="k">in</span> results.response[<span class="s">"violations"</span>]] == []</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -s</pre></div><div class="err"><span>Terminal output</span><pre>collecting ... collected 1 item
+
+tests/test_offers.py::test_the_offers_page_has_no_accessibility_problems[chromium] color-contrast (serious): 1 element(s). Elements must meet minimum color contrast ratio thresholds
+image-alt (critical): 1 element(s). Images must have alternative text
+FAILED
+
+=================================== FAILURES ===================================
+_________ test_the_offers_page_has_no_accessibility_problems[chromium] _________
+
+page = &lt;Page url=&#x27;http://localhost:4173/a11y&#x27;&gt;
+
+    def test_the_offers_page_has_no_accessibility_problems(page: Page):
+        page.goto(&quot;/a11y&quot;)
+        results = Axe().run(page, options={&quot;runOnly&quot;: [&quot;wcag2a&quot;, &quot;wcag2aa&quot;]})   # the WCAG 2 A and AA rules
+        for v in results.response[&quot;violations&quot;]:
+            print(f&quot;{v[&#x27;id&#x27;]} ({v[&#x27;impact&#x27;]}): {len(v[&#x27;nodes&#x27;])} element(s). {v[&#x27;help&#x27;]}&quot;)
+&gt;       assert [v[&quot;id&quot;] for v in results.response[&quot;violations&quot;]] == []
+E       AssertionError: assert [&#x27;color-contr..., &#x27;image-alt&#x27;] == []
+E         
+E         Left contains 2 more items, first extra item: &#x27;color-contrast&#x27;
+E         
+E         Full diff:
+E         - []
+E         + [
+E         +     &#x27;color-contrast&#x27;,
+E         +     &#x27;image-alt&#x27;,
+E         + ]
+
+tests/test_offers.py:10: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_offers.py::test_the_offers_page_has_no_accessibility_problems[chromium] - AssertionError: assert [&#x27;color-contr..., &#x27;image-alt&#x27;] == []
+============================== 1 failed in 1.46s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="💥 Playwright Test ran, fails on purpose"><div class="fname">📄 tests/offers.spec.js</div><pre class="src" data-file="tests/offers.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> <span class="t">AxeBuilder</span> <span class="k">from</span> <span class="s">'@axe-core/playwright'</span>;
+
+test(<span class="s">'the offers page has no accessibility problems'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/a11y'</span>);
+  <span class="k">const</span> results = <span class="k">await</span> <span class="k">new</span> <span class="t">AxeBuilder</span>({ page })
+    .withTags([<span class="s">'wcag2a'</span>, <span class="s">'wcag2aa'</span>])          <span class="c">// the WCAG 2 A and AA rules</span>
+    .analyze();
+  <span class="k">for</span> (<span class="k">const</span> v <span class="k">of</span> results.violations) {
+    console.log(<span class="s">`${v.id} (${v.impact}): ${v.nodes.length} element(s). ${v.help}`</span>);
+  }
+  expect(results.violations.map(v =&gt; v.id)).toEqual([]);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+color-contrast (serious): 1 element(s). Elements must meet minimum color contrast ratio thresholds
+image-alt (critical): 1 element(s). Images must have alternative text
+  ✘  1 [chromium] › tests/offers.spec.js:4:1 › the offers page has no accessibility problems (1.2s)
+
+
+  1) [chromium] › tests/offers.spec.js:4:1 › the offers page has no accessibility problems ─────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 4
+
+    - Array []
+    + Array [
+    +   &quot;color-contrast&quot;,
+    +   &quot;image-alt&quot;,
+    + ]
+
+      10 |     console.log(`${v.id} (${v.impact}): ${v.nodes.length} element(s). ${v.help}`);
+      11 |   }
+    &gt; 12 |   expect(results.violations.map(v =&gt; v.id)).toEqual([]);
+         |                                             ^
+      13 | });
+      14 |
+        at tests/offers.spec.js:12:45
+
+    Error Context: test-results/offers-the-offers-page-has-no-accessibility-problems-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/offers.spec.js:4:1 › the offers page has no accessibility problems ──────────</pre></div></div><div class="pw-pane" data-l="ts" data-badge="💥 tsc checked, Playwright Test ran, fails on purpose"><div class="fname">📄 tests/offers.spec.ts</div><pre class="src" data-file="tests/offers.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> <span class="t">AxeBuilder</span> <span class="k">from</span> <span class="s">'@axe-core/playwright'</span>;
+
+test(<span class="s">'the offers page has no accessibility problems'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/a11y'</span>);
+  <span class="k">const</span> results = <span class="k">await</span> <span class="k">new</span> <span class="t">AxeBuilder</span>({ page })
+    .withTags([<span class="s">'wcag2a'</span>, <span class="s">'wcag2aa'</span>])          <span class="c">// the WCAG 2 A and AA rules</span>
+    .analyze();
+  <span class="k">for</span> (<span class="k">const</span> v <span class="k">of</span> results.violations) {
+    console.log(<span class="s">`${v.id} (${v.impact}): ${v.nodes.length} element(s). ${v.help}`</span>);
+  }
+  expect(results.violations.map(v =&gt; v.id)).toEqual([]);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="err"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+color-contrast (serious): 1 element(s). Elements must meet minimum color contrast ratio thresholds
+image-alt (critical): 1 element(s). Images must have alternative text
+  ✘  1 [chromium] › tests/offers.spec.ts:4:1 › the offers page has no accessibility problems (834ms)
+
+
+  1) [chromium] › tests/offers.spec.ts:4:1 › the offers page has no accessibility problems ─────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 4
+
+    - Array []
+    + Array [
+    +   &quot;color-contrast&quot;,
+    +   &quot;image-alt&quot;,
+    + ]
+
+      10 |     console.log(`${v.id} (${v.impact}): ${v.nodes.length} element(s). ${v.help}`);
+      11 |   }
+    &gt; 12 |   expect(results.violations.map(v =&gt; v.id)).toEqual([]);
+         |                                             ^
+      13 | });
+      14 |
+        at tests/offers.spec.ts:12:45
+
+    Error Context: test-results/offers-the-offers-page-has-no-accessibility-problems-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/offers.spec.ts:4:1 › the offers page has no accessibility problems ──────────</pre></div></div><div class="note-out"><span>What happens</span><p>The scan failed on purpose, because the offers page was built with common mistakes. axe found the same two rule breaks in every language and listed each with how serious it is, how many elements break it and a one line help text. The JavaScript and Java libraries come from Deque, the makers of axe. The Python one, axe-playwright-python, is a community package with its own copy of axe, so its rule versions can lag a little behind.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>What axe found</th><th>Why it matters</th><th>The fix</th></tr><tr><td>image-alt: the lamp image has no alt text</td><td>a screen reader cannot say what the picture shows</td><td>add alt="Desk lamp"</td></tr><tr><td>color-contrast: light blue text on a light background</td><td>people with low vision cannot read it</td><td>use a darker colour, with a contrast ratio of at least 4.5 to 1</td></tr></table></div>
+<p>The scan passed two things on the same page that a person would still question. The bell button has the text 🔔, so it has a name, but a screen reader may read it as just "bell". The email field has only a placeholder, which axe accepts as a name, but the hint disappears as soon as someone starts typing. A scan finds rule breaks. It cannot judge whether a name is helpful.</p>
+<div class="tw"><table class="jt "><tr><th>Package</th><th>Language</th><th>Made by</th></tr><tr><td>@axe-core/playwright</td><td>JavaScript and TypeScript</td><td>Deque</td></tr><tr><td>com.deque.html.axe-core:playwright</td><td>Java</td><td>Deque</td></tr><tr><td>axe-playwright-python</td><td>Python</td><td>community</td></tr></table></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>An automatic scan finds only part of the problems. It cannot tell whether alt text is useful or whether the tab order makes sense. Keep a few manual checks with a keyboard and a screen reader, and use the scan to stop the easy mistakes from coming back.</div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>An old page may have many known problems. Scan with .exclude() for the parts you will fix later, or compare the list of violations with a saved list, so new problems still fail the test.</div></div>
+</section>
+<section class="card reveal jsec" id="clock" data-say="clock"><div class="sec-num">Part 4</div><h2><span class="sec-em">⏰</span><span>Fake time with page.clock</span></h2>
+
+<p>Some pages change with the date or after a delay: a sale that starts at midnight, a session that ends after 5 minutes, a countdown. Waiting for the real time is slow or impossible. <b>page.clock</b> replaces the page's Date and timers with a fake clock that you control.</p>
+<div class="codewrap tests pw4" data-k="clock" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Control dates and timers with a fake clock · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/SaleClockTest.java</div><pre class="src" data-file="src/test/java/com/brainy/SaleClockTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Clock</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">SaleClockTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theSaleIsNotLiveTheDayBefore(<span class="t">Page</span> page) {
+    page.clock().setFixedTime(<span class="s">"2026-12-24T12:00:00Z"</span>);
+    page.navigate(<span class="s">"/clock"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).hasText(<span class="s">"The Christmas sale is coming soon"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> theSaleGoesLiveOnChristmasDay(<span class="t">Page</span> page) {
+    page.clock().setFixedTime(<span class="s">"2026-12-25T12:00:00Z"</span>);
+    page.navigate(<span class="s">"/clock"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">STATUS</span>)).hasText(<span class="s">"The Christmas sale is live"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="k">void</span> anIdleUserIsSignedOutAfterFiveMinutes(<span class="t">Page</span> page) {
+    page.clock().install(<span class="k">new</span> <span class="t">Clock</span>.<span class="t">InstallOptions</span>().setTime(<span class="s">"2026-12-24T10:00:00Z"</span>));
+    page.navigate(<span class="s">"/clock"</span>);
+    page.clock().runFor(<span class="s">"05:00"</span>);                        <span class="c">// 5 minutes of timers, in a moment</span>
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">ALERT</span>)).hasText(<span class="s">"You were signed out"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.brainy.SaleClockTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.877 s -- in com.brainy.SaleClockTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_clock.py</div><pre class="src" data-file="tests/test_clock.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">def</span> test_the_sale_is_not_live_the_day_before(page: <span class="t">Page</span>):
+    page.clock.set_fixed_time(<span class="s">"2026-12-24T12:00:00Z"</span>)
+    page.goto(<span class="s">"/clock"</span>)
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_have_text(<span class="s">"The Christmas sale is coming soon"</span>)
+
+
+<span class="k">def</span> test_the_sale_goes_live_on_christmas_day(page: <span class="t">Page</span>):
+    page.clock.set_fixed_time(<span class="s">"2026-12-25T12:00:00Z"</span>)
+    page.goto(<span class="s">"/clock"</span>)
+    expect(page.get_by_role(<span class="s">"status"</span>)).to_have_text(<span class="s">"The Christmas sale is live"</span>)
+
+
+<span class="k">def</span> test_an_idle_user_is_signed_out_after_5_minutes(page: <span class="t">Page</span>):
+    page.clock.install(time=<span class="s">"2026-12-24T10:00:00Z"</span>)
+    page.goto(<span class="s">"/clock"</span>)
+    page.clock.run_for(<span class="s">"05:00"</span>)                          <span class="c"># 5 minutes of timers, in a moment</span>
+    expect(page.get_by_role(<span class="s">"alert"</span>)).to_have_text(<span class="s">"You were signed out"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 3 items
+
+tests/test_clock.py::test_the_sale_is_not_live_the_day_before[chromium] PASSED [ 33%]
+tests/test_clock.py::test_the_sale_goes_live_on_christmas_day[chromium] PASSED [ 66%]
+tests/test_clock.py::test_an_idle_user_is_signed_out_after_5_minutes[chromium] PASSED [100%]
+
+============================== 3 passed in 4.53s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/clock.spec.js</div><pre class="src" data-file="tests/clock.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the sale is not live the day before'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.clock.setFixedTime(<span class="k">new</span> <span class="t">Date</span>(<span class="s">'2026-12-24T12:00:00Z'</span>));
+  <span class="k">await</span> page.goto(<span class="s">'/clock'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'The Christmas sale is coming soon'</span>);
+});
+
+test(<span class="s">'the sale goes live on Christmas Day'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.clock.setFixedTime(<span class="k">new</span> <span class="t">Date</span>(<span class="s">'2026-12-25T12:00:00Z'</span>));
+  <span class="k">await</span> page.goto(<span class="s">'/clock'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'The Christmas sale is live'</span>);
+});
+
+test(<span class="s">'an idle user is signed out after 5 minutes'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.clock.install({ time: <span class="k">new</span> <span class="t">Date</span>(<span class="s">'2026-12-24T10:00:00Z'</span>) });
+  <span class="k">await</span> page.goto(<span class="s">'/clock'</span>);
+  <span class="k">await</span> page.clock.runFor(<span class="s">'05:00'</span>);                     <span class="c">// 5 minutes of timers, in a moment</span>
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'alert'</span>)).toHaveText(<span class="s">'You were signed out'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › tests/clock.spec.js:3:1 › the sale is not live the day before (348ms)
+  ✓  2 [chromium] › tests/clock.spec.js:9:1 › the sale goes live on Christmas Day (244ms)
+  ✓  3 [chromium] › tests/clock.spec.js:15:1 › an idle user is signed out after 5 minutes (2.9s)
+
+  3 passed (5.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/clock.spec.ts</div><pre class="src" data-file="tests/clock.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the sale is not live the day before'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.clock.setFixedTime(<span class="k">new</span> <span class="t">Date</span>(<span class="s">'2026-12-24T12:00:00Z'</span>));
+  <span class="k">await</span> page.goto(<span class="s">'/clock'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'The Christmas sale is coming soon'</span>);
+});
+
+test(<span class="s">'the sale goes live on Christmas Day'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.clock.setFixedTime(<span class="k">new</span> <span class="t">Date</span>(<span class="s">'2026-12-25T12:00:00Z'</span>));
+  <span class="k">await</span> page.goto(<span class="s">'/clock'</span>);
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'status'</span>)).toHaveText(<span class="s">'The Christmas sale is live'</span>);
+});
+
+test(<span class="s">'an idle user is signed out after 5 minutes'</span>, <span class="k">async</span> ({ page }) =&gt; {
+  <span class="k">await</span> page.clock.install({ time: <span class="k">new</span> <span class="t">Date</span>(<span class="s">'2026-12-24T10:00:00Z'</span>) });
+  <span class="k">await</span> page.goto(<span class="s">'/clock'</span>);
+  <span class="k">await</span> page.clock.runFor(<span class="s">'05:00'</span>);                     <span class="c">// 5 minutes of timers, in a moment</span>
+  <span class="k">await</span> expect(page.getByRole(<span class="s">'alert'</span>)).toHaveText(<span class="s">'You were signed out'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › tests/clock.spec.ts:3:1 › the sale is not live the day before (359ms)
+  ✓  2 [chromium] › tests/clock.spec.ts:9:1 › the sale goes live on Christmas Day (262ms)
+  ✓  3 [chromium] › tests/clock.spec.ts:15:1 › an idle user is signed out after 5 minutes (2.9s)
+
+  3 passed (5.4s)</pre></div></div><div class="note-out"><span>What happens</span><p>All three tests passed in well under a second each. setFixedTime made the page think it was 24 or 25 December 2026, so both sides of the sale date were tested without waiting for Christmas. install replaced the page timers, and runFor ran five minutes of them at once, so the idle sign out happened straight away.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Method</th><th>What it does</th></tr><tr><td>setFixedTime(time)</td><td>Date.now() always returns this time. Timers still run normally.</td></tr><tr><td>install({ time })</td><td>replaces Date and every timer. Call it before the page loads.</td></tr><tr><td>runFor("05:00")</td><td>moves forward, firing every timer that falls due on the way</td></tr><tr><td>fastForward("05:00")</td><td>jumps forward and fires due timers at most once, like a laptop waking from sleep</td></tr><tr><td>pauseAt(time), resume()</td><td>stops time at a moment to check the page, then lets it run again</td></tr><tr><td>setSystemTime(time)</td><td>changes the date without firing timers, like a user changing the system clock</td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Use setFixedTime when the page only reads the date, and install with runFor when it uses setTimeout or setInterval. Either way the test runs in milliseconds and gives the same result on every day of the year.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-debug.html" data-topic="pw-debug"><small>← Previous chapter</small><b>🔍 Debugging</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Beyond clicks and text", "panels": [{"s": [["e", "🖼️"], ["t", "pixels", {"b": 1}]], "h": "Screenshot", "t": "How it looks.", "more": "Baseline and diff."}, {"s": [["e", "🌳"], ["t", "tree", {"b": 1}]], "h": "Aria snapshot", "t": "How it reads.", "more": "Every language."}, {"s": [["e", "♿"], ["t", "axe", {"b": 1}]], "h": "axe scan", "t": "Who can use it.", "more": "WCAG rules."}, {"s": [["e", "⏰"], ["t", "clock", {"b": 1}]], "h": "Fake clock", "t": "Any date, any delay.", "more": "No waiting."}], "remember": "Screenshots check pixels, aria snapshots check structure, axe checks access, and the clock checks time. Use each for the mistakes it is good at."}, "real": [["🎨", "The style change that broke checkout", "A designer changes a shared button style. Every functional test passes, but the screenshot test of the checkout page fails: the Pay button is now white on white. The change is fixed before release."], ["♿", "A scan on every pull request", "A public service runs an axe scan on its 20 most used pages in CI. A new form field without a label fails the build the same day, instead of reaching users who rely on screen readers."], ["🎄", "Testing Christmas in July", "An online shop tests its holiday banner, its midnight price change and its New Year sale with page.clock, so the tests pass on any day of the year and every rule is checked before the date arrives."]], "quiz": [{"lv": 1, "q": "What does toHaveScreenshot compare the page with?", "o": ["the live site", "a saved baseline picture", "the HTML source", "the trace"], "a": 1, "hint": "It is saved the first time.", "why": "It compares a new screenshot with the baseline saved earlier."}, {"lv": 1, "q": "Which flag saves new baselines after a change you meant to make?", "o": ["--headed", "--update-snapshots", "--reset", "--save"], "a": 1, "hint": "It updates them.", "why": "--update-snapshots writes the current screenshots as the new baselines."}, {"lv": 1, "q": "What does an aria snapshot describe?", "o": ["pixels", "roles, names and states, as assistive technology sees them", "network calls", "CSS rules"], "a": 1, "hint": "Think of a screen reader.", "why": "It is the accessibility tree of a part of the page, written in YAML."}, {"lv": 1, "q": "What is axe?", "o": ["a browser", "an engine that checks pages against accessibility rules", "a reporter", "a CI tool"], "a": 1, "hint": "Made by Deque.", "why": "axe-core checks pages against WCAG rules and lists the violations."}, {"lv": 2, "q": "Why does a baseline file name end in chromium-linux?", "o": ["it is a convention only", "screenshots differ between browsers and operating systems", "Linux is required", "it is the project name"], "a": 1, "hint": "Fonts render differently.", "why": "Each browser and operating system draws text slightly differently, so each has its own baseline."}, {"lv": 2, "q": "A date on the page changes every run and breaks the screenshot. What do you use?", "o": ["a bigger threshold", "mask: [locator]", "--update-snapshots every run", "delete the test"], "a": 1, "hint": "Cover it.", "why": "mask paints a box over the given elements before comparing."}, {"lv": 2, "q": "Which method makes Date.now() return a set time while timers keep running?", "o": ["install", "setFixedTime", "runFor", "pauseAt"], "a": 1, "hint": "Fixed.", "why": "setFixedTime fixes the date. Timers keep running normally."}, {"lv": 2, "q": "Which check works in Python and Java without extra packages?", "o": ["toHaveScreenshot", "an aria snapshot", "an axe scan", "a visual diff"], "a": 1, "hint": "It is in the core assertions.", "why": "to_match_aria_snapshot and matchesAriaSnapshot are part of Playwright for every language."}, {"lv": 2, "q": "What does runFor(\"05:00\") do after clock.install?", "o": ["waits 5 real minutes", "runs 5 minutes of timers at once", "sets the time to 5:00", "pauses for 5 seconds"], "a": 1, "hint": "Fake time.", "why": "It moves the fake clock forward 5 minutes and fires every timer that falls due."}, {"lv": 3, "q": "What share of accessibility problems can an automatic scan find?", "o": ["all of them", "only part of them", "none", "only colour problems"], "a": 1, "hint": "Some need a human.", "why": "A scan cannot judge whether alt text is useful or the tab order makes sense, so manual checks are still needed."}, {"lv": 3, "q": "How is fastForward different from runFor?", "o": ["it is slower", "it fires due timers at most once, like waking from sleep", "it only works in Java", "there is no difference"], "a": 1, "hint": "Think of a closed laptop.", "why": "fastForward jumps ahead and fires due timers once. runFor fires every timer on the way."}, {"lv": 3, "q": "Which axe package is a community project, not from Deque?", "o": ["@axe-core/playwright", "com.deque.html.axe-core:playwright", "axe-playwright-python", "axe-core"], "a": 2, "hint": "The Python one.", "why": "axe-playwright-python is a community package with its own copy of axe-core."}], "calc": [{"lv": 1, "q": "A screenshot is 1280 by 720 pixels. How many pixels is that?", "ans": 921600, "hint": "1280 × 720", "steps": ["1280 × 720 = 921600"]}, {"lv": 2, "q": "maxDiffPixelRatio is 0.01 on that screenshot. How many pixels may differ?", "ans": 9216, "hint": "921600 × 0.01", "steps": ["921600 × 0.01 = 9216"]}, {"lv": 1, "q": "The idle timer counts down from 5 minutes. How many seconds is that?", "ans": 300, "hint": "5 × 60", "steps": ["5 × 60 = 300 s"]}, {"lv": 2, "q": "runFor(\"05:00\") fires a 1 second interval how many times?", "ans": 300, "hint": "300 s / 1 s", "steps": ["5 minutes = 300 s", "300 / 1 = 300 times"]}, {"lv": 2, "q": "12 pages, each with 3 projects (browsers). How many baseline pictures?", "ans": 36, "hint": "12 × 3", "steps": ["one baseline per page and project", "12 × 3 = 36"]}, {"lv": 3, "q": "An axe scan finds 3 rules broken by 1, 2 and 4 elements. How many elements need a fix?", "ans": 7, "hint": "1 + 2 + 4", "steps": ["1 + 2 + 4 = 7"]}, {"lv": 3, "q": "A sale starts on 25 December. A test sets the clock to 24 December at 12:00. How many hours until midnight?", "ans": 12, "hint": "24 - 12", "steps": ["from 12:00 to 24:00 is 12 hours"]}, {"lv": 3, "q": "20 pages are scanned with axe in CI, 2 seconds each, on 4 workers. About how many seconds does the scan take?", "ans": 10, "hint": "20 × 2 / 4", "steps": ["20 × 2 = 40 s of scanning", "40 / 4 workers = 10 s"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter checks what plain tests miss: how a page looks with screenshot comparisons, how it reads with aria snapshots, who can use it with an axe scan, and how it behaves on a date or after a delay with a fake clock.", "hi": "यह अध्याय वह जाँचता है जो साधारण tests छोड़ देते हैं: screenshot comparison से page कैसा दिखता है, aria snapshot से वह कैसा पढ़ा जाता है, axe scan से कौन उसे इस्तेमाल कर सकता है, और fake clock से किसी तारीख या देरी के बाद वह कैसा व्यवहार करता है।", "kn": "ಈ ಅಧ್ಯಾಯ ಸಾಮಾನ್ಯ tests ಬಿಟ್ಟುಬಿಡುವುದನ್ನು ಪರಿಶೀಲಿಸುತ್ತದೆ: screenshot comparison ನಿಂದ page ಹೇಗೆ ಕಾಣುತ್ತದೆ, aria snapshot ನಿಂದ ಹೇಗೆ ಓದಲ್ಪಡುತ್ತದೆ, axe scan ನಿಂದ ಯಾರು ಬಳಸಬಹುದು, fake clock ನಿಂದ ಒಂದು ದಿನಾಂಕ ಅಥವಾ ವಿಳಂಬದ ನಂತರ ಹೇಗೆ ವರ್ತಿಸುತ್ತದೆ.", "or": "ଏହି ଅଧ୍ୟାୟ ସାଧାରଣ tests ଛାଡିଦେଉଥିବା ଜିନିଷ ଯାଞ୍ଚ କରେ: screenshot comparison ରେ page କେମିତି ଦେଖାଯାଏ, aria snapshot ରେ କେମିତି ପଢାଯାଏ, axe scan ରେ କିଏ ବ୍ୟବହାର କରିପାରିବ, ଏବଂ fake clock ରେ ଏକ ତାରିଖ ବା ବିଳମ୍ବ ପରେ କେମିତି ବ୍ୟବହାର କରେ।", "ar": "يفحص هذا الفصل ما تفوته الاختبارات العادية: كيف تبدو الصفحة بمقارنة لقطات الشاشة، وكيف تُقرأ بلقطة aria، ومن يستطيع استخدامها بفحص axe، وكيف تتصرف في تاريخ معين أو بعد مهلة بساعة مزيفة.", "de": "Dieses Kapitel prüft, was normale Tests übersehen: wie eine Seite aussieht, mit Screenshot-Vergleichen, wie sie gelesen wird, mit Aria-Snapshots, wer sie benutzen kann, mit einem axe-Scan, und wie sie sich an einem Datum oder nach einer Wartezeit verhält, mit einer falschen Uhr."}, {"id": "visual", "h": "Visual comparisons", "en": "toHaveScreenshot compares a screenshot with a saved baseline and fails when too many pixels differ. Update the baseline with --update-snapshots after a change you meant to make. It is part of Playwright Test.", "hi": "toHaveScreenshot एक screenshot की तुलना saved baseline से करता है और बहुत ज़्यादा pixels अलग हों तो fail होता है। जानबूझकर किए बदलाव के बाद --update-snapshots से baseline बदलें। यह Playwright Test का हिस्सा है।", "kn": "toHaveScreenshot screenshot ಅನ್ನು saved baseline ಜೊತೆ ಹೋಲಿಸುತ್ತದೆ, ತುಂಬಾ pixels ಬೇರೆಯಾದರೆ fail ಆಗುತ್ತದೆ. ಉದ್ದೇಶಪೂರ್ವಕ ಬದಲಾವಣೆಯ ನಂತರ --update-snapshots ನಿಂದ baseline ಬದಲಿಸಿ. ಇದು Playwright Test ನ ಭಾಗ.", "or": "toHaveScreenshot ଏକ screenshot କୁ saved baseline ସହ ତୁଳନା କରେ ଏବଂ ଅଧିକ pixels ଭିନ୍ନ ହେଲେ fail ହୁଏ। ଜାଣିଶୁଣି କରିଥିବା ପରିବର୍ତ୍ତନ ପରେ --update-snapshots ରେ baseline ବଦଳାନ୍ତୁ। ଏହା Playwright Test ର ଅଂଶ।", "ar": "يقارن toHaveScreenshot لقطة الشاشة بصورة أساس محفوظة ويفشل إذا اختلف عدد كبير من البكسلات. حدّث الصورة الأساس بالخيار ‎--update-snapshots بعد تغيير مقصود. وهو جزء من Playwright Test.", "de": "toHaveScreenshot vergleicht einen Screenshot mit einer gespeicherten Basis und schlägt fehl, wenn zu viele Pixel abweichen. Nach einer gewollten Änderung aktualisierst du die Basis mit --update-snapshots. Es gehört zu Playwright Test."}, {"id": "aria", "h": "Aria snapshots", "en": "An aria snapshot is the page as a screen reader sees it: roles, names and states in YAML. toMatchAriaSnapshot compares it with a saved version and works in every language.", "hi": "Aria snapshot page को वैसे दिखाता है जैसे screen reader देखता है: roles, names और states YAML में। toMatchAriaSnapshot इसे saved version से मिलाता है और हर भाषा में काम करता है।", "kn": "Aria snapshot ಎಂದರೆ screen reader ನೋಡುವಂತೆ page: roles, names ಮತ್ತು states YAML ನಲ್ಲಿ. toMatchAriaSnapshot ಅದನ್ನು saved version ಜೊತೆ ಹೋಲಿಸುತ್ತದೆ ಮತ್ತು ಎಲ್ಲಾ ಭಾಷೆಗಳಲ್ಲಿ ಕೆಲಸ ಮಾಡುತ್ತದೆ.", "or": "Aria snapshot ହେଉଛି screen reader ଦେଖୁଥିବା ପରି page: roles, names ଓ states YAML ରେ। toMatchAriaSnapshot ଏହାକୁ saved version ସହ ତୁଳନା କରେ ଏବଂ ସବୁ ଭାଷାରେ କାମ କରେ।", "ar": "لقطة aria هي الصفحة كما يراها قارئ الشاشة: الأدوار والأسماء والحالات بصيغة YAML. يقارنها toMatchAriaSnapshot بنسخة محفوظة ويعمل في كل اللغات.", "de": "Ein Aria-Snapshot ist die Seite so, wie ein Screenreader sie sieht: Rollen, Namen und Zustände in YAML. toMatchAriaSnapshot vergleicht ihn mit einer gespeicherten Fassung und funktioniert in jeder Sprache."}, {"id": "a11y", "h": "Accessibility scans", "en": "axe checks a page against WCAG rules and lists each problem with its impact and the elements involved. Deque makes the JavaScript and Java packages, and a community package covers Python. A scan finds only part of the problems, so keep some manual checks.", "hi": "axe page को WCAG नियमों से जाँचता है और हर समस्या को उसके असर और elements के साथ बताता है। Deque JavaScript और Java packages बनाता है, और Python के लिए community package है। Scan केवल कुछ समस्याएँ ढूँढता है, इसलिए कुछ manual checks रखें।", "kn": "axe page ಅನ್ನು WCAG ನಿಯಮಗಳ ಜೊತೆ ಪರಿಶೀಲಿಸಿ ಪ್ರತಿ ಸಮಸ್ಯೆಯನ್ನು ಅದರ ಪರಿಣಾಮ ಮತ್ತು elements ಜೊತೆ ಪಟ್ಟಿ ಮಾಡುತ್ತದೆ. Deque JavaScript ಮತ್ತು Java packages ಮಾಡುತ್ತದೆ, Python ಗೆ community package ಇದೆ. Scan ಕೆಲವು ಸಮಸ್ಯೆಗಳನ್ನು ಮಾತ್ರ ಕಂಡುಹಿಡಿಯುತ್ತದೆ, ಆದ್ದರಿಂದ manual checks ಇಡಿ.", "or": "axe page କୁ WCAG ନିୟମ ସହ ଯାଞ୍ଚ କରେ ଏବଂ ପ୍ରତି ସମସ୍ୟାକୁ ତାର ପ୍ରଭାବ ଓ elements ସହ ତାଲିକା କରେ। Deque JavaScript ଓ Java packages ତିଆରି କରେ, ଏବଂ Python ପାଇଁ community package ଅଛି। Scan କେବଳ କିଛି ସମସ୍ୟା ଖୋଜେ, ତେଣୁ କିଛି manual checks ରଖନ୍ତୁ।", "ar": "يفحص axe الصفحة وفق قواعد WCAG ويعرض كل مشكلة مع أثرها والعناصر المعنية. تصنع Deque حزمتي JavaScript وJava، وتغطي حزمة مجتمعية لغة Python. ولا يجد الفحص إلا جزءًا من المشكلات، لذا أبقِ بعض الفحوص اليدوية.", "de": "axe prüft eine Seite nach den WCAG-Regeln und listet jedes Problem mit seiner Schwere und den betroffenen Elementen. Deque baut die Pakete für JavaScript und Java, für Python gibt es ein Community-Paket. Ein Scan findet nur einen Teil der Probleme, also behalte einige manuelle Prüfungen."}, {"id": "clock", "h": "Fake time", "en": "page.clock controls Date and timers in the page. setFixedTime sets the date, install with runFor runs timers forward, so a sale date or a 5 minute sign out is tested in milliseconds.", "hi": "page.clock page में Date और timers को नियंत्रित करता है। setFixedTime तारीख तय करता है, install और runFor timers को आगे चलाते हैं, इसलिए sale की तारीख या 5 minute का sign out milliseconds में test होता है।", "kn": "page.clock page ನಲ್ಲಿ Date ಮತ್ತು timers ನಿಯಂತ್ರಿಸುತ್ತದೆ. setFixedTime ದಿನಾಂಕ ಹೊಂದಿಸುತ್ತದೆ, install ಮತ್ತು runFor timers ಮುಂದೆ ಓಡಿಸುತ್ತವೆ, ಆದ್ದರಿಂದ sale ದಿನಾಂಕ ಅಥವಾ 5 minute sign out milliseconds ನಲ್ಲಿ test ಆಗುತ್ತದೆ.", "or": "page.clock page ରେ Date ଓ timers ନିୟନ୍ତ୍ରଣ କରେ। setFixedTime ତାରିଖ ସ୍ଥିର କରେ, install ଓ runFor timers ଆଗକୁ ଚଳାନ୍ତି, ତେଣୁ sale ତାରିଖ ବା 5 minute sign out milliseconds ରେ test ହୁଏ।", "ar": "يتحكم page.clock في Date والمؤقتات داخل الصفحة. يضبط setFixedTime التاريخ، ويدفع install مع runFor المؤقتات إلى الأمام، فيُختبر موعد التخفيضات أو تسجيل الخروج بعد 5 دقائق في أجزاء من الثانية.", "de": "page.clock steuert Date und Timer in der Seite. setFixedTime setzt das Datum, install mit runFor lässt Timer vorlaufen, sodass ein Verkaufsdatum oder eine Abmeldung nach 5 Minuten in Millisekunden getestet wird."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you check the shop the way a screen reader would: find the cart link by its accessible name, and check that the products list is named and holds five products.", "hi": "Labs में आप shop को वैसे जाँचते हैं जैसे screen reader करेगा: cart link को उसके accessible name से ढूँढते हैं, और जाँचते हैं कि products list का नाम है और उसमें पाँच products हैं।", "kn": "Labs ನಲ್ಲಿ screen reader ಮಾಡುವಂತೆ shop ಪರಿಶೀಲಿಸುತ್ತೀರಿ: cart link ಅನ್ನು ಅದರ accessible name ನಿಂದ ಹುಡುಕುತ್ತೀರಿ, products list ಗೆ ಹೆಸರಿದೆ ಮತ್ತು ಐದು products ಇವೆ ಎಂದು ಪರಿಶೀಲಿಸುತ್ತೀರಿ.", "or": "Labs ରେ screen reader କରିବା ପରି shop ଯାଞ୍ଚ କରନ୍ତି: cart link କୁ ତାର accessible name ରୁ ଖୋଜନ୍ତି, ଏବଂ products list ର ନାମ ଅଛି ଓ ସେଥିରେ ପାଞ୍ଚଟି products ଅଛି ବୋଲି ଯାଞ୍ଚ କରନ୍ତି।", "ar": "في المختبرات تفحص المتجر كما يفعل قارئ الشاشة: تجد رابط السلة باسمه المتاح، وتتحقق من أن قائمة المنتجات لها اسم وتحتوي على خمسة منتجات.", "de": "In den Labs prüfst du den Shop so, wie ein Screenreader es täte: Du findest den Warenkorb-Link über seinen zugänglichen Namen und prüfst, dass die Produktliste einen Namen hat und fünf Produkte enthält."}], "ex": [], "dg": {"layers": {"t": "Four checks, four kinds of mistake", "w": 900, "h": 230, "n": [["page", 20, 83, 140, 64, "one page", {"c": 5, "sub": "the shop", "i": "The same page can break in ways that functional checks do not notice."}], ["look", 250, 10, 170, 56, "screenshot", {"c": 1, "sub": "how it looks", "i": "toHaveScreenshot catches colours, layout and fonts that changed."}], ["tree", 250, 86, 170, 56, "aria snapshot", {"c": 2, "sub": "how it reads", "i": "toMatchAriaSnapshot catches a missing heading, a renamed button or a lost label."}], ["axe", 250, 162, 170, 56, "axe scan", {"c": 3, "sub": "who can use it", "i": "axe catches images without text, low contrast and fields without labels."}], ["time", 500, 83, 170, 64, "fake clock", {"c": 0, "sub": "when it changes", "i": "The clock tests what the page does on a given date or after a given time."}], ["ok", 750, 83, 130, 64, "release", {"c": 4, "sub": "with confidence", "i": "A page that passes all four looks right, reads right, works for everyone and on every date."}]], "e": [["page", "look"], ["page", "tree"], ["page", "axe"], ["look", "time"], ["tree", "time"], ["axe", "time"], ["time", "ok"]], "st": [[["page"], "A page can pass every click test and still be broken."], [["look", "page>look"], "A screenshot comparison sees how it looks."], [["tree", "page>tree"], "An aria snapshot sees how it reads to a screen reader."], [["axe", "page>axe"], "An axe scan finds barriers for disabled users."], [["time", "look>time", "tree>time", "axe>time"], "A fake clock tests dates and timers without waiting."], [["ok", "time>ok"], "Together they cover what plain checks miss."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "cartname", "title": "Find the cart link by its accessible name", "name": "the cart link has a name", "task": "The cart link in the header shows only an icon and a number, but it has the accessible name <b>Cart<\/b>. Find it with <code>getByRole<\/code> and check its accessible name is <b>Cart<\/b>.", "goal": "The cart link is found by its role and name.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the cart link has a name', async ({ page }) => {\n  await page.goto('/products');\n  // find the link named Cart and check its accessible name\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheCartLinkHasANameTest {\n  @Test\n  void theCartLinkHasAName(Page page) {\n    page.navigate(\"/products\");\n    Locator cart = page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(\"Cart\"));\n    assertThat(cart).isVisible();\n    assertThat(cart).hasAccessibleName(\"Cart\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_cart_link_has_a_name(page: Page):\n    page.goto(\"/products\")\n    cart = page.get_by_role(\"link\", name=\"Cart\")\n    expect(cart).to_be_visible()\n    expect(cart).to_have_accessible_name(\"Cart\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the cart link has a name', async ({ page }) => {\n  await page.goto('/products');\n  const cart = page.getByRole('link', { name: 'Cart' });\n  await expect(cart).toBeVisible();\n  await expect(cart).toHaveAccessibleName('Cart');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the cart link has a name', async ({ page }) => {\n  await page.goto('/products');\n  const cart = page.getByRole('link', { name: 'Cart' });\n  await expect(cart).toBeVisible();\n  await expect(cart).toHaveAccessibleName('Cart');\n});"}, "hint": "Use <code>page.getByRole('link', { name: 'Cart' })<\/code>, then <code>toHaveAccessibleName('Cart')<\/code>.", "why": "A link with only an icon is silent for a screen reader unless it has a name. Here aria-label gives it one, and the test makes sure it stays.", "check": [["/toHaveAccessibleName|to_have_accessible_name|hasAccessibleName/i.test(ctx.code)", "The test checks the accessible name"], ["/Cart/.test(ctx.code)", "It uses the name Cart"]]}, {"id": "namedlist", "title": "Check the named products list", "name": "the products list is named", "task": "On <code>/products<\/code> the list of products has the accessible name <b>Products<\/b>. Find the list by its role and name, and check that it holds <b>5<\/b> list items.", "goal": "The named list holds five products.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the products list is named', async ({ page }) => {\n  await page.goto('/products');\n  // find the list named Products and count its items\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheProductsListIsNamedTest {\n  @Test\n  void theProductsListIsNamed(Page page) {\n    page.navigate(\"/products\");\n    Locator list = page.getByRole(AriaRole.LIST, new Page.GetByRoleOptions().setName(\"Products\"));\n    assertThat(list.getByRole(AriaRole.LISTITEM)).hasCount(5);\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_products_list_is_named(page: Page):\n    page.goto(\"/products\")\n    list = page.get_by_role(\"list\", name=\"Products\")\n    expect(list.get_by_role(\"listitem\")).to_have_count(5)\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the products list is named', async ({ page }) => {\n  await page.goto('/products');\n  const list = page.getByRole('list', { name: 'Products' });\n  await expect(list.getByRole('listitem')).toHaveCount(5);\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the products list is named', async ({ page }) => {\n  await page.goto('/products');\n  const list = page.getByRole('list', { name: 'Products' });\n  await expect(list.getByRole('listitem')).toHaveCount(5);\n});"}, "hint": "Chain locators: <code>page.getByRole('list', { name: 'Products' }).getByRole('listitem')<\/code>.", "why": "A named list lets a screen reader user jump straight to it and hear how many items it has. The test checks both the name and the content.", "check": [["/list/i.test(ctx.code) && /Products/.test(ctx.code)", "The list is found by its name"], ["/5/.test(ctx.code)", "The test counts 5 items"]]}], "trees": {}};
+JSPLAY.page({ title: "Visual, accessibility and time checks", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

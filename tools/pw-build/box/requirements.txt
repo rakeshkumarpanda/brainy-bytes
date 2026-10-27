@@ -8,3 +8,5 @@ pytest-rerunfailures==16.7
 pytest-split==0.11.0
 allure-pytest==2.16.2
 python-dotenv==1.2.4
+axe-playwright-python==0.1.8
+python-xlib==0.33

@@ -3144,6 +3144,20 @@ function pwModules() {
         { id: "lab-soldout", title: "Test what the page really shows", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-visual", title: "Visual, accessibility and time checks", emoji: "🖼️", page: "content/playwright/pw-visual.html",
+        summary: "A screenshot comparison that catches a style bug with a real diff picture, aria snapshots of the menu and a product card, an axe scan that finds a missing alt text and low contrast, and a sale date and an idle sign out tested with a fake clock.",
+        keywords: ["visual testing", "toHaveScreenshot", "baseline", "update-snapshots", "aria snapshot", "toMatchAriaSnapshot", "accessibility", "axe", "WCAG", "clock", "setFixedTime", "runFor", "fake timers"],
+        added: "2026-10-24",
+        sections: [
+        { id: "visual", title: "Visual comparisons", emoji: "🖼️", group: "Lesson", keywords: ["visual comparison", "toHaveScreenshot", "baseline", "update-snapshots", "maxDiffPixels", "mask", "pixel diff"] },
+        { id: "aria", title: "Aria snapshots", emoji: "🌳", group: "Beginner path", keywords: ["aria snapshot", "toMatchAriaSnapshot", "ariaSnapshot", "accessibility tree", "YAML", "structure"] },
+        { id: "a11y", title: "Accessibility scans with axe", emoji: "♿", group: "Lesson", keywords: ["accessibility", "axe", "axe-core", "WCAG", "AxeBuilder", "violations", "a11y", "screen reader"] },
+        { id: "clock", title: "Fake time with page.clock", emoji: "⏰", group: "Lesson", keywords: ["clock", "page.clock", "setFixedTime", "install", "runFor", "fastForward", "fake timers", "date"] },
+        { id: "lab-cartname", title: "Find the cart link by its accessible name", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-namedlist", title: "Check the named products list", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];

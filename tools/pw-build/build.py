@@ -272,6 +272,8 @@ def lang_body(key, lg, spec, res):
             body += f'<div class="note-out"><span>What happens</span><p>{spec["result"]}</p></div>'
         return body
     ok = (res['code'] == 0) == (spec.get('expect', 'pass') == 'pass')
+    if lg == 'ts' and re.search(r'error TS\d+', res['out']) and not spec.get('type_error'):
+        raise SystemExit(f'{key} [ts]: tsc found a type error, so the test never ran\n{res["out"][-3000:]}')
     if not ok:
         raise SystemExit(f'{key} [{lg}]: the run ended with exit code {res["code"]}, expected {spec.get("expect", "pass")}\n{res["out"][-6000:]}')
     cls = 'out' if res['code'] == 0 else 'err'
