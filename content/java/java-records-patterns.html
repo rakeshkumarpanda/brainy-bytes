@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Records, sealed types and pattern matching · Java</title>
+<meta name="description" content="Modern Java syntax: var, text blocks, switch expressions, records, compact constructors, sealed classes and interfaces, pattern matching for instanceof and switch, guards, record patterns, unnamed variables and primitive patterns (Java 27 preview).">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/xv.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🚀 Modern Java</span><span>›</span><span>Chapter 22 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">📇</span><div><h1>Records, sealed types and pattern matching</h1><p class="lead">Modern Java writes far less code to say far more. This chapter covers var, text blocks for JSON and SQL, switch expressions, records, sealed classes, pattern matching for instanceof and switch, record patterns, the unnamed variable and the primitive patterns previewed in Java 27, ending with API results modelled as data.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 25 min read</span><span class="chip">📚 10 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 17 examples run on a real JDK</span><span class="chip">👣 14 line by line replays</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="jdk-note">Every example below was compiled and run on java version &quot;25.0.5.0.2&quot; 2026-10-21 LTS and java version &quot;27.0.1.0.2&quot; 2026-10-21 when this page was built, so each output is real. Press <b>👣 Run line by line</b> on an example to replay that run one line at a time.</div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#var"><span>🏷️</span>var: let the compiler write the type</a><a href="#text-blocks"><span>📜</span>Text blocks</a><a href="#switch"><span>🔀</span>Switch expressions</a><a href="#records"><span>📇</span>Records</a><a href="#sealed"><span>🔒</span>Sealed classes and interfaces</a><a href="#instanceof"><span>🔍</span>Pattern matching for instanceof</a><a href="#switch-patterns"><span>🎯</span>Pattern matching for switch</a><a href="#record-patterns"><span>🪆</span>Record patterns and unnamed variables</a><a href="#primitive-patterns"><span>🧪</span>Primitive patterns (preview in Java 27)</a><a href="#scenario"><span>🎬</span>Real world scenario: modelling API outcomes</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="var" data-say="var"><div class="sec-num">Part 1</div><h2><span class="sec-em">🏷️</span><span>var: let the compiler write the type</span></h2>
+<p><code>var</code> (Java 10) asks the compiler to work out the type of a <b>local variable</b> from the value on the right. The variable still has one fixed type. It is not like JavaScript, where a variable can hold anything.</p>
+<div class="codewrap" data-k="var" data-trace="var"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">var lets the compiler write the type for you · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">var</span> browser = <span class="s">"chromium"</span>;                               <span class="c">// String</span>
+        <span class="k">var</span> retries = <span class="n">3</span>;                                        <span class="c">// int</span>
+        <span class="k">var</span> results = <span class="k">new</span> <span class="t">HashMap</span>&lt;<span class="t">String</span>, <span class="t">List</span>&lt;<span class="t">Integer</span>&gt;&gt;();     <span class="c">// no need to repeat the long type</span>
+        results.computeIfAbsent(<span class="s">"login"</span>, k -&gt; <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;()).add(<span class="n">420</span>);
+
+        <span class="k">for</span> (<span class="k">var</span> entry : results.entrySet()) {
+            <span class="t">System</span>.out.println(entry.getKey() + <span class="s">" -&gt; "</span> + entry.getValue());
+        }
+        <span class="t">System</span>.out.println(browser + <span class="s">" x"</span> + retries);
+        <span class="t">System</span>.out.println(((<span class="t">Object</span>) retries).getClass().getSimpleName());   <span class="c">// still a real, fixed type</span>
+    }
+}</pre><div class="out"><span>Output</span><pre>login -&gt; [420]
+chromium x3
+Integer</pre></div></div>
+<div class="codewrap" data-k="var-bad"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Where var is not allowed · ❌ Does not compile · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">var</span> nothing;                     <span class="c">// needs an initial value</span>
+        <span class="k">var</span> empty = <span class="k">null</span>;                <span class="c">// null has no useful type</span>
+        <span class="k">var</span> x = <span class="n">10</span>;
+        x = <span class="s">"ten"</span>;                       <span class="c">// the type is fixed once chosen</span>
+    }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Line 3: cannot infer type for local variable nothing
+(cannot use &#x27;var&#x27; on variable without initializer)
+Line 4: cannot infer type for local variable empty
+(variable initializer is &#x27;null&#x27;)
+Line 6: incompatible types: String cannot be converted to int</pre></div><div class="note-out"><span>Why</span><p>Fields, method parameters and return types cannot use var either. It is only for local variables.</p></div></div>
+<div class="tip">Use <code>var</code> when the type is obvious from the right side, such as <code>var users = new ArrayList&lt;User&gt;()</code>. Keep the type when it helps the reader, such as <code>int timeoutMs = config.get("timeout")</code>.</div>
+</section>
+<section class="card reveal jsec" id="text-blocks" data-say="text-blocks"><div class="sec-num">Part 2</div><h2><span class="sec-em">📜</span><span>Text blocks</span></h2>
+<p>A <b>text block</b> (Java 15) is a string that spans several lines between triple quotes. Indentation shared by all lines is removed, line breaks are kept, and double quotes need no escaping. It is perfect for JSON request bodies, SQL and expected HTML in tests.</p>
+<div class="codewrap" data-k="textblock" data-trace="textblock"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Text blocks for JSON bodies and SQL · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">String</span> name = <span class="s">"Asha"</span>;
+        <span class="k">int</span> qty = <span class="n">2</span>;
+
+        <span class="c">// Java 15: a text block keeps the layout, and quotes need no escaping</span>
+        <span class="t">String</span> body = <span class="s">"""
+            {
+              "customer": "%s",
+              "items": [ { "sku": "TSHIRT-RED-M", "qty": %d } ],
+              "note": "Ring the bell"
+            }
+            """</span>.formatted(name, qty);
+        <span class="t">System</span>.out.print(body);
+
+        <span class="t">String</span> sql = <span class="s">"""
+            SELECT id, total
+            FROM orders
+            WHERE status = 'PAID' \
+            AND total &gt; 500
+            """</span>;                                  <span class="c">// a backslash at the end of a line joins it with the next</span>
+        <span class="t">System</span>.out.print(sql);
+        <span class="t">System</span>.out.println(<span class="s">"""
+            trailing space kept here:\s|"""</span>);   <span class="c">// \s keeps one space that would otherwise be trimmed</span>
+    }
+}</pre><div class="out"><span>Output</span><pre>{
+  &quot;customer&quot;: &quot;Asha&quot;,
+  &quot;items&quot;: [ { &quot;sku&quot;: &quot;TSHIRT-RED-M&quot;, &quot;qty&quot;: 2 } ],
+  &quot;note&quot;: &quot;Ring the bell&quot;
+}
+SELECT id, total
+FROM orders
+WHERE status = &#x27;PAID&#x27; AND total &gt; 500
+trailing space kept here: |</pre></div></div>
+<div class="note">Two escapes exist only for text blocks: a backslash at the end of a line joins it with the next line, and <code>\s</code> keeps a space that would otherwise be trimmed. <code>formatted(...)</code> fills in <code>%s</code> and <code>%d</code> placeholders.</div>
+</section>
+<section class="card reveal jsec" id="switch" data-say="switch"><div class="sec-num">Part 3</div><h2><span class="sec-em">🔀</span><span>Switch expressions</span></h2>
+<p>The old <code>switch</code> statement falls through to the next case unless you remember <code>break</code>. That single missing word has caused many real bugs.</p>
+<div class="codewrap" data-k="switch-old" data-trace="switch-old"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The old switch and its fall through bug · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">int</span> status = <span class="n">404</span>;
+        <span class="t">String</span> kind;
+        <span class="k">switch</span> (status) {                    <span class="c">// old statement switch: easy to forget a break</span>
+            <span class="k">case</span> <span class="n">200</span>:
+            <span class="k">case</span> <span class="n">201</span>:
+                kind = <span class="s">"success"</span>;
+            <span class="k">case</span> <span class="n">404</span>:
+                kind = <span class="s">"not found"</span>;
+                <span class="k">break</span>;
+            <span class="k">default</span>:
+                kind = <span class="s">"other"</span>;
+        }
+        <span class="t">System</span>.out.println(kind);
+        status = <span class="n">200</span>;
+        <span class="k">switch</span> (status) { <span class="k">case</span> <span class="n">200</span>: <span class="k">case</span> <span class="n">201</span>: kind = <span class="s">"success"</span>; <span class="k">case</span> <span class="n">404</span>: kind = <span class="s">"not found"</span>; <span class="k">break</span>; <span class="k">default</span>: kind = <span class="s">"other"</span>; }
+        <span class="t">System</span>.out.println(kind + <span class="s">"   &lt;- 200 fell through into the next case"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>not found
+not found   &lt;- 200 fell through into the next case</pre></div></div>
+<p>Java 14 made <code>switch</code> an <b>expression</b>: it produces a value, the arrow form never falls through, one case can list several labels, and <code>yield</code> returns a value from a block. Over an enum, covering every constant means no <code>default</code> is needed, and the compiler complains when a new constant is added.</p>
+<div class="codewrap" data-k="switch-new" data-trace="switch-new"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Switch expressions: arrows, many labels, yield and exhaustive enums · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">enum</span> <span class="t">Env</span> { <span class="t">DEV</span>, <span class="t">QA</span>, <span class="t">STAGING</span>, <span class="t">PROD</span> }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="k">for</span> (<span class="k">int</span> status : <span class="k">new</span> <span class="k">int</span>[]{<span class="n">200</span>, <span class="n">201</span>, <span class="n">404</span>, <span class="n">503</span>}) {
+            <span class="t">String</span> kind = <span class="k">switch</span> (status) {          <span class="c">// Java 14: switch is an expression with a value</span>
+                <span class="k">case</span> <span class="n">200</span>, <span class="n">201</span>, <span class="n">204</span> -&gt; <span class="s">"success"</span>;     <span class="c">// several labels, no fall through</span>
+                <span class="k">case</span> <span class="n">404</span> -&gt; <span class="s">"not found"</span>;
+                <span class="k">default</span> -&gt; {
+                    <span class="t">String</span> range = status &gt;= <span class="n">500</span> ? <span class="s">"server error"</span> : <span class="s">"other"</span>;
+                    <span class="k">yield</span> range;                     <span class="c">// yield gives the value of a block</span>
+                }
+            };
+            <span class="t">System</span>.out.println(status + <span class="s">" "</span> + kind);
+        }
+
+        <span class="t">Env</span> env = <span class="t">Env</span>.<span class="t">QA</span>;
+        <span class="k">int</span> workers = <span class="k">switch</span> (env) {                 <span class="c">// no default needed: every enum constant is covered</span>
+            <span class="k">case</span> <span class="t">DEV</span> -&gt; <span class="n">1</span>;
+            <span class="k">case</span> <span class="t">QA</span>, <span class="t">STAGING</span> -&gt; <span class="n">4</span>;
+            <span class="k">case</span> <span class="t">PROD</span> -&gt; <span class="n">16</span>;
+        };
+        <span class="t">System</span>.out.println(env + <span class="s">" workers="</span> + workers);
+    }
+}</pre><div class="out"><span>Output</span><pre>200 success
+201 success
+404 not found
+503 server error
+QA workers=4</pre></div></div>
+</section>
+<section class="card reveal jsec" id="records" data-say="records"><div class="sec-num">Part 4</div><h2><span class="sec-em">📇</span><span>Records</span></h2>
+<p>A <b>record</b> (Java 16) is a class whose job is to carry data. From one line, Java writes the private final fields, the constructor, an accessor per field (named <code>name()</code>, not <code>getName()</code>), and <code>equals</code>, <code>hashCode</code> and <code>toString</code> based on all fields.</p>
+<div class="codewrap" data-k="record" data-trace="record"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Records: data carriers with validation · 💥 Crashes at run time · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="c">// One line gives: private final fields, a constructor, accessors, equals, hashCode and toString</span>
+    <span class="k">record</span> <span class="t">Product</span>(<span class="t">String</span> sku, <span class="t">String</span> name, <span class="k">double</span> price) {
+        <span class="t">Product</span> {                                         <span class="c">// compact constructor: validate the input</span>
+            <span class="k">if</span> (price &lt; <span class="n">0</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalArgumentException</span>(<span class="s">"price must not be negative: "</span> + price);
+            name = name.strip();                          <span class="c">// you may normalise parameters before they are stored</span>
+        }
+        <span class="t">Product</span> withPrice(<span class="k">double</span> p) { <span class="k">return</span> <span class="k">new</span> <span class="t">Product</span>(sku, name, p); }   <span class="c">// "withers" return a changed copy</span>
+        <span class="k">static</span> <span class="t">Product</span> free(<span class="t">String</span> sku) { <span class="k">return</span> <span class="k">new</span> <span class="t">Product</span>(sku, <span class="s">"Gift"</span>, <span class="n">0</span>); }
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Product</span> a = <span class="k">new</span> <span class="t">Product</span>(<span class="s">"TSHIRT-RED-M"</span>, <span class="s">"  Red T-shirt "</span>, <span class="n">499.0</span>);
+        <span class="t">Product</span> b = <span class="k">new</span> <span class="t">Product</span>(<span class="s">"TSHIRT-RED-M"</span>, <span class="s">"Red T-shirt"</span>, <span class="n">499.0</span>);
+        <span class="t">System</span>.out.println(a);
+        <span class="t">System</span>.out.println(a.name() + <span class="s">" costs "</span> + a.price());
+        <span class="t">System</span>.out.println(<span class="s">"equal by value: "</span> + a.equals(b) + <span class="s">", same object: "</span> + (a == b));
+        <span class="t">System</span>.out.println(<span class="k">new</span> <span class="t">HashSet</span>&lt;&gt;(<span class="t">List</span>.of(a, b)).size() + <span class="s">" product in the set"</span>);
+        <span class="t">System</span>.out.println(a.withPrice(<span class="n">399.0</span>));
+        <span class="t">System</span>.out.println(<span class="t">Product</span>.free(<span class="s">"GIFT-01"</span>));
+        <span class="k">new</span> <span class="t">Product</span>(<span class="s">"MUG"</span>, <span class="s">"Mug"</span>, -<span class="n">5</span>);
+    }
+}</pre><div class="out"><span>Output before the crash</span><pre>Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=499.0]
+Red T-shirt costs 499.0
+equal by value: true, same object: false
+1 product in the set
+Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=399.0]
+Product[sku=GIFT-01, name=Gift, price=0.0]</pre></div><div class="err"><span>💥 Runtime error</span><pre>Exception in thread &quot;main&quot; java.lang.IllegalArgumentException: price must not be negative: -5.0</pre></div></div>
+<p>The <b>compact constructor</b> (no parameter list) is where you validate and normalise. Records are final, cannot extend another class, and cannot add instance fields, but they can implement interfaces and have methods.</p>
+<div class="codewrap" data-k="record-shallow" data-trace="record-shallow"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Records are only shallowly immutable · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">record</span> <span class="t">Order</span>(<span class="t">String</span> id, <span class="t">List</span>&lt;<span class="t">String</span>&gt; items) {
+        <span class="t">Order</span> {
+            items = <span class="t">List</span>.copyOf(items);       <span class="c">// defensive copy: callers cannot change the order later</span>
+        }
+    }
+    <span class="k">record</span> <span class="t">Leaky</span>(<span class="t">String</span> id, <span class="t">List</span>&lt;<span class="t">String</span>&gt; items) {}
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">List</span>&lt;<span class="t">String</span>&gt; cart = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;(<span class="t">List</span>.of(<span class="s">"mug"</span>));
+        <span class="t">Order</span> safe = <span class="k">new</span> <span class="t">Order</span>(<span class="s">"ORD-1"</span>, cart);
+        <span class="t">Leaky</span> leaky = <span class="k">new</span> <span class="t">Leaky</span>(<span class="s">"ORD-2"</span>, cart);
+        cart.add(<span class="s">"laptop"</span>);                    <span class="c">// the caller changes its own list afterwards</span>
+        <span class="t">System</span>.out.println(safe);
+        <span class="t">System</span>.out.println(leaky + <span class="s">"   &lt;- changed from outside"</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>Order[id=ORD-1, items=[mug]]
+Leaky[id=ORD-2, items=[mug, laptop]]   &lt;- changed from outside</pre></div></div>
+<div class="tip">Records are ideal for API test models: request bodies, expected responses, test data rows. Jackson 2.12 and later can read JSON straight into records, and two records with the same values are equal, which makes assertions simple.</div>
+</section>
+<section class="card reveal jsec" id="sealed" data-say="sealed"><div class="sec-num">Part 5</div><h2><span class="sec-em">🔒</span><span>Sealed classes and interfaces</span></h2>
+<p>A <b>sealed</b> type (Java 17) lists exactly which classes may extend or implement it, using <code>permits</code>. It is the middle ground between <code>final</code> (nobody) and a normal class (anybody). Because the compiler knows the full list, a switch over a sealed type can be checked for completeness.</p>
+<div class="codewrap" data-k="sealed" data-trace="sealed"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Sealed interfaces list every allowed subtype · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="c">// Only these three may implement Payment. The compiler knows the full list.</span>
+    <span class="k">sealed</span> <span class="k">interface</span> <span class="t">Payment</span> <span class="k">permits</span> <span class="t">Card</span>, <span class="t">Upi</span>, <span class="t">Wallet</span> {}
+    <span class="k">record</span> <span class="t">Card</span>(<span class="t">String</span> last4, <span class="k">double</span> amount) <span class="k">implements</span> <span class="t">Payment</span> {}
+    <span class="k">record</span> <span class="t">Upi</span>(<span class="t">String</span> vpa, <span class="k">double</span> amount) <span class="k">implements</span> <span class="t">Payment</span> {}
+    <span class="k">record</span> <span class="t">Wallet</span>(<span class="t">String</span> provider, <span class="k">double</span> amount) <span class="k">implements</span> <span class="t">Payment</span> {}
+
+    <span class="k">static</span> <span class="k">double</span> fee(<span class="t">Payment</span> p) {
+        <span class="k">return</span> <span class="k">switch</span> (p) {                     <span class="c">// no default: the switch is checked for completeness</span>
+            <span class="k">case</span> <span class="t">Card</span> c -&gt; c.amount() * <span class="n">0.02</span>;
+            <span class="k">case</span> <span class="t">Upi</span> u -&gt; <span class="n">0</span>;
+            <span class="k">case</span> <span class="t">Wallet</span> w -&gt; w.amount() * <span class="n">0.01</span>;
+        };
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(fee(<span class="k">new</span> <span class="t">Card</span>(<span class="s">"4242"</span>, <span class="n">1000</span>)));
+        <span class="t">System</span>.out.println(fee(<span class="k">new</span> <span class="t">Upi</span>(<span class="s">"asha@okbank"</span>, <span class="n">1000</span>)));
+        <span class="t">System</span>.out.println(fee(<span class="k">new</span> <span class="t">Wallet</span>(<span class="s">"PayFast"</span>, <span class="n">1000</span>)));
+    }
+}</pre><div class="out"><span>Output</span><pre>20.0
+0.0
+10.0</pre></div></div>
+<div class="codewrap" data-k="sealed-missing"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Forget a case and the compiler tells you · ❌ Does not compile · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">sealed</span> <span class="k">interface</span> <span class="t">Payment</span> <span class="k">permits</span> <span class="t">Card</span>, <span class="t">Upi</span>, <span class="t">Wallet</span> {}
+    <span class="k">record</span> <span class="t">Card</span>(<span class="k">double</span> amount) <span class="k">implements</span> <span class="t">Payment</span> {}
+    <span class="k">record</span> <span class="t">Upi</span>(<span class="k">double</span> amount) <span class="k">implements</span> <span class="t">Payment</span> {}
+    <span class="k">record</span> <span class="t">Wallet</span>(<span class="k">double</span> amount) <span class="k">implements</span> <span class="t">Payment</span> {}
+
+    <span class="k">static</span> <span class="k">double</span> fee(<span class="t">Payment</span> p) {
+        <span class="k">return</span> <span class="k">switch</span> (p) {                     <span class="c">// Wallet was forgotten</span>
+            <span class="k">case</span> <span class="t">Card</span> c -&gt; c.amount() * <span class="n">0.02</span>;
+            <span class="k">case</span> <span class="t">Upi</span> u -&gt; <span class="n">0</span>;
+        };
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Line 8: the switch expression does not cover all possible input values</pre></div></div>
+<p>Every permitted subclass must say what happens next: <code>final</code> stops there, <code>sealed</code> gives its own list, and <code>non-sealed</code> opens the hierarchy again.</p>
+<div class="codewrap" data-k="sealed-kinds" data-trace="sealed-kinds"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">final, sealed and non-sealed subclasses · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">sealed</span> <span class="k">abstract</span> <span class="k">static</span> <span class="k">class</span> <span class="t">Account</span> <span class="k">permits</span> <span class="t">Savings</span>, <span class="t">Current</span>, <span class="t">Business</span> {}
+    <span class="k">static</span> <span class="k">final</span> <span class="k">class</span> <span class="t">Savings</span> <span class="k">extends</span> <span class="t">Account</span> {}          <span class="c">// final: no more subclasses</span>
+    <span class="k">static</span> <span class="k">sealed</span> <span class="k">class</span> <span class="t">Current</span> <span class="k">extends</span> <span class="t">Account</span> <span class="k">permits</span> <span class="t">StudentCurrent</span> {}   <span class="c">// sealed again, with its own list</span>
+    <span class="k">static</span> <span class="k">final</span> <span class="k">class</span> <span class="t">StudentCurrent</span> <span class="k">extends</span> <span class="t">Current</span> {}
+    <span class="k">static</span> <span class="k">non-sealed</span> <span class="k">class</span> <span class="t">Business</span> <span class="k">extends</span> <span class="t">Account</span> {}    <span class="c">// open again: anyone may extend it</span>
+    <span class="k">static</span> <span class="k">class</span> <span class="t">StartupBusiness</span> <span class="k">extends</span> <span class="t">Business</span> {}
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Account</span>[] all = { <span class="k">new</span> <span class="t">Savings</span>(), <span class="k">new</span> <span class="t">StudentCurrent</span>(), <span class="k">new</span> <span class="t">StartupBusiness</span>() };
+        <span class="k">for</span> (<span class="t">Account</span> a : all) <span class="t">System</span>.out.println(a.getClass().getSimpleName() + <span class="s">" is an Account"</span>);
+        <span class="t">System</span>.out.println(<span class="t">Account</span>.<span class="k">class</span>.isSealed() + <span class="s">" "</span> + java.util.<span class="t">Arrays</span>.toString(
+            java.util.<span class="t">Arrays</span>.stream(<span class="t">Account</span>.<span class="k">class</span>.getPermittedSubclasses()).map(<span class="t">Class</span>::getSimpleName).toArray()));
+    }
+}</pre><div class="out"><span>Output</span><pre>Savings is an Account
+StudentCurrent is an Account
+StartupBusiness is an Account
+true [Savings, Current, Business]</pre></div></div>
+</section>
+<section class="card reveal jsec" id="instanceof" data-say="instanceof"><div class="sec-num">Part 6</div><h2><span class="sec-em">🔍</span><span>Pattern matching for instanceof</span></h2>
+<p>The old pattern was test, then cast, then use. Since Java 16, <code>o instanceof String s</code> does all three: if the test passes, <code>s</code> is a String variable ready to use. The variable is only in scope where the test is known to be true, a rule called <b>flow scoping</b>.</p>
+<div class="codewrap" data-k="instanceof" data-trace="instanceof"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Pattern matching for instanceof · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="t">String</span> describe(<span class="t">Object</span> o) {
+        <span class="c">// Old style: test, then cast</span>
+        <span class="k">if</span> (o <span class="k">instanceof</span> <span class="t">String</span>) {
+            <span class="t">String</span> s = (<span class="t">String</span>) o;
+            <span class="k">return</span> <span class="s">"old: text of length "</span> + s.length();
+        }
+        <span class="c">// Java 16: test and bind a variable in one step</span>
+        <span class="k">if</span> (o <span class="k">instanceof</span> <span class="t">Integer</span> n &amp;&amp; n &gt; <span class="n">100</span>) {           <span class="c">// n can be used right away in the same condition</span>
+            <span class="k">return</span> <span class="s">"big number "</span> + n;
+        }
+        <span class="k">if</span> (!(o <span class="k">instanceof</span> java.util.<span class="t">List</span>&lt;?&gt; list)) {
+            <span class="k">return</span> <span class="s">"something else: "</span> + o;
+        }
+        <span class="k">return</span> <span class="s">"a list with "</span> + list.size() + <span class="s">" items"</span>;    <span class="c">// list is in scope here because of the negation above</span>
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(describe(<span class="s">"hello"</span>));
+        <span class="t">System</span>.out.println(describe(<span class="n">500</span>));
+        <span class="t">System</span>.out.println(describe(java.util.<span class="t">List</span>.of(<span class="n">1</span>, <span class="n">2</span>)));
+        <span class="t">System</span>.out.println(describe(<span class="n">7</span>));
+    }
+}</pre><div class="out"><span>Output</span><pre>old: text of length 5
+big number 500
+a list with 2 items
+something else: 7</pre></div></div>
+</section>
+<section class="card reveal jsec" id="switch-patterns" data-say="switch-patterns"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎯</span><span>Pattern matching for switch</span></h2>
+<p>Since Java 21, a switch can test the <b>type</b> of a value, add a condition with <code>when</code> (a <b>guard</b>), and even handle <code>null</code> as a case. Cases are checked from top to bottom and the first match wins.</p>
+<div class="codewrap" data-k="switch-patterns" data-trace="switch-patterns"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Pattern matching for switch with guards and null · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="t">String</span> classify(<span class="t">Object</span> o) {
+        <span class="k">return</span> <span class="k">switch</span> (o) {
+            <span class="k">case</span> <span class="k">null</span> -&gt; <span class="s">"null, handled without a NullPointerException"</span>;
+            <span class="k">case</span> <span class="t">Integer</span> i <span class="k">when</span> i &lt; <span class="n">0</span> -&gt; <span class="s">"negative int "</span> + i;
+            <span class="k">case</span> <span class="t">Integer</span> i -&gt; <span class="s">"int "</span> + i;
+            <span class="k">case</span> <span class="t">String</span> s <span class="k">when</span> s.isBlank() -&gt; <span class="s">"blank text"</span>;
+            <span class="k">case</span> <span class="t">String</span> s -&gt; <span class="s">"text \""</span> + s + <span class="s">"\""</span>;
+            <span class="k">case</span> <span class="k">int</span>[] arr -&gt; <span class="s">"int array of "</span> + arr.length;
+            <span class="k">default</span> -&gt; <span class="s">"other: "</span> + o.getClass().getSimpleName();
+        };
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">Object</span>[] inputs = { -<span class="n">4</span>, <span class="n">42</span>, <span class="s">"   "</span>, <span class="s">"PASS"</span>, <span class="k">new</span> <span class="k">int</span>[]{<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>}, <span class="n">3.14</span>, <span class="k">null</span> };
+        <span class="k">for</span> (<span class="t">Object</span> o : inputs) <span class="t">System</span>.out.println(classify(o));
+    }
+}</pre><div class="out"><span>Output</span><pre>negative int -4
+int 42
+blank text
+text &quot;PASS&quot;
+int array of 3
+other: Double
+null, handled without a NullPointerException</pre></div></div>
+<div class="viz" data-viz="jswitch"></div>
+<div class="codewrap" data-k="dominance"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Order matters: a case that can never match is an error · ❌ Does not compile · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="t">String</span> f(<span class="t">Object</span> o) {
+        <span class="k">return</span> <span class="k">switch</span> (o) {
+            <span class="k">case</span> <span class="t">CharSequence</span> cs -&gt; <span class="s">"chars"</span>;
+            <span class="k">case</span> <span class="t">String</span> s -&gt; <span class="s">"string"</span>;          <span class="c">// can never match: String is a CharSequence, and that case came first</span>
+            <span class="k">default</span> -&gt; <span class="s">"other"</span>;
+        };
+    }
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) { }
+}</pre><div class="err"><span>❌ Compile error</span><pre>Line 5: this case label is dominated by a preceding case label</pre></div></div>
+</section>
+<section class="card reveal jsec" id="record-patterns" data-say="record-patterns"><div class="sec-num">Part 8</div><h2><span class="sec-em">🪆</span><span>Record patterns and unnamed variables</span></h2>
+<p>A <b>record pattern</b> (Java 21) matches a record and pulls its fields out into variables in the same step, and patterns can be nested. Combined with sealed types and switch, this style is called <b>data oriented programming</b>.</p>
+<div class="codewrap" data-k="record-patterns" data-trace="record-patterns"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Record patterns take a record apart · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">record</span> <span class="t">Point</span>(<span class="k">int</span> x, <span class="k">int</span> y) {}
+    <span class="k">sealed</span> <span class="k">interface</span> <span class="t">Shape</span> <span class="k">permits</span> <span class="t">Circle</span>, <span class="t">Rect</span> {}
+    <span class="k">record</span> <span class="t">Circle</span>(<span class="t">Point</span> centre, <span class="k">int</span> r) <span class="k">implements</span> <span class="t">Shape</span> {}
+    <span class="k">record</span> <span class="t">Rect</span>(<span class="t">Point</span> topLeft, <span class="t">Point</span> bottomRight) <span class="k">implements</span> <span class="t">Shape</span> {}
+
+    <span class="k">static</span> <span class="k">int</span> area(<span class="t">Shape</span> s) {
+        <span class="k">return</span> <span class="k">switch</span> (s) {
+            <span class="k">case</span> <span class="t">Circle</span>(<span class="t">Point</span> c, <span class="k">int</span> r) -&gt; (<span class="k">int</span>) <span class="t">Math</span>.round(<span class="t">Math</span>.<span class="t">PI</span> * r * r);
+            <span class="c">// nested record pattern: pull the numbers straight out of both points</span>
+            <span class="k">case</span> <span class="t">Rect</span>(<span class="t">Point</span>(<span class="k">var</span> x1, <span class="k">var</span> y1), <span class="t">Point</span>(<span class="k">var</span> x2, <span class="k">var</span> y2)) -&gt; <span class="t">Math</span>.abs(x2 - x1) * <span class="t">Math</span>.abs(y2 - y1);
+        };
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">System</span>.out.println(area(<span class="k">new</span> <span class="t">Circle</span>(<span class="k">new</span> <span class="t">Point</span>(<span class="n">0</span>, <span class="n">0</span>), <span class="n">10</span>)));
+        <span class="t">System</span>.out.println(area(<span class="k">new</span> <span class="t">Rect</span>(<span class="k">new</span> <span class="t">Point</span>(<span class="n">1</span>, <span class="n">1</span>), <span class="k">new</span> <span class="t">Point</span>(<span class="n">4</span>, <span class="n">5</span>))));
+
+        <span class="t">Object</span> o = <span class="k">new</span> <span class="t">Point</span>(<span class="n">3</span>, <span class="n">4</span>);
+        <span class="k">if</span> (o <span class="k">instanceof</span> <span class="t">Point</span>(<span class="k">int</span> x, <span class="k">int</span> y) &amp;&amp; x &lt; y) {      <span class="c">// record patterns work with instanceof too</span>
+            <span class="t">System</span>.out.println(<span class="s">"point below the diagonal: "</span> + x + <span class="s">","</span> + y);
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>314
+12
+point below the diagonal: 3,4</pre></div></div>
+<div class="viz" data-viz="flow" data-k="dop"></div>
+<p>Java 22 added the <b>unnamed variable</b> <code>_</code> for things you must declare but never use: a loop variable, a caught exception, a lambda parameter or a record field you do not care about.</p>
+<div class="codewrap" data-k="unnamed" data-trace="unnamed"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Unnamed variables and patterns with _ (Java 22) · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">record</span> <span class="t">Order</span>(<span class="t">String</span> id, <span class="t">String</span> customer, <span class="k">double</span> total) {}
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">List</span>&lt;<span class="t">Order</span>&gt; orders = <span class="t">List</span>.of(<span class="k">new</span> <span class="t">Order</span>(<span class="s">"A1"</span>, <span class="s">"asha"</span>, <span class="n">900</span>), <span class="k">new</span> <span class="t">Order</span>(<span class="s">"A2"</span>, <span class="s">"ravi"</span>, <span class="n">120</span>));
+
+        <span class="k">int</span> count = <span class="n">0</span>;
+        <span class="k">for</span> (<span class="t">Order</span> _ : orders) count++;                          <span class="c">// Java 22: the variable is not needed</span>
+        <span class="t">System</span>.out.println(count + <span class="s">" orders"</span>);
+
+        <span class="k">for</span> (<span class="t">Order</span> o : orders) {
+            <span class="k">if</span> (o <span class="k">instanceof</span> <span class="t">Order</span>(_, <span class="k">var</span> who, <span class="k">var</span> total) &amp;&amp; total &gt; <span class="n">500</span>) {   <span class="c">// ignore the id</span>
+                <span class="t">System</span>.out.println(<span class="s">"big order from "</span> + who);
+            }
+        }
+        <span class="k">try</span> {
+            <span class="t">Integer</span>.parseInt(<span class="s">"12a"</span>);
+        } <span class="k">catch</span> (<span class="t">NumberFormatException</span> _) {                      <span class="c">// the exception itself is not used</span>
+            <span class="t">System</span>.out.println(<span class="s">"not a number"</span>);
+        }
+        <span class="t">Map</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; hits = <span class="k">new</span> <span class="t">TreeMap</span>&lt;&gt;();
+        <span class="t">List</span>.of(<span class="s">"x"</span>, <span class="s">"y"</span>, <span class="s">"x"</span>).forEach(k -&gt; hits.merge(k, <span class="n">1</span>, (a, _) -&gt; a + <span class="n">1</span>));
+        <span class="t">System</span>.out.println(hits);
+    }
+}</pre><div class="out"><span>Output</span><pre>2 orders
+big order from asha
+not a number
+{x=2, y=1}</pre></div></div>
+</section>
+<section class="card reveal jsec" id="primitive-patterns" data-say="primitive-patterns"><div class="sec-num">Part 9</div><h2><span class="sec-em">🧪</span><span>Primitive patterns (preview in Java 27)</span></h2>
+<p>Patterns so far only worked with objects. <b>Primitive types in patterns, instanceof and switch</b> (JEP 532, fifth preview in Java 27) lets you write <code>case int c when c &gt;= 500</code> and ask <code>big instanceof int</code>, which is true only when the value fits into an int without losing anything.</p>
+<div class="codewrap" data-k="primitive-patterns" data-trace="primitive-patterns"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Primitive types in patterns (preview in Java 27) · ▶ Runs · ☕ JDK 27 preview</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">void</span> main() {
+    <span class="c">// Java 27 preview (JEP 532): patterns over primitive types</span>
+    <span class="k">int</span>[] codes = {<span class="n">200</span>, <span class="n">302</span>, <span class="n">404</span>, <span class="n">503</span>, <span class="n">1000</span>};
+    <span class="k">for</span> (<span class="k">int</span> code : codes) {
+        <span class="t">String</span> text = <span class="k">switch</span> (code) {
+            <span class="k">case</span> <span class="k">int</span> c <span class="k">when</span> c &gt;= <span class="n">200</span> &amp;&amp; c &lt; <span class="n">300</span> -&gt; <span class="s">"success"</span>;
+            <span class="k">case</span> <span class="k">int</span> c <span class="k">when</span> c &gt;= <span class="n">300</span> &amp;&amp; c &lt; <span class="n">400</span> -&gt; <span class="s">"redirect"</span>;
+            <span class="k">case</span> <span class="k">int</span> c <span class="k">when</span> c &gt;= <span class="n">400</span> &amp;&amp; c &lt; <span class="n">500</span> -&gt; <span class="s">"client error"</span>;
+            <span class="k">case</span> <span class="k">int</span> c <span class="k">when</span> c &gt;= <span class="n">500</span> &amp;&amp; c &lt; <span class="n">600</span> -&gt; <span class="s">"server error"</span>;
+            <span class="k">case</span> <span class="k">int</span> c -&gt; <span class="s">"not an HTTP status: "</span> + c;
+        };
+        <span class="t">IO</span>.println(code + <span class="s">" "</span> + text);
+    }
+
+    <span class="c">// instanceof with a primitive type checks that the value fits without losing information</span>
+    <span class="k">long</span> big = <span class="n">3_000_000_000L</span>, small = <span class="n">42</span>;
+    <span class="t">IO</span>.println((big <span class="k">instanceof</span> <span class="k">int</span>) + <span class="s">" "</span> + (small <span class="k">instanceof</span> <span class="k">int</span>));
+    <span class="k">double</span> d = <span class="n">2.5</span>;
+    <span class="t">IO</span>.println(d <span class="k">instanceof</span> <span class="k">int</span> i ? <span class="s">"whole number "</span> + i : <span class="s">"has a fraction: "</span> + d);
+}</pre><div class="cmd"><span>Terminal</span><pre>$ java --enable-preview Main.java</pre></div><div class="out"><span>Output</span><pre>200 success
+302 redirect
+404 client error
+503 server error
+1000 not an HTTP status: 1000
+false true
+has a fraction: 2.5</pre></div></div>
+<div class="warn">Preview features can still change. They need <code>--enable-preview</code> to compile and run, so keep them out of production code and use them to try ideas early.</div>
+</section>
+<section class="card reveal jsec" id="scenario" data-say="scenario"><div class="sec-num">Part 10</div><h2><span class="sec-em">🎬</span><span>Real world scenario: modelling API outcomes</span></h2>
+<div class="scenario"><b>The situation</b>An API test client returned either a body or null, and errors were thrown as exceptions. Tests forgot to handle 503s and network resets, so failures in the nightly run were hard to read.</div>
+<div class="codewrap" data-k="scenario" data-trace="scenario"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Real world: every API outcome as a sealed type · ▶ Runs · ☕ JDK 25</span><button type="button" class="try xv-try" aria-pressed="false">👣 Run line by line</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.util.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="c">// How a test framework can model every possible API outcome</span>
+    <span class="k">sealed</span> <span class="k">interface</span> <span class="t">ApiResult</span>&lt;<span class="t">T</span>&gt; <span class="k">permits</span> <span class="t">Ok</span>, <span class="t">ClientError</span>, <span class="t">ServerError</span>, <span class="t">NetworkError</span> {}
+    <span class="k">record</span> <span class="t">Ok</span>&lt;<span class="t">T</span>&gt;(<span class="k">int</span> status, <span class="t">T</span> body) <span class="k">implements</span> <span class="t">ApiResult</span>&lt;<span class="t">T</span>&gt; {}
+    <span class="k">record</span> <span class="t">ClientError</span>&lt;<span class="t">T</span>&gt;(<span class="k">int</span> status, <span class="t">String</span> message) <span class="k">implements</span> <span class="t">ApiResult</span>&lt;<span class="t">T</span>&gt; {}
+    <span class="k">record</span> <span class="t">ServerError</span>&lt;<span class="t">T</span>&gt;(<span class="k">int</span> status) <span class="k">implements</span> <span class="t">ApiResult</span>&lt;<span class="t">T</span>&gt; {}
+    <span class="k">record</span> <span class="t">NetworkError</span>&lt;<span class="t">T</span>&gt;(<span class="t">String</span> reason) <span class="k">implements</span> <span class="t">ApiResult</span>&lt;<span class="t">T</span>&gt; {}
+
+    <span class="k">record</span> <span class="t">Order</span>(<span class="t">String</span> id, <span class="k">double</span> total) {}
+
+    <span class="k">static</span> <span class="t">String</span> report(<span class="t">ApiResult</span>&lt;<span class="t">Order</span>&gt; r) {
+        <span class="k">return</span> <span class="k">switch</span> (r) {
+            <span class="k">case</span> <span class="t">Ok</span>(<span class="k">int</span> s, <span class="t">Order</span>(<span class="k">var</span> id, <span class="k">var</span> total)) <span class="k">when</span> total == <span class="n">0</span> -&gt; <span class="s">"WARN "</span> + s + <span class="s">" order "</span> + id + <span class="s">" has a zero total"</span>;
+            <span class="k">case</span> <span class="t">Ok</span>(<span class="k">var</span> s, <span class="t">Order</span>(<span class="k">var</span> id, <span class="k">var</span> total)) -&gt; <span class="s">"PASS "</span> + s + <span class="s">" order "</span> + id + <span class="s">" total "</span> + total;
+            <span class="k">case</span> <span class="t">ClientError</span>(<span class="k">var</span> s, <span class="k">var</span> msg) -&gt; <span class="s">"FAIL "</span> + s + <span class="s">" client error: "</span> + msg;
+            <span class="k">case</span> <span class="t">ServerError</span>(<span class="k">var</span> s) <span class="k">when</span> s == <span class="n">503</span> -&gt; <span class="s">"RETRY service unavailable"</span>;
+            <span class="k">case</span> <span class="t">ServerError</span>(<span class="k">var</span> s) -&gt; <span class="s">"FAIL "</span> + s + <span class="s">" server error"</span>;
+            <span class="k">case</span> <span class="t">NetworkError</span>(<span class="k">var</span> why) -&gt; <span class="s">"RETRY network: "</span> + why;
+        };
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) {
+        <span class="t">List</span>&lt;<span class="t">ApiResult</span>&lt;<span class="t">Order</span>&gt;&gt; results = <span class="t">List</span>.of(
+            <span class="k">new</span> <span class="t">Ok</span>&lt;&gt;(<span class="n">201</span>, <span class="k">new</span> <span class="t">Order</span>(<span class="s">"ORD-7"</span>, <span class="n">1499.0</span>)), <span class="k">new</span> <span class="t">Ok</span>&lt;&gt;(<span class="n">200</span>, <span class="k">new</span> <span class="t">Order</span>(<span class="s">"ORD-8"</span>, <span class="n">0</span>)),
+            <span class="k">new</span> <span class="t">ClientError</span>&lt;&gt;(<span class="n">422</span>, <span class="s">"qty must be at least 1"</span>), <span class="k">new</span> <span class="t">ServerError</span>&lt;&gt;(<span class="n">503</span>), <span class="k">new</span> <span class="t">ServerError</span>&lt;&gt;(<span class="n">500</span>),
+            <span class="k">new</span> <span class="t">NetworkError</span>&lt;&gt;(<span class="s">"connection reset"</span>));
+        results.forEach(r -&gt; <span class="t">System</span>.out.println(report(r)));
+    }
+}</pre><div class="out"><span>Output</span><pre>PASS 201 order ORD-7 total 1499.0
+WARN 200 order ORD-8 has a zero total
+FAIL 422 client error: qty must be at least 1
+RETRY service unavailable
+FAIL 500 server error
+RETRY network: connection reset</pre></div></div>
+<p>Every possible outcome is now a record that implements one sealed interface. The report switch must handle them all, guards pick out special cases such as a zero total or a 503, and nested record patterns read the order fields directly. When someone adds a <code>Timeout</code> outcome, every switch that ignores it stops compiling.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./java-streams.html" data-topic="java-streams"><small>← Previous chapter</small><b>🌊 Streams</b></a><a class="next" href="./java-concurrency.html" data-topic="java-concurrency"><small>Next chapter →</small><b>🧵 Modern concurrency</b></a></nav>
+</div>
+<script type="application/json" id="traces">{"var": {"steps": [{"l": 5, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 6, "d": {"L.browser": "\"chromium\""}}, {"l": 7, "d": {"L.retries": "3"}}, {"l": 8, "d": {"L.results": "{}"}}, {"l": 8, "s": ["main()", "lambda in main()"], "d": {"L.k": "\"login\"", "L.args": null, "L.browser": null, "L.retries": null, "L.results": null}}, {"l": 8, "s": ["main()"], "d": {"L.args": "[]", "L.browser": "\"chromium\"", "L.retries": "3", "L.results": "{login=[]}", "L.k": null}}, {"l": 10, "d": {"L.results": "{login=[420]}"}}, {"l": 11, "d": {"L.entry": "login=[420]"}}, {"l": 12, "d": {"L.entry": null}, "o": "login -> [420]\n"}, {"l": 10}, {"l": 13}, {"l": 14, "o": "chromium x3\n"}, {"l": 15, "o": "Integer\n"}], "end": {"o": "", "t": false}}, "textblock": {"steps": [{"l": 3, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 4, "d": {"L.name": "\"Asha\""}}, {"l": 7, "d": {"L.qty": "2"}}, {"l": 13}, {"l": 14, "d": {"L.body": "\"{\\n  \\\"customer\\\": \\\"Asha\\\",\\n  \\\"items\\\": [ { \\\"sku\\\": \\\"TSHIRT-RED-M\\\", \\\"qty\\\": 2 } ],\\n  \\\"note\\\": \\\"Ring the bell\\\"\\n}\\n\""}}, {"l": 16, "o": "{\n  \"customer\": \"Asha\",\n  \"items\": [ { \"sku\": \"TSHIRT-RED-M\", \"qty\": 2 } ],\n  \"note\": \"Ring the bell\"\n}\n"}, {"l": 22, "d": {"L.sql": "\"SELECT id, total\\nFROM orders\\nWHERE status = 'PAID' AND total > 500\\n\""}}, {"l": 23, "o": "SELECT id, total\nFROM orders\nWHERE status = 'PAID' AND total > 500\n"}, {"l": 25, "o": "trailing space kept here: |\n"}], "end": {"o": "", "t": false}}, "switch-old": {"steps": [{"l": 3, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 5, "d": {"L.status": "404"}}, {"l": 10}, {"l": 11, "d": {"L.kind": "\"not found\""}}, {"l": 15}, {"l": 16, "o": "not found\n"}, {"l": 17, "d": {"L.status": "200"}}, {"l": 18}, {"l": 19, "o": "not found   <- 200 fell through into the next case\n"}], "end": {"o": "", "t": false}}, "switch-new": {"steps": [{"l": 5, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 6, "d": {"L.status": "200"}}, {"l": 7}, {"l": 13}, {"l": 14, "d": {"L.kind": "\"success\""}}, {"l": 5, "d": {"L.status": null, "L.kind": null}, "o": "200 success\n"}, {"l": 6, "d": {"L.status": "201"}}, {"l": 7}, {"l": 13}, {"l": 14, "d": {"L.kind": "\"success\""}}, {"l": 5, "d": {"L.status": null, "L.kind": null}, "o": "201 success\n"}, {"l": 6, "d": {"L.status": "404"}}, {"l": 8}, {"l": 13}, {"l": 14, "d": {"L.kind": "\"not found\""}}, {"l": 5, "d": {"L.status": null, "L.kind": null}, "o": "404 not found\n"}, {"l": 6, "d": {"L.status": "503"}}, {"l": 10}, {"l": 11, "d": {"L.range": "\"server error\""}}, {"l": 13, "d": {"L.range": null}}, {"l": 14, "d": {"L.kind": "\"server error\""}}, {"l": 5, "d": {"L.status": null, "L.kind": null}, "o": "503 server error\n"}, {"l": 17}, {"l": 18, "d": {"L.env": "QA"}}, {"l": 20}, {"l": 18}, {"l": 23, "d": {"L.workers": "4"}}, {"l": 24, "o": "QA workers=4\n"}], "end": {"o": "", "t": false}}, "record": {"steps": [{"l": 15, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 6, "s": ["main()", "Product()"], "d": {"L.sku": "\"TSHIRT-RED-M\"", "L.name": "\"  Red T-shirt \"", "L.price": "499.0", "L.this.sku": "null", "L.this.name": "null", "L.this.price": "0.0", "L.args": null}}, {"l": 7}, {"l": 8}, {"l": 6, "d": {"L.name": "\"Red T-shirt\""}}, {"l": 9, "d": {"L.this.sku": "\"TSHIRT-RED-M\"", "L.this.name": "\"Red T-shirt\"", "L.this.price": "499.0"}}, {"l": 15, "s": ["main()"], "d": {"L.args": "[]", "L.sku": null, "L.name": null, "L.price": null, "L.this.sku": null, "L.this.name": null, "L.this.price": null}}, {"l": 16, "d": {"L.a": "Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=499.0]"}}, {"l": 6, "s": ["main()", "Product()"], "d": {"L.sku": "\"TSHIRT-RED-M\"", "L.name": "\"Red T-shirt\"", "L.price": "499.0", "L.this.sku": "null", "L.this.name": "null", "L.this.price": "0.0", "L.args": null, "L.a": null}}, {"l": 7}, {"l": 8}, {"l": 6}, {"l": 9, "d": {"L.this.sku": "\"TSHIRT-RED-M\"", "L.this.name": "\"Red T-shirt\"", "L.this.price": "499.0"}}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.a": "Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=499.0]", "L.sku": null, "L.name": null, "L.price": null, "L.this.sku": null, "L.this.name": null, "L.this.price": null}}, {"l": 17, "d": {"L.b": "Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=499.0]"}}, {"l": 18, "o": "Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=499.0]\n"}, {"l": 19, "o": "Red T-shirt costs 499.0\n"}, {"l": 20, "o": "equal by value: true, same object: false\n"}, {"l": 21, "o": "1 product in the set\n"}, {"l": 6, "s": ["main()", "Product()"], "d": {"L.sku": "\"TSHIRT-RED-M\"", "L.name": "\"Red T-shirt\"", "L.price": "399.0", "L.this.sku": "null", "L.this.name": "null", "L.this.price": "0.0", "L.args": null, "L.a": null, "L.b": null}}, {"l": 7}, {"l": 8}, {"l": 6}, {"l": 9, "d": {"L.this.sku": "\"TSHIRT-RED-M\"", "L.this.name": "\"Red T-shirt\"", "L.this.price": "399.0"}}, {"l": 21, "s": ["main()"], "d": {"L.args": "[]", "L.a": "Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=499.0]", "L.b": "Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=499.0]", "L.sku": null, "L.name": null, "L.price": null, "L.this.sku": null, "L.this.name": null, "L.this.price": null}}, {"l": 22, "o": "Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=399.0]\n"}, {"l": 6, "s": ["main()", "Product()"], "d": {"L.sku": "\"GIFT-01\"", "L.name": "\"Gift\"", "L.price": "0.0", "L.this.sku": "null", "L.this.name": "null", "L.this.price": "0.0", "L.args": null, "L.a": null, "L.b": null}}, {"l": 7}, {"l": 8}, {"l": 6}, {"l": 9, "d": {"L.this.sku": "\"GIFT-01\"", "L.this.name": "\"Gift\""}}, {"l": 22, "s": ["main()"], "d": {"L.args": "[]", "L.a": "Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=499.0]", "L.b": "Product[sku=TSHIRT-RED-M, name=Red T-shirt, price=499.0]", "L.sku": null, "L.name": null, "L.price": null, "L.this.sku": null, "L.this.name": null, "L.this.price": null}}, {"l": 23, "o": "Product[sku=GIFT-01, name=Gift, price=0.0]\n"}, {"l": 6, "s": ["main()", "Product()"], "d": {"L.sku": "\"MUG\"", "L.name": "\"Mug\"", "L.price": "-5.0", "L.this.sku": "null", "L.this.name": "null", "L.this.price": "0.0", "L.args": null, "L.a": null, "L.b": null}}, {"l": 7}], "end": {"o": "Exception in thread \"main\" java.lang.IllegalArgumentException: price must not be negative: -5.0", "t": false}}, "record-shallow": {"steps": [{"l": 12, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 13, "d": {"L.cart": "[mug]"}}, {"l": 5, "s": ["main()", "Order()"], "d": {"L.id": "\"ORD-1\"", "L.items": "[mug]", "L.this.id": "null", "L.this.items": "null", "L.args": null, "L.cart": null}}, {"l": 6}, {"l": 5}, {"l": 7, "d": {"L.this.id": "\"ORD-1\"", "L.this.items": "[mug]"}}, {"l": 13, "s": ["main()"], "d": {"L.args": "[]", "L.cart": "[mug]", "L.id": null, "L.items": null, "L.this.id": null, "L.this.items": null}}, {"l": 14, "d": {"L.safe": "Order[id=ORD-1, items=[mug]]"}}, {"l": 15, "d": {"L.leaky": "Leaky[id=ORD-2, items=[mug]]"}}, {"l": 16, "d": {"L.cart": "[mug, laptop]", "L.leaky": "Leaky[id=ORD-2, items=[mug, laptop]]"}}, {"l": 17, "o": "Order[id=ORD-1, items=[mug]]\n"}, {"l": 18, "o": "Leaky[id=ORD-2, items=[mug, laptop]]   <- changed from outside\n"}], "end": {"o": "", "t": false}}, "sealed": {"steps": [{"l": 17, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 9, "s": ["main()", "fee()"], "d": {"L.p": "Card[last4=4242, amount=1000.0]", "L.args": null}}, {"l": 10}, {"l": 10, "d": {"L.c": "Card[last4=4242, amount=1000.0]"}}, {"l": 9, "d": {"L.c": null}}, {"l": 17, "s": ["main()"], "d": {"L.args": "[]", "L.p": null}}, {"l": 18, "o": "20.0\n"}, {"l": 9, "s": ["main()", "fee()"], "d": {"L.p": "Upi[vpa=asha@okbank, amount=1000.0]", "L.args": null}}, {"l": 11}, {"l": 9}, {"l": 18, "s": ["main()"], "d": {"L.args": "[]", "L.p": null}}, {"l": 19, "o": "0.0\n"}, {"l": 9, "s": ["main()", "fee()"], "d": {"L.p": "Wallet[provider=PayFast, amount=1000.0]", "L.args": null}}, {"l": 12}, {"l": 12, "d": {"L.w": "Wallet[provider=PayFast, amount=1000.0]"}}, {"l": 9, "d": {"L.w": null}}, {"l": 19, "s": ["main()"], "d": {"L.args": "[]", "L.p": null}}, {"l": 20, "o": "10.0\n"}], "end": {"o": "", "t": false}}, "sealed-kinds": {"steps": [{"l": 10, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 3, "s": ["main()", "Savings()"], "d": {"L.args": null}}, {"l": 2, "s": ["main()", "Savings()", "Account()"]}, {"l": 3, "s": ["main()", "Savings()"]}, {"l": 10, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 5, "s": ["main()", "StudentCurrent()"], "d": {"L.args": null}}, {"l": 4, "s": ["main()", "StudentCurrent()", "Current()"]}, {"l": 2, "s": ["main()", "StudentCurrent()", "Current()", "Account()"]}, {"l": 4, "s": ["main()", "StudentCurrent()", "Current()"]}, {"l": 5, "s": ["main()", "StudentCurrent()"]}, {"l": 10, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 7, "s": ["main()", "StartupBusiness()"], "d": {"L.args": null}}, {"l": 6, "s": ["main()", "StartupBusiness()", "Business()"]}, {"l": 2, "s": ["main()", "StartupBusiness()", "Business()", "Account()"]}, {"l": 6, "s": ["main()", "StartupBusiness()", "Business()"]}, {"l": 7, "s": ["main()", "StartupBusiness()"]}, {"l": 10, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 11, "d": {"L.all": "[Savings{}, StudentCurrent{}, StartupBusiness{}]"}}, {"l": 12, "o": "Savings is an Account\nStudentCurrent is an Account\nStartupBusiness is an Account\n"}, {"l": 13}, {"l": 12}, {"l": 14, "o": "true [Savings, Current, Business]\n"}], "end": {"o": "", "t": false}}, "instanceof": {"steps": [{"l": 19, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 4, "s": ["main()", "describe()"], "d": {"L.o": "\"hello\"", "L.args": null}}, {"l": 5}, {"l": 6, "d": {"L.s": "\"hello\""}}, {"l": 19, "s": ["main()"], "d": {"L.args": "[]", "L.o": null, "L.s": null}}, {"l": 20, "o": "old: text of length 5\n"}, {"l": 4, "s": ["main()", "describe()"], "d": {"L.o": "500", "L.args": null}}, {"l": 9}, {"l": 10, "d": {"L.n": "500"}}, {"l": 20, "s": ["main()"], "d": {"L.args": "[]", "L.o": null, "L.n": null}}, {"l": 21, "o": "big number 500\n"}, {"l": 4, "s": ["main()", "describe()"], "d": {"L.o": "[1, 2]", "L.args": null}}, {"l": 9}, {"l": 12}, {"l": 15, "d": {"L.list": "[1, 2]"}}, {"l": 21, "s": ["main()"], "d": {"L.args": "[]", "L.o": null, "L.list": null}}, {"l": 22, "o": "a list with 2 items\n"}, {"l": 4, "s": ["main()", "describe()"], "d": {"L.o": "7", "L.args": null}}, {"l": 9}, {"l": 12}, {"l": 13}, {"l": 22, "s": ["main()"], "d": {"L.args": "[]", "L.o": null}}, {"l": 23, "o": "something else: 7\n"}], "end": {"o": "", "t": false}}, "switch-patterns": {"steps": [{"l": 15, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 16, "d": {"L.inputs": "[-4, 42, \"   \", \"PASS\", [1, 2, 3], 3.14, null]"}}, {"l": 3, "s": ["main()", "classify()"], "d": {"L.o": "-4", "L.args": null, "L.inputs": null}}, {"l": 5}, {"l": 3}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.inputs": "[-4, 42, \"   \", \"PASS\", [1, 2, 3], 3.14, null]"}}, {"l": 3, "s": ["main()", "classify()"], "d": {"L.o": "42", "L.args": null, "L.inputs": null}, "o": "negative int -4\n"}, {"l": 5}, {"l": 3}, {"l": 6}, {"l": 3}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.inputs": "[-4, 42, \"   \", \"PASS\", [1, 2, 3], 3.14, null]"}}, {"l": 3, "s": ["main()", "classify()"], "d": {"L.o": "\"   \"", "L.args": null, "L.inputs": null}, "o": "int 42\n"}, {"l": 7}, {"l": 3}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.inputs": "[-4, 42, \"   \", \"PASS\", [1, 2, 3], 3.14, null]"}}, {"l": 3, "s": ["main()", "classify()"], "d": {"L.o": "\"PASS\"", "L.args": null, "L.inputs": null}, "o": "blank text\n"}, {"l": 7}, {"l": 3}, {"l": 8}, {"l": 3}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.inputs": "[-4, 42, \"   \", \"PASS\", [1, 2, 3], 3.14, null]"}}, {"l": 3, "s": ["main()", "classify()"], "d": {"L.o": "[1, 2, 3]", "L.args": null, "L.inputs": null}, "o": "text \"PASS\"\n"}, {"l": 9}, {"l": 3}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.inputs": "[-4, 42, \"   \", \"PASS\", [1, 2, 3], 3.14, null]"}}, {"l": 3, "s": ["main()", "classify()"], "d": {"L.o": "3.14", "L.args": null, "L.inputs": null}, "o": "int array of 3\n"}, {"l": 10}, {"l": 3}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.inputs": "[-4, 42, \"   \", \"PASS\", [1, 2, 3], 3.14, null]"}}, {"l": 3, "s": ["main()", "classify()"], "d": {"L.o": "null", "L.args": null, "L.inputs": null}, "o": "other: Double\n"}, {"l": 4}, {"l": 3}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.inputs": "[-4, 42, \"   \", \"PASS\", [1, 2, 3], 3.14, null]"}}, {"l": 17, "d": {"L.o": null}, "o": "null, handled without a NullPointerException\n"}], "end": {"o": "", "t": false}}, "record-patterns": {"steps": [{"l": 16, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 8, "s": ["main()", "area()"], "d": {"L.s": "Circle[centre=Point[x=0, y=0], r=10]", "L.args": null}}, {"l": 9}, {"l": 9, "d": {"L.c": "Point[x=0, y=0]"}}, {"l": 8, "d": {"L.c": null}}, {"l": 16, "s": ["main()"], "d": {"L.args": "[]", "L.s": null}}, {"l": 17, "o": "314\n"}, {"l": 8, "s": ["main()", "area()"], "d": {"L.s": "Rect[topLeft=Point[x=1, y=1], bottomRight=Point[x=4, y=5]]", "L.args": null}}, {"l": 11}, {"l": 11, "d": {"L.x1": "1"}}, {"l": 11, "d": {"L.y1": "1"}}, {"l": 11, "d": {"L.x2": "4"}}, {"l": 8, "d": {"L.x1": null, "L.y1": null, "L.x2": null}}, {"l": 17, "s": ["main()"], "d": {"L.args": "[]", "L.s": null}}, {"l": 19, "o": "12\n"}, {"l": 20, "d": {"L.o": "Point[x=3, y=4]"}}, {"l": 20, "d": {"L.x": "3"}}, {"l": 21, "d": {"L.y": "4"}}, {"l": 23, "d": {"L.x": null, "L.y": null}, "o": "point below the diagonal: 3,4\n"}], "end": {"o": "", "t": false}}, "unnamed": {"steps": [{"l": 7, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 9, "d": {"L.orders": "[Order[id=A1, customer=asha, total=900.0], Order[id=A2, customer=ravi, total=120.0]]"}}, {"l": 10, "d": {"L.count": "0"}}, {"l": 11, "d": {"L.count": "2"}}, {"l": 13, "o": "2 orders\n"}, {"l": 14, "d": {"L.o": "Order[id=A1, customer=asha, total=900.0]"}}, {"l": 14, "d": {"L.who": "\"asha\""}}, {"l": 15, "d": {"L.total": "900.0"}}, {"l": 17, "d": {"L.o": null, "L.who": null, "L.total": null}, "o": "big order from asha\n"}, {"l": 13}, {"l": 14, "d": {"L.o": "Order[id=A2, customer=ravi, total=120.0]"}}, {"l": 14, "d": {"L.who": "\"ravi\""}}, {"l": 17, "d": {"L.o": null, "L.who": null}}, {"l": 13}, {"l": 19}, {"l": 21}, {"l": 23, "o": "not a number\n"}, {"l": 24, "d": {"L.hits": "{}"}}, {"l": 24, "s": ["main()", "lambda in main()"], "d": {"L.k": "\"x\"", "L.args": null, "L.orders": null, "L.count": null}}, {"l": 24, "d": {"L.hits": "{x=1}", "L.k": "\"y\""}}, {"l": 24, "d": {"L.hits": "{x=1, y=1}", "L.k": "\"x\""}}, {"l": 24, "s": ["main()", "lambda in main()", "lambda in main()"], "d": {"L.a": "1", "L.hits": null, "L.k": null}}, {"l": 24, "s": ["main()", "lambda in main()"], "d": {"L.hits": "{x=2, y=1}", "L.k": "\"x\"", "L.a": null}}, {"l": 25, "s": ["main()"], "d": {"L.args": "[]", "L.orders": "[Order[id=A1, customer=asha, total=900.0], Order[id=A2, customer=ravi, total=120.0]]", "L.count": "2", "L.k": null}}, {"l": 26, "o": "{x=2, y=1}\n"}], "end": {"o": "", "t": false}}, "primitive-patterns": {"steps": [{"l": 3, "s": ["main()"]}, {"l": 4, "d": {"L.codes": "[200, 302, 404, 503, 1000]"}}, {"l": 5, "d": {"L.code": "200"}}, {"l": 6}, {"l": 11}, {"l": 12, "d": {"L.text": "\"success\""}}, {"l": 4, "d": {"L.code": null, "L.text": null}, "o": "200 success\n"}, {"l": 5, "d": {"L.code": "302"}}, {"l": 6}, {"l": 5}, {"l": 7}, {"l": 11}, {"l": 12, "d": {"L.text": "\"redirect\""}}, {"l": 4, "d": {"L.code": null, "L.text": null}, "o": "302 redirect\n"}, {"l": 5, "d": {"L.code": "404"}}, {"l": 6}, {"l": 5}, {"l": 7}, {"l": 5}, {"l": 8}, {"l": 11}, {"l": 12, "d": {"L.text": "\"client error\""}}, {"l": 4, "d": {"L.code": null, "L.text": null}, "o": "404 client error\n"}, {"l": 5, "d": {"L.code": "503"}}, {"l": 6}, {"l": 5}, {"l": 7}, {"l": 5}, {"l": 8}, {"l": 5}, {"l": 9}, {"l": 11}, {"l": 12, "d": {"L.text": "\"server error\""}}, {"l": 4, "d": {"L.code": null, "L.text": null}, "o": "503 server error\n"}, {"l": 5, "d": {"L.code": "1000"}}, {"l": 6}, {"l": 5}, {"l": 7}, {"l": 5}, {"l": 8}, {"l": 5}, {"l": 9}, {"l": 5}, {"l": 10}, {"l": 11}, {"l": 12, "d": {"L.text": "\"not an HTTP status: 1000\""}}, {"l": 4, "d": {"L.code": null, "L.text": null}, "o": "1000 not an HTTP status: 1000\n"}, {"l": 16}, {"l": 17, "d": {"L.big": "3000000000", "L.small": "42"}}, {"l": 18, "o": "false true\n"}, {"l": 19, "d": {"L.d": "2.5"}}, {"l": 20, "o": "has a fraction: 2.5\n"}], "end": {"o": "", "t": false}}, "scenario": {"steps": [{"l": 25, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 29, "d": {"L.results": "[Ok[status=201, body=Order[id=ORD-7, total=1499.0]], Ok[status=200, body=Order[id=ORD-8, total=0.0]], ClientError[statu…"}}, {"l": 29, "s": ["main()", "lambda in main()"], "d": {"L.r": "Ok[status=201, body=Order[id=ORD-7, total=1499.0]]", "L.args": null, "L.results": null}}, {"l": 14, "s": ["main()", "lambda in main()", "report()"]}, {"l": 15}, {"l": 20}, {"l": 15}, {"l": 20}, {"l": 15}, {"l": 15, "d": {"L.s": "201"}}, {"l": 15, "d": {"L.id": "\"ORD-7\""}}, {"l": 20, "d": {"L.id": null}}, {"l": 16, "d": {"L.s": null}}, {"l": 16, "d": {"L.s": "201"}}, {"l": 16, "d": {"L.id": "\"ORD-7\""}}, {"l": 14, "d": {"L.s": null, "L.id": null}}, {"l": 29, "s": ["main()", "lambda in main()"]}, {"l": 29, "d": {"L.r": "Ok[status=200, body=Order[id=ORD-8, total=0.0]]"}, "o": "PASS 201 order ORD-7 total 1499.0\n"}, {"l": 14, "s": ["main()", "lambda in main()", "report()"]}, {"l": 15}, {"l": 20}, {"l": 15}, {"l": 20}, {"l": 15}, {"l": 15, "d": {"L.s": "200"}}, {"l": 15, "d": {"L.id": "\"ORD-8\""}}, {"l": 14, "d": {"L.s": null, "L.id": null}}, {"l": 29, "s": ["main()", "lambda in main()"]}, {"l": 29, "d": {"L.r": "ClientError[status=422, message=qty must be at least 1]"}, "o": "WARN 200 order ORD-8 has a zero total\n"}, {"l": 14, "s": ["main()", "lambda in main()", "report()"]}, {"l": 17}, {"l": 17, "d": {"L.s": "422"}}, {"l": 14, "d": {"L.s": null}}, {"l": 29, "s": ["main()", "lambda in main()"]}, {"l": 29, "d": {"L.r": "ServerError[status=503]"}, "o": "FAIL 422 client error: qty must be at least 1\n"}, {"l": 14, "s": ["main()", "lambda in main()", "report()"]}, {"l": 18}, {"l": 20}, {"l": 18}, {"l": 20}, {"l": 18}, {"l": 14}, {"l": 29, "s": ["main()", "lambda in main()"]}, {"l": 29, "d": {"L.r": "ServerError[status=500]"}, "o": "RETRY service unavailable\n"}, {"l": 14, "s": ["main()", "lambda in main()", "report()"]}, {"l": 18}, {"l": 20}, {"l": 18}, {"l": 20}, {"l": 18}, {"l": 20, "d": {"L.s": "500"}}, {"l": 19, "d": {"L.s": null}}, {"l": 14}, {"l": 29, "s": ["main()", "lambda in main()"]}, {"l": 29, "d": {"L.r": "NetworkError[reason=connection reset]"}, "o": "FAIL 500 server error\n"}, {"l": 14, "s": ["main()", "lambda in main()", "report()"]}, {"l": 20}, {"l": 14}, {"l": 29, "s": ["main()", "lambda in main()"]}, {"l": 30, "s": ["main()"], "d": {"L.args": "[]", "L.results": "[Ok[status=201, body=Order[id=ORD-7, total=1499.0]], Ok[status=200, body=Order[id=ORD-8, total=0.0]], ClientError[statu…", "L.r": null}, "o": "RETRY network: connection reset\n"}], "end": {"o": "", "t": false}}}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/javaviz.js"></script>
+<script src="../../assets/xv.js"></script>
+<script>
+const PAGE = {"info": {"title": "Say what the data is, then ask what it is", "panels": [{"s": [["e", "📇"], ["t", "record Order(String id, double total)", {"b": 1, "size": 10}]], "h": "Records", "t": "Data without boilerplate.", "more": "equals, hashCode and toString come free."}, {"s": [["e", "🔒"], ["t", "sealed ... permits Ok, Error", {"b": 1, "size": 11}]], "h": "Sealed", "t": "A closed list of kinds.", "more": "The compiler knows every option."}, {"s": [["e", "🎯"], ["t", "case Ok(var s, var body) ->", {"b": 1, "size": 11}]], "h": "Patterns", "t": "Test and take apart at once.", "more": "Guards with when, null as a case."}, {"s": [["e", "📜"], ["t", "\"\"\" { \"qty\": 2 } \"\"\"", {"b": 1, "size": 11}]], "h": "Text blocks", "t": "JSON as it really looks.", "more": "No escaped quotes."}], "remember": "Model data with records, list the possible kinds with a sealed interface, and handle them with a switch over patterns. The compiler then checks that every case is covered."}, "real": [["💳", "A payments team", "Models every payment method as a record under a sealed interface. Adding a new wallet showed the 4 places in the code that had to learn about it."], ["🧪", "An API test suite", "Keeps expected JSON bodies in text blocks, so they can be copied straight from the API documentation."], ["📦", "A logistics app", "Replaced 300 lines of getters, equals and hashCode in shipment classes with 12 record declarations."]], "quiz": [{"lv": "e", "q": "Which accessor does <code>record User(String name)<\/code> create?", "o": ["name()", "getName()", "getname()", "user.name field only"], "a": 0, "hint": "Records use the field name.", "why": "Record accessors have the same name as the component, without get."}, {"lv": "e", "q": "What does this print?", "o": ["success", "not found", "other", "Compile error"], "a": 0, "hint": "Several labels on one case.", "why": "201 is one of the labels of the first case.", "code": "int s = 201;\nSystem.out.println(switch (s) { case 200, 201 -> \"success\"; case 404 -> \"not found\"; default -> \"other\"; });", "run": 1}, {"lv": "e", "q": "Where can <code>var<\/code> be used?", "o": ["Local variables with an initial value", "Fields", "Method return types", "Method parameters"], "a": 0, "hint": "Local only.", "why": "var is local variable type inference. Lambda parameters are the one extra place."}, {"lv": "m", "q": "What does this print?", "o": ["true", "false", "Compile error", "It depends on the JVM"], "a": 0, "hint": "Records compare by value.", "why": "equals compares every component, and both have the same sku and price.", "code": "record P(String sku, double price) {}\nSystem.out.println(new P(\"A\", 1.0).equals(new P(\"A\", 1.0)));", "run": 1}, {"lv": "m", "q": "Why does a switch over a sealed interface need no default?", "o": ["The compiler knows every permitted subtype and checks they are all covered", "Defaults are not allowed in switch", "Sealed types cannot be null", "Java adds a hidden default that returns null"], "a": 0, "hint": "Closed list.", "why": "If a subtype is missing, it is a compile error. The hidden default throws MatchException only for classes changed after compiling."}, {"lv": "m", "q": "What does this print?", "o": ["int 7", "big 7", "other", "Compile error"], "a": 0, "hint": "The guard is checked.", "why": "7 is not above 100, so the first case is skipped and the plain Integer case matches.", "code": "Object o = 7;\nSystem.out.println(switch (o) { case Integer i when i > 100 -> \"big \" + i; case Integer i -> \"int \" + i; default -> \"other\"; });", "run": 1}, {"lv": "m", "q": "What does a text block do with the indentation that all lines share?", "o": ["Removes it", "Keeps it", "Turns it into tabs", "Throws an error"], "a": 0, "hint": "Incidental whitespace.", "why": "Only the indentation relative to the least indented line (or the closing quotes) stays."}, {"lv": "h", "q": "A permitted subclass of a sealed class must be declared as what?", "o": ["final, sealed or non-sealed", "abstract", "static", "public"], "a": 0, "hint": "It must say what comes next.", "why": "final stops the hierarchy, sealed continues with its own list, and non-sealed opens it again."}, {"lv": "h", "q": "What does this print?", "o": ["7", "12", "3", "Compile error"], "a": 0, "hint": "A nested record pattern pulls out the numbers.", "why": "x is 3 and y is 4, so 3 + 4 is 7.", "code": "record Pt(int x, int y) {}\nrecord Box(Pt p) {}\nObject o = new Box(new Pt(3, 4));\nif (o instanceof Box(Pt(var x, var y))) System.out.println(x + y);", "run": 1}, {"lv": "h", "q": "Why is <code>case CharSequence cs -&gt; ...<\/code> followed by <code>case String s -&gt; ...<\/code> a compile error?", "o": ["The String case can never be reached, it is dominated", "String is not a CharSequence", "Two cases cannot use types", "Patterns need a default first"], "a": 0, "hint": "Top to bottom.", "why": "Every String is a CharSequence, so the first case always wins. Put the more specific case first."}, {"lv": "x", "q": "Are records deeply immutable?", "o": ["No, a record holding a mutable list can still see that list change", "Yes, always", "Only if all fields are primitives and you mark the record final", "Yes, Java copies every field"], "a": 0, "hint": "final fields hold references.", "why": "The reference cannot change, but the object it points to can. Copy with List.copyOf in the compact constructor."}, {"lv": "x", "q": "What does this print with Java 21 or later?", "o": ["no value", "null", "NullPointerException", "Compile error"], "a": 0, "hint": "case null is allowed in a pattern switch.", "why": "Without case null, a switch on null throws NullPointerException.", "code": "Object o = null;\nSystem.out.println(switch (o) { case null -> \"no value\"; case String s -> s; default -> \"other\"; });", "run": 1}], "calc": [{"lv": "e", "q": "What does this print?", "ans": "4", "hint": "QA uses 4 workers.", "steps": ["The enum constant QA shares a case with STAGING.", "That case gives 4."], "code": "enum Env { DEV, QA, PROD }\nEnv e = Env.QA;\nSystem.out.println(switch (e) { case DEV -> 1; case QA -> 4; case PROD -> 16; });", "run": 1}, {"lv": "e", "q": "What does this print?", "ans": "20.0", "hint": "Card fee is 2 percent.", "steps": ["<span class=\"eq\">1000 × 0.02 = 20.0<\/span>"], "code": "record Card(double amount) {}\nSystem.out.println(new Card(1000).amount() * 0.02);", "run": 1}, {"lv": "m", "q": "What does this print?", "ans": "12", "hint": "Width times height of the rectangle.", "steps": ["<span class=\"eq\">|4 − 1| × |5 − 1| = 3 × 4 = 12<\/span>"], "code": "record Pt(int x, int y) {}\nrecord Rect(Pt a, Pt b) {}\nObject o = new Rect(new Pt(1, 1), new Pt(4, 5));\nif (o instanceof Rect(Pt(var x1, var y1), Pt(var x2, var y2))) System.out.println(Math.abs(x2 - x1) * Math.abs(y2 - y1));", "run": 1}, {"lv": "m", "q": "What does this print?", "ans": "1", "hint": "Equal records count once in a set.", "steps": ["Both records have the same components.", "equals and hashCode agree, so the set keeps one."], "code": "record P(String sku) {}\nSystem.out.println(new HashSet<>(List.of(new P(\"A\"), new P(\"A\"))).size());", "run": 1}, {"lv": "m", "q": "A sealed interface permits 4 records and a switch handles 3 of them with no default. How many compile errors does javac report for that switch?", "ans": "1", "hint": "One switch, one error.", "steps": ["javac reports that the switch expression does not cover all possible input values."]}, {"lv": "h", "q": "What does this print?", "ans": "314", "hint": "Round the circle area.", "steps": ["<span class=\"eq\">π × 10 × 10 ≈ 314.16<\/span>", "Math.round gives 314."], "code": "record Circle(int r) {}\nObject o = new Circle(10);\nif (o instanceof Circle(int r)) System.out.println(Math.round(Math.PI * r * r));", "run": 1}, {"lv": "h", "q": "With the old switch, status 200 falls through case 200, case 201 and into case 404 before break. How many assignments to kind run?", "ans": "2", "hint": "Count the assignments passed.", "steps": ["kind = \"success\" runs.", "Then kind = \"not found\" runs and break stops.", "So 2 assignments, and the value is wrong."]}, {"lv": "x", "q": "What does this print?", "ans": "2", "hint": "Count the orders above 500 using an unnamed pattern.", "steps": ["900 and 700 are above 500.", "So 2."], "code": "record O(String id, double total) {}\nvar list = List.of(new O(\"a\", 900), new O(\"b\", 120), new O(\"c\", 700));\nint n = 0;\nfor (var o : list) if (o instanceof O(_, var t) && t > 500) n++;\nSystem.out.println(n);", "run": 1}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to modern Java syntax: var, text blocks, switch expressions, records, sealed types and pattern matching.", "hi": "आधुनिक Java syntax में आपका स्वागत है: var, text blocks, switch expressions, records, sealed types और pattern matching।", "kn": "ಆಧುನಿಕ Java syntax ಗೆ ಸ್ವಾಗತ: var, text blocks, switch expressions, records, sealed types ಮತ್ತು pattern matching.", "or": "ଆଧୁନିକ Java syntax କୁ ସ୍ୱାଗତ: var, text blocks, switch expressions, records, sealed types ଓ pattern matching।", "ar": "مرحبًا بك في صياغة Java الحديثة: var والكتل النصية وتعابير switch والسجلات والأنواع المختومة ومطابقة الأنماط.", "de": "Willkommen bei moderner Java-Syntax: var, Textblöcke, Switch-Ausdrücke, Records, versiegelte Typen und Pattern Matching."}, {"id": "var", "h": "var", "en": "var lets the compiler infer the type of a local variable. The type is still fixed and cannot change later.", "hi": "var compiler को local variable का type निकालने देता है। Type फिर भी तय रहता है और बाद में नहीं बदलता।", "kn": "var compiler ಗೆ local variable type ಊಹಿಸಲು ಬಿಡುತ್ತದೆ. Type ಸ್ಥಿರ, ನಂತರ ಬದಲಾಗದು.", "or": "var compiler କୁ local variable type ଅନୁମାନ କରିବାକୁ ଦିଏ। Type ସ୍ଥିର, ପରେ ବଦଳେ ନାହିଁ।", "ar": "يتيح var للمترجم استنتاج نوع المتغير المحلي، ويبقى النوع ثابتًا لا يتغير لاحقًا.", "de": "Mit var leitet der Compiler den Typ einer lokalen Variable ab. Der Typ bleibt fest."}, {"id": "text-blocks", "h": "Text blocks", "en": "Text blocks span several lines between triple quotes, keep the layout and need no escaped quotes. Great for JSON and SQL.", "hi": "Text blocks तीन quotes के बीच कई lines में होते हैं, layout रखते हैं और quotes escape नहीं करने पड़ते। JSON और SQL के लिए बढ़िया।", "kn": "Text blocks ಮೂರು quotes ನಡುವೆ ಹಲವು lines, layout ಉಳಿಸುತ್ತವೆ. JSON ಮತ್ತು SQL ಗೆ ಉತ್ತಮ.", "or": "Text blocks ତିନି quotes ମଧ୍ୟରେ ଅନେକ lines, layout ରଖନ୍ତି। JSON ଓ SQL ପାଇଁ ଭଲ।", "ar": "تمتد الكتل النصية على عدة أسطر بين ثلاث علامات اقتباس وتحافظ على التنسيق دون تهريب. ممتازة لـ JSON وSQL.", "de": "Textblöcke stehen zwischen dreifachen Anführungszeichen, behalten das Layout und brauchen kein Escaping. Ideal für JSON und SQL."}, {"id": "switch", "h": "Switch expressions", "en": "A switch expression gives a value, the arrow form never falls through, and yield returns a value from a block.", "hi": "Switch expression एक value देता है, arrow form कभी fall through नहीं करता, और yield block से value लौटाता है।", "kn": "Switch expression value ಕೊಡುತ್ತದೆ, arrow form fall through ಆಗುವುದಿಲ್ಲ, yield block ನಿಂದ value ಕೊಡುತ್ತದೆ.", "or": "Switch expression value ଦିଏ, arrow form fall through ହୁଏ ନାହିଁ, yield block ରୁ value ଦିଏ।", "ar": "يعطي تعبير switch قيمة، ولا يسقط شكل السهم إلى الحالة التالية، وتعيد yield قيمة من كتلة.", "de": "Ein Switch-Ausdruck liefert einen Wert, die Pfeilform fällt nie durch, und yield gibt einen Wert aus einem Block zurück."}, {"id": "records", "h": "Records", "en": "A record carries data. Java writes the fields, constructor, accessors, equals, hashCode and toString. Validate in the compact constructor.", "hi": "Record data ले जाता है। Java fields, constructor, accessors, equals, hashCode और toString लिखता है। Compact constructor में जाँच करें।", "kn": "Record data ಹೊತ್ತೊಯ್ಯುತ್ತದೆ. Java fields, constructor, equals, toString ಬರೆಯುತ್ತದೆ.", "or": "Record data ବହନ କରେ। Java fields, constructor, equals, toString ଲେଖେ।", "ar": "السجل يحمل البيانات، ويكتب Java الحقول والمنشئ والدوال وequals وhashCode وtoString. تحقق من المدخلات في المنشئ المختصر.", "de": "Ein Record trägt Daten. Java schreibt Felder, Konstruktor, Zugriffsmethoden, equals, hashCode und toString. Prüfe im kompakten Konstruktor."}, {"id": "sealed", "h": "Sealed types", "en": "A sealed type lists exactly which classes may extend it, so a switch over it can be checked for completeness.", "hi": "Sealed type बताता है कि कौन सी classes उसे extend कर सकती हैं, इसलिए switch की पूर्णता जाँची जा सकती है।", "kn": "Sealed type ಯಾವ classes extend ಮಾಡಬಹುದು ಎಂದು ಪಟ್ಟಿ ಮಾಡುತ್ತದೆ.", "or": "Sealed type କେଉଁ classes extend କରିପାରିବେ ତାହା ତାଲିକା କରେ।", "ar": "يسرد النوع المختوم الأصناف المسموح لها بتوسيعه، فيمكن التحقق من اكتمال switch عليه.", "de": "Ein versiegelter Typ nennt genau die erlaubten Unterklassen, daher kann ein switch auf Vollständigkeit geprüft werden."}, {"id": "instanceof", "h": "instanceof patterns", "en": "instanceof with a variable name tests, casts and binds in one step. The variable exists only where the test is true.", "hi": "Variable नाम के साथ instanceof एक ही कदम में जाँचता, cast करता और bind करता है।", "kn": "instanceof ಒಂದೇ ಹಂತದಲ್ಲಿ ಪರೀಕ್ಷೆ, cast ಮತ್ತು bind ಮಾಡುತ್ತದೆ.", "or": "instanceof ଗୋଟିଏ ପଦକ୍ଷେପରେ ଯାଞ୍ଚ, cast ଓ bind କରେ।", "ar": "يختبر instanceof مع اسم متغير ويحول ويربط في خطوة واحدة، والمتغير موجود فقط حيث يكون الاختبار صحيحًا.", "de": "instanceof mit Variablenname prüft, castet und bindet in einem Schritt. Die Variable gilt nur, wo der Test wahr ist."}, {"id": "switch-patterns", "h": "Switch patterns", "en": "A switch can test types, add guards with when, and handle null. The first matching case wins.", "hi": "Switch types जाँच सकता है, when से guards जोड़ सकता है और null संभाल सकता है। पहला मिलने वाला case जीतता है।", "kn": "Switch types ಪರೀಕ್ಷಿಸಿ when guards ಮತ್ತು null ನಿಭಾಯಿಸುತ್ತದೆ. ಮೊದಲ case ಗೆಲ್ಲುತ್ತದೆ.", "or": "Switch types ଯାଞ୍ଚ କରି when guards ଓ null ସମ୍ଭାଳେ। ପ୍ରଥମ case ଜିତେ।", "ar": "يستطيع switch اختبار الأنواع وإضافة شروط بـ when ومعالجة null، وأول حالة مطابقة تفوز.", "de": "Ein switch prüft Typen, kennt Guards mit when und behandelt null. Der erste passende Fall gewinnt."}, {"id": "record-patterns", "h": "Record patterns", "en": "A record pattern matches a record and pulls out its fields. The underscore marks variables you do not need.", "hi": "Record pattern record से मेल खाता है और उसके fields निकालता है। Underscore उन variables के लिए है जिनकी ज़रूरत नहीं।", "kn": "Record pattern record ಹೊಂದಿಸಿ fields ತೆಗೆಯುತ್ತದೆ. Underscore ಬೇಡದ variables ಗೆ.", "or": "Record pattern record ମେଳାଇ fields ବାହାର କରେ। Underscore ଅଦରକାରୀ variables ପାଇଁ।", "ar": "يطابق نمط السجل سجلًا ويستخرج حقوله، وتشير الشرطة السفلية إلى متغيرات لا تحتاجها.", "de": "Ein Record-Muster passt auf einen Record und holt seine Felder heraus. Der Unterstrich steht für unnötige Variablen."}, {"id": "primitive-patterns", "h": "Primitive patterns", "en": "In the Java 27 preview, patterns also work with int, long and double, and instanceof int checks that a value fits.", "hi": "Java 27 preview में patterns int, long और double के साथ भी काम करते हैं, और instanceof int जाँचता है कि value फिट होती है।", "kn": "Java 27 preview ನಲ್ಲಿ patterns int, long, double ಜೊತೆಗೂ ಕೆಲಸ ಮಾಡುತ್ತವೆ.", "or": "Java 27 preview ରେ patterns int, long, double ସହ ମଧ୍ୟ କାମ କରେ।", "ar": "في معاينة Java 27 تعمل الأنماط مع int وlong وdouble، ويتحقق instanceof int من أن القيمة تتسع.", "de": "In der Vorschau von Java 27 funktionieren Muster auch mit int, long und double, und instanceof int prüft, ob ein Wert passt."}, {"id": "scenario", "h": "Scenario", "en": "Every API outcome becomes a record under one sealed interface, and the report switch must handle every one of them.", "hi": "हर API परिणाम एक sealed interface के तहत record बनता है, और report switch को हर एक संभालना होता है।", "kn": "ಪ್ರತಿ API ಫಲಿತಾಂಶ sealed interface ಅಡಿ record ಆಗುತ್ತದೆ.", "or": "ପ୍ରତ୍ୟେକ API ଫଳାଫଳ sealed interface ତଳେ record ହୁଏ।", "ar": "يصبح كل ناتج من الواجهة البرمجية سجلًا تحت واجهة مختومة واحدة، ويجب أن يعالجها switch التقرير كلها.", "de": "Jedes API-Ergebnis wird ein Record unter einem versiegelten Interface, und der Bericht muss jedes behandeln."}], "dg": {"dop": {"t": "Data oriented programming in three steps", "w": 900, "h": 230, "mw": 640, "n": [["rec", 30, 60, 240, 100, "record", {"c": 1, "sub": "model the data:\nfields, equals, toString"}], ["sea", 330, 60, 240, 100, "sealed interface", {"c": 3, "sub": "list every\npossible kind"}], ["sw", 630, 60, 240, 100, "switch with patterns", {"c": 2, "sub": "handle each kind,\nchecked for completeness"}]], "e": [["rec", "sea", {"t": "implements"}], ["sea", "sw", {"t": "is switched on"}]], "tx": [[450, 200, "Add a new kind later, and every switch that forgot it stops compiling.", {"c": 6, "b": 1}]], "st": [[["rec"], "Records hold plain data with no boilerplate."], [["sea", "rec>sea"], "A sealed interface says exactly which records exist, for example Ok, ClientError and ServerError."], [["sw", "sea>sw"], "A switch with type and record patterns handles each one. Because the list is closed, the compiler can check that none is missing."]]}}, "lanes": {}, "jv": {}};
+JAVAPAGE.start({ title: "Records, sealed types and pattern matching" });
+</script>
+</body>
+</html>

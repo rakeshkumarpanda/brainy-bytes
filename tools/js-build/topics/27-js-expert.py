@@ -389,6 +389,14 @@ console.log(byDuration(3).map((s, i) => `shard ${i + 1}: ${s.join(", ")}`).join(
 ''', 'Balance CI shards with last run timings'),
 }
 
+LANES = {
+    'debounce': {'t': 'Debounce: wait until the typing stops', 'code': 'const search = debounce(q => fetchResults(q), 300);\ninput.addEventListener("input", e => search(e.target.value));', 'lanes': ['Time', 'Key typed', 'Timer', 'Request sent'], 'tone': [5, 2, 0, 1], 'steps': [{'l': 2, 'v': [['0 ms'], ['p'], ['wait until 300 ms'], []], 'm': 'The user types p. Debounce starts a 300 ms timer instead of searching at once.'}, {'l': 2, 'v': [['100 ms'], ['pe'], ['restart: wait until 400 ms'], []], 'm': 'Another key before the timer ends. The old timer is cancelled and a new one starts.'}, {'l': 2, 'v': [['200 ms'], ['pen'], ['restart: wait until 500 ms'], []], 'm': 'And again. Still no request.'}, {'l': 1, 'v': [['500 ms'], [], ['fired'], ['fetchResults("pen")']], 'm': 'The user stopped typing. 300 ms of quiet later, one request goes out for the final text. Without debounce there would have been three.'}]},
+}
+
+DG = {
+    'worker': {'t': 'The main thread and a worker talk with messages', 'w': 900, 'h': 230, 'n': [['main', 20, 80, 200, 70, 'main thread', {'c': 2, 'sub': 'UI, events, your page'}], ['msg1', 300, 20, 260, 50, 'postMessage(data)', {'c': 5, 'sh': 'pill', 'sub': 'a copy, by structured clone'}], ['wk', 640, 80, 220, 70, 'worker thread', {'c': 3, 'sub': 'heavy work, no DOM'}], ['msg2', 300, 160, 260, 50, 'postMessage(result)', {'c': 1, 'sh': 'pill', 'sub': 'back as a message event'}]], 'e': [['main', 'msg1', {'fs': 't', 'ts': 'l'}], ['msg1', 'wk', {'ts': 't'}], ['wk', 'msg2', {'fs': 'b', 'ts': 'r'}], ['msg2', 'main', {'ts': 'b'}]], 'st': [[['main'], 'The main thread keeps handling clicks and painting. It must never run long jobs itself.'], [['msg1', 'main>msg1', 'msg1>wk'], 'It sends the input to the worker. The data is copied, so neither side can change objects on the other side.'], [['wk'], 'The worker does the heavy work on its own thread. The page stays responsive the whole time.'], [['msg2', 'wk>msg2', 'msg2>main'], 'The result comes back as a message event and the main thread shows it.']]},
+}
+
 PARTS = [
     part('performance', '⚡', 'Performance: count first, then measure', '''
 <p>Most slow JavaScript is slow because of the algorithm, not the engine. A loop inside a loop over the same list does about <span class="eq">n²</span> ÷ 2 steps, while a <code>Set</code> lookup does about <span class="eq">n</span>. Count steps to compare ideas, and measure time only to confirm.</p>
@@ -409,7 +417,9 @@ PARTS = [
     part('patterns', '🧩', 'Patterns experts reach for', '''
 <p>A pattern is a known shape for a common problem. These four appear in application code and in test frameworks alike.</p>
 [[patterns]]
-<p>For tests, the two most useful patterns are the <b>page object</b> from chapter 8 and the <b>test data builder</b>. A builder gives every field a valid default, so each test states only what it is about.</p>
+<p>Debounce and throttle are the two patterns behind every search box, autosave and scroll handler. Debounce waits for a pause, throttle allows at most one call per time window. The animation shows debounce on a search box.</p>
+<div class="viz" data-viz="lanes" data-k="debounce"></div>
+<p>For tests, the two most useful patterns are the <b>page object</b> from {{ch:js-oop}} and the <b>test data builder</b>. A builder gives every field a valid default, so each test states only what it is about.</p>
 [[builder]]
 <div class="tip">Unique values from a counter or <code>crypto.randomUUID()</code> keep tests that run in parallel from clashing over the same email or order id.</div>
 ''', qa=True, qa_why='Builders, factories and page objects make large test suites readable and safe to run in parallel.',
@@ -417,6 +427,8 @@ PARTS = [
     part('workers', '🧵', 'Workers: real parallel work', '''
 <p>JavaScript runs your code on one thread, so a long calculation blocks everything else. <b>Worker threads</b> in Node.js and <b>Web Workers</b> in the browser run code on separate threads and talk to the main thread with messages.</p>
 [[workers]]
+<p>The two threads share no variables. Everything goes through messages, and each message is a copy made with the structured clone algorithm, the same one <code>structuredClone()</code> uses. Big binary data can be <b>transferred</b> instead of copied, and a SharedArrayBuffer can be shared on purpose ({{ch:js-collections-iterators}}).</p>
+<div class="viz" data-viz="flow" data-k="worker"></div>
 [[web-worker]]
 <div class="note">Use workers for heavy CPU work such as parsing, hashing, image work or big calculations. For waiting on the network or disk, plain <code>async</code> code is already enough. Test runners use the same idea: Jest, Vitest and Playwright run test files in parallel workers.</div>
 ''', qa=['Playwright', 'Jest', 'Vitest'], qa_why='Test runners use workers to run files in parallel, which is why tests must not share state.',
@@ -431,7 +443,7 @@ PARTS = [
 <tr><td>Secrets</td><td>No API keys in the browser bundle or in git. Read them from environment variables</td></tr>
 <tr><td>eval</td><td>No <code>eval</code> or <code>new Function</code> on user input</td></tr>
 <tr><td>Dependencies</td><td>Run <code>npm audit</code>, keep a lock file and use <code>npm ci</code> in CI</td></tr>
-<tr><td>Auth</td><td>Every API checks the token and the role, not just the UI (chapter 20)</td></tr>
+<tr><td>Auth</td><td>Every API checks the token and the role, not just the UI ({{ch:js-api-testing}})</td></tr>
 <tr><td>Cookies</td><td>Session cookies use HttpOnly, Secure and SameSite</td></tr>
 </table></div>
 ''', qa=True, qa_why='Security checks such as XSS payloads and auth rules belong in every regression suite.',
@@ -580,5 +592,5 @@ T = {
     'summary': 'Counting steps and benchmarking with a warm up and median, listener leaks and weak references, memoize, pipe, strategy, observer, builder and factory patterns, worker threads and Web Workers, XSS and prototype pollution with a security checklist, property based testing, mutation testing and order dependent flaky tests, and balancing CI shards by duration.',
     'keywords': ['performance', 'Big O', 'benchmark', 'memory leak', 'WeakMap', 'design patterns', 'test data builder', 'worker threads', 'Web Workers', 'XSS', 'prototype pollution', 'security testing', 'property based testing', 'mutation testing', 'flaky tests', 'CI sharding', 'expert JavaScript'],
     'qa_intro': 'Senior testers judge the tests as well as the product: they check performance and memory, try security payloads, measure test quality with mutants, hunt flaky tests and keep the pipeline fast.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'dg': DG, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

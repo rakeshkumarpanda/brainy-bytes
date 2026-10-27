@@ -426,7 +426,7 @@ PARTS = [
 ''', qa=['Playwright', 'Cypress'], qa_why='Network mocking makes error states testable and UI tests independent of backend data.',
         kw=['page.route', 'route.fulfill', 'network mocking', 'waitForRequest', 'waitForResponse', 'postDataJSON', 'error state', 'cy.intercept', 'stub API']),
     part('framework', '🏗️', 'Page objects, fixtures and retries', '''
-<p>As a suite grows, repeated steps move into <b>page objects</b> (chapter 8) and <b>fixtures</b>. A Playwright fixture prepares something a test needs, here a logged in shop, and passes it in as a parameter. Tests become short and read like a test case.</p>
+<p>As a suite grows, repeated steps move into <b>page objects</b> ({{ch:js-oop}}) and <b>fixtures</b>. A Playwright fixture prepares something a test needs, here a logged in shop, and passes it in as a parameter. Tests become short and read like a test case.</p>
 [[pw-pom]]
 <h3>Flaky tests and retries</h3>
 <p>A <b>flaky</b> test passes and fails without any code change. Playwright can retry a failed test, and a test that fails and then passes is reported as <b>flaky</b>, not hidden as passed.</p>

@@ -680,6 +680,177 @@ static HttpResponse<String> sendWithRetry(HttpClient c, HttpRequest r, int attem
             ],
         },
         {
+            'id': 'essentials', 'title': 'Real project essentials: environments, secrets, logging with redaction and cleanup', 'emoji': '🧳', 'level': 'Intermediate',
+            'blocks': [
+                ('p', 'Even with no libraries, a native suite can behave like a professional one. The JDK already has everything needed: system properties and environment variables for config, <code>System.Logger</code> for logs, <code>UUID</code> for unique data, and JUnit hooks for cleanup. The one rule that matters most is to hide secrets before anything is logged.'),
+                ('code', 'java', 'src/test/java/tests/support/HttpLog.java', '''
+package tests.support;
+
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+public final class HttpLog {
+
+    private static final System.Logger LOG = System.getLogger("api");
+    private static final Set<String> SECRET = Set.of("authorization", "cookie", "x-api-key");
+
+    private HttpLog() { }
+
+    /** Headers as text, with secret values replaced, so logs are safe to share. */
+    public static String headers(HttpRequest req) {
+        return req.headers().map().entrySet().stream()
+            .map(e -> e.getKey() + ": " + (SECRET.contains(e.getKey().toLowerCase()) ? "***" : String.join(",", e.getValue())))
+            .collect(Collectors.joining(", "));
+    }
+
+    public static void log(HttpResponse<String> res, long ms) {
+        HttpRequest req = res.request();
+        LOG.log(System.Logger.Level.INFO, "{0} {1} -> {2} in {3} ms [{4}]", req.method(), req.uri(), res.statusCode(), ms, headers(req));
+        if (res.statusCode() >= 400) LOG.log(System.Logger.Level.WARNING, "body: {0}", res.body());
+    }
+}
+''', {'save': 'src/test/java/tests/support/HttpLog.java'}),
+                ('code', 'java', 'src/test/java/tests/EssentialsTest.java', '''
+package tests;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import tests.support.HttpLog;
+
+class EssentialsTest {
+
+    static final String BASE = System.getProperty("baseUrl", System.getenv().getOrDefault("BASE_URL", "https://restful-booker.herokuapp.com"));
+    static final String USER = System.getenv().getOrDefault("API_USER", "admin");
+    static final String PASSWORD = System.getenv().getOrDefault("API_PASSWORD", "password123");   // practice API only
+    static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+
+    private final List<String> created = new ArrayList<>();
+
+    static HttpResponse<String> send(String method, String path, String json, String... headers) throws Exception {
+        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(BASE + path)).timeout(Duration.ofSeconds(15))
+            .header("Accept", "application/json");
+        if (headers.length > 0) b.headers(headers);
+        if (json != null) b.header("Content-Type", "application/json");
+        HttpRequest req = b.method(method, json == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(json)).build();
+        long start = System.nanoTime();
+        HttpResponse<String> res = CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
+        HttpLog.log(res, (System.nanoTime() - start) / 1_000_000);
+        return res;
+    }
+
+    static String token() throws Exception {
+        String body = send("POST", "/auth", "{\\"username\\":\\"%s\\",\\"password\\":\\"%s\\"}".formatted(USER, PASSWORD)).body();
+        return body.replaceAll(".*\\"token\\"\\\\s*:\\\\s*\\"([^\\"]+)\\".*", "$1");
+    }
+
+    @AfterEach
+    void cleanUp() throws Exception {
+        if (created.isEmpty()) return;
+        String cookie = "token=" + token();
+        for (String id : created) send("DELETE", "/booking/" + id, null, "Cookie", cookie);
+        created.clear();
+    }
+
+    @Test
+    void uniqueGuestIsStoredAndCleanedUp() throws Exception {
+        String guest = "Guest-" + UUID.randomUUID().toString().substring(0, 8);
+        String json = """
+            {"firstname":"%s","lastname":"Native","totalprice":420,"depositpaid":true,
+             "bookingdates":{"checkin":"2026-12-20","checkout":"2026-12-22"}}""".formatted(guest);
+
+        HttpResponse<String> res = send("POST", "/booking", json);
+        assertEquals(200, res.statusCode(), res.body());
+        String id = res.body().replaceAll(".*\\"bookingid\\"\\\\s*:\\\\s*(\\\\d+).*", "$1");
+        created.add(id);
+
+        HttpResponse<String> read = send("GET", "/booking/" + id, null);
+        assertTrue(read.body().contains(guest), read.body());
+        assertEquals("Cookie: ***", HttpLog.headers(HttpRequest.newBuilder(URI.create(BASE)).header("Cookie", "token=abc").build()));
+    }
+}
+''', {'save': 'src/test/java/tests/EssentialsTest.java'}),
+                ('code', 'bash', 'Run it', '''
+mvn test -Dtest=EssentialsTest -DbaseUrl=http://localhost:3001
+API_PASSWORD="$QA_PASSWORD" BASE_URL=https://qa.booker.example mvn test
+'''),
+                ('ul', [
+                    '<code>System.Logger</code> is part of the JDK and is routed to whatever logging framework the project already uses, so there is nothing extra to set up.',
+                    'Redact secrets in one place, <code>HttpLog.headers</code>, and test the redaction itself, as the last line of the test does.',
+                    'Unique names from <code>UUID</code> keep parallel CI jobs from reading each other\'s bookings.',
+                ]),
+                ('warn', 'The regular expressions here keep the example free of libraries. In a real suite, parse JSON with Jackson as the schema lesson does. Regex parsing breaks as soon as the response format changes.'),
+            ],
+        },
+        {
+            'id': 'latest', 'title': 'What is new in Java for HTTP testing, and how it helps at work', 'emoji': '🆕', 'level': 'Expert',
+            'blocks': [
+                ('table', ['Feature', 'Since', 'How it helps an API tester'], [
+                    ['Java 25 LTS', 'September 2025', 'The current long term support release, a good target for new CI images'],
+                    ['Compact source files and instance <code>main</code>', 'Java 25 (JEP 512)', 'A health check or data seeding script in a few lines, run with <code>java Seed.java</code>'],
+                    ['Module import declarations', 'Java 25 (JEP 511)', '<code>import module java.net.http;</code> brings in the whole HTTP client in one line'],
+                    ['Scoped values', 'Java 25 (JEP 506)', 'Pass a request id or test run id safely through virtual threads without thread locals'],
+                    ['Virtual threads', 'Java 21', 'Thousands of concurrent requests for a quick load smoke, as in the earlier lesson'],
+                    ['HTTP/3 in <code>HttpClient</code>', 'Java 26 (JEP 517, March 2026)', 'Opt in with <code>HttpClient.Version.HTTP_3</code> to test gateways that speak HTTP/3 over QUIC. HTTP/2 has been there since Java 11'],
+                ]),
+                ('code', 'java', 'Seed.java on Java 25 (run with: java Seed.java)', '''
+import module java.net.http;
+
+void main() throws Exception {
+    var client = HttpClient.newHttpClient();
+    for (var name : List.of("Asha", "Ben", "Chen")) {
+        var body = """
+            {"firstname":"%s","lastname":"Seed","totalprice":100,"depositpaid":true,
+             "bookingdates":{"checkin":"2026-12-01","checkout":"2026-12-02"}}""".formatted(name);
+        var req = HttpRequest.newBuilder(URI.create("http://localhost:3001/booking"))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body)).build();
+        IO.println(name + " -> " + client.send(req, HttpResponse.BodyHandlers.ofString()).body());
+    }
+}
+'''),
+                ('code', 'java', 'src/test/java/tests/ProtocolTest.java', '''
+package tests;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import org.junit.jupiter.api.Test;
+
+class ProtocolTest {
+
+    static final String BASE = System.getProperty("baseUrl", "https://restful-booker.herokuapp.com");
+
+    @Test
+    void reportsWhichHttpVersionWasUsed() throws Exception {
+        HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
+        HttpResponse<String> res = client.send(HttpRequest.newBuilder(URI.create(BASE + "/booking/1")).build(),
+            HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, res.statusCode());
+        // HTTP_2 is a preference. Over plain http, or when the server cannot, the client falls back to HTTP/1.1
+        assertTrue(res.version() == HttpClient.Version.HTTP_2 || res.version() == HttpClient.Version.HTTP_1_1, res.version().toString());
+        System.out.println("negotiated " + res.version());
+    }
+}
+''', {'save': 'src/test/java/tests/ProtocolTest.java'}),
+                ('tip', 'Before you move a suite to a new Java release at work, run it on the new JDK in a separate CI job for a week. Compile warnings about deprecated APIs are your to do list.'),
+            ],
+        },
+        {
             'id': 'scenario', 'title': 'Real world scenario: a release gate health check', 'emoji': '🚦', 'level': 'Scenario',
             'blocks': [
                 ('p', 'Before a release goes live, the team wants a quick yes or no: is the booking service healthy and does a full booking journey still work? The check must run anywhere a JDK exists, finish in seconds, and print a clear result.'),

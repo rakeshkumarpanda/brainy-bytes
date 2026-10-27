@@ -569,6 +569,121 @@ test('five creates in parallel get five different ids', async ({ request }) => {
             ],
         },
         {
+            'id': 'essentials', 'title': 'Real project essentials: environments, secrets, test data, logging and cleanup', 'emoji': '🧳', 'level': 'Intermediate',
+            'blocks': [
+                ('p', 'A company suite runs against several servers, keeps secrets out of Git, makes unique data so parallel workers never clash, attaches the exact exchange to the report when something fails, and leaves the shared QA database clean. Playwright Test has a built in answer for each of these.'),
+                ('code', 'js', 'playwright.config.js: one config, many environments', '''
+import { defineConfig } from '@playwright/test';
+
+const ENVS = {
+  local: 'http://localhost:3001',
+  qa: 'https://qa.booker.example',
+  prod: 'https://restful-booker.herokuapp.com',
+};
+const env = process.env.TEST_ENV ?? 'prod';
+if (!(env in ENVS)) throw new Error(`TEST_ENV must be one of ${Object.keys(ENVS).join(', ')}`);
+
+export default defineConfig({
+  testDir: './tests',
+  use: {
+    baseURL: process.env.BASE_URL ?? ENVS[env],
+    extraHTTPHeaders: { Accept: 'application/json', 'X-Test-Run': process.env.GITHUB_RUN_ID ?? 'local' },
+    ignoreHTTPSErrors: process.env.QA_SELF_SIGNED === '1',      // QA only, never production
+  },
+});
+'''),
+                ('code', 'js', 'tests/essentials.spec.js', '''
+import { test as base, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+
+const test = base.extend({
+  // Logs in once per test with the secret from the environment
+  token: async ({ request }, use) => {
+    const res = await request.post('/auth', { data: { username: process.env.API_USER ?? 'admin', password: process.env.API_PASSWORD ?? 'password123' } });
+    await use((await res.json()).token);
+  },
+  // Collects ids and deletes them after the test, pass or fail
+  created: async ({ request, token }, use) => {
+    const ids = [];
+    await use(ids);
+    for (const id of ids) await request.delete(`/booking/${id}`, { headers: { Cookie: `token=${token}` } });
+  },
+});
+
+async function attach(name, res) {
+  await test.info().attach(name, { body: `${res.status()} ${res.url()}\\n${await res.text()}`, contentType: 'text/plain' });
+}
+
+test('a unique guest round trip, fully reported', async ({ request, created }) => {
+  const guest = {
+    firstname: `Guest-${randomUUID().slice(0, 8)}`,
+    lastname: 'Essentials',
+    totalprice: 500 + Math.floor(Math.random() * 24_500),
+    depositpaid: true,
+    bookingdates: { checkin: '2026-12-20', checkout: '2026-12-27' },
+  };
+
+  const res = await request.post('/booking', { data: guest });
+  await attach('create booking', res);
+  await expect(res).toBeOK();
+  const { bookingid } = await res.json();
+  created.push(bookingid);
+
+  const read = await request.get(`/booking/${bookingid}`);
+  await attach('read booking', read);
+  expect(await read.json()).toEqual(guest);
+});
+''', {'save': 'tests/essentials.spec.js'}),
+                ('code', 'bash', 'Run it', '''
+TEST_ENV=local npx playwright test tests/essentials.spec.js
+TEST_ENV=qa API_PASSWORD="$QA_PASSWORD" npx playwright test     # secret from your shell or CI
+npx playwright show-report                                      # the attachments are under each test
+'''),
+                ('table', ['Need', 'Playwright answer'], [
+                    ['Different servers', '<code>baseURL</code> chosen from <code>TEST_ENV</code> in the config'],
+                    ['Secrets', '<code>process.env</code>, filled from CI secrets, or a local <code>.env</code> loaded with <code>node --env-file</code> or the dotenv package'],
+                    ['Unique data', '<code>crypto.randomUUID()</code> in the names'],
+                    ['Readable failures', '<code>test.info().attach()</code> and <code>trace: \'retain-on-failure\'</code>'],
+                    ['Cleanup', 'code after <code>await use()</code> in a fixture'],
+                ]),
+                ('warn', 'Attachments and traces include request headers. If your API uses an <code>Authorization</code> header, avoid attaching raw headers, or replace the token with <code>***</code> before you attach.'),
+            ],
+        },
+        {
+            'id': 'latest', 'title': 'What is new in Playwright Test, and how it helps at work', 'emoji': '🆕', 'level': 'Expert',
+            'blocks': [
+                ('table', ['Feature', 'Available in', 'How it helps an API tester'], [
+                    ['Tracing on API request contexts', 'Playwright 1.64', 'API calls appear in the trace viewer with headers and bodies. The runner traces them for you when <code>trace</code> is on'],
+                    ['Cookie methods on API contexts', 'Playwright 1.64', '<code>addCookies()</code>, <code>cookies()</code> and <code>clearCookies()</code> set or inspect a session without a browser'],
+                    ['<code>await using</code> on request contexts', 'Playwright 1.64 with Node 24 or TypeScript', 'A private context is disposed automatically at the end of the block'],
+                    ['<code>maxRetries</code> per request', 'Playwright 1.46 and newer', 'Retries connection resets only, so real 5xx bugs still fail the test'],
+                    ['Testing WebMCP tools and passkeys', 'Playwright 1.61 to 1.64', 'End to end tests for AI tool calls in the browser and passwordless login'],
+                    ['Tags and annotations in test details', 'Playwright 1.42 and newer', '<code>test(\'...\', { tag: \'@smoke\' })</code> and linked issues in the report'],
+                ]),
+                ('code', 'js', 'tests/latest.spec.js', '''
+import { test, expect } from '@playwright/test';
+
+test('an API session with its own cookies', { tag: ['@smoke', '@api'] }, async ({ playwright }, testInfo) => {
+  const baseURL = testInfo.project.use.baseURL;
+  const api = await playwright.request.newContext({ baseURL });     // traced by the runner when trace is on
+  try {
+    const { token } = await (await api.post('/auth', { data: { username: 'admin', password: 'password123' } })).json();
+    await api.addCookies([{ name: 'token', value: token, url: baseURL }]);
+    expect((await api.cookies()).map(c => c.name)).toContain('token');
+
+    // The cookie is sent automatically now, so PATCH works without a header
+    const res = await api.patch('/booking/1', { data: { additionalneeds: 'Dinner' }, maxRetries: 2 });
+    await expect(res).toBeOK();
+  } finally {
+    await api.dispose();
+  }
+});
+''', {'save': 'tests/latest.spec.js'}),
+                ('warn', 'Inside Playwright Test, do not call <code>api.tracing.start()</code> yourself when <code>trace</code> is set in the config. The runner already records every request context the test creates, and a second start fails with <code>Tracing has been already started</code>. Manual tracing is for scripts and other languages that do not use the runner.'),
+                ('tip', 'Upgrade Playwright on a branch, run the suite with <code>--repeat-each 3</code> to spot new flakiness, and read the release notes for changed defaults before you merge.'),
+            ],
+        },
+        {
             'id': 'scenario', 'title': 'Real world scenario: a hotel front desk day', 'emoji': '🏨', 'level': 'Scenario',
             'blocks': [
                 ('p', 'The receptionist logs in, books a room, adds breakfast, and the guest later cancels. Someone without a login also tries to cancel. Each step is a <code>test.step</code>, so the report reads like the story.'),

@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Databases and web APIs: JDBC and HttpClient · Java</title>
+<meta name="description" content="JDBC with a real H2 database: Connection, Statement, ResultSet, PreparedStatement, SQL injection, transactions with commit and rollback, batches and generated keys. HttpClient: GET and POST, headers, status codes, timeouts, sendAsync, HTTP/3 in Java 26, and an API smoke test.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/xv.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🚀 Modern Java</span><span>›</span><span>Chapter 26 of 27</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🔌</span><div><h1>Databases and web APIs: JDBC and HttpClient</h1><p class="lead">Programs become useful when they talk to the outside world. This chapter connects Java to a real database with JDBC, shows SQL injection and how PreparedStatement stops it, groups changes into transactions, and then calls web APIs with HttpClient, including timeouts, async calls, HTTP/3 from Java 26 and a small API test suite.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 26 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 8 examples run on a real JDK</span><span class="chip">👣 0 line by line replays</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 7 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="jdk-note">Every example below was compiled and run on java version &quot;25.0.5.0.2&quot; 2026-10-21 LTS when this page was built, so each output is real. Press <b>👣 Run line by line</b> on an example to replay that run one line at a time.</div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#jdbc"><span>🗃️</span>JDBC: talking to a database</a><a href="#prepared"><span>🛡️</span>PreparedStatement and SQL injection</a><a href="#transactions"><span>🏦</span>Transactions: all or nothing</a><a href="#batch"><span>📦</span>Generated keys, batches and records</a><a href="#httpclient"><span>🌐</span>HttpClient: calling web APIs (Java 11)</a><a href="#async"><span>⏱️</span>Timeouts, async calls and HTTP/3</a><a href="#scenario"><span>🎬</span>Real world scenario: an API test suite with only the JDK</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="jdbc" data-say="jdbc"><div class="sec-num">Part 1</div><h2><span class="sec-em">🗃️</span><span>JDBC: talking to a database</span></h2>
+<p>Almost every real application stores data in a database. <b>JDBC</b> (Java Database Connectivity) is the standard API in <code>java.sql</code> for that. Your code uses the same interfaces whatever the database, and a <b>driver</b> JAR does the database specific work. The examples here use H2, a small database written in Java that can live entirely in memory, so they really run.</p>
+<div class="viz" data-viz="flow" data-k="jdbc"></div>
+<div class="codewrap" data-k="connect"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Connect, create, insert and query · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.sql.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">SQLException</span> {
+        <span class="t">String</span> url = <span class="s">"jdbc:h2:mem:shop"</span>;                     <span class="c">// an in-memory database, gone when the program ends</span>
+        <span class="k">try</span> (<span class="t">Connection</span> con = <span class="t">DriverManager</span>.getConnection(url, <span class="s">"sa"</span>, <span class="s">""</span>);
+             <span class="t">Statement</span> st = con.createStatement()) {
+
+            st.execute(<span class="s">"CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(40), price INT)"</span>);
+            <span class="k">int</span> rows = st.executeUpdate(<span class="s">"INSERT INTO products VALUES (1, 'pen', 49), (2, 'notebook', 120), (3, 'bag', 899)"</span>);
+            <span class="t">System</span>.out.println(rows + <span class="s">" rows inserted"</span>);
+
+            <span class="k">try</span> (<span class="t">ResultSet</span> rs = st.executeQuery(<span class="s">"SELECT id, name, price FROM products WHERE price &lt; 500 ORDER BY price"</span>)) {
+                <span class="k">while</span> (rs.next()) {                          <span class="c">// move to the next row, false when there are no more</span>
+                    <span class="t">System</span>.out.println(rs.getInt(<span class="s">"id"</span>) + <span class="s">" "</span> + rs.getString(<span class="s">"name"</span>) + <span class="s">" costs "</span> + rs.getInt(<span class="s">"price"</span>));
+                }
+            }
+            <span class="t">System</span>.out.println(<span class="s">"database: "</span> + con.getMetaData().getDatabaseProductName());
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>3 rows inserted
+1 pen costs 49
+2 notebook costs 120
+database: H2</pre></div></div>
+<div class="tip">Every Connection, Statement and ResultSet holds resources in the database. Always open them in try-with-resources so they close even when an exception is thrown. Leaked connections are a classic cause of "the app froze after a few hours".</div>
+</section>
+<section class="card reveal jsec" id="prepared" data-say="prepared"><div class="sec-num">Part 2</div><h2><span class="sec-em">🛡️</span><span>PreparedStatement and SQL injection</span></h2>
+<p>The most famous database bug is <b>SQL injection</b>. When user input is glued into SQL text, a quote in the input can end the string early and change the meaning of the query. Try it in the widget first, then see the real database do it.</p>
+<div class="viz" data-viz="jsql"></div>
+<div class="codewrap" data-k="inject"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">SQL injection, for real, and the fix · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.sql.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">SQLException</span> {
+        <span class="k">try</span> (<span class="t">Connection</span> con = <span class="t">DriverManager</span>.getConnection(<span class="s">"jdbc:h2:mem:login"</span>, <span class="s">"sa"</span>, <span class="s">""</span>)) {
+            con.createStatement().execute(<span class="s">"CREATE TABLE users (name VARCHAR(20), role VARCHAR(20))"</span>);
+            con.createStatement().execute(<span class="s">"INSERT INTO users VALUES ('asha', 'admin'), ('ravi', 'customer'), ('meera', 'customer')"</span>);
+
+            <span class="t">String</span> typed = <span class="s">"x' OR '1'='1"</span>;                   <span class="c">// what an attacker types into the login form</span>
+
+            <span class="c">// ❌ gluing the input into the SQL text</span>
+            <span class="t">String</span> sql = <span class="s">"SELECT name FROM users WHERE name = '"</span> + typed + <span class="s">"'"</span>;
+            <span class="t">System</span>.out.println(<span class="s">"glued SQL: "</span> + sql);
+            <span class="k">try</span> (<span class="t">ResultSet</span> rs = con.createStatement().executeQuery(sql)) {
+                <span class="k">while</span> (rs.next()) <span class="t">System</span>.out.println(<span class="s">"  glued query returned "</span> + rs.getString(<span class="n">1</span>));
+            }
+
+            <span class="c">// ✅ a PreparedStatement sends the input as a value, never as SQL</span>
+            <span class="k">try</span> (<span class="t">PreparedStatement</span> ps = con.prepareStatement(<span class="s">"SELECT name FROM users WHERE name = ?"</span>)) {
+                ps.setString(<span class="n">1</span>, typed);
+                <span class="k">try</span> (<span class="t">ResultSet</span> rs = ps.executeQuery()) {
+                    <span class="t">System</span>.out.println(<span class="s">"prepared query found a row? "</span> + rs.next());
+                }
+            }
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>glued SQL: SELECT name FROM users WHERE name = &#x27;x&#x27; OR &#x27;1&#x27;=&#x27;1&#x27;
+  glued query returned asha
+  glued query returned ravi
+  glued query returned meera
+prepared query found a row? false</pre></div></div>
+<p>A <b>PreparedStatement</b> sends the SQL with <code>?</code> placeholders, and the values separately. The database never reads a value as SQL, whatever it contains. As a bonus, the database can reuse the query plan, so repeated queries run faster.</p>
+<div class="note">Testers check for this by typing <code>'</code>, <code>' OR '1'='1</code> and <code>'; DROP TABLE users; --</code> into every input field and API parameter. A 500 error or extra rows is a serious bug.</div>
+</section>
+<section class="card reveal jsec" id="transactions" data-say="transactions"><div class="sec-num">Part 3</div><h2><span class="sec-em">🏦</span><span>Transactions: all or nothing</span></h2>
+<p>A bank transfer is two updates: take money from one account and add it to another. If the program crashes between them, money appears or disappears. A <b>transaction</b> groups statements so they all succeed together (<b>commit</b>) or all are undone (<b>rollback</b>).</p>
+<div class="codewrap" data-k="tx"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A money transfer: commit or roll back together · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.sql.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">static</span> <span class="k">void</span> transfer(<span class="t">Connection</span> con, <span class="t">String</span> from, <span class="t">String</span> <span class="k">to</span>, <span class="k">int</span> amount) <span class="k">throws</span> <span class="t">SQLException</span> {
+        con.setAutoCommit(<span class="k">false</span>);                            <span class="c">// start a transaction</span>
+        <span class="k">try</span> (<span class="t">PreparedStatement</span> take = con.prepareStatement(<span class="s">"UPDATE accounts SET balance = balance - ? WHERE name = ?"</span>);
+             <span class="t">PreparedStatement</span> give = con.prepareStatement(<span class="s">"UPDATE accounts SET balance = balance + ? WHERE name = ?"</span>)) {
+            give.setInt(<span class="n">1</span>, amount); give.setString(<span class="n">2</span>, <span class="k">to</span>); give.executeUpdate();
+            take.setInt(<span class="n">1</span>, amount); take.setString(<span class="n">2</span>, from); take.executeUpdate();   <span class="c">// fails if balance goes below 0</span>
+            con.commit();
+            <span class="t">System</span>.out.println(<span class="s">"transfer of "</span> + amount + <span class="s">" committed"</span>);
+        } <span class="k">catch</span> (<span class="t">SQLException</span> e) {
+            con.rollback();                                  <span class="c">// undo every change in this transaction</span>
+            <span class="t">System</span>.out.println(<span class="s">"transfer of "</span> + amount + <span class="s">" rolled back: balance would go below 0"</span>);
+        } <span class="k">finally</span> {
+            con.setAutoCommit(<span class="k">true</span>);
+        }
+    }
+
+    <span class="k">static</span> <span class="k">void</span> show(<span class="t">Connection</span> con) <span class="k">throws</span> <span class="t">SQLException</span> {
+        <span class="k">try</span> (<span class="t">ResultSet</span> rs = con.createStatement().executeQuery(<span class="s">"SELECT name, balance FROM accounts ORDER BY name"</span>)) {
+            <span class="t">StringBuilder</span> sb = <span class="k">new</span> <span class="t">StringBuilder</span>(<span class="s">"  balances:"</span>);
+            <span class="k">while</span> (rs.next()) sb.append(<span class="s">" "</span>).append(rs.getString(<span class="n">1</span>)).append(<span class="s">"="</span>).append(rs.getInt(<span class="n">2</span>));
+            <span class="t">System</span>.out.println(sb);
+        }
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">SQLException</span> {
+        <span class="k">try</span> (<span class="t">Connection</span> con = <span class="t">DriverManager</span>.getConnection(<span class="s">"jdbc:h2:mem:bank"</span>, <span class="s">"sa"</span>, <span class="s">""</span>)) {
+            con.createStatement().execute(<span class="s">"CREATE TABLE accounts (name VARCHAR(20), balance INT CHECK (balance &gt;= 0))"</span>);
+            con.createStatement().execute(<span class="s">"INSERT INTO accounts VALUES ('asha', 500), ('ravi', 100)"</span>);
+            show(con);
+            transfer(con, <span class="s">"asha"</span>, <span class="s">"ravi"</span>, <span class="n">200</span>);
+            show(con);
+            transfer(con, <span class="s">"ravi"</span>, <span class="s">"asha"</span>, <span class="n">1000</span>);
+            show(con);
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>  balances: asha=500 ravi=100
+transfer of 200 committed
+  balances: asha=300 ravi=300
+transfer of 1000 rolled back: balance would go below 0
+  balances: asha=300 ravi=300</pre></div></div>
+<p>In the failed transfer the first update had already added 1000 to asha. The rollback undid it, so the balances are exactly as before. By default JDBC commits every statement on its own (auto commit). Turn that off for a group of statements that belong together.</p>
+<div class="tw"><table class="jt"><tr><th>ACID</th><th>Means</th></tr>
+<tr><td>Atomic</td><td>all statements or none</td></tr>
+<tr><td>Consistent</td><td>rules such as CHECK constraints always hold</td></tr>
+<tr><td>Isolated</td><td>other users do not see half finished work</td></tr>
+<tr><td>Durable</td><td>after commit, the data survives a crash</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="batch" data-say="batch"><div class="sec-num">Part 4</div><h2><span class="sec-em">📦</span><span>Generated keys, batches and records</span></h2>
+<p>Three everyday needs: getting the id the database generated for a new row, inserting many rows quickly, and turning rows into Java objects. Records are a natural fit for rows.</p>
+<div class="codewrap" data-k="batch"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Generated keys, batches and mapping rows to records · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> java.sql.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+    <span class="k">record</span> <span class="t">Order</span>(<span class="k">long</span> id, <span class="t">String</span> customer, <span class="k">int</span> amount) { }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">SQLException</span> {
+        <span class="k">try</span> (<span class="t">Connection</span> con = <span class="t">DriverManager</span>.getConnection(<span class="s">"jdbc:h2:mem:orders"</span>, <span class="s">"sa"</span>, <span class="s">""</span>)) {
+            con.createStatement().execute(<span class="s">"CREATE TABLE orders (id BIGINT AUTO_INCREMENT PRIMARY KEY, customer VARCHAR(20), amount INT)"</span>);
+
+            <span class="c">// one row, and ask for the id the database generated</span>
+            <span class="k">try</span> (<span class="t">PreparedStatement</span> ps = con.prepareStatement(<span class="s">"INSERT INTO orders (customer, amount) VALUES (?, ?)"</span>, <span class="t">Statement</span>.<span class="t">RETURN_GENERATED_KEYS</span>)) {
+                ps.setString(<span class="n">1</span>, <span class="s">"asha"</span>); ps.setInt(<span class="n">2</span>, <span class="n">450</span>);
+                ps.executeUpdate();
+                <span class="k">try</span> (<span class="t">ResultSet</span> keys = ps.getGeneratedKeys()) {
+                    keys.next();
+                    <span class="t">System</span>.out.println(<span class="s">"new order id: "</span> + keys.getLong(<span class="n">1</span>));
+                }
+            }
+
+            <span class="c">// a thousand rows in one round trip with a batch</span>
+            <span class="k">try</span> (<span class="t">PreparedStatement</span> ps = con.prepareStatement(<span class="s">"INSERT INTO orders (customer, amount) VALUES (?, ?)"</span>)) {
+                <span class="k">for</span> (<span class="k">int</span> i = <span class="n">1</span>; i &lt;= <span class="n">1000</span>; i++) {
+                    ps.setString(<span class="n">1</span>, i % <span class="n">2</span> == <span class="n">0</span> ? <span class="s">"ravi"</span> : <span class="s">"meera"</span>);
+                    ps.setInt(<span class="n">2</span>, i);
+                    ps.addBatch();
+                }
+                <span class="t">System</span>.out.println(<span class="s">"batch inserted "</span> + ps.executeBatch().length + <span class="s">" rows"</span>);
+            }
+
+            <span class="c">// map rows to records</span>
+            <span class="k">try</span> (<span class="t">PreparedStatement</span> ps = con.prepareStatement(<span class="s">"SELECT id, customer, amount FROM orders WHERE amount &gt; ? ORDER BY amount DESC LIMIT 3"</span>)) {
+                ps.setInt(<span class="n">1</span>, <span class="n">990</span>);
+                <span class="k">try</span> (<span class="t">ResultSet</span> rs = ps.executeQuery()) {
+                    <span class="k">while</span> (rs.next()) <span class="t">System</span>.out.println(<span class="k">new</span> <span class="t">Order</span>(rs.getLong(<span class="s">"id"</span>), rs.getString(<span class="s">"customer"</span>), rs.getInt(<span class="s">"amount"</span>)));
+                }
+            }
+            <span class="k">try</span> (<span class="t">ResultSet</span> rs = con.createStatement().executeQuery(<span class="s">"SELECT customer, COUNT(*), SUM(amount) FROM orders GROUP BY customer ORDER BY customer"</span>)) {
+                <span class="k">while</span> (rs.next()) <span class="t">System</span>.out.println(rs.getString(<span class="n">1</span>) + <span class="s">": "</span> + rs.getInt(<span class="n">2</span>) + <span class="s">" orders, total "</span> + rs.getLong(<span class="n">3</span>));
+            }
+        }
+    }
+}</pre><div class="out"><span>Output</span><pre>new order id: 1
+batch inserted 1000 rows
+Order[id=1001, customer=ravi, amount=1000]
+Order[id=1000, customer=meera, amount=999]
+Order[id=999, customer=ravi, amount=998]
+asha: 1 orders, total 450
+meera: 500 orders, total 250000
+ravi: 500 orders, total 250500</pre></div></div>
+<div class="tip">In real projects, libraries such as Spring's JdbcClient, jOOQ or JPA with Hibernate remove most of this code. They all use JDBC underneath, so knowing it helps when you need to read their logs or fix a slow query.</div>
+</section>
+<section class="card reveal jsec" id="httpclient" data-say="httpclient"><div class="sec-num">Part 5</div><h2><span class="sec-em">🌐</span><span>HttpClient: calling web APIs (Java 11)</span></h2>
+<p>Since Java 11, the JDK has a modern HTTP client in <code>java.net.http</code>. It supports HTTP/1.1 and HTTP/2, synchronous and asynchronous calls, and timeouts. Each example below starts a tiny local server first with <code>com.sun.net.httpserver</code>, so the calls really happen.</p>
+<div class="viz" data-viz="flow" data-k="http"></div>
+<div class="codewrap" data-k="get"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A GET request with HttpClient · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> com.sun.net.httpserver.*;
+<span class="k">import</span> java.io.*;
+<span class="k">import</span> java.net.*;
+<span class="k">import</span> java.net.http.*;
+<span class="k">import</span> java.time.<span class="t">Duration</span>;
+<span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+
+    <span class="c">// a tiny shop API on a free port, so the example needs no internet</span>
+    <span class="k">static</span> <span class="t">HttpServer</span> startServer() <span class="k">throws</span> <span class="t">IOException</span> {
+        <span class="t">HttpServer</span> server = <span class="t">HttpServer</span>.create(<span class="k">new</span> <span class="t">InetSocketAddress</span>(<span class="s">"127.0.0.1"</span>, <span class="n">0</span>), <span class="n">0</span>);
+        server.createContext(<span class="s">"/products/1"</span>, ex -&gt; reply(ex, <span class="n">200</span>, <span class="s">"{\"id\":1,\"name\":\"pen\",\"price\":49}"</span>));
+        server.createContext(<span class="s">"/orders"</span>, ex -&gt; {
+            <span class="t">String</span> body = <span class="k">new</span> <span class="t">String</span>(ex.getRequestBody().readAllBytes());
+            <span class="k">if</span> (!ex.getRequestMethod().equals(<span class="s">"POST"</span>)) { reply(ex, <span class="n">405</span>, <span class="s">"{\"error\":\"use POST\"}"</span>); <span class="k">return</span>; }
+            <span class="k">if</span> (!<span class="s">"secret-token"</span>.equals(ex.getRequestHeaders().getFirst(<span class="s">"Authorization"</span>))) { reply(ex, <span class="n">401</span>, <span class="s">"{\"error\":\"login first\"}"</span>); <span class="k">return</span>; }
+            ex.getResponseHeaders().add(<span class="s">"Location"</span>, <span class="s">"/orders/77"</span>);
+            reply(ex, <span class="n">201</span>, <span class="s">"{\"id\":77,\"received\":"</span> + body + <span class="s">"}"</span>);
+        });
+        server.createContext(<span class="s">"/slow"</span>, ex -&gt; {
+            <span class="k">try</span> { <span class="t">Thread</span>.sleep(<span class="n">2000</span>); } <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { }
+            reply(ex, <span class="n">200</span>, <span class="s">"finally"</span>);
+        });
+        server.setExecutor(<span class="t">Executors</span>.newVirtualThreadPerTaskExecutor());
+        server.start();
+        <span class="k">return</span> server;
+    }
+
+    <span class="k">static</span> <span class="k">void</span> reply(<span class="t">HttpExchange</span> ex, <span class="k">int</span> status, <span class="t">String</span> body) <span class="k">throws</span> <span class="t">IOException</span> {
+        <span class="k">byte</span>[] bytes = body.getBytes();
+        ex.getResponseHeaders().add(<span class="s">"Content-Type"</span>, <span class="s">"application/json"</span>);
+        ex.sendResponseHeaders(status, bytes.length);
+        <span class="k">try</span> (<span class="t">OutputStream</span> out = ex.getResponseBody()) { out.write(bytes); }
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">HttpServer</span> server = startServer();
+        <span class="t">String</span> base = <span class="s">"http://127.0.0.1:"</span> + server.getAddress().getPort();
+
+        <span class="t">HttpClient</span> client = <span class="t">HttpClient</span>.newBuilder()
+                .connectTimeout(<span class="t">Duration</span>.ofSeconds(<span class="n">2</span>))
+                .build();
+
+        <span class="t">HttpRequest</span> req = <span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/products/1"</span>))
+                .header(<span class="s">"Accept"</span>, <span class="s">"application/json"</span>)
+                .<span class="t">GET</span>()
+                .build();
+        <span class="t">HttpResponse</span>&lt;<span class="t">String</span>&gt; res = client.send(req, <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString());
+
+        <span class="t">System</span>.out.println(<span class="s">"status: "</span> + res.statusCode());
+        <span class="t">System</span>.out.println(<span class="s">"content type: "</span> + res.headers().firstValue(<span class="s">"Content-Type"</span>).orElse(<span class="s">"none"</span>));
+        <span class="t">System</span>.out.println(<span class="s">"body: "</span> + res.body());
+        <span class="t">System</span>.out.println(<span class="s">"protocol: "</span> + res.version());
+        server.stop(<span class="n">0</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>status: 200
+content type: application/json
+body: {&quot;id&quot;:1,&quot;name&quot;:&quot;pen&quot;,&quot;price&quot;:49}
+protocol: HTTP_1_1</pre></div></div>
+<p>The protocol says HTTP_1_1 even though the client prefers HTTP/2. The little test server only speaks HTTP/1.1, so the client quietly falls back. Against a real HTTPS API that supports it, the same code would print HTTP_2.</p>
+<div class="codewrap" data-k="post"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">POST with a JSON body, headers and status codes · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> com.sun.net.httpserver.*;
+<span class="k">import</span> java.io.*;
+<span class="k">import</span> java.net.*;
+<span class="k">import</span> java.net.http.*;
+<span class="k">import</span> java.time.<span class="t">Duration</span>;
+<span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+
+    <span class="c">// a tiny shop API on a free port, so the example needs no internet</span>
+    <span class="k">static</span> <span class="t">HttpServer</span> startServer() <span class="k">throws</span> <span class="t">IOException</span> {
+        <span class="t">HttpServer</span> server = <span class="t">HttpServer</span>.create(<span class="k">new</span> <span class="t">InetSocketAddress</span>(<span class="s">"127.0.0.1"</span>, <span class="n">0</span>), <span class="n">0</span>);
+        server.createContext(<span class="s">"/products/1"</span>, ex -&gt; reply(ex, <span class="n">200</span>, <span class="s">"{\"id\":1,\"name\":\"pen\",\"price\":49}"</span>));
+        server.createContext(<span class="s">"/orders"</span>, ex -&gt; {
+            <span class="t">String</span> body = <span class="k">new</span> <span class="t">String</span>(ex.getRequestBody().readAllBytes());
+            <span class="k">if</span> (!ex.getRequestMethod().equals(<span class="s">"POST"</span>)) { reply(ex, <span class="n">405</span>, <span class="s">"{\"error\":\"use POST\"}"</span>); <span class="k">return</span>; }
+            <span class="k">if</span> (!<span class="s">"secret-token"</span>.equals(ex.getRequestHeaders().getFirst(<span class="s">"Authorization"</span>))) { reply(ex, <span class="n">401</span>, <span class="s">"{\"error\":\"login first\"}"</span>); <span class="k">return</span>; }
+            ex.getResponseHeaders().add(<span class="s">"Location"</span>, <span class="s">"/orders/77"</span>);
+            reply(ex, <span class="n">201</span>, <span class="s">"{\"id\":77,\"received\":"</span> + body + <span class="s">"}"</span>);
+        });
+        server.createContext(<span class="s">"/slow"</span>, ex -&gt; {
+            <span class="k">try</span> { <span class="t">Thread</span>.sleep(<span class="n">2000</span>); } <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { }
+            reply(ex, <span class="n">200</span>, <span class="s">"finally"</span>);
+        });
+        server.setExecutor(<span class="t">Executors</span>.newVirtualThreadPerTaskExecutor());
+        server.start();
+        <span class="k">return</span> server;
+    }
+
+    <span class="k">static</span> <span class="k">void</span> reply(<span class="t">HttpExchange</span> ex, <span class="k">int</span> status, <span class="t">String</span> body) <span class="k">throws</span> <span class="t">IOException</span> {
+        <span class="k">byte</span>[] bytes = body.getBytes();
+        ex.getResponseHeaders().add(<span class="s">"Content-Type"</span>, <span class="s">"application/json"</span>);
+        ex.sendResponseHeaders(status, bytes.length);
+        <span class="k">try</span> (<span class="t">OutputStream</span> out = ex.getResponseBody()) { out.write(bytes); }
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">HttpServer</span> server = startServer();
+        <span class="t">String</span> base = <span class="s">"http://127.0.0.1:"</span> + server.getAddress().getPort();
+        <span class="t">HttpClient</span> client = <span class="t">HttpClient</span>.newHttpClient();
+        <span class="t">String</span> json = <span class="s">"{\"product\":1,\"qty\":2}"</span>;
+
+        <span class="t">HttpRequest</span> noToken = <span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/orders"</span>))
+                .header(<span class="s">"Content-Type"</span>, <span class="s">"application/json"</span>)
+                .<span class="t">POST</span>(<span class="t">HttpRequest</span>.<span class="t">BodyPublishers</span>.ofString(json))
+                .build();
+        <span class="t">HttpResponse</span>&lt;<span class="t">String</span>&gt; r1 = client.send(noToken, <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString());
+        <span class="t">System</span>.out.println(<span class="s">"without a token: "</span> + r1.statusCode() + <span class="s">" "</span> + r1.body());
+
+        <span class="t">HttpRequest</span> withToken = <span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/orders"</span>))
+                .header(<span class="s">"Content-Type"</span>, <span class="s">"application/json"</span>)
+                .header(<span class="s">"Authorization"</span>, <span class="s">"secret-token"</span>)
+                .<span class="t">POST</span>(<span class="t">HttpRequest</span>.<span class="t">BodyPublishers</span>.ofString(json))
+                .build();
+        <span class="t">HttpResponse</span>&lt;<span class="t">String</span>&gt; r2 = client.send(withToken, <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString());
+        <span class="t">System</span>.out.println(<span class="s">"with a token:    "</span> + r2.statusCode() + <span class="s">" "</span> + r2.body());
+        <span class="t">System</span>.out.println(<span class="s">"new order at:    "</span> + r2.headers().firstValue(<span class="s">"Location"</span>).orElseThrow());
+
+        <span class="t">HttpResponse</span>&lt;<span class="t">String</span>&gt; r3 = client.send(<span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/orders"</span>)).<span class="t">GET</span>().build(), <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString());
+        <span class="t">System</span>.out.println(<span class="s">"GET on /orders:  "</span> + r3.statusCode() + <span class="s">" "</span> + r3.body());
+        server.stop(<span class="n">0</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>without a token: 401 {&quot;error&quot;:&quot;login first&quot;}
+with a token:    201 {&quot;id&quot;:77,&quot;received&quot;:{&quot;product&quot;:1,&quot;qty&quot;:2}}
+new order at:    /orders/77
+GET on /orders:  405 {&quot;error&quot;:&quot;use POST&quot;}</pre></div></div>
+<div class="tw"><table class="jt"><tr><th>Status</th><th>Meaning</th></tr>
+<tr><td>200 OK, 201 Created, 204 No Content</td><td>it worked</td></tr>
+<tr><td>301, 302, 304</td><td>look elsewhere, or use your cached copy</td></tr>
+<tr><td>400, 401, 403, 404, 405, 409, 429</td><td>the client did something wrong</td></tr>
+<tr><td>500, 502, 503, 504</td><td>the server failed</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="async" data-say="async"><div class="sec-num">Part 6</div><h2><span class="sec-em">⏱️</span><span>Timeouts, async calls and HTTP/3</span></h2>
+<p>A call to another service can hang. Always set a <b>connect timeout</b> on the client and a <b>request timeout</b> on each request. Since Java 26 the request timeout also covers reading the response body, not only waiting for the headers. <code>sendAsync</code> returns a CompletableFuture, so many calls can run at the same time.</p>
+<div class="codewrap" data-k="async"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Timeouts and calls in parallel with sendAsync · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> com.sun.net.httpserver.*;
+<span class="k">import</span> java.io.*;
+<span class="k">import</span> java.net.*;
+<span class="k">import</span> java.net.http.*;
+<span class="k">import</span> java.time.<span class="t">Duration</span>;
+<span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+
+    <span class="c">// a tiny shop API on a free port, so the example needs no internet</span>
+    <span class="k">static</span> <span class="t">HttpServer</span> startServer() <span class="k">throws</span> <span class="t">IOException</span> {
+        <span class="t">HttpServer</span> server = <span class="t">HttpServer</span>.create(<span class="k">new</span> <span class="t">InetSocketAddress</span>(<span class="s">"127.0.0.1"</span>, <span class="n">0</span>), <span class="n">0</span>);
+        server.createContext(<span class="s">"/products/1"</span>, ex -&gt; reply(ex, <span class="n">200</span>, <span class="s">"{\"id\":1,\"name\":\"pen\",\"price\":49}"</span>));
+        server.createContext(<span class="s">"/orders"</span>, ex -&gt; {
+            <span class="t">String</span> body = <span class="k">new</span> <span class="t">String</span>(ex.getRequestBody().readAllBytes());
+            <span class="k">if</span> (!ex.getRequestMethod().equals(<span class="s">"POST"</span>)) { reply(ex, <span class="n">405</span>, <span class="s">"{\"error\":\"use POST\"}"</span>); <span class="k">return</span>; }
+            <span class="k">if</span> (!<span class="s">"secret-token"</span>.equals(ex.getRequestHeaders().getFirst(<span class="s">"Authorization"</span>))) { reply(ex, <span class="n">401</span>, <span class="s">"{\"error\":\"login first\"}"</span>); <span class="k">return</span>; }
+            ex.getResponseHeaders().add(<span class="s">"Location"</span>, <span class="s">"/orders/77"</span>);
+            reply(ex, <span class="n">201</span>, <span class="s">"{\"id\":77,\"received\":"</span> + body + <span class="s">"}"</span>);
+        });
+        server.createContext(<span class="s">"/slow"</span>, ex -&gt; {
+            <span class="k">try</span> { <span class="t">Thread</span>.sleep(<span class="n">2000</span>); } <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { }
+            reply(ex, <span class="n">200</span>, <span class="s">"finally"</span>);
+        });
+        server.setExecutor(<span class="t">Executors</span>.newVirtualThreadPerTaskExecutor());
+        server.start();
+        <span class="k">return</span> server;
+    }
+
+    <span class="k">static</span> <span class="k">void</span> reply(<span class="t">HttpExchange</span> ex, <span class="k">int</span> status, <span class="t">String</span> body) <span class="k">throws</span> <span class="t">IOException</span> {
+        <span class="k">byte</span>[] bytes = body.getBytes();
+        ex.getResponseHeaders().add(<span class="s">"Content-Type"</span>, <span class="s">"application/json"</span>);
+        ex.sendResponseHeaders(status, bytes.length);
+        <span class="k">try</span> (<span class="t">OutputStream</span> out = ex.getResponseBody()) { out.write(bytes); }
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">HttpServer</span> server = startServer();
+        <span class="t">String</span> base = <span class="s">"http://127.0.0.1:"</span> + server.getAddress().getPort();
+        <span class="t">HttpClient</span> client = <span class="t">HttpClient</span>.newHttpClient();
+
+        <span class="c">// a timeout on one request: the server takes 2 s, we wait at most 500 ms</span>
+        <span class="t">HttpRequest</span> slow = <span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/slow"</span>)).timeout(<span class="t">Duration</span>.ofMillis(<span class="n">500</span>)).build();
+        <span class="k">try</span> {
+            client.send(slow, <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString());
+        } <span class="k">catch</span> (<span class="t">HttpTimeoutException</span> e) {
+            <span class="t">System</span>.out.println(<span class="s">"timed out: "</span> + e.getMessage());
+        }
+
+        <span class="c">// three calls at once with sendAsync, which returns CompletableFutures</span>
+        <span class="k">long</span> t0 = <span class="t">System</span>.currentTimeMillis();
+        <span class="t">List</span>&lt;<span class="t">CompletableFuture</span>&lt;<span class="t">Integer</span>&gt;&gt; calls = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();
+        <span class="k">for</span> (<span class="k">int</span> i = <span class="n">0</span>; i &lt; <span class="n">3</span>; i++) {
+            calls.add(client.sendAsync(<span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/slow"</span>)).build(), <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString())
+                    .thenApply(<span class="t">HttpResponse</span>::statusCode));
+        }
+        <span class="t">List</span>&lt;<span class="t">Integer</span>&gt; codes = calls.stream().map(<span class="t">CompletableFuture</span>::join).toList();
+        <span class="k">long</span> secs = <span class="t">Math</span>.round((<span class="t">System</span>.currentTimeMillis() - t0) / <span class="n">1000.0</span>);
+        <span class="t">System</span>.out.println(<span class="s">"3 slow calls together: "</span> + codes + <span class="s">" in about "</span> + secs + <span class="s">" s, not 6 s"</span>);
+        server.stop(<span class="n">0</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>timed out: request timed out
+3 slow calls together: [200, 200, 200] in about 2 s, not 6 s</pre></div></div>
+<p>Java 26 added <b>HTTP/3</b> to the client (JEP 517). HTTP/3 runs over QUIC on UDP and handles lossy mobile networks better. It is opt in, and the default stays HTTP/2.</p>
+<div class="codewrap" data-k="http3"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Opting in to HTTP/3 (Java 26) · Needs a real HTTP/3 server on the internet, so it is not run here</span><button type="button" class="copy">Copy</button></div><pre class="src"><span class="c">// Java 26 (JEP 517): ask for HTTP/3, which runs over QUIC (UDP) instead of TCP</span>
+<span class="t">HttpClient</span> client = <span class="t">HttpClient</span>.newBuilder()
+        .version(<span class="t">HttpClient</span>.<span class="t">Version</span>.<span class="t">HTTP_3</span>)     <span class="c">// the default stays HTTP/2</span>
+        .build();
+
+<span class="t">HttpRequest</span> req = <span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(<span class="s">"https://openjdk.org/"</span>))
+        <span class="c">// try HTTP/3 only when the server advertises it, otherwise use HTTP/2 or 1.1</span>
+        .setOption(<span class="t">HttpOption</span>.<span class="t">H3_DISCOVERY</span>, <span class="t">HttpOption</span>.<span class="t">Http3DiscoveryMode</span>.<span class="t">ALT_SVC</span>)
+        .build();
+
+<span class="t">HttpResponse</span>&lt;<span class="t">String</span>&gt; res = client.send(req, <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString());
+<span class="t">System</span>.out.println(res.version());              <span class="c">// HTTP_3 once the server has offered it</span></pre></div>
+</section>
+<section class="card reveal jsec" id="scenario" data-say="scenario"><div class="sec-num">Part 7</div><h2><span class="sec-em">🎬</span><span>Real world scenario: an API test suite with only the JDK</span></h2>
+<div class="scenario"><b>The situation</b>A team wants a smoke test that runs right after deployment, with no extra libraries to install on the build agent.</div>
+<div class="codewrap" data-k="apitest"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">An API test suite with nothing but the JDK · ▶ Runs · ☕ JDK 25</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> com.sun.net.httpserver.*;
+<span class="k">import</span> java.io.*;
+<span class="k">import</span> java.net.*;
+<span class="k">import</span> java.net.http.*;
+<span class="k">import</span> java.time.<span class="t">Duration</span>;
+<span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.concurrent.*;
+
+<span class="k">class</span> <span class="t">Main</span> {
+
+    <span class="c">// a tiny shop API on a free port, so the example needs no internet</span>
+    <span class="k">static</span> <span class="t">HttpServer</span> startServer() <span class="k">throws</span> <span class="t">IOException</span> {
+        <span class="t">HttpServer</span> server = <span class="t">HttpServer</span>.create(<span class="k">new</span> <span class="t">InetSocketAddress</span>(<span class="s">"127.0.0.1"</span>, <span class="n">0</span>), <span class="n">0</span>);
+        server.createContext(<span class="s">"/products/1"</span>, ex -&gt; reply(ex, <span class="n">200</span>, <span class="s">"{\"id\":1,\"name\":\"pen\",\"price\":49}"</span>));
+        server.createContext(<span class="s">"/orders"</span>, ex -&gt; {
+            <span class="t">String</span> body = <span class="k">new</span> <span class="t">String</span>(ex.getRequestBody().readAllBytes());
+            <span class="k">if</span> (!ex.getRequestMethod().equals(<span class="s">"POST"</span>)) { reply(ex, <span class="n">405</span>, <span class="s">"{\"error\":\"use POST\"}"</span>); <span class="k">return</span>; }
+            <span class="k">if</span> (!<span class="s">"secret-token"</span>.equals(ex.getRequestHeaders().getFirst(<span class="s">"Authorization"</span>))) { reply(ex, <span class="n">401</span>, <span class="s">"{\"error\":\"login first\"}"</span>); <span class="k">return</span>; }
+            ex.getResponseHeaders().add(<span class="s">"Location"</span>, <span class="s">"/orders/77"</span>);
+            reply(ex, <span class="n">201</span>, <span class="s">"{\"id\":77,\"received\":"</span> + body + <span class="s">"}"</span>);
+        });
+        server.createContext(<span class="s">"/slow"</span>, ex -&gt; {
+            <span class="k">try</span> { <span class="t">Thread</span>.sleep(<span class="n">2000</span>); } <span class="k">catch</span> (<span class="t">InterruptedException</span> e) { }
+            reply(ex, <span class="n">200</span>, <span class="s">"finally"</span>);
+        });
+        server.setExecutor(<span class="t">Executors</span>.newVirtualThreadPerTaskExecutor());
+        server.start();
+        <span class="k">return</span> server;
+    }
+
+    <span class="k">static</span> <span class="k">void</span> reply(<span class="t">HttpExchange</span> ex, <span class="k">int</span> status, <span class="t">String</span> body) <span class="k">throws</span> <span class="t">IOException</span> {
+        <span class="k">byte</span>[] bytes = body.getBytes();
+        ex.getResponseHeaders().add(<span class="s">"Content-Type"</span>, <span class="s">"application/json"</span>);
+        ex.sendResponseHeaders(status, bytes.length);
+        <span class="k">try</span> (<span class="t">OutputStream</span> out = ex.getResponseBody()) { out.write(bytes); }
+    }
+
+    <span class="k">static</span> <span class="k">int</span> passed = <span class="n">0</span>, failed = <span class="n">0</span>;
+
+    <span class="k">static</span> <span class="k">void</span> check(<span class="t">String</span> name, <span class="k">boolean</span> ok, <span class="t">String</span> detail) {
+        <span class="k">if</span> (ok) passed++; <span class="k">else</span> failed++;
+        <span class="t">System</span>.out.println((ok ? <span class="s">"PASS "</span> : <span class="s">"FAIL "</span>) + name + (ok ? <span class="s">""</span> : <span class="s">"  -&gt; "</span> + detail));
+    }
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(<span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">HttpServer</span> server = startServer();
+        <span class="t">String</span> base = <span class="s">"http://127.0.0.1:"</span> + server.getAddress().getPort();
+        <span class="t">HttpClient</span> client = <span class="t">HttpClient</span>.newBuilder().connectTimeout(<span class="t">Duration</span>.ofSeconds(<span class="n">2</span>)).build();
+
+        <span class="t">HttpResponse</span>&lt;<span class="t">String</span>&gt; p = client.send(<span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/products/1"</span>)).build(), <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString());
+        check(<span class="s">"GET product returns 200"</span>, p.statusCode() == <span class="n">200</span>, <span class="s">"got "</span> + p.statusCode());
+        check(<span class="s">"product is JSON"</span>, p.headers().firstValue(<span class="s">"Content-Type"</span>).orElse(<span class="s">""</span>).contains(<span class="s">"json"</span>), p.headers().map().toString());
+        check(<span class="s">"product has a price"</span>, p.body().matches(<span class="s">".*\"price\":\\d+.*"</span>), p.body());
+
+        <span class="t">HttpRequest</span> order = <span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/orders"</span>))
+                .header(<span class="s">"Authorization"</span>, <span class="s">"secret-token"</span>)
+                .<span class="t">POST</span>(<span class="t">HttpRequest</span>.<span class="t">BodyPublishers</span>.ofString(<span class="s">"{\"product\":1,\"qty\":2}"</span>)).build();
+        <span class="t">HttpResponse</span>&lt;<span class="t">String</span>&gt; o = client.send(order, <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString());
+        check(<span class="s">"POST order returns 201"</span>, o.statusCode() == <span class="n">201</span>, <span class="s">"got "</span> + o.statusCode());
+        check(<span class="s">"Location header points to the order"</span>, o.headers().firstValue(<span class="s">"Location"</span>).orElse(<span class="s">""</span>).startsWith(<span class="s">"/orders/"</span>), o.headers().map().toString());
+
+        <span class="t">HttpResponse</span>&lt;<span class="t">String</span>&gt; anon = client.send(<span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/orders"</span>)).<span class="t">POST</span>(<span class="t">HttpRequest</span>.<span class="t">BodyPublishers</span>.noBody()).build(), <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.ofString());
+        check(<span class="s">"POST without a token returns 401"</span>, anon.statusCode() == <span class="n">401</span>, <span class="s">"got "</span> + anon.statusCode());
+        check(<span class="s">"unknown path returns 404"</span>, client.send(<span class="t">HttpRequest</span>.newBuilder(<span class="t">URI</span>.create(base + <span class="s">"/nope"</span>)).build(), <span class="t">HttpResponse</span>.<span class="t">BodyHandlers</span>.discarding()).statusCode() == <span class="n">404</span>, <span class="s">""</span>);
+        check(<span class="s">"deliberately wrong: product costs 50"</span>, p.body().contains(<span class="s">"\"price\":50"</span>), <span class="s">"body was "</span> + p.body());
+
+        <span class="t">System</span>.out.println(passed + <span class="s">" passed, "</span> + failed + <span class="s">" failed"</span>);
+        server.stop(<span class="n">0</span>);
+    }
+}</pre><div class="out"><span>Output</span><pre>PASS GET product returns 200
+PASS product is JSON
+PASS product has a price
+PASS POST order returns 201
+PASS Location header points to the order
+PASS POST without a token returns 401
+PASS unknown path returns 404
+FAIL deliberately wrong: product costs 50  -&gt; body was {&quot;id&quot;:1,&quot;name&quot;:&quot;pen&quot;,&quot;price&quot;:49}
+7 passed, 1 failed</pre></div></div>
+<p>The one failing check is there on purpose, to show what a failure report looks like. In bigger projects the same checks are written with REST Assured or JUnit, but they still send these requests and compare these status codes, headers and bodies. Read the API testing subject for the full story.</p>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><a class="prev" href="./java-annotations-modules.html" data-topic="java-annotations-modules"><small>← Previous chapter</small><b>🏷️ Annotations and modules</b></a><a class="next" href="./java-whats-new.html" data-topic="java-whats-new"><small>Next chapter →</small><b>🆕 What is new up to Java 27</b></a></nav>
+</div>
+<script type="application/json" id="traces">{}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/javaviz.js"></script>
+<script src="../../assets/xv.js"></script>
+<script>
+const PAGE = {"info": {"title": "Two doors to the outside world", "panels": [{"s": [["e", "🗃️"], ["t", "rs.next()", {"b": 1}]], "h": "JDBC", "t": "Same API for every database.", "more": "Always close with try-with-resources."}, {"s": [["e", "🛡️"], ["t", "WHERE name = ?", {"b": 1}]], "h": "PreparedStatement", "t": "Values are never read as SQL.", "more": "That stops SQL injection."}, {"s": [["e", "🏦"], ["t", "commit() / rollback()", {"b": 1, "size": 11}]], "h": "Transactions", "t": "All or nothing.", "more": "Turn off auto commit for a group."}, {"s": [["e", "🌐"], ["t", "client.send(req, ofString())", {"b": 1, "size": 10}]], "h": "HttpClient", "t": "Status, headers, body.", "more": "Set timeouts and use sendAsync for many calls."}], "remember": "Use PreparedStatement for every query with input, transactions for changes that belong together, and try-with-resources for every JDBC object. Reuse one HttpClient, set timeouts, and check status codes before trusting a body."}, "real": [["🛒", "An online shop", "Places an order in one transaction: the order row, its items and the stock updates are committed together or not at all."], ["🔐", "A security test team", "Found a login form that glued input into SQL. Switching to PreparedStatement fixed it in one line per query."], ["🚦", "A release pipeline", "Runs a JDK only HttpClient smoke test after each deploy and rolls back automatically when any check fails."]], "quiz": [{"lv": "e", "q": "Which method moves a ResultSet to the next row?", "o": ["next()", "moveNext()", "fetch()", "read()"], "a": 0, "hint": "It returns false at the end.", "why": "A ResultSet starts before the first row, so call next() before reading."}, {"lv": "e", "q": "Which HTTP status means \"created\"?", "o": ["201", "200", "204", "302"], "a": 0, "hint": "Usually after a POST.", "why": "A Location header often points to the new resource."}, {"lv": "e", "q": "Why use try-with-resources for a Connection?", "o": ["It always closes the connection, even when an exception is thrown", "It makes queries faster", "It is required to compile", "It commits automatically"], "a": 0, "hint": "Resource leaks.", "why": "Leaked connections eventually exhaust the pool."}, {"lv": "m", "q": "What does a PreparedStatement do with the input <code>x' OR '1'='1<\/code>?", "o": ["Treats it as one plain text value, so no user matches", "Returns every user", "Throws a syntax error", "Removes the quotes"], "a": 0, "hint": "Values are not SQL.", "why": "The SQL text and the values travel separately."}, {"lv": "m", "q": "A transaction updates two rows, and the second update fails. What should the code call?", "o": ["rollback()", "commit()", "close() only", "nothing, JDBC undoes it by itself"], "a": 0, "hint": "All or nothing.", "why": "rollback undoes the first update too."}, {"lv": "m", "q": "What does <code>client.sendAsync(...)<\/code> return?", "o": ["A CompletableFuture of the response", "The response directly", "A Thread", "void"], "a": 0, "hint": "Async.", "why": "Use thenApply, join or allOf to work with the results."}, {"lv": "m", "q": "Which status code family means the server failed?", "o": ["5xx", "4xx", "3xx", "2xx"], "a": 0, "hint": "Not the client's fault.", "why": "4xx means the client sent something wrong."}, {"lv": "h", "q": "What is the default HTTP version of HttpClient in Java 26?", "o": ["HTTP/2, and HTTP/3 is opt in", "HTTP/3", "HTTP/1.1", "HTTP/1.0"], "a": 0, "hint": "JEP 517.", "why": "Choose HTTP_3 on the client or request to try it."}, {"lv": "h", "q": "What changed about HttpRequest timeouts in Java 26?", "o": ["They also cover reading the response body", "They were removed", "They now default to 30 seconds", "They only apply to HTTP/3"], "a": 0, "hint": "Body reading.", "why": "Before Java 26 the timeout ended once the headers arrived."}, {"lv": "h", "q": "Why is executeBatch faster than 1000 separate executeUpdate calls?", "o": ["The rows go to the database in fewer round trips", "It skips constraints", "It does not write to disk", "It runs in parallel threads"], "a": 0, "hint": "Network trips.", "why": "Each round trip has a fixed delay, so fewer trips save time."}, {"lv": "x", "q": "What does this print?", "o": ["2", "3", "1", "0"], "a": 0, "hint": "Count rows in the result.", "why": "Two of the three prices are under 500.", "code": "void main() throws Exception {\n    try (var con = java.sql.DriverManager.getConnection(\"jdbc:h2:mem:q\", \"sa\", \"\")) {\n        con.createStatement().execute(\"CREATE TABLE p (price INT)\");\n        con.createStatement().execute(\"INSERT INTO p VALUES (49), (120), (899)\");\n        var rs = con.createStatement().executeQuery(\"SELECT COUNT(*) FROM p WHERE price < 500\");\n        rs.next();\n        System.out.println(rs.getInt(1));\n    }\n}", "run": 1}, {"lv": "x", "q": "What does this print?", "o": ["HTTP_2", "HTTP_1_1", "HTTP_3", "null"], "a": 0, "hint": "The default version of a new client.", "why": "HttpClient prefers HTTP/2 unless told otherwise.", "code": "System.out.println(java.net.http.HttpClient.newHttpClient().version());", "run": 1}], "calc": [{"lv": "e", "q": "asha has 500 and ravi 100. asha sends ravi 200. What is ravi's balance?", "ans": "300", "hint": "Add to ravi.", "steps": ["<span class=\"eq\">100 + 200 = 300<\/span>"]}, {"lv": "e", "q": "A batch has 1000 rows. How many rows does executeBatch report in total?", "ans": "1000", "hint": "One count per row.", "steps": ["The returned int array has one entry per batched statement."]}, {"lv": "m", "q": "Each database round trip takes 2 ms. How many ms do 1000 separate inserts spend on round trips?", "ans": "2000", "hint": "1000 trips.", "steps": ["<span class=\"eq\">1000 × 2 ms = 2000 ms<\/span>", "A single batch needs roughly one trip, which is why batches are so much faster."]}, {"lv": "m", "q": "Three API calls take 2 s each. How many seconds do they take with sendAsync at the same time?", "ans": "2", "hint": "Wait for the slowest.", "steps": ["<span class=\"eq\">max(2, 2, 2) = 2 s<\/span>"]}, {"lv": "h", "q": "An API test suite has 8 checks and 1 fails. What percent pass?", "ans": "87.5", "hint": "Passed over total.", "steps": ["<span class=\"eq\"><span class=\"fr\"><i>7<\/i><i>8<\/i><\/span> × 100 = 87.5<\/span>"]}, {"lv": "h", "q": "What does this print?", "ans": "3", "hint": "Rows inserted by one statement.", "steps": ["executeUpdate returns how many rows changed."], "code": "void main() throws Exception {\n    try (var con = java.sql.DriverManager.getConnection(\"jdbc:h2:mem:c\", \"sa\", \"\")) {\n        con.createStatement().execute(\"CREATE TABLE t (n INT)\");\n        System.out.println(con.createStatement().executeUpdate(\"INSERT INTO t VALUES (1), (2), (3)\"));\n    }\n}", "run": 1}, {"lv": "x", "q": "What does this print?", "ans": "0", "hint": "An update with no matching rows.", "steps": ["No row has the name zed, so 0 rows change and no exception is thrown."], "code": "void main() throws Exception {\n    try (var con = java.sql.DriverManager.getConnection(\"jdbc:h2:mem:z\", \"sa\", \"\")) {\n        con.createStatement().execute(\"CREATE TABLE u (name VARCHAR(9))\");\n        var ps = con.prepareStatement(\"UPDATE u SET name = ? WHERE name = ?\");\n        ps.setString(1, \"amy\"); ps.setString(2, \"zed\");\n        System.out.println(ps.executeUpdate());\n    }\n}", "run": 1}], "say": [{"id": "top", "h": "Welcome", "en": "Welcome to JDBC and HttpClient: talking to a database and calling web APIs from Java, with real runs.", "hi": "JDBC और HttpClient में स्वागत है: Java से database और web APIs से बात करना, असली runs के साथ।", "kn": "JDBC ಮತ್ತು HttpClient ಗೆ ಸ್ವಾಗತ: database ಮತ್ತು web APIs ಜೊತೆ ಮಾತನಾಡುವುದು.", "or": "JDBC ଏବଂ HttpClient କୁ ସ୍ୱାଗତ: database ଏବଂ web APIs ସହ କଥା ହେବା।", "ar": "مرحبًا بك في JDBC وHttpClient: التحدث إلى قاعدة بيانات واستدعاء واجهات الويب من Java بتشغيل حقيقي.", "de": "Willkommen zu JDBC und HttpClient: mit einer Datenbank sprechen und Web-APIs aus Java aufrufen, mit echten Läufen."}, {"id": "jdbc", "h": "JDBC", "en": "Get a Connection, run SQL with a Statement, and read rows from a ResultSet with next. Close everything with try with resources.", "hi": "Connection लें, Statement से SQL चलाएँ, और ResultSet से next के साथ rows पढ़ें। try with resources से सब बंद करें।", "kn": "Connection ಪಡೆದು Statement ನಿಂದ SQL ಓಡಿಸಿ, ResultSet ನಿಂದ rows ಓದಿ.", "or": "Connection ନେଇ Statement ଦ୍ୱାରା SQL ଚଲାନ୍ତୁ, ResultSet ରୁ rows ପଢ଼ନ୍ତୁ।", "ar": "احصل على اتصال، ونفذ SQL بعبارة، واقرأ الصفوف من ResultSet باستخدام next، وأغلق كل شيء بـ try مع الموارد.", "de": "Hole eine Connection, führe SQL mit einem Statement aus und lies Zeilen aus dem ResultSet mit next. Schließe alles mit try-with-resources."}, {"id": "prepared", "h": "PreparedStatement", "en": "Gluing input into SQL allows SQL injection. A PreparedStatement sends values separately, so they are never read as SQL.", "hi": "Input को SQL में जोड़ने से SQL injection होता है। PreparedStatement values अलग भेजता है, इसलिए वे कभी SQL नहीं बनते।", "kn": "Input ಅನ್ನು SQL ಗೆ ಅಂಟಿಸಿದರೆ injection. PreparedStatement values ಪ್ರತ್ಯೇಕವಾಗಿ ಕಳುಹಿಸುತ್ತದೆ.", "or": "Input କୁ SQL ରେ ଯୋଡ଼ିଲେ injection। PreparedStatement values ଅଲଗା ପଠାଏ।", "ar": "لصق المدخلات في SQL يسمح بحقن SQL، أما PreparedStatement فيرسل القيم منفصلة فلا تُقرأ أبدًا على أنها SQL.", "de": "Eingaben in SQL einzukleben erlaubt SQL-Injection. Ein PreparedStatement sendet Werte getrennt, sie werden nie als SQL gelesen."}, {"id": "transactions", "h": "Transactions", "en": "Turn off auto commit, run the statements, then commit. If anything fails, roll back and every change is undone.", "hi": "Auto commit बंद करें, statements चलाएँ, फिर commit करें। कुछ गलत हो तो rollback करें और हर बदलाव वापस हो जाता है।", "kn": "Auto commit ಆಫ್ ಮಾಡಿ, commit ಮಾಡಿ. ವಿಫಲವಾದರೆ rollback.", "or": "Auto commit ବନ୍ଦ କରି commit କରନ୍ତୁ। ବିଫଳ ହେଲେ rollback।", "ar": "أوقف الالتزام التلقائي، ونفذ العبارات، ثم التزم، وإذا فشل شيء فتراجع فتُلغى كل التغييرات.", "de": "Schalte Auto-Commit aus, führe die Anweisungen aus und committe. Schlägt etwas fehl, mache ein Rollback und alles wird rückgängig."}, {"id": "batch", "h": "Batches", "en": "Ask for generated keys to learn a new row id, use addBatch for many rows in one trip, and map each row to a record.", "hi": "नई row की id के लिए generated keys माँगें, कई rows के लिए addBatch इस्तेमाल करें, और हर row को record में बदलें।", "kn": "Generated keys, addBatch ಮತ್ತು rows ಅನ್ನು records ಗೆ ಬದಲಿಸಿ.", "or": "Generated keys, addBatch ଏବଂ rows କୁ records ରେ ବଦଳାନ୍ତୁ।", "ar": "اطلب المفاتيح المولدة لمعرفة رقم الصف الجديد، واستخدم addBatch لصفوف كثيرة دفعة واحدة، وحوّل كل صف إلى سجل.", "de": "Frage generierte Schlüssel ab, nutze addBatch für viele Zeilen auf einmal und bilde jede Zeile auf einen Record ab."}, {"id": "httpclient", "h": "HttpClient", "en": "Build an HttpRequest, send it with one shared HttpClient, then check the status code, headers and body of the HttpResponse.", "hi": "HttpRequest बनाएँ, एक shared HttpClient से भेजें, फिर HttpResponse का status code, headers और body जाँचें।", "kn": "HttpRequest ರಚಿಸಿ, HttpClient ನಿಂದ ಕಳುಹಿಸಿ, status, headers, body ಪರಿಶೀಲಿಸಿ.", "or": "HttpRequest ତିଆରି କରି HttpClient ଦ୍ୱାରା ପଠାନ୍ତୁ, status, headers, body ଯାଞ୍ଚ କରନ୍ତୁ।", "ar": "ابنِ HttpRequest وأرسله عبر HttpClient مشترك، ثم افحص رمز الحالة والترويسات والجسم في HttpResponse.", "de": "Baue einen HttpRequest, sende ihn mit einem gemeinsamen HttpClient und prüfe Statuscode, Header und Body der Antwort."}, {"id": "async", "h": "Timeouts and async", "en": "Set timeouts so a slow server cannot hang your program. sendAsync runs many calls at once. Java 26 adds HTTP 3 as an option.", "hi": "Timeouts लगाएँ ताकि धीमा server program को न रोके। sendAsync कई calls एक साथ चलाता है। Java 26 में HTTP 3 विकल्प है।", "kn": "Timeouts ಹೊಂದಿಸಿ. sendAsync ಹಲವು calls ಒಟ್ಟಿಗೆ. Java 26 ನಲ್ಲಿ HTTP 3.", "or": "Timeouts ସେଟ୍ କରନ୍ତୁ। sendAsync ଅନେକ calls ଏକାଥରେ। Java 26 ରେ HTTP 3।", "ar": "اضبط المهلات حتى لا يعلّق خادم بطيء برنامجك، ويشغل sendAsync استدعاءات كثيرة معًا، وتضيف Java 26 خيار HTTP 3.", "de": "Setze Timeouts, damit ein langsamer Server nichts blockiert. sendAsync führt viele Aufrufe parallel aus. Java 26 bietet HTTP 3 als Option."}, {"id": "scenario", "h": "Scenario", "en": "A smoke test checks status codes, headers and bodies of a real API, with nothing but the JDK.", "hi": "एक smoke test केवल JDK के साथ असली API के status codes, headers और bodies जाँचता है।", "kn": "Smoke test JDK ಮಾತ್ರದಿಂದ API status, headers, body ಪರಿಶೀಲಿಸುತ್ತದೆ.", "or": "Smoke test କେବଳ JDK ଦ୍ୱାରା API status, headers, body ଯାଞ୍ଚ କରେ।", "ar": "يفحص اختبار دخان رموز الحالة والترويسات والأجسام لواجهة حقيقية باستخدام JDK وحدها.", "de": "Ein Smoke-Test prüft Statuscodes, Header und Bodys einer echten API, nur mit dem JDK."}], "dg": {"jdbc": {"t": "What happens during one JDBC query", "w": 900, "h": 280, "mw": 640, "n": [["app", 30, 50, 200, 60, "Your code", {"c": 1, "sub": "prepareStatement"}], ["drv", 350, 50, 200, 60, "JDBC driver", {"c": 3, "sub": "H2, PostgreSQL, MySQL"}], ["dbs", 670, 50, 200, 60, "Database", {"c": 2, "sub": "plans and runs SQL"}], ["rs", 670, 180, 200, 60, "ResultSet", {"c": 4, "sub": "rows, one at a time"}], ["pool", 350, 180, 200, 60, "Connection pool", {"c": 5, "sub": "reuses connections"}]], "e": [["app", "drv", {"t": "SQL + values", "id": "q1"}], ["drv", "dbs", {"t": "network", "id": "q2"}], ["dbs", "rs", {"t": "rows", "id": "q3"}], ["pool", "drv", {"id": "q4", "d": 1}]], "st": [[["app"], "Your code only talks to the java.sql interfaces: Connection, PreparedStatement and ResultSet."], [["drv", "q1"], "The driver, a JAR from the database vendor, implements those interfaces. Switching databases mostly means switching the driver and the URL."], [["dbs", "q2"], "The driver sends the SQL with ? placeholders and the values separately. The database plans the query once and fills in the values."], [["rs", "q3"], "Rows come back in a ResultSet. rs.next() moves to the next row and returns false at the end."], [["pool", "q4"], "Opening a connection is slow, so real services borrow connections from a pool such as HikariCP and give them back when the try block ends."]]}, "http": {"t": "The life of one HTTP request", "w": 900, "h": 280, "mw": 640, "n": [["b", 30, 40, 220, 60, "HttpRequest.newBuilder", {"c": 1, "sub": "URI, method, headers, body"}], ["c", 30, 170, 220, 60, "HttpClient.send", {"c": 3, "sub": "or sendAsync"}], ["n", 340, 105, 200, 60, "Network", {"c": 5, "sub": "HTTP/1.1, 2 or 3"}], ["s", 630, 40, 240, 60, "Server", {"c": 2, "sub": "routes and replies"}], ["r", 630, 170, 240, 60, "HttpResponse", {"c": 4, "sub": "status, headers, body"}]], "e": [["b", "c", {"t": "build()", "id": "h1"}], ["c", "n", {"id": "h2"}], ["n", "s", {"t": "request", "id": "h3"}], ["s", "r", {"t": "response", "id": "h4"}]], "st": [[["b"], "A request is an immutable value built step by step: where to go, which method, which headers, and an optional body."], [["c", "h1"], "One HttpClient is reused for many requests. It keeps connections open and handles redirects, timeouts and HTTP versions."], [["n", "h2", "h3"], "The request travels over the network. The client uses HTTP/2 when the server supports it, and HTTP/3 if you opt in on Java 26 or later."], [["s", "r", "h4"], "The server answers with a status code, headers and a body. A body handler decides how to read it: as a String, a file, a stream, or not at all."]]}}, "lanes": {}, "jv": {}};
+JAVAPAGE.start({ title: "Databases and web APIs: JDBC and HttpClient" });
+</script>
+</body>
+</html>

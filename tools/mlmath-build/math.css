@@ -6,6 +6,11 @@
 .fx-b{font-family:"Cambria Math","STIX Two Math","Latin Modern Math","Times New Roman",serif; font-size:21px; line-height:1.9; margin:4px 0; overflow-x:auto; overflow-y:hidden; white-space:nowrap; padding-bottom:2px}
 .fx-b .sm{font-size:16px}
 .fx-n{font-size:14px; color:var(--ink2); font-weight:600}
+.deep{margin:16px 0 12px; padding:12px 16px; border-radius:16px; border:1.5px dashed color-mix(in srgb, var(--accent) 55%, var(--line)); background:color-mix(in srgb, var(--accent) 5%, var(--surface))}
+.deep-h{font-family:var(--font-head); font-weight:800; font-size:16px; color:var(--accent-deep); margin-bottom:4px}
+.deep>p:first-of-type{margin-top:4px}
+.deep ol,.deep ul{padding-left:22px}
+.deep li{margin:4px 0}
 .trick,.mlnote,.life{position:relative; margin:12px 0; padding:10px 14px; border-radius:14px; font-size:15px; border:1.5px solid var(--line)}
 .trick::before,.mlnote::before,.life::before{display:block; font-family:var(--font-head); font-weight:800; font-size:14px; margin-bottom:2px}
 .trick{background:color-mix(in srgb, var(--pink) 10%, var(--surface)); border-color:color-mix(in srgb, var(--pink) 50%, var(--line))}

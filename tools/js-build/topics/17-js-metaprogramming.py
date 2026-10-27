@@ -148,7 +148,7 @@ console.log(dedent`
         Then I see "Try again"`);
 ''', 'Tagged templates: safe HTML and SQL'),
     'decorators': show('''
-// Decorators are a stage 3 proposal. TypeScript 5 and later supports them today (chapter 24),
+// Decorators are a TC39 proposal (listed at stage 2.7 in October 2026). TypeScript 5 and later supports them today ({{ch:ts-projects}}),
 // and Babel can compile them for JavaScript.
 class CheckoutPage {
   @step("Pay with card")          // log the step in the report
@@ -164,7 +164,7 @@ function step(title) {
     };
   };
 }
-''', 'Decorators wrap methods and classes', note='Runs in chapter 24 with TypeScript'),
+''', 'Decorators wrap methods and classes', note='Runs in {{ch:ts-projects}} with TypeScript'),
     'scenario': run('''
 // A fluent API client built from a Proxy: api.users[7].orders.get() calls GET /users/7/orders
 function client(baseURL, fetchFn) {
@@ -190,6 +190,10 @@ console.log(calls);
 ''', 'A dynamic API client with a Proxy'),
 }
 
+LANES = {
+    'proxy': {'t': 'Every access goes through the Proxy first', 'code': 'const target = { price: 100 };\nconst guarded = new Proxy(target, {\n  get(t, key, r) { log.push(`read ${key}`); return Reflect.get(t, key, r); },\n  set(t, key, v, r) { if (v < 0) throw new RangeError("negative"); return Reflect.set(t, key, v, r); },\n});\nguarded.price;\nguarded.price = 120;\nguarded.price = -5;', 'lanes': ['Your code', 'Trap', 'Target object', 'Log'], 'tone': [2, 3, 1, 4], 'steps': [{'l': [1, 2], 'v': [['new Proxy(target, handler)'], [], ['price: 100'], []], 'm': 'The proxy wraps the target. Code should use guarded, not target, from now on.'}, {'l': 6, 'v': [['guarded.price'], ['get trap'], ['price: 100'], ['read price']], 'm': 'Reading a property calls the get trap. It logs the read, then Reflect.get does the normal read and returns 100.'}, {'l': 7, 'v': [['guarded.price = 120'], ['set trap: 120 is fine'], ['price: 120'], ['read price']], 'm': 'Writing calls the set trap. 120 passes the check, so Reflect.set writes it to the target.'}, {'l': 8, 'v': [['guarded.price = -5'], ['set trap: throws RangeError'], ['price: 120'], ['read price']], 'm': 'A negative price fails the check. The trap throws and the target is never changed.'}]},
+}
+
 PARTS = [
     part('descriptors', '🧾', 'Property descriptors, getters and setters', '''
 <p>Every property has a <b>descriptor</b> with flags. <code>writable</code> allows changes, <code>enumerable</code> shows it in <code>Object.keys</code>, loops and JSON, and <code>configurable</code> allows deleting it or changing its flags. Accessor properties use <code>get</code> and <code>set</code> functions instead of a value.</p>
@@ -197,7 +201,7 @@ PARTS = [
 <div class="tip">This is why a hidden property can be on an object you are testing but missing from <code>JSON.stringify</code> and <code>toEqual</code> comparisons. Use <code>Object.getOwnPropertyDescriptors</code> when an object behaves strangely.</div>
 ''', kw=['property descriptor', 'defineProperty', 'writable', 'enumerable', 'configurable', 'getter', 'setter', 'accessor', 'Object.freeze', 'Object.seal', 'preventExtensions']),
     part('symbols', '🔣', 'Well known symbols', '''
-<p>Built in operations look for special symbol keys on your objects. <code>Symbol.toPrimitive</code> controls conversion to numbers and strings, <code>Symbol.hasInstance</code> controls <code>instanceof</code>, <code>Symbol.toStringTag</code> the type label, and <code>Symbol.iterator</code> (chapter 7) makes an object loopable. Node.js adds <code>util.inspect.custom</code> for how an object is logged.</p>
+<p>Built in operations look for special symbol keys on your objects. <code>Symbol.toPrimitive</code> controls conversion to numbers and strings, <code>Symbol.hasInstance</code> controls <code>instanceof</code>, <code>Symbol.toStringTag</code> the type label, and <code>Symbol.iterator</code> ({{ch:js-collections-iterators}}) makes an object loopable. Node.js adds <code>util.inspect.custom</code> for how an object is logged.</p>
 [[symbols]]
 <div class="qa-box">Give credential and token objects a custom inspect and a <code>toJSON</code> that leave the secret out. Test reports, CI logs and screenshots of the console then never leak a password.</div>
 ''', qa=True, qa_why='Hiding secrets from logs and reports is a must for test frameworks that log every object.',
@@ -205,6 +209,8 @@ PARTS = [
     part('proxy', '🪞', 'Proxy and Reflect', '''
 <p>A <b>Proxy</b> sits in front of an object and can intercept almost anything done to it: reading, writing, deleting, <code>in</code>, listing keys, calling and <code>new</code>. Each handler function is a <b>trap</b>. <b>Reflect</b> has a method for every trap that does the normal behaviour, so a trap can add checks and then hand over.</p>
 [[proxy]]
+<p>The key idea is that the proxy and the target are two different objects. Code talks to the proxy, every operation is handed to a trap if there is one, and the trap decides whether to pass it on to the real object with <code>Reflect</code>.</p>
+<div class="viz" data-viz="lanes" data-k="proxy"></div>
 <p>Test frameworks use proxies for auto mocking, for fluent APIs and for wrapping page objects. Here a Proxy adds step logging and one retry on a known flaky error to every method, without touching the page class.</p>
 [[pom-proxy]]
 <div class="warn">Proxies add a cost to every operation and can surprise people reading the code. Use them in tools and test frameworks, not in hot paths of application code.</div>
@@ -218,11 +224,11 @@ PARTS = [
     part('decorators', '🎀', 'Decorators', '''
 <p>A <b>decorator</b> is a function written as <code>@name</code> before a class, method, field or accessor. It receives the original and can replace or wrap it. Test frameworks use decorators for steps, retries, timeouts and dependency injection.</p>
 [[decorators]]
-''', kw=['decorators', 'stage 3', '@decorator', 'method decorator', 'TypeScript decorators', 'Babel']),
+''', kw=['decorators', 'stage 2.7', '@decorator', 'method decorator', 'TypeScript decorators', 'Babel']),
     part('scenario', '🎬', 'Real world scenario: a fluent API client', '''
 <div class="scenario"><b>The situation</b>The API test suite calls dozens of endpoints. Writing a function for each one is slow, and URL strings built by hand are full of typos.</div>
 [[scenario]]
-<p>Each property read adds a part to the path, and the verb at the end sends the request. The same trick is used by real clients for large APIs. Pair it with TypeScript types (chapter 23) so the editor suggests only valid paths.</p>
+<p>Each property read adds a part to the path, and the verb at the end sends the request. The same trick is used by real clients for large APIs. Pair it with TypeScript types ({{ch:ts-advanced}}) so the editor suggests only valid paths.</p>
 ''', qa=True, kw=['API client', 'fluent API', 'Proxy', 'REST', 'URL builder', 'fake fetch']),
 ]
 
@@ -344,5 +350,5 @@ T = {
     'summary': 'Descriptor flags, getters, setters and the three levels of locking, well known symbols and hiding secrets from logs, Proxy and Reflect for strict config, negative indexes and usage tracking, a proxy that logs and retries page object steps, tagged templates for HTML and SQL, decorators, and a fluent API client.',
     'keywords': ['property descriptor', 'defineProperty', 'getter', 'setter', 'Object.seal', 'Symbol.toPrimitive', 'util.inspect.custom', 'Proxy', 'Reflect', 'trap', 'tagged template', 'String.raw', 'decorators', 'spy', 'interview'],
     'qa_intro': 'Mocks, spies, fluent clients and step reporters are all metaprogramming. This chapter shows how they work so you can build and debug them.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

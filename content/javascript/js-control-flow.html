@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 3 of 27</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 4 of 31</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🔀</span><div><h1>Control Flow, Loops and Errors</h1><p class="lead">if and switch, every kind of loop, the forEach and await trap, throwing and catching errors with causes and cleanup, and the polling and retry loops that power auto-waiting in every test tool.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 18 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 14 runnable examples</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 5 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -190,7 +190,7 @@ mei: pass
 </section>
 <section class="card reveal jsec qa-part" id="async-loops" data-say="async-loops"><div class="sec-num">Part 4</div><h2><span class="sec-em">⏱️</span><span>Loops with async steps</span></h2>
 <div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">Playwright</span><span class="qa-tool">WebdriverIO</span><span class="qa-tool">Selenium</span><span class="qa-tool">Cypress</span><span class="qa-why">Awaiting inside forEach is one of the most common causes of flaky UI tests.</span></div>
-<p>Test code is full of steps that take time: open a page, click, wait for a response. These steps return promises and are written with <code>await</code> (chapter 10 explains how they work). Loops and <code>await</code> have one trap that breaks many first test suites.</p>
+<p>Test code is full of steps that take time: open a page, click, wait for a response. These steps return promises and are written with <code>await</code> (chapter 11 explains how they work). Loops and <code>await</code> have one trap that breaks many first test suites.</p>
 <div class="codewrap" data-k="foreach-await" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">forEach does not wait for async steps · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> sleep = ms =&gt; <span class="k">new</span> <span class="t">Promise</span>(r =&gt; setTimeout(r, ms));
 <span class="k">const</span> steps = [<span class="s">"open page"</span>, <span class="s">"fill form"</span>, <span class="s">"submit"</span>];
 

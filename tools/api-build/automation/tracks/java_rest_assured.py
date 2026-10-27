@@ -69,6 +69,12 @@ TRACK = {
       <version>2.22.4</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>net.datafaker</groupId>
+      <artifactId>datafaker</artifactId>
+      <version>2.7.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -943,6 +949,225 @@ given().contentType(ContentType.JSON)
                     '<b>Fuzzing</b>: very long strings, emoji, SQL characters and wrong types should give 400, never 500.',
                     '<b>OpenAPI</b>: generate the client and the schema checks from the API spec so tests follow the contract.',
                 ]),
+            ],
+        },
+        {
+            'id': 'essentials', 'title': 'Real project essentials: environments, secrets, fake data, safe logging and cleanup', 'emoji': '🧳', 'level': 'Intermediate',
+            'blocks': [
+                ('p', 'In a company, the same Rest Assured suite runs on a laptop, in QA and in staging. Passwords come from the CI secret store, every run makes its own realistic data, failing calls are logged with the token hidden, and every record a test creates is removed afterwards. Here is one class that shows all five habits.'),
+                ('code', 'xml', 'Add DataFaker to pom.xml', '''
+<dependency>
+  <groupId>net.datafaker</groupId>
+  <artifactId>datafaker</artifactId>
+  <version>2.7.0</version>
+  <scope>test</scope>
+</dependency>
+'''),
+                ('code', 'java', 'src/test/java/tests/support/TestConfig.java', '''
+package tests.support;
+
+import java.util.Map;
+
+public final class TestConfig {
+
+    private static final Map<String, String> ENVIRONMENTS = Map.of(
+        "local", "http://localhost:3001",
+        "qa", "https://qa.booker.example",
+        "prod", "https://restful-booker.herokuapp.com");
+
+    private TestConfig() { }
+
+    /** -Dkey=value wins, then the environment variable, then the default. */
+    public static String get(String key, String envVar, String fallback) {
+        String fromProperty = System.getProperty(key);
+        if (fromProperty != null && !fromProperty.isBlank()) return fromProperty;
+        String fromEnv = System.getenv(envVar);
+        return fromEnv != null && !fromEnv.isBlank() ? fromEnv : fallback;
+    }
+
+    public static String baseUrl() {
+        String env = get("env", "TEST_ENV", "prod");
+        if (!ENVIRONMENTS.containsKey(env)) throw new IllegalArgumentException("Unknown env " + env + ", use one of " + ENVIRONMENTS.keySet());
+        return get("baseUrl", "BASE_URL", ENVIRONMENTS.get(env));
+    }
+
+    public static String user()     { return get("apiUser", "API_USER", "admin"); }
+    public static String password() { return get("apiPassword", "API_PASSWORD", "password123"); }   // practice API only
+}
+''', {'save': 'src/test/java/tests/support/TestConfig.java'}),
+                ('code', 'java', 'src/test/java/tests/EssentialsTest.java', '''
+package tests;
+
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.config.LogConfig;
+import io.restassured.config.RestAssuredConfig;
+import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import net.datafaker.Faker;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import tests.support.TestConfig;
+
+public class EssentialsTest {
+
+    private final Faker faker = new Faker(Locale.forLanguageTag("en-IN"));
+    private final List<Integer> created = new ArrayList<>();
+    private RequestSpecification spec;
+    private String token;
+
+    @BeforeClass
+    public void setUp() {
+        RestAssuredConfig config = RestAssuredConfig.config().logConfig(LogConfig.logConfig()
+            .enableLoggingOfRequestAndResponseIfValidationFails()
+            .blacklistHeader("Cookie", "Authorization"));           // secrets show as [ BLACKLISTED ] in logs
+        spec = new RequestSpecBuilder()
+            .setBaseUri(TestConfig.baseUrl())
+            .setContentType(ContentType.JSON)
+            .setAccept(ContentType.JSON)
+            .setConfig(config)
+            .build();
+        token = given().spec(spec)
+            .body(Map.of("username", TestConfig.user(), "password", TestConfig.password()))
+            .post("/auth").then().statusCode(200).extract().path("token");
+    }
+
+    @AfterMethod(alwaysRun = true)                                   // runs even when the test failed
+    public void cleanUp() {
+        for (int id : created) given().spec(spec).cookie("token", token).delete("/booking/{id}", id);
+        created.clear();
+    }
+
+    private Map<String, Object> realisticBooking() {
+        LocalDate checkin = LocalDate.of(2026, 12, 1).plusDays(faker.number().numberBetween(0, 20));
+        return Map.of(
+            "firstname", faker.name().firstName(),
+            "lastname", faker.name().lastName(),
+            "totalprice", faker.number().numberBetween(500, 25_000),
+            "depositpaid", faker.bool().bool(),
+            "bookingdates", Map.of("checkin", checkin.toString(), "checkout", checkin.plusDays(3).toString()),
+            "additionalneeds", faker.options().option("Breakfast", "Airport pickup", "Late checkout"));
+    }
+
+    @Test
+    public void realisticGuestRoundTrip() {
+        Map<String, Object> data = realisticBooking();
+
+        int id = given().spec(spec).body(data)
+            .post("/booking")
+            .then().statusCode(200).extract().path("bookingid");
+        created.add(id);
+
+        given().spec(spec).cookie("token", token)
+            .get("/booking/{id}", id)
+            .then().statusCode(200)
+            .body("firstname", equalTo(data.get("firstname")))
+            .body("totalprice", equalTo(data.get("totalprice")));
+    }
+}
+''', {'save': 'src/test/java/tests/EssentialsTest.java'}),
+                ('code', 'bash', 'Run it against different servers', '''
+mvn test -Dtest=EssentialsTest -Denv=local
+TEST_ENV=qa API_PASSWORD="$QA_PASSWORD" mvn test              # secret from your shell or CI
+'''),
+                ('table', ['Habit', 'How this class does it'], [
+                    ['One suite, many servers', '<code>TestConfig.baseUrl()</code> reads <code>-Denv</code>, <code>TEST_ENV</code> or <code>-DbaseUrl</code>'],
+                    ['Secrets out of Git', 'password from <code>-DapiPassword</code> or <code>API_PASSWORD</code>, a default only for the public practice API'],
+                    ['Realistic unique data', 'DataFaker with the Indian English locale'],
+                    ['Logs that explain failures but hide secrets', '<code>enableLoggingOfRequestAndResponseIfValidationFails()</code> and <code>blacklistHeader</code>'],
+                    ['Leave QA clean', '<code>@AfterMethod(alwaysRun = true)</code> deletes everything the test created'],
+                ]),
+                ('warn', 'Logs end up in CI artifacts that many people can read. Always blacklist <code>Authorization</code>, <code>Cookie</code> and any custom API key header before you turn request logging on.'),
+            ],
+        },
+        {
+            'id': 'latest', 'title': 'What is new in Rest Assured 6, and how it helps at work', 'emoji': '🆕', 'level': 'Expert',
+            'blocks': [
+                ('table', ['Release', 'What changed', 'How it helps an API tester'], [
+                    ['6.1.0 (October 2026)', 'HTTP QUERY method, JSON Schema drafts 6, 7, 2019-09 and 2020-12, <code>java.time</code> values as parameters, Authorization and Cookie headers dropped on cross host redirects', 'Test search APIs that use QUERY, validate OpenAPI 3.1 schemas, pass dates without formatting them by hand, and stop tokens leaking to other hosts'],
+                    ['6.2.0 (October 2026)', 'Core module in pure Java with no direct Groovy dependency, safer static config in parallel runs, <code>auth().certificate(..)</code> sends client certificates for mutual TLS, clearer error messages', 'Fewer odd failures in parallel TestNG runs, and banking style mTLS APIs from the same framework'],
+                    ['6.3.0 (October 2026)', 'Prepares for 7.0: <code>Duration</code> timeouts in <code>HttpClientConfig</code>, <code>SSLContext</code> in <code>SSLConfig</code>, a migration recipe module (<code>rest-assured-openrewrite</code>)', 'Move off deprecated APIs now with an automatic recipe, before 7.0 removes Apache HttpClient 4 and Groovy from the defaults'],
+                ]),
+                ('code', 'json', 'src/test/resources/schemas/booking-2020-12.json', '''
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["firstname", "lastname", "totalprice", "depositpaid", "bookingdates"],
+  "properties": {
+    "firstname": { "type": "string", "minLength": 1 },
+    "lastname": { "type": "string", "minLength": 1 },
+    "totalprice": { "type": "integer", "minimum": 0 },
+    "depositpaid": { "type": "boolean" },
+    "bookingdates": {
+      "type": "object",
+      "required": ["checkin", "checkout"],
+      "properties": {
+        "checkin": { "type": "string", "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$" },
+        "checkout": { "type": "string", "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$" }
+      }
+    },
+    "additionalneeds": { "type": "string" }
+  },
+  "unevaluatedProperties": false
+}
+''', {'save': 'src/test/resources/schemas/booking-2020-12.json'}),
+                ('code', 'java', 'src/test/java/tests/LatestFeaturesTest.java', '''
+package tests;
+
+import static io.restassured.RestAssured.*;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.hamcrest.Matchers.*;
+
+import io.restassured.RestAssured;
+import java.time.LocalDate;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+public class LatestFeaturesTest {
+
+    @BeforeClass
+    public void setUp() {
+        RestAssured.baseURI = System.getProperty("baseUrl", "https://restful-booker.herokuapp.com");
+    }
+
+    @Test
+    public void bookingMatchesA2020_12Schema() {
+        get("/booking/1").then()
+            .statusCode(200)
+            .body(matchesJsonSchemaInClasspath("schemas/booking-2020-12.json"));   // draft read from $schema
+    }
+
+    @Test
+    public void javaTimeValuesAreSentAsIsoDates() {
+        given()
+            .queryParam("checkin", LocalDate.of(2026, 1, 1))      // sent as checkin=2026-01-01
+        .when()
+            .get("/booking")
+        .then()
+            .statusCode(200)
+            .body("size()", greaterThanOrEqualTo(0));
+    }
+}
+''', {'save': 'src/test/java/tests/LatestFeaturesTest.java'}),
+                ('code', 'java', 'The QUERY method (RFC 10008) on an API that supports it', '''
+given()
+    .contentType(ContentType.JSON)
+    .body(Map.of("city", "Bengaluru", "maxPrice", 6000, "amenities", List.of("pool", "wifi")))
+.when()
+    .query("/hotels/search")          // safe and idempotent like GET, but with a body
+.then()
+    .statusCode(200)
+    .body("results.size()", greaterThan(0));
+'''),
+                ('tip', 'Restful Booker does not support QUERY, so that last example is for APIs that do. When your team adopts QUERY, test that it never changes data, that repeating it gives the same answer, and that gateways and caches let it through.'),
             ],
         },
         {

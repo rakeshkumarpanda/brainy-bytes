@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Python Runs: From Source Code to Output · Python</title>
+<meta name="description" content="How Python executes a program internally: CPython, tokenizer, PEG parser, AST, compiler, code objects, bytecode and dis, pyc files and __pycache__, the evaluation loop, frames, LEGB, objects, reference counting, garbage collection, GIL, free threading, specializing interpreter, JIT and Python 3.14.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/pyplay.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=python" target="_top">🐍 Python</a><span>›</span><span>⚙️ How Python Works</span><span>›</span><span>Chapter 1 of 1</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">⚙️</span><div><h1>How Python Runs: From Source Code to Output</h1><p class="lead">Follow one Python file through CPython: the tokenizer, the parser and its syntax tree, the compiler and bytecode, <code>__pycache__</code>, the evaluation loop and its value stack, frames and tracebacks, names and scopes, objects, reference counting and the garbage collector, the GIL and free threading, the specializing interpreter and the JIT, imports and start up, with every change up to Python 3.14.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 45 min read</span><span class="chip">📚 20 parts</span><span class="chip">🎬 7 animations</span><span class="chip">▶ 24 runnable examples</span><span class="chip">👣 13 line by line</span><span class="chip">🧪 5 terminal runs</span><span class="chip">🏋️ 5 hands-on exercises</span><span class="chip">🎯 14 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 2 QA essential parts</span><span class="chip">🐍 Run with CPython 3.14.6</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="qa-intro"><b>🧪 For QA engineers</b><p>Testers who know how Python runs read tracebacks faster, understand why pytest shows the values in a failed assert, and spot module shadowing and stale cache problems that only happen on some machines.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#big-picture"><span>🗺️</span>From source code to output</a><a href="#implementations"><span>🧩</span>Compiled or interpreted: the honest answer</a><a href="#try-it"><span>🎬</span>Try it: follow your own code through CPython</a><a href="#tokens"><span>🔤</span>Step 1: the tokenizer</a><a href="#parser"><span>🌳</span>Step 2: the parser and the syntax tree</a><a href="#compiler"><span>🏭</span>Step 3: the compiler and code objects</a><a href="#pyc"><span>💾</span>__pycache__ and .pyc files</a><a href="#eval-loop"><span>🔁</span>Step 4: the evaluation loop</a><a href="#frames"><span>🧱</span>Frames, the call stack and tracebacks</a><a href="#names"><span>🔎</span>Names and scopes: the LEGB rule</a><a href="#objects"><span>📦</span>Everything is an object</a><a href="#memory"><span>🧹</span>Memory: reference counting and the garbage collector</a><a href="#gil"><span>🔒</span>The GIL, threads and free-threaded Python</a><a href="#faster"><span>🚀</span>Faster CPython: specialization and the JIT</a><a href="#imports"><span>📥</span>What import really does</a><a href="#startup"><span>🏁</span>What happens before your first line runs</a><a href="#tools"><span>🔬</span>Tools to look inside</a><a href="#versions"><span>🆕</span>What changed inside CPython, release by release</a><a href="#qa" class="qa"><span>🧪</span>Python internals in test automation</a><a href="#scenario" class="qa"><span>🎬</span>Real world scenario: &quot;it works on my machine&quot;</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec" id="big-picture" data-say="big-picture"><div class="sec-num">Part 1<span class="lvl-tag lvl-b">🌱 Beginner</span></div><h2><span class="sec-em">🗺️</span><span>From source code to output</span></h2>
+
+<p>When you run <code>python main.py</code>, the computer does not understand Python directly. A program called the <b>interpreter</b> reads your file and does the work for you. The interpreter almost everyone uses is <b>CPython</b>, written in the C language and published by the Python Software Foundation. It is the one you download from python.org, and it is what this chapter describes.</p>
+<p>CPython works in two stages, just like Java. First it <b>compiles</b> your text into <b>bytecode</b>, a list of small instructions. Then the <b>Python Virtual Machine</b> runs that bytecode one instruction at a time. The big difference from Java is that you never call the compiler yourself. Python does both stages every time you press Run, in a fraction of a second.</p>
+<div class="viz" data-viz="flow" data-k="pyrun"></div>
+<div class="codewrap" data-k="hello" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">hello.py · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># hello.py: a small bill, the kind of program every learner writes first</span>
+name = <span class="s">"Asha"</span>
+items = <span class="n">3</span>
+price = <span class="n">40</span>
+total = items * price
+print(<span class="s">"Hi"</span>, name + <span class="s">"!"</span>, <span class="s">"Your bill is"</span>, total, <span class="s">"rupees"</span>)</pre><div class="out"><span>Output</span><pre>Hi Asha! Your bill is 120 rupees</pre></div></div>
+<p>Here is the same journey for this small bill, in plain words:</p>
+<ol class="steps">
+<li><b>Read.</b> CPython opens <code>hello.py</code> and reads it as text, using UTF-8 by default.</li>
+<li><b>Tokenize.</b> The characters are grouped into tokens such as <code>total</code>, <code>=</code>, <code>items</code>, <code>*</code>.</li>
+<li><b>Parse.</b> The tokens are checked against Python's grammar and arranged into a tree.</li>
+<li><b>Compile.</b> The tree becomes bytecode inside a <b>code object</b>.</li>
+<li><b>Run.</b> The evaluation loop runs the bytecode. <code>print</code> is a built in function written in C, and it writes the text to your screen.</li>
+</ol>
+<div class="tw"><table class="jt"><tr><th>Step</th><th>Java</th><th>Python (CPython)</th></tr>
+<tr><td>Source file</td><td><code>Hello.java</code></td><td><code>hello.py</code></td></tr>
+<tr><td>Compiler</td><td><code>javac</code>, run by you</td><td>Built into <code>python</code>, runs automatically</td></tr>
+<tr><td>Bytecode file</td><td><code>Hello.class</code>, always written</td><td><code>.pyc</code> in <code>__pycache__</code>, only for imported modules</td></tr>
+<tr><td>Virtual machine</td><td>JVM</td><td>The CPython evaluation loop, often called the PVM</td></tr>
+<tr><td>Machine code</td><td>JIT compiler on by default</td><td>Interpreted. An experimental JIT exists since 3.13, off by default</td></tr>
+<tr><td>Memory</td><td>Tracing garbage collector</td><td>Reference counting plus a cycle collector</td></tr>
+<tr><td>Type checks</td><td>At compile time</td><td>At run time, when each instruction runs</td></tr></table></div>
+<div class="rule">The same <code>.py</code> file runs on Windows, macOS and Linux because each has its own CPython. The bytecode is tied to the Python version, not to the operating system.</div>
+</section>
+<section class="card reveal jsec" id="implementations" data-say="implementations"><div class="sec-num">Part 2<span class="lvl-tag lvl-b">🌱 Beginner</span></div><h2><span class="sec-em">🧩</span><span>Compiled or interpreted: the honest answer</span></h2>
+
+<p>People often say "Python is interpreted" and "Java is compiled". Both statements are half true. CPython <b>compiles</b> your code to bytecode and then <b>interprets</b> the bytecode. Python the <b>language</b> is a set of rules. An <b>implementation</b> is a program that follows those rules. There are several:</p>
+<div class="tw"><table class="jt"><tr><th>Implementation</th><th>Written in</th><th>How it runs your code</th><th>Where you meet it</th></tr>
+<tr><td><b>CPython</b></td><td>C</td><td>Bytecode on an interpreter loop, optional JIT</td><td>python.org, Linux, macOS, most jobs</td></tr>
+<tr><td><b>PyPy</b></td><td>RPython</td><td>A tracing JIT that compiles hot loops to machine code</td><td>Long running pure Python programs</td></tr>
+<tr><td><b>MicroPython</b></td><td>C</td><td>A small compiler and VM for chips with little memory</td><td>Microcontrollers, school robotics kits</td></tr>
+<tr><td><b>GraalPy</b></td><td>Java</td><td>Runs on the GraalVM, close to the JVM world</td><td>Mixing Python with Java</td></tr>
+<tr><td><b>Pyodide</b></td><td>CPython built for WebAssembly</td><td>The real CPython inside a web browser</td><td>The "Edit and run" buttons on this page</td></tr></table></div>
+<div class="codewrap" data-k="which" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Which Python is running this code · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> sys, platform
+
+print(<span class="s">"Implementation:"</span>, platform.python_implementation())
+print(<span class="s">"Version:       "</span>, sys.version.split()[<span class="n">0</span>])
+print(<span class="s">"Cache tag:     "</span>, sys.implementation.cache_tag)
+print(<span class="s">"Program name:  "</span>, sys.executable.split(<span class="s">"/"</span>)[-<span class="n">1</span>])</pre><div class="out"><span>Output</span><pre>Implementation: CPython
+Version:        3.14.6
+Cache tag:      cpython-314
+Program name:   python3.14</pre></div></div>
+<p>The <b>cache tag</b> <code>cpython-314</code> is the name CPython uses for its bytecode files. It contains the implementation and the version, because bytecode from 3.13 cannot be used by 3.14.</p>
+<div class="tip">On this page, every recorded output came from CPython 3.14 on Linux. When you press <b>Edit and run</b>, the code runs in your browser with Pyodide, which is CPython 3.14 compiled to WebAssembly. A few things that need an operating system, such as threads, are marked as not runnable in the browser.</div>
+</section>
+<section class="card reveal jsec" id="try-it" data-say="try-it"><div class="sec-num">Part 3<span class="lvl-tag lvl-b">🌱 Beginner</span></div><h2><span class="sec-em">🎬</span><span>Try it: follow your own code through CPython</span></h2>
+
+<p>This animation is a small working model of CPython 3.14. Type a few lines of your own, or pick an example, and open each tab. It shows the tokens, the syntax tree, the bytecode, and then runs the bytecode on a value stack, one instruction per step. It was checked against the real CPython 3.14 on more than ten thousand generated programs, so what you see here is what CPython really does.</p>
+<div class="viz" data-viz="pvm" data-k="mainpvm"></div>
+<p>Things to try:</p>
+<ul>
+<li>Write <code>x = 2 * 3</code> and open <b>Bytecode</b>. There is no multiplication. The compiler already worked out 6.</li>
+<li>Remove a closing bracket. The error appears before any step can run.</li>
+<li>Use a name before giving it a value. The program runs until the <code>LOAD_NAME</code> that cannot find it, then stops with <code>NameError</code>.</li>
+<li>Write <code>print("5" + 5)</code>. Python only finds out that a string and a number cannot be added when <code>BINARY_OP</code> actually runs.</li>
+</ul>
+</section>
+<section class="card reveal jsec" id="tokens" data-say="tokens"><div class="sec-num">Part 4<span class="lvl-tag lvl-i">🌿 Intermediate</span></div><h2><span class="sec-em">🔤</span><span>Step 1: the tokenizer</span></h2>
+
+<p>The tokenizer, also called the <b>lexer</b>, reads characters from left to right and groups them into <b>tokens</b>, the smallest pieces that mean something. It is the same thing you do when you read a sentence: you see words, not single letters.</p>
+<p>Python has a special job here that most languages do not have. Indentation is part of the grammar, so the tokenizer keeps a stack of indentation levels. When a line is indented more than the previous one, it produces an <code>INDENT</code> token. When the indentation goes back, it produces a <code>DEDENT</code> token. The parser never sees spaces, only these tokens.</p>
+<div class="codewrap" data-k="tokens" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The tokens Python sees, including INDENT and DEDENT · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> io, tokenize
+
+source = <span class="s">"""if total &gt; 100:
+    discount = 10
+print(discount)
+"""</span>
+<span class="k">for</span> tok <span class="k">in</span> tokenize.generate_tokens(io.<span class="t">StringIO</span>(source).readline):
+    kind = tokenize.tok_name[tok.<span class="k">type</span>]
+    print(<span class="s">f"{kind:&lt;9} {tok.string!r:&lt;14} line {tok.start[0]}"</span>)</pre><div class="out"><span>Output</span><pre>NAME      &#x27;if&#x27;           line 1
+NAME      &#x27;total&#x27;        line 1
+OP        &#x27;&gt;&#x27;            line 1
+NUMBER    &#x27;100&#x27;          line 1
+OP        &#x27;:&#x27;            line 1
+NEWLINE   &#x27;\n&#x27;           line 1
+INDENT    &#x27;    &#x27;         line 2
+NAME      &#x27;discount&#x27;     line 2
+OP        &#x27;=&#x27;            line 2
+NUMBER    &#x27;10&#x27;           line 2
+NEWLINE   &#x27;\n&#x27;           line 2
+DEDENT    &#x27;&#x27;             line 3
+NAME      &#x27;print&#x27;        line 3
+OP        &#x27;(&#x27;            line 3
+NAME      &#x27;discount&#x27;     line 3
+OP        &#x27;)&#x27;            line 3
+NEWLINE   &#x27;\n&#x27;           line 3
+ENDMARKER &#x27;&#x27;             line 4</pre></div></div>
+<ul>
+<li><code>NEWLINE</code> ends a logical line of code. <code>NL</code> is a line break that does not end a statement, such as a blank line or a line inside brackets.</li>
+<li><code>OP</code> covers operators and punctuation like <code>&gt;</code>, <code>=</code>, <code>:</code> and brackets.</li>
+<li>Mixing tabs and spaces so that the meaning is unclear raises <code>TabError</code> right here, before anything runs.</li>
+</ul>
+<div class="tip">You can see the tokens of any file from a terminal with <code>python -m tokenize main.py</code>.</div>
+</section>
+<section class="card reveal jsec" id="parser" data-say="parser"><div class="sec-num">Part 5<span class="lvl-tag lvl-i">🌿 Intermediate</span></div><h2><span class="sec-em">🌳</span><span>Step 2: the parser and the syntax tree</span></h2>
+
+<p>The parser takes the tokens and checks them against Python's grammar. Since Python 3.9, CPython uses a <b>PEG parser</b> (Parsing Expression Grammar), generated from a grammar file that lives in the CPython source. The result is an <b>abstract syntax tree</b>, or AST. "Abstract" means that brackets, spaces and commas are gone. Only the meaning is kept.</p>
+<div class="codewrap" data-k="astdump" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The syntax tree of one line · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> ast
+
+tree = ast.parse(<span class="s">"total = price * qty + 5"</span>)
+print(ast.dump(tree, indent=<span class="n">2</span>))</pre><div class="out"><span>Output</span><pre>Module(
+  body=[
+    Assign(
+      targets=[
+        Name(id=&#x27;total&#x27;, ctx=Store())],
+      value=BinOp(
+        left=BinOp(
+          left=Name(id=&#x27;price&#x27;, ctx=Load()),
+          op=Mult(),
+          right=Name(id=&#x27;qty&#x27;, ctx=Load())),
+        op=Add(),
+        right=Constant(value=5)))])</pre></div></div>
+<p>Read the tree from the bottom up. <code>price * qty</code> is a <code>BinOp</code> with <code>Mult</code>. That whole node is the left side of another <code>BinOp</code> with <code>Add</code>. The tree already encodes that multiplication happens before addition, so the later stages never think about operator precedence again.</p>
+<p>The parser reads the <b>whole file</b> before anything runs. That is why one syntax error stops the program completely, even the lines above it that are fine:</p>
+<div class="codewrap" data-k="syntax-first" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A syntax error stops the program before line 1 runs · 💥 Raises an error</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">print(<span class="s">"Step 1: this line never runs"</span>)
+total = <span class="n">100</span>
+<span class="k">if</span> total &gt; <span class="n">50</span>
+    print(<span class="s">"big order"</span>)</pre><div class="err"><span>Output</span><pre>  File &quot;main.py&quot;, line 3
+    if total &gt; 50
+                 ^
+SyntaxError: expected &#x27;:&#x27;</pre></div></div>
+<div class="note">Tools you use every day read this tree: <b>pytest</b> rewrites <code>assert</code> statements in it, linters such as <b>Ruff</b> and <b>Pylint</b> walk it to find bugs, and formatters like <b>Black</b> rebuild your file from it. The <code>ast</code> module lets your own code do the same.</div>
+</section>
+<section class="card reveal jsec" id="compiler" data-say="compiler"><div class="sec-num">Part 6<span class="lvl-tag lvl-i">🌿 Intermediate</span></div><h2><span class="sec-em">🏭</span><span>Step 3: the compiler and code objects</span></h2>
+
+<p>The compiler walks the tree and produces a <b>code object</b>. It does this in three small steps:</p>
+<ol class="steps">
+<li><b>Symbol table.</b> For every function, the compiler decides whether each name is local, global, from an enclosing function or free. This decision is made once, here, and never changes while the program runs.</li>
+<li><b>Code generation.</b> Each node of the tree becomes one or more instructions.</li>
+<li><b>Optimisation.</b> A peephole optimiser cleans up the instruction list. It removes dead code, shortens jumps and folds constants.</li>
+</ol>
+<p>Every function has its own code object, stored in <code>__code__</code>. It is a plain Python object you can inspect:</p>
+<div class="codewrap" data-k="codeobj" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Inside a code object · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">def</span> add_tax(price, rate=<span class="n">0.18</span>):
+    tax = price * rate
+    <span class="k">return</span> round(price + tax, <span class="n">2</span>)
+
+code = add_tax.__code__
+print(<span class="s">"name:         "</span>, code.co_name)
+print(<span class="s">"arguments:    "</span>, code.co_argcount)
+print(<span class="s">"local names:  "</span>, code.co_varnames)
+print(<span class="s">"constants:    "</span>, code.co_consts)
+print(<span class="s">"other names:  "</span>, code.co_names)
+print(<span class="s">"bytecode size:"</span>, len(code.co_code), <span class="s">"bytes"</span>)
+print(add_tax(<span class="n">100</span>))</pre><div class="out"><span>Output</span><pre>name:          add_tax
+arguments:     2
+local names:   (&#x27;price&#x27;, &#x27;rate&#x27;, &#x27;tax&#x27;)
+constants:     (2,)
+other names:   (&#x27;round&#x27;,)
+bytecode size: 54 bytes
+118.0</pre></div></div>
+<p>The <code>dis</code> module (short for disassembler) prints the bytecode in a readable form. The first column is the source line, then the instruction name, its argument, and in brackets what the argument means.</p>
+<div class="codewrap" data-k="dis1" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Read the bytecode with dis · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> dis
+
+<span class="k">def</span> add_tax(price, rate):
+    tax = price * rate
+    <span class="k">return</span> price + tax
+
+dis.dis(add_tax)</pre><div class="out"><span>Output</span><pre>  3           RESUME                   0
+
+  4           LOAD_FAST_BORROW_LOAD_FAST_BORROW 1 (price, rate)
+              BINARY_OP                5 (*)
+              STORE_FAST               2 (tax)
+
+  5           LOAD_FAST_BORROW_LOAD_FAST_BORROW 2 (price, tax)
+              BINARY_OP                0 (+)
+              RETURN_VALUE</pre></div></div>
+<p>Notice <code>LOAD_FAST_BORROW_LOAD_FAST_BORROW</code>. Local variables live in a small array inside the frame, so reading one is just an index, which is fast. Here the compiler even joined two local loads into one <b>superinstruction</b>. <code>STORE_FAST</code> writes to that array. Global names need slower dictionary lookups.</p>
+<p>Look at the code object again: the default value <code>0.18</code> is not among the constants. Defaults are worked out once, when the <code>def</code> line runs, and kept on the function in <code>add_tax.__defaults__</code>. The <code>2</code> in the constants is the second argument of <code>round</code>.</p>
+<p><b>Constant folding</b> is the easiest optimisation to see. Arithmetic on plain numbers is done once by the compiler, not every time the line runs:</p>
+<div class="codewrap" data-k="folding" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Constant folding · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> dis
+
+<span class="c"># The compiler does arithmetic on plain numbers once, before the program runs</span>
+dis.dis(<span class="s">"seconds_per_day = 60 * 60 * 24"</span>)</pre><div class="out"><span>Output</span><pre>  0           RESUME                   0
+
+  1           LOAD_CONST               2 (86400)
+              STORE_NAME               0 (seconds_per_day)
+              LOAD_CONST               1 (None)
+              RETURN_VALUE</pre></div></div>
+<div class="note">Bytecode changes in every Python release. <code>LOAD_SMALL_INT</code> and <code>LOAD_FAST_BORROW</code> are new in 3.14, and 3.15 will change more. Bytecode is an internal detail. Use it to understand Python, never as something your programs depend on.</div>
+</section>
+<section class="card reveal jsec" id="pyc" data-say="pyc"><div class="sec-num">Part 7<span class="lvl-tag lvl-i">🌿 Intermediate</span></div><h2><span class="sec-em">💾</span><span>__pycache__ and .pyc files</span></h2>
+
+<p>Compiling is quick, but a big project imports hundreds of modules. To save that work, CPython writes the bytecode of every <b>imported</b> module to a <code>.pyc</code> file in a folder named <code>__pycache__</code>, next to the source. The next run checks that the <code>.pyc</code> is still fresh and loads it directly, skipping the tokenizer, the parser and the compiler.</p>
+<div class="codewrap tests" data-k="pycache"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Watch __pycache__ appear, then read a .pyc header · 🧪 Run in a terminal</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 shop.py</div><pre class="src" data-file="shop.py"><span class="t">GST</span> = <span class="n">0.18</span>
+
+<span class="k">def</span> bill(amount):
+    <span class="k">return</span> round(amount * (<span class="n">1</span> + <span class="t">GST</span>), <span class="n">2</span>)</pre><div class="fname">📄 main.py</div><pre class="src" data-file="main.py"><span class="k">import</span> shop
+
+print(<span class="s">"Bill for 100 rupees:"</span>, shop.bill(<span class="n">100</span>))</pre><div class="fname">📄 read_pyc.py</div><pre class="src" data-file="read_pyc.py"><span class="k">import</span> glob, importlib.util, struct
+
+path = glob.glob(<span class="s">"__pycache__/shop.*.pyc"</span>)[<span class="n">0</span>]
+data = open(path, <span class="s">"rb"</span>).read()
+magic, flags, mtime, size = struct.unpack(<span class="s">"&lt;4sIII"</span>, data[:<span class="n">16</span>])
+print(<span class="s">"file:          "</span>, path)
+print(<span class="s">"magic number:  "</span>, magic, <span class="s">"matches this Python:"</span>, magic == importlib.util.<span class="t">MAGIC_NUMBER</span>)
+print(<span class="s">"flags:         "</span>, flags, <span class="s">"(0 means: compare the source timestamp and size)"</span>)
+print(<span class="s">"source size:   "</span>, size, <span class="s">"bytes"</span>)
+print(<span class="s">"bytecode part: "</span>, len(data) - <span class="n">16</span>, <span class="s">"bytes"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ python main.py
+$ ls -R
+$ python read_pyc.py
+$ rm -r __pycache__ &amp;&amp; python -B main.py &amp;&amp; ls</pre></div><div class="out"><span>Terminal output</span><pre>Bill for 100 rupees: 118.0
+--- what is in the folder now
+.:
+__pycache__
+main.py
+read_pyc.py
+shop.py
+./__pycache__:
+shop.cpython-314.pyc
+--- the .pyc header
+file:           __pycache__/shop.cpython-314.pyc
+magic number:   b&#x27;+\x0e\r\n&#x27; matches this Python: True
+flags:          0 (0 means: compare the source timestamp and size)
+source size:    70 bytes
+bytecode part:  363 bytes
+--- run again with -B: nothing new is written
+Bill for 100 rupees: 118.0
+main.py
+read_pyc.py
+shop.py</pre></div></div>
+<p>What the example shows:</p>
+<ul>
+<li>Only <code>shop.py</code> got a <code>.pyc</code>. The script you start, <code>main.py</code>, is compiled in memory every time and never cached.</li>
+<li>The name <code>shop.cpython-314.pyc</code> holds the cache tag, so Python 3.13 and 3.14 can share a folder without breaking each other.</li>
+<li>The 16 byte header starts with a <b>magic number</b> that changes whenever the bytecode format changes. If it does not match, the file is ignored and rebuilt.</li>
+<li>By default the header also stores the source file's modification time and size. If you edit <code>shop.py</code>, they no longer match and Python compiles it again.</li>
+<li><code>python -B</code> or the environment variable <code>PYTHONDONTWRITEBYTECODE=1</code> stops Python from writing <code>.pyc</code> files. <code>PYTHONPYCACHEPREFIX</code> moves them all to one separate folder.</li>
+</ul>
+<div class="tw"><table class="jt"><tr><th>Tool</th><th>What it does</th></tr>
+<tr><td><code>python -m py_compile shop.py</code></td><td>Compile one file to its <code>.pyc</code></td></tr>
+<tr><td><code>python -m compileall src/</code></td><td>Compile a whole folder, used when building Docker images and installers</td></tr>
+<tr><td><code>--invalidation-mode checked-hash</code></td><td>Store a hash of the source instead of the time, for builds that must be reproducible</td></tr></table></div>
+<div class="tip">A <code>.pyc</code> file is not faster to <b>run</b>. It only starts faster, because the compile step is skipped. It also does not hide your code: tools can turn it back into readable Python. Always add <code>__pycache__/</code> to <code>.gitignore</code>.</div>
+</section>
+<section class="card reveal jsec" id="eval-loop" data-say="eval-loop"><div class="sec-num">Part 8<span class="lvl-tag lvl-a">🔥 Advanced</span></div><h2><span class="sec-em">🔁</span><span>Step 4: the evaluation loop</span></h2>
+
+<p>Now the code object meets the <b>evaluation loop</b>, the heart of CPython. It is a C function that repeats three things for as long as the program runs: read the next instruction, do what it says, move on. Each instruction works with a <b>value stack</b>. Loading a name pushes its value on top. An operator pops its inputs and pushes its result. Storing a name pops the top value.</p>
+<div class="viz" data-viz="lanes" data-k="loop"></div>
+<div class="codewrap" data-k="evalloop" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Every instruction has an offset · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> dis
+
+code = compile(<span class="s">"total = price * qty"</span>, <span class="s">"&lt;bill&gt;"</span>, <span class="s">"exec"</span>)
+<span class="k">for</span> ins <span class="k">in</span> dis.get_instructions(code):
+    print(<span class="s">f"{ins.offset:&gt;3}  {ins.opname:&lt;16} {ins.argrepr}"</span>)</pre><div class="out"><span>Output</span><pre>  0  RESUME           
+  2  LOAD_NAME        price
+  4  LOAD_NAME        qty
+  6  BINARY_OP        *
+ 18  STORE_NAME       total
+ 20  LOAD_CONST       None
+ 22  RETURN_VALUE</pre></div></div>
+<p>The offsets go up by 2 because every instruction takes two bytes: one for the instruction and one for its argument. Some instructions also keep hidden cache entries after them, which is why offsets can jump by more.</p>
+<p>The loop itself is surprisingly simple. Here is the whole idea in a few lines of Python. Press <b>Line by line</b> to watch the stack change.</p>
+<div class="codewrap" data-k="minivm" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Build your own evaluation loop in 15 lines · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c"># A tiny stack machine that works the way the CPython evaluation loop does</span>
+program = [(<span class="s">"LOAD"</span>, <span class="s">"price"</span>), (<span class="s">"LOAD"</span>, <span class="s">"qty"</span>), (<span class="s">"MULTIPLY"</span>, <span class="k">None</span>), (<span class="s">"STORE"</span>, <span class="s">"total"</span>)]
+names = {<span class="s">"price"</span>: <span class="n">40</span>, <span class="s">"qty"</span>: <span class="n">3</span>}
+stack = []
+
+<span class="k">for</span> op, arg <span class="k">in</span> program:
+    <span class="k">if</span> op == <span class="s">"LOAD"</span>:
+        stack.append(names[arg])
+    <span class="k">elif</span> op == <span class="s">"MULTIPLY"</span>:
+        right = stack.pop()
+        left = stack.pop()
+        stack.append(left * right)
+    <span class="k">elif</span> op == <span class="s">"STORE"</span>:
+        names[arg] = stack.pop()
+    print(<span class="s">f"{op:&lt;9} {str(arg):&lt;6} stack = {stack}"</span>)
+
+print(names)</pre><div class="out"><span>Output</span><pre>LOAD      price  stack = [40]
+LOAD      qty    stack = [40, 3]
+MULTIPLY  None   stack = [120]
+STORE     total  stack = []
+{&#x27;price&#x27;: 40, &#x27;qty&#x27;: 3, &#x27;total&#x27;: 120}</pre></div></div>
+<p>The real loop knows about 150 instructions (see <code>dis.opmap</code>) plus more than 80 specialized forms of them, and many tricks for speed, but this is honestly how it works. Between instructions, CPython also checks for a few things: a pending signal such as Ctrl + C, a request to switch threads, and the hooks used by debuggers.</p>
+</section>
+<section class="card reveal jsec" id="frames" data-say="frames"><div class="sec-num">Part 9<span class="lvl-tag lvl-a">🔥 Advanced</span></div><h2><span class="sec-em">🧱</span><span>Frames, the call stack and tracebacks</span></h2>
+
+<p>Every time a function is called, CPython creates a <b>frame</b>. A frame holds everything that one call needs: which code object it is running, the current instruction, the local variables and its own value stack. Frames sit on the <b>call stack</b>. The newest one is on top and is the one running. When a function returns, its frame is thrown away and the one below continues from where it paused.</p>
+<div class="viz" data-viz="lanes" data-k="calls"></div>
+<p>A <b>traceback</b> is a print of the call stack at the moment an error happened. Python prints it with the oldest frame first, which is why it says "most recent call last". Read it from the bottom up: the last lines show the error and the exact place it happened.</p>
+<div class="codewrap" data-k="traceback" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A traceback is the call stack, printed · 💥 Raises an error</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">def</span> apply_coupon(total, code):
+    discounts = {<span class="s">"SAVE10"</span>: <span class="n">10</span>, <span class="s">"SAVE20"</span>: <span class="n">20</span>}
+    <span class="k">return</span> total - discounts[code]
+
+<span class="k">def</span> checkout(cart_total, coupon):
+    <span class="k">return</span> apply_coupon(cart_total, coupon)
+
+print(checkout(<span class="n">500</span>, <span class="s">"SAVE10"</span>))
+print(checkout(<span class="n">500</span>, <span class="s">"FREE100"</span>))</pre><div class="err"><span>Output</span><pre>490
+Traceback (most recent call last):
+  File &quot;main.py&quot;, line 9, in &lt;module&gt;
+    print(checkout(500, &quot;FREE100&quot;))
+          ~~~~~~~~^^^^^^^^^^^^^^^^
+  File &quot;main.py&quot;, line 6, in checkout
+    return apply_coupon(cart_total, coupon)
+  File &quot;main.py&quot;, line 3, in apply_coupon
+    return total - discounts[code]
+                   ~~~~~~~~~^^^^^^
+KeyError: &#x27;FREE100&#x27;</pre></div></div>
+<div class="codewrap" data-k="frames" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Walk the frames, then hit the recursion limit · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> sys
+
+<span class="k">def</span> inner():
+    frame = sys._getframe()
+    chain = []
+    <span class="k">while</span> frame:
+        chain.append(frame.f_code.co_name)
+        frame = frame.f_back
+    <span class="k">return</span> chain
+
+<span class="k">def</span> middle():
+    <span class="k">return</span> inner()
+
+print(middle())
+print(<span class="s">"recursion limit:"</span>, sys.getrecursionlimit())
+
+<span class="k">def</span> countdown(n):
+    <span class="k">return</span> <span class="n">0</span> <span class="k">if</span> n == <span class="n">0</span> <span class="k">else</span> countdown(n - <span class="n">1</span>)
+
+<span class="k">try</span>:
+    countdown(<span class="n">5000</span>)
+<span class="k">except</span> <span class="t">RecursionError</span> <span class="k">as</span> e:
+    print(<span class="s">"RecursionError:"</span>, e)</pre><div class="out"><span>Output</span><pre>[&#x27;inner&#x27;, &#x27;middle&#x27;, &#x27;&lt;module&gt;&#x27;]
+recursion limit: 1000
+RecursionError: maximum recursion depth exceeded</pre></div></div>
+<p>Since Python 3.11, frames are small C structures inside the interpreter. A full Python frame object, the one <code>sys._getframe()</code> returns, is only built when someone asks for it. This change made function calls much cheaper.</p>
+<div class="note">The recursion limit (1000 by default) protects your program from running out of stack memory. You can raise it with <code>sys.setrecursionlimit</code>, but a loop is usually the better fix for deep recursion.</div>
+</section>
+<section class="card reveal jsec" id="names" data-say="names"><div class="sec-num">Part 10<span class="lvl-tag lvl-a">🔥 Advanced</span></div><h2><span class="sec-em">🔎</span><span>Names and scopes: the LEGB rule</span></h2>
+
+<p>When the evaluation loop needs a name, it searches up to four places in a fixed order: <b>L</b>ocal, <b>E</b>nclosing, <b>G</b>lobal and <b>B</b>uilt-in. The first match wins.</p>
+<div class="viz" data-viz="lanes" data-k="legb"></div>
+<div class="codewrap" data-k="legb" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Local, Enclosing, Global, Built-in · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">rate = <span class="n">0.18</span>                        <span class="c"># global name</span>
+
+<span class="k">def</span> make_bill(price):
+    discount = <span class="n">5</span>                   <span class="c"># enclosing name, seen by the inner function</span>
+    <span class="k">def</span> final():
+        total = price - discount   <span class="c"># local name</span>
+        <span class="k">return</span> round(total * (<span class="n">1</span> + rate), <span class="n">2</span>)   <span class="c"># round is found in builtins</span>
+    <span class="k">return</span> final()
+
+print(make_bill(<span class="n">100</span>))
+
+<span class="k">import</span> builtins
+print(<span class="s">"round lives in builtins:"</span>, builtins.round <span class="k">is</span> round)</pre><div class="out"><span>Output</span><pre>112.1
+round lives in builtins: True</pre></div></div>
+<p>Here is the part that surprises people. The decision "is this name local" is made by the <b>compiler</b>, not while the program runs. If a function assigns to a name anywhere in its body, that name is local everywhere in the function, even on lines before the assignment.</p>
+<div class="codewrap" data-k="unbound" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Why UnboundLocalError happens · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> dis
+
+visits = <span class="n">0</span>
+
+<span class="k">def</span> add_visit():
+    visits = visits + <span class="n">1</span>    <span class="c"># the compiler sees an assignment, so visits is local here</span>
+    <span class="k">return</span> visits
+
+<span class="k">try</span>:
+    add_visit()
+<span class="k">except</span> <span class="t">UnboundLocalError</span> <span class="k">as</span> e:
+    print(<span class="s">"UnboundLocalError:"</span>, e)
+
+dis.dis(add_visit)</pre><div class="out"><span>Output</span><pre>UnboundLocalError: cannot access local variable &#x27;visits&#x27; where it is not associated with a value
+  5           RESUME                   0
+
+  6           LOAD_FAST_CHECK          0 (visits)
+              LOAD_SMALL_INT           1
+              BINARY_OP                0 (+)
+              STORE_FAST               0 (visits)
+
+  7           LOAD_FAST_BORROW         0 (visits)
+              RETURN_VALUE</pre></div></div>
+<p>The bytecode shows the reason: the compiler used <code>LOAD_FAST_CHECK</code> for <code>visits</code>, an instruction for local names, so Python never looked at the global. Add <code>global visits</code> at the top of the function to tell the compiler you mean the module level name, or better, pass the value in and return the new one.</p>
+<div class="tw"><table class="jt"><tr><th>Where the name lives</th><th>Instruction</th><th>How fast</th></tr>
+<tr><td>Local variable</td><td><code>LOAD_FAST</code>, <code>STORE_FAST</code></td><td>Array index, fastest</td></tr>
+<tr><td>Enclosing function</td><td><code>LOAD_DEREF</code></td><td>Through a cell object</td></tr>
+<tr><td>Module global or built-in</td><td><code>LOAD_GLOBAL</code></td><td>Dictionary lookups, cached by the specializing interpreter</td></tr>
+<tr><td>Module level code</td><td><code>LOAD_NAME</code>, <code>STORE_NAME</code></td><td>Dictionary lookups</td></tr></table></div>
+</section>
+<section class="card reveal jsec" id="objects" data-say="objects"><div class="sec-num">Part 11<span class="lvl-tag lvl-i">🌿 Intermediate</span></div><h2><span class="sec-em">📦</span><span>Everything is an object</span></h2>
+
+<p>In Python, every value is an <b>object</b> that lives in memory: numbers, strings, lists, functions, classes, even modules. Every object has three things: an <b>identity</b> (its address, shown by <code>id()</code>), a <b>type</b> (shown by <code>type()</code>) and a <b>value</b>.</p>
+<p>A variable is not a box that holds a value. It is a <b>name</b> that points at an object. Two names can point at the same object. This is the single most useful fact for understanding Python's behaviour.</p>
+<div class="viz" data-viz="lanes" data-k="refs"></div>
+<div class="codewrap" data-k="objects" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Names point at objects · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main">a = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]
+b = a                  <span class="c"># a second name for the same list</span>
+b.append(<span class="n">4</span>)
+print(a, a <span class="k">is</span> b, id(a) == id(b))
+
+c = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>]
+print(a == c, a <span class="k">is</span> c)  <span class="c"># equal values, two different objects</span>
+
+x = <span class="n">256</span>
+y = int(<span class="s">"256"</span>)
+print(<span class="s">"256 is shared:"</span>, x <span class="k">is</span> y)
+x = <span class="n">257</span>
+y = int(<span class="s">"257"</span>)
+print(<span class="s">"257 is shared:"</span>, x <span class="k">is</span> y)
+
+print(<span class="k">type</span>(<span class="n">5</span>), <span class="k">type</span>(<span class="k">type</span>(<span class="n">5</span>)), isinstance(print, object))</pre><div class="out"><span>Output</span><pre>[1, 2, 3, 4] True True
+True False
+256 is shared: True
+257 is shared: False
+&lt;class &#x27;int&#x27;&gt; &lt;class &#x27;type&#x27;&gt; True</pre></div></div>
+<ul>
+<li><code>==</code> asks "do these have the same value". <code>is</code> asks "are these the very same object".</li>
+<li>CPython creates the integers from -5 to 256 once at startup and shares them, because they are used everywhere. That is why <code>256 is 256</code> is true and the same test with 257 can be false. Never use <code>is</code> to compare numbers or strings. Use it only for <code>None</code>, <code>True</code> and <code>False</code>.</li>
+<li>Strings that look like names are often <b>interned</b>: kept once and shared. Python does this for its own identifiers to make attribute and dictionary lookups faster.</li>
+</ul>
+</section>
+<section class="card reveal jsec" id="memory" data-say="memory"><div class="sec-num">Part 12<span class="lvl-tag lvl-a">🔥 Advanced</span></div><h2><span class="sec-em">🧹</span><span>Memory: reference counting and the garbage collector</span></h2>
+
+<p>CPython frees memory in two ways.</p>
+<p><b>Reference counting.</b> Every object keeps a count of how many references point at it. A new name, a list slot or a function argument adds one. When a reference goes away, the count drops. When it reaches zero, the object is freed at once. This frees the vast majority of objects, and it does so immediately, which is why a file object that nobody uses any more gets closed straight away in CPython.</p>
+<p><b>The cycle collector.</b> Reference counting has one weak spot: a <b>reference cycle</b>. If object A points at B and B points back at A, both counts stay above zero even when your program can no longer reach either of them. The <code>gc</code> module finds such groups of unreachable objects and frees them.</p>
+<div class="codewrap" data-k="refcount" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Reference counts and a reference cycle · ▶ Runs</span><button type="button" class="step">👣 Line by line</button><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> sys, gc
+
+order = {<span class="s">"id"</span>: <span class="n">1042</span>}
+before = sys.getrefcount(order)
+alias = order
+print(<span class="s">"one more name adds one reference:"</span>, sys.getrefcount(order) - before)
+<span class="k">del</span> alias
+print(<span class="s">"del removes it again:"</span>, sys.getrefcount(order) - before)
+
+<span class="k">class</span> <span class="t">Node</span>:
+    <span class="k">def</span> __init__(self, name):
+        self.name = name
+        self.partner = <span class="k">None</span>
+    <span class="k">def</span> __del__(self):
+        print(<span class="s">"freed"</span>, self.name)
+
+a, b = <span class="t">Node</span>(<span class="s">"a"</span>), <span class="t">Node</span>(<span class="s">"b"</span>)
+a.partner, b.partner = b, a    <span class="c"># a cycle: each keeps the other alive</span>
+<span class="k">del</span> a, b
+print(<span class="s">"names deleted, but nothing was freed yet"</span>)
+found = gc.collect()
+print(<span class="s">"the cycle collector found unreachable objects:"</span>, found &gt; <span class="n">0</span>)
+print(<span class="s">"collector thresholds:"</span>, gc.get_threshold())</pre><div class="out"><span>Output</span><pre>one more name adds one reference: 1
+del removes it again: 0
+names deleted, but nothing was freed yet
+freed a
+freed b
+the cycle collector found unreachable objects: True
+collector thresholds: (2000, 10, 10)</pre></div></div>
+<p>The collector runs automatically when enough new container objects have been created since the last run. The thresholds above control how often that happens. It sorts objects into generations, because most objects die young: new objects are checked often, and objects that survive several collections are checked rarely.</p>
+<div class="note"><b>A 3.14 story worth knowing.</b> Python 3.14.0 shipped an <b>incremental</b> collector, which spreads the work over many small steps. Users then reported that some production systems used a lot more memory, so Python 3.14.5 went back to the generational collector from 3.13. Real projects found a problem that tests had not, and the core team chose the safe option.</div>
+<p>Small objects (up to 512 bytes) do not come straight from the operating system. CPython's own allocator, <b>pymalloc</b>, takes memory in 1 MiB <b>arenas</b>, splits them into 16 KiB <b>pools</b>, and splits each pool into equal sized <b>blocks</b>. Many tiny objects can then be created and freed very quickly.</p>
+</section>
+<section class="card reveal jsec" id="gil" data-say="gil"><div class="sec-num">Part 13<span class="lvl-tag lvl-a">🔥 Advanced</span></div><h2><span class="sec-em">🔒</span><span>The GIL, threads and free-threaded Python</span></h2>
+
+<p>The <b>Global Interpreter Lock</b> (GIL) is a lock inside CPython. A thread must hold it to run Python bytecode, so in a normal build only one thread runs Python code at any moment. Reference counting is the main reason it exists: without the lock, two threads could change the same count at the same time and break it.</p>
+<div class="codewrap" data-k="gil"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Four threads share one counter safely · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> sys, threading
+
+print(<span class="s">"GIL enabled:"</span>, sys._is_gil_enabled())
+print(<span class="s">"switch interval:"</span>, sys.getswitchinterval(), <span class="s">"seconds"</span>)
+
+counter = <span class="n">0</span>
+lock = threading.<span class="t">Lock</span>()
+
+<span class="k">def</span> work():
+    <span class="k">global</span> counter
+    <span class="k">for</span> _ <span class="k">in</span> range(<span class="n">100_000</span>):
+        <span class="k">with</span> lock:
+            counter += <span class="n">1</span>
+
+threads = [threading.<span class="t">Thread</span>(target=work) <span class="k">for</span> _ <span class="k">in</span> range(<span class="n">4</span>)]
+<span class="k">for</span> t <span class="k">in</span> threads:
+    t.start()
+<span class="k">for</span> t <span class="k">in</span> threads:
+    t.join()
+print(<span class="s">"counter:"</span>, counter)</pre><div class="out"><span>Output</span><pre>GIL enabled: True
+switch interval: 0.005 seconds
+counter: 400000</pre></div></div>
+<ul>
+<li>The running thread is asked to give up the GIL every <b>5 milliseconds</b>, the switch interval, so other threads get a turn.</li>
+<li>Waiting for a network reply, a file or <code>time.sleep</code> releases the GIL. That is why threads still speed up programs that mostly wait, such as API tests or web scraping.</li>
+<li>Pure Python number crunching does not get faster with threads in the normal build. Use processes (<code>multiprocessing</code>, <code>concurrent.futures.ProcessPoolExecutor</code>) or libraries like NumPy, which do their heavy work in C without the GIL.</li>
+<li>The GIL does not make your code thread safe. <code>counter += 1</code> is several instructions, and a switch can happen between them. The example uses a <code>Lock</code> for that reason.</li>
+</ul>
+<p><b>Free-threaded Python.</b> Python 3.13 added an experimental build without the GIL, installed as <code>python3.13t</code>. In <b>Python 3.14 it is officially supported</b>, though still optional. Threads then run Python code truly in parallel on several CPU cores. Single threaded code runs a little slower in that build, and some C extensions are not ready yet, so measure your own program before you switch.</p>
+<p>Python 3.14 also added the <code>concurrent.interpreters</code> module. It runs several interpreters inside one process, each with its own modules and its own GIL, so they can work in parallel while staying isolated.</p>
+<div class="codewrap" data-k="subinterp"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A second interpreter in the same process (new in 3.14) · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">from</span> concurrent <span class="k">import</span> interpreters
+
+worker = interpreters.create()
+worker.exec(<span class="s">"total = sum(range(1, 101))\nprint('inside the second interpreter, total =', total)"</span>)
+print(<span class="s">"the main interpreter has its own globals:"</span>, <span class="s">"total"</span> <span class="k">not</span> <span class="k">in</span> globals())
+worker.close()</pre><div class="out"><span>Output</span><pre>inside the second interpreter, total = 5050
+the main interpreter has its own globals: True</pre></div></div>
+</section>
+<section class="card reveal jsec" id="faster" data-say="faster"><div class="sec-num">Part 14<span class="lvl-tag lvl-x">🧠 Expert</span></div><h2><span class="sec-em">🚀</span><span>Faster CPython: specialization and the JIT</span></h2>
+
+<p>Since Python 3.11, CPython watches your code while it runs. This is the <b>specializing adaptive interpreter</b>. When an instruction keeps seeing the same kind of data, CPython swaps it for a <b>specialized</b> version that skips the general checks. A <code>BINARY_OP</code> that always multiplies two small integers becomes <code>BINARY_OP_MULTIPLY_INT</code>. If the data changes later, it goes back to the general form.</p>
+<div class="codewrap" data-k="adaptive" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The specializing interpreter rewrites hot code · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> dis
+
+<span class="k">def</span> price_with_tax(price):
+    <span class="k">return</span> price * <span class="n">118</span> // <span class="n">100</span>
+
+print(<span class="s">"Before warming up:"</span>)
+dis.dis(price_with_tax, adaptive=<span class="k">True</span>)
+
+<span class="k">for</span> p <span class="k">in</span> range(<span class="n">1000</span>):
+    price_with_tax(p)
+
+print(<span class="s">"After 1000 calls:"</span>)
+dis.dis(price_with_tax, adaptive=<span class="k">True</span>)</pre><div class="out"><span>Output</span><pre>Before warming up:
+  3           RESUME                   0
+
+  4           LOAD_FAST_BORROW         0 (price)
+              LOAD_SMALL_INT         118
+              BINARY_OP                5 (*)
+              LOAD_SMALL_INT         100
+              BINARY_OP                2 (//)
+              RETURN_VALUE
+After 1000 calls:
+  3           RESUME_CHECK             0
+
+  4           LOAD_FAST_BORROW         0 (price)
+              LOAD_SMALL_INT         118
+              BINARY_OP_MULTIPLY_INT   5 (*)
+              LOAD_SMALL_INT         100
+              BINARY_OP                2 (//)
+              RETURN_VALUE</pre></div></div>
+<p>This happens on its own. You do not change anything in your code, and programs got noticeably faster between 3.10 and 3.11 just from this work.</p>
+<p><b>The JIT compiler.</b> Python 3.13 added an experimental <b>just in time</b> compiler. It uses a technique called <b>copy and patch</b>: ready made pieces of machine code are copied and filled in for hot sequences of instructions. In 3.14 it is included in the official Windows and macOS installers but stays <b>off by default</b>. You switch it on with the environment variable <code>PYTHON_JIT=1</code>. Whether it is available at all depends on how your Python was built.</p>
+<div class="codewrap tests" data-k="jit"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Is the JIT here, and is it on · 🧪 Run in a terminal</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 check.py</div><pre class="src" data-file="check.py"><span class="k">import</span> sys
+
+print(<span class="s">"JIT built in:"</span>, sys._jit.is_available(), <span class="s">"| switched on:"</span>, sys._jit.is_enabled())</pre><div class="cmd"><span>Terminal</span><pre>$ python check.py
+$ PYTHON_JIT=1 python check.py</pre></div><div class="out"><span>Terminal output</span><pre>JIT built in: True | switched on: False
+JIT built in: True | switched on: True</pre></div></div>
+<p>Python 3.14 also brought a new way to build the interpreter loop itself, called the <b>tail-call interpreter</b>. When CPython is built with a recent Clang compiler, each instruction becomes its own small C function. The gain is a few percent, and you get it simply by using a Python built that way.</p>
+<div class="tip">The order of what helps speed, from biggest to smallest, is almost always: a better algorithm, a library that does the work in C (NumPy, pandas, polars), a newer Python version, and only then tricks like the JIT.</div>
+</section>
+<section class="card reveal jsec" id="imports" data-say="imports"><div class="sec-num">Part 15<span class="lvl-tag lvl-i">🌿 Intermediate</span></div><h2><span class="sec-em">📥</span><span>What import really does</span></h2>
+
+<p><code>import greet</code> looks like one small step, but it is a whole process, and it explains many real bugs.</p>
+<div class="viz" data-viz="lanes" data-k="imports"></div>
+<div class="codewrap" data-k="imports"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">What import really does · ▶ Runs</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 greet.py</div><pre class="src" data-file="greet.py">print(<span class="s">"greet.py is running its top level code"</span>)
+<span class="t">WELCOME</span> = <span class="s">"Namaste"</span>
+
+<span class="k">def</span> hello(name):
+    <span class="k">return</span> <span class="s">f"{WELCOME}, {name}!"</span>
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    print(<span class="s">"this line runs only when greet.py is started directly"</span>)</pre><div class="fname">📄 main.py</div><pre class="src main"><span class="k">import</span> sys
+<span class="k">import</span> greet          <span class="c"># first import: find greet.py, compile it, run it once</span>
+<span class="k">import</span> greet          <span class="c"># second import: already in sys.modules, nothing runs</span>
+
+print(greet.hello(<span class="s">"Ravi"</span>))
+print(<span class="s">"cached in sys.modules:"</span>, <span class="s">"greet"</span> <span class="k">in</span> sys.modules)
+print(<span class="s">"loaded from:"</span>, greet.__spec__.origin.split(<span class="s">"/"</span>)[-<span class="n">1</span>])
+print(<span class="s">"this file's __name__:"</span>, __name__)</pre><div class="cmd"><span>Terminal</span><pre>$ python main.py</pre></div><div class="out"><span>Output</span><pre>greet.py is running its top level code
+Namaste, Ravi!
+cached in sys.modules: True
+loaded from: greet.py
+this file&#x27;s __name__: __main__</pre></div></div>
+<ul>
+<li>A module's top level code runs <b>once</b>, on the first import. Later imports reuse the same module object from <code>sys.modules</code>.</li>
+<li><code>if __name__ == "__main__":</code> works because the file you start gets the name <code>"__main__"</code>, while an imported file gets its own module name.</li>
+<li><code>sys.path</code> is the list of folders Python searches. The folder of the script you started comes first, then the standard library, then <code>site-packages</code>, where pip installs packages.</li>
+<li>The finders and loaders are ordinary Python objects in <code>importlib</code>. Tools such as pytest add their own to change how modules are loaded.</li>
+</ul>
+</section>
+<section class="card reveal jsec" id="startup" data-say="startup"><div class="sec-num">Part 16<span class="lvl-tag lvl-a">🔥 Advanced</span></div><h2><span class="sec-em">🏁</span><span>What happens before your first line runs</span></h2>
+
+<p>Between pressing Enter on <code>python main.py</code> and your first line, CPython does a lot of setup work:</p>
+<ol class="steps">
+<li>Reads the command line options and environment variables such as <code>PYTHONPATH</code>.</li>
+<li>Creates the main interpreter, its memory allocators and the <b>builtins</b> module with <code>print</code>, <code>len</code> and friends.</li>
+<li>Imports the modules it needs for itself, mostly from frozen copies built into the program, so they load very fast.</li>
+<li>Builds <code>sys.path</code> and imports the <code>site</code> module, which adds <code>site-packages</code> and processes <code>.pth</code> files.</li>
+<li>Compiles <code>main.py</code> as the module <code>__main__</code> and starts the evaluation loop on it.</li>
+</ol>
+<div class="codewrap" data-k="startup"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">What is ready before your first line runs · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> sys
+
+print(<span class="s">"folder of this script is first on sys.path:"</span>, sys.path[<span class="n">0</span>] != <span class="s">""</span>)
+print(<span class="s">"modules loaded before line 1 ran:"</span>, len(sys.modules) &gt; <span class="n">20</span>)
+print(<span class="s">"optimize flag:"</span>, sys.flags.optimize, <span class="s">"| -B flag:"</span>, sys.flags.dont_write_bytecode)
+print(<span class="s">"builtins ready:"</span>, callable(print), callable(len))</pre><div class="out"><span>Output</span><pre>folder of this script is first on sys.path: True
+modules loaded before line 1 ran: True
+optimize flag: 0 | -B flag: 0
+builtins ready: True True</pre></div></div>
+<p>When a command line tool starts slowly, the cause is almost always its imports. <code>-X importtime</code> prints how long each import took, in microseconds. The last column shows nested imports with extra indentation.</p>
+<div class="codewrap tests" data-k="importtime"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Measure startup imports with -X importtime · 🧪 Run in a terminal</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 app.py</div><pre class="src" data-file="app.py"><span class="k">import</span> json</pre><div class="cmd"><span>Terminal</span><pre>$ python -X importtime app.py</pre></div><div class="out"><span>Terminal output</span><pre>import time:       612 |       3954 |     re
+import time:        88 |         88 |       _json
+import time:       430 |        517 |     json.scanner
+import time:       527 |       4997 |   json.decoder
+import time:       425 |        425 |   json.encoder
+import time:       332 |       5752 | json</pre></div></div>
+<div class="tip">Other useful options: <code>python -X dev</code> turns on extra warnings and checks while you develop, <code>python -I</code> runs in isolated mode without the script folder and user site-packages on the path, and <code>python -X frozen_modules=off</code> loads standard library modules from their <code>.py</code> files.</div>
+</section>
+<section class="card reveal jsec" id="tools" data-say="tools"><div class="sec-num">Part 17<span class="lvl-tag lvl-x">🧠 Expert</span></div><h2><span class="sec-em">🔬</span><span>Tools to look inside</span></h2>
+
+<p>Everything in this chapter can be seen with tools that come with Python:</p>
+<div class="tw"><table class="jt"><tr><th>Module or option</th><th>What you can see</th></tr>
+<tr><td><code>tokenize</code></td><td>The tokens of a file</td></tr>
+<tr><td><code>ast</code></td><td>The syntax tree, and you can change it</td></tr>
+<tr><td><code>symtable</code></td><td>Which names the compiler made local, global or free</td></tr>
+<tr><td><code>dis</code></td><td>The bytecode, with <code>adaptive=True</code> for specialized instructions</td></tr>
+<tr><td><code>inspect</code>, <code>sys._getframe</code></td><td>Frames, signatures and source code of live objects</td></tr>
+<tr><td><code>gc</code>, <code>sys.getrefcount</code>, <code>tracemalloc</code></td><td>Memory, reference counts and the lines that allocate</td></tr>
+<tr><td><code>sys.settrace</code>, <code>sys.monitoring</code></td><td>Every line, call and return as it happens</td></tr>
+<tr><td><code>python -m pdb -p PID</code> (3.14)</td><td>Attach the debugger to a program that is already running</td></tr></table></div>
+<p><code>sys.settrace</code> is the classic hook. Debuggers such as <code>pdb</code> use it, and so does the <b>Line by line</b> viewer on this page.</p>
+<div class="codewrap" data-k="settrace" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">sys.settrace: the hook behind debuggers and the line by line viewer · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> sys
+
+<span class="k">def</span> tracer(frame, event, arg):
+    <span class="k">if</span> event == <span class="s">"line"</span>:
+        print(<span class="s">f"  about to run line {frame.f_lineno} in {frame.f_code.co_name}()"</span>)
+    <span class="k">return</span> tracer
+
+<span class="k">def</span> bill(price, qty):
+    total = price * qty
+    total = total + <span class="n">5</span>
+    <span class="k">return</span> total
+
+sys.settrace(tracer)
+result = bill(<span class="n">40</span>, <span class="n">3</span>)
+sys.settrace(<span class="k">None</span>)
+print(<span class="s">"result:"</span>, result)</pre><div class="out"><span>Output</span><pre>  about to run line 9 in bill()
+  about to run line 10 in bill()
+  about to run line 11 in bill()
+result: 125</pre></div></div>
+<p><code>sys.monitoring</code> arrived in Python 3.12. Tools switch on only the events they need, so coverage tools and profilers slow your program down much less than with <code>settrace</code>.</p>
+<div class="codewrap" data-k="monitoring" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">sys.monitoring: low cost events (3.12 and later) · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> sys
+
+mon = sys.monitoring
+<span class="t">TOOL</span> = mon.<span class="t">PROFILER_ID</span>
+calls = {}
+
+<span class="k">def</span> on_start(code, offset):
+    calls[code.co_name] = calls.get(code.co_name, <span class="n">0</span>) + <span class="n">1</span>
+
+mon.use_tool_id(<span class="t">TOOL</span>, <span class="s">"call counter"</span>)
+mon.register_callback(<span class="t">TOOL</span>, mon.events.<span class="t">PY_START</span>, on_start)
+mon.set_events(<span class="t">TOOL</span>, mon.events.<span class="t">PY_START</span>)
+
+<span class="k">def</span> tax(amount):
+    <span class="k">return</span> amount * <span class="n">0.18</span>
+
+<span class="k">def</span> bill(amount):
+    <span class="k">return</span> amount + tax(amount)
+
+<span class="k">for</span> price <span class="k">in</span> (<span class="n">100</span>, <span class="n">200</span>, <span class="n">300</span>):
+    bill(price)
+
+mon.set_events(<span class="t">TOOL</span>, <span class="n">0</span>)
+mon.free_tool_id(<span class="t">TOOL</span>)
+print(calls)</pre><div class="out"><span>Output</span><pre>{&#x27;bill&#x27;: 3, &#x27;tax&#x27;: 3}</pre></div></div>
+<div class="codewrap" data-k="tracemalloc" data-play="py"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">tracemalloc: which line used the memory · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">import</span> tracemalloc
+
+tracemalloc.start()
+orders = [{<span class="s">"id"</span>: i, <span class="s">"items"</span>: [<span class="s">"pen"</span>, <span class="s">"book"</span>]} <span class="k">for</span> i <span class="k">in</span> range(<span class="n">10_000</span>)]
+current, peak = tracemalloc.get_traced_memory()
+print(<span class="s">"memory in use is more than 1 MB:"</span>, current &gt; <span class="n">1_000_000</span>)
+top = tracemalloc.take_snapshot().statistics(<span class="s">"lineno"</span>)[<span class="n">0</span>]
+print(<span class="s">"the line that allocated the most:"</span>, top.traceback[<span class="n">0</span>].lineno)
+tracemalloc.stop()</pre><div class="out"><span>Output</span><pre>memory in use is more than 1 MB: True
+the line that allocated the most: 4</pre></div></div>
+<div class="note">Python 3.14 added a safe way for a debugger to attach to a running process by its process id, without restarting it. That is what <code>python -m pdb -p 1234</code> uses. It helps when a long running service hangs and you need to see what it is doing.</div>
+</section>
+<section class="card reveal jsec" id="versions" data-say="versions"><div class="sec-num">Part 18<span class="lvl-tag lvl-x">🧠 Expert</span></div><h2><span class="sec-em">🆕</span><span>What changed inside CPython, release by release</span></h2>
+
+<p>The internals keep improving. This table lists the changes that matter for this chapter. Every entry was checked against the official release notes.</p>
+<div class="tw"><table class="jt"><tr><th>Version</th><th>Change inside the interpreter</th><th>What you notice</th></tr>
+<tr><td>3.9</td><td>New PEG parser</td><td>Clearer syntax error messages over the next releases</td></tr>
+<tr><td>3.11</td><td>Specializing adaptive interpreter, cheaper frames, zero cost <code>try</code></td><td>Often much faster with no code change, error messages point at the exact expression</td></tr>
+<tr><td>3.12</td><td><code>sys.monitoring</code>, a GIL per subinterpreter at the C level, comprehensions inlined into the function</td><td>Faster coverage and profiling tools</td></tr>
+<tr><td>3.13</td><td>Experimental free-threaded build, experimental JIT, a new interactive shell</td><td>A colourful REPL with multi line editing</td></tr>
+<tr><td>3.14</td><td>Free threading officially supported, JIT in the Windows and macOS installers (off by default), tail-call interpreter, <code>concurrent.interpreters</code>, remote debugging, annotations evaluated only when asked for, template strings (<code>t"..."</code>)</td><td>New options for parallel code, attaching a debugger to a live process</td></tr>
+<tr><td>3.14.5</td><td>Back to the generational garbage collector from 3.13</td><td>Lower memory use in some long running services</td></tr></table></div>
+<div class="tip">Upgrading Python is one of the cheapest speed improvements you can make. Run your test suite on the new version first, because C extensions and tools that read bytecode may need an update.</div>
+</section>
+<section class="card reveal jsec qa-part" id="qa" data-say="qa"><div class="sec-num">Part 19<span class="lvl-tag lvl-i">🌿 Intermediate</span></div><h2><span class="sec-em">🧪</span><span>Python internals in test automation</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-tool">pytest</span><span class="qa-tool">Selenium</span><span class="qa-tool">Playwright</span><span class="qa-why">Assertion messages, import side effects and parallel runs all come straight from how CPython compiles and imports code.</span></div>
+<p>Knowing how Python runs explains several things testers meet every week.</p>
+<p><b>pytest rewrites your asserts.</b> A plain <code>assert</code> only says "AssertionError". pytest installs its own import hook, reads each test module's syntax tree, and rewrites every <code>assert</code> so that it records the values involved. The rewritten bytecode is cached with its own tag, as you can see in the file name.</p>
+<div class="codewrap tests" data-k="pytest"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">pytest rewrites assert before your test runs · 🧪 Run in a terminal</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 cart.py</div><pre class="src" data-file="cart.py"><span class="k">def</span> total(prices, discount=<span class="n">0</span>):
+    <span class="k">return</span> sum(prices) - discount</pre><div class="fname">📄 test_cart.py</div><pre class="src" data-file="test_cart.py"><span class="k">from</span> cart <span class="k">import</span> total
+
+<span class="k">def</span> test_total_with_discount():
+    prices = [<span class="n">120</span>, <span class="n">80</span>, <span class="n">50</span>]
+    <span class="k">assert</span> total(prices, discount=<span class="n">20</span>) == <span class="n">200</span></pre><div class="cmd"><span>Terminal</span><pre>$ python -m pytest -q test_cart.py
+$ ls __pycache__</pre></div><div class="out"><span>Terminal output</span><pre>F                                                                                            [100%]
+============================================= FAILURES =============================================
+_____________________________________ test_total_with_discount _____________________________________
+
+    def test_total_with_discount():
+        prices = [120, 80, 50]
+&gt;       assert total(prices, discount=20) == 200
+E       assert 230 == 200
+E        +  where 230 = total([120, 80, 50], discount=20)
+
+test_cart.py:5: AssertionError
+===================================== short test summary info ======================================
+FAILED test_cart.py::test_total_with_discount - assert 230 == 200
+1 failed in 0.01s
+--- the rewritten test module is cached separately
+cart.cpython-314.pyc
+test_cart.cpython-314-pytest-9.1.1.pyc</pre></div></div>
+<ul>
+<li>Only test modules and <code>conftest.py</code> are rewritten. An <code>assert</code> inside a helper module gives the short message unless you register it with <code>pytest.register_assert_rewrite</code>.</li>
+<li><code>python -O</code> removes every <code>assert</code> at compile time. Never use <code>assert</code> for checks your application needs in production.</li>
+<li>Import side effects run once per process. Code at the top level of <code>conftest.py</code> or a page object module runs during collection, before any test. Put setup in fixtures instead.</li>
+<li><b>pytest-xdist</b> runs tests in several worker <b>processes</b>, not threads, so CPU heavy tests really run in parallel even with the GIL. Each worker has its own <code>sys.modules</code> and its own memory, so global state is not shared between workers.</li>
+<li>A stale <code>__pycache__</code> copied between machines with a different Python version is ignored safely, because of the magic number and the cache tag. Still, keep it out of Git.</li>
+</ul>
+</section>
+<section class="card reveal jsec qa-part" id="scenario" data-say="scenario"><div class="sec-num">Part 20<span class="lvl-tag lvl-i">🌿 Intermediate</span></div><h2><span class="sec-em">🎬</span><span>Real world scenario: &quot;it works on my machine&quot;</span></h2>
+<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span><span class="qa-why">Shadowed modules and wrong sys.path order cause failures that only happen on some machines, which testers are often first to see.</span></div>
+<div class="scenario"><b>The situation</b>A dice game test suite passes on one laptop and fails in CI with <code>AttributeError: module 'random' has no attribute 'randint'</code>. Nobody changed the code that rolls the dice. Someone had added a small settings file to the project and named it <code>random.py</code>.</div>
+<div class="codewrap tests" data-k="shadow"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">A file named random.py breaks import random · 🧪 Run in a terminal</span><button type="button" class="copy">Copy</button></div><div class="fname">📄 random.py</div><pre class="src" data-file="random.py"><span class="c"># The team kept its dice settings in a file called random.py</span>
+<span class="t">FACES</span> = <span class="n">6</span></pre><div class="fname">📄 main.py</div><pre class="src" data-file="main.py"><span class="k">import</span> random
+
+roll = random.randint(<span class="n">1</span>, <span class="n">6</span>)
+print(<span class="s">"rolled a number from 1 to 6:"</span>, <span class="n">1</span> &lt;= roll &lt;= <span class="n">6</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ python main.py
+$ mv random.py dice_settings.py
+$ python main.py</pre></div><div class="out"><span>Terminal output</span><pre>Traceback (most recent call last):
+  File &quot;main.py&quot;, line 3, in &lt;module&gt;
+    roll = random.randint(1, 6)
+           ^^^^^^^^^^^^^^
+AttributeError: module &#x27;random&#x27; has no attribute &#x27;randint&#x27; (consider renaming &#x27;random.py&#x27; since it has the same name as the standard library module named &#x27;random&#x27; and prevents importing that standard library module)
+--- after renaming random.py to dice_settings.py
+rolled a number from 1 to 6: True</pre></div></div>
+<p>The import system explains it. The folder of the script comes <b>first</b> on <code>sys.path</code>, so <code>import random</code> found the team's file before the standard library one. Python 3.13 and later even say so in the error message. On the laptop that passed, the tests happened to be started from a different folder, so the standard module won.</p>
+<p>How the team fixed it for good:</p>
+<ol class="steps">
+<li>Renamed the file to <code>dice_settings.py</code> and deleted the old <code>__pycache__</code> folders.</li>
+<li>Moved the code into a package folder (<code>src/dice/</code>), so its modules have unique names such as <code>dice.settings</code>.</li>
+<li>Added a lint rule that flags module names that hide standard library modules.</li>
+<li>Added <code>python -c "import random; print(random.__file__)"</code> to the CI log, so the next time anything shadows a module, the log shows where it came from.</li>
+</ol>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card reveal" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <nav class="pager"><span></span><span></span></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/pyviz.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "The life of one line of Python", "panels": [{"s": [["e", "📄"], ["t", "total = price * qty", {"b": 1}]], "h": "You write text", "t": "A .py file is plain text.", "more": "Python reads all of it before running any of it."}, {"s": [["e", "🔤"], ["c", ["total", "=", "price", "*", "qty"], {"ix": false}]], "h": "Tokens", "t": "The text becomes small pieces.", "more": "Indentation turns into INDENT and DEDENT tokens."}, {"s": [["e", "🏭"], ["t", "LOAD  LOAD  BINARY_OP  STORE", {"b": 1, "size": 11}]], "h": "Bytecode", "t": "The compiler writes simple instructions.", "more": "Imported modules keep them in __pycache__."}, {"s": [["e", "🔁"], ["c", ["40", "3", "120"], {"ix": false, "hl": {"2": "ok"}}]], "h": "The loop runs it", "t": "Push, pop, compute, store.", "more": "Reference counts free objects the moment they are unused."}], "remember": "CPython compiles your file to bytecode, then the evaluation loop runs it one instruction at a time on a value stack."}, "real": [["🧾", "A billing counter at a supermarket", "Its Python service imports hundreds of modules at start up. Shipping the .pyc files made by compileall inside the Docker image cut its start time, because nothing had to be compiled when the container started."], ["🛰️", "A school robotics kit", "Runs MicroPython: the same compile to bytecode, then run on a small VM idea, squeezed into a chip with a few hundred kilobytes of memory."], ["🐞", "A nightly test run", "Failed only on the build server with \"module random has no attribute randint\". A file called random.py in the tests folder was found first on sys.path."], ["📈", "A log analysis script", "Got faster after moving from Python 3.10 to 3.12 with no code changes, thanks to the specializing interpreter and cheaper function calls."]], "quiz": [{"lv": "e", "q": "What does CPython do with your .py file before running it?", "o": ["Compiles it to bytecode", "Compiles it to a .exe file", "Sends it to a server", "Nothing, it runs the text directly"], "a": 0, "hint": "Two stages.", "why": "CPython compiles to bytecode, then the evaluation loop runs that bytecode."}, {"lv": "e", "q": "Where does Python save the bytecode of imported modules?", "o": ["In a __pycache__ folder as .pyc files", "Inside the .py file", "In the Windows registry", "Nowhere, it is never saved"], "a": 0, "hint": "Look next to the source file.", "why": "The file name includes the cache tag, for example shop.cpython-314.pyc."}, {"lv": "e", "q": "A file has a syntax error on line 10. What happens to the print on line 1?", "o": ["It never runs", "It runs, then the error appears", "It runs twice", "Python skips line 10 and runs the rest"], "a": 0, "hint": "The parser reads the whole file first.", "why": "Compiling happens before running, and a syntax error stops compiling."}, {"lv": "m", "q": "What does b = a do when a is a list?", "o": ["Makes b a second name for the same list", "Copies the list into b", "Moves the list from a to b", "Raises an error"], "a": 0, "hint": "Names point at objects.", "why": "Use a.copy() or list(a) when you need a separate list."}, {"lv": "m", "q": "Why does x = 2 * 3 compile to a single load of 6?", "o": ["Constant folding by the compiler", "The CPU is very fast", "The tokenizer adds numbers", "Python caches the result after the first run"], "a": 0, "hint": "It happens before running.", "why": "The compiler does arithmetic on plain constants once, while it builds the bytecode."}, {"lv": "m", "q": "Which file never gets a .pyc in __pycache__?", "o": ["The script you start with python main.py", "A module you import", "A package __init__.py", "A standard library module"], "a": 0, "hint": "Only imported modules are cached.", "why": "The main script is compiled in memory on every run."}, {"lv": "m", "q": "A traceback says \"most recent call last\". Where is the line that raised the error?", "o": ["At the bottom", "At the top", "In the middle", "It is not shown"], "a": 0, "hint": "Most recent is last.", "why": "Read a traceback from the bottom up."}, {"lv": "h", "q": "A function reads count and later assigns count = count + 1. Why does it raise UnboundLocalError?", "o": ["The compiler made count local for the whole function", "count was deleted by the garbage collector", "Globals cannot be read inside functions", "It is a bug in CPython"], "a": 0, "hint": "Who decides what is local.", "why": "Any assignment in the body makes the name local everywhere in that function."}, {"lv": "h", "q": "When is an object freed in CPython in the usual case?", "o": ["As soon as its reference count reaches zero", "Once a minute", "Only when gc.collect() is called", "When the program ends"], "a": 0, "hint": "Counting references.", "why": "The cycle collector is only needed for objects that refer to each other."}, {"lv": "h", "q": "In the normal build, why do threads speed up API tests but not pure number crunching?", "o": ["Waiting for the network releases the GIL", "Threads are always faster", "Number crunching uses the JIT", "API calls run in another language"], "a": 0, "hint": "One thread runs bytecode at a time.", "why": "Threads help when they mostly wait. Use processes for CPU heavy work."}, {"lv": "h", "q": "What does dis.dis(f, adaptive=True) show after f has run many times?", "o": ["Specialized instructions such as BINARY_OP_ADD_INT", "Machine code", "The syntax tree", "The .pyc header"], "a": 0, "hint": "Specializing adaptive interpreter.", "why": "CPython swaps general instructions for faster ones that fit the data it saw."}, {"lv": "x", "q": "What does this print?", "o": ["True then False", "True then True", "False then False", "It raises TypeError"], "a": 0, "hint": "The small integer cache covers -5 to 256.", "why": "int(\"256\") returns the shared object. 257 is created fresh.", "code": "print(int(\"256\") is 256)\nprint(int(\"257\") is int(\"257\"))"}, {"lv": "x", "q": "Which statement about Python 3.14 is correct?", "o": ["The free threaded build is officially supported but optional", "The GIL was removed from every build", "The JIT is on by default", "Bytecode is now the same in every version"], "a": 0, "hint": "Supported, not default.", "why": "You install the free threaded build on purpose, and the JIT still needs PYTHON_JIT=1."}, {"lv": "x", "q": "Why does pytest show the values inside a failing assert?", "o": ["It rewrites the assert in the syntax tree while importing the test", "Python always prints them", "It reads the .pyc of your app", "It runs the test twice"], "a": 0, "hint": "An import hook.", "why": "pytest changes the AST of test modules, then compiles them, and caches the result with its own tag."}], "calc": [{"lv": "e", "q": "What is the full .pyc file name for the module shop on Python 3.14? Type it without the folder.", "ans": "shop.cpython-314.pyc", "hint": "Module name, cache tag, extension.", "steps": ["The cache tag of CPython 3.14 is cpython-314.", "Name: <span class=\"eq\">shop.cpython-314.pyc<\/span>"]}, {"lv": "e", "q": "How many integers does CPython keep ready made in its small integer cache, from -5 to 256 inclusive?", "ans": "262", "hint": "Count both ends.", "steps": ["<span class=\"eq\">256 − (−5) + 1 = 262<\/span>"]}, {"lv": "m", "q": "A .pyc header has 4 fields of 4 bytes each. How many bytes is the header?", "ans": "16", "hint": "Magic, flags, time, size.", "steps": ["<span class=\"eq\">4 × 4 = 16<\/span>"]}, {"lv": "m", "q": "What is the value of total after this code runs?", "ans": "125", "hint": "Multiplication first.", "steps": ["The tree puts price * qty under the addition.", "<span class=\"eq\">40 × 3 + 5 = 125<\/span>"], "code": "price = 40\nqty = 3\ntotal = price * qty + 5"}, {"lv": "m", "q": "How many values are on the value stack right after the second LOAD_NAME in total = price * qty runs?", "ans": "2", "hint": "Two loads, no pop yet.", "steps": ["LOAD_NAME price pushes 1 value.", "LOAD_NAME qty pushes a second one.", "BINARY_OP has not run yet, so the stack holds 2."]}, {"lv": "h", "q": "A pymalloc arena is 1 MiB and a pool is 16 KiB. How many pools fit in one arena?", "ans": "64", "hint": "Same unit first.", "steps": ["1 MiB = 1024 KiB.", "<span class=\"eq\">1024 ÷ 16 = 64<\/span>"]}, {"lv": "h", "q": "The switch interval is 0.005 seconds. How many times per second, at most, is the running thread asked to give up the GIL?", "ans": "200", "hint": "One second divided by the interval.", "steps": ["<span class=\"eq\">1 ÷ 0.005 = 200<\/span>"]}, {"lv": "x", "q": "countdown(n) calls itself until n is 0. How many frames are on the stack at the deepest point of countdown(3), counting the module frame?", "ans": "5", "hint": "Count calls that have not returned.", "steps": ["The module frame is 1.", "countdown(3), countdown(2), countdown(1) and countdown(0) add 4.", "<span class=\"eq\">1 + 4 = 5<\/span>"], "code": "def countdown(n):\n    return 0 if n == 0 else countdown(n - 1)\n\ncountdown(3)"}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter follows one Python file from the first character to the output: tokens, the syntax tree, bytecode, pyc files, the evaluation loop, frames, names, memory, the GIL and the newest changes in Python 3.14.", "hi": "यह अध्याय एक Python फ़ाइल को पहले अक्षर से output तक ले जाता है: tokens, syntax tree, bytecode, pyc फ़ाइलें, evaluation loop, frames, memory, GIL और Python 3.14 के नए बदलाव।", "kn": "ಈ ಅಧ್ಯಾಯ ಒಂದು Python ಫೈಲ್ ಅನ್ನು ಮೊದಲ ಅಕ್ಷರದಿಂದ output ವರೆಗೆ ತೋರಿಸುತ್ತದೆ: tokens, syntax tree, bytecode, pyc ಫೈಲ್‌ಗಳು, evaluation loop, frames, memory, GIL ಮತ್ತು Python 3.14 ಬದಲಾವಣೆಗಳು.", "or": "ଏହି ଅଧ୍ୟାୟ ଗୋଟିଏ Python ଫାଇଲକୁ ପ୍ରଥମ ଅକ୍ଷରରୁ output ପର୍ଯ୍ୟନ୍ତ ଦେଖାଏ: tokens, syntax tree, bytecode, pyc ଫାଇଲ, evaluation loop, frames, memory, GIL ଓ Python 3.14 ର ନୂଆ ପରିବର୍ତ୍ତନ।", "ar": "يتتبع هذا الفصل ملف Python واحدًا من أول حرف حتى النتيجة: الرموز وشجرة الصياغة وشيفرة البايت وملفات pyc وحلقة التنفيذ والإطارات والذاكرة وقفل GIL وأحدث تغييرات Python 3.14.", "de": "Dieses Kapitel begleitet eine Python-Datei vom ersten Zeichen bis zur Ausgabe: Tokens, Syntaxbaum, Bytecode, pyc-Dateien, die Auswertungsschleife, Frames, Speicher, das GIL und die Neuerungen in Python 3.14."}, {"id": "big-picture", "h": "The big picture", "en": "CPython works in two stages. It compiles your file to bytecode, then the Python Virtual Machine runs the bytecode one instruction at a time. Unlike Java, both stages happen every time you press Run.", "hi": "CPython दो चरणों में काम करता है। पहले फ़ाइल को bytecode में compile करता है, फिर Python Virtual Machine उसे एक एक instruction करके चलाती है। Java के उलट, दोनों चरण हर बार Run दबाने पर होते हैं।", "kn": "CPython ಎರಡು ಹಂತಗಳಲ್ಲಿ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಮೊದಲು bytecode ಗೆ compile, ನಂತರ Python Virtual Machine ಒಂದೊಂದೇ instruction ಓಡಿಸುತ್ತದೆ. Java ಗಿಂತ ಭಿನ್ನವಾಗಿ ಎರಡೂ ಹಂತಗಳು ಪ್ರತಿ ಬಾರಿ ನಡೆಯುತ್ತವೆ.", "or": "CPython ଦୁଇଟି ପର୍ଯ୍ୟାୟରେ କାମ କରେ। ପ୍ରଥମେ bytecode କୁ compile, ତାପରେ Python Virtual Machine ଗୋଟିଏ ଗୋଟିଏ instruction ଚଲାଏ। Java ଠାରୁ ଭିନ୍ନ, ଦୁଇଟି ପର୍ଯ୍ୟାୟ ପ୍ରତି ଥର ହୁଏ।", "ar": "يعمل CPython على مرحلتين: يترجم الملف إلى شيفرة بايت، ثم تنفذها آلة Python الافتراضية تعليمة تعليمة. وعلى عكس Java تحدث المرحلتان في كل تشغيل.", "de": "CPython arbeitet in zwei Stufen. Es übersetzt die Datei in Bytecode, dann führt die Python Virtual Machine ihn Befehl für Befehl aus. Anders als bei Java passieren beide Stufen bei jedem Start."}, {"id": "implementations", "h": "Implementations", "en": "Python is a language. CPython, PyPy, MicroPython, GraalPy and Pyodide are programs that run it. CPython compiles to bytecode and then interprets it, so it is both compiled and interpreted.", "hi": "Python एक भाषा है। CPython, PyPy, MicroPython, GraalPy और Pyodide उसे चलाने वाले programs हैं। CPython पहले bytecode बनाता है फिर उसे interpret करता है।", "kn": "Python ಒಂದು ಭಾಷೆ. CPython, PyPy, MicroPython, GraalPy ಮತ್ತು Pyodide ಅದನ್ನು ಓಡಿಸುವ programs. CPython bytecode ಮಾಡಿ ನಂತರ interpret ಮಾಡುತ್ತದೆ.", "or": "Python ଏକ ଭାଷା। CPython, PyPy, MicroPython, GraalPy ଓ Pyodide ତାକୁ ଚଲାଉଥିବା programs। CPython bytecode ତିଆରି କରି interpret କରେ।", "ar": "Python لغة، وCPython وPyPy وMicroPython وGraalPy وPyodide برامج تشغلها. يترجم CPython إلى شيفرة بايت ثم يفسرها، فهو مترجم ومفسر معًا.", "de": "Python ist eine Sprache. CPython, PyPy, MicroPython, GraalPy und Pyodide sind Programme, die sie ausführen. CPython übersetzt in Bytecode und interpretiert ihn dann."}, {"id": "try-it", "h": "Try it", "en": "Type your own lines in the animation and open each tab: tokens, the syntax tree, the bytecode, and the run on the value stack, one instruction at a time.", "hi": "Animation में अपनी lines लिखें और हर tab खोलें: tokens, syntax tree, bytecode, और value stack पर एक एक instruction का run।", "kn": "Animation ನಲ್ಲಿ ನಿಮ್ಮ ಸಾಲುಗಳನ್ನು ಬರೆದು ಪ್ರತಿ tab ತೆರೆಯಿರಿ: tokens, syntax tree, bytecode ಮತ್ತು value stack ಮೇಲೆ run.", "or": "Animation ରେ ନିଜ ଧାଡ଼ି ଲେଖି ପ୍ରତ୍ୟେକ tab ଖୋଲନ୍ତୁ: tokens, syntax tree, bytecode ଓ value stack ଉପରେ run।", "ar": "اكتب أسطرك في الرسم المتحرك وافتح كل تبويب: الرموز وشجرة الصياغة وشيفرة البايت والتشغيل على مكدس القيم تعليمة بعد تعليمة.", "de": "Tippe eigene Zeilen in die Animation und öffne jeden Reiter: Tokens, Syntaxbaum, Bytecode und den Lauf auf dem Wertestapel, Befehl für Befehl."}, {"id": "tokens", "h": "Tokenizer", "en": "The tokenizer groups characters into tokens such as names, numbers, strings and operators. Indentation becomes INDENT and DEDENT tokens, because indentation is part of Python grammar.", "hi": "Tokenizer अक्षरों को tokens में बांटता है: names, numbers, strings और operators। Indentation INDENT और DEDENT tokens बनता है।", "kn": "Tokenizer ಅಕ್ಷರಗಳನ್ನು tokens ಆಗಿ ಗುಂಪು ಮಾಡುತ್ತದೆ. Indentation INDENT ಮತ್ತು DEDENT tokens ಆಗುತ್ತದೆ.", "or": "Tokenizer ଅକ୍ଷରଗୁଡ଼ିକୁ tokens ରେ ଭାଗ କରେ। Indentation INDENT ଓ DEDENT tokens ହୁଏ।", "ar": "يجمع المحلل اللفظي الحروف في رموز مثل الأسماء والأرقام والنصوص والعوامل، وتصبح المسافة البادئة رموز INDENT وDEDENT.", "de": "Der Tokenizer fasst Zeichen zu Tokens zusammen: Namen, Zahlen, Strings und Operatoren. Einrückung wird zu INDENT und DEDENT."}, {"id": "parser", "h": "Parser", "en": "The parser checks the grammar and builds an abstract syntax tree. It reads the whole file first, so one syntax error stops the program before any line runs.", "hi": "Parser grammar जांचता है और abstract syntax tree बनाता है। वह पूरी फ़ाइल पहले पढ़ता है, इसलिए एक syntax error पूरा program रोक देता है।", "kn": "Parser grammar ಪರಿಶೀಲಿಸಿ abstract syntax tree ಮಾಡುತ್ತದೆ. ಒಂದು syntax error ಯಾವ ಸಾಲೂ ಓಡುವ ಮೊದಲೇ program ನಿಲ್ಲಿಸುತ್ತದೆ.", "or": "Parser grammar ଯାଞ୍ଚ କରି abstract syntax tree ତିଆରି କରେ। ଗୋଟିଏ syntax error କୌଣସି ଧାଡ଼ି ଚାଲିବା ପୂର୍ବରୁ program ବନ୍ଦ କରେ।", "ar": "يتحقق المحلل من القواعد ويبني شجرة صياغة مجردة، ويقرأ الملف كله أولًا، لذا يوقف خطأ صياغة واحد البرنامج قبل تشغيل أي سطر.", "de": "Der Parser prüft die Grammatik und baut einen abstrakten Syntaxbaum. Er liest zuerst die ganze Datei, deshalb stoppt ein Syntaxfehler alles."}, {"id": "compiler", "h": "Compiler", "en": "The compiler decides which names are local, writes bytecode into a code object and folds constant arithmetic. The dis module shows the result.", "hi": "Compiler तय करता है कौन से नाम local हैं, code object में bytecode लिखता है और constant arithmetic पहले ही कर देता है। dis module नतीजा दिखाता है।", "kn": "Compiler ಯಾವ ಹೆಸರುಗಳು local ಎಂದು ನಿರ್ಧರಿಸಿ code object ನಲ್ಲಿ bytecode ಬರೆಯುತ್ತದೆ. dis module ಅದನ್ನು ತೋರಿಸುತ್ತದೆ.", "or": "Compiler କେଉଁ ନାମ local ସ୍ଥିର କରି code object ରେ bytecode ଲେଖେ। dis module ତାହା ଦେଖାଏ।", "ar": "يحدد المترجم الأسماء المحلية ويكتب شيفرة البايت في كائن شيفرة ويحسب العمليات الثابتة مسبقًا، وتعرض وحدة dis النتيجة.", "de": "Der Compiler legt fest, welche Namen lokal sind, schreibt Bytecode in ein Code-Objekt und rechnet Konstanten vorab aus. dis zeigt das Ergebnis."}, {"id": "pyc", "h": "pyc files", "en": "Imported modules are saved as pyc files in pycache, so the next run skips compiling. The main script is never cached. A pyc file starts faster but does not run faster.", "hi": "Import किए गए modules pycache में pyc फ़ाइल बनकर रहते हैं, ताकि अगली बार compile न करना पड़े। Main script कभी cache नहीं होती।", "kn": "Import ಮಾಡಿದ modules pycache ನಲ್ಲಿ pyc ಆಗಿ ಉಳಿಯುತ್ತವೆ. Main script cache ಆಗುವುದಿಲ್ಲ. pyc ಬೇಗ ಆರಂಭಿಸುತ್ತದೆ, ಬೇಗ ಓಡುವುದಿಲ್ಲ.", "or": "Import ହୋଇଥିବା modules pycache ରେ pyc ଭାବେ ରହେ। Main script cache ହୁଏ ନାହିଁ। pyc ଶୀଘ୍ର ଆରମ୍ଭ କରେ, ଶୀଘ୍ର ଚାଲେ ନାହିଁ।", "ar": "تحفظ الوحدات المستوردة كملفات pyc في مجلد pycache لتخطي الترجمة في المرة التالية، أما السكربت الرئيسي فلا يحفظ أبدًا.", "de": "Importierte Module werden als pyc-Dateien in pycache gespeichert. Das Hauptskript nie. Eine pyc-Datei startet schneller, läuft aber nicht schneller."}, {"id": "eval-loop", "h": "Evaluation loop", "en": "The evaluation loop reads one instruction, does it and moves on. Loading pushes a value on the stack, an operator pops its inputs and pushes the result, and storing pops it into a name.", "hi": "Evaluation loop एक instruction पढ़ता है, करता है और आगे बढ़ता है। Load stack पर value रखता है, operator values निकालकर नतीजा रखता है।", "kn": "Evaluation loop ಒಂದು instruction ಓದಿ, ಮಾಡಿ, ಮುಂದೆ ಹೋಗುತ್ತದೆ. Load stack ಮೇಲೆ value ಇಡುತ್ತದೆ, operator ಫಲಿತಾಂಶ ಇಡುತ್ತದೆ.", "or": "Evaluation loop ଗୋଟିଏ instruction ପଢ଼ି କରି ଆଗକୁ ଯାଏ। Load stack ରେ value ରଖେ, operator ଫଳାଫଳ ରଖେ।", "ar": "تقرأ حلقة التنفيذ تعليمة وتنفذها ثم تنتقل للتالية. التحميل يدفع قيمة إلى المكدس، والعامل يسحب مدخلاته ويدفع النتيجة.", "de": "Die Auswertungsschleife liest einen Befehl, führt ihn aus und geht weiter. Laden legt einen Wert auf den Stapel, ein Operator nimmt Werte und legt das Ergebnis ab."}, {"id": "frames", "h": "Frames", "en": "Each call creates a frame with its own local names. Frames sit on the call stack, and a traceback prints that stack with the most recent call last.", "hi": "हर call अपने local नामों के साथ एक frame बनाता है। Frames call stack पर रहते हैं, और traceback वही stack दिखाता है।", "kn": "ಪ್ರತಿ call ತನ್ನ local ಹೆಸರುಗಳ frame ಮಾಡುತ್ತದೆ. Traceback ಆ call stack ತೋರಿಸುತ್ತದೆ.", "or": "ପ୍ରତ୍ୟେକ call ନିଜ local ନାମ ସହ frame ତିଆରି କରେ। Traceback ସେହି call stack ଦେଖାଏ।", "ar": "كل استدعاء ينشئ إطارًا بأسمائه المحلية، وتوضع الإطارات على مكدس الاستدعاءات، وأثر الخطأ يطبع هذا المكدس.", "de": "Jeder Aufruf erzeugt einen Frame mit eigenen lokalen Namen. Ein Traceback druckt diesen Aufrufstapel, der neueste Aufruf steht unten."}, {"id": "names", "h": "LEGB", "en": "Python looks for a name in four places: local, enclosing, global and built in. The compiler decides which names are local, which explains UnboundLocalError.", "hi": "Python नाम चार जगह ढूंढता है: local, enclosing, global और built in। Compiler तय करता है कौन से नाम local हैं, इसी से UnboundLocalError आता है।", "kn": "Python ಹೆಸರನ್ನು ನಾಲ್ಕು ಕಡೆ ಹುಡುಕುತ್ತದೆ: local, enclosing, global, built in. Compiler local ನಿರ್ಧರಿಸುತ್ತದೆ.", "or": "Python ନାମକୁ ଚାରି ସ୍ଥାନରେ ଖୋଜେ: local, enclosing, global, built in। Compiler local ସ୍ଥିର କରେ।", "ar": "يبحث Python عن الاسم في أربعة أماكن: المحلي ثم المحيط ثم العام ثم المدمج، والمترجم يقرر الأسماء المحلية، ومن هنا يأتي UnboundLocalError.", "de": "Python sucht einen Namen an vier Orten: lokal, umschließend, global und eingebaut. Der Compiler entscheidet, was lokal ist."}, {"id": "objects", "h": "Objects", "en": "Every value is an object with an identity, a type and a value. A variable is a name that points at an object, so two names can share one list.", "hi": "हर value एक object है जिसकी identity, type और value होती है। Variable एक नाम है जो object की ओर इशारा करता है।", "kn": "ಪ್ರತಿ value ಒಂದು object, ಅದಕ್ಕೆ identity, type ಮತ್ತು value ಇದೆ. Variable object ಅನ್ನು ತೋರಿಸುವ ಹೆಸರು.", "or": "ପ୍ରତ୍ୟେକ value ଏକ object, ଯାହାର identity, type ଓ value ଅଛି। Variable object କୁ ଦେଖାଉଥିବା ନାମ।", "ar": "كل قيمة كائن له هوية ونوع وقيمة، والمتغير اسم يشير إلى كائن، لذا يمكن لاسمين مشاركة القائمة نفسها.", "de": "Jeder Wert ist ein Objekt mit Identität, Typ und Wert. Eine Variable ist ein Name, der auf ein Objekt zeigt."}, {"id": "memory", "h": "Memory", "en": "Reference counting frees most objects the moment nobody uses them. The cycle collector frees groups of objects that only point at each other.", "hi": "Reference counting ज़्यादातर objects को तुरंत free करता है। Cycle collector उन objects को free करता है जो सिर्फ एक दूसरे की ओर इशारा करते हैं।", "kn": "Reference counting ಹೆಚ್ಚಿನ objects ತಕ್ಷಣ free ಮಾಡುತ್ತದೆ. Cycle collector ಪರಸ್ಪರ ತೋರಿಸುವ objects free ಮಾಡುತ್ತದೆ.", "or": "Reference counting ଅଧିକାଂଶ objects ତୁରନ୍ତ free କରେ। Cycle collector ପରସ୍ପରକୁ ଦେଖାଉଥିବା objects free କରେ।", "ar": "عد المراجع يحرر معظم الكائنات فور توقف استخدامها، ومجمع الدورات يحرر الكائنات التي يشير بعضها إلى بعض فقط.", "de": "Referenzzählung gibt die meisten Objekte sofort frei. Der Zyklensammler räumt Gruppen auf, die nur aufeinander zeigen."}, {"id": "gil", "h": "GIL", "en": "The GIL lets only one thread run Python bytecode at a time in the normal build. Python 3.14 officially supports a free threaded build where threads run in parallel.", "hi": "GIL सामान्य build में एक समय में सिर्फ एक thread को bytecode चलाने देता है। Python 3.14 free threaded build को आधिकारिक समर्थन देता है।", "kn": "GIL ಸಾಮಾನ್ಯ build ನಲ್ಲಿ ಒಂದೇ thread ಗೆ bytecode ಓಡಿಸಲು ಬಿಡುತ್ತದೆ. Python 3.14 free threaded build ಅನ್ನು ಅಧಿಕೃತವಾಗಿ ಬೆಂಬಲಿಸುತ್ತದೆ.", "or": "GIL ସାଧାରଣ build ରେ ଗୋଟିଏ thread କୁ ହିଁ bytecode ଚଲାଇବାକୁ ଦିଏ। Python 3.14 free threaded build କୁ ଆଧିକାରିକ ସମର୍ଥନ ଦିଏ।", "ar": "يسمح قفل GIL لخيط واحد فقط بتشغيل شيفرة البايت في البناء العادي، ويدعم Python 3.14 رسميًا بناءً بلا قفل تعمل فيه الخيوط بالتوازي.", "de": "Das GIL lässt im normalen Build nur einen Thread gleichzeitig Bytecode ausführen. Python 3.14 unterstützt offiziell einen Build ohne GIL."}, {"id": "faster", "h": "Faster CPython", "en": "Since 3.11, CPython replaces general instructions with specialized ones for the data it sees. An experimental JIT exists, off by default, switched on with PYTHON_JIT equals 1.", "hi": "3.11 से CPython सामान्य instructions को खास instructions से बदलता है। एक experimental JIT भी है, जो default में बंद है।", "kn": "3.11 ರಿಂದ CPython ಸಾಮಾನ್ಯ instructions ಅನ್ನು ವಿಶೇಷ instructions ಆಗಿ ಬದಲಾಯಿಸುತ್ತದೆ. Experimental JIT default ಆಗಿ off.", "or": "3.11 ରୁ CPython ସାଧାରଣ instructions କୁ ବିଶେଷ instructions ରେ ବଦଳାଏ। Experimental JIT default ରେ off।", "ar": "منذ 3.11 يستبدل CPython التعليمات العامة بتعليمات متخصصة حسب البيانات، ويوجد مترجم JIT تجريبي متوقف افتراضيًا.", "de": "Seit 3.11 ersetzt CPython allgemeine Befehle durch spezialisierte. Ein experimenteller JIT ist standardmäßig aus."}, {"id": "imports", "h": "Imports", "en": "Import checks sys.modules, searches sys.path, loads or compiles the file, and runs its top level code once. Later imports reuse the cached module.", "hi": "Import पहले sys.modules देखता है, फिर sys.path में खोजता है, फ़ाइल load करता है और उसका top level code एक बार चलाता है।", "kn": "Import sys.modules ನೋಡಿ, sys.path ನಲ್ಲಿ ಹುಡುಕಿ, top level code ಒಮ್ಮೆ ಓಡಿಸುತ್ತದೆ.", "or": "Import sys.modules ଦେଖେ, sys.path ରେ ଖୋଜେ, top level code ଥରେ ଚଲାଏ।", "ar": "يفحص الاستيراد sys.modules ثم يبحث في sys.path ويحمل الملف ويشغل شيفرته العليا مرة واحدة، وتعيد الاستيرادات اللاحقة استخدام الوحدة المخزنة.", "de": "Import prüft sys.modules, sucht in sys.path, lädt die Datei und führt ihren Code einmal aus. Spätere Importe nutzen das gespeicherte Modul."}, {"id": "startup", "h": "Startup", "en": "Before your first line, CPython reads options, creates the builtins, imports its own modules, builds sys.path and runs the site module. Slow startup usually means slow imports.", "hi": "पहली line से पहले CPython options पढ़ता है, builtins बनाता है, sys.path बनाता है और site module चलाता है।", "kn": "ಮೊದಲ ಸಾಲಿನ ಮೊದಲು CPython options ಓದಿ, builtins ಮಾಡಿ, sys.path ಕಟ್ಟಿ site module ಓಡಿಸುತ್ತದೆ.", "or": "ପ୍ରଥମ ଧାଡ଼ି ପୂର୍ବରୁ CPython options ପଢ଼େ, builtins ତିଆରି କରେ, sys.path ଓ site module ଚଲାଏ।", "ar": "قبل أول سطر يقرأ CPython الخيارات وينشئ الدوال المدمجة ويبني sys.path ويشغل وحدة site، وبطء البدء يعني غالبًا بطء الاستيراد.", "de": "Vor der ersten Zeile liest CPython Optionen, legt builtins an, baut sys.path und startet site. Langsamer Start heißt meist langsame Importe."}, {"id": "tools", "h": "Tools", "en": "tokenize, ast, dis, inspect, gc, tracemalloc, settrace and sys.monitoring let you see every stage. Python 3.14 can attach pdb to a running process.", "hi": "tokenize, ast, dis, inspect, gc, tracemalloc, settrace और sys.monitoring हर चरण दिखाते हैं। Python 3.14 चलते process से pdb जोड़ सकता है।", "kn": "tokenize, ast, dis, gc, tracemalloc, settrace ಮತ್ತು sys.monitoring ಪ್ರತಿ ಹಂತ ತೋರಿಸುತ್ತವೆ.", "or": "tokenize, ast, dis, gc, tracemalloc, settrace ଓ sys.monitoring ପ୍ରତ୍ୟେକ ପର୍ଯ୍ୟାୟ ଦେଖାନ୍ତି।", "ar": "تتيح لك وحدات tokenize وast وdis وinspect وgc وtracemalloc وsettrace وsys.monitoring رؤية كل مرحلة، ويمكن في 3.14 ربط pdb بعملية تعمل.", "de": "tokenize, ast, dis, inspect, gc, tracemalloc, settrace und sys.monitoring zeigen jede Stufe. Python 3.14 kann pdb an einen laufenden Prozess hängen."}, {"id": "versions", "h": "Versions", "en": "The PEG parser came in 3.9, specialization in 3.11, sys.monitoring in 3.12, free threading and the JIT as experiments in 3.13, and in 3.14 free threading became officially supported.", "hi": "PEG parser 3.9 में, specialization 3.11 में, sys.monitoring 3.12 में, free threading और JIT 3.13 में आए, और 3.14 में free threading को आधिकारिक समर्थन मिला।", "kn": "PEG parser 3.9, specialization 3.11, sys.monitoring 3.12, free threading ಮತ್ತು JIT 3.13, 3.14 ನಲ್ಲಿ free threading ಅಧಿಕೃತ.", "or": "PEG parser 3.9, specialization 3.11, sys.monitoring 3.12, free threading ଓ JIT 3.13, 3.14 ରେ free threading ଆଧିକାରିକ।", "ar": "جاء محلل PEG في 3.9 والتخصيص في 3.11 وsys.monitoring في 3.12 والتشغيل بلا قفل وJIT تجريبيًا في 3.13، وصار التشغيل بلا قفل مدعومًا رسميًا في 3.14.", "de": "Der PEG-Parser kam mit 3.9, Spezialisierung mit 3.11, sys.monitoring mit 3.12, freies Threading und JIT als Experiment mit 3.13, offiziell ohne GIL ab 3.14."}, {"id": "qa", "h": "For testers", "en": "pytest rewrites assert statements through an import hook. python minus O removes asserts. pytest xdist uses processes, so tests run in parallel despite the GIL.", "hi": "pytest import hook से assert statements को बदलता है। python -O asserts हटा देता है। pytest xdist processes इस्तेमाल करता है।", "kn": "pytest import hook ಮೂಲಕ assert ಬದಲಿಸುತ್ತದೆ. python -O asserts ತೆಗೆಯುತ್ತದೆ. pytest xdist processes ಬಳಸುತ್ತದೆ.", "or": "pytest import hook ମାଧ୍ୟମରେ assert ବଦଳାଏ। python -O asserts ହଟାଏ। pytest xdist processes ବ୍ୟବହାର କରେ।", "ar": "يعيد pytest كتابة عبارات assert عبر خطاف الاستيراد، ويحذف python -O هذه العبارات، ويستخدم pytest xdist عمليات منفصلة فتعمل الاختبارات بالتوازي.", "de": "pytest schreibt assert über einen Import-Hook um. python -O entfernt asserts. pytest-xdist nutzt Prozesse und läuft trotz GIL parallel."}, {"id": "scenario", "h": "Scenario", "en": "A file named random dot py hid the standard random module, because the script folder comes first on sys.path. Renaming the file fixed it.", "hi": "random.py नाम की फ़ाइल ने standard random module को छिपा दिया, क्योंकि script का folder sys.path में पहले आता है। नाम बदलने से ठीक हुआ।", "kn": "random.py ಫೈಲ್ standard random module ಅನ್ನು ಮರೆಮಾಡಿತು, ಏಕೆಂದರೆ script folder sys.path ನಲ್ಲಿ ಮೊದಲು. ಹೆಸರು ಬದಲಿಸಿದಾಗ ಸರಿಯಾಯಿತು.", "or": "random.py ଫାଇଲ standard random module କୁ ଲୁଚାଇଲା, କାରଣ script folder sys.path ରେ ପ୍ରଥମେ। ନାମ ବଦଳାଇବାରୁ ଠିକ୍ ହେଲା।", "ar": "أخفى ملف باسم random.py وحدة random القياسية لأن مجلد السكربت يأتي أولًا في sys.path، وحلت إعادة تسمية الملف المشكلة.", "de": "Eine Datei random.py verdeckte das Standardmodul random, weil der Skriptordner in sys.path zuerst kommt. Umbenennen half."}, {"id": "practice", "h": "Hands-on", "en": "Practise the small integer cache, pyc file names, a stack machine of your own, counting bytecode instructions and compiling an expression to stack instructions.", "hi": "Small integer cache, pyc फ़ाइल नाम, अपनी stack machine, bytecode instructions गिनना और expression को stack instructions में बदलना अभ्यास करें।", "kn": "Small integer cache, pyc ಹೆಸರುಗಳು, ನಿಮ್ಮ stack machine, bytecode ಎಣಿಕೆ ಮತ್ತು expression compile ಅಭ್ಯಾಸ ಮಾಡಿ.", "or": "Small integer cache, pyc ନାମ, ନିଜ stack machine, bytecode ଗଣନା ଓ expression compile ଅଭ୍ୟାସ କରନ୍ତୁ।", "ar": "تدرب على ذاكرة الأعداد الصغيرة وأسماء ملفات pyc وآلة مكدس خاصة بك وعد تعليمات البايت وترجمة تعبير إلى تعليمات مكدس.", "de": "Übe den Cache kleiner Zahlen, pyc-Dateinamen, eine eigene Stapelmaschine, das Zählen von Bytecode-Befehlen und das Übersetzen eines Ausdrucks."}], "ex": [{"id": "small-int", "lv": "e", "title": "Is this integer shared", "task": "<p>CPython creates the integers from <code>-5<\/code> to <code>256<\/code> once and shares them. Write <code>is_cached(n)<\/code> that returns <code>True<\/code> when <code>n<\/code> is in that range and <code>False<\/code> otherwise.<\/p>", "starter": "def is_cached(n):\n    return False", "tests": [{"call": "is_cached(0)", "want": true}, {"call": "is_cached(256)", "want": true}, {"call": "is_cached(257)", "want": false}, {"call": "is_cached(-5)", "want": true}, {"call": "is_cached(-6)", "want": false}], "solution": "def is_cached(n):\n    return -5 <= n <= 256", "hint": "Python lets you chain comparisons: <code>a <= n <= b<\/code>.", "why": "The range is a CPython detail, not part of the language, which is one more reason never to compare numbers with <code>is<\/code>."}, {"id": "pyc-name", "lv": "e", "title": "Where will the bytecode go", "task": "<p>Write <code>pyc_path(module, major, minor)<\/code> that returns the path CPython uses for a module's bytecode, for example <code>pyc_path(\"shop\", 3, 14)<\/code> gives <code>\"__pycache__/shop.cpython-314.pyc\"<\/code>.<\/p>", "starter": "def pyc_path(module, major, minor):\n    return module + \".pyc\"", "tests": [{"call": "pyc_path(\"shop\", 3, 14)", "want": "__pycache__/shop.cpython-314.pyc"}, {"call": "pyc_path(\"cart_utils\", 3, 9)", "want": "__pycache__/cart_utils.cpython-39.pyc"}], "solution": "def pyc_path(module, major, minor):\n    return f\"__pycache__/{module}.cpython-{major}{minor}.pyc\"", "hint": "An f-string with three parts: the folder, the module name and the cache tag.", "why": "<code>importlib.util.cache_from_source(\"shop.py\")<\/code> gives the same answer for the Python you are running."}, {"id": "stack-vm", "lv": "m", "title": "Your own stack machine", "task": "<p>Write <code>run_stack(program)<\/code>. The program is a list of tuples: <code>(\"PUSH\", n)<\/code> pushes a number, and <code>(\"ADD\",)<\/code>, <code>(\"SUB\",)<\/code> and <code>(\"MUL\",)<\/code> pop two values and push the result. For <code>SUB<\/code>, the value pushed first is on the left. Return the value left on top of the stack.<\/p>", "starter": "def run_stack(program):\n    stack = []\n    for ins in program:\n        pass\n    return stack[-1] if stack else None", "tests": [{"call": "run_stack([(\"PUSH\", 40), (\"PUSH\", 3), (\"MUL\",)])", "want": 120}, {"call": "run_stack([(\"PUSH\", 10), (\"PUSH\", 4), (\"SUB\",)])", "want": 6}, {"call": "run_stack([(\"PUSH\", 2), (\"PUSH\", 3), (\"PUSH\", 4), (\"MUL\",), (\"ADD\",)])", "want": 14}], "solution": "def run_stack(program):\n    stack = []\n    for ins in program:\n        op = ins[0]\n        if op == \"PUSH\":\n            stack.append(ins[1])\n        else:\n            right = stack.pop()\n            left = stack.pop()\n            if op == \"ADD\":\n                stack.append(left + right)\n            elif op == \"SUB\":\n                stack.append(left - right)\n            elif op == \"MUL\":\n                stack.append(left * right)\n    return stack[-1] if stack else None", "hint": "Pop the right value first, then the left one.", "why": "This is exactly how <code>BINARY_OP<\/code> works in CPython: the right operand is on top of the stack."}, {"id": "count-ops", "lv": "h", "title": "Count the bytecode instructions", "task": "<p>Write <code>count_instructions(source, name)<\/code> that compiles <code>source<\/code> and returns how many of its instructions are called <code>name<\/code>. Use <code>compile(source, \"&lt;x&gt;\", \"exec\")<\/code> and <code>dis.get_instructions<\/code>. Notice what constant folding does to the second test.<\/p>", "starter": "import dis\n\ndef count_instructions(source, name):\n    return 0", "tests": [{"call": "count_instructions(\"total = price * qty + 5\", \"BINARY_OP\")", "want": 2}, {"call": "count_instructions(\"x = 2 * 3\", \"BINARY_OP\")", "want": 0}, {"call": "count_instructions(\"print(1)\\nprint(2)\", \"CALL\")", "want": 2}], "solution": "import dis\n\ndef count_instructions(source, name):\n    code = compile(source, \"<x>\", \"exec\")\n    return sum(1 for ins in dis.get_instructions(code) if ins.opname == name)", "hint": "Loop over <code>dis.get_instructions(code)<\/code> and compare <code>ins.opname<\/code>.", "why": "Bytecode differs between versions, so only use counts like this to learn, never in a real test."}, {"id": "to-stack", "lv": "x", "title": "Compile an expression yourself", "task": "<p>Write <code>compile_expr(source)<\/code> that turns an arithmetic expression into stack instructions, the way the CPython compiler does. Use <code>ast.parse(source, mode=\"eval\").body<\/code> and walk the tree: a number gives <code>\"PUSH n\"<\/code>, a name gives <code>\"LOAD name\"<\/code>, and a <code>BinOp<\/code> gives its left side, its right side, then <code>\"ADD\"<\/code>, <code>\"SUB\"<\/code>, <code>\"MUL\"<\/code> or <code>\"DIV\"<\/code>.<\/p>", "starter": "import ast\n\ndef compile_expr(source):\n    tree = ast.parse(source, mode=\"eval\").body\n    return []", "tests": [{"call": "compile_expr(\"2 + 3 * x\")", "want": ["PUSH 2", "PUSH 3", "LOAD x", "MUL", "ADD"]}, {"call": "compile_expr(\"(a - b) * 4\")", "want": ["LOAD a", "LOAD b", "SUB", "PUSH 4", "MUL"]}, {"call": "compile_expr(\"7\")", "want": ["PUSH 7"]}], "solution": "import ast\n\nOPS = {ast.Add: \"ADD\", ast.Sub: \"SUB\", ast.Mult: \"MUL\", ast.Div: \"DIV\"}\n\ndef compile_expr(source):\n    out = []\n    def walk(node):\n        if isinstance(node, ast.Constant):\n            out.append(f\"PUSH {node.value}\")\n        elif isinstance(node, ast.Name):\n            out.append(f\"LOAD {node.id}\")\n        elif isinstance(node, ast.BinOp):\n            walk(node.left)\n            walk(node.right)\n            out.append(OPS[type(node.op)])\n    walk(ast.parse(source, mode=\"eval\").body)\n    return out", "hint": "Write a small recursive function. Visit the left child, then the right child, then add the operator. This order is called post order.", "why": "Post order is the reason a stack machine needs no brackets: by the time an operator runs, both of its inputs are already on the stack."}], "dg": {"pyrun": {"t": "From main.py to output, inside CPython", "w": 900, "h": 360, "mw": 760, "g": [[8, 8, 560, 120, "Compile time: before your first line runs", 0], [8, 210, 884, 140, "Run time: the Python Virtual Machine", 2]], "n": [["src", 20, 44, 120, 64, "main.py", {"c": 5, "sh": "doc", "sub": "source text"}], ["tok", 160, 44, 110, 64, "Tokenizer", {"c": 0, "sub": "tokens"}], ["par", 290, 44, 110, 64, "Parser", {"c": 0, "sub": "syntax tree"}], ["cmp", 420, 44, 130, 64, "Compiler", {"c": 0, "sub": "bytecode"}], ["code", 740, 44, 140, 64, "Code object", {"c": 3, "sub": "bytecode + consts"}], ["pyc", 600, 140, 130, 56, ".pyc file", {"c": 3, "sh": "db", "sub": "__pycache__"}], ["loop", 660, 254, 200, 64, "Evaluation loop", {"c": 2, "sub": "one instruction at a time"}], ["mem", 400, 254, 200, 64, "Objects and memory", {"c": 1, "sub": "ref counts + GC"}], ["bi", 170, 254, 170, 64, "Built-ins and C code", {"c": 1, "sub": "print, len, dict..."}], ["out", 20, 250, 110, 72, "Output", {"c": 4, "sh": "screen", "sub": "Your bill is 120"}]], "e": [["src", "tok", {}], ["tok", "par", {}], ["par", "cmp", {}], ["cmp", "code", {}], ["cmp", "pyc", {"t": "imported modules", "d": 1, "via": [[485, 168]], "ts": "l", "tx": 532, "ty": 186}], ["pyc", "code", {"d": 1}], ["code", "loop", {}], ["loop", "mem", {"bi": 1}], ["mem", "bi", {"bi": 1}], ["bi", "out", {}]], "st": [[["src", "g0"], "You type python main.py. CPython reads the whole file as text before anything runs."], [["tok", "src>tok"], "The tokenizer groups characters into tokens: names, numbers, strings, operators and indentation."], [["par", "tok>par"], "The parser checks the grammar and builds an abstract syntax tree. A syntax error stops everything here."], [["cmp", "par>cmp"], "The compiler turns the tree into bytecode: small, simple instructions for a virtual machine."], [["pyc", "cmp>pyc", "pyc>code"], "For imported modules, the bytecode is saved in __pycache__ so the next run can skip the first three stages."], [["code", "cmp>code"], "The result is a code object: the bytecode plus its constants, names and line numbers."], [["loop", "g1", "code>loop"], "The evaluation loop runs the bytecode one instruction at a time on a value stack."], [["mem", "bi", "loop>mem", "mem>bi"], "Instructions create objects, count references to them and call built in functions written in C."], [["out", "bi>out"], "print is one of those built ins. It writes the text and the result appears on the screen."]]}}, "lanes": {"loop": {"t": "The evaluation loop runs total = price * qty", "s": "Each step is one bytecode instruction. Watch the value stack grow and shrink.", "code": "price = 40\nqty = 3\ntotal = price * qty\nprint(total)", "lanes": ["Instruction now", "Value stack (top on the right)", "Names in this frame", "Output"], "tone": [3, 2, 1, 4], "steps": [{"l": 1, "v": [["LOAD_SMALL_INT 40"], ["40"], [], []], "m": "Push the number 40 onto the value stack."}, {"l": 1, "v": [["STORE_NAME price"], [], ["price → 40"], []], "m": "Pop it and bind the name price to it. The stack is empty again."}, {"l": 2, "v": [["LOAD_SMALL_INT 3", "STORE_NAME qty"], [], ["price → 40", "qty → 3"], []], "m": "Line 2 does the same for qty in two instructions."}, {"l": 3, "v": [["LOAD_NAME price"], ["40"], ["price → 40", "qty → 3"], []], "m": "Look up price and push its value."}, {"l": 3, "v": [["LOAD_NAME qty"], ["40", "3"], ["price → 40", "qty → 3"], []], "m": "Look up qty and push it. Two values now wait on the stack."}, {"l": 3, "v": [["BINARY_OP *"], ["120"], ["price → 40", "qty → 3"], []], "m": "BINARY_OP pops both, multiplies them and pushes the result 120."}, {"l": 3, "v": [["STORE_NAME total"], [], ["price → 40", "qty → 3", "total → 120"], []], "m": "Pop 120 and bind total to it."}, {"l": 4, "v": [["LOAD_NAME print", "PUSH_NULL", "LOAD_NAME total"], ["print", "NULL", "120"], ["price → 40", "qty → 3", "total → 120"], []], "m": "Push the function, an empty slot used for methods, then the argument."}, {"l": 4, "v": [["CALL 1", "POP_TOP"], [], ["price → 40", "qty → 3", "total → 120"], ["120"]], "m": "CALL runs print with one argument. The returned None is popped and thrown away."}], "lang": "py"}, "calls": {"t": "Frames on the call stack", "s": "Every call gets a new frame with its own local names. A return throws the frame away.", "code": "def tax(amount):\n    return amount * 0.18\n\ndef bill(price, qty):\n    subtotal = price * qty\n    return subtotal + tax(subtotal)\n\ntotal = bill(100, 2)\nprint(total)", "lanes": ["Call stack (newest first)", "Locals of the running frame", "Values returned"], "tone": [2, 1, 4], "steps": [{"l": 8, "v": [["<module>"], ["tax, bill (functions)"], []], "m": "The module frame runs first. def lines only create function objects."}, {"l": 4, "v": [["bill()", "<module>"], ["price = 100", "qty = 2"], []], "m": "Calling bill pushes a new frame. Its arguments become local names."}, {"l": 5, "v": [["bill()", "<module>"], ["price = 100", "qty = 2", "subtotal = 200"], []], "m": "subtotal is local to bill. The module cannot see it."}, {"l": 1, "v": [["tax()", "bill()", "<module>"], ["amount = 200"], []], "m": "bill calls tax, so a third frame goes on top. bill waits, paused in the middle of line 6."}, {"l": 2, "v": [["bill()", "<module>"], ["price = 100", "qty = 2", "subtotal = 200"], ["tax → 36.0"]], "m": "tax returns 36.0. Its frame and its local amount are gone."}, {"l": 6, "v": [["<module>"], ["tax, bill", "total = 236.0"], ["tax → 36.0", "bill → 236.0"]], "m": "bill returns 236.0 and its frame is removed too. Only the module frame is left."}, {"l": 9, "v": [["<module>"], ["tax, bill", "total = 236.0"], ["tax → 36.0", "bill → 236.0"]], "m": "print(total) shows 236.0. If an error had happened inside tax, the traceback would list all three frames."}], "lang": "py"}, "legb": {"t": "How Python finds a name: L, E, G, B", "s": "Python looks in four places, in this order, and stops at the first match.", "code": "rate = 0.18\n\ndef make_bill(price):\n    discount = 5\n    def final():\n        total = price - discount\n        return round(total * (1 + rate), 2)\n    return final()", "lanes": ["Local (final)", "Enclosing (make_bill)", "Global (module)", "Built-in"], "tone": [1, 3, 2, 0], "steps": [{"l": 6, "v": [["total ✓"], ["price", "discount"], ["rate", "make_bill"], ["round", "print", "len"]], "m": "total is assigned inside final, so the compiler made it local."}, {"l": 6, "v": [["total"], ["price ✓", "discount ✓"], ["rate", "make_bill"], ["round", "print", "len"]], "m": "price and discount are not local. Python finds them in the enclosing function, kept alive in cells."}, {"l": 7, "v": [["total"], ["price", "discount"], ["rate ✓", "make_bill"], ["round", "print", "len"]], "m": "rate is not local or enclosing. Python finds it in the module globals."}, {"l": 7, "v": [["total"], ["price", "discount"], ["rate", "make_bill"], ["round ✓", "print", "len"]], "m": "round is nowhere in your code. The last place is the builtins module, and there it is."}, {"l": 7, "v": [["total"], ["price", "discount"], ["rate", "make_bill"], ["round", "print", "len"]], "m": "If a name is in none of the four places, Python raises NameError."}], "lang": "py"}, "refs": {"t": "Names, objects and reference counts", "s": "A name never holds a value. It points at an object, and the object counts how many references it has.", "code": "a = [1, 2]\nb = a\nb.append(3)\ndel a\nb = None", "lanes": ["Names", "Objects in memory", "What happened"], "tone": [2, 0, 4], "steps": [{"l": 1, "v": [["a → list"], ["list [1, 2] refs: 1"], ["A new list object is created and a points at it."]], "m": "One object, one reference."}, {"l": 2, "v": [["a → list", "b → list"], ["list [1, 2] refs: 2"], ["b = a copies the reference, not the list."]], "m": "Two names, still only one list."}, {"l": 3, "v": [["a → list", "b → list"], ["list [1, 2, 3] refs: 2"], ["Changing the list through b is visible through a."]], "m": "This is why a function that changes a list you passed in changes your list too."}, {"l": 4, "v": [["b → list"], ["list [1, 2, 3] refs: 1"], ["del removes the name a. The list survives."]], "m": "del never deletes an object directly. It removes one reference."}, {"l": 5, "v": [["b → None"], ["(list freed)"], ["The count reached 0, so the memory is given back at once."]], "m": "Reference counting frees most objects the moment the last reference goes."}], "lang": "py"}, "imports": {"t": "What happens on import greet", "s": "Follow one import from the name to a ready module object.", "code": "import greet\nimport greet\nprint(greet.hello(\"Ravi\"))", "lanes": ["sys.modules", "Finders and loaders", "Module code"], "tone": [2, 3, 1], "steps": [{"l": 1, "v": [["sys", "builtins", "..."], [], []], "m": "Python first checks sys.modules, the cache of every module already imported. greet is not there."}, {"l": 1, "v": [["sys", "builtins", "..."], ["look in sys.path", "found greet.py"], []], "m": "The path finder looks in each folder of sys.path, in order. The script folder comes first."}, {"l": 1, "v": [["sys", "builtins", "..."], ["found greet.py", "use __pycache__ or compile"], []], "m": "The loader reuses a fresh .pyc, or compiles greet.py and writes a new one."}, {"l": 1, "v": [["sys", "builtins", "...", "greet"], ["done"], ["top level code runs once"]], "m": "A module object is put in sys.modules first, then its top level code runs and fills it."}, {"l": 2, "v": [["sys", "builtins", "...", "greet ✓"], [], ["nothing runs"]], "m": "The second import finds greet in sys.modules and just binds the name. No search, no code."}, {"l": 3, "v": [["sys", "builtins", "...", "greet"], [], ["greet.hello called"]], "m": "greet.hello is an attribute lookup on the module object."}], "lang": "py"}}, "tr": {"hello": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.name": "'Asha'"}}, {"l": 4, "ev": "line", "d": {"G.items": "3"}}, {"l": 5, "ev": "line", "d": {"G.price": "40"}}, {"l": 6, "ev": "line", "d": {"G.total": "120"}}, {"l": 6, "ev": "return", "o": "Hi Asha! Your bill is 120 rupees\n"}], "tail": "", "err": null, "cut": false}, "which": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "o": "Implementation: CPython\n"}, {"l": 5, "ev": "line", "o": "Version:        3.14.6\n"}, {"l": 6, "ev": "line", "o": "Cache tag:      cpython-314\n"}, {"l": 6, "ev": "return", "o": "Program name:   python3.14\n"}], "tail": "", "err": null, "cut": false}, "tokens": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.source": "'if total > 100:\\n    discount = 10\\nprint(discount)\\n'"}}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=1 (NAME), string='if', start=(1, 0), end=(1, 2), line='if total > 100:\\n')"}}, {"l": 9, "ev": "line", "d": {"G.kind": "'NAME'"}}, {"l": 7, "ev": "line", "o": "NAME      'if'           line 1\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=1 (NAME), string='total', start=(1, 3), end=(1, 8), line='if total > 100..."}}, {"l": 9, "ev": "line"}, {"l": 7, "ev": "line", "o": "NAME      'total'        line 1\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=55 (OP), string='>', start=(1, 9), end=(1, 10), line='if total > 100:\\n')"}}, {"l": 9, "ev": "line", "d": {"G.kind": "'OP'"}}, {"l": 7, "ev": "line", "o": "OP        '>'            line 1\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=2 (NUMBER), string='100', start=(1, 11), end=(1, 14), line='if total > 1..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'NUMBER'"}}, {"l": 7, "ev": "line", "o": "NUMBER    '100'          line 1\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=55 (OP), string=':', start=(1, 14), end=(1, 15), line='if total > 100:\\n')"}}, {"l": 9, "ev": "line", "d": {"G.kind": "'OP'"}}, {"l": 7, "ev": "line", "o": "OP        ':'            line 1\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=4 (NEWLINE), string='\\n', start=(1, 15), end=(1, 16), line='if total > 1..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'NEWLINE'"}}, {"l": 7, "ev": "line", "o": "NEWLINE   '\\n'           line 1\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=5 (INDENT), string='    ', start=(2, 0), end=(2, 4), line='    discount ..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'INDENT'"}}, {"l": 7, "ev": "line", "o": "INDENT    '    '         line 2\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=1 (NAME), string='discount', start=(2, 4), end=(2, 12), line='    discou..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'NAME'"}}, {"l": 7, "ev": "line", "o": "NAME      'discount'     line 2\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=55 (OP), string='=', start=(2, 13), end=(2, 14), line='    discount = 10..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'OP'"}}, {"l": 7, "ev": "line", "o": "OP        '='            line 2\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=2 (NUMBER), string='10', start=(2, 15), end=(2, 17), line='    discount ..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'NUMBER'"}}, {"l": 7, "ev": "line", "o": "NUMBER    '10'           line 2\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=4 (NEWLINE), string='\\n', start=(2, 17), end=(2, 18), line='    discount..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'NEWLINE'"}}, {"l": 7, "ev": "line", "o": "NEWLINE   '\\n'           line 2\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=6 (DEDENT), string='', start=(3, 0), end=(3, 0), line='print(discount)\\n')"}}, {"l": 9, "ev": "line", "d": {"G.kind": "'DEDENT'"}}, {"l": 7, "ev": "line", "o": "DEDENT    ''             line 3\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=1 (NAME), string='print', start=(3, 0), end=(3, 5), line='print(discount..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'NAME'"}}, {"l": 7, "ev": "line", "o": "NAME      'print'        line 3\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=55 (OP), string='(', start=(3, 5), end=(3, 6), line='print(discount)\\n')"}}, {"l": 9, "ev": "line", "d": {"G.kind": "'OP'"}}, {"l": 7, "ev": "line", "o": "OP        '('            line 3\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=1 (NAME), string='discount', start=(3, 6), end=(3, 14), line='print(disc..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'NAME'"}}, {"l": 7, "ev": "line", "o": "NAME      'discount'     line 3\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=55 (OP), string=')', start=(3, 14), end=(3, 15), line='print(discount)\\n')"}}, {"l": 9, "ev": "line", "d": {"G.kind": "'OP'"}}, {"l": 7, "ev": "line", "o": "OP        ')'            line 3\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=4 (NEWLINE), string='\\n', start=(3, 15), end=(3, 16), line='print(discou..."}}, {"l": 9, "ev": "line", "d": {"G.kind": "'NEWLINE'"}}, {"l": 7, "ev": "line", "o": "NEWLINE   '\\n'           line 3\n"}, {"l": 8, "ev": "line", "d": {"G.tok": "TokenInfo(type=0 (ENDMARKER), string='', start=(4, 0), end=(4, 0), line='')"}}, {"l": 9, "ev": "line", "d": {"G.kind": "'ENDMARKER'"}}, {"l": 7, "ev": "line", "o": "ENDMARKER ''             line 4\n"}, {"l": 7, "ev": "return"}], "tail": "", "err": null, "cut": false}, "astdump": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.tree": "Module(body=[Assign(targets=[Name(id='total', ctx=Store(...))], value=BinOp(left=BinOp(..."}}, {"l": 4, "ev": "return", "o": "Module(\n  body=[\n    Assign(\n      targets=[\n        Name(id='total', ctx=Store())],\n      value=BinOp(\n        left=BinOp(\n          left=Name(id='price', ctx=Load()),\n          op=Mult(),\n          right=Name(id='qty', ctx=Load())),\n        op=Add(),\n        right=Constant(value=5)))])\n"}], "tail": "", "err": null, "cut": false}, "codeobj": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 5, "ev": "line", "d": {"G.add_tax": "<function add_tax>"}}, {"l": 6, "ev": "line", "d": {"G.code": "<code object add_tax at 0x7f2880406780, file \"main.py\", line 1>"}}, {"l": 7, "ev": "line", "o": "name:          add_tax\n"}, {"l": 8, "ev": "line", "o": "arguments:     2\n"}, {"l": 9, "ev": "line", "o": "local names:   ('price', 'rate', 'tax')\n"}, {"l": 10, "ev": "line", "o": "constants:     (2,)\n"}, {"l": 11, "ev": "line", "o": "other names:   ('round',)\n"}, {"l": 12, "ev": "line", "o": "bytecode size: 54 bytes\n"}, {"l": 1, "ev": "call", "s": ["module", "add_tax()"], "d": {"L.price": "100", "L.rate": "0.18"}}, {"l": 2, "ev": "line"}, {"l": 3, "ev": "line", "d": {"L.tax": "18.0"}}, {"l": 3, "ev": "return"}, {"l": 12, "ev": "return", "s": ["module"], "d": {"L.price": null, "L.rate": null, "L.tax": null}, "o": "118.0\n"}], "tail": "", "err": null, "cut": false}, "dis1": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.add_tax": "<function add_tax>"}}, {"l": 7, "ev": "return", "o": "  3           RESUME                   0\n\n  4           LOAD_FAST_BORROW_LOAD_FAST_BORROW 1 (price, rate)\n              BINARY_OP                5 (*)\n              STORE_FAST               2 (tax)\n\n  5           LOAD_FAST_BORROW_LOAD_FAST_BORROW 2 (price, tax)\n              BINARY_OP                0 (+)\n              RETURN_VALUE\n"}], "tail": "", "err": null, "cut": false}, "folding": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return", "o": "  0           RESUME                   0\n\n  1           LOAD_CONST               2 (86400)\n              STORE_NAME               0 (seconds_per_day)\n              LOAD_CONST               1 (None)\n              RETURN_VALUE\n"}], "tail": "", "err": null, "cut": false}, "evalloop": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.code": "<code object <module> at 0x7f0fe4775c50, file \"<bill>\", line 1>"}}, {"l": 5, "ev": "line", "d": {"G.ins": "Instruction(opname='RESUME', opcode=128, arg=0, argval=0, argrepr='', offset=0, start_o..."}}, {"l": 4, "ev": "line", "o": "  0  RESUME           \n"}, {"l": 5, "ev": "line", "d": {"G.ins": "Instruction(opname='LOAD_NAME', opcode=93, arg=0, argval='price', argrepr='price', offs..."}}, {"l": 4, "ev": "line", "o": "  2  LOAD_NAME        price\n"}, {"l": 5, "ev": "line", "d": {"G.ins": "Instruction(opname='LOAD_NAME', opcode=93, arg=1, argval='qty', argrepr='qty', offset=4..."}}, {"l": 4, "ev": "line", "o": "  4  LOAD_NAME        qty\n"}, {"l": 5, "ev": "line", "d": {"G.ins": "Instruction(opname='BINARY_OP', opcode=44, arg=5, argval=5, argrepr='*', offset=6, star..."}}, {"l": 4, "ev": "line", "o": "  6  BINARY_OP        *\n"}, {"l": 5, "ev": "line", "d": {"G.ins": "Instruction(opname='STORE_NAME', opcode=116, arg=2, argval='total', argrepr='total', of..."}}, {"l": 4, "ev": "line", "o": " 18  STORE_NAME       total\n"}, {"l": 5, "ev": "line", "d": {"G.ins": "Instruction(opname='LOAD_CONST', opcode=82, arg=0, argval=None, argrepr='None', offset=..."}}, {"l": 4, "ev": "line", "o": " 20  LOAD_CONST       None\n"}, {"l": 5, "ev": "line", "d": {"G.ins": "Instruction(opname='RETURN_VALUE', opcode=35, arg=None, argval=None, argrepr='', offset..."}}, {"l": 4, "ev": "line", "o": " 22  RETURN_VALUE     \n"}, {"l": 4, "ev": "return"}], "tail": "", "err": null, "cut": false}, "minivm": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.program": "[('LOAD', 'price'), ('LOAD', 'qty'), ('MULTIPLY', None), ('STORE', 'total')]"}}, {"l": 4, "ev": "line", "d": {"G.names": "{'price': 40, 'qty': 3}"}}, {"l": 6, "ev": "line", "d": {"G.stack": "[]"}}, {"l": 7, "ev": "line", "d": {"G.op": "'LOAD'", "G.arg": "'price'"}}, {"l": 8, "ev": "line"}, {"l": 15, "ev": "line", "d": {"G.stack": "[40]"}}, {"l": 6, "ev": "line", "o": "LOAD      price  stack = [40]\n"}, {"l": 7, "ev": "line", "d": {"G.arg": "'qty'"}}, {"l": 8, "ev": "line"}, {"l": 15, "ev": "line", "d": {"G.stack": "[40, 3]"}}, {"l": 6, "ev": "line", "o": "LOAD      qty    stack = [40, 3]\n"}, {"l": 7, "ev": "line", "d": {"G.op": "'MULTIPLY'", "G.arg": "None"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"G.stack": "[40]", "G.right": "3"}}, {"l": 12, "ev": "line", "d": {"G.stack": "[]", "G.left": "40"}}, {"l": 15, "ev": "line", "d": {"G.stack": "[120]"}}, {"l": 6, "ev": "line", "o": "MULTIPLY  None   stack = [120]\n"}, {"l": 7, "ev": "line", "d": {"G.op": "'STORE'", "G.arg": "'total'"}}, {"l": 9, "ev": "line"}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line"}, {"l": 15, "ev": "line", "d": {"G.names": "{'price': 40, 'qty': 3, 'total': 120}", "G.stack": "[]"}}, {"l": 6, "ev": "line", "o": "STORE     total  stack = []\n"}, {"l": 17, "ev": "line"}, {"l": 17, "ev": "return", "o": "{'price': 40, 'qty': 3, 'total': 120}\n"}], "tail": "", "err": null, "cut": false}, "traceback": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 5, "ev": "line", "d": {"G.apply_coupon": "<function apply_coupon>"}}, {"l": 8, "ev": "line", "d": {"G.checkout": "<function checkout>"}}, {"l": 5, "ev": "call", "s": ["module", "checkout()"], "d": {"L.cart_total": "500", "L.coupon": "'SAVE10'"}}, {"l": 6, "ev": "line"}, {"l": 1, "ev": "call", "s": ["module", "checkout()", "apply_coupon()"], "d": {"L.total": "500", "L.code": "'SAVE10'", "L.cart_total": null, "L.coupon": null}}, {"l": 2, "ev": "line"}, {"l": 3, "ev": "line", "d": {"L.discounts": "{'SAVE10': 10, 'SAVE20': 20}"}}, {"l": 3, "ev": "return"}, {"l": 6, "ev": "return", "s": ["module", "checkout()"], "d": {"L.cart_total": "500", "L.coupon": "'SAVE10'", "L.total": null, "L.code": null, "L.discounts": null}}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.cart_total": null, "L.coupon": null}, "o": "490\n"}, {"l": 5, "ev": "call", "s": ["module", "checkout()"], "d": {"L.cart_total": "500", "L.coupon": "'FREE100'"}}, {"l": 6, "ev": "line"}, {"l": 1, "ev": "call", "s": ["module", "checkout()", "apply_coupon()"], "d": {"L.total": "500", "L.code": "'FREE100'", "L.cart_total": null, "L.coupon": null}}, {"l": 2, "ev": "line"}, {"l": 3, "ev": "line", "d": {"L.discounts": "{'SAVE10': 10, 'SAVE20': 20}"}}, {"l": 3, "ev": "return"}, {"l": 6, "ev": "return", "s": ["module", "checkout()"], "d": {"L.cart_total": "500", "L.coupon": "'FREE100'", "L.total": null, "L.code": null, "L.discounts": null}}, {"l": 9, "ev": "return", "s": ["module"], "d": {"L.cart_total": null, "L.coupon": null}}], "tail": "", "err": "Traceback (most recent call last):\n  File \"main.py\", line 9, in <module>\n    print(checkout(500, \"FREE100\"))\n          ~~~~~~~~^^^^^^^^^^^^^^^^\n  File \"main.py\", line 6, in checkout\n    return apply_coupon(cart_total, coupon)\n  File \"main.py\", line 3, in apply_coupon\n    return total - discounts[code]\n                   ~~~~~~~~~^^^^^^\nKeyError: 'FREE100'", "cut": false}, "legb": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.rate": "0.18"}}, {"l": 10, "ev": "line", "d": {"G.make_bill": "<function make_bill>"}}, {"l": 3, "ev": "call", "s": ["module", "make_bill()"], "d": {"L.price": "100"}}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"L.discount": "5"}}, {"l": 8, "ev": "line", "d": {"L.final": "<function final>"}}, {"l": 5, "ev": "call", "s": ["module", "make_bill()", "final()"], "d": {"L.final": null}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"L.total": "95"}}, {"l": 7, "ev": "return"}, {"l": 8, "ev": "return", "s": ["module", "make_bill()"], "d": {"L.final": "<function final>", "L.total": null}}, {"l": 12, "ev": "line", "s": ["module"], "d": {"L.price": null, "L.final": null, "L.discount": null}, "o": "112.1\n"}, {"l": 13, "ev": "line"}, {"l": 13, "ev": "return", "o": "round lives in builtins: True\n"}], "tail": "", "err": null, "cut": false}, "objects": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 2, "ev": "line", "d": {"G.a": "[1, 2, 3]"}}, {"l": 3, "ev": "line", "d": {"G.b": "[1, 2, 3]"}}, {"l": 4, "ev": "line", "d": {"G.a": "[1, 2, 3, 4]", "G.b": "[1, 2, 3, 4]"}}, {"l": 6, "ev": "line", "o": "[1, 2, 3, 4] True True\n"}, {"l": 7, "ev": "line", "d": {"G.c": "[1, 2, 3, 4]"}}, {"l": 9, "ev": "line", "o": "True False\n"}, {"l": 10, "ev": "line", "d": {"G.x": "256"}}, {"l": 11, "ev": "line", "d": {"G.y": "256"}}, {"l": 12, "ev": "line", "o": "256 is shared: True\n"}, {"l": 13, "ev": "line", "d": {"G.x": "257"}}, {"l": 14, "ev": "line", "d": {"G.y": "257"}}, {"l": 16, "ev": "line", "o": "257 is shared: False\n"}, {"l": 16, "ev": "return", "o": "<class 'int'> <class 'type'> True\n"}], "tail": "", "err": null, "cut": false}, "refcount": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.order": "{'id': 1042}"}}, {"l": 5, "ev": "line", "d": {"G.before": "2"}}, {"l": 6, "ev": "line", "d": {"G.alias": "{'id': 1042}"}}, {"l": 7, "ev": "line", "o": "one more name adds one reference: 1\n"}, {"l": 8, "ev": "line", "d": {"G.alias": null}}, {"l": 10, "ev": "line", "o": "del removes it again: 0\n"}, {"l": 10, "ev": "call", "s": ["module", "Node()"]}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 14, "ev": "line"}, {"l": 14, "ev": "return"}, {"l": 17, "ev": "line", "s": ["module"], "d": {"G.Node": "<type Node>"}}, {"l": 11, "ev": "call", "s": ["module", "__init__()"], "d": {"L.self": "<__main__.Node object at 0x7fca1755d6a0>", "L.name": "'a'"}}, {"l": 12, "ev": "line"}, {"l": 13, "ev": "line"}, {"l": 13, "ev": "return"}, {"l": 11, "ev": "call", "d": {"L.self": "<__main__.Node object at 0x7fca17614190>", "L.name": "'b'"}}, {"l": 12, "ev": "line"}, {"l": 13, "ev": "line"}, {"l": 13, "ev": "return"}, {"l": 18, "ev": "line", "s": ["module"], "d": {"G.a": "<__main__.Node object at 0x7fca1755d6a0>", "G.b": "<__main__.Node object at 0x7fca17614190>", "L.self": null, "L.name": null}}, {"l": 19, "ev": "line"}, {"l": 20, "ev": "line", "d": {"G.a": null, "G.b": null}}, {"l": 21, "ev": "line", "o": "names deleted, but nothing was freed yet\n"}, {"l": 14, "ev": "call", "s": ["module", "__del__()"], "d": {"L.self": "<__main__.Node object at 0x7fca1755d6a0>"}}, {"l": 15, "ev": "line"}, {"l": 15, "ev": "return", "o": "freed a\n"}, {"l": 14, "ev": "call", "d": {"L.self": "<__main__.Node object at 0x7fca17614190>"}}, {"l": 15, "ev": "line"}, {"l": 15, "ev": "return", "o": "freed b\n"}, {"l": 22, "ev": "line", "s": ["module"], "d": {"G.found": "2", "L.self": null}}, {"l": 23, "ev": "line", "o": "the cycle collector found unreachable objects: True\n"}, {"l": 23, "ev": "return", "o": "collector thresholds: (2000, 10, 10)\n"}], "tail": "", "err": null, "cut": false}}};
+PYPLAY.page({ title: "How Python Runs: From Source Code to Output", subject: "python", tracer: "\"\"\"Run one Python program and record it line by line for the \"Line by line\" viewer on the Python pages.\n\nThe same file runs in two places:\n  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON\n  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)\n\nA recording is {\"steps\": [...], \"tail\": text, \"err\": traceback text or null, \"cut\": bool}. Each step is\n{\"l\": line, \"ev\": \"line\" | \"call\" | \"return\", \"s\": call stack labels, \"d\": {name: repr or null}, \"o\": new output}.\ns, d and o appear only when something changed, to keep pages small. \"tail\" is output printed after the last step.\n\"\"\"\nimport io\nimport json\nimport linecache\nimport sys\nimport traceback\nimport types\n\nFILE = 'main.py'\nMAX_STEPS = 600\n\n\ndef fmt(v, depth=0):\n    try:\n        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):\n            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'\n        r = repr(v)\n    except Exception as e:  # a broken __repr__ must not stop the recording\n        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'\n    return r if len(r) <= 90 else r[:87] + '...'\n\n\ndef visible(name, v):\n    if name.startswith('__') or name in ('_record_',):\n        return False\n    return not isinstance(v, types.ModuleType)\n\n\ndef record(src, stdin_text=''):\n    steps, out = [], io.StringIO()\n    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}\n\n    def label(f):\n        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'\n\n    def snap(frame, event):\n        if len(steps) >= MAX_STEPS:\n            state['cut'] = True\n            raise KeyboardInterrupt\n        frames, f = [], frame\n        while f is not None:\n            if f.f_code.co_filename == FILE:\n                frames.append(f)\n            f = f.f_back\n        frames.reverse()\n        st = {'l': frame.f_lineno, 'ev': event}\n        stack = [label(f) for f in frames]\n        if stack != state['stack']:\n            st['s'] = stack\n            state['stack'] = stack\n        cur = {}\n        for k, v in list(frames[0].f_globals.items()):\n            if visible(k, v):\n                cur['G.' + k] = fmt(v)\n        top = frames[-1]\n        if top.f_code.co_name != '<module>':\n            for k, v in list(top.f_locals.items()):\n                if visible(k, v):\n                    cur['L.' + k] = fmt(v)\n        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}\n        for k in state['vars']:\n            if k not in cur:\n                d[k] = None\n        if d:\n            st['d'] = d\n        state['vars'] = cur\n        o = out.getvalue()\n        if len(o) > state['olen']:\n            st['o'] = o[state['olen']:]\n            state['olen'] = len(o)\n        steps.append(st)\n\n    def tracer(frame, event, arg):\n        if frame.f_code.co_filename != FILE:\n            return None\n        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):\n            snap(frame, event)\n        return tracer\n\n    err = None\n    real_out, real_in = sys.stdout, sys.stdin\n    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)\n    # Tracebacks read source lines through linecache, so give it the program text.\n    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)\n    try:\n        code = compile(src, FILE, 'exec')\n        sys.settrace(tracer)\n        try:\n            exec(code, {'__name__': '__main__'})\n        finally:\n            sys.settrace(None)\n    except KeyboardInterrupt:\n        pass\n    except SystemExit:\n        pass\n    except BaseException as e:\n        tb = e.__traceback__\n        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:\n            tb = tb.tb_next\n        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()\n    finally:\n        sys.stdout, sys.stdin = real_out, real_in\n    o = out.getvalue()\n    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}\n\n\nif __name__ == '__main__':\n    source = open(sys.argv[1], encoding='utf-8').read()\n    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''\n    print(json.dumps(record(source, given), ensure_ascii=False))\n" });
+</script>
+</body>
+</html>

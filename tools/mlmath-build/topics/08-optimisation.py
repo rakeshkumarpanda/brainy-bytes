@@ -1,7 +1,7 @@
 # Chapter 8: gradient descent in one and two dimensions, the learning rate, stochastic and mini batch
 # gradient descent, momentum, RMSProp and Adam, convexity and saddles, constrained optimisation with
 # Lagrange multipliers, and learning rate schedules.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, deep
 
 K = Kit()
 
@@ -988,6 +988,171 @@ VIZ_JS = r'''
 })();
 '''
 
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'idea': deep('when to stop, and why the steps shrink on their own', f'''
+<p>Gradient descent is a loop, so it needs a rule for when to stop. Real training code uses one or more of these.</p>
+{table(['Stopping rule', 'Check', 'Typical setting'], [
+        ['fixed budget', 'stop after a set number of steps or epochs', '10 epochs, or 100000 steps'],
+        ['small gradient', 'stop when ‖∇L‖ is tiny, since that means the ground is flat', '‖∇L‖ &lt; 10⁻⁶'],
+        ['small improvement', 'stop when the loss barely changes between checks', 'less than 0.01% better'],
+        ['early stopping', 'stop when the validation loss has not improved for a while', 'patience of 5 epochs'],
+    ])}
+<p>Notice that the learning rate η stays the same in the worked example, yet the steps get smaller. That happens because the step is η × slope, and the slope itself shrinks near the bottom of a smooth bowl. Gradient descent slows down by itself exactly where caution is needed.</p>
+{fx('Progress per step on a smooth loss', 'L(w − η∇L) ≈ L(w) − η ‖∇L‖²', 'From the linear approximation of Chapter 7. As long as η is small enough, every step lowers the loss by roughly η times the squared gradient length.')}
+{life('Parking a car: you drive at normal speed down the street, slow as you near the space, and creep the last few centimetres. Gradient descent follows the same pattern because its steps are proportional to how far the slope says you still have to go.')}
+'''),
+    'lr': deep('see the loss curves for each learning rate', f'''
+<p>Engineers rarely look at the weights directly. They watch the <b>loss curve</b>, the loss plotted against the step number, and read the learning rate from its shape. Compare four learning rates on the same bowl below, then add your own.</p>
+{viz('lrcurve')}
+{table(['Shape of the loss curve', 'Diagnosis', 'Action'], [
+        ['almost flat from the start', 'learning rate far too small', 'multiply η by 10'],
+        ['smooth fast drop, then flat', 'about right', 'keep it'],
+        ['drops, but saw tooth wobbles', 'a little too big', 'halve η, or add momentum'],
+        ['rises, or jumps to NaN', 'far too big, diverging', 'divide η by 10, add gradient clipping'],
+    ])}
+<p>A popular trick for finding a good starting value is the <b>learning rate range test</b>: run a few hundred steps while raising η exponentially from 10⁻⁷ to 1, and plot the loss against η. Pick a value a little below the point where the loss falls fastest, well before it shoots up.</p>
+'''),
+    'sgd': deep('watch full batch, mini batch and single example paths', f'''
+<p>All three methods head for the same valley, but they take very different routes. The animation fits y = w x + b to 40 noisy points. Each dot on the contour map is one update. Full batch gradient descent glides smoothly. Single example SGD stumbles around, because each step listens to only one point. Mini batches are in between.</p>
+{viz('sgdpath')}
+<p>The noisy path is still useful for a simple reason. Each SGD step costs 1 ÷ n of a full batch step, so in the time a full batch takes one careful step, SGD takes n quick ones. Early in training, when you are far from the valley, rough directions are good enough and speed wins. Near the bottom, the noise makes SGD jitter around the best point instead of landing on it, which is why the learning rate is usually lowered later in training.</p>
+{fx('Noise in a mini batch gradient', f'spread ∝ {frac("σ", "√B")}', 'σ is how much the per example gradients disagree. Four times the batch size halves the noise, the same √n rule as the standard error in Chapter 10.')}
+'''),
+    'landscape': deep('meeting a saddle point', f'''
+<p>A saddle is flat in the middle, but it curves up in one direction and down in another, which is where the name comes from: the seat used for horse riding has exactly this shape. The simplest example is f(x, y) = x² − y².</p>
+{worked('Why (0, 0) is a saddle of f = x² − y²', [
+        'Gradient: <span class="eq">∇f = [2x, −2y]</span>, which is <span class="eq">[0, 0]</span> at the origin. So it is a flat point.',
+        'Hessian: <span class="eq">H = [[2, 0], [0, −2]]</span>, with eigenvalues <span class="eq">2</span> and <span class="eq">−2</span>',
+        'One positive eigenvalue: along x the surface is a valley.',
+        'One negative eigenvalue: along y the surface is a hill.',
+        'Mixed signs mean a saddle. A tiny push in y and gradient descent rolls away downhill.'])}
+<p>In a network with millions of weights, a flat point is a minimum only if <b>every</b> one of millions of curvature directions bends upward. That is extremely unlikely, so most flat points are saddles. Plain gradient descent can crawl near them because the gradient is tiny, but the randomness of mini batches and the speed kept by momentum usually carry the weights past.</p>
+'''),
+    'lagrange': deep('inequality constraints and the KKT conditions in plain words', f'''
+<p>Many real rules are limits rather than exact equalities: "spend at most 100", "the weights must have length at most 1", "a probability cannot be negative". These are <b>inequality constraints</b>, g(x) ≤ c. There are only two possibilities at the best point.</p>
+{table(['Case', 'What happens', 'Multiplier'], [
+        ['the limit is not reached', 'the best point is inside the allowed region, so ∇f = 0 there as usual', 'λ = 0, the rule costs nothing'],
+        ['the limit is reached', 'the best point sits on the boundary, and the Lagrange rule ∇f = λ∇g holds', 'λ &gt; 0, loosening the rule would help'],
+    ])}
+<p>Both cases are captured in one line, called <b>complementary slackness</b>: λ × (g(x) − c) = 0. Either the multiplier is zero or the constraint is tight. Together with ∇f = λ∇g and λ ≥ 0 these are the <b>Karush Kuhn Tucker (KKT) conditions</b>, the rule book for constrained optimisation.</p>
+{ml('In a support vector machine, every training point has its own multiplier. Points far from the boundary have λ = 0 and do not affect the answer at all. Only the points that sit right on the margin have λ &gt; 0. Those are the support vectors that give the method its name.')}
+'''),
+    'practice': deep('draw your own learning rate schedule', f'''
+<p>A schedule is just a function η(t) of the step number. The most common one for large models has a short linear <b>warm up</b> followed by a <b>cosine decay</b>. Set the number of steps and the warm up below and press Play to move along the schedule.</p>
+{viz('sched')}
+{fx('Warm up then cosine', f'η(t) = η<sub>max</sub> × {frac("t", "T<sub>w</sub>")} for t &lt; T<sub>w</sub>, then η<sub>max</sub> × ½(1 + cos(π {frac("t − T<sub>w</sub>", "T − T<sub>w</sub>")}))', 'T<sub>w</sub> is the warm up length and T the total number of steps.')}
+<p>Warm up exists because of the very first steps. At step 1 the weights are random and Adam has not yet seen enough gradients to estimate their typical size, so its step sizes can be wild. A gentle start for the first few hundred or thousand steps lets those statistics settle before the full learning rate is used.</p>
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+
+  /* ----- loss curves for several learning rates ----- */
+  W.lrcurve = el => {
+    const b = shell(el, 'Loss curves for different learning rates', 'Gradient descent on L = w² from w = 1. Grey curves are fixed examples. Move the slider to draw your own curve in orange, then press Play to draw all of them step by step.');
+    b.innerHTML = `<div class="mv-wrap"><div class="lc-plot"></div><div class="mv-side">${slider('lr', 'your η', 0.01, 1.05, 0.3, 0.01)}<div class="mv-legend"><span><i class="k"></i>η = 0.02, 0.2, 0.95</span><span><i class="o"></i>your η</span></div><div class="mv-read lc-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let lr = 0.3;
+    const run = e => { let w = 1; const L = [1]; for (let k = 0; k < 20; k++) { w = (1 - 2 * e) * w; L.push(Math.min(3, w * w)); } return L; };
+    const G = MV.frame(440, 300, [0, 20.5], [0, 1.6]);
+    function show(t) {
+      let s = MV.axes(G, { labels: false, xl: 'step', yl: 'loss' });
+      for (let k = 5; k <= 20; k += 5) s += MV.text(G, k, 0, String(k), { dy: 14, anchor: 'middle', cls: 'sm' });
+      [0.5, 1].forEach(y => { s += MV.text(G, 0, y, MV.num(y, 1), { dx: 3, dy: 4, cls: 'sm' }); });
+      const line = (L, cls) => `<polyline class="mv-v ${cls}" stroke-width="2" points="${L.slice(0, t + 1).map((v, k) => G.sx(k).toFixed(1) + ',' + G.sy(Math.min(1.6, v)).toFixed(1)).join(' ')}"/>`;
+      [0.02, 0.2, 0.95].forEach(e => { s += line(run(e), 'k'); });
+      const mine = run(lr);
+      s += line(mine, 'o');
+      $('.lc-plot', b).innerHTML = MV.svg(G, s, 'Loss curves');
+      const f = 1 - 2 * lr;
+      $('.lc-out', b).innerHTML = `your η = <b>${MV.num(lr)}</b><br>each step multiplies w by 1 − 2η = <b>${MV.num(f, 2)}</b><br>loss at step ${t}: <b>${MV.num(mine[t], 5)}</b><br>` +
+        (Math.abs(f) >= 1 ? '❌ |factor| ≥ 1: the loss never falls. Diverging.' : f < 0 ? '⚠️ Negative factor: w flips sign each step (zig zag), but it still shrinks.' : lr < 0.05 ? '🐢 Very slow.' : '✅ Smooth and steady.');
+    }
+    const P = Player($('.vz-p', b), show, 250);
+    wireSlider(b, 'lr', v => { lr = v; P.load(21, 20); });
+    P.load(21, 20);
+  };
+
+  /* ----- full batch, mini batch and single example paths on one contour map ----- */
+  W.sgdpath = el => {
+    const b = shell(el, 'Three ways down the same valley', 'Fitting y = w x + b to 40 noisy points from y = 2x + 1. Press Play to take updates. The purple dot marks the best (w, b).');
+    b.innerHTML = `<div class="vz-row">${seg('m', [['all', 'All three'], ['full', 'Full batch'], ['mini', 'Mini batch of 8'], ['one', 'One example']], 'all')}</div><div class="mv-wrap"><div class="sg-plot"></div><div class="mv-side"><div class="mv-legend"><span><i class="g"></i>full batch</span><span><i class="a"></i>mini batch 8</span><span><i class="r"></i>one example</span></div><div class="mv-read sg-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const xs = [], ys = [];
+    for (let i = 0; i < 40; i++) { const x = -1 + 2 * i / 39; xs.push(x); ys.push(2 * x + 1 + (rnd() - 0.5) * 1.2); }
+    const n = xs.length, mx = xs.reduce((a, c) => a + c) / n, my = ys.reduce((a, c) => a + c) / n;
+    let sxy = 0, sxx = 0; for (let i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) ** 2; }
+    const wB = sxy / sxx, bB = my - wB * mx;
+    const loss = (w, bb) => { let s = 0; for (let i = 0; i < n; i++) s += (w * xs[i] + bb - ys[i]) ** 2; return s / n; };
+    const N = 40, lr = 0.25;
+    const run = B => {
+      let w = -1, bb = -1.5, p = [[w, bb]], order = [];
+      seed = 11;
+      for (let t = 0; t < N; t++) {
+        if (order.length < B) { const o = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [o[i], o[j]] = [o[j], o[i]]; } order = order.concat(o); }
+        const idx = order.splice(0, B);
+        let gw = 0, gb = 0; idx.forEach(i => { const e = w * xs[i] + bb - ys[i]; gw += 2 * e * xs[i] / B; gb += 2 * e / B; });
+        w -= lr * gw; bb -= lr * gb; p.push([w, bb]);
+      }
+      return p;
+    };
+    const paths = { full: run(n), mini: run(8), one: run(1) };
+    const G = MV.frame(420, 380, [-1.5, 4], [-2, 3]);
+    const cont = (() => { let s = ''; const lv = [0.3, 0.6, 1.2, 2.5, 5, 9]; for (let gx = 0; gx < 56; gx++) for (let gy = 0; gy < 50; gy++) { const w = -1.5 + gx * 0.1, bb = -2 + gy * 0.1; const v = loss(w, bb), k = lv.findIndex(l => v < l); const op = k < 0 ? 0.02 : 0.06 + (lv.length - k) * 0.035; s += `<rect class="mv-heat" x="${G.sx(w - 0.05).toFixed(1)}" y="${G.sy(bb + 0.05).toFixed(1)}" width="${(G.sx(0.1) - G.sx(0)).toFixed(1)}" height="${(G.sy(0) - G.sy(0.1)).toFixed(1)}" style="fill:var(--accent);opacity:${op.toFixed(3)}"/>`; } return s; })();
+    let mode = 'all';
+    function show(t) {
+      let s = cont + MV.axes(G, { labels: false, xl: 'w', yl: 'b' }) + MV.dot(G, wB, bB, 'p', 7);
+      const draw = (k, c) => { const p = paths[k].slice(0, t + 1); s += `<polyline class="mv-v ${c}" stroke-width="2" points="${p.map(q => G.sx(q[0]).toFixed(1) + ',' + G.sy(q[1]).toFixed(1)).join(' ')}"/>` + MV.dot(G, p[p.length - 1][0], p[p.length - 1][1], c, 5); };
+      if (mode === 'all' || mode === 'full') draw('full', 'g');
+      if (mode === 'all' || mode === 'mini') draw('mini', 'a');
+      if (mode === 'all' || mode === 'one') draw('one', 'r');
+      $('.sg-plot', b).innerHTML = MV.svg(G, s, 'Paths on the loss surface');
+      const L = k => MV.num(loss(...paths[k][t]), 4);
+      $('.sg-out', b).innerHTML = `update ${t}<br>best fit: w = ${MV.num(wB, 3)}, b = ${MV.num(bB, 3)}, loss ${MV.num(loss(wB, bB), 4)}<br>full batch loss: <b>${L('full')}</b> (uses 40 points per step)<br>mini batch loss: <b>${L('mini')}</b> (8 points per step)<br>one example loss: <b>${L('one')}</b> (1 point per step)`;
+    }
+    const P = Player($('.vz-p', b), show, 220);
+    wireSeg(b, 'm', v => { mode = v; show(P.i); });
+    P.load(N + 1, 0);
+  };
+
+  /* ----- warm up plus cosine (or step) learning rate schedule ----- */
+  W.sched = el => {
+    const b = shell(el, 'Learning rate schedules', 'Choose a schedule, the total number of steps and the warm up length. Press Play to walk along it and read η at each step.');
+    b.innerHTML = `<div class="vz-row">${seg('k', [['cos', 'Warm up + cosine'], ['step', 'Step decay'], ['const', 'Constant']], 'cos')}</div><div class="mv-wrap"><div class="sc-plot"></div><div class="mv-side">${slider('T', 'total steps', 200, 2000, 1000, 100)}${slider('w', 'warm up steps', 0, 400, 100, 10)}<div class="mv-read sc-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let kind = 'cos', T = 1000, Tw = 100, cur = 0;
+    const eta = t => { const m = 0.001; if (kind === 'const') return m; if (t < Tw) return m * (t + 1) / Tw; if (kind === 'step') return m * 0.1 ** Math.floor((t - Tw) / ((T - Tw) / 3)); return m * 0.5 * (1 + Math.cos(Math.PI * (t - Tw) / Math.max(1, T - Tw))); };
+    function show(i) {
+      cur = Math.round(i / 40 * T);
+      const G = MV.frame(440, 280, [0, T], [0, 0.0011]);
+      let s = MV.axes(G, { labels: false, xl: 'step', yl: 'η' });
+      [0.0005, 0.001].forEach(y => { s += MV.text(G, 0, y, y.toString(), { dx: 3, dy: -3, cls: 'sm' }); });
+      s += MV.text(G, T, 0, String(T), { dy: 14, anchor: 'end', cls: 'sm' });
+      s += MV.curve(G, eta, '', { n: 400 }) + MV.dot(G, cur, eta(Math.min(T - 1, cur)), 'o', 7);
+      if (Tw > 0 && kind !== 'const') s += MV.line(G, Tw, 0, Tw, 0.0011, 'mv-v k dash') + MV.text(G, Tw, 0.00105, 'end of warm up', { dx: 4, cls: 'sm' });
+      $('.sc-plot', b).innerHTML = MV.svg(G, s, 'Learning rate against step');
+      const e = eta(Math.min(T - 1, cur));
+      $('.sc-out', b).innerHTML = `step <b>${cur}</b> of ${T}<br>η = <b>${e.toExponential(2)}</b><br>` + (kind !== 'const' && cur < Tw ? 'warming up: η grows in a straight line' : kind === 'cos' ? 'cosine decay: slow at first, fastest in the middle, gentle at the end' : kind === 'step' ? 'step decay: η drops by 10 times at fixed points' : 'constant: the same η all the way');
+    }
+    const P = Player($('.vz-p', b), show, 200);
+    wireSeg(b, 'k', v => { kind = v; show(P.i); });
+    wireSlider(b, 'T', v => { T = v; if (Tw > T / 2) Tw = Math.floor(T / 2); show(P.i); });
+    wireSlider(b, 'w', v => { Tw = Math.min(v, T / 2); show(P.i); });
+    P.load(41, 12);
+  };
+})();
+'''
+CSS = r'''
+.sg-plot .mv-svg{max-height:400px}
+'''
+
 T = K.topic(
     slug='optimisation', topic='optimisation', prefix='mm08', short='Optimisation', emoji='⛷️',
     title='Gradient Descent and Optimisation',
@@ -997,5 +1162,5 @@ T = K.topic(
     desc='Optimisation for machine learning: gradient descent, the learning rate and stability, stochastic and mini batch gradient descent, momentum, RMSProp and Adam, convexity and saddle points, Lagrange multipliers and learning rate schedules.',
     summary='The gradient descent update, learning rates that crawl, converge, zig zag or diverge, SGD, mini batches and epochs, momentum, RMSProp and Adam with bias correction, convex and non convex landscapes, the condition number and feature scaling, Lagrange multipliers, warm up, cosine decay, clipping and early stopping.',
     keywords=['gradient descent', 'learning rate', 'sgd', 'mini batch', 'epoch', 'momentum', 'rmsprop', 'adam', 'adamw', 'convex', 'saddle point', 'condition number', 'lagrange multiplier', 'learning rate schedule', 'gradient clipping', 'early stopping'],
-    parts=PARTS, info=INFO, real=REAL, viz=VIZ_JS, css='', allow_diff={},
+    parts=PARTS, info=INFO, real=REAL, viz=VIZ_JS, css=CSS, allow_diff={},
 )

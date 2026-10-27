@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>📦 Working with data</span><span>›</span><span>Chapter 5 of 27</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>📦 Working with data</span><span>›</span><span>Chapter 6 of 31</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">📦</span><div><h1>Objects and Arrays</h1><p class="lead">Objects and their tools, destructuring, spread with shallow and deep copies, arrays, sorting without surprises, map, filter, reduce and friends, and grouping data for reports.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 20 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 2 animations</span><span class="chip">▶ 10 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -108,7 +108,7 @@ console.log(id, withoutId);</pre><div class="out"><span>Output</span><pre>200 As
 y none
 7 { name: &#x27;Asha&#x27;, email: &#x27;asha@example.com&#x27; }</pre></div></div>
 <p>Test runners use destructuring all the time, so it is worth being fluent in it.</p>
-<div class="codewrap" data-k="fixture-shape"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Destructuring inside test runners · Snippets, full runs in chapters 19 to 21</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Playwright: the test receives one object and destructures the fixtures it needs</span>
+<div class="codewrap" data-k="fixture-shape"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Destructuring inside test runners · Snippets, full runs in chapters 20 to 22</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Playwright: the test receives one object and destructures the fixtures it needs</span>
 test(<span class="s">"search shows results"</span>, <span class="k">async</span> ({ page, request, baseURL }) =&gt; {
   <span class="k">await</span> page.goto(baseURL + <span class="s">"/search?q=phone"</span>);
 });
@@ -146,7 +146,7 @@ console.log(order.items[<span class="n">0</span>].qty, deep.items[<span class="n
 99 1</pre></div></div>
 <div class="viz" data-viz="lanes" data-k="copies"></div>
 <div class="exam">Spread makes a <b>shallow</b> copy: the outer object is new, but nested objects and arrays are shared. Use <code>structuredClone</code> for a full deep copy.</div>
-<div class="qa-box">Shared nested test data is a common cause of tests that pass alone and fail together. Give each test its own copy with <code>structuredClone(baseOrder)</code>, or build data with a factory function as in chapter 4.</div>
+<div class="qa-box">Shared nested test data is a common cause of tests that pass alone and fail together. Give each test its own copy with <code>structuredClone(baseOrder)</code>, or build data with a factory function as in chapter 5.</div>
 </section>
 <section class="card reveal jsec" id="arrays" data-say="arrays"><div class="sec-num">Part 4</div><h2><span class="sec-em">📚</span><span>Arrays</span></h2>
 
