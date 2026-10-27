@@ -254,7 +254,7 @@ const [response] = await Promise.all([
 
 // Avoid: a fixed sleep is either too long or too short
 await page.waitForTimeout(3000);
-''', 'Waiting the right way in Playwright', note='Runs for real in chapter 21'),
+''', 'Waiting the right way in Playwright', note='Runs for real in {{ch:js-ui-automation}}'),
     'scenario': run('''
 // Check 8 product URLs, at most 3 requests at a time, with a timeout on each.
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -304,6 +304,8 @@ PARTS = [
 <p>JavaScript runs your code on <b>one thread</b>: one line at a time. Slow work such as a network request, a timer or reading a file is handed to the browser or Node.js, and your code keeps going. When the slow work finishes, a <b>callback</b> is queued. The <b>event loop</b> runs queued callbacks only when the call stack is empty.</p>
 <div class="viz" data-viz="lanes" data-k="loop"></div>
 [[order]]
+<p>Now try your own code. The simulator below accepts <code>console.log</code>, <code>setTimeout</code>, <code>queueMicrotask</code> and <code>Promise.resolve().then</code>, including callbacks inside callbacks. Predict the console first, then press Play.</p>
+<div class="viz" data-viz="loopsim"></div>
 <div class="tw"><table class="jt"><tr><th>Queue</th><th>What goes there</th><th>When it runs</th></tr>
 <tr><td>Microtasks</td><td>promise callbacks (<code>then</code>, code after <code>await</code>), <code>queueMicrotask</code></td><td>right after the current code, all of them, before anything else</td></tr>
 <tr><td>Tasks (macrotasks)</td><td><code>setTimeout</code>, <code>setInterval</code>, clicks, network and file events</td><td>one per turn of the loop, after the microtasks are empty</td></tr>
@@ -319,6 +321,8 @@ PARTS = [
     part('promises', '🤝', 'Promises', '''
 <p>A <b>promise</b> is an object that stands for a result that is not ready yet. It starts <b>pending</b>, then becomes <b>fulfilled</b> with a value or <b>rejected</b> with an error, and never changes again. <code>then</code> runs when it fulfils, <code>catch</code> when it rejects and <code>finally</code> either way. Returning a value or a promise from <code>then</code> passes it to the next step, so the steps form a flat chain.</p>
 [[promise]]
+<p>Follow one real chain below. Each <code>then</code> creates a <b>new</b> promise, which is why returning a value passes it on, returning a promise makes the chain wait for it, and one <code>catch</code> at the end handles a failure in any earlier step.</p>
+<div class="viz" data-viz="lanes" data-k="states"></div>
 [[with-resolvers]]
 <div class="warn">A rejected promise that nobody catches is an <b>unhandled rejection</b>. In Node.js it crashes the process, and in test runners it often shows up as a confusing failure in a different test.</div>
 ''', qa=True, qa_why='Every Playwright, WebdriverIO and Selenium call returns a promise, so you need to know what one is.',
@@ -338,6 +342,8 @@ PARTS = [
     part('combinators', '🧮', 'Running many promises: all, allSettled, race, any', '''
 <p>Four helpers combine several promises into one. They differ in what counts as done and what happens on a failure.</p>
 [[combinators]]
+<p>The timeline below runs the four helpers on the same three promises, so you can see the exact moment each one decides. Notice that the requests themselves keep running: <code>Promise.all</code> stops waiting, it does not cancel anything. Use an <code>AbortController</code> to really cancel requests.</p>
+<div class="viz" data-viz="lanes" data-k="combine"></div>
 <div class="tw"><table class="jt"><tr><th>Helper</th><th>Fulfils when</th><th>Rejects when</th><th>Good for</th></tr>
 <tr><td><code>Promise.all</code></td><td>all fulfil</td><td>the first one rejects</td><td>steps that must all succeed</td></tr>
 <tr><td><code>Promise.allSettled</code></td><td>all have finished, either way</td><td>never</td><td>reports: check every link, list each result</td></tr>
@@ -368,6 +374,8 @@ PARTS = [
 ]
 
 LANES = {
+    'combine': {'t': 'all, allSettled, race and any on the same three promises', 'code': 'const fast = wait(100, "fast ok");\nconst bad  = fail(200, "500 error");\nconst slow = wait(300, "slow ok");\nPromise.all([fast, bad, slow]);\nPromise.allSettled([fast, bad, slow]);\nPromise.race([fast, bad, slow]);\nPromise.any([fast, bad, slow]);', 'lanes': ['Clock', 'all', 'allSettled', 'race', 'any'], 'tone': [5, 2, 1, 0, 3], 'steps': [{'l': [1, 2, 3], 'v': [['0 ms'], ['pending'], ['pending'], ['pending'], ['pending']], 'm': 'All three requests start at the same time. All four combined promises are pending.'}, {'l': [1, 6, 7], 'v': [['100 ms: fast fulfils'], ['pending'], ['pending'], ['fulfilled: "fast ok"'], ['fulfilled: "fast ok"']], 'm': 'fast is first. race settles with the first result of any kind, any settles with the first success.'}, {'l': [2, 4], 'v': [['200 ms: bad rejects'], ['rejected: "500 error"'], ['pending'], ['fulfilled: "fast ok"'], ['fulfilled: "fast ok"']], 'm': 'bad fails. all rejects at once with that error and stops caring about slow.'}, {'l': [3, 5], 'v': [['300 ms: slow fulfils'], ['rejected: "500 error"'], ['fulfilled: [ok, error, ok]'], ['fulfilled: "fast ok"'], ['fulfilled: "fast ok"']], 'm': 'allSettled waits for every promise and reports each one, fulfilled or rejected. It never rejects.'}]},
+    'states': {'t': 'A promise chain, one state at a time', 'code': 'fetch("/api/orders/7")\n  .then(res => res.json())\n  .then(order => order.total)\n  .catch(err => 0)\n  .finally(() => hideSpinner());', 'lanes': ['Promise', 'State', 'What runs'], 'tone': [2, 3, 1], 'steps': [{'l': 1, 'v': [['fetch(...)'], ['pending'], ['the request is on its way']], 'm': 'fetch returns a promise at once. It is pending while the request travels.'}, {'l': 1, 'v': [['fetch(...)'], ['fulfilled: Response'], []], 'm': 'The server answers. The promise is fulfilled with a Response object. It can never change again.'}, {'l': 2, 'v': [['then #1'], ['pending'], ['res.json() reads the body']], 'm': 'The first then callback runs as a microtask. It returns another promise, so the chain waits for it.'}, {'l': 3, 'v': [['then #2'], ['fulfilled: 1250'], ['order => order.total']], 'm': 'The body is parsed. The second then receives the order and returns its total, 1250.'}, {'l': 4, 'v': [['catch'], ['skipped'], []], 'm': 'Nothing failed, so catch is skipped and the value 1250 passes straight through.'}, {'l': 5, 'v': [['finally'], ['fulfilled: 1250'], ['hideSpinner()']], 'm': 'finally runs either way and keeps the value. If the network had failed, every then would be skipped, catch would return 0, and finally would still hide the spinner.'}]},
     'loop': {'t': 'The event loop runs the queues in order',
              'code': 'console.log("1 start");\nsetTimeout(() => console.log("5 timeout"), 0);\nPromise.resolve().then(() => console.log("3 promise"));\nqueueMicrotask(() => console.log("4 microtask"));\nconsole.log("2 end");',
              'lanes': ['Call stack', 'Microtasks', 'Tasks', 'Console'], 'tone': [2, 1, 3, 4],

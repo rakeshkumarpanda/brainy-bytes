@@ -1,6 +1,6 @@
 # Chapter 12: information and entropy, cross entropy and KL divergence, softmax and log-sum-exp, regression
 # losses, log loss, L1 and L2 regularisation, and classification metrics up to ROC and AUC.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, deep
 
 K = Kit()
 
@@ -1042,6 +1042,199 @@ VIZ_JS = r'''
 
 CSS = r'''
 .rc-roc{max-width:320px; margin:8px auto 0}
+'''
+
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'entropy': deep('information gain and mutual information, worked', f'''
+<p>A decision tree asks one question at a time, such as "is income above 50000?". A good question leaves the groups below it purer, with lower entropy. The drop in entropy is the <b>information gain</b>.</p>
+{worked('Information gain of one split', [
+        'Parent node: 10 customers, 5 bought and 5 did not. Entropy <span class="eq">H = 1 bit</span> (a fair coin).',
+        'Split on "visited twice": left gets 4 customers who all bought (<span class="eq">H = 0</span>). Right gets 6 customers, 1 bought and 5 did not.',
+        'Right entropy: <span class="eq">−(1/6 log₂ 1/6 + 5/6 log₂ 5/6) ≈ 0.431 + 0.219 = 0.650 bits</span>',
+        'Weighted entropy after the split: <span class="eq">0.4 × 0 + 0.6 × 0.650 = 0.390</span>',
+        'Information gain: <span class="eq">1 − 0.390 = 0.610 bits</span>. The tree compares this with every other possible question and keeps the biggest.'])}
+<p>Information gain is a special case of a more general idea, <b>mutual information</b>. It measures how much knowing one variable reduces your uncertainty about another.</p>
+{fx('Mutual information', 'I(X, Y) = H(Y) − H(Y | X) = Σ p(x, y) log [p(x, y) ÷ (p(x) p(y))]', 'It is 0 exactly when X and Y are independent, and it catches curved and non numeric relationships that correlation misses.')}
+{ml('Feature selection often ranks features by their mutual information with the label (scikit learn has mutual_info_classif for this). Unlike correlation, it can spot a feature whose effect is U shaped, and it works for categories such as city or device type.')}
+'''),
+    'xent': deep('cross entropy and KL with real numbers', f'''
+{worked('Reality p = [0.7, 0.2, 0.1], model q = [0.5, 0.3, 0.2], natural logs', [
+        'Entropy of reality: <span class="eq">H(p) = −(0.7 ln 0.7 + 0.2 ln 0.2 + 0.1 ln 0.1) ≈ 0.802</span>',
+        'Cross entropy: <span class="eq">H(p, q) = −(0.7 ln 0.5 + 0.2 ln 0.3 + 0.1 ln 0.2) ≈ 0.887</span>',
+        'KL divergence: <span class="eq">0.887 − 0.802 = 0.085</span> nats of extra surprise per outcome',
+        'If the model changes q to exactly [0.7, 0.2, 0.1], the cross entropy falls to 0.802 and KL to 0. No q can do better than H(p).'])}
+<p>Move the model’s guess q below and watch the three bars. Entropy H(p) never moves, because it belongs to reality. Cross entropy is always at least as big, and the gap between them is the KL divergence. Press Play to let q walk towards p.</p>
+{viz('xentbars')}
+<p><b>Why KL is not symmetric.</b> KL(p ‖ q) punishes q heavily for giving tiny probability to something p says happens often. KL(q ‖ p) punishes the opposite. Generative models choose between them on purpose: one direction makes a model cover every possible output, the other makes it focus on the most common ones.</p>
+'''),
+    'losses': deep('compare the losses and their slopes side by side', f'''
+<p>The shape of a loss decides how hard the model is pushed by each error. Look at the slope (the gradient) as well as the loss itself. MSE pushes in proportion to the error, so one huge outlier gets a huge push. MAE pushes with the same strength whatever the size of the error. Huber behaves like MSE for small errors and like MAE for big ones, with δ choosing where it switches.</p>
+{viz('losscmp')}
+{table(['Error e', 'MSE e²', 'MAE |e|', 'Huber, δ = 1'], [
+        ['0.5', '0.25', '0.5', '0.125'],
+        ['1', '1', '1', '0.5'],
+        ['3', '9', '3', '2.5'],
+        ['10 (an outlier)', '100', '10', '9.5'],
+    ])}
+<p>Another useful loss is the <b>quantile (pinball) loss</b>. It charges q × e for under predictions and (1 − q) × |e| for over predictions. With q = 0.9, under predicting costs nine times more, so the model learns the 90th percentile instead of the middle. Delivery apps and energy forecasters use it to predict "safe" upper estimates.</p>
+'''),
+    'logloss': deep('the loss curve and the famous p − y gradient', f'''
+<p>Slide the predicted probability p below. When the true label is 1, the loss −ln p is gentle near p = 1 and shoots up towards infinity as p heads to 0. Being confidently wrong is punished far more than being unsure.</p>
+{viz('logloss')}
+{worked('Why the gradient is simply p − y', [
+        'The model outputs <span class="eq">p = σ(z)</span>, where z is the score (logit).',
+        'Loss: <span class="eq">L = −[y ln p + (1 − y) ln(1 − p)]</span>',
+        'Slope with respect to p: <span class="eq">∂L/∂p = −y ÷ p + (1 − y) ÷ (1 − p) = (p − y) ÷ (p(1 − p))</span>',
+        'Sigmoid slope (Chapter 6): <span class="eq">∂p/∂z = p(1 − p)</span>',
+        'Chain rule: <span class="eq">∂L/∂z = (p − y) ÷ (p(1 − p)) × p(1 − p) = p − y</span>. The p(1 − p) cancels completely.'])}
+<p>That cancellation is the real reason log loss and sigmoid are always used together. The gradient is just "prediction minus truth", which is large when the model is badly wrong and never gets stuck in the flat ends of the sigmoid. The same thing happens for softmax with cross entropy: the gradient for each class is pᵢ − yᵢ.</p>
+'''),
+    'reg': deep('why L1 gives exact zeros: the picture', f'''
+<p>Regularisation can be seen as a budget on the weights. L2 says the weights must stay inside a circle, w₁² + w₂² ≤ t². L1 says they must stay inside a diamond, |w₁| + |w₂| ≤ t. The best allowed point is where the loss contours (the ellipses) first touch the shape. A diamond has sharp corners sitting exactly on the axes, and the ellipses very often touch at a corner, where one weight is exactly 0. A circle has no corners, so that almost never happens.</p>
+{viz('l1l2')}
+{table(['Method', 'Penalty', 'Effect'], [
+        ['Ridge (L2)', 'λ Σ wⱼ²', 'shrinks all weights smoothly, keeps them all'],
+        ['Lasso (L1)', 'λ Σ |wⱼ|', 'sets some weights exactly to 0, choosing features'],
+        ['Elastic net', 'λ₁ Σ |wⱼ| + λ₂ Σ wⱼ²', 'a mix: sparse like L1 but stable when features are correlated'],
+    ])}
+{ml('There is also a probability reading. L2 regularisation is the same as assuming, before seeing data, that each weight comes from a normal distribution centred on 0. L1 is the same as assuming a Laplace distribution, which has a sharp peak at 0. Chapter 15 shows this link through MAP estimation.')}
+'''),
+    'metrics': deep('choosing the threshold, PR curves and F beta', f'''
+<p>A classifier gives a score, and you choose the threshold that turns scores into yes or no. Raising the threshold flags fewer cases: precision usually goes up and recall goes down. There is no single right threshold. It depends on what each kind of mistake costs.</p>
+{fx('F beta score', f'F<sub>β</sub> = (1 + β²) × {frac("precision × recall", "β² × precision + recall")}', 'β = 1 gives F1. β = 2 counts recall as more important (screening for disease). β = 0.5 counts precision as more important (spam filtering).')}
+{worked('Picking a threshold by cost', [
+        'A missed fraud (FN) costs 500. A false alarm (FP) costs 5, the time to check a payment.',
+        'Threshold 0.5: <span class="eq">FN = 20</span>, <span class="eq">FP = 100</span>. Cost <span class="eq">20 × 500 + 100 × 5 = 10500</span>',
+        'Threshold 0.2: <span class="eq">FN = 8</span>, <span class="eq">FP = 600</span>. Cost <span class="eq">8 × 500 + 600 × 5 = 7000</span>',
+        'The lower threshold has worse precision, but costs less overall, so it is the better business choice.'])}
+<p>When positives are rare (fraud, rare diseases), a <b>precision recall curve</b> is often more honest than the ROC curve. ROC uses the false positive rate, whose bottom FP + TN is huge when negatives are plentiful, so even many false alarms look like a small rate. Precision shows those false alarms directly.</p>
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+
+  /* ----- entropy, cross entropy and KL as three bars ----- */
+  W.xentbars = el => {
+    const b = shell(el, 'Entropy, cross entropy and KL', 'Pick the true distribution p. Move the model’s q₁ and q₂ (q₃ is whatever is left). Press Play to let q walk step by step towards p.');
+    const PS = { soft: [0.7, 0.2, 0.1], hot: [1, 0, 0], uni: [1 / 3, 1 / 3, 1 / 3] };
+    b.innerHTML = `<div class="vz-row">${seg('p', [['soft', 'p = [0.7, 0.2, 0.1]'], ['hot', 'one hot p = [1, 0, 0]'], ['uni', 'uniform p']], 'soft')}</div><div class="mv-wrap"><div class="xb-plot"></div><div class="mv-side">${slider('q1', 'q₁', 0.01, 0.98, 0.5, 0.01)}${slider('q2', 'q₂', 0.01, 0.98, 0.3, 0.01)}<div class="mv-read xb-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let p = PS.soft, q = [0.5, 0.3, 0.2], start = q.slice();
+    const lg = v => v > 0 ? Math.log(v) : 0;
+    function draw() {
+      q[2] = Math.max(0.01, 1 - q[0] - q[1]); const s3 = q[0] + q[1] + q[2]; const Q = q.map(v => v / s3);
+      const H = -p.reduce((a, v) => a + (v > 0 ? v * lg(v) : 0), 0), X = -p.reduce((a, v, i) => a + (v > 0 ? v * Math.log(Q[i]) : 0), 0), K = X - H;
+      const G = MV.frame(440, 280, [0, 10], [0, 1.15]);
+      let s = MV.axes(G, { labels: false });
+      [0, 1, 2].forEach(i => { const x = 0.5 + i * 1.4; s += `<rect class="mv-bar" x="${G.sx(x)}" y="${G.sy(p[i])}" width="${G.sx(0.55) - G.sx(0)}" height="${G.sy(0) - G.sy(p[i])}"/><rect class="mv-bar o" x="${G.sx(x + 0.6)}" y="${G.sy(Q[i])}" width="${G.sx(0.55) - G.sx(0)}" height="${G.sy(0) - G.sy(Q[i])}"/>` + MV.text(G, x + 0.57, 0, 'class ' + (i + 1), { dy: 14, anchor: 'middle', cls: 'sm' }); });
+      const top = Math.max(1.2, X * 1.1), bar = (x, v, c, lab) => { const h = v / top; return `<rect class="mv-bar ${c}" x="${G.sx(x)}" y="${G.sy(h)}" width="${G.sx(0.8) - G.sx(0)}" height="${G.sy(0) - G.sy(h)}"/>` + MV.text(G, x + 0.4, 0, lab, { dy: 14, anchor: 'middle', cls: 'sm' }) + MV.text(G, x + 0.4, h, MV.num(v, 3), { dy: -4, anchor: 'middle', cls: 'sm' }); };
+      s += MV.line(G, 5.1, 0, 5.1, 1.1, 'mv-v k dash') + bar(5.6, H, '', 'H(p)') + bar(7, X, 'o', 'H(p, q)') + bar(8.4, K, 'g', 'KL');
+      $('.xb-plot', b).innerHTML = MV.svg(G, s, 'Distributions and their information measures');
+      $('.xb-out', b).innerHTML = `<div class="mv-legend"><span><i></i>p (reality)</span><span><i class="o"></i>q (model)</span></div>q = [${Q.map(v => MV.num(v, 2)).join(', ')}]<br>H(p) = <b>${MV.num(H, 4)}</b><br>H(p, q) = <b>${MV.num(X, 4)}</b><br>KL(p ‖ q) = <span class="big">${MV.num(K, 4)}</span>` + (K < 0.002 ? '<br>✅ q matches p: no extra surprise.' : '');
+    }
+    const setQ = () => { $('[data-sl="q1"]', b).value = q[0]; $('[data-slv="q1"]', b).textContent = MV.num(q[0]); $('[data-sl="q2"]', b).value = q[1]; $('[data-slv="q2"]', b).textContent = MV.num(q[1]); };
+    const P = Player($('.vz-p', b), t => { const f = t / 10, tgt = p.map(v => Math.min(0.98, Math.max(0.01, v))); q[0] = start[0] + (tgt[0] - start[0]) * f; q[1] = start[1] + (tgt[1] - start[1]) * f; setQ(); draw(); }, 500);
+    wireSeg(b, 'p', k => { p = PS[k]; start = [q[0], q[1], q[2]]; P.load(11, 0); });
+    wireSlider(b, 'q1', v => { P.pause(); q[0] = Math.min(v, 0.99 - q[1]); start = q.slice(); draw(); });
+    wireSlider(b, 'q2', v => { P.pause(); q[1] = Math.min(v, 0.99 - q[0]); start = q.slice(); draw(); });
+    P.load(11, 0);
+  };
+
+  /* ----- MSE, MAE and Huber, as losses or as gradients ----- */
+  W.losscmp = el => {
+    const b = shell(el, 'Three losses and how hard they push', 'Switch between the loss and its gradient. Move δ to change where Huber switches from squared to straight. Press Play to slide the error e outwards.');
+    b.innerHTML = `<div class="vz-row">${seg('v', [['loss', 'Loss'], ['grad', 'Gradient (push)']], 'loss')}</div><div class="mv-wrap"><div class="lo-plot"></div><div class="mv-side">${slider('d', 'Huber δ', 0.25, 3, 1, 0.25)}${slider('e', 'error e', -4, 4, 2, 0.1)}<div class="mv-legend"><span><i></i>MSE</span><span><i class="o"></i>MAE</span><span><i class="g"></i>Huber</span></div><div class="mv-read lo-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let view = 'loss', d = 1, e = 2;
+    const L = { mse: x => x * x, mae: x => Math.abs(x), hub: x => Math.abs(x) <= d ? 0.5 * x * x : d * (Math.abs(x) - 0.5 * d) };
+    const D = { mse: x => 2 * x, mae: x => Math.sign(x), hub: x => Math.abs(x) <= d ? x : d * Math.sign(x) };
+    function draw() {
+      const F = view === 'loss' ? L : D, G = view === 'loss' ? MV.frame(440, 300, [-4, 4], [-0.5, 8]) : MV.frame(440, 300, [-4, 4], [-8, 8]);
+      let s = MV.axes(G, { xstep: 1, ystep: 2, xl: 'e', yl: view === 'loss' ? 'loss' : 'gradient' }) + MV.curve(G, F.mse) + MV.curve(G, F.mae, 'c2') + MV.curve(G, F.hub, 'c3');
+      s += MV.line(G, e, G.yr[0], e, G.yr[1], 'mv-v k dash');
+      ['mse', 'mae', 'hub'].forEach((k, i) => { const y = F[k](e); if (y >= G.yr[0] && y <= G.yr[1]) s += MV.dot(G, e, y, ['', 'o', 'g'][i], 5); });
+      $('.lo-plot', b).innerHTML = MV.svg(G, s, 'Loss curves');
+      const f = v => MV.num(v, 3);
+      $('.lo-out', b).innerHTML = `e = <b>${f(e)}</b><br>MSE: loss ${f(L.mse(e))}, push ${f(D.mse(e))}<br>MAE: loss ${f(L.mae(e))}, push ${f(D.mae(e))}<br>Huber: loss ${f(L.hub(e))}, push ${f(D.hub(e))}<br>` + (Math.abs(e) > d ? 'Beyond δ, Huber pushes with a fixed strength δ, like MAE.' : 'Inside δ, Huber behaves like half of MSE.');
+    }
+    const P = Player($('.vz-p', b), t => { e = t * 0.25; $('[data-sl="e"]', b).value = e; $('[data-slv="e"]', b).textContent = MV.num(e); draw(); }, 300);
+    wireSeg(b, 'v', k => { view = k; draw(); });
+    wireSlider(b, 'd', v => { d = v; draw(); });
+    wireSlider(b, 'e', v => { P.pause(); e = v; draw(); });
+    P.load(17, 8);
+  };
+
+  /* ----- log loss against the predicted probability ----- */
+  W.logloss = el => {
+    const b = shell(el, 'Log loss for one prediction', 'Choose the true label and move the predicted probability p of class 1. Press Play to sweep p from very wrong to very right.');
+    b.innerHTML = `<div class="vz-row">${seg('y', [['1', 'true label y = 1'], ['0', 'true label y = 0']], '1')}</div><div class="mv-wrap"><div class="ll-plot"></div><div class="mv-side">${slider('p', 'predicted p', 0.01, 0.99, 0.6, 0.01)}<div class="mv-read ll-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let y = 1, p = 0.6;
+    const G = MV.frame(440, 300, [0, 1], [0, 5]);
+    function draw() {
+      const f = y === 1 ? (x => -Math.log(x)) : (x => -Math.log(1 - x));
+      let s = MV.axes(G, { xstep: 0.1, ystep: 1, xl: 'p', yl: 'loss' }) + MV.curve(G, f, '', { from: 0.005, to: 0.995 }) + MV.curve(G, y === 1 ? (x => -Math.log(1 - x)) : (x => -Math.log(x)), 'thin dash c4', { from: 0.005, to: 0.995 });
+      const L = f(p);
+      s += MV.dot(G, p, Math.min(5, L), 'o', 7);
+      $('.ll-plot', b).innerHTML = MV.svg(G, s, 'Log loss curve');
+      $('.ll-out', b).innerHTML = `y = ${y}, p = <b>${MV.num(p, 2)}</b><br>loss = ${y === 1 ? '−ln p' : '−ln(1 − p)'} = <span class="big">${MV.num(L, 3)}</span><br>gradient with respect to the logit: p − y = <b>${MV.num(p - y, 2)}</b><br>` +
+        (L > 2 ? '🚨 Confident and wrong: a very large loss.' : L < 0.2 ? '✅ Confident and right: tiny loss.' : 'Unsure: a moderate loss.') + '<br><small>The dashed curve is the loss for the other label.</small>';
+    }
+    const P = Player($('.vz-p', b), t => { p = y === 1 ? 0.01 + t * 0.07 : 0.99 - t * 0.07; $('[data-sl="p"]', b).value = p; $('[data-slv="p"]', b).textContent = MV.num(p); draw(); }, 400);
+    wireSeg(b, 'y', k => { y = +k; draw(); });
+    wireSlider(b, 'p', v => { P.pause(); p = v; draw(); });
+    P.load(15, 8);
+  };
+
+  /* ----- L1 diamond versus L2 circle against loss ellipses ----- */
+  W.l1l2 = el => {
+    const b = shell(el, 'L1 diamond versus L2 circle', 'The ellipses are contours of the loss, whose best point (purple) is where the model would go with no penalty. The shaded shape is the weight budget. The orange dot is the best point inside the budget. Press Play to shrink the budget.');
+    b.innerHTML = `<div class="vz-row">${seg('k', [['l1', 'L1 (diamond)'], ['l2', 'L2 (circle)']], 'l1')}</div><div class="mv-wrap"><div class="lr-plot"></div><div class="mv-side">${slider('t', 'budget t', 0.2, 3.5, 1.5, 0.1)}${slider('cx', 'best w₁ without penalty', -3, 3, 2.5, 0.1)}${slider('cy', 'best w₂ without penalty', -3, 3, 1, 0.1)}<div class="mv-read lr-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let kind = 'l1', t = 1.5, c = [2.5, 1];
+    const A = [[1, 0.6], [0.6, 2]];
+    const loss = (x, y) => { const dx = x - c[0], dy = y - c[1]; return A[0][0] * dx * dx + 2 * A[0][1] * dx * dy + A[1][1] * dy * dy; };
+    const G = MV.frame(400, 400, [-4, 4], [-4, 4]);
+    function best() {
+      const inside = kind === 'l1' ? Math.abs(c[0]) + Math.abs(c[1]) <= t : Math.hypot(c[0], c[1]) <= t;
+      if (inside) return c.slice();
+      let bp = null, bl = Infinity;
+      for (let i = 0; i < 4000; i++) {
+        const a = i / 4000 * 2 * Math.PI; let x, y;
+        if (kind === 'l2') { x = t * Math.cos(a); y = t * Math.sin(a); }
+        else { const u = i / 1000, q = Math.floor(u), f = u - q, P0 = [[t, 0], [0, t], [-t, 0], [0, -t]][q], P1 = [[0, t], [-t, 0], [0, -t], [t, 0]][q]; x = P0[0] + (P1[0] - P0[0]) * f; y = P0[1] + (P1[1] - P0[1]) * f; }
+        const l = loss(x, y); if (l < bl) { bl = l; bp = [x, y]; }
+      }
+      return bp;
+    }
+    function draw() {
+      let s = MV.axes(G, { xstep: 1, ystep: 1, labels: false, xl: 'w₁', yl: 'w₂' });
+      const shape = kind === 'l1' ? `<polygon class="mv-poly g" points="${[[t, 0], [0, t], [-t, 0], [0, -t]].map(p => G.sx(p[0]) + ',' + G.sy(p[1])).join(' ')}"/>` : `<circle class="mv-poly g" cx="${G.sx(0)}" cy="${G.sy(0)}" r="${G.sx(t) - G.sx(0)}"/>`;
+      s += shape;
+      const ev = (() => { const tr = A[0][0] + A[1][1], dt = A[0][0] * A[1][1] - A[0][1] ** 2, r = Math.sqrt(tr * tr / 4 - dt), l1 = tr / 2 + r, l2 = tr / 2 - r, ang = Math.atan2(l1 - A[0][0], A[0][1]); return { l1, l2, ang }; })();
+      [0.5, 2, 4.5, 8, 12.5, 18].forEach(lv => { const pts = []; for (let k = 0; k <= 80; k++) { const th = k / 80 * 2 * Math.PI, u = Math.sqrt(lv / ev.l1) * Math.cos(th), v = Math.sqrt(lv / ev.l2) * Math.sin(th); const x = c[0] + u * Math.cos(ev.ang) - v * Math.sin(ev.ang), y = c[1] + u * Math.sin(ev.ang) + v * Math.cos(ev.ang); pts.push(G.sx(x).toFixed(1) + ',' + G.sy(y).toFixed(1)); } s += `<polyline class="mv-cont" points="${pts.join(' ')}"/>`; });
+      const w = best();
+      s += MV.dot(G, c[0], c[1], 'p', 6) + MV.dot(G, w[0], w[1], 'o', 7);
+      $('.lr-plot', b).innerHTML = MV.svg(G, s, 'Constraint shapes and loss contours');
+      const z = v => Math.abs(v) < 0.02;
+      $('.lr-out', b).innerHTML = `${kind === 'l1' ? '|w₁| + |w₂| ≤ ' : '√(w₁² + w₂²) ≤ '}${MV.num(t)}<br>best weights inside the budget: <b>[${MV.num(z(w[0]) ? 0 : w[0], 2)}, ${MV.num(z(w[1]) ? 0 : w[1], 2)}]</b><br>` +
+        (z(w[0]) || z(w[1]) ? '✂️ One weight is exactly 0: that feature has been switched off.' : 'Both weights are non zero, just shrunk towards 0.');
+    }
+    const P = Player($('.vz-p', b), k => { t = 3.5 - k * 0.3; $('[data-sl="t"]', b).value = t; $('[data-slv="t"]', b).textContent = MV.num(t); draw(); }, 600);
+    wireSeg(b, 'k', v => { kind = v; draw(); });
+    wireSlider(b, 't', v => { P.pause(); t = v; draw(); });
+    wireSlider(b, 'cx', v => { c[0] = v; draw(); });
+    wireSlider(b, 'cy', v => { c[1] = v; draw(); });
+    P.load(12, 7);
+  };
+})();
+'''
+CSS += r'''
+.lr-plot .mv-svg{max-height:420px}
 '''
 
 T = K.topic(

@@ -44,7 +44,7 @@ window.CATALOG = {
     name: 'Brainy Bytes',
     tagline: 'Deep concepts, served with a smile',
     headline: ['Learn it deep.', 'Laugh along the way.'],
-    hello: 'New: Maths for Machine Learning, twelve animated chapters from school basics to expert with interview questions, plus JavaScript, Manual Testing, Java and TestNG',
+    hello: 'New: Maths for Machine Learning, fifteen animated chapters from school basics to expert with interview questions, plus JavaScript, Manual Testing, Java and TestNG',
     intro: 'Free notes that move, joke and run. Every topic comes with animations you can control, everyday examples, step by step code in Java, JavaScript and Python, and practice from easy to expert.',
     footer: 'Brainy Bytes. Free to learn, free to share.',
     searchExamples: ['binary search', 'heap sort', 'two pointers', 'Kadane', 'boundary value analysis', 'bug life cycle', 'constructor chaining', 'HashMap', 'DataProvider', 'listeners'],
@@ -181,7 +181,7 @@ window.CATALOG = {
       emoji: '🐞',
       color: '#f25da0',
       blurb: 'Find bugs before your users do: test design, life cycles, bug reports and test plans.',
-      intro: 'Ten chapters that follow the manual testing notes in order, from what testing is to the test plan. Every diagram is redrawn as an animation, every idea has an everyday example, and each chapter ends with practice programs in Java, Python and JavaScript, quizzes from easy to expert and a narrator in six languages. The last chapter collects the interview questions asked most, with hints and full answers.',
+      intro: 'Fifteen chapters, from what testing is to the test plan, followed by the newer practices every tester now needs: static testing and reviews, security, accessibility, localization and mobile testing, estimation and metrics, Agile and DevOps testing, and AI in testing. Every diagram is an animation you can step through, every idea has an everyday example, and each chapter has hands on labs, quizzes from easy to expert, number practice and a narrator in six languages. The last chapter collects the interview questions asked most, with hints and full answers.',
       tags: ['STLC', 'Test cases', 'Bug life cycle', 'Regression', 'Test plan'],
       modules: mtModules().concat(iqModule('manual-testing'))
     },
@@ -221,7 +221,7 @@ window.CATALOG = {
       emoji: '🔌',
       color: '#8467f0',
       blurb: 'Test APIs by hand from your first HTTP request to security, contracts and AI APIs, with a live playground.',
-      intro: 'One complete course in four levels, from what an API is to contract testing, the OWASP API Top 10 and testing AI and MCP APIs. Every part has an animation or a tool to try, and the live playground lets you send requests to a mock shop API and hunt seven hidden bugs.',
+      intro: 'One complete course in 38 parts and four levels, from what an API is and how to watch real traffic, through files, time zones, race conditions and side effects, to contract testing, fuzzing, the OWASP API Top 10, testing AI and MCP APIs and the newest 2026 standards and tools. Every part has an animation or a tool to try, and the live playground lets you send requests to a mock shop API and hunt seven hidden bugs.',
       tags: ['HTTP', 'Postman', 'Status codes', 'Auth', 'API security'],
       modules: [apiManualModule()]
     },
@@ -230,9 +230,9 @@ window.CATALOG = {
       title: 'API Automation Testing',
       emoji: '🤖',
       color: '#8467f0',
-      blurb: 'Pick a language, then a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript.',
-      intro: 'One page that asks for your programming language first, then for a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, and Postman, Playwright or fetch in JavaScript. Every track runs from a first GET to schema checks, mocking, framework design, parallel runs and CI, with a real world scenario, a quiz, an animated request walkthrough and a hands on sandbox. Every code sample was run against a copy of the Restful Booker practice API.',
-      tags: ['Rest Assured', 'Playwright', 'pytest', 'Postman', 'Newman', 'fetch', 'HttpClient', 'JSON Schema'],
+      blurb: 'Pick a language, then a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript, and Playwright in TypeScript.',
+      intro: 'One page that asks for your programming language first, then for a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript, and Playwright with Zod and OpenAPI generated types in TypeScript. Every track runs from a first GET to schema checks, mocking, framework design, real project essentials (environments, secrets, fake data, safe logging and cleanup), parallel runs, CI and a lesson on the newest tool features, with a real world scenario, a quiz, an animated request walkthrough and a hands on sandbox. Every code sample was run against a copy of the Restful Booker practice API.',
+      tags: ['Rest Assured', 'Playwright', 'TypeScript', 'pytest', 'Postman', 'Newman', 'fetch', 'HttpClient', 'JSON Schema', 'Zod'],
       page: 'content/api-automation/api-automation.html'
     },
     {
@@ -302,16 +302,16 @@ window.CATALOG = {
       emoji: '🐍',
       color: '#3776ab',
       blurb: 'Python from your first variable to classes, files, testing and automation scripts.',
-      intro: 'A full Python course for beginners and testers. It covers the core language, data structures, object oriented code, files, error handling, pytest and scripts that automate everyday work.',
-      tags: ['Basics', 'Collections', 'OOP', 'pytest', 'Scripting'],
-      modules: [soonModule([
+      intro: 'A full Python course for beginners and testers. It starts with how Python really runs your code, from the first character CPython reads to the last line of output, with an animation you can type into, real Python in your browser and a line by line viewer. Chapters on the core language, data structures, object oriented code, files, error handling, pytest and scripts that automate everyday work follow.',
+      tags: ['How Python runs', 'Bytecode', 'Basics', 'Collections', 'OOP', 'pytest'],
+      modules: pyModules().concat([soonModule([
         ['Python basics', '👋', 'Variables, types, input and output.'],
         ['Control flow and functions', '🔁', 'Conditions, loops and reusable functions.'],
         ['Lists, tuples, sets and dictionaries', '📦', 'The built in collections and when to use each.'],
         ['Object oriented Python', '🧱', 'Classes, inheritance and dunder methods.'],
         ['Files and error handling', '📁', 'Read and write files and handle exceptions.'],
         ['Testing with pytest', '🧪', 'Fixtures, parametrize and plugins.']
-      ])]
+      ])])
     },
     {
       id: 'ml-maths',
@@ -319,7 +319,7 @@ window.CATALOG = {
       emoji: '📐',
       color: '#0ea5e9',
       blurb: 'The linear algebra, calculus, probability and statistics that machine learning is built on.',
-      intro: 'Twelve chapters that start from school arithmetic and climb to the maths inside real models. Every idea is shown as a step by step animation you can control, worked through with examples, and run as code in Python, JavaScript, TypeScript and Java.',
+      intro: 'Fifteen chapters that start from school arithmetic and climb to the maths inside real models, ending with an advanced module on matrix factorisations, Taylor series and automatic differentiation, and Bayesian inference with sampling. Every idea is shown as a step by step animation you can control, worked through with examples, and run as code in Python, JavaScript, TypeScript and Java.',
       tags: ['Linear algebra', 'Calculus', 'Probability', 'Statistics', 'Loss and metrics'],
       modules: mlMathModules().concat(iqModule('ml-maths'))
     },
@@ -1305,6 +1305,8 @@ function mtModules() {
           { id: "principles", title: "The seven principles of testing", emoji: "📜", group: 'Lesson', keywords: ["seven testing principles", "ISTQB", "presence of defects", "exhaustive testing impossible", "early testing", "defect clustering", "pesticide paradox", "context dependent", "absence of errors fallacy"] },
           { id: "cost", title: "Why a late bug costs more", emoji: "💸", group: 'Lesson', keywords: ["cost of a bug", "shift left", "early testing", "requirement review", "rework", "phase", "production defect"] },
           { id: "roles", title: "Who does what in a software company", emoji: "👥", group: 'Lesson', keywords: ["business analyst", "product analyst", "architect", "development manager", "developer", "test engineer", "test lead", "test manager", "build team", "customer"] },
+          { id: "qa-qc", title: "QA, QC and testing: three different jobs", emoji: "🏭", group: 'Lesson', keywords: ["QA, QC and testing: three different jobs", "process", "product", "Testing"] }, // mt2
+          { id: "oracle-mindset", title: "Test oracles and the tester mindset", emoji: "🧠", group: 'Lesson', keywords: ["Test oracles and the tester mindset", "test oracle"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1326,6 +1328,8 @@ function mtModules() {
           { id: "vmodel", title: "The V and V model (V model)", emoji: "✌️", group: 'Lesson', keywords: ["V model", "verification and validation", "review", "CRS", "SRS", "HLD", "LLD", "acceptance test document", "system test document", "integration test document", "functional test document", "UAT", "system testing", "integration testing", "functional testing", "white box testing"] },
           { id: "agile", title: "Agile and Scrum", emoji: "🏃", group: 'Lesson', keywords: ["agile", "scrum", "iterative incremental", "user story", "sprint", "release", "scrum team", "scrum master", "product owner", "pigs and chickens", "product backlog", "sprint backlog", "carry forward", "sprint planning", "daily stand up", "retrospective", "kick off"] },
           { id: "choose", title: "Hybrid models and choosing a model", emoji: "🧭", group: 'Lesson', keywords: ["hybrid model", "spiral plus prototype", "prototype plus V", "choosing SDLC model", "comparison of models"] },
+          { id: "kanban-devops", title: "Kanban, scaled Agile and DevOps", emoji: "♾️", group: 'Lesson', keywords: ["Kanban, scaled Agile and DevOps", "WIP limit"] }, // mt2
+          { id: "testing-per-model", title: "Where testing happens in each model", emoji: "🧪", group: 'Lesson', keywords: ["Where testing happens in each model"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1354,6 +1358,7 @@ function mtModules() {
           { id: "statement-vs-branch", title: "Full statements, half the branches", emoji: '🏋️', group: "Hard practice" },
           { id: "dead-stores", title: "Find dead stores in a tiny program", emoji: '🏋️', group: "Expert practice" },
           { id: "cheapest-check-order", title: "Order checks for the lowest expected cost", emoji: '🏋️', group: "Expert practice" },
+          { id: "mcdc-mutation", title: "Stronger coverage: MC/DC and mutation testing", emoji: "🧬", group: 'Lesson', keywords: ["each single condition", "mutants", "killed", "survived"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1374,6 +1379,8 @@ function mtModules() {
           { id: "adhoc", title: "Ad hoc and exploratory testing", emoji: "🐒", group: 'Lesson', keywords: ["ad hoc testing", "monkey testing", "random testing", "negative scenarios", "exploratory testing", "requirement missing", "domain expert"] },
           { id: "uat", title: "User acceptance testing, alpha and beta", emoji: "🤝", group: 'Lesson', keywords: ["UAT", "user acceptance testing", "customer", "business scenarios", "domain expert", "alpha testing", "beta testing", "service based", "product based", "trial version"] },
           { id: "levels", title: "The levels of testing at a glance", emoji: "📶", group: 'Lesson', keywords: ["levels of testing", "unit", "integration", "system", "acceptance", "functional vs non functional"] },
+          { id: "pos-neg", title: "Positive, negative and end to end testing", emoji: "➕", group: 'Lesson', keywords: ["End to end (E2E) testing"] }, // mt2
+          { id: "api-level", title: "Testing below the screen: APIs and system integration", emoji: "🔌", group: 'Lesson', keywords: ["APIs"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1393,10 +1400,32 @@ function mtModules() {
           { id: "builds", title: "The build process", emoji: "📦", group: 'Lesson', keywords: ["build", "version control", "build tool", "compile", "compress", "zip", "war", "jar", "build number", "install on test server", "test cycle"] },
           { id: "respin", title: "Respin, patch and blocker", emoji: "🩹", group: 'Lesson', keywords: ["respin", "patch", "blocker bug", "hot fix", "test cycle", "temporary fix", "permanent fix", "tube puncture analogy"] },
           { id: "release", title: "Release, version and the road to production", emoji: "🚀", group: 'Lesson', keywords: ["release", "version", "release vs version", "final product", "UAT", "production", "Cheeta", "Tiger", "Lion"] },
+          { id: "test-data", title: "Test data: realistic, safe and ready", emoji: "🗃️", group: 'Lesson', keywords: ["Test data: realistic, safe and ready", "Test data management"] }, // mt2
+          { id: "cloud-envs", title: "Cloud, containers and environments on demand", emoji: "☁️", group: 'Lesson', keywords: [] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
-      }
+      },
+      { /* mt2-block-start */
+        id: "static-testing", title: "Static Testing and Reviews", emoji: "🔎",
+        page: "content/manual-testing/static-testing.html",
+        summary: "Testing without running the program: verification and validation, requirement reviews, the five step review process, review roles, informal reviews, walkthroughs, technical reviews and inspections, and static analysis tools.",
+        keywords: ["What static testing is", "Dynamic testing", "never", "Verification and validation", "Verification", "Validation", "Reviewing a requirement like a tester", "1. What is the input?", "2. What is the expected output?", "3. How do I know it passed?", "The review process in five steps", "Who does what in a review", "Static analysis: tools that read for you", "Making reviews work in a real team", "Review rate", "Defect density of a document", "Savings"],
+        added: "2026-10-24",
+        sections: [
+          { id: "what-static", title: "What static testing is", emoji: "📄", group: 'Lesson', keywords: ["What static testing is", "Dynamic testing", "never"] },
+          { id: "what-review", title: "What can be reviewed, and what reviews find", emoji: "🗂️", group: 'Lesson', keywords: [] },
+          { id: "verval", title: "Verification and validation", emoji: "✌️", group: 'Lesson', keywords: ["Verification and validation", "Verification", "Validation"] },
+          { id: "req-review", title: "Reviewing a requirement like a tester", emoji: "🕵️", group: 'Lesson', keywords: ["Reviewing a requirement like a tester", "1. What is the input?", "2. What is the expected output?", "3. How do I know it passed?"] },
+          { id: "process", title: "The review process in five steps", emoji: "🔁", group: 'Lesson', keywords: ["The review process in five steps"] },
+          { id: "roles", title: "Who does what in a review", emoji: "👥", group: 'Lesson', keywords: ["Who does what in a review"] },
+          { id: "types", title: "Four types of review, from a chat to an inspection", emoji: "🪜", group: 'Lesson', keywords: [] },
+          { id: "analysis", title: "Static analysis: tools that read for you", emoji: "🤖", group: 'Lesson', keywords: ["Static analysis: tools that read for you"] },
+          { id: "success", title: "Making reviews work in a real team", emoji: "🌱", group: 'Lesson', keywords: ["Making reviews work in a real team", "Review rate", "Defect density of a document", "Savings"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */
       ]
     },
     {
@@ -1419,6 +1448,8 @@ function mtModules() {
           { id: "rtm", title: "The repository and the RTM", emoji: "🧭", group: 'Lesson', keywords: ["test case repository", "baseline", "centralised", "smoke test cases", "requirement traceability matrix", "RTM", "CRM", "missing test case", "drawback"] },
           { id: "ter", title: "The test execution report", emoji: "📊", group: 'Lesson', keywords: ["test execution report", "TER", "pass percentage", "fail percentage", "modules", "exit criteria", "stability"] },
           { id: "stlc", title: "STLC: the software testing life cycle", emoji: "🔁", group: 'Lesson', keywords: ["STLC", "software testing life cycle", "system study", "test plan", "test documents", "RTM", "test execution", "defect tracking", "TER", "retrospect", "post mortem"] },
+          { id: "use-case", title: "Use case testing and checklist based testing", emoji: "🎭", group: 'Lesson', keywords: ["use case", "main flow", "alternative flows", "exception flows", "checklists"] }, // mt2
+          { id: "good-cases", title: "Writing test cases that others can run", emoji: "✨", group: 'Lesson', keywords: ["Writing test cases that others can run"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1439,6 +1470,8 @@ function mtModules() {
           { id: "severity", title: "Severity and priority", emoji: "🚦", group: 'Lesson', keywords: ["severity", "priority", "blocker", "critical", "major", "minor", "urgent", "P1", "P2", "P3", "P4", "impact", "which bug first", "examples"] },
           { id: "report", title: "Writing the bug report", emoji: "📝", group: 'Lesson', keywords: ["bug report template", "bug id", "test case name", "module", "status", "reporter", "assigned to", "CC", "release", "version", "severity", "priority", "test data", "server", "OS and browser", "build", "screenshot", "brief description", "steps to reproduce", "observation", "expected result"] },
           { id: "tools", title: "Bug tracking tools and queries", emoji: "🛠️", group: 'Lesson', keywords: ["bug tracking tool", "Jira", "Bugzilla", "Mantis", "Quality Center", "ALM", "manual bug report drawbacks", "logging a bug", "query", "search", "comments"] },
+          { id: "triage", title: "The defect triage meeting", emoji: "🚑", group: 'Lesson', keywords: ["The defect triage meeting", "Triage"] }, // mt2
+          { id: "rca", title: "Root cause analysis: 5 whys and the fishbone", emoji: "🌳", group: 'Lesson', keywords: ["root cause"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1463,6 +1496,8 @@ function mtModules() {
           { id: "auto-lc", title: "The automation life cycle", emoji: "⚙️", group: 'Lesson', keywords: ["automation life cycle", "manual team", "automation team", "test cases", "stable application", "tool", "script execution", "failed scripts", "manual retest"] },
           { id: "cant-automate", title: "What cannot be automated", emoji: "🚧", group: 'Lesson', keywords: ["cannot automate", "unstable features", "captcha", "virtual keyboard", "OTP", "complex", "human judgement", "usability"] },
           { id: "compare", title: "The classic comparisons", emoji: "⚖️", group: 'Lesson', keywords: ["smoke vs sanity", "static vs dynamic", "verification", "validation", "QA vs QC", "quality assurance", "quality control", "functional vs non-functional", "preventive", "detective"] },
+          { id: "what-first", title: "Choosing what to automate first", emoji: "🥇", group: 'Lesson', keywords: ["Choosing what to automate first", "test pyramid", "cost to build + cost to maintain", "manual time saved"] }, // mt2
+          { id: "flaky", title: "Flaky tests and why they matter", emoji: "🎲", group: 'Lesson', keywords: ["Flaky tests and why they matter", "flaky test"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
@@ -1481,10 +1516,30 @@ function mtModules() {
           { id: "performance", title: "Performance testing", emoji: "🚀", group: 'Lesson', keywords: ["performance testing", "response time", "load", "stability", "virtual users", "LoadRunner", "JMeter", "script", "scenario", "distribute load", "result graph", "average", "maximum", "minimum", "percentile"] },
           { id: "bottleneck", title: "Bottlenecks and tuning", emoji: "🧪", group: 'Lesson', keywords: ["bottleneck", "tuning", "analyse results", "architect", "DBA", "network admin", "code", "database", "server", "hardware", "network", "re-execute"] },
           { id: "types", title: "Load, stress, scalability, volume and soak", emoji: "📈", group: 'Lesson', keywords: ["load testing", "stress testing", "scalability testing", "stability testing", "volume testing", "soak testing", "endurance testing", "desired load", "upward", "downward", "crash"] },
+          { id: "iso25010", title: "The quality model: ISO/IEC 25010:2023", emoji: "🏅", group: 'Lesson', keywords: ["The quality model: ISO/IEC 25010:2023", "ISO/IEC 25010"] }, // mt2
+          { id: "reliability", title: "Reliability, recovery and installation testing", emoji: "🛟", group: 'Lesson', keywords: ["MTBF", "MTTR"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
-      }
+      },
+      { /* mt2-block-start */
+        id: "specialised", title: "Security, Accessibility, Localization and Mobile Testing", emoji: "🛡️",
+        page: "content/manual-testing/specialised-testing.html",
+        summary: "The specialised checks every manual tester is now expected to know: security basics and the OWASP Top 10 2025, accessibility with WCAG 2.2 and the European Accessibility Act, globalization and localization, mobile app testing, and privacy testing.",
+        keywords: ["Security testing: what it protects", "CIA triad", "The OWASP Top 10 (2025) for testers", "OWASP Top 10:2025", "Accessibility: software for everyone", "WCAG", "2.2", "AAA", "How to test accessibility by hand", "4.5 : 1", "3 : 1", "can", "for one", "Mobile app testing", "Privacy and data protection testing"],
+        added: "2026-10-24",
+        sections: [
+          { id: "security", title: "Security testing: what it protects", emoji: "🔐", group: 'Lesson', keywords: ["Security testing: what it protects", "CIA triad"] },
+          { id: "owasp", title: "The OWASP Top 10 (2025) for testers", emoji: "🔟", group: 'Lesson', keywords: ["The OWASP Top 10 (2025) for testers", "OWASP Top 10:2025"] },
+          { id: "a11y", title: "Accessibility: software for everyone", emoji: "♿", group: 'Lesson', keywords: ["Accessibility: software for everyone", "WCAG", "2.2", "AAA"] },
+          { id: "a11y-how", title: "How to test accessibility by hand", emoji: "⌨️", group: 'Lesson', keywords: ["How to test accessibility by hand", "4.5 : 1", "3 : 1"] },
+          { id: "l10n", title: "Globalization: one product, many countries", emoji: "🌍", group: 'Lesson', keywords: ["can", "for one"] },
+          { id: "mobile", title: "Mobile app testing", emoji: "📱", group: 'Lesson', keywords: ["Mobile app testing"] },
+          { id: "privacy", title: "Privacy and data protection testing", emoji: "🔏", group: 'Lesson', keywords: ["Privacy and data protection testing"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */
       ]
     },
     {
@@ -1506,12 +1561,75 @@ function mtModules() {
           { id: "tools", title: "Tools", emoji: "🛠️", group: 'Lesson', keywords: ["tools", "functional testing tool", "performance testing tool", "test management tool", "licences", "UFT", "QTP", "Selenium", "LoadRunner", "JMeter", "Quality Center", "ALM", "Jira", "virtual users"] },
           { id: "criteria", title: "Entry and exit criteria", emoji: "🚦", group: 'Lesson', keywords: ["entry criteria", "exit criteria", "coding completed", "build installed", "test documents prepared", "resources ready", "executed percentage", "pass percentage", "blocker", "critical", "major", "minor", "release decision"] },
           { id: "more", title: "Parallel testing and the whole journey", emoji: "🧭", group: 'Lesson', keywords: ["parallel testing", "old and new version", "same inputs", "anomalies", "hot fix", "latent bug", "golden bug", "the testing journey", "STLC"] },
+          { id: "strategy", title: "Test strategy and test approaches", emoji: "♟️", group: 'Lesson', keywords: ["Test strategy and test approaches", "test strategy", "test plan", "test approaches"] }, // mt2
+          { id: "risk-based", title: "Risk based testing in practice", emoji: "🎯", group: 'Lesson', keywords: ["Risk based testing in practice", "Risk based testing", "likelihood", "impact", "risk level"] }, // mt2
           { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
           { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
         ]
-      }
+      },
+      { /* mt2-block-start */
+        id: "metrics", title: "Test Estimation, Metrics and Reporting", emoji: "📊",
+        page: "content/manual-testing/test-metrics.html",
+        summary: "How long testing will take and how to show where it stands: estimation techniques (work breakdown, three point, planning poker, Wideband Delphi), test progress metrics, defect metrics such as DRE, leakage and density, coverage, test status and completion reports, test closure, and the traps of measuring people.",
+        keywords: ["Why testers measure", "Goal, Question, Metric (GQM)", "Estimating test effort", "Measuring test progress", "burndown chart", "Coverage: what have we really checked", "Test status and completion reports", "test status report", "test completion report", "Test closure: finishing properly", "Test completion"],
+        added: "2026-10-24",
+        sections: [
+          { id: "why-measure", title: "Why testers measure", emoji: "🎯", group: 'Lesson', keywords: ["Why testers measure", "Goal, Question, Metric (GQM)"] },
+          { id: "estimation", title: "Estimating test effort", emoji: "⏳", group: 'Lesson', keywords: ["Estimating test effort"] },
+          { id: "progress", title: "Measuring test progress", emoji: "📈", group: 'Lesson', keywords: ["Measuring test progress", "burndown chart"] },
+          { id: "defect-metrics", title: "Defect metrics that show how good testing is", emoji: "🐞", group: 'Lesson', keywords: [] },
+          { id: "coverage", title: "Coverage: what have we really checked", emoji: "🧩", group: 'Lesson', keywords: ["Coverage: what have we really checked"] },
+          { id: "reporting", title: "Test status and completion reports", emoji: "📰", group: 'Lesson', keywords: ["Test status and completion reports", "test status report", "test completion report"] },
+          { id: "closure", title: "Test closure: finishing properly", emoji: "📦", group: 'Lesson', keywords: ["Test closure: finishing properly", "Test completion"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */
       ]
-    }
+    },
+    { /* mt2-module-start */
+      id: "mt-modern", title: "Modern testing practice", emoji: "🧭", blurb: "How testing works in Agile and DevOps teams today, and how AI is changing the job.",
+      topics: [
+      { /* mt2-block-start */
+        id: "agile-devops", title: "Agile, DevOps and Shift Left Testing", emoji: "🔄",
+        page: "content/manual-testing/agile-devops-testing.html",
+        summary: "How testers work in modern teams: the whole team approach, user stories and acceptance criteria, Given When Then and BDD, Definition of Ready and Done, the agile testing quadrants, the test pyramid, CI and CD pipelines with quality gates, shift left and shift right, canary releases, feature flags and monitoring.",
+        keywords: ["The whole team owns quality", "The whole team", "User stories and acceptance criteria", "user story", "bank customer", "set a daily transfer limit", "Acceptance criteria", "INVEST", "Given, When, Then", "Scenario", "Given", "And", "The agile testing quadrants", "agile testing quadrants", "business", "technology", "guide the team", "critique the product", "The test pyramid", "test pyramid", "ice cream cone", "CI, CD and quality gates", "Continuous integration (CI)", "Continuous delivery (CD)"],
+        added: "2026-10-24",
+        sections: [
+          { id: "whole-team", title: "The whole team owns quality", emoji: "🤝", group: 'Lesson', keywords: ["The whole team owns quality", "The whole team"] },
+          { id: "stories", title: "User stories and acceptance criteria", emoji: "📝", group: 'Lesson', keywords: ["User stories and acceptance criteria", "user story", "bank customer", "set a daily transfer limit", "Acceptance criteria", "INVEST", "Given, When, Then", "Scenario", "Given", "And"] },
+          { id: "dor-dod", title: "Definition of Ready and Definition of Done", emoji: "✅", group: 'Lesson', keywords: [] },
+          { id: "quadrants", title: "The agile testing quadrants", emoji: "🧭", group: 'Lesson', keywords: ["The agile testing quadrants", "agile testing quadrants", "business", "technology", "guide the team", "critique the product"] },
+          { id: "pyramid", title: "The test pyramid", emoji: "🔺", group: 'Lesson', keywords: ["The test pyramid", "test pyramid", "ice cream cone"] },
+          { id: "cicd", title: "CI, CD and quality gates", emoji: "🚦", group: 'Lesson', keywords: ["CI, CD and quality gates", "Continuous integration (CI)", "Continuous delivery (CD)", "Continuous deployment", "quality gate"] },
+          { id: "shift", title: "Shift left and shift right", emoji: "↔️", group: 'Lesson', keywords: ["Shift left and shift right", "Shift left", "Shift right"] },
+          { id: "sbtm", title: "Exploratory testing that the team can trust", emoji: "🧭", group: 'Lesson', keywords: ["Exploratory testing", "session based test management (SBTM)", "Explore", "with", "to discover"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */,
+      { /* mt2-block-start */
+        id: "ai-testing", title: "AI in Testing and Testing AI", emoji: "🤖",
+        page: "content/manual-testing/ai-in-testing.html",
+        summary: "The newest part of a tester's job: using generative AI as a testing assistant, writing good prompts, the risks of hallucination, bias and data leaks, AI features inside test tools, and how to test AI powered products with evaluation sets, rubrics and metamorphic testing. Includes the ISTQB CT-AI and CT-GenAI certifications.",
+        keywords: ["What generative AI is, in plain words", "large language model (LLM)", "AI as a testing assistant", "Writing prompts that give useful answers", "Weak prompt", "Strong prompt", "The risks of using AI in testing", "AI inside testing tools", "Testing a product that contains AI", "test oracle problem", "Quality risks special to AI", "EU AI Act", "Growing as a tester in the AI era"],
+        added: "2026-10-24",
+        sections: [
+          { id: "ai-basics", title: "What generative AI is, in plain words", emoji: "🧠", group: 'Lesson', keywords: ["What generative AI is, in plain words", "large language model (LLM)"] },
+          { id: "ai-assist", title: "AI as a testing assistant", emoji: "🧑‍💻", group: 'Lesson', keywords: ["AI as a testing assistant"] },
+          { id: "prompting", title: "Writing prompts that give useful answers", emoji: "✍️", group: 'Lesson', keywords: ["Writing prompts that give useful answers", "Weak prompt", "Strong prompt"] },
+          { id: "ai-risks", title: "The risks of using AI in testing", emoji: "⚠️", group: 'Lesson', keywords: ["The risks of using AI in testing"] },
+          { id: "ai-tools", title: "AI inside testing tools", emoji: "🛠️", group: 'Lesson', keywords: ["AI inside testing tools"] },
+          { id: "testing-ai", title: "Testing a product that contains AI", emoji: "🔬", group: 'Lesson', keywords: ["Testing a product that contains AI", "test oracle problem"] },
+          { id: "ai-quality", title: "Quality risks special to AI", emoji: "⚖️", group: 'Lesson', keywords: ["Quality risks special to AI", "EU AI Act"] },
+          { id: "ai-career", title: "Growing as a tester in the AI era", emoji: "🎓", group: 'Lesson', keywords: ["Growing as a tester in the AI era"] },
+          { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+          { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+        ]
+      } /* mt2-block-end */
+      ]
+    } /* mt2-module-end */
   ];
 }
 
@@ -1800,8 +1918,8 @@ function apiManualModule() {
       {
         id: 'manual-api-testing', title: 'Manual API Testing: Basics to Expert', emoji: '🔌',
         page: 'content/api-testing/manual-api-testing.html',
-        summary: 'Web services, SOAP and REST, HTTP, methods, status codes, headers, JSON, REST, SOAP, GraphQL and gRPC, Postman and curl, OpenAPI, JWT and OAuth 2.0 with PKCE, test design, validation, chaining, pagination, rate limits, caching, idempotency keys, Problem Details, the OWASP API Top 10, performance, async APIs, contract testing, mocking, CI, AI and MCP APIs, with a live mock API playground, seven hidden bugs and 68 interview questions.',
-        keywords: ['API testing', 'manual API testing', 'REST', 'HTTP', 'status codes', 'Postman', 'curl', 'Bruno', 'OpenAPI', 'Swagger', 'JWT', 'OAuth', 'PKCE', 'idempotency', 'ETag', '304', '429', 'rate limit', 'pagination', 'BOLA', 'OWASP API Top 10', 'mass assignment', 'Problem Details', 'RFC 9457', 'GraphQL', 'gRPC', 'WebSocket', 'webhook', 'contract testing', 'Pact', 'WireMock', 'Newman', 'percentile', 'p95', 'MCP', 'LLM API', 'web service', 'SOAP', 'WSDL', 'Richardson Maturity Model', 'HATEOAS', 'interview questions'],
+        summary: 'Web services, SOAP and REST, HTTP, methods, status codes, headers, JSON, REST, SOAP, GraphQL and gRPC, Postman and curl, DevTools, HAR files and proxies, OpenAPI, JWT and OAuth 2.0 with PKCE, test types, test design, validation, chaining, pagination, rate limits, caching, idempotency keys, Problem Details, file uploads, dates, money and Unicode edge cases, race conditions, database and log checks, TLS, CORS and HTTP/3, the OWASP API Top 10, performance, async APIs, contract testing, mocking, fuzzing with ZAP, Burp Suite and Schemathesis, CI, AI and MCP APIs and the latest 2026 standards, with a live mock API playground, seven hidden bugs and 78 interview questions.',
+        keywords: ['API testing', 'manual API testing', 'REST', 'HTTP', 'status codes', 'Postman', 'curl', 'Bruno', 'OpenAPI', 'Swagger', 'JWT', 'OAuth', 'PKCE', 'idempotency', 'ETag', '304', '429', 'rate limit', 'pagination', 'BOLA', 'OWASP API Top 10', 'mass assignment', 'Problem Details', 'RFC 9457', 'GraphQL', 'gRPC', 'WebSocket', 'webhook', 'contract testing', 'Pact', 'WireMock', 'Newman', 'percentile', 'p95', 'MCP', 'LLM API', 'web service', 'SOAP', 'WSDL', 'Richardson Maturity Model', 'HATEOAS', 'smoke testing', 'regression', 'DevTools', 'HAR', 'Charles', 'mitmproxy', 'multipart', 'file upload', 'presigned URL', 'time zone', 'Unicode', 'race condition', 'If-Match', 'CORS', 'TLS', 'mTLS', 'HTTP/3', 'fuzzing', 'OWASP ZAP', 'Burp Suite', 'Schemathesis', 'QUERY method', 'RFC 10008', 'Postman 12', 'interview questions'],
         added: '2026-10-20',
         sections: [
           { id: 'what-is-api', title: "What an API is and why we test it", emoji: '🔌', group: 'Level 1 · Foundations' },
@@ -1815,8 +1933,10 @@ function apiManualModule() {
           { id: 'data-formats', title: "JSON, XML and other payloads", emoji: '🧾', group: 'Level 1 · Foundations' },
           { id: 'api-styles', title: "REST, SOAP, GraphQL, gRPC, WebSocket and webhooks", emoji: '🧭', group: 'Level 1 · Foundations' },
           { id: 'tools', title: "Tools: Postman, curl, Bruno and friends", emoji: '🧰', group: 'Level 2 · Core skills' },
+          { id: 'debugging', title: "Seeing real traffic: DevTools, HAR files and proxies", emoji: '🔎', group: 'Level 2 · Core skills', keywords: ['DevTools', 'Network tab', 'Copy as cURL', 'HAR', 'Charles', 'Fiddler', 'Proxyman', 'mitmproxy', 'certificate pinning'] },
           { id: 'api-docs', title: "Reading API docs and OpenAPI", emoji: '📘', group: 'Level 2 · Core skills' },
           { id: 'auth', title: "Authentication and authorization", emoji: '🔐', group: 'Level 2 · Core skills' },
+          { id: 'test-types', title: "Types of API testing and when to use each", emoji: '🧩', group: 'Level 2 · Core skills', keywords: ['smoke', 'sanity', 'functional', 'integration', 'regression', 'non functional', 'synthetic monitoring', 'exploratory'] },
           { id: 'test-design', title: "Designing API test cases", emoji: '✍️', group: 'Level 2 · Core skills' },
           { id: 'validations', title: "What to check in every response", emoji: '✅', group: 'Level 2 · Core skills' },
           { id: 'chaining', title: "Variables, chaining and end to end flows", emoji: '🔗', group: 'Level 2 · Core skills' },
@@ -1824,12 +1944,18 @@ function apiManualModule() {
           { id: 'pagination', title: "Pagination, filtering and sorting", emoji: '📄', group: 'Level 3 · Advanced' },
           { id: 'rate-limits', title: "Rate limits, caching and idempotency keys", emoji: '⏱️', group: 'Level 3 · Advanced' },
           { id: 'errors', title: "Error handling and Problem Details", emoji: '🧯', group: 'Level 3 · Advanced' },
+          { id: 'files', title: "File uploads and downloads", emoji: '📎', group: 'Level 3 · Advanced', keywords: ['multipart/form-data', 'presigned URL', '413', 'Content-Disposition', '206 Partial Content', 'resumable upload'] },
+          { id: 'edge-data', title: "Dates, money, text and language edge cases", emoji: '🌐', group: 'Level 3 · Advanced', keywords: ['ISO 8601', 'time zone', 'daylight saving', 'floating point', 'paise', 'Unicode', 'NFC', 'Accept-Language'] },
+          { id: 'concurrency', title: "Concurrency, race conditions and double clicks", emoji: '🏁', group: 'Level 3 · Advanced', keywords: ['race condition', 'oversell', 'lost update', 'If-Match', '412', '428', 'optimistic locking'] },
+          { id: 'backend', title: "Checking side effects: database, queues, emails and logs", emoji: '🗄️', group: 'Level 3 · Advanced', keywords: ['database validation', 'SQL', 'Kafka', 'Mailpit', 'trace id', 'traceparent', 'audit log'] },
+          { id: 'transport', title: "HTTPS, TLS certificates, CORS and HTTP versions", emoji: '🔒', group: 'Level 3 · Advanced', keywords: ['TLS', 'certificate', 'mTLS', 'HSTS', 'CORS', 'preflight', 'HTTP/2', 'HTTP/3', 'QUIC'] },
           { id: 'security', title: "API security testing: the OWASP API Top 10", emoji: '🛡️', group: 'Level 3 · Advanced' },
           { id: 'performance', title: "Performance testing for APIs", emoji: '📈', group: 'Level 3 · Advanced' },
           { id: 'async', title: "Async APIs: webhooks, polling and queues", emoji: '📬', group: 'Level 3 · Advanced' },
           { id: 'scenarios', title: "Real world scenario walkthroughs", emoji: '🌍', group: 'Level 3 · Advanced' },
           { id: 'contracts', title: "Contract testing and versioning", emoji: '🤝', group: 'Level 4 · Expert and latest' },
           { id: 'mocking', title: "Mocks, service virtualization and test data", emoji: '🎭', group: 'Level 4 · Expert and latest' },
+          { id: 'fuzzing', title: "Security tools and fuzzing: ZAP, Burp Suite and Schemathesis", emoji: '🐛', group: 'Level 4 · Expert and latest', keywords: ['fuzzing', 'OWASP ZAP', 'Burp Suite', 'Repeater', 'Intruder', 'Schemathesis', 'RESTler', 'property based testing'] },
           { id: 'graphql-grpc', title: "Testing GraphQL, gRPC, WebSocket and SSE", emoji: '📡', group: 'Level 4 · Expert and latest' },
           { id: 'cicd', title: "API tests in CI, monitoring and observability", emoji: '🔭', group: 'Level 4 · Expert and latest' },
           { id: 'ai-apis', title: "Testing AI and LLM APIs and MCP servers", emoji: '🤖', group: 'Level 4 · Expert and latest' },
@@ -1874,6 +2000,29 @@ function jsModules() {
         { id: "seconds", title: "Milliseconds to seconds", emoji: "🏋️", group: "Medium practice" },
         { id: "summary", title: "Count the results", emoji: "🏋️", group: "Hard practice" },
         { id: "stack-line", title: "Find the line in a stack trace", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "js-how-it-runs", title: "How a JavaScript Program Runs Inside the Engine", emoji: "⚙️", page: "content/javascript/js-how-it-runs.html",
+        summary: "The full journey of a JavaScript program compared with Java and Python: engine and runtime, loading and the CommonJS wrapper, scanning into tokens, parsing into an AST with early errors and lazy parsing, the creation phase and the temporal dead zone, real V8 Ignition bytecode, the call stack, the heap and garbage collection, the JIT tiers with a real deoptimisation trace, the event loop with a simulator, module construction, linking and evaluation, and a frozen page caused by a long task.",
+        keywords: ["how JavaScript runs", "JavaScript execution", "JavaScript internals", "engine", "runtime", "V8", "scanner", "tokens", "parser", "AST", "bytecode", "Ignition", "Sparkplug", "Maglev", "TurboFan", "JIT", "deoptimisation", "call stack", "heap", "garbage collection", "event loop", "hoisting", "execution context", "module linking", "interview"],
+        added: "2026-10-24",
+        sections: [
+        { id: "big-picture", title: "The journey of a JavaScript program", emoji: "🗺️", group: "Lesson", keywords: ["JavaScript engine", "runtime", "host", "V8", "SpiderMonkey", "JavaScriptCore", "Node.js", "libuv", "Web APIs", "how JavaScript runs", "JavaScript vs Java", "JIT"] },
+        { id: "loading", title: "Step 1: loading the source text", emoji: "📥", group: "Lesson", keywords: ["script loading", "module wrapper", "CommonJS", "require", "__dirname", "__filename", "ES module", "type module", "bundler", "defer"] },
+        { id: "scanning", title: "Step 2: the scanner cuts text into tokens", emoji: "🔤", group: "Lesson", keywords: ["scanner", "lexer", "tokenizer", "tokens", "keyword", "identifier", "punctuator", "literal", "longest match", "automatic semicolon insertion", "ASI", "numeric separator"] },
+        { id: "parsing", title: "Step 3: the parser builds a syntax tree", emoji: "🌳", group: "QA essential", keywords: ["parser", "AST", "abstract syntax tree", "SyntaxError", "early errors", "lazy parsing", "pre-parsing", "IIFE", "node --check", "grammar"] },
+        { id: "creation", title: "Step 4: scopes and the creation phase", emoji: "🏗️", group: "Lesson", keywords: ["execution context", "creation phase", "execution phase", "hoisting", "temporal dead zone", "TDZ", "var", "let", "const", "function declaration", "global execution context"] },
+        { id: "bytecode", title: "Step 5: Ignition turns the tree into bytecode", emoji: "⚙️", group: "Lesson", keywords: ["bytecode", "Ignition", "interpreter", "accumulator", "register machine", "feedback vector", "type feedback", "--print-bytecode", "Ldar", "Star"] },
+        { id: "execution", title: "Step 6: running: the call stack, the heap and garbage collection", emoji: "📚", group: "QA essential", keywords: ["call stack", "stack frame", "heap", "reference", "primitive", "copy by value", "shared object", "garbage collection", "roots", "reachability", "young generation", "old generation", "Orinoco", "WeakRef", "memory leak", "Maximum call stack size exceeded"] },
+        { id: "jit", title: "Step 7: hot code gets compiled: Sparkplug, Maglev and TurboFan", emoji: "🚀", group: "Lesson", keywords: ["JIT", "just in time", "Sparkplug", "Maglev", "TurboFan", "machine code", "optimisation", "deoptimisation", "deopt", "type feedback", "hot function", "--trace-opt", "--trace-deopt", "SpiderMonkey Warp", "JavaScriptCore FTL"] },
+        { id: "runtime", title: "Step 8: the runtime, Web APIs and the event loop", emoji: "🔄", group: "QA essential", keywords: ["event loop", "call stack", "Web APIs", "libuv", "task queue", "macrotask", "callback queue", "microtask queue", "setTimeout", "Promise then", "queueMicrotask", "single thread", "non blocking", "rendering"] },
+        { id: "modules", title: "Modules: load, link, then evaluate", emoji: "📦", group: "Lesson", keywords: ["ES modules", "module graph", "construction", "linking", "evaluation", "live binding", "import hoisting", "module runs once", "top level await", "CommonJS vs ESM"] },
+        { id: "scenario", title: "Real world scenario: a frozen page on sale day", emoji: "🎬", group: "QA essential", keywords: ["long task", "blocking the event loop", "responsive UI", "chunking", "setTimeout 0", "scheduler.yield", "Web Worker", "INP", "Interaction to Next Paint", "Lighthouse", "performance bug"] },
+        { id: "hoisted", title: "What does early access give", emoji: "🏋️", group: "Easy practice" },
+        { id: "accumulator", title: "Run bytecode with an accumulator", emoji: "🏋️", group: "Medium practice" },
+        { id: "loop-order", title: "Predict the console", emoji: "🏋️", group: "Hard practice" },
+        { id: "module-order", title: "Which module runs first", emoji: "🏋️", group: "Expert practice" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] },
@@ -1957,13 +2106,14 @@ function jsModules() {
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] },
       { id: "js-strings-dates-json", title: "Strings, Regex, Numbers, Dates and JSON", emoji: "🔤", page: "content/javascript/js-strings-dates-json.html",
-        summary: "String methods and Unicode, normalising page text for comparisons, regular expressions with groups, lookahead and flags, regex in Playwright, Cypress and Jest, Math and rounding traps, Intl.NumberFormat for currencies, Date and time zone traps, Temporal, JSON with replacers and revivers, JSON fixture files and validating an order API response.",
-        keywords: ["string", "regex", "regular expression", "Math", "Intl.NumberFormat", "currency", "Date", "time zone", "Temporal", "JSON", "JSON.parse", "JSON.stringify", "fixtures", "toMatch", "toMatchObject"],
+        summary: "String methods and Unicode, normalising page text for comparisons, regular expressions with groups, lookahead and flags, regex in Playwright, Cypress and Jest, Math and rounding traps, Intl.NumberFormat for currencies, Intl for relative times, plurals, lists, display names, graphemes and sorting, Date and time zone traps, Temporal, JSON with replacers and revivers, JSON fixture files and validating an order API response.",
+        keywords: ["string", "regex", "regular expression", "Math", "Intl.NumberFormat", "currency", "Intl", "localisation", "PluralRules", "Segmenter", "Date", "time zone", "Temporal", "JSON", "JSON.parse", "JSON.stringify", "fixtures", "toMatch", "toMatchObject"],
         added: "2026-10-20",
         sections: [
         { id: "strings", title: "Working with strings", emoji: "🔤", group: "QA essential", keywords: ["string", "trim", "includes", "startsWith", "slice", "split", "replace", "replaceAll", "padStart", "toUpperCase", "unicode", "normalize", "localeCompare", "whitespace", "non breaking space"] },
         { id: "regex", title: "Regular expressions", emoji: "🧷", group: "QA essential", keywords: ["regular expression", "regex", "RegExp", "test", "match", "matchAll", "replace", "capture group", "named group", "lookahead", "flags", "toMatch", "toHaveText regex", "stringMatching", "RegExp.escape"] },
         { id: "math", title: "Math and number formatting", emoji: "🧮", group: "QA essential", keywords: ["Math", "Math.round", "Math.floor", "Math.ceil", "Math.random", "random integer", "toFixed", "Intl.NumberFormat", "currency format", "percent", "compact notation"] },
+        { id: "intl", title: "Intl: one app, every language and country", emoji: "🌐", group: "QA essential", keywords: ["Intl", "internationalisation", "i18n", "localisation", "l10n", "locale", "NumberFormat", "DateTimeFormat", "RelativeTimeFormat", "PluralRules", "ListFormat", "DisplayNames", "Segmenter", "Collator", "grapheme", "CLDR", "lakh", "timezoneId"] },
         { id: "dates", title: "Dates, time zones and Temporal", emoji: "📅", group: "QA essential", keywords: ["Date", "Date.UTC", "toISOString", "getTime", "timestamp", "time zone", "UTC", "Intl.DateTimeFormat", "Temporal", "PlainDate", "ZonedDateTime", "Duration", "fake timers", "page.clock", "cy.clock"] },
         { id: "json", title: "JSON", emoji: "📄", group: "QA essential", keywords: ["JSON", "JSON.stringify", "JSON.parse", "replacer", "reviver", "pretty print", "fixtures", "cy.fixture", "import JSON", "import attributes"] },
         { id: "scenario", title: "Real world scenario: validate an order API response", emoji: "🎬", group: "QA essential", keywords: ["API response validation", "toMatchObject", "expect.stringMatching", "expect.any", "JSON body", "ISO date check", "currency check"] },
@@ -1975,8 +2125,8 @@ function jsModules() {
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] },
       { id: "js-collections-iterators", title: "Map, Set, Iterators and Generators", emoji: "🗂️", page: "content/javascript/js-collections-iterators.html",
-        summary: "Map and when it beats an object, getOrInsert, Set with union, intersection and difference, WeakMap and WeakRef, the iteration protocol, lazy iterator helpers, generators that pause and resume, async generators and for await for paginated APIs, symbols and well known symbols, and comparing an expected menu with the real one.",
-        keywords: ["Map", "Set", "union", "intersection", "difference", "WeakMap", "WeakRef", "iterator", "iterable", "iterator helpers", "generator", "yield", "async generator", "for await", "pagination", "Symbol"],
+        summary: "Map and when it beats an object, getOrInsert, Set with union, intersection and difference, WeakMap and WeakRef, the iteration protocol, lazy iterator helpers, generators that pause and resume, async generators and for await for paginated APIs, binary data with typed arrays, DataView, encodings, SharedArrayBuffer and Atomics, symbols and well known symbols, and comparing an expected menu with the real one.",
+        keywords: ["Map", "Set", "ArrayBuffer", "typed array", "Uint8Array", "DataView", "SharedArrayBuffer", "Atomics", "union", "intersection", "difference", "WeakMap", "WeakRef", "iterator", "iterable", "iterator helpers", "generator", "yield", "async generator", "for await", "pagination", "Symbol"],
         added: "2026-10-20",
         sections: [
         { id: "map", title: "Map", emoji: "🗺️", group: "QA essential", keywords: ["Map", "set", "get", "has", "delete", "size", "insertion order", "object keys", "counter", "getOrInsert", "cache"] },
@@ -1984,6 +2134,7 @@ function jsModules() {
         { id: "weak", title: "WeakMap, WeakSet and WeakRef", emoji: "🪶", group: "Lesson", keywords: ["WeakMap", "WeakSet", "WeakRef", "FinalizationRegistry", "garbage collection", "memory leak"] },
         { id: "iterators", title: "Iterators and iterator helpers", emoji: "🔁", group: "Lesson", keywords: ["iterable", "iterator", "Symbol.iterator", "next", "done", "iteration protocol", "iterator helpers", "take", "drop", "toArray", "Iterator.from", "lazy evaluation"] },
         { id: "generators", title: "Generators and async generators", emoji: "⏯️", group: "QA essential", keywords: ["generator", "function*", "yield", "yield*", "next", "lazy", "async generator", "for await", "pagination", "Array.fromAsync"] },
+        { id: "binary", title: "Binary data: ArrayBuffer, typed arrays and DataView", emoji: "🧱", group: "QA essential", keywords: ["ArrayBuffer", "typed array", "Uint8Array", "Int32Array", "Float64Array", "Uint8ClampedArray", "DataView", "endianness", "little endian", "big endian", "TextEncoder", "TextDecoder", "UTF-8", "subarray", "slice", "SharedArrayBuffer", "Atomics", "magic number", "file signature"] },
         { id: "symbols", title: "Symbols", emoji: "🔣", group: "Lesson", keywords: ["Symbol", "Symbol.for", "unique key", "well known symbols", "Symbol.iterator", "Symbol.toPrimitive", "Symbol.asyncIterator"] },
         { id: "scenario", title: "Real world scenario: compare a menu and walk every page", emoji: "🎬", group: "QA essential", keywords: ["compare menu", "expected vs actual", "set difference", "duplicates", "pagination", "async generator", "for await"] },
         { id: "unique", title: "Unique, in order", emoji: "🏋️", group: "Easy practice" },
@@ -2055,8 +2206,8 @@ function jsModules() {
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] },
       { id: "js-dom-browser", title: "The DOM and the Browser", emoji: "🌐", page: "content/javascript/js-dom-browser.html",
-        summary: "The DOM tree and how to move around it, CSS selectors including :has and attribute selectors, XPath by text and ancestor, which locators stay stable, textContent against innerHTML and XSS, events with capture and bubble, delegation and trusted events, form values and validation, shadow DOM and iframes in each test tool, waiting with MutationObserver, localStorage, sessionStorage and cookies, and checking every row of an order table.",
-        keywords: ["DOM", "querySelector", "CSS selector", "XPath", "locator", "getByRole", "data-test", "textContent", "innerHTML", "XSS", "event", "bubbling", "delegation", "form validation", "shadow DOM", "iframe", "MutationObserver", "localStorage", "cookie"],
+        summary: "The DOM tree and how to move around it, CSS selectors including :has and attribute selectors, XPath by text and ancestor, which locators stay stable, textContent against innerHTML and XSS, events with capture and bubble, delegation and trusted events, form values and validation, shadow DOM and iframes in each test tool, waiting with MutationObserver, the rendering pipeline from style to composite with requestAnimationFrame, layout thrashing and IntersectionObserver, localStorage, sessionStorage and cookies, and checking every row of an order table.",
+        keywords: ["DOM", "querySelector", "CSS selector", "XPath", "locator", "getByRole", "data-test", "textContent", "innerHTML", "XSS", "event", "bubbling", "delegation", "form validation", "shadow DOM", "iframe", "MutationObserver", "rendering", "layout", "paint", "requestAnimationFrame", "IntersectionObserver", "localStorage", "cookie"],
         added: "2026-10-20",
         sections: [
         { id: "dom", title: "The DOM tree", emoji: "🌳", group: "QA essential", keywords: ["DOM", "document", "element", "node", "tree", "getElementById", "querySelector", "querySelectorAll", "closest", "NodeList", "parentElement"] },
@@ -2065,6 +2216,7 @@ function jsModules() {
         { id: "events", title: "Events", emoji: "🖱️", group: "QA essential", keywords: ["event", "addEventListener", "click", "capture", "bubble", "event delegation", "target", "currentTarget", "preventDefault", "stopPropagation", "CustomEvent", "dispatchEvent", "isTrusted", "force click"] },
         { id: "forms", title: "Forms and validation", emoji: "📝", group: "QA essential", keywords: ["form", "input", "value", "checked", "select", "validation", "checkValidity", "validity", "required", "FormData", "submit", "requestSubmit", "boundary values"] },
         { id: "advanced", title: "Shadow DOM, iframes and observers", emoji: "🧱", group: "QA essential", keywords: ["shadow DOM", "shadowRoot", "web components", "custom elements", "iframe", "contentDocument", "frameLocator", "switchTo frame", "MutationObserver", "wait for element"] },
+        { id: "rendering", title: "How the browser draws the page", emoji: "🎨", group: "QA essential", keywords: ["rendering pipeline", "critical rendering path", "DOM", "CSSOM", "style", "layout", "reflow", "paint", "composite", "requestAnimationFrame", "layout thrashing", "IntersectionObserver", "ResizeObserver", "requestIdleCallback", "scheduler.yield", "element is not stable", "visual regression"] },
         { id: "storage", title: "Storage and cookies", emoji: "🍪", group: "QA essential", keywords: ["localStorage", "sessionStorage", "cookie", "document.cookie", "HttpOnly", "SameSite", "storageState", "session", "login state"] },
         { id: "scenario", title: "Real world scenario: check an order table", emoji: "🎬", group: "QA essential", keywords: ["table", "rows", "cells", "scrape", "data validation", "totals", "price parsing", "UI data check"] },
         { id: "selector", title: "Build a CSS selector", emoji: "🏋️", group: "Easy practice" },
@@ -2075,14 +2227,16 @@ function jsModules() {
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] },
       { id: "js-http-node", title: "HTTP, fetch and Node.js Servers", emoji: "📡", page: "content/javascript/js-http-node.html",
-        summary: "A raw HTTP exchange, methods and status codes, fetch with GET and POST and why it does not reject on 404, building URLs with the URL class, token login and access checks, an Express REST API with proper status codes, reading CSV test data and writing reports, running other programs, and a mock API with reset, fault injection and delays.",
-        keywords: ["HTTP", "status code", "fetch", "URL", "URLSearchParams", "Bearer token", "401", "403", "Express", "REST", "middleware", "fs", "path", "child_process", "mock server", "fault injection"],
+        summary: "A raw HTTP exchange, methods and status codes, fetch with GET and POST and why it does not reject on 404, building URLs with the URL class, token login and access checks, an Express REST API with proper status codes, CORS checked the way a browser does it, Server-Sent Events and WebSockets, reading CSV test data and writing reports, running other programs, and a mock API with reset, fault injection and delays.",
+        keywords: ["HTTP", "status code", "fetch", "URL", "URLSearchParams", "Bearer token", "401", "403", "Express", "REST", "middleware", "CORS", "preflight", "SSE", "WebSocket", "fs", "path", "child_process", "mock server", "fault injection"],
         added: "2026-10-20",
         sections: [
         { id: "http", title: "How HTTP works", emoji: "📨", group: "QA essential", keywords: ["HTTP", "request", "response", "method", "GET", "POST", "PUT", "PATCH", "DELETE", "status code", "headers", "body", "idempotent", "200", "201", "404", "500"] },
         { id: "fetch", title: "fetch and URLs", emoji: "📡", group: "QA essential", keywords: ["fetch", "Response", "res.ok", "res.status", "res.json", "headers", "POST body", "Content-Type", "URL", "URLSearchParams", "encodeURIComponent", "query string"] },
         { id: "auth", title: "Authentication: 401 against 403", emoji: "🔑", group: "QA essential", keywords: ["authentication", "authorization", "token", "Bearer", "Authorization header", "401", "403", "JWT", "session", "roles", "access control"] },
         { id: "server", title: "Writing a server with Express", emoji: "🖥️", group: "QA essential", keywords: ["Express", "server", "route", "middleware", "req.params", "req.query", "req.body", "res.status", "res.json", "REST", "CRUD", "201", "204", "400"] },
+        { id: "cors", title: "CORS and the same origin policy", emoji: "🛂", group: "QA essential", keywords: ["CORS", "same origin policy", "origin", "preflight", "OPTIONS", "Access-Control-Allow-Origin", "Access-Control-Allow-Methods", "Access-Control-Allow-Headers", "credentials", "Vary Origin", "works in Postman fails in browser"] },
+        { id: "realtime", title: "Real time: Server-Sent Events and WebSockets", emoji: "📶", group: "QA essential", keywords: ["real time", "Server-Sent Events", "SSE", "EventSource", "text/event-stream", "WebSocket", "ws", "101 Switching Protocols", "polling", "push", "routeWebSocket", "live updates"] },
         { id: "node", title: "Node.js core modules", emoji: "🧰", group: "QA essential", keywords: ["fs", "fs/promises", "readFile", "writeFile", "mkdir", "path", "path.join", "os", "process.argv", "child_process", "execFile", "CSV", "test data"] },
         { id: "scenario", title: "Real world scenario: a mock API for UI tests", emoji: "🎬", group: "QA essential", keywords: ["mock API", "mock server", "test double", "fault injection", "reset state", "health check", "page.route", "cy.intercept", "Express"] },
         { id: "status", title: "Group a status code", emoji: "🏋️", group: "Easy practice" },
@@ -2179,7 +2333,7 @@ function jsModules() {
         { id: "symbols", title: "Well known symbols", emoji: "🔣", group: "QA essential", keywords: ["Symbol.toPrimitive", "Symbol.hasInstance", "Symbol.toStringTag", "Symbol.iterator", "util.inspect.custom", "toJSON", "well known symbols", "secrets in logs"] },
         { id: "proxy", title: "Proxy and Reflect", emoji: "🪞", group: "QA essential", keywords: ["Proxy", "Reflect", "trap", "get trap", "set trap", "has", "deleteProperty", "apply", "construct", "validation proxy", "negative index", "auto mock", "step logging"] },
         { id: "tagged", title: "Tagged template literals", emoji: "🏷️", group: "QA essential", keywords: ["tagged template", "template literal", "String.raw", "escape HTML", "SQL injection", "parameterised query", "dedent", "gql"] },
-        { id: "decorators", title: "Decorators", emoji: "🎀", group: "Lesson", keywords: ["decorators", "stage 3", "@decorator", "method decorator", "TypeScript decorators", "Babel"] },
+        { id: "decorators", title: "Decorators", emoji: "🎀", group: "Lesson", keywords: ["decorators", "stage 2.7", "@decorator", "method decorator", "TypeScript decorators", "Babel"] },
         { id: "scenario", title: "Real world scenario: a fluent API client", emoji: "🎬", group: "QA essential", keywords: ["API client", "fluent API", "Proxy", "REST", "URL builder", "fake fetch"] },
         { id: "readonly", title: "A read only view", emoji: "🏋️", group: "Easy practice" },
         { id: "defaults", title: "Defaults for missing keys", emoji: "🏋️", group: "Medium practice" },
@@ -2407,16 +2561,17 @@ function jsModules() {
       ] }
     ] },
     { id: "js-expert", title: "Expert and latest", emoji: "🧠", blurb: "The newest language features, performance, patterns, security and the habits of expert JavaScript developers and testers.", topics: [
-      { id: "js-modern", title: "Modern JavaScript: ES2020 to 2026", emoji: "🆕", page: "content/javascript/js-modern.html",
-        summary: "The yearly release process and a table of editions, ES2020 to ES2023 features for safer access and copies, ES2024 and ES2025 grouping, iterator helpers, Set methods and safer regular expressions, the newest features such as using and await using, Error.isError and base64, Temporal for dates, ages, time zones and durations, and modernising an old helper with a check that its results did not change.",
-        keywords: ["ES2020", "ES2021", "ES2022", "ES2023", "ES2024", "ES2025", "ES2026", "optional chaining", "nullish coalescing", "toSorted", "groupBy", "iterator helpers", "RegExp.escape", "Promise.try", "using", "Symbol.dispose", "Temporal", "latest JavaScript"],
+      { id: "js-modern", title: "Modern JavaScript: ES2020 to ES2027", emoji: "🆕", page: "content/javascript/js-modern.html",
+        summary: "The yearly release process and a table of editions, ES2020 to ES2023 features for safer access and copies, ES2024 and ES2025 grouping, iterator helpers, Set methods and safer regular expressions, the newest features such as using and await using, Error.isError and base64, Temporal for dates, ages, time zones and durations, feature detection and the proposals coming next, and modernising an old helper with a check that its results did not change.",
+        keywords: ["ES2020", "ES2021", "ES2022", "ES2023", "ES2024", "ES2025", "ES2026", "ES2027", "DisposableStack", "getOrInsert", "feature detection", "optional chaining", "nullish coalescing", "toSorted", "groupBy", "iterator helpers", "RegExp.escape", "Promise.try", "using", "Symbol.dispose", "Temporal", "latest JavaScript"],
         added: "2026-10-20",
         sections: [
         { id: "yearly", title: "How JavaScript grows every year", emoji: "📅", group: "Lesson", keywords: ["ECMAScript", "ES2015", "ES6", "ES2020", "ES2021", "ES2022", "ES2023", "ES2024", "ES2025", "ES2026", "TC39", "stage 4", "browser support"] },
         { id: "es2020", title: "ES2020 to ES2023: safer access and copies", emoji: "❓", group: "QA essential", keywords: ["optional chaining", "?.", "nullish coalescing", "??", "BigInt", "logical assignment", "??=", "replaceAll", "at", "Object.hasOwn", "error cause", "findLast", "toSorted", "toReversed", "toSpliced", "with", "change by copy"] },
         { id: "es2024", title: "ES2024 and ES2025: grouping, iterators, safer regexes", emoji: "🧰", group: "QA essential", keywords: ["Object.groupBy", "Map.groupBy", "Promise.withResolvers", "v flag", "isWellFormed", "iterator helpers", "Set methods", "RegExp.escape", "Promise.try", "duplicate named groups", "regex modifiers", "Float16Array", "import attributes"] },
-        { id: "es2026", title: "Arriving now: using, Error.isError and more", emoji: "🆕", group: "QA essential", keywords: ["using", "await using", "Symbol.dispose", "Symbol.asyncDispose", "explicit resource management", "Error.isError", "Array.fromAsync", "toBase64", "fromBase64", "getOrInsertComputed", "Iterator.concat", "JSON.parse source"] },
+        { id: "es2026", title: "ES2026 and ES2027: using, Error.isError, upsert and more", emoji: "🆕", group: "QA essential", keywords: ["ES2026", "ES2027", "using", "await using", "Symbol.dispose", "Symbol.asyncDispose", "explicit resource management", "DisposableStack", "AsyncDisposableStack", "SuppressedError", "Error.isError", "Array.fromAsync", "toBase64", "fromBase64", "toHex", "getOrInsert", "getOrInsertComputed", "upsert", "Iterator.concat", "JSON.parse source", "JSON.rawJSON", "Math.sumPrecise"] },
         { id: "temporal", title: "Temporal: dates done right", emoji: "🕰️", group: "QA essential", keywords: ["Temporal", "PlainDate", "PlainDateTime", "ZonedDateTime", "Instant", "Duration", "time zone", "daylight saving", "leap year", "age check", "immutable dates"] },
+        { id: "next", title: "What comes next, and how to check before you use it", emoji: "🔭", group: "QA essential", keywords: ["feature detection", "browser support", "TC39 stages", "stage 3", "iterator chunks", "windows", "Iterator.zip", "zipKeyed", "iterator join", "iterator includes", "Math.sumPrecise", "import defer", "decorators stage 2.7", "Math.clamp"] },
         { id: "scenario", title: "Real world scenario: modernise safely", emoji: "🎬", group: "QA essential", keywords: ["refactoring", "modernise", "legacy code", "characterisation test", "optional chaining", "groupBy", "toSorted"] },
         { id: "safe", title: "Safe access with defaults", emoji: "🏋️", group: "Easy practice" },
         { id: "copy", title: "Sort without side effects", emoji: "🏋️", group: "Medium practice" },
@@ -2974,10 +3129,111 @@ function mlMathModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "advanced", title: "Advanced maths for ML", emoji: "🚀", blurb: "The next level: matrix factorisations and tensors, Taylor series, Newton’s method and automatic differentiation, and Bayesian inference with sampling.", topics: [
+      { id: "decompositions", title: "Orthogonality, Matrix Decompositions and Tensors", emoji: "🧱", page: "content/ml-maths/decompositions.html",
+        summary: "Orthonormal bases and orthogonal matrices, Gram Schmidt and A = QR, quadratic forms, positive definite and indefinite matrices with Sylvester’s test, LU and Cholesky with forward and back substitution, least squares as a projection with the normal equations and the pseudo inverse, Frobenius and spectral norms, trace, condition number and lost digits, tensor shapes and broadcasting.",
+        keywords: ["orthonormal", "orthogonal matrix", "gram schmidt", "qr decomposition", "quadratic form", "positive definite", "cholesky", "lu decomposition", "least squares", "normal equations", "pseudo inverse", "frobenius norm", "spectral norm", "condition number", "tensor", "broadcasting"],
+        added: "2026-10-24",
+        sections: [
+        { id: "orth", title: "Orthogonal vectors and orthonormal bases", emoji: "📐", group: "Lesson", keywords: ["orthogonal", "orthonormal", "orthonormal basis", "orthogonal matrix", "perpendicular", "coordinates", "Q transpose Q"] },
+        { id: "gram", title: "Gram Schmidt and the QR decomposition", emoji: "🧹", group: "Lesson", keywords: ["gram schmidt", "qr decomposition", "orthonormalise", "projection", "upper triangular", "least squares qr"] },
+        { id: "posdef", title: "Quadratic forms and positive definite matrices", emoji: "🥣", group: "Lesson", keywords: ["quadratic form", "positive definite", "positive semi definite", "indefinite", "sylvester test", "leading minors", "hessian", "covariance matrix"] },
+        { id: "lu", title: "LU and Cholesky: solving systems fast", emoji: "🧩", group: "Lesson", keywords: ["lu decomposition", "cholesky", "forward substitution", "back substitution", "triangular", "factorisation", "gaussian process"] },
+        { id: "lstsq", title: "Least squares as a projection", emoji: "📏", group: "Lesson", keywords: ["least squares", "projection", "column space", "normal equations", "residual", "pseudo inverse", "linear regression geometry"] },
+        { id: "norms", title: "Matrix norms, trace and the condition number", emoji: "🎚️", group: "Lesson", keywords: ["matrix norm", "frobenius norm", "spectral norm", "trace", "condition number", "ill conditioned", "singular values", "spectral normalisation"] },
+        { id: "tensors", title: "Tensors, shapes and broadcasting", emoji: "🧊", group: "Lesson", keywords: ["tensor", "shape", "axis", "broadcasting", "batch dimension", "numpy", "pytorch", "shape mismatch"] },
+        { id: "orth-check", title: "Is this set orthonormal?", emoji: "🏋️", group: "Easy practice" },
+        { id: "qr-line", title: "Fit a line with QR", emoji: "🏋️", group: "Medium practice" },
+        { id: "posdef", title: "Sylvester’s test for positive definiteness", emoji: "🏋️", group: "Hard practice" },
+        { id: "chain-cost", title: "The cheapest order for a chain of products", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "taylor-autodiff", title: "Taylor Series, Newton’s Method and Automatic Differentiation", emoji: "🧠", page: "content/ml-maths/taylor-autodiff.html",
+        summary: "Taylor polynomials and radius of convergence, Newton’s method and quadratic convergence, the Hessian and quasi Newton methods, gradients of aᵀx, xᵀAx and ‖Xw − y‖², forward mode with dual numbers and reverse mode with a tape, why backpropagation is reverse mode, vanishing and exploding gradients with initialisation, normalisation and residual connections, convex functions and Jensen’s inequality with KL divergence, overflow, underflow, cancellation, log-sum-exp and gradient checking.",
+        keywords: ["taylor series", "maclaurin", "newton method", "quadratic convergence", "hessian", "matrix calculus", "automatic differentiation", "forward mode", "reverse mode", "dual numbers", "backpropagation", "vanishing gradient", "exploding gradient", "convex", "jensen inequality", "log sum exp", "gradient checking", "numerical stability"],
+        added: "2026-10-24",
+        sections: [
+        { id: "taylor", title: "Taylor series: curves as polynomials", emoji: "🪜", group: "Lesson", keywords: ["taylor series", "maclaurin", "polynomial approximation", "factorial", "radius of convergence", "remainder", "linear approximation", "quadratic approximation"] },
+        { id: "newton", title: "Newton’s method for roots and minimums", emoji: "🎯", group: "Lesson", keywords: ["newton method", "newton raphson", "root finding", "quadratic convergence", "hessian", "second order optimisation", "l-bfgs", "quasi newton"] },
+        { id: "matcalc", title: "Matrix calculus: gradients without index pain", emoji: "🧮", group: "Lesson", keywords: ["matrix calculus", "gradient of quadratic form", "jacobian", "hessian", "normal equations", "shape check", "vector derivative"] },
+        { id: "autodiff", title: "Automatic differentiation: forward and reverse mode", emoji: "🤖", group: "Lesson", keywords: ["automatic differentiation", "autodiff", "forward mode", "reverse mode", "dual numbers", "computational graph", "backpropagation", "tape", "jacobian vector product"] },
+        { id: "vanish", title: "Vanishing and exploding gradients", emoji: "📉", group: "Lesson", keywords: ["vanishing gradient", "exploding gradient", "sigmoid derivative", "relu", "xavier initialisation", "he initialisation", "residual connection", "gradient clipping", "batch normalisation"] },
+        { id: "convex", title: "Convexity and Jensen’s inequality", emoji: "🥣", group: "Lesson", keywords: ["convex function", "concave", "chord", "jensen inequality", "global minimum", "kl divergence non negative", "elbo", "second derivative test"] },
+        { id: "numerics", title: "Numerical stability: when maths meets floating point", emoji: "🧯", group: "Lesson", keywords: ["numerical stability", "overflow", "underflow", "catastrophic cancellation", "log sum exp", "stable softmax", "finite difference", "gradient checking", "machine epsilon", "mixed precision"] },
+        { id: "taylor-e", title: "How many terms does e need?", emoji: "🏋️", group: "Easy practice" },
+        { id: "cuberoot", title: "Cube root with Newton’s method", emoji: "🏋️", group: "Medium practice" },
+        { id: "grad-check", title: "Gradient check for logistic regression", emoji: "🏋️", group: "Hard practice" },
+        { id: "newton-2d", title: "Newton’s method on the Rosenbrock banana", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "bayes-sampling", title: "Bayesian Inference, Markov Chains and Sampling", emoji: "🎰", page: "content/ml-maths/bayes-sampling.html",
+        summary: "Joint tables, marginals by summing, conditionals by dividing, independence and the chain rule of probability, the multivariate normal with Mahalanobis distance and Cholesky sampling, priors, likelihoods and posteriors with the Beta Binomial update, MLE versus MAP and priors as regularisation, transition matrices and stationary distributions with PageRank, Monte Carlo error 1 ÷ √n, inverse transform, rejection and importance sampling, Metropolis with burn in and step size, Markov, Chebyshev and Hoeffding bounds and PAC learning.",
+        keywords: ["joint distribution", "marginal", "conditional", "multivariate normal", "mahalanobis", "bayesian inference", "prior", "posterior", "beta binomial", "map", "markov chain", "stationary distribution", "pagerank", "monte carlo", "inverse transform", "mcmc", "metropolis", "hoeffding", "chebyshev"],
+        added: "2026-10-24",
+        sections: [
+        { id: "joint", title: "Joint, marginal and conditional distributions", emoji: "🧩", group: "Lesson", keywords: ["joint distribution", "marginal distribution", "conditional distribution", "independence", "product rule", "chain rule of probability", "contingency table"] },
+        { id: "mvn", title: "The multivariate normal and Mahalanobis distance", emoji: "🥚", group: "Lesson", keywords: ["multivariate normal", "gaussian", "covariance matrix", "mahalanobis distance", "ellipse", "cholesky sampling", "anomaly detection"] },
+        { id: "bayes", title: "Bayesian inference: priors, posteriors and MAP", emoji: "🪙", group: "Lesson", keywords: ["bayesian inference", "prior", "likelihood", "posterior", "beta distribution", "conjugate prior", "map estimate", "mle", "credible interval", "regularisation as prior"] },
+        { id: "markov", title: "Markov chains and stationary distributions", emoji: "🔁", group: "Lesson", keywords: ["markov chain", "transition matrix", "stationary distribution", "steady state", "pagerank", "irreducible", "aperiodic", "markov property"] },
+        { id: "montecarlo", title: "Monte Carlo and inverse transform sampling", emoji: "🎲", group: "Lesson", keywords: ["monte carlo", "simulation", "law of large numbers", "standard error", "inverse transform sampling", "box muller", "rejection sampling", "importance sampling"] },
+        { id: "mcmc", title: "MCMC and the Metropolis algorithm", emoji: "⛓️", group: "Lesson", keywords: ["mcmc", "markov chain monte carlo", "metropolis", "metropolis hastings", "burn in", "acceptance rate", "proposal", "hamiltonian monte carlo", "posterior sampling"] },
+        { id: "concentration", title: "Concentration inequalities and the law of large numbers", emoji: "📏", group: "Lesson", keywords: ["law of large numbers", "concentration inequality", "markov inequality", "chebyshev inequality", "hoeffding inequality", "union bound", "pac learning", "sample size"] },
+        { id: "two-state", title: "The steady state of a two state chain", emoji: "🏋️", group: "Easy practice" },
+        { id: "dice-sim", title: "Estimate a dice probability by simulation", emoji: "🏋️", group: "Medium practice" },
+        { id: "grid-posterior", title: "A posterior on a grid", emoji: "🏋️", group: "Hard practice" },
+        { id: "mh-beta", title: "Metropolis on a coin posterior", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Worked problems', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
 /* ===== end of mlmath-build ===== */
+
+/* ===== py-build: Python chapters. Generated by tools/py-build/build.py, edit the topic files instead. ===== */
+function pyModules() {
+  return [
+    { id: "py-internals", title: "How Python Works", emoji: "⚙️", blurb: "What CPython does with your code, from the first character it reads to the last line of output.", topics: [
+      { id: "py-how-python-runs", title: "How Python Runs: From Source Code to Output", emoji: "⚙️", page: "content/python/py-how-python-runs.html",
+        summary: "What CPython does with your file, step by step: tokens and indentation, the PEG parser and the syntax tree, the compiler, code objects and bytecode read with dis, __pycache__ and the .pyc header, the evaluation loop on a value stack, frames and tracebacks, the LEGB rule and UnboundLocalError, objects and names, reference counting and the cycle collector, the GIL, free threading and subinterpreters, the specializing interpreter and the JIT, imports and start up, inspection tools, what changed up to 3.14, pytest assertion rewriting and a module shadowing bug.",
+        keywords: ["how Python works", "Python execution", "CPython internals", "interpreter", "compiler", "bytecode", "dis", "pyc", "__pycache__", "PVM", "evaluation loop", "AST", "tokenizer", "frames", "GIL", "garbage collection", "reference counting", "JIT", "free threading", "Python 3.14", "interview"],
+        added: "2026-10-24",
+        sections: [
+        { id: "big-picture", title: "From source code to output", emoji: "🗺️", group: "Lesson", keywords: ["interpreter", "CPython", "compile", "bytecode", "Python Virtual Machine", "PVM", "source code", "Java vs Python", "javac", "JVM"] },
+        { id: "implementations", title: "Compiled or interpreted: the honest answer", emoji: "🧩", group: "Lesson", keywords: ["compiled", "interpreted", "implementation", "CPython", "PyPy", "MicroPython", "GraalPy", "Pyodide", "WebAssembly", "cache tag", "platform.python_implementation"] },
+        { id: "try-it", title: "Try it: follow your own code through CPython", emoji: "🎬", group: "Lesson", keywords: ["animation", "tokens", "syntax tree", "bytecode", "value stack", "try it", "step by step"] },
+        { id: "tokens", title: "Step 1: the tokenizer", emoji: "🔤", group: "Lesson", keywords: ["tokenizer", "lexer", "tokens", "INDENT", "DEDENT", "NEWLINE", "NL", "tokenize module", "TabError", "indentation"] },
+        { id: "parser", title: "Step 2: the parser and the syntax tree", emoji: "🌳", group: "Lesson", keywords: ["parser", "PEG parser", "grammar", "abstract syntax tree", "AST", "ast.parse", "ast.dump", "SyntaxError", "BinOp", "precedence"] },
+        { id: "compiler", title: "Step 3: the compiler and code objects", emoji: "🏭", group: "Lesson", keywords: ["compiler", "symbol table", "code object", "__code__", "co_consts", "co_varnames", "co_names", "dis", "disassembler", "bytecode", "LOAD_FAST", "constant folding", "peephole optimiser"] },
+        { id: "pyc", title: "__pycache__ and .pyc files", emoji: "💾", group: "Lesson", keywords: ["__pycache__", ".pyc", "bytecode cache", "magic number", "cache tag", "cpython-314", "python -B", "PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX", "py_compile", "compileall", "invalidation mode", "gitignore"] },
+        { id: "eval-loop", title: "Step 4: the evaluation loop", emoji: "🔁", group: "Lesson", keywords: ["evaluation loop", "eval loop", "ceval", "value stack", "stack machine", "instruction", "offset", "BINARY_OP", "LOAD_NAME", "STORE_NAME", "dis.get_instructions"] },
+        { id: "frames", title: "Frames, the call stack and tracebacks", emoji: "🧱", group: "Lesson", keywords: ["frame", "call stack", "traceback", "most recent call last", "sys._getframe", "f_back", "RecursionError", "recursion limit", "setrecursionlimit", "KeyError"] },
+        { id: "names", title: "Names and scopes: the LEGB rule", emoji: "🔎", group: "Lesson", keywords: ["LEGB", "scope", "local", "enclosing", "global", "builtins", "namespace", "UnboundLocalError", "global keyword", "nonlocal", "closure", "cell", "LOAD_FAST", "LOAD_GLOBAL", "LOAD_DEREF"] },
+        { id: "objects", title: "Everything is an object", emoji: "📦", group: "Lesson", keywords: ["object", "identity", "id", "type", "value", "name binding", "reference", "aliasing", "is vs ==", "small integer cache", "interning", "mutable", "immutable"] },
+        { id: "memory", title: "Memory: reference counting and the garbage collector", emoji: "🧹", group: "Lesson", keywords: ["reference counting", "sys.getrefcount", "garbage collector", "gc module", "gc.collect", "reference cycle", "generations", "thresholds", "incremental GC", "Python 3.14.5", "__del__", "pymalloc", "arena", "pool", "block", "memory"] },
+        { id: "gil", title: "The GIL, threads and free-threaded Python", emoji: "🔒", group: "Lesson", keywords: ["GIL", "Global Interpreter Lock", "threads", "threading", "switch interval", "sys.getswitchinterval", "free-threaded", "no GIL", "python3.14t", "sys._is_gil_enabled", "PEP 703", "PEP 779", "multiprocessing", "subinterpreters", "concurrent.interpreters", "race condition", "Lock"] },
+        { id: "faster", title: "Faster CPython: specialization and the JIT", emoji: "🚀", group: "Lesson", keywords: ["specializing adaptive interpreter", "PEP 659", "quickening", "inline cache", "dis adaptive", "BINARY_OP_MULTIPLY_INT", "JIT", "just in time", "copy and patch", "PEP 744", "PYTHON_JIT", "sys._jit", "tail-call interpreter", "performance"] },
+        { id: "imports", title: "What import really does", emoji: "📥", group: "Lesson", keywords: ["import", "sys.modules", "sys.path", "finder", "loader", "importlib", "module spec", "__name__", "__main__", "top level code", "site-packages", "circular import"] },
+        { id: "startup", title: "What happens before your first line runs", emoji: "🏁", group: "Lesson", keywords: ["startup", "interpreter initialisation", "builtins", "site module", "sys.path", "PYTHONPATH", "frozen modules", "-X importtime", "-X dev", "-I isolated mode", "sys.flags"] },
+        { id: "tools", title: "Tools to look inside", emoji: "🔬", group: "Lesson", keywords: ["dis", "ast", "tokenize", "symtable", "inspect", "sys.settrace", "sys.monitoring", "PEP 669", "pdb", "remote debugging", "PEP 768", "tracemalloc", "profiling", "coverage"] },
+        { id: "versions", title: "What changed inside CPython, release by release", emoji: "🆕", group: "Lesson", keywords: ["Python 3.14", "Python 3.13", "Python 3.12", "Python 3.11", "release notes", "what's new", "free threading", "JIT", "template strings", "deferred annotations", "PEP 649", "PEP 750", "upgrade"] },
+        { id: "qa", title: "Python internals in test automation", emoji: "🧪", group: "QA essential", keywords: ["pytest", "assertion rewriting", "import hook", "conftest.py", "register_assert_rewrite", "python -O", "assert removed", "pytest-xdist", "parallel tests", "processes", "side effects", "__pycache__"] },
+        { id: "scenario", title: "Real world scenario: \"it works on my machine\"", emoji: "🎬", group: "QA essential", keywords: ["shadowing", "sys.path order", "AttributeError", "random.py", "module name clash", "works on my machine", "CI", "debugging imports", "__file__"] },
+        { id: "small-int", title: "Is this integer shared", emoji: "🏋️", group: "Easy practice" },
+        { id: "pyc-name", title: "Where will the bytecode go", emoji: "🏋️", group: "Easy practice" },
+        { id: "stack-vm", title: "Your own stack machine", emoji: "🏋️", group: "Medium practice" },
+        { id: "count-ops", title: "Count the bytecode instructions", emoji: "🏋️", group: "Hard practice" },
+        { id: "to-stack", title: "Compile an expression yourself", emoji: "🏋️", group: "Expert practice" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of py-build ===== */
 
 /* ===== java-build: newer Java chapters. Generated by tools/java-build/build.py, edit the topic files instead. ===== */
 function javaNewModules() {

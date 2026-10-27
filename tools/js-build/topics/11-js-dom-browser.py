@@ -48,6 +48,39 @@ FORM = '''
 '''
 
 CODES = {
+    'raf': show('''
+// 1. Animate with requestAnimationFrame: the browser calls you right before it paints
+const box = document.querySelector(".progress");
+let width = 0;
+function frame() {
+  width += 2;
+  box.style.width = width + "%";
+  if (width < 100) requestAnimationFrame(frame);   // once per screen refresh, paused in hidden tabs
+}
+requestAnimationFrame(frame);
+
+// 2. Layout thrashing: reading a size right after a write forces a layout every time
+for (const row of rows) {
+  row.style.height = "40px";        // write
+  total += row.offsetHeight;        // read, so the browser must lay out the page now
+}
+// Better: read everything first, then write everything
+const heights = rows.map(r => r.offsetHeight);
+rows.forEach(r => (r.style.height = "40px"));
+
+// 3. IntersectionObserver: load images or more results only when they scroll into view
+const io = new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting) { e.target.src = e.target.dataset.src; io.unobserve(e.target); }
+});
+document.querySelectorAll("img[data-src]").forEach(img => io.observe(img));
+
+// 4. A long task blocks all of this. Give the browser a turn in long loops.
+let done = 0;
+for (const item of hugeList) {
+  process(item);
+  if (++done % 50 === 0) await scheduler.yield();   // Chrome and Edge, or await new Promise(r => setTimeout(r))
+}
+''', 'Working with the rendering loop', note='Browser code, shown here'),
     'tree': dom(SHOP, '''
 console.log(document.title === "", document.body.children.length);
 
@@ -264,7 +297,7 @@ setup("log in", async ({ page }) => {
 await page.evaluate(() => localStorage.setItem("onboarding-done", "true"));
 const cookies = await page.context().cookies();
 await page.context().addCookies([{ name: "consent", value: "yes", url: "https://shop.example" }]);
-''', 'Browser state in Playwright', note='Runs for real in chapter 21', result='Tests start already logged in, which saves the login steps in every test and keeps them independent.'),
+''', 'Browser state in Playwright', note='Runs for real in {{ch:js-ui-automation}}', result='Tests start already logged in, which saves the login steps in every test and keeps them independent.'),
     'scenario': dom('''
 <!doctype html>
 <html><body>
@@ -366,6 +399,27 @@ PARTS = [
 [[observer]]
 ''', qa=['Playwright', 'Selenium', 'Cypress'], qa_why='Elements inside shadow roots and iframes are the most common reason a correct looking locator finds nothing.',
         kw=['shadow DOM', 'shadowRoot', 'web components', 'custom elements', 'iframe', 'contentDocument', 'frameLocator', 'switchTo frame', 'MutationObserver', 'wait for element']),
+    part('rendering', '🎨', 'How the browser draws the page', '''
+<p>Changing the DOM does not change the screen straight away. The browser collects your changes and then runs its <b>rendering pipeline</b>, usually 60 times a second, between tasks of the event loop ({{ch:js-how-it-runs}}).</p>
+<div class="viz" data-viz="flow" data-k="render"></div>
+<ol class="steps">
+<li><b>Parse</b> the HTML into the DOM and the CSS into the CSSOM.</li>
+<li><b>Style</b>: work out which CSS rules apply to every element.</li>
+<li><b>Layout</b> (also called reflow): work out the size and position of every box.</li>
+<li><b>Paint</b>: fill in the pixels for text, colours, borders and images, in layers.</li>
+<li><b>Composite</b>: put the layers together on the screen, often on the GPU.</li>
+</ol>
+<p>Each step costs time, and changes restart the pipeline from different points. Changing <code>width</code> needs layout, paint and composite. Changing <code>color</code> skips layout. Changing <code>transform</code> or <code>opacity</code> can skip both layout and paint, which is why smooth animations use them.</p>
+[[raf]]
+<div class="tw"><table class="jt"><tr><th>Tool</th><th>When your code runs</th><th>Typical use</th></tr>
+<tr><td><code>requestAnimationFrame</code></td><td>just before the next paint</td><td>smooth animations, measuring after a change</td></tr>
+<tr><td><code>IntersectionObserver</code></td><td>when an element enters or leaves the visible area</td><td>lazy images, infinite scroll, "seen" analytics</td></tr>
+<tr><td><code>ResizeObserver</code></td><td>when an element changes size</td><td>charts that redraw to fit</td></tr>
+<tr><td><code>MutationObserver</code></td><td>after DOM changes, as a microtask</td><td>waiting for elements, as shown above</td></tr>
+<tr><td><code>requestIdleCallback</code></td><td>when the browser has nothing else to do</td><td>sending analytics, warming caches</td></tr></table></div>
+<div class="qa-box">Many "element not clickable" and "element is not stable" errors come from this pipeline: the element exists in the DOM but is still moving, hidden behind another layer or not laid out yet. Playwright waits for an element to be visible, stable and able to receive events before clicking. Visual regression tests compare the result of paint and composite, so they need fonts loaded and animations turned off.</div>
+''', qa=['Playwright', 'Cypress', 'Selenium'], qa_why='Clicks fail on elements that are still moving or covered, and visual tests compare painted pixels.',
+        kw=['rendering pipeline', 'critical rendering path', 'DOM', 'CSSOM', 'style', 'layout', 'reflow', 'paint', 'composite', 'requestAnimationFrame', 'layout thrashing', 'IntersectionObserver', 'ResizeObserver', 'requestIdleCallback', 'scheduler.yield', 'element is not stable', 'visual regression']),
     part('storage', '🍪', 'Storage and cookies', '''
 <p>Browsers keep data for a site in three main places. <b>localStorage</b> keeps strings until they are deleted. <b>sessionStorage</b> keeps them until the tab closes. <b>Cookies</b> are small strings that are also sent to the server with every request, which is why logins usually live in them.</p>
 [[storage]]
@@ -393,6 +447,26 @@ REAL = [
     ['💳', 'A payment iframe', 'The card form comes from the payment provider inside an iframe, so the checkout test switches into the frame to fill it.'],
     ['🧾', 'Report checks', 'A nightly script opens the admin dashboard and checks that every table row adds up, catching a rounding bug before customers do.'],
 ]
+
+DG = {
+    'render': {'t': 'From HTML text to pixels on the screen', 'w': 960, 'h': 250,
+               'n': [['html', 20, 30, 120, 50, 'HTML', {'c': 5, 'sh': 'doc'}], ['css', 20, 150, 120, 50, 'CSS', {'c': 5, 'sh': 'doc'}],
+                     ['dom', 180, 30, 120, 50, 'DOM tree', {'c': 2, 'i': 'The page as a tree of element objects. JavaScript reads and changes this.'}],
+                     ['cssom', 180, 150, 120, 50, 'CSSOM', {'c': 2, 'i': 'All the CSS rules as objects.'}],
+                     ['style', 340, 90, 120, 50, 'Style', {'c': 3, 'i': 'Matches the rules to every element and computes its final styles.'}],
+                     ['layout', 500, 90, 120, 50, 'Layout', {'c': 0, 'sub': 'size and position', 'i': 'Works out where every box goes. Changing width, height or fonts restarts from here.'}],
+                     ['paint', 660, 90, 120, 50, 'Paint', {'c': 4, 'sub': 'pixels in layers', 'i': 'Draws text, colours, borders and images. Changing a colour restarts from here.'}],
+                     ['comp', 820, 90, 120, 50, 'Composite', {'c': 1, 'sub': 'GPU', 'i': 'Puts the layers together. transform and opacity changes can skip straight to this step.'}],
+                     ['js', 500, 195, 280, 44, 'your JavaScript changes the DOM or styles', {'c': 6, 'sh': 'pill'}]],
+               'e': [['html', 'dom'], ['css', 'cssom'], ['dom', 'style'], ['cssom', 'style'], ['style', 'layout'], ['layout', 'paint'], ['paint', 'comp'],
+                     ['js', 'layout', {'t': 'width', 'd': 1}], ['js', 'paint', {'t': 'color', 'd': 1}], ['js', 'comp', {'t': 'transform', 'd': 1}]],
+               'st': [[['html', 'css', 'dom', 'cssom', 'html>dom', 'css>cssom'], 'The browser parses HTML into the DOM and CSS into the CSSOM.'],
+                      [['style', 'dom>style', 'cssom>style'], 'Style matches every rule to every element.'],
+                      [['layout', 'style>layout'], 'Layout works out the size and position of each box.'],
+                      [['paint', 'layout>paint'], 'Paint fills in the pixels, in layers.'],
+                      [['comp', 'paint>comp'], 'Composite puts the layers on the screen. One full pass fits in about 16 ms on a 60 Hz screen.'],
+                      [['js', 'js>layout', 'js>paint', 'js>comp'], 'A change from JavaScript restarts the pipeline. Size changes need layout again, colour changes only paint, transform and opacity only composite.']]},
+}
 
 SAY = [
     say('top', 'Welcome', 'This chapter covers the DOM, selectors and XPath, changing the page, events, forms, shadow DOM, iframes, storage and cookies.',
@@ -443,6 +517,12 @@ SAY = [
         'localStorage strings ରଖେ, sessionStorage ଗୋଟିଏ tab ପର୍ଯ୍ୟନ୍ତ ରହେ, ଏବଂ cookies ପ୍ରତ୍ୟେକ request ସହ ଯାଏ।',
         'يحفظ localStorage النصوص، ويبقى sessionStorage لعلامة تبويب واحدة، وترسل ملفات الارتباط مع كل طلب.',
         'localStorage hält Texte, sessionStorage gilt für einen Tab, Cookies gehen mit jeder Anfrage mit. Tests setzen sie, um Logins zu sparen.'),
+    say('rendering', 'Rendering', 'After your changes the browser runs style, layout, paint and composite. requestAnimationFrame runs before the next paint, and transform and opacity changes are the cheapest to animate.',
+        'आपके बदलाव के बाद browser style, layout, paint और composite चलाता है। requestAnimationFrame अगले paint से पहले चलता है, और transform और opacity सबसे सस्ते animations हैं।',
+        'ನಿಮ್ಮ ಬದಲಾವಣೆಯ ನಂತರ browser style, layout, paint ಮತ್ತು composite ಓಡಿಸುತ್ತದೆ. requestAnimationFrame ಮುಂದಿನ paint ಮೊದಲು ಓಡುತ್ತದೆ.',
+        'ଆପଣଙ୍କ ପରିବର୍ତ୍ତନ ପରେ browser style, layout, paint ଓ composite ଚଲାଏ। requestAnimationFrame ପରବର୍ତ୍ତୀ paint ପୂର୍ବରୁ ଚାଲେ।',
+        'بعد تغييراتك يجري المتصفح حساب الأنماط ثم التخطيط ثم الرسم ثم التركيب. تعمل requestAnimationFrame قبل الرسم التالي، وأرخص الحركات تكون بـ transform وopacity.',
+        'Nach deinen Änderungen rechnet der Browser Stil, Layout, Paint und Composite. requestAnimationFrame läuft vor dem nächsten Paint, transform und opacity sind am günstigsten.'),
     say('scenario', 'Scenario', 'Read the table header, turn each row into an object, and check every line total and the footer total.',
         'Table header पढ़ें, हर row को object बनाएं, और हर line total और footer total जांचें।',
         'Table header ಓದಿ, ಪ್ರತಿ row ಅನ್ನು object ಮಾಡಿ, ಪ್ರತಿ line total ಮತ್ತು footer total ಪರಿಶೀಲಿಸಿ.',
@@ -458,6 +538,8 @@ SAY = [
 ]
 
 QUIZ = [
+    quiz('m', 'Which CSS change is cheapest to animate?', ['transform', 'width', 'top with position absolute', 'font-size'], 0, 'It can skip layout and paint.', 'transform and opacity can be handled in the composite step, often on the GPU.'),
+    quiz('h', 'Why is reading offsetHeight right after setting a style inside a loop slow?', ['Each read forces the browser to run layout immediately', 'offsetHeight is a network call', 'It clears the cache', 'It is not slow'], 0, 'Layout thrashing.', 'Batch the reads first and the writes second, so layout runs once.'),
     quiz('e', 'What does document.querySelector(".card") return when nothing matches?', ['null', 'an empty array', 'undefined', 'It throws'], 0, 'One element or nothing.', 'querySelector returns null, querySelectorAll returns an empty NodeList.'),
     quiz('e', 'Which selector matches <button data-test="buy">?', ['[data-test="buy"]', '#buy', '.buy', 'button:buy'], 0, 'Attribute selectors use square brackets.', 'The attribute and its value go inside brackets.'),
     quiz('e', 'Which property is safe for showing user input as text?', ['textContent', 'innerHTML', 'outerHTML', 'insertAdjacentHTML'], 0, 'No HTML parsing.', 'textContent never turns the text into elements, so scripts cannot sneak in.'),
@@ -509,11 +591,11 @@ EX = [
 ]
 
 T = {
-    'slug': 'js-dom-browser', 'title': 'The DOM and the Browser', 'short': 'DOM and browser', 'emoji': '🌐', 'module': MODULE, 'minutes': 19,
-    'lead': 'How the page becomes a tree of objects, finding elements with CSS selectors and XPath, choosing stable locators, changing the page safely, events and delegation, forms and validation, shadow DOM, iframes, observers, storage and cookies.',
-    'desc': 'DOM tree, querySelector, CSS selectors, XPath, locator strategy, textContent and innerHTML, XSS, events, bubbling, delegation, forms, validation, shadow DOM, iframes, MutationObserver, localStorage and cookies.',
-    'summary': 'The DOM tree and how to move around it, CSS selectors including :has and attribute selectors, XPath by text and ancestor, which locators stay stable, textContent against innerHTML and XSS, events with capture and bubble, delegation and trusted events, form values and validation, shadow DOM and iframes in each test tool, waiting with MutationObserver, localStorage, sessionStorage and cookies, and checking every row of an order table.',
-    'keywords': ['DOM', 'querySelector', 'CSS selector', 'XPath', 'locator', 'getByRole', 'data-test', 'textContent', 'innerHTML', 'XSS', 'event', 'bubbling', 'delegation', 'form validation', 'shadow DOM', 'iframe', 'MutationObserver', 'localStorage', 'cookie'],
+    'slug': 'js-dom-browser', 'title': 'The DOM and the Browser', 'short': 'DOM and browser', 'emoji': '🌐', 'module': MODULE, 'minutes': 23,
+    'lead': 'How the page becomes a tree of objects, finding elements with CSS selectors and XPath, choosing stable locators, changing the page safely, events and delegation, forms and validation, shadow DOM, iframes, observers, the rendering pipeline with requestAnimationFrame, storage and cookies.',
+    'desc': 'DOM tree, querySelector, CSS selectors, XPath, locator strategy, textContent and innerHTML, XSS, events, bubbling, delegation, forms, validation, shadow DOM, iframes, MutationObserver, rendering pipeline, layout, paint, requestAnimationFrame, IntersectionObserver, localStorage and cookies.',
+    'summary': 'The DOM tree and how to move around it, CSS selectors including :has and attribute selectors, XPath by text and ancestor, which locators stay stable, textContent against innerHTML and XSS, events with capture and bubble, delegation and trusted events, form values and validation, shadow DOM and iframes in each test tool, waiting with MutationObserver, the rendering pipeline from style to composite with requestAnimationFrame, layout thrashing and IntersectionObserver, localStorage, sessionStorage and cookies, and checking every row of an order table.',
+    'keywords': ['DOM', 'querySelector', 'CSS selector', 'XPath', 'locator', 'getByRole', 'data-test', 'textContent', 'innerHTML', 'XSS', 'event', 'bubbling', 'delegation', 'form validation', 'shadow DOM', 'iframe', 'MutationObserver', 'rendering', 'layout', 'paint', 'requestAnimationFrame', 'IntersectionObserver', 'localStorage', 'cookie'],
     'qa_intro': 'UI automation is the DOM driven from outside. Locators, events, frames, shadow roots and browser storage explain most of what makes UI tests pass, fail or flake.',
-    'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

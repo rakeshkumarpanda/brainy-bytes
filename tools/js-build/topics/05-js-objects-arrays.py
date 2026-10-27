@@ -79,7 +79,7 @@ test.each([
 ])("password $input is valid: $valid", ({ input, valid }) => {
   expect(isValidPassword(input)).toBe(valid);
 });
-''', 'Destructuring inside test runners', note='Snippets, full runs in chapters 19 to 21'),
+''', 'Destructuring inside test runners', note='Snippets, full runs in chapters {{n:js-unit-testing}} to {{n:js-ui-automation}}'),
     'spread': run('''
 const defaults = { browser: "chromium", headless: true, retries: 0 };
 const ciConfig = { ...defaults, retries: 2 };           // later keys win
@@ -291,7 +291,7 @@ PARTS = [
 [[spread]]
 <div class="viz" data-viz="lanes" data-k="copies"></div>
 <div class="exam">Spread makes a <b>shallow</b> copy: the outer object is new, but nested objects and arrays are shared. Use <code>structuredClone</code> for a full deep copy.</div>
-<div class="qa-box">Shared nested test data is a common cause of tests that pass alone and fail together. Give each test its own copy with <code>structuredClone(baseOrder)</code>, or build data with a factory function as in chapter 4.</div>
+<div class="qa-box">Shared nested test data is a common cause of tests that pass alone and fail together. Give each test its own copy with <code>structuredClone(baseOrder)</code>, or build data with a factory function as in {{ch:js-functions}}.</div>
 ''', qa=True, kw=['spread', 'shallow copy', 'deep copy', 'structuredClone', 'immutability', 'defaults and overrides', 'object merge']),
     part('arrays', '📚', 'Arrays', '''
 <p>An <b>array</b> is an ordered list. Indexes start at 0, <code>length</code> is the number of items and <code>at(-1)</code> reads from the end.</p>

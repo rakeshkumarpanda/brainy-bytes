@@ -85,6 +85,11 @@ def life(text):
     return f'<div class="life">{text}</div>'
 
 
+def deep(title, body):
+    """A "going deeper" box: a longer, slower explanation that follows the short version of a lesson."""
+    return f'<div class="deep"><div class="deep-h">🔍 Going deeper: {title}</div>{body}</div>'
+
+
 def frac(a, b):
     """A stacked fraction: a over b."""
     return f'<span class="fr"><span>{a}</span><span>{b}</span></span>'

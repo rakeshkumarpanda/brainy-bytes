@@ -411,11 +411,32 @@ def prose_pieces(T):
 
 
 def topic_files():
+    # Two digits give the order. An optional letter (01a) slots a chapter in without renaming the files after it.
     return sorted(f for f in os.listdir(os.path.join(HERE, 'topics')) if re.match(r'\d\d[a-z]?-.*\.py$', f))
 
 
 def all_topics():
-    return [load_topic(os.path.join(HERE, 'topics', f)) for f in topic_files()]
+    chapters = [load_topic(os.path.join(HERE, 'topics', f)) for f in topic_files()]
+    number = {T['slug']: i + 1 for i, T in enumerate(chapters)}
+
+    # Cross references are written as {{ch:slug}} (or {{Ch:slug}} at the start of a sentence, {{n:slug}} for the bare number),
+    # so "chapter 7" stays right when a chapter is added or moved.
+    def ref(m):
+        if m.group(2) not in number:
+            raise SystemExit(f'unknown chapter in a cross reference: {m.group(0)}')
+        return {'Ch': 'Chapter ', 'ch': 'chapter ', 'n': ''}[m.group(1)] + str(number[m.group(2)])
+
+    def fill(v):
+        if isinstance(v, str):
+            return re.sub(r'\{\{(ch|Ch|n):([\w-]+)\}\}', ref, v)
+        if isinstance(v, list):
+            return [fill(x) for x in v]
+        if isinstance(v, tuple):
+            return tuple(fill(x) for x in v)
+        if isinstance(v, dict):
+            return {k: fill(x) for k, x in v.items()}
+        return v
+    return [fill(T) for T in chapters]
 
 
 def build(T, chapters):

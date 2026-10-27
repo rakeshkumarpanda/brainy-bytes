@@ -770,6 +770,39 @@ pre.http .h-m{color:#ffcf70; font-weight:700} pre.http .h-c{color:#8aa0c2; font-
 .rm-txt p{margin-top:0}
 @media (max-width:560px){.rm-step span{display:none}}
 
+/* ===== Edge case labs ===== */
+.ed-zones{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; margin-top:10px}
+.ed-iso{grid-column:1/-1; font-size:14px; overflow-wrap:anywhere}
+.ed-z{padding:8px 10px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface2); display:flex; flex-direction:column; gap:2px; min-width:0}
+.ed-z b{font-family:var(--font-head); font-size:15px}
+.ed-z span{font-family:var(--font-mono); font-size:12.5px; overflow-wrap:anywhere}
+.ed-z small{font-weight:800; color:var(--red); font-size:12px}
+.ed-z.diff{border-color:var(--bad-line); background:color-mix(in srgb, var(--red) 8%, var(--surface))}
+.ed-len .pc-s b{font-size:22px}
+
+/* ===== Race simulator ===== */
+.rc-board{display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:start; margin-top:6px}
+.rc-col{min-width:0; border:1.5px solid var(--line); border-radius:12px; padding:8px 10px; background:var(--surface2)}
+.rc-col ul{list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; min-height:80px}
+.rc-col li{display:flex; flex-direction:column; gap:3px; padding:6px 8px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); font-size:13.5px; animation:ch-in .3s both}
+.rc-col li.cur{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft)}
+.rc-col li code{font-size:12px; overflow-wrap:anywhere}
+.rc-col li .pill{align-self:flex-start}
+.rc-stock{display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 14px; border-radius:14px; border:2px solid var(--line); background:var(--surface2); text-align:center}
+.rc-stock small{font-weight:800; color:var(--ink2); font-size:12px; max-width:80px}
+.rc-n{font-family:var(--font-head); font-size:38px; line-height:1; transition:color .3s}
+.rc-n.neg{color:var(--red)}
+.rc-cnt{font-weight:800; color:var(--ink2); font-size:13px}
+@media (max-width:560px){.rc-board{grid-template-columns:1fr}.rc-stock{flex-direction:row; justify-content:center}.rc-stock small{max-width:none}}
+
+/* ===== Fuzzer ===== */
+.fz-t td{vertical-align:top}
+.fz-t td small{display:block; color:var(--ink2); font-size:12px; margin-top:2px}
+.fz-row{animation:ch-in .3s both}
+.fz-row.bug td{background:color-mix(in srgb, var(--red) 7%, transparent)}
+.fz-req{margin-top:8px}
+.fz-tw{max-height:430px; overflow:auto; margin-top:8px}
+
 </style>
 </head>
 <body>
@@ -778,14 +811,14 @@ pre.http .h-m{color:#ffcf70; font-weight:700} pre.http .h-c{color:#8aa0c2; font-
   <div class="crumb"><a class="home-link" href="../../subject.html?s=api-manual-testing" target="_top">🔌 Manual API Testing</a><span>›</span><span>📨 Manual API testing course</span><span>›</span><span>Basics to expert</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🔌</span><div><h1>Manual API Testing: Basics to Expert</h1><p class="lead">Every app you use talks to a server through APIs. This course teaches you to test those APIs by hand, the way a tester explores them before anyone writes automation. You start with a single HTTP request and finish with contract testing, security testing and the newest topics such as testing AI APIs. Every part has an animation or a tool you can use, and the live playground lets you send real requests to a mock shop API with bugs hidden inside it.</p></div></div>
-    <div class="chips"><span class="chip">⏱️ About 90 min read</span><span class="chip">📚 30 parts in 4 levels</span><span class="chip">🎬 17 animations and tools</span><span class="chip">🧪 Live API playground with 7 hidden bugs</span><span class="chip">🏋️ 8 practice tasks</span><span class="chip">🎯 24 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="chips"><span class="chip">⏱️ About 2 hours read</span><span class="chip">📚 38 parts in 4 levels</span><span class="chip">🎬 25 animations and tools</span><span class="chip">🧪 Live API playground with 7 hidden bugs</span><span class="chip">🏋️ 8 practice tasks</span><span class="chip">🎯 32 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
   </header>
 
   <nav class="lvl-nav" aria-label="Parts of this page">
     <div class="lvl-row lv-easy"><span class="lvl-tag">🌱 Level 1 · Foundations</span><a href="#what-is-api">🔌 What an API is</a><a href="#web-services">🌐 Web services</a><a href="#rest">🏛️ REST</a><a href="#api-types">🗂️ Kinds of APIs</a><a href="#http-basics">📨 HTTP</a><a href="#methods">🛠️ Methods</a><a href="#status-codes">🚦 Status codes</a><a href="#headers">🏷️ Headers</a><a href="#data-formats">🧾 JSON and XML</a><a href="#api-styles">🧭 API styles</a></div>
-    <div class="lvl-row lv-med"><span class="lvl-tag">🌿 Level 2 · Core skills</span><a href="#tools">🧰 Tools</a><a href="#api-docs">📘 OpenAPI docs</a><a href="#auth">🔐 Auth</a><a href="#test-design">✍️ Test design</a><a href="#validations">✅ Validations</a><a href="#chaining">🔗 Chaining</a></div>
-    <div class="lvl-row lv-hard"><span class="lvl-tag">🔥 Level 3 · Advanced</span><a href="#pagination">📄 Pagination</a><a href="#rate-limits">⏱️ Rate limits and caching</a><a href="#errors">🧯 Errors</a><a href="#security">🛡️ Security</a><a href="#performance">📈 Performance</a><a href="#async">📬 Async APIs</a><a href="#scenarios">🌍 Scenarios</a></div>
-    <div class="lvl-row lv-exp"><span class="lvl-tag">🧠 Level 4 · Expert and latest</span><a href="#contracts">🤝 Contracts</a><a href="#mocking">🎭 Mocking</a><a href="#graphql-grpc">📡 GraphQL and gRPC</a><a href="#cicd">🔭 CI and observability</a><a href="#ai-apis">🤖 AI APIs and MCP</a><a href="#latest">🆕 Latest</a><a href="#strategy">🗺️ Strategy</a></div>
+    <div class="lvl-row lv-med"><span class="lvl-tag">🌿 Level 2 · Core skills</span><a href="#tools">🧰 Tools</a><a href="#debugging">🔎 DevTools and proxies</a><a href="#api-docs">📘 OpenAPI docs</a><a href="#auth">🔐 Auth</a><a href="#test-types">🧩 Test types</a><a href="#test-design">✍️ Test design</a><a href="#validations">✅ Validations</a><a href="#chaining">🔗 Chaining</a></div>
+    <div class="lvl-row lv-hard"><span class="lvl-tag">🔥 Level 3 · Advanced</span><a href="#pagination">📄 Pagination</a><a href="#rate-limits">⏱️ Rate limits and caching</a><a href="#errors">🧯 Errors</a><a href="#files">📎 Files</a><a href="#edge-data">🌐 Dates, money, text</a><a href="#concurrency">🏁 Race conditions</a><a href="#backend">🗄️ Side effects</a><a href="#transport">🔒 TLS and CORS</a><a href="#security">🛡️ Security</a><a href="#performance">📈 Performance</a><a href="#async">📬 Async APIs</a><a href="#scenarios">🌍 Scenarios</a></div>
+    <div class="lvl-row lv-exp"><span class="lvl-tag">🧠 Level 4 · Expert and latest</span><a href="#contracts">🤝 Contracts</a><a href="#mocking">🎭 Mocking</a><a href="#fuzzing">🐛 Fuzzing tools</a><a href="#graphql-grpc">📡 GraphQL and gRPC</a><a href="#cicd">🔭 CI and observability</a><a href="#ai-apis">🤖 AI APIs and MCP</a><a href="#latest">🆕 Latest</a><a href="#strategy">🗺️ Strategy</a></div>
     <div class="lvl-row lv-hands"><span class="lvl-tag">🎮 Hands on</span><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#lab">🧪 API playground</a><a class="spec" href="#cheatsheet">📋 Cheat sheet</a><a class="spec" href="#practice">🏋️ Practice</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><a class="spec" href="#interview">💼 Interview Questions</a></div>
   </nav>
 
@@ -1133,7 +1166,32 @@ pm.test("answers in under 800 ms", () =&gt; pm.expect(pm.response.responseTime).
 <div class="tip">Never save real passwords or production tokens in a shared collection. Use the environment's secret variable type or a vault, and keep the current value local so it is not synced.</div>
 </section>
 
-<section class="card reveal jsec" id="api-docs" data-say="api-docs"><div class="sec-num">Part 12</div><h2><span class="sec-em">📘</span><span>Reading API docs and OpenAPI</span></h2>
+<section class="card reveal jsec" id="debugging" data-say="debugging"><div class="sec-num">Part 12</div><h2><span class="sec-em">🔎</span><span>Seeing real traffic: DevTools, HAR files and proxies</span></h2>
+<p>Documentation tells you what an API <b>should</b> receive. Real traffic tells you what the app <b>actually</b> sends. Many of the best API bugs are found by watching the calls a web page or a mobile app makes while you click around, then replaying them with small changes.</p>
+<p>Think of a food delivery app. You tap "Place order" and the screen says "Order placed". Behind that one tap there might be six API calls: check the cart, apply the coupon, reserve the delivery slot, charge the card, create the order and send a notification. If you only look at the screen, you see one result. If you look at the traffic, you see all six, and you notice when the coupon call quietly failed with a 500 while the screen still showed a discount.</p>
+<h3>Browser DevTools: the Network tab</h3>
+<div class="grid2">
+<div class="box"><h4>What you can see</h4><ul><li>Every request with method, URL, status, size and time.</li><li>Request and response headers, the payload and the preview of the JSON.</li><li>The <b>Timing</b> view: DNS, connect, TLS, waiting for the server (TTFB) and download.</li><li>The <b>Initiator</b>: which script or click started the call.</li></ul></div>
+<div class="box"><h4>What testers do with it</h4><ul><li>Filter by <b>Fetch/XHR</b> to hide images and scripts.</li><li>Tick <b>Preserve log</b> so calls survive a page redirect.</li><li>Right click a call and choose <b>Copy as cURL</b>, then paste it into Postman or a terminal to replay and edit it.</li><li>Use <b>Throttling</b> (for example Slow 4G) and <b>Block request URL</b> to see how the page behaves when an API is slow or missing.</li><li>Use <b>Override content</b> (local overrides) to fake a response and test how the UI shows an error.</li></ul></div>
+</div>
+<h3>HAR files: a recording of the traffic</h3>
+<p>A HAR (HTTP Archive) file is a JSON recording of every request and response in a session. In DevTools you right click the list and choose <b>Save all as HAR</b>. Developers love receiving a HAR with a bug report, because it shows the exact calls, timings and responses that led to the problem. Postman, Insomnia, Playwright and many other tools can import a HAR and turn it into requests or mocks.</p>
+<div class="warn">A HAR file can contain passwords, cookies, tokens and personal data. Chrome now strips cookies and Authorization headers from exported HAR files by default, but other tools may not. Before you attach a HAR to a ticket, open it in a text editor or a sanitizer tool and remove secrets.</div>
+<h3>Proxies: standing in the middle</h3>
+<p>For a mobile app there is no DevTools. Instead you run an <b>intercepting proxy</b> on your laptop and point the phone's Wi-Fi proxy setting at it. The phone sends every request to the proxy, the proxy shows it to you and then forwards it to the real server. Press Play to watch it.</p>
+<div class="seq" data-seq="proxy"></div>
+<div class="tw"><table class="jt"><tr><th>Tool</th><th>Good at</th><th>Notes</th></tr>
+<tr><td><b>Charles Proxy</b></td><td>Mobile app testing on Mac, Windows and Linux</td><td>Breakpoints, rewrite rules, map local files, bandwidth throttling</td></tr>
+<tr><td><b>Fiddler Everywhere and Fiddler Classic</b></td><td>Windows desktop and browser traffic</td><td>Auto responders that return a saved response for a matching request</td></tr>
+<tr><td><b>Proxyman</b></td><td>A modern macOS and iOS friendly proxy</td><td>Easy certificate setup for iOS simulators</td></tr>
+<tr><td><b>mitmproxy</b></td><td>Free, open source, scriptable in Python</td><td><code>mitmweb</code> gives a browser interface</td></tr>
+<tr><td><b>Burp Suite</b></td><td>Security testing: intercept, repeat, fuzz</td><td>Repeater and Intruder are covered in the security tools part</td></tr></table></div>
+<h3>HTTPS needs a trusted certificate</h3>
+<p>Traffic is encrypted with TLS, so a proxy can only read it if your device trusts the proxy's own certificate authority. You install that certificate on the test phone. Some apps use <b>certificate pinning</b>, which means they only accept the real server certificate and refuse the proxy. On Android, apps also ignore user installed certificates unless the app's network security config allows them in debug builds. Ask your developers for a debug build that trusts user certificates. That is normal practice and much safer than trying to bypass pinning.</p>
+<div class="tip">A quick win: compare what the app sends with the API documentation. Extra fields nobody documented, personal data sent to analytics, old API versions still being called and tokens passed in URLs are all common findings.</div>
+</section>
+
+<section class="card reveal jsec" id="api-docs" data-say="api-docs"><div class="sec-num">Part 13</div><h2><span class="sec-em">📘</span><span>Reading API docs and OpenAPI</span></h2>
 <p>Your test oracle is the contract. For REST APIs this is usually an <b>OpenAPI</b> document (formerly called Swagger) in YAML or JSON. It lists every path, method, parameter, request body, response, status code and security scheme. Learning to read it is the most valuable skill for a manual API tester, because every line is a test idea.</p>
 <pre class="http">openapi: 3.1.0
 info: { title: ShopLite API, version: 1.4.0 }
@@ -1169,7 +1227,7 @@ paths:
 <div class="modern">OpenAPI 3.1 (2021) aligned its schemas with JSON Schema. OpenAPI 3.2, released in September 2025, adds support for the QUERY method, streaming responses such as Server-Sent Events, and nested tags. Expect to see 3.0 and 3.1 in most projects today.</div>
 </section>
 
-<section class="card reveal jsec" id="auth" data-say="auth"><div class="sec-num">Part 13</div><h2><span class="sec-em">🔐</span><span>Authentication and authorization</span></h2>
+<section class="card reveal jsec" id="auth" data-say="auth"><div class="sec-num">Part 14</div><h2><span class="sec-em">🔐</span><span>Authentication and authorization</span></h2>
 <p><b>Authentication</b> answers who you are. <b>Authorization</b> answers what you are allowed to do. A missing or bad identity should give 401. A known identity without permission should give 403 (or 404 if the API hides that the resource exists).</p>
 <div class="tw"><table class="jt"><tr><th>Scheme</th><th>How it is sent</th><th>Tester checklist</th></tr>
 <tr><td>Basic auth</td><td><code>Authorization: Basic base64(user:password)</code></td><td>Only over HTTPS. Base64 is encoding, not encryption</td></tr>
@@ -1190,7 +1248,31 @@ paths:
 <div class="box"><h4>Authorization tests to always run</h4><ul><li>User A reads user B's resource by changing the id in the URL.</li><li>A normal user calls an admin endpoint.</li><li>A token with a <code>read</code> scope tries to write.</li><li>A token still works after logout or password change.</li><li>A token from staging is used on production.</li></ul></div></div>
 </section>
 
-<section class="card reveal jsec" id="test-design" data-say="test-design"><div class="sec-num">Part 14</div><h2><span class="sec-em">✍️</span><span>Designing API test cases</span></h2>
+<section class="card reveal jsec" id="test-types" data-say="test-types"><div class="sec-num">Part 15</div><h2><span class="sec-em">🧩</span><span>Types of API testing and when to use each</span></h2>
+<p>"API testing" is not one activity. It is a family of test types, and each one answers a different question. A hospital gives a good picture. A quick pulse check at the door is a smoke test. A full blood report is functional testing. Checking that the lab, the pharmacy and the billing desk all agree on your record is integration testing. Each check is useful, but none of them replaces the others.</p>
+<div class="tw"><table class="jt"><tr><th>Type</th><th>The question it answers</th><th>Example on a shop API</th><th>When it runs</th></tr>
+<tr><td><b>Smoke</b></td><td>Is the build alive at all?</td><td><code>GET /health</code> is 200, login works, one product loads</td><td>After every deploy, in minutes</td></tr>
+<tr><td><b>Sanity</b></td><td>Does the area that just changed basically work?</td><td>The coupon fix: apply the coupon from the bug report once</td><td>After a small fix</td></tr>
+<tr><td><b>Functional</b></td><td>Does each endpoint do what the spec says?</td><td>Create, read, update and delete an order with valid and invalid data</td><td>Every feature, every release</td></tr>
+<tr><td><b>Negative</b></td><td>Does it fail safely and clearly?</td><td>Missing fields, wrong types, expired token, unknown id</td><td>Alongside functional tests</td></tr>
+<tr><td><b>Integration</b></td><td>Do the services work together?</td><td>Placing an order really reduces stock and starts a payment</td><td>When services or contracts change</td></tr>
+<tr><td><b>End to end (API level)</b></td><td>Does a full user journey work through the APIs?</td><td>Sign up, search, add to cart, pay, track the order</td><td>Before a release</td></tr>
+<tr><td><b>Regression</b></td><td>Did the change break something that used to work?</td><td>The whole saved collection runs again</td><td>Every build in CI</td></tr>
+<tr><td><b>Contract</b></td><td>Do provider and consumers still agree on the shape?</td><td>The mobile app still finds <code>price</code> as a number</td><td>On every provider change</td></tr>
+<tr><td><b>Security</b></td><td>Can someone see or do what they should not?</td><td>Alice reads Bob's order by changing the id</td><td>Every release and after auth changes</td></tr>
+<tr><td><b>Performance</b></td><td>Is it fast enough under real load?</td><td>p95 under 300 ms at 500 requests per second</td><td>Before big events and releases</td></tr>
+<tr><td><b>Fuzz</b></td><td>What happens with random or weird input?</td><td>Thousands of generated bodies, looking for 500 errors</td><td>Nightly, or before a security review</td></tr>
+<tr><td><b>Exploratory</b></td><td>What have we not thought of?</td><td>A 60 minute session on "refunds with two users and stale data"</td><td>When a feature is new or risky</td></tr>
+<tr><td><b>Monitoring (synthetic)</b></td><td>Is production working right now?</td><td>A login and search check every 5 minutes from three regions</td><td>All the time, in production</td></tr></table></div>
+<h3>Functional versus non functional</h3>
+<p><b>Functional</b> tests check <b>what</b> the API does: the right status, body and data change. <b>Non functional</b> tests check <b>how well</b> it does it: speed, security, reliability, scalability and how clear its errors and documentation are. A login endpoint that returns the right token in 9 seconds passes functional testing and fails non functional testing.</p>
+<h3>Play: pick the right test type</h3>
+<p>Read each situation and choose the test type that fits best. Every answer explains why.</p>
+<div class="w" data-w="ttype"></div>
+<div class="tip">In real teams, the same request can serve several test types. A single "create order" call can sit in the smoke suite, the regression suite and the performance script. What changes is the question you ask and how often you run it.</div>
+</section>
+
+<section class="card reveal jsec" id="test-design" data-say="test-design"><div class="sec-num">Part 16</div><h2><span class="sec-em">✍️</span><span>Designing API test cases</span></h2>
 <p>The test design techniques from manual testing all apply to APIs. The difference is that you control every byte of the request, so you can reach cases the UI never allows.</p>
 <div class="grid2">
 <div class="box"><h4>Positive</h4><p>Valid input, valid token, expected status and body. Include optional fields both present and absent.</p></div>
@@ -1224,7 +1306,7 @@ paths:
 <tr><td>Duplicates</td><td>The same key twice in one JSON object, the same item twice in an array</td></tr></table></div>
 </section>
 
-<section class="card reveal jsec" id="validations" data-say="validations"><div class="sec-num">Part 15</div><h2><span class="sec-em">✅</span><span>What to check in every response</span></h2>
+<section class="card reveal jsec" id="validations" data-say="validations"><div class="sec-num">Part 17</div><h2><span class="sec-em">✅</span><span>What to check in every response</span></h2>
 <p>A 200 status alone proves very little. A response can be 200 and still wrong. Check these layers every time.</p>
 <div class="layers">
 <div class="layer"><b>1. Status code</b><span>Exactly the documented one. 201 for create, not 200.</span></div>
@@ -1255,7 +1337,7 @@ pm.test("matches the order schema", () =&gt; pm.response.to.have.jsonSchema(sche
 <div class="warn">Watch for responses that wrap errors inside a 200, such as <code>{"success": false, "error": "Invalid id"}</code>. Clients and monitors that only check the status will treat failures as success. Report it as a design issue.</div>
 </section>
 
-<section class="card reveal jsec" id="chaining" data-say="chaining"><div class="sec-num">Part 16</div><h2><span class="sec-em">🔗</span><span>Variables, chaining and end to end flows</span></h2>
+<section class="card reveal jsec" id="chaining" data-say="chaining"><div class="sec-num">Part 18</div><h2><span class="sec-em">🔗</span><span>Variables, chaining and end to end flows</span></h2>
 <p>Real flows need data from earlier responses. You log in, save the token, create an order, save its id, then read, update and delete that same order. This is called <b>request chaining</b>.</p>
 <div class="chain">
 <div class="ch-step"><b>1</b><code>POST /auth/login</code><small>save <code>token</code></small></div>
@@ -1292,7 +1374,7 @@ newman run shop.json -e qa.json -d quantities.csv -r cli,htmlextra</pre>
 <!-- ===================== LEVEL 3 ===================== -->
 <div class="lvl-banner lv-hard" id="level-3"><span>🔥</span><div><b>Level 3 · Advanced</b><small>The behaviours that break in production: paging, limits, caching, errors, security, speed and async work.</small></div></div>
 
-<section class="card reveal jsec" id="pagination" data-say="pagination"><div class="sec-num">Part 17</div><h2><span class="sec-em">📄</span><span>Pagination, filtering and sorting</span></h2>
+<section class="card reveal jsec" id="pagination" data-say="pagination"><div class="sec-num">Part 19</div><h2><span class="sec-em">📄</span><span>Pagination, filtering and sorting</span></h2>
 <p>No API returns a million rows at once. Lists come in pages. There are three common styles.</p>
 <div class="tw"><table class="jt"><tr><th>Style</th><th>Request</th><th>Strength</th><th>Weakness</th></tr>
 <tr><td>Offset and limit</td><td><code>?offset=40&amp;limit=20</code> or <code>?page=3&amp;size=20</code></td><td>Jump to any page</td><td>Rows can repeat or be skipped when data changes between calls. Slow on large offsets</td></tr>
@@ -1312,7 +1394,7 @@ newman run shop.json -e qa.json -d quantities.csv -r cli,htmlextra</pre>
 <div class="exam">Offset pagination with a changing data set is a classic interview question. If a new item is inserted at the top while you read page 1, the last item of page 1 moves to page 2 and you see it twice. Cursor pagination avoids this.</div>
 </section>
 
-<section class="card reveal jsec" id="rate-limits" data-say="rate-limits"><div class="sec-num">Part 18</div><h2><span class="sec-em">⏱️</span><span>Rate limits, caching and idempotency keys</span></h2>
+<section class="card reveal jsec" id="rate-limits" data-say="rate-limits"><div class="sec-num">Part 20</div><h2><span class="sec-em">⏱️</span><span>Rate limits, caching and idempotency keys</span></h2>
 <h3>Rate limiting</h3>
 <p>APIs limit how many requests a client can make, to protect the service and to stop brute force attacks. When you exceed the limit you should get <b>429 Too Many Requests</b> with a <code>Retry-After</code> header. Many APIs also return headers such as <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code>.</p>
 <p>A common algorithm is the <b>token bucket</b>. The bucket holds up to N tokens and refills at a fixed rate. Each request takes one token. With no tokens left, the request is refused. Click Send quickly to drain it, then wait and watch it refill.</p>
@@ -1327,7 +1409,7 @@ newman run shop.json -e qa.json -d quantities.csv -r cli,htmlextra</pre>
 <div class="tip">Test the same key with a <i>different</i> body. A well designed API returns an error such as 422 or 409, because reusing a key for a different payment is a client bug, not a retry.</div>
 </section>
 
-<section class="card reveal jsec" id="errors" data-say="errors"><div class="sec-num">Part 19</div><h2><span class="sec-em">🧯</span><span>Error handling and Problem Details</span></h2>
+<section class="card reveal jsec" id="errors" data-say="errors"><div class="sec-num">Part 21</div><h2><span class="sec-em">🧯</span><span>Error handling and Problem Details</span></h2>
 <p>Good errors tell the client what went wrong and how to fix it, without leaking internals. The standard format is <b>Problem Details for HTTP APIs</b>, RFC 9457 (2023), which replaced RFC 7807. It uses the media type <code>application/problem+json</code>.</p>
 <pre class="http">HTTP/1.1 <span class="h-bad">422 Unprocessable Content</span>
 Content-Type: application/problem+json
@@ -1346,7 +1428,184 @@ Content-Type: application/problem+json
 <p>Ask developers or use a mock to make a dependency slow or broken, then check the API's behaviour. A payment provider timeout should give a clear 502 or 504 and leave the order in a known state, not a half saved one. Retries should use backoff, and a circuit breaker should stop hammering a service that is down.</p>
 </section>
 
-<section class="card reveal jsec" id="security" data-say="security"><div class="sec-num">Part 20</div><h2><span class="sec-em">🛡️</span><span>API security testing: the OWASP API Top 10</span></h2>
+<section class="card reveal jsec" id="files" data-say="files"><div class="sec-num">Part 22</div><h2><span class="sec-em">📎</span><span>File uploads and downloads</span></h2>
+<p>Profile photos, resumes on a job site, invoices in a banking app and medical reports in a health app all travel through APIs. Files bring their own bugs: huge sizes, wrong types, broken names and security holes. File endpoints are also a common target for attackers, so they deserve careful testing.</p>
+<h3>How an upload travels: multipart/form-data</h3>
+<p>A normal JSON request has one body. An upload usually uses <code>multipart/form-data</code>, which packs several parts into one body, each separated by a boundary string. One part is the file and the other parts are ordinary fields.</p>
+<pre class="http">POST /v1/documents HTTP/1.1
+Content-Type: multipart/form-data; boundary=----b0und4ry
+Authorization: Bearer eyJhbGciOi...
+
+------b0und4ry
+Content-Disposition: form-data; name="title"
+
+March invoice
+------b0und4ry
+Content-Disposition: form-data; name="file"; filename="invoice-03.pdf"
+Content-Type: application/pdf
+
+%PDF-1.7 ... (the bytes of the file) ...
+------b0und4ry--</pre>
+<p>In Postman choose <b>Body</b>, then <b>form-data</b>, set the key type to <b>File</b> and pick a file. In curl use <code>-F</code>:</p>
+<pre class="cmdline">curl -i https://api.shop.test/v1/documents \
+     -H "Authorization: Bearer $TOKEN" \
+     -F "title=March invoice" \
+     -F "file=@invoice-03.pdf;type=application/pdf"</pre>
+<h3>Big files: presigned URLs</h3>
+<p>Many modern apps do not send big files through their own API at all. The API hands out a short lived <b>presigned URL</b> and the app uploads straight to cloud storage such as Amazon S3, Google Cloud Storage or Azure Blob Storage. This keeps the API fast. It also adds new things to test. Press Play.</p>
+<div class="seq" data-seq="upload"></div>
+<h3>Test ideas for uploads</h3>
+<div class="grid2">
+<div class="box"><h4>Size</h4><ul><li>An empty file (0 bytes).</li><li>Exactly the limit, and one byte over. Expect <b>413 Content Too Large</b> or a clear 400 or 422.</li><li>A very large file, to check timeouts and memory.</li></ul></div>
+<div class="box"><h4>Type</h4><ul><li>An allowed type with the wrong extension, such as a PNG named <code>photo.pdf</code>.</li><li>A disallowed type such as <code>.exe</code> or <code>.html</code>. Expect <b>415 Unsupported Media Type</b> or 422.</li><li>A file whose <code>Content-Type</code> says image but whose bytes are a script. The server must check the real content, not trust the label.</li></ul></div>
+<div class="box"><h4>Names</h4><ul><li>Spaces, Unicode and emoji: <code>रिपोर्ट 2026 ✅.pdf</code>.</li><li>Path traversal: <code>../../etc/passwd</code>. The server must never use the name as a path.</li><li>A 300 character name, a name with no extension, two files with the same name.</li></ul></div>
+<div class="box"><h4>Security and lifecycle</h4><ul><li>Can user A download user B's file by guessing its id or URL? (BOLA again.)</li><li>Is an SVG or HTML file served back in a way that runs scripts in the browser?</li><li>Is the file scanned for malware? Is image metadata such as GPS location removed?</li><li>Does a presigned URL stop working after it expires? Is a deleted file really gone?</li></ul></div>
+</div>
+<h3>Downloads</h3>
+<p>For downloads check the status, the <code>Content-Type</code>, the <code>Content-Length</code> and the <code>Content-Disposition</code> header, which tells the browser to save the file and suggests its name.</p>
+<pre class="http">HTTP/1.1 200 OK
+Content-Type: application/pdf
+Content-Length: 48213
+Content-Disposition: attachment; filename="invoice-03.pdf"; filename*=UTF-8''invoice%E2%80%9103.pdf
+ETag: "a91f3c"</pre>
+<ul>
+<li>Open the downloaded file. A file that downloads but will not open is still a bug.</li>
+<li>Compare a checksum (for example SHA-256) with the original when integrity matters.</li>
+<li>Try a <code>Range: bytes=0-999</code> header. A server that supports resumable downloads answers <b>206 Partial Content</b>.</li>
+<li>Large exports such as "download all my transactions" are often async: the API answers 202 and later gives a download link. Test that path like any other async job.</li>
+</ul>
+<div class="tip">Very large uploads on poor mobile networks often use <b>resumable uploads</b>, where the file is sent in chunks and an interrupted upload continues where it stopped. The open tus protocol and the cloud providers' resumable APIs work this way. Test by switching the network off halfway and back on.</div>
+</section>
+
+<section class="card reveal jsec" id="edge-data" data-say="edge-data"><div class="sec-num">Part 23</div><h2><span class="sec-em">🌐</span><span>Dates, money, text and language edge cases</span></h2>
+<p>Some of the most famous software bugs had nothing to do with clever logic. They were about a clock, a currency or a name. Airline systems have shown flights landing before they took off because of time zones. Shops have charged ₹59.969999 because of floating point maths. Sign up forms have rejected people whose names contain an apostrophe or an accent. APIs are where these values are stored and passed around, so this is where testers catch them.</p>
+<h3>Dates and times</h3>
+<ul>
+<li><b>Use ISO 8601 with a zone.</b> <code>2026-10-24T15:30:00Z</code> or <code>2026-10-24T21:00:00+05:30</code> is clear. <code>10/11/2026</code> is 10 November in India and 11 October in the United States.</li>
+<li><b>Store in UTC, show in local time.</b> The API should usually return UTC or an explicit offset, and the app converts it for the user.</li>
+<li><b>Day boundaries.</b> An order placed at 11:30 pm in Mumbai on 31 March is already 1 April in Tokyo and still 31 March in London. Reports grouped "by day" can disagree.</li>
+<li><b>Daylight saving time.</b> In many countries one night has 23 hours and another has 25. A meeting at 2:30 am on the change night may not exist, or may happen twice.</li>
+<li><b>Leap days and month ends.</b> 29 February, 31 April (invalid), "one month after 31 January", the last day of the year.</li>
+<li><b>Expiry checks.</b> Tokens, coupons and offers that expire "today": does today mean the user's day or the server's day?</li>
+</ul>
+<h3>Money</h3>
+<ul>
+<li><b>Never trust floating point for money.</b> Computers store 0.1 as a tiny bit more or less than 0.1, so <code>0.1 + 0.2</code> gives <code>0.30000000000000004</code>. Good APIs send money as an integer number of the smallest unit (<code>"amount": 5997</code> paise) or as a decimal string (<code>"5997.00"</code>) together with a currency code (<code>"currency": "INR"</code>).</li>
+<li><b>Rounding rules.</b> Is tax rounded per item or on the total? Does ₹10 split three ways give 3.33, 3.33 and 3.34?</li>
+<li><b>Currencies with different decimals.</b> Japanese yen has no minor unit, Indian rupee and US dollar have two, Kuwaiti dinar has three.</li>
+<li><b>Negative and zero amounts.</b> A refund larger than the payment, a ₹0 order, a 100% discount coupon.</li>
+</ul>
+<h3>Text and Unicode</h3>
+<ul>
+<li><b>"Length" has several meanings.</b> The name <code>José 👨‍👩‍👧</code> looks like 6 characters to a person, but a database might count bytes, and JavaScript counts UTF-16 units. A "max 20 characters" rule can reject a short name with emoji or cut an emoji in half.</li>
+<li><b>Same look, different bytes.</b> <code>é</code> can be one code point or <code>e</code> plus an accent mark. Search and duplicate checks should treat them as equal, which is called Unicode normalization (NFC).</li>
+<li><b>Real names.</b> O'Brien, Nguyễn, Zoë, María José, names in Devanagari or Arabic script, a single name with no surname, very long names.</li>
+<li><b>Right to left text</b> such as Arabic and Hebrew, and mixed scripts in one field.</li>
+<li><b>Language and number formats.</b> Send <code>Accept-Language: hi-IN</code> or <code>de-DE</code> and check messages and formats. In German, 1.234,50 means one thousand two hundred thirty four point five.</li>
+</ul>
+<h3>Try it: three tiny edge case labs</h3>
+<p>Change the inputs and watch what happens. The time lab shows one moment in several cities. The money lab compares floating point maths with integer paise. The text lab measures your text in four different ways.</p>
+<div class="w" data-w="edge"></div>
+<div class="rule">Every API that accepts a date, an amount or a name should have at least one test with a time zone other than the server's, one with an awkward amount, and one with non English text.</div>
+</section>
+
+<section class="card reveal jsec" id="concurrency" data-say="concurrency"><div class="sec-num">Part 24</div><h2><span class="sec-em">🏁</span><span>Concurrency, race conditions and double clicks</span></h2>
+<p>Picture the last train ticket on a festival weekend. Two people in two cities press "Book" in the same second. If the booking system checks "is a seat free?" for both of them before either booking is saved, both see "yes", both pay, and the train now has two people for one seat. This is a <b>race condition</b>: the result depends on which request happens to finish first.</p>
+<p>Testing one request at a time never finds these bugs. You have to send requests at the same moment, on purpose.</p>
+<h3>Common race bugs in APIs</h3>
+<div class="tw"><table class="jt"><tr><th>Bug</th><th>What happens</th><th>Real world example</th></tr>
+<tr><td><b>Oversell</b></td><td>Two buyers get the last item</td><td>Flash sales, concert tickets, hotel rooms</td></tr>
+<tr><td><b>Double submit</b></td><td>A double click or a retry creates two records</td><td>Two identical orders, a customer charged twice</td></tr>
+<tr><td><b>Lost update</b></td><td>Two people edit the same record and the second save silently wipes the first</td><td>Two support agents editing one ticket</td></tr>
+<tr><td><b>Limit bypass</b></td><td>A "use once" rule is broken by parallel requests</td><td>A one time coupon or a referral reward used five times at once</td></tr>
+<tr><td><b>Balance check bypass</b></td><td>Two withdrawals both pass the "enough money?" check</td><td>A wallet that goes below zero</td></tr></table></div>
+<h3>Try it: two buyers, one item</h3>
+<p>Choose how the server protects the stock, then step through what each request does. Watch the stock count at the end.</p>
+<div class="w" data-w="race"></div>
+<h3>How servers prevent races, and how you check each one</h3>
+<div class="grid2">
+<div class="box"><h4>Optimistic locking with ETag and If-Match</h4><p>The client reads the record and gets <code>ETag: "v7"</code>. It sends the update with <code>If-Match: "v7"</code>. If someone changed the record in between, the version is now v8 and the server answers <b>412 Precondition Failed</b>. Test: update with an old ETag and expect 412. Update with no If-Match and see whether the API requires it (<b>428 Precondition Required</b>).</p></div>
+<div class="box"><h4>Atomic database updates</h4><p>The server does the check and the change in one step, such as "reduce stock by 1 only if stock is above 0". The losing request gets <b>409 Conflict</b> or an "out of stock" error. Test: fire many purchases of the last item at once. Exactly one should succeed.</p></div>
+<div class="box"><h4>Idempotency keys</h4><p>The client sends the same <code>Idempotency-Key</code> on a retry. The server returns the first result instead of doing the work twice. Test: send the same key twice in parallel, and the same key with a different body.</p></div>
+<div class="box"><h4>Unique constraints</h4><p>The database refuses a second row with the same email or order reference. Test: two sign ups with the same email at the same moment. One should get 409, and neither should get 500.</p></div>
+</div>
+<h3>How to send requests at the same time by hand</h3>
+<ul>
+<li><b>Postman</b>: the Collection Runner and performance runs can send many virtual users at once. Put the purchase request in a collection and run it with several users.</li>
+<li><b>curl</b>: <code>seq 20 | xargs -P 20 -I{} curl -s -o /dev/null -w "%{http_code}\n" -X POST ...</code> sends 20 copies in parallel and prints the status of each.</li>
+<li><b>Burp Suite Repeater</b>: group several tabs and use <b>Send group in parallel</b>. For HTTP/2 it uses the single packet technique, so all requests arrive within about a millisecond, which makes races much easier to hit.</li>
+<li><b>Two people, two laptops</b>: still the simplest way to test lost updates in a staging system. Count down from three and both press Save.</li>
+</ul>
+<div class="warn">After a race test, always check the data, not just the status codes. Two 201 responses might be correct (two different items), while one 201 and one 500 might still have left half finished data behind.</div>
+</section>
+
+<section class="card reveal jsec" id="backend" data-say="backend"><div class="sec-num">Part 25</div><h2><span class="sec-em">🗄️</span><span>Checking side effects: database, queues, emails and logs</span></h2>
+<p>A response of <b>201 Created</b> tells you what the API claims happened. It does not prove it. When you order a phone online, the response says "Order placed", but the real work happens behind it: a row is saved in the orders table, stock goes down, a payment is recorded, a message is put on a queue for the warehouse, and you get an email. If any of these silently fails, the customer has a problem even though the API test "passed".</p>
+<p>Good API testers follow the request into the system and check what it changed. Press Play to follow one order.</p>
+<div class="seq" data-seq="sidefx"></div>
+<h3>Where to look and what to check</h3>
+<div class="tw"><table class="jt"><tr><th>Place</th><th>What to check</th><th>How testers look</th></tr>
+<tr><td><b>Database</b></td><td>The row exists, every field has the right value and type, created and updated timestamps, no duplicate rows, nothing else changed</td><td>A read only SQL client (DBeaver, pgAdmin, MySQL Workbench), or a read endpoint of the API</td></tr>
+<tr><td><b>Related data</b></td><td>Stock went down by exactly the quantity, loyalty points were added, the cart is now empty</td><td>Query the related tables or call the other services' read APIs</td></tr>
+<tr><td><b>Message queue or event stream</b></td><td>One <code>OrderPlaced</code> event was published with the right ids, in the right format, only once</td><td>The Kafka, RabbitMQ or SQS console, or a test consumer</td></tr>
+<tr><td><b>Notifications</b></td><td>Exactly one email or SMS, to the right person, in the right language, with the right amount</td><td>A test inbox such as Mailpit or MailHog in QA, or the provider's sandbox</td></tr>
+<tr><td><b>Logs</b></td><td>No errors or stack traces for this request, no passwords, tokens or card numbers written in plain text</td><td>Search the log tool (Kibana, Splunk, Grafana Loki, CloudWatch) by the request id or trace id</td></tr>
+<tr><td><b>Audit trail</b></td><td>Who did what and when, for sensitive actions such as refunds or role changes</td><td>The audit table or admin screen</td></tr>
+<tr><td><b>Cache</b></td><td>After an update, the next read shows the new value, not an old cached one</td><td>Read twice, check <code>Age</code> and <code>Cache-Control</code> headers</td></tr></table></div>
+<h3>A simple SQL check</h3>
+<p>You do not need to be a database expert. A few read only queries cover most checks. Always use a read only account in shared environments.</p>
+<pre class="http">-- Did the order get saved with the right values?
+SELECT id, customer_id, status, total_paise, currency, created_at
+FROM orders
+WHERE id = 1042;
+
+-- Did stock go down by exactly 2?
+SELECT sku, quantity FROM stock WHERE sku = 'PHONE-128-BLK';
+
+-- Was the order saved only once?
+SELECT COUNT(*) FROM orders WHERE idempotency_key = 'a6f0c2e1-...';</pre>
+<h3>Following one request with a trace id</h3>
+<p>Most systems give every request an id and pass it from service to service, often in the W3C <code>traceparent</code> header or a custom <code>X-Request-Id</code>. Copy it from the response headers. Then search for it in the logging or tracing tool (Jaeger, Grafana Tempo, Datadog, Honeycomb) to see every service the request touched, how long each took, and where an error happened. Put this id in every bug report.</p>
+<h3>Negative side effects matter too</h3>
+<ul>
+<li>A request that failed with 400 or 500 must not leave half saved data, such as a payment with no order.</li>
+<li>A cancelled order must give the stock back and refund once, not twice.</li>
+<li>A deleted account must remove or anonymise personal data as the privacy policy promises, for example under GDPR or India's DPDP Act.</li>
+</ul>
+<div class="tip">If you have no database access, ask for it in read only form, or ask developers for "test support" endpoints in QA that show internal state. Being able to see side effects is one of the biggest differences between a beginner and a senior API tester.</div>
+</section>
+
+<section class="card reveal jsec" id="transport" data-say="transport"><div class="sec-num">Part 26</div><h2><span class="sec-em">🔒</span><span>HTTPS, TLS certificates, CORS and HTTP versions</span></h2>
+<p>Before your request reaches any business logic, it passes through a few lower layers: encryption, certificates and browser safety rules. When these break, the whole app breaks, often with confusing errors. Testers who understand this layer can tell the team "this is a CORS problem, not a backend bug" in two minutes instead of two days.</p>
+<h3>HTTPS and TLS in plain words</h3>
+<p>HTTPS is HTTP inside an encrypted TLS tunnel. When you visit your bank's site, TLS does two jobs. It proves you are talking to the real bank (using the bank's certificate), and it scrambles the traffic so nobody on the café Wi-Fi can read it.</p>
+<div class="grid2">
+<div class="box"><h4>Certificate checks</h4><ul><li><b>Expiry</b>: an expired certificate takes the whole API down. Many big outages started this way. Know when yours expire.</li><li><b>Hostname</b>: the certificate must match the domain, such as <code>api.shop.com</code>.</li><li><b>Chain</b>: the certificate must lead to a trusted authority. A missing intermediate certificate works in some clients and fails in others.</li><li><b>Versions</b>: TLS 1.2 and 1.3 should work. TLS 1.0 and 1.1 should be refused.</li></ul></div>
+<div class="box"><h4>Quick commands</h4><pre class="cmdline">curl -vI https://api.shop.test 2>&1 | grep -iE "SSL|TLS|expire|subject"
+openssl s_client -connect api.shop.test:443 -servername api.shop.test &lt;/dev/null | openssl x509 -noout -dates -subject
+curl --tlsv1.1 --tls-max 1.1 https://api.shop.test   # should fail</pre></div>
+</div>
+<p><b>Mutual TLS (mTLS)</b> goes one step further: the client also shows a certificate. Banks, payment networks and service to service calls inside a company use it. Test that a request without a client certificate, with an expired one, or with one from the wrong authority is refused.</p>
+<p><b>HSTS</b> (<code>Strict-Transport-Security</code> header) tells browsers to always use HTTPS for the site. Check that plain <code>http://</code> redirects to HTTPS and that the HSTS header is present on HTTPS responses.</p>
+<h3>CORS: which websites may call the API</h3>
+<p>Browsers protect you with the <b>same origin policy</b>: JavaScript on <code>https://evil.example</code> must not read data from <code>https://api.bank.com</code> using your cookies. But a real shop's frontend on <code>https://shop.com</code> does need to call <code>https://api.shop.com</code>. <b>CORS</b> (Cross Origin Resource Sharing) is how the API says which other origins are allowed. The browser checks the API's answer and lets the JavaScript read the response only if its origin is on the allowed list.</p>
+<p>For "non simple" requests, such as a PUT or a request with a JSON body and an Authorization header, the browser first sends an <b>OPTIONS preflight</b> request to ask permission. Press Play.</p>
+<div class="seq" data-seq="cors"></div>
+<div class="tw"><table class="jt"><tr><th>Test</th><th>Expected</th></tr>
+<tr><td>Preflight from the real frontend origin</td><td><code>Access-Control-Allow-Origin</code> echoes that origin, allowed methods and headers listed</td></tr>
+<tr><td>Preflight from <code>Origin: https://evil.example</code></td><td>No allow origin header for it, so the browser blocks the call</td></tr>
+<tr><td><code>Access-Control-Allow-Origin: *</code> together with <code>Access-Control-Allow-Credentials: true</code></td><td>Never allowed. Browsers reject it, and an API that reflects any origin with credentials is a serious security bug</td></tr>
+<tr><td>Origin <code>null</code> or a look alike such as <code>https://shop.com.evil.example</code></td><td>Refused. Sloppy "starts with" or "contains" checks let these through</td></tr></table></div>
+<div class="tip">CORS is enforced only by browsers. Postman and curl ignore it completely, so "it works in Postman but not in the app" is often a CORS problem. To test CORS by hand, add an <code>Origin</code> header in curl and read the response headers: <code>curl -i -X OPTIONS https://api.shop.test/v1/orders -H "Origin: https://shop.test" -H "Access-Control-Request-Method: PUT"</code></div>
+<h3>HTTP/1.1, HTTP/2 and HTTP/3</h3>
+<div class="tw"><table class="jt"><tr><th>Version</th><th>Main idea</th><th>What testers notice</th></tr>
+<tr><td>HTTP/1.1 (1997, now RFC 9112)</td><td>Text based, one request at a time per connection</td><td>Browsers open several connections. Headers are readable in raw form</td></tr>
+<tr><td>HTTP/2 (RFC 9113)</td><td>Binary, many requests share one connection (multiplexing), headers compressed</td><td>gRPC needs it. Header names are lower case. DevTools shows <code>h2</code> in the Protocol column</td></tr>
+<tr><td>HTTP/3 (RFC 9114)</td><td>Runs over QUIC on UDP instead of TCP</td><td>Faster on lossy mobile networks and when switching from Wi-Fi to mobile data. Some corporate firewalls block UDP, so clients must fall back</td></tr></table></div>
+<p>The meaning of methods, status codes and headers is the same in every version, so your functional tests do not change. What changes is performance, connection behaviour and which tools and gateways support it. <code>curl --http2</code> and <code>curl --http3</code> (when your curl build supports it) let you try each one.</p>
+</section>
+
+<section class="card reveal jsec" id="security" data-say="security"><div class="sec-num">Part 27</div><h2><span class="sec-em">🛡️</span><span>API security testing: the OWASP API Top 10</span></h2>
 <p>The OWASP API Security Top 10 (2023 edition) is the standard list of the most common API risks. Manual testers find many of these with nothing more than Postman and curiosity. Only test systems you are allowed to test.</p>
 <div class="tw"><table class="jt"><tr><th>Risk</th><th>What it looks like</th><th>How to test by hand</th></tr>
 <tr><td>API1 Broken Object Level Authorization (BOLA)</td><td>Change <code>/orders/1042</code> to <code>/orders/1041</code> and see someone else's order</td><td>Use two users. Swap ids in every path, query and body</td></tr>
@@ -1366,7 +1625,7 @@ Content-Type: application/problem+json
 <div class="warn">Security testing on systems you do not own or have no written permission to test can be illegal. Use your team's QA environment, or practice on deliberately vulnerable apps such as OWASP crAPI and OWASP Juice Shop.</div>
 </section>
 
-<section class="card reveal jsec" id="performance" data-say="performance"><div class="sec-num">Part 21</div><h2><span class="sec-em">📈</span><span>Performance testing for APIs</span></h2>
+<section class="card reveal jsec" id="performance" data-say="performance"><div class="sec-num">Part 28</div><h2><span class="sec-em">📈</span><span>Performance testing for APIs</span></h2>
 <p>Even manual testers should note response times and payload sizes, and know the vocabulary of load testing.</p>
 <div class="tw"><table class="jt"><tr><th>Term</th><th>Meaning</th></tr>
 <tr><td>Latency or response time</td><td>Time from sending the request to receiving the full response</td></tr>
@@ -1381,7 +1640,7 @@ Content-Type: application/problem+json
 <div class="w" data-w="perc"></div>
 </section>
 
-<section class="card reveal jsec" id="async" data-say="async"><div class="sec-num">Part 22</div><h2><span class="sec-em">📬</span><span>Async APIs: webhooks, polling and queues</span></h2>
+<section class="card reveal jsec" id="async" data-say="async"><div class="sec-num">Part 29</div><h2><span class="sec-em">📬</span><span>Async APIs: webhooks, polling and queues</span></h2>
 <p>Some work takes too long for one request, such as generating a report or processing a video. The API answers <b>202 Accepted</b> with a job id, and the client either polls a status endpoint or waits for a webhook.</p>
 <div class="seq" data-seq="async"></div>
 <h3>Testing webhooks</h3>
@@ -1396,7 +1655,7 @@ Content-Type: application/problem+json
 <p>In systems built from many services and message queues (Kafka, RabbitMQ, SQS), a write may take a moment to appear in another service. A test that reads immediately after a write may fail by chance. Poll with a timeout instead of a fixed sleep, and report when the delay exceeds what the business accepts.</p>
 </section>
 
-<section class="card reveal jsec" id="scenarios" data-say="scenarios"><div class="sec-num">Part 23</div><h2><span class="sec-em">🌍</span><span>Real world scenario walkthroughs</span></h2>
+<section class="card reveal jsec" id="scenarios" data-say="scenarios"><div class="sec-num">Part 30</div><h2><span class="sec-em">🌍</span><span>Real world scenario walkthroughs</span></h2>
 <p>Here is how API testing looks on three real kinds of product. Pick a scenario to step through the calls, then read the test ideas a senior tester would bring to it.</p>
 <div class="scn-tabs" role="tablist"><button type="button" class="scn-tab on" data-scn="checkout">🛒 Shopping checkout</button><button type="button" class="scn-tab" data-scn="transfer">🏦 Bank transfer</button><button type="button" class="scn-tab" data-scn="ride">🚕 Ride booking</button></div>
 <div class="scn-pane" data-scn="checkout"><div class="seq" data-seq="checkout"></div>
@@ -1425,7 +1684,7 @@ Content-Type: application/problem+json
 <!-- ===================== LEVEL 4 ===================== -->
 <div class="lvl-banner lv-exp" id="level-4"><span>🧠</span><div><b>Level 4 · Expert and latest</b><small>Contracts, mocks, other protocols, pipelines, AI APIs and the newest standards.</small></div></div>
 
-<section class="card reveal jsec" id="contracts" data-say="contracts"><div class="sec-num">Part 24</div><h2><span class="sec-em">🤝</span><span>Contract testing and versioning</span></h2>
+<section class="card reveal jsec" id="contracts" data-say="contracts"><div class="sec-num">Part 31</div><h2><span class="sec-em">🤝</span><span>Contract testing and versioning</span></h2>
 <p>When ten teams depend on one API, a small change such as renaming a field can break apps that nobody on the provider team knows about. <b>Contract testing</b> catches this before release.</p>
 <div class="grid2"><div class="box"><h4>Consumer driven contracts</h4><p>Each consumer writes down exactly what it uses (requests and the fields it reads). The provider runs these contracts in its own pipeline. The best known tool is Pact, with a Pact Broker to share contracts and a can-i-deploy check before release.</p></div>
 <div class="box"><h4>Provider or schema driven</h4><p>The OpenAPI document is the contract. Tools compare the running API with the spec, or compare two versions of the spec to flag breaking changes (for example oasdiff).</p></div></div>
@@ -1440,7 +1699,7 @@ Content-Type: application/problem+json
 <p>When an endpoint is retired, the <code>Deprecation</code> header (RFC 9745, 2025) says it is deprecated and the <code>Sunset</code> header (RFC 8594) gives the date it will stop working. Test that both old and new versions behave as documented until the sunset date, and that the old one really stops afterwards.</p>
 </section>
 
-<section class="card reveal jsec" id="mocking" data-say="mocking"><div class="sec-num">Part 25</div><h2><span class="sec-em">🎭</span><span>Mocks, service virtualization and test data</span></h2>
+<section class="card reveal jsec" id="mocking" data-say="mocking"><div class="sec-num">Part 32</div><h2><span class="sec-em">🎭</span><span>Mocks, service virtualization and test data</span></h2>
 <p>You often need to test an API whose dependencies are not ready, are expensive (a real payment provider), or cannot be made to fail on demand. A <b>mock server</b> pretends to be that dependency.</p>
 <div class="tw"><table class="jt"><tr><th>Tool</th><th>Use</th></tr>
 <tr><td>Postman mock servers</td><td>Return saved examples for a collection. Quick for front end teams</td></tr>
@@ -1453,7 +1712,37 @@ Content-Type: application/problem+json
 <ul><li>Create data through the API in setup, and delete it in teardown.</li><li>Use unique values (timestamps, UUIDs) so parallel runs do not collide.</li><li>Never copy real customer data into test environments. Use synthetic or masked data, which privacy laws such as GDPR and India's DPDP Act expect.</li><li>Keep a small set of known seed records for read only tests.</li></ul>
 </section>
 
-<section class="card reveal jsec" id="graphql-grpc" data-say="graphql-grpc"><div class="sec-num">Part 26</div><h2><span class="sec-em">📡</span><span>Testing GraphQL, gRPC, WebSocket and SSE</span></h2>
+<section class="card reveal jsec" id="fuzzing" data-say="fuzzing"><div class="sec-num">Part 33</div><h2><span class="sec-em">🐛</span><span>Security tools and fuzzing: ZAP, Burp Suite and Schemathesis</span></h2>
+<p>Manual thinking finds the clever bugs. Tools find the many small ones a person would never have time to try. <b>Fuzzing</b> means sending large numbers of unexpected, random or malformed inputs and watching for crashes, 500 errors, slow responses or data leaks. A fuzzer never gets tired, so it can try thousands of values in the time a person tries ten.</p>
+<h3>Try it: fuzz a quantity field</h3>
+<p>The spec says <code>quantity</code> must be a whole number from 1 to 10. Behind this widget sits a small simulated server with some hidden mistakes. Run the built in fuzz list, or type your own JSON value, and see which inputs reveal bugs.</p>
+<div class="w" data-w="fuzz"></div>
+<h3>The main tools</h3>
+<div class="tw"><table class="jt"><tr><th>Tool</th><th>What it is</th><th>How testers use it</th></tr>
+<tr><td><b>OWASP ZAP</b> (Zed Attack Proxy)</td><td>A free, open source security scanner and proxy, now maintained by Checkmarx under the name ZAP</td><td>Import an OpenAPI file, run the API scan, review alerts such as missing security headers, injection and information leaks. Runs in CI with a Docker image</td></tr>
+<tr><td><b>Burp Suite</b> (Community and Professional)</td><td>An intercepting proxy built for security testing</td><td><b>Repeater</b> to edit and resend one request many times, <b>Intruder</b> to fuzz a parameter with a word list, <b>Comparer</b> to diff two responses, extensions such as Autorize to find authorization bugs automatically</td></tr>
+<tr><td><b>Schemathesis</b></td><td>An open source tool that reads your OpenAPI or GraphQL schema and generates thousands of test requests from it (property based testing)</td><td><code>schemathesis run https://api.shop.test/openapi.json</code> finds 500 errors, responses that break the schema and requests the API wrongly accepts</td></tr>
+<tr><td><b>RESTler</b></td><td>Microsoft Research's stateful REST fuzzer</td><td>Learns which calls produce ids for other calls, then fuzzes whole sequences</td></tr>
+<tr><td><b>Postman and Newman with data files</b></td><td>Not a fuzzer, but a CSV of nasty values works well</td><td>Run one request with hundreds of rows of bad input</td></tr></table></div>
+<h3>Good fuzz values to keep in your pocket</h3>
+<div class="grid2">
+<div class="box"><h4>Numbers</h4><p><code>0</code>, <code>-1</code>, <code>2.5</code>, <code>1e309</code>, <code>9007199254740993</code>, <code>"5"</code> (a string), <code>null</code>, <code>true</code>, <code>[]</code>, <code>{}</code></p></div>
+<div class="box"><h4>Strings</h4><p>Empty, a single space, 10,000 characters, emoji, right to left text, a null byte <code>\u0000</code>, <code>' OR '1'='1</code>, <code>&lt;script&gt;</code>, <code>{{7*7}}</code>, <code>../../</code></p></div>
+<div class="box"><h4>Structure</h4><p>Missing body, invalid JSON, a field sent twice, extra unknown fields, deeply nested objects, an array where an object is expected</p></div>
+<div class="box"><h4>Protocol</h4><p>Wrong <code>Content-Type</code>, no <code>Content-Type</code>, a huge header, an unsupported method such as <code>TRACE</code>, a very long URL</p></div>
+</div>
+<h3>How to read the results</h3>
+<ul>
+<li><b>Any 5xx</b> is a bug. The server should validate input and answer 4xx.</li>
+<li><b>A 2xx for input the spec forbids</b> is a bug. Bad data has entered the system.</li>
+<li><b>A 4xx for input the spec allows</b> is a bug too. The validation is stricter than the contract.</li>
+<li><b>A response time spike</b> for one input can point to a denial of service risk, such as a slow regular expression.</li>
+<li><b>Stack traces, SQL messages or internal paths</b> in an error body are information leaks.</li>
+</ul>
+<div class="warn">Scanners and fuzzers send a lot of traffic and can create, change or delete data. Run them only against environments you own or have written permission to test, never against production unless the team has planned it, and tell the team before a big run.</div>
+</section>
+
+<section class="card reveal jsec" id="graphql-grpc" data-say="graphql-grpc"><div class="sec-num">Part 34</div><h2><span class="sec-em">📡</span><span>Testing GraphQL, gRPC, WebSocket and SSE</span></h2>
 <h3>GraphQL</h3>
 <div class="grid2"><div><pre class="http">POST /graphql
 {
@@ -1474,7 +1763,7 @@ grpcurl -d '{"id": 1042}' -plaintext localhost:50051 shop.OrderService/GetOrder<
 <ul><li>Connect without a token, with an expired token, and with a token that expires during the session.</li><li>Send malformed messages and very large messages.</li><li>Drop the network and reconnect. Check whether missed messages are replayed, and in the right order.</li><li>For SSE, check the <code>text/event-stream</code> content type, the <code>data:</code> lines, and resume with <code>Last-Event-ID</code>.</li></ul>
 </section>
 
-<section class="card reveal jsec" id="cicd" data-say="cicd"><div class="sec-num">Part 27</div><h2><span class="sec-em">🔭</span><span>API tests in CI, monitoring and observability</span></h2>
+<section class="card reveal jsec" id="cicd" data-say="cicd"><div class="sec-num">Part 35</div><h2><span class="sec-em">🔭</span><span>API tests in CI, monitoring and observability</span></h2>
 <p>Manual exploration finds the bugs. Saved collections stop them from coming back. A mature team runs its API collection on every pull request and on a schedule against live environments.</p>
 <pre class="http"># .github/workflows/api-tests.yml (simplified)
 name: api-tests
@@ -1494,7 +1783,7 @@ jobs:
               ver  trace id (32 hex)                 parent span id   flags</pre>
 </section>
 
-<section class="card reveal jsec" id="ai-apis" data-say="ai-apis"><div class="sec-num">Part 28</div><h2><span class="sec-em">🤖</span><span>Testing AI and LLM APIs and MCP servers</span></h2>
+<section class="card reveal jsec" id="ai-apis" data-say="ai-apis"><div class="sec-num">Part 36</div><h2><span class="sec-em">🤖</span><span>Testing AI and LLM APIs and MCP servers</span></h2>
 <p>More and more products call large language model (LLM) APIs, or expose their own AI endpoints. These APIs behave differently from classic ones, and testers need new techniques.</p>
 <div class="tw"><table class="jt"><tr><th>Difference</th><th>How to test it</th></tr>
 <tr><td>Non deterministic output</td><td>The same prompt can give different words. Assert on structure, required facts and rules, not on exact text. Run the same case several times</td></tr>
@@ -1511,28 +1800,39 @@ jobs:
 <pre class="http">{ "jsonrpc": "2.0", "id": 3, "method": "tools/call",
   "params": { "name": "get_order", "arguments": { "orderId": 1042 } } }</pre>
 <ul><li>Call <code>tools/list</code> and check every tool has a clear description and an input schema.</li><li>Send arguments that break the schema. Expect a JSON-RPC error or a tool error result, not a crash.</li><li>Authorization: a remote MCP server must check that the user behind the AI is allowed to see order 1042, exactly like a normal API (BOLA again).</li><li>Tool results that contain instructions are a prompt injection risk for the AI that reads them.</li><li>The MCP Inspector tool lets you connect to a server and call its tools by hand.</li></ul>
+<p>The MCP specification dated <b>2026-07-28</b> changed how remote servers work. The core is now <b>stateless</b>: there is no <code>initialize</code> handshake and no <code>Mcp-Session-Id</code>, so every request stands alone and any server instance can answer it. Streamable HTTP requests carry <code>Mcp-Method</code> and <code>Mcp-Name</code> headers, and servers must reject a request whose headers and body disagree. Tool input and output schemas use JSON Schema 2020-12. Testers should check routing through a load balancer without sticky sessions, a request with a mismatched <code>Mcp-Method</code> header, tool schemas against a 2020-12 validator, and OAuth issuer validation on authenticated servers.</p>
 </section>
 
-<section class="card reveal jsec" id="latest" data-say="latest"><div class="sec-num">Part 29</div><h2><span class="sec-em">🆕</span><span>Latest standards and trends</span></h2>
-<p>API standards keep moving. These are the ones worth knowing about today. Some are final standards, and some are drafts that tools already support.</p>
+<section class="card reveal jsec" id="latest" data-say="latest"><div class="sec-num">Part 37</div><h2><span class="sec-em">🆕</span><span>Latest standards and trends</span></h2>
+<p>API standards keep moving. These are the ones worth knowing about today (checked in October 2026). Some are final standards, and some are drafts that tools already support.</p>
 <div class="tw"><table class="jt"><tr><th>Topic</th><th>Status</th><th>What it means for testers</th></tr>
 <tr><td>RFC 9457 Problem Details</td><td>Standard (2023)</td><td>One error format across APIs. Check <code>application/problem+json</code></td></tr>
 <tr><td>OpenAPI 3.1 and 3.2</td><td>3.2 released September 2025</td><td>Full JSON Schema, QUERY method, streaming responses, better tags</td></tr>
 <tr><td>Arazzo 1.0</td><td>OpenAPI Initiative standard (2024)</td><td>Describes multi step API workflows, such as login then order then pay. Useful as a source for end to end tests</td></tr>
 <tr><td>AsyncAPI 3.0</td><td>Standard (2023)</td><td>The OpenAPI equivalent for Kafka, MQTT and WebSocket based APIs</td></tr>
-<tr><td>HTTP QUERY method</td><td>IETF draft</td><td>A safe, idempotent request that carries a body, for complex searches</td></tr>
+<tr><td>HTTP QUERY method</td><td>RFC 10008 (June 2026)</td><td>A safe, idempotent request that carries a body, for complex searches that do not fit in a URL. Rest Assured 6.1 and newer can already send it. Test that QUERY never changes data and that caches and gateways pass it through</td></tr>
 <tr><td>RateLimit headers</td><td>IETF draft</td><td>Standard <code>RateLimit</code> and <code>RateLimit-Policy</code> headers to replace the many <code>X-RateLimit</code> variants</td></tr>
 <tr><td>Idempotency-Key header</td><td>IETF draft</td><td>Standardizes the header payment APIs already use</td></tr>
 <tr><td>Deprecation header</td><td>RFC 9745 (2025)</td><td>A standard way to announce deprecated endpoints</td></tr>
-<tr><td>OAuth 2.1</td><td>IETF draft</td><td>PKCE for every client, no implicit or password flow, exact redirect matching</td></tr>
+<tr><td>OAuth 2.1</td><td>IETF draft, still in progress in 2026</td><td>PKCE for every client, no implicit or password flow, exact redirect matching</td></tr>
 <tr><td>DPoP</td><td>RFC 9449 (2023)</td><td>Tokens bound to a key the client holds, so a stolen token alone is useless</td></tr>
 <tr><td>HTTP/3</td><td>RFC 9114 (2022)</td><td>Faster on mobile networks. Check your tools and gateways support it</td></tr>
-<tr><td>MCP</td><td>Open protocol (2024 onwards)</td><td>AI agents calling tools. A new kind of API to test</td></tr></table></div>
+<tr><td>MCP</td><td>Open protocol, latest specification dated 2026-07-28</td><td>AI agents calling tools. The 2026 revision made the core stateless, added <code>Mcp-Method</code> and <code>Mcp-Name</code> routing headers and moved tool schemas to JSON Schema 2020-12</td></tr>
+<tr><td>OWASP Top 10:2025</td><td>Published for web apps (the API Top 10 is still the 2023 edition)</td><td>Adds software supply chain failures and mishandling of exceptional conditions. Both affect APIs: risky dependencies and error paths that fail open</td></tr></table></div>
 <h3>Trends in how teams test</h3>
-<ul><li><b>AI assistants in API tools</b>: Postman's Postbot and similar assistants draft tests and documentation. Review what they generate, because they can assert the current behaviour even when it is a bug.</li><li><b>Git native collections</b>: Bruno and Postman's file based collections keep tests next to the code and reviewed in pull requests.</li><li><b>Spec first development</b>: the OpenAPI file is written and reviewed first, mocks are generated from it, and tests check the implementation against it.</li><li><b>API governance</b>: linting rules across all of a company's APIs, so every team uses the same errors, pagination and auth.</li><li><b>Zero trust</b>: every internal call is authenticated too, so internal APIs need the same security tests as public ones.</li></ul>
+<ul><li><b>AI agents in API tools</b>: Postman's Agent Mode can create collections, tests and mocks, and can diagnose a failed test and suggest a fix. Other tools have similar assistants. Review what they generate, because they can assert the current behaviour even when it is a bug.</li><li><b>Git native collections</b>: Postman 12 is built to be Git native and stores collections in the Collection 3.0 format as YAML files, one per request. Bruno has worked with plain text files for years. Both keep tests next to the code and reviewed in pull requests.</li><li><b>One collection, many protocols</b>: Postman 12 collections can hold HTTP, GraphQL, gRPC, WebSocket, MQTT, MCP and AI requests side by side, so one test plan can cover a whole system.</li><li><b>Spec first development</b>: the OpenAPI file is written and reviewed first, mocks are generated from it, and tests check the implementation against it.</li><li><b>API governance</b>: linting rules across all of a company's APIs, so every team uses the same errors, pagination and auth.</li><li><b>Zero trust</b>: every internal call is authenticated too, so internal APIs need the same security tests as public ones.</li></ul>
+<h3>Latest tool releases and how they help in daily work</h3>
+<div class="tw"><table class="jt"><tr><th>Release</th><th>What is new</th><th>How it helps a tester</th></tr>
+<tr><td><b>Postman 12</b></td><td>Git native workspace, Collection 3.0 in YAML, code based local mock servers, Agent Mode, API Catalog</td><td>Collections live in the same pull request as the code change, so reviewers see the API change and its tests together. Local mocks let you test before the backend is ready</td></tr>
+<tr><td><b>Rest Assured 6.x</b> (6.3.0, October 2026)</td><td>QUERY method, JSON Schema drafts up to 2020-12, mutual TLS client certificates, clearer error messages</td><td>Validate modern OpenAPI 3.1 schemas and test banking style mTLS APIs from the same framework</td></tr>
+<tr><td><b>pytest 9</b></td><td>Built in subtests, native TOML configuration, a strict mode</td><td>One test can check many fields and report every failure instead of stopping at the first</td></tr>
+<tr><td><b>Playwright 1.6x</b></td><td>Tests for WebMCP tools, passkey (WebAuthn) support, isolated retries, test locks</td><td>UI and API tests for AI features and passwordless login in one runner</td></tr>
+<tr><td><b>Schemathesis 4</b></td><td>A rewritten core engine, plus stateful testing that follows OpenAPI links from one operation to the next</td><td>Point it at an OpenAPI file in CI and it finds 500 errors and schema breaks nobody wrote a test for</td></tr>
+<tr><td><b>OpenAPI 3.2 and Arazzo 1.0</b></td><td>Streaming responses, the QUERY method, multi step workflow descriptions</td><td>Generate end to end flows such as "log in, add to cart, pay" from a reviewed file instead of from memory</td></tr></table></div>
+<p class="small">Versions move fast. Before you upgrade at work, read the release notes and run your suite on a branch first.</p>
 </section>
 
-<section class="card reveal jsec" id="strategy" data-say="strategy"><div class="sec-num">Part 30</div><h2><span class="sec-em">🗺️</span><span>An API test strategy and great bug reports</span></h2>
+<section class="card reveal jsec" id="strategy" data-say="strategy"><div class="sec-num">Part 38</div><h2><span class="sec-em">🗺️</span><span>An API test strategy and great bug reports</span></h2>
 <h3>A strategy that scales</h3>
 <ol>
 <li><b>Understand</b>: read the spec, the user stories and the architecture diagram. List every endpoint, consumer and dependency.</li>
@@ -2614,6 +2914,59 @@ const DATA = {
         { f: 'p', t: 'c', m: '201 (same result)', n: 'It returns the stored result. The user is charged exactly once. Testers check this by sending the same key twice and counting charges.', k: 'ok' }
       ]
     },
+    proxy: {
+      title: 'A proxy in the middle of a mobile app',
+      lanes: [{ id: 'p', e: '📱', label: 'Phone app' }, { id: 'x', e: '🧑‍💻', label: 'Proxy on laptop' }, { id: 's', e: '⚙️', label: 'Real API' }],
+      steps: [
+        { f: 'p', t: 'p', m: 'Wi-Fi proxy = laptop:8888', n: 'You set the phone\'s Wi-Fi proxy to your laptop\'s IP address and the proxy port, and install the proxy\'s certificate on the phone.' },
+        { f: 'p', t: 'x', m: 'POST /v2/cart/apply-coupon', n: 'You tap Apply coupon. The app sends the request to the proxy instead of straight to the internet.' },
+        { f: 'x', t: 'x', m: 'Show it, pause it, edit it', n: 'The proxy decrypts the request with its own certificate and shows you the headers and the JSON. With a breakpoint you can change the coupon code or the cart total before it leaves.' },
+        { f: 'x', t: 's', m: 'Forward (edited) request', n: 'The proxy sends the request on to the real API over a new encrypted connection.' },
+        { f: 's', t: 'x', m: '200 discount 900', n: 'The server answers. If you changed the cart total and the server trusted it, you have just found a serious bug.', k: 'bad' },
+        { f: 'x', t: 'p', m: 'Response to the app', n: 'The proxy passes the response back. The app never knows it was watched. Every call is saved, so you can replay it later.', k: 'ok' }
+      ]
+    },
+    upload: {
+      title: 'Uploading a big file with a presigned URL',
+      lanes: [{ id: 'c', e: '📱', label: 'App' }, { id: 'a', e: '⚙️', label: 'API' }, { id: 'o', e: '☁️', label: 'Cloud storage' }, { id: 'w', e: '🛡️', label: 'Scanner' }],
+      steps: [
+        { f: 'c', t: 'a', m: 'POST /uploads {name, size, type}', n: 'The app tells the API it wants to upload a 40 MB video, with its name, size and type. The API checks the user may upload and that the size and type are allowed.' },
+        { f: 'a', t: 'c', m: '201 {uploadUrl, expires 10 min}', n: 'The API answers with a presigned URL. It works only for this one file, only with a PUT, and only for a short time.', k: 'ok' },
+        { f: 'c', t: 'o', m: 'PUT file bytes to uploadUrl', n: 'The app sends the bytes straight to cloud storage. The API server does not carry the heavy file at all.' },
+        { f: 'o', t: 'c', m: '200 ETag', n: 'Storage confirms the upload. Testers check what happens if the URL is used after it expires, with a different file type, or with a bigger file than declared.' },
+        { f: 'c', t: 'a', m: 'POST /uploads/88/complete', n: 'The app tells the API the upload is done.' },
+        { f: 'a', t: 'w', m: 'scan file', n: 'The API asks a scanner to check for malware and confirm the real file type before anyone else can download it.' },
+        { f: 'w', t: 'a', m: 'clean, type = video/mp4', n: 'The file is clean. If it were infected, the API should mark it blocked and never serve it.', k: 'ok' },
+        { f: 'a', t: 'c', m: 'status READY', n: 'Now the file appears in the app. A test should also prove that another user cannot read it.', k: 'ok' }
+      ]
+    },
+    sidefx: {
+      title: 'Following one order through the system',
+      lanes: [{ id: 'c', e: '🧪', label: 'Tester' }, { id: 'a', e: '⚙️', label: 'Order API' }, { id: 'd', e: '🗄️', label: 'Database' }, { id: 'q', e: '📬', label: 'Queue' }, { id: 'm', e: '✉️', label: 'Email service' }],
+      steps: [
+        { f: 'c', t: 'a', m: 'POST /orders (2 phones)', n: 'You place an order for two phones with a valid token.' },
+        { f: 'a', t: 'd', m: 'INSERT order, stock - 2', n: 'The service saves the order and reduces stock by two in the same database transaction.' },
+        { f: 'a', t: 'q', m: 'publish OrderPlaced', n: 'It publishes an OrderPlaced event so the warehouse and email services can do their part.' },
+        { f: 'a', t: 'c', m: '201 {id: 1042}', n: 'You get 201 Created. Many testers stop here. You keep going.', k: 'ok' },
+        { f: 'c', t: 'd', m: 'SELECT order 1042, stock', n: 'You check the order row has the right customer, total and status, and that stock went down by exactly two.' },
+        { f: 'q', t: 'm', m: 'OrderPlaced consumed', n: 'The email service reads the event from the queue.' },
+        { f: 'm', t: 'm', m: 'send confirmation', n: 'It sends one confirmation email. You check the test inbox: one email, right name, right amount, right language.' },
+        { f: 'c', t: 'c', m: 'search logs by trace id', n: 'Finally you search the logs by the trace id from the response headers. No errors, and no card numbers or tokens in plain text.', k: 'ok' }
+      ]
+    },
+    cors: {
+      title: 'A CORS preflight in the browser',
+      lanes: [{ id: 'j', e: '🧑‍💻', label: 'shop.com page' }, { id: 'b', e: '🌐', label: 'Browser' }, { id: 'a', e: '⚙️', label: 'api.shop.com' }],
+      steps: [
+        { f: 'j', t: 'b', m: 'fetch PUT /cart (JSON, token)', n: 'JavaScript on https://shop.com wants to send a PUT with a JSON body and an Authorization header to a different origin, https://api.shop.com.' },
+        { f: 'b', t: 'a', m: 'OPTIONS /cart  Origin: shop.com', n: 'Because this is not a simple request, the browser first sends a preflight. It says which origin is asking, which method (Access-Control-Request-Method: PUT) and which headers it wants to use.' },
+        { f: 'a', t: 'b', m: '204 Allow-Origin: https://shop.com', n: 'The API answers with Access-Control-Allow-Origin, Allow-Methods and Allow-Headers. It can also send Max-Age so the browser remembers the answer for a while.', k: 'ok' },
+        { f: 'b', t: 'a', m: 'PUT /cart (the real request)', n: 'The origin is allowed, so the browser now sends the real request.' },
+        { f: 'a', t: 'b', m: '200 + Allow-Origin', n: 'The real response must carry the allow origin header as well.', k: 'ok' },
+        { f: 'b', t: 'j', m: 'response readable', n: 'The browser lets the page read the response. If any header were missing or wrong, the page would see only "CORS error" in the console, even if the server did the work.' },
+        { f: 'b', t: 'b', m: 'evil.example? blocked', n: 'A page on https://evil.example asking the same API gets no allow origin header for its origin, so the browser blocks it from reading the answer.', k: 'bad' }
+      ]
+    },
     bola: {
       title: 'Broken object level authorization',
       lanes: [{ id: 'a', e: '🕵️', label: 'Alice (attacker)' }, { id: 's', e: '⚙️', label: 'API' }, { id: 'b', e: '🗄️', label: 'Database' }],
@@ -2681,6 +3034,17 @@ const DATA = {
     }
   },
 
+  typeGame: [
+    { q: 'A new build was deployed to QA five minutes ago. You want to know in two minutes whether it is worth testing at all.', o: ['Smoke', 'Performance', 'Contract', 'Fuzz'], a: 0, why: 'A smoke test checks the build is alive: health check, login, one key call. If it fails, nobody wastes time on deeper testing.' },
+    { q: 'The provider team renamed a response field. You want to know whether the mobile app will break.', o: ['Sanity', 'Contract', 'Security', 'Exploratory'], a: 1, why: 'Contract tests compare what the consumer expects with what the provider now sends, so they catch breaking changes before release.' },
+    { q: 'Before a Diwali sale, the team wants to know whether checkout stays fast with 20 times the normal traffic.', o: ['Regression', 'Functional', 'Performance (load and spike)', 'Negative'], a: 2, why: 'Load and spike tests measure response time and error rate under heavy and sudden traffic.' },
+    { q: 'You want to see whether a customer can read another customer\'s invoice by changing the id in the URL.', o: ['Integration', 'Security', 'Smoke', 'Contract'], a: 1, why: 'That is broken object level authorization, the number one risk in the OWASP API Top 10. It is a security test.' },
+    { q: 'A developer fixed a bug in the coupon endpoint. You check that exact case and the nearby coupon features once.', o: ['Sanity', 'Soak', 'Fuzz', 'Monitoring'], a: 0, why: 'A sanity test is a narrow, quick check of the changed area after a small fix.' },
+    { q: 'Every night a tool sends thousands of generated, strange request bodies and reports any 500 error.', o: ['Exploratory', 'Fuzz', 'Contract', 'Smoke'], a: 1, why: 'Sending large numbers of random or malformed inputs to find crashes is fuzz testing.' },
+    { q: 'Placing an order should reduce stock in the inventory service and start a payment in the payment service.', o: ['Unit', 'Integration', 'Sanity', 'Performance'], a: 1, why: 'Integration tests check that separate services work together correctly.' },
+    { q: 'A login and product search runs every five minutes against production and alerts the team if it fails.', o: ['Regression', 'Synthetic monitoring', 'Fuzz', 'Contract'], a: 1, why: 'Scheduled checks against production are synthetic monitoring. They find outages before customers report them.' }
+  ],
+  fuzzList: ['1', '10', '0', '11', '-1', '2.5', '"5"', '"five"', 'null', 'true', '""', '[]', '1e309', '9007199254740993', '"\' OR \'1\'=\'1"', '99999999'],
   venn: [
     { n: 'REST orders API over HTTPS', ws: true, why: 'It is reached over the network with HTTP and JSON.' },
     { n: 'SOAP banking service', ws: true, why: 'XML envelopes over HTTP, described by a WSDL file.' },
@@ -2811,24 +3175,32 @@ const PAGE = {
     { lv: 'e', q: 'Which of these is <b>not</b> valid JSON?', o: ['<code>{"a": 1}</code>', '<code>[1, 2, 3]</code>', '<code>{\'a\': 1}</code>', '<code>"hello"</code>'], a: 2, hint: 'Look at the quote marks.', why: 'JSON keys and strings need double quotes.' },
     { lv: 'e', q: 'In <code>https://api.shop.com/v1/orders?page=2</code>, what is <code>page=2</code>?', o: ['A path parameter', 'A header', 'A query parameter', 'A fragment'], a: 2, hint: 'It comes after the question mark.', why: 'Everything after <code>?</code> and before <code>#</code> is the query string.' },
     { lv: 'e', q: 'A user with a valid token tries an admin only action. What status fits best?', o: ['401', '403', '404', '409'], a: 1, hint: 'The server knows who they are.', why: '403 Forbidden: authenticated but not allowed.' },
+    { lv: 'e', q: 'Which test type is a quick check that a new build is alive before deeper testing?', o: ['Soak test', 'Smoke test', 'Fuzz test', 'Contract test'], a: 1, hint: 'It runs in minutes right after a deploy.', why: 'A smoke test checks a few key calls such as health, login and one main feature.' },
+    { lv: 'e', q: 'In browser DevTools, which option lets you replay a call in Postman or a terminal?', o: ['Copy as cURL', 'Clear cache', 'Disable JavaScript', 'Print page'], a: 0, hint: 'curl is a command line HTTP client.', why: 'Copy as cURL gives the exact request with headers and body, ready to paste and edit.' },
     { lv: 'm', q: 'Which method is idempotent but not safe?', o: ['GET', 'POST', 'PUT', 'HEAD'], a: 2, hint: 'It changes data, yet repeating it gives the same state.', why: 'PUT changes data (not safe) and repeating it leaves the same state (idempotent). DELETE is the other one.' },
     { lv: 'm', q: 'In a Postman Tests script, how do you save the id from the response for the next request?', o: ['<code>pm.request.id = body.id</code>', '<code>pm.collectionVariables.set("id", pm.response.json().id)</code>', '<code>localStorage.id = body.id</code>', '<code>pm.expect(body.id)</code>'], a: 1, hint: 'Variables are set with a set method.', why: 'Collection, environment and global variables are set with <code>.set(name, value)</code> and read as <code>{{name}}</code>.' },
     { lv: 'm', q: 'The JSON body is valid, but <code>quantity</code> is 50 when the maximum is 10. Which status is most appropriate?', o: ['200', '400', '422', '500'], a: 2, hint: 'The syntax is fine, a rule is broken.', why: '422 Unprocessable Content fits a valid body that breaks a rule. Some APIs document 400 instead, which is acceptable if consistent.' },
     { lv: 'm', q: 'Which part of a JWT can anyone read without a key?', o: ['Only the header', 'The header and the payload', 'Only the signature', 'Nothing, it is encrypted'], a: 1, hint: 'Base64url is an encoding.', why: 'Header and payload are only base64url encoded. Never put secrets in them.' },
     { lv: 'm', q: 'Why is PKCE used in the OAuth authorization code flow?', o: ['To encrypt the access token', 'To stop a stolen authorization code being exchanged by someone else', 'To make tokens last longer', 'To avoid using HTTPS'], a: 1, hint: 'The verifier stays with the app that started the flow.', why: 'Only the app holding the original code verifier can redeem the code.' },
     { lv: 'm', q: 'A field accepts 3 to 20 characters. Which set is the best boundary test?', o: ['1, 10, 30', '2, 3, 4, 19, 20, 21', '3 and 20 only', '0 and 100'], a: 1, hint: 'Test at and on both sides of each edge.', why: 'Values just below, at and just above each boundary catch off by one errors.' },
+    { lv: 'm', q: 'An upload is one byte over the allowed size. Which status fits best?', o: ['404', '409', '413', '503'], a: 2, hint: 'The content is too big.', why: '413 Content Too Large is the standard answer when a request body exceeds the limit.' },
+    { lv: 'm', q: 'Why should an API not send money as a floating point number such as 59.97?', o: ['JSON cannot hold decimals', 'Floating point cannot store most decimals exactly, so rounding errors appear', 'It makes the response larger', 'Browsers round all numbers'], a: 1, hint: 'Try 0.1 + 0.2 in a browser console.', why: 'Use an integer in the smallest unit, such as paise, or a decimal string with a currency code.' },
     { lv: 'h', q: 'User A requests <code>GET /orders/77</code>, which belongs to user B, and gets 200 with the data. What is this?', o: ['Broken function level authorization', 'Broken object level authorization', 'Mass assignment', 'SSRF'], a: 1, hint: 'The object is someone else\'s.', why: 'BOLA, API1 in the OWASP API Security Top 10 (2023).' },
     { lv: 'h', q: 'A client sends <code>If-None-Match</code> with the current ETag. What should it get?', o: ['200 with the body', '204', '304 with no body', '412'], a: 2, hint: 'Nothing has changed.', why: '304 Not Modified lets the client reuse its cached copy.' },
     { lv: 'h', q: 'Which pagination style avoids duplicates when new rows are inserted while you page?', o: ['Offset and limit', 'Page number and size', 'Cursor based', 'Random sampling'], a: 2, hint: 'It remembers where you stopped, not how many you skipped.', why: 'A cursor points after the last item seen, so inserted rows do not shift the window.' },
     { lv: 'h', q: 'Response times p50 = 120 ms, average = 190 ms, p99 = 2400 ms. What does this tell you?', o: ['The API is uniformly slow', 'A small share of requests are very slow', 'Half the requests take 2400 ms', 'The average is wrong'], a: 1, hint: 'Compare the median with the tail.', why: 'A fast median with a very slow p99 means a long tail. Investigate those slow requests.' },
     { lv: 'h', q: 'A webhook provider promises "at least once" delivery. What must the receiver handle?', o: ['Events that never arrive', 'The same event arriving more than once', 'Events without a body', 'Only GET requests'], a: 1, hint: 'At least once allows more than once.', why: 'Receivers must be idempotent, usually by storing processed event ids.' },
     { lv: 'h', q: 'A PATCH to <code>/users/me</code> with <code>{"role": "admin"}</code> succeeds and the role changes. Which risk is this?', o: ['Broken object property level authorization (mass assignment)', 'Rate limiting', 'Improper inventory management', 'Unsafe consumption of APIs'], a: 0, hint: 'A property was set that the user should not control.', why: 'API3 in the 2023 OWASP list covers mass assignment and excessive data exposure.' },
+    { lv: 'h', q: 'Two buyers send "buy the last item" at the same moment and both get 201. What kind of bug is this?', o: ['A race condition', 'A CORS error', 'A caching bug', 'A contract break'], a: 0, hint: 'The result depends on timing.', why: 'Both requests read "stock 1" before either wrote. Atomic updates, locking or If-Match prevent it.' },
+    { lv: 'h', q: 'A call works in Postman but the web app shows "blocked by CORS policy". What is the most likely cause?', o: ['The database is down', 'The API does not return the right Access-Control-Allow-Origin header for the app\'s origin', 'The token expired', 'The JSON is invalid'], a: 1, hint: 'Only browsers enforce this rule.', why: 'Postman ignores CORS. The browser blocks the page from reading the response unless the API allows its origin.' },
     { lv: 'x', q: 'Which change to a JSON response is backward compatible for well behaved clients?', o: ['Renaming a field', 'Changing a number to a string', 'Adding a new optional field', 'Removing a field nobody "should" use'], a: 2, hint: 'Clients ignore what they do not know.', why: 'Additions are safe for clients that ignore unknown fields. The others break someone.' },
     { lv: 'x', q: 'Which standard defines <code>application/problem+json</code> error bodies today?', o: ['RFC 7231', 'RFC 9457', 'RFC 6749', 'RFC 7519'], a: 1, hint: 'It replaced RFC 7807 in 2023.', why: 'RFC 9457 Problem Details for HTTP APIs. RFC 6749 is OAuth 2.0 and RFC 7519 is JWT.' },
     { lv: 'x', q: 'In consumer driven contract testing with Pact, who writes the contract?', o: ['The provider team', 'The consumer, from what it actually uses', 'An external auditor', 'The API gateway'], a: 1, hint: 'The name says who drives it.', why: 'Consumers record their expectations. The provider verifies them in its own pipeline.' },
     { lv: 'x', q: 'A GraphQL API returns status 200 with <code>"errors": [...]</code> and partial <code>data</code>. How should a test treat it?', o: ['Pass, because the status is 200', 'Inspect the errors array and decide if partial data is acceptable', 'Fail only if the status is 500', 'Ignore GraphQL errors'], a: 1, hint: 'GraphQL reports field errors in the body.', why: 'In GraphQL the body, not the status, tells you which fields failed.' },
     { lv: 'x', q: 'Which protocol do MCP servers use for messages such as <code>tools/call</code>?', o: ['SOAP', 'gRPC', 'JSON-RPC 2.0', 'GraphQL'], a: 2, hint: 'The messages have jsonrpc, id, method and params.', why: 'The Model Context Protocol uses JSON-RPC 2.0 over stdio or Streamable HTTP.' },
-    { lv: 'x', q: 'What is the best way to assert on an LLM API answer in a regression test?', o: ['Exact string match with yesterday\'s answer', 'Check structure, required facts and rules, over several runs', 'Only check the status code', 'Skip testing because output is random'], a: 1, hint: 'The wording changes, the facts should not.', why: 'Non deterministic text needs property based checks and repeated runs, often scored as a pass rate on an eval set.' }
+    { lv: 'x', q: 'What is the best way to assert on an LLM API answer in a regression test?', o: ['Exact string match with yesterday\'s answer', 'Check structure, required facts and rules, over several runs', 'Only check the status code', 'Skip testing because output is random'], a: 1, hint: 'The wording changes, the facts should not.', why: 'Non deterministic text needs property based checks and repeated runs, often scored as a pass rate on an eval set.' },
+    { lv: 'x', q: 'Which tool generates thousands of test requests directly from an OpenAPI schema?', o: ['Schemathesis', 'Mailpit', 'Kibana', 'Swagger UI'], a: 0, hint: 'It does property based testing.', why: 'Schemathesis reads the schema, generates valid and invalid requests, and reports 5xx errors and schema violations.' },
+    { lv: 'x', q: 'In the MCP specification released on 28 July 2026, what happened to the initialize handshake and session id?', o: ['They became mandatory for every tool', 'They were removed, so each request stands alone', 'They moved into the request body', 'Nothing changed'], a: 1, hint: 'The core became stateless.', why: 'The 2026-07-28 revision made the core stateless and added Mcp-Method and Mcp-Name headers so gateways can route requests.' }
   ],
 
   calc: [
@@ -2855,8 +3227,10 @@ const PAGE = {
     { id: 'data-formats', en: 'JSON is the main payload format. Check types, null versus missing, numbers, dates and Unicode.', hi: 'JSON मुख्य format है। types, null और missing, numbers, dates और Unicode जाँचें।', kn: 'JSON ಮುಖ್ಯ format. types, null ಮತ್ತು missing, numbers, dates ಮತ್ತು Unicode ಪರಿಶೀಲಿಸಿ.', or: 'JSON ମୁଖ୍ୟ format। types, null ଓ missing, numbers, dates ଏବଂ Unicode ଯାଞ୍ଚ କରନ୍ତୁ।', ar: 'JSON هو التنسيق الرئيسي. تحقق من الأنواع والقيم الفارغة والأرقام والتواريخ.', de: 'JSON ist das Hauptformat. Prüfe Typen, null gegenüber fehlend, Zahlen, Datumswerte und Unicode.' },
     { id: 'api-styles', en: 'REST, SOAP, GraphQL, gRPC, WebSocket and webhooks each need a slightly different testing focus.', hi: 'REST, SOAP, GraphQL, gRPC, WebSocket और webhooks सबके testing पर अलग ध्यान चाहिए।', kn: 'REST, SOAP, GraphQL, gRPC, WebSocket ಮತ್ತು webhooks ಪ್ರತಿಯೊಂದಕ್ಕೂ ಬೇರೆ testing ಗಮನ ಬೇಕು.', or: 'REST, SOAP, GraphQL, gRPC, WebSocket ଏବଂ webhooks ପ୍ରତ୍ୟେକର testing ଧ୍ୟାନ ଅଲଗା।', ar: 'كل من REST وSOAP وGraphQL وgRPC وWebSocket يحتاج تركيزًا مختلفًا في الاختبار.', de: 'REST, SOAP, GraphQL, gRPC, WebSocket und Webhooks brauchen jeweils einen etwas anderen Testfokus.' },
     { id: 'tools', en: 'Postman, curl and Bruno are the everyday tools. Use environments and variables, never hard coded secrets.', hi: 'Postman, curl और Bruno रोज़ के tools हैं। environments और variables इस्तेमाल करें।', kn: 'Postman, curl ಮತ್ತು Bruno ದಿನನಿತ್ಯದ tools. environments ಮತ್ತು variables ಬಳಸಿ.', or: 'Postman, curl ଏବଂ Bruno ଦୈନିକ tools। environments ଏବଂ variables ବ୍ୟବହାର କରନ୍ତୁ।', ar: 'Postman وcurl وBruno هي الأدوات اليومية. استخدم البيئات والمتغيرات.', de: 'Postman, curl und Bruno sind die Alltagswerkzeuge. Nutze Umgebungen und Variablen, nie fest eingetragene Geheimnisse.' },
+    { id: 'debugging', en: 'DevTools, HAR files and proxies show the calls an app really makes, so you can replay and change them.', hi: 'DevTools, HAR files और proxies दिखाते हैं कि app असल में कौन सी calls करता है, ताकि आप उन्हें दोबारा भेजकर बदल सकें।', kn: 'DevTools, HAR files ಮತ್ತು proxies app ನಿಜವಾಗಿ ಮಾಡುವ calls ತೋರಿಸುತ್ತವೆ, ಅವುಗಳನ್ನು ಮತ್ತೆ ಕಳುಹಿಸಿ ಬದಲಿಸಬಹುದು.', or: 'DevTools, HAR files ଓ proxies ଦେଖାନ୍ତି app ପ୍ରକୃତରେ କେଉଁ calls କରେ, ଯାହାକୁ ଆପଣ ପୁଣି ପଠାଇ ବଦଳାଇ ପାରିବେ।', ar: 'تُظهر أدوات المطور وملفات HAR والوكلاء الطلبات التي يرسلها التطبيق فعلًا، فتستطيع إعادة إرسالها وتعديلها.', de: 'DevTools, HAR-Dateien und Proxys zeigen, welche Aufrufe eine App wirklich sendet, damit du sie wiederholen und ändern kannst.' },
     { id: 'api-docs', en: 'The OpenAPI document is your test oracle. Every line in it is a test idea.', hi: 'OpenAPI document आपका test oracle है। इसकी हर line एक test idea है।', kn: 'OpenAPI document ನಿಮ್ಮ test oracle. ಅದರ ಪ್ರತಿ line ಒಂದು test idea.', or: 'OpenAPI document ଆପଣଙ୍କ test oracle। ଏହାର ପ୍ରତ୍ୟେକ line ଏକ test idea।', ar: 'وثيقة OpenAPI هي مرجع الاختبار. كل سطر فيها فكرة اختبار.', de: 'Das OpenAPI Dokument ist dein Testorakel. Jede Zeile darin ist eine Testidee.' },
     { id: 'auth', en: 'Authentication is who you are. Authorization is what you may do. Test both with several users.', hi: 'Authentication बताता है आप कौन हैं। Authorization बताता है आप क्या कर सकते हैं।', kn: 'Authentication ನೀವು ಯಾರು ಎಂದು ಹೇಳುತ್ತದೆ. Authorization ನೀವು ಏನು ಮಾಡಬಹುದು ಎಂದು ಹೇಳುತ್ತದೆ.', or: 'Authentication କହେ ଆପଣ କିଏ। Authorization କହେ ଆପଣ କଣ କରିପାରିବେ।', ar: 'المصادقة تحدد من أنت، والتفويض يحدد ما يحق لك فعله.', de: 'Authentifizierung klärt, wer du bist. Autorisierung klärt, was du darfst. Teste beides mit mehreren Nutzern.' },
+    { id: 'test-types', en: 'Smoke, functional, integration, regression, contract, security, performance and fuzz tests each answer a different question.', hi: 'Smoke, functional, integration, regression, contract, security, performance और fuzz tests हर एक अलग सवाल का जवाब देते हैं।', kn: 'Smoke, functional, integration, regression, contract, security, performance ಮತ್ತು fuzz tests ಪ್ರತಿಯೊಂದೂ ಬೇರೆ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸುತ್ತವೆ.', or: 'Smoke, functional, integration, regression, contract, security, performance ଓ fuzz tests ପ୍ରତ୍ୟେକ ଭିନ୍ନ ପ୍ରଶ୍ନର ଉତ୍ତର ଦିଅନ୍ତି।', ar: 'اختبارات الدخان والوظائف والتكامل والانحدار والعقود والأمان والأداء والتشويش يجيب كل منها عن سؤال مختلف.', de: 'Smoke-, Funktions-, Integrations-, Regressions-, Vertrags-, Sicherheits-, Last- und Fuzz-Tests beantworten jeweils eine andere Frage.' },
     { id: 'test-design', en: 'Use positive, negative, boundary, partition, decision table and state transition cases for every endpoint.', hi: 'हर endpoint के लिए positive, negative, boundary और state cases बनाएँ।', kn: 'ಪ್ರತಿ endpoint ಗೆ positive, negative, boundary ಮತ್ತು state cases ರಚಿಸಿ.', or: 'ପ୍ରତ୍ୟେକ endpoint ପାଇଁ positive, negative, boundary ଏବଂ state cases ତିଆରି କରନ୍ତୁ।', ar: 'استخدم حالات إيجابية وسلبية وحدية وانتقالات الحالة لكل نقطة نهاية.', de: 'Nutze positive, negative, Grenzwert, Äquivalenzklassen und Zustandsfälle für jeden Endpunkt.' },
     { id: 'validations', en: 'Check status, headers, schema, values, business rules, side effects and speed. A 200 alone proves little.', hi: 'Status, headers, schema, values, rules और side effects जाँचें। अकेला 200 काफ़ी नहीं।', kn: 'Status, headers, schema, values, rules ಮತ್ತು side effects ಪರಿಶೀಲಿಸಿ. 200 ಮಾತ್ರ ಸಾಕಲ್ಲ.', or: 'Status, headers, schema, values, rules ଏବଂ side effects ଯାଞ୍ଚ କରନ୍ତୁ। କେବଳ 200 ଯଥେଷ୍ଟ ନୁହେଁ।', ar: 'تحقق من الحالة والرؤوس والمخطط والقيم والقواعد والآثار الجانبية. الرمز 200 وحده لا يكفي.', de: 'Prüfe Status, Header, Schema, Werte, Geschäftsregeln, Nebenwirkungen und Tempo. Ein 200 allein beweist wenig.' },
     { id: 'chaining', en: 'Chain requests by saving values like the token and the order id into variables.', hi: 'Token और order id जैसे values variables में रखकर requests जोड़ें।', kn: 'Token ಮತ್ತು order id ಅನ್ನು variables ನಲ್ಲಿ ಉಳಿಸಿ requests ಜೋಡಿಸಿ.', or: 'Token ଏବଂ order id variables ରେ ରଖି requests ଯୋଡ଼ନ୍ତୁ।', ar: 'اربط الطلبات بحفظ القيم مثل الرمز ورقم الطلب في متغيرات.', de: 'Verkette Anfragen, indem du Werte wie Token und Bestellnummer in Variablen speicherst.' },
@@ -2864,12 +3238,18 @@ const PAGE = {
     { id: 'pagination', en: 'Test first, last and beyond the last page, limits, totals, duplicates and sorting.', hi: 'पहला, आख़िरी और उसके बाद का page, limits, totals और sorting test करें।', kn: 'ಮೊದಲ, ಕೊನೆಯ ಮತ್ತು ನಂತರದ page, limits, totals ಮತ್ತು sorting test ಮಾಡಿ.', or: 'ପ୍ରଥମ, ଶେଷ ଏବଂ ପରର page, limits, totals ଏବଂ sorting test କରନ୍ତୁ।', ar: 'اختبر الصفحة الأولى والأخيرة وما بعدها والحدود والإجماليات والترتيب.', de: 'Teste erste, letzte und eine Seite zu viel, Limits, Gesamtzahlen, Duplikate und Sortierung.' },
     { id: 'rate-limits', en: 'Rate limits answer 429 with Retry-After. ETags enable 304. Idempotency keys stop double payments.', hi: 'Rate limit पर 429 आता है। ETag से 304 मिलता है। Idempotency key दोहरे भुगतान रोकती है।', kn: 'Rate limit ಗೆ 429 ಬರುತ್ತದೆ. ETag ಇಂದ 304. Idempotency key ಎರಡು ಬಾರಿ ಪಾವತಿ ತಡೆಯುತ್ತದೆ.', or: 'Rate limit ରେ 429 ଆସେ। ETag ରୁ 304। Idempotency key ଦୁଇଥର payment ରୋକେ।', ar: 'حد المعدل يعيد 429. وسم ETag يتيح 304. ومفتاح عدم التكرار يمنع الدفع المزدوج.', de: 'Ratenlimits antworten mit 429. ETags ermöglichen 304. Idempotenzschlüssel verhindern doppelte Zahlungen.' },
     { id: 'errors', en: 'Good errors use the right status and the Problem Details format, without leaking internals.', hi: 'अच्छी errors सही status और Problem Details format इस्तेमाल करती हैं।', kn: 'ಒಳ್ಳೆಯ errors ಸರಿಯಾದ status ಮತ್ತು Problem Details format ಬಳಸುತ್ತವೆ.', or: 'ଭଲ errors ଠିକ status ଏବଂ Problem Details format ବ୍ୟବହାର କରେ।', ar: 'الأخطاء الجيدة تستخدم الحالة الصحيحة وتنسيق Problem Details دون كشف التفاصيل الداخلية.', de: 'Gute Fehler nutzen den richtigen Status und das Problem Details Format, ohne Interna zu verraten.' },
+    { id: 'files', en: 'Uploads use multipart form data or presigned URLs. Test size limits, real file types, names and who can download each file.', hi: 'Uploads multipart form data या presigned URLs से होते हैं। Size limit, असली file type, नाम और कौन file download कर सकता है, यह जाँचें।', kn: 'Uploads multipart form data ಅಥವಾ presigned URLs ಬಳಸುತ್ತವೆ. Size limit, ನಿಜವಾದ file type, ಹೆಸರು ಮತ್ತು ಯಾರು download ಮಾಡಬಹುದು ಎಂದು ಪರಿಶೀಲಿಸಿ.', or: 'Uploads multipart form data ବା presigned URLs ବ୍ୟବହାର କରେ। Size limit, ପ୍ରକୃତ file type, ନାମ ଓ କିଏ download କରିପାରିବ ଯାଞ୍ଚ କରନ୍ତୁ।', ar: 'يستخدم الرفع بيانات النماذج متعددة الأجزاء أو روابط موقعة مسبقًا. اختبر حدود الحجم ونوع الملف الحقيقي والأسماء ومن يستطيع التنزيل.', de: 'Uploads nutzen multipart/form-data oder vorsignierte URLs. Teste Größenlimits, echte Dateitypen, Namen und wer jede Datei laden darf.' },
+    { id: 'edge-data', en: 'Dates need time zones, money needs integers or decimals, and text needs Unicode. Test each one with awkward values.', hi: 'Dates को time zone चाहिए, पैसे को integer या decimal, और text को Unicode। हर एक को अजीब values से test करें।', kn: 'Dates ಗೆ time zone, ಹಣಕ್ಕೆ integer ಅಥವಾ decimal, text ಗೆ Unicode ಬೇಕು. ಪ್ರತಿಯೊಂದನ್ನೂ ವಿಚಿತ್ರ values ನಿಂದ test ಮಾಡಿ.', or: 'Dates ପାଇଁ time zone, ଟଙ୍କା ପାଇଁ integer ବା decimal, text ପାଇଁ Unicode ଦରକାର। ପ୍ରତ୍ୟେକକୁ ଅଦ୍ଭୁତ values ରେ test କରନ୍ତୁ।', ar: 'تحتاج التواريخ إلى مناطق زمنية، والمال إلى أعداد صحيحة أو عشرية، والنص إلى يونيكود. اختبر كلًا منها بقيم صعبة.', de: 'Datumswerte brauchen Zeitzonen, Geld braucht Ganzzahlen oder Dezimalwerte und Text braucht Unicode. Teste jedes mit kniffligen Werten.' },
+    { id: 'concurrency', en: 'Race conditions appear only when requests arrive together. Send them in parallel and check the data afterwards.', hi: 'Race conditions तभी दिखती हैं जब requests एक साथ आती हैं। उन्हें parallel भेजें और बाद में data जाँचें।', kn: 'Requests ಒಟ್ಟಿಗೆ ಬಂದಾಗ ಮಾತ್ರ race conditions ಕಾಣುತ್ತವೆ. ಅವುಗಳನ್ನು parallel ಆಗಿ ಕಳುಹಿಸಿ, ನಂತರ data ಪರಿಶೀಲಿಸಿ.', or: 'Requests ଏକାସାଙ୍ଗରେ ଆସିଲେ ହିଁ race conditions ଦେଖାଯାଏ। ସେଗୁଡ଼ିକୁ parallel ପଠାନ୍ତୁ ଏବଂ ପରେ data ଯାଞ୍ଚ କରନ୍ତୁ।', ar: 'تظهر حالات التسابق فقط عندما تصل الطلبات معًا. أرسلها بالتوازي ثم افحص البيانات.', de: 'Race Conditions zeigen sich nur, wenn Anfragen gleichzeitig ankommen. Sende sie parallel und prüfe danach die Daten.' },
+    { id: 'backend', en: 'A 201 is not proof. Check the database, the queue, the email and the logs that the request should have changed.', hi: '201 सबूत नहीं है। Database, queue, email और logs जाँचें जिन्हें request ने बदलना था।', kn: '201 ಪುರಾವೆ ಅಲ್ಲ. Request ಬದಲಿಸಬೇಕಾದ database, queue, email ಮತ್ತು logs ಪರಿಶೀಲಿಸಿ.', or: '201 ପ୍ରମାଣ ନୁହେଁ। Request ବଦଳାଇବା କଥା database, queue, email ଓ logs ଯାଞ୍ଚ କରନ୍ତୁ।', ar: 'رمز 201 ليس دليلًا. افحص قاعدة البيانات والطابور والبريد والسجلات التي كان يجب أن يغيرها الطلب.', de: 'Ein 201 ist kein Beweis. Prüfe Datenbank, Queue, E-Mail und Logs, die die Anfrage ändern sollte.' },
+    { id: 'transport', en: 'TLS proves who the server is and encrypts traffic. CORS decides which websites may read the API in a browser.', hi: 'TLS बताता है server कौन है और traffic को encrypt करता है। CORS तय करता है कौन सी websites browser में API पढ़ सकती हैं।', kn: 'TLS server ಯಾರು ಎಂದು ಸಾಬೀತುಪಡಿಸಿ traffic encrypt ಮಾಡುತ್ತದೆ. Browser ನಲ್ಲಿ ಯಾವ websites API ಓದಬಹುದು ಎಂದು CORS ನಿರ್ಧರಿಸುತ್ತದೆ.', or: 'TLS server କିଏ ପ୍ରମାଣ କରେ ଏବଂ traffic encrypt କରେ। Browser ରେ କେଉଁ websites API ପଢ଼ିପାରିବେ CORS ସ୍ଥିର କରେ।', ar: 'يثبت TLS هوية الخادم ويشفر الحركة. ويحدد CORS أي المواقع يمكنها قراءة الواجهة داخل المتصفح.', de: 'TLS beweist, wer der Server ist, und verschlüsselt den Verkehr. CORS legt fest, welche Websites die API im Browser lesen dürfen.' },
     { id: 'security', en: 'The OWASP API Top 10 lists the common risks. Start with BOLA by swapping ids between two users.', hi: 'OWASP API Top 10 मुख्य ख़तरों की सूची है। दो users के बीच ids बदलकर BOLA से शुरू करें।', kn: 'OWASP API Top 10 ಸಾಮಾನ್ಯ ಅಪಾಯಗಳ ಪಟ್ಟಿ. ಇಬ್ಬರು users ನಡುವೆ ids ಬದಲಿಸಿ BOLA ಇಂದ ಆರಂಭಿಸಿ.', or: 'OWASP API Top 10 ସାଧାରଣ ବିପଦ ତାଲିକା। ଦୁଇ users ମଧ୍ୟରେ ids ବଦଳାଇ BOLA ରୁ ଆରମ୍ଭ କରନ୍ତୁ।', ar: 'قائمة OWASP API Top 10 تضم المخاطر الشائعة. ابدأ بتبديل المعرفات بين مستخدمين.', de: 'Die OWASP API Top 10 nennt die häufigsten Risiken. Beginne mit BOLA, indem du IDs zwischen zwei Nutzern tauschst.' },
     { id: 'performance', en: 'Report percentiles like p95 and p99, not only the average.', hi: 'केवल average नहीं, p95 और p99 जैसे percentiles बताएँ।', kn: 'average ಮಾತ್ರವಲ್ಲ, p95 ಮತ್ತು p99 percentiles ತಿಳಿಸಿ.', or: 'କେବଳ average ନୁହେଁ, p95 ଏବଂ p99 percentiles ଜଣାନ୍ତୁ।', ar: 'أبلغ عن المئينات مثل p95 وp99 وليس المتوسط فقط.', de: 'Berichte Perzentile wie p95 und p99, nicht nur den Durchschnitt.' },
     { id: 'async', en: 'Async APIs answer 202, then you poll or receive a webhook. Expect retries and duplicates.', hi: 'Async APIs 202 देती हैं, फिर polling या webhook। retries और duplicates के लिए तैयार रहें।', kn: 'Async APIs 202 ಕೊಡುತ್ತವೆ, ನಂತರ polling ಅಥವಾ webhook. retries ಮತ್ತು duplicates ನಿರೀಕ್ಷಿಸಿ.', or: 'Async APIs 202 ଦିଏ, ପରେ polling ବା webhook। retries ଏବଂ duplicates ଆଶା କରନ୍ତୁ।', ar: 'واجهات API غير المتزامنة تعيد 202، ثم تستعلم أو تتلقى webhook. توقع إعادة المحاولة والتكرار.', de: 'Asynchrone APIs antworten mit 202, danach fragst du ab oder bekommst einen Webhook. Rechne mit Wiederholungen und Duplikaten.' },
     { id: 'scenarios', en: 'Checkout, bank transfers and ride booking show how API risks look in real products.', hi: 'Checkout, bank transfer और ride booking असली products में API ख़तरे दिखाते हैं।', kn: 'Checkout, bank transfer ಮತ್ತು ride booking ನಿಜವಾದ products ನಲ್ಲಿ API ಅಪಾಯ ತೋರಿಸುತ್ತವೆ.', or: 'Checkout, bank transfer ଏବଂ ride booking ପ୍ରକୃତ products ରେ API ବିପଦ ଦେଖାଏ।', ar: 'الدفع والتحويل البنكي وحجز الرحلات تبين شكل مخاطر API في منتجات حقيقية.', de: 'Checkout, Banküberweisung und Fahrtbuchung zeigen API Risiken in echten Produkten.' },
     { id: 'contracts', en: 'Contract tests catch breaking changes. Adding fields is safe, renaming or retyping them is not.', hi: 'Contract tests breaking changes पकड़ते हैं। field जोड़ना सुरक्षित है, नाम या type बदलना नहीं।', kn: 'Contract tests breaking changes ಹಿಡಿಯುತ್ತವೆ. field ಸೇರಿಸುವುದು ಸುರಕ್ಷಿತ, ಹೆಸರು ಬದಲಿಸುವುದು ಅಲ್ಲ.', or: 'Contract tests breaking changes ଧରେ। field ଯୋଡ଼ିବା ନିରାପଦ, ନାମ ବଦଳାଇବା ନୁହେଁ।', ar: 'اختبارات العقود تكشف التغييرات الكاسرة. إضافة الحقول آمنة، وتغيير اسمها أو نوعها ليس كذلك.', de: 'Vertragstests finden brechende Änderungen. Felder hinzufügen ist sicher, umbenennen oder Typ ändern nicht.' },
     { id: 'mocking', en: 'Mocks stand in for dependencies so you can test timeouts, failures and rare states.', hi: 'Mocks dependencies की जगह लेते हैं ताकि timeouts और failures test हो सकें।', kn: 'Mocks dependencies ಬದಲಿಗೆ ಕೆಲಸ ಮಾಡಿ timeouts ಮತ್ತು failures test ಮಾಡಲು ಬಿಡುತ್ತವೆ.', or: 'Mocks dependencies ବଦଳରେ କାମ କରି timeouts ଏବଂ failures test କରିବାକୁ ଦିଏ।', ar: 'تحل المحاكيات محل التبعيات لتختبر المهلات والأعطال والحالات النادرة.', de: 'Mocks ersetzen Abhängigkeiten, damit du Zeitüberschreitungen, Fehler und seltene Zustände testen kannst.' },
+    { id: 'fuzzing', en: 'Fuzzers and scanners such as ZAP, Burp Suite and Schemathesis send thousands of strange inputs. Any 500 is a bug.', hi: 'ZAP, Burp Suite और Schemathesis जैसे tools हज़ारों अजीब inputs भेजते हैं। हर 500 एक bug है।', kn: 'ZAP, Burp Suite ಮತ್ತು Schemathesis ಸಾವಿರಾರು ವಿಚಿತ್ರ inputs ಕಳುಹಿಸುತ್ತವೆ. ಪ್ರತಿ 500 ಒಂದು bug.', or: 'ZAP, Burp Suite ଓ Schemathesis ହଜାର ହଜାର ଅଦ୍ଭୁତ inputs ପଠାନ୍ତି। ପ୍ରତ୍ୟେକ 500 ଏକ bug।', ar: 'ترسل أدوات مثل ZAP وBurp Suite وSchemathesis آلاف المدخلات الغريبة. وأي رمز 500 هو خلل.', de: 'Fuzzer und Scanner wie ZAP, Burp Suite und Schemathesis senden Tausende seltsamer Eingaben. Jeder 500er ist ein Fehler.' },
     { id: 'graphql-grpc', en: 'GraphQL returns errors inside a 200. gRPC has its own status codes and deadlines.', hi: 'GraphQL 200 के अंदर errors देता है। gRPC के अपने status codes और deadlines हैं।', kn: 'GraphQL 200 ಒಳಗೆ errors ಕೊಡುತ್ತದೆ. gRPC ಗೆ ತನ್ನದೇ status codes ಮತ್ತು deadlines.', or: 'GraphQL 200 ଭିତରେ errors ଦିଏ। gRPC ର ନିଜ status codes ଏବଂ deadlines ଅଛି।', ar: 'تعيد GraphQL الأخطاء داخل استجابة 200. ولـ gRPC رموز حالة ومهل خاصة.', de: 'GraphQL liefert Fehler in einer 200 Antwort. gRPC hat eigene Statuscodes und Deadlines.' },
     { id: 'cicd', en: 'Run saved collections in CI, monitor production, and include trace ids in every bug report.', hi: 'Collections को CI में चलाएँ, production monitor करें, और bug report में trace id दें।', kn: 'Collections ಅನ್ನು CI ನಲ್ಲಿ ಓಡಿಸಿ, production monitor ಮಾಡಿ, bug report ನಲ್ಲಿ trace id ಕೊಡಿ.', or: 'Collections CI ରେ ଚଲାନ୍ତୁ, production monitor କରନ୍ତୁ, bug report ରେ trace id ଦିଅନ୍ତୁ।', ar: 'شغّل المجموعات في CI وراقب الإنتاج وأضف معرف التتبع في كل تقرير خطأ.', de: 'Lass gespeicherte Sammlungen in CI laufen, überwache die Produktion und nenne Trace IDs in jedem Fehlerbericht.' },
     { id: 'ai-apis', en: 'AI APIs are non deterministic. Assert on structure and rules, use eval sets, and test MCP tools like any API.', hi: 'AI APIs हर बार अलग जवाब दे सकती हैं। structure और rules पर assert करें, eval sets बनाएँ।', kn: 'AI APIs ಪ್ರತಿ ಬಾರಿ ಬೇರೆ ಉತ್ತರ ಕೊಡಬಹುದು. structure ಮತ್ತು rules ಮೇಲೆ assert ಮಾಡಿ.', or: 'AI APIs ପ୍ରତିଥର ଅଲଗା ଉତ୍ତର ଦେଇପାରେ। structure ଏବଂ rules ଉପରେ assert କରନ୍ତୁ।', ar: 'واجهات الذكاء الاصطناعي غير حتمية. تحقق من البنية والقواعد واستخدم مجموعات التقييم.', de: 'KI APIs sind nicht deterministisch. Prüfe Struktur und Regeln, nutze Eval Sets und teste MCP Tools wie jede API.' },
@@ -2985,6 +3365,16 @@ const INTERVIEW = {
     { id: 'iq-llm', lv: 'x', topic: 'Expert and latest', q: 'How would you test an LLM powered API?', hint: 'The words change, the rules should not.', answer: 'Assert on structure and rules instead of exact text, run cases several times, validate structured output against a schema, test streaming, token limits, timeouts and rate limits, build an eval set including prompt injection, and check that tool calls enforce the user\'s permissions.', explain: '<p>Track the pass rate of the eval set per release and the token cost per request.</p>' },
     { id: 'iq-mcp', lv: 'x', topic: 'Expert and latest', q: 'What is an MCP server and what would you test?', hint: 'Tools for AI apps, over JSON-RPC.', answer: 'The Model Context Protocol lets AI apps call tools, read resources and use prompts from an MCP server over JSON-RPC 2.0. Test tools/list descriptions and schemas, invalid arguments, authorization on every tool call, and prompt injection risks in tool results.', explain: '<p>The MCP Inspector lets you call a server\'s tools by hand, much like Postman for REST.</p>' },
     { id: 'iq-problem', lv: 'x', topic: 'Expert and latest', q: 'What is RFC 9457?', hint: 'A standard error format.', answer: 'Problem Details for HTTP APIs, published in 2023 to replace RFC 7807. It defines application/problem+json error bodies with type, title, status, detail and instance, plus custom fields.', explain: '<p>Using one error format across all endpoints makes clients simpler and lets testers check errors with one schema.</p>' },
+    { id: 'iq-types', lv: 'e', topic: 'Test design', q: 'What is the difference between smoke, sanity and regression testing for an API?', hint: 'Breadth versus depth, and when each runs.', answer: 'Smoke is a quick check that a new build is alive (health, login, one key call). Sanity is a narrow check of the area that just changed. Regression reruns the wider suite to prove old features still work.', explain: '<p>Smoke runs right after every deploy and decides whether deeper testing is worth starting. Regression usually runs in CI on every build.</p>' },
+    { id: 'iq-copycurl', lv: 'e', topic: 'Tools', q: 'How do you find out which API calls a web page makes?', hint: 'A built in browser tool.', answer: 'Open browser DevTools, go to the Network tab, filter by Fetch/XHR and use the page. Each call shows its method, URL, status, headers, payload and timing. Copy as cURL lets you replay it in Postman or a terminal.', explain: '<p>Tick Preserve log so calls survive redirects. Save all as HAR to attach the traffic to a bug report, after removing secrets.</p>' },
+    { id: 'iq-proxy', lv: 'm', topic: 'Tools', q: 'How would you test the API calls of a mobile app?', hint: 'There is no DevTools on a phone.', answer: 'Run an intercepting proxy such as Charles, Proxyman, Fiddler or mitmproxy on a laptop, set the phone\'s Wi-Fi proxy to it, and install the proxy certificate on the phone. Then every request is visible and can be paused, edited and replayed.', explain: '<p>Apps with certificate pinning refuse the proxy. Ask developers for a debug build that trusts user certificates instead of trying to bypass pinning.</p>' },
+    { id: 'iq-upload', lv: 'm', topic: 'Advanced', q: 'What would you test on a file upload endpoint?', hint: 'Size, type, name, security.', answer: 'Empty, at limit and over limit sizes (413), allowed and blocked types, a file whose content does not match its extension or Content-Type, odd names including Unicode and ../ paths, malware scanning, metadata removal, and that one user cannot download another user\'s file.', explain: '<p>For presigned URL uploads also test expiry, reuse and a bigger file than declared. For downloads check Content-Type, Content-Disposition and that the file opens.</p>' },
+    { id: 'iq-money', lv: 'm', topic: 'Advanced', q: 'How should an API represent money, and why?', hint: 'Try 0.1 + 0.2.', answer: 'As an integer in the smallest unit (for example paise) or a decimal string, always with an ISO 4217 currency code. Floating point numbers cannot store most decimals exactly, which causes rounding differences between services.', explain: '<p>Also test currencies with zero or three decimal places, rounding rules for tax and discounts, and negative and zero amounts.</p>' },
+    { id: 'iq-race', lv: 'h', topic: 'Advanced', q: 'How do you test an API for race conditions?', hint: 'Requests must arrive together.', answer: 'Send the same or conflicting requests in parallel (Postman runner with many virtual users, curl with xargs -P, or Burp Repeater\'s send group in parallel), then check the data. Typical targets are the last item in stock, one time coupons, wallet withdrawals and duplicate sign ups.', explain: '<p>Expect exactly one winner. The others should get 409 or 412, never 500, and no half saved data should remain. ETag with If-Match, atomic updates, unique constraints and idempotency keys are the usual fixes.</p>' },
+    { id: 'iq-sidefx', lv: 'h', topic: 'Advanced', q: 'The API returned 201. Is the test done?', hint: 'Follow the request.', answer: 'No. Check the side effects: the database row and related data such as stock, events on the queue, emails or SMS, logs without errors or secrets, the audit trail and caches. A 201 is only what the API claims.', explain: '<p>Use the trace id from the response headers to search logs and traces across services. Also check that failed requests leave no partial data behind.</p>' },
+    { id: 'iq-cors', lv: 'h', topic: 'Auth and security', q: 'An endpoint works in Postman but fails in the browser with a CORS error. Explain.', hint: 'Who enforces CORS?', answer: 'CORS is enforced only by browsers. The browser sends an OPTIONS preflight for non simple requests and lets the page read the response only if the API returns a matching Access-Control-Allow-Origin and the allowed methods and headers. Postman ignores CORS, so the API needs to allow the app\'s origin.', explain: '<p>Test that unknown origins, the null origin and look alike domains are refused, and that a wildcard origin is never combined with credentials.</p>' },
+    { id: 'iq-fuzz', lv: 'x', topic: 'Expert and latest', q: 'What is API fuzzing and which tools would you use?', hint: 'Many strange inputs, automatically.', answer: 'Sending large numbers of random, boundary and malformed inputs to find crashes, 5xx errors, accepted bad data and slow responses. Tools: Schemathesis (from the OpenAPI schema), OWASP ZAP API scan, Burp Suite Intruder, Microsoft RESTler, or a data driven Postman run with a file of nasty values.', explain: '<p>Any 5xx is a bug, a 2xx for forbidden input is a bug, and a 4xx for allowed input is a bug. Run fuzzers only where you have permission.</p>' },
+    { id: 'iq-latest26', lv: 'x', topic: 'Expert and latest', q: 'Name some API standards or tool changes from 2025 and 2026 that affect testers.', hint: 'Methods, specs, tools.', answer: 'The HTTP QUERY method became RFC 10008 in June 2026, the Deprecation header became RFC 9745 in 2025, OpenAPI 3.2 arrived in September 2025, the MCP specification dated 2026-07-28 made the core stateless, Postman 12 became Git native with YAML collections and Agent Mode, and Rest Assured 6.x added QUERY, newer JSON Schema drafts and mTLS.', explain: '<p>Tie each one to a test idea, for example: QUERY must never change data, deprecated endpoints must send Deprecation and Sunset headers, and MCP servers must reject mismatched Mcp-Method headers.</p>' },
     { id: 'iq-strategy', lv: 'x', topic: 'Expert and latest', kind: 'Design', q: 'How would you build an API test strategy for a new product?', hint: 'Risk first.', answer: 'Understand the architecture and contracts, prioritize by risk (money, personal data, auth, busiest endpoints), design functional, negative, security and contract tests, explore with charters, automate stable checks in CI, add performance tests for critical flows, and monitor production with synthetic checks.', explain: '<p>Define entry and exit criteria, environments, test data, tools, reporting and who owns what between manual and automation work.</p>' }
   ]
 };
@@ -2995,7 +3385,7 @@ const APIW = (() => {
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } } };
   const cheer = el => { if (window.FUN && FUN.confetti) { const r = el.getBoundingClientRect(); FUN.confetti(r.left + r.width / 2, r.top + 10, 50); } };
-  const REASON = { 200: 'OK', 201: 'Created', 202: 'Accepted', 204: 'No Content', 301: 'Moved Permanently', 304: 'Not Modified', 400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 405: 'Method Not Allowed', 406: 'Not Acceptable', 409: 'Conflict', 412: 'Precondition Failed', 415: 'Unsupported Media Type', 422: 'Unprocessable Content', 429: 'Too Many Requests', 500: 'Internal Server Error', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout' };
+  const REASON = { 200: 'OK', 201: 'Created', 202: 'Accepted', 204: 'No Content', 206: 'Partial Content', 301: 'Moved Permanently', 304: 'Not Modified', 400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 405: 'Method Not Allowed', 406: 'Not Acceptable', 409: 'Conflict', 412: 'Precondition Failed', 413: 'Content Too Large', 415: 'Unsupported Media Type', 422: 'Unprocessable Content', 428: 'Precondition Required', 429: 'Too Many Requests', 500: 'Internal Server Error', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout' };
   const pill = code => `<span class="pill s${String(code)[0]}">${code} ${esc(REASON[code] || '')}</span>`;
 
   /* ---------- sequence player ---------- */
@@ -3464,7 +3854,203 @@ const APIW = (() => {
     paint();
   }
 
-  const W = { pyramid, url, idem, status, json, jwt, bva, bucket, perc, diff, checklist, venn, soaprest, rmm };
+  /* ---------- test type game ---------- */
+  function ttype(host) {
+    const Q = DATA.typeGame;
+    let k = 0, score = 0, answered = false;
+    function render() {
+      if (k >= Q.length) {
+        host.innerHTML = `<div class="w-h"><b>🧩 Pick the test type</b></div><div class="wmsg ok">You scored <b>${score} / ${Q.length}</b>. ${score === Q.length ? 'Perfect. You know which test answers which question.' : 'Look at the table above once more and try again.'}</div><div class="wrow" style="margin-top:8px"><button type="button" class="wb pri" data-again>↺ Play again</button></div>`;
+        if (score === Q.length) cheer(host);
+        return;
+      }
+      const q = Q[k];
+      answered = false;
+      host.innerHTML = `<div class="w-h"><b>🧩 Pick the test type</b><span class="w-sp"></span><small>Situation ${k + 1} of ${Q.length} · Score ${score}</small></div>
+        <div class="sg-q">${esc(q.q)}</div><div class="sg-opts">${q.o.map((c, j) => `<button type="button" class="sg-opt" data-j="${j}">${esc(c)}</button>`).join('')}</div>
+        <div class="sg-fb"></div><div class="sg-prog"><i style="width:${k / Q.length * 100}%"></i></div>`;
+    }
+    host.addEventListener('click', e => {
+      if (e.target.closest('[data-again]')) { k = 0; score = 0; render(); return; }
+      if (e.target.closest('[data-nx]')) { k++; render(); return; }
+      const b = e.target.closest('.sg-opt');
+      if (!b || answered) return;
+      answered = true;
+      const q = Q[k], j = +b.dataset.j, right = j === q.a;
+      if (right) score++;
+      host.querySelectorAll('.sg-opt').forEach(x => { x.disabled = true; if (+x.dataset.j === q.a) x.classList.add('ok'); });
+      if (!right) b.classList.add('bad');
+      host.querySelector('.sg-fb').innerHTML = `<div class="wmsg ${right ? 'ok' : 'bad'}">${right ? '✅ Right.' : `❌ The best answer is ${esc(q.o[q.a])}.`} ${esc(q.why)}</div><div class="wrow" style="margin-top:8px"><button type="button" class="wb pri" data-nx>Next ▶</button></div>`;
+    });
+    render();
+  }
+
+  /* ---------- date, money and text edge cases ---------- */
+  function edge(host) {
+    const ZONES = [['UTC', 'UTC'], ['Asia/Kolkata', 'Mumbai'], ['Asia/Tokyo', 'Tokyo'], ['Europe/London', 'London'], ['America/New_York', 'New York'], ['Australia/Sydney', 'Sydney']];
+    host.innerHTML = `<div class="w-h"><b>🧪 Edge case labs</b><span class="w-sp"></span><button type="button" class="wb on" data-t="time">🕒 Time zones</button><button type="button" class="wb" data-t="money">💰 Money</button><button type="button" class="wb" data-t="text">🔤 Text</button></div>
+      <div class="ed-pane" data-p="time"><label class="wl" for="edT">A moment in Mumbai time (IST, UTC+05:30)</label><input class="wi" id="edT" type="datetime-local" value="2026-03-31T23:30"><div class="ed-zones"></div><div class="wmsg ed-tnote"></div></div>
+      <div class="ed-pane" data-p="money" hidden><div class="wgrid"><div><label class="wl" for="edP">Price in rupees</label><input class="wi" id="edP" value="19.99" inputmode="decimal"></div><div><label class="wl" for="edQ">Quantity</label><input class="wi" id="edQ" value="3" inputmode="numeric"></div><div><label class="wl" for="edD">Discount %</label><input class="wi" id="edD" value="15" inputmode="decimal"></div></div><div class="wgrid" style="margin-top:8px"><div><span class="wl">Floating point (risky)</span><pre class="wout ed-f"></pre></div><div><span class="wl">Integer paise (safe)</span><pre class="wout ed-i"></pre></div></div><div class="wmsg ed-mnote"></div></div>
+      <div class="ed-pane" data-p="text" hidden><label class="wl" for="edS">Type a name or any text</label><input class="wi" id="edS" value="José 👨‍👩‍👧"><div class="pc-stats ed-len"></div><div class="wmsg ed-xnote"></div><div class="wrow" style="margin-top:8px"><button type="button" class="wb" data-s="O'Brien">O'Brien</button><button type="button" class="wb" data-s="Nguyễn">Nguyễn</button><button type="button" class="wb" data-s="प्रिया शर्मा">प्रिया शर्मा</button><button type="button" class="wb" data-s="محمد">محمد</button><button type="button" class="wb" data-s="🇮🇳👍🏽">🇮🇳👍🏽</button></div></div>`;
+    const $q = s => host.querySelector(s);
+    const ymd = (d, tz) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+    function time() {
+      const v = $q('#edT').value;
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)) { $q('.ed-tnote').textContent = 'Pick a date and time.'; return; }
+      const d = new Date(v.slice(0, 16) + ':00+05:30');
+      const base = ymd(d, 'Asia/Kolkata');
+      $q('.ed-zones').innerHTML = `<div class="ed-iso">ISO 8601 in UTC: <code>${d.toISOString().replace('.000', '')}</code></div>` + ZONES.map(([tz, n]) => {
+        const day = ymd(d, tz), t = new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }).format(d);
+        return `<div class="ed-z${day !== base ? ' diff' : ''}"><b>${n}</b><span>${esc(t)}</span>${day !== base ? '<small>different date</small>' : ''}</div>`;
+      }).join('');
+      const n = ZONES.filter(([tz]) => ymd(d, tz) !== base).length;
+      $q('.ed-tnote').innerHTML = n ? `The same moment falls on a <b>different calendar date</b> in ${n} of these cities. A report "by day", a coupon that "expires today" or a daily limit can give different answers depending on whose day the server uses.` : 'All these cities share the same date for this moment. Try a time close to midnight, such as 23:30 or 04:00.';
+    }
+    function money() {
+      const p = parseFloat($q('#edP').value), qn = parseInt($q('#edQ').value, 10), dc = parseFloat($q('#edD').value) || 0;
+      if (!isFinite(p) || !isFinite(qn)) { $q('.ed-mnote').textContent = 'Enter a price and a whole number quantity.'; return; }
+      const f = p * qn * (1 - dc / 100);
+      const paise = Math.round(p * 100), sub = paise * qn, off = Math.round(sub * dc / 100), tot = sub - off;
+      const rs = x => (x / 100).toFixed(2);
+      $q('.ed-f').textContent = `${p} × ${qn} × (1 − ${dc}/100)\n= ${f}\n\n0.1 + 0.2 = ${0.1 + 0.2}`;
+      $q('.ed-i').textContent = `${paise} paise × ${qn} = ${sub}\ndiscount ${dc}% = round(${sub * dc / 100}) = ${off}\ntotal = ${tot} paise = ₹${rs(tot)}`;
+      const exact = String(f) === rs(tot) || String(f) === String(Number(rs(tot)));
+      $q('.ed-mnote').innerHTML = exact ? 'This time the floating point answer happens to look clean. Try 0.1 with quantity 3, or 19.99 with a 15% discount, and watch the digits.' : `The floating point result <code>${f}</code> is not a clean amount. If one service rounds it and another truncates it, the customer is charged one value and the invoice shows another. Send money as integer paise or as a decimal string such as <code>"${rs(tot)}"</code>, plus a currency code.`;
+    }
+    function text() {
+      const s = $q('#edS').value;
+      const units = s.length, cps = [...s].length, bytes = new TextEncoder().encode(s).length;
+      let gr = cps;
+      try { gr = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)].length; } catch (e) { /* older browser */ }
+      const nfc = s.normalize('NFC') === s.normalize('NFD');
+      $q('.ed-len').innerHTML = [['What a person sees', gr], ['Code points', cps], ['UTF-16 units (JS length)', units], ['UTF-8 bytes', bytes]].map(([l, v]) => `<div class="pc-s"><small>${l}</small><b>${v}</b></div>`).join('');
+      $q('.ed-xnote').innerHTML = (gr !== bytes ? `The same text has a length of <b>${gr}</b>, <b>${cps}</b>, <b>${units}</b> or <b>${bytes}</b> depending on who counts. Ask which one a "max length" rule means, then test right at that limit with text like this.` : 'Plain English letters give the same length every way. Try an accent, Hindi text or an emoji.') + (nfc ? '' : ' This text also has two Unicode forms (NFC and NFD). Search and duplicate checks should treat them as equal.');
+    }
+    host.addEventListener('click', e => {
+      const t = e.target.closest('[data-t]');
+      if (t) { host.querySelectorAll('[data-t]').forEach(b => b.classList.toggle('on', b === t)); host.querySelectorAll('.ed-pane').forEach(p => { p.hidden = p.dataset.p !== t.dataset.t; }); }
+      const s = e.target.closest('[data-s]');
+      if (s) { $q('#edS').value = s.dataset.s; text(); }
+    });
+    $q('#edT').addEventListener('input', time);
+    ['#edP', '#edQ', '#edD'].forEach(id => $q(id).addEventListener('input', money));
+    $q('#edS').addEventListener('input', text);
+    time(); money(); text();
+  }
+
+  /* ---------- race condition simulator ---------- */
+  function race(host) {
+    const MODES = {
+      none: { label: 'No protection', steps: [
+        ['A', 'GET /items/7', 'reads stock = 1', 1], ['B', 'GET /items/7', 'reads stock = 1', 1],
+        ['A', 'POST /orders', 'stock 1 > 0, so save order. stock = 0', 0, 201], ['B', 'POST /orders', 'B still believes stock is 1, so save order. stock = −1', -1, 201]],
+        end: 'bad', note: 'Both buyers got 201 Created and stock is now −1. The shop sold one item twice. This is the classic oversell bug.' },
+      etag: { label: 'ETag and If-Match', steps: [
+        ['A', 'GET /items/7', 'reads stock = 1, ETag "v7"', 1], ['B', 'GET /items/7', 'reads stock = 1, ETag "v7"', 1],
+        ['A', 'PATCH If-Match: "v7"', 'version matches, stock = 0, ETag now "v8"', 0, 200], ['B', 'PATCH If-Match: "v7"', 'version is "v8" now, so refuse', 0, 412]],
+        end: 'ok', note: 'Buyer B gets 412 Precondition Failed because the item changed after B read it. The app should read again and tell B the item is sold out.' },
+      atomic: { label: 'Atomic update', steps: [
+        ['A', 'POST /orders', 'UPDATE stock = stock − 1 WHERE stock > 0  (1 row changed)', 0, 201], ['B', 'POST /orders', 'same UPDATE, but stock is 0 (0 rows changed)', 0, 409],
+        ['A', '', 'order saved for A', 0], ['B', '', 'no order for B, nothing half saved', 0]],
+        end: 'ok', note: 'The check and the change happen in one database step, so only one request can win. Buyer B gets 409 Conflict with an "out of stock" message.' }
+    };
+    let mode = 'none', i = -1, timer = null;
+    host.innerHTML = `<div class="w-h"><b>🏁 Two buyers, one last item</b><span class="w-sp"></span>${Object.entries(MODES).map(([k, m]) => `<button type="button" class="wb" data-m="${k}">${m.label}</button>`).join('')}</div>
+      <div class="rc-board"><div class="rc-col"><b>🙋‍♀️ Buyer A (Asha)</b><ul class="rc-a"></ul></div><div class="rc-stock"><small>Stock of item 7</small><b class="rc-n">1</b></div><div class="rc-col"><b>🙋‍♂️ Buyer B (Ben)</b><ul class="rc-b"></ul></div></div>
+      <div class="wrow" style="margin-top:8px"><button type="button" class="wb" data-a="prev" aria-label="Previous step">◀</button><button type="button" class="wb pri" data-a="play">▶ Play</button><button type="button" class="wb" data-a="next" aria-label="Next step">▶|</button><button type="button" class="wb" data-a="reset">↺</button><span class="rc-cnt"></span></div>
+      <div class="wmsg rc-note" aria-live="polite"></div>`;
+    const $q = s => host.querySelector(s), pb = $q('[data-a="play"]');
+    function draw() {
+      const m = MODES[mode];
+      host.querySelectorAll('[data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === mode));
+      const li = who => m.steps.map((s, k) => s[0] !== who || k > i ? '' : `<li class="${k === i ? 'cur' : ''}">${s[1] ? `<code>${esc(s[1])}</code>` : ''}<span>${esc(s[2])}</span>${s[4] ? pill(s[4]) : ''}</li>`).join('');
+      $q('.rc-a').innerHTML = li('A');
+      $q('.rc-b').innerHTML = li('B');
+      const stock = i < 0 ? 1 : m.steps[i][3];
+      const n = $q('.rc-n');
+      n.textContent = stock;
+      n.className = 'rc-n' + (stock < 0 ? ' neg' : '');
+      $q('.rc-cnt').textContent = `${i + 1} / ${m.steps.length}`;
+      const nt = $q('.rc-note');
+      nt.className = 'wmsg rc-note' + (i === m.steps.length - 1 ? ' ' + m.end : '');
+      nt.innerHTML = i < 0 ? 'Both buyers press Buy at the same moment. Press Play, or step through one request at a time.' : i === m.steps.length - 1 ? m.note : `<b>Step ${i + 1}.</b> Buyer ${m.steps[i][0]}: ${esc(m.steps[i][2])}`;
+    }
+    function stop() { clearInterval(timer); timer = null; pb.textContent = '▶ Play'; }
+    function go(n) { i = Math.max(-1, Math.min(MODES[mode].steps.length - 1, n)); draw(); }
+    host.addEventListener('click', e => {
+      const mb = e.target.closest('[data-m]');
+      if (mb) { stop(); mode = mb.dataset.m; go(-1); return; }
+      const a = e.target.closest('[data-a]');
+      if (!a) return;
+      const act = a.dataset.a, last = MODES[mode].steps.length - 1;
+      if (act === 'play') {
+        if (timer) { stop(); return; }
+        if (i >= last) go(-1);
+        pb.textContent = '❚❚ Pause';
+        go(i + 1);
+        timer = setInterval(() => { if (i >= last) { stop(); return; } go(i + 1); if (i >= last) stop(); }, 1800);
+      } else { stop(); if (act === 'prev') go(i - 1); if (act === 'next') go(i + 1); if (act === 'reset') go(-1); }
+    });
+    draw();
+  }
+
+  /* ---------- fuzzing a quantity field ---------- */
+  function fuzz(host) {
+    // The pretend server: it should accept whole numbers 1 to 10 and reject everything else with 422
+    function server(v) {
+      if (v === null || v === '') return [500, 'NullPointerException at OrderService.java:88'];
+      if (typeof v === 'string') { if (/^\d+$/.test(v)) v = Number(v); else return [422, 'quantity must be a number']; }
+      if (typeof v !== 'number') return [400, 'quantity has the wrong type'];
+      if (!Number.isFinite(v)) return [400, 'quantity is not a valid number'];
+      if (v > 2147483647) return [500, 'integer overflow in stock service'];
+      if (v === 0) return [422, 'quantity must be at least 1'];
+      if (v > 10) return [422, 'quantity must be at most 10'];
+      return [201, 'order created'];
+    }
+    const spec = v => Number.isInteger(v) && v >= 1 && v <= 10;
+    function parse(raw) { try { return { v: JSON.parse(raw), ok: true }; } catch (e) { return { v: raw, ok: false }; } }
+    function verdict(raw) {
+      const p = parse(raw);
+      if (!p.ok) return { st: 400, msg: 'invalid JSON body', kind: 'ok', why: 'Malformed JSON should give 400, and it does.' };
+      const v = p.v, [st, msg] = server(v), good = spec(v);
+      if (st >= 500) return { st, msg, kind: 'bug', why: 'A 5xx error means the server crashed on input it should have rejected.' };
+      if (st < 300 && !good) return { st, msg, kind: 'bug', why: typeof v === 'string' ? 'The spec asks for a number, but a string was accepted. This may be fine if documented, so raise it as a question.' : 'The spec forbids this value, yet the order was created. Bad data is now in the system.' };
+      if (st >= 400 && good) return { st, msg, kind: 'bug', why: 'A valid value was rejected.' };
+      return { st, msg, kind: 'ok', why: good ? 'Valid input accepted.' : 'Invalid input rejected with a clear 4xx.' };
+    }
+    host.innerHTML = `<div class="w-h"><b>🐛 Fuzz the quantity field</b><span class="w-sp"></span><small>Spec: whole number from 1 to 10</small></div>
+      <div class="wrow"><button type="button" class="wb pri" data-run>▶ Run the fuzz list</button><button type="button" class="wb" data-clear>↺ Clear</button></div>
+      <div class="wrow" style="margin-top:8px"><label class="wl" for="fzIn" style="margin:0">Your own value (JSON)</label><input class="wi" id="fzIn" value="-1" style="flex:1; min-width:140px"><button type="button" class="wb" data-one>📨 Send</button></div>
+      <pre class="wout fz-req">POST /v1/orders  {"productId": 7, "quantity": ?}</pre>
+      <div class="tw fz-tw"><table class="jt fz-t"><thead><tr><th>quantity</th><th>Status</th><th>Server said</th><th>Verdict</th></tr></thead><tbody></tbody></table></div>
+      <div class="wmsg fz-sum">Press Run to send each value in the list, one after another.</div>`;
+    const $q = s => host.querySelector(s), body = $q('.fz-t tbody');
+    let timer = null, bugs = new Set(), sent = 0;
+    function add(raw) {
+      const r = verdict(raw);
+      sent++;
+      if (r.kind === 'bug') bugs.add(raw);
+      $q('.fz-req').textContent = `POST /v1/orders  {"productId": 7, "quantity": ${raw}}`;
+      const tr = document.createElement('tr');
+      tr.className = 'fz-row ' + r.kind;
+      tr.innerHTML = `<td><code>${esc(raw)}</code></td><td>${pill(r.st)}</td><td>${esc(r.msg)}</td><td>${r.kind === 'bug' ? '🐞 Bug' : '✅ Fine'}<small>${esc(r.why)}</small></td>`;
+      body.prepend(tr);
+      $q('.fz-sum').className = 'wmsg fz-sum' + (bugs.size ? ' bad' : ' ok');
+      $q('.fz-sum').innerHTML = `${sent} requests sent. <b>${bugs.size}</b> distinct input${bugs.size === 1 ? '' : 's'} revealed a problem${bugs.size ? ': ' + [...bugs].map(b => `<code>${esc(b)}</code>`).join(' ') : ''}.`;
+    }
+    host.addEventListener('click', e => {
+      if (e.target.closest('[data-run]')) {
+        clearInterval(timer);
+        const list = DATA.fuzzList.slice();
+        timer = setInterval(() => { if (!list.length || !host.isConnected) { clearInterval(timer); if (bugs.size >= 5) cheer(host); return; } add(list.shift()); }, 380);
+      }
+      if (e.target.closest('[data-one]')) { const v = $q('#fzIn').value.trim(); if (v) add(v); }
+      if (e.target.closest('[data-clear]')) { clearInterval(timer); body.innerHTML = ''; bugs = new Set(); sent = 0; $q('.fz-sum').className = 'wmsg fz-sum'; $q('.fz-sum').textContent = 'Press Run to send each value in the list, one after another.'; }
+    });
+    $q('#fzIn').addEventListener('keydown', e => { if (e.key === 'Enter') { const v = e.target.value.trim(); if (v) add(v); } });
+  }
+
+  const W = { pyramid, url, idem, status, json, jwt, bva, bucket, perc, diff, checklist, venn, soaprest, rmm, ttype, edge, race, fuzz };
   function mountAll(root = document) {
     root.querySelectorAll('[data-w]').forEach(el => { if (el._m) return; el._m = true; const f = el.dataset.w === 'lab' ? LAB.mount : W[el.dataset.w]; if (f) f(el); });
     root.querySelectorAll('[data-seq]').forEach(el => { if (el._m) return; el._m = true; if (DATA.seqs[el.dataset.seq]) seq(el, DATA.seqs[el.dataset.seq]); });
@@ -3847,7 +4433,7 @@ const LAB = (() => {
   $('#comic').innerHTML = XTRA.infoHtml(PAGE.info);
   IQ.mount($('.iq-host'), INTERVIEW.questions, { key: 'api-manual', title: INTERVIEW.title, sub: 'Real interview questions from easy to expert. Write your answer first, open the hint if you are stuck, then compare with the model answer and rate yourself.', lang: 'js', must: INTERVIEW.must });
   $('#practice').innerHTML = practiceHtml(PAGE.practice);
-  $('#quiz').innerHTML = LEARN.quizHtml(PAGE.quiz, { lang: 'js', sub: 'Six questions per level from easy to expert. Every answer comes with the reason behind it.' });
+  $('#quiz').innerHTML = LEARN.quizHtml(PAGE.quiz, { lang: 'js', sub: 'Eight questions per level from easy to expert. Every answer comes with the reason behind it.' });
   $('#numbers').innerHTML = LEARN.calcHtml(PAGE.calc, { lang: 'js', sub: 'Pages, limits, SLAs, percentiles and retries. Type your answer and press Check, or open the working.' });
   wirePractice($('#practice'));
   document.querySelectorAll('.chain .ch-step').forEach((s, i) => s.style.setProperty('--i', i));

@@ -4,7 +4,7 @@ const APIW = (() => {
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } } };
   const cheer = el => { if (window.FUN && FUN.confetti) { const r = el.getBoundingClientRect(); FUN.confetti(r.left + r.width / 2, r.top + 10, 50); } };
-  const REASON = { 200: 'OK', 201: 'Created', 202: 'Accepted', 204: 'No Content', 301: 'Moved Permanently', 304: 'Not Modified', 400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 405: 'Method Not Allowed', 406: 'Not Acceptable', 409: 'Conflict', 412: 'Precondition Failed', 415: 'Unsupported Media Type', 422: 'Unprocessable Content', 429: 'Too Many Requests', 500: 'Internal Server Error', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout' };
+  const REASON = { 200: 'OK', 201: 'Created', 202: 'Accepted', 204: 'No Content', 206: 'Partial Content', 301: 'Moved Permanently', 304: 'Not Modified', 400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 405: 'Method Not Allowed', 406: 'Not Acceptable', 409: 'Conflict', 412: 'Precondition Failed', 413: 'Content Too Large', 415: 'Unsupported Media Type', 422: 'Unprocessable Content', 428: 'Precondition Required', 429: 'Too Many Requests', 500: 'Internal Server Error', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout' };
   const pill = code => `<span class="pill s${String(code)[0]}">${code} ${esc(REASON[code] || '')}</span>`;
 
   /* ---------- sequence player ---------- */
@@ -473,7 +473,203 @@ const APIW = (() => {
     paint();
   }
 
-  const W = { pyramid, url, idem, status, json, jwt, bva, bucket, perc, diff, checklist, venn, soaprest, rmm };
+  /* ---------- test type game ---------- */
+  function ttype(host) {
+    const Q = DATA.typeGame;
+    let k = 0, score = 0, answered = false;
+    function render() {
+      if (k >= Q.length) {
+        host.innerHTML = `<div class="w-h"><b>🧩 Pick the test type</b></div><div class="wmsg ok">You scored <b>${score} / ${Q.length}</b>. ${score === Q.length ? 'Perfect. You know which test answers which question.' : 'Look at the table above once more and try again.'}</div><div class="wrow" style="margin-top:8px"><button type="button" class="wb pri" data-again>↺ Play again</button></div>`;
+        if (score === Q.length) cheer(host);
+        return;
+      }
+      const q = Q[k];
+      answered = false;
+      host.innerHTML = `<div class="w-h"><b>🧩 Pick the test type</b><span class="w-sp"></span><small>Situation ${k + 1} of ${Q.length} · Score ${score}</small></div>
+        <div class="sg-q">${esc(q.q)}</div><div class="sg-opts">${q.o.map((c, j) => `<button type="button" class="sg-opt" data-j="${j}">${esc(c)}</button>`).join('')}</div>
+        <div class="sg-fb"></div><div class="sg-prog"><i style="width:${k / Q.length * 100}%"></i></div>`;
+    }
+    host.addEventListener('click', e => {
+      if (e.target.closest('[data-again]')) { k = 0; score = 0; render(); return; }
+      if (e.target.closest('[data-nx]')) { k++; render(); return; }
+      const b = e.target.closest('.sg-opt');
+      if (!b || answered) return;
+      answered = true;
+      const q = Q[k], j = +b.dataset.j, right = j === q.a;
+      if (right) score++;
+      host.querySelectorAll('.sg-opt').forEach(x => { x.disabled = true; if (+x.dataset.j === q.a) x.classList.add('ok'); });
+      if (!right) b.classList.add('bad');
+      host.querySelector('.sg-fb').innerHTML = `<div class="wmsg ${right ? 'ok' : 'bad'}">${right ? '✅ Right.' : `❌ The best answer is ${esc(q.o[q.a])}.`} ${esc(q.why)}</div><div class="wrow" style="margin-top:8px"><button type="button" class="wb pri" data-nx>Next ▶</button></div>`;
+    });
+    render();
+  }
+
+  /* ---------- date, money and text edge cases ---------- */
+  function edge(host) {
+    const ZONES = [['UTC', 'UTC'], ['Asia/Kolkata', 'Mumbai'], ['Asia/Tokyo', 'Tokyo'], ['Europe/London', 'London'], ['America/New_York', 'New York'], ['Australia/Sydney', 'Sydney']];
+    host.innerHTML = `<div class="w-h"><b>🧪 Edge case labs</b><span class="w-sp"></span><button type="button" class="wb on" data-t="time">🕒 Time zones</button><button type="button" class="wb" data-t="money">💰 Money</button><button type="button" class="wb" data-t="text">🔤 Text</button></div>
+      <div class="ed-pane" data-p="time"><label class="wl" for="edT">A moment in Mumbai time (IST, UTC+05:30)</label><input class="wi" id="edT" type="datetime-local" value="2026-03-31T23:30"><div class="ed-zones"></div><div class="wmsg ed-tnote"></div></div>
+      <div class="ed-pane" data-p="money" hidden><div class="wgrid"><div><label class="wl" for="edP">Price in rupees</label><input class="wi" id="edP" value="19.99" inputmode="decimal"></div><div><label class="wl" for="edQ">Quantity</label><input class="wi" id="edQ" value="3" inputmode="numeric"></div><div><label class="wl" for="edD">Discount %</label><input class="wi" id="edD" value="15" inputmode="decimal"></div></div><div class="wgrid" style="margin-top:8px"><div><span class="wl">Floating point (risky)</span><pre class="wout ed-f"></pre></div><div><span class="wl">Integer paise (safe)</span><pre class="wout ed-i"></pre></div></div><div class="wmsg ed-mnote"></div></div>
+      <div class="ed-pane" data-p="text" hidden><label class="wl" for="edS">Type a name or any text</label><input class="wi" id="edS" value="José 👨‍👩‍👧"><div class="pc-stats ed-len"></div><div class="wmsg ed-xnote"></div><div class="wrow" style="margin-top:8px"><button type="button" class="wb" data-s="O'Brien">O'Brien</button><button type="button" class="wb" data-s="Nguyễn">Nguyễn</button><button type="button" class="wb" data-s="प्रिया शर्मा">प्रिया शर्मा</button><button type="button" class="wb" data-s="محمد">محمد</button><button type="button" class="wb" data-s="🇮🇳👍🏽">🇮🇳👍🏽</button></div></div>`;
+    const $q = s => host.querySelector(s);
+    const ymd = (d, tz) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+    function time() {
+      const v = $q('#edT').value;
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)) { $q('.ed-tnote').textContent = 'Pick a date and time.'; return; }
+      const d = new Date(v.slice(0, 16) + ':00+05:30');
+      const base = ymd(d, 'Asia/Kolkata');
+      $q('.ed-zones').innerHTML = `<div class="ed-iso">ISO 8601 in UTC: <code>${d.toISOString().replace('.000', '')}</code></div>` + ZONES.map(([tz, n]) => {
+        const day = ymd(d, tz), t = new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }).format(d);
+        return `<div class="ed-z${day !== base ? ' diff' : ''}"><b>${n}</b><span>${esc(t)}</span>${day !== base ? '<small>different date</small>' : ''}</div>`;
+      }).join('');
+      const n = ZONES.filter(([tz]) => ymd(d, tz) !== base).length;
+      $q('.ed-tnote').innerHTML = n ? `The same moment falls on a <b>different calendar date</b> in ${n} of these cities. A report "by day", a coupon that "expires today" or a daily limit can give different answers depending on whose day the server uses.` : 'All these cities share the same date for this moment. Try a time close to midnight, such as 23:30 or 04:00.';
+    }
+    function money() {
+      const p = parseFloat($q('#edP').value), qn = parseInt($q('#edQ').value, 10), dc = parseFloat($q('#edD').value) || 0;
+      if (!isFinite(p) || !isFinite(qn)) { $q('.ed-mnote').textContent = 'Enter a price and a whole number quantity.'; return; }
+      const f = p * qn * (1 - dc / 100);
+      const paise = Math.round(p * 100), sub = paise * qn, off = Math.round(sub * dc / 100), tot = sub - off;
+      const rs = x => (x / 100).toFixed(2);
+      $q('.ed-f').textContent = `${p} × ${qn} × (1 − ${dc}/100)\n= ${f}\n\n0.1 + 0.2 = ${0.1 + 0.2}`;
+      $q('.ed-i').textContent = `${paise} paise × ${qn} = ${sub}\ndiscount ${dc}% = round(${sub * dc / 100}) = ${off}\ntotal = ${tot} paise = ₹${rs(tot)}`;
+      const exact = String(f) === rs(tot) || String(f) === String(Number(rs(tot)));
+      $q('.ed-mnote').innerHTML = exact ? 'This time the floating point answer happens to look clean. Try 0.1 with quantity 3, or 19.99 with a 15% discount, and watch the digits.' : `The floating point result <code>${f}</code> is not a clean amount. If one service rounds it and another truncates it, the customer is charged one value and the invoice shows another. Send money as integer paise or as a decimal string such as <code>"${rs(tot)}"</code>, plus a currency code.`;
+    }
+    function text() {
+      const s = $q('#edS').value;
+      const units = s.length, cps = [...s].length, bytes = new TextEncoder().encode(s).length;
+      let gr = cps;
+      try { gr = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)].length; } catch (e) { /* older browser */ }
+      const nfc = s.normalize('NFC') === s.normalize('NFD');
+      $q('.ed-len').innerHTML = [['What a person sees', gr], ['Code points', cps], ['UTF-16 units (JS length)', units], ['UTF-8 bytes', bytes]].map(([l, v]) => `<div class="pc-s"><small>${l}</small><b>${v}</b></div>`).join('');
+      $q('.ed-xnote').innerHTML = (gr !== bytes ? `The same text has a length of <b>${gr}</b>, <b>${cps}</b>, <b>${units}</b> or <b>${bytes}</b> depending on who counts. Ask which one a "max length" rule means, then test right at that limit with text like this.` : 'Plain English letters give the same length every way. Try an accent, Hindi text or an emoji.') + (nfc ? '' : ' This text also has two Unicode forms (NFC and NFD). Search and duplicate checks should treat them as equal.');
+    }
+    host.addEventListener('click', e => {
+      const t = e.target.closest('[data-t]');
+      if (t) { host.querySelectorAll('[data-t]').forEach(b => b.classList.toggle('on', b === t)); host.querySelectorAll('.ed-pane').forEach(p => { p.hidden = p.dataset.p !== t.dataset.t; }); }
+      const s = e.target.closest('[data-s]');
+      if (s) { $q('#edS').value = s.dataset.s; text(); }
+    });
+    $q('#edT').addEventListener('input', time);
+    ['#edP', '#edQ', '#edD'].forEach(id => $q(id).addEventListener('input', money));
+    $q('#edS').addEventListener('input', text);
+    time(); money(); text();
+  }
+
+  /* ---------- race condition simulator ---------- */
+  function race(host) {
+    const MODES = {
+      none: { label: 'No protection', steps: [
+        ['A', 'GET /items/7', 'reads stock = 1', 1], ['B', 'GET /items/7', 'reads stock = 1', 1],
+        ['A', 'POST /orders', 'stock 1 > 0, so save order. stock = 0', 0, 201], ['B', 'POST /orders', 'B still believes stock is 1, so save order. stock = −1', -1, 201]],
+        end: 'bad', note: 'Both buyers got 201 Created and stock is now −1. The shop sold one item twice. This is the classic oversell bug.' },
+      etag: { label: 'ETag and If-Match', steps: [
+        ['A', 'GET /items/7', 'reads stock = 1, ETag "v7"', 1], ['B', 'GET /items/7', 'reads stock = 1, ETag "v7"', 1],
+        ['A', 'PATCH If-Match: "v7"', 'version matches, stock = 0, ETag now "v8"', 0, 200], ['B', 'PATCH If-Match: "v7"', 'version is "v8" now, so refuse', 0, 412]],
+        end: 'ok', note: 'Buyer B gets 412 Precondition Failed because the item changed after B read it. The app should read again and tell B the item is sold out.' },
+      atomic: { label: 'Atomic update', steps: [
+        ['A', 'POST /orders', 'UPDATE stock = stock − 1 WHERE stock > 0  (1 row changed)', 0, 201], ['B', 'POST /orders', 'same UPDATE, but stock is 0 (0 rows changed)', 0, 409],
+        ['A', '', 'order saved for A', 0], ['B', '', 'no order for B, nothing half saved', 0]],
+        end: 'ok', note: 'The check and the change happen in one database step, so only one request can win. Buyer B gets 409 Conflict with an "out of stock" message.' }
+    };
+    let mode = 'none', i = -1, timer = null;
+    host.innerHTML = `<div class="w-h"><b>🏁 Two buyers, one last item</b><span class="w-sp"></span>${Object.entries(MODES).map(([k, m]) => `<button type="button" class="wb" data-m="${k}">${m.label}</button>`).join('')}</div>
+      <div class="rc-board"><div class="rc-col"><b>🙋‍♀️ Buyer A (Asha)</b><ul class="rc-a"></ul></div><div class="rc-stock"><small>Stock of item 7</small><b class="rc-n">1</b></div><div class="rc-col"><b>🙋‍♂️ Buyer B (Ben)</b><ul class="rc-b"></ul></div></div>
+      <div class="wrow" style="margin-top:8px"><button type="button" class="wb" data-a="prev" aria-label="Previous step">◀</button><button type="button" class="wb pri" data-a="play">▶ Play</button><button type="button" class="wb" data-a="next" aria-label="Next step">▶|</button><button type="button" class="wb" data-a="reset">↺</button><span class="rc-cnt"></span></div>
+      <div class="wmsg rc-note" aria-live="polite"></div>`;
+    const $q = s => host.querySelector(s), pb = $q('[data-a="play"]');
+    function draw() {
+      const m = MODES[mode];
+      host.querySelectorAll('[data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === mode));
+      const li = who => m.steps.map((s, k) => s[0] !== who || k > i ? '' : `<li class="${k === i ? 'cur' : ''}">${s[1] ? `<code>${esc(s[1])}</code>` : ''}<span>${esc(s[2])}</span>${s[4] ? pill(s[4]) : ''}</li>`).join('');
+      $q('.rc-a').innerHTML = li('A');
+      $q('.rc-b').innerHTML = li('B');
+      const stock = i < 0 ? 1 : m.steps[i][3];
+      const n = $q('.rc-n');
+      n.textContent = stock;
+      n.className = 'rc-n' + (stock < 0 ? ' neg' : '');
+      $q('.rc-cnt').textContent = `${i + 1} / ${m.steps.length}`;
+      const nt = $q('.rc-note');
+      nt.className = 'wmsg rc-note' + (i === m.steps.length - 1 ? ' ' + m.end : '');
+      nt.innerHTML = i < 0 ? 'Both buyers press Buy at the same moment. Press Play, or step through one request at a time.' : i === m.steps.length - 1 ? m.note : `<b>Step ${i + 1}.</b> Buyer ${m.steps[i][0]}: ${esc(m.steps[i][2])}`;
+    }
+    function stop() { clearInterval(timer); timer = null; pb.textContent = '▶ Play'; }
+    function go(n) { i = Math.max(-1, Math.min(MODES[mode].steps.length - 1, n)); draw(); }
+    host.addEventListener('click', e => {
+      const mb = e.target.closest('[data-m]');
+      if (mb) { stop(); mode = mb.dataset.m; go(-1); return; }
+      const a = e.target.closest('[data-a]');
+      if (!a) return;
+      const act = a.dataset.a, last = MODES[mode].steps.length - 1;
+      if (act === 'play') {
+        if (timer) { stop(); return; }
+        if (i >= last) go(-1);
+        pb.textContent = '❚❚ Pause';
+        go(i + 1);
+        timer = setInterval(() => { if (i >= last) { stop(); return; } go(i + 1); if (i >= last) stop(); }, 1800);
+      } else { stop(); if (act === 'prev') go(i - 1); if (act === 'next') go(i + 1); if (act === 'reset') go(-1); }
+    });
+    draw();
+  }
+
+  /* ---------- fuzzing a quantity field ---------- */
+  function fuzz(host) {
+    // The pretend server: it should accept whole numbers 1 to 10 and reject everything else with 422
+    function server(v) {
+      if (v === null || v === '') return [500, 'NullPointerException at OrderService.java:88'];
+      if (typeof v === 'string') { if (/^\d+$/.test(v)) v = Number(v); else return [422, 'quantity must be a number']; }
+      if (typeof v !== 'number') return [400, 'quantity has the wrong type'];
+      if (!Number.isFinite(v)) return [400, 'quantity is not a valid number'];
+      if (v > 2147483647) return [500, 'integer overflow in stock service'];
+      if (v === 0) return [422, 'quantity must be at least 1'];
+      if (v > 10) return [422, 'quantity must be at most 10'];
+      return [201, 'order created'];
+    }
+    const spec = v => Number.isInteger(v) && v >= 1 && v <= 10;
+    function parse(raw) { try { return { v: JSON.parse(raw), ok: true }; } catch (e) { return { v: raw, ok: false }; } }
+    function verdict(raw) {
+      const p = parse(raw);
+      if (!p.ok) return { st: 400, msg: 'invalid JSON body', kind: 'ok', why: 'Malformed JSON should give 400, and it does.' };
+      const v = p.v, [st, msg] = server(v), good = spec(v);
+      if (st >= 500) return { st, msg, kind: 'bug', why: 'A 5xx error means the server crashed on input it should have rejected.' };
+      if (st < 300 && !good) return { st, msg, kind: 'bug', why: typeof v === 'string' ? 'The spec asks for a number, but a string was accepted. This may be fine if documented, so raise it as a question.' : 'The spec forbids this value, yet the order was created. Bad data is now in the system.' };
+      if (st >= 400 && good) return { st, msg, kind: 'bug', why: 'A valid value was rejected.' };
+      return { st, msg, kind: 'ok', why: good ? 'Valid input accepted.' : 'Invalid input rejected with a clear 4xx.' };
+    }
+    host.innerHTML = `<div class="w-h"><b>🐛 Fuzz the quantity field</b><span class="w-sp"></span><small>Spec: whole number from 1 to 10</small></div>
+      <div class="wrow"><button type="button" class="wb pri" data-run>▶ Run the fuzz list</button><button type="button" class="wb" data-clear>↺ Clear</button></div>
+      <div class="wrow" style="margin-top:8px"><label class="wl" for="fzIn" style="margin:0">Your own value (JSON)</label><input class="wi" id="fzIn" value="-1" style="flex:1; min-width:140px"><button type="button" class="wb" data-one>📨 Send</button></div>
+      <pre class="wout fz-req">POST /v1/orders  {"productId": 7, "quantity": ?}</pre>
+      <div class="tw fz-tw"><table class="jt fz-t"><thead><tr><th>quantity</th><th>Status</th><th>Server said</th><th>Verdict</th></tr></thead><tbody></tbody></table></div>
+      <div class="wmsg fz-sum">Press Run to send each value in the list, one after another.</div>`;
+    const $q = s => host.querySelector(s), body = $q('.fz-t tbody');
+    let timer = null, bugs = new Set(), sent = 0;
+    function add(raw) {
+      const r = verdict(raw);
+      sent++;
+      if (r.kind === 'bug') bugs.add(raw);
+      $q('.fz-req').textContent = `POST /v1/orders  {"productId": 7, "quantity": ${raw}}`;
+      const tr = document.createElement('tr');
+      tr.className = 'fz-row ' + r.kind;
+      tr.innerHTML = `<td><code>${esc(raw)}</code></td><td>${pill(r.st)}</td><td>${esc(r.msg)}</td><td>${r.kind === 'bug' ? '🐞 Bug' : '✅ Fine'}<small>${esc(r.why)}</small></td>`;
+      body.prepend(tr);
+      $q('.fz-sum').className = 'wmsg fz-sum' + (bugs.size ? ' bad' : ' ok');
+      $q('.fz-sum').innerHTML = `${sent} requests sent. <b>${bugs.size}</b> distinct input${bugs.size === 1 ? '' : 's'} revealed a problem${bugs.size ? ': ' + [...bugs].map(b => `<code>${esc(b)}</code>`).join(' ') : ''}.`;
+    }
+    host.addEventListener('click', e => {
+      if (e.target.closest('[data-run]')) {
+        clearInterval(timer);
+        const list = DATA.fuzzList.slice();
+        timer = setInterval(() => { if (!list.length || !host.isConnected) { clearInterval(timer); if (bugs.size >= 5) cheer(host); return; } add(list.shift()); }, 380);
+      }
+      if (e.target.closest('[data-one]')) { const v = $q('#fzIn').value.trim(); if (v) add(v); }
+      if (e.target.closest('[data-clear]')) { clearInterval(timer); body.innerHTML = ''; bugs = new Set(); sent = 0; $q('.fz-sum').className = 'wmsg fz-sum'; $q('.fz-sum').textContent = 'Press Run to send each value in the list, one after another.'; }
+    });
+    $q('#fzIn').addEventListener('keydown', e => { if (e.key === 'Enter') { const v = e.target.value.trim(); if (v) add(v); } });
+  }
+
+  const W = { pyramid, url, idem, status, json, jwt, bva, bucket, perc, diff, checklist, venn, soaprest, rmm, ttype, edge, race, fuzz };
   function mountAll(root = document) {
     root.querySelectorAll('[data-w]').forEach(el => { if (el._m) return; el._m = true; const f = el.dataset.w === 'lab' ? LAB.mount : W[el.dataset.w]; if (f) f(el); });
     root.querySelectorAll('[data-seq]').forEach(el => { if (el._m) return; el._m = true; if (DATA.seqs[el.dataset.seq]) seq(el, DATA.seqs[el.dataset.seq]); });

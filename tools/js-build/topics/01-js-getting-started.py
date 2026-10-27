@@ -119,7 +119,7 @@ const count = await page.evaluate(() => document.querySelectorAll(".product").le
 
 // Cypress
 cy.window().then(win => win.localStorage.setItem("token", "abc"));
-''', 'Test tools send JavaScript into the page', note='Snippets, full runs come in chapter 21'),
+''', 'Test tools send JavaScript into the page', note='Snippets, full runs come in {{ch:js-ui-automation}}'),
     'strict': run('''
 "use strict";
 let total = 0;
@@ -265,8 +265,9 @@ PARTS = [
 <ul>
 <li><b>Parse</b>: the engine reads the whole file first. A typo anywhere is a <code>SyntaxError</code> and nothing runs at all.</li>
 <li><b>Compile</b>: V8 turns the code into bytecode, then a JIT (just in time) compiler turns busy functions into fast machine code while the program runs.</li>
-<li><b>Execute</b>: one line at a time on a <b>single thread</b>. JavaScript does one thing at a time. Waiting for a server or a timer is handed to the runtime, which is how one thread stays responsive. Chapter 10 explains this event loop.</li>
+<li><b>Execute</b>: one line at a time on a <b>single thread</b>. JavaScript does one thing at a time. Waiting for a server or a timer is handed to the runtime, which is how one thread stays responsive. {{Ch:js-async}} explains this event loop.</li>
 </ul>
+<p>This is the short version. {{Ch:js-how-it-runs}} follows a program through every step in depth, with the real bytecode V8 makes, a trace of the JIT compilers at work and two simulators where you type your own code.</p>
 <h3>Strict mode</h3>
 <p>Strict mode turns silent mistakes into errors. Modules (<code>type="module"</code> or <code>.mjs</code> files) and classes are always strict. Older scripts opt in with <code>"use strict"</code> on the first line.</p>
 [[sloppy]]
@@ -287,7 +288,7 @@ PARTS = [
 <tr><td><code>TypeError</code></td><td>Reading a property of <code>undefined</code> or <code>null</code>, or calling something that is not a function.</td></tr>
 <tr><td><code>RangeError</code></td><td>A number out of range, such as <code>new Array(-1)</code>, or endless recursion.</td></tr>
 </table></div>
-<p>A <code>try</code> and <code>catch</code> block lets the program handle the error and carry on. Chapter 3 goes much deeper.</p>
+<p>A <code>try</code> and <code>catch</code> block lets the program handle the error and carry on. {{Ch:js-control-flow}} goes much deeper.</p>
 [[try-it]]
 <div class="qa-box">A failing test prints exactly this kind of stack. "Cannot read properties of undefined" inside a test usually means a locator found nothing or an API response did not have the field you expected. Read the line number, then log the value.</div>
 ''', qa=['Jest', 'Playwright', 'Cypress'], qa_why='Every failed test hands you an error message and a stack trace to read.',

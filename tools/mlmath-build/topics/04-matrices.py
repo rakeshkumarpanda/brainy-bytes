@@ -1,6 +1,6 @@
 # Chapter 4: matrices, matrix multiplication, transformations, determinant and inverse,
 # solving systems with elimination, rank and the normal equations.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, vec, mat
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, vec, mat, deep
 
 K = Kit()
 
@@ -1051,6 +1051,197 @@ VIZ_JS = r'''
 })();
 '''
 
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'what': deep('rows, columns and shapes in code', f'''
+<p>Maths books count rows and columns from 1. Python, JavaScript, TypeScript and Java count from 0. So the entry a₂₃ of a book (row 2, column 3) is <code>A[1][2]</code> in code. Keep this "off by one" shift in mind whenever you copy a formula into a program.</p>
+{table(['Question', 'Maths', 'NumPy or PyTorch'], [
+        ['How big is it?', 'm × n', 'A.shape gives (m, n)'],
+        ['One entry', 'aᵢⱼ', 'A[i, j], counting from 0'],
+        ['A whole row', 'row i', 'A[i, :] or A[i]'],
+        ['A whole column', 'column j', 'A[:, j]'],
+        ['Number of examples', 'm (rows of X)', 'X.shape[0], also len(X)'],
+    ])}
+<p>Deep learning code usually adds one more direction in front, the <b>batch</b>. A batch of 32 grey 28 × 28 images is a tensor of shape (32, 28, 28). A batch of 16 sentences of 128 tokens, each token an embedding of 768 numbers, has shape (16, 128, 768). Reading a shape from left to right tells you the story: how many examples, then how many positions, then how many numbers describe each position.</p>
+{trick('Say the shape out loud before you write any matrix code: "X is examples by features, W is features by outputs, so XW is examples by outputs". Most shape bugs disappear with this habit.')}
+'''),
+    'basic': deep('watch the transpose, and meet symmetric matrices', f'''
+<p>The transpose is easier to see than to describe. Every entry swaps its row number with its column number, so entries on the main diagonal (where row = column) stay put and everything else reflects across that diagonal. Press Play to watch it move one entry at a time.</p>
+{viz('transpose')}
+<p>A matrix that equals its own transpose, A = Aᵀ, is called <b>symmetric</b>. It is a mirror image of itself across the diagonal. Symmetric matrices are everywhere in machine learning because of one simple fact: for <b>any</b> matrix X, the product XᵀX is symmetric.</p>
+{worked('XᵀX is always symmetric', [
+        'Use the rule for the transpose of a product: <span class="eq">(AB)ᵀ = BᵀAᵀ</span>',
+        'Apply it to XᵀX: <span class="eq">(XᵀX)ᵀ = Xᵀ(Xᵀ)ᵀ</span>',
+        'Transposing twice gives back the original: <span class="eq">(Xᵀ)ᵀ = X</span>',
+        'So <span class="eq">(XᵀX)ᵀ = XᵀX</span>. It equals its own transpose, so it is symmetric.',
+        'XᵀX appears in the normal equations of regression and (divided by n − 1) as the covariance matrix of PCA.'])}
+{ml('Adding a bias vector to every row of a batch, Z = XW + b, is technically a matrix plus a vector. Libraries allow it by "broadcasting": the vector is copied down every row automatically. Chapter 13 explains the broadcasting rules in detail.')}
+'''),
+    'matmul': deep('four ways to see the same multiplication', f'''
+<p>"Row times column" is the way to compute a product by hand, but there are three other ways to look at the very same answer. Each one makes a different idea in machine learning obvious.</p>
+{table(['View', 'What AB is', 'Where it helps'], [
+        ['dot products', 'entry (i, j) is row i of A dotted with column j of B', 'computing by hand, attention scores QKᵀ'],
+        ['columns', 'column j of AB is A times column j of B', 'a layer applied to many inputs at once'],
+        ['rows', 'row i of AB is row i of A times B', 'each example (a row of X) passes through the same weights'],
+        ['outer products', 'AB is the sum over k of (column k of A) times (row k of B)', 'low rank ideas such as LoRA and the SVD'],
+    ])}
+{worked('The columns view with A = [[1, 2], [3, 4]] and x = [5, 6]', [
+        'Row view: <span class="eq">[1×5 + 2×6, 3×5 + 4×6] = [17, 39]</span>',
+        'Column view: Ax is 5 lots of column 1 plus 6 lots of column 2.',
+        '<span class="eq">5 × [1, 3] + 6 × [2, 4] = [5, 15] + [12, 24] = [17, 39]</span>',
+        'Same answer. A matrix times a vector is a linear combination of the matrix columns, with the vector giving the amounts.'])}
+<p><b>Counting the work.</b> Multiplying an m × n matrix by an n × p matrix needs m × n × p multiplications. A batch of 64 inputs with 1024 features through a layer with 4096 outputs costs 64 × 1024 × 4096 ≈ 268 million multiply and add steps, for just one layer of one batch. That is why GPUs, which do thousands of these at the same time, made deep learning possible.</p>
+'''),
+    'transform': deep('doing one transformation after another', f'''
+<p>If you first apply B and then apply A to a vector, the result is A(Bx) = (AB)x. So <b>one matrix, AB, does both moves at once</b>. Notice the order: the move done first is written on the right, next to x.</p>
+{worked('Rotate by 90°, then stretch x by 2', [
+        'Rotate: <span class="eq">R = [[0, −1], [1, 0]]</span>. Stretch: <span class="eq">S = [[2, 0], [0, 1]]</span>',
+        'Rotate first, then stretch: <span class="eq">SR = [[0, −2], [1, 0]]</span>',
+        'Stretch first, then rotate: <span class="eq">RS = [[0, −1], [2, 0]]</span>',
+        'Try x = [1, 0]: SR gives <span class="eq">[0, 1]</span>, but RS gives <span class="eq">[0, 2]</span>. Different results, so order matters.'])}
+<p>This is exactly why a neural network needs activation functions between its layers. Without them, layer 3 of layer 2 of layer 1 is W₃W₂W₁x, and the product W₃W₂W₁ is a single matrix. Ten layers would collapse into one, which can only rotate, stretch and shear.</p>
+{life('Putting on socks and then shoes is a composition. Doing it in the other order gives a very different (and funny) result. Matrix products behave the same way.')}
+'''),
+    'inverse': deep('the determinant is an area, and why zero means no way back', f'''
+<p>Take the unit square with corners (0, 0), (1, 0), (1, 1) and (0, 1). A 2 × 2 matrix moves it into a parallelogram whose sides are the two columns of the matrix. The <b>area of that parallelogram is the determinant</b>. Change the four numbers below and watch the area follow ad − bc. Press Play to slowly squash the matrix down to determinant 0.</p>
+{viz('detarea')}
+<p>When the determinant reaches 0, the square is flattened onto a line. Many different points land on the same spot, so there is no way to tell where each one came from. That is why a matrix with determinant 0 has no inverse.</p>
+{worked('Check an inverse the honest way', [
+        'A = <span class="eq">[[4, 7], [2, 6]]</span>, det = <span class="eq">4 × 6 − 7 × 2 = 10</span>',
+        'Swap a and d, negate b and c, divide by 10: <span class="eq">A⁻¹ = [[0.6, −0.7], [−0.2, 0.4]]</span>',
+        'Multiply to check, first row: <span class="eq">[4 × 0.6 + 7 × (−0.2), 4 × (−0.7) + 7 × 0.4] = [1, 0]</span>',
+        'Second row: <span class="eq">[2 × 0.6 + 6 × (−0.2), 2 × (−0.7) + 6 × 0.4] = [0, 1]</span>',
+        'We got the identity, so the inverse is right.'])}
+{trick('A negative determinant means the parallelogram is flipped over, like looking at the square in a mirror. The size of the area is still |det|.')}
+'''),
+    'systems': deep('Gaussian elimination, one row operation at a time', f'''
+<p>Gaussian elimination only ever uses three moves, and none of them changes the answer of the system: swap two rows, multiply a row by a non zero number, and add a multiple of one row to another. The goal is a staircase of zeros below the diagonal. Then the last equation has one unknown, and you work back up.</p>
+<p>Type your own three equations below (or keep the example from the lesson) and press Play to see every row operation and then the back substitution.</p>
+{viz('elim')}
+{table(['What the last rows look like', 'What it means', 'How many answers'], [
+        ['a staircase with no zero on the diagonal', 'every equation adds new information', 'exactly one'],
+        ['a row of all zeros = 0', 'one equation repeated another', 'infinitely many'],
+        ['a row of zeros = a non zero number', 'the equations contradict each other (0 = 5)', 'none'],
+    ])}
+{ml('Least squares regression usually has more equations (examples) than unknowns (weights), so there is no exact answer. Instead of elimination on Ax = b, libraries solve the normal equations XᵀXβ = Xᵀy or, more accurately, use the QR or SVD factorisations of Chapter 13 and Chapter 5.')}
+'''),
+    'rank': deep('finding the rank, and what low rank buys you', f'''
+<p>The easiest way to find the rank by hand is elimination: after the staircase is made, <b>the rank is the number of rows that are not all zero</b>. Each surviving row is an independent piece of information.</p>
+{worked('Rank of [[1, 2, 3], [2, 4, 6], [1, 0, 1]]', [
+        'Row 2 minus 2 × row 1: <span class="eq">[0, 0, 0]</span>. Row 2 was just a copy of row 1, doubled.',
+        'Row 3 minus row 1: <span class="eq">[0, −2, −2]</span>',
+        'Two rows are not zero: <span class="eq">[1, 2, 3]</span> and <span class="eq">[0, −2, −2]</span>',
+        'So the rank is <span class="eq">2</span>. The 3 × 3 matrix really only uses 2 dimensions, and its determinant is 0.'])}
+{fx('Rank and the lost directions', 'rank + (number of lost directions) = number of columns', 'A 3 × 3 matrix of rank 2 squashes one whole direction to zero. That lost direction is called the null space.')}
+<p><b>Why low rank is useful.</b> A rank r matrix of size m × n can be written as an m × r matrix times an r × n matrix. That needs only r(m + n) numbers instead of m × n. A 1000 × 1000 image of rank 20 needs 20 × 2000 = 40000 numbers instead of a million, 25 times smaller. This idea powers image compression, recommender systems and LoRA fine tuning.</p>
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+  const fmt = v => MV.num(Math.abs(v) < 1e-9 ? 0 : v, 3);
+
+  /* ----- the transpose, one entry at a time ----- */
+  W.transpose = el => {
+    const b = shell(el, 'Watch a matrix flip over its diagonal', 'Each step moves one entry from row i, column j of A to row j, column i of Aᵀ. Entries on the diagonal stay where they are.');
+    const A = [[1, 2, 3], [4, 5, 6]];
+    b.innerHTML = `<div class="mv-mm"><div><div class="mv-mgrid tp-a" style="grid-template-columns:repeat(3,auto)"></div><span class="lbl">A (2 × 3)</span></div><span class="op">→</span><div><div class="mv-mgrid tp-t" style="grid-template-columns:repeat(2,auto)"></div><span class="lbl">Aᵀ (3 × 2)</span></div></div><div class="mv-calc tp-msg" aria-live="polite"></div><div class="vz-p"></div>`;
+    const order = [];
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 3; j++) order.push([i, j]);
+    function show(t) {
+      let a = '', tt = '';
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 3; j++) { const k = i * 3 + j; a += `<div class="mv-c ${k === t - 1 ? 'hl' : k < t - 1 ? 'ok' : ''}">${A[i][j]}</div>`; }
+      for (let j = 0; j < 3; j++) for (let i = 0; i < 2; i++) { const k = i * 3 + j; tt += `<div class="mv-c ${k === t - 1 ? 'hl' : ''}">${k < t ? A[i][j] : ''}</div>`; }
+      $('.tp-a', b).innerHTML = a; $('.tp-t', b).innerHTML = tt;
+      if (!t) { $('.tp-msg', b).innerHTML = 'Press Play. Aᵀ starts empty.'; return; }
+      const [i, j] = order[t - 1];
+      $('.tp-msg', b).innerHTML = `<span class="t">a${i + 1}${j + 1} = ${A[i][j]}</span> moves from row ${i + 1}, column ${j + 1} to row ${j + 1}, column ${i + 1}` + (i === j ? ' (on the diagonal, so it stays in the same place)' : '') + (t === 6 ? '. Done: rows have become columns.' : '');
+    }
+    const P = Player($('.vz-p', b), show, 900);
+    P.load(7, 0);
+  };
+
+  /* ----- determinant as the area of the transformed unit square ----- */
+  W.detarea = el => {
+    const b = shell(el, 'The determinant is an area', 'The grey square is the unit square. The coloured shape is where the matrix [[a, b], [c, d]] sends it. Its sides are the columns [a, c] and [b, d]. Press Play to squash it down to determinant 0.');
+    b.innerHTML = `<div class="mv-wrap"><div class="da-plot"></div><div class="mv-side">${slider('a', 'a', -3, 3, 2, 0.25)}${slider('b', 'b', -3, 3, 1, 0.25)}${slider('c', 'c', -3, 3, 0.5, 0.25)}${slider('d', 'd', -3, 3, 1.5, 0.25)}<div class="mv-read da-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    const M = { a: 2, b: 1, c: 0.5, d: 1.5 };
+    const G = MV.frame(420, 420, [-4, 4], [-4, 4]);
+    function draw() {
+      const { a, b: bb, c, d } = M, det = a * d - bb * c;
+      const poly = pts => `<polygon class="${det < 0 ? 'mv-poly o' : Math.abs(det) < 1e-9 ? 'mv-poly g' : 'mv-poly'}" points="${pts.map(p => G.sx(p[0]).toFixed(1) + ',' + G.sy(p[1]).toFixed(1)).join(' ')}"/>`;
+      let s = MV.axes(G, { xstep: 1, ystep: 1, labels: false });
+      s += `<polygon class="mv-poly" style="fill:none;stroke-dasharray:4 4;stroke:var(--ink2)" points="${[[0, 0], [1, 0], [1, 1], [0, 1]].map(p => G.sx(p[0]) + ',' + G.sy(p[1])).join(' ')}"/>`;
+      s += poly([[0, 0], [a, c], [a + bb, c + d], [bb, d]]);
+      s += MV.arrow(G, 0, 0, a, c, 'a') + MV.arrow(G, 0, 0, bb, d, 'o');
+      $('.da-plot', b).innerHTML = MV.svg(G, s, 'Unit square and its image');
+      $('.da-out', b).innerHTML = `det = ad − bc = ${fmt(a)} × ${fmt(d)} − ${fmt(bb)} × ${fmt(c)} = <span class="big">${fmt(det)}</span><br>area of the shape = |det| = <b>${fmt(Math.abs(det))}</b><br>` +
+        (Math.abs(det) < 1e-9 ? '⚠️ Flattened onto a line. No inverse exists.' : det < 0 ? 'Negative: the square is flipped over as well as stretched.' : 'Positive: stretched but not flipped.') +
+        (Math.abs(det) > 1e-9 ? `<br>inverse = (1 ÷ ${fmt(det)}) × [[${fmt(d)}, ${fmt(-bb)}], [${fmt(-c)}, ${fmt(a)}]]` : '');
+    }
+    const setS = (k, v) => { M[k] = v; $(`[data-sl="${k}"]`, b).value = v; $(`[data-slv="${k}"]`, b).textContent = MV.num(v); };
+    const P = Player($('.vz-p', b), t => { setS('a', 2); setS('b', 1); setS('c', 0.5); setS('d', 1.5 - t * 0.125); draw(); }, 450);
+    ['a', 'b', 'c', 'd'].forEach(k => wireSlider(b, k, v => { P.pause(); M[k] = v; draw(); }));
+    P.load(11, 0);
+  };
+
+  /* ----- Gaussian elimination on a 3 × 3 system the reader types ----- */
+  W.elim = el => {
+    const b = shell(el, 'Gaussian elimination step by step', 'Each row is one equation: the three numbers in front of x, y and z, then the right hand side. Edit any number, then press Play.');
+    const start = [[1, 1, 1, 6], [0, 2, 5, -4], [2, 5, -1, 27]];
+    b.innerHTML = `<div class="mv-mm"><div class="mv-mgrid el-in" style="grid-template-columns:repeat(4,auto)">${start.map((r, i) => r.map((v, j) => `<div class="mv-c"><input type="number" step="1" value="${v}" data-i="${i}" data-j="${j}" aria-label="row ${i + 1} entry ${j + 1}"></div>`).join('')).join('')}</div><span class="op">→</span><div><div class="mv-mgrid el-out" style="grid-template-columns:repeat(4,auto)"></div><span class="lbl">x · y · z | right side</span></div></div><div class="mv-calc el-msg" aria-live="polite"></div><div class="vz-p"></div>`;
+    let frames = [];
+    function plan() {
+      const M = start.map(r => r.slice());
+      b.querySelectorAll('.el-in input').forEach(inp => { M[+inp.dataset.i][+inp.dataset.j] = +inp.value || 0; });
+      frames = [{ M: M.map(r => r.slice()), msg: 'The starting system, written as an augmented matrix.', hl: -1 }];
+      let ok = true;
+      for (let c = 0; c < 3 && ok; c++) {
+        let p = c;
+        while (p < 3 && Math.abs(M[p][c]) < 1e-12) p++;
+        if (p === 3) { ok = false; frames.push({ M: M.map(r => r.slice()), msg: `Column ${c + 1} has no non zero number to work with. The equations are not independent, so there is no single answer.`, hl: -1 }); break; }
+        if (p !== c) { [M[p], M[c]] = [M[c], M[p]]; frames.push({ M: M.map(r => r.slice()), msg: `Swap row ${c + 1} and row ${p + 1} so the pivot is not 0.`, hl: c }); }
+        for (let r = c + 1; r < 3; r++) {
+          const f = M[r][c] / M[c][c];
+          if (Math.abs(f) < 1e-12) continue;
+          for (let k = c; k < 4; k++) M[r][k] -= f * M[c][k];
+          frames.push({ M: M.map(rr => rr.slice()), msg: `Row ${r + 1} − (${fmt(f)}) × row ${c + 1} makes a zero below the pivot ${fmt(M[c][c])}.`, hl: r });
+        }
+      }
+      if (ok) {
+        const x = [0, 0, 0], names = ['x', 'y', 'z'];
+        for (let r = 2; r >= 0; r--) {
+          let s = M[r][3];
+          for (let k = r + 1; k < 3; k++) s -= M[r][k] * x[k];
+          x[r] = s / M[r][r];
+          frames.push({ M: M.map(rr => rr.slice()), msg: `Back substitution, row ${r + 1}: ${names[r]} = <b>${fmt(x[r])}</b>`, hl: r });
+        }
+        frames.push({ M: M.map(rr => rr.slice()), msg: `Answer: x = <b>${fmt(x[0])}</b>, y = <b>${fmt(x[1])}</b>, z = <b>${fmt(x[2])}</b>`, hl: -1 });
+      }
+      P.load(frames.length, 0);
+    }
+    function show(t) {
+      const F = frames[t];
+      $('.el-out', b).innerHTML = F.M.map((r, i) => r.map((v, j) => `<div class="mv-c ${i === F.hl ? 'hl' : j < 3 && j < i && Math.abs(v) < 1e-9 ? 'ok' : ''}">${fmt(v)}</div>`).join('')).join('');
+      $('.el-msg', b).innerHTML = `<span class="t">step ${t}</span> ${F.msg}`;
+    }
+    const P = Player($('.vz-p', b), show, 1300);
+    b.querySelectorAll('.el-in input').forEach(inp => inp.addEventListener('change', plan));
+    plan();
+  };
+})();
+'''
+CSS = r'''
+.el-in .mv-c,.el-out .mv-c{min-width:46px}
+@media (max-width:560px){ .el-in .mv-c,.el-out .mv-c{min-width:34px; font-size:12.5px} .el-in .mv-c input{width:32px} }
+'''
+
 T = K.topic(
     slug='matrices', topic='matrices', prefix='mm04', short='Matrices', emoji='🔢',
     title='Matrices and Matrix Multiplication',
@@ -1060,5 +1251,5 @@ T = K.topic(
     desc='Matrices for machine learning: shape, transpose, matrix multiplication step by step, linear transformations, determinant, inverse, Gaussian elimination, rank and the normal equations.',
     summary='Shapes and data matrices, addition, transpose and the element wise product, matrix multiplication with the shape rule, transformations and the Wx + b layer, identity, determinant and inverse, Gaussian elimination, rank, special matrices and the normal equations for regression.',
     keywords=['matrix', 'matrix multiplication', 'transpose', 'shape', 'linear transformation', 'rotation matrix', 'determinant', 'inverse', 'identity matrix', 'gaussian elimination', 'Ax = b', 'rank', 'normal equations', 'dense layer', 'markov chain'],
-    parts=PARTS, info=INFO, real=REAL, viz=VIZ_JS, css='', allow_diff={},
+    parts=PARTS, info=INFO, real=REAL, viz=VIZ_JS, css=CSS, allow_diff={},
 )

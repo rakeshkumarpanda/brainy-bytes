@@ -16,7 +16,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🚀 Modern Java</span><span>›</span><span>Chapter 24 of 24</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=java" target="_top">☕ Java</a><span>›</span><span>🚀 Modern Java</span><span>›</span><span>Chapter 24 of 27</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">⚙️</span><div><h1>Inside the JVM: how a Java program really runs</h1><p class="lead">What happens between typing java Main and seeing output? This chapter follows a program through the class file, the class loaders, the memory areas, bytecode, the JIT compiler and the garbage collector, then shows the tools that make Java services fast and easy to diagnose: Flight Recorder, the AOT cache from Java 24 to 26, compact object headers and G1 everywhere in Java 27.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 26 min read</span><span class="chip">📚 10 parts</span><span class="chip">🎬 4 animations</span><span class="chip">▶ 13 examples run on a real JDK</span><span class="chip">👣 2 line by line replays</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -335,7 +335,7 @@ collector: G1 Old Generation</pre></div></div>
   <section class="card reveal" id="real-life"></section>
   <section class="card reveal" id="quiz"></section>
   <section class="card reveal" id="numbers"></section>
-  <nav class="pager"><a class="prev" href="./java-concurrency.html" data-topic="java-concurrency"><small>← Previous chapter</small><b>🧵 Modern concurrency</b></a><span></span></nav>
+  <nav class="pager"><a class="prev" href="./java-concurrency.html" data-topic="java-concurrency"><small>← Previous chapter</small><b>🧵 Modern concurrency</b></a><a class="next" href="./java-annotations-modules.html" data-topic="java-annotations-modules"><small>Next chapter →</small><b>🏷️ Annotations and modules</b></a></nav>
 </div>
 <script type="application/json" id="traces">{"lazy": {"steps": [{"l": 15, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 16, "o": "main starts\n"}, {"l": 17, "d": {"L.none": "[null, null, null]"}}, {"l": 18, "o": "an array of Unused does not initialise Unused\n"}, {"l": 19, "o": "Config is being initialised\nfirst use: https://shop.test\n"}, {"l": 20, "o": "second use: https://shop.test\n"}], "end": {"o": "", "t": false}}, "frames": {"steps": [{"l": 13, "s": ["main()"], "d": {"L.args": "[]"}}, {"l": 3, "s": ["main()", "price()"], "d": {"L.qty": "3", "L.args": null}}, {"l": 4, "d": {"L.base": "150"}}, {"l": 8, "s": ["main()", "price()", "withTax()"], "d": {"L.amount": "150", "L.qty": null, "L.base": null}}, {"l": 9, "d": {"L.tax": "15"}}, {"l": 4, "s": ["main()", "price()"], "d": {"L.qty": "3", "L.base": "150", "L.amount": null, "L.tax": null}}, {"l": 13, "s": ["main()"], "d": {"L.args": "[]", "L.qty": null, "L.base": null}}, {"l": 14, "d": {"L.total": "165"}}, {"l": 15, "o": "total 165\n"}], "end": {"o": "", "t": false}}}</script>
 <script src="../../assets/fun.js"></script>

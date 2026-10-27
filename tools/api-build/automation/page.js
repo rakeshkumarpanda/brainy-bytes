@@ -31,9 +31,10 @@
   const TOOLS = {
     java: [['rest-assured', 'Rest Assured'], ['playwright', 'Playwright'], ['native', 'Native Java (HttpClient)']],
     py: [['requests', 'requests and pytest'], ['playwright', 'Playwright']],
-    js: [['postman', 'Postman'], ['playwright', 'Playwright'], ['native', 'Native JS (fetch and node:test)']]
+    js: [['postman', 'Postman'], ['playwright', 'Playwright'], ['native', 'Native JS (fetch and node:test)']],
+    ts: [['playwright', 'Playwright']]
   };
-  const LANG_NAME = { java: 'Java', py: 'Python', js: 'JavaScript' };
+  const LANG_NAME = { java: 'Java', py: 'Python', js: 'JavaScript', ts: 'TypeScript' };
   const byId = Object.fromEntries(TRACKS.map(t => [t.id, t]));
   const langSel = $('#langSel'), toolSel = $('#toolSel'), toolBox = $('#toolBox'), msg = $('#pickMsg'), trackEl = $('#track');
   // The requests track keeps its first id and #python link, so older bookmarks still open it
@@ -474,7 +475,7 @@
   challenges();
 
   /* request as code */
-  const GEN_LANG = { 'java-rest-assured': 'java', 'java-playwright': 'java', 'java-native': 'java', python: 'py', 'py-playwright': 'py', 'js-postman': 'js', 'js-playwright': 'js', 'js-native': 'js' };
+  const GEN_LANG = { 'java-rest-assured': 'java', 'java-playwright': 'java', 'java-native': 'java', python: 'py', 'py-playwright': 'py', 'js-postman': 'js', 'js-playwright': 'js', 'js-native': 'js', 'ts-playwright': 'js' };
   $('#sbGen').innerHTML = TRACKS.map(t => `<option value="${t.id}">${esc(t.title)}</option>`).join('');
   $('#sbGen').addEventListener('change', renderCode);
   $('#sbCopy').addEventListener('click', e => copyText($('#sbCodeOut').textContent, e.target));
@@ -629,6 +630,11 @@
       });
       L.push('});');
       return L.join('\n');
+    },
+    'ts-playwright': r => {
+      const code = GEN['js-playwright'](r).split('\n');
+      const typed = code.map(l => l.replace('  const body = await res.json();', '  const body: Record<string, any> = await res.json();   // or parse with a Zod schema for a typed, checked body'));
+      return "import { test, expect } from '@playwright/test';\n\n" + typed.join('\n');
     },
     'js-native': r => {
       const h = ["Accept: 'application/json'"];

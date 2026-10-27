@@ -1,6 +1,6 @@
 # Chapter 11: descriptive statistics, sampling and standard error, confidence intervals, hypothesis tests and
 # p-values, A/B tests, maximum likelihood, linear regression with R², and the bias and variance trade-off.
-from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz
+from mkit import Kit, part, fx, fxs, trick, ml, life, frac, worked, table, code, viz, deep
 
 K = Kit()
 
@@ -1063,6 +1063,215 @@ VIZ_JS = r'''
 
 CSS = r'''
 .ci-new{margin:6px 0}
+'''
+
+# ---------------------------------------------------------------- deeper explanations and extra animations
+# Each lesson above gives the short version. DEEPER adds a slower, fuller explanation (and sometimes an
+# animation) to the end of the lesson with the same id.
+DEEPER = {
+    'describe': deep('type your own data and read its five number summary', f'''
+<p>The <b>five number summary</b> (minimum, Q1, median, Q3, maximum) is drawn as a <b>box plot</b>. The box covers the middle half of the data, the line inside is the median, and the whiskers reach out to the furthest values that are not outliers. Type any list of numbers below and press Play to see the summary built one piece at a time.</p>
+{viz('boxplot')}
+<p><b>Skew.</b> When a few values are far out on one side, the mean is dragged towards them and the median is not. So comparing the two tells you the shape without drawing anything.</p>
+{table(['Comparison', 'Shape', 'Everyday example'], [
+        ['mean ≈ median', 'roughly symmetric', 'heights of adults of one sex'],
+        ['mean &gt; median', 'long tail to the right (right skew)', 'incomes, house prices, time spent on a website'],
+        ['mean &lt; median', 'long tail to the left (left skew)', 'marks in an easy exam where most score high'],
+    ])}
+{ml('Many machine learning features are right skewed. Taking the log of such a feature (often log(1 + x) so that zeros are allowed) pulls in the long tail, makes the shape closer to symmetric, and usually helps linear models and gradient descent.')}
+'''),
+    'sampling': deep('watch the sample mean settle, then meet the bootstrap', f'''
+<p>The population below is lopsided, like incomes: most values are small and a few are large. Press Play to draw many samples of size n and record each sample mean. The histogram of those means is the <b>sampling distribution</b>. However skewed the population, the means pile up into a bell around the true mean, and the bell narrows as n grows, exactly as σ ÷ √n predicts.</p>
+{viz('sampdist')}
+<p>In real life you have <b>one</b> sample, not thousands. The <b>bootstrap</b> is a clever way round that. Treat your sample as if it were the population, draw many new samples from it <b>with replacement</b> (so some values appear twice and some not at all), and compute the statistic each time. The spread of those results estimates the standard error, for any statistic, even ones with no neat formula such as the median.</p>
+{worked('One bootstrap round by hand', [
+        'Original sample of 5 delivery times in minutes: <span class="eq">[12, 15, 20, 22, 41]</span>, median <span class="eq">20</span>',
+        'Draw 5 values with replacement, for example: <span class="eq">[15, 15, 22, 41, 12]</span>, median <span class="eq">15</span>',
+        'Another draw: <span class="eq">[20, 41, 41, 22, 12]</span>, median <span class="eq">22</span>',
+        'Repeat a thousand times and collect the medians.',
+        'The SD of those thousand medians is the bootstrap standard error of the median. The middle 95% of them gives a 95% confidence interval.'])}
+{ml('Bagging (bootstrap aggregating) trains many models, each on a different bootstrap sample, and averages them. A random forest is bagging applied to decision trees, plus a random choice of features at each split.')}
+'''),
+    'tests': deep('see the p-value as an area, then the tests you will meet most', f'''
+<p>A p-value is an area under the null distribution: the share of results at least as extreme as the one you saw. Move the test statistic below and watch the shaded tails grow and shrink. A two sided test counts both tails, because a surprisingly large difference in either direction would count against H₀.</p>
+{viz('pvalue')}
+{table(['Test', 'Question it answers', 'Example'], [
+        ['one sample t-test', 'is the mean different from a claimed value, when σ is unknown', 'do our batteries last 10 hours on average'],
+        ['two sample t-test', 'do two groups have different means', 'is model B faster than model A per request'],
+        ['paired t-test', 'did the same items change between two conditions', 'each patient’s blood pressure before and after'],
+        ['chi-square test', 'are two categories related, from a table of counts', 'is device type related to whether people buy'],
+        ['two proportion z-test', 'do two rates differ', 'A/B test of click rates (next lesson)'],
+    ])}
+<p><b>The multiple testing trap.</b> If you run 20 independent tests at α = 0.05 on data where nothing is going on, the chance that at least one comes out "significant" is 1 − 0.95²⁰ ≈ 0.64. Testing many metrics, many segments or many models and reporting only the winner almost guarantees a false discovery. The simplest fix is the <b>Bonferroni correction</b>: with m tests, use α ÷ m for each one.</p>
+'''),
+    'ab': deep('how many visitors does an A/B test need', f'''
+<p>Before starting a test, decide how small a change you want to be able to detect. A tiny effect needs a huge sample, because it must stand out from random noise. A common rule of thumb for comparing two rates at 5% significance with 80% power is:</p>
+{fx('Visitors needed in each group (rule of thumb)', f'n ≈ {frac("16 × p(1 − p)", "δ²")}', 'p is the current rate and δ is the smallest difference worth detecting. The 16 comes from (1.96 + 0.84)² × 2 ≈ 15.7.')}
+{worked('Detect a lift from 5% to 6% conversion', [
+        'p = <span class="eq">0.05</span>, δ = <span class="eq">0.01</span>',
+        'p(1 − p) = <span class="eq">0.05 × 0.95 = 0.0475</span>',
+        'n ≈ <span class="eq">16 × 0.0475 ÷ 0.0001 = 7600</span> visitors per version',
+        'To detect a smaller lift, 5% to 5.5%, δ halves, so n grows four times to about 30400 per version.'])}
+{trick('Halve the effect you want to see and you need four times the people. The square in δ² is the same √n rule seen throughout this chapter.')}
+'''),
+    'regress': deep('watch overfitting happen, and fix it with cross validation', f'''
+<p>Ten noisy points are drawn from a smooth curve. Raise the polynomial degree below and watch two error numbers: the training error, on the ten points the curve can see, and the test error, on fresh points from the same curve. Training error always falls as the degree grows. Test error falls at first and then shoots up as the curve starts threading through the noise.</p>
+{viz('biasvar')}
+<p>To choose the degree (or any setting) honestly you need data the model did not train on. With little data, setting aside a single test set wastes a lot of it. <b>k fold cross validation</b> reuses every point.</p>
+<ol>
+<li>Split the data into k equal parts, called folds. 5 or 10 is common.</li>
+<li>Train on k − 1 folds and measure the error on the one left out.</li>
+<li>Repeat k times so that every fold is left out once.</li>
+<li>Average the k errors. Pick the setting with the lowest average, then retrain on all the data.</li>
+</ol>
+{ml('Keep a final test set that is never used during cross validation. If you tune on the same data you report on, the score is too optimistic, a subtle form of overfitting called data leakage.')}
+'''),
+}
+for _p in PARTS:
+    _p['html'] += DEEPER.get(_p['id'], '')
+
+VIZ_JS += r'''
+(() => {
+  const { $, shell, seg, wireSeg, Player, slider, wireSlider } = VIZ.kit;
+  const W = VIZ.widgets;
+  /* standard normal CDF via the Abramowitz and Stegun approximation of erf (error below 1.5e-7) */
+  const erf = x => { const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s * y; };
+  const Phi = z => 0.5 * (1 + erf(z / Math.SQRT2));
+  const quant = (s, q) => { const pos = (s.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos); return s[lo] + (s[hi] - s[lo]) * (pos - lo); };
+  const median = s => quant(s, 0.5);
+
+  /* ----- five number summary and box plot of typed data ----- */
+  W.boxplot = el => {
+    const b = shell(el, 'Box plot builder', 'Type numbers separated by commas, or pick an example. Press Play to add the median, the quartiles, the fences and the whiskers one at a time. Q1 and Q3 are the medians of the lower and upper halves, as in the lesson.');
+    const EX = { exam: '45, 52, 58, 61, 63, 65, 66, 68, 70, 72, 75, 79, 84, 97', income: '18, 20, 21, 23, 24, 25, 27, 28, 30, 33, 36, 40, 95, 180', even: '2, 4, 4, 5, 6, 7, 8, 9' };
+    b.innerHTML = `<div class="mv-inp">data <input type="text" class="bx-in" value="${EX.income}" aria-label="data values" style="width:100%;max-width:520px"></div><div class="vz-row">${seg('e', [['income', 'Incomes (thousands)'], ['exam', 'Exam marks'], ['even', 'Small even list']], 'income')}</div><div class="bx-plot"></div><div class="mv-read bx-out" aria-live="polite"></div><div class="vz-p"></div>`;
+    let d = [];
+    function read() { d = $('.bx-in', b).value.split(/[ ,]+/).map(Number).filter(v => isFinite(v) && $('.bx-in', b).value.trim() !== '').sort((a, c) => a - c); P.load(6, 5); }
+    function show(t) {
+      if (d.length < 2) { $('.bx-plot', b).innerHTML = ''; $('.bx-out', b).innerHTML = 'Type at least two numbers.'; return; }
+      const h = Math.floor(d.length / 2), md = median(d), q1 = median(d.slice(0, h)), q3 = median(d.slice(d.length - h)), iqr = q3 - q1, lf = q1 - 1.5 * iqr, uf = q3 + 1.5 * iqr;
+      const inl = d.filter(v => v >= lf && v <= uf), out = d.filter(v => v < lf || v > uf), mean = d.reduce((a, c) => a + c) / d.length;
+      const lo = Math.min(d[0], lf), hi = Math.max(d[d.length - 1], uf), pad = (hi - lo) * 0.05 || 1;
+      const G = MV.frame(520, 170, [lo - pad, hi + pad], [0, 3], 18);
+      let s = `<line class="mv-axis" x1="${G.pad}" y1="${G.sy(0.4)}" x2="${G.w - G.pad}" y2="${G.sy(0.4)}"/>`;
+      const step = MV.niceStep(hi - lo);
+      for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) s += `<text class="mv-tick" x="${G.sx(v)}" y="${G.sy(0.4) + 14}" text-anchor="middle">${MV.num(v)}</text>`;
+      d.forEach((v, i) => { s += `<circle class="mv-pt ${out.includes(v) && t >= 4 ? 'r' : 'k'}" cx="${G.sx(v).toFixed(1)}" cy="${G.sy(2.6 - (i % 3) * 0.18).toFixed(1)}" r="4"/>`; });
+      if (t >= 2) s += `<rect class="mv-poly" x="${G.sx(q1)}" y="${G.sy(1.9)}" width="${Math.max(1, G.sx(q3) - G.sx(q1))}" height="${G.sy(0.9) - G.sy(1.9)}" rx="4"/>`;
+      if (t >= 1) s += MV.line(G, md, 0.8, md, 2, 'mv-v o') + MV.line(G, mean, 0.6, mean, 2.2, 'mv-v p dash');
+      if (t >= 3) s += MV.line(G, lf, 0.7, lf, 2.1, 'mv-v r dash') + MV.line(G, uf, 0.7, uf, 2.1, 'mv-v r dash');
+      if (t >= 5) s += MV.line(G, inl[0], 1.4, q1, 1.4, 'mv-v k') + MV.line(G, q3, 1.4, inl[inl.length - 1], 1.4, 'mv-v k') + MV.line(G, inl[0], 1.2, inl[0], 1.6, 'mv-v k') + MV.line(G, inl[inl.length - 1], 1.2, inl[inl.length - 1], 1.6, 'mv-v k');
+      $('.bx-plot', b).innerHTML = MV.svg(G, s, 'Box plot');
+      const f = v => MV.num(v, 2), L = [`n = ${d.length}, sorted: ${d.map(f).join(', ')}`];
+      if (t >= 1) L.push(`median = <b>${f(md)}</b> (orange), mean = <b>${f(mean)}</b> (purple dashes)`);
+      if (t >= 2) L.push(`Q1 = <b>${f(q1)}</b>, Q3 = <b>${f(q3)}</b>, IQR = <b>${f(iqr)}</b>`);
+      if (t >= 3) L.push(`fences: ${f(q1)} − 1.5 × ${f(iqr)} = <b>${f(lf)}</b> and ${f(q3)} + 1.5 × ${f(iqr)} = <b>${f(uf)}</b> (red dashes)`);
+      if (t >= 4) L.push(out.length ? `outliers: <b>${out.map(f).join(', ')}</b> (red dots)` : 'no outliers');
+      if (t >= 5) L.push(mean > md * 1.05 ? 'mean well above median: right skewed' : mean < md * 0.95 ? 'mean well below median: left skewed' : 'mean close to median: roughly symmetric');
+      $('.bx-out', b).innerHTML = L.join('<br>');
+    }
+    const P = Player($('.vz-p', b), show, 1100);
+    wireSeg(b, 'e', k => { $('.bx-in', b).value = EX[k]; read(); });
+    $('.bx-in', b).addEventListener('change', read);
+    read();
+  };
+
+  /* ----- sampling distribution of the mean from a skewed population ----- */
+  W.sampdist = el => {
+    const b = shell(el, 'Where sample means land', 'The grey histogram is a lopsided population. Each Play step draws 25 more samples of size n and adds their means to the orange histogram.');
+    b.innerHTML = `<div class="mv-wrap"><div class="sd-plot"></div><div class="mv-side">${slider('n', 'sample size n', 2, 64, 16, 1)}<div class="mv-read sd-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let s0 = 21; const rnd = () => { s0 = (s0 * 16807) % 2147483647; return s0 / 2147483647; };
+    const pop = []; for (let i = 0; i < 4000; i++) pop.push(Math.min(9.9, -Math.log(Math.max(1e-9, rnd())) * 2));
+    const mu = pop.reduce((a, c) => a + c) / pop.length, sig = Math.sqrt(pop.reduce((a, c) => a + (c - mu) ** 2, 0) / pop.length);
+    let n = 16, means = [];
+    function plan() { s0 = 99; means = []; for (let r = 0; r < 400; r++) { let s = 0; for (let k = 0; k < n; k++) s += pop[Math.floor(rnd() * pop.length)]; means.push(s / n); } P.load(17, 0); }
+    function show(t) {
+      const used = means.slice(0, t * 25), bins = 40, w = 10 / bins;
+      const hp = new Array(bins).fill(0), hm = new Array(bins).fill(0);
+      pop.forEach(v => { hp[Math.min(bins - 1, Math.floor(v / w))]++; });
+      used.forEach(v => { hm[Math.min(bins - 1, Math.floor(v / w))]++; });
+      const mp = Math.max(...hp), mm = Math.max(1, ...hm);
+      const G = MV.frame(440, 300, [0, 10], [0, 1.1]);
+      let s = MV.axes(G, { xstep: 1, labels: true, xl: 'value' });
+      hp.forEach((c, i) => { s += `<rect class="mv-bar" style="opacity:.35" x="${G.sx(i * w)}" y="${G.sy(c / mp * 0.5)}" width="${G.sx(w) - G.sx(0)}" height="${G.sy(0) - G.sy(c / mp * 0.5)}"/>`; });
+      hm.forEach((c, i) => { if (c) s += `<rect class="mv-bar o" x="${G.sx(i * w)}" y="${G.sy(c / mm)}" width="${G.sx(w) - G.sx(0)}" height="${G.sy(0) - G.sy(c / mm)}"/>`; });
+      s += MV.line(G, mu, 0, mu, 1.1, 'mv-v p dash');
+      $('.sd-plot', b).innerHTML = MV.svg(G, s, 'Population and sample means');
+      const m = used.length ? used.reduce((a, c) => a + c) / used.length : 0, sd = used.length > 1 ? Math.sqrt(used.reduce((a, c) => a + (c - m) ** 2, 0) / (used.length - 1)) : 0;
+      $('.sd-out', b).innerHTML = `population mean μ = <b>${MV.num(mu, 3)}</b>, σ = <b>${MV.num(sig, 3)}</b><br>samples taken: <b>${used.length}</b> of size ${n}<br>average of the means: <b>${MV.num(m, 3)}</b><br>SD of the means: <b>${MV.num(sd, 3)}</b><br>theory σ ÷ √n = <b>${MV.num(sig / Math.sqrt(n), 3)}</b>`;
+    }
+    const P = Player($('.vz-p', b), show, 500);
+    wireSlider(b, 'n', v => { n = v; plan(); });
+    plan();
+  };
+
+  /* ----- p-value as the shaded tail area ----- */
+  W.pvalue = el => {
+    const b = shell(el, 'A p-value is a tail area', 'The curve is the standard normal, what z looks like if H₀ is true. Move z or press Play to slide it outwards. The shaded area is the p-value.');
+    b.innerHTML = `<div class="vz-row">${seg('t', [['two', 'Two sided'], ['right', 'Right tail only']], 'two')}</div><div class="mv-wrap"><div class="pv-plot"></div><div class="mv-side">${slider('z', 'test statistic z', -4, 4, 1.5, 0.05)}<div class="mv-read pv-out" aria-live="polite"></div></div></div><div class="vz-p"></div>`;
+    let z = 1.5, tail = 'two';
+    const pdf = x => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+    const G = MV.frame(440, 280, [-4, 4], [0, 0.45]);
+    function draw() {
+      let s = MV.axes(G, { xstep: 1, ystep: 0.1, labels: true });
+      const a = Math.abs(z);
+      if (tail === 'two') s += MV.area(G, pdf, a, 4, 'c2') + MV.area(G, pdf, -4, -a, 'c2');
+      else s += MV.area(G, pdf, z, 4, 'c2');
+      s += MV.curve(G, pdf) + MV.line(G, z, 0, z, 0.42, 'mv-v r');
+      s += MV.line(G, 1.96, 0, 1.96, 0.08, 'mv-v k dash') + MV.line(G, -1.96, 0, -1.96, 0.08, 'mv-v k dash');
+      $('.pv-plot', b).innerHTML = MV.svg(G, s, 'Normal curve with tails');
+      const p = tail === 'two' ? 2 * (1 - Phi(a)) : 1 - Phi(z);
+      $('.pv-out', b).innerHTML = `z = <b>${MV.num(z, 2)}</b><br>p-value = <span class="big">${p < 0.0001 ? p.toExponential(2) : p.toFixed(4)}</span><br>` + (p < 0.05 ? '✅ Below 0.05: reject H₀ at the 5% level.' : '❌ Not below 0.05: keep H₀. That does not prove H₀ true.') + '<br><small>Dashed marks at ±1.96 are the two sided 5% cut offs.</small>';
+    }
+    const P = Player($('.vz-p', b), t => { z = t * 0.25; $('[data-sl="z"]', b).value = z; $('[data-slv="z"]', b).textContent = MV.num(z); draw(); }, 450);
+    wireSeg(b, 't', v => { tail = v; draw(); });
+    wireSlider(b, 'z', v => { P.pause(); z = v; draw(); });
+    P.load(15, 6);
+  };
+
+  /* ----- polynomial degree versus training and test error ----- */
+  W.biasvar = el => {
+    const b = shell(el, 'Underfitting, a good fit and overfitting', 'Ten blue training points and thirty grey test points come from the green curve plus noise. Press Play to raise the polynomial degree from 0 to 9.');
+    b.innerHTML = `<div class="mv-wrap"><div class="bv-plot"></div><div class="mv-side">${slider('d', 'degree', 0, 9, 3, 1)}<div class="mv-read bv-out" aria-live="polite"></div><div class="bv-err"></div></div></div><div class="vz-p"></div>`;
+    let s0 = 13; const rnd = () => { s0 = (s0 * 16807) % 2147483647; return s0 / 2147483647; };
+    const truth = x => Math.sin(Math.PI * x);
+    const tx = [], ty = [], vx = [], vy = [];
+    for (let i = 0; i < 10; i++) { const x = -1 + 2 * (i + 0.5) / 10 + (rnd() - 0.5) * 0.08; tx.push(x); ty.push(truth(x) + (rnd() - 0.5) * 0.6); }
+    for (let i = 0; i < 30; i++) { const x = -0.98 + 1.96 * rnd(); vx.push(x); vy.push(truth(x) + (rnd() - 0.5) * 0.6); }
+    const fit = d => {
+      const m = d + 1, A = [];
+      for (let r = 0; r < m; r++) { A.push(new Array(m + 1).fill(0)); for (let c = 0; c < m; c++) for (let i = 0; i < tx.length; i++) A[r][c] += tx[i] ** (r + c); for (let i = 0; i < tx.length; i++) A[r][m] += ty[i] * tx[i] ** r; A[r][r] += 1e-10; }
+      for (let c = 0; c < m; c++) { let p = c; for (let r = c + 1; r < m; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r; [A[c], A[p]] = [A[p], A[c]]; for (let r = 0; r < m; r++) if (r !== c) { const f = A[r][c] / A[c][c]; for (let k = c; k <= m; k++) A[r][k] -= f * A[c][k]; } }
+      return A.map((row, i) => row[m] / row[i]);
+    };
+    const ev = (w, x) => w.reduce((a, c, i) => a + c * x ** i, 0);
+    const mse = (w, X, Y) => X.reduce((a, x, i) => a + (ev(w, x) - Y[i]) ** 2, 0) / X.length;
+    const errs = []; for (let d = 0; d <= 9; d++) { const w = fit(d); errs.push([mse(w, tx, ty), mse(w, vx, vy)]); }
+    let deg = 3;
+    function draw() {
+      const w = fit(deg), G = MV.frame(440, 300, [-1.05, 1.05], [-2, 2]);
+      let s = MV.axes(G, { labels: false, xl: 'x', yl: 'y' }) + MV.curve(G, truth, 'c3 thin dash');
+      vx.forEach((x, i) => { s += MV.dot(G, x, vy[i], 'k', 3); });
+      tx.forEach((x, i) => { s += MV.dot(G, x, ty[i], '', 5); });
+      s += MV.curve(G, x => ev(w, x), 'c2');
+      $('.bv-plot', b).innerHTML = MV.svg(G, s, 'Polynomial fit');
+      const [tr, te] = errs[deg], best = errs.reduce((bi, e, i) => e[1] < errs[bi][1] ? i : bi, 0);
+      $('.bv-out', b).innerHTML = `degree <b>${deg}</b><br>training error = <b>${MV.num(tr, 4)}</b><br>test error = <b>${MV.num(te, 4)}</b><br>` + (deg < 2 ? 'Underfitting: too simple to follow the curve (high bias).' : te > 2.5 * errs[best][1] ? 'Overfitting: it threads the training points but misses new ones (high variance).' : 'A good balance.') + `<br>lowest test error at degree ${best}`;
+      const E = MV.frame(300, 150, [-0.5, 9.5], [0, Math.min(1, Math.max(...errs.map(e => e[1]))) * 1.1]);
+      let e = MV.axes(E, { labels: false, xl: 'degree', yl: 'error' });
+      const pl = k => errs.map((v, i) => E.sx(i).toFixed(1) + ',' + E.sy(Math.min(E.yr[1], v[k])).toFixed(1)).join(' ');
+      e += `<polyline class="mv-v a" stroke-width="2" points="${pl(0)}"/><polyline class="mv-v o" stroke-width="2" points="${pl(1)}"/>` + MV.line(E, deg, 0, deg, E.yr[1], 'mv-v k dash');
+      $('.bv-err', b).innerHTML = MV.svg(E, e, 'Error against degree') + '<div class="mv-legend"><span><i></i>training</span><span><i class="o"></i>test</span></div>';
+    }
+    const P = Player($('.vz-p', b), t => { deg = t; $('[data-sl="d"]', b).value = deg; $('[data-slv="d"]', b).textContent = deg; draw(); }, 900);
+    wireSlider(b, 'd', v => { P.pause(); deg = v; draw(); });
+    P.load(10, 3);
+  };
+})();
+'''
+CSS += r'''
+.bx-plot .mv-svg{max-height:200px}
+.bv-err .mv-svg{max-height:170px}
 '''
 
 T = K.topic(

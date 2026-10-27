@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 1 of 30</span></div>
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=javascript" target="_top">🟨 JavaScript</a><span>›</span><span>🌱 Foundations</span><span>›</span><span>Chapter 1 of 31</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">🚀</span><div><h1>Getting Started with JavaScript</h1><p class="lead">What JavaScript is, where it runs, how to set up Node.js, how to print with the console, how a page loads scripts and how to read the errors you will meet every day.</p></div></div>
     <div class="chips"><span class="chip">⏱️ About 14 min read</span><span class="chip">📚 8 parts</span><span class="chip">🎬 3 animations</span><span class="chip">▶ 11 runnable examples</span><span class="chip">🧪 1 real test run</span><span class="chip">🏋️ 4 hands-on exercises</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧪 6 QA essential parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
@@ -185,7 +185,7 @@ Message: Added to cart</pre></div></div>
 &lt;<span class="k">script</span> <span class="a">type</span>=<span class="s">"module"</span> <span class="a">src</span>=<span class="s">"main.js"</span>&gt;&lt;/<span class="k">script</span>&gt;</pre></div>
 <div class="viz" data-viz="flow" data-k="loading"></div>
 <p>Every browser has <b>DevTools</b> (<span class="kbd">F12</span>). Its Console tab runs any JavaScript you type against the open page. Testers use it to try a selector before putting it in a test: <code>document.querySelectorAll("button.buy").length</code> tells you at once whether the selector is unique.</p>
-<div class="codewrap" data-k="qa-execute"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Test tools send JavaScript into the page · Snippets, full runs come in chapter 21</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Selenium WebDriver for JavaScript</span>
+<div class="codewrap" data-k="qa-execute"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Test tools send JavaScript into the page · Snippets, full runs come in chapter 22</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="c">// Selenium WebDriver for JavaScript</span>
 <span class="k">const</span> title = <span class="k">await</span> driver.executeScript(<span class="s">"return document.title"</span>);
 
 <span class="c">// Playwright</span>
@@ -202,8 +202,9 @@ cy.window().then(win =&gt; win.localStorage.setItem(<span class="s">"token"</spa
 <ul>
 <li><b>Parse</b>: the engine reads the whole file first. A typo anywhere is a <code>SyntaxError</code> and nothing runs at all.</li>
 <li><b>Compile</b>: V8 turns the code into bytecode, then a JIT (just in time) compiler turns busy functions into fast machine code while the program runs.</li>
-<li><b>Execute</b>: one line at a time on a <b>single thread</b>. JavaScript does one thing at a time. Waiting for a server or a timer is handed to the runtime, which is how one thread stays responsive. Chapter 10 explains this event loop.</li>
+<li><b>Execute</b>: one line at a time on a <b>single thread</b>. JavaScript does one thing at a time. Waiting for a server or a timer is handed to the runtime, which is how one thread stays responsive. Chapter 11 explains this event loop.</li>
 </ul>
+<p>This is the short version. Chapter 2 follows a program through every step in depth, with the real bytecode V8 makes, a trace of the JIT compilers at work and two simulators where you type your own code.</p>
 <h3>Strict mode</h3>
 <p>Strict mode turns silent mistakes into errors. Modules (<code>type="module"</code> or <code>.mjs</code> files) and classes are always strict. Older scripts opt in with <code>"use strict"</code> on the first line.</p>
 <div class="codewrap" data-k="sloppy"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">The same typo without strict mode · ▶ Runs</span><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">let</span> total = <span class="n">0</span>;
@@ -247,7 +248,7 @@ Node.js v26.12.1</pre></div></div>
 <tr><td><code>TypeError</code></td><td>Reading a property of <code>undefined</code> or <code>null</code>, or calling something that is not a function.</td></tr>
 <tr><td><code>RangeError</code></td><td>A number out of range, such as <code>new Array(-1)</code>, or endless recursion.</td></tr>
 </table></div>
-<p>A <code>try</code> and <code>catch</code> block lets the program handle the error and carry on. Chapter 3 goes much deeper.</p>
+<p>A <code>try</code> and <code>catch</code> block lets the program handle the error and carry on. Chapter 4 goes much deeper.</p>
 <div class="codewrap" data-k="try-it" data-play="worker" data-strict="1"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Catching the error instead of crashing · ▶ Runs</span><button type="button" class="try">✏️ Edit and run</button><button type="button" class="copy">Copy</button></div><pre class="src main"><span class="k">const</span> cart = [];
 <span class="k">try</span> {
   cart.push({ id: <span class="n">1</span>, price: <span class="n">99</span> });
@@ -331,7 +332,7 @@ test(<span class="s">"an empty run has zero of everything"</span>, () =&gt; {
   <section class="card reveal" id="practice" data-say="practice"></section>
   <section class="card reveal" id="quiz"></section>
   <section class="card reveal" id="numbers"></section>
-  <nav class="pager"><span></span><a class="next" href="./js-values-types.html" data-topic="js-values-types"><small>Next chapter →</small><b>🔢 Variables and types</b></a></nav>
+  <nav class="pager"><span></span><a class="next" href="./js-how-it-runs.html" data-topic="js-how-it-runs"><small>Next chapter →</small><b>⚙️ How JavaScript runs</b></a></nav>
 </div>
 <script src="../../assets/fun.js"></script>
 <script src="../../assets/extras.js"></script>

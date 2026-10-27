@@ -87,9 +87,9 @@ body.qa-only .jsec:not(.qa-part), body.qa-only .toc a:not(.qa):not(.spec){displa
 
 /* animations written for the JavaScript chapters (assets/jsviz.js) */
 .jv-lanes{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:10px}
-.jv-lane{border:1.5px solid var(--line); border-radius:14px; background:var(--surface); padding:8px; min-height:118px}
+.jv-lane{min-width:0; border:1.5px solid var(--line); border-radius:14px; background:var(--surface); padding:8px; min-height:118px}
 .jv-lane>b{display:block; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink2); margin-bottom:6px}
-.jv-chip{display:block; margin:4px 0; padding:5px 8px; border-radius:9px; font-family:var(--font-mono); font-size:12.5px; font-weight:700; background:var(--box); border:1.5px solid var(--box-line)}
+.jv-chip{display:block; margin:4px 0; overflow-wrap:anywhere; padding:5px 8px; border-radius:9px; font-family:var(--font-mono); font-size:12.5px; font-weight:700; background:var(--box); border:1.5px solid var(--box-line)}
 .jv-chip.new{animation:fun-pop .35s ease}
 .jv-chip.t0{background:var(--g0)} .jv-chip.t1{background:var(--g1)} .jv-chip.t2{background:var(--g2)} .jv-chip.t3{background:var(--g3)} .jv-chip.t4{background:var(--g4)} .jv-chip.t5{background:var(--g5)}
 .jv-code{margin:0; background:var(--code-bg); color:var(--code-ink); border-radius:12px; padding:10px 0; font-family:var(--font-mono); font-size:12.5px; line-height:1.55; overflow:auto}
@@ -122,3 +122,32 @@ body.qa-only .jsec:not(.qa-part), body.qa-only .toc a:not(.qa):not(.spec){displa
   .jv-time{grid-template-columns:90px 1fr}
 }
 .vz-msg mark{background:var(--hl); color:var(--ink); border-radius:4px; padding:0 2px; box-shadow:0 0 0 1.5px var(--hl-line)}
+
+/* the engine and event loop simulators (assets/jsviz.js) */
+.jv-src{min-height:96px; border-radius:12px; margin:8px 0}
+.jv-stages{display:flex; flex-wrap:wrap; gap:6px; list-style:none; padding:0; margin:8px 0}
+.jv-stages li{flex:1 1 110px; padding:6px 10px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); font-weight:800; font-size:13px; color:var(--ink2); transition:all .3s}
+.jv-stages li b{display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; background:var(--surface2); margin-right:4px; font-size:12px}
+.jv-stages li.done{background:var(--ok); border-color:var(--ok-line); color:var(--ink)}
+.jv-stages li.on{background:var(--hl); border-color:var(--hl-line); color:var(--ink)}
+.jv-stages li.bad{background:var(--bad); border-color:var(--bad-line); color:var(--ink)}
+.jv-eng{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr)); gap:10px; margin-top:10px}
+.jv-eng .jv-lane{min-width:0}
+.jv-eng .jv-code{max-height:220px}
+.jv-code div.bad{background:color-mix(in srgb, var(--red) 35%, transparent); box-shadow:inset 3px 0 0 var(--red)}
+.jv-toks{display:flex; flex-wrap:wrap; gap:4px}
+.jv-tok{padding:3px 7px; border-radius:7px; font-family:var(--font-mono); font-size:12.5px; font-weight:700; border:1.5px solid var(--box-line); background:var(--box); transition:all .3s}
+.jv-tok.keyword{background:var(--g3)} .jv-tok.name{background:var(--g0)} .jv-tok.number{background:var(--g2)} .jv-tok.string{background:var(--g1)}
+.jv-tok.on{background:var(--hl); border-color:var(--hl-line); transform:translateY(-2px)}
+.jv-ast,.jv-out{margin:0; font-family:var(--font-mono); font-size:12px; line-height:1.5; white-space:pre; overflow:auto; max-height:220px; color:var(--ink)}
+.jv-out{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:8px 10px; min-height:60px; white-space:pre-wrap}
+.jv-sub{margin-top:8px}
+.jv-dim{color:var(--ink2); font-size:13px}
+.jv-note{font-size:12.5px; color:var(--ink2); margin:8px 0 0}
+.jv-q{display:flex; flex-wrap:wrap; gap:4px; min-height:30px}
+.jv-q .jv-chip{display:inline-block; margin:0}
+.jv-go{border:0; border-radius:12px; padding:9px 16px; font-weight:800; font-size:14px; background:var(--accent); color:var(--accent-ink); cursor:pointer; font-family:inherit}
+.jv-go:hover{filter:brightness(1.08)}
+.jv-eng .jv-lane{min-height:72px}
+.jsec pre.tree{max-width:100%;overflow-x:auto}
+.jsec p code,.jsec li code,.jsec td code{overflow-wrap:anywhere}

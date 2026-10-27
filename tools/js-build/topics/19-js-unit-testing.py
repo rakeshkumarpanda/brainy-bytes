@@ -669,12 +669,18 @@ test("examples", () => {
     }, 'npm test', 'Step 2: fix the code and the same tests pass', show=['src/split.js'], badge='🟢 Green: fixed', replace=NT),
 }
 
+LANES = {
+    'hooks': {'t': 'The order hooks and tests run in', 'code': 'beforeAll(startServer);\nbeforeEach(seedData);\nafterEach(clearData);\nafterAll(stopServer);\ntest("A adds an item", ...);\ntest("B removes an item", ...);', 'lanes': ['Running now', 'Order so far'], 'tone': [2, 1], 'steps': [{'l': 1, 'v': [['beforeAll'], ['startServer']], 'm': 'beforeAll runs once before any test in the file or describe block: start a server, open a browser.'}, {'l': 2, 'v': [['beforeEach'], ['startServer', 'seedData']], 'm': 'beforeEach runs before every test, so each test starts from the same data.'}, {'l': 5, 'v': [['test A'], ['startServer', 'seedData', 'A']], 'm': 'Test A runs.'}, {'l': 3, 'v': [['afterEach'], ['startServer', 'seedData', 'A', 'clearData']], 'm': 'afterEach runs after every test, even when the test failed.'}, {'l': 2, 'v': [['beforeEach'], ['startServer', 'seedData', 'A', 'clearData', 'seedData']], 'm': 'Fresh data again for the next test. A cannot leave anything behind for B.'}, {'l': 6, 'v': [['test B'], ['startServer', 'seedData', 'A', 'clearData', 'seedData', 'B']], 'm': 'Test B runs.'}, {'l': 3, 'v': [['afterEach'], ['startServer', 'seedData', 'A', 'clearData', 'seedData', 'B', 'clearData']], 'm': 'Clean up after B.'}, {'l': 4, 'v': [['afterAll'], ['startServer', 'seedData', 'A', 'clearData', 'seedData', 'B', 'clearData', 'stopServer']], 'm': 'afterAll runs once at the end. Jest, Vitest, Mocha (before and beforeEach) and node:test all follow this order.'}]},
+}
+
 PARTS = [
     part('basics', '🧱', 'What a unit test is', '''
 <p>A <b>unit test</b> checks one small piece of code, usually one function or one class, on its own. It runs in milliseconds, needs no browser, server or database, and tells you exactly which piece broke. A good suite has many unit tests, fewer API or integration tests, and a small number of slow end to end tests. This shape is called the <b>test pyramid</b>.</p>
 <div class="viz" data-viz="flow" data-k="pyramid"></div>
 <p>Every test follows the same three steps: <b>Arrange</b> the input, <b>Act</b> by calling the code, <b>Assert</b> that the result is right. Node.js has a test runner built in, so the first suite needs nothing installed.</p>
 [[first]]
+<p>Most suites also need set up and clean up. <b>Hooks</b> run code around the tests, and their order is the same in every popular runner. Getting it wrong is a common cause of tests that pass alone and fail together.</p>
+<div class="viz" data-viz="lanes" data-k="hooks"></div>
 <div class="tip">Good unit tests are fast, independent of each other and of the order they run in, repeatable on any machine, and named so that a failure explains itself: "takes 10% off with SAVE10" beats "test 3".</div>
 ''', qa=['node:test'], qa_why="Testers who read and write unit tests can review developers' tests and spot missing cases early.",
         kw=['unit test', 'test pyramid', 'Arrange Act Assert', 'AAA', 'node:test', 'describe', 'it', 'assert', 'assert.equal', 'assert.throws', 'deepEqual']),
@@ -751,7 +757,7 @@ PARTS = [
 <p>API code has two sides to test. <b>Incoming</b>: your routes. <b>supertest</b> sends requests straight into an Express app, without opening a port, and checks the status, headers and body. <b>Outgoing</b>: calls your code makes to other services. <b>nock</b> intercepts them and answers with whatever the test needs, including errors that are hard to produce for real.</p>
 [[api-unit]]
 <div class="tip">Passing <code>stockService</code> into <code>createApp</code> is what makes the route easy to test. Code that creates its own clients inside every function is much harder to test, so testable design starts with how dependencies are passed in.</div>
-<div class="dev-box">Chapter 20 goes further: tests against a running server, JSON Schema validation, contract checks and Playwright's API testing.</div>
+<div class="dev-box">{{Ch:js-api-testing}} goes further: tests against a running server, JSON Schema validation, contract checks and Playwright's API testing.</div>
 ''', qa=['supertest', 'nock', 'Jest', 'Vitest'], qa_why='Most API test frameworks start from supertest and nock, and their ideas carry over to every other tool.',
         kw=['API unit test', 'supertest', 'nock', 'Express', 'route test', 'status code', 'mock HTTP', 'outgoing request', 'dependency injection', '503', '404']),
     part('scenario', '🎬', 'Real world scenario: turn a bug report into a test', '''
@@ -858,7 +864,7 @@ QUIZ = [
     quiz('m', 'A test must not send real emails. What do you use?', ['A mock or stub for the mailer', 'A slower test', 'A try catch', 'A longer timeout'], 0, 'Replace the outside service.', 'A test double records the call without any real side effect.'),
     quiz('m', 'Which command runs only Jest tests whose name contains "@smoke"?', ['npx jest -t "@smoke"', 'npx jest --smoke', 'npx jest @smoke.test.js', 'npx jest --only smoke'], 0, 't for test name.', '-t filters by test name, which is how tags in names work in Jest.'),
     quiz('m', 'What does --shard=2/3 do?', ['Runs the second of three equal parts of the suite', 'Runs tests 2 and 3', 'Runs the suite three times', 'Retries twice'], 0, 'Split across machines.', 'Three CI machines each take one shard, so the suite finishes about three times faster.'),
-    quiz('h', 'expect(promise).rejects.toThrow("x") without await. What can happen?', ['The test passes even if the promise fulfils', 'It always fails', 'It throws a syntax error', 'Jest waits automatically'], 0, 'Chapter 10.', 'Without await, the test ends before the assertion is checked.'),
+    quiz('h', 'expect(promise).rejects.toThrow("x") without await. What can happen?', ['The test passes even if the promise fulfils', 'It always fails', 'It throws a syntax error', 'Jest waits automatically'], 0, '{{Ch:js-async}}.', 'Without await, the test ends before the assertion is checked.'),
     quiz('h', 'Why does supertest not need app.listen()?', ['It passes requests straight to the app function', 'It uses a fixed port', 'It mocks Express', 'It only checks headers'], 0, 'In process.', 'supertest starts a temporary server internally or calls the handler directly, so tests never fight over ports.'),
     quiz('h', 'What can jsdom not test?', ['Real layout and CSS, such as an element hidden behind another', 'Click handlers', 'Form validation messages', 'Text content'], 0, 'It draws nothing.', 'jsdom has no rendering, so overlap and visual bugs need a real browser.'),
     quiz('x', 'A suite has a test.only left in by mistake. What is the safest CI protection?', ['Fail the run with --forbid-only or a lint rule', 'Run the suite twice', 'Use --bail', 'Use coverage'], 0, 'Make it impossible to merge.', 'Blocking .only stops one test from silently replacing the whole suite.'),
@@ -913,5 +919,5 @@ T = {
     'summary': 'The test pyramid and Arrange Act Assert, node:test with mocks and a fake clock, Jest matchers, test.each, module mocks, spies and fake timers, Vitest and Mocha with Chai and Sinon, seven ways to run a node:test suite and five with Jest, a CI matrix with shards, UI component tests with jsdom, Testing Library and user-event, API route tests with supertest, outgoing HTTP faked with nock, and a bug turned into a regression test.',
     'keywords': ['unit testing', 'node:test', 'Jest', 'Vitest', 'Mocha', 'Chai', 'Sinon', 'mock', 'spy', 'stub', 'fake timers', 'test.each', 'filter', 'tags', 'shard', 'coverage', 'JUnit', 'CI', 'jsdom', 'Testing Library', 'supertest', 'nock', 'TDD', 'regression test'],
     'qa_intro': 'Every example on this page ran with the real runner when the page was built. You will see the same test written for web code and for API code, and the same suite run in many different ways.',
-    'parts': PARTS, 'codes': CODES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
+    'parts': PARTS, 'codes': CODES, 'lanes': LANES, 'dg': DG, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'ex': EX,
 }

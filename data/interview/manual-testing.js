@@ -45,6 +45,11 @@ IQ_SETS["manual-testing"] = {
     "⚡",
     "Non functional testing",
     "Performance, load, stress, usability, compatibility and security basics."
+   ],
+   [
+    "🧭",
+    "Modern practice",
+    "Static reviews, OWASP 2025, accessibility law, metrics, shift left, BDD, flaky tests and AI in testing."
    ]
   ],
   "key": "manual-testing-interview"
@@ -480,6 +485,133 @@ IQ_SETS["manual-testing"] = {
    "hint": "Think about repetition, stability and human judgement.",
    "answer": "Automate tests that run often and are stable: regression, smoke, data driven tests, API checks and cross browser runs. Keep manual the tests that need human judgement or change often: exploratory testing, usability, new features still changing, one time tests, and checks such as CAPTCHA.",
    "explain": "<p>Mention return on investment. A test is worth automating when the cost to build and maintain it is lower than running it by hand over the next releases. Automation does not replace testers, it frees them for exploratory and risk based work.</p>"
+  },
+  {
+   "id": "review-process",
+   "topic": "Static testing and reviews",
+   "lv": "m",
+   "q": "What are the steps of a formal review, and who takes part?",
+   "hint": "Five steps in ISTQB, and a handful of roles around one meeting.",
+   "answer": "The ISTQB review process has five steps: planning, review initiation, individual review, communication and analysis, and fixing and reporting. The roles are the manager, the author, the moderator (facilitator), the scribe (recorder), the reviewers and, in larger reviews, a review leader.",
+   "explain": "<p>Review types go from informal (a quick buddy check) to walkthrough (the author leads), technical review (peers decide on technical points) and inspection (the most formal, with checklists, metrics and entry and exit criteria). A good answer gives one defect found in a requirement review, such as an undefined limit or two rules that contradict each other.</p>"
+  },
+  {
+   "id": "ambiguous-req",
+   "topic": "Static testing and reviews",
+   "lv": "e",
+   "q": "How do you review a requirement as a tester?",
+   "hint": "Try to write a test for it. Every question you cannot answer is a finding.",
+   "answer": "Read each requirement and try to write its test cases. Ask what the inputs are, what the exact limits and formats are, what happens on wrong input, what the expected result is, and how it will be measured. Vague words such as fast, user friendly, appropriate or etc. cannot be tested and must be replaced with numbers or clear rules.",
+   "explain": "<p>Example: \"The page should load quickly\" becomes \"The search results page shows the first 20 results within 2 seconds for 95% of requests with 500 users online.\"</p>"
+  },
+  {
+   "id": "owasp-2025",
+   "topic": "Specialised testing",
+   "lv": "m",
+   "q": "What is the OWASP Top 10, and what is first on the 2025 list?",
+   "hint": "A list of the most serious web application risks. Access is still the biggest problem.",
+   "answer": "The OWASP Top 10 is a widely used list of the most critical web application security risks. In the 2025 edition, A01 is Broken Access Control, followed by Security Misconfiguration and the new Software Supply Chain Failures. Other entries include Cryptographic Failures, Injection, Insecure Design, Authentication Failures and the new Mishandling of Exceptional Conditions.",
+   "explain": "<p>A manual tester can check access control directly: log in as user A, note an order id in the URL, log in as user B and open the same URL. If B sees A's order, that is an insecure direct object reference (IDOR), a form of broken access control.</p>"
+  },
+  {
+   "id": "a11y-standards",
+   "topic": "Specialised testing",
+   "lv": "m",
+   "q": "Which accessibility standard do you test against, and why does it matter more now?",
+   "hint": "WCAG levels A, AA and AAA, and a European law from 2025.",
+   "answer": "Most teams test against WCAG 2.2 at level AA. It covers perceivable, operable, understandable and robust content, such as alt text, keyboard access, visible focus, contrast of at least 4.5 to 1 for normal text, and clear error messages. The European Accessibility Act has applied since 28 June 2025, so many products sold in the EU must now meet these rules.",
+   "explain": "<p>Combine automated tools such as axe or Lighthouse, which find only part of the issues, with manual checks: keyboard only navigation, a screen reader such as NVDA, VoiceOver or TalkBack, and zoom to 200%.</p>"
+  },
+  {
+   "id": "l10n-i18n",
+   "topic": "Specialised testing",
+   "lv": "e",
+   "q": "What is the difference between internationalisation and localisation testing?",
+   "hint": "Can the product support many languages, and is each language done right.",
+   "answer": "Internationalisation (i18n) testing checks that the product can support any language and region: Unicode text, longer strings, right to left layouts, different date, number and currency formats, and time zones. Localisation (l10n) testing checks one specific locale: correct translation, local formats, cultural fit and legal content.",
+   "explain": "<p>Quick checks: German text is often about 30% longer than English, Arabic needs a right to left mirrored layout, and India writes 1,00,000 where the US writes 100,000.</p>"
+  },
+  {
+   "id": "mobile-specific",
+   "topic": "Specialised testing",
+   "lv": "m",
+   "q": "What do you test in a mobile app that you would not test on a website?",
+   "hint": "Interruptions, networks, permissions and the device itself.",
+   "answer": "Interruptions such as calls, notifications and switching apps, network changes from Wi-Fi to mobile data or offline, permissions being denied or revoked, battery and low storage, screen rotation, different screen sizes and notches, install, update and uninstall, push notifications, and gestures.",
+   "explain": "<p>Test on real devices for the most used models and on emulators or cloud device farms for wider coverage. Check what happens to a half finished payment when the network drops.</p>",
+   "kind": "Scenario"
+  },
+  {
+   "id": "test-metrics",
+   "topic": "Metrics and reporting",
+   "lv": "m",
+   "q": "Which test metrics do you report, and which ones can mislead?",
+   "hint": "Progress, quality and escape, and the danger of counting.",
+   "answer": "Useful metrics are test execution progress (planned, run, passed, failed, blocked), defect counts by severity and status, defect removal efficiency (defects found before release divided by all defects), defect leakage to production, requirement coverage from the RTM and automation pass rate. Counts such as test cases per tester or bugs per tester mislead, because they reward many small cases and many trivial bugs.",
+   "explain": "<p>Pick metrics from goals, as in the Goal, Question, Metric approach, and show trends over time rather than single numbers. A manager wants risk and readiness. A developer wants open defects by module.</p>"
+  },
+  {
+   "id": "estimation-techniques",
+   "topic": "Metrics and reporting",
+   "lv": "h",
+   "q": "How do you estimate testing effort?",
+   "hint": "Several techniques, from expert guesses to a three point formula.",
+   "answer": "Common techniques are work breakdown structure, expert judgement, the ratio of test effort to development effort from past projects, Wideband Delphi, planning poker in Agile, and three point estimation with E = (O + 4M + P) / 6, where O is optimistic, M most likely and P pessimistic.",
+   "explain": "<p>Example: O = 4 days, M = 6 days, P = 14 days gives E = (4 + 24 + 14) / 6 = 7 days. Add time for environment problems, retesting and regression, and say which assumptions the estimate depends on.</p>"
+  },
+  {
+   "id": "shift-left-right",
+   "topic": "Modern practice",
+   "lv": "m",
+   "q": "What do shift left and shift right testing mean?",
+   "hint": "Earlier in the life cycle, and after release in production.",
+   "answer": "Shift left means testing earlier: reviewing requirements and designs, writing acceptance criteria with the team, and running unit and API tests on every commit. Shift right means learning from production: monitoring, canary releases, feature flags, A/B tests and real user feedback.",
+   "explain": "<p>They work together. Shift left stops most defects early, and shift right catches what only real users, real data and real load can show, with a small blast radius.</p>"
+  },
+  {
+   "id": "bdd",
+   "topic": "Modern practice",
+   "lv": "e",
+   "q": "What is BDD, and how does Given, When, Then help testers?",
+   "hint": "Shared examples written in plain language before coding.",
+   "answer": "Behaviour driven development is a practice where business, developers and testers agree on examples of behaviour before coding, often in a \"three amigos\" meeting. Each example is written as Given (the starting state), When (the action) and Then (the expected result). The examples become acceptance criteria and often automated tests.",
+   "explain": "<p>Example: Given my balance is 1,000, When I transfer 1,200, Then I see \"Insufficient balance\" and my balance stays 1,000.</p>"
+  },
+  {
+   "id": "test-pyramid",
+   "topic": "Modern practice",
+   "lv": "m",
+   "q": "What is the test pyramid?",
+   "hint": "Many fast tests at the bottom, few slow ones at the top.",
+   "answer": "The test pyramid says a suite should have many unit tests, fewer service or API tests and only a few UI end to end tests. Lower tests are faster, cheaper and less flaky. UI tests prove that the whole journey works, but each one is slow and breaks easily.",
+   "explain": "<p>An inverted pyramid, with mostly UI tests, is often called an ice cream cone. It gives slow pipelines and many flaky failures. Manual and exploratory testing sit on top of the pyramid.</p>"
+  },
+  {
+   "id": "flaky-tests",
+   "topic": "Modern practice",
+   "lv": "m",
+   "q": "What is a flaky test, and how do you deal with one?",
+   "hint": "Same code, different results. Find the cause instead of retrying.",
+   "answer": "A flaky test passes and fails on the same code without any change. Common causes are timing and fixed waits, shared test data, dependence on test order, unstable environments, outside services and real race conditions in the product. Quarantine it so it does not block others, find the cause, fix it and bring it back.",
+   "explain": "<p>Automatic retries make the pipeline green but hide the problem. If you can make the failure happen by hand, it may be a real product bug.</p>"
+  },
+  {
+   "id": "ai-in-testing",
+   "topic": "Modern practice",
+   "lv": "h",
+   "q": "How can AI help testers, and how do you test an AI feature?",
+   "hint": "AI as a helper, and AI as the thing under test.",
+   "answer": "AI tools can draft test ideas and test data from requirements, summarise logs and suggest locators, but a tester must review every output because it can be wrong with confidence. Testing an AI feature such as a chatbot means checking accuracy against known answers, hallucination, bias, safety and prompt injection, consistency across repeated runs, and privacy of personal data.",
+   "explain": "<p>Since outputs vary, use rules and reference sets instead of one exact expected result. ISTQB launched a certification on testing with generative AI (CT-GenAI) in 2025.</p>"
+  },
+  {
+   "id": "privacy-test-data",
+   "topic": "Modern practice",
+   "lv": "m",
+   "q": "Can you use production data for testing?",
+   "hint": "Think about privacy law and masking.",
+   "answer": "Not directly. Personal data is protected by laws such as GDPR in Europe and India's DPDP Act, whose rules were notified in November 2025. Use synthetic data, or mask and anonymise production copies so names, phone numbers, account numbers and emails cannot identify real people, while keeping formats and relationships valid.",
+   "explain": "<p>Also test privacy features themselves: consent screens, the right to see and delete data, and that personal data does not appear in logs or error messages.</p>"
   }
  ]
 };
