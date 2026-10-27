@@ -3955,6 +3955,24 @@ function cvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cv-project", title: "Project lab", emoji: "8", step: 8, level: "Hands on", blurb: "Your own experiment rebuilt step by step: what blur and sharpening do to a YOLO detector, and how to read and question the results.", topics: [
+      { id: "project-lab", title: "Project lab: blur, sharpening and detection", emoji: "8.1", page: "content/computer-vision/project-lab.html",
+        summary: "The project notebook step by step: Gaussian blur, the sharpening kernel, the results table and what it can and cannot show.",
+        keywords: ["project", "YOLO11n", "COCO128", "Gaussian blur", "sharpening", "Laplacian", "unsharp masking", "filter2D", "precision", "recall", "mAP", "F1", "robustness", "experiment design"],
+        minutes: 50, counts: {"lessons": 5, "problems": 14, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "brief", title: "The project brief", emoji: "", group: "Lesson", keywords: ["project", "COCO128", "YOLO11n", "model.val", "controlled experiment", "dataset YAML", "labels", "precision", "recall", "mAP50", "mAP50-95"] },
+        { id: "blur", title: "Stage 2: the Gaussian blur", emoji: "", group: "Lesson", keywords: ["GaussianBlur", "kernel size", "sigma", "OpenCV sigma formula", "binomial", "separable filter", "low pass filter", "small objects", "class confusion"] },
+        { id: "sharpen", title: "Stage 3: the sharpening kernel", emoji: "", group: "Lesson", keywords: ["sharpening kernel", "filter2D", "Laplacian", "unsharp masking", "high pass", "halo", "clipping", "uint8", "correlation", "BORDER_REFLECT_101", "deconvolution", "Wiener filter", "frequency response"] },
+        { id: "results", title: "Reading the results", emoji: "", group: "Lesson", keywords: ["results table", "relative change", "precision rises", "false alarms", "share won back", "F1", "mAP50-95 drop", "localisation", "operating point"] },
+        { id: "validity", title: "How sure can we be, and what to try next", emoji: "", group: "Lesson", keywords: ["validity", "train test overlap", "COCO128", "val2017", "sample size", "bootstrap", "confidence interval", "operating point", "blur sweep", "augmentation", "variance of Laplacian", "robustness", "ImageNet-C"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

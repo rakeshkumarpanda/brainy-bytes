@@ -2372,4 +2372,200 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 16: project lab */
+  const cvSigma = k => 0.3 * ((k - 1) * 0.5 - 1) + 0.8;
+  const gTaps = (k, s) => { const w = []; let t = 0; for (let i = 0; i < k; i++) { const d = i - (k - 1) / 2, v = Math.exp(-d * d / (2 * s * s)); w.push(v); t += v; } return w.map(v => v / t); };
+  const cvTaps = k => k === 3 ? [0.25, 0.5, 0.25] : k === 5 ? [0.0625, 0.25, 0.375, 0.25, 0.0625] : gTaps(k, cvSigma(k));
+  const refl = (i, n) => { while (i < 0 || i >= n) i = i < 0 ? -i : 2 * n - 2 - i; return i; };
+  const blur2 = (A, w) => {
+    const n = A.length, R = (w.length - 1) / 2;
+    const H = A.map(r => r.map((_, x) => w.reduce((s, c, j) => s + c * r[refl(x + j - R, n)], 0)));
+    return H.map((r, y) => r.map((_, x) => w.reduce((s, c, j) => s + c * H[refl(y + j - R, n)][x], 0)));
+  };
+  const sharpen2 = (A, a) => {
+    const n = A.length;
+    return A.map((r, y) => r.map((v, x) => { const nb = A[refl(y - 1, n)][x] + A[refl(y + 1, n)][x] + r[refl(x - 1, n)] + r[refl(x + 1, n)]; return v + a * (v - nb / 4); }));
+  };
+  const u8 = A => { let c = 0; const B = A.map(r => r.map(v => { const q = Math.round(v); if (q < 0 || q > 255) c++; return clamp(q, 0, 255); })); return [B, c]; };
+  const labScene = (noise) => {
+    const n = 40, r = CVZ.rng(16);
+    const A = [];
+    for (let y = 0; y < n; y++) { const row = []; for (let x = 0; x < n; x++) {
+      let v = x < 20 ? 70 : 150;
+      if (x >= 6 && x <= 13 && y >= 24 && y <= 33) v = 200;
+      if (y === 8 && x >= 22) v = 40;
+      if (x === 30 && y >= 12) v = 230;
+      if ((x - 8) ** 2 + (y - 8) ** 2 <= 1) v = 240;
+      if (x >= 23 && x <= 37 && y >= 26 && y <= 37 && x !== 30) v = ((x + y) % 2) ? 190 : 110;
+      row.push(v + CVZ.gauss(r) * noise);
+    } A.push(row); }
+    return A;
+  };
+  def('labpipe', {
+    title: 'The notebook pipeline on a small test image',
+    sub: 'A 40 × 40 test image with an edge, a thin bright line, a thin dark line, a tiny dot and a fine checker texture. It goes through the same two steps as the project: GaussianBlur, then filter2D with a sharpening kernel, rounded and clipped to 0 to 255.',
+    W: 560, H: 250,
+    params: [
+      { k: 'k', label: 'Blur kernel size', type: 'select', num: true, v: 9, opts: [[1, '1 (no blur)'], [3, '3 × 3'], [5, '5 × 5'], [9, '9 × 9 (project)'], [15, '15 × 15']] },
+      { k: 's', label: 'σ (0 lets OpenCV choose from the size)', type: 'range', min: 0, max: 4, step: 0.1, v: 0, fmt: v => v ? f(v, 1) : 'auto' },
+      { k: 'a', label: 'Sharpening amount a (4 gives the project kernel)', type: 'range', min: 0, max: 8, step: 0.5, v: 4 },
+      { k: 'noise', label: 'Sensor noise (standard deviation)', type: 'range', min: 0, max: 20, v: 2 },
+      { k: 'show', label: 'Show', type: 'select', v: 'img', opts: [['img', 'Images'], ['row', 'Row 20 as a curve (edge and thin bright line)']] }
+    ],
+    tips: [
+      { t: 'The project setting: 9 × 9 with σ chosen by OpenCV (1.7), then the kernel with 5 in the centre. Compare the middle and right panels. Edges come back, the checker texture does not.', set: { k: 9, s: 0, a: 4, noise: 2, show: 'img' } },
+      { t: 'Switch to the row view. The edge at column 20 becomes a slope and the one pixel bright line at column 30 shrinks to a small bump. Sharpening steepens both but cannot rebuild the original spike.', set: { show: 'row' } },
+      { t: 'Raise noise to 15. The sharpened panel gets grainy, because the kernel boosts every fine change, real or not. This is how sharpening can add false boxes and lower precision.', set: { noise: 15, show: 'img' } },
+      { t: 'Use a 3 × 3 blur. Mild blur leaves enough detail for sharpening to restore most of it. The size of the loss decides how much can be won back.', set: { k: 3, s: 0, noise: 2 } },
+      { t: 'Push a to 8. Halos and clipped pixels appear at every edge. The clipped count in the readout shows values that left the 0 to 255 range.', set: { k: 9, a: 8, noise: 2 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const sg = p.k === 1 ? 0 : (p.s || cvSigma(p.k));
+      const A = labScene(p.noise);
+      const Bf = p.k === 1 ? A : blur2(A, p.s ? gTaps(p.k, p.s) : cvTaps(p.k));
+      const [B] = u8(Bf);
+      const [S, clipped] = u8(sharpen2(B, p.a));
+      const [O] = u8(A);
+      const c0 = 1 + p.a, cn = p.a / 4;
+      if (p.show === 'img') {
+        const cell = 4.2;
+        [[O, 'original'], [B, 'blurred'], [S, 'sharpened']].forEach(([M, t], i) => {
+          const x0 = 12 + i * 182;
+          D.image(g, M, x0, 22, cell);
+          D.text(g, t, x0 + 84, 16, { a: 'center', s: 12, b: true, c: z.col.ink });
+        });
+      } else {
+        const m = D.axes(g, z, [50, 14, 490, 186], [0, 40], [0, 255], { nx: 4, ny: 3, xl: 'column', yl: 'intensity', fx: v => Math.round(v), fy: v => Math.round(v) });
+        const plot = (M, c, w, dash) => { g.save(); g.strokeStyle = c; g.lineWidth = w; if (dash) g.setLineDash(dash); g.beginPath(); M[20].forEach((v, i) => { if (i) g.lineTo(m.sx(i), m.sy(v)); else g.moveTo(m.sx(i), m.sy(v)); }); g.stroke(); g.restore(); };
+        plot(O, z.col.ink2, 1.4, [4, 4]); plot(B, z.col.cv, 2); plot(S, z.col.orange, 2.2);
+        D.text(g, 'dashed original, blue blurred, orange sharpened', 54, 238, { s: 11, c: z.col.ink2 });
+      }
+      return `<span class="big">σ used: ${p.k === 1 ? 'none' : p.k < 9 && !p.s ? 'fixed binomial weights' : f(sg, 2) + (p.s ? '' : ' from 0.3 ((k − 1) ÷ 2 − 1) + 0.8')}, &nbsp; kernel centre ${f(c0, 1)}, neighbours −${f(cn, 2)}</span><br>The sharpening kernel is the image plus a times (the image minus the average of its four neighbours). With a = 4 it is exactly [[0, −1, 0], [−1, 5, −1], [0, −1, 0]], whose weights add to 1, so flat areas keep their brightness. Pixels clipped to 0 or 255 after sharpening: ${clipped}.`;
+    }
+  });
+
+  def('freqgain', {
+    title: 'What blur removes and sharpening gives back, by frequency',
+    sub: 'Every image is a sum of waves. Low frequency means slow changes such as large shapes, high frequency means fine detail such as edges and texture. Each curve shows how much of a wave survives a filter.',
+    W: 560, H: 260,
+    params: [
+      { k: 'k', label: 'Blur kernel size', type: 'select', num: true, v: 9, opts: [[3, '3 × 3'], [5, '5 × 5'], [9, '9 × 9 (project)'], [15, '15 × 15']] },
+      { k: 'a', label: 'Sharpening amount a', type: 'range', min: 0, max: 8, step: 0.5, v: 4 },
+      { k: 'w', label: 'Probe frequency (fraction of the finest wave)', type: 'range', min: 0.05, max: 1, step: 0.05, v: 0.5 },
+      { k: 'log', label: 'Logarithmic gain axis', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'The project case at half the finest frequency: the 9 × 9 blur keeps about 3 percent, the kernel multiplies by 3, and only about 9 percent comes back.', set: { k: 9, a: 4, w: 0.5, log: false } },
+      { t: 'Turn on the log axis and move the probe to 1. Blur leaves about 0.5 percent of the finest wave. Multiplying a tiny number by 5 is still tiny, and any noise at that frequency is multiplied by 5 too.', set: { log: true, w: 1 } },
+      { t: 'Try a 3 × 3 blur. Much more survives at middle frequencies, so the same kernel restores far more. Recovery depends on what the blur left.', set: { k: 3, log: false, w: 0.5 } },
+      { t: 'Set a to 0. The orange curve flattens at 1, meaning no change. Sharpening is a high pass boost layered on top of the image.', set: { a: 0, k: 9 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const t = cvTaps(p.k), R = (p.k - 1) / 2;
+      const Hg = w => t.reduce((s, c, i) => s + c * Math.cos(w * Math.PI * (i - R)), 0);
+      const Hs = w => 1 + p.a * (1 - Math.cos(w * Math.PI)) / 2;
+      const ymax = 2 * Math.ceil((2 + p.a) / 2);
+      const tr = v => p.log ? Math.log10(Math.max(Math.abs(v), 1e-4)) : Math.abs(v);
+      const m = D.axes(g, z, [50, 14, 330, 210], [0, 1], p.log ? [-4, 1] : [0, ymax], { nx: 4, ny: p.log ? 5 : ymax / 2, xl: 'frequency (1 = finest)', yl: p.log ? '' : 'gain', fx: v => f(v, 2), fy: v => p.log ? String(+Math.pow(10, Math.round(v)).toPrecision(1)) : f(v, 1) });
+      D.curve(g, w => tr(Hg(w)), [0, 1], m, z.col.cv, 2.2);
+      D.curve(g, w => tr(Hs(w)), [0, 1], m, z.col.orange, 2.2);
+      D.curve(g, w => tr(Hg(w) * Hs(w)), [0, 1], m, z.col.purple, 2.6, 200, [6, 3]);
+      D.line(g, m.sx(0), m.sy(tr(1)), m.sx(1), m.sy(tr(1)), z.col.ink2, 1, [2, 3]);
+      D.line(g, m.sx(p.w), 14, m.sx(p.w), 224, z.col.red, 1.2, [4, 3]);
+      const gb = Math.abs(Hg(p.w)), gs = Hs(p.w);
+      const tx = 400;
+      [['blur keeps', gb, z.col.cv], ['kernel multiplies by', gs, z.col.orange], ['after both', gb * gs, z.col.purple]].forEach(([l, v, c], i) => {
+        D.text(g, l, tx, 34 + i * 46, { s: 12, c: z.col.ink2 });
+        D.text(g, v < 0.01 ? f(v, 4) : f(v, 3), tx, 52 + i * 46, { s: 14, mono: true, b: true, c });
+      });
+      D.text(g, 'red line: probe', tx, 176, { s: 11, c: z.col.red });
+      return `<span class="big">H<sub>blur</sub>(ω) = Σ<sub>i</sub> w<sub>i</sub> cos(ω i), &nbsp; H<sub>sharpen</sub>(ω) = 1 + a (1 − cos ω) ÷ 2, &nbsp; after both = H<sub>blur</sub> · H<sub>sharpen</sub></span><br>Blue: the Gaussian blur. Orange: the sharpening kernel along one axis (3 − 2 cos ω for the project kernel). Dashed purple: blur followed by sharpening. A filter multiplies each wave by its gain, so a wave reduced to almost nothing cannot be brought back by any finite boost.`;
+    }
+  });
+
+  const Phi = x => { const s = x < 0 ? -1 : 1, a = Math.abs(x) / Math.SQRT2, t = 1 / (1 + 0.3275911 * a); const e = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a); return 0.5 * (1 + s * e); };
+  def('opshift', {
+    title: 'Why blur can raise precision while recall falls',
+    sub: 'A toy model, not the real detector. Green: confidence scores of 100 real objects. Red: scores of false alarms triggered by texture and clutter. Blur lowers the object scores and also removes many texture alarms.',
+    W: 560, H: 250,
+    params: [
+      { k: 'b', label: 'Blur strength', type: 'range', min: 0, max: 1, step: 0.05, v: 0 },
+      { k: 'sh', label: 'Sharpen after blurring', type: 'check', v: false },
+      { k: 't', label: 'Confidence threshold', type: 'range', min: 0.1, max: 0.9, step: 0.05, v: 0.4 }
+    ],
+    tips: [
+      { t: 'No blur at threshold 0.4. Most objects pass, along with some texture alarms.', set: { b: 0, sh: false, t: 0.4 } },
+      { t: 'Blur 0.5. The green hill slides left so recall drops. The red area shrinks even more, so precision rises. This is the pattern in the project table: P 0.6633 to 0.6802, R 0.5894 to 0.5358.', set: { b: 0.5, sh: false, t: 0.4 } },
+      { t: 'Now tick Sharpen. Objects regain a little confidence and recall rises, but amplified noise brings back false alarms and precision falls. The project saw R 0.5358 to 0.5468 and P 0.6802 to 0.6583.', set: { b: 0.5, sh: true, t: 0.4 } },
+      { t: 'Move the threshold. Precision and recall always trade against each other, which is why mAP sums over every threshold instead of trusting one.', set: { t: 0.6 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const sb = p.sh ? 1 : 0;
+      const mo = 0.62 - 0.25 * p.b + 0.05 * p.b * sb, so = 0.15;
+      const nf = 80 * (1 - 0.7 * p.b) * (1 + 0.5 * p.b * sb), mf = 0.3 - 0.05 * p.b, sf = 0.12;
+      const pdf = (x, mu, s) => Math.exp(-((x - mu) ** 2) / (2 * s * s)) / (s * Math.sqrt(2 * Math.PI));
+      const m = D.axes(g, z, [40, 14, 330, 200], [0, 1], [0, 3.4], { nx: 5, ny: 2, xl: 'confidence', fx: v => f(v, 1), fy: v => '' });
+      const fill = (fn, c) => { g.save(); g.fillStyle = c; g.beginPath(); g.moveTo(m.sx(p.t), m.sy(0)); for (let i = 0; i <= 100; i++) { const x = p.t + (1 - p.t) * i / 100; g.lineTo(m.sx(x), m.sy(fn(x))); } g.lineTo(m.sx(1), m.sy(0)); g.closePath(); g.fill(); g.restore(); };
+      const fo = x => pdf(x, mo, so), ff = x => nf / 100 * pdf(x, mf, sf);
+      fill(fo, 'rgba(40,160,100,.25)'); fill(ff, 'rgba(220,70,70,.25)');
+      D.curve(g, fo, [0, 1], m, z.col.green, 2.2);
+      D.curve(g, ff, [0, 1], m, z.col.red, 2.2);
+      D.line(g, m.sx(p.t), 14, m.sx(p.t), 214, z.col.ink, 1.4, [4, 3]);
+      const tp = 100 * (1 - Phi((p.t - mo) / so)), fp = nf * (1 - Phi((p.t - mf) / sf));
+      const P = tp / Math.max(tp + fp, 1e-9), Rc = tp / 100, F = 2 * P * Rc / Math.max(P + Rc, 1e-9);
+      const tx = 400;
+      [['kept objects (TP)', f(tp, 1)], ['kept alarms (FP)', f(fp, 1)], ['precision', f(P, 3)], ['recall', f(Rc, 3)]].forEach(([l, v], i) => {
+        D.text(g, l, tx, 30 + i * 46, { s: 12, c: z.col.ink2 });
+        D.text(g, v, tx, 48 + i * 46, { s: 14, mono: true, b: true, c: i === 2 ? z.col.cv : i === 3 ? z.col.orange : z.col.ink });
+      });
+      return `<span class="big">P = TP ÷ (TP + FP), &nbsp; R = TP ÷ 100, &nbsp; F1 = 2PR ÷ (P + R) = ${f(F, 3)}</span><br>The shaded areas right of the threshold are what the detector reports. Precision only counts what was reported, so losing many false alarms can raise it even while real objects are missed. The shapes here are made up to show the mechanism. The real numbers are in the project table.`;
+    }
+  });
+
+  def('stagebars', {
+    title: 'Compare the three stages, or your own run',
+    sub: 'The default values are the notebook results on COCO128 with YOLO11n. Replace them with your own numbers to see the same comparison.',
+    W: 560, H: 260,
+    params: [
+      { k: 'rows', label: 'Stage | precision recall mAP50 mAP50-95', type: 'area', v: 'Baseline | 0.6633 0.5894 0.6706 0.5026\nBlur | 0.6802 0.5358 0.6176 0.4434\nSharpened | 0.6583 0.5468 0.6277 0.4556' },
+      { k: 'view', label: 'Show', type: 'select', v: 'abs', opts: [['abs', 'Values'], ['delta', 'Change from the first stage'], ['rec', 'Share of the loss won back by the last stage']] }
+    ],
+    tips: [
+      { t: 'Values: blur lowers recall and both mAP numbers. Precision is the one metric that rose.', set: { view: 'abs' } },
+      { t: 'Change view: mAP50-95 fell by 0.0592 under blur, the largest drop, because the strict IoU thresholds punish blurred box edges most.', set: { view: 'delta' } },
+      { t: 'Share won back: sharpening recovered about 20 percent of the loss in recall, mAP50 and mAP50-95. Most of the damage stayed. Precision rose under blur, so it has no loss to win back.', set: { view: 'rec', rows: 'Baseline | 0.6633 0.5894 0.6706 0.5026\nBlur | 0.6802 0.5358 0.6176 0.4434\nSharpened | 0.6583 0.5468 0.6277 0.4556' } },
+      { t: 'Imagine a stronger restoration method with made up scores: Deblurred | 0.66 0.57 0.65 0.48. About 60 percent of each loss would come back.', set: { view: 'rec', rows: 'Baseline | 0.6633 0.5894 0.6706 0.5026\nBlur | 0.6802 0.5358 0.6176 0.4434\nDeblurred | 0.66 0.57 0.65 0.48' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const st = p.rows.split('\n').map(l => l.split('|')).filter(a => a.length === 2).map(([n, v]) => [n.trim(), v.trim().split(/\s+/).map(Number)]).filter(([, v]) => v.length === 4 && v.every(x => isFinite(x))).slice(0, 4);
+      if (st.length < 2) { D.text(g, 'Enter at least two rows: name | four numbers', 20, 40, { s: 13, c: z.col.red }); return 'Each row needs a name, a bar, and four numbers.'; }
+      const names = ['Precision', 'Recall', 'mAP50', 'mAP50-95'], cols = [z.col.ink2, z.col.cv, z.col.orange, z.col.purple];
+      const base = st[0][1], prev = st[st.length - 2][1], last = st[st.length - 1][1];
+      let vals, lo, hi, fy;
+      if (p.view === 'abs') { vals = st.map(s => s[1]); lo = 0; hi = 1; fy = v => f(v, 1); }
+      else if (p.view === 'delta') { vals = st.slice(1).map(s => s[1].map((v, i) => v - base[i])); const mx = Math.ceil(Math.max(0.02, ...vals.flat().map(Math.abs)) * 1.1 / 0.02) * 0.02; lo = -mx; hi = mx; fy = v => f(v, 2); }
+      else { vals = [last.map((v, i) => { const loss = base[i] - prev[i]; return loss <= 1e-9 ? null : (v - prev[i]) / loss; })]; const ok = vals[0].filter(v => v !== null); lo = Math.min(-0.5, Math.floor(Math.min(0, ...ok) * 2) / 2); hi = Math.max(1, Math.ceil(Math.max(0, ...ok) * 2) / 2); fy = v => Math.round(v * 100) + '%'; }
+      const m = D.axes(g, z, [56, 14, 470, 196], [0, 4], [lo, hi], { nx: 4, ny: p.view === 'rec' ? Math.round((hi - lo) * 2) : 4, xl: '', fx: () => '', fy });
+      D.line(g, m.sx(0), m.sy(0), m.sx(4), m.sy(0), z.col.ink2, 1);
+      const groups = vals.length, bw = 0.8 / groups;
+      names.forEach((nm, j) => {
+        D.text(g, nm, m.sx(j + 0.5), 228, { a: 'center', s: 11.5, b: true, c: z.col.ink });
+        vals.forEach((v, i) => {
+          if (v[j] === null) { D.text(g, 'no loss', m.sx(j + 0.5), m.sy(0) - 6, { a: 'center', s: 11, c: z.col.ink2 }); return; }
+          const x = m.sx(j + 0.1 + i * bw), w = m.sx(j + 0.1 + (i + 1) * bw) - x - 2, y0 = m.sy(0), y1 = m.sy(v[j]);
+          D.rect(g, x, Math.min(y0, y1), w, Math.abs(y1 - y0), { fill: cols[(i + (p.view === 'delta' ? 1 : 0) + (p.view === 'rec' ? 3 : 0)) % 4] });
+          if (groups <= 3) D.text(g, p.view === 'rec' ? Math.round(v[j] * 100) + '%' : (p.view === 'delta' && v[j] > 0 ? '+' : '') + f(v[j], p.view === 'abs' ? 3 : 4), x + w / 2, (v[j] >= 0 ? y1 - 4 : y1 + 12), { a: 'center', s: groups > 2 ? 9 : 10.5, mono: true, c: z.col.ink });
+        });
+      });
+      const legendNames = p.view === 'abs' ? st.map(s => s[0]) : p.view === 'delta' ? st.slice(1).map(s => s[0] + ' minus ' + st[0][0]) : [st[st.length - 1][0] + ' share won back'];
+      legendNames.forEach((n, i) => { const c = cols[(i + (p.view === 'delta' ? 1 : 0) + (p.view === 'rec' ? 3 : 0)) % 4]; D.rect(g, 60 + i * 170, 244, 10, 10, { fill: c }); D.text(g, n, 74 + i * 170, 253, { s: 11, c: z.col.ink2 }); });
+      const F1 = st.map(([n, v]) => `${n} ${f(2 * v[0] * v[1] / (v[0] + v[1]), 4)}`).join(', ');
+      return `<span class="big">share won back = (restored − degraded) ÷ (baseline − degraded)</span><br>F1 at the reported operating point: ${F1}. A share of 100 percent would mean sharpening fully undid the blur, 0 percent means no help, and a negative share means it made things worse.`;
+    }
+  });
+
 })();
