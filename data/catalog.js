@@ -3208,6 +3208,23 @@ function pwModules() {
         { id: "lab-relative", title: "Let the config choose the address", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-reports", title: "Reporting labs", emoji: "📊", page: "content/playwright/pw-reports.html",
+        summary: "One out of date test failed in every lab, and each report showed it: JUnit XML and JSON counts, the Playwright HTML report, pytest-html and ExtentReports with screenshots, Allure Report in all four languages, a custom summary, and one HTML report merged from two shards.",
+        keywords: ["report", "reporter", "reporting", "Allure", "ExtentReports", "Extent", "pytest-html", "HTML report", "JUnit XML", "JSON", "custom reporter", "merge-reports", "listener", "evidence"],
+        added: "2026-10-24",
+        sections: [
+        { id: "what", title: "What a test report is for", emoji: "📊", group: "Beginner path", keywords: ["report", "reporter", "JUnit XML", "HTML report", "dashboard", "who reads"] },
+        { id: "lab1", title: "Lab 1: built-in reporters and JUnit XML", emoji: "1️⃣", group: "Lesson", keywords: ["list", "line", "dot", "json", "junit", "blob", "github", "junitxml", "surefire-reports"] },
+        { id: "lab2", title: "Lab 2: HTML reports with evidence", emoji: "2️⃣", group: "Lesson", keywords: ["html report", "pytest-html", "ExtentReports", "Extent", "screenshot", "evidence", "IReporter", "ITestListener"] },
+        { id: "lab3", title: "Lab 3: Allure Report in all four languages", emoji: "3️⃣", group: "Lesson", keywords: ["Allure", "allure-playwright", "allure-pytest", "allure-testng", "allure-results", "severity", "feature", "steps"] },
+        { id: "lab4", title: "Lab 4: a custom reporter", emoji: "4️⃣", group: "Lesson", keywords: ["custom reporter", "Reporter interface", "onTestEnd", "pytest hooks", "ITestListener", "listener"] },
+        { id: "lab5", title: "Lab 5: merging and publishing reports in CI", emoji: "5️⃣", group: "Lesson", keywords: ["merge-reports", "blob", "publish", "GitHub Pages", "artifact", "Jenkins junit", "HTML Publisher"] },
+        { id: "choose", title: "Which report should a team use?", emoji: "🧭", group: "Lesson", keywords: ["choose", "compare", "Allure vs Extent", "recommendation"] },
+        { id: "lab-fixprice", title: "Fix the test the report flagged", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-precise", title: "Make a weak check precise", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];

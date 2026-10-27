@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reporting labs · Playwright</title>
+<meta name="description" content="Playwright reporting labs in four languages: list, line, dot, html, json, junit, blob and github reporters, pytest --junitxml and pytest-html, Maven Surefire XML, ExtentReports with a TestNG IReporter and listener, Allure Report with allure-playwright, allure-pytest and allure-testng, failure screenshots as evidence, custom reporters with onTestEnd, pytest hooks and ITestListener, and merge-reports for shards.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🏗️ Framework design</span><span>›</span><span>Chapter 18 of 18</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">📊</span><div><h1>Reporting labs</h1><p class="lead">Hands-on labs for test reports in TypeScript, JavaScript, Python and Java: built-in reporters and JUnit XML, HTML reports with screenshots and traces, Allure in every language, ExtentReports, your own reporter, and merged reports in CI.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 35 min read</span><span class="chip">📚 7 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 17 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 1 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>A report is the record of a test run. Machines read the XML to count passes and failures, and people open the HTML report to see the error, the screenshot and the trace of a failed test.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#what" class="easy"><span>📊</span>What a test report is for</a><a href="#lab1"><span>1️⃣</span>Lab 1: built-in reporters and JUnit XML</a><a href="#lab2"><span>2️⃣</span>Lab 2: HTML reports with evidence</a><a href="#lab3"><span>3️⃣</span>Lab 3: Allure Report in all four languages</a><a href="#lab4"><span>4️⃣</span>Lab 4: a custom reporter</a><a href="#lab5"><span>5️⃣</span>Lab 5: merging and publishing reports in CI</a><a href="#choose"><span>🧭</span>Which report should a team use?</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="what" data-say="what"><div class="sec-num">Part 1</div><h2><span class="sec-em">📊</span><span>What a test report is for</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>A <b>report</b> tells people and machines what happened in a test run: which tests ran, which failed, why, and how long it took. Different readers want different things, so a run usually writes several reports at once.</p>
+<div class="viz" data-viz="flow" data-k="flow"></div>
+<div class="tw"><table class="jt "><tr><th>Reader</th><th>Wants</th><th>Report</th></tr><tr><td>you, at the terminal</td><td>pass or fail, right now</td><td>list, line or dot in Playwright Test, -v or -q in pytest, the Surefire summary in Maven</td></tr><tr><td>the CI server</td><td>counts and history</td><td>JUnit XML, which every CI server reads</td></tr><tr><td>a tester fixing a failure</td><td>the error, the screenshot, the trace</td><td>the Playwright HTML report, pytest-html, Allure, ExtentReports</td></tr><tr><td>a manager</td><td>a dashboard: how many passed, trends, which features</td><td>Allure, ExtentReports</td></tr><tr><td>your own tools</td><td>data in a known shape</td><td>JSON, or a custom reporter</td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>The labs in this chapter all use the framework from the framework chapter, plus one test that fails on purpose: it still expects the lamp to cost ₹1,199 after a price change to ₹1,299. A report is only interesting when something fails.</div></div>
+</section>
+<section class="card reveal jsec" id="lab1" data-say="lab1"><div class="sec-num">Part 2</div><h2><span class="sec-em">1️⃣</span><span>Lab 1: built-in reporters and JUnit XML</span></h2>
+
+<p>Every runner has reporters built in. Start with the ones that need nothing installed.</p>
+<div class="tw"><table class="jt "><tr><th>Playwright Test reporter</th><th>What it gives</th></tr><tr><td>list</td><td>one line per test, the default on a laptop</td></tr><tr><td>line</td><td>one line that updates, and failures in full</td></tr><tr><td>dot</td><td>one character per test, for long runs on CI</td></tr><tr><td>html</td><td>a web page with every test, its steps, screenshots, videos and traces</td></tr><tr><td>json</td><td>all results as JSON, for your own tools</td></tr><tr><td>junit</td><td>JUnit XML for CI servers</td></tr><tr><td>blob</td><td>raw results of one shard, merged later with merge-reports</td></tr><tr><td>github</td><td>error notes on the right lines of a GitHub pull request</td></tr></table></div>
+<p><span class="only-java">Maven Surefire prints a summary and always writes XML files to target/surefire-reports. TestNG adds its own testng-results.xml.</span><span class="only-py">In pytest the terminal output is set with <code>-v</code>, <code>-q</code> and <code>-rA</code>, and <code>--junitxml</code> writes JUnit XML.</span><span class="only-js">Choose reporters with <code>--reporter</code> or in the config. Output files are set with options or environment variables such as PLAYWRIGHT_JUNIT_OUTPUT_NAME.</span><span class="only-ts">Choose reporters with <code>--reporter</code> or in the config. Output files are set with options or environment variables such as PLAYWRIGHT_JUNIT_OUTPUT_NAME.</span></p>
+<div class="codewrap tests pw4" data-k="builtin" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lab 1: the reports a machine reads · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/shop/tests/products/PriceTest.java</div><pre class="src" data-file="src/test/java/com/brainy/shop/tests/products/PriceTest.java"><span class="k">package</span> com.brainy.shop.tests.products;
+
+<span class="k">import</span> com.brainy.shop.base.<span class="t">BaseTest</span>;
+<span class="k">import</span> com.brainy.shop.data.<span class="t">Product</span>;
+<span class="k">import</span> org.testng.annotations.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">PriceTest</span> <span class="k">extends</span> <span class="t">BaseTest</span> {
+  <span class="c">// Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+  <span class="a">@Test</span>
+  <span class="k">public</span> <span class="k">void</span> theDeskLampCosts1199() {
+    productsPage.open();
+    assertThat(productsPage.card(<span class="t">Product</span>.<span class="t">DESK_LAMP</span>.label).price).hasText(<span class="s">"₹1,199"</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test; grep -o &#x27;&lt;testsuite [^&gt;]*&gt;&#x27; target/surefire-reports/TEST-TestSuite.xml</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running TestSuite
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 14.38 s &lt;&lt;&lt; FAILURE! -- in TestSuite
+[ERROR] com.brainy.shop.tests.products.PriceTest.theDeskLampCosts1199 -- Time elapsed: 1.434 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: 
+Locator expected to have text
+Expected: ₹1,199
+Received: ₹1,299
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   PriceTest.theDeskLampCosts1199:14 Locator expected to have text
+Expected: ₹1,199
+Received: ₹1,299
+
+[INFO] 
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+&lt;testsuite xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:noNamespaceSchemaLocation=&quot;https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd&quot; version=&quot;3.0.2&quot; name=&quot;TestSuite&quot; time=&quot;14.382&quot; tests=&quot;8&quot; errors=&quot;0&quot; skipped=&quot;0&quot; failures=&quot;1&quot;&gt;</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/products/test_price.py</div><pre class="src" data-file="tests/products/test_price.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> expect
+
+<span class="k">from</span> framework.data.products <span class="k">import</span> <span class="t">DESK_LAMP</span>
+<span class="k">from</span> framework.pages.products_page <span class="k">import</span> <span class="t">ProductsPage</span>
+
+
+<span class="c"># Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+<span class="k">def</span> test_the_desk_lamp_costs_1199(products_page: <span class="t">ProductsPage</span>):
+    products_page.open()
+    expect(products_page.card(<span class="t">DESK_LAMP</span>.name).price).to_have_text(<span class="s">"₹1,199"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -q --tb=line --junitxml=results/junit.xml; grep -o &#x27;&lt;testsuite [^&gt;]*&gt;&#x27; results/junit.xml</pre></div><div class="out"><span>Terminal output</span><pre>..F.....                                                                 [100%]
+=================================== FAILURES ===================================
+E   AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+    Actual value: ₹1,299 
+    Call log:
+      - Expect &quot;to_have_text&quot; get_by_role(&quot;list&quot;, name=&quot;Products&quot;).get_by_role(&quot;listitem&quot;).filter(has=get_by_role(&quot;heading&quot;, name=&quot;Desk lamp&quot;)).locator(&quot;.price&quot;) with timeout 5000ms
+      - waiting for get_by_role(&quot;list&quot;, name=&quot;Products&quot;).get_by_role(&quot;listitem&quot;).filter(has=get_by_role(&quot;heading&quot;, name=&quot;Desk lamp&quot;)).locator(&quot;.price&quot;)
+        8 × locator resolved to &lt;span class=&quot;price&quot;&gt;₹1,299&lt;/span&gt;
+          - unexpected value &quot;₹1,299&quot;
+    
+    Aria snapshot:
+    - text: ₹1,299
+tests/products/test_price.py:10: AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+=========================== short test summary info ============================
+FAILED tests/products/test_price.py::test_the_desk_lamp_costs_1199[chromium] - AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+1 failed, 7 passed in 17.42s
+&lt;testsuite name=&quot;pytest&quot; errors=&quot;0&quot; failures=&quot;1&quot; skipped=&quot;0&quot; tests=&quot;8&quot; time=&quot;17.422&quot; timestamp=&quot;2026-10-27T14:56:46.823248+00:00&quot; hostname=&quot;vm&quot;&gt;</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ ran for real"><div class="fname">📄 tests/products/price.spec.js</div><pre class="src" data-file="tests/products/price.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'../../src/fixtures/index.js'</span>;
+<span class="k">import</span> { products } <span class="k">from</span> <span class="s">'../../src/data/products.js'</span>;
+
+<span class="c">// Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+test(<span class="s">'the desk lamp costs ₹1,199'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {
+  <span class="k">await</span> productsPage.open();
+  <span class="k">await</span> expect(productsPage.card(products.deskLamp.name).price).toHaveText(<span class="s">'₹1,199'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ PLAYWRIGHT_JSON_OUTPUT_NAME=results/results.json PLAYWRIGHT_JUNIT_OUTPUT_NAME=results/junit.xml npx playwright test --reporter=dot,json,junit; grep -o &#x27;&lt;testsuites [^&gt;]*&gt;&#x27; results/junit.xml; node -p &quot;JSON.stringify(require(&#x27;./results/results.json&#x27;).stats)&quot;</pre></div><div class="out"><span>Terminal output</span><pre>Running 8 tests using 2 workers
+······F·
+
+  1) [chromium] › tests/products/price.spec.js:5:1 › the desk lamp costs ₹1,199 ────────────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;list&#x27;, { name: &#x27;Products&#x27; }).getByRole(&#x27;listitem&#x27;).filter({ has: getByRole(&#x27;heading&#x27;, { name: &#x27;Desk lamp&#x27; }) }).locator(&#x27;.price&#x27;)
+    Expected: &quot;₹1,199&quot;
+    Received: &quot;₹1,299&quot;
+    Timeout:  5000ms
+        at tests/products/price.spec.js:7:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › tests/products/price.spec.js:5:1 › the desk lamp costs ₹1,199 ─────────────────────
+  7 passed (10.9s)
+&lt;testsuites id=&quot;&quot; name=&quot;&quot; tests=&quot;8&quot; failures=&quot;1&quot; skipped=&quot;0&quot; errors=&quot;0&quot; time=&quot;10.906714&quot;&gt;
+{&quot;startTime&quot;:&quot;2026-10-27T14:56:48.399Z&quot;,&quot;duration&quot;:10906.714,&quot;expected&quot;:7,&quot;skipped&quot;:0,&quot;unexpected&quot;:1,&quot;flaky&quot;:0}</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ ran for real"><div class="fname">📄 tests/products/price.spec.ts</div><pre class="src" data-file="tests/products/price.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'../../src/fixtures/index'</span>;
+<span class="k">import</span> { products } <span class="k">from</span> <span class="s">'../../src/data/products'</span>;
+
+<span class="c">// Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+test(<span class="s">'the desk lamp costs ₹1,199'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {
+  <span class="k">await</span> productsPage.open();
+  <span class="k">await</span> expect(productsPage.card(products.deskLamp.name).price).toHaveText(<span class="s">'₹1,199'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ PLAYWRIGHT_JSON_OUTPUT_NAME=results/results.json PLAYWRIGHT_JUNIT_OUTPUT_NAME=results/junit.xml npx playwright test --reporter=dot,json,junit; grep -o &#x27;&lt;testsuites [^&gt;]*&gt;&#x27; results/junit.xml; node -p &quot;JSON.stringify(require(&#x27;./results/results.json&#x27;).stats)&quot;</pre></div><div class="out"><span>Terminal output</span><pre>Running 8 tests using 2 workers
+······F·
+
+  1) [chromium] › tests/products/price.spec.ts:5:1 › the desk lamp costs ₹1,199 ────────────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;list&#x27;, { name: &#x27;Products&#x27; }).getByRole(&#x27;listitem&#x27;).filter({ has: getByRole(&#x27;heading&#x27;, { name: &#x27;Desk lamp&#x27; }) }).locator(&#x27;.price&#x27;)
+    Expected: &quot;₹1,199&quot;
+    Received: &quot;₹1,299&quot;
+    Timeout:  5000ms
+        at tests/products/price.spec.ts:7:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › tests/products/price.spec.ts:5:1 › the desk lamp costs ₹1,199 ─────────────────────
+  7 passed (12.4s)
+&lt;testsuites id=&quot;&quot; name=&quot;&quot; tests=&quot;8&quot; failures=&quot;1&quot; skipped=&quot;0&quot; errors=&quot;0&quot; time=&quot;12.391974&quot;&gt;
+{&quot;startTime&quot;:&quot;2026-10-27T14:56:52.401Z&quot;,&quot;duration&quot;:12391.974,&quot;expected&quot;:7,&quot;skipped&quot;:0,&quot;unexpected&quot;:1,&quot;flaky&quot;:0}</pre></div></div><div class="note-out"><span>What happens</span><p>One test now fails on purpose: the lamp costs ₹1,299, not ₹1,199. Every runner printed a short result for people and wrote JUnit XML for machines. The XML line is what Jenkins, GitLab and Azure DevOps read to count passed and failed tests: eight tests, one failure. Playwright Test also wrote JSON, whose stats say 7 expected and 1 unexpected. Several reporters can run at once, here dot, json and junit.</p></div></div>
+</section>
+<section class="card reveal jsec" id="lab2" data-say="lab2"><div class="sec-num">Part 3</div><h2><span class="sec-em">2️⃣</span><span>Lab 2: HTML reports with evidence</span></h2>
+
+<p>An HTML report is what a tester opens first. A good one shows the error, a screenshot taken at the moment of failure, and a link to the trace.</p>
+<div class="codewrap tests pw4" data-k="html" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lab 2: an HTML report for people · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/shop/reporting/ExtentReporter.java</div><pre class="src" data-file="src/test/java/com/brainy/shop/reporting/ExtentReporter.java"><span class="k">package</span> com.brainy.shop.reporting;
+
+<span class="k">import</span> com.aventstack.extentreports.<span class="t">ExtentReports</span>;
+<span class="k">import</span> com.aventstack.extentreports.<span class="t">ExtentTest</span>;
+<span class="k">import</span> com.aventstack.extentreports.<span class="t">MediaEntityBuilder</span>;
+<span class="k">import</span> com.aventstack.extentreports.reporter.<span class="t">ExtentSparkReporter</span>;
+<span class="k">import</span> org.testng.<span class="t">IReporter</span>;
+<span class="k">import</span> org.testng.<span class="t">ISuite</span>;
+<span class="k">import</span> org.testng.<span class="t">ITestResult</span>;
+<span class="k">import</span> org.testng.xml.<span class="t">XmlSuite</span>;
+
+<span class="k">import</span> java.util.<span class="t">ArrayList</span>;
+<span class="k">import</span> java.util.<span class="t">Base64</span>;
+<span class="k">import</span> java.util.<span class="t">Comparator</span>;
+<span class="k">import</span> java.util.<span class="t">Date</span>;
+<span class="k">import</span> java.util.<span class="t">List</span>;
+
+<span class="c">// TestNG calls generateReport once, after the whole suite. It writes target/extent/index.html</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">ExtentReporter</span> <span class="k">implements</span> <span class="t">IReporter</span> {
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="k">void</span> generateReport(<span class="t">List</span>&lt;<span class="t">XmlSuite</span>&gt; xmlSuites, <span class="t">List</span>&lt;<span class="t">ISuite</span>&gt; suites, <span class="t">String</span> outputDirectory) {
+    <span class="t">ExtentSparkReporter</span> spark = <span class="k">new</span> <span class="t">ExtentSparkReporter</span>(<span class="s">"target/extent/index.html"</span>);
+    spark.config().setDocumentTitle(<span class="s">"Brainy Shop tests"</span>);
+    spark.config().setReportName(<span class="s">"Brainy Shop, nightly run"</span>);
+    <span class="t">ExtentReports</span> extent = <span class="k">new</span> <span class="t">ExtentReports</span>();
+    extent.attachReporter(spark);
+    extent.setSystemInfo(<span class="s">"Browser"</span>, <span class="s">"Chromium"</span>);
+
+    <span class="t">List</span>&lt;<span class="t">ITestResult</span>&gt; all = <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;();
+    <span class="k">for</span> (<span class="t">ISuite</span> suite : suites) {
+      suite.getResults().values().forEach(r -&gt; {
+        all.addAll(r.getTestContext().getPassedTests().getAllResults());
+        all.addAll(r.getTestContext().getFailedTests().getAllResults());
+        all.addAll(r.getTestContext().getSkippedTests().getAllResults());
+      });
+    }
+    all.sort(<span class="t">Comparator</span>.comparingLong(<span class="t">ITestResult</span>::getStartMillis));
+    <span class="k">for</span> (<span class="t">ITestResult</span> result : all) add(extent, result);
+    extent.flush();
+  }
+
+  <span class="k">private</span> <span class="k">void</span> add(<span class="t">ExtentReports</span> extent, <span class="t">ITestResult</span> result) {
+    <span class="t">ExtentTest</span> test = extent.createTest(result.getMethod().getMethodName())
+        .assignCategory(result.getTestClass().getRealClass().getSimpleName());
+    <span class="k">for</span> (<span class="t">String</span> group : result.getMethod().getGroups()) test.assignCategory(group);
+    test.getModel().setStartTime(<span class="k">new</span> <span class="t">Date</span>(result.getStartMillis()));   <span class="c">// the real times, not the report time</span>
+    test.getModel().setEndTime(<span class="k">new</span> <span class="t">Date</span>(result.getEndMillis()));
+    <span class="k">switch</span> (result.getStatus()) {
+      <span class="k">case</span> <span class="t">ITestResult</span>.<span class="t">SUCCESS</span> -&gt; test.pass(<span class="s">"Passed"</span>);
+      <span class="k">case</span> <span class="t">ITestResult</span>.<span class="t">SKIP</span> -&gt; test.skip(<span class="s">"Skipped"</span>);
+      <span class="k">default</span> -&gt; {
+        test.fail(result.getThrowable());
+        <span class="k">if</span> (result.getAttribute(<span class="s">"screenshot"</span>) <span class="k">instanceof</span> <span class="k">byte</span>[] png) {
+          <span class="t">String</span> base64 = <span class="t">Base64</span>.getEncoder().encodeToString(png);
+          test.fail(<span class="s">"Screenshot at failure"</span>, <span class="t">MediaEntityBuilder</span>.createScreenCaptureFromBase64String(base64).build());
+        }
+      }
+    }
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/shop/reporting/EvidenceListener.java</div><pre class="src" data-file="src/test/java/com/brainy/shop/reporting/EvidenceListener.java"><span class="k">package</span> com.brainy.shop.reporting;
+
+<span class="k">import</span> com.brainy.shop.base.<span class="t">BaseTest</span>;
+<span class="k">import</span> org.testng.<span class="t">ITestListener</span>;
+<span class="k">import</span> org.testng.<span class="t">ITestResult</span>;
+
+<span class="c">// TestNG calls onTestFailure while the page is still open, so the screenshot shows the failure</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">EvidenceListener</span> <span class="k">implements</span> <span class="t">ITestListener</span> {
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="k">void</span> onTestFailure(<span class="t">ITestResult</span> result) {
+    <span class="k">if</span> (result.getInstance() <span class="k">instanceof</span> <span class="t">BaseTest</span> test) {
+      result.setAttribute(<span class="s">"screenshot"</span>, test.screenshot());   <span class="c">// ExtentReporter reads it at the end</span>
+    }
+  }
+}</pre><div class="fname">📄 testng.xml</div><pre class="src" data-file="testng.xml">&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+<span class="c">&lt;!-- Every test, two classes at a time. Each class gets its own browser on its own thread. --&gt;</span>
+&lt;<span class="k">suite</span> <span class="a">name</span>=<span class="s">"Brainy Shop"</span> <span class="a">parallel</span>=<span class="s">"classes"</span> <span class="a">thread-count</span>=<span class="s">"2"</span>&gt;
+  &lt;<span class="k">listeners</span>&gt;
+    &lt;<span class="k">listener</span> <span class="a">class-name</span>=<span class="s">"com.brainy.shop.reporting.EvidenceListener"</span>/&gt;
+    &lt;<span class="k">listener</span> <span class="a">class-name</span>=<span class="s">"com.brainy.shop.reporting.ExtentReporter"</span>/&gt;
+  &lt;/<span class="k">listeners</span>&gt;
+  &lt;<span class="k">test</span> <span class="a">name</span>=<span class="s">"All tests"</span>&gt;
+    &lt;<span class="k">packages</span>&gt;
+      &lt;<span class="k">package</span> <span class="a">name</span>=<span class="s">"com.brainy.shop.tests.*"</span>/&gt;
+    &lt;/<span class="k">packages</span>&gt;
+  &lt;/<span class="k">test</span>&gt;
+&lt;/<span class="k">suite</span>&gt;</pre><div class="fname">📄 pom.xml</div><pre class="src" data-file="pom.xml">&lt;<span class="k">project</span> <span class="a">xmlns</span>=<span class="s">"http://maven.apache.org/POM/4.0.0"</span>&gt;
+  &lt;<span class="k">modelVersion</span>&gt;4.0.0&lt;/<span class="k">modelVersion</span>&gt;
+  &lt;<span class="k">groupId</span>&gt;com.brainy&lt;/<span class="k">groupId</span>&gt;
+  &lt;<span class="k">artifactId</span>&gt;shop-tests&lt;/<span class="k">artifactId</span>&gt;
+  &lt;<span class="k">version</span>&gt;1.0.0&lt;/<span class="k">version</span>&gt;
+
+  &lt;<span class="k">properties</span>&gt;
+    &lt;<span class="k">maven</span><span class="a">.compiler.release</span>&gt;21&lt;/<span class="k">maven</span><span class="a">.compiler.release</span>&gt;
+    &lt;<span class="k">project</span><span class="a">.build.sourceEncoding</span>&gt;UTF-8&lt;/<span class="k">project</span><span class="a">.build.sourceEncoding</span>&gt;
+    &lt;<span class="k">suite</span>&gt;testng.xml&lt;/<span class="k">suite</span>&gt;                 <span class="c">&lt;!-- mvn test -Dsuite=testng-smoke.xml runs another suite --&gt;</span>
+  &lt;/<span class="k">properties</span>&gt;
+
+  &lt;<span class="k">dependencies</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;com.microsoft.playwright&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;playwright&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;1.63.0&lt;/<span class="k">version</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;org.testng&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;testng&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;7.11.0&lt;/<span class="k">version</span>&gt;
+      &lt;<span class="k">scope</span>&gt;test&lt;/<span class="k">scope</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;com.aventstack&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;extentreports&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;5.1.2&lt;/<span class="k">version</span>&gt;
+      &lt;<span class="k">scope</span>&gt;test&lt;/<span class="k">scope</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+  &lt;/<span class="k">dependencies</span>&gt;
+
+  &lt;<span class="k">build</span>&gt;
+    &lt;<span class="k">plugins</span>&gt;
+      &lt;<span class="k">plugin</span>&gt;
+        &lt;<span class="k">groupId</span>&gt;org.apache.maven.plugins&lt;/<span class="k">groupId</span>&gt;
+        &lt;<span class="k">artifactId</span>&gt;maven-surefire-plugin&lt;/<span class="k">artifactId</span>&gt;
+        &lt;<span class="k">version</span>&gt;3.5.4&lt;/<span class="k">version</span>&gt;
+        &lt;<span class="k">configuration</span>&gt;
+          &lt;<span class="k">suiteXmlFiles</span>&gt;
+            &lt;<span class="k">suiteXmlFile</span>&gt;${suite}&lt;/<span class="k">suiteXmlFile</span>&gt;
+          &lt;/<span class="k">suiteXmlFiles</span>&gt;
+        &lt;/<span class="k">configuration</span>&gt;
+      &lt;/<span class="k">plugin</span>&gt;
+    &lt;/<span class="k">plugins</span>&gt;
+  &lt;/<span class="k">build</span>&gt;
+&lt;/<span class="k">project</span>&gt;</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test; ls target/extent</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running TestSuite
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 15.83 s &lt;&lt;&lt; FAILURE! -- in TestSuite
+[ERROR] com.brainy.shop.tests.products.PriceTest.theDeskLampCosts1199 -- Time elapsed: 0.717 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: 
+Locator expected to have text
+Expected: ₹1,199
+Received: ₹1,299
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   PriceTest.theDeskLampCosts1199:14 Locator expected to have text
+Expected: ₹1,199
+Received: ₹1,299
+
+[INFO] 
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+index.html</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/products/test_price.py</div><pre class="src" data-file="tests/products/test_price.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> expect
+
+<span class="k">from</span> framework.data.products <span class="k">import</span> <span class="t">DESK_LAMP</span>
+<span class="k">from</span> framework.pages.products_page <span class="k">import</span> <span class="t">ProductsPage</span>
+
+
+<span class="c"># Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+<span class="k">def</span> test_the_desk_lamp_costs_1199(products_page: <span class="t">ProductsPage</span>):
+    products_page.open()
+    expect(products_page.card(<span class="t">DESK_LAMP</span>.name).price).to_have_text(<span class="s">"₹1,199"</span>)</pre><div class="fname">📄 pytest.ini</div><pre class="src" data-file="pytest.ini"><span class="k">[pytest]</span>
+<span class="a">testpaths </span>=<span class="s"> tests</span>
+<span class="a">pythonpath </span>=<span class="s"> .</span>
+<span class="a">addopts </span>=<span class="s"> --browser chromium --tracing retain-on-failure --screenshot only-on-failure</span>
+<span class="a">markers </span>=<span class="s"></span>
+    smoke: quick checks that run on every commit
+    cart: the cart and checkout</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -q --tb=line --html=reports/report.html --self-contained-html; ls reports</pre></div><div class="out"><span>Terminal output</span><pre>..F.....                                                                 [100%]
+=================================== FAILURES ===================================
+E   AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+    Actual value: ₹1,299 
+    Call log:
+      - Expect &quot;to_have_text&quot; get_by_role(&quot;list&quot;, name=&quot;Products&quot;).get_by_role(&quot;listitem&quot;).filter(has=get_by_role(&quot;heading&quot;, name=&quot;Desk lamp&quot;)).locator(&quot;.price&quot;) with timeout 5000ms
+      - waiting for get_by_role(&quot;list&quot;, name=&quot;Products&quot;).get_by_role(&quot;listitem&quot;).filter(has=get_by_role(&quot;heading&quot;, name=&quot;Desk lamp&quot;)).locator(&quot;.price&quot;)
+        8 × locator resolved to &lt;span class=&quot;price&quot;&gt;₹1,299&lt;/span&gt;
+          - unexpected value &quot;₹1,299&quot;
+    
+    Aria snapshot:
+    - text: ₹1,299
+tests/products/test_price.py:10: AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+- Generated html report: reports/report.html -
+=========================== short test summary info ============================
+FAILED tests/products/test_price.py::test_the_desk_lamp_costs_1199[chromium] - AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+1 failed, 7 passed in 18.02s
+report.html</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> <span class="s">'dotenv/config'</span>;
+<span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { env } <span class="k">from</span> <span class="s">'./src/config/env.js'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  fullyParallel: <span class="k">true</span>,
+  forbidOnly: !!process.env.<span class="t">CI</span>,                 <span class="c">// a forgotten test.only fails the CI run</span>
+  retries: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="n">0</span>,
+  workers: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="k">undefined</span>,
+  reporter: process.env.<span class="t">CI</span>
+    ? [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }], [<span class="s">'junit'</span>, { outputFile: <span class="s">'results/junit.xml'</span> }]]
+    : [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }]],
+  use: {
+    baseURL: env.baseURL,
+    trace: <span class="s">'on-first-retry'</span>,
+    screenshot: <span class="s">'only-on-failure'</span>,
+    video: <span class="s">'retain-on-failure'</span>,
+  },
+  projects: [
+    { name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } },
+    <span class="c">// { name: 'firefox', use: { ...devices['Desktop Firefox'] } },</span>
+    <span class="c">// { name: 'webkit', use: { ...devices['Desktop Safari'] } },</span>
+  ],
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --reporter=line,html; ls playwright-report</pre></div><div class="out"><span>Terminal output</span><pre>Running 8 tests using 2 workers
+
+[1/8] [chromium] › tests/cart/checkout.spec.js:5:3 › checkout › places an order for a cart filled through the API @cart @smoke
+[2/8] [chromium] › tests/cart/add-to-cart.spec.js:5:3 › cart › adds two products from their cards @cart
+[3/8] [chromium] › tests/products/price.spec.js:5:1 › the desk lamp costs ₹1,199
+[4/8] [chromium] › tests/products/search.spec.js:5:3 › product search › finds the lamp by name
+[5/8] [chromium] › tests/products/search.spec.js:12:3 › product search › says so when nothing matches
+[6/8] [chromium] › tests/products/search.spec.js:18:3 › product search › the notebook cannot be added
+[7/8] [chromium] › tests/smoke/sign-in.spec.js:5:3 › sign in › Asha signs in with the right password @smoke
+[8/8] [chromium] › tests/smoke/sign-in.spec.js:11:3 › sign in › a wrong password shows an error @smoke
+  1) [chromium] › tests/products/price.spec.js:5:1 › the desk lamp costs ₹1,199 ────────────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;list&#x27;, { name: &#x27;Products&#x27; }).getByRole(&#x27;listitem&#x27;).filter({ has: getByRole(&#x27;heading&#x27;, { name: &#x27;Desk lamp&#x27; }) }).locator(&#x27;.price&#x27;)
+    Expected: &quot;₹1,199&quot;
+    Received: &quot;₹1,299&quot;
+    Timeout:  5000ms
+        at tests/products/price.spec.js:7:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [chromium] › tests/products/price.spec.js:5:1 › the desk lamp costs ₹1,199 ─────────────────────
+  7 passed (11.2s)
+data
+index.html</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> <span class="s">'dotenv/config'</span>;
+<span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+<span class="k">import</span> { env } <span class="k">from</span> <span class="s">'./src/config/env'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  fullyParallel: <span class="k">true</span>,
+  forbidOnly: !!process.env.<span class="t">CI</span>,                 <span class="c">// a forgotten test.only fails the CI run</span>
+  retries: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="n">0</span>,
+  workers: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="k">undefined</span>,
+  reporter: process.env.<span class="t">CI</span>
+    ? [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }], [<span class="s">'junit'</span>, { outputFile: <span class="s">'results/junit.xml'</span> }]]
+    : [[<span class="s">'list'</span>], [<span class="s">'html'</span>, { open: <span class="s">'never'</span> }]],
+  use: {
+    baseURL: env.baseURL,
+    trace: <span class="s">'on-first-retry'</span>,
+    screenshot: <span class="s">'only-on-failure'</span>,
+    video: <span class="s">'retain-on-failure'</span>,
+  },
+  projects: [
+    { name: <span class="s">'chromium'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } },
+    <span class="c">// { name: 'firefox', use: { ...devices['Desktop Firefox'] } },</span>
+    <span class="c">// { name: 'webkit', use: { ...devices['Desktop Safari'] } },</span>
+  ],
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --reporter=line,html; ls playwright-report</pre></div><div class="out"><span>Terminal output</span><pre>Running 8 tests using 2 workers
+
+[1/8] [chromium] › tests/cart/checkout.spec.ts:5:3 › checkout › places an order for a cart filled through the API @cart @smoke
+[2/8] [chromium] › tests/cart/add-to-cart.spec.ts:5:3 › cart › adds two products from their cards @cart
+[3/8] [chromium] › tests/products/price.spec.ts:5:1 › the desk lamp costs ₹1,199
+[4/8] [chromium] › tests/products/search.spec.ts:5:3 › product search › finds the lamp by name
+[5/8] [chromium] › tests/products/search.spec.ts:12:3 › product search › says so when nothing matches
+[6/8] [chromium] › tests/products/search.spec.ts:18:3 › product search › the notebook cannot be added
+[7/8] [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke
+[8/8] [chromium] › tests/smoke/sign-in.spec.ts:11:3 › sign in › a wrong password shows an error @smoke
+  1) [chromium] › tests/products/price.spec.ts:5:1 › the desk lamp costs ₹1,199 ────────────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;list&#x27;, { name: &#x27;Products&#x27; }).getByRole(&#x27;listitem&#x27;).filter({ has: getByRole(&#x27;heading&#x27;, { name: &#x27;Desk lamp&#x27; }) }).locator(&#x27;.price&#x27;)
+    Expected: &quot;₹1,199&quot;
+    Received: &quot;₹1,299&quot;
+    Timeout:  5000ms
+        at tests/products/price.spec.ts:7:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [chromium] › tests/products/price.spec.ts:5:1 › the desk lamp costs ₹1,199 ─────────────────────
+  7 passed (8.1s)
+data
+index.html</pre></div></div><div class="note-out"><span>What happens</span><p>Each language now has a report a person can open in a browser. Playwright Test has one built in: playwright-report/index.html, with the screenshot, video and trace of the failed test, because the config keeps them on failure. pytest-html wrote one self-contained file, and pytest-playwright added its screenshot and trace link to it by itself. In Java, a TestNG listener grabs a screenshot when a test fails, and an IReporter builds an ExtentReports page from all the results when the suite ends.</p></div></div>
+<div class="only-ts"><figure class="pw-shot"><img src="img/report-pw-html-list.jpg" alt="The Playwright HTML report from this run, listing eight tests with one failed" loading="lazy"><figcaption>The Playwright HTML report from this run: filters at the top, one row per test file and test, the failed price test marked with a cross.</figcaption></figure></div><div class="only-js"><figure class="pw-shot"><img src="img/report-pw-html-list.jpg" alt="The Playwright HTML report from this run, listing eight tests with one failed" loading="lazy"><figcaption>The Playwright HTML report from this run: filters at the top, one row per test file and test, the failed price test marked with a cross.</figcaption></figure></div><div class="only-ts"><figure class="pw-shot"><img src="img/report-pw-html-failed.jpg" alt="The failed price test in the Playwright HTML report, with expected and received prices" loading="lazy"><figcaption>The failed test opened: the error with expected and received prices and the source line. The screenshot, video and trace are further down the same page.</figcaption></figure></div><div class="only-js"><figure class="pw-shot"><img src="img/report-pw-html-failed.jpg" alt="The failed price test in the Playwright HTML report, with expected and received prices" loading="lazy"><figcaption>The failed test opened: the error with expected and received prices and the source line. The screenshot, video and trace are further down the same page.</figcaption></figure></div><div class="only-py"><figure class="pw-shot"><img src="img/report-pytest-html.jpg" alt="The pytest-html report with the failed price test opened, showing the error and a screenshot" loading="lazy"><figcaption>The pytest-html report from this run: the environment, the summary with filters, and the failed test opened with its error, the screenshot and a Trace link.</figcaption></figure></div><div class="only-java"><figure class="pw-shot"><img src="img/report-extent-tests.jpg" alt="The ExtentReports page listing every test, with the failed price test opened" loading="lazy"><figcaption>The ExtentReports page from this run: every test with its time, and the failed one with its error and the screenshot.</figcaption></figure></div><div class="only-java"><figure class="pw-shot"><img src="img/report-extent-dashboard.jpg" alt="The ExtentReports dashboard with pass and fail charts and a timeline" loading="lazy"><figcaption>The ExtentReports dashboard: passed and failed counts, charts and a timeline of the run.</figcaption></figure></div>
+<div class="tw"><table class="jt "><tr><th>Evidence</th><th>Playwright Test</th><th>pytest</th><th>Java with TestNG</th></tr><tr><td>screenshot at failure</td><td>use: { screenshot: 'only-on-failure' }</td><td>--screenshot only-on-failure</td><td>page.screenshot() in a listener</td></tr><tr><td>video</td><td>video: 'retain-on-failure'</td><td>--video retain-on-failure</td><td>setRecordVideoDir in the context options</td></tr><tr><td>trace</td><td>trace: 'on-first-retry'</td><td>--tracing retain-on-failure</td><td>context.tracing() in BaseTest</td></tr><tr><td>your own file</td><td>testInfo.attach()</td><td>allure.attach or a pytest-html extra</td><td>Allure.attachment or an Extent media entity</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>The report is only as good as its evidence. A failure with a screenshot and a trace can often be understood in a minute, without running anything again.</div></div>
+</section>
+<section class="card reveal jsec" id="lab3" data-say="lab3"><div class="sec-num">Part 4</div><h2><span class="sec-em">3️⃣</span><span>Lab 3: Allure Report in all four languages</span></h2>
+
+<p><b>Allure Report</b> is a free, open source report that many companies use, because it looks the same for every language and test runner. Each runner writes raw results with a small adapter, and the Allure command line turns them into a report.</p>
+<div class="tw"><table class="jt "><tr><th>Language</th><th>Adapter</th><th>Writes results with</th></tr><tr><td>TypeScript and JavaScript</td><td>allure-playwright (npm)</td><td>--reporter=allure-playwright</td></tr><tr><td>Python</td><td>allure-pytest (pip)</td><td>--alluredir=allure-results</td></tr><tr><td>Java with TestNG</td><td>io.qameta.allure:allure-testng (Maven)</td><td>nothing: it registers itself as a TestNG listener</td></tr></table></div>
+<div class="codewrap tests pw4" data-k="allure" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lab 3: Allure Report, the same report for every language · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/shop/tests/products/PriceTest.java</div><pre class="src" data-file="src/test/java/com/brainy/shop/tests/products/PriceTest.java"><span class="k">package</span> com.brainy.shop.tests.products;
+
+<span class="k">import</span> com.brainy.shop.base.<span class="t">BaseTest</span>;
+<span class="k">import</span> com.brainy.shop.data.<span class="t">Product</span>;
+<span class="k">import</span> io.qameta.allure.<span class="t">Allure</span>;
+<span class="k">import</span> io.qameta.allure.<span class="t">Feature</span>;
+<span class="k">import</span> io.qameta.allure.<span class="t">Severity</span>;
+<span class="k">import</span> io.qameta.allure.<span class="t">SeverityLevel</span>;
+<span class="k">import</span> org.testng.annotations.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="k">public</span> <span class="k">class</span> <span class="t">PriceTest</span> <span class="k">extends</span> <span class="t">BaseTest</span> {
+  <span class="c">// Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+  <span class="a">@Test</span>
+  <span class="a">@Feature</span>(<span class="s">"Prices"</span>)
+  <span class="a">@Severity</span>(<span class="t">SeverityLevel</span>.<span class="t">CRITICAL</span>)
+  <span class="k">public</span> <span class="k">void</span> theDeskLampCosts1199() {
+    <span class="t">Allure</span>.step(<span class="s">"open the products page"</span>, () -&gt; productsPage.open());
+    <span class="t">Allure</span>.step(<span class="s">"check the lamp price"</span>,
+        () -&gt; assertThat(productsPage.card(<span class="t">Product</span>.<span class="t">DESK_LAMP</span>.label).price).hasText(<span class="s">"₹1,199"</span>));
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/shop/reporting/EvidenceListener.java</div><pre class="src" data-file="src/test/java/com/brainy/shop/reporting/EvidenceListener.java"><span class="k">package</span> com.brainy.shop.reporting;
+
+<span class="k">import</span> com.brainy.shop.base.<span class="t">BaseTest</span>;
+<span class="k">import</span> io.qameta.allure.<span class="t">Allure</span>;
+<span class="k">import</span> io.qameta.allure.<span class="t">AttachmentOptions</span>;
+<span class="k">import</span> org.testng.<span class="t">ITestListener</span>;
+<span class="k">import</span> org.testng.<span class="t">ITestResult</span>;
+
+<span class="k">import</span> java.io.<span class="t">ByteArrayInputStream</span>;
+
+<span class="c">// TestNG calls onTestFailure while the page is still open, so the screenshot shows the failure</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">EvidenceListener</span> <span class="k">implements</span> <span class="t">ITestListener</span> {
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="k">void</span> onTestFailure(<span class="t">ITestResult</span> result) {
+    <span class="k">if</span> (result.getInstance() <span class="k">instanceof</span> <span class="t">BaseTest</span> test) {
+      <span class="k">byte</span>[] png = test.screenshot();
+      <span class="t">Allure</span>.attachment(<span class="s">"screenshot at failure"</span>, <span class="s">"image/png"</span>, <span class="k">new</span> <span class="t">ByteArrayInputStream</span>(png),
+          <span class="t">AttachmentOptions</span>.withFileExtension(<span class="s">".png"</span>));
+    }
+  }
+}</pre><div class="fname">📄 src/test/resources/allure.properties</div><pre class="src" data-file="src/test/resources/allure.properties"><span class="a">allure.results.directory</span>=<span class="s">target/allure-results</span></pre><div class="fname">📄 pom.xml</div><pre class="src" data-file="pom.xml">&lt;<span class="k">project</span> <span class="a">xmlns</span>=<span class="s">"http://maven.apache.org/POM/4.0.0"</span>&gt;
+  &lt;<span class="k">modelVersion</span>&gt;4.0.0&lt;/<span class="k">modelVersion</span>&gt;
+  &lt;<span class="k">groupId</span>&gt;com.brainy&lt;/<span class="k">groupId</span>&gt;
+  &lt;<span class="k">artifactId</span>&gt;shop-tests&lt;/<span class="k">artifactId</span>&gt;
+  &lt;<span class="k">version</span>&gt;1.0.0&lt;/<span class="k">version</span>&gt;
+
+  &lt;<span class="k">properties</span>&gt;
+    &lt;<span class="k">maven</span><span class="a">.compiler.release</span>&gt;21&lt;/<span class="k">maven</span><span class="a">.compiler.release</span>&gt;
+    &lt;<span class="k">project</span><span class="a">.build.sourceEncoding</span>&gt;UTF-8&lt;/<span class="k">project</span><span class="a">.build.sourceEncoding</span>&gt;
+    &lt;<span class="k">suite</span>&gt;testng.xml&lt;/<span class="k">suite</span>&gt;                 <span class="c">&lt;!-- mvn test -Dsuite=testng-smoke.xml runs another suite --&gt;</span>
+  &lt;/<span class="k">properties</span>&gt;
+
+  &lt;<span class="k">dependencies</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;com.microsoft.playwright&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;playwright&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;1.63.0&lt;/<span class="k">version</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;org.testng&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;testng&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;7.11.0&lt;/<span class="k">version</span>&gt;
+      &lt;<span class="k">scope</span>&gt;test&lt;/<span class="k">scope</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+    &lt;<span class="k">dependency</span>&gt;
+      &lt;<span class="k">groupId</span>&gt;io.qameta.allure&lt;/<span class="k">groupId</span>&gt;
+      &lt;<span class="k">artifactId</span>&gt;allure-testng&lt;/<span class="k">artifactId</span>&gt;
+      &lt;<span class="k">version</span>&gt;3.0.1&lt;/<span class="k">version</span>&gt;
+      &lt;<span class="k">scope</span>&gt;test&lt;/<span class="k">scope</span>&gt;
+    &lt;/<span class="k">dependency</span>&gt;
+  &lt;/<span class="k">dependencies</span>&gt;
+
+  &lt;<span class="k">build</span>&gt;
+    &lt;<span class="k">plugins</span>&gt;
+      &lt;<span class="k">plugin</span>&gt;
+        &lt;<span class="k">groupId</span>&gt;org.apache.maven.plugins&lt;/<span class="k">groupId</span>&gt;
+        &lt;<span class="k">artifactId</span>&gt;maven-surefire-plugin&lt;/<span class="k">artifactId</span>&gt;
+        &lt;<span class="k">version</span>&gt;3.5.4&lt;/<span class="k">version</span>&gt;
+        &lt;<span class="k">configuration</span>&gt;
+          &lt;<span class="k">suiteXmlFiles</span>&gt;
+            &lt;<span class="k">suiteXmlFile</span>&gt;${suite}&lt;/<span class="k">suiteXmlFile</span>&gt;
+          &lt;/<span class="k">suiteXmlFiles</span>&gt;
+        &lt;/<span class="k">configuration</span>&gt;
+      &lt;/<span class="k">plugin</span>&gt;
+    &lt;/<span class="k">plugins</span>&gt;
+  &lt;/<span class="k">build</span>&gt;
+&lt;/<span class="k">project</span>&gt;</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test; npx allure generate target/allure-results &amp;&amp; ls allure-report/index.html</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running TestSuite
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 13.42 s &lt;&lt;&lt; FAILURE! -- in TestSuite
+[ERROR] com.brainy.shop.tests.products.PriceTest.theDeskLampCosts1199 -- Time elapsed: 1.607 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: 
+Locator expected to have text
+Expected: ₹1,199
+Received: ₹1,299
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   PriceTest.theDeskLampCosts1199:20-&gt;lambda$theDeskLampCosts1199$1:21 Locator expected to have text
+Expected: ₹1,199
+Received: ₹1,299
+
+[INFO] 
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+allure-report/index.html</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/products/test_price.py</div><pre class="src" data-file="tests/products/test_price.py"><span class="k">import</span> allure
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> expect
+
+<span class="k">from</span> framework.data.products <span class="k">import</span> <span class="t">DESK_LAMP</span>
+<span class="k">from</span> framework.pages.products_page <span class="k">import</span> <span class="t">ProductsPage</span>
+
+
+<span class="c"># Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+<span class="a">@allure</span>.feature(<span class="s">"Prices"</span>)
+<span class="a">@allure</span>.severity(allure.severity_level.<span class="t">CRITICAL</span>)
+<span class="k">def</span> test_the_desk_lamp_costs_1199(products_page: <span class="t">ProductsPage</span>):
+    <span class="k">with</span> allure.step(<span class="s">"open the products page"</span>):
+        products_page.open()
+    <span class="k">with</span> allure.step(<span class="s">"check the lamp price"</span>):
+        expect(products_page.card(<span class="t">DESK_LAMP</span>.name).price).to_have_text(<span class="s">"₹1,199"</span>)</pre><div class="fname">📄 tests/conftest.py</div><pre class="src" data-file="tests/conftest.py"><span class="k">import</span> allure
+<span class="k">import</span> pytest
+
+
+<span class="c"># After each test: when it failed, attach a screenshot of the page to the Allure results.</span>
+<span class="c"># pytest-playwright already puts its own screenshot and trace into pytest-html.</span>
+<span class="a">@pytest</span>.hookimpl(hookwrapper=<span class="k">True</span>)
+<span class="k">def</span> pytest_runtest_makereport(item, call):
+    outcome = <span class="k">yield</span>
+    report = outcome.get_result()
+    page = item.funcargs.get(<span class="s">"page"</span>)
+    <span class="k">if</span> report.when == <span class="s">"call"</span> <span class="k">and</span> report.failed <span class="k">and</span> page:
+        allure.attach(page.screenshot(), name=<span class="s">"screenshot at failure"</span>, attachment_type=allure.attachment_type.<span class="t">PNG</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -q --tb=line --alluredir=allure-results; npx allure generate allure-results &amp;&amp; ls allure-report/index.html</pre></div><div class="out"><span>Terminal output</span><pre>..F.....                                                                 [100%]
+=================================== FAILURES ===================================
+E   AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+    Actual value: ₹1,299 
+    Call log:
+      - Expect &quot;to_have_text&quot; get_by_role(&quot;list&quot;, name=&quot;Products&quot;).get_by_role(&quot;listitem&quot;).filter(has=get_by_role(&quot;heading&quot;, name=&quot;Desk lamp&quot;)).locator(&quot;.price&quot;) with timeout 5000ms
+      - waiting for get_by_role(&quot;list&quot;, name=&quot;Products&quot;).get_by_role(&quot;listitem&quot;).filter(has=get_by_role(&quot;heading&quot;, name=&quot;Desk lamp&quot;)).locator(&quot;.price&quot;)
+        8 × locator resolved to &lt;span class=&quot;price&quot;&gt;₹1,299&lt;/span&gt;
+          - unexpected value &quot;₹1,299&quot;
+    
+    Aria snapshot:
+    - text: ₹1,299
+tests/products/test_price.py:15: AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+=========================== short test summary info ============================
+FAILED tests/products/test_price.py::test_the_desk_lamp_costs_1199[chromium] - AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+1 failed, 7 passed in 16.74s
+allure-report/index.html</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products/price.spec.js</div><pre class="src" data-file="tests/products/price.spec.js"><span class="k">import</span> * <span class="k">as</span> allure <span class="k">from</span> <span class="s">'allure-js-commons'</span>;
+<span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'../../src/fixtures/index.js'</span>;
+<span class="k">import</span> { products } <span class="k">from</span> <span class="s">'../../src/data/products.js'</span>;
+
+<span class="c">// Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+test(<span class="s">'the desk lamp costs ₹1,199'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {
+  <span class="k">await</span> allure.feature(<span class="s">'Prices'</span>);
+  <span class="k">await</span> allure.severity(<span class="s">'critical'</span>);
+  <span class="k">await</span> test.step(<span class="s">'open the products page'</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> productsPage.open();
+  });
+  <span class="k">await</span> test.step(<span class="s">'check the lamp price'</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> expect(productsPage.card(products.deskLamp.name).price).toHaveText(<span class="s">'₹1,199'</span>);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --reporter=line,allure-playwright; npx allure generate allure-results &amp;&amp; ls allure-report/index.html</pre></div><div class="out"><span>Terminal output</span><pre>Running 8 tests using 2 workers
+
+[1/8] [chromium] › tests/cart/add-to-cart.spec.js:5:3 › cart › adds two products from their cards @cart
+[2/8] [chromium] › tests/cart/checkout.spec.js:5:3 › checkout › places an order for a cart filled through the API @cart @smoke
+[3/8] [chromium] › tests/products/price.spec.js:6:1 › the desk lamp costs ₹1,199
+[4/8] [chromium] › tests/products/search.spec.js:5:3 › product search › finds the lamp by name
+[5/8] [chromium] › tests/products/search.spec.js:12:3 › product search › says so when nothing matches
+[6/8] [chromium] › tests/products/search.spec.js:18:3 › product search › the notebook cannot be added
+[7/8] [chromium] › tests/smoke/sign-in.spec.js:5:3 › sign in › Asha signs in with the right password @smoke
+[8/8] [chromium] › tests/smoke/sign-in.spec.js:11:3 › sign in › a wrong password shows an error @smoke
+  1) [chromium] › tests/products/price.spec.js:6:1 › the desk lamp costs ₹1,199 › check the lamp price 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;list&#x27;, { name: &#x27;Products&#x27; }).getByRole(&#x27;listitem&#x27;).filter({ has: getByRole(&#x27;heading&#x27;, { name: &#x27;Desk lamp&#x27; }) }).locator(&#x27;.price&#x27;)
+    Expected: &quot;₹1,199&quot;
+    Received: &quot;₹1,299&quot;
+    Timeout:  5000ms
+        at tests/products/price.spec.js:13:67
+        at tests/products/price.spec.js:12:3
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #4: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [chromium] › tests/products/price.spec.js:6:1 › the desk lamp costs ₹1,199 ─────────────────────
+  7 passed (10.2s)
+allure-report/index.html</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products/price.spec.ts</div><pre class="src" data-file="tests/products/price.spec.ts"><span class="k">import</span> * <span class="k">as</span> allure <span class="k">from</span> <span class="s">'allure-js-commons'</span>;
+<span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'../../src/fixtures/index'</span>;
+<span class="k">import</span> { products } <span class="k">from</span> <span class="s">'../../src/data/products'</span>;
+
+<span class="c">// Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+test(<span class="s">'the desk lamp costs ₹1,199'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {
+  <span class="k">await</span> allure.feature(<span class="s">'Prices'</span>);
+  <span class="k">await</span> allure.severity(<span class="s">'critical'</span>);
+  <span class="k">await</span> test.step(<span class="s">'open the products page'</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> productsPage.open();
+  });
+  <span class="k">await</span> test.step(<span class="s">'check the lamp price'</span>, <span class="k">async</span> () =&gt; {
+    <span class="k">await</span> expect(productsPage.card(products.deskLamp.name).price).toHaveText(<span class="s">'₹1,199'</span>);
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --reporter=line,allure-playwright; npx allure generate allure-results &amp;&amp; ls allure-report/index.html</pre></div><div class="out"><span>Terminal output</span><pre>Running 8 tests using 2 workers
+
+[1/8] [chromium] › tests/cart/checkout.spec.ts:5:3 › checkout › places an order for a cart filled through the API @cart @smoke
+[2/8] [chromium] › tests/cart/add-to-cart.spec.ts:5:3 › cart › adds two products from their cards @cart
+[3/8] [chromium] › tests/products/price.spec.ts:6:1 › the desk lamp costs ₹1,199
+[4/8] [chromium] › tests/products/search.spec.ts:5:3 › product search › finds the lamp by name
+[5/8] [chromium] › tests/products/search.spec.ts:12:3 › product search › says so when nothing matches
+[6/8] [chromium] › tests/products/search.spec.ts:18:3 › product search › the notebook cannot be added
+[7/8] [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke
+[8/8] [chromium] › tests/smoke/sign-in.spec.ts:11:3 › sign in › a wrong password shows an error @smoke
+  1) [chromium] › tests/products/price.spec.ts:6:1 › the desk lamp costs ₹1,199 › check the lamp price 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;list&#x27;, { name: &#x27;Products&#x27; }).getByRole(&#x27;listitem&#x27;).filter({ has: getByRole(&#x27;heading&#x27;, { name: &#x27;Desk lamp&#x27; }) }).locator(&#x27;.price&#x27;)
+    Expected: &quot;₹1,199&quot;
+    Received: &quot;₹1,299&quot;
+    Timeout:  5000ms
+        at tests/products/price.spec.ts:13:67
+        at tests/products/price.spec.ts:12:3
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #4: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [chromium] › tests/products/price.spec.ts:6:1 › the desk lamp costs ₹1,199 ─────────────────────
+  7 passed (10.0s)
+allure-report/index.html</pre></div></div><div class="note-out"><span>What happens</span><p>Each language wrote raw results into an allure-results folder: allure-playwright for Playwright Test, allure-pytest for pytest and allure-testng for TestNG. The same Allure command line then built the same kind of report from them. The labels and steps in the test show up as severity, feature and a step list, and the failure carries its screenshot.</p></div></div>
+<div class="only-ts"><figure class="pw-shot"><img src="img/report-allure-ts-overview.jpg" alt="The Allure report overview for the TypeScript run" loading="lazy"><figcaption>The Allure overview from the TypeScript run: totals, the pass rate and the tests grouped by folder.</figcaption></figure></div><div class="only-js"><figure class="pw-shot"><img src="img/report-allure-ts-overview.jpg" alt="The Allure report overview for the Playwright Test run" loading="lazy"><figcaption>The Allure overview from the Playwright Test run: totals, the pass rate and the tests grouped by folder.</figcaption></figure></div><div class="only-ts"><figure class="pw-shot"><img src="img/report-allure-ts-failed.jpg" alt="The failed price test in Allure with its error, severity and feature" loading="lazy"><figcaption>The failed test in Allure: expected and received side by side, the Critical severity, and three attachments kept by Playwright Test, among them the screenshot and the video.</figcaption></figure></div><div class="only-js"><figure class="pw-shot"><img src="img/report-allure-ts-failed.jpg" alt="The failed price test in Allure with its error, severity and feature" loading="lazy"><figcaption>The failed test in Allure: expected and received side by side, the Critical severity, and three attachments kept by Playwright Test, among them the screenshot and the video.</figcaption></figure></div><div class="only-py"><figure class="pw-shot"><img src="img/report-allure-py-overview.jpg" alt="The Allure report overview for the Python run" loading="lazy"><figcaption>The Allure overview from the pytest run.</figcaption></figure></div><div class="only-py"><figure class="pw-shot"><img src="img/report-allure-py-failed.jpg" alt="The failed price test in Allure from the Python run" loading="lazy"><figcaption>The failed test in Allure: the error, the Critical severity from the decorator, and the screenshot from the conftest hook under Attachments.</figcaption></figure></div><div class="only-java"><figure class="pw-shot"><img src="img/report-allure-java-overview.jpg" alt="The Allure report overview for the Java run" loading="lazy"><figcaption>The Allure overview from the TestNG run.</figcaption></figure></div><div class="only-java"><figure class="pw-shot"><img src="img/report-allure-java-failed.jpg" alt="The failed price test in Allure from the Java run" loading="lazy"><figcaption>The failed test in Allure: the error, the Prices feature and Critical severity from the annotations, and the screenshot from the listener under Attachments.</figcaption></figure></div>
+<div class="pw-box pw-new"><span class="pw-ic">🆕</span><div>This page uses Allure Report 3, which installs from npm and needs Node.js, even for Python and Java projects: <code>npx allure generate allure-results</code>. Allure Report 2 is a Java program installed separately, with the command <code>allure generate</code>. Both read the same allure-results folder.</div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Keep the allure-results of earlier runs, or the history folder of the last report, and Allure shows trends and flaky tests across runs.</div></div>
+</section>
+<section class="card reveal jsec" id="lab4" data-say="lab4"><div class="sec-num">Part 5</div><h2><span class="sec-em">4️⃣</span><span>Lab 4: a custom reporter</span></h2>
+
+<p>Sometimes a team wants something no reporter gives: a message in a chat channel, a row in a dashboard, or a list of failed tests in a fixed format. Every runner lets you write your own reporter.</p>
+<div class="codewrap tests pw4" data-k="custom" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lab 4: write your own reporter · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/shop/reporting/SummaryListener.java</div><pre class="src" data-file="src/test/java/com/brainy/shop/reporting/SummaryListener.java"><span class="k">package</span> com.brainy.shop.reporting;
+
+<span class="k">import</span> org.testng.<span class="t">ITestContext</span>;
+<span class="k">import</span> org.testng.<span class="t">ITestListener</span>;
+<span class="k">import</span> org.testng.<span class="t">ITestResult</span>;
+
+<span class="c">// One line per test, then a short summary when the run ends</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">SummaryListener</span> <span class="k">implements</span> <span class="t">ITestListener</span> {
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="k">void</span> onTestSuccess(<span class="t">ITestResult</span> result) { line(<span class="s">"PASS"</span>, result); }
+
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="k">void</span> onTestFailure(<span class="t">ITestResult</span> result) { line(<span class="s">"FAIL"</span>, result); }
+
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="k">void</span> onTestSkipped(<span class="t">ITestResult</span> result) { line(<span class="s">"SKIP"</span>, result); }
+
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="k">void</span> onFinish(<span class="t">ITestContext</span> context) {
+    <span class="t">System</span>.out.printf(<span class="s">"%d passed, %d failed, %d skipped%n"</span>, context.getPassedTests().size(),
+        context.getFailedTests().size(), context.getSkippedTests().size());
+    context.getFailedTests().getAllResults()
+        .forEach(r -&gt; <span class="t">System</span>.out.println(<span class="s">"  to look at: "</span> + r.getMethod().getMethodName()));
+  }
+
+  <span class="k">private</span> <span class="k">void</span> line(<span class="t">String</span> status, <span class="t">ITestResult</span> r) {
+    <span class="k">double</span> seconds = (r.getEndMillis() - r.getStartMillis()) / <span class="n">1000.0</span>;
+    <span class="t">System</span>.out.printf(<span class="s">"%s  %s (%.1f s)%n"</span>, status, r.getMethod().getMethodName(), seconds);
+  }
+}</pre><div class="fname">📄 testng.xml</div><pre class="src" data-file="testng.xml">&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+<span class="c">&lt;!-- Every test, two classes at a time. Each class gets its own browser on its own thread. --&gt;</span>
+&lt;<span class="k">suite</span> <span class="a">name</span>=<span class="s">"Brainy Shop"</span> <span class="a">parallel</span>=<span class="s">"classes"</span> <span class="a">thread-count</span>=<span class="s">"2"</span>&gt;
+  &lt;<span class="k">listeners</span>&gt;
+    &lt;<span class="k">listener</span> <span class="a">class-name</span>=<span class="s">"com.brainy.shop.reporting.SummaryListener"</span>/&gt;
+  &lt;/<span class="k">listeners</span>&gt;
+  &lt;<span class="k">test</span> <span class="a">name</span>=<span class="s">"All tests"</span>&gt;
+    &lt;<span class="k">packages</span>&gt;
+      &lt;<span class="k">package</span> <span class="a">name</span>=<span class="s">"com.brainy.shop.tests.*"</span>/&gt;
+    &lt;/<span class="k">packages</span>&gt;
+  &lt;/<span class="k">test</span>&gt;
+&lt;/<span class="k">suite</span>&gt;</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test; echo &quot;exit code $?&quot;</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running TestSuite
+PASS  aWrongPasswordShowsAnError (0.5 s)
+PASS  placesAnOrderForACartFilledThroughTheApi (0.9 s)
+PASS  ashaSignsInWithTheRightPassword (0.5 s)
+PASS  addsTwoProductsFromTheirCards (1.4 s)
+PASS  findsTheLampByName (1.1 s)
+PASS  saysSoWhenNothingMatches (0.1 s)
+PASS  theNotebookCannotBeAdded (1.0 s)
+FAIL  theDeskLampCosts1199 (5.1 s)
+7 passed, 1 failed, 0 skipped
+  to look at: theDeskLampCosts1199
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 9.568 s &lt;&lt;&lt; FAILURE! -- in TestSuite
+[ERROR] com.brainy.shop.tests.products.PriceTest.theDeskLampCosts1199 -- Time elapsed: 1.996 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: 
+Locator expected to have text
+Expected: ₹1,199
+Received: ₹1,299
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   PriceTest.theDeskLampCosts1199:14 Locator expected to have text
+Expected: ₹1,199
+Received: ₹1,299
+
+[INFO] 
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+exit code 1</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 framework/reporting/summary.py</div><pre class="src" data-file="framework/reporting/summary.py"><span class="k">import</span> pytest
+
+results = []
+
+
+<span class="c"># pytest reports each test three times: setup, call and teardown. The call holds the result,</span>
+<span class="c"># and a failure while setting up is reported in the setup instead.</span>
+<span class="k">def</span> pytest_runtest_logreport(report):
+    <span class="k">if</span> report.when == <span class="s">"call"</span> <span class="k">or</span> (report.when == <span class="s">"setup"</span> <span class="k">and</span> <span class="k">not</span> report.passed):
+        results.append(report)
+
+
+<span class="k">def</span> pytest_terminal_summary(terminalreporter):
+    tr = terminalreporter
+    tr.section(<span class="s">"shop summary"</span>)
+    <span class="k">for</span> r <span class="k">in</span> results:
+        name = r.nodeid.split(<span class="s">"::"</span>)[-<span class="n">1</span>]
+        tr.write_line(f<span class="s">"{'PASS' if r.passed else 'FAIL'}  {name} ({r.duration:.1f} s)"</span>)
+    failed = [r.nodeid.split(<span class="s">"::"</span>)[-<span class="n">1</span>] <span class="k">for</span> r <span class="k">in</span> results <span class="k">if</span> r.failed]
+    tr.write_line(f<span class="s">"{len(results) - len(failed)} passed, {len(failed)} failed"</span>)
+    <span class="k">for</span> name <span class="k">in</span> failed:
+        tr.write_line(f<span class="s">"  to look at: {name}"</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -q --tb=no -p framework.reporting.summary; echo &quot;exit code $?&quot;</pre></div><div class="out"><span>Terminal output</span><pre>..F.....                                                                 [100%]
+================================= shop summary =================================
+PASS  test_adds_two_products_from_their_cards[chromium] (1.3 s)
+PASS  test_places_an_order_for_a_cart_filled_through_the_api[chromium] (0.6 s)
+FAIL  test_the_desk_lamp_costs_1199[chromium] (5.1 s)
+PASS  test_finds_the_lamp_by_name[chromium] (1.0 s)
+PASS  test_says_so_when_nothing_matches[chromium] (0.2 s)
+PASS  test_the_notebook_cannot_be_added[chromium] (0.9 s)
+PASS  test_asha_signs_in_with_the_right_password[chromium] (0.4 s)
+PASS  test_a_wrong_password_shows_an_error[chromium] (0.4 s)
+7 passed, 1 failed
+  to look at: test_the_desk_lamp_costs_1199[chromium]
+=========================== short test summary info ============================
+FAILED tests/products/test_price.py::test_the_desk_lamp_costs_1199[chromium] - AssertionError: Locator expected to have text &#x27;₹1,199&#x27;
+1 failed, 7 passed in 12.82s
+exit code 1</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 reporters/summary-reporter.js</div><pre class="src" data-file="reporters/summary-reporter.js"><span class="c">// One line per test, then a short summary that a team could also send to chat or a dashboard</span>
+<span class="k">export</span> <span class="k">default</span> <span class="k">class</span> <span class="t">SummaryReporter</span> {
+  passed = <span class="n">0</span>;
+  failed = [];
+
+  onBegin(config, suite) {
+    console.log(<span class="s">`Starting ${suite.allTests().length} tests on ${config.workers} workers`</span>);
+  }
+
+  onTestEnd(test, result) {
+    <span class="k">const</span> seconds = (result.duration / <span class="n">1000</span>).toFixed(<span class="n">1</span>);
+    <span class="k">if</span> (result.status === <span class="s">'passed'</span>) {
+      <span class="k">this</span>.passed++;
+      console.log(<span class="s">`PASS  ${test.title} (${seconds} s)`</span>);
+    } <span class="k">else</span> {
+      <span class="k">this</span>.failed.push(test.title);
+      console.log(<span class="s">`FAIL  ${test.title} (${seconds} s)`</span>);
+    }
+  }
+
+  onEnd(result) {
+    console.log(<span class="s">`${this.passed} passed, ${this.failed.length} failed, run ${result.status}`</span>);
+    <span class="k">for</span> (<span class="k">const</span> title <span class="k">of</span> <span class="k">this</span>.failed) console.log(<span class="s">`  to look at: ${title}`</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --reporter=./reporters/summary-reporter.js; echo &quot;exit code $?&quot;</pre></div><div class="out"><span>Terminal output</span><pre>Starting 8 tests on 2 workers
+PASS  places an order for a cart filled through the API (1.2 s)
+PASS  adds two products from their cards (2.0 s)
+PASS  finds the lamp by name (1.5 s)
+PASS  says so when nothing matches (0.5 s)
+PASS  the notebook cannot be added (1.4 s)
+PASS  Asha signs in with the right password (1.1 s)
+FAIL  the desk lamp costs ₹1,199 (6.0 s)
+PASS  a wrong password shows an error (0.8 s)
+7 passed, 1 failed, run failed
+  to look at: the desk lamp costs ₹1,199
+exit code 1</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 reporters/summary-reporter.ts</div><pre class="src" data-file="reporters/summary-reporter.ts"><span class="k">import</span> <span class="k">type</span> { <span class="t">FullConfig</span>, <span class="t">FullResult</span>, <span class="t">Reporter</span>, <span class="t">Suite</span>, <span class="t">TestCase</span>, <span class="t">TestResult</span> } <span class="k">from</span> <span class="s">'@playwright/test/reporter'</span>;
+
+<span class="c">// One line per test, then a short summary that a team could also send to chat or a dashboard</span>
+<span class="k">export</span> <span class="k">default</span> <span class="k">class</span> <span class="t">SummaryReporter</span> <span class="k">implements</span> <span class="t">Reporter</span> {
+  <span class="k">private</span> passed = <span class="n">0</span>;
+  <span class="k">private</span> failed: <span class="k">string</span>[] = [];
+
+  onBegin(config: <span class="t">FullConfig</span>, suite: <span class="t">Suite</span>) {
+    console.log(<span class="s">`Starting ${suite.allTests().length} tests on ${config.workers} workers`</span>);
+  }
+
+  onTestEnd(test: <span class="t">TestCase</span>, result: <span class="t">TestResult</span>) {
+    <span class="k">const</span> seconds = (result.duration / <span class="n">1000</span>).toFixed(<span class="n">1</span>);
+    <span class="k">if</span> (result.status === <span class="s">'passed'</span>) {
+      <span class="k">this</span>.passed++;
+      console.log(<span class="s">`PASS  ${test.title} (${seconds} s)`</span>);
+    } <span class="k">else</span> {
+      <span class="k">this</span>.failed.push(test.title);
+      console.log(<span class="s">`FAIL  ${test.title} (${seconds} s)`</span>);
+    }
+  }
+
+  onEnd(result: <span class="t">FullResult</span>) {
+    console.log(<span class="s">`${this.passed} passed, ${this.failed.length} failed, run ${result.status}`</span>);
+    <span class="k">for</span> (<span class="k">const</span> title <span class="k">of</span> <span class="k">this</span>.failed) console.log(<span class="s">`  to look at: ${title}`</span>);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --reporter=./reporters/summary-reporter.ts; echo &quot;exit code $?&quot;</pre></div><div class="out"><span>Terminal output</span><pre>Starting 8 tests on 2 workers
+PASS  places an order for a cart filled through the API (1.6 s)
+PASS  adds two products from their cards (2.4 s)
+PASS  finds the lamp by name (1.5 s)
+PASS  says so when nothing matches (0.5 s)
+PASS  the notebook cannot be added (1.7 s)
+PASS  Asha signs in with the right password (1.0 s)
+FAIL  the desk lamp costs ₹1,199 (6.2 s)
+PASS  a wrong password shows an error (0.8 s)
+7 passed, 1 failed, run failed
+  to look at: the desk lamp costs ₹1,199
+exit code 1</pre></div></div><div class="note-out"><span>What happens</span><p>A reporter is a class or a set of hooks that the runner calls as the run goes: once at the start, once per finished test and once at the end. Playwright Test calls onBegin, onTestEnd and onEnd. pytest calls pytest_runtest_logreport for every phase and pytest_terminal_summary at the end. TestNG calls ITestListener methods. The run still fails with exit code 1, so CI marks it red whatever the reporter prints.</p></div></div>
+<div class="tw"><table class="jt "><tr><th></th><th>Playwright Test</th><th>pytest</th><th>TestNG</th></tr><tr><td>at the start</td><td>onBegin(config, suite)</td><td>pytest_sessionstart</td><td>onStart(context)</td></tr><tr><td>after each test</td><td>onTestEnd(test, result)</td><td>pytest_runtest_logreport(report)</td><td>onTestSuccess, onTestFailure, onTestSkipped</td></tr><tr><td>at the end</td><td>onEnd(result)</td><td>pytest_terminal_summary</td><td>onFinish(context), or IReporter.generateReport</td></tr><tr><td>turn it on</td><td>--reporter=./my-reporter.ts or the config</td><td>-p module, or code in conftest.py</td><td>a listener in testng.xml</td></tr></table></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>A reporter must not change whether the run passed. It only describes the run, so CI still sees exit code 1 when a test failed.</div></div>
+</section>
+<section class="card reveal jsec" id="lab5" data-say="lab5"><div class="sec-num">Part 6</div><h2><span class="sec-em">5️⃣</span><span>Lab 5: merging and publishing reports in CI</span></h2>
+
+<p>With shards, each machine has only part of the results. Merge them into one report, then publish it where the team looks.</p>
+<div class="codewrap tests pw4 pw-single" data-k="merge" data-langs="ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Lab 5: one HTML report from several shards · <b class="pw-badge">✅ ran for real</b></span><button type="button" class="copy">Copy</button></div><div class="pw-pane" data-l="ts" data-badge="✅ ran for real"><div class="fname">📄 tests/products/price.spec.ts</div><pre class="src" data-file="tests/products/price.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'../../src/fixtures/index'</span>;
+<span class="k">import</span> { products } <span class="k">from</span> <span class="s">'../../src/data/products'</span>;
+
+<span class="c">// Out of date on purpose: the lamp now costs ₹1,299, so the reports have a failure to show</span>
+test(<span class="s">'the desk lamp costs ₹1,199'</span>, <span class="k">async</span> ({ productsPage }) =&gt; {
+  <span class="k">await</span> productsPage.open();
+  <span class="k">await</span> expect(productsPage.card(products.deskLamp.name).price).toHaveText(<span class="s">'₹1,199'</span>);
+});</pre><div class="cmd"><span>Terminal</span><pre>$ for i in 1 2; do npx playwright test --shard=$i/2 --reporter=blob; mkdir -p all-blob-reports; mv blob-report/*.zip all-blob-reports/; done; npx playwright merge-reports --reporter=html ./all-blob-reports; ls playwright-report</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 2 workers, shard 1 of 2
+
+[1/4] [chromium] › tests/cart/add-to-cart.spec.ts:5:3 › cart › adds two products from their cards @cart
+[2/4] [chromium] › tests/cart/checkout.spec.ts:5:3 › checkout › places an order for a cart filled through the API @cart @smoke
+[3/4] [chromium] › tests/products/price.spec.ts:5:1 › the desk lamp costs ₹1,199
+[4/4] [chromium] › tests/products/search.spec.ts:5:3 › product search › finds the lamp by name
+  1) [chromium] › tests/products/price.spec.ts:5:1 › the desk lamp costs ₹1,199 ────────────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole(&#x27;list&#x27;, { name: &#x27;Products&#x27; }).getByRole(&#x27;listitem&#x27;).filter({ has: getByRole(&#x27;heading&#x27;, { name: &#x27;Desk lamp&#x27; }) }).locator(&#x27;.price&#x27;)
+    Expected: &quot;₹1,199&quot;
+    Received: &quot;₹1,299&quot;
+    Timeout:  5000ms
+        at tests/products/price.spec.ts:7:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/products-price-the-desk-lamp-costs-₹1-199-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [chromium] › tests/products/price.spec.ts:5:1 › the desk lamp costs ₹1,199 ─────────────────────
+  3 passed (10.6s)
+
+Running 4 tests using 2 workers, shard 2 of 2
+
+[1/4] [chromium] › tests/products/search.spec.ts:18:3 › product search › the notebook cannot be added
+[2/4] [chromium] › tests/products/search.spec.ts:12:3 › product search › says so when nothing matches
+[3/4] [chromium] › tests/smoke/sign-in.spec.ts:5:3 › sign in › Asha signs in with the right password @smoke
+[4/4] [chromium] › tests/smoke/sign-in.spec.ts:11:3 › sign in › a wrong password shows an error @smoke
+  4 passed (4.9s)
+merging reports from all-blob-reports
+extracting: all-blob-reports/report-1.zip
+extracting: all-blob-reports/report-2.zip
+merging events
+processing test events
+building final report
+finished building report
+data
+index.html</pre></div></div><div class="note-out"><span>What happens</span><p>Two shards each wrote a blob report, and merge-reports built one HTML report from both: the same playwright-report folder a single run makes, with all eight tests and the failure from shard 1. This is the last job of the sharded workflow in the CI/CD chapter.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Where</th><th>How</th></tr><tr><td>GitHub Actions</td><td>upload the report folder as an artifact, or publish it to GitHub Pages</td></tr><tr><td>Jenkins</td><td>the junit step for counts and history, and the HTML Publisher or Allure plugin for the page</td></tr><tr><td>GitLab CI</td><td>artifacts: reports: junit, and the report folder as an artifact or GitLab Pages</td></tr><tr><td>Azure DevOps</td><td>PublishTestResults for JUnit XML, and PublishPipelineArtifact for the HTML</td></tr></table></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Python and Java shards each write their own JUnit XML file. CI servers read many files at once, for example target/surefire-reports/*.xml in Jenkins, so they do not need merging first. Allure also reads several allure-results folders in one command.</div></div>
+</section>
+<section class="card reveal jsec" id="choose" data-say="choose"><div class="sec-num">Part 7</div><h2><span class="sec-em">🧭</span><span>Which report should a team use?</span></h2>
+
+<p>Most teams combine a few. Here is a starting point that suits most projects.</p>
+<div class="tw"><table class="jt "><tr><th>Need</th><th>TypeScript and JavaScript</th><th>Python</th><th>Java</th></tr><tr><td>CI counts</td><td>junit reporter</td><td>--junitxml</td><td>Surefire XML, already there</td></tr><tr><td>debugging a failure</td><td>the built-in HTML report with traces</td><td>pytest-html with traces from pytest-playwright</td><td>traces from BaseTest, plus Extent or Allure</td></tr><tr><td>one report for many languages and teams</td><td>Allure</td><td>Allure</td><td>Allure</td></tr><tr><td>a report managers know from older Java projects</td><td></td><td></td><td>ExtentReports</td></tr><tr><td>something special</td><td>a custom reporter</td><td>hooks in a plugin</td><td>a listener</td></tr></table></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>Start with the built-in reports and JUnit XML. Add Allure or Extent when someone outside the test team needs to read the results, not before.</div></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-ci.html" data-topic="pw-ci"><small>← Previous chapter</small><b>🚦 CI/CD</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Reports in four ideas", "panels": [{"s": [["e", "🖥️"], ["t", "terminal", {"b": 1}]], "h": "For you", "t": "list, dot, -v.", "more": "Right now."}, {"s": [["e", "🧾"], ["t", "JUnit XML", {"b": 1}]], "h": "For CI", "t": "Counts and history.", "more": "Every server reads it."}, {"s": [["e", "📸"], ["t", "HTML", {"b": 1}]], "h": "For testers", "t": "Error, screenshot, trace.", "more": "Why it failed."}, {"s": [["e", "📈"], ["t", "Allure", {"b": 1}]], "h": "For everyone", "t": "Same report, any language.", "more": "Trends and labels."}], "remember": "Write several reports from one run: a short one for the terminal, JUnit XML for CI, and an HTML report with evidence for people."}, "real": [["🧾", "The report that saved a release meeting", "A release manager asks whether checkout is safe to ship. The Allure report filtered by the Checkout feature shows all tests green for the last ten nightly runs, and the meeting takes two minutes."], ["📸", "A failure understood without a rerun", "A test fails only on CI. The HTML report has the screenshot at failure: a cookie banner covers the button. The fix is one line in the fixture, found without running anything again."], ["💬", "Failures in the team chat", "A team writes a twenty line custom reporter that posts the failed test names to their chat channel when the nightly run ends. People see failures at the start of the day instead of finding them later."]], "quiz": [{"lv": 1, "q": "Which report format do almost all CI servers read?", "o": ["PDF", "JUnit XML", "Markdown", "CSV"], "a": 1, "hint": "An XML format.", "why": "JUnit XML is read by Jenkins, GitLab, Azure DevOps, GitHub actions and more."}, {"lv": 1, "q": "Which Playwright Test reporter prints one character per test?", "o": ["list", "dot", "html", "json"], "a": 1, "hint": "Very short.", "why": "dot prints a dot for a passed test and F for a failed one."}, {"lv": 1, "q": "Which pytest option writes JUnit XML?", "o": ["--html", "--junitxml", "--xml", "-rA"], "a": 1, "hint": "junit plus xml.", "why": "--junitxml=path writes the XML file."}, {"lv": 1, "q": "What makes a failure in a report quick to understand?", "o": ["more colours", "the error, a screenshot at failure and a trace", "a longer test name", "running it again"], "a": 1, "hint": "Evidence.", "why": "With the error, the screenshot and the trace, you can often see the cause without rerunning."}, {"lv": 2, "q": "What does pytest-playwright add to a pytest-html report by itself?", "o": ["nothing", "the screenshot, video and trace link it kept for a failed test", "an Allure link", "a PDF"], "a": 1, "hint": "Its artifacts.", "why": "pytest-playwright 0.10 adds the screenshot, video and trace link it kept to pytest-html."}, {"lv": 2, "q": "Why does the Java EvidenceListener take the screenshot in onTestFailure?", "o": ["it is faster", "TestNG calls it before @AfterMethod, while the page is still open", "Allure requires it", "for parallel runs"], "a": 1, "hint": "Order of calls.", "why": "onTestFailure runs before the @AfterMethod that closes the context, so the page still shows the failure."}, {"lv": 2, "q": "Which folder does each Allure adapter write?", "o": ["allure-report", "raw results such as allure-results", "playwright-report", "target/site"], "a": 1, "hint": "Raw first.", "why": "Adapters write raw results, and allure generate builds the report folder from them."}, {"lv": 2, "q": "Which TestNG interface builds a report once after the whole suite?", "o": ["ITestListener", "IReporter", "IRetryAnalyzer", "IHookable"], "a": 1, "hint": "generateReport.", "why": "IReporter.generateReport receives every result when the suite has finished."}, {"lv": 2, "q": "Which Playwright Test reporter callback runs after each test?", "o": ["onBegin", "onTestEnd", "onEnd", "onStdOut"], "a": 1, "hint": "End of a test.", "why": "onTestEnd receives the test and its result."}, {"lv": 3, "q": "A custom reporter prints that everything is fine, but a test failed. What exit code does the run end with?", "o": ["0", "1", "2", "it depends on the reporter"], "a": 1, "hint": "Reporters only describe.", "why": "The run still fails with exit code 1, so CI marks it red."}, {"lv": 3, "q": "How do you get one HTML report from four Playwright Test shards?", "o": ["run html on each and zip them", "write blob reports, then npx playwright merge-reports --reporter html", "use the json reporter", "it is not possible"], "a": 1, "hint": "blob, then merge.", "why": "Each shard writes a blob report and merge-reports builds one report from all of them."}, {"lv": 3, "q": "Why do Python and Java shards not need a merge step for CI counts?", "o": ["they cannot be sharded", "CI servers read many JUnit XML files at once", "their reports are already HTML", "Allure merges them by itself"], "a": 1, "hint": "Many files.", "why": "Patterns such as target/surefire-reports/*.xml read every shard's file."}], "calc": [{"lv": 1, "q": "A run has 8 tests and 1 fails. How many passed?", "ans": 7, "hint": "8 - 1", "steps": ["8 - 1 = 7"]}, {"lv": 1, "q": "The JSON stats say expected 7 and unexpected 1. How many tests ran?", "ans": 8, "hint": "7 + 1", "steps": ["7 + 1 = 8"]}, {"lv": 2, "q": "Allure shows 7 of 8 passed. What is the pass rate in percent, to one decimal place?", "ans": 87.5, "hint": "7 / 8 × 100", "steps": ["7 / 8 = 0.875", "0.875 × 100 = 87.5"]}, {"lv": 2, "q": "A failure screenshot is 60 KB. A nightly run of 400 tests has 12 failures. How many KB of screenshots is that?", "ans": 720, "hint": "12 × 60", "steps": ["only failures keep screenshots", "12 × 60 = 720"]}, {"lv": 2, "q": "The test expected ₹1,199 and the page showed ₹1,299. How many rupees apart are they?", "ans": 100, "hint": "1299 - 1199", "steps": ["1299 - 1199 = 100"]}, {"lv": 3, "q": "Two shards ran 4 and 4 tests. The merged report shows how many tests?", "ans": 8, "hint": "4 + 4", "steps": ["4 + 4 = 8"]}, {"lv": 3, "q": "A team keeps Allure history for 20 runs, one run a night. How many days of trend does the report show?", "ans": 20, "hint": "one run per night", "steps": ["20 runs × 1 per night = 20 days"]}, {"lv": 3, "q": "Video is kept only on failure. With 2 failures out of 50 tests, what percentage of tests keep a video?", "ans": 4, "hint": "2 / 50 × 100", "steps": ["2 / 50 = 0.04", "0.04 × 100 = 4"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter is a set of reporting labs: built-in reporters and JUnit XML, HTML reports with evidence, Allure in all four languages, ExtentReports for Java, your own reporter, and merging reports in CI.", "hi": "यह अध्याय reporting labs का एक सेट है: built-in reporters और JUnit XML, सबूत के साथ HTML reports, चारों भाषाओं में Allure, Java के लिए ExtentReports, आपका अपना reporter, और CI में reports जोड़ना।", "kn": "ಈ ಅಧ್ಯಾಯ reporting labs ಗುಂಪು: built-in reporters ಮತ್ತು JUnit XML, ಸಾಕ್ಷ್ಯದೊಂದಿಗೆ HTML reports, ನಾಲ್ಕೂ ಭಾಷೆಗಳಲ್ಲಿ Allure, Java ಗೆ ExtentReports, ನಿಮ್ಮದೇ reporter, ಮತ್ತು CI ನಲ್ಲಿ reports ಸೇರಿಸುವುದು.", "or": "ଏହି ଅଧ୍ୟାୟ reporting labs ର ଏକ ସେଟ୍: built-in reporters ଓ JUnit XML, ପ୍ରମାଣ ସହ HTML reports, ଚାରି ଭାଷାରେ Allure, Java ପାଇଁ ExtentReports, ଆପଣଙ୍କ ନିଜ reporter, ଏବଂ CI ରେ reports ଯୋଡିବା।", "ar": "هذا الفصل مجموعة مختبرات للتقارير: المراسلون المدمجون وJUnit XML، وتقارير HTML مع الأدلة، وAllure في اللغات الأربع، وExtentReports لـ Java، ومراسلك الخاص، ودمج التقارير في CI.", "de": "Dieses Kapitel ist eine Reihe von Berichts-Labs: eingebaute Reporter und JUnit XML, HTML-Berichte mit Belegen, Allure in allen vier Sprachen, ExtentReports für Java, ein eigener Reporter und das Zusammenführen von Berichten in CI."}, {"id": "what", "h": "What a report is for", "en": "A report tells people and machines what happened in a run. The terminal is for you, JUnit XML is for the CI server, and an HTML report with screenshots and traces is for whoever fixes a failure.", "hi": "Report लोगों और machines को बताता है कि run में क्या हुआ। Terminal आपके लिए है, JUnit XML CI server के लिए, और screenshots व traces वाली HTML report failure ठीक करने वाले के लिए।", "kn": "Report ಜನರಿಗೂ machines ಗೂ run ನಲ್ಲಿ ಏನಾಯಿತು ಎಂದು ಹೇಳುತ್ತದೆ. Terminal ನಿಮಗಾಗಿ, JUnit XML CI server ಗಾಗಿ, screenshots ಮತ್ತು traces ಇರುವ HTML report failure ಸರಿಪಡಿಸುವವರಿಗಾಗಿ.", "or": "Report ଲୋକ ଓ machines କୁ କହେ run ରେ କଣ ହେଲା। Terminal ଆପଣଙ୍କ ପାଇଁ, JUnit XML CI server ପାଇଁ, ଏବଂ screenshots ଓ traces ଥିବା HTML report failure ଠିକ୍ କରୁଥିବା ଲୋକ ପାଇଁ।", "ar": "يخبر التقرير الناس والآلات بما حدث في التشغيل. الطرفية لك، وJUnit XML لخادم CI، وتقرير HTML مع اللقطات والآثار لمن يصلح الفشل.", "de": "Ein Bericht sagt Menschen und Maschinen, was in einem Lauf passiert ist. Das Terminal ist für dich, JUnit XML für den CI-Server und ein HTML-Bericht mit Screenshots und Traces für den, der einen Fehler behebt."}, {"id": "lab1", "h": "Lab 1", "en": "Every runner has built-in reporters. Several can run at once: a short one for the terminal and JUnit XML for the CI server. Playwright Test can also write JSON.", "hi": "हर runner में built-in reporters होते हैं। कई एक साथ चल सकते हैं: terminal के लिए छोटा और CI server के लिए JUnit XML। Playwright Test JSON भी लिख सकता है।", "kn": "ಪ್ರತಿ runner ನಲ್ಲಿ built-in reporters ಇವೆ. ಹಲವು ಒಟ್ಟಿಗೆ ನಡೆಯಬಹುದು: terminal ಗೆ ಚಿಕ್ಕದು, CI server ಗೆ JUnit XML. Playwright Test JSON ಕೂಡ ಬರೆಯಬಲ್ಲದು.", "or": "ପ୍ରତି runner ରେ built-in reporters ଅଛି। ଅନେକ ଏକାସାଙ୍ଗରେ ଚାଲିପାରେ: terminal ପାଇଁ ଛୋଟ ଓ CI server ପାଇଁ JUnit XML। Playwright Test JSON ମଧ୍ୟ ଲେଖିପାରେ।", "ar": "لكل مشغّل مراسلون مدمجون، ويمكن تشغيل عدة منهم معًا: واحد مختصر للطرفية وJUnit XML لخادم CI. ويمكن لـ Playwright Test كتابة JSON أيضًا.", "de": "Jeder Runner hat eingebaute Reporter. Mehrere können gleichzeitig laufen: ein kurzer für das Terminal und JUnit XML für den CI-Server. Playwright Test kann auch JSON schreiben."}, {"id": "lab2", "h": "Lab 2", "en": "An HTML report shows the error, a screenshot at failure and the trace. Playwright Test has one built in, pytest uses pytest-html, and Java teams often use ExtentReports with a TestNG listener.", "hi": "HTML report error, failure के समय का screenshot और trace दिखाती है। Playwright Test में यह built-in है, pytest pytest-html इस्तेमाल करता है, और Java teams अक्सर TestNG listener के साथ ExtentReports इस्तेमाल करती हैं।", "kn": "HTML report error, failure ಸಮಯದ screenshot ಮತ್ತು trace ತೋರಿಸುತ್ತದೆ. Playwright Test ನಲ್ಲಿ built-in, pytest pytest-html ಬಳಸುತ್ತದೆ, Java teams ಹೆಚ್ಚಾಗಿ TestNG listener ಜೊತೆ ExtentReports ಬಳಸುತ್ತವೆ.", "or": "HTML report error, failure ସମୟର screenshot ଓ trace ଦେଖାଏ। Playwright Test ରେ ଏହା built-in, pytest pytest-html ବ୍ୟବହାର କରେ, ଏବଂ Java teams ପ୍ରାୟ TestNG listener ସହ ExtentReports ବ୍ୟବହାର କରନ୍ତି।", "ar": "يعرض تقرير HTML الخطأ ولقطة عند الفشل والأثر. لدى Playwright Test واحد مدمج، ويستخدم pytest الإضافة pytest-html، وتستخدم فرق Java غالبًا ExtentReports مع مستمع TestNG.", "de": "Ein HTML-Bericht zeigt den Fehler, einen Screenshot beim Fehlschlag und den Trace. Playwright Test hat einen eingebaut, pytest nutzt pytest-html, und Java-Teams nutzen oft ExtentReports mit einem TestNG-Listener."}, {"id": "lab3", "h": "Lab 3", "en": "Allure Report looks the same for every language. An adapter writes raw results, and the Allure command line builds the report, with labels, steps and screenshots.", "hi": "Allure Report हर भाषा के लिए एक जैसी दिखती है। Adapter raw results लिखता है, और Allure command line labels, steps और screenshots के साथ report बनाती है।", "kn": "Allure Report ಪ್ರತಿ ಭಾಷೆಗೂ ಒಂದೇ ರೀತಿ ಕಾಣುತ್ತದೆ. Adapter raw results ಬರೆಯುತ್ತದೆ, Allure command line labels, steps ಮತ್ತು screenshots ಜೊತೆ report ಕಟ್ಟುತ್ತದೆ.", "or": "Allure Report ପ୍ରତି ଭାଷା ପାଇଁ ସମାନ ଦେଖାଯାଏ। Adapter raw results ଲେଖେ, ଏବଂ Allure command line labels, steps ଓ screenshots ସହ report ତିଆରି କରେ।", "ar": "يبدو Allure Report متماثلًا في كل لغة. يكتب المحوّل النتائج الخام، ويبني سطر أوامر Allure التقرير مع الوسوم والخطوات واللقطات.", "de": "Allure Report sieht in jeder Sprache gleich aus. Ein Adapter schreibt Rohergebnisse, und die Allure-Kommandozeile baut daraus den Bericht mit Labels, Schritten und Screenshots."}, {"id": "lab4", "h": "Lab 4", "en": "A custom reporter is a class or a set of hooks that the runner calls at the start, after each test and at the end. It describes the run but never changes whether it passed.", "hi": "Custom reporter एक class या hooks का सेट है जिसे runner शुरू में, हर test के बाद और आख़िर में बुलाता है। यह run का वर्णन करता है पर उसके pass होने को कभी नहीं बदलता।", "kn": "Custom reporter ಒಂದು class ಅಥವಾ hooks ಗುಂಪು, runner ಆರಂಭದಲ್ಲಿ, ಪ್ರತಿ test ನಂತರ ಮತ್ತು ಕೊನೆಯಲ್ಲಿ ಕರೆಯುತ್ತದೆ. ಇದು run ವಿವರಿಸುತ್ತದೆ, pass ಆಗಿದೆಯೇ ಎಂಬುದನ್ನು ಬದಲಿಸುವುದಿಲ್ಲ.", "or": "Custom reporter ଏକ class ବା hooks ର ସେଟ୍, ଯାହାକୁ runner ଆରମ୍ଭରେ, ପ୍ରତି test ପରେ ଓ ଶେଷରେ ଡାକେ। ଏହା run ବର୍ଣ୍ଣନା କରେ କିନ୍ତୁ pass ହେବା କେବେ ବଦଳାଏ ନାହିଁ।", "ar": "المراسل المخصص صنف أو مجموعة خطافات يستدعيها المشغّل في البداية وبعد كل اختبار وفي النهاية. يصف التشغيل ولا يغيّر أبدًا نجاحه أو فشله.", "de": "Ein eigener Reporter ist eine Klasse oder eine Reihe von Hooks, die der Runner am Anfang, nach jedem Test und am Ende aufruft. Er beschreibt den Lauf, ändert aber nie, ob er bestanden hat."}, {"id": "lab5", "h": "Lab 5", "en": "Shards each write a blob report, and merge-reports turns them into one HTML report. CI servers read many JUnit XML files at once, so Python and Java results need no merging.", "hi": "हर shard blob report लिखता है, और merge-reports उन्हें एक HTML report बनाता है। CI servers कई JUnit XML files एक साथ पढ़ते हैं, इसलिए Python और Java results को जोड़ना नहीं पड़ता।", "kn": "ಪ್ರತಿ shard blob report ಬರೆಯುತ್ತದೆ, merge-reports ಅವನ್ನು ಒಂದು HTML report ಮಾಡುತ್ತದೆ. CI servers ಹಲವು JUnit XML files ಒಟ್ಟಿಗೆ ಓದುತ್ತವೆ, ಆದ್ದರಿಂದ Python ಮತ್ತು Java results ಸೇರಿಸಬೇಕಿಲ್ಲ.", "or": "ପ୍ରତି shard blob report ଲେଖେ, ଏବଂ merge-reports ସେଗୁଡିକୁ ଗୋଟିଏ HTML report କରେ। CI servers ଅନେକ JUnit XML files ଏକାସାଙ୍ଗରେ ପଢନ୍ତି, ତେଣୁ Python ଓ Java results ଯୋଡିବା ଦରକାର ନାହିଁ।", "ar": "يكتب كل جزء تقرير blob، ويحوّلها merge-reports إلى تقرير HTML واحد. وتقرأ خوادم CI ملفات JUnit XML كثيرة معًا، فلا تحتاج نتائج Python وJava إلى دمج.", "de": "Jeder Shard schreibt einen Blob-Bericht, und merge-reports macht daraus einen HTML-Bericht. CI-Server lesen viele JUnit-XML-Dateien auf einmal, daher müssen Python- und Java-Ergebnisse nicht zusammengeführt werden."}, {"id": "choose", "h": "Choosing", "en": "Start with the built-in reports and JUnit XML. Add Allure or ExtentReports when people outside the test team need to read the results.", "hi": "Built-in reports और JUnit XML से शुरू करें। जब test team के बाहर के लोगों को results पढ़ने हों, तब Allure या ExtentReports जोड़ें।", "kn": "Built-in reports ಮತ್ತು JUnit XML ನಿಂದ ಆರಂಭಿಸಿ. Test team ಹೊರಗಿನವರು results ಓದಬೇಕಾದಾಗ Allure ಅಥವಾ ExtentReports ಸೇರಿಸಿ.", "or": "Built-in reports ଓ JUnit XML ରୁ ଆରମ୍ଭ କରନ୍ତୁ। Test team ବାହାରର ଲୋକଙ୍କୁ results ପଢିବାକୁ ପଡିଲେ Allure ବା ExtentReports ଯୋଡନ୍ତୁ।", "ar": "ابدأ بالتقارير المدمجة وJUnit XML. وأضف Allure أو ExtentReports حين يحتاج أشخاص من خارج فريق الاختبار إلى قراءة النتائج.", "de": "Beginne mit den eingebauten Berichten und JUnit XML. Füge Allure oder ExtentReports hinzu, wenn Menschen außerhalb des Testteams die Ergebnisse lesen müssen."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you fix the test the reports flagged, and make a weak check precise so that a failure in the report says exactly what was wrong.", "hi": "Labs में आप reports में दिखे test को ठीक करते हैं, और एक कमज़ोर check को सटीक बनाते हैं ताकि report में failure ठीक-ठीक बताए कि क्या गलत था।", "kn": "Labs ನಲ್ಲಿ reports ತೋರಿಸಿದ test ಸರಿಪಡಿಸುತ್ತೀರಿ, ಮತ್ತು ದುರ್ಬಲ check ಅನ್ನು ನಿಖರ ಮಾಡುತ್ತೀರಿ, ಆಗ report ನಲ್ಲಿ failure ಏನು ತಪ್ಪಾಯಿತು ಎಂದು ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳುತ್ತದೆ.", "or": "Labs ରେ ଆପଣ reports ଦେଖାଇଥିବା test ଠିକ୍ କରନ୍ତି, ଏବଂ ଏକ ଦୁର୍ବଳ check କୁ ସଠିକ କରନ୍ତି ଯେପରି report ରେ failure କଣ ଭୁଲ ଥିଲା ଠିକ୍ କହେ।", "ar": "في المختبرات تصلح الاختبار الذي أشارت إليه التقارير، وتجعل فحصًا ضعيفًا دقيقًا كي يقول الفشل في التقرير ما الخطأ بالضبط.", "de": "In den Labs reparierst du den Test, den die Berichte gemeldet haben, und machst eine schwache Prüfung genau, damit ein Fehler im Bericht genau sagt, was falsch war."}], "ex": [], "dg": {"flow": {"t": "From a test run to a report someone reads", "w": 900, "h": 240, "n": [["run", 20, 92, 120, 56, "test run", {"c": 2, "sub": "any runner", "i": "Playwright Test, pytest or TestNG runs the tests."}], ["con", 190, 20, 150, 56, "terminal", {"c": 5, "sub": "list, dot, -v", "i": "A short result for the person watching."}], ["raw", 190, 165, 150, 56, "raw results", {"c": 1, "sub": "XML, JSON, blob", "i": "Files that other tools read: JUnit XML, JSON, blob reports, allure-results."}], ["html", 400, 92, 150, 56, "HTML report", {"c": 3, "sub": "built in or Allure", "i": "A page with every test, its steps, screenshots and traces."}], ["ci", 610, 30, 140, 56, "CI server", {"c": 0, "sub": "reads JUnit XML", "i": "Counts passed and failed tests and keeps the history."}], ["ppl", 610, 155, 140, 56, "people", {"c": 4, "sub": "testers, managers", "i": "Open the report to see what failed and why."}]], "e": [["run", "con"], ["run", "raw"], ["raw", "html"], ["raw", "ci"], ["html", "ppl"]], "st": [[["run"], "The runner runs the tests."], [["con", "run>con"], "Reporters print a short result in the terminal."], [["raw", "run>raw"], "Other reporters write raw results to files."], [["html", "raw>html"], "A report generator turns the raw results into a page."], [["ci", "raw>ci"], "The CI server reads the JUnit XML."], [["ppl", "html>ppl"], "People open the HTML report to find out why a test failed."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "fixprice", "title": "Fix the test the report flagged", "name": "the desk lamp costs ₹1,299", "task": "The reports showed this test failing because the lamp now costs <b>₹1,299<\/b>. On <code>/products<\/code>, check that the card with the test id <code>product-3<\/code> contains the new price.", "goal": "The check uses the current price and passes.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the desk lamp costs ₹1,299', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByTestId('product-3')).toContainText('₹1,199');\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheDeskLampCosts1299Test {\n  @Test\n  void theDeskLampCosts1299(Page page) {\n    page.navigate(\"/products\");\n    assertThat(page.getByTestId(\"product-3\")).containsText(\"₹1,299\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_desk_lamp_costs_1_299(page: Page):\n    page.goto(\"/products\")\n    expect(page.get_by_test_id(\"product-3\")).to_contain_text(\"₹1,299\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the desk lamp costs ₹1,299', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByTestId('product-3')).toContainText('₹1,299');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the desk lamp costs ₹1,299', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByTestId('product-3')).toContainText('₹1,299');\n});"}, "hint": "Only the expected price is out of date. Change <code>₹1,199<\/code> to <code>₹1,299<\/code>.", "why": "The report showed the expected and the received value side by side, so the fix took one look. When a product really changes, the test data changes with it.", "check": [["/1,299/.test(ctx.code) && !/1,199/.test(ctx.code)", "The test expects ₹1,299"], ["ctx.url.includes('/products')", "The products page is open"]]}, {"id": "precise", "title": "Make a weak check precise", "name": "the coffee mug costs ₹199", "task": "This test only checks that the words <b>Coffee mug<\/b> are on the page, so a wrong price would never show up in a report. Check that the card with the test id <code>product-2<\/code> contains <b>₹199<\/b>.", "goal": "The check names the card and the price.", "start": "/products", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the coffee mug costs ₹199', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByText('Coffee mug')).toBeVisible();\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheCoffeeMugCosts199Test {\n  @Test\n  void theCoffeeMugCosts199(Page page) {\n    page.navigate(\"/products\");\n    assertThat(page.getByTestId(\"product-2\")).containsText(\"₹199\");\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_coffee_mug_costs_199(page: Page):\n    page.goto(\"/products\")\n    expect(page.get_by_test_id(\"product-2\")).to_contain_text(\"₹199\")\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the coffee mug costs ₹199', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByTestId('product-2')).toContainText('₹199');\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the coffee mug costs ₹199', async ({ page }) => {\n  await page.goto('/products');\n  await expect(page.getByTestId('product-2')).toContainText('₹199');\n});"}, "hint": "Use the card: <code>page.getByTestId('product-2')<\/code>, and check its text with <code>toContainText('₹199')<\/code>.", "why": "If the price ever changes, this test fails, and the report shows the expected ₹199 next to the price on the page. The old check would have passed and hidden the problem.", "check": [["/product-2/.test(ctx.code)", "The check uses the mug card"], ["/199/.test(ctx.code)", "The check names the price"]]}], "trees": {}};
+JSPLAY.page({ title: "Reporting labs", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

@@ -4,3 +4,4 @@ box/runs/
 .cache/
 __pycache__/
 screens/__pycache__/
+box/vendor/

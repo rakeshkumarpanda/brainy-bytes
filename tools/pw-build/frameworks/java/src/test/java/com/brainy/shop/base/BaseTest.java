@@ -65,6 +65,11 @@ public abstract class BaseTest {
     return signInThroughApi(Users.ASHA);
   }
 
+  // Report listeners call this when a test fails. TestNG calls them before closePage(), so the page is still open.
+  public byte[] screenshot() {
+    return page.screenshot();
+  }
+
   @AfterMethod(alwaysRun = true)
   public void closePage(ITestResult result) {
     if (result.isSuccess()) {
