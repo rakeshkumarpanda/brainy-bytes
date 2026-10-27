@@ -357,5 +357,8 @@ onmessage = async ev => {
     else document.querySelector('.home-link').removeAttribute('target');
   }
 
-  return { page, run, trace, runTests, get version() { return version; } };
+  /* pages that draw their own layout (Computer Vision) set the recorder source and stop a run directly */
+  const setTracer = src => { TRACER = src; };
+  const stop = () => { if (current) current.stop(); };
+  return { page, run, trace, runTests, setTracer, stop, get version() { return version; } };
 })();

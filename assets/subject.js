@@ -28,6 +28,9 @@
   document.documentElement.style.setProperty('--c', subj.color || 'var(--accent)');
   const live = subj.liveTopics;
   let cur = null;
+  /* a subject with layout 'path' shows a numbered learning path instead of the contents list on the left */
+  const pathMode = subj.layout === 'path';
+  if (pathMode) { document.body.classList.add('pathmode'); layout.classList.add('pathmode'); }
 
   /* ----- left side: subject card, filter and modules ----- */
   const closed = new Set();
@@ -96,6 +99,7 @@
   function overview(focusModule) {
     crumbs(null);
     document.title = subj.title + ' · ' + site.name;
+    if (pathMode) { pathOverview(focusModule); return; }
     if (subj.page && !subj.topics.length) { frame({ title: subj.title, emoji: subj.emoji, page: subj.page, summary: subj.blurb, subject: subj }, location.hash.slice(1)); return; }
     main.innerHTML = `<div class="overview">
       <h2>${esc(subj.emoji)} ${esc(subj.title)}</h2>
@@ -124,6 +128,76 @@
     }
   }
 
+  /* ----- the learning path: one numbered step per module, topics as links inside each step ----- */
+  const openSteps = new Set();
+  try { JSON.parse(localStorage.getItem('lh-open-' + subj.id) || '[]').forEach(x => openSteps.add(x)); } catch (e) { /* storage unavailable */ }
+  const mins = ts => ts.reduce((a, t) => a + (t.minutes || 0), 0);
+  const hrs = m => m >= 90 ? `about ${Math.round(m / 6) / 10} hours` : `about ${m} min`;
+  function pathOverview(focusModule) {
+    const steps = subj.modules.filter(m => m.step), extra = subj.modules.filter(m => !m.step);
+    const all = steps.flatMap(m => m.topics.filter(t => !t.soon));
+    const firstOpen = all.find(t => !PROGRESS.isDone(t));
+    const curStep = firstOpen ? firstOpen.module : null;
+    const r = PROGRESS.lastTopic(cat);
+    const resume = r && r.topic.subject === subj ? r : null;
+    const target = resume ? resume.topic : (firstOpen || all[0]);
+    const count = k => all.reduce((a, t) => a + ((t.counts && t.counts[k]) || 0), 0);
+    const p = PROGRESS.stats(all);
+    const pct = p.total ? Math.round(p.done / p.total * 100) : 0;
+    const status = t => {
+      if (PROGRESS.isDone(t)) return '<span class="lp-st done">Completed</span>';
+      const q = PROGRESS.quiz(t);
+      if (q) return `<span class="lp-st prog">Quiz best ${q.best}/${q.total}</span>`;
+      return '<span class="lp-st">Start</span>';
+    };
+    const topicRow = t => {
+      const c = t.counts || {};
+      const bits = [c.lessons && `${c.lessons} lessons`, c.problems && `${c.problems} problems`, c.quiz && `${c.quiz} quiz`, c.assign && `${c.assign} assignments`, t.minutes && `${t.minutes} min`].filter(Boolean).join(' · ');
+      return `<li><a class="lp-topic${PROGRESS.isDone(t) ? ' is-done' : ''}${t.soon ? ' is-soon' : ''}" href="${LH.topicUrl(t)}" data-t="${esc(t.id)}">
+        <span class="lp-tn">${esc(t.emoji || '')}</span><span class="lp-tb"><b>${esc(t.title)}</b><span class="lp-ts2">${esc(t.summary || '')}</span>${bits ? `<span class="lp-tc">${bits}</span>` : ''}</span>${t.soon ? '<span class="lp-st">Soon</span>' : status(t)}</a></li>`;
+    };
+    const stepHtml = m => {
+      const ts = m.topics.filter(t => !t.soon), d = PROGRESS.stats(ts);
+      const done = d.total && d.done === d.total, isCur = m === curStep;
+      const open = openSteps.has(m.id) || isCur || m.id === focusModule;
+      return `<li class="lp-step${done ? ' done' : ''}${isCur ? ' current' : ''}${open ? ' open' : ''}" id="m-${esc(m.id)}" data-m="${esc(m.id)}">
+        <div class="lp-rail"><span class="lp-num">${done ? '✓' : m.step}</span></div>
+        <div class="lp-card"><button type="button" class="lp-head" aria-expanded="${open}">
+          <span class="lp-hb"><span class="lp-meta">Step ${m.step}${m.level ? ' · ' + esc(m.level) : ''} · ${ts.length} topic${ts.length === 1 ? '' : 's'} · ${hrs(mins(ts))}</span><span class="lp-title">${esc(m.title)}</span><span class="lp-blurb">${esc(m.blurb || '')}</span></span>
+          <span class="lp-sp">${d.done}/${d.total}<small>done</small></span><span class="chev">▾</span></button>
+          <ol class="lp-topics">${m.topics.map(topicRow).join('')}</ol></div></li>`;
+    };
+    main.innerHTML = `<div class="lpath">
+      <header class="lp-hero">
+        <div class="lp-kicker">Learning path</div>
+        <h1>${esc(subj.title)}</h1>
+        <p class="lede">${esc(subj.intro || subj.blurb || '')}</p>
+        <div class="lp-stats"><span><b>${steps.length}</b> steps</span><span><b>${all.length}</b> topics</span><span><b>${count('problems')}</b> worked problems</span><span><b>${count('quiz')}</b> quiz questions</span><span><b>${count('assign')}</b> assignments</span><span><b>${hrs(mins(all))}</b></span></div>
+        <div class="lp-prog"><div class="meter"><i style="width:${pct}%"></i></div><span>${p.done ? `${p.done} of ${p.total} topics complete` : 'Not started yet. Follow the steps in order, each one builds on the last.'}</span></div>
+        ${target ? `<a class="ibtn primary lp-go" href="${LH.topicUrl(target)}${resume && resume.hash ? '#' + esc(resume.hash) : ''}" data-t="${esc(target.id)}" data-h="${esc(resume ? resume.hash : '')}">${resume ? 'Continue: ' + esc(target.title) : 'Start step 1: ' + esc(target.title)}</a>` : ''}
+      </header>
+      <ol class="lp-steps">${steps.map(stepHtml).join('')}</ol>
+      ${extra.map(m => `<div class="lp-extra"><h3>${esc(m.title)}</h3><p class="lede">${esc(m.blurb || '')}</p><ol class="lp-topics">${m.topics.map(topicRow).join('')}</ol></div>`).join('')}
+    </div>`;
+    main.querySelectorAll('.lp-head').forEach(b => b.addEventListener('click', () => {
+      const li = b.closest('.lp-step'), on = !li.classList.contains('open');
+      li.classList.toggle('open', on); b.setAttribute('aria-expanded', on);
+      if (on) openSteps.add(li.dataset.m); else openSteps.delete(li.dataset.m);
+      try { localStorage.setItem('lh-open-' + subj.id, JSON.stringify([...openSteps])); } catch (e) { /* storage unavailable */ }
+    }));
+    main.querySelectorAll('a[data-t]').forEach(a => a.addEventListener('click', e => {
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+      e.preventDefault();
+      const t = subj.topics.find(x => x.id === a.dataset.t), h = a.dataset.h || '';
+      history.pushState(null, '', LH.topicUrl(t) + (h ? '#' + h : ''));
+      show(t, h);
+    }));
+    if (focusModule) {
+      const el = document.getElementById('m-' + focusModule);
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: FUN.reduce ? 'auto' : 'smooth', block: 'start' }), 60);
+    }
+  }
+
   function modDone(m) {
     const p = PROGRESS.stats(m.topics);
     return p.done ? ` · ${p.done} complete` : '';
@@ -149,10 +223,13 @@
     const i = live.indexOf(t);
     const prev = live[i - 1], next = live[i + 1];
     const src = t.page + (hash ? '#' + hash : '');
+    const inStep = t.module.topics.filter(x => !x.soon);
+    const where = pathMode ? (t.module.step ? `Step ${t.module.step}: ${t.module.title} · Topic ${inStep.indexOf(t) + 1} of ${inStep.length}` : t.module.title) : '';
     main.innerHTML = `<div class="toolbar">
-        <div class="tt"><span class="em">${esc(t.emoji)}</span><div style="min-width:0"><h1>${esc(t.title)}</h1><div class="sum">${esc(t.summary || '')}</div></div></div>
+        ${pathMode ? `<a class="ibtn pathbtn" href="${LH.subjectUrl(subj)}" data-path title="Back to the learning path">← <span class="lbl">Learning path</span></a>` : ''}
+        <div class="tt">${pathMode ? '' : `<span class="em">${esc(t.emoji)}</span>`}<div style="min-width:0"><h1>${esc(t.title)}</h1><div class="sum">${esc(pathMode ? where : t.summary || '')}</div></div></div>
         <button class="ibtn donebtn" id="doneBtn" aria-pressed="false"></button>
-        <button class="ibtn focusbtn" id="focusBtn" title="Hide or show the contents list">${layout.classList.contains('focus') ? '📚 <span class="lbl">Show list</span>' : '🧘 <span class="lbl">Focus</span>'}</button>
+        ${pathMode ? '' : `<button class="ibtn focusbtn" id="focusBtn" title="Hide or show the contents list">${layout.classList.contains('focus') ? '📚 <span class="lbl">Show list</span>' : '🧘 <span class="lbl">Focus</span>'}</button>`}
         ${prev ? `<a class="ibtn" href="${LH.topicUrl(prev)}" data-t="${esc(prev.id)}" title="${esc(prev.title)}">← <span class="lbl">Prev</span></a>` : ''}
         ${next ? `<a class="ibtn" href="${LH.topicUrl(next)}" data-t="${esc(next.id)}" title="${esc(next.title)}"><span class="lbl">Next</span> →</a>` : ''}
         <a class="ibtn" id="fullBtn" href="${esc(src)}" target="_blank" rel="noopener" title="Open this page on its own">↗ <span class="lbl">Full page</span></a>
@@ -165,7 +242,7 @@
       doneBtn.classList.toggle('on', on);
       doneBtn.setAttribute('aria-pressed', on);
       doneBtn.title = on ? 'Click to mark this topic as not complete' : 'Mark this topic as complete';
-      doneBtn.innerHTML = on ? '✅ <span class="lbl">Completed</span>' : '☑️ <span class="lbl">Mark complete</span>';
+      doneBtn.innerHTML = pathMode ? (on ? '✓ <span class="lbl">Completed</span>' : '<span class="lbl">Mark complete</span>') : on ? '✅ <span class="lbl">Completed</span>' : '☑️ <span class="lbl">Mark complete</span>';
     };
     paintDone();
     doneBtn.onclick = e => {
@@ -181,7 +258,14 @@
       PROGRESS.watchFrame(fr, t);
       frameMsg({ lh: 'theme', value: FUN.currentTheme() });
     });
-    document.getElementById('focusBtn').onclick = () => {
+    const pb = main.querySelector('[data-path]');
+    if (pb) pb.onclick = e => {
+      if (e.ctrlKey || e.metaKey) return;
+      e.preventDefault();
+      history.pushState(null, '', LH.moduleUrl(t.module));
+      show(null, '', t.module.id);
+    };
+    if (!pathMode) document.getElementById('focusBtn').onclick = () => {
       layout.classList.toggle('focus');
       document.getElementById('focusBtn').innerHTML = layout.classList.contains('focus') ? '📚 <span class="lbl">Show list</span>' : '🧘 <span class="lbl">Focus</span>';
     };
@@ -200,10 +284,10 @@
     }
   }
 
-  function show(t, hash) {
+  function show(t, hash, focusModule) {
     cur = t;
     side.querySelectorAll('.titem').forEach(a => a.classList.toggle('on', !!t && a.dataset.t === t.id));
-    if (!t) { overview(); return; }
+    if (!t) { overview(focusModule); return; }
     document.title = t.title + ' · ' + subj.title + ' · ' + site.name;
     if (t.soon) { soonPage(t); return; }
     crumbs(t, hashLabel(t, hash));
