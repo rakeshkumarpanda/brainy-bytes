@@ -1866,4 +1866,184 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 13: segmentation architectures */
+  const parseGrid = (s, fb) => {
+    const rows = String(s).split(/[;\n]/).map(r => r.trim().split(/[\s,]+/).filter(Boolean).map(Number)).filter(r => r.length);
+    if (!rows.length || rows.some(r => r.length !== rows[0].length || r.some(v => !isFinite(v)))) return fb;
+    return rows;
+  };
+  const gridDraw = (g, z, m, X, Y, cell, o = {}) => {
+    const flat = m.flat(), lo = Math.min(...flat), hi = Math.max(...flat);
+    m.forEach((row, r) => row.forEach((v, c) => {
+      const t = hi > lo ? (v - lo) / (hi - lo) : 0.5;
+      D.rect(g, X + c * cell, Y + r * cell, cell, cell, { fill: o.fill ? o.fill(v, r, c) : `rgba(18,110,130,${0.12 + 0.75 * t})`, stroke: z.col.line, w: 1 });
+      D.text(g, o.fmt ? o.fmt(v) : String(+v.toFixed(1)), X + (c + 0.5) * cell, Y + (r + 0.5) * cell + 4, { a: 'center', s: o.s || 11, mono: true, b: true, c: z.col.ink });
+    }));
+  };
+
+  def('upsample', {
+    title: 'Making a map bigger: copy or blend',
+    sub: 'A 2 × 2 score map is enlarged. Nearest neighbour copies each value into a block. Bilinear blends the neighbours. Neither one adds information the small map did not have.',
+    W: 560, H: 270,
+    params: [
+      { k: 'v', label: 'Small map values (row by row)', type: 'text', v: '0 100; 100 200' },
+      { k: 'm', label: 'Method', type: 'select', v: 'bil', opts: [['near', 'Nearest neighbour (copy)'], ['bil', 'Bilinear, half pixel centres'], ['ac', 'Bilinear, align corners']] },
+      { k: 'F', label: 'Factor', type: 'select', num: true, v: 2, opts: [[2, '×2'], [3, '×3'], [4, '×4']] }
+    ],
+    tips: [
+      { t: 'The lecture case. Bilinear gives rows 0, 25, 75, 100 then 25, 50, 100, 125 and so on: a smooth ramp.', set: { v: '0 100; 100 200', m: 'bil', F: 2 } },
+      { t: 'Switch to nearest neighbour. Each value is copied into a 2 × 2 block. Simple and exact, but blocky edges.', set: { v: '0 100; 100 200', m: 'near', F: 2 } },
+      { t: 'Align corners keeps the corner values on the corners and spreads the rest evenly: 0, 33, 67, 100. Frameworks differ, so check which one yours uses.', set: { v: '0 100; 100 200', m: 'ac', F: 2 } },
+      { t: 'Use the class IDs 1 3; 1 3 (road and car). Bilinear invents 1.5 and 2.5, values that are not classes. Masks must be resized with nearest neighbour.', set: { v: '1 3; 1 3', m: 'bil', F: 2 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const a = parseGrid(p.v, [[0, 100], [100, 200]]);
+      const n = a.length, mcol = a[0].length, F = p.F, N = n * F, M = mcol * F;
+      const at = (y, x) => {
+        const x0 = Math.floor(x), y0 = Math.floor(y), x1 = Math.min(x0 + 1, mcol - 1), y1 = Math.min(y0 + 1, n - 1), u = x - x0, v = y - y0;
+        return (1 - u) * (1 - v) * a[y0][x0] + u * (1 - v) * a[y0][x1] + (1 - u) * v * a[y1][x0] + u * v * a[y1][x1];
+      };
+      const src = (i, Nn, nn) => p.m === 'ac' ? (Nn > 1 ? i * (nn - 1) / (Nn - 1) : 0) : clamp((i + 0.5) / F - 0.5, 0, nn - 1);
+      const out = Array.from({ length: N }, (_, r) => Array.from({ length: M }, (_, c) => p.m === 'near' ? a[Math.floor(r / F)][Math.floor(c / F)] : at(src(r, N, n), src(c, M, mcol))));
+      const cs = Math.min(46, 120 / Math.max(n, mcol)), co = Math.min(40, 230 / Math.max(N, M));
+      D.text(g, `small map ${n} × ${mcol}`, 14, 22, { s: 12, b: true, c: z.col.ink });
+      gridDraw(g, z, a, 14, 34, cs, { s: 12 });
+      D.arrow(g, 30 + mcol * cs, 34 + n * cs / 2, 150 + 20, 34 + n * cs / 2, z.col.ink2, 2);
+      D.text(g, `enlarged ${N} × ${M}`, 200, 22, { s: 12, b: true, c: z.col.ink });
+      gridDraw(g, z, out, 200, 34, co, { s: co < 30 ? 9 : 11, fmt: v => String(Math.round(v * 10) / 10) });
+      const ints = new Set(a.flat()), fake = p.m !== 'near' && out.flat().some(v => !ints.has(v) && Math.abs(v - Math.round(v)) > 1e-9);
+      return `<b>${p.m === 'near' ? 'Copying keeps the original values but makes blocky boundaries.' : 'Blending makes a smooth ramp but nothing knows where a real boundary lies between two cells.'}</b>${fake && [...ints].every(Number.isInteger) && [...ints].length <= 6 ? ' If these numbers were class IDs, the in-between values would be classes that are not there.' : ''} Images and score maps may be resized bilinearly. Label masks must use nearest neighbour.`;
+    }
+  });
+
+  const TK = { corner: [[1, 0, 1], [0, 1, 0], [1, 0, 1]], ones3: [[1, 1, 1], [1, 1, 1], [1, 1, 1]], ones4: [[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]], ones2: [[1, 1], [1, 1]] };
+  def('tconv', {
+    title: 'Transposed convolution: learned upsampling, step by step',
+    sub: 'Each input value multiplies the whole kernel and the result is added into the output at a position that moves by the stride. Where placements overlap, values add up.',
+    W: 560, H: 290,
+    params: [
+      { k: 'x', label: 'Input map', type: 'text', v: '1 2; 3 4' },
+      { k: 'k', label: 'Kernel', type: 'select', v: 'corner', opts: [['corner', '3 × 3 corners and centre (lecture)'], ['ones3', '3 × 3 all ones'], ['ones4', '4 × 4 all ones'], ['ones2', '2 × 2 all ones']] },
+      { k: 's', label: 'Stride', type: 'select', num: true, v: 2, opts: [[1, '1'], [2, '2'], [3, '3']] },
+      { k: 'cnt', label: 'Show how many placements cover each cell', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'Press Play. The lecture case gives a 5 × 5 output. The centre receives 1 + 2 + 3 + 4 = 10 because all four corner weights land there.', set: { x: '1 2; 3 4', k: 'corner', s: 2, cnt: false }, play: true },
+      { t: 'Use the 3 × 3 ones kernel and tick the count. Cells are covered 1, 2 or 4 times in a regular pattern. That uneven overlap causes checkerboard artefacts.', set: { k: 'ones3', s: 2, cnt: true } },
+      { t: 'Use the 4 × 4 kernel with stride 2. The kernel size is divisible by the stride, so the inner cells are covered evenly. This is the usual fix.', set: { k: 'ones4', s: 2, cnt: true } },
+      { t: 'The 2 × 2 kernel with stride 2 never overlaps: each value fills its own 2 × 2 block, exactly like nearest neighbour with learnable weights.', set: { k: 'ones2', s: 2, cnt: false } }
+    ],
+    steps: z => { const a = parseGrid(z.p.x, [[1, 2], [3, 4]]); return Math.min(9, a.length * a[0].length); },
+    speed: () => 900,
+    draw(z) {
+      const { g, p, step } = z;
+      let a = parseGrid(p.x, [[1, 2], [3, 4]]); a = a.slice(0, 3).map(r => r.slice(0, 3));
+      const K = TK[p.k], k = K.length, s = p.s, n = a.length, mm = a[0].length;
+      const H = (n - 1) * s + k, W = (mm - 1) * s + k;
+      const out = Array.from({ length: H }, () => Array(W).fill(0)), cov = Array.from({ length: H }, () => Array(W).fill(0));
+      let cur = null;
+      for (let q = 0; q < Math.min(step, n * mm); q++) {
+        const i = Math.floor(q / mm), j = q % mm; cur = [i, j];
+        for (let u = 0; u < k; u++) for (let v = 0; v < k; v++) { out[i * s + u][j * s + v] += a[i][j] * K[u][v]; cov[i * s + u][j * s + v]++; }
+      }
+      D.text(g, 'input', 14, 22, { s: 12, b: true, c: z.col.ink });
+      gridDraw(g, z, a, 14, 32, 34, { fill: (v, r, c) => cur && cur[0] === r && cur[1] === c ? z.col.orange : z.col.bg });
+      D.text(g, `kernel ${k} × ${k}`, 14, 160, { s: 12, b: true, c: z.col.ink });
+      gridDraw(g, z, K, 14, 170, 20, { fill: v => v ? 'rgba(18,110,130,0.35)' : z.col.bg, s: 10 });
+      const cell = Math.min(36, 250 / Math.max(H, W)), X = 190;
+      D.text(g, `output ${H} × ${W} = (${n} − 1) × ${s} + ${k}`, X, 22, { s: 12, b: true, c: z.col.ink });
+      const show = p.cnt ? cov : out;
+      gridDraw(g, z, show, X, 32, cell, { s: cell < 26 ? 9 : 11, fill: (v, r, c) => cur && r >= cur[0] * s && r < cur[0] * s + k && c >= cur[1] * s && c < cur[1] * s + k ? 'rgba(240,140,40,0.35)' : `rgba(18,110,130,${0.08 + 0.12 * (p.cnt ? cov[r][c] : (out[r][c] ? 2 : 0))})` });
+      return `<span class="big">H<sub>out</sub> = (H<sub>in</sub> − 1) · s − 2p + k</span><br>${step === 0 ? 'Press Play or Step to place the first input value.' : `Placed ${Math.min(step, n * mm)} of ${n * mm} values.`} The kernel weights are learned, so the network learns how to spread each coarse value. Transposed convolution is the transpose of the matrix of an ordinary convolution, which is how it got its name.`;
+    }
+  });
+
+  def('dilation', {
+    title: 'Dilated convolution and ASPP',
+    sub: 'A 3 × 3 kernel whose taps are spread r cells apart. It still has 9 weights, but it reaches further. Enter several rates to see ASPP, which runs them side by side.',
+    W: 560, H: 300,
+    params: [
+      { k: 'r', label: 'Dilation rates (one for a single kernel, several for ASPP)', type: 'text', v: '2' },
+      { k: 'os', label: 'Output stride of the feature map', type: 'select', num: true, v: 1, opts: [[1, '1 (full resolution)'], [8, '8'], [16, '16 (DeepLabv3)']] }
+    ],
+    tips: [
+      { t: 'Rate 1 is an ordinary 3 × 3 kernel. Rate 2 covers 5 × 5 with the same 9 weights.', set: { r: '2', os: 1 } },
+      { t: 'Rate 4 covers 9 × 9. The skipped pixels are simply not multiplied. Atrous means with holes in French.', set: { r: '4', os: 1 } },
+      { t: 'ASPP with rates 1, 3 and 6 on one map: three views of the same pixel, from local to wide, then concatenated.', set: { r: '1 3 6', os: 1 } },
+      { t: 'DeepLabv3 uses rates 6, 12 and 18 at output stride 16. Each feature cell is 16 pixels, so the branches see about 208, 400 and 592 input pixels across.', set: { r: '6 12 18', os: 16 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let rs = String(p.r).trim().split(/[\s,]+/).map(Number).filter(v => Number.isInteger(v) && v >= 1 && v <= 24).slice(0, 4);
+      if (!rs.length) rs = [1];
+      const span = 2 * Math.max(...rs) + 1, G = Math.max(span + 2, 9), cell = Math.min(24, 260 / G), X = 14, Y = 26, c0 = Math.floor(G / 2);
+      for (let r = 0; r < G; r++) for (let c = 0; c < G; c++) D.rect(g, X + c * cell, Y + r * cell, cell, cell, { fill: z.col.bg, stroke: z.col.line, w: 0.6 });
+      const cols = [z.col.cv, z.col.orange, z.col.purple, z.col.green];
+      rs.slice().reverse().forEach((rate, idx) => {
+        const i = rs.length - 1 - idx, col = cols[i % 4], e = 2 * rate + 1;
+        D.rect(g, X + (c0 - rate) * cell, Y + (c0 - rate) * cell, e * cell, e * cell, { stroke: col, w: 1.5, dash: [4, 3] });
+        for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) D.rect(g, X + (c0 + a * rate) * cell + 2, Y + (c0 + b * rate) * cell + 2, cell - 4, cell - 4, { fill: col });
+      });
+      const tx = 310;
+      D.text(g, 'rate   covers     input pixels', tx, 34, { s: 12, mono: true, b: true, c: z.col.ink });
+      rs.forEach((rate, i) => { const e = 2 * rate + 1; D.text(g, `${String(rate).padStart(3)}    ${(e + ' × ' + e).padEnd(9)}  ${e * p.os}`, tx, 58 + i * 22, { s: 12, mono: true, c: cols[i % 4], b: true }); });
+      D.text(g, 'weights per kernel: 9 for every rate', tx, 70 + rs.length * 22, { s: 12, c: z.col.ink2 });
+      D.text(g, 'parameters of a 256 → 256 layer:', tx, 92 + rs.length * 22, { s: 12, c: z.col.ink2 });
+      D.text(g, '3 × 3 × 256 × 256 = 589,824', tx, 112 + rs.length * 22, { s: 12, mono: true, c: z.col.ink });
+      if (rs.length > 1) D.text(g, 'ASPP: concatenate the branches,', tx, 144 + rs.length * 22, { s: 12, b: true, c: z.col.ink }), D.text(g, 'then mix them with a 1 × 1 conv', tx, 162 + rs.length * 22, { s: 12, b: true, c: z.col.ink });
+      return `<span class="big">k<sub>eff</sub> = k + (k − 1)(r − 1) = 2r + 1 for k = 3, &nbsp; padding r keeps the size</span><br>Dilation enlarges the view without pooling, so the map keeps its resolution and no parameters are added. ${rs.length > 1 ? 'Parallel rates give several zoom levels at once, which handles a tiny pedestrian and a large building in the same image.' : 'Stacking one large rate repeatedly leaves holes (gridding), which is why DeepLab runs several rates in parallel.'}`;
+    }
+  });
+
+  def('unet', {
+    title: 'U-Net: sizes, skips and parameters',
+    sub: 'The contracting path halves the size and doubles the channels. The expanding path does the reverse, and each level receives a copy of the encoder map of the same size.',
+    W: 560, H: 300,
+    params: [
+      { k: 'in', label: 'Input size', type: 'select', num: true, v: 572, opts: [[572, '572 (original paper)'], [256, '256 (lecture slide)'], [512, '512'], [128, '128']] },
+      { k: 'pad', label: '3 × 3 convolutions', type: 'select', v: 'valid', opts: [['valid', 'Valid, no padding (2015 paper)'], ['same', 'Same padding (modern code)']] },
+      { k: 'b', label: 'Base channels', type: 'select', num: true, v: 64, opts: [[16, '16'], [32, '32'], [64, '64']] },
+      { k: 'd', label: 'Number of poolings', type: 'range', min: 2, max: 5, step: 1, v: 4 },
+      { k: 'fuse', label: 'Skip fusion', type: 'select', v: 'cat', opts: [['cat', 'Concatenate (U-Net)'], ['add', 'Add (FPN style)']] }
+    ],
+    tips: [
+      { t: 'The original U-Net: 572 in, 388 out, because every unpadded 3 × 3 conv trims 2 pixels and skips must be cropped. About 31.0 million parameters.', set: { in: 572, pad: 'valid', b: 64, d: 4, fuse: 'cat' } },
+      { t: 'The lecture slide: 256 with same padding goes 256, 128, 64, 32, 16 and back. Output equals input.', set: { in: 256, pad: 'same', b: 64, d: 4, fuse: 'cat' } },
+      { t: 'Halve the base channels to 32. Parameters fall about 4 times, because each conv cost grows with input channels times output channels.', set: { b: 32 } },
+      { t: 'Switch the fusion to add. The first decoder conv at each level takes half the channels, so the decoder gets cheaper.', set: { fuse: 'add' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const cp = (i, o, k = 3) => k * k * i * o + o, t = p.pad === 'valid' ? 4 : 0;
+      let s = p.in, ok = true; const enc = [], skips = [];
+      let ch = p.b, cin = 1, params = 0;
+      for (let l = 0; l < p.d; l++) { s -= t; skips.push(s); enc.push([s, ch]); params += cp(cin, ch) + cp(ch, ch); if (s % 2) ok = false; s = Math.floor(s / 2); cin = ch; ch *= 2; }
+      s -= t; const bott = [s, ch]; params += cp(cin, ch) + cp(ch, ch);
+      const dec = [];
+      for (let l = p.d - 1; l >= 0; l--) { const o = ch / 2; params += 4 * ch * o + o; s *= 2; const crop = s; params += cp(p.fuse === 'cat' ? 2 * o : o, o) + cp(o, o); s -= t; dec.unshift([s, o, crop]); ch = o; }
+      params += p.b * 2 + 2;
+      if (s <= 0 || bott[0] <= 0) ok = false;
+      const rows = p.d + 1, dy = Math.min(46, 230 / rows), bw = 120, bh = 24;
+      const Y = l => 22 + l * dy;
+      enc.forEach(([sz, c], l) => {
+        D.rect(g, 20 + l * 12, Y(l), bw, bh, { fill: 'rgba(18,110,130,0.18)', stroke: z.col.cv });
+        D.text(g, `${sz}² × ${c}`, 20 + l * 12 + bw / 2, Y(l) + 16, { a: 'center', s: 11, mono: true, b: true, c: z.col.ink });
+        const [dsz, dc, crop] = dec[l];
+        D.rect(g, 420 - l * 12, Y(l), bw, bh, { fill: 'rgba(240,140,40,0.18)', stroke: z.col.orange });
+        D.text(g, `${dsz}² × ${dc}`, 420 - l * 12 + bw / 2, Y(l) + 16, { a: 'center', s: 11, mono: true, b: true, c: z.col.ink });
+        D.arrow(g, 20 + l * 12 + bw + 4, Y(l) + bh / 2, 420 - l * 12 - 4, Y(l) + bh / 2, z.col.red, 1.5, 6);
+        const lab = p.pad === 'valid' && crop !== skips[l] ? `copy, crop ${skips[l]} → ${crop}` : 'copy';
+        D.text(g, lab, 280, Y(l) + bh / 2 - 4, { a: 'center', s: 10.5, c: z.col.red, b: true });
+      });
+      const bl = p.d;
+      D.rect(g, 220, Y(bl), bw, bh, { fill: 'rgba(130,90,220,0.2)', stroke: z.col.purple });
+      D.text(g, `${bott[0]}² × ${bott[1]}`, 280, Y(bl) + 16, { a: 'center', s: 11, mono: true, b: true, c: z.col.ink });
+      D.text(g, 'bottleneck', 280, Y(bl) - 4, { a: 'center', s: 10.5, c: z.col.ink2, b: true });
+      D.text(g, `in ${p.in}² × 1`, 20, 14, { s: 11, b: true, c: z.col.ink2 });
+      D.text(g, `out ${dec[0][0]}² × 2 classes`, 540, 14, { a: 'right', s: 11, b: true, c: z.col.ink2 });
+      return ok ? `<span class="big">parameters ≈ ${params.toLocaleString('en-US')} (${(params / 1e6).toFixed(1)} M), &nbsp; output ${dec[0][0]} × ${dec[0][0]}</span><br>A 3 × 3 conv from C<sub>in</sub> to C<sub>out</sub> has 9 C<sub>in</sub> C<sub>out</sub> + C<sub>out</sub> parameters. The deepest block holds the largest share. Deep features say this is probably a car, the skip says exactly where its edge is.` : '<b>This size does not work: a map becomes odd before pooling or shrinks to nothing.</b> The original paper chose 572 so that every pooling step gets an even size.';
+    }
+  });
+
 })();

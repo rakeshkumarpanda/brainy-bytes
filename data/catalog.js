@@ -3902,6 +3902,23 @@ function cvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "seg-architectures", title: "Segmentation architectures", emoji: "6.2", page: "content/computer-vision/segmentation-architectures.html",
+        summary: "FCN, upsampling and transposed convolution, encoder-decoders and skip connections, U-Net, dilated convolution, ASPP and DeepLab.",
+        keywords: ["FCN", "U-Net", "DeepLab", "ASPP", "dilated convolution", "atrous", "transposed convolution", "upsampling", "skip connection", "encoder decoder", "bottleneck", "VAE"],
+        minutes: 60, counts: {"lessons": 6, "problems": 12, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "fcn", title: "FCN: turning a classifier into a segmenter", emoji: "", group: "Lesson", keywords: ["FCN", "fully convolutional network", "convolutionalisation", "fully connected as convolution", "FCN-32s", "FCN-16s", "FCN-8s", "coarse score map"] },
+        { id: "upsampling", title: "Three ways to make a map bigger", emoji: "", group: "Lesson", keywords: ["upsampling", "nearest neighbour", "bilinear", "align corners", "half pixel", "transposed convolution", "deconvolution", "checkerboard artefacts", "PixelShuffle", "resize convolution", "overfitting"] },
+        { id: "encdec", title: "Encoder, decoder and skip connections", emoji: "", group: "Lesson", keywords: ["encoder", "decoder", "bottleneck", "tensor shape", "autoencoder", "variational autoencoder", "VAE", "KL divergence", "reparameterisation", "skip connection", "concatenation", "addition", "neural architecture search"] },
+        { id: "unet", title: "U-Net", emoji: "", group: "Lesson", keywords: ["U-Net", "contracting path", "expanding path", "symmetric", "valid convolution", "572 to 388", "overlap tile", "crop", "parameters", "nnU-Net", "medical segmentation"] },
+        { id: "deeplab", title: "Dilated convolution, ASPP and DeepLab", emoji: "", group: "Lesson", keywords: ["dilated convolution", "atrous", "effective kernel", "gridding", "ASPP", "DeepLab", "DeepLabv3+", "output stride", "multi-scale context", "deformable convolution"] },
+        { id: "choose", title: "Choosing an architecture from its failures", emoji: "", group: "Lesson", keywords: ["architecture choice", "failure analysis", "boundary", "small objects", "context", "class weights", "pixel accuracy trap", "scenario", "FCN-32s rough masks", "tumour 2 percent"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
