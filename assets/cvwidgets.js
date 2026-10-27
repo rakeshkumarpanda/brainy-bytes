@@ -1725,4 +1725,145 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 12: what segmentation predicts */
+  def('pixelsm', {
+    title: 'One pixel, five classes: SoftMax then argmax',
+    sub: 'The network gives every pixel one raw score (logit) per class. SoftMax turns them into probabilities that add to 1, and the largest one names the pixel.',
+    W: 560, H: 250,
+    params: [
+      { k: 'z0', label: 'Road logit', type: 'range', min: -4, max: 4, step: 0.01, v: 0 },
+      { k: 'z1', label: 'Car logit', type: 'range', min: -4, max: 4, step: 0.01, v: -0.51 },
+      { k: 'z2', label: 'Person logit', type: 'range', min: -4, max: 4, step: 0.01, v: -0.91 },
+      { k: 'z3', label: 'Building logit', type: 'range', min: -4, max: 4, step: 0.01, v: 0.7 },
+      { k: 'z4', label: 'Sky logit', type: 'range', min: -4, max: 4, step: 0.01, v: 2.78 },
+      { k: 'sig', label: 'Use separate sigmoids instead', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'The lecture pixel. SoftMax gives 0.05, 0.03, 0.02, 0.10 and 0.80, so the pixel becomes Sky.', set: { z0: 0, z1: -0.51, z2: -0.91, z3: 0.7, z4: 2.78, sig: false } },
+      { t: 'Raise Building to 2.78 as well. Sky and Building tie at about 0.47 each. A boundary pixel often looks like this.', set: { z3: 2.78 } },
+      { t: 'Add 2 to every logit. The probabilities do not change at all, only the differences matter.', set: { z0: 2, z1: 1.49, z2: 1.09, z3: 2.7, z4: 4, sig: false } },
+      { t: 'Tick sigmoids. Each class now gets its own yes or no probability and they no longer add to 1. That suits multi-label pixels, not one label per pixel.', set: { sig: true } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const names = ['Road', 'Car', 'Person', 'Building', 'Sky'];
+      const zs = [p.z0, p.z1, p.z2, p.z3, p.z4];
+      const mx = Math.max(...zs), ex = zs.map(v => Math.exp(v - mx)), S = ex.reduce((a, b) => a + b, 0);
+      const pr = p.sig ? zs.map(v => 1 / (1 + Math.exp(-v))) : ex.map(e => e / S);
+      const win = zs.indexOf(mx);
+      const cols = [z.col.ink2, z.col.cv, z.col.orange, z.col.purple, z.col.green];
+      D.text(g, 'class', 14, 24, { s: 12, b: true, c: z.col.ink });
+      D.text(g, 'logit', 110, 24, { s: 12, b: true, c: z.col.ink });
+      D.text(g, p.sig ? 'sigmoid' : 'probability', 180, 24, { s: 12, b: true, c: z.col.ink });
+      names.forEach((n, i) => {
+        const y = 52 + i * 36;
+        D.text(g, n, 14, y + 4, { s: 13, b: i === win, c: i === win ? z.col.ink : z.col.ink2 });
+        D.text(g, zs[i].toFixed(2), 110, y + 4, { s: 12, mono: true, c: z.col.ink2 });
+        D.rect(g, 180, y - 10, 300, 18, { fill: z.col.bg, stroke: z.col.line, w: 1 });
+        D.rect(g, 180, y - 10, 300 * pr[i], 18, { fill: cols[i] });
+        D.text(g, pr[i].toFixed(3), 488, y + 4, { s: 12, mono: true, b: i === win, c: z.col.ink });
+      });
+      const sum = pr.reduce((a, b) => a + b, 0);
+      D.text(g, `sum = ${sum.toFixed(3)}`, 180, 238, { s: 12, mono: true, b: true, c: Math.abs(sum - 1) < 1e-6 ? z.col.green : z.col.red });
+      D.text(g, `argmax: ${names[win].toUpperCase()}`, 488, 238, { a: 'right', s: 13, b: true, c: cols[win] });
+      return `<span class="big">p<sub>c</sub> = e<sup>z<sub>c</sub></sup> ÷ Σ<sub>k</sub> e<sup>z<sub>k</sub></sup>, &nbsp; label = argmax<sub>c</sub> p<sub>c</sub> = argmax<sub>c</sub> z<sub>c</sub></span><br>The exponential keeps the order of the logits, so the winning class is the same with or without SoftMax. At test time you can take the argmax of the logits directly. SoftMax is needed for the loss and for confidence values.`;
+    }
+  });
+
+  /* a 16 x 16 mask: a 6 x 6 blob, a thin line and a 2 x 2 object */
+  const segMask = off => {
+    const m = Array.from({ length: 16 }, () => Array(16).fill(0));
+    for (let r = 2; r <= 7; r++) for (let c = 2 + off; c <= 7 + off; c++) m[r][c] = 1;
+    for (let r = 11; r <= 12; r++) for (let c = 1; c <= 14; c++) m[r][c] = 2;
+    for (let r = 1; r <= 2; r++) for (let c = 13; c <= 14; c++) m[r][c] = 3;
+    return m;
+  };
+  def('downup', {
+    title: 'Shrink a mask, grow it back, measure the damage',
+    sub: 'A 16 × 16 mask with a blob (36 pixels), a line 2 pixels thick (28 pixels) and a small 2 × 2 object. Each block of the coarse map takes a class only if that class fills more than half of it.',
+    W: 560, H: 280,
+    params: [
+      { k: 'fac', label: 'Downsampling factor', type: 'select', num: true, v: 4, opts: [[1, '×1 (no change)'], [2, '×2'], [4, '×4'], [8, '×8'], [16, '×16']] },
+      { k: 'off', label: 'Shift the blob right (pixels)', type: 'range', min: 0, max: 4, step: 1, v: 0 },
+      { k: 'rule', label: 'Block rule', type: 'select', v: 'maj', opts: [['maj', 'Strict majority (more than half)'], ['any', 'Any pixel present (like max pooling)']] }
+    ],
+    tips: [
+      { t: 'The lecture case, ×4. Only one block of the blob survives (IoU 0.444), and the line and the small object vanish. All foreground together scores 0.235.', set: { fac: 4, off: 0, rule: 'maj' } },
+      { t: 'Try ×2. The blob lines up with the blocks and comes back perfectly, but the 2 pixel structures still never win a block.', set: { fac: 2, off: 0, rule: 'maj' } },
+      { t: 'Try ×8. The blob IoU rises to 0.562, higher than at ×4. Damage depends on how a shape sits on the grid, not only on the factor.', set: { fac: 8, off: 0, rule: 'maj' } },
+      { t: 'Stay at ×8 and shift the blob 2 pixels right. It now straddles two blocks, wins neither, and disappears completely (IoU 0).', set: { fac: 8, off: 2, rule: 'maj' } },
+      { t: 'Switch the rule to any pixel present. Nothing is lost, but every shape grows into fat blocks. Neither rule can recover the true outline.', set: { fac: 4, off: 0, rule: 'any' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const m = segMask(p.off), F = p.fac, n = 16 / F;
+      const coarse = Array.from({ length: n }, (_, R) => Array.from({ length: n }, (_, C) => {
+        const cnt = [0, 0, 0, 0];
+        for (let r = R * F; r < (R + 1) * F; r++) for (let c = C * F; c < (C + 1) * F; c++) cnt[m[r][c]]++;
+        if (p.rule === 'any') { let best = 0; for (let k = 1; k < 4; k++) if (cnt[k] > (best ? cnt[best] : 0)) best = k; return best; }
+        for (let k = 1; k < 4; k++) if (cnt[k] * 2 > F * F) return k;
+        return 0;
+      }));
+      const up = m.map((row, r) => row.map((_, c) => coarse[Math.floor(r / F)][Math.floor(c / F)]));
+      const pal = [z.col.bg, z.col.cv, z.col.orange, z.col.purple];
+      const grid = (mm, X, cell, lines) => {
+        mm.forEach((row, r) => row.forEach((v, c) => D.rect(g, X + c * cell, 30 + r * cell, cell, cell, { fill: pal[v] })));
+        D.rect(g, X, 30, mm.length * cell, mm.length * cell, { stroke: z.col.line, w: 1 });
+        if (lines) for (let k = 1; k < lines; k++) { const t = k * mm.length * cell / lines; D.line(g, X + t, 30, X + t, 30 + mm.length * cell, z.col.ink2, 0.6); D.line(g, X, 30 + t, X + mm.length * cell, 30 + t, z.col.ink2, 0.6); }
+      };
+      grid(m, 10, 10, n); grid(coarse, 196, 160 / n, 0); grid(up, 382, 10, 0);
+      D.text(g, 'original 16 × 16', 10, 20, { s: 12, b: true, c: z.col.ink });
+      D.text(g, `coarse ${n} × ${n}`, 196, 20, { s: 12, b: true, c: z.col.ink });
+      D.text(g, 'upsampled back', 382, 20, { s: 12, b: true, c: z.col.ink });
+      const iou = k => { let i = 0, u = 0; m.forEach((row, r) => row.forEach((v, c) => { const a = k ? v === k : v > 0, b = k ? up[r][c] === k : up[r][c] > 0; if (a && b) i++; if (a || b) u++; })); return u ? i / u : 1; };
+      const res = [['blob', 1], ['line', 2], ['small object', 3], ['all foreground', 0]].map(([nm, k]) => `${nm} ${iou(k).toFixed(3)}`);
+      D.text(g, 'IoU with the original:', 10, 222, { s: 12, b: true, c: z.col.ink });
+      D.text(g, res.slice(0, 2).join('     '), 10, 244, { s: 12, mono: true, c: z.col.ink2 });
+      D.text(g, res.slice(2).join('     '), 10, 264, { s: 12, mono: true, c: z.col.ink2 });
+      return `<b>No upsampling method can bring back what the coarse map never held.</b> A structure narrower than about two cells of the coarse grid (here ${2 * F} pixels) cannot survive. This is the reason segmentation networks pass early, high resolution features to the decoder.`;
+    }
+  });
+
+  def('rfstack', {
+    title: 'Which input pixels can one neuron see?',
+    sub: 'A stack of four 3 × 3 layers drawn in one dimension. The top cell is one output neuron. Each row below shows the cells that feed it, down to the input. Edit the stride and dilation of each layer.',
+    W: 560, H: 270,
+    params: [
+      { k: 'L', label: 'Layers as stride,dilation (first layer first)', type: 'text', v: '1,1 2,1 1,2 1,4' }
+    ],
+    tips: [
+      { t: 'The practice problem: (1,1) (2,1) (1,2) (1,4). The receptive field grows 3, 5, 13, 29.', set: { L: '1,1 2,1 1,2 1,4' } },
+      { t: 'Four plain layers: 1,1 1,1 1,1 1,1. Each adds 2, so the field is only 9.', set: { L: '1,1 1,1 1,1 1,1' } },
+      { t: 'Stride 2 on layers 2 and 4: the field reaches 13, but the map is now 4 times smaller in each direction.', set: { L: '1,1 2,1 1,1 2,1' } },
+      { t: 'Dilations 1, 2, 4, 8 with no stride: a field of 31 and the map keeps its full size.', set: { L: '1,1 1,2 1,4 1,8' } },
+      { t: 'Gridding: four layers all with dilation 2. Only every second input pixel is ever used, so the gaps never influence the output.', set: { L: '1,2 1,2 1,2 1,2' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let layers = String(p.L).trim().split(/\s+/).map(t => t.split(',').map(Number)).filter(a => a.length === 2 && a.every(v => Number.isInteger(v) && v >= 1 && v <= 8)).slice(0, 5);
+      if (!layers.length) layers = [[1, 1]];
+      let sets = [new Set([0])];
+      for (let l = layers.length - 1; l >= 0; l--) {
+        const [s, d] = layers[l], nxt = new Set();
+        sets[0].forEach(q => { for (let t = -1; t <= 1; t++) nxt.add(q * s + t * d); });
+        sets.unshift(nxt);
+      }
+      const inp = [...sets[0]], lo = Math.min(...inp), hi = Math.max(...inp), span = hi - lo + 1;
+      const cell = Math.min(14, 420 / span), X0 = 340 - span * cell / 2 - lo * cell;
+      const rows = sets.length, dy = Math.min(40, 190 / (rows - 1));
+      const jumps = [1]; layers.forEach(([s]) => jumps.push(jumps[jumps.length - 1] * s));
+      sets.forEach((st, i) => {
+        const y = 230 - i * dy, j = jumps[i];
+        [...st].forEach(q => D.rect(g, X0 + q * j * cell, y, Math.max(2, cell - 1), 12, { fill: i === 0 ? z.col.cv : i === rows - 1 ? z.col.red : z.col.orange }));
+        D.text(g, i === 0 ? `input: field ${span}` : i === rows - 1 ? 'output neuron' : `after layer ${i}`, 8, y + 10, { s: 11, b: true, c: z.col.ink2 });
+      });
+      let r = 1, j = 1; const seq = [1];
+      layers.forEach(([s, d]) => { r += 2 * d * j; j *= s; seq.push(r); });
+      const used = inp.length;
+      D.text(g, `receptive field after each layer: ${seq.join(', ')}`, 8, 22, { s: 12, b: true, c: z.col.ink });
+      D.text(g, `input pixels actually used: ${used} of ${span}${used < span ? ' (gaps: gridding)' : ''}. Map shrinks by ${j}× in each direction.`, 8, 42, { s: 12, c: used < span ? z.col.red : z.col.ink2 });
+      return `<span class="big">r<sub>l</sub> = r<sub>l−1</sub> + (k − 1) · d<sub>l</sub> · j<sub>l−1</sub>, &nbsp; j<sub>l</sub> = j<sub>l−1</sub> · s<sub>l</sub></span><br>j is the jump, the distance in input pixels between neighbouring cells of a layer. Stride grows the field by shrinking the map. Dilation grows it while keeping the map at full size, which is what segmentation wants.`;
+    }
+  });
+
 })();

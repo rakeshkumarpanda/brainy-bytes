@@ -3886,6 +3886,23 @@ function cvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cv-segmentation", title: "Understanding every pixel", emoji: "6", step: 6, level: "College and masters", blurb: "Semantic segmentation from the output tensor to modern architectures, losses, metrics and debugging.", topics: [
+      { id: "segmentation", title: "What segmentation predicts", emoji: "6.1", page: "content/computer-vision/segmentation-basics.html",
+        summary: "Pixel level classification, semantic, instance and panoptic masks, SoftMax per pixel, receptive field, the downsampling trade-off and dense prediction.",
+        keywords: ["semantic segmentation", "instance segmentation", "panoptic", "mask", "dense prediction", "SoftMax", "argmax", "receptive field", "equivariance", "downsampling", "depth estimation", "optical flow"],
+        minutes: 50, counts: {"lessons": 4, "problems": 12, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "tasks", title: "From one label to a label per pixel", emoji: "", group: "Lesson", keywords: ["semantic segmentation", "dense prediction", "mask", "bounding box", "instance segmentation", "panoptic segmentation", "things and stuff", "connected components", "panoptic quality", "annotation cost"] },
+        { id: "output", title: "What the network outputs", emoji: "", group: "Lesson", keywords: ["output tensor", "H x W x C", "SoftMax", "argmax", "logit", "sigmoid", "multi-label", "ground truth mask", "class ID", "one hot", "ignore label", "weak supervision"] },
+        { id: "where", title: "Why a classifier loses the WHERE", emoji: "", group: "Lesson", keywords: ["invariance", "equivariance", "global pooling", "receptive field", "jump", "stride", "downsampling", "thin structures", "Nyquist", "data processing inequality", "WHAT and WHERE"] },
+        { id: "dense", title: "The dense prediction family", emoji: "", group: "Lesson", keywords: ["dense prediction", "depth estimation", "optical flow", "surface normals", "keypoints", "heat maps", "stereo", "LiDAR", "monocular depth", "same body different head"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
