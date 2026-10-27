@@ -1385,4 +1385,168 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 10: IoU, NMS and architectures */
+  def('iou', {
+    title: 'Intersection over union',
+    sub: 'Green is the true box A = (50, 50, 150, 150). Move the predicted box B. The shaded part is the intersection, the outline of both together is the union.',
+    W: 560, H: 250,
+    params: [
+      { k: 'x', label: 'B left edge x<sub>1</sub>', type: 'range', min: 0, max: 200, v: 80 },
+      { k: 'y', label: 'B top edge y<sub>1</sub>', type: 'range', min: 0, max: 200, v: 70 },
+      { k: 'w', label: 'B width', type: 'range', min: 10, max: 200, v: 100 },
+      { k: 'h', label: 'B height', type: 'range', min: 10, max: 200, v: 100 },
+      { k: 'thr', label: 'Threshold α for a hit', type: 'range', min: 0.3, max: 0.95, step: 0.05, v: 0.5 }
+    ],
+    tips: [
+      { t: 'The lecture box B = (80, 70, 180, 170): intersection 70 × 80 = 5,600, union 14,400, IoU 0.389. A miss at α = 0.5.', set: { x: 80, y: 70, w: 100, h: 100 } },
+      { t: 'The second lecture prediction (60, 55, 160, 155) gives IoU 0.747, a hit.', set: { x: 60, y: 55, w: 100, h: 100 } },
+      { t: 'Make B huge (x = 0, y = 0, 200 × 200). It covers A completely, yet IoU is only 0.25 because the union is large. IoU punishes boxes that are too big as well as too small.', set: { x: 0, y: 0, w: 200, h: 200 } },
+      { t: 'Raise α to 0.75, the stricter COCO style criterion. Boxes that passed at 0.5 now fail.', set: { x: 60, y: 55, w: 100, h: 100, thr: 0.75 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const A = [50, 50, 150, 150], B = [p.x, p.y, p.x + p.w, p.y + p.h];
+      const X = 10, Y = 10, S = 0.95;
+      D.rect(g, X, Y, 230 * S, 230 * S, { fill: z.col.bg, stroke: z.col.line });
+      g.save(); g.beginPath(); g.rect(X, Y, 230 * S, 230 * S); g.clip();
+      const ix1 = Math.max(A[0], B[0]), iy1 = Math.max(A[1], B[1]), ix2 = Math.min(A[2], B[2]), iy2 = Math.min(A[3], B[3]);
+      if (ix2 > ix1 && iy2 > iy1) D.rect(g, X + ix1 * S, Y + iy1 * S, (ix2 - ix1) * S, (iy2 - iy1) * S, { fill: z.col.dark ? 'rgba(250,204,21,.45)' : 'rgba(250,204,21,.6)' });
+      D.rect(g, X + A[0] * S, Y + A[1] * S, 100 * S, 100 * S, { stroke: z.col.green, w: 2.5 });
+      D.rect(g, X + B[0] * S, Y + B[1] * S, p.w * S, p.h * S, { stroke: z.col.cv, w: 2.5 });
+      g.restore();
+      const iw = Math.max(0, ix2 - ix1), ih = Math.max(0, iy2 - iy1), I = iw * ih, U = 10000 + p.w * p.h - I, v = I / U;
+      const lines = [`A = (50, 50, 150, 150), area 10,000`, `B = (${B.join(', ')}), area ${(p.w * p.h).toLocaleString('en-GB')}`, `overlap ${iw} × ${ih} = ${I.toLocaleString('en-GB')}`, `union = ${(10000).toLocaleString('en-GB')} + ${(p.w * p.h).toLocaleString('en-GB')} − ${I.toLocaleString('en-GB')} = ${U.toLocaleString('en-GB')}`, `IoU = ${f(v, 3)}`, v > p.thr ? `hit at α = ${f(p.thr, 2)} (true positive)` : `miss at α = ${f(p.thr, 2)}`];
+      lines.forEach((t, i) => D.text(g, t, 250, 30 + i * 26, { s: 12, mono: true, b: i >= 4, c: i === 5 ? (v > p.thr ? z.col.green : z.col.red) : z.col.ink }));
+      return `<span class="big">IoU(A, B) = |A ∩ B| ÷ |A ∪ B| = |A ∩ B| ÷ (|A| + |B| − |A ∩ B|)</span><br>IoU is 0 exactly when the boxes do not overlap and 1 exactly when they are identical. It does not change if you scale the whole picture, because both areas scale by the same factor.`;
+    }
+  });
+
+  const NMSBOX = [
+    { id: 'P1', c: 'person', s: 0.92, b: [40, 40, 120, 200] }, { id: 'P4', c: 'person', s: 0.88, b: [108, 52, 186, 212] }, { id: 'P2', c: 'person', s: 0.85, b: [46, 48, 126, 206] },
+    { id: 'D1', c: 'dog', s: 0.75, b: [200, 130, 300, 200] }, { id: 'P3', c: 'person', s: 0.60, b: [30, 30, 112, 195] }, { id: 'C1', c: 'cat', s: 0.55, b: [204, 126, 298, 198] }, { id: 'D2', c: 'dog', s: 0.40, b: [212, 138, 306, 206] }];
+  def('nms', {
+    title: 'Non-maximum suppression, one box at a time',
+    sub: 'Seven raw detections: two people, a dog, and one cat box on the dog. Boxes are taken in order of score. Each kept box removes lower scoring boxes of the same class that overlap it by more than the threshold.',
+    W: 560, H: 285,
+    params: [
+      { k: 'thr', label: 'IoU threshold', type: 'range', min: 0.05, max: 0.9, step: 0.05, v: 0.5 },
+      { k: 'mode', label: 'Method', type: 'select', v: 'hard', opts: [['hard', 'Standard NMS (delete)'], ['soft', 'Soft-NMS (decay the score, σ = 0.5)']] },
+      { k: 'agn', label: 'Ignore classes (class agnostic)', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'Press Play at threshold 0.5. P2 and P3 are duplicates of P1, D2 of D1. The result is P1, P4, D1 and C1.', set: { thr: 0.5, mode: 'hard', agn: false }, play: true },
+      { t: 'The cat box C1 survives on top of the dog because NMS runs per class. Tick class agnostic and D1 removes it.', set: { thr: 0.5, agn: true }, play: true },
+      { t: 'Lower the threshold to 0.05. P4, a real second person who overlaps P1 slightly (IoU 0.076), is now wrongly deleted. Crowds suffer most.', set: { thr: 0.05, mode: 'hard', agn: false }, play: true },
+      { t: 'Switch to Soft-NMS. Nothing is deleted. Duplicates lose most of their score while P4 keeps almost all of it.', set: { thr: 0.05, mode: 'soft', agn: false }, play: true }
+    ],
+    startAtZero: true,
+    steps: () => NMSBOX.length,
+    speed: () => 900,
+    draw(z) {
+      const { g, p, step } = z;
+      const st = NMSBOX.map(o => ({ ...o, score: o.s, state: 'pending', by: '' }));
+      let cur = -1;
+      for (let k = 0; k < step; k++) {
+        const order = st.map((o, i) => i).filter(i => st[i].state === 'pending').sort((a, b) => st[b].score - st[a].score);
+        if (!order.length) break;
+        const i = order[0]; cur = i; st[i].state = 'kept';
+        st.forEach((o, j) => {
+          if (o.state !== 'pending' || (!p.agn && o.c !== st[i].c)) return;
+          const v = iouC(o.b, st[i].b);
+          if (p.mode === 'hard') { if (v > p.thr) { o.state = 'gone'; o.by = `${st[i].id}, IoU ${f(v, 3)}`; } }
+          else if (v > 0) { o.score = o.score * Math.exp(-v * v / 0.5); o.by = `× ${f(Math.exp(-v * v / 0.5), 3)} by ${st[i].id}`; }
+        });
+      }
+      const X = 10, Y = 10, S = 0.8;
+      D.rect(g, X, Y, 320 * S, 240 * S, { fill: z.col.bg, stroke: z.col.line });
+      const colOf = o => o.c === 'person' ? z.col.cv : o.c === 'dog' ? z.col.orange : z.col.purple;
+      st.forEach((o, i) => {
+        const r = [X + o.b[0] * S, Y + o.b[1] * S, (o.b[2] - o.b[0]) * S, (o.b[3] - o.b[1]) * S];
+        g.save(); g.globalAlpha = o.state === 'gone' ? 0.25 : o.state === 'pending' ? 0.6 : 1;
+        D.rect(g, ...r, { stroke: colOf(o), w: o.state === 'kept' ? 3 : 1.5, dash: o.state === 'kept' ? null : [5, 3] });
+        g.restore();
+        if (i === cur) D.rect(g, r[0] - 3, r[1] - 3, r[2] + 6, r[3] + 6, { stroke: z.col.red, w: 1.5 });
+      });
+      D.text(g, 'blue person, orange dog, purple cat', X, Y + 240 * S + 16, { s: 11, c: z.col.ink2 });
+      D.text(g, 'box   class    score   status', 280, 22, { s: 11.5, mono: true, b: true, c: z.col.ink });
+      st.slice().sort((a, b) => b.s - a.s).forEach((o, k) => {
+        const status = o.state === 'kept' ? 'KEPT' : o.state === 'gone' ? 'removed' : 'waiting';
+        D.text(g, `${o.id}    ${o.c.padEnd(7)}  ${f(o.score, 3).padEnd(5)}   ${status}`, 280, 46 + k * 30, { s: 11.5, mono: true, b: o.state === 'kept', c: o.state === 'gone' ? z.col.ink2 : colOf(o) });
+        if (o.by) D.text(g, o.state === 'gone' ? 'by ' + o.by : o.by, 312, 60 + k * 30, { s: 10, mono: true, c: z.col.ink2 });
+      });
+      const kept = st.filter(o => o.state === 'kept').map(o => o.id);
+      return `<b>${step === 0 ? 'Press Play or Step. Boxes are processed in order of score: P1 0.92, P4 0.88, P2 0.85, D1 0.75, P3 0.60, C1 0.55, D2 0.40.' : `Kept so far: ${kept.join(', ') || 'none'}.`}</b><br>${p.mode === 'soft' ? 'Soft-NMS multiplies each overlapping score by e<sup>−IoU² ÷ σ</sup> instead of deleting it. A final score threshold then removes the boxes that fell low.' : 'NMS uses only scores and box to box IoU. No ground truth is involved at test time.'}`;
+    }
+  });
+
+  def('bilinear', {
+    title: 'Bilinear interpolation: reading between pixels',
+    sub: 'A feature map only has values at whole number positions. To read it at (x, y) in between, blend the four neighbours. Each corner\'s weight is the area of the rectangle on the opposite side of the point.',
+    W: 560, H: 260,
+    params: [
+      { k: 'x', label: 'Sample x (between 2 and 3)', type: 'range', min: 2, max: 3, step: 0.05, v: 2.3 },
+      { k: 'y', label: 'Sample y (between 4 and 5)', type: 'range', min: 4, max: 5, step: 0.05, v: 4.6 },
+      { k: 'v', label: 'Corner values f(2,4) f(3,4) f(2,5) f(3,5)', type: 'text', v: '10 20 30 50' }
+    ],
+    tips: [
+      { t: 'The lecture point (2.3, 4.6) with corners 10, 20, 30 and 50 gives 26.8. The nearest corner, (2, 5), has the largest weight, 0.42.', set: { x: 2.3, y: 4.6, v: '10 20 30 50' } },
+      { t: 'Move the point onto a corner, for example (3, 5). That corner\'s weight becomes 1 and the answer is exactly its value.', set: { x: 3, y: 5 } },
+      { t: 'Use the values 42 43 52 53, which follow f = 10y + x. At (2.5, 4.5) you get 47.5 = 10 × 4.5 + 2.5 exactly. Bilinear interpolation reproduces such formulas exactly, which the RoIAlign example relies on.', set: { v: '42 43 52 53', x: 2.5, y: 4.5 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let v = String(p.v).trim().split(/[\s,]+/).map(Number);
+      if (v.length < 4 || v.some(a => !isFinite(a))) v = [10, 20, 30, 50];
+      const u = p.x - 2, t = p.y - 4;
+      const w = [(1 - u) * (1 - t), u * (1 - t), (1 - u) * t, u * t];
+      const X0 = 60, Y0 = 38, L = 180;
+      const px = X0 + u * L, py = Y0 + t * L;
+      const cols = [z.col.cv, z.col.orange, z.col.purple, z.col.green];
+      g.save(); g.globalAlpha = 0.3;
+      D.rect(g, px, py, X0 + L - px, Y0 + L - py, { fill: cols[0] });
+      D.rect(g, X0, py, px - X0, Y0 + L - py, { fill: cols[1] });
+      D.rect(g, px, Y0, X0 + L - px, py - Y0, { fill: cols[2] });
+      D.rect(g, X0, Y0, px - X0, py - Y0, { fill: cols[3] });
+      g.restore();
+      D.rect(g, X0, Y0, L, L, { stroke: z.col.ink2, w: 1.5 });
+      const corners = [[X0, Y0, '(2, 4)'], [X0 + L, Y0, '(3, 4)'], [X0, Y0 + L, '(2, 5)'], [X0 + L, Y0 + L, '(3, 5)']];
+      corners.forEach(([cx, cy, lab], i) => { D.circle(g, cx, cy, 7, { fill: cols[i] }); D.text(g, `${lab} = ${v[i]}`, cx, cy + (i < 2 ? -14 : 22), { s: 11.5, mono: true, a: 'center', c: z.col.ink, b: true }); });
+      D.circle(g, px, py, 6, { fill: z.col.red });
+      const val = w.reduce((s, a, i) => s + a * v[i], 0);
+      const rows = [`u = x − 2 = ${f(u, 2)}, v = y − 4 = ${f(t, 2)}`, ...['(2, 4)', '(3, 4)', '(2, 5)', '(3, 5)'].map((lab, i) => `w${lab} = ${['(1 − u)(1 − v)', 'u(1 − v)', '(1 − u)v', 'uv'][i]} = ${f(w[i], 3)}`), `sum of weights = ${f(w.reduce((a, b) => a + b, 0), 3)}`, `f(${f(p.x, 2)}, ${f(p.y, 2)}) = ${f(val, 3)}`];
+      rows.forEach((r, i) => D.text(g, r, 300, 30 + i * 28, { s: 12, mono: true, b: i === 6, c: i >= 1 && i <= 4 ? cols[i - 1] : z.col.ink }));
+      return `<span class="big">f(x, y) = (1 − u)(1 − v) f<sub>00</sub> + u(1 − v) f<sub>10</sub> + (1 − u)v f<sub>01</sub> + uv f<sub>11</sub></span><br>The weights always add to 1, and the result changes smoothly with x and y. That smoothness is why the crop and resize step (RoIAlign) can pass gradients back, so a two stage detector trains end to end.`;
+    }
+  });
+
+  def('pyramid', {
+    title: 'Feature pyramid and anchor count',
+    sub: 'A backbone halves the map size at each stage. RetinaNet predicts from five levels, P3 to P7. Change the input size and the anchors per cell to see how many predictions one image produces.',
+    W: 560, H: 250,
+    params: [
+      { k: 'n', label: 'Input size (square)', type: 'range', min: 320, max: 1280, step: 64, v: 640 },
+      { k: 'A', label: 'Anchors per cell A', type: 'range', min: 1, max: 9, v: 9 },
+      { k: 'K', label: 'Classes K', type: 'range', min: 1, max: 100, v: 80 }
+    ],
+    tips: [
+      { t: 'The lecture case: 640 × 640 gives levels of 80, 40, 20, 10 and 5 cells, 8,525 cells, 76,725 anchors and about 6.1 million class scores.', set: { n: 640, A: 9, K: 80 } },
+      { t: 'Set A to 1. Anchor free detectors such as FCOS predict one box per cell, nine times fewer predictions.', set: { A: 1 } },
+      { t: 'Double the input to 1280. Every level grows 4 times, and so does the work. Larger images help small objects but cost time.', set: { n: 1280, A: 9 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const lv = [3, 4, 5, 6, 7].map(l => ({ l, st: 2 ** l, s: Math.ceil(p.n / 2 ** l) }));
+      let cells = 0;
+      lv.forEach((o, i) => {
+        cells += o.s * o.s;
+        const w = Math.max(12, 200 * o.s / 160), x = 120 - w / 2, y = 205 - i * 40;
+        D.rect(g, x, y - 26, w, 26, { fill: z.col.cv, stroke: z.col.line });
+        D.text(g, `P${o.l}: ${o.s} × ${o.s}, stride ${o.st}${i === 0 ? ', small objects' : i === 4 ? ', large objects' : ''}`, 236, y - 9, { s: 12, mono: true, c: z.col.ink });
+      });
+      const an = cells * p.A;
+      [`cells ${cells.toLocaleString('en-GB')}`, `anchors ${an.toLocaleString('en-GB')}`, `class scores ${(an * p.K).toLocaleString('en-GB')}`].forEach((t, i) => D.text(g, t, 20 + i * 180, 236, { s: 12, mono: true, b: true, c: z.col.ink }));
+      return `<span class="big">cells per level = (input ÷ stride)², &nbsp; anchors = cells × A, &nbsp; class scores = anchors × K</span><br>Fine levels (P3) have small strides and catch small objects. Coarse levels (P7) see the whole scene and catch large ones. The same class and box heads are shared across all levels.`;
+    }
+  });
+
 })();

@@ -3852,6 +3852,22 @@ function cvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nms", title: "IoU, NMS and detector architectures", emoji: "5.3", page: "content/computer-vision/nms-architectures.html",
+        summary: "IoU, NMS and Soft-NMS, one stage and two stage detectors, RetinaNet with FPN, Faster R-CNN, bilinear interpolation and RoIAlign.",
+        keywords: ["IoU", "NMS", "soft-NMS", "one stage", "two stage", "YOLO", "SSD", "RetinaNet", "FPN", "feature pyramid", "Faster R-CNN", "RPN", "RoIAlign", "bilinear interpolation", "joint training"],
+        minutes: 55, counts: {"lessons": 5, "problems": 12, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "iou", title: "Intersection over union", emoji: "", group: "Lesson", keywords: ["IoU", "intersection over union", "overlap", "union", "Jaccard index", "threshold", "shifted boxes"] },
+        { id: "nms", title: "Removing duplicates with NMS", emoji: "", group: "Lesson", keywords: ["NMS", "non-maximum suppression", "duplicates", "score threshold", "IoU threshold", "soft-NMS", "crowd", "per class", "DETR"] },
+        { id: "stages", title: "One stage or two stage", emoji: "", group: "Lesson", keywords: ["one stage", "two stage", "meta-architecture", "YOLO", "SSD", "Faster R-CNN", "region proposal", "class agnostic", "task agnostic", "stage wise training", "joint training", "end to end"] },
+        { id: "fpn", title: "RetinaNet and the feature pyramid", emoji: "", group: "Lesson", keywords: ["RetinaNet", "FPN", "feature pyramid network", "hierarchical", "semantic", "spatial resolution", "top-down path", "lateral connection", "1x1 convolution", "upsampling", "shared heads", "anchor count"] },
+        { id: "roialign", title: "Faster R-CNN, interpolation and RoIAlign", emoji: "", group: "Lesson", keywords: ["Faster R-CNN", "region proposal network", "RPN", "crop and resize", "interpolation", "nearest neighbour", "bilinear", "bicubic", "quantisation", "RoIAlign", "RoI pooling", "Mask R-CNN", "end to end"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
