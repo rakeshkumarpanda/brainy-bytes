@@ -3836,6 +3836,22 @@ function cvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "losses", title: "Training a detector: targets and losses", emoji: "5.2", page: "content/computer-vision/detection-losses.html",
+        summary: "Anchor targets by IoU, Huber loss for boxes, class imbalance, cross entropy and focal loss, bias initialisation and architecture versus loss.",
+        keywords: ["target assignment", "IoU threshold", "Huber loss", "Smooth L1", "MSE", "MAE", "class imbalance", "hard example mining", "cross entropy", "entropy", "focal loss", "RetinaNet", "prior bias", "WGAN"],
+        minutes: 55, counts: {"lessons": 5, "problems": 12, "quiz": 12, "assign": 4},
+        added: "2026-10-27",
+        sections: [
+        { id: "targets", title: "Giving every anchor a target", emoji: "", group: "Lesson", keywords: ["target assignment", "positive anchor", "negative anchor", "background", "ignored anchor", "IoU threshold", "Euclidean", "Manhattan", "scale invariant", "training objective", "multi-task loss"] },
+        { id: "boxloss", title: "Box loss: MSE, MAE and Huber", emoji: "", group: "Lesson", keywords: ["MSE", "MAE", "Huber loss", "Smooth L1", "outlier", "gradient", "clip", "convex", "normalisation", "min-max scaling", "mean", "median"] },
+        { id: "imbalance", title: "Class imbalance and cross entropy", emoji: "", group: "Lesson", keywords: ["class imbalance", "easy negatives", "subsampling", "hard example mining", "OHEM", "token pruning", "entropy", "cross entropy", "binary cross entropy", "BCE", "p_t", "KL divergence"] },
+        { id: "focal", title: "Focal loss and the RetinaNet bias trick", emoji: "", group: "Lesson", keywords: ["focal loss", "gamma", "alpha", "modulating factor", "RetinaNet", "easy examples", "hard examples", "prior probability", "bias initialisation", "sigmoid"] },
+        { id: "axes", title: "Architecture or loss: the GAN story", emoji: "", group: "Lesson", keywords: ["architecture", "loss function", "optimisation", "GAN", "DCGAN", "WGAN", "Wasserstein", "earth mover distance", "discriminator", "generator", "thesis"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

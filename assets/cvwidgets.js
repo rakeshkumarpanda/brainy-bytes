@@ -1277,4 +1277,111 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 9: targets and losses */
+  def('assign', {
+    title: 'Target assignment: which anchor learns which object',
+    sub: 'Green boxes are the ground truth (a person and a dog). Each anchor is labelled by its best IoU: positive above the upper threshold, background below the lower one, ignored in between.',
+    W: 560, H: 280,
+    params: [
+      { k: 'preset', label: 'Rule', type: 'select', v: 'retina', opts: [['retina', 'RetinaNet: positive ≥ 0.5, negative < 0.4'], ['rpn', 'Faster R-CNN RPN: positive ≥ 0.7, negative < 0.3'], ['custom', 'My own thresholds']] },
+      { k: 'hi', label: 'Positive if IoU ≥', type: 'range', min: 0.3, max: 0.9, step: 0.05, v: 0.5, show: p => p.preset === 'custom' },
+      { k: 'lo', label: 'Background if IoU <', type: 'range', min: 0.1, max: 0.7, step: 0.05, v: 0.4, show: p => p.preset === 'custom' }
+    ],
+    tips: [
+      { t: 'RetinaNet rule: A1 and A3 become positives, A2 at 0.465 is ignored, A4 and A5 are background. Only 2 of 5 anchors will learn a box.', set: { preset: 'retina' } },
+      { t: 'Switch to the RPN rule. A1 at 0.695 falls just short of 0.7 and is ignored, so only A3 stays positive. Stricter rules give fewer but cleaner positives.', set: { preset: 'rpn' } },
+      { t: 'Choose your own thresholds and set both to 0.45. Nothing is ignored any more, so borderline anchors get a hard label either way.', set: { preset: 'custom', hi: 0.45, lo: 0.45 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const [hi, lo] = p.preset === 'retina' ? [0.5, 0.4] : p.preset === 'rpn' ? [0.7, 0.3] : [p.hi, Math.min(p.lo, p.hi)];
+      const GT = [['person', [40, 30, 120, 190]], ['dog', [150, 110, 260, 190]]];
+      const AN = [[30, 20, 110, 180], [55, 65, 135, 225], [160, 115, 270, 195], [280, 20, 330, 90], [70, 70, 150, 230]];
+      const X = 10, Y = 10, S = 0.78;
+      D.rect(g, X, Y, 340 * S, 260 * S, { fill: z.col.bg, stroke: z.col.line });
+      const r = b => [X + b[0] * S, Y + b[1] * S, (b[2] - b[0]) * S, (b[3] - b[1]) * S];
+      GT.forEach(([n, b]) => { D.rect(g, ...r(b), { stroke: z.col.green, w: 3 }); D.text(g, n, X + b[0] * S + 2, Y + b[1] * S - 4, { s: 11, b: true, c: z.col.green }); });
+      const rows = AN.map((a, i) => {
+        const ious = GT.map(([, b]) => iouC(a, b)), best = Math.max(...ious), j = ious.indexOf(best);
+        const lab = best >= hi ? 'positive, ' + GT[j][0] : best < lo ? 'background' : 'ignored';
+        const col = best >= hi ? z.col.cv : best < lo ? z.col.ink2 : z.col.orange;
+        D.rect(g, ...r(a), { stroke: col, w: 1.8, dash: best >= hi ? null : [5, 3] });
+        D.text(g, 'A' + (i + 1), X + a[2] * S - 3, Y + a[3] * S - 4, { s: 11, b: true, c: col, a: 'right' });
+        return [i, best, lab, col];
+      });
+      D.text(g, 'anchor   best IoU   label', 290, 24, { s: 11.5, mono: true, b: true, c: z.col.ink });
+      rows.forEach(([i, b, l, c], k) => D.text(g, `A${i + 1}       ${f(b, 3).padEnd(6)}     ${l}`, 290, 50 + k * 24, { s: 11.5, mono: true, c }));
+      const pos = rows.filter(x => x[2].startsWith('positive')).length, ign = rows.filter(x => x[2] === 'ignored').length;
+      D.text(g, `box loss from ${pos} anchor${pos === 1 ? '' : 's'}`, 290, 190, { s: 12, b: true, c: z.col.ink });
+      D.text(g, `class loss from ${5 - ign} anchors`, 290, 210, { s: 12, b: true, c: z.col.ink });
+      return `<span class="big">IoU ≥ ${f(hi, 2)} → positive (class and box loss), &nbsp; IoU < ${f(lo, 2)} → background (class loss only), &nbsp; otherwise ignored</span><br>Real images have tens of thousands of anchors and only a handful of objects, so nearly every anchor ends up as background. That imbalance is the subject of the focal loss lesson.`;
+    }
+  });
+
+  def('huber', {
+    title: 'MSE, MAE and Huber: one bad box among four',
+    sub: 'Left: each loss and its slope. Right: how much of the total loss and of the total gradient comes from the one bad box. The gradient is what training actually feels.',
+    W: 560, H: 270,
+    params: [
+      { k: 'e4', label: 'Error of the bad box', type: 'range', min: 0, max: 20, step: 0.5, v: 10 },
+      { k: 'd', label: 'Huber threshold δ', type: 'range', min: 0.25, max: 3, step: 0.25, v: 1 },
+      { k: 'show', label: 'Left plot shows', type: 'select', v: 'loss', opts: [['loss', 'Loss'], ['grad', 'Gradient (slope)']] }
+    ],
+    tips: [
+      { t: 'Lecture example: errors 0.2, 0.3, 0.4 and 10. With squared error the bad box gives 100 against 0.29 for the other three, about 345 times more.', set: { e4: 10, d: 1, show: 'loss' } },
+      { t: 'Switch the plot to Gradient. MSE slope keeps growing with the error, Huber flattens at δ. With Huber the bad box pushes only about 1.1 times as hard as the three good boxes together.', set: { show: 'grad' } },
+      { t: 'Set the bad error to 0.5. Now every box is inside the quadratic zone and Huber behaves exactly like ½e².', set: { e4: 0.5 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const d = p.d, hub = e => Math.abs(e) <= d ? 0.5 * e * e : d * (Math.abs(e) - 0.5 * d), hg = e => Math.max(-d, Math.min(d, e));
+      const m = D.axes(g, z, [50, 14, 230, 190], [-4, 4], p.show === 'loss' ? [0, 8] : [-4, 4], { nx: 4, ny: 4, xl: 'error e', fy: v => f(v, 0) });
+      if (p.show === 'loss') { D.curve(g, e => 0.5 * e * e, [-4, 4], m, z.col.red, 2); D.curve(g, e => Math.abs(e), [-4, 4], m, z.col.purple, 2, 200, [5, 3]); D.curve(g, hub, [-4, 4], m, z.col.cv, 2.6); }
+      else { D.curve(g, e => e, [-4, 4], m, z.col.red, 2); D.curve(g, e => Math.sign(e), [-4, 4], m, z.col.purple, 2, 400, [5, 3]); D.curve(g, hg, [-4, 4], m, z.col.cv, 2.6); }
+      [['½e² (MSE)', z.col.red], ['|e| (MAE)', z.col.purple], ['Huber', z.col.cv]].forEach(([t, c], i) => D.text(g, t, 128, 30 + i * 16, { s: 11, b: true, c, a: 'center' }));
+      const E = [0.2, 0.3, 0.4, p.e4];
+      const sq = E.map(e => e * e), hu = E.map(hub), gq = E, gh = E.map(hg);
+      const share = a => a[3] / Math.max(1e-9, a[0] + a[1] + a[2]);
+      const rows = [['', 'e²', 'Huber'], ...E.map((e, i) => [`box ${i + 1}, e = ${e}`, f(sq[i], 2), f(hu[i], 3)]), ['bad ÷ rest, loss', f(share(sq), 1) + '×', f(share(hu), 1) + '×'], ['bad ÷ rest, slope', f(share(gq), 1) + '×', f(share(gh), 1) + '×']];
+      rows.forEach((r, i) => { D.text(g, r[0], 310, 26 + i * 25, { s: 11.5, c: i ? z.col.ink2 : z.col.ink, b: !i || i > 4 }); D.text(g, r[1], 470, 26 + i * 25, { s: 11.5, mono: true, a: 'right', c: z.col.red, b: !i || i > 4 }); D.text(g, r[2], 545, 26 + i * 25, { s: 11.5, mono: true, a: 'right', c: z.col.cv, b: !i || i > 4 }); });
+      return `<span class="big">Huber<sub>δ</sub>(e) = ½e² if |e| ≤ δ, &nbsp; δ(|e| − ½δ) otherwise, &nbsp; slope = clip(e, −δ, δ)</span><br>Quadratic near zero, so it settles smoothly on the answer. Linear far away, so one wild box cannot drown out the rest. With δ = 1 this is the Smooth L1 loss on the lecture slide.`;
+    }
+  });
+
+  def('focal', {
+    title: 'Focal loss: stop easy background from drowning the objects',
+    sub: 'An image has many easy background anchors and a few hard object anchors. Compare who owns the loss under cross entropy and under focal loss. p<sub>t</sub> is the probability the model gives to the correct answer.',
+    W: 560, H: 270,
+    params: [
+      { k: 'gam', label: 'Focusing parameter γ', type: 'range', min: 0, max: 5, step: 0.5, v: 2 },
+      { k: 'ne', label: 'Easy background anchors (power of 10)', type: 'range', min: 2, max: 6, step: 0.5, v: 5, fmt: v => Math.round(10 ** v).toLocaleString('en-GB') },
+      { k: 'pe', label: 'p<sub>t</sub> of an easy anchor', type: 'range', min: 0.8, max: 0.999, step: 0.001, v: 0.99 },
+      { k: 'ph', label: 'p<sub>t</sub> of a hard object anchor (10 of them)', type: 'range', min: 0.05, max: 0.6, step: 0.01, v: 0.1 }
+    ],
+    tips: [
+      { t: 'Lecture example: 100,000 easy anchors at 0.99 and 10 hard ones at 0.10. Under cross entropy the easy ones own 97.8% of the loss. Under focal loss with γ = 2 they own about 0.5%.', set: { gam: 2, ne: 5, pe: 0.99, ph: 0.1 } },
+      { t: 'Set γ to 0. Focal loss becomes plain cross entropy, and the background takes over again.', set: { gam: 0 } },
+      { t: 'Set γ to 5. Even moderately easy examples are almost silenced. The RetinaNet paper found γ = 2 worked best.', set: { gam: 5 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const ce = q => -Math.log(q), fl = (q, gm) => Math.pow(1 - q, gm) * ce(q);
+      const m = D.axes(g, z, [50, 14, 230, 190], [0, 1], [0, 3], { nx: 4, ny: 3, xl: 'p of the correct class, p_t', fx: v => f(v, 2), fy: v => f(v, 0) });
+      [[0, z.col.ink2], [1, z.col.purple], [2, z.col.orange], [5, z.col.red]].forEach(([gm, c]) => D.curve(g, q => fl(q, gm), [0.02, 1], m, c, 1.4, 200, [4, 3]));
+      D.curve(g, q => fl(q, p.gam), [0.02, 1], m, z.col.cv, 2.8);
+      D.text(g, 'dashed: γ = 0, 1, 2, 5', 150, 30, { s: 11, c: z.col.ink2 }); D.text(g, `solid: γ = ${p.gam}`, 150, 46, { s: 11, b: true, c: z.col.cv });
+      const N = Math.round(10 ** p.ne);
+      const eCE = N * ce(p.pe), hCE = 10 * ce(p.ph), eFL = N * fl(p.pe, p.gam), hFL = 10 * fl(p.ph, p.gam);
+      const bar = (y, lab, e, h) => {
+        const tot = e + h, se = e / tot;
+        D.text(g, lab, 310, y - 8, { s: 12, b: true, c: z.col.ink });
+        D.rect(g, 310, y, 230 * se, 26, { fill: z.col.ink2 }); D.rect(g, 310 + 230 * se, y, 230 * (1 - se), 26, { fill: z.col.cv });
+        D.text(g, `background ${f(100 * se, 2)}%`, 310, y + 44, { s: 11.5, mono: true, c: z.col.ink2 });
+        D.text(g, `objects ${f(100 * (1 - se), 2)}%`, 540, y + 44, { s: 11.5, mono: true, a: 'right', c: z.col.cv });
+      };
+      bar(36, 'Cross entropy', eCE, hCE); bar(140, `Focal loss, γ = ${p.gam}`, eFL, hFL);
+      return `<span class="big">CE = −ln p<sub>t</sub>, &nbsp; FL = −(1 − p<sub>t</sub>)<sup>γ</sup> ln p<sub>t</sub></span><br>Easy anchor: CE ${f(ce(p.pe), 5)}, FL ${fl(p.pe, p.gam).toExponential(2)}. Hard anchor: CE ${f(ce(p.ph), 3)}, FL ${f(fl(p.ph, p.gam), 3)}. The factor (1 − p<sub>t</sub>)<sup>γ</sup> shrinks the loss of confident, correct answers and barely touches the hard ones.`;
+    }
+  });
+
 })();
