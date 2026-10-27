@@ -3065,6 +3065,20 @@ function pwModules() {
         { id: "lab-headerorders", title: "Reach the orders page from the header", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-fixtures", title: "Fixtures, hooks and set up once", emoji: "🧩", page: "content/playwright/pw-fixtures.html",
+        summary: "The order hooks run in, the built in fixtures of each language, the life of a fixture, a signed in page fixture with a clean up, an automatic fixture that fails tests on JavaScript errors, and set up that checks the shop and creates data once per run.",
+        keywords: ["fixture", "hooks", "beforeEach", "afterEach", "beforeAll", "test.extend", "conftest", "yield", "autouse", "auto", "setup project", "dependencies", "session", "BeforeEach", "base class"],
+        added: "2026-10-24",
+        sections: [
+        { id: "hooks", title: "Before and after hooks", emoji: "🪝", group: "Beginner path", keywords: ["beforeEach", "afterEach", "beforeAll", "afterAll", "BeforeEach", "AfterEach", "hooks", "yield"] },
+        { id: "fixtures", title: "Fixtures: set up on demand", emoji: "🧩", group: "Beginner path", keywords: ["fixture", "test.extend", "use", "conftest", "yield", "base class", "signed in"] },
+        { id: "auto", title: "Automatic fixtures", emoji: "🛡️", group: "Lesson", keywords: ["auto fixture", "autouse", "pageerror", "guard"] },
+        { id: "global", title: "Set up once for the whole run", emoji: "🌍", group: "Lesson", keywords: ["global setup", "setup project", "dependencies", "session fixture", "worker fixture", "BeforeAll", "scope"] },
+        { id: "lab-signinadd", title: "Sign in, then add the lamp", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-emptycart", title: "Empty the cart like a tear down", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
