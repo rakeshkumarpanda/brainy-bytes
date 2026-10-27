@@ -3159,6 +3159,22 @@ function pwModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "pw-framework", title: "Framework design", emoji: "🏗️", blurb: "Page objects and components, a real framework built step by step in each language, CI pipelines and reports that teams read every day.", topics: [
+      { id: "pw-pom", title: "Page objects and components", emoji: "🧱", page: "content/playwright/pw-pom.html",
+        summary: "A LoginPage, a ProductsPage built from Header and ProductCard components, and fixtures that hand out signed in page objects, each run for real in four languages.",
+        keywords: ["page object model", "POM", "page object", "component", "LoginPage", "ProductCard", "test.extend", "conftest", "base class", "best practices"],
+        added: "2026-10-24",
+        sections: [
+        { id: "why", title: "Why page objects", emoji: "🤔", group: "Beginner path", keywords: ["page object model", "POM", "page object", "LoginPage", "maintenance", "reuse"] },
+        { id: "components", title: "Components for repeated parts", emoji: "🧩", group: "Lesson", keywords: ["component", "ProductCard", "Header", "filter has", "root locator", "reuse"] },
+        { id: "fixtures", title: "Handing out page objects", emoji: "🔧", group: "Lesson", keywords: ["fixtures", "test.extend", "conftest", "base class", "BeforeEach", "dependency injection"] },
+        { id: "rules", title: "Rules teams follow", emoji: "📏", group: "Lesson", keywords: ["best practices", "rules", "no assertions in page objects", "fluent", "business layer"] },
+        { id: "lab-gelpen", title: "Add the gel pen from its own card", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-bottleprice", title: "Read a price from one card", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
