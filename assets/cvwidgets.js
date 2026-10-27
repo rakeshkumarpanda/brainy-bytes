@@ -2209,4 +2209,167 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 15: vision and language */
+  const unitArrow = (g, z, cx, cy, R, deg, col, dash, lab) => {
+    const a = deg * Math.PI / 180, x = cx + R * Math.cos(a), y = cy - R * Math.sin(a);
+    if (dash) D.line(g, cx, cy, x, y, col, 2, [5, 4]); else D.arrow(g, cx, cy, x, y, col, 2.2, 8);
+    if (lab) D.text(g, lab, cx + (R + 14) * Math.cos(a), cy - (R + 14) * Math.sin(a) + 4, { a: 'center', s: 11, b: true, c: col });
+  };
+  const parseAngles = (s, n, fb) => { const v = String(s).trim().split(/[\s,]+/).map(Number).filter(isFinite); return v.length >= n ? v.slice(0, n) : fb; };
+
+  def('cliptrain', {
+    title: 'CLIP training: pull matching pairs together',
+    sub: 'Real CLIP embeddings have hundreds of dimensions. Here each one is a direction in 2D so it can be drawn. Solid arrows are images, dashed are captions. Similarity is the cosine of the angle between them.',
+    W: 560, H: 290,
+    params: [
+      { k: 'im', label: 'Image directions in degrees (dog, cat, car)', type: 'text', v: '20 95 210' },
+      { k: 'tx', label: 'Caption directions in degrees (same order)', type: 'text', v: '35 80 195' },
+      { k: 'tau', label: 'Temperature τ', type: 'select', num: true, v: 0.1, opts: [[0.01, '0.01 (CLIP learns about this)'], [0.1, '0.1'], [0.5, '0.5'], [1, '1']] }
+    ],
+    tips: [
+      { t: 'A well trained batch. Each image is closest to its own caption, so the diagonal wins every row and the loss is low.', set: { im: '20 95 210', tx: '35 80 195', tau: 0.1 } },
+      { t: 'Swap the dog and cat captions (80 35 195). The diagonal now loses two rows and the loss jumps. Training would push them back.', set: { tx: '80 35 195' } },
+      { t: 'Put the dog and cat close together (20 40 and 25 45). Hard negatives: the rows are no longer confident. This is what forces fine distinctions.', set: { im: '20 40 210', tx: '25 45 195', tau: 0.1 } },
+      { t: 'Raise τ to 1. All probabilities flatten towards one third and the model cannot be confident. A small temperature sharpens the SoftMax.', set: { im: '20 95 210', tx: '35 80 195', tau: 1 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const im = parseAngles(p.im, 3, [20, 95, 210]), tx = parseAngles(p.tx, 3, [35, 80, 195]), names = ['dog', 'cat', 'car'];
+      const cols = [z.col.cv, z.col.orange, z.col.purple], cx = 110, cy = 140, R = 90;
+      D.circle(g, cx, cy, R, { stroke: z.col.line, w: 1 });
+      im.forEach((a, i) => unitArrow(g, z, cx, cy, R, a, cols[i], false, 'I' + (i + 1)));
+      tx.forEach((a, i) => unitArrow(g, z, cx, cy, R * 0.8, a, cols[i], true, ''));
+      D.text(g, 'solid: images, dashed: captions', 14, 270, { s: 11, c: z.col.ink2 });
+      const S = im.map(a => tx.map(b => Math.cos((a - b) * Math.PI / 180)));
+      const sm = row => { const m = Math.max(...row), e = row.map(v => Math.exp((v - m) / p.tau)), s = e.reduce((x, y) => x + y, 0); return e.map(v => v / s); };
+      const P = S.map(sm), Pc = [0, 1, 2].map(j => sm(S.map(r => r[j])));
+      const li = -P.reduce((s, r, i) => s + Math.log(r[i]), 0) / 3, lt = -Pc.reduce((s, c, j) => s + Math.log(c[j]), 0) / 3;
+      const X = 270, Y = 50, c = 72;
+      D.text(g, 'cosine similarity (row SoftMax below)', X, 22, { s: 11.5, b: true, c: z.col.ink });
+      names.forEach((n, j) => D.text(g, '"' + n + '"', X + (j + 0.5) * c, Y - 8, { a: 'center', s: 11, b: true, c: cols[j] }));
+      S.forEach((r, i) => {
+        D.text(g, 'I' + (i + 1), X - 8, Y + (i + 0.5) * c / 1.1, { a: 'right', s: 11, b: true, c: cols[i] });
+        r.forEach((v, j) => {
+          const y = Y + i * c / 1.1;
+          D.rect(g, X + j * c, y, c, c / 1.1, { fill: i === j ? `rgba(40,160,100,${0.1 + 0.5 * P[i][j]})` : `rgba(220,70,70,${0.05 + 0.5 * P[i][j]})`, stroke: z.col.line, w: 1 });
+          D.text(g, v.toFixed(2), X + (j + 0.5) * c, y + 26, { a: 'center', s: 12, mono: true, b: true, c: z.col.ink });
+          D.text(g, P[i][j].toFixed(2), X + (j + 0.5) * c, y + 46, { a: 'center', s: 10.5, mono: true, c: z.col.ink2 });
+        });
+      });
+      D.text(g, `image to text ${li.toFixed(3)}, text to image ${lt.toFixed(3)}`, X - 20, 262, { s: 11, c: z.col.ink2 }); D.text(g, `loss = ½(sum) = ${((li + lt) / 2).toFixed(3)}`, X - 20, 278, { s: 12, b: true, c: z.col.ink });
+      return `<span class="big">s<sub>ij</sub> = cos(I<sub>i</sub>, T<sub>j</sub>) = I<sub>i</sub> · T<sub>j</sub> ÷ (‖I<sub>i</sub>‖ ‖T<sub>j</sub>‖), &nbsp; L = −½ [ (1/N) Σ<sub>i</sub> ln softmax<sub>j</sub>(s<sub>ij</sub> ÷ τ)<sub>i</sub> + (1/N) Σ<sub>j</sub> ln softmax<sub>i</sub>(s<sub>ij</sub> ÷ τ)<sub>j</sub> ]</span><br>The correct pairs are the diagonal. Every other cell in the batch is a negative. Training pulls the diagonal up and pushes the rest down, in both directions.`;
+    }
+  });
+
+  def('zeroshot', {
+    title: 'Zero-shot classification with text prompts',
+    sub: 'Write one prompt per class. The image is given the class whose prompt embedding is most similar. New classes need only new prompts, no retraining. Directions stand in for the real embeddings.',
+    W: 560, H: 260,
+    params: [
+      { k: 'img', label: 'Image embedding direction (degrees)', type: 'range', min: 0, max: 359, step: 1, v: 40 },
+      { k: 'pr', label: 'Prompts: text then direction', type: 'area', v: 'a photo of a dog | 30\na photo of a cat | 70\na photo of a horse | 150\na photo of a car | 250' },
+      { k: 'scale', label: 'Logit scale (1 ÷ τ)', type: 'select', num: true, v: 100, opts: [[1, '1'], [10, '10'], [100, '100 (CLIP)']] }
+    ],
+    tips: [
+      { t: 'The image points at 40°, closest to the dog prompt. With CLIP\'s scale of 100, dog wins with high confidence.', set: { img: 40, scale: 100 } },
+      { t: 'Turn the image to 50°, halfway between dog and cat. Small changes in wording or embedding now decide the answer. That is why prompt design matters.', set: { img: 50 } },
+      { t: 'Add a class with no training at all: append the line "a photo of a zebra | 120". It immediately becomes a choice.', set: { pr: 'a photo of a dog | 30\na photo of a cat | 70\na photo of a horse | 150\na photo of a car | 250\na photo of a zebra | 120', img: 115 } },
+      { t: 'Set the scale to 1. Cosines lie between −1 and 1, so without scaling the SoftMax is nearly flat.', set: { scale: 1, img: 40 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let pr = String(p.pr).split('\n').map(l => l.split('|')).filter(a => a.length === 2 && isFinite(+a[1])).map(a => ({ t: a[0].trim().slice(0, 28), a: +a[1] })).slice(0, 6);
+      if (!pr.length) pr = [{ t: 'a photo of a dog', a: 30 }];
+      const cols = [z.col.cv, z.col.orange, z.col.purple, z.col.green, z.col.red, z.col.pink];
+      const cx = 100, cy = 130, R = 85;
+      D.circle(g, cx, cy, R, { stroke: z.col.line, w: 1 });
+      pr.forEach((q, i) => unitArrow(g, z, cx, cy, R * 0.85, q.a, cols[i % 6], true, ''));
+      unitArrow(g, z, cx, cy, R, p.img, z.col.ink, false, 'image');
+      const s = pr.map(q => Math.cos((p.img - q.a) * Math.PI / 180)), m = Math.max(...s), e = s.map(v => Math.exp((v - m) * p.scale)), S = e.reduce((a, b) => a + b, 0), P = e.map(v => v / S);
+      const best = P.indexOf(Math.max(...P));
+      D.text(g, 'prompt                       cos    p', 230, 24, { s: 11.5, mono: true, b: true, c: z.col.ink });
+      pr.forEach((q, i) => {
+        const y = 50 + i * 32;
+        D.text(g, q.t.padEnd(28), 230, y, { s: 11, mono: true, b: i === best, c: cols[i % 6] });
+        D.text(g, `${s[i].toFixed(2).padStart(5)}  ${P[i].toFixed(2)}`, 430, y, { s: 11, mono: true, b: i === best, c: z.col.ink });
+        D.rect(g, 230, y + 6, 300 * P[i], 6, { fill: cols[i % 6] });
+      });
+      return `<b>Prediction: ${pr[best].t}</b> (p = ${P[best].toFixed(2)}).<br>p<sub>k</sub> = softmax(scale × cos(image, prompt<sub>k</sub>)). The class list is just text, so it can change at test time. Accuracy depends on how the prompts are worded, and averaging several wordings per class (prompt ensembling) usually helps.`;
+    }
+  });
+
+  def('vitcost', {
+    title: 'Vision transformer tokens and attention cost',
+    sub: 'The image is cut into patches, each patch becomes one token, and global self-attention compares every token with every other one. Windowed attention only compares tokens inside each window.',
+    W: 560, H: 280,
+    params: [
+      { k: 'n', label: 'Image size (square)', type: 'range', min: 64, max: 1024, step: 32, v: 224 },
+      { k: 'ps', label: 'Patch size', type: 'select', num: true, v: 16, opts: [[4, '4 (Swin first stage)'], [8, '8'], [14, '14'], [16, '16 (ViT-B/16)'], [32, '32']] },
+      { k: 'w', label: 'Attention window (tokens per side)', type: 'select', num: true, v: 0, opts: [[0, 'Global (whole image)'], [7, '7 × 7 (Swin)'], [12, '12 × 12']] }
+    ],
+    tips: [
+      { t: 'The ViT case: 224 with 16 × 16 patches gives 14 × 14 = 196 tokens and 38,416 attention pairs per head.', set: { n: 224, ps: 16, w: 0 } },
+      { t: 'A segmentation sized 512 image: 1,024 tokens and 1,048,576 pairs, 27.3 times more for 5.2 times more pixels.', set: { n: 512, ps: 16, w: 0 } },
+      { t: 'Patch 4 on 224 gives 56 × 56 = 3,136 tokens. Global attention needs 9.8 million pairs.', set: { n: 224, ps: 4, w: 0 } },
+      { t: 'Now use 7 × 7 windows: 64 windows of 49 tokens, 153,664 pairs, 64 times fewer. Swin shifts the windows between layers so information still spreads.', set: { n: 224, ps: 4, w: 7 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const t = Math.ceil(p.n / p.ps), N = t * t, glob = N * N;
+      const w = p.w && p.w < t ? p.w : 0, nw = w ? Math.ceil(t / w) ** 2 : 1, win = w ? nw * (w * w) ** 2 : glob;
+      const S = 220, cell = S / t, X = 14, Y = 30;
+      D.rect(g, X, Y, S, S, { fill: z.col.bg, stroke: z.col.line });
+      if (t <= 64) for (let k = 1; k < t; k++) { D.line(g, X + k * cell, Y, X + k * cell, Y + S, z.col.line, 0.5); D.line(g, X, Y + k * cell, X + S, Y + k * cell, z.col.line, 0.5); }
+      if (w) { for (let k = 0; k <= t; k += w) { D.line(g, X + Math.min(k, t) * cell, Y, X + Math.min(k, t) * cell, Y + S, z.col.orange, 1.5); D.line(g, X, Y + Math.min(k, t) * cell, X + S, Y + Math.min(k, t) * cell, z.col.orange, 1.5); } D.rect(g, X, Y, Math.min(w, t) * cell, Math.min(w, t) * cell, { fill: 'rgba(240,140,40,0.25)' }); }
+      else D.rect(g, X, Y, S, S, { fill: 'rgba(18,110,130,0.08)' });
+      D.rect(g, X, Y, cell, cell, { fill: z.col.red });
+      D.text(g, `${p.n} × ${p.n} image, ${t} × ${t} tokens`, X, 20, { s: 12, b: true, c: z.col.ink });
+      const tx = 260, L = [
+        ['tokens', N.toLocaleString('en-US')],
+        ['numbers per patch', (p.ps * p.ps * 3).toLocaleString('en-US')],
+        ['global pairs per head', glob.toLocaleString('en-US')],
+        [w ? `${nw} windows × ${w * w}²` : 'windowed pairs', w ? win.toLocaleString('en-US') : 'off'],
+        ['saving', w ? `${(glob / win).toFixed(1)}×` : 'none']];
+      L.forEach(([a, b], i) => { D.text(g, a, tx, 50 + i * 30, { s: 12.5, c: z.col.ink2 }); D.text(g, b, 540, 50 + i * 30, { a: 'right', s: 13, mono: true, b: true, c: z.col.ink }); });
+      D.text(g, 'red: one token. Orange: the window it may attend to.', tx, 210, { s: 11, c: z.col.ink2 });
+      return `<span class="big">tokens = (n ÷ p)², &nbsp; global attention pairs = tokens²</span><br>Attention cost grows with the square of the number of tokens, so doubling the image side multiplies it by 16. Segmentation transformers therefore use hierarchical stages, windows or spatially reduced keys and values. The trade is global context in one layer against cost.`;
+    }
+  });
+
+  def('triangulate', {
+    title: 'Depth from two cameras: triangulation',
+    sub: 'Top view. Two cameras a baseline B apart both see point P. Its image shifts between the two views by the disparity d, and depth follows from the similar triangles of the two rays.',
+    W: 560, H: 290,
+    params: [
+      { k: 'Z', label: 'True depth of P (m)', type: 'range', min: 0.5, max: 10, step: 0.1, v: 2 },
+      { k: 'X', label: 'Sideways position of P (m)', type: 'range', min: -1, max: 1, step: 0.05, v: 0.2 },
+      { k: 'B', label: 'Baseline B (m)', type: 'range', min: 0.05, max: 0.6, step: 0.01, v: 0.12 },
+      { k: 'f', label: 'Focal length f (pixels)', type: 'range', min: 300, max: 1500, step: 10, v: 700 },
+      { k: 'e', label: 'Matching error (pixels)', type: 'range', min: 0, max: 3, step: 0.25, v: 1 }
+    ],
+    tips: [
+      { t: 'f = 700 px, B = 0.12 m, P at 2 m: disparity 42 px. A 1 pixel matching error moves the estimate by about 5 cm.', set: { Z: 2, X: 0.2, B: 0.12, f: 700, e: 1 } },
+      { t: 'Move P to 8 m. The disparity shrinks to 10.5 px and the same 1 pixel error now costs about 0.8 m. Error grows with depth squared.', set: { Z: 8 } },
+      { t: 'Widen the baseline to 0.5 m at 8 m. Disparity grows and the error drops by about 4 times. Wide baselines see far, but matching gets harder.', set: { Z: 8, B: 0.5 } },
+      { t: 'Set the matching error to 0. Triangulation is exact when the match and the camera geometry are perfect. Real errors come from bad matches and poor calibration.', set: { e: 0, Z: 2, B: 0.12 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const d = p.f * p.B / p.Z, de = Math.max(0.01, d - p.e), Ze = p.f * p.B / de, err = Ze - p.Z;
+      const zMax = Math.max(10, Ze) * 1.05, sc = 230 / zMax, X0 = 200, Y0 = 268, xs = 60;
+      const toS = (x, zz) => [X0 + x * xs, Y0 - zz * sc];
+      const c1 = toS(-p.B / 2, 0), c2 = toS(p.B / 2, 0), P = toS(p.X, p.Z);
+      D.line(g, 20, Y0, 380, Y0, z.col.line, 1);
+      for (let k = 2; k <= zMax; k += 2) { const yy = Y0 - k * sc; D.line(g, 20, yy, 380, yy, z.col.line, 0.5, [2, 4]); D.text(g, k + ' m', 24, yy - 3, { s: 10, c: z.col.ink2 }); }
+      D.line(g, ...c1, ...P, z.col.cv, 1.8); D.line(g, ...c2, ...P, z.col.orange, 1.8);
+      if (p.e > 0) { const Pe = toS(p.X * Ze / p.Z, Ze); D.line(g, ...c1, ...Pe, z.col.cv, 1, [4, 4]); D.circle(g, ...Pe, 5, { stroke: z.col.red, w: 2 }); D.text(g, 'estimate', Pe[0] - 9, Pe[1] + 4, { a: 'right', s: 11, b: true, c: z.col.red }); }
+      D.circle(g, ...P, 6, { fill: z.col.green }); D.text(g, 'P', P[0] + 9, P[1] - 4, { s: 12, b: true, c: z.col.green });
+      [c1, c2].forEach((c, i) => { D.rect(g, c[0] - 7, c[1] - 4, 14, 10, { fill: i ? z.col.orange : z.col.cv }); });
+      D.text(g, `B = ${p.B.toFixed(2)} m`, X0, Y0 + 16, { a: 'center', s: 11, b: true, c: z.col.ink2 });
+      const tx = 400, rows = [['disparity d', `${d.toFixed(1)} px`], ['true depth', `${p.Z.toFixed(2)} m`], ['with error', `${Ze.toFixed(2)} m`], ['depth error', `${err >= 0 ? '+' : ''}${err.toFixed(3)} m`], ['rule of thumb', `${(p.Z * p.Z / (p.f * p.B) * p.e).toFixed(3)} m`]];
+      rows.forEach(([a, b], i) => { D.text(g, a, tx, 34 + i * 46, { s: 12, c: z.col.ink2 }); D.text(g, b, tx, 52 + i * 46, { s: 13, mono: true, b: true, c: i === 3 ? z.col.red : z.col.ink }); });
+      return `<span class="big">Z = f B ÷ d, &nbsp; ΔZ ≈ (Z² ÷ (f B)) Δd</span><br>The two viewing rays meet at P. Depth is inversely proportional to disparity, so far points have tiny disparities and a one pixel matching mistake matters much more. With many photos and unknown cameras, the camera poses are estimated together with the points, which is how 3D models are built from internet photo collections.`;
+    }
+  });
+
 })();

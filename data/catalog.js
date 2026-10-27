@@ -3936,6 +3936,25 @@ function cvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cv-vlm", title: "Vision meets language and 3D", emoji: "7", step: 7, level: "Masters and research", blurb: "How modern models connect pictures with words, segment anything on request, generate and restore images, and recover depth from several views.", topics: [
+      { id: "vision-language", title: "Connecting vision and language", emoji: "7.1", page: "content/computer-vision/vision-language.html",
+        summary: "CLIP, contrastive learning and zero-shot prompts, transformers for segmentation, SAM, DALL-E, restoration and stereo triangulation.",
+        keywords: ["CLIP", "contrastive learning", "zero-shot", "prompt", "vision transformer", "SegFormer", "Mask2Former", "SAM", "open vocabulary", "DALL-E", "diffusion", "restoration", "super-resolution", "triangulation", "stereo"],
+        minutes: 60, counts: {"lessons": 6, "problems": 12, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "bridge", title: "From pixels to meaning to words", emoji: "", group: "Lesson", keywords: ["low level vision", "high level vision", "processing ladder", "fixed classes", "vision and language", "benchmark", "human level"] },
+        { id: "clip", title: "CLIP: one space for images and text", emoji: "", group: "Lesson", keywords: ["CLIP", "image encoder", "text encoder", "embedding", "shared space", "cosine similarity", "contrastive learning", "InfoNCE", "temperature", "negatives", "zero-shot", "prompt", "prompt ensembling"] },
+        { id: "transformers", title: "Transformers for dense prediction", emoji: "", group: "Lesson", keywords: ["vision transformer", "ViT", "patch", "token", "self-attention", "attention cost", "windowed attention", "Swin", "positional encoding", "SegFormer", "MaskFormer", "Mask2Former", "mask classification", "Hungarian matching"] },
+        { id: "sam", title: "Promptable and language-guided segmentation", emoji: "", group: "Lesson", keywords: ["SAM", "Segment Anything", "promptable", "foundation model", "SA-1B", "class agnostic", "open vocabulary", "language guided segmentation", "CLIPSeg", "Grounded-SAM", "referring expression", "VQA", "conditioning"] },
+        { id: "generate", title: "Generating and restoring images", emoji: "", group: "Lesson", keywords: ["DALL-E", "text to image", "generative models", "GAN", "VAE", "diffusion", "restoration", "MRI", "super-resolution", "hallucination", "validation"] },
+        { id: "threed", title: "3D from many photographs", emoji: "", group: "Lesson", keywords: ["3D reconstruction", "triangulation", "camera pose", "feature matching", "stereo", "disparity", "baseline", "depth error", "Building Rome in a Day", "structure from motion"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
