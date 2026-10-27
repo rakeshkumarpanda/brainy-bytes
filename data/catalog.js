@@ -285,16 +285,10 @@ window.CATALOG = {
       title: 'Playwright',
       emoji: '🎭',
       color: '#2ead33',
-      blurb: 'Fast and reliable browser tests with auto waiting, tracing and parallel runs.',
-      intro: 'Learn Playwright for UI testing from the first test to fixtures, network mocking, visual checks, traces and CI.',
-      tags: ['Locators', 'Auto wait', 'Fixtures', 'Tracing', 'CI'],
-      modules: [soonModule([
-        ['Playwright setup and first test', '🚀', 'Install Playwright and run your first browser test.'],
-        ['Locators and assertions', '🎯', 'Role based locators and web first assertions.'],
-        ['Fixtures and test hooks', '🧩', 'Share setup cleanly between tests.'],
-        ['Network mocking', '🛰️', 'Intercept and fake API calls in the browser.'],
-        ['Traces, reports and CI', '📊', 'Debug failures with the trace viewer and run in pipelines.']
-      ])]
+      blurb: 'Browser tests in Java, Python, JavaScript and TypeScript, from setup to a company style framework, reporting labs and CI.',
+      intro: 'Learn Playwright in TypeScript, JavaScript, Python and Java, from setup and browser handling to locators, network mocking, fixtures, a company style framework built step by step, reporting labs, CI pipelines and the AI test agents.',
+      tags: ['Java', 'Python', 'JS and TS', 'Framework', 'Reports', 'CI'],
+      modules: pwModules().concat(iqModule('playwright'))
     },
     {
       id: 'python',
@@ -1270,6 +1264,7 @@ function iqModule(sid) {
     'javascript': ['content/javascript/interview-questions.html', 'JavaScript and TypeScript questions from developer and automation interviews: types, closures, this, prototypes, the event loop, promises, TypeScript generics and narrowing, unit and API tests, Playwright and framework design, with output questions run on Node.js.', ['var let const', 'hoisting', 'closure', 'this', 'event loop', 'microtask', 'Promise.all', 'debounce', 'deep clone', 'interface vs type', 'any vs unknown', 'generics', 'utility types', 'mocks and spies', 'auto waiting', 'flaky tests', 'fixtures']],
     'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']],
     'ml-maths': ['content/ml-maths/interview-questions.html', 'Maths questions from machine learning interviews and certification theory sections: dot products, matrix shapes, eigenvalues and PCA, derivatives, backpropagation, gradient descent and Adam, Bayes, distributions, confidence intervals, A/B tests, entropy, losses and metrics, each solved step by step.', ['dot product', 'cosine similarity', 'matrix multiplication', 'eigenvalues', 'PCA', 'chain rule', 'sigmoid derivative', 'gradient descent', 'Adam', 'Bayes theorem', 'central limit theorem', 'p-value', 'A/B test', 'cross entropy', 'precision recall', 'ROC AUC']],
+    'playwright': ['content/playwright/interview-questions.html', 'Playwright questions from automation interviews in TypeScript, JavaScript, Python and Java: how Playwright works, locators and strict mode, auto waiting, network mocking, fixtures, framework design, traces and reports, CI, sharding, flaky tests and the AI test agents, with real scenario questions.', ['playwright vs selenium', 'browser context', 'getByRole', 'strict mode', 'auto waiting', 'web first assertions', 'page.route', 'storageState', 'test.extend', 'pytest fixtures', 'trace viewer', 'sharding', 'flaky tests', 'test agents', 'playwright mcp']],
     'master-claude': ['content/claude/interview-questions.html', 'Claude interview questions on prompting, context engineering, CLAUDE.md and rules, skills, permissions and hooks, subagents, MCP, claude -p and GitHub Actions, the Claude API, agents, cost and safety, with real scenario questions.', ['prompt engineering', 'context rot', 'CLAUDE.md', 'rules.md', 'SKILL.md', 'hooks exit code 2', 'subagents', 'MCP', '.mcp.json', 'claude -p', 'tool use loop', 'prompt caching', 'agent safety']]
   }[sid];
   return {
