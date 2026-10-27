@@ -546,8 +546,8 @@ INFO = {'title': 'Set up once, use everywhere', 'panels': [
     'remember': 'Put set up where it belongs: in the test if one test needs it, in a fixture if several do, and in a setup step if the whole run does.'}
 
 REAL = [
-    ['🛡️', 'JavaScript errors found for free', 'An online travel agency added one automatic fixture that fails on page errors. It found four broken scripts in its first week, on pages nobody had written checks for.'],
-    ['🔐', 'One sign in fixture for 400 tests', 'A banking team replaced copy pasted sign in steps in 400 tests with one fixture. When the sign in page changed, they fixed one file.'],
+    ['🛡️', 'JavaScript errors found for free', 'A travel site adds one automatic fixture that fails on page errors. From then on, a broken script fails a test even on pages nobody wrote checks for.'],
+    ['🔐', 'One sign in fixture for 400 tests', 'A banking team moves copy pasted sign in steps from hundreds of tests into one fixture. When the sign in page changes, they fix one file.'],
     ['🧹', 'Tests that clean up after themselves', 'A shop test suite empties the cart in a fixture tear down, so a failed test never leaves items that break the next one.'],
 ]
 

@@ -3079,6 +3079,21 @@ function pwModules() {
         { id: "lab-emptycart", title: "Empty the cart like a tear down", emoji: "🧪", group: "Playground lab" },
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] },
+      { id: "pw-parallel", title: "Parallel runs, retries, timeouts and sharding", emoji: "⚡", page: "content/playwright/pw-parallel.html",
+        summary: "Four tests on two workers in each language, two tests kept apart with a lock, a flaky test that passes on retry, the five kinds of timeout with one that is too short, and a suite split into two shards.",
+        keywords: ["parallel", "workers", "fullyParallel", "pytest-xdist", "ResourceLock", "lock", "retries", "flaky", "reruns", "timeout", "expect timeout", "actionTimeout", "shard", "pytest-split", "merge-reports"],
+        added: "2026-10-24",
+        sections: [
+        { id: "workers", title: "Workers: tests at the same time", emoji: "👷", group: "Beginner path", keywords: ["parallel", "workers", "fullyParallel", "pytest-xdist", "-n", "junit-platform.properties", "threads"] },
+        { id: "isolation", title: "Parallel tests must not share data", emoji: "🧱", group: "Lesson", keywords: ["isolation", "shared state", "lock", "ResourceLock", "xdist_group", "loadgroup", "serial"] },
+        { id: "retries", title: "Retries and flaky tests", emoji: "🔁", group: "Lesson", keywords: ["retries", "flaky", "rerun", "reruns", "rerunFailingTestsCount", "testInfo.retry"] },
+        { id: "timeouts", title: "Timeouts", emoji: "⏱️", group: "Lesson", keywords: ["timeout", "expect timeout", "actionTimeout", "navigationTimeout", "test.slow", "setTimeout", "globalTimeout", "@Timeout"] },
+        { id: "sharding", title: "Sharding across machines", emoji: "🍕", group: "Lesson", keywords: ["shard", "sharding", "--shard", "pytest-split", "merge-reports", "blob", "CI machines"] },
+        { id: "lab-offerwait", title: "Fix a timeout that is too short", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-paytimeout", title: "Give one click its own timeout", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
     ] }
   ];
