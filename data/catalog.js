@@ -3819,6 +3819,24 @@ function cvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cv-detection", title: "Finding objects", emoji: "5", step: 5, level: "College and masters", blurb: "Object detection from the ground up: anchors, losses, duplicate removal, the main architectures and how detectors are scored.", topics: [
+      { id: "anchors", title: "From sliding windows to anchor boxes", emoji: "5.1", page: "content/computer-vision/detection-anchors.html",
+        summary: "Detector outputs, sliding window cost, anchors with box encoding and decoding, anchor grids and heads, and trusting confidence scores.",
+        keywords: ["object detection", "bounding box", "sliding window", "anchor", "box regression", "encoding", "decoding", "log space", "SSD", "anchor density", "convolutional head", "calibration", "uncertainty"],
+        minutes: 50, counts: {"lessons": 5, "problems": 12, "quiz": 12, "assign": 4},
+        added: "2026-10-27",
+        sections: [
+        { id: "detector", title: "What a detector predicts", emoji: "", group: "Lesson", keywords: ["object detection", "localisation", "bounding box", "class label", "confidence score", "box format", "corners", "centre size", "multi-task", "applications"] },
+        { id: "sliding", title: "Sliding windows and their four problems", emoji: "", group: "Lesson", keywords: ["sliding window", "stride", "window count", "location", "scale", "shape", "computation", "GFLOPs", "brute force"] },
+        { id: "anchors", title: "Anchor boxes and box regression", emoji: "", group: "Lesson", keywords: ["anchor", "anchor box", "bounding box regression", "box encoding", "box decoding", "offsets", "tx ty tw th", "log space", "regression versus classification"] },
+        { id: "density", title: "Anchor grids, shapes and convolutional heads", emoji: "", group: "Lesson", keywords: ["anchor grid", "feature map", "convolutional heads", "weight sharing", "multiple anchors", "aspect ratio", "scale", "SSD", "8732", "anchor density", "stride"] },
+        { id: "trust", title: "How far can we trust the score?", emoji: "", group: "Lesson", keywords: ["uncertainty quantification", "aleatoric", "epistemic", "calibration", "ECE", "overconfident", "conformal prediction", "coverage guarantee", "trust"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

@@ -1155,4 +1155,126 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 8: sliding windows and anchors */
+  def('slidewin', {
+    title: 'Sliding windows: counting the cost',
+    sub: 'A fixed window scans a 640 × 480 image one stride at a time, and a classifier runs on every crop. Press Play to watch it scan, then change the stride and the window shape.',
+    W: 560, H: 270,
+    params: [
+      { k: 'shape', label: 'Window shape', type: 'select', v: 'person', opts: [['person', 'Person 64 × 128 (tall)'], ['square', 'Square 96 × 96'], ['car', 'Car 128 × 64 (wide)']] },
+      { k: 's', label: 'Stride (pixels)', type: 'range', min: 4, max: 64, step: 4, v: 8 },
+      { k: 'gflops', label: 'Cost of one classifier pass (GFLOPs)', type: 'range', min: 0.5, max: 8, step: 0.5, v: 4 }
+    ],
+    tips: [
+      { t: 'The lecture count: a 64 × 128 window at stride 8 gives 73 × 45 = 3,285 windows for one shape.', set: { shape: 'person', s: 8, gflops: 4 } },
+      { t: 'Halve the stride to 4. The windows multiply by about 4, to 12,905. Fine strides are accurate but slow.', set: { s: 4 } },
+      { t: 'Set the stride to 64. Only a few windows, but a person standing between two positions is cut in half and may be missed.', set: { s: 64 } }
+    ],
+    startAtZero: true,
+    steps: () => 40,
+    speed: () => 120,
+    draw(z) {
+      const { g, p, step } = z;
+      const [w, h] = { person: [64, 128], square: [96, 96], car: [128, 64] }[p.shape];
+      const W = 640, H = 480, sc = 0.45, X = 10, Y = 10;
+      const nx = Math.floor((W - w) / p.s) + 1, ny = Math.floor((H - h) / p.s) + 1, N = nx * ny;
+      D.rect(g, X, Y, W * sc, H * sc, { fill: z.col.bg, stroke: z.col.line });
+      D.rect(g, X + 300 * sc, Y + 250 * sc, 60 * sc, 150 * sc, { fill: z.col.dark ? '#64748b' : '#94a3b8' });
+      D.circle(g, X + 330 * sc, Y + 230 * sc, 20 * sc, { fill: z.col.dark ? '#64748b' : '#94a3b8' });
+      g.save(); g.fillStyle = z.col.ink2; g.globalAlpha = 0.5;
+      if (N <= 4000) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) g.fillRect(X + (i * p.s + w / 2) * sc - 0.6, Y + (j * p.s + h / 2) * sc - 0.6, 1.2, 1.2);
+      g.restore();
+      const idx = step === 0 ? 0 : Math.round((step / 40) * (N - 1)), ci = idx % nx, cj = Math.floor(idx / nx);
+      D.rect(g, X + ci * p.s * sc, Y + cj * p.s * sc, w * sc, h * sc, { stroke: z.col.red, w: 2.2 });
+      D.text(g, 'dots: centre of every window position', X, Y + H * sc + 16, { s: 11, c: z.col.ink2 });
+      const tf = N * p.gflops / 1000, secs = tf / 10;
+      [`across: ⌊${640 - w} ÷ ${p.s}⌋ + 1 = ${nx}`, `down: ⌊${480 - h} ÷ ${p.s}⌋ + 1 = ${ny}`, `windows = ${nx} × ${ny} = ${N.toLocaleString('en-GB')}`, `window ${(idx + 1).toLocaleString('en-GB')} of ${N.toLocaleString('en-GB')}`, `compute ≈ ${f(tf, 2)} TFLOPs`, `≈ ${f(secs, 2)} s on a 10 TFLOP/s GPU`, `real time needs about 0.03 s`].forEach((t, i) => D.text(g, t, 312, 22 + i * 21, { s: 12, mono: true, c: i === 5 ? (secs > 0.03 ? z.col.red : z.col.green) : z.col.ink }));
+      return `<span class="big">windows = (⌊(W − w) ÷ s⌋ + 1) × (⌊(H − h) ÷ s⌋ + 1)</span><br>And this is for one window shape at one scale. Real objects come in many sizes and shapes, so the count multiplies again. Neighbouring windows also recompute almost the same pixels. These are the four problems from the lecture: location, scale, shape and computation.`;
+    }
+  });
+
+  const cornersOf = (xc, yc, w, h) => [xc - w / 2, yc - h / 2, xc + w / 2, yc + h / 2];
+  const iouC = (a, b) => { const iw = Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])), ih = Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1])), I = iw * ih; const U = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - I; return U > 0 ? I / U : 0; };
+  CVZ.iouC = iouC;
+  def('anchor', {
+    title: 'Anchor box plus correction: decoding and encoding',
+    sub: 'Grey dashed: the anchor, a rough starting box. Green dotted: the true object. Blue: the box the network predicts by applying its four corrections t to the anchor.',
+    W: 560, H: 275,
+    params: [
+      { k: 'tx', label: 't<sub>x</sub> (shift right, in anchor widths)', type: 'range', min: -0.6, max: 0.6, step: 0.01, v: 0.1 },
+      { k: 'ty', label: 't<sub>y</sub> (shift down, in anchor heights)', type: 'range', min: -0.6, max: 0.6, step: 0.01, v: -0.05 },
+      { k: 'tw', label: 't<sub>w</sub> (log of width ratio)', type: 'range', min: -1, max: 1, step: 0.01, v: 0.2 },
+      { k: 'th', label: 't<sub>h</sub> (log of height ratio)', type: 'range', min: -1, max: 1, step: 0.01, v: -0.1 },
+      { k: 'gt', label: 'True object', type: 'select', v: 'lec', opts: [['lec', 'Lecture: centre (108, 112), 75 × 110'], ['wide', 'A wide object: centre (90, 130), 130 × 70'], ['small', 'A small object: centre (120, 100), 30 × 40']] }
+    ],
+    tips: [
+      { t: 'The defaults are the lecture decoding example: t = (0.10, −0.05, 0.20, −0.10) turns the anchor into a box centred at (106, 114), 73.28 × 108.58.', set: { tx: 0.1, ty: -0.05, tw: 0.2, th: -0.1, gt: 'lec' } },
+      { t: 'Set t to the encoded target of the lecture object, (0.13, −0.07, 0.22, −0.09). The blue box now sits on the green one. This target is exactly what training asks the network to output.', set: { tx: 0.13, ty: -0.07, tw: 0.22, th: -0.09, gt: 'lec' } },
+      { t: 'Pick the wide object. The anchor is tall, so the targets are large and the anchor overlaps it poorly. This is why detectors use several anchor shapes.', set: { gt: 'wide' } },
+      { t: 'Move t<sub>w</sub> to −1 and then to +1. The width is multiplied by e<sup>−1</sup> ≈ 0.37 or e ≈ 2.72. It can never become negative.', set: { tw: -1 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const A = [100, 120, 60, 120];
+      const G = { lec: [108, 112, 75, 110], wide: [90, 130, 130, 70], small: [120, 100, 30, 40] }[p.gt];
+      const P = [A[0] + p.tx * A[2], A[1] + p.ty * A[3], A[2] * Math.exp(p.tw), A[3] * Math.exp(p.th)];
+      const T = [(G[0] - A[0]) / A[2], (G[1] - A[1]) / A[3], Math.log(G[2] / A[2]), Math.log(G[3] / A[3])];
+      const X = 20, Y = 8, S = 1.05, bx = b => { const c = cornersOf(...b); return [X + c[0] * S, Y + c[1] * S, (c[2] - c[0]) * S, (c[3] - c[1]) * S]; };
+      D.rect(g, X, Y, 240 * S, 245 * S, { fill: z.col.bg, stroke: z.col.line });
+      g.save(); g.beginPath(); g.rect(X, Y, 240 * S, 245 * S); g.clip();
+      D.rect(g, ...bx(A), { stroke: z.col.ink2, w: 2, dash: [6, 4] });
+      D.rect(g, ...bx(G), { stroke: z.col.green, w: 2.5, dash: [2, 3] });
+      D.rect(g, ...bx(P), { stroke: z.col.cv, w: 2.5 });
+      D.arrow(g, X + A[0] * S, Y + A[1] * S, X + P[0] * S, Y + P[1] * S, z.col.red, 2, 6);
+      g.restore();
+      const c = cornersOf(...P), fr = v => f(v, 2);
+      const lines = [
+        ['anchor', `(${A[0]}, ${A[1]}), ${A[2]} × ${A[3]}`],
+        ['x = x_a + t_x w_a', fr(P[0])], ['y = y_a + t_y h_a', fr(P[1])], ['w = w_a e^t_w', fr(P[2])], ['h = h_a e^t_h', fr(P[3])],
+        ['corners', `(${f(c[0], 1)}, ${f(c[1], 1)}, ${f(c[2], 1)}, ${f(c[3], 1)})`],
+        ['target t*', `(${T.map(v => f(v, 3)).join(', ')})`],
+        ['IoU anchor, object', f(iouC(cornersOf(...A), cornersOf(...G)), 3)], ['IoU predicted, object', f(iouC(cornersOf(...P), cornersOf(...G)), 3)]];
+      lines.forEach(([a, b], i) => { D.text(g, a, 288, 22 + i * 26, { s: 11, c: z.col.ink2 }); D.text(g, b, 288, 35 + i * 26, { s: 12, mono: true, c: z.col.ink, b: i >= 7 }); });
+      return `<span class="big">t<sub>x</sub> = (x − x<sub>a</sub>) ÷ w<sub>a</sub>, &nbsp; t<sub>y</sub> = (y − y<sub>a</sub>) ÷ h<sub>a</sub>, &nbsp; t<sub>w</sub> = ln(w ÷ w<sub>a</sub>), &nbsp; t<sub>h</sub> = ln(h ÷ h<sub>a</sub>)</span><br>Training turns the true box into the target t* with these formulas (encoding). At test time the network outputs t and the formulas run backwards (decoding). Shifts are measured in anchor sizes, so the same numbers work for small and large objects.`;
+    }
+  });
+
+  def('anchorgrid', {
+    title: 'How dense must the anchors be?',
+    sub: 'Anchors of the same size as the object sit on a grid with stride s. The object can land anywhere between grid points. The best anchor must still overlap it well enough (IoU ≥ 0.5) for a small correction to work.',
+    W: 560, H: 260,
+    params: [
+      { k: 'w', label: 'Object (and anchor) size w', type: 'range', min: 16, max: 96, step: 4, v: 32 },
+      { k: 's', label: 'Anchor stride s', type: 'range', min: 4, max: 48, step: 2, v: 8 },
+      { k: 'ox', label: 'Object position between grid points (0 = on a point, 0.5 = worst case)', type: 'range', min: 0, max: 0.5, step: 0.05, v: 0.5 }
+    ],
+    tips: [
+      { t: 'RetinaNet finest level: stride 8, anchors of size 32. Even in the worst position the best anchor has IoU 0.62.', set: { w: 32, s: 8, ox: 0.5 } },
+      { t: 'Raise the stride to 16 with the same 32 pixel object. The worst case drops below 0.5, so some objects get no good anchor.', set: { w: 32, s: 16, ox: 0.5 } },
+      { t: 'Keep stride 16 but make the object 48 wide. s ÷ w = 0.33 is under 0.367 again, so it works. This is why larger anchors live on coarser grids.', set: { w: 48, s: 16, ox: 0.5 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const X = 10, Y = 10, A = 230, sc = A / 128;
+      D.rect(g, X, Y, A, A, { fill: z.col.bg, stroke: z.col.line });
+      for (let gx = 0; gx <= 128; gx += p.s) for (let gy = 0; gy <= 128; gy += p.s) D.circle(g, X + gx * sc, Y + gy * sc, 1.6, { fill: z.col.ink2 });
+      const g0 = Math.floor(64 / p.s) * p.s, cx = g0 + p.ox * p.s, cy = g0 + p.ox * p.s;
+      const obj = cornersOf(cx, cy, p.w, p.w), anc = cornersOf(g0, g0, p.w, p.w);
+      g.save(); g.beginPath(); g.rect(X, Y, A, A); g.clip();
+      D.rect(g, X + anc[0] * sc, Y + anc[1] * sc, p.w * sc, p.w * sc, { stroke: z.col.cv, w: 2, dash: [5, 3] });
+      D.rect(g, X + obj[0] * sc, Y + obj[1] * sc, p.w * sc, p.w * sc, { stroke: z.col.green, w: 2.5 });
+      g.restore();
+      const iou = iouC(obj, anc);
+      D.text(g, `nearest anchor IoU = ${f(iou, 3)}`, X, Y + A + 18, { s: 12, mono: true, b: true, c: iou >= 0.5 ? z.col.green : z.col.red });
+      const m = D.axes(g, z, [300, 14, 240, 190], [0, 0.8], [0, 1], { nx: 4, ny: 4, xl: 'stride ÷ size, s ÷ w', fx: v => f(v, 1), fy: v => f(v, 2) });
+      D.curve(g, r => { const I = Math.max(0, 1 - r / 2) ** 2; return I / (2 - I); }, [0, 0.8], m, z.col.cv, 2.2);
+      D.line(g, m.sx(0), m.sy(0.5), m.sx(0.8), m.sy(0.5), z.col.red, 1, [4, 3]);
+      D.line(g, m.sx(0.367), m.sy(0), m.sx(0.367), m.sy(1), z.col.ink2, 1, [2, 3]);
+      const r = p.s / p.w, Iw = Math.max(0, 1 - r / 2) ** 2;
+      D.circle(g, m.sx(Math.min(0.8, r)), m.sy(Iw / (2 - Iw)), 5, { fill: z.col.orange });
+      D.text(g, 'worst case IoU', 306, 30, { s: 11, c: z.col.ink2, b: true });
+      return `<span class="big">worst case: I = (w − s/2)², &nbsp; IoU = I ÷ (2w² − I) ≥ 0.5 &nbsp;⟺&nbsp; s ≤ 0.367 w</span><br>Here s ÷ w = ${f(r, 3)}, so the worst case IoU is ${f(Iw / (2 - Iw), 3)}${Iw / (2 - Iw) >= 0.5 ? ', which is enough' : ', which is too low'}. The orange dot marks your setting on the curve.`;
+    }
+  });
+
 })();
