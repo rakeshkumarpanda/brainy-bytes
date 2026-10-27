@@ -1549,4 +1549,180 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 11: evaluating detectors */
+  const parseDets = s => String(s).split('\n').map(l => l.trim().split(/\s+/)).filter(a => a.length >= 3 && isFinite(+a[1]))
+    .map(a => ({ n: a[0], s: +a[1], tp: /^(t|tp|y|1)$/i.test(a[2]) }));
+  /* cumulative precision and recall down a ranked list */
+  const prList = (tps, nGT) => { let tp = 0, fp = 0; return tps.map(t => { if (t) tp++; else fp++; return { p: tp / (tp + fp), r: nGT ? tp / nGT : 0, tp, fp }; }); };
+  const envAt = (pts, r) => Math.max(0, ...pts.filter(q => q.r >= r - 1e-9).map(q => q.p));
+  const apOf = (pts, mode) => {
+    if (mode === '11' || mode === '101') { const n = mode === '11' ? 10 : 100; let s = 0; for (let i = 0; i <= n; i++) s += envAt(pts, i / n); return s / (n + 1); }
+    let s = 0, prev = 0; pts.forEach(q => { if (q.r > prev + 1e-9) { s += (q.r - prev) * envAt(pts, q.r); prev = q.r; } }); return s;
+  };
+
+  def('prsweep', {
+    title: 'The score threshold trades precision against recall',
+    sub: 'The slide 84 detections. Cup, Cat and Dog are real objects. Keep only the boxes whose score is at least the threshold, then count.',
+    W: 560, H: 270,
+    params: [
+      { k: 'thr', label: 'Score threshold', type: 'range', min: 0, max: 1, step: 0.01, v: 0.4 },
+      { k: 'gt', label: 'Real objects in the image', type: 'range', min: 1, max: 8, step: 1, v: 3, help: 'Objects beyond the true detections below were never found.' },
+      { k: 'd', label: 'Detections: name, score, T (true) or F (false)', type: 'area', v: 'Dog 0.99 T\nCat 0.90 T\nHuman 0.50 F\nCup 0.30 T\nLaundry 0.10 F\nTortilla 0.02 F' }
+    ],
+    tips: [
+      { t: 'Threshold 0.4 keeps Dog, Cat and Human. TP 2, FP 1, so precision and recall are both 0.67.', set: { thr: 0.4, gt: 3 } },
+      { t: 'Threshold 0.6 drops the false Human. Precision becomes 1.00, recall stays 0.67.', set: { thr: 0.6, gt: 3 } },
+      { t: 'Threshold 0 keeps all six boxes. Recall is 1.00 but precision falls to 0.50.', set: { thr: 0, gt: 3 } },
+      { t: 'Compare 0.2 and 0.4. Precision goes from 0.75 down to 0.67 even though the threshold rose. This zig-zag is why AP uses the envelope.', set: { thr: 0.2, gt: 3 } },
+      { t: 'Set real objects to 5. Two objects were never detected, so no threshold can give recall above 0.6.', set: { gt: 5 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let ds = parseDets(p.d); if (!ds.length) ds = parseDets('Dog 0.99 T\nCat 0.90 T');
+      ds.sort((a, b) => b.s - a.s);
+      const nGT = Math.max(p.gt, ds.filter(d => d.tp).length);
+      const kept = ds.filter(d => d.s >= p.thr), TP = kept.filter(d => d.tp).length, FP = kept.length - TP;
+      const P = kept.length ? TP / kept.length : 1, R = TP / nGT, F1 = P + R ? 2 * P * R / (P + R) : 0;
+      D.text(g, 'name        score   truth', 14, 22, { s: 11.5, mono: true, b: true, c: z.col.ink });
+      const rowY = i => 44 + i * Math.min(24, 170 / Math.max(1, ds.length - 1));
+      let lineDrawn = false;
+      ds.forEach((d, i) => {
+        const on = d.s >= p.thr;
+        if (!on && !lineDrawn) { D.line(g, 10, rowY(i) - 15, 250, rowY(i) - 15, z.col.red, 2, [6, 4]); lineDrawn = true; }
+        D.text(g, `${d.n.slice(0, 10).padEnd(10)}  ${d.s.toFixed(2).padEnd(5)}   ${d.tp ? 'TP' : 'FP'}`, 14, rowY(i), { s: 11.5, mono: true, b: on, c: on ? (d.tp ? z.col.green : z.col.red) : z.col.ink2 });
+      });
+      D.text(g, `threshold ${f(p.thr, 2)}: kept ${kept.length}, TP ${TP}, FP ${FP}, FN ${nGT - TP}`, 14, 250, { s: 12, b: true, c: z.col.ink });
+      const m = D.axes(g, z, [340, 16, 196, 186], [0, 1], [0, 1], { xl: 'recall', yl: 'precision', nx: 2, ny: 2 });
+      const ths = [...new Set(ds.map(d => d.s))].sort((a, b) => b - a);
+      const pts = ths.map(t => { const k = ds.filter(d => d.s >= t), tp = k.filter(d => d.tp).length; return [tp / nGT, tp / k.length]; });
+      g.save(); g.strokeStyle = z.col.ink2; g.lineWidth = 1; g.setLineDash([3, 3]); g.beginPath();
+      pts.forEach(([r, pp], i) => i ? g.lineTo(m.sx(r), m.sy(pp)) : g.moveTo(m.sx(r), m.sy(pp))); g.stroke(); g.restore();
+      pts.forEach(([r, pp]) => D.circle(g, m.sx(r), m.sy(pp), 3.5, { fill: z.col.ink2 }));
+      if (kept.length) D.circle(g, m.sx(R), m.sy(P), 7, { stroke: z.col.cv, w: 3 });
+      return `<span class="big">P = TP ÷ (TP + FP) = ${kept.length ? f(P, 2) : 'undefined'}, &nbsp; R = TP ÷ (TP + FN) = ${f(R, 2)}, &nbsp; F1 = ${f(F1, 3)}</span><br>Raising the threshold usually raises precision and lowers recall. The grey dots are every possible threshold, the blue ring is yours. Rather than argue about one threshold, the PR curve looks at all of them.`;
+    }
+  });
+
+  def('apcurve', {
+    title: 'Average precision, rank by rank',
+    sub: 'Ten detections of one class, ranked by score, marked TP or FP. Red is the raw precision, blue is the envelope, and the shaded area is AP.',
+    W: 560, H: 275,
+    params: [
+      { k: 'seq', label: 'TP or FP for each rank, best first', type: 'text', v: 'T T F T F T F T F F' },
+      { k: 'gt', label: 'Ground truth objects', type: 'range', min: 1, max: 12, step: 1, v: 6 },
+      { k: 'mode', label: 'Method', type: 'select', v: 'all', opts: [['all', 'All points (area under the envelope)'], ['11', '11 points (PASCAL VOC 2007)'], ['101', '101 points (COCO)']] }
+    ],
+    tips: [
+      { t: 'Press Play to add one detection at a time. Rank 3 is an FP, so precision drops to 0.667 while recall stays 0.333.', set: { seq: 'T T F T F T F T F F', gt: 6, mode: 'all' }, play: true },
+      { t: 'The lecture answer is AP = 0.674. Switch to 11 points: it also gives 0.674 for this list.', set: { seq: 'T T F T F T F T F F', gt: 6, mode: '11' } },
+      { t: 'Move the false positives to the end: T T T T T F F F F F. Same counts, but AP rises to 0.833, the highest recall reached. Ranking matters.', set: { seq: 'T T T T T F F F F F', gt: 6, mode: 'all' } },
+      { t: 'Put them first instead: F F F F F T T T T T. AP falls to 0.417, half of the best order.', set: { seq: 'F F F F F T T T T T', gt: 6, mode: 'all' } },
+      { t: 'Raise the ground truth count to 10. The same detections now miss more objects and AP falls.', set: { seq: 'T T F T F T F T F F', gt: 10, mode: 'all' } }
+    ],
+    steps: z => Math.max(1, String(z.p.seq).trim().split(/[\s,]+/).filter(Boolean).length),
+    speed: () => 650,
+    draw(z) {
+      const { g, p, step } = z;
+      let all = String(p.seq).trim().split(/[\s,]+/).filter(Boolean).map(s => /^t/i.test(s));
+      if (!all.length) all = [true];
+      const nGT = Math.max(p.gt, all.filter(Boolean).length);
+      const shown = all.slice(0, step), pts = prList(shown, nGT);
+      D.text(g, 'rank  TP?  P      R', 12, 20, { s: 11, mono: true, b: true, c: z.col.ink });
+      const dy = Math.min(22, 225 / all.length);
+      pts.forEach((q, i) => D.text(g, `${String(i + 1).padStart(3)}   ${shown[i] ? 'TP' : 'FP'}  ${q.p.toFixed(3)}  ${q.r.toFixed(3)}`, 12, 40 + i * dy, { s: 11, mono: true, c: shown[i] ? z.col.green : z.col.red, b: i === pts.length - 1 }));
+      const m = D.axes(g, z, [250, 14, 290, 210], [0, 1], [0, 1.05], { xl: 'recall', yl: 'precision', nx: 5, ny: 2, fy: v => f(v, 1) });
+      if (pts.length) {
+        const ap = apOf(pts, p.mode);
+        g.save(); g.fillStyle = z.col.cv; g.globalAlpha = 0.18; g.beginPath(); g.moveTo(m.sx(0), m.sy(0));
+        let prev = 0;
+        pts.forEach(q => { if (q.r > prev + 1e-9) { const e = envAt(pts, q.r); g.lineTo(m.sx(prev), m.sy(e)); g.lineTo(m.sx(q.r), m.sy(e)); prev = q.r; } });
+        g.lineTo(m.sx(prev), m.sy(0)); g.closePath(); g.fill(); g.restore();
+        prev = 0; let first = true;
+        g.save(); g.strokeStyle = z.col.cv; g.lineWidth = 2.5; g.beginPath();
+        pts.forEach(q => { if (q.r > prev + 1e-9) { const e = envAt(pts, q.r); if (first) { g.moveTo(m.sx(prev), m.sy(e)); first = false; } else g.lineTo(m.sx(prev), m.sy(e)); g.lineTo(m.sx(q.r), m.sy(e)); prev = q.r; } });
+        g.stroke(); g.restore();
+        g.save(); g.strokeStyle = z.col.red; g.lineWidth = 1.5; g.beginPath();
+        pts.forEach((q, i) => i ? g.lineTo(m.sx(q.r), m.sy(q.p)) : g.moveTo(m.sx(q.r), m.sy(q.p))); g.stroke(); g.restore();
+        pts.forEach(q => D.circle(g, m.sx(q.r), m.sy(q.p), 3, { fill: z.col.red }));
+        if (p.mode !== 'all') { const n = p.mode === '11' ? 10 : 100; for (let i = 0; i <= n; i += (n === 100 ? 5 : 1)) D.circle(g, m.sx(i / n), m.sy(envAt(pts, i / n)), 2.5, { fill: z.col.orange }); }
+        D.text(g, `AP = ${f(ap, 3)}`, 530, 40, { a: 'right', s: 15, b: true, c: z.col.cv });
+        const name = p.mode === 'all' ? 'Σ (r<sub>k</sub> − r<sub>k−1</sub>) · p<sub>interp</sub>(r<sub>k</sub>)' : `mean of p<sub>interp</sub> at ${p.mode} recall points`;
+        return `<span class="big">p<sub>interp</sub>(r) = max precision at any recall ≥ r, &nbsp; AP = ${name} = ${f(ap, 3)}</span><br>After ${pts.length} of ${all.length} detections: precision ${f(pts[pts.length - 1].p, 3)}, recall ${f(pts[pts.length - 1].r, 3)}. Recall can never pass ${f(all.filter(Boolean).length / nGT, 3)}, because only ${all.filter(Boolean).length} of ${nGT} objects are ever found.`;
+      }
+      return 'Press Play or Step to add the detections one by one.';
+    }
+  });
+
+  def('cocoap', {
+    title: 'COCO AP: averaging over ten IoU thresholds',
+    sub: 'The same detector is scored at IoU 0.50, 0.55 up to 0.95. A stricter threshold demands tighter boxes, so AP falls. COCO reports the mean of all ten.',
+    W: 560, H: 255,
+    params: [
+      { k: 'v', label: 'AP at IoU 0.50, 0.55, ..., 0.95', type: 'text', v: '0.80 0.78 0.75 0.71 0.66 0.60 0.52 0.42 0.27 0.08' },
+      { k: 'hl', label: 'Highlight IoU threshold', type: 'range', min: 0.5, max: 0.95, step: 0.05, v: 0.75 }
+    ],
+    tips: [
+      { t: 'The lecture numbers. AP at 0.5 is 0.80 but the COCO average is only 0.559, because tight boxes are demanded.', set: { v: '0.80 0.78 0.75 0.71 0.66 0.60 0.52 0.42 0.27 0.08' } },
+      { t: 'A detector with sloppy boxes: same 0.80 at IoU 0.5, but the COCO AP drops to 0.289.', set: { v: '0.80 0.70 0.55 0.40 0.25 0.12 0.05 0.02 0 0' } },
+      { t: 'A detector with very tight boxes: the curve stays high and the COCO AP reaches 0.692. Both detectors look equal under the PASCAL VOC rule.', set: { v: '0.80 0.80 0.79 0.78 0.77 0.75 0.72 0.66 0.55 0.30' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let v = String(p.v).trim().split(/[\s,]+/).map(Number).filter(isFinite).slice(0, 10);
+      while (v.length < 10) v.push(0);
+      v = v.map(a => clamp(a, 0, 1));
+      const mean = v.reduce((a, b) => a + b, 0) / 10, hi = Math.round((p.hl - 0.5) / 0.05);
+      const X = 60, Y = 30, Wd = 470, Ht = 170;
+      const m = D.axes(g, z, [X, Y, Wd, Ht], [0, 10], [0, 1], { nx: 1, ny: 4, fx: () => '', yl: 'AP' });
+      D.bars(g, z, [X, Y, Wd, Ht], v, { max: 1, gap: 6, colour: i => i === hi ? z.col.orange : z.col.cv });
+      v.forEach((a, i) => { D.text(g, f(0.5 + 0.05 * i, 2), X + (i + 0.5) * Wd / 10, Y + Ht + 16, { a: 'center', s: 11, c: z.col.ink2 }); D.text(g, a.toFixed(2), X + (i + 0.5) * Wd / 10, m.sy(a) - 5, { a: 'center', s: 11, b: true, c: z.col.ink }); });
+      D.line(g, X, m.sy(mean), X + Wd, m.sy(mean), z.col.red, 2, [6, 4]);
+      D.text(g, `dashed line: COCO AP = mean = ${f(mean, 3)}`, X + Wd, 16, { a: 'right', s: 12, b: true, c: z.col.red });
+      D.text(g, 'IoU threshold', X + Wd / 2, Y + Ht + 32, { a: 'center', s: 12, b: true, c: z.col.ink2 });
+      return `<span class="big">AP<sub>COCO</sub> = (1 ÷ 10) Σ AP<sub>t</sub>, &nbsp; t = 0.50, 0.55, ..., 0.95</span><br>AP@0.5 = ${f(v[0], 2)}, AP@${f(p.hl, 2)} = ${f(v[hi], 2)}, COCO AP = ${f(mean, 3)}. This is why COCO numbers (30 to 50) look small next to PASCAL VOC AP@0.5 numbers (70 to 90).`;
+    }
+  });
+
+  def('pareto', {
+    title: 'Speed against accuracy: the Pareto frontier',
+    sub: 'Each dot is a detector. A model is dominated if another one is at least as accurate and at least as fast, and better in one of the two. The rest form the frontier.',
+    W: 560, H: 270,
+    params: [
+      { k: 'm', label: 'Models: name, mAP, latency in ms', type: 'area', v: 'A 21 30\nB 24 45\nC 30 90\nD 32 80\nE 34 150\nF 37 200\nG 28 120' },
+      { k: 'b', label: 'Latency budget (ms)', type: 'range', min: 20, max: 260, step: 5, v: 100 }
+    ],
+    tips: [
+      { t: 'The lecture example. C and G are dominated by D, which is both more accurate and faster. The frontier is A, B, D, E and F.', set: { m: 'A 21 30\nB 24 45\nC 30 90\nD 32 80\nE 34 150\nF 37 200\nG 28 120', b: 100 } },
+      { t: 'A phone app with a 50 ms budget. The best choice is B with mAP 24.', set: { b: 50 } },
+      { t: 'Change G to "G 33 100". No model is both at least as accurate and at least as fast, so G joins the frontier.', set: { m: 'A 21 30\nB 24 45\nC 30 90\nD 32 80\nE 34 150\nF 37 200\nG 33 100' } },
+      { t: 'Add a new model "H 38 120". It dominates both E and F, and the frontier gets shorter.', set: { m: 'A 21 30\nB 24 45\nC 30 90\nD 32 80\nE 34 150\nF 37 200\nG 28 120\nH 38 120', b: 260 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let ms = String(p.m).split('\n').map(l => l.trim().split(/\s+/)).filter(a => a.length >= 3 && isFinite(+a[1]) && isFinite(+a[2])).map(a => ({ n: a[0].slice(0, 6), a: +a[1], t: +a[2] }));
+      if (!ms.length) ms = [{ n: 'A', a: 21, t: 30 }];
+      ms.forEach(x => { x.by = ms.filter(y => y !== x && y.a >= x.a && y.t <= x.t && (y.a > x.a || y.t < x.t)).sort((u, w) => w.a - u.a || u.t - w.t)[0]; });
+      const front = ms.filter(x => !x.by).sort((a, b) => a.t - b.t);
+      const tMax = Math.max(p.b, ...ms.map(x => x.t)) * 1.1, aMin = Math.min(...ms.map(x => x.a)), aMax = Math.max(...ms.map(x => x.a));
+      const pad = Math.max(2, (aMax - aMin) * 0.15);
+      const m = D.axes(g, z, [60, 14, 300, 210], [0, tMax], [aMin - pad, aMax + pad], { xl: 'latency (ms), lower is better', yl: 'mAP', fx: v => Math.round(v), fy: v => Math.round(v) });
+      g.save(); g.fillStyle = z.col.green; g.globalAlpha = 0.08; g.fillRect(60, 14, m.sx(p.b) - 60, 210); g.restore();
+      D.line(g, m.sx(p.b), 14, m.sx(p.b), 224, z.col.green, 2, [6, 4]);
+      g.save(); g.strokeStyle = z.col.cv; g.lineWidth = 2; g.beginPath();
+      front.forEach((x, i) => i ? g.lineTo(m.sx(x.t), m.sy(x.a)) : g.moveTo(m.sx(x.t), m.sy(x.a))); g.stroke(); g.restore();
+      const ok = ms.filter(x => x.t <= p.b), best = ok.length ? ok.reduce((a, b) => b.a > a.a || (b.a === a.a && b.t < a.t) ? b : a) : null;
+      ms.forEach(x => {
+        D.circle(g, m.sx(x.t), m.sy(x.a), 6, x.by ? { stroke: z.col.ink2, w: 2, fill: z.col.bg } : { fill: z.col.cv });
+        if (x === best) D.circle(g, m.sx(x.t), m.sy(x.a), 10, { stroke: z.col.orange, w: 3 });
+        D.text(g, x.n, m.sx(x.t) + 9, m.sy(x.a) + (x.by ? 16 : -9), { s: 12, b: true, c: x.by ? z.col.ink2 : z.col.ink });
+      });
+      D.text(g, 'frontier', 384, 26, { s: 12, b: true, c: z.col.cv });
+      front.slice(0, 7).forEach((x, i) => D.text(g, `${x.n}  mAP ${x.a}, ${x.t} ms`, 384, 46 + i * 18, { s: 11, mono: true, c: z.col.ink }));
+      const dom = ms.filter(x => x.by);
+      D.text(g, 'dominated', 384, 60 + Math.min(7, front.length) * 18, { s: 12, b: true, c: z.col.ink2 });
+      dom.slice(0, 4).forEach((x, i) => D.text(g, `${x.n}  by ${x.by.n}`, 384, 80 + Math.min(7, front.length) * 18 + i * 18, { s: 11, mono: true, c: z.col.ink2 }));
+      return `<b>${best ? `Best model within ${p.b} ms: ${best.n} (mAP ${best.a}, ${best.t} ms).` : `No model fits within ${p.b} ms.`}</b> Frontier: ${front.map(x => x.n).join(', ')}.<br>Moving along the frontier you cannot gain accuracy without losing speed. A dominated model is never the right pick, whatever the budget.`;
+    }
+  });
+
 })();

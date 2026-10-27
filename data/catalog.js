@@ -3868,6 +3868,23 @@ function cvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "evaluation", title: "Evaluating and choosing detectors", emoji: "5.4", page: "content/computer-vision/detection-evaluation.html",
+        summary: "Datasets and the long tail, TP and FP matching, precision and recall, AP, mAP and COCO AP, the Pareto frontier, batch norm with small batches and transfer learning.",
+        keywords: ["evaluation", "precision", "recall", "F1", "average precision", "mAP", "COCO", "PR curve", "long tail", "repeat factor sampling", "Pareto frontier", "batch norm", "GroupNorm", "transfer learning"],
+        minutes: 55, counts: {"lessons": 6, "problems": 12, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "datasets", title: "Datasets and the long tail", emoji: "", group: "Lesson", keywords: ["dataset", "PASCAL VOC", "COCO", "Open Images", "LVIS", "long tail", "class imbalance", "repeat factor sampling", "learning curve", "rare classes"] },
+        { id: "matching", title: "Matching detections: TP, FP and FN", emoji: "", group: "Lesson", keywords: ["TP", "FP", "FN", "true positive", "false positive", "false negative", "matching", "IoU threshold", "alpha", "duplicate", "confusion matrix", "location error"] },
+        { id: "pr", title: "Precision, recall and the score threshold", emoji: "", group: "Lesson", keywords: ["precision", "recall", "F1", "harmonic mean", "score threshold", "trade-off", "screening", "fraud detection", "false alarm", "miss"] },
+        { id: "ap", title: "The PR curve and average precision", emoji: "", group: "Lesson", keywords: ["PR curve", "precision recall curve", "average precision", "AP", "interpolated precision", "envelope", "11 point", "101 point", "area under curve", "ranking"] },
+        { id: "map", title: "mAP and the COCO protocol", emoji: "", group: "Lesson", keywords: ["mAP", "mean average precision", "COCO", "AP@0.5", "AP@0.75", "AP 0.5:0.95", "IoU thresholds", "APS", "APM", "APL", "small objects", "average recall"] },
+        { id: "practice", title: "Choosing, speeding up and training a detector", emoji: "", group: "Lesson", keywords: ["model selection", "Pareto frontier", "Pareto optimal", "speed accuracy trade-off", "latency", "resolution", "proposals", "batch normalisation", "GroupNorm", "Sync-BN", "transfer learning", "JFT-300M", "pre-training"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
