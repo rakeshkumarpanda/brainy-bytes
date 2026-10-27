@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The test runner: organise, tag, parameterise and configure · Playwright</title>
+<meta name="description" content="Playwright Test, pytest with pytest-playwright and JUnit 5 with @UsePlaywright side by side: describe and classes, tags and markers, skip, fail and xfail, grep, -m and -Dgroups, parameterised tests, playwright.config projects, pytest.ini and conftest, and OptionsFactory.">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/extras.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/lesson.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/jsplay.css">
+<link rel="stylesheet" href="../../assets/claude.css">
+<link rel="stylesheet" href="../../assets/pw.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a class="home-link" href="../../subject.html?s=playwright" target="_top">🎭 Playwright</a><span>›</span><span>🧪 The test runner</span><span>›</span><span>Chapter 8 of 8</span></div>
+  <header class="hero" id="top" data-say="top">
+    <div class="hero-row"><span class="em">🏃</span><div><h1>The test runner: organise, tag, parameterise and configure</h1><p class="lead">Let the runner do the heavy lifting. Group and tag tests, skip and mark known failures, run a slice of the suite, feed one test many rows of data, and keep every setting in one configuration.</p></div></div>
+    <div class="chips"><span class="chip">⏱️ About 22 min read</span><span class="chip">📚 5 parts</span><span class="chip">🎬 1 animations</span><span class="chip">▶ 16 real runs in 4 languages</span><span class="chip">🧪 2 playground labs</span><span class="chip">🎯 12 quiz questions</span><span class="chip">🧮 8 calculations</span><span class="chip">🧒 3 beginner parts</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="pw-pick" role="group" aria-label="Your programming language"><span>I write my tests in</span><button type="button" data-l="java">☕ Java</button><button type="button" data-l="py">🐍 Python</button><button type="button" data-l="js">🟨 JavaScript</button><button type="button" data-l="ts">🔷 TypeScript</button></div>
+    <div class="cl-plain"><b>🧒 In plain words</b><p>Playwright moves the browser. The test runner decides which tests run, with which settings, and how the results are reported. This chapter shows the runner of each language doing the same jobs.</p></div>
+  </header>
+  <nav class="toc" aria-label="Parts of this chapter"><a href="#runners" class="easy"><span>🏃</span>One library, a runner per language</a><a href="#organize" class="easy"><span>🗂️</span>Grouping, tags and annotations</a><a href="#select"><span>🎯</span>Running a slice of the suite</a><a href="#param" class="easy"><span>🔁</span>Parameterised tests</a><a href="#config"><span>⚙️</span>Configuration in one place</a><a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a><a class="spec" href="#practice">🧪 Playground labs</a><a class="spec" href="#quiz">🎯 Quiz</a><a class="spec" href="#numbers">🧮 Number crunch</a><button type="button" class="cl-toggle" id="easyOnly" aria-pressed="false">🧒 Show the beginner path only</button></nav>
+  <section class="card reveal" id="comic"></section>
+
+<section class="card reveal jsec easy-part" id="runners" data-say="runners"><div class="sec-num">Part 1</div><h2><span class="sec-em">🏃</span><span>One library, a runner per language</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>Playwright itself drives the browser. A <b>test runner</b> finds your tests, runs them, and reports the results. Each language uses the runner its developers already know.</p>
+<div class="tw"><table class="jt "><tr><th>Language</th><th>Test runner</th><th>How Playwright plugs in</th></tr><tr><td>JavaScript, TypeScript</td><td>Playwright Test (@playwright/test)</td><td>built in: fixtures, config, projects, retries, sharding, reporters, UI mode</td></tr><tr><td>Python</td><td>pytest</td><td>the pytest-playwright plugin gives page, context and browser fixtures and CLI options</td></tr><tr><td>Java</td><td>JUnit 5 or TestNG</td><td>JUnit 5: @UsePlaywright injects Page and friends (since 1.42). TestNG: you create them in hooks</td></tr><tr><td>C#</td><td>NUnit, MSTest or xUnit</td><td>base classes such as PageTest give you Page</td></tr></table></div>
+<div class="viz" data-viz="flow" data-k="run"></div>
+<div class="pw-box pw-tip"><span class="pw-ic">💡</span><div>Playwright Test was built by the Playwright team, so it has the most features out of the box. pytest, JUnit and TestNG need a plugin or a little code for the same things, which the next chapters show side by side.</div></div>
+</section>
+<section class="card reveal jsec easy-part" id="organize" data-say="organize"><div class="sec-num">Part 2</div><h2><span class="sec-em">🗂️</span><span>Grouping, tags and annotations</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>A real suite has hundreds of tests. Groups keep related tests together, tags let you run a slice such as the smoke tests, and annotations say why a test is skipped or expected to fail.</p>
+<div class="codewrap tests pw4" data-k="organize" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Group, tag, skip and mark known failures · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ProductsPageTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ProductsPageTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Disabled</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">DisplayName</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Tag</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="a">@DisplayName</span>(<span class="s">"Products page"</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">ProductsPageTest</span> {
+  <span class="a">@Test</span>
+  <span class="a">@Tag</span>(<span class="s">"smoke"</span>)
+  <span class="a">@DisplayName</span>(<span class="s">"shows five products"</span>)
+  <span class="k">void</span> showsFiveProducts(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Tag</span>(<span class="s">"regression"</span>)
+  <span class="a">@DisplayName</span>(<span class="s">"sorts by price"</span>)
+  <span class="k">void</span> sortsByPrice(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    page.getByLabel(<span class="s">"Sort by"</span>).selectOption(<span class="s">"low"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>).first()).containsText(<span class="s">"Gel pen"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Disabled</span>(<span class="s">"the wish list is not built yet"</span>)
+  <span class="k">void</span> addsAProductToTheWishList(<span class="t">Page</span> page) {
+  }
+
+  <span class="c">// JUnit has no "expected to fail". Teams disable the test and name the ticket: SHOP-42.</span>
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running Products page
+[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 4.668 s -- in Products page
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 1
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_products_page.py</div><pre class="src" data-file="tests/test_products_page.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">class</span> <span class="t">TestProductsPage</span>:
+    <span class="a">@pytest</span>.mark.smoke
+    <span class="k">def</span> test_shows_five_products(self, page: <span class="t">Page</span>):
+        page.goto(<span class="s">"/products"</span>)
+        expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)
+
+    <span class="a">@pytest</span>.mark.regression
+    <span class="k">def</span> test_sorts_by_price(self, page: <span class="t">Page</span>):
+        page.goto(<span class="s">"/products"</span>)
+        page.get_by_label(<span class="s">"Sort by"</span>).select_option(<span class="s">"low"</span>)
+        expect(page.get_by_role(<span class="s">"listitem"</span>).first).to_contain_text(<span class="s">"Gel pen"</span>)
+
+    <span class="a">@pytest</span>.mark.skip(reason=<span class="s">"the wish list is not built yet"</span>)
+    <span class="k">def</span> test_adds_a_product_to_the_wish_list(self, page: <span class="t">Page</span>):
+        <span class="k">pass</span>
+
+    <span class="a">@pytest</span>.mark.regression
+    <span class="a">@pytest</span>.mark.xfail(reason=<span class="s">"SHOP-42: phones arrive next month"</span>, strict=<span class="k">True</span>)
+    <span class="k">def</span> test_sells_phones(self, page: <span class="t">Page</span>):
+        page.goto(<span class="s">"/products"</span>)
+        page.get_by_placeholder(<span class="s">"Search products"</span>).fill(<span class="s">"phone"</span>)
+        expect(page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Add to cart"</span>)).to_have_count(<span class="n">1</span>, timeout=<span class="n">1000</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 4 items
+
+tests/test_products_page.py::TestProductsPage::test_shows_five_products[chromium] PASSED [ 25%]
+tests/test_products_page.py::TestProductsPage::test_sorts_by_price[chromium] PASSED [ 50%]
+tests/test_products_page.py::TestProductsPage::test_adds_a_product_to_the_wish_list[chromium] SKIPPED [ 75%]
+tests/test_products_page.py::TestProductsPage::test_sells_phones[chromium] XFAIL [100%]
+
+=================== 2 passed, 1 skipped, 1 xfailed in 4.90s ====================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products-page.spec.js</div><pre class="src" data-file="tests/products-page.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.describe(<span class="s">'products page'</span>, () =&gt; {
+  test(<span class="s">'shows five products'</span>, { tag: <span class="s">'@smoke'</span> }, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+  });
+
+  test(<span class="s">'sorts by price'</span>, { tag: <span class="s">'@regression'</span> }, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Sort by'</span>).selectOption(<span class="s">'low'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>).first()).toContainText(<span class="s">'Gel pen'</span>);
+  });
+
+  test.skip(<span class="s">'adds a product to the wish list'</span>, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="c">// the wish list is not built yet</span>
+  });
+
+  test(<span class="s">'sells phones'</span>, {
+    tag: <span class="s">'@regression'</span>,
+    annotation: { type: <span class="s">'issue'</span>, description: <span class="s">'SHOP-42: phones arrive next month'</span> },
+  }, <span class="k">async</span> ({ page }) =&gt; {
+    test.fail();   <span class="c">// known to fail today, so a failure is the expected result</span>
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'phone'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> })).toHaveCount(<span class="n">1</span>, { timeout: <span class="n">1000</span> });
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › tests/products-page.spec.js:4:3 › products page › shows five products @smoke (1.2s)
+  ✓  2 [chromium] › tests/products-page.spec.js:9:3 › products page › sorts by price @regression (1.1s)
+  -  3 [chromium] › tests/products-page.spec.js:15:8 › products page › adds a product to the wish list
+  ✘  4 [chromium] › tests/products-page.spec.js:19:3 › products page › sells phones @regression (1.3s)
+
+  1 skipped
+  3 passed (5.0s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products-page.spec.ts</div><pre class="src" data-file="tests/products-page.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.describe(<span class="s">'products page'</span>, () =&gt; {
+  test(<span class="s">'shows five products'</span>, { tag: <span class="s">'@smoke'</span> }, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+  });
+
+  test(<span class="s">'sorts by price'</span>, { tag: <span class="s">'@regression'</span> }, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Sort by'</span>).selectOption(<span class="s">'low'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>).first()).toContainText(<span class="s">'Gel pen'</span>);
+  });
+
+  test.skip(<span class="s">'adds a product to the wish list'</span>, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="c">// the wish list is not built yet</span>
+  });
+
+  test(<span class="s">'sells phones'</span>, {
+    tag: <span class="s">'@regression'</span>,
+    annotation: { <span class="k">type</span>: <span class="s">'issue'</span>, description: <span class="s">'SHOP-42: phones arrive next month'</span> },
+  }, <span class="k">async</span> ({ page }) =&gt; {
+    test.fail();   <span class="c">// known to fail today, so a failure is the expected result</span>
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'phone'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> })).toHaveCount(<span class="n">1</span>, { timeout: <span class="n">1000</span> });
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › tests/products-page.spec.ts:4:3 › products page › shows five products @smoke (1.0s)
+  ✓  2 [chromium] › tests/products-page.spec.ts:9:3 › products page › sorts by price @regression (1.1s)
+  -  3 [chromium] › tests/products-page.spec.ts:15:8 › products page › adds a product to the wish list
+  ✘  4 [chromium] › tests/products-page.spec.ts:19:3 › products page › sells phones @regression (1.3s)
+
+  1 skipped
+  3 passed (4.7s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four tests, one result each: two passed, one skipped, and one failed as expected. The test that is known to fail keeps the run green: Playwright Test shows its cross but counts it as passed, and pytest calls it xfailed. The day phones arrive it turns red, which reminds the team to remove the mark. JUnit has no such mark, so the Java class skips that case.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>You want</th><th>JavaScript and TypeScript</th><th>Python (pytest)</th><th>Java (JUnit 5)</th></tr><tr><td>a group</td><td>test.describe()</td><td>a class TestSomething</td><td>a test class with @DisplayName</td></tr><tr><td>a tag</td><td>{ tag: '@smoke' }</td><td>@pytest.mark.smoke</td><td>@Tag("smoke")</td></tr><tr><td>skip</td><td>test.skip()</td><td>@pytest.mark.skip(reason=...)</td><td>@Disabled("why")</td></tr><tr><td>skip on a condition</td><td>test.skip(condition, reason)</td><td>@pytest.mark.skipif(condition, reason=...)</td><td>@EnabledOnOs, @DisabledIf...</td></tr><tr><td>known to fail</td><td>test.fail()</td><td>@pytest.mark.xfail(strict=True)</td><td>not built in, @Disabled with the ticket</td></tr><tr><td>broken, fix later</td><td>test.fixme()</td><td>@pytest.mark.skip with a reason</td><td>@Disabled</td></tr><tr><td>give it more time</td><td>test.slow()</td><td>a timeout marker from a plugin</td><td>@Timeout</td></tr><tr><td>run only this one</td><td>test.only()</td><td>-k name on the command line</td><td>-Dtest=Class#method</td></tr></table></div>
+<div class="pw-box pw-warn"><span class="pw-ic">⚠️</span><div>A test.only left in the code silently skips every other test. Set forbidOnly in the CI config so such a run fails instead.</div></div>
+</section>
+<section class="card reveal jsec" id="select" data-say="select"><div class="sec-num">Part 3</div><h2><span class="sec-em">🎯</span><span>Running a slice of the suite</span></h2>
+
+<p>Tags pay off when you run only some tests: smoke tests on every deploy, the full regression at night.</p>
+<div class="codewrap tests pw4" data-k="select" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Run only the tests with one tag · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ProductsPageTest.java</div><pre class="src" data-file="src/test/java/com/brainy/ProductsPageTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Disabled</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">DisplayName</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Tag</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="a">@DisplayName</span>(<span class="s">"Products page"</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">ProductsPageTest</span> {
+  <span class="a">@Test</span>
+  <span class="a">@Tag</span>(<span class="s">"smoke"</span>)
+  <span class="a">@DisplayName</span>(<span class="s">"shows five products"</span>)
+  <span class="k">void</span> showsFiveProducts(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>)).hasCount(<span class="n">5</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Tag</span>(<span class="s">"regression"</span>)
+  <span class="a">@DisplayName</span>(<span class="s">"sorts by price"</span>)
+  <span class="k">void</span> sortsByPrice(<span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/products"</span>);
+    page.getByLabel(<span class="s">"Sort by"</span>).selectOption(<span class="s">"low"</span>);
+    assertThat(page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>).first()).containsText(<span class="s">"Gel pen"</span>);
+  }
+
+  <span class="a">@Test</span>
+  <span class="a">@Disabled</span>(<span class="s">"the wish list is not built yet"</span>)
+  <span class="k">void</span> addsAProductToTheWishList(<span class="t">Page</span> page) {
+  }
+
+  <span class="c">// JUnit has no "expected to fail". Teams disable the test and name the ticket: SHOP-42.</span>
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test -Dgroups=smoke</pre></div><div class="out"><span>Terminal output</span><pre>[INFO]  T E S T S
+[INFO] Running Products page
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.154 s -- in Products page
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_products_page.py</div><pre class="src" data-file="tests/test_products_page.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="k">class</span> <span class="t">TestProductsPage</span>:
+    <span class="a">@pytest</span>.mark.smoke
+    <span class="k">def</span> test_shows_five_products(self, page: <span class="t">Page</span>):
+        page.goto(<span class="s">"/products"</span>)
+        expect(page.get_by_role(<span class="s">"listitem"</span>)).to_have_count(<span class="n">5</span>)
+
+    <span class="a">@pytest</span>.mark.regression
+    <span class="k">def</span> test_sorts_by_price(self, page: <span class="t">Page</span>):
+        page.goto(<span class="s">"/products"</span>)
+        page.get_by_label(<span class="s">"Sort by"</span>).select_option(<span class="s">"low"</span>)
+        expect(page.get_by_role(<span class="s">"listitem"</span>).first).to_contain_text(<span class="s">"Gel pen"</span>)
+
+    <span class="a">@pytest</span>.mark.skip(reason=<span class="s">"the wish list is not built yet"</span>)
+    <span class="k">def</span> test_adds_a_product_to_the_wish_list(self, page: <span class="t">Page</span>):
+        <span class="k">pass</span>
+
+    <span class="a">@pytest</span>.mark.regression
+    <span class="a">@pytest</span>.mark.xfail(reason=<span class="s">"SHOP-42: phones arrive next month"</span>, strict=<span class="k">True</span>)
+    <span class="k">def</span> test_sells_phones(self, page: <span class="t">Page</span>):
+        page.goto(<span class="s">"/products"</span>)
+        page.get_by_placeholder(<span class="s">"Search products"</span>).fill(<span class="s">"phone"</span>)
+        expect(page.get_by_role(<span class="s">"button"</span>, name=<span class="s">"Add to cart"</span>)).to_have_count(<span class="n">1</span>, timeout=<span class="n">1000</span>)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v -m smoke</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 4 items / 3 deselected / 1 selected
+
+tests/test_products_page.py::TestProductsPage::test_shows_five_products[chromium] PASSED [100%]
+
+======================= 1 passed, 3 deselected in 2.14s ========================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/products-page.spec.js</div><pre class="src" data-file="tests/products-page.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.describe(<span class="s">'products page'</span>, () =&gt; {
+  test(<span class="s">'shows five products'</span>, { tag: <span class="s">'@smoke'</span> }, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+  });
+
+  test(<span class="s">'sorts by price'</span>, { tag: <span class="s">'@regression'</span> }, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Sort by'</span>).selectOption(<span class="s">'low'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>).first()).toContainText(<span class="s">'Gel pen'</span>);
+  });
+
+  test.skip(<span class="s">'adds a product to the wish list'</span>, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="c">// the wish list is not built yet</span>
+  });
+
+  test(<span class="s">'sells phones'</span>, {
+    tag: <span class="s">'@regression'</span>,
+    annotation: { type: <span class="s">'issue'</span>, description: <span class="s">'SHOP-42: phones arrive next month'</span> },
+  }, <span class="k">async</span> ({ page }) =&gt; {
+    test.fail();   <span class="c">// known to fail today, so a failure is the expected result</span>
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'phone'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> })).toHaveCount(<span class="n">1</span>, { timeout: <span class="n">1000</span> });
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --grep @smoke</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/products-page.spec.js:4:3 › products page › shows five products @smoke (1.2s)
+
+  1 passed (2.5s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/products-page.spec.ts</div><pre class="src" data-file="tests/products-page.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.describe(<span class="s">'products page'</span>, () =&gt; {
+  test(<span class="s">'shows five products'</span>, { tag: <span class="s">'@smoke'</span> }, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>)).toHaveCount(<span class="n">5</span>);
+  });
+
+  test(<span class="s">'sorts by price'</span>, { tag: <span class="s">'@regression'</span> }, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByLabel(<span class="s">'Sort by'</span>).selectOption(<span class="s">'low'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'listitem'</span>).first()).toContainText(<span class="s">'Gel pen'</span>);
+  });
+
+  test.skip(<span class="s">'adds a product to the wish list'</span>, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="c">// the wish list is not built yet</span>
+  });
+
+  test(<span class="s">'sells phones'</span>, {
+    tag: <span class="s">'@regression'</span>,
+    annotation: { <span class="k">type</span>: <span class="s">'issue'</span>, description: <span class="s">'SHOP-42: phones arrive next month'</span> },
+  }, <span class="k">async</span> ({ page }) =&gt; {
+    test.fail();   <span class="c">// known to fail today, so a failure is the expected result</span>
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(<span class="s">'phone'</span>);
+    <span class="k">await</span> expect(page.getByRole(<span class="s">'button'</span>, { name: <span class="s">'Add to cart'</span> })).toHaveCount(<span class="n">1</span>, { timeout: <span class="n">1000</span> });
+  });
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test --grep @smoke</pre></div><div class="out"><span>Terminal output</span><pre>Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/products-page.spec.ts:4:3 › products page › shows five products @smoke (1.2s)
+
+  1 passed (2.5s)</pre></div></div><div class="note-out"><span>What happens</span><p>The same file, but only the smoke test ran. Playwright Test matches the tag in the title and tag list with <code>--grep</code>, pytest selects markers with <code>-m</code>, and Maven Surefire passes JUnit tags with <code>-Dgroups</code>. All three accept expressions, such as <code>--grep-invert @slow</code>, <code>-m "smoke and not slow"</code> or <code>-Dgroups="smoke &amp; !slow"</code>.</p></div></div>
+</section>
+<section class="card reveal jsec easy-part" id="param" data-say="param"><div class="sec-num">Part 4</div><h2><span class="sec-em">🔁</span><span>Parameterised tests</span></h2>
+<div class="cl-tags"><span class="cl-easy">🧒 Beginner friendly</span></div>
+<p>When the same steps should run with different data, write the steps once and feed them rows of data. Each row becomes its own test in the report.</p>
+<div class="codewrap tests pw4" data-k="param" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">One test, many rows of data · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/SearchTest.java</div><pre class="src" data-file="src/test/java/com/brainy/SearchTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Locator</span>;
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> com.microsoft.playwright.options.<span class="t">AriaRole</span>;
+<span class="k">import</span> org.junit.jupiter.params.<span class="t">ParameterizedTest</span>;
+<span class="k">import</span> org.junit.jupiter.params.provider.<span class="t">CsvSource</span>;
+
+<span class="k">import</span> <span class="k">static</span> com.microsoft.playwright.assertions.<span class="t">PlaywrightAssertions</span>.assertThat;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">SearchTest</span> {
+  <span class="a">@ParameterizedTest</span>(name = <span class="s">"search for \"{0}\" finds {1}"</span>)
+  <span class="a">@CsvSource</span>({
+      <span class="s">"mug, 1, Coffee mug"</span>,
+      <span class="s">"o, 3, Coffee mug"</span>,
+      <span class="s">"pen, 1, Gel pen"</span>,
+      <span class="s">"BOTTLE, 1, Water bottle"</span>,
+  })
+  <span class="k">void</span> search(<span class="t">String</span> term, <span class="k">int</span> count, <span class="t">String</span> first, <span class="t">Page</span> page) {   <span class="c">// the data first, then Page</span>
+    page.navigate(<span class="s">"/products"</span>);
+    page.getByPlaceholder(<span class="s">"Search products"</span>).fill(term);
+    <span class="t">Locator</span> cards = page.getByRole(<span class="t">AriaRole</span>.<span class="t">LISTITEM</span>);
+    assertThat(cards).hasCount(count);
+    assertThat(cards.first()).containsText(first);
+  }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO]  T E S T S
+[INFO] Running com.brainy.SearchTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.708 s -- in com.brainy.SearchTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 tests/test_search.py</div><pre class="src" data-file="tests/test_search.py"><span class="k">import</span> pytest
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>, expect
+
+
+<span class="a">@pytest</span>.mark.parametrize(<span class="s">"term, count, first"</span>, [
+    (<span class="s">"mug"</span>, <span class="n">1</span>, <span class="s">"Coffee mug"</span>),
+    (<span class="s">"o"</span>, <span class="n">3</span>, <span class="s">"Coffee mug"</span>),
+    (<span class="s">"pen"</span>, <span class="n">1</span>, <span class="s">"Gel pen"</span>),
+    (<span class="s">"BOTTLE"</span>, <span class="n">1</span>, <span class="s">"Water bottle"</span>),
+])
+<span class="k">def</span> test_search(page: <span class="t">Page</span>, term: str, count: int, first: str):
+    page.goto(<span class="s">"/products"</span>)
+    page.get_by_placeholder(<span class="s">"Search products"</span>).fill(term)
+    cards = page.get_by_role(<span class="s">"listitem"</span>)
+    expect(cards).to_have_count(count)
+    expect(cards.first).to_contain_text(first)</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -v</pre></div><div class="out"><span>Terminal output</span><pre>collecting ... collected 4 items
+
+tests/test_search.py::test_search[chromium-mug-1-Coffee mug] PASSED      [ 25%]
+tests/test_search.py::test_search[chromium-o-3-Coffee mug] PASSED        [ 50%]
+tests/test_search.py::test_search[chromium-pen-1-Gel pen] PASSED         [ 75%]
+tests/test_search.py::test_search[chromium-BOTTLE-1-Water bottle] PASSED [100%]
+
+============================== 4 passed in 5.26s ===============================</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 tests/search.spec.js</div><pre class="src" data-file="tests/search.spec.js"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">const</span> searches = [
+  { term: <span class="s">'mug'</span>, count: <span class="n">1</span>, first: <span class="s">'Coffee mug'</span> },
+  { term: <span class="s">'o'</span>, count: <span class="n">3</span>, first: <span class="s">'Coffee mug'</span> },
+  { term: <span class="s">'pen'</span>, count: <span class="n">1</span>, first: <span class="s">'Gel pen'</span> },
+  { term: <span class="s">'BOTTLE'</span>, count: <span class="n">1</span>, first: <span class="s">'Water bottle'</span> },
+];
+
+<span class="k">for</span> (<span class="k">const</span> { term, count, first } <span class="k">of</span> searches) {
+  test(<span class="s">`search for "${term}" finds ${count}`</span>, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(term);
+    <span class="k">const</span> cards = page.getByRole(<span class="s">'listitem'</span>);
+    <span class="k">await</span> expect(cards).toHaveCount(count);
+    <span class="k">await</span> expect(cards.first()).toContainText(first);
+  });
+}</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › tests/search.spec.js:11:3 › search for &quot;mug&quot; finds 1 (1.1s)
+  ✓  2 [chromium] › tests/search.spec.js:11:3 › search for &quot;o&quot; finds 3 (1.1s)
+  ✓  3 [chromium] › tests/search.spec.js:11:3 › search for &quot;pen&quot; finds 1 (1.1s)
+  ✓  4 [chromium] › tests/search.spec.js:11:3 › search for &quot;BOTTLE&quot; finds 1 (1.1s)
+
+  4 passed (5.9s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 tests/search.spec.ts</div><pre class="src" data-file="tests/search.spec.ts"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">const</span> searches = [
+  { term: <span class="s">'mug'</span>, count: <span class="n">1</span>, first: <span class="s">'Coffee mug'</span> },
+  { term: <span class="s">'o'</span>, count: <span class="n">3</span>, first: <span class="s">'Coffee mug'</span> },
+  { term: <span class="s">'pen'</span>, count: <span class="n">1</span>, first: <span class="s">'Gel pen'</span> },
+  { term: <span class="s">'BOTTLE'</span>, count: <span class="n">1</span>, first: <span class="s">'Water bottle'</span> },
+];
+
+<span class="k">for</span> (<span class="k">const</span> { term, count, first } <span class="k">of</span> searches) {
+  test(<span class="s">`search for "${term}" finds ${count}`</span>, <span class="k">async</span> ({ page }) =&gt; {
+    <span class="k">await</span> page.goto(<span class="s">'/products'</span>);
+    <span class="k">await</span> page.getByPlaceholder(<span class="s">'Search products'</span>).fill(term);
+    <span class="k">const</span> cards = page.getByRole(<span class="s">'listitem'</span>);
+    <span class="k">await</span> expect(cards).toHaveCount(count);
+    <span class="k">await</span> expect(cards.first()).toContainText(first);
+  });
+}</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › tests/search.spec.ts:11:3 › search for &quot;mug&quot; finds 1 (1.3s)
+  ✓  2 [chromium] › tests/search.spec.ts:11:3 › search for &quot;o&quot; finds 3 (1.1s)
+  ✓  3 [chromium] › tests/search.spec.ts:11:3 › search for &quot;pen&quot; finds 1 (1.0s)
+  ✓  4 [chromium] › tests/search.spec.ts:11:3 › search for &quot;BOTTLE&quot; finds 1 (1.0s)
+
+  4 passed (6.0s)</pre></div></div><div class="note-out"><span>What happens</span><p>Four rows of data became four separate tests, each with its own name and its own fresh page. A failure names the row that failed. The search ignores case, so BOTTLE finds the Water bottle.</p></div></div>
+<div class="pw-box pw-pro"><span class="pw-ic">🏢</span><div>In real projects the rows often come from a CSV or JSON file, for example 50 postcodes for a delivery check. Read the file at the top of the test file and loop over it, or use @CsvFileSource in JUnit and a list built from the file in pytest.</div></div>
+</section>
+<section class="card reveal jsec" id="config" data-say="config"><div class="sec-num">Part 5</div><h2><span class="sec-em">⚙️</span><span>Configuration in one place</span></h2>
+
+<p>Settings that are the same for every test belong in one place, not in each test: the base URL, the browser, timeouts, retries, what to record on failure, and the devices to test.</p>
+<div class="codewrap tests pw4" data-k="config" data-langs="java py js ts"><div class="codebar"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">Configuration that every test receives · <b class="pw-badge">✅ mvn test ran</b></span><button type="button" class="copy">Copy</button></div><div class="pw-tabs" role="tablist"><button type="button" class="pw-tab" data-l="java" role="tab">☕ Java</button><button type="button" class="pw-tab" data-l="py" role="tab">🐍 Python</button><button type="button" class="pw-tab" data-l="js" role="tab">🟨 JavaScript</button><button type="button" class="pw-tab" data-l="ts" role="tab">🔷 TypeScript</button></div><div class="pw-pane" data-l="java" data-badge="✅ mvn test ran"><div class="fname">📄 src/test/java/com/brainy/ShopOptions.java</div><pre class="src" data-file="src/test/java/com/brainy/ShopOptions.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Browser</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">Options</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">OptionsFactory</span>;
+
+<span class="c">// Shared settings for every test class that says @UsePlaywright(ShopOptions.class)</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">ShopOptions</span> <span class="k">implements</span> <span class="t">OptionsFactory</span> {
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="t">Options</span> getOptions() {
+    <span class="k">return</span> <span class="k">new</span> <span class="t">Options</span>()
+        .setHeadless(<span class="k">true</span>)
+        .setBrowserName(<span class="s">"chromium"</span>)
+        .setBaseUrl(<span class="s">"http://localhost:4173"</span>)
+        .setContextOptions(<span class="k">new</span> <span class="t">Browser</span>.<span class="t">NewContextOptions</span>()
+            .setLocale(<span class="s">"en-IN"</span>)
+            .setTimezoneId(<span class="s">"Asia/Kolkata"</span>));
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/PhoneOptions.java</div><pre class="src" data-file="src/test/java/com/brainy/PhoneOptions.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Browser</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">Options</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">OptionsFactory</span>;
+
+<span class="c">// The same shop, as a phone. setDeviceName uses Playwright's device list.</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">PhoneOptions</span> <span class="k">implements</span> <span class="t">OptionsFactory</span> {
+  <span class="a">@Override</span>
+  <span class="k">public</span> <span class="t">Options</span> getOptions() {
+    <span class="k">return</span> <span class="k">new</span> <span class="t">Options</span>()
+        .setHeadless(<span class="k">true</span>)
+        .setBaseUrl(<span class="s">"http://localhost:4173"</span>)
+        .setDeviceName(<span class="s">"Pixel 7"</span>)
+        .setContextOptions(<span class="k">new</span> <span class="t">Browser</span>.<span class="t">NewContextOptions</span>()
+            .setLocale(<span class="s">"en-IN"</span>)
+            .setTimezoneId(<span class="s">"Asia/Kolkata"</span>));
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/AboutYou.java</div><pre class="src" data-file="src/test/java/com/brainy/AboutYou.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+
+<span class="c">// A helper both test classes share.</span>
+<span class="k">public</span> <span class="k">class</span> <span class="t">AboutYou</span> {
+  <span class="k">static</span> <span class="k">void</span> show(<span class="t">String</span> name, <span class="t">Page</span> page) {
+    page.navigate(<span class="s">"/about-you"</span>);
+    <span class="t">System</span>.out.println(<span class="t">String</span>.format(<span class="s">"%-8s"</span>, name)
+        + <span class="s">"| viewport "</span> + page.viewportSize().width
+        + <span class="s">" | language "</span> + page.locator(<span class="s">"#lang"</span>).textContent()
+        + <span class="s">" | time zone "</span> + page.locator(<span class="s">"#tz"</span>).textContent());
+  }
+}</pre><div class="fname">📄 src/test/java/com/brainy/DesktopTest.java</div><pre class="src" data-file="src/test/java/com/brainy/DesktopTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="a">@UsePlaywright</span>(<span class="t">ShopOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">DesktopTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theConfigReachesEveryTest(<span class="t">Page</span> page) { <span class="t">AboutYou</span>.show(<span class="s">"desktop"</span>, page); }
+}</pre><div class="fname">📄 src/test/java/com/brainy/PhoneTest.java</div><pre class="src" data-file="src/test/java/com/brainy/PhoneTest.java"><span class="k">package</span> com.brainy;
+
+<span class="k">import</span> com.microsoft.playwright.<span class="t">Page</span>;
+<span class="k">import</span> com.microsoft.playwright.junit.<span class="t">UsePlaywright</span>;
+<span class="k">import</span> org.junit.jupiter.api.<span class="t">Test</span>;
+
+<span class="a">@UsePlaywright</span>(<span class="t">PhoneOptions</span>.<span class="k">class</span>)
+<span class="k">public</span> <span class="k">class</span> <span class="t">PhoneTest</span> {
+  <span class="a">@Test</span>
+  <span class="k">void</span> theConfigReachesEveryTest(<span class="t">Page</span> page) { <span class="t">AboutYou</span>.show(<span class="s">"phone"</span>, page); }
+}</pre><div class="cmd"><span>Terminal</span><pre>$ mvn test</pre></div><div class="out"><span>Terminal output</span><pre>[INFO]  T E S T S
+[INFO] Running com.brainy.PhoneTest
+phone   | viewport 412 | language en-IN | time zone Asia/Calcutta
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.674 s -- in com.brainy.PhoneTest
+[INFO] Running com.brainy.DesktopTest
+desktop | viewport 1280 | language en-IN | time zone Asia/Calcutta
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.249 s -- in com.brainy.DesktopTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS</pre></div></div><div class="pw-pane" data-l="py" data-badge="✅ pytest ran"><div class="fname">📄 pytest.ini</div><pre class="src" data-file="pytest.ini"><span class="k">[pytest]</span>
+<span class="a">addopts </span>=<span class="s"></span>
+    --base-url http://localhost:4173
+    --browser chromium
+    --screenshot only-on-failure
+    --tracing retain-on-failure</pre><div class="fname">📄 conftest.py</div><pre class="src" data-file="conftest.py"><span class="k">import</span> pytest
+
+
+<span class="c"># Options for every browser context that the page fixture opens.</span>
+<span class="a">@pytest</span>.fixture(scope=<span class="s">"session"</span>)
+<span class="k">def</span> browser_context_args(browser_context_args):
+    <span class="k">return</span> {**browser_context_args, <span class="s">"locale"</span>: <span class="s">"en-IN"</span>, <span class="s">"timezone_id"</span>: <span class="s">"Asia/Kolkata"</span>}</pre><div class="fname">📄 tests/test_config.py</div><pre class="src" data-file="tests/test_config.py"><span class="k">from</span> playwright.sync_api <span class="k">import</span> <span class="t">Page</span>
+
+
+<span class="k">def</span> test_the_config_reaches_every_test(page: <span class="t">Page</span>):
+    page.goto(<span class="s">"/about-you"</span>)
+    print(<span class="s">"| viewport"</span>, page.viewport_size[<span class="s">"width"</span>],
+          <span class="s">"| language"</span>, page.locator(<span class="s">"#lang"</span>).text_content(),
+          <span class="s">"| time zone"</span>, page.locator(<span class="s">"#tz"</span>).text_content())</pre><div class="cmd"><span>Terminal</span><pre>$ pytest -s -q
+pytest -s -q --device &quot;Pixel 7&quot;</pre></div><div class="out"><span>Terminal output</span><pre>| viewport 1280 | language en-IN | time zone Asia/Calcutta
+.
+1 passed in 1.45s
+| viewport 412 | language en-IN | time zone Asia/Calcutta
+.
+1 passed in 1.33s</pre></div></div><div class="pw-pane" data-l="js" data-badge="✅ Playwright Test ran"><div class="fname">📄 playwright.config.js</div><pre class="src" data-file="playwright.config.js"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  timeout: <span class="n">30_000</span>,                   <span class="c">// one test may take 30 s</span>
+  expect: { timeout: <span class="n">5_000</span> },        <span class="c">// one assertion may keep trying for 5 s</span>
+  fullyParallel: <span class="k">true</span>,
+  forbidOnly: !!process.env.<span class="t">CI</span>,      <span class="c">// a forgotten test.only fails the CI run</span>
+  retries: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="n">0</span>,
+  workers: <span class="n">2</span>,
+  reporter: <span class="s">'list'</span>,
+  use: {
+    baseURL: <span class="s">'http://localhost:4173'</span>,
+    locale: <span class="s">'en-IN'</span>,
+    timezoneId: <span class="s">'Asia/Kolkata'</span>,
+    trace: <span class="s">'on-first-retry'</span>,
+    screenshot: <span class="s">'only-on-failure'</span>,
+  },
+  projects: [
+    { name: <span class="s">'desktop'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } },
+    { name: <span class="s">'phone'</span>, use: { ...devices[<span class="s">'Pixel 7'</span>] } },
+  ],
+});</pre><div class="fname">📄 tests/config.spec.js</div><pre class="src" data-file="tests/config.spec.js"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the config reaches every test'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+  console.log(testInfo.project.name.padEnd(<span class="n">8</span>),
+    <span class="s">'| viewport'</span>, page.viewportSize()?.width,
+    <span class="s">'| language'</span>, <span class="k">await</span> page.locator(<span class="s">'#lang'</span>).textContent(),
+    <span class="s">'| time zone'</span>, <span class="k">await</span> page.locator(<span class="s">'#tz'</span>).textContent());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 2 workers
+
+desktop  | viewport 1280 | language en-IN | time zone Asia/Calcutta
+phone    | viewport 412 | language en-IN | time zone Asia/Calcutta
+  ✓  1 [desktop] › tests/config.spec.js:3:1 › the config reaches every test (442ms)
+  ✓  2 [phone] › tests/config.spec.js:3:1 › the config reaches every test (411ms)
+
+  2 passed (2.2s)</pre></div></div><div class="pw-pane" data-l="ts" data-badge="✅ tsc checked, Playwright Test ran"><div class="fname">📄 playwright.config.ts</div><pre class="src" data-file="playwright.config.ts"><span class="k">import</span> { defineConfig, devices } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+<span class="k">export</span> <span class="k">default</span> defineConfig({
+  testDir: <span class="s">'./tests'</span>,
+  timeout: <span class="n">30_000</span>,                   <span class="c">// one test may take 30 s</span>
+  expect: { timeout: <span class="n">5_000</span> },        <span class="c">// one assertion may keep trying for 5 s</span>
+  fullyParallel: <span class="k">true</span>,
+  forbidOnly: !!process.env.<span class="t">CI</span>,      <span class="c">// a forgotten test.only fails the CI run</span>
+  retries: process.env.<span class="t">CI</span> ? <span class="n">2</span> : <span class="n">0</span>,
+  workers: <span class="n">2</span>,
+  reporter: <span class="s">'list'</span>,
+  use: {
+    baseURL: <span class="s">'http://localhost:4173'</span>,
+    locale: <span class="s">'en-IN'</span>,
+    timezoneId: <span class="s">'Asia/Kolkata'</span>,
+    trace: <span class="s">'on-first-retry'</span>,
+    screenshot: <span class="s">'only-on-failure'</span>,
+  },
+  projects: [
+    { name: <span class="s">'desktop'</span>, use: { ...devices[<span class="s">'Desktop Chrome'</span>] } },
+    { name: <span class="s">'phone'</span>, use: { ...devices[<span class="s">'Pixel 7'</span>] } },
+  ],
+});</pre><div class="fname">📄 tests/config.spec.ts</div><pre class="src" data-file="tests/config.spec.ts"><span class="k">import</span> { test } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test(<span class="s">'the config reaches every test'</span>, <span class="k">async</span> ({ page }, testInfo) =&gt; {
+  <span class="k">await</span> page.goto(<span class="s">'/about-you'</span>);
+  console.log(testInfo.project.name.padEnd(<span class="n">8</span>),
+    <span class="s">'| viewport'</span>, page.viewportSize()?.width,
+    <span class="s">'| language'</span>, <span class="k">await</span> page.locator(<span class="s">'#lang'</span>).textContent(),
+    <span class="s">'| time zone'</span>, <span class="k">await</span> page.locator(<span class="s">'#tz'</span>).textContent());
+});</pre><div class="cmd"><span>Terminal</span><pre>$ npx playwright test</pre></div><div class="out"><span>Terminal output</span><pre>Running 2 tests using 2 workers
+
+phone    | viewport 412 | language en-IN | time zone Asia/Calcutta
+desktop  | viewport 1280 | language en-IN | time zone Asia/Calcutta
+  ✓  1 [desktop] › tests/config.spec.ts:3:1 › the config reaches every test (573ms)
+  ✓  2 [phone] › tests/config.spec.ts:3:1 › the config reaches every test (570ms)
+
+  2 passed (3.1s)</pre></div></div><div class="note-out"><span>What happens</span><p>One test ran as a desktop browser and as a phone, and both got the language and time zone from the configuration, not from the test. Chromium reports the time zone Asia/Kolkata by its older name Asia/Calcutta, which is the same zone. In Playwright Test, projects run the same tests with different settings. pytest-playwright takes the device from the command line, and Java uses one options class per setup.</p></div></div>
+<div class="tw"><table class="jt "><tr><th>Setting</th><th>Playwright Test</th><th>pytest-playwright</th><th>Java JUnit</th></tr><tr><td>base URL</td><td>use: { baseURL }</td><td>--base-url</td><td>setBaseUrl</td></tr><tr><td>browser</td><td>projects with devices['Desktop Firefox']</td><td>--browser firefox</td><td>setBrowserName("firefox")</td></tr><tr><td>headed</td><td>--headed or use: { headless: false }</td><td>--headed</td><td>setHeadless(false)</td></tr><tr><td>device</td><td>use: { ...devices['Pixel 7'] }</td><td>--device "Pixel 7"</td><td>setDeviceName("Pixel 7")</td></tr><tr><td>locale and other context options</td><td>use: { locale }</td><td>browser_context_args fixture</td><td>setContextOptions(...)</td></tr><tr><td>test timeout</td><td>timeout</td><td>a plugin such as pytest-timeout</td><td>@Timeout or junit.jupiter.execution.timeout</td></tr><tr><td>screenshots, video, trace</td><td>use: { screenshot, video, trace }</td><td>--screenshot, --video, --tracing</td><td>setTrace(...) and your own hooks</td></tr></table></div>
+</section>
+
+  <section class="card reveal" id="real-life"></section>
+  <section class="card" id="practice" data-say="practice"></section>
+  <section class="card reveal" id="quiz"></section>
+  <section class="card reveal" id="numbers"></section>
+  <p class="cl-checked">📖 Every API, option and command on this page was checked against the official Playwright documentation and release notes (version 1.64, October 2026). Every example was run with Playwright 1.63 in Chromium when the page was built, and the output shown is what it printed.</p>
+  <nav class="pager"><a class="prev" href="./pw-assertions.html" data-topic="pw-assertions"><small>← Previous chapter</small><b>✅ Assertions</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next →</small><b>🎤 Interview Questions</b></a></nav>
+</div>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/extras.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/voice.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/jsviz.js"></script>
+<script src="../../assets/jsplay.js"></script>
+<script src="../../assets/claude.js"></script>
+<script src="../../assets/pwviz.js"></script>
+<script src="../../assets/pwplay.js"></script>
+<script>
+const PAGE = {"info": {"title": "Let the runner do the work", "panels": [{"s": [["e", "🏃"], ["t", "runner", {"b": 1}]], "h": "Runner", "t": "Finds and runs tests.", "more": "One per language."}, {"s": [["e", "🏷️"], ["t", "@smoke", {"b": 1}]], "h": "Tags", "t": "Run a slice.", "more": "Smoke now, regression tonight."}, {"s": [["e", "🔁"], ["t", "parametrize", {"b": 1}]], "h": "Data", "t": "One test, many rows.", "more": "Each row is its own result."}, {"s": [["e", "⚙️"], ["t", "config", {"b": 1}]], "h": "Config", "t": "Settings in one place.", "more": "Projects for each device."}], "remember": "Tests say what to check. The runner and its configuration decide where, how and with what settings they run."}, "real": [["🚀", "Smoke tests on every deploy", "A food delivery app runs 20 tests tagged @smoke after every deploy in 3 minutes, and the full 1000 test regression every night."], ["🏷️", "Known bugs stay visible", "A bank marks tests for known bugs as expected to fail with the ticket number. The day a fix ships, the test turns red and the team removes the mark."], ["📮", "Fifty postcodes, one test", "A courier company checks delivery prices for 50 postcodes with one parameterised test that reads a CSV file."]], "quiz": [{"lv": 1, "q": "Which runner do Python Playwright tests usually use?", "o": ["unittest only", "pytest with pytest-playwright", "Playwright Test", "JUnit"], "a": 1, "hint": "Look at the runner table.", "why": "pytest with the pytest-playwright plugin gives the page fixture and the CLI options."}, {"lv": 1, "q": "How do you tag a test as smoke in Playwright Test?", "o": ["test('x', { tag: '@smoke' }, ...)", "test.smoke()", "@smoke above the test", "test.only()"], "a": 0, "hint": "Tags are an option of the test.", "why": "Pass a tag in the details object, or put @smoke in the title."}, {"lv": 1, "q": "How do you run only tests tagged smoke in pytest?", "o": ["pytest --tag smoke", "pytest -m smoke", "pytest -k @smoke", "pytest smoke"], "a": 1, "hint": "m for marker.", "why": "pytest selects markers with -m."}, {"lv": 1, "q": "Where should the base URL live?", "o": ["in every test", "in the configuration", "in an environment variable only", "in the page object"], "a": 1, "hint": "One place for shared settings.", "why": "The base URL goes in the config, so tests can use relative addresses."}, {"lv": 2, "q": "What does test.fail() (or xfail) mean?", "o": ["skip the test", "the test is expected to fail, and a failure keeps the run green", "retry the test", "fail the whole run"], "a": 1, "hint": "Look at the organize result.", "why": "The test runs and is expected to fail. If it passes unexpectedly, the run reports it."}, {"lv": 2, "q": "In JUnit 5, how do you run only tests tagged smoke with Maven?", "o": ["mvn test -m smoke", "mvn test -Dgroups=smoke", "mvn test --grep smoke", "mvn smoke"], "a": 1, "hint": "Surefire passes JUnit tags as groups.", "why": "-Dgroups=smoke tells Surefire which JUnit tags to include."}, {"lv": 2, "q": "A parameterised test has 4 rows of data. How many results does the report show?", "o": ["1", "4", "0", "depends on the browser"], "a": 1, "hint": "Each row is a test.", "why": "Each row runs as its own test with its own result."}, {"lv": 2, "q": "In a JUnit @ParameterizedTest with @UsePlaywright, where does the Page parameter go?", "o": ["first", "after the data parameters", "it cannot be used", "in a field"], "a": 1, "hint": "Look at the Java parameter example.", "why": "JUnit fills the source arguments first, then resolves the remaining parameters such as Page."}, {"lv": 2, "q": "Why set forbidOnly on CI?", "o": ["To speed up", "A forgotten test.only would silently skip all other tests", "To allow retries", "For reports"], "a": 1, "hint": "What does test.only do?", "why": "test.only runs just that test. forbidOnly makes such a run fail instead of passing quietly."}, {"lv": 3, "q": "How does one Playwright Test run cover a desktop and a phone?", "o": ["two config files", "two projects with different use settings", "a loop in each test", "it cannot"], "a": 1, "hint": "Look at the config example.", "why": "Each project runs every test with its own settings, such as a device."}, {"lv": 3, "q": "Where do you set the locale for every page in pytest-playwright?", "o": ["pytest.ini locale=", "a browser_context_args fixture in conftest.py", "page.set_locale()", "--locale"], "a": 1, "hint": "Context options come from a fixture.", "why": "Override the browser_context_args fixture and add locale."}, {"lv": 3, "q": "Why did the time zone print as Asia/Calcutta when the config said Asia/Kolkata?", "o": ["A bug", "Chromium reports the older name of the same zone", "Java changed it", "The server is in Calcutta"], "a": 1, "hint": "Both names exist in the time zone database.", "why": "Asia/Kolkata and Asia/Calcutta are the same zone, and Chromium reports the older name."}], "calc": [{"lv": 1, "q": "A file has 4 tests: 2 pass, 1 is skipped and 1 is expected to fail and does. How many tests ran in the browser?", "ans": 3, "hint": "4 - 1 skipped", "steps": ["The skipped test does not run", "4 - 1 = 3"]}, {"lv": 1, "q": "A parameterised test has 4 rows and runs in 2 projects. How many results?", "ans": 8, "hint": "4 × 2", "steps": ["4 rows × 2 projects = 8"]}, {"lv": 2, "q": "The full suite has 1000 tests and 20 are tagged smoke. What percent is smoke?", "ans": 2, "hint": "20 / 1000 × 100", "steps": ["20 / 1000 = 0.02", "0.02 × 100 = 2 %"]}, {"lv": 2, "q": "50 postcodes in a CSV and 3 browsers. How many test results?", "ans": 150, "hint": "50 × 3", "steps": ["50 × 3 = 150"]}, {"lv": 2, "q": "Smoke tests take 3 minutes and run on 12 deploys a day. How many minutes a day?", "ans": 36, "hint": "3 × 12", "steps": ["3 × 12 = 36 minutes"]}, {"lv": 3, "q": "retries is 2 on CI. A test fails every time. How many times does it run in total?", "ans": 3, "hint": "1 + 2 retries", "steps": ["the first run", "+ 2 retries", "= 3 runs"]}, {"lv": 3, "q": "The Pixel 7 viewport is 412 px wide and the desktop one is 1280 px. How many px wider is the desktop?", "ans": 868, "hint": "1280 - 412", "steps": ["1280 - 412 = 868"]}, {"lv": 3, "q": "Each test may take 30 s. In the worst case, how many minutes can 10 tests take on 1 worker?", "ans": 5, "hint": "10 × 30 / 60", "steps": ["10 × 30 = 300 s", "300 / 60 = 5 minutes"]}], "say": [{"id": "top", "h": "Welcome", "en": "This chapter is about the test runner: which runner each language uses, how to group, tag and skip tests, how to run a slice of the suite, parameterised tests, and configuration.", "hi": "यह अध्याय test runner के बारे में है: हर भाषा कौन सा runner इस्तेमाल करती है, tests को group, tag और skip कैसे करें, suite का हिस्सा कैसे चलाएँ, parameterised tests और configuration।", "kn": "ಈ ಅಧ್ಯಾಯ test runner ಬಗ್ಗೆ: ಪ್ರತಿ ಭಾಷೆ ಯಾವ runner ಬಳಸುತ್ತದೆ, tests ಅನ್ನು group, tag ಮತ್ತು skip ಮಾಡುವುದು, suite ನ ಭಾಗ ನಡೆಸುವುದು, parameterised tests ಮತ್ತು configuration.", "or": "ଏହି ଅଧ୍ୟାୟ test runner ବିଷୟରେ: ପ୍ରତି ଭାଷା କେଉଁ runner ବ୍ୟବହାର କରେ, tests କୁ group, tag ଓ skip କିପରି କରିବେ, suite ର ଅଂଶ କିପରି ଚଳାଇବେ, parameterised tests ଓ configuration।", "ar": "يتناول هذا الفصل مشغل الاختبارات: أي مشغل تستخدمه كل لغة، وكيف تجمع الاختبارات وتوسمها وتتخطاها، وكيف تشغل جزءًا من المجموعة، والاختبارات ذات المعاملات، والإعدادات.", "de": "Dieses Kapitel behandelt den Test Runner: welchen Runner jede Sprache nutzt, wie man Tests gruppiert, taggt und überspringt, wie man einen Teil der Suite ausführt, parametrisierte Tests und Konfiguration."}, {"id": "runners", "h": "Runners", "en": "Playwright drives the browser and a test runner runs the tests. JavaScript and TypeScript use Playwright Test, Python uses pytest with a plugin, and Java uses JUnit or TestNG.", "hi": "Playwright browser चलाता है और test runner tests चलाता है। JavaScript और TypeScript Playwright Test, Python plugin के साथ pytest, और Java JUnit या TestNG इस्तेमाल करते हैं।", "kn": "Playwright browser ನಡೆಸುತ್ತದೆ, test runner tests ನಡೆಸುತ್ತದೆ. JavaScript ಮತ್ತು TypeScript Playwright Test, Python plugin ಜೊತೆ pytest, Java JUnit ಅಥವಾ TestNG ಬಳಸುತ್ತವೆ.", "or": "Playwright browser ଚଳାଏ ଏବଂ test runner tests ଚଳାଏ। JavaScript ଓ TypeScript Playwright Test, Python plugin ସହ pytest, ଏବଂ Java JUnit ବା TestNG ବ୍ୟବହାର କରନ୍ତି।", "ar": "يقود Playwright المتصفح ويشغّل مشغل الاختبارات الاختبارات. تستخدم JavaScript وTypeScript أداة Playwright Test، وتستخدم Python أداة pytest مع إضافة، وتستخدم Java أداة JUnit أو TestNG.", "de": "Playwright steuert den Browser, ein Test Runner führt die Tests aus. JavaScript und TypeScript nutzen Playwright Test, Python pytest mit einem Plugin und Java JUnit oder TestNG."}, {"id": "organize", "h": "Organising tests", "en": "Group related tests, tag them as smoke or regression, skip what is not built yet, and mark known failures with the ticket number so they turn red when the bug is fixed.", "hi": "मिलते जुलते tests को group करें, उन्हें smoke या regression tag दें, जो अभी बना नहीं उसे skip करें, और जानी हुई failures को ticket number के साथ mark करें ताकि bug ठीक होने पर वे लाल हो जाएँ।", "kn": "ಸಂಬಂಧಿತ tests ಅನ್ನು group ಮಾಡಿ, smoke ಅಥವಾ regression tag ನೀಡಿ, ಇನ್ನೂ ಮಾಡದದ್ದನ್ನು skip ಮಾಡಿ, ತಿಳಿದ failures ಅನ್ನು ticket number ಜೊತೆ mark ಮಾಡಿ, bug ಸರಿಯಾದಾಗ ಅವು ಕೆಂಪಾಗುತ್ತವೆ.", "or": "ସମ୍ପର୍କିତ tests କୁ group କରନ୍ତୁ, smoke ବା regression tag ଦିଅନ୍ତୁ, ଯାହା ଏପର୍ଯ୍ୟନ୍ତ ତିଆରି ହୋଇନି ତାକୁ skip କରନ୍ତୁ, ଜଣା failures କୁ ticket number ସହ mark କରନ୍ତୁ ଯାହାଫଳରେ bug ଠିକ୍ ହେଲେ ସେମାନେ ଲାଲ ହୁଅନ୍ତି।", "ar": "اجمع الاختبارات المترابطة ووسمها كاختبارات smoke أو regression، وتخطَّ ما لم يُبنَ بعد، وعلّم الإخفاقات المعروفة برقم التذكرة لتتحول إلى الأحمر عند إصلاح الخلل.", "de": "Gruppiere zusammengehörige Tests, tagge sie als Smoke oder Regression, überspringe Unfertiges und markiere bekannte Fehler mit der Ticketnummer, damit sie rot werden, sobald der Fehler behoben ist."}, {"id": "select", "h": "Running a slice", "en": "Run only some tests by tag: grep in Playwright Test, dash m in pytest, and dash D groups in Maven. Smoke tests on every deploy, the full set at night.", "hi": "Tag से कुछ ही tests चलाएँ: Playwright Test में grep, pytest में dash m, और Maven में dash D groups। हर deploy पर smoke tests, रात को पूरा set।", "kn": "Tag ಮೂಲಕ ಕೆಲವು tests ಮಾತ್ರ ನಡೆಸಿ: Playwright Test ನಲ್ಲಿ grep, pytest ನಲ್ಲಿ dash m, Maven ನಲ್ಲಿ dash D groups. ಪ್ರತಿ deploy ಗೆ smoke tests, ರಾತ್ರಿ ಸಂಪೂರ್ಣ set.", "or": "Tag ଦ୍ୱାରା କିଛି tests ଚଳାନ୍ତୁ: Playwright Test ରେ grep, pytest ରେ dash m, Maven ରେ dash D groups। ପ୍ରତି deploy ରେ smoke tests, ରାତିରେ ପୂରା set।", "ar": "شغّل بعض الاختبارات فقط حسب الوسم: grep في Playwright Test وdash m في pytest وdash D groups في Maven. اختبارات smoke مع كل نشر والمجموعة الكاملة ليلًا.", "de": "Führe nur einige Tests per Tag aus: grep in Playwright Test, Minus m in pytest und Minus D groups in Maven. Smoke-Tests bei jedem Deploy, das volle Set nachts."}, {"id": "param", "h": "Parameterised tests", "en": "Write the steps once and give them rows of data. Each row becomes its own test with its own name, so a failure tells you which row broke.", "hi": "Steps एक बार लिखें और उन्हें data की rows दें। हर row अपने नाम के साथ अलग test बनती है, इसलिए failure बताता है कि कौन सी row टूटी।", "kn": "Steps ಒಮ್ಮೆ ಬರೆದು ಅವುಗಳಿಗೆ data rows ನೀಡಿ. ಪ್ರತಿ row ತನ್ನದೇ ಹೆಸರಿನ ಪ್ರತ್ಯೇಕ test ಆಗುತ್ತದೆ, failure ಯಾವ row ಮುರಿಯಿತು ಎಂದು ಹೇಳುತ್ತದೆ.", "or": "Steps ଥରେ ଲେଖନ୍ତୁ ଏବଂ ସେଗୁଡ଼ିକୁ data ର rows ଦିଅନ୍ତୁ। ପ୍ରତି row ନିଜ ନାମ ସହ ଅଲଗା test ହୁଏ, ତେଣୁ failure କହେ କେଉଁ row ଭାଙ୍ଗିଲା।", "ar": "اكتب الخطوات مرة واحدة وأعطها صفوفًا من البيانات. يصبح كل صف اختبارًا مستقلًا باسمه، فيخبرك الفشل بالصف الذي تعطل.", "de": "Schreibe die Schritte einmal und gib ihnen Datenzeilen. Jede Zeile wird ein eigener Test mit eigenem Namen, sodass ein Fehler die kaputte Zeile nennt."}, {"id": "config", "h": "Configuration", "en": "Put shared settings in one place: base URL, browser, timeouts, retries, recordings on failure and devices. Projects in Playwright Test run the same tests with different settings.", "hi": "साझा settings एक जगह रखें: base URL, browser, timeouts, retries, failure पर recordings और devices। Playwright Test में projects वही tests अलग settings के साथ चलाते हैं।", "kn": "ಹಂಚಿಕೊಂಡ settings ಒಂದೇ ಸ್ಥಳದಲ್ಲಿ ಇರಿಸಿ: base URL, browser, timeouts, retries, failure ಸಮಯದ recordings ಮತ್ತು devices. Playwright Test ನ projects ಅದೇ tests ಅನ್ನು ಬೇರೆ settings ಜೊತೆ ನಡೆಸುತ್ತವೆ.", "or": "ସାଝା settings ଗୋଟିଏ ଜାଗାରେ ରଖନ୍ତୁ: base URL, browser, timeouts, retries, failure ରେ recordings ଓ devices। Playwright Test ର projects ସେହି tests କୁ ଅଲଗା settings ସହ ଚଳାନ୍ତି।", "ar": "ضع الإعدادات المشتركة في مكان واحد: عنوان URL الأساسي والمتصفح والمهل وإعادة المحاولة والتسجيلات عند الفشل والأجهزة. تشغّل المشاريع في Playwright Test الاختبارات نفسها بإعدادات مختلفة.", "de": "Lege gemeinsame Einstellungen an einem Ort ab: Basis-URL, Browser, Timeouts, Wiederholungen, Aufnahmen bei Fehlern und Geräte. Projekte in Playwright Test führen dieselben Tests mit anderen Einstellungen aus."}, {"id": "practice", "h": "Playground labs", "en": "In the labs you write a quick smoke test for the home page, and a test that uses the header to reach the orders page.", "hi": "Labs में आप home page का छोटा smoke test लिखते हैं, और header से orders page तक पहुँचने वाला test।", "kn": "Labs ನಲ್ಲಿ home page ಗೆ ಸಣ್ಣ smoke test ಬರೆಯುತ್ತೀರಿ, ಮತ್ತು header ಮೂಲಕ orders page ತಲುಪುವ test.", "or": "Labs ରେ ଆପଣ home page ପାଇଁ ଛୋଟ smoke test ଲେଖନ୍ତି, ଏବଂ header ଦ୍ୱାରା orders page ପର୍ଯ୍ୟନ୍ତ ପହଞ୍ଚୁଥିବା test।", "ar": "في المختبرات تكتب اختبار smoke سريعًا للصفحة الرئيسية، واختبارًا يستخدم الترويسة للوصول إلى صفحة الطلبات.", "de": "In den Labs schreibst du einen schnellen Smoke-Test für die Startseite und einen Test, der über die Kopfzeile zur Bestellseite geht."}], "ex": [], "dg": {"run": {"t": "What happens when you start a test run", "w": 900, "h": 210, "n": [["find", 20, 75, 150, 64, "find tests", {"c": 5, "sub": "files and names", "i": "The runner collects test files and test names, and applies filters such as tags."}], ["cfg", 190, 75, 150, 64, "read config", {"c": 3, "sub": "one place", "i": "Base URL, browser, timeouts, retries, reporters and projects come from the configuration."}], ["work", 360, 75, 160, 64, "start workers", {"c": 2, "sub": "in parallel", "i": "Worker processes start, each with its own browser."}], ["each", 540, 75, 170, 64, "each test", {"c": 1, "sub": "a fresh context", "i": "Every test gets a new browser context and page, so tests do not share cookies or storage."}], ["rep", 730, 75, 150, 64, "report", {"c": 0, "sub": "pass, fail, skip", "i": "Reporters print results and write files such as HTML or JUnit XML."}]], "e": [["find", "cfg"], ["cfg", "work"], ["work", "each"], ["each", "rep"]], "st": [[["find"], "The runner finds your test files and test names and applies filters, such as a tag."], [["cfg", "find>cfg"], "It reads the configuration once: base URL, browser, timeouts, retries and reporters."], [["work", "cfg>work"], "It starts worker processes so several tests can run at the same time."], [["each", "work>each"], "Every test gets a fresh browser context and page."], [["rep", "each>rep"], "Results go to reporters: the terminal, an HTML report, JUnit XML for CI and more."]]}}, "lanes": {}, "play": {}, "labs": [{"id": "smoke", "title": "A smoke test for the home page", "name": "the home page works", "task": "Open <code>/<\/code>. Check the heading <b>Welcome to Brainy Shop<\/b> is visible, click the <b>Browse products<\/b> link, and check that the address ends with <code>/products<\/code>.", "goal": "The home page shows its heading and leads to the products.", "start": "/", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the home page works', { tag: '@smoke' }, async ({ page }) => {\n  await page.goto('/');\n  // check the heading, follow the Browse products link, check the address\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\nimport java.util.regex.Pattern;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheHomePageWorksTest {\n  @Test\n  void theHomePageWorks(Page page) {\n    page.navigate(\"/\");\n    assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(\"Welcome to Brainy Shop\"))).isVisible();\n    page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(\"Browse products\")).click();\n    assertThat(page).hasURL(Pattern.compile(\"\\\\/products$\"));\n  }\n}\n", "py": "import re\nfrom playwright.sync_api import Page, expect\n\n\ndef test_the_home_page_works(page: Page):\n    page.goto(\"/\")\n    expect(page.get_by_role(\"heading\", name=\"Welcome to Brainy Shop\")).to_be_visible()\n    page.get_by_role(\"link\", name=\"Browse products\").click()\n    expect(page).to_have_url(re.compile(r\"\\/products$\"))\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the home page works', async ({ page }) => {\n  await page.goto('/');\n  await expect(page.getByRole('heading', { name: 'Welcome to Brainy Shop' })).toBeVisible();\n  await page.getByRole('link', { name: 'Browse products' }).click();\n  await expect(page).toHaveURL(/\\/products$/);\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the home page works', { tag: '@smoke' }, async ({ page }) => {\n  await page.goto('/');\n  await expect(page.getByRole('heading', { name: 'Welcome to Brainy Shop' })).toBeVisible();\n  await page.getByRole('link', { name: 'Browse products' }).click();\n  await expect(page).toHaveURL(/\\/products$/);\n});"}, "hint": "<code>page.getByRole('link', { name: 'Browse products' }).click()<\/code>, then <code>expect(page).toHaveURL(/\\/products$/)<\/code>.", "why": "A smoke test checks the few things that must work after every deploy: the page loads and the main way in works. Keep it short so it can run often.", "check": [["ctx.url.includes('/products')", "The test reached the products page"], ["/Welcome to Brainy Shop/.test(ctx.code)", "The test checks the heading"]]}, {"id": "headerorders", "title": "Reach the orders page from the header", "name": "the header leads to orders", "task": "Open <code>/<\/code>. Click <b>Orders<\/b> in the header navigation, check the heading <b>Past orders<\/b>, and check the table shows <b>6<\/b> rows (5 orders and the header row).", "goal": "The header link opens the orders table.", "start": "/", "code": {"ts": "import { test, expect } from '@playwright/test';\n\ntest('the header leads to orders', async ({ page }) => {\n  await page.goto('/');\n  // click Orders in the navigation, then check the heading and the rows\n});"}, "answer": {"java": "package com.brainy;\n\nimport com.microsoft.playwright.*;\nimport com.microsoft.playwright.junit.UsePlaywright;\nimport com.microsoft.playwright.options.AriaRole;\nimport org.junit.jupiter.api.Test;\n\nimport static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;\n\n@UsePlaywright(ShopOptions.class)\npublic class TheHeaderLeadsToOrdersTest {\n  @Test\n  void theHeaderLeadsToOrders(Page page) {\n    page.navigate(\"/\");\n    page.getByRole(AriaRole.NAVIGATION, new Page.GetByRoleOptions().setName(\"Main\")).getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName(\"Orders\")).click();\n    assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName(\"Past orders\"))).isVisible();\n    assertThat(page.getByRole(AriaRole.ROW)).hasCount(6);\n  }\n}\n", "py": "from playwright.sync_api import Page, expect\n\n\ndef test_the_header_leads_to_orders(page: Page):\n    page.goto(\"/\")\n    page.get_by_role(\"navigation\", name=\"Main\").get_by_role(\"link\", name=\"Orders\").click()\n    expect(page.get_by_role(\"heading\", name=\"Past orders\")).to_be_visible()\n    expect(page.get_by_role(\"row\")).to_have_count(6)\n", "js": "import { test, expect } from '@playwright/test';\n\ntest('the header leads to orders', async ({ page }) => {\n  await page.goto('/');\n  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Orders' }).click();\n  await expect(page.getByRole('heading', { name: 'Past orders' })).toBeVisible();\n  await expect(page.getByRole('row')).toHaveCount(6);\n});\n", "ts": "import { test, expect } from '@playwright/test';\n\ntest('the header leads to orders', async ({ page }) => {\n  await page.goto('/');\n  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Orders' }).click();\n  await expect(page.getByRole('heading', { name: 'Past orders' })).toBeVisible();\n  await expect(page.getByRole('row')).toHaveCount(6);\n});"}, "hint": "The header has <code>&lt;nav aria-label=\"Main\"&gt;<\/code>, so <code>page.getByRole('navigation', { name: 'Main' })<\/code> finds it.", "why": "Starting from the navigation keeps the test from clicking another Orders link somewhere else on the page.", "check": [["ctx.url.includes('/orders')", "The test opened the orders page"], ["/6/.test(ctx.code)", "The test counts the rows"]]}], "trees": {}};
+JSPLAY.page({ title: "The test runner: organise, tag, parameterise and configure", subject: "playwright" });
+CLAUDE_PAGE.wire();
+PW.page();
+</script>
+</body>
+</html>

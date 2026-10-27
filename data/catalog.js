@@ -3049,6 +3049,23 @@ function pwModules() {
         { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
         { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "pw-runner", title: "The test runner", emoji: "🧪", blurb: "Organising, configuring and running tests: tags, parameters, config, fixtures and hooks, parallel runs, retries, timeouts and sharding.", topics: [
+      { id: "pw-runner", title: "The test runner: organise, tag, parameterise and configure", emoji: "🏃", page: "content/playwright/pw-runner.html",
+        summary: "Which runner each language uses, what happens in a test run, groups, tags, skip and expected failures in all four languages, running only smoke tests, parameterised search tests, and one test run as a desktop and as a phone from configuration.",
+        keywords: ["test runner", "Playwright Test", "pytest", "JUnit", "describe", "tag", "grep", "marker", "skip", "xfail", "parametrize", "ParameterizedTest", "config", "projects", "OptionsFactory", "conftest"],
+        added: "2026-10-24",
+        sections: [
+        { id: "runners", title: "One library, a runner per language", emoji: "🏃", group: "Beginner path", keywords: ["test runner", "Playwright Test", "pytest", "JUnit", "TestNG", "UsePlaywright"] },
+        { id: "organize", title: "Grouping, tags and annotations", emoji: "🗂️", group: "Beginner path", keywords: ["describe", "tag", "grep", "skip", "fixme", "fail", "xfail", "marker", "Disabled", "Tag", "annotation"] },
+        { id: "select", title: "Running a slice of the suite", emoji: "🎯", group: "Lesson", keywords: ["grep", "markers", "-m", "groups", "smoke", "regression"] },
+        { id: "param", title: "Parameterised tests", emoji: "🔁", group: "Beginner path", keywords: ["parameterize", "parametrize", "ParameterizedTest", "CsvSource", "data driven"] },
+        { id: "config", title: "Configuration in one place", emoji: "⚙️", group: "Lesson", keywords: ["playwright.config", "pytest.ini", "conftest", "OptionsFactory", "projects", "devices", "baseURL", "use"] },
+        { id: "lab-smoke", title: "A smoke test for the home page", emoji: "🧪", group: "Playground lab" },
+        { id: "lab-headerorders", title: "Reach the orders page from the header", emoji: "🧪", group: "Playground lab" },
+        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' },
+        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
