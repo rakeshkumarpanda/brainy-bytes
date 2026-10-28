@@ -2568,4 +2568,60 @@
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 17: exam revision */
+  def('netsheet', {
+    title: 'Exam calculator: a stack of layers, checked line by line',
+    sub: 'Type one layer per line. conv k s p channels, optionally followed by a dilation, or pool k s. The table gives every number examiners ask for: output size, channels, weights, multiply adds and receptive field.',
+    W: 560, H: 270,
+    params: [
+      { k: 'n', label: 'Input size (square)', type: 'range', min: 8, max: 512, step: 8, v: 224 },
+      { k: 'c', label: 'Input channels', type: 'select', num: true, v: 3, opts: [[1, '1 (grey)'], [3, '3 (RGB)'], [64, '64']] },
+      { k: 'L', label: 'Layers: conv k s p out [dilation] or pool k s', type: 'area', v: 'conv 3 1 1 64\nconv 3 1 1 64\npool 2 2\nconv 3 1 1 128' },
+      { k: 'bias', label: 'Count bias terms', type: 'check', v: true }
+    ],
+    tips: [
+      { t: 'The VGG opening: two 3 × 3 convs with 64 channels and a 2 × 2 pool. The first conv has 3 × 3 × 3 × 64 + 64 = 1,792 weights, the second 36,928.', set: { n: 224, c: 3, L: 'conv 3 1 1 64\nconv 3 1 1 64\npool 2 2\nconv 3 1 1 128', bias: true } },
+      { t: 'A classic exam line: 32 × 32 input, 5 × 5 kernel, stride 2, padding 2. Output ⌊(32 + 4 − 5) ÷ 2⌋ + 1 = 16.', set: { n: 32, c: 3, L: 'conv 5 2 2 16' } },
+      { t: 'Five stride 2 stages take 224 down to 7, the size of the last feature map in ResNet and VGG.', set: { n: 224, c: 3, L: 'conv 3 2 1 32\nconv 3 2 1 64\nconv 3 2 1 128\nconv 3 2 1 256\nconv 3 2 1 512' } },
+      { t: 'Dilation 2 makes a 3 × 3 kernel reach 5 pixels with 9 weights. Padding 2 keeps the size. Watch the receptive field grow from 5 to 9 to 17 over three layers with dilations 2, 2 and 4.', set: { n: 64, c: 64, L: 'conv 3 1 2 64 2\nconv 3 1 2 64 2\nconv 3 1 4 64 4' } },
+      { t: 'Two 3 × 3 layers reach 5 pixels with 73,856 weights. Replace both lines with conv 5 1 2 64: the reach is the same but the weights rise to 102,464, because 2 × 9 = 18 is less than 25.', set: { n: 56, c: 64, L: 'conv 3 1 1 64\nconv 3 1 1 64' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let n = p.n, c = p.c, r = 1, j = 1, totP = 0, totM = 0;
+      const rows = [['layer', 'output', 'weights', 'mult adds', 'RF']];
+      const lines = p.L.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 7);
+      let err = '';
+      lines.forEach((l, i) => {
+        if (err) return;
+        const a = l.split(/\s+/), t = a[0], v = a.slice(1).map(Number);
+        if (t === 'conv' && v.length >= 4 && v.every(x => Number.isFinite(x) && x >= 0)) {
+          const [k, s, pd, co, d = 1] = v, ke = d * (k - 1) + 1;
+          const o = Math.floor((n + 2 * pd - ke) / Math.max(1, s)) + 1;
+          if (o < 1) { err = `line ${i + 1}: the kernel no longer fits`; return; }
+          const w = k * k * c * co + (p.bias ? co : 0), mac = o * o * k * k * c * co;
+          r += (ke - 1) * j; j *= s; totP += w; totM += mac;
+          rows.push([`conv ${k}×${k}${d > 1 ? ' d' + d : ''} s${s}`, `${o}×${o}×${co}`, w.toLocaleString('en-US'), (mac / 1e6).toFixed(1) + ' M', r]);
+          n = o; c = co;
+        } else if (t === 'pool' && v.length >= 2 && v.every(x => Number.isFinite(x) && x > 0)) {
+          const [k, s] = v, o = Math.floor((n - k) / s) + 1;
+          if (o < 1) { err = `line ${i + 1}: the window no longer fits`; return; }
+          r += (k - 1) * j; j *= s;
+          rows.push([`pool ${k}×${k} s${s}`, `${o}×${o}×${c}`, '0', '0', r]);
+          n = o;
+        } else err = `line ${i + 1}: write conv k s p out [d] or pool k s`;
+      });
+      const xs = [14, 240, 340, 450, 540];
+      rows.forEach((rw, i) => rw.forEach((v, q) => D.text(g, String(v), xs[q] + (q ? 0 : 0), 24 + i * 26, { a: q === 0 ? 'left' : 'right', s: i ? 12 : 11, mono: i > 0, b: i === 0 || q === 1, c: i ? z.col.ink : z.col.ink2 })));
+      D.line(g, 14, 31, 546, 31, z.col.line, 1);
+      const yb = 24 + rows.length * 26;
+      D.line(g, 14, yb - 18, 546, yb - 18, z.col.line, 1);
+      D.text(g, 'total', 14, yb, { s: 12, b: true, c: z.col.ink });
+      D.text(g, totP.toLocaleString('en-US'), 340, yb, { a: 'right', s: 12, mono: true, b: true, c: z.col.cv });
+      D.text(g, (totM / 1e6).toFixed(1) + ' M', 450, yb, { a: 'right', s: 12, mono: true, b: true, c: z.col.orange });
+      if (err) D.text(g, err, 14, 258, { s: 12, b: true, c: z.col.red });
+      return `<span class="big">out = ⌊(n + 2p − d(k − 1) − 1) ÷ s⌋ + 1, &nbsp; weights = k² C<sub>in</sub> C<sub>out</sub> + C<sub>out</sub>, &nbsp; mult adds = out² k² C<sub>in</sub> C<sub>out</sub>, &nbsp; r ← r + d(k − 1) j, &nbsp; j ← j s</span><br>The column header RF is the receptive field in input pixels, and j is the distance between neighbouring outputs measured in input pixels. Pooling has no weights but still grows the receptive field and the jump.`;
+    }
+  });
+
 })();

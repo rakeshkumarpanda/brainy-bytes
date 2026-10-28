@@ -240,8 +240,10 @@ def page(T, chs, steps_by_id):
     lessons = T['lessons']
     n_viz = sum(len(re.findall(r'data-viz="', p['html'])) for p in lessons)
     n_fx = sum(len(re.findall(r'class="fx[ "]', p['html'])) for p in lessons)
-    chips = [f'About {T["minutes"]} min', f'{len(lessons)} lessons', f'{n_viz} animations', f'{n_fx} formulas',
-             f'{len(T["calc"])} worked problems', f'{len(T["quiz"])} quiz questions', f'{len(T["assign"])} assignments']
+    def cnt(n, word, many=None):
+        return f'{n} {word if n == 1 else (many or word + "s")}'
+    chips = [f'About {T["minutes"]} min', cnt(len(lessons), 'lesson'), cnt(n_viz, 'animation'), cnt(n_fx, 'formula'),
+             cnt(len(T["calc"]), 'worked problem'), cnt(len(T["quiz"]), 'quiz question'), cnt(len(T["assign"]), 'assignment')]
     chip_html = ''.join(f'<span class="cv-chip">{c}</span>' for c in chips if not c.startswith('0 '))
     stepper = ''.join(f'<li><a href="#{p["id"]}" data-l="{p["id"]}"><span class="n">{n}</span><span class="t">{html.escape(p["title"])}</span></a></li>'
                       for n, p in enumerate(lessons, 1))

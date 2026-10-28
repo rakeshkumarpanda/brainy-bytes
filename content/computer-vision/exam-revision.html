@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam revision: from school to research universities · Computer Vision</title>
+<meta name="description" content="Exam patterns by tier, worked questions on image size, grey conversion, Sobel, Harris, IoU, parameter counts, F1, cross entropy, mIoU, focal loss, separable Gaussians, optical flow and stereo error, a formula sheet and common mistakes.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+</head>
+<body class="cvp">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=computer-vision">Computer Vision learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=computer-vision" target="_top">Computer Vision</a><span>›</span><span>Step 9: Exam revision</span><span>›</span><span>Exam revision</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 9 · Topic 1 of 1 · All levels</div>
+    <h1>Exam revision: from school to research universities</h1>
+    <p class="lead">Practise the question shapes of every level with worked answers: image arithmetic, numericals by hand, quick multiple choice tricks, and derivations with their assumptions.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">3 formulas</span><span class="cv-chip">16 worked problems</span><span class="cv-chip">13 quiz questions</span></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Revise</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#map" data-l="map"><span class="n">1</span><span class="t">How computer vision is examined</span></a></li><li><a href="#school" data-l="school"><span class="n">2</span><span class="t">Tier 1: school and first year</span></a></li><li><a href="#semester" data-l="semester"><span class="n">3</span><span class="t">Tier 2: university semester and IIT course exams</span></a></li><li><a href="#mcq" data-l="mcq"><span class="n">4</span><span class="t">Tier 3: multiple choice and numerical answer papers</span></a></li><li><a href="#derive" data-l="derive"><span class="n">5</span><span class="t">Tier 4: derivations, design and critique</span></a></li><li><a href="#sheet" data-l="sheet"><span class="n">6</span><span class="t">Formula sheet and last minute checks</span></a></li></ol>
+    <article class="cv-lesson" id="map" data-l="map" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>How computer vision is examined</h2>
+<p>This chapter is for the week before an exam. It does not teach new material. It shows the shapes questions take at each level, with worked answers, and points back to the chapter where each idea is taught. The questions are original practice questions written in the style of each tier, not copies of real past papers.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Tier</th><th>Typical format</th><th>What earns the marks</th><th>Where to practise</th></tr></thead><tbody><tr><td>School and first year</td><td>Short answers, small calculations, labelled diagrams</td><td>Correct definitions and units, careful arithmetic</td><td>Lesson 2</td></tr><tr><td>University semester and IIT course exams</td><td>Numericals by hand, short notes, compare and contrast</td><td>Every step shown, formula stated first, final answer boxed</td><td>Lesson 3</td></tr><tr><td>NPTEL and GATE style papers</td><td>Multiple choice, multiple select and numerical answer type, no partial credit</td><td>Speed, recognising the trap option, exact rounding</td><td>Lesson 4</td></tr><tr><td>MIT, Stanford and Cambridge style</td><td>Derivations, proofs, design questions, critique of an experiment</td><td>Clear assumptions, a complete argument, trade offs named</td><td>Lesson 5</td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>In a numerical, write the formula, substitute, then compute. Most lost marks come from skipping the first line, so the examiner cannot give method marks when the arithmetic slips.</div></div>
+<h3>The ten ideas examined most often</h3>
+<ol>
+<li>Image as an array: size in bytes, colour to grey (chapter 2.1).</li>
+<li>Histograms, contrast stretching and equalisation (chapter 2.2).</li>
+<li>Convolution by hand, Gaussian and median filters, edge kernels (chapters 1.2 and 2.3).</li>
+<li>Gradient magnitude and direction, Harris corners, HOG (chapter 1.2).</li>
+<li>Optical flow constraint (chapter 3.1).</li>
+<li>CNN output size, parameter count, receptive field (chapter 4.1).</li>
+<li>IoU, NMS, anchors and detection losses (chapters 5.1 to 5.3).</li>
+<li>Precision, recall, AP and mAP (chapter 5.4).</li>
+<li>Segmentation metrics: pixel accuracy, IoU, mIoU, Dice (chapters 6.1 and 6.3).</li>
+<li>Upsampling, transposed and dilated convolution, U-Net (chapter 6.2).</li>
+</ol>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="school" data-l="school" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Tier 1: school and first year</h2>
+<p>Questions at this level check that you can describe an image as numbers and do small calculations on it.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Image size in bytes</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">width × height × channels × bytes per value</div><div class="fx-n">An 8 bit value takes 1 byte.</div></div><div class="fx fx-key"><div class="fx-h"><span>Colour to grey</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>Y</i> = 0.299 <i>R</i> + 0.587 <i>G</i> + 0.114 <i>B</i></div><div class="fx-n">Green counts most because the eye is most sensitive to it.</div></div><div class="fx"><div class="fx-h"><span>Negative and brightness</span></div><div class="fx-b">s = 255 − r, &nbsp; s = clip(r + b, 0, 255)</div><div class="fx-n">Results outside 0 to 255 are clipped.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Question 1. How much memory does a Full HD colour photo take, uncompressed?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Full HD is 1920 × 1080 pixels with 3 channels of 1 byte.</li><li>1920 × 1080 × 3 = 6,220,800 bytes.</li><li>Divide by 1,048,576 (2<sup>20</sup>) to get about 5.93 MiB, or 6.22 MB in powers of ten. State which one you used.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 2. Convert the pixel (R, G, B) = (200, 100, 50) to grey.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Y = 0.299 × 200 + 0.587 × 100 + 0.114 × 50.</li><li>= 59.8 + 58.7 + 5.7 = 124.2.</li><li>Round to the nearest whole number: 124.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 3. How many different colours can a 24 bit image show?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>8 bits per channel gives 2<sup>8</sup> = 256 levels.</li><li>Three channels: 256 × 256 × 256.</li><li>= 2<sup>24</sup> = 16,777,216 colours.</li></ol></div>
+<p>Short answer favourites: name three tasks of computer vision (classification, detection, segmentation), explain why the same object can look very different (viewpoint, light, occlusion, scale, deformation, clutter, from chapter 1.1), and explain why a photo file is smaller than width × height × 3 (compression, chapter 2.1).</p>
+<div class="note note-warn"><b>Common mistake</b><div>A common slip is mixing bits and bytes. 24 bits per pixel is 3 bytes per pixel.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="semester" data-l="semester" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Tier 2: university semester and IIT course exams</h2>
+<p>Here the examiner gives a small matrix or a pair of boxes and asks you to work by hand. Show every step.</p>
+<div class="walk"><div class="walk-h"><span>Question 4. Apply the Sobel x kernel to the patch [[1, 2, 3], [4, 5, 6], [7, 8, 9]].</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Sobel x = [[−1, 0, 1], [−2, 0, 2], [−1, 0, 1]]. Multiply matching entries and add.</li><li>Top row: −1 + 3 = 2. Middle row: −8 + 12 = 4. Bottom row: −7 + 9 = 2.</li><li>G<sub>x</sub> = 2 + 4 + 2 = 8. A positive value means brightness increases to the right.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 5. G<sub>x</sub> = 3 and G<sub>y</sub> = 4. Find the gradient magnitude and direction.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Magnitude = √(3² + 4²) = √25 = 5.</li><li>Direction θ = atan2(4, 3).</li><li>θ ≈ 53.13°. The edge itself runs at right angles to this direction.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 6. The Harris matrix is M = [[4, 0], [0, 4]] and k = 0.04. Find R and classify the point.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>det M = 16, trace M = 8.</li><li>R = det M − k (trace M)² = 16 − 0.04 × 64.</li><li>R = 13.44, large and positive, so the point is a corner. Negative R means an edge, small |R| a flat area.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 7. Boxes A = (0, 0, 4, 4) and B = (2, 2, 6, 6) as (x1, y1, x2, y2). Find IoU.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Overlap is from (2, 2) to (4, 4), area 4.</li><li>Union = 16 + 16 − 4 = 28.</li><li>IoU = 4 ÷ 28 = 1 ÷ 7 ≈ 0.143. Under the usual 0.5 rule these are different objects.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 8. A conv layer has 3 × 3 kernels, 64 input and 128 output channels, with bias. How many parameters?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Weights per filter: 3 × 3 × 64 = 576.</li><li>128 filters: 576 × 128 = 73,728.</li><li>Add 128 biases: 73,856.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 9. A detector finds 10 boxes, 8 correct, and 12 objects exist. Find P, R and F1.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>TP = 8, FP = 2, FN = 12 − 8 = 4.</li><li>P = 8 ÷ 10 = 0.8, R = 8 ÷ 12 ≈ 0.667.</li><li>F1 = 2PR ÷ (P + R) = 1.0667 ÷ 1.4667 ≈ 0.727.</li></ol></div>
+<p>Short notes and compare questions at this level: median against Gaussian filter for salt and pepper noise (chapter 2.3), one stage against two stage detectors (chapter 5.3), semantic against instance against panoptic segmentation (chapter 6.1), FCN against U-Net (chapter 6.2), dense against sparse optical flow (chapter 3.1).</p>
+<div class="note note-warn"><b>Common mistake</b><div>Write the box format before computing IoU. (x1, y1, x2, y2) and (x, y, w, h) give very different answers from the same four numbers.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="mcq" data-l="mcq" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Tier 3: multiple choice and numerical answer papers</h2>
+<p>NPTEL course exams and GATE style papers use multiple choice, multiple select and numerical answer questions with no partial credit. Speed matters, so learn the shortcuts and the trap options.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Shortcut</th><th>Use it for</th></tr></thead><tbody><tr><td>Same padding: p = (k − 1) ÷ 2 at stride 1</td><td>Size unchanged after a k × k conv</td></tr><tr><td>Each stride 2 halves the size</td><td>224 → 112 → 56 → 28 → 14 → 7</td></tr><tr><td>Two 3 × 3 = reach 5, three 3 × 3 = reach 7</td><td>Receptive field without a formula</td></tr><tr><td>Dilated kernel reach d (k − 1) + 1</td><td>3 × 3 with d = 2 reaches 5</td></tr><tr><td>Transposed conv out = (n − 1) s − 2p + k</td><td>k 4, s 2, p 1 exactly doubles the size</td></tr><tr><td>Dice = 2 IoU ÷ (1 + IoU)</td><td>Convert between the two segmentation scores</td></tr></tbody></table></div>
+<div class="cvz" data-viz="netsheet"></div>
+<div class="walk"><div class="walk-h"><span>Question 10. Logits (2, 1, 0), true class first. Find the cross entropy loss to three decimals.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>e² = 7.389, e¹ = 2.718, e⁰ = 1. Sum 11.107.</li><li>p = 7.389 ÷ 11.107 ≈ 0.665.</li><li>Loss = −ln 0.665 ≈ 0.408.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 11. A confusion matrix for two classes has rows (50, 10) and (5, 35), rows true and columns predicted. Find mIoU.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Class 0: TP 50, FN 10, FP 5. IoU = 50 ÷ 65 ≈ 0.769.</li><li>Class 1: TP 35, FN 5, FP 10. IoU = 35 ÷ 50 = 0.700.</li><li>mIoU = (0.769 + 0.700) ÷ 2 ≈ 0.735.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 12. Focal loss with γ = 2 for a well classified example with p = 0.9. How much smaller is it than cross entropy?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Cross entropy = −ln 0.9 ≈ 0.105.</li><li>Focal factor (1 − 0.9)² = 0.01.</li><li>Focal loss ≈ 0.00105, 100 times smaller. Easy examples stop dominating the total.</li></ol></div>
+<div class="note note-exam"><b>In the exam</b><div>Trap options to expect: forgetting the bias in a parameter count, using k instead of k − 1 in the receptive field, counting the background class in mIoU when the question excludes it, and rounding in the middle of a calculation.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="derive" data-l="derive" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Tier 4: derivations, design and critique</h2>
+<p>Research university exams in the style of MIT, Stanford and Cambridge reward a complete argument more than a final number. A good answer states assumptions, derives the result, then says when it fails.</p>
+<h3>Question 13. Show that a 2D Gaussian blur is separable and say why it matters.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>G(x, y) = (1 ÷ 2πσ²) e<sup>−(x² + y²) ÷ 2σ²</sup> = [(1 ÷ √(2π) σ) e<sup>−x² ÷ 2σ²</sup>] × [(1 ÷ √(2π) σ) e<sup>−y² ÷ 2σ²</sup>] = g(x) g(y).</li><li>So G ∗ I = g<sub>y</sub> ∗ (g<sub>x</sub> ∗ I): blur every row, then every column.</li><li>Cost per pixel falls from k² to 2k multiplications, for k = 15 from 225 to 30, 7.5 times less.</li><li>Also, two Gaussian blurs make one Gaussian with σ = √(σ₁² + σ₂²), so σ = 3 then 4 equals one blur with σ = 5.</li></ol></div>
+<h3>Question 14. Derive the optical flow constraint and explain the aperture problem.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Assume a point keeps its brightness as it moves: I(x + u, y + v, t + 1) = I(x, y, t).</li><li>A first order Taylor expansion gives I<sub>x</sub> u + I<sub>y</sub> v + I<sub>t</sub> = 0.</li><li>One equation, two unknowns: only the flow along the gradient is fixed. That is the aperture problem.</li><li>Lucas and Kanade assume the flow is constant in a small window and solve the stacked equations by least squares. Example: I<sub>x</sub> = 2, I<sub>y</sub> = 1, I<sub>t</sub> = −4 with v = 0 gives u = 2.</li></ol></div>
+<h3>Question 15. Derive how stereo depth error grows with distance.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Similar triangles give Z = f B ÷ d.</li><li>Differentiate: dZ ÷ dd = −f B ÷ d² = −Z² ÷ (f B).</li><li>So ΔZ ≈ Z² Δd ÷ (f B). Error grows with the square of depth and falls with focal length and baseline.</li><li>With f = 500 px, B = 0.1 m and d = 25 px, Z = 2 m, and a 1 pixel error costs about 0.08 m.</li></ol></div>
+<h3>Design and critique questions</h3>
+<p>A design question such as build a system that counts people in a crowded station has no single answer. Structure it as: the data and labels you need, the model family and why (detector, density map or segmentation), the metric that matches the goal, the failure cases (occlusion, scale, lighting) and how you would test them. A critique question gives an experiment, such as the blur and sharpening project in chapter 8.1, and asks what it shows. Name the controlled variable, the sample size, any train and test overlap, the operating point, and one experiment that would make the claim stronger.</p>
+<div class="note note-exam"><b>In the exam</b><div>In derivations, name each assumption when you use it: brightness constancy, small motion, rectified cameras, known σ. Examiners often ask what breaks when an assumption fails.</div></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>At school you are asked what a picture is made of and how to change it. You show you can count and convert carefully.</p></div><div class="ld-p" data-ld="college" hidden><p>At university you are given a small matrix or two boxes and asked to apply a formula by hand, showing each step.</p></div><div class="ld-p" data-ld="masters" hidden><p>In competitive papers you must recognise the right formula quickly, avoid the trap options and round only at the end.</p></div><div class="ld-p" data-ld="research" hidden><p>At research universities you derive the formula yourself, state its assumptions, and argue when a method or an experiment fails.</p></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sheet" data-l="sheet" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Formula sheet and last minute checks</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Topic</th><th>Formula</th></tr></thead><tbody><tr><td>Grey value</td><td>Y = 0.299 R + 0.587 G + 0.114 B</td></tr><tr><td>Equalisation</td><td>s<sub>k</sub> = round((L − 1) × CDF(r<sub>k</sub>))</td></tr><tr><td>Gradient</td><td>|∇I| = √(G<sub>x</sub>² + G<sub>y</sub>²), θ = atan2(G<sub>y</sub>, G<sub>x</sub>)</td></tr><tr><td>Harris</td><td>R = det M − k (trace M)²</td></tr><tr><td>Flow constraint</td><td>I<sub>x</sub> u + I<sub>y</sub> v + I<sub>t</sub> = 0</td></tr><tr><td>Conv output</td><td>⌊(n + 2p − k) ÷ s⌋ + 1</td></tr><tr><td>Conv weights</td><td>k² C<sub>in</sub> C<sub>out</sub> + C<sub>out</sub></td></tr><tr><td>Receptive field</td><td>r ← r + (k − 1) j, j ← j s</td></tr><tr><td>Transposed conv</td><td>(n − 1) s − 2p + k</td></tr><tr><td>IoU, Dice</td><td>A ∩ B ÷ A ∪ B, &nbsp; 2 |A ∩ B| ÷ (|A| + |B|)</td></tr><tr><td>Precision, recall, F1</td><td>TP ÷ (TP + FP), TP ÷ (TP + FN), 2PR ÷ (P + R)</td></tr><tr><td>Cross entropy, focal</td><td>−ln p, &nbsp; −(1 − p)<sup>γ</sup> ln p</td></tr><tr><td>Stereo</td><td>Z = f B ÷ d, ΔZ ≈ Z² Δd ÷ (f B)</td></tr><tr><td>ViT tokens</td><td>(n ÷ p)², attention pairs N²</td></tr></tbody></table></div>
+<div class="cv-code" data-k="drill"></div>
+<h3>Ten mistakes that cost marks</h3>
+<ol>
+<li>Rounding in the middle of a long calculation.</li>
+<li>Forgetting biases in parameter counts.</li>
+<li>Mixing box formats in IoU.</li>
+<li>Forgetting to clip pixel values to 0 to 255.</li>
+<li>Flipping the kernel for correlation, or not flipping it when the question says true convolution.</li>
+<li>Treating mAP as the mean of precision instead of the mean of AP over classes.</li>
+<li>Using pixel accuracy on unbalanced classes where mIoU is asked for.</li>
+<li>Forgetting that NMS runs per class in most detectors.</li>
+<li>Writing degrees when the formula needs radians.</li>
+<li>Giving a design answer without a metric and a failure case.</li>
+</ol>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./project-lab.html" data-topic="project-lab"><small>Previous topic</small><b>Project: blur and sharpen</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "exam-revision", "topic": "exam-revision", "subject": "computer-vision", "title": "Exam revision: from school to research universities", "codes": {"drill": {"src": "# Exam drill: one convolution layer, every number an examiner can ask for\nn = int(input(\"input size n: \"))\nk = int(input(\"kernel size k: \"))\ns = int(input(\"stride s: \"))\np = int(input(\"padding p: \"))\ncin = int(input(\"input channels: \"))\ncout = int(input(\"output channels: \"))\n\nout = (n + 2 * p - k) // s + 1\nweights = k * k * cin * cout\nprint(\"output size  = floor((\", n, \"+ 2 x\", p, \"-\", k, \") /\", s, \") + 1 =\", out)\nprint(\"weights      =\", k, \"x\", k, \"x\", cin, \"x\", cout, \"=\", weights, \" plus\", cout, \"biases =\", weights + cout)\nprint(\"mult adds    =\", out, \"x\", out, \"x\", weights, \"=\", out * out * weights)\nprint(\"output shape =\", out, \"x\", out, \"x\", cout)", "stdin": "32\n5\n2\n2\n3\n16\n", "out": "input size n: kernel size k: stride s: padding p: input channels: output channels: output size  = floor(( 32 + 2 x 2 - 5 ) / 2 ) + 1 = 16\nweights      = 5 x 5 x 3 x 16 = 1200  plus 16 biases = 1216\nmult adds    = 16 x 16 x 1200 = 307200\noutput shape = 16 x 16 x 16"}}, "quiz": [{"lv": "e", "q": "An 8 bit grey image of 640 × 480 pixels takes how many bytes uncompressed?", "o": ["307,200", "921,600", "2,457,600", "76,800"], "a": 0, "hint": "One byte per pixel.", "why": "640 × 480 = 307,200. RGB would be three times that."}, {"lv": "e", "q": "Which colour gets the largest weight in the grey conversion?", "o": ["Red", "Green", "Blue", "All equal"], "a": 1, "hint": "0.587.", "why": "The eye is most sensitive to green."}, {"lv": "e", "q": "Which filter is best for salt and pepper noise?", "o": ["Mean", "Gaussian", "Median", "Sobel"], "a": 2, "hint": "Outliers.", "why": "The median ignores extreme values instead of averaging them in."}, {"lv": "m", "q": "A 32 × 32 input, 5 × 5 kernel, stride 2, padding 2 gives an output of", "o": ["14", "15", "16", "32"], "a": 2, "hint": "⌊(32 + 4 − 5) ÷ 2⌋ + 1.", "why": "⌊31 ÷ 2⌋ + 1 = 16."}, {"lv": "m", "q": "Harris R is large and negative. The point is", "o": ["A corner", "An edge", "Flat", "Noise"], "a": 1, "hint": "One large eigenvalue.", "why": "Negative R means one strong direction, an edge."}, {"lv": "m", "q": "Two boxes with IoU 1 ÷ 7 under NMS at threshold 0.5", "o": ["Suppress each other", "Both survive", "Merge", "Are removed"], "a": 1, "hint": "0.143 < 0.5.", "why": "Only overlaps above the threshold are suppressed."}, {"lv": "m", "q": "Dice for IoU = 0.6 is", "o": ["0.6", "0.75", "0.8", "0.5"], "a": 1, "hint": "2 IoU ÷ (1 + IoU).", "why": "1.2 ÷ 1.6 = 0.75."}, {"lv": "h", "q": "A transposed conv with k = 4, s = 2, p = 1 on a 16 × 16 map gives", "o": ["8", "16", "32", "34"], "a": 2, "hint": "(n − 1) s − 2p + k.", "why": "30 − 2 + 4 = 32, exactly double."}, {"lv": "h", "q": "Three stacked 3 × 3 convs at stride 1 have the reach of one", "o": ["3 × 3", "5 × 5", "7 × 7", "9 × 9"], "a": 2, "hint": "Each adds 2.", "why": "1 + 2 + 2 + 2 = 7, with 27 instead of 49 weights per channel pair."}, {"lv": "h", "q": "The optical flow constraint alone cannot give flow because", "o": ["Images are noisy", "It is one equation in two unknowns", "It needs colour", "Brightness changes"], "a": 1, "hint": "The aperture problem.", "why": "Only the component along the gradient is fixed."}, {"lv": "x", "q": "Two Gaussian blurs with σ = 3 and σ = 4 equal one blur with σ =", "o": ["5", "7", "12", "3.5"], "a": 0, "hint": "Variances add.", "why": "√(9 + 16) = 5."}, {"lv": "x", "q": "Stereo depth error at 3 times the distance, everything else fixed, is", "o": ["3 times larger", "9 times larger", "the same", "3 times smaller"], "a": 1, "hint": "Z².", "why": "ΔZ ≈ Z² Δd ÷ (f B)."}, {"lv": "x", "q": "In a critique of the blur experiment, which point most limits the baseline score?", "o": ["The GPU type", "COCO128 images come from the training set of the pretrained model", "The batch size", "The YAML file name"], "a": 1, "hint": "Train and test overlap.", "why": "The baseline is optimistic. Use held out images."}], "calc": [{"lv": "e", "q": "How many bytes does an uncompressed 1920 × 1080 RGB image with 8 bit channels take?", "ans": "6220800", "hint": "width × height × 3.", "steps": ["1920 × 1080 = 2,073,600 pixels.", "Three bytes per pixel.", "<span class=\"eq\">6,220,800 bytes<\/span>"]}, {"lv": "e", "q": "Grey value of (R, G, B) = (200, 100, 50), rounded to a whole number?", "ans": "124", "hint": "Y = 0.299 R + 0.587 G + 0.114 B.", "steps": ["59.8 + 58.7 + 5.7.", "= 124.2.", "<span class=\"eq\">Y ≈ 124<\/span>"]}, {"lv": "e", "q": "Negative of a pixel with value 70 in an 8 bit image?", "ans": "185", "hint": "s = 255 − r.", "steps": ["L − 1 = 255.", "255 − 70.", "<span class=\"eq\">s = 185<\/span>"]}, {"lv": "m", "q": "Sobel x on [[1, 2, 3], [4, 5, 6], [7, 8, 9]]?", "ans": "8", "hint": "Kernel [[−1, 0, 1], [−2, 0, 2], [−1, 0, 1]].", "steps": ["Rows give 2, 4 and 2.", "Add them.", "<span class=\"eq\">G<sub>x<\/sub> = 8<\/span>"]}, {"lv": "m", "q": "Gradient direction in degrees for G<sub>x<\/sub> = 3, G<sub>y<\/sub> = 4? Give two decimals.", "ans": "53.13", "hint": "atan2(G<sub>y<\/sub>, G<sub>x<\/sub>).", "steps": ["tan θ = 4 ÷ 3.", "θ = atan(1.333).", "<span class=\"eq\">θ ≈ 53.13°<\/span>"], "tol": 0.006}, {"lv": "m", "q": "Harris R for M = [[4, 0], [0, 4]] with k = 0.04?", "ans": "13.44", "hint": "det − k trace².", "steps": ["det = 16, trace = 8.", "0.04 × 64 = 2.56.", "<span class=\"eq\">R = 13.44<\/span>"], "tol": 1e-09}, {"lv": "m", "q": "Parameters in a 3 × 3 conv from 64 to 128 channels with bias?", "ans": "73856", "hint": "k² C<sub>in<\/sub> C<sub>out<\/sub> + C<sub>out<\/sub>.", "steps": ["9 × 64 = 576 per filter.", "576 × 128 = 73,728.", "<span class=\"eq\">+ 128 = 73,856<\/span>"]}, {"lv": "m", "q": "F1 for 8 correct out of 10 boxes when 12 objects exist? Give three decimals.", "ans": "0.727", "hint": "2PR ÷ (P + R).", "steps": ["P = 0.8, R = 0.667.", "2 × 0.8 × 0.667 = 1.0667.", "<span class=\"eq\">1.0667 ÷ 1.4667 ≈ 0.727<\/span>"], "tol": 0.0006}, {"lv": "h", "q": "Cross entropy for logits (2, 1, 0) with the first class true? Three decimals.", "ans": "0.408", "hint": "−ln SoftMax.", "steps": ["Exponentials 7.389, 2.718, 1.", "p = 7.389 ÷ 11.107 ≈ 0.665.", "<span class=\"eq\">−ln 0.665 ≈ 0.408<\/span>"], "tol": 0.0006}, {"lv": "h", "q": "mIoU for the confusion matrix rows (50, 10) and (5, 35)? Three decimals.", "ans": "0.735", "hint": "Per class TP ÷ (TP + FP + FN).", "steps": ["Class 0: 50 ÷ 65 ≈ 0.769.", "Class 1: 35 ÷ 50 = 0.700.", "<span class=\"eq\">mean ≈ 0.735<\/span>"], "tol": 0.0006}, {"lv": "h", "q": "Multiply adds of a 3 × 3 conv, 64 to 64 channels, with a 56 × 56 output?", "ans": "115605504", "hint": "out² k² C<sub>in<\/sub> C<sub>out<\/sub>.", "steps": ["56² = 3,136 positions.", "9 × 64 × 64 = 36,864 per position.", "<span class=\"eq\">3,136 × 36,864 = 115,605,504<\/span>"]}, {"lv": "h", "q": "Parameters of a ViT patch embedding for 16 × 16 RGB patches into 768 dimensions, with bias?", "ans": "590592", "hint": "A linear layer.", "steps": ["Inputs per patch: 16 × 16 × 3 = 768.", "768 × 768 = 589,824 weights.", "<span class=\"eq\">+ 768 biases = 590,592<\/span>"]}, {"lv": "x", "q": "One Gaussian equivalent to blurring with σ = 3 and then σ = 4?", "ans": "5", "hint": "Variances add.", "steps": ["σ² = 9 + 16.", "= 25.", "<span class=\"eq\">σ = 5<\/span>"]}, {"lv": "x", "q": "I<sub>x<\/sub> = 2, I<sub>y<\/sub> = 1, I<sub>t<\/sub> = −4 and v = 0. Find u.", "ans": "2", "hint": "I<sub>x<\/sub> u + I<sub>y<\/sub> v + I<sub>t<\/sub> = 0.", "steps": ["2u + 0 − 4 = 0.", "2u = 4.", "<span class=\"eq\">u = 2 pixels per frame<\/span>"]}, {"lv": "x", "q": "f = 500 px, B = 0.1 m, d = 25 px. Depth error for a 1 pixel disparity error, by the rule of thumb?", "ans": "0.08", "hint": "Z² Δd ÷ (f B).", "steps": ["Z = 50 ÷ 25 = 2 m.", "Z² = 4, f B = 50.", "<span class=\"eq\">ΔZ ≈ 4 ÷ 50 = 0.08 m<\/span>"]}, {"lv": "x", "q": "Cost ratio of a direct 15 × 15 blur to a separable one?", "ans": "7.5", "hint": "k² against 2k.", "steps": ["Direct: 225.", "Separable: 30.", "<span class=\"eq\">225 ÷ 30 = 7.5<\/span>"]}], "assign": [], "must": [], "summary": ""}</script>
+<script type="application/json" id="cvtrace">{"drill": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.n": "32"}, "o": "input size n: "}, {"l": 4, "ev": "line", "d": {"G.k": "5"}, "o": "kernel size k: "}, {"l": 5, "ev": "line", "d": {"G.s": "2"}, "o": "stride s: "}, {"l": 6, "ev": "line", "d": {"G.p": "2"}, "o": "padding p: "}, {"l": 7, "ev": "line", "d": {"G.cin": "3"}, "o": "input channels: "}, {"l": 9, "ev": "line", "d": {"G.cout": "16"}, "o": "output channels: "}, {"l": 10, "ev": "line", "d": {"G.out": "16"}}, {"l": 11, "ev": "line", "d": {"G.weights": "1200"}}, {"l": 12, "ev": "line", "o": "output size  = floor(( 32 + 2 x 2 - 5 ) / 2 ) + 1 = 16\n"}, {"l": 13, "ev": "line", "o": "weights      = 5 x 5 x 3 x 16 = 1200  plus 16 biases = 1216\n"}, {"l": 14, "ev": "line", "o": "mult adds    = 16 x 16 x 1200 = 307200\n"}, {"l": 14, "ev": "return", "o": "output shape = 16 x 16 x 16\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cvwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

@@ -3973,6 +3973,22 @@ function cvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cv-revision", title: "Exam revision", emoji: "9", step: 9, level: "All levels", blurb: "Revise the whole subject by exam style, from school questions to IIT numericals, NPTEL and GATE style papers, and MIT and Cambridge style derivations.", topics: [
+      { id: "exam-revision", title: "Exam revision: from school to research universities", emoji: "9.1", page: "content/computer-vision/exam-revision.html",
+        summary: "Exam style questions from school level to research universities, with worked answers, a formula sheet and a mock quiz.",
+        keywords: ["exam", "revision", "formula sheet", "mock quiz", "numericals", "derivations", "IIT", "NPTEL", "GATE", "MIT", "Cambridge", "Stanford"],
+        minutes: 60, counts: {"lessons": 6, "problems": 16, "quiz": 13, "assign": 0},
+        added: "2026-10-27",
+        sections: [
+        { id: "map", title: "How computer vision is examined", emoji: "", group: "Lesson", keywords: ["exam pattern", "revision", "school", "university exam", "IIT", "NPTEL", "GATE", "MIT", "Stanford", "Cambridge", "method marks"] },
+        { id: "school", title: "Tier 1: school and first year", emoji: "", group: "Lesson", keywords: ["image size", "bytes", "grey conversion", "luminance", "negative", "brightness", "bit depth", "24 bit colour", "short answer"] },
+        { id: "semester", title: "Tier 2: university semester and IIT course exams", emoji: "", group: "Lesson", keywords: ["Sobel", "convolution by hand", "gradient magnitude", "gradient direction", "Harris", "IoU", "parameter count", "precision", "recall", "F1", "short notes"] },
+        { id: "mcq", title: "Tier 3: multiple choice and numerical answer papers", emoji: "", group: "Lesson", keywords: ["MCQ", "numerical answer", "NPTEL", "GATE", "shortcuts", "same padding", "stride", "cross entropy", "mIoU", "confusion matrix", "focal loss", "Dice", "traps"] },
+        { id: "derive", title: "Tier 4: derivations, design and critique", emoji: "", group: "Lesson", keywords: ["derivation", "separable Gaussian", "Gaussian cascade", "optical flow constraint", "aperture problem", "Lucas Kanade", "stereo error", "design question", "critique", "assumptions", "MIT", "Cambridge", "Stanford"] },
+        { id: "sheet", title: "Formula sheet and last minute checks", emoji: "", group: "Lesson", keywords: ["formula sheet", "common mistakes", "last minute revision", "equalisation", "conv output", "receptive field", "IoU", "Dice", "stereo"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
