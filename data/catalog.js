@@ -4275,6 +4275,22 @@ function nlpModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "nlp-revision", title: "Exam revision", emoji: "6", step: 6, level: "All levels", blurb: "Revise the whole subject by exam style, from school questions to IIT numericals, NPTEL and GATE style papers, and MIT and Cambridge style derivations.", topics: [
+      { id: "exam-revision", title: "Exam revision: from school to research universities", emoji: "6.1", page: "content/nlp/exam-revision.html",
+        summary: "Exam style questions from school level to research universities, with worked answers, a formula sheet and a mock quiz.",
+        keywords: ["exam", "revision", "formula sheet", "mock quiz", "numericals", "derivations", "IIT", "NPTEL", "GATE", "MIT", "Cambridge", "Stanford"],
+        minutes: 60, counts: {"lessons": 6, "problems": 14, "quiz": 12, "assign": 0},
+        added: "2026-10-27",
+        sections: [
+        { id: "map", title: "How NLP is examined", emoji: "", group: "Lesson", keywords: ["exam pattern", "revision", "school", "university exam", "IIT", "NPTEL", "GATE", "MIT", "Stanford", "Cambridge", "derivations", "hand computation"] },
+        { id: "school", title: "Tier 1: school and first year", emoji: "", group: "Lesson", keywords: ["tokens", "types", "type token ratio", "Zipf", "stem", "lemma", "entropy", "bits", "short answer", "definitions"] },
+        { id: "semester", title: "Tier 2: university semester and IIT course exams", emoji: "", group: "Lesson", keywords: ["bigram MLE", "toy corpus", "perplexity by hand", "Laplace", "Viterbi by hand", "PCFG", "compare and contrast", "short notes"] },
+        { id: "mcq", title: "Tier 3: multiple choice and numerical answer papers", emoji: "", group: "Lesson", keywords: ["MCQ", "numerical answer", "NPTEL", "GATE", "shortcuts", "KL divergence", "PMI", "uniform perplexity", "complexity", "traps"] },
+        { id: "derive", title: "Tier 4: derivations, design and critique", emoji: "", group: "Lesson", keywords: ["derivation", "MLE", "Lagrange multiplier", "perplexity derivation", "cross entropy", "Bayes", "Viterbi proof", "KL nonnegative", "Jensen", "design question", "critique", "MIT", "Cambridge", "Stanford"] },
+        { id: "sheet", title: "Formula sheet and last minute checks", emoji: "", group: "Lesson", keywords: ["formula sheet", "common mistakes", "last minute revision", "perplexity", "Laplace", "Viterbi", "KL", "mutual information"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
