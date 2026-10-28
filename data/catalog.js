@@ -4137,6 +4137,67 @@ function nlpModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "nlp-lm", title: "Language models", emoji: "4", step: 4, level: "College and masters", blurb: "Predict the next word with n-gram models, measure them with perplexity, smooth away the zeros and run the SRILM assignment.", topics: [
+      { id: "ngrams", title: "N-gram models and the Markov assumption", emoji: "4.1", page: "content/nlp/ngram-models.html",
+        summary: "The chain rule, the Markov assumption, MLE counting, the start and end tags, and the bigram and unigram activity.",
+        keywords: ["n-gram", "bigram", "unigram", "trigram", "Markov assumption", "Markov chain", "MLE", "start and end tags", "language model"],
+        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "predict", title: "Why predict the next word?", emoji: "", group: "Lesson", keywords: ["language model", "next word prediction", "true probability", "estimate", "chain rule", "conditional probability", "speech recognition", "grep"] },
+        { id: "markov", title: "The Markov assumption", emoji: "", group: "Lesson", keywords: ["Markov assumption", "n-gram", "bigram", "trigram", "context window", "Markov chain", "finite state machine", "self loop", "start distribution"] },
+        { id: "mle", title: "Counting: the maximum likelihood estimate", emoji: "", group: "Lesson", keywords: ["MLE", "maximum likelihood", "relative frequency", "bigram counts", "start tag", "end tag", "N = 22", "Lagrange multiplier", "activity corpus"] },
+        { id: "activity", title: "The activity: which sentence is better?", emoji: "", group: "Lesson", keywords: ["activity", "question 1", "question 2", "bigram probability", "unigram probability", "Sam I am", "answer sheet errors", "PP1", "grammar against probability"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "perplexity", title: "Perplexity and evaluating language models", emoji: "4.2", page: "content/nlp/perplexity.html",
+        summary: "Perplexity from entropy, ppl and ppl1, file perplexity, underflow, the WSJ table and fair comparison.",
+        keywords: ["perplexity", "ppl", "ppl1", "cross entropy", "evaluation", "underflow", "test set", "vocabulary"],
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "surprise", title: "From surprise to perplexity", emoji: "", group: "Lesson", keywords: ["perplexity", "surprisal", "average entropy", "branching factor", "derivation", "log base", "bits", "hartleys"] },
+        { id: "ppl1", title: "PP, PP1 and whole files", emoji: "", group: "Lesson", keywords: ["ppl", "ppl1", "file perplexity", "geometric mean", "SRILM output", "OOV", "zeroprobs", "end of sentence"] },
+        { id: "evaluate", title: "Evaluating language models", emoji: "", group: "Lesson", keywords: ["extrinsic evaluation", "intrinsic evaluation", "likelihood", "underflow", "log probability", "WSJ", "test set", "dev set", "vocabulary", "comparability"] },
+        { id: "crossent", title: "Perplexity as cross entropy", emoji: "", group: "Lesson", keywords: ["cross entropy", "KL divergence", "upper bound", "true entropy", "human prediction", "surprisal theory", "reading time"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "smoothing", title: "Unseen words and smoothing", emoji: "4.3", page: "content/nlp/smoothing.html",
+        summary: "<UNK>, Laplace and add-k, discounting methods and Kneser-Ney, backoff, interpolation and λ tuning.",
+        keywords: ["smoothing", "UNK", "Laplace", "add-k", "Good-Turing", "Kneser-Ney", "backoff", "interpolation", "lambda"],
+        minutes: 55, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "zeros", title: "Two kinds of zero", emoji: "", group: "Lesson", keywords: ["zero probability", "OOV", "unseen bigram", "sparsity", "Berkeley Restaurant Project", "parameters", "John eats blue", "structural zeros"] },
+        { id: "laplace", title: "<UNK>, Laplace and add-k", emoji: "", group: "Lesson", keywords: ["UNK", "Laplace smoothing", "add-one", "add-k", "bag of fruit", "normalisation proof", "answer sheet", "reconstituted counts"] },
+        { id: "discount", title: "Better smoothing: discounting", emoji: "", group: "Lesson", keywords: ["absolute discounting", "Good-Turing", "Witten-Bell", "Kneser-Ney", "continuation probability", "San Francisco", "Chen and Goodman", "frequency of frequencies"] },
+        { id: "backoff", title: "Backoff, interpolation and choosing λ", emoji: "", group: "Lesson", keywords: ["backoff", "Katz", "alpha", "interpolation", "lambda", "dev set", "grid search", "EM", "stupid backoff", "Jelinek-Mercer"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "srilm", title: "The SRILM toolkit and assignment 2", emoji: "4.4", page: "content/nlp/srilm-lab.html",
+        summary: "SRILM commands, count and ARPA files, test output, and the Brown corpus results of assignment 2.",
+        keywords: ["SRILM", "ARPA", "ngram-count", "Brown corpus", "assignment 2", "Kneser-Ney", "stop words", "lambda search"],
+        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "workflow", title: "SRILM in three commands", emoji: "", group: "Lesson", keywords: ["SRILM", "ngram-count", "ngram -ppl", "debug 2", "count file", "ARPA format", "backoff weight", "-99", "addsmooth", "unk flag"] },
+        { id: "brown", title: "From the toy corpus to the Brown corpus", emoji: "", group: "Lesson", keywords: ["Brown corpus", "in-class activity 2", "train dev test", "genres", "OOV", "smoothing flags"] },
+        { id: "a2", title: "Assignment 2, question by question", emoji: "", group: "Lesson", keywords: ["assignment 2", "Brown", "Kneser-Ney", "Witten-Bell", "Good-Turing", "absolute discounting", "stop words", "punctuation", "k and lambda search", "unk probability"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

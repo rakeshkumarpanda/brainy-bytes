@@ -1266,3 +1266,742 @@ const NLZ = (() => {
     }
   });
 })();
+
+/* ===== Step 4: n-gram language models, perplexity and smoothing ===== */
+(() => {
+  const { def, D, esc } = CVZ;
+  const { tw, rr, pill, wrap, fit, log2, fmt } = NLZ;
+
+  /* the five sentence corpus of the in-class activity (adapted from Jurafsky and Martin) */
+  const TOY = 'I am Sam\nSam I am\nSam I like\nSam I do like\ndo I like Sam';
+  NLZ.TOY = TOY;
+  const toks = s => String(s).trim().split(/\s+/).filter(Boolean);
+  const lines = s => String(s).split('\n').map(toks).filter(a => a.length);
+  const g6 = v => !isFinite(v) ? (v > 0 ? 'inf' : '-inf') : String(Number(v.toPrecision(6)));
+  const L10 = Math.log10;
+  /* 9.6 × 10⁻³ style, for the readouts */
+  const sci = v => { if (!(v > 0)) return String(v); const e = Math.floor(Math.log10(v)); return e > -3 && e < 4 ? fmt(v, 5) : `${(v / 10 ** e).toFixed(4)} × 10<sup>${String(e).replace('-', '−')}</sup>`; };
+
+  /* count every order from 1 to maxN. Order m pads each sentence with m − 1 start tags and one end tag.
+     <s> is only ever context, </s> is predicted, exactly as in class and in SRILM */
+  function train(text, maxN) {
+    const sents = lines(text);
+    const C = [];
+    for (let m = 1; m <= maxN; m++) {
+      const ng = new Map(), hist = new Map(), foll = new Map();
+      sents.forEach(s => {
+        const t = Array(m - 1).fill('<s>').concat(s, ['</s>']);
+        for (let i = m - 1; i < t.length; i++) {
+          const h = t.slice(i - m + 1, i).join(' '), key = h + '|' + t[i];
+          ng.set(key, (ng.get(key) || 0) + 1);
+          hist.set(h, (hist.get(h) || 0) + 1);
+          if (!foll.has(h)) foll.set(h, new Map());
+          foll.get(h).set(t[i], (foll.get(h).get(t[i]) || 0) + 1);
+        }
+      });
+      C[m] = { ng, hist, foll };
+    }
+    const words = [];
+    sents.flat().forEach(w => { if (!words.includes(w)) words.push(w); });
+    return { sents, C, words, N: C[1].hist.get('') || 0 };
+  }
+  NLZ.lmTrain = train;
+  /* add-k estimate of P(w | h) from the counts of order h.length + 1. k = 0 is the plain MLE */
+  function est(lm, h, w, k, V) {
+    const c = lm.C[h.length + 1], hs = h.join(' ');
+    const n = c.ng.get(hs + '|' + w) || 0, d = c.hist.get(hs) || 0;
+    return { p: d + k * V > 0 ? (n + k) / (d + k * V) : 0, n, d };
+  }
+  /* score every test sentence. o = { n, k, unk, lam, ku }. lam null means no interpolation */
+  function score(lm, test, o) {
+    const vocab = new Set(lm.words.concat(['</s>']));
+    if (o.unk) vocab.add('<unk>');
+    const V = vocab.size;
+    const out = lines(test).map(ws => {
+      let hist = Array(o.n - 1).fill('<s>');
+      const f = [];
+      ws.concat(['</s>']).forEach(w => {
+        let w2 = w;
+        if (!vocab.has(w)) {
+          if (o.unk) w2 = '<unk>';
+          else { f.push({ w, oov: true, h: o.n > 1 ? hist.slice(-(o.n - 1)) : [] }); hist = []; return; }
+        }
+        const h = o.n > 1 ? hist.slice(-(o.n - 1)) : [];
+        const r = est(lm, h, w2, o.k, V);
+        let p = r.p, u = null;
+        if (o.lam != null) { u = est(lm, [], w2, o.ku, V).p; p = o.lam * r.p + (1 - o.lam) * u; }
+        f.push({ w, w2, h, m: h.length + 1, n: r.n, d: r.d, pn: r.p, u, p });
+        hist.push(w2);
+      });
+      const words = ws.length, oov = f.filter(x => x.oov).length, zero = f.filter(x => !x.oov && x.p === 0).length;
+      const lp = f.reduce((a, x) => a + (!x.oov && x.p > 0 ? L10(x.p) : 0), 0);
+      return { ws, f, words, oov, zero, lp };
+    });
+    const tot = { sents: out.length, words: 0, oov: 0, zero: 0, lp: 0 };
+    out.forEach(s => { tot.words += s.words; tot.oov += s.oov; tot.zero += s.zero; tot.lp += s.lp; });
+    const pp = (lp, words, oov, zero, sents) => ({ ppl: 10 ** (-lp / (words - oov - zero + sents)), ppl1: 10 ** (-lp / Math.max(1, words - oov - zero)) });
+    out.forEach(s => Object.assign(s, pp(s.lp, s.words, s.oov, s.zero, 1)));
+    Object.assign(tot, pp(tot.lp, tot.words, tot.oov, tot.zero, tot.sents));
+    return { out, tot, V };
+  }
+  NLZ.lmScore = score;
+  const ctx = h => h.length ? h.join(' ') : '';
+  const label = x => `P(${x.w}${x.w2 && x.w2 !== x.w ? '→' + x.w2 : ''}${x.h.length ? ' | ' + ctx(x.h) : ''})`;
+
+  /* ---------------------------------------------------------------- the n-gram model and its SRILM printout */
+  def('ngramlm', {
+    title: 'Train an n-gram model and score a sentence',
+    sub: 'The model is trained on the corpus on the left. Each test word becomes one factor of the chain rule, read straight from the counts.',
+    W: 560, H: 300,
+    params: [
+      { k: 'train', label: 'Training corpus (one sentence per line, tags are added for you)', type: 'area', v: TOY },
+      { k: 'test', label: 'Test sentences (one per line)', type: 'area', v: 'Sam I do I like' },
+      { k: 'n', label: 'Model order n', type: 'select', v: '2', opts: [['1', 'unigram (n = 1)'], ['2', 'bigram (n = 2)'], ['3', 'trigram (n = 3)']] },
+      { k: 'k', label: 'Add-k smoothing k (0 is plain counting, 1 is Laplace)', type: 'range', min: 0, max: 2, step: 0.01, v: 0 },
+      { k: 'unk', label: 'Map unseen words to &lt;unk&gt;', type: 'check', v: false },
+      { k: 'mix', label: 'Interpolate with a unigram model', type: 'check', v: false },
+      { k: 'lam', label: 'λ, the weight of the n-gram', type: 'range', min: 0, max: 1, step: 0.01, v: 0.7, show: p => p.mix },
+      { k: 'ku', label: 'Add-k for that unigram', type: 'range', min: 0, max: 2, step: 0.01, v: 1, show: p => p.mix },
+      { k: 'view', label: 'Show', type: 'select', v: 'table', opts: [['table', 'the factors as a table'], ['srilm', 'the output of ngram -ppl -debug 2']] }
+    ],
+    tips: [
+      { t: 'Question 1 of the activity: type "Sam I am" as a second test line. The file total is −3.16040 and ppl 2.07033, exactly SRILM\'s last line.', set: { test: 'Sam I do I like\nSam I am', n: '2', k: 0, unk: false, mix: false } },
+      { t: 'Question 2: switch to the unigram. S1 drops to 3.3 × 10⁻⁵ because word order no longer helps.', set: { test: 'Sam I do I like\nSam I am', n: '1', k: 0, mix: false } },
+      { t: 'Question 3: test "Sam I do like linguistics" with the bigram, then tick &lt;unk&gt;. Without &lt;unk&gt; SRILM skips the word as an OOV. With it, plain counting gives probability 0.', set: { test: 'Sam I do like linguistics', n: '2', k: 0, unk: false, mix: false } },
+      { t: 'Laplace bigram: tick &lt;unk&gt; and set k to 1. The sentence gets 1/17010 and PP 5.07.', set: { test: 'Sam I do like linguistics', n: '2', k: 1, unk: true, mix: false } },
+      { t: 'Interpolation: k = 0, mix with a Laplace unigram at λ = 0.7. P ≈ 9.99 × 10⁻⁶ and PP ≈ 6.81, nothing is zero any more.', set: { test: 'Sam I do like linguistics', n: '2', k: 0, unk: true, mix: true, lam: 0.7, ku: 1 } },
+      { t: 'Trigram on "Sam I do I like": the factor P(I | I do) is 0 because "I do I" never occurred, although both bigrams did.', set: { test: 'Sam I do I like', n: '3', k: 0, unk: false, mix: false } },
+      { t: 'See the same numbers as the toolkit prints them.', set: { test: 'Sam I do I like\nSam I am', n: '2', k: 0, unk: false, mix: false, view: 'srilm' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const n = +p.n, lm = train(p.train, n);
+      if (!lm.sents.length) return 'Type at least one training sentence.';
+      const r = score(lm, p.test, { n, k: p.k, unk: p.unk, lam: p.mix ? p.lam : null, ku: p.ku });
+      if (!r.out.length) return 'Type a test sentence.';
+      const T = r.tot;
+      if (p.view === 'srilm') {
+        const L = [];
+        r.out.forEach(s => {
+          L.push([s.ws.join(' '), z.col.ink, true]);
+          s.f.forEach(x => {
+            const c = x.h.length ? (x.h.length > 1 ? x.h[x.h.length - 1] + ' ...' : x.h[0]) : '';
+            if (x.oov) L.push([`    p( ${x.w} | ${c} )  = [OOV] 0 [ -inf ]`, z.col.red]);
+            else L.push([`    p( ${x.w2} | ${c} )  = [${x.m}gram] ${g6(x.p)} [ ${x.p > 0 ? g6(L10(x.p)) : '-inf'} ]`, x.p > 0 ? z.col.ink : z.col.red]);
+          });
+          L.push([`1 sentences, ${s.words} words, ${s.oov} OOVs`, z.col.ink2]);
+          L.push([`${s.zero} zeroprobs, logprob= ${g6(s.lp)} ppl= ${g6(s.ppl)} ppl1= ${g6(s.ppl1)}`, z.col.cv, true]);
+          L.push(['', z.col.ink]);
+        });
+        L.push([`file test.txt: ${T.sents} sentences, ${T.words} words, ${T.oov} OOVs`, z.col.ink2]);
+        L.push([`${T.zero} zeroprobs, logprob= ${g6(T.lp)} ppl= ${g6(T.ppl)} ppl1= ${g6(T.ppl1)}`, z.col.orange, true]);
+        rr(g, 8, 8, z.W - 16, z.H - 16, 10, { fill: z.col.bg, stroke: z.col.line });
+        const lh = Math.min(17, (z.H - 36) / L.length);
+        const fs = Math.min(12, lh - 3);
+        L.forEach(([s, c, b], i) => { if (s) D.text(g, s, 22, 30 + i * lh, { s: fit(g, s, z.W - 44, fs, { mono: true }), mono: true, c, b }); });
+      } else {
+        const rows = [];
+        r.out.forEach((s, i) => { if (i) rows.push(null); s.f.forEach(x => rows.push(x)); });
+        const cols = [16, 222, 380, 470, 548];
+        ['factor', 'counts used', 'value', 'log₁₀'].forEach((t, i) => D.text(g, t, i < 2 ? cols[i] : (i === 2 ? 452 : cols[4]), 20, { a: i < 2 ? 'left' : 'right', s: 11.5, b: true, c: z.col.ink2 }));
+        const maxRows = 11, rh = Math.min(21, 232 / Math.max(1, Math.min(rows.length, maxRows)));
+        rows.slice(0, maxRows).forEach((x, i) => {
+          const y = 30 + i * rh;
+          if (!x) { D.line(g, 16, y + rh / 2, 548, y + rh / 2, z.col.line, 1, [4, 4]); return; }
+          const lab = label(x);
+          D.text(g, lab, cols[0], y + rh * 0.7, { s: fit(g, lab, 200, 12.5), b: true, c: x.oov ? z.col.red : z.col.ink });
+          if (x.oov) { D.text(g, 'not in the vocabulary: skipped as an OOV', cols[1], y + rh * 0.7, { s: 11.5, c: z.col.red }); return; }
+          let cu;
+          if (p.mix) cu = `${fmt(p.lam, 2)}×${fmt(x.pn, 3)} + ${fmt(1 - p.lam, 2)}×${fmt(x.u, 3)}`;
+          else if (p.k > 0) cu = `(${x.n} + ${fmt(p.k, 2)}) ÷ (${x.d} + ${fmt(p.k, 2)}×${r.V})`;
+          else cu = x.d ? `${x.n} ÷ ${x.d}` : `${x.n} ÷ 0, history never seen`;
+          D.text(g, cu, cols[1], y + rh * 0.7, { s: fit(g, cu, 150, 11.5, { mono: true }), mono: true, c: z.col.ink2 });
+          rr(g, 380, y + 4, Math.max(1.5, x.p * 30), rh - 8, 3, { fill: x.p > 0 ? z.col.cv : z.col.red });
+          D.text(g, fmt(x.p, 4), 452, y + rh * 0.7, { a: 'right', s: 12, mono: true, c: x.p > 0 ? z.col.ink : z.col.red, b: x.p === 0 });
+          D.text(g, x.p > 0 ? fmt(L10(x.p), 5) : '−∞', 548, y + rh * 0.7, { a: 'right', s: 12, mono: true, c: x.p > 0 ? z.col.ink : z.col.red });
+        });
+        if (rows.length > maxRows) D.text(g, `and ${rows.length - maxRows} more rows. Shorten the test to see them all.`, 16, 30 + maxRows * rh + 12, { s: 11, c: z.col.ink2 });
+        const y = z.H - 14;
+        const hand = T.zero ? 'P = 0, so log₁₀ P = −∞ and PP = ∞' : `log₁₀ P = ${fmt(T.lp, 5)}    PP = ${fmt(T.ppl, 4)}    PP1 = ${fmt(T.ppl1, 4)}`;
+        rr(g, 8, y - 20, z.W - 16, 28, 8, { fill: T.zero ? z.col.red : z.col.cv });
+        D.text(g, hand, z.W / 2, y - 1, { a: 'center', s: fit(g, hand, z.W - 40, 13.5), b: true, c: '#fff' });
+      }
+      const s0 = r.out[0];
+      const P = s0.zero ? 0 : 10 ** s0.lp;
+      let msg = `Vocabulary V = ${r.V} (${lm.words.length} words, &lt;/s&gt;${p.unk ? ' and &lt;unk&gt;' : ''}). Training tokens N = ${lm.N}. `;
+      if (r.out.length === 1) msg += `P(sentence) = <b>${s0.oov && !s0.zero ? 'not defined without &lt;unk&gt;' : P === 0 ? '0' : sci(P)}</b> over ${s0.words} words + &lt;/s&gt;. `;
+      else msg += `File: ${T.sents} sentences, ${T.words} words, logprob <b>${fmt(T.lp, 5)}</b>, ppl <b>${fmt(T.ppl, 5)}</b>, ppl1 ${fmt(T.ppl1, 5)}. The file perplexity is not the average of the sentence perplexities. `;
+      if (T.oov) msg += `SRILM skips the ${T.oov} OOV word${T.oov > 1 ? 's' : ''} and scores the rest, so its perplexity is not comparable with a run that has no OOVs. `;
+      if (T.zero) msg += `By hand one zero factor makes the whole product 0. SRILM instead reports ${T.zero} zeroprob${T.zero > 1 ? 's' : ''}, leaves ${T.zero > 1 ? 'them' : 'it'} out and prints ppl ${fmt(T.ppl, 4)}. `;
+      if (p.k > 0 && n > 1) msg += 'With add-k every unseen n-gram gets a share. SRILM\'s own -addsmooth backs off for unseen n-grams, so its numbers can differ slightly from this textbook form.';
+      return msg;
+    }
+  });
+
+  /* ---------------------------------------------------------------- the bigram table */
+  def('bigramtable', {
+    title: 'The bigram table: counts, probabilities and zeros',
+    sub: 'Rows are the previous word (the history), columns the next word. Every row of probabilities adds up to 1. Red cells are bigrams never seen.',
+    W: 560, H: 300,
+    params: [
+      { k: 'train', label: 'Training corpus (one sentence per line)', type: 'area', v: TOY },
+      { k: 'view', label: 'Show', type: 'select', v: 'count', opts: [['count', 'counts C(h w)'], ['mle', 'MLE probabilities C(h w) ÷ C(h)'], ['addk', 'add-k probabilities']] },
+      { k: 'k', label: 'k for add-k', type: 'range', min: 0.01, max: 2, step: 0.01, v: 1, show: p => p.view === 'addk' },
+      { k: 'unk', label: 'Add an &lt;unk&gt; row and column', type: 'check', v: false },
+      { k: 'row', label: 'Highlight the row of the history', type: 'text', v: 'I' }
+    ],
+    tips: [
+      { t: 'Count the red cells: 22 of the 36 bigrams never occur, even in a corpus built from six words. Real corpora are far sparser.', set: { view: 'count', unk: false } },
+      { t: 'Switch to MLE and read the row of I: am 2/5, like 2/5, do 1/5. The row sums to 1 because every I is followed by exactly one token.', set: { view: 'mle', row: 'I' } },
+      { t: 'Choose add-k with k = 1 and tick &lt;unk&gt;. No cell is 0 any more, and the row of do becomes 2/9 for I and like, 1/9 for the rest.', set: { view: 'addk', k: 1, unk: true, row: 'do' } },
+      { t: 'Lower k to 0.05. The table moves back towards the counts, while unseen cells keep a small share.', set: { view: 'addk', k: 0.05, unk: true } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const lm = train(p.train, 2);
+      if (!lm.sents.length) return 'Type at least one training sentence.';
+      const W = lm.words.slice(0, 8);
+      const rowsL = ['<s>'].concat(W, p.unk ? ['<unk>'] : []), colsL = W.concat(['</s>'], p.unk ? ['<unk>'] : []);
+      const V = colsL.length;
+      const c = lm.C[2];
+      const x0 = 74, y0 = 40, cw = Math.min(64, (z.W - x0 - 56) / colsL.length), ch = Math.min(28, (z.H - y0 - 20) / rowsL.length);
+      D.text(g, 'next word →', x0, 16, { s: 11, b: true, c: z.col.ink2 });
+      D.text(g, 'history ↓', 8, 16, { s: 11, b: true, c: z.col.ink2 });
+      colsL.forEach((w, j) => D.text(g, w, x0 + j * cw + cw / 2, y0 - 8, { a: 'center', s: fit(g, w, cw - 4, 12), b: true, mono: true, c: z.col.ink }));
+      D.text(g, p.view === 'count' ? 'C(h)' : 'sum', x0 + V * cw + 26, y0 - 8, { a: 'center', s: 11, b: true, c: z.col.ink2 });
+      let zeros = 0, cells = 0;
+      const hi = String(p.row).trim();
+      rowsL.forEach((h, i) => {
+        const y = y0 + i * ch, d = c.hist.get(h) || 0;
+        if (h === hi) rr(g, 4, y, x0 + V * cw + 54, ch, 6, { fill: z.col.hl || z.col.bg });
+        D.text(g, h, x0 - 8, y + ch / 2 + 4, { a: 'right', s: fit(g, h, x0 - 12, 12), b: true, mono: true, c: z.col.ink });
+        let sum = 0;
+        colsL.forEach((w, j) => {
+          const n = c.ng.get(h + '|' + w) || 0;
+          cells++; if (!n) zeros++;
+          let v, s;
+          if (p.view === 'count') { v = n; s = String(n); }
+          else if (p.view === 'mle') { v = d ? n / d : 0; s = d ? (n ? `${n}/${d}` : '0') : '–'; }
+          else { v = (n + p.k) / (d + p.k * V); s = fmt(v, 3).replace(/^0\./, '.'); }
+          sum += p.view === 'count' ? n : v;
+          const x = x0 + j * cw;
+          const mx = p.view === 'count' ? 5 : 1;
+          g.save(); g.globalAlpha = 0.1 + 0.75 * Math.min(1, v / mx);
+          rr(g, x + 2, y + 2, cw - 4, ch - 4, 4, { fill: n ? z.col.cv : (p.view === 'addk' ? z.col.orange : z.col.red) });
+          g.restore();
+          if (!n && p.view !== 'addk') rr(g, x + 2, y + 2, cw - 4, ch - 4, 4, { stroke: z.col.red, dash: [3, 3], w: 1 });
+          D.text(g, s, x + cw / 2, y + ch / 2 + 4, { a: 'center', s: fit(g, s, cw - 6, 12), mono: true, b: !!n, c: n ? z.col.ink : z.col.red });
+        });
+        D.text(g, p.view === 'count' ? String(d) : (d || p.view === 'addk' ? fmt(sum, 3) : '–'), x0 + V * cw + 26, y + ch / 2 + 4, { a: 'center', s: 12, mono: true, b: true, c: z.col.ink2 });
+      });
+      const rowH = rowsL.indexOf(hi);
+      let extra = '';
+      if (rowH >= 0) {
+        const d = c.hist.get(hi) || 0;
+        const f = colsL.filter(w => c.ng.get(hi + '|' + w)).map(w => `${esc(w)} ${c.ng.get(hi + '|' + w)}`);
+        extra = d ? ` The history <b>${esc(hi)}</b> occurs ${d} times as a history and is followed by ${f.join(', ')}.` : ` The history ${esc(hi)} never occurs, so its MLE row is undefined (0 ÷ 0).`;
+      }
+      return `<b>${zeros}</b> of ${cells} cells have a count of 0 (${Math.round(100 * zeros / cells)}%). The row total C(h) is the denominator of every probability in the row: P(w | h) = C(h w) ÷ C(h).${extra}${p.view === 'addk' ? ` Add-k divides by C(h) + kV with V = ${V}.` : ''}`;
+    }
+  });
+
+  /* curved arrow between two circles. Returns the middle point of the curve for a label */
+  function carc(g, x1, y1, x2, y2, r, b, c, w) {
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1;
+    const cx = mx - dy / L * b, cy = my + dx / L * b;
+    const a1 = Math.atan2(cy - y1, cx - x1), a2 = Math.atan2(cy - y2, cx - x2);
+    const sx = x1 + Math.cos(a1) * r, sy = y1 + Math.sin(a1) * r, ex = x2 + Math.cos(a2) * (r + 2), ey = y2 + Math.sin(a2) * (r + 2);
+    g.save(); g.strokeStyle = c; g.fillStyle = c; g.lineWidth = w;
+    g.beginPath(); g.moveTo(sx, sy); g.quadraticCurveTo(cx, cy, ex, ey); g.stroke();
+    const an = Math.atan2(ey - cy, ex - cx), h = 7 + w;
+    g.beginPath(); g.moveTo(ex, ey); g.lineTo(ex - h * Math.cos(an - 0.42), ey - h * Math.sin(an - 0.42)); g.lineTo(ex - h * Math.cos(an + 0.42), ey - h * Math.sin(an + 0.42)); g.closePath(); g.fill();
+    g.restore();
+    return [0.25 * sx + 0.5 * cx + 0.25 * ex, 0.25 * sy + 0.5 * cy + 0.25 * ey];
+  }
+  NLZ.carc = carc;
+  /* a self loop drawn outside the circle in direction ang */
+  function loop(g, x, y, r, ang, c, w) {
+    const lx = x + Math.cos(ang) * (r + 13), ly = y + Math.sin(ang) * (r + 13);
+    g.save(); g.strokeStyle = c; g.fillStyle = c; g.lineWidth = w;
+    g.beginPath(); g.arc(lx, ly, 15, ang + Math.PI + 1.05, ang + Math.PI - 1.05 + 2 * Math.PI); g.stroke();
+    const ea = ang + Math.PI - 1.05, ex = lx + Math.cos(ea) * 15, ey = ly + Math.sin(ea) * 15, t = ea - Math.PI / 2, h = 7 + w;
+    g.beginPath(); g.moveTo(ex, ey); g.lineTo(ex - h * Math.cos(t - 0.42), ey - h * Math.sin(t - 0.42)); g.lineTo(ex - h * Math.cos(t + 0.42), ey - h * Math.sin(t + 0.42)); g.closePath(); g.fill();
+    g.restore();
+    return [x + Math.cos(ang) * (r + 40), y + Math.sin(ang) * (r + 40)];
+  }
+  NLZ.loop = loop;
+
+  /* ---------------------------------------------------------------- Markov chain */
+  def('markov', {
+    title: 'A bigram model drawn as a Markov chain',
+    sub: 'Each word is a state, each arrow the probability of the next word. Press Play to walk the sentence one factor at a time.',
+    W: 560, H: 300,
+    params: [
+      { k: 'names', label: 'The three states', type: 'text', v: 'He, cool, is' },
+      { k: 'pi', label: 'Start probabilities π, in the same order', type: 'text', v: '0.7, 0.1, 0.2' },
+      { k: 'T', label: 'Transitions: one row per state, P(next | this state)', type: 'area', v: '0.1 0.3 0.6\n0.2 0 0.8\n0.5 0.5 0' },
+      { k: 'seq', label: 'Sentence to score', type: 'text', v: 'is He cool' }
+    ],
+    steps: z => toks(z.p.seq).length, startAtZero: true,
+    tips: [
+      { t: 'Press Play on "is He cool": 0.2 × 0.5 × 0.3 = 0.03, the value on the slide.', set: { seq: 'is He cool' }, play: true },
+      { t: 'Score "He is He" and "He is cool". Both give 0.21, a tie for the most probable three word string.', set: { seq: 'He is cool' }, play: true },
+      { t: 'Try "cool cool is". The arrow cool → cool has probability 0, so the whole product is 0.', set: { seq: 'cool cool is' }, play: true },
+      { t: 'Change the row of He to 0.1 0.3 0.7. It now adds to 1.1, which a probability row must never do. The readout warns you.', set: { T: '0.1 0.3 0.7\n0.2 0 0.8\n0.5 0.5 0' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const S = String(p.names).split(',').map(s => s.trim()).filter(Boolean).slice(0, 3);
+      while (S.length < 3) S.push('s' + (S.length + 1));
+      const pi = NLZ.nums(p.pi).slice(0, 3); while (pi.length < 3) pi.push(0);
+      const T = String(p.T).split('\n').map(l => NLZ.nums(l).slice(0, 3)).filter(r => r.length).slice(0, 3);
+      while (T.length < 3) T.push([0, 0, 0]);
+      T.forEach(r => { while (r.length < 3) r.push(0); });
+      const P = [[110, 200], [300, 200], [205, 72]], R = 30;
+      const seq = toks(p.seq), idx = seq.map(w => S.indexOf(w));
+      const used = new Set();
+      for (let i = 1; i < Math.min(z.step, seq.length); i++) used.add(idx[i - 1] + ',' + idx[i]);
+      const cen = [205, 157];
+      /* edges */
+      const labs = [];
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+        const v = T[i][j]; if (!(v > 0)) continue;
+        const on = used.has(i + ',' + j), col = on ? z.col.orange : z.col.ink2, w = on ? 3.2 : 1 + 2 * v;
+        let at;
+        if (i === j) at = loop(g, P[i][0], P[i][1], R, Math.atan2(P[i][1] - cen[1], P[i][0] - cen[0]), col, w);
+        else at = carc(g, P[i][0], P[i][1], P[j][0], P[j][1], R, 22, col, w);
+        labs.push([fmt(v, 3), at, on]);
+      }
+      labs.forEach(([t, [x, y], on]) => { const w = tw(g, t, { s: 11.5, b: true }) + 10; rr(g, x - w / 2, y - 10, w, 20, 6, { fill: on ? z.col.orange : z.col.surf, stroke: on ? z.col.orange : z.col.line, w: 1 }); D.text(g, t, x, y + 4, { a: 'center', s: 11.5, b: true, c: on ? '#fff' : z.col.ink }); });
+      /* start arrows */
+      const st = [[22, 268], [388, 268], [118, 26]];
+      P.forEach(([x, y], i) => {
+        if (!(pi[i] > 0)) return;
+        const on = z.step >= 1 && idx[0] === i;
+        D.arrow(g, st[i][0], st[i][1], x + (st[i][0] - x) * R / Math.hypot(st[i][0] - x, st[i][1] - y), y + (st[i][1] - y) * R / Math.hypot(st[i][0] - x, st[i][1] - y), on ? z.col.orange : z.col.purple, on ? 3 : 1.6);
+        D.text(g, `π ${fmt(pi[i], 3)}`, st[i][0], st[i][1] + (i === 2 ? -6 : 16), { a: 'center', s: 11.5, b: true, c: on ? z.col.orange : z.col.purple });
+      });
+      /* nodes */
+      P.forEach(([x, y], i) => {
+        const cur = z.step >= 1 && idx[Math.min(z.step, seq.length) - 1] === i;
+        D.circle(g, x, y, R, { fill: cur ? z.col.cv : z.col.surf, stroke: z.col.cv, w: 2.5 });
+        D.text(g, S[i], x, y + 5, { a: 'center', s: fit(g, S[i], 2 * R - 8, 14), b: true, c: cur ? '#fff' : z.col.ink });
+      });
+      /* right panel: the factors so far */
+      const lx = 412;
+      D.text(g, 'Factors', lx, 22, { s: 12.5, b: true, c: z.col.ink });
+      let prod = 1, bad = false;
+      seq.slice(0, z.step).forEach((w, i) => {
+        let t, v;
+        if (idx[i] < 0 || (i && idx[i - 1] < 0)) { t = `${w} is not a state`; v = 0; bad = true; }
+        else if (i === 0) { t = `π(${w})`; v = pi[idx[0]]; }
+        else { t = `P(${w} | ${seq[i - 1]})`; v = T[idx[i - 1]][idx[i]]; }
+        prod *= v;
+        D.text(g, t, lx, 46 + i * 21, { s: fit(g, t, 100, 12), c: v > 0 ? z.col.ink : z.col.red });
+        D.text(g, fmt(v, 3), 548, 46 + i * 21, { a: 'right', s: 12, mono: true, b: true, c: v > 0 ? z.col.ink : z.col.red });
+      });
+      const yP = 46 + Math.min(z.step, 8) * 21 + 6;
+      if (z.step) { D.line(g, lx, yP - 12, 548, yP - 12, z.col.line, 1); D.text(g, 'product', lx, yP + 4, { s: 12, b: true, c: z.col.cv }); D.text(g, fmt(prod, 5), 548, yP + 4, { a: 'right', s: 12.5, mono: true, b: true, c: z.col.cv }); }
+      /* best sequences of the same length */
+      const Lq = Math.max(1, Math.min(seq.length, 6));
+      const all = [];
+      const rec = (pre, pr) => { if (pre.length === Lq) { all.push([pre, pr]); return; } for (let j = 0; j < 3; j++) rec(pre.concat(j), pre.length ? pr * T[pre[pre.length - 1]][j] : pi[j]); };
+      rec([], 1);
+      all.sort((a, b) => b[1] - a[1]);
+      const tot = all.reduce((a, b) => a + b[1], 0);
+      const rowsums = T.map(r => r.reduce((a, b) => a + b, 0)), pis = pi.reduce((a, b) => a + b, 0);
+      const warn = rowsums.map((s, i) => Math.abs(s - 1) > 1e-6 ? `row ${esc(S[i])} adds to ${fmt(s, 3)}` : '').filter(Boolean).concat(Math.abs(pis - 1) > 1e-6 ? [`π adds to ${fmt(pis, 3)}`] : []);
+      return `${z.step < seq.length ? `Step ${z.step} of ${seq.length}. ` : ''}P(${esc(seq.join(' '))}) = π × transitions = <b>${bad ? '0 (a word is not a state)' : fmt(prod, 5)}</b>. The most probable ${Lq} word strings: ${all.slice(0, 3).map(a => `${esc(a[0].map(j => S[j]).join(' '))} ${fmt(a[1], 3)}`).join(', ')}. All ${all.length} strings of this length add to ${fmt(tot, 4)}. ${warn.length ? `<b>Not a valid chain:</b> ${warn.join(', ')}.` : 'Every row adds to 1. There is no end state, so this chain only scores strings of a fixed length.'}`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- perplexity */
+  def('perplexity', {
+    title: 'Perplexity: how many equally likely words the model is choosing between',
+    sub: 'Each bar is the surprise −log₂ p of one word. Their average is the cross entropy Ĥ, and PP = 2 to the power Ĥ.',
+    W: 560, H: 290,
+    params: [
+      { k: 'list', label: 'Each word and the probability the model gave it', type: 'area', v: 'He 0.2\nput 0.1\nthe 0.25\ncoffee 0.05\non 0.4' },
+      { k: 'base', label: 'Logarithm base for the working', type: 'select', v: '2', opts: [['2', 'base 2 (bits)'], ['10', 'base 10, as SRILM prints'], ['e', 'base e (nats)']] }
+    ],
+    tips: [
+      { t: 'The worked example from class: total 13.288 bits, Ĥ = 2.658 bits, PP = 6.31. The model behaves as if picking among about six words each time.', set: { list: 'He 0.2\nput 0.1\nthe 0.25\ncoffee 0.05\non 0.4' } },
+      { t: 'Give every word 1/7, a uniform model over V = 7. PP is exactly 7: perplexity is a branching factor.', set: { list: 'Sam 0.142857\nI 0.142857\ndo 0.142857\nI 0.142857\nlike 0.142857\n</s> 0.142857' } },
+      { t: 'Load the bigram factors of S1 = Sam I do I like. PP = 2.169, the number SRILM printed.', set: { list: 'Sam 0.6\nI 0.6\ndo 0.2\nI 0.5\nlike 0.4\n</s> 0.666667' } },
+      { t: 'Make one word very unlikely: coffee 0.0001. One surprising word raises the perplexity of the whole sentence from 6.31 to 25.', set: { list: 'He 0.2\nput 0.1\nthe 0.25\ncoffee 0.0001\non 0.4' } },
+      { t: 'Change the base. The surprises change units but PP stays the same, as long as you raise the same base you logged with.', set: { base: '10' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const rows = NLZ.pairs(p.list).filter(r => r[1] > 0 && r[1] <= 1).slice(0, 10);
+      if (!rows.length) return 'Write lines like "He 0.2" with a probability between 0 and 1.';
+      const b = p.base === 'e' ? Math.E : +p.base, unit = { 2: 'bits', 10: 'hartleys', e: 'nats' }[p.base];
+      const S = rows.map(r => -Math.log(r[1]) / Math.log(b));
+      const tot = S.reduce((a, c) => a + c, 0), Hh = tot / rows.length, PP = b ** Hh;
+      const box = [56, 20, 310, 200], mx = Math.max(...S, Hh) * 1.12;
+      const m = D.axes(g, z, box, [0, rows.length], [0, mx], { nx: 1, ny: 4, fx: () => '', fy: v => fmt(v, 2) });
+      const bw = box[2] / rows.length;
+      rows.forEach((r, i) => {
+        const x = box[0] + i * bw;
+        rr(g, x + bw * 0.15, m.sy(S[i]), bw * 0.7, box[1] + box[3] - m.sy(S[i]), 4, { fill: z.col.cv });
+        D.text(g, fmt(S[i], 3), x + bw / 2, m.sy(S[i]) - 5, { a: 'center', s: 10.5, b: true, c: z.col.ink });
+        D.text(g, r[0], x + bw / 2, box[1] + box[3] + 15, { a: 'center', s: fit(g, r[0], bw - 2, 11.5), b: true, c: z.col.ink });
+        D.text(g, fmt(r[1], 4), x + bw / 2, box[1] + box[3] + 30, { a: 'center', s: fit(g, fmt(r[1], 4), bw - 2, 10.5), c: z.col.ink2 });
+      });
+      D.line(g, box[0], m.sy(Hh), box[0] + box[2], m.sy(Hh), z.col.orange, 2, [6, 4]);
+      D.text(g, `Ĥ = ${fmt(Hh, 3)}`, box[0] + box[2] - 4, m.sy(Hh) - 6, { a: 'right', s: 11.5, b: true, c: z.col.orange });
+      g.save(); g.translate(18, box[1] + box[3] / 2); g.rotate(-Math.PI / 2); D.text(g, `surprise in ${unit}`, 0, 0, { a: 'center', s: 11.5, b: true, c: z.col.ink2 }); g.restore();
+      /* right: PP as a row of equally likely choices */
+      const lx = 392;
+      D.text(g, 'Same uncertainty as a fair', lx, 30, { s: 12, b: true, c: z.col.ink });
+      D.text(g, `choice among ${fmt(PP, 3)} words`, lx, 48, { s: 12, b: true, c: z.col.ink });
+      const nFull = Math.min(40, Math.floor(PP)), frac = PP - Math.floor(PP);
+      for (let i = 0; i < Math.min(40, Math.ceil(PP)); i++) {
+        const cx = lx + (i % 8) * 20, cy = 64 + Math.floor(i / 8) * 20;
+        rr(g, cx, cy, i < nFull ? 16 : 16 * frac, 16, 3, { fill: z.col.purple });
+      }
+      if (PP > 40) D.text(g, `(40 of ${Math.round(PP)} shown)`, lx, 176, { s: 11, c: z.col.ink2 });
+      D.text(g, `total = ${fmt(tot, 4)} ${unit}`, lx, 200, { s: 12, mono: true, c: z.col.ink });
+      D.text(g, `Ĥ = total ÷ ${rows.length} = ${fmt(Hh, 4)}`, lx, 220, { s: 12, mono: true, c: z.col.ink });
+      D.text(g, `PP = ${p.base === 'e' ? 'e' : p.base}^Ĥ = ${fmt(PP, 4)}`, lx, 240, { s: 12, mono: true, b: true, c: z.col.cv });
+      const prod = rows.reduce((a, r) => a * r[1], 1);
+      return `P(sequence) = ${sci(prod)}. Root form: PP = P<sup>−1/N</sup> = (${sci(prod)})<sup>−1/${rows.length}</sup> = <b>${fmt(PP, 4)}</b>. Lower is better, but only when two models are scored on the same test text with the same vocabulary.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- add-k on a unigram */
+  def('addk', {
+    title: 'Add-k smoothing: where the borrowed probability comes from',
+    sub: 'Dark bars are the counted (MLE) probabilities, light bars after adding k to every count. Unseen words get a share, paid for by the others.',
+    W: 560, H: 280,
+    params: [
+      { k: 'list', label: 'Each word and its count (count 0 means unseen)', type: 'area', v: 'I 5\nSam 5\n</s> 5\nlike 3\nam 2\ndo 2\n<unk> 0' },
+      { k: 'k', label: 'k, the amount added to every count', type: 'range', min: 0, max: 3, step: 0.01, v: 1 },
+      { k: 'extra', label: 'Extra unseen word types in the vocabulary', type: 'range', min: 0, max: 200, step: 1, v: 0 }
+    ],
+    tips: [
+      { t: 'Laplace on the toy corpus: N = 22, V = 7. &lt;unk&gt; rises from 0 to 1/29 = 0.0345 while I, Sam and &lt;/s&gt; fall from 0.227 to 0.207.', set: { k: 1, extra: 0 } },
+      { t: 'The bag of fruit from class: 2 bananas, 2 apples, no orange. Add 1 to each and the orange gets 1/7.', set: { list: 'banana 2\napple 2\norange 0', k: 1, extra: 0 } },
+      { t: 'Keep k = 1 and add 200 unseen types, as a real vocabulary would. Most of the probability now goes to words never seen. This is why add-one is too strong for large V.', set: { list: 'I 5\nSam 5\n</s> 5\nlike 3\nam 2\ndo 2\n<unk> 0', k: 1, extra: 200 } },
+      { t: 'Lower k to 0.05 with the same 200 types. The seen words keep most of their mass. Choosing k on a dev set is how add-k is tuned.', set: { k: 0.05, extra: 200 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const rows = NLZ.pairs(p.list).filter(r => r[1] >= 0).slice(0, 10);
+      if (!rows.length) return 'Write lines like "Sam 5".';
+      const N = rows.reduce((a, r) => a + r[1], 0), V = rows.length + p.extra, den = N + p.k * V;
+      if (N <= 0 && p.k <= 0) return 'Give at least one word a count above 0, or a k above 0.';
+      const show = rows.concat(p.extra ? [[`${p.extra} more unseen`, 0, p.extra]] : []);
+      const mle = r => N > 0 ? r[1] / N * (r[2] ? 0 : 1) : 0;
+      const sm = r => (r[1] + p.k) / den * (r[2] || 1);
+      const mx = Math.max(...show.map(r => Math.max(mle(r), sm(r))), 0.01);
+      const box = [60, 18, 480, 190];
+      const m = D.axes(g, z, box, [0, show.length], [0, mx * 1.1], { nx: 1, ny: 4, fx: () => '', fy: v => fmt(v, 2) });
+      const bw = box[2] / show.length;
+      show.forEach((r, i) => {
+        const x = box[0] + i * bw, a = mle(r), b = sm(r);
+        rr(g, x + bw * 0.12, m.sy(a), bw * 0.36, box[1] + box[3] - m.sy(a), 3, { fill: z.col.cv });
+        g.save(); g.globalAlpha = 0.55; rr(g, x + bw * 0.52, m.sy(b), bw * 0.36, box[1] + box[3] - m.sy(b), 3, { fill: z.col.orange }); g.restore();
+        D.text(g, fmt(b, 3), x + bw * 0.7, m.sy(b) - 4, { a: 'center', s: 10, c: z.col.ink2 });
+        D.text(g, r[0], x + bw / 2, box[1] + box[3] + 15, { a: 'center', s: fit(g, r[0], bw - 2, 11.5), b: true, c: z.col.ink });
+        const cs = r[2] ? '0 each' : `c* = ${fmt((r[1] + p.k) * N / den, 2)}`;
+        D.text(g, cs, x + bw / 2, box[1] + box[3] + 30, { a: 'center', s: fit(g, cs, bw - 2, 10), c: z.col.ink2 });
+      });
+      rr(g, 64, 252, 12, 12, 2, { fill: z.col.cv }); D.text(g, 'MLE  C(w) ÷ N', 82, 262, { s: 11.5, c: z.col.ink });
+      g.save(); g.globalAlpha = 0.55; rr(g, 200, 252, 12, 12, 2, { fill: z.col.orange }); g.restore(); D.text(g, '(C(w) + k) ÷ (N + kV)', 218, 262, { s: 11.5, c: z.col.ink });
+      const unseen = rows.filter(r => r[1] === 0).length + p.extra;
+      const moved = unseen * p.k / den;
+      return `N = ${N}, V = ${V}, denominator N + kV = ${fmt(den, 3)}. Words never seen now hold <b>${fmt(100 * moved, 2)}%</b> of the probability. The reconstituted count c* = (C + k) × N ÷ (N + kV) shows the discount: frequent words shrink, rare words grow. Everything still adds to 1 because adding k to V counts adds kV to the total.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- one history row under six smoothers */
+  def('smoothrow', {
+    title: 'One history, six ways to share out the probability',
+    sub: 'Pick a history word and a method. The bars are P(w | history) for every next word. Dark means the bigram was seen, light means unseen.',
+    W: 560, H: 290,
+    params: [
+      { k: 'train', label: 'Training corpus (one sentence per line)', type: 'area', v: TOY },
+      { k: 'h', label: 'History word', type: 'text', v: 'like' },
+      { k: 'm', label: 'Method', type: 'select', v: 'kn', opts: [['mle', 'MLE (plain counting)'], ['addk', 'Add-k'], ['abs', 'Absolute discounting'], ['kn', 'Kneser-Ney (interpolated)'], ['katz', 'Katz style backoff'], ['wb', 'Witten-Bell']] },
+      { k: 'k', label: 'k', type: 'range', min: 0.01, max: 2, step: 0.01, v: 1, show: p => p.m === 'addk' },
+      { k: 'd', label: 'Discount d', type: 'range', min: 0.05, max: 0.95, step: 0.05, v: 0.75, show: p => ['abs', 'kn', 'katz'].includes(p.m) }
+    ],
+    tips: [
+      { t: 'Problem D10: Kneser-Ney with d = 0.75 after like. &lt;/s&gt; 0.5238, Sam 0.1905, and am only 0.0357 because am follows just one word.', set: { m: 'kn', h: 'like', d: 0.75 } },
+      { t: 'Problem D8: absolute discounting with d = 0.5 after like. λ = 1/3 and &lt;/s&gt; gets 0.5758.', set: { m: 'abs', h: 'like', d: 0.5 } },
+      { t: 'Problem E9: Katz style backoff after do with d = 0.5. Seen words get 0.25 each and α = 11/14 scales the unigram for the rest.', set: { m: 'katz', h: 'do', d: 0.5 } },
+      { t: 'Switch to MLE. Four of the six bars vanish: plain counting has nothing to say about unseen pairs.', set: { m: 'mle', h: 'like' } },
+      { t: 'Witten-Bell after I: I was followed by 3 different words in 5 uses, so 3/8 of the mass is kept for the unigram.', set: { m: 'wb', h: 'I' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const lm = train(p.train, 2);
+      if (!lm.sents.length) return 'Type at least one training sentence.';
+      const h = String(p.h).trim() || '<s>';
+      const cols = lm.words.slice(0, 9).concat(['</s>']), V = cols.length;
+      const c2 = lm.C[2], c1 = lm.C[1];
+      const Ch = c2.hist.get(h) || 0;
+      const cnt = w => c2.ng.get(h + '|' + w) || 0;
+      const uni = w => (c1.ng.get('|' + w) || 0) / lm.N;
+      const seen = cols.filter(w => cnt(w) > 0), N1 = seen.length;
+      /* continuation probability: in how many different histories does w appear */
+      let types = 0; const pred = new Map();
+      c2.ng.forEach((n, key) => { const w = key.split('|')[1]; types++; pred.set(w, (pred.get(w) || 0) + 1); });
+      const cont = w => (pred.get(w) || 0) / types;
+      let P, note, lam = null;
+      if (!Ch && p.m !== 'addk') { P = cols.map(uni); note = `The history ${esc(h)} was never seen, so every method falls back to the unigram.`; }
+      else if (p.m === 'mle') { P = cols.map(w => cnt(w) / Ch); note = `P(w | ${esc(h)}) = C(${esc(h)} w) ÷ ${Ch}. Unseen pairs get exactly 0.`; }
+      else if (p.m === 'addk') { P = cols.map(w => (cnt(w) + p.k) / (Ch + p.k * V)); note = `(C + ${fmt(p.k, 2)}) ÷ (${Ch} + ${fmt(p.k, 2)} × ${V}). Every unseen word gets the same share whatever its frequency.`; }
+      else if (p.m === 'abs' || p.m === 'kn') {
+        lam = p.d * N1 / Ch;
+        const low = p.m === 'kn' ? cont : uni;
+        P = cols.map(w => Math.max(cnt(w) - p.d, 0) / Ch + lam * low(w));
+        note = `max(C − ${fmt(p.d, 2)}, 0) ÷ ${Ch} + λ × ${p.m === 'kn' ? 'P<sub>cont</sub>(w)' : 'P(w)'}, with λ = d × ${N1} ÷ ${Ch} = ${fmt(lam, 4)}.${p.m === 'kn' ? ` P<sub>cont</sub>(w) counts the different words that come before w, out of ${types} bigram types.` : ''}`;
+      } else if (p.m === 'katz') {
+        const beta = p.d * N1 / Ch, um = cols.filter(w => !cnt(w)).reduce((a, w) => a + uni(w), 0);
+        const alpha = um > 0 ? beta / um : 0; lam = alpha;
+        P = cols.map(w => cnt(w) ? (cnt(w) - p.d) / Ch : alpha * uni(w));
+        note = `Seen: (C − ${fmt(p.d, 2)}) ÷ ${Ch}. Left over β = ${fmt(beta, 4)}. Unseen: α × P(w) with α = β ÷ ${fmt(um, 4)} = ${fmt(alpha, 4)}.`;
+      } else {
+        lam = N1 / (N1 + Ch);
+        P = cols.map(w => (1 - lam) * cnt(w) / Ch + lam * uni(w));
+        note = `λ = N₁₊ ÷ (N₁₊ + C(h)) = ${N1} ÷ (${N1} + ${Ch}) = ${fmt(lam, 4)} goes to the unigram.`;
+      }
+      const box = [60, 22, 480, 190], mx = Math.max(...P, 0.05) * 1.15;
+      const m = D.axes(g, z, box, [0, V], [0, mx], { nx: 1, ny: 4, fx: () => '', fy: v => fmt(v, 2) });
+      const bw = box[2] / V;
+      cols.forEach((w, i) => {
+        const x = box[0] + i * bw, s = cnt(w) > 0;
+        g.save(); if (!s) g.globalAlpha = 0.5;
+        rr(g, x + bw * 0.18, m.sy(P[i]), bw * 0.64, box[1] + box[3] - m.sy(P[i]), 4, { fill: s ? z.col.cv : z.col.orange });
+        g.restore();
+        D.text(g, fmt(P[i], 4), x + bw / 2, m.sy(P[i]) - 5, { a: 'center', s: fit(g, fmt(P[i], 4), bw - 2, 11), b: true, c: z.col.ink });
+        D.text(g, w, x + bw / 2, box[1] + box[3] + 15, { a: 'center', s: fit(g, w, bw - 2, 12), b: true, mono: true, c: z.col.ink });
+        const sub = p.m === 'kn' ? `cont ${pred.get(w) || 0}` : `C = ${cnt(w)}`;
+        D.text(g, sub, x + bw / 2, box[1] + box[3] + 31, { a: 'center', s: fit(g, sub, bw - 2, 10.5), c: z.col.ink2 });
+      });
+      const sum = P.reduce((a, b) => a + b, 0);
+      D.text(g, `history: ${h}    C(h) = ${Ch}    followers seen: ${N1}`, 60, 268, { s: 12, b: true, c: z.col.ink2 });
+      return `${note} The row adds to <b>${fmt(sum, 4)}</b>${Math.abs(sum - 1) < 1e-9 ? ', a proper distribution' : ''}. Unseen words in this row share ${fmt(cols.filter(w => !cnt(w)).reduce((a, w, i) => a + P[cols.indexOf(w)], 0), 4)} of the mass.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- Good-Turing */
+  def('goodturing', {
+    title: 'Good-Turing: use the things seen once to estimate the unseen',
+    sub: 'Nc is how many types were seen exactly c times. Each count c is replaced by c* = (c + 1) N(c+1) ÷ Nc, and N1 ÷ N goes to everything unseen.',
+    W: 560, H: 270,
+    params: [
+      { k: 'list', label: 'Counts of the seen types (one number per type)', type: 'area', v: '3 3 2 2 2 2 1 1 1 1 1 1 1 1' },
+      { k: 'possible', label: 'Number of possible types (seen and unseen)', type: 'range', min: 1, max: 200, v: 36 }
+    ],
+    tips: [
+      { t: 'Problem D9: the 14 seen bigram types of the toy corpus. N1 = 8 of N = 22, so 8/22 = 0.364 is kept for the 22 unseen bigrams, 0.0165 each.', set: { list: '3 3 2 2 2 2 1 1 1 1 1 1 1 1', possible: 36 } },
+      { t: 'A fishing trip from the textbook: 10 carp, 3 perch, 2 whitefish, 1 trout, 1 salmon, 1 eel. P(a new species) = 3/18.', set: { list: '10 3 2 1 1 1', possible: 8 } },
+      { t: 'Make every type seen at least twice. N1 = 0, so Good-Turing gives nothing to the unseen. It needs some singletons to work.', set: { list: '3 3 2 2 2 2', possible: 36 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const cs = NLZ.nums(p.list).filter(v => v > 0 && Number.isInteger(v));
+      if (!cs.length) return 'Type whole number counts, like 3 2 1 1.';
+      const N = cs.reduce((a, b) => a + b, 0), Nc = new Map();
+      cs.forEach(c => Nc.set(c, (Nc.get(c) || 0) + 1));
+      const maxc = Math.max(...cs);
+      const unseenTypes = Math.max(0, p.possible - cs.length), N1 = Nc.get(1) || 0;
+      const head = ['c', 'Nc', 'c × Nc', 'c*', 'P per type'];
+      const xs = [40, 100, 170, 250, 340];
+      head.forEach((t, i) => D.text(g, t, xs[i], 22, { a: 'right', s: 11.5, b: true, c: z.col.ink2 }));
+      const rows = [[0, unseenTypes]];
+      for (let c = 1; c <= Math.min(maxc, 9); c++) if (Nc.get(c) || c <= 3) rows.push([c, Nc.get(c) || 0]);
+      rows.forEach(([c, n], i) => {
+        const y = 44 + i * 22;
+        const nn = Nc.get(c + 1) || 0;
+        const cstar = c === 0 ? (unseenTypes ? N1 / unseenTypes : 0) : (n ? (c + 1) * nn / n : NaN);
+        const pt = c === 0 ? (unseenTypes ? N1 / N / unseenTypes : 0) : (n ? cstar / N : NaN);
+        if (c === 0) rr(g, 4, y - 15, 350, 22, 5, { fill: z.col.hl || z.col.bg });
+        D.text(g, String(c), xs[0], y, { a: 'right', s: 12, mono: true, b: true, c: z.col.ink });
+        D.text(g, String(n), xs[1], y, { a: 'right', s: 12, mono: true, c: z.col.ink });
+        D.text(g, c ? String(c * n) : '-', xs[2], y, { a: 'right', s: 12, mono: true, c: z.col.ink2 });
+        D.text(g, n && isFinite(cstar) ? fmt(cstar, 3) : '-', xs[3], y, { a: 'right', s: 12, mono: true, b: true, c: n && cstar === 0 && c > 0 ? z.col.red : z.col.cv });
+        D.text(g, n && isFinite(pt) ? fmt(pt, 4) : '-', xs[4], y, { a: 'right', s: 12, mono: true, c: z.col.ink });
+      });
+      /* right: share of the probability */
+      const lx = 380, bw = 168;
+      D.text(g, 'Where the probability goes', lx, 22, { s: 12, b: true, c: z.col.ink });
+      const pu = N1 / N;
+      rr(g, lx, 36, bw, 26, 5, { fill: z.col.bg, stroke: z.col.line });
+      rr(g, lx, 36, Math.max(2, bw * pu), 26, 5, { fill: z.col.orange });
+      D.text(g, `unseen ${fmt(pu, 3)}`, lx, 80, { s: 12, b: true, c: z.col.orange });
+      D.text(g, `= N1 ÷ N = ${N1} ÷ ${N}`, lx, 98, { s: 12, mono: true, c: z.col.ink });
+      wrap(g, `Seen types keep ${fmt(1 - pu, 3)}. The largest counts have no N(c+1), so in practice counts above about 5 are left as they are (Katz).`, lx, 128, bw, { s: 11.5, c: z.col.ink2 });
+      return `N = ${N} tokens over ${cs.length} seen types. The unseen mass is <b>${N1} ÷ ${N} = ${fmt(pu, 4)}</b>${unseenTypes ? `, which is ${fmt(pu / unseenTypes, 4)} for each of the ${unseenTypes} unseen types if spread evenly` : ''}. A c* of 0 (red) shows where N(c+1) is missing: the raw formula breaks for the largest counts, which is why real systems smooth the Nc values first.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- tuning lambda on a dev set */
+  def('lambdagrid', {
+    title: 'Tune λ on the dev set, report on the test set',
+    sub: 'Mixture = λ × MLE bigram + (1 − λ) × add-k unigram. The curves are perplexity for every λ. The dot is the λ you chose.',
+    W: 560, H: 290,
+    params: [
+      { k: 'train', label: 'Training corpus', type: 'area', v: TOY },
+      { k: 'dev', label: 'Dev sentences', type: 'area', v: 'Sam I do like linguistics' },
+      { k: 'test', label: 'Test sentences', type: 'area', v: 'I like Sam\ndo I like linguistics' },
+      { k: 'ku', label: 'Add-k for the unigram', type: 'range', min: 0.01, max: 2, step: 0.01, v: 1 },
+      { k: 'lam', label: 'Your λ', type: 'range', min: 0.01, max: 0.99, step: 0.01, v: 0.5 }
+    ],
+    tips: [
+      { t: 'Problem E8: on this dev sentence λ = 0.5 gives PP 6.438, and the curve bottoms out near λ = 0.48.', set: { lam: 0.48 } },
+      { t: 'Push λ to 0.99. Context is used fully, but the unseen word now gets only 1% of a tiny unigram share, and perplexity shoots up.', set: { lam: 0.99 } },
+      { t: 'Problem E10: keep λ = 0.5 and read the test perplexity, 5.9003. It is honest because the test data took no part in the choice.', set: { lam: 0.5, ku: 1 } },
+      { t: 'Change the unigram k to 0.1. The best λ moves. In assignment 2 the same search was run over k and λ together.', set: { ku: 0.1 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const lm = train(p.train, 2);
+      if (!lm.sents.length) return 'Type a training corpus.';
+      const run = (txt, l) => score(lm, txt, { n: 2, k: 0, unk: true, lam: l, ku: p.ku }).tot.ppl;
+      const xs = []; for (let i = 1; i <= 99; i++) xs.push(i / 100);
+      const dev = xs.map(l => run(p.dev, l)), tst = lines(p.test).length ? xs.map(l => run(p.test, l)) : [];
+      const all = dev.concat(tst).filter(isFinite);
+      if (!all.length) return 'Type a dev sentence.';
+      const box = [60, 16, 330, 220];
+      const ymax = Math.min(Math.max(...all), Math.min(...all) * 4);
+      const m = D.axes(g, z, box, [0, 1], [0, ymax * 1.05], { nx: 5, ny: 4, xl: 'λ, the weight of the bigram', fy: v => fmt(v, 1) });
+      g.save(); g.beginPath(); g.rect(box[0], box[1], box[2], box[3]); g.clip();
+      const line = (arr, c, dash) => { g.save(); g.strokeStyle = c; g.lineWidth = 2.2; if (dash) g.setLineDash(dash); g.beginPath(); arr.forEach((v, i) => { const X = m.sx(xs[i]), Y = m.sy(v); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }); g.stroke(); g.restore(); };
+      line(dev, z.col.cv); if (tst.length) line(tst, z.col.purple, [6, 4]);
+      g.restore();
+      let bi = 0; dev.forEach((v, i) => { if (v < dev[bi]) bi = i; });
+      D.circle(g, m.sx(xs[bi]), m.sy(dev[bi]), 5, { stroke: z.col.cv, w: 2, fill: z.col.surf });
+      const dv = run(p.dev, p.lam), tv = tst.length ? run(p.test, p.lam) : NaN;
+      D.line(g, m.sx(p.lam), box[1], m.sx(p.lam), box[1] + box[3], z.col.orange, 1.5, [3, 3]);
+      D.circle(g, m.sx(p.lam), m.sy(Math.min(dv, ymax)), 6, { fill: z.col.orange });
+      const lx = 412;
+      D.text(g, 'dev', lx + 22, 30, { s: 12, b: true, c: z.col.cv }); D.line(g, lx, 26, lx + 16, 26, z.col.cv, 2.5);
+      if (tst.length) { D.text(g, 'test', lx + 22, 50, { s: 12, b: true, c: z.col.purple }); D.line(g, lx, 46, lx + 16, 46, z.col.purple, 2.5, [5, 3]); }
+      D.text(g, `best λ on dev: ${fmt(xs[bi], 2)}`, lx, 84, { s: 12, b: true, c: z.col.ink });
+      D.text(g, `dev PP there: ${fmt(dev[bi], 4)}`, lx, 104, { s: 12, mono: true, c: z.col.ink });
+      D.text(g, `your λ = ${fmt(p.lam, 2)}`, lx, 140, { s: 12, b: true, c: z.col.orange });
+      D.text(g, `dev PP:  ${fmt(dv, 4)}`, lx, 160, { s: 12, mono: true, c: z.col.ink });
+      if (tst.length) D.text(g, `test PP: ${fmt(tv, 4)}`, lx, 180, { s: 12, mono: true, b: true, c: z.col.purple });
+      return `The dev curve is U shaped: a small λ throws away the bigram context, a large λ leaves unseen words almost unprotected. Pick λ where the dev curve is lowest (${fmt(xs[bi], 2)} here), then report the test perplexity once. Picking λ by looking at the test curve would be the same cheating as training on the test set.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- assignment 2 on the Brown corpus */
+  const A2 = {
+    methods: ['addsmooth 1', 'Absolute discounting', 'Good-Turing', 'Witten-Bell', 'Kneser-Ney'],
+    flags: ['-addsmooth 1', '-cdiscount', '(default)', '-wbdiscount', '-kndiscount'],
+    bi: [[2493.24, 3600.57], [391.85, 518.76], [642.33, 870.35], [396.83, 525.66], [352.45, 464.28]],
+    tri: [[3620.71, 5321.27], [384.91, 509.14], [629.24, 851.77], [385.06, 509.35], [340.18, 447.38]],
+    unk: [-5.428, -1.401, -5.408, -1.298, -0.878]
+  };
+  NLZ.A2 = A2;
+  def('srilmtable', {
+    title: 'Assignment 2: five smoothing methods on the Brown corpus',
+    sub: 'Real SRILM results from the assignment. Pick what to compare. Lower perplexity is better, all on the same test set and vocabulary.',
+    W: 560, H: 270,
+    params: [
+      { k: 'metric', label: 'Measure', type: 'select', v: 'ppl', opts: [['ppl', 'ppl (words and </s>)'], ['ppl1', 'ppl1 (words only)'], ['unk', 'log₁₀ P(<unk>) in the model']] },
+      { k: 'order', label: 'Order', type: 'select', v: 'both', opts: [['2', 'bigram'], ['3', 'trigram'], ['both', 'bigram and trigram side by side']], show: p => p.metric !== 'unk' },
+      { k: 'drop', label: 'Hide addsmooth 1 (it dwarfs the others)', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'Compare the five methods as bigrams. Kneser-Ney is best at 352.45, add-one is worst at 2493.24, about 7 times higher.', set: { metric: 'ppl', order: '2', drop: false } },
+      { t: 'Hide add-one and show both orders. Every discounting method improves from bigram to trigram. Add-one gets worse.', set: { metric: 'ppl', order: 'both', drop: true } },
+      { t: 'Look at log P(&lt;unk&gt;). Add-one and Good-Turing give &lt;unk&gt; about 10⁻⁵·⁴, Kneser-Ney about 10⁻⁰·⁹. Much of the gap comes from how much mass &lt;unk&gt; receives.', set: { metric: 'unk', drop: false } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const idx = A2.methods.map((m, i) => i).filter(i => !(p.drop && i === 0));
+      const series = p.metric === 'unk' ? [['log₁₀ P(<unk>)', idx.map(i => -A2.unk[i]), z.col.orange]]
+        : [['2', 'bigram', z.col.cv], ['3', 'trigram', z.col.purple]].filter(s => p.order === 'both' || p.order === s[0]).map(s => [s[1], idx.map(i => (s[0] === '2' ? A2.bi : A2.tri)[i][p.metric === 'ppl' ? 0 : 1]), s[2]]);
+      const mx = Math.max(...series.flatMap(s => s[1]));
+      const x0 = 156, bwMax = 330, rowH = 200 / idx.length, bh = Math.min(16, (rowH - 8) / series.length);
+      idx.forEach((i, r) => {
+        const y = 20 + r * rowH;
+        D.text(g, A2.methods[i], x0 - 10, y + rowH / 2 - 2, { a: 'right', s: 12.5, b: true, c: z.col.ink });
+        D.text(g, A2.flags[i], x0 - 10, y + rowH / 2 + 12, { a: 'right', s: 10.5, mono: true, c: z.col.ink2 });
+        series.forEach((s, j) => {
+          const v = s[1][r], w = Math.max(2, v / mx * bwMax), yy = y + rowH / 2 - series.length * bh / 2 + j * bh;
+          rr(g, x0, yy, w, bh - 2, 3, { fill: s[2] });
+          const t = p.metric === 'unk' ? '−' + fmt(v, 3) : fmt(v, 2);
+          D.text(g, t, x0 + w + 5, yy + bh - 4, { s: 11, b: true, c: z.col.ink });
+        });
+      });
+      series.forEach((s, j) => { rr(g, x0 + j * 110, 238, 12, 12, 2, { fill: s[2] }); D.text(g, s[0], x0 + 18 + j * 110, 248, { s: 11.5, b: true, c: z.col.ink }); });
+      if (p.metric === 'unk') return 'Bars show how negative log₁₀ P(&lt;unk&gt;) is, so a longer bar means less probability for unknown words. Kneser-Ney and Witten-Bell keep far more mass for &lt;unk&gt;, and the Brown test set has many unknown words, which is a large part of why they score better.';
+      const best = idx.reduce((a, i) => A2.bi[i][0] < A2.bi[a][0] ? i : a, idx[0]);
+      return `Best: <b>${A2.methods[best]}</b>. Every discounting method beats add-one by a factor of 4 to 7. Moving from bigram to trigram lowers perplexity for the discounting methods but raises it for add-one, which spreads mass over far more unseen trigrams. ppl1 is always higher than ppl because the same log probability is divided by fewer tokens.`;
+    }
+  });
+
+  def('stopwords', {
+    title: 'What removing punctuation and stop words does to perplexity',
+    sub: 'Three versions of the Brown data, Witten-Bell bigram. The vocabulary and token count change too, so read this as a trend, not a strict comparison.',
+    W: 560, H: 250,
+    params: [
+      { k: 'metric', label: 'Show', type: 'select', v: 'ppl', opts: [['ppl', 'ppl'], ['ppl1', 'ppl1'], ['words', 'test words'], ['uni', 'model unigrams (vocabulary)']] },
+      { k: 'log', label: 'Log scale', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'Perplexity rises from 397 to 611 to 3235 as the easy tokens are removed.', set: { metric: 'ppl' } },
+      { t: 'Look at test words: removing stop words halves the test set. Fewer, harder tokens remain.', set: { metric: 'words' } },
+      { t: 'Turn on the log scale to compare the growth steps fairly.', set: { metric: 'ppl1', log: true } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const D3 = [['Original', 305056, 40607, 396.83, 525.66], ['Punctuation removed', 268236, 40590, 610.78, 859.35], ['Punctuation and stop words removed', 148503, 40262, 3234.52, 7019.32]];
+      const col = { words: 1, uni: 2, ppl: 3, ppl1: 4 }[p.metric];
+      const vals = D3.map(r => r[col]);
+      const f = v => p.log ? Math.log10(v) : v;
+      const mx = Math.max(...vals.map(f)), mn = p.log ? Math.min(...vals.map(f)) - 0.3 : 0;
+      const x0 = 220, W = 270;
+      D3.forEach((r, i) => {
+        const y = 30 + i * 62;
+        wrap(g, r[0], 12, y + 14, x0 - 24, { s: 12.5, b: true, c: z.col.ink });
+        const w = Math.max(3, (f(r[col]) - mn) / (mx - mn) * W);
+        rr(g, x0, y, w, 30, 5, { fill: [z.col.cv, z.col.purple, z.col.orange][i] });
+        D.text(g, r[col].toLocaleString(), x0 + w + 6, y + 20, { s: 12.5, b: true, mono: true, c: z.col.ink });
+      });
+      return 'Punctuation and stop words such as the, of and and are frequent and easy to predict, so they pull the average surprise down. Remove them and only the harder content words remain, and words that were never neighbours become adjacent, which weakens the bigram context. Perplexities are only comparable with the same vocabulary and tokenisation, so this is a trend, not a fair contest.';
+    }
+  });
+
+  def('addkgrid', {
+    title: 'Searching k and λ together on the dev set',
+    sub: 'Assignment 2, question 5: an add-k bigram interpolated with a unigram. For each k the best λ was found on dev. The search picks the lowest point.',
+    W: 560, H: 260,
+    params: [
+      { k: 'pick', label: 'Your choice of k', type: 'select', v: '0.001', opts: [['1', '1'], ['0.1', '0.1'], ['0.01', '0.01'], ['0.001', '0.001'], ['0.0001', '0.0001']] }
+    ],
+    tips: [
+      { t: 'Choose k = 1. The best λ is only 0.3 and dev perplexity is 1123.66: add-one is far too strong.', set: { pick: '1' } },
+      { t: 'Choose k = 0.001, the winner: λ = 0.7, dev ppl 581.03. On the unseen test set it gives 681.35.', set: { pick: '0.001' } },
+      { t: 'Choose k = 0.0001. The curve has flattened (582.25): smaller k no longer helps.', set: { pick: '0.0001' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const G = [[1, 0.3, 1123.66], [0.1, 0.6, 833.51], [0.01, 0.7, 656.01], [0.001, 0.7, 581.03], [0.0001, 0.6, 582.25]];
+      const box = [70, 20, 300, 180];
+      const m = D.axes(g, z, box, [-4, 0], [500, 1200], { nx: 4, ny: 7, fx: v => '10' + ({ '-4': '⁻⁴', '-3': '⁻³', '-2': '⁻²', '-1': '⁻¹', 0: '⁰' }[Math.round(v)] || ''), fy: v => String(Math.round(v)), xl: 'k (log scale)' });
+      g.save(); g.strokeStyle = z.col.cv; g.lineWidth = 2.2; g.beginPath();
+      G.forEach((r, i) => { const X = m.sx(Math.log10(r[0])), Y = m.sy(r[2]); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }); g.stroke(); g.restore();
+      G.forEach(r => {
+        const on = String(r[0]) === p.pick, X = m.sx(Math.log10(r[0])), Y = m.sy(r[2]);
+        D.circle(g, X, Y, on ? 7 : 4.5, { fill: on ? z.col.orange : z.col.cv, stroke: '#fff', w: 1.5 });
+        D.text(g, `λ ${r[1]}`, r[0] === 0.0001 ? X + 9 : X, r[0] === 0.0001 ? Y - 9 : Y - 11, { a: r[0] === 0.0001 ? 'left' : 'center', s: 10.5, b: true, c: z.col.ink2 });
+      });
+      const r = G.find(x => String(x[0]) === p.pick);
+      const lx = 402;
+      D.text(g, `k = ${r[0]}`, lx, 40, { s: 13, b: true, c: z.col.orange });
+      D.text(g, `best λ = ${r[1]}`, lx, 64, { s: 12.5, mono: true, c: z.col.ink });
+      D.text(g, `dev ppl = ${r[2]}`, lx, 86, { s: 12.5, mono: true, c: z.col.ink });
+      if (r[0] === 0.001) { D.text(g, 'test ppl = 681.35', lx, 120, { s: 12.5, mono: true, b: true, c: z.col.purple }); D.text(g, 'test ppl1 = 925.77', lx, 140, { s: 12.5, mono: true, c: z.col.purple }); }
+      wrap(g, 'For comparison, Kneser-Ney alone reached 352.45 on test.', lx, 176, 150, { s: 11.5, c: z.col.ink2 });
+      return 'The minimum is k = 0.001 with λ = 0.7 (dev ppl 581.03). The test set was used once, after the choice, and gave ppl 681.35. Even tuned, add-k with interpolation loses clearly to Kneser-Ney, which is why discounting methods are the standard.';
+    }
+  });
+})();
