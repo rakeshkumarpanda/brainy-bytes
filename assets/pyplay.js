@@ -34,6 +34,16 @@ def _bb_run(src):
         traceback.print_exception(type(e), e, tb)
     sys.stdout.flush(); sys.stderr.flush()
 
+def _bb_norm(v):
+    # the tests travel through JavaScript, where 1.0 and 1 are the same number, so compare them as equal here too
+    if isinstance(v, float) and v.is_integer():
+        return int(v)
+    if isinstance(v, (list, tuple)):
+        return [_bb_norm(x) for x in v]
+    if isinstance(v, dict):
+        return {k: _bb_norm(x) for k, x in v.items()}
+    return v
+
 def _bb_tests(code, tests_json):
     tests = json.loads(tests_json)
     ns = {'__name__': 'exercise'}
@@ -45,7 +55,7 @@ def _bb_tests(code, tests_json):
     for t in tests:
         try:
             got = eval(t['call'], ns)
-            ok = json.dumps(got, sort_keys=True, default=repr) == json.dumps(t['want'], sort_keys=True, default=repr)
+            ok = json.dumps(_bb_norm(got), sort_keys=True, default=repr) == json.dumps(_bb_norm(t['want']), sort_keys=True, default=repr)
             res.append({'ok': ok, 'got': repr(got), 'err': None})
         except BaseException as e:
             res.append({'ok': False, 'got': None, 'err': type(e).__name__ + ': ' + str(e)})
@@ -357,5 +367,8 @@ onmessage = async ev => {
     else document.querySelector('.home-link').removeAttribute('target');
   }
 
-  return { page, run, trace, runTests, get version() { return version; } };
+  /* pages that draw their own layout (Computer Vision) set the recorder source and stop a run directly */
+  const setTracer = src => { TRACER = src; };
+  const stop = () => { if (current) current.stop(); };
+  return { page, run, trace, runTests, setTracer, stop, get version() { return version; } };
 })();
