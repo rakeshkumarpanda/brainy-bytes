@@ -381,16 +381,11 @@ window.CATALOG = {
       title: 'Natural Language Processing',
       emoji: '💬',
       color: '#ea580c',
-      blurb: 'Work with text: tokens, embeddings, language models and real NLP tasks.',
-      intro: 'Learn how computers read and write text, from tokenisation and word embeddings to transformers and large language models.',
-      tags: ['Tokenisation', 'Embeddings', 'Transformers', 'LLMs'],
-      modules: [soonModule([
-        ['Text preprocessing', '🧹', 'Tokens, stemming and stop words.'],
-        ['Word embeddings', '🗺️', 'Word2Vec, GloVe and meaning as vectors.'],
-        ['Text classification', '🏷️', 'Sentiment analysis and spam detection.'],
-        ['Transformers for text', '🔤', 'BERT, GPT and how attention reads text.'],
-        ['Large language models', '🦾', 'Prompting, fine tuning and retrieval.']
-      ])]
+      layout: 'path',
+      blurb: 'A step by step path from what language is to tokens, information theory, n-gram language models, smoothing, tagging and parsing.',
+      intro: 'Follow the path one step at a time. You start with what language is and why it is ambiguous, turn text into tokens and counts with NLTK, measure information with entropy, build and smooth n-gram language models the way SRILM does, then tag and parse sentences with HMMs, Viterbi and grammars. A lab rebuilds the SRILM assignment and an exam step revises everything. Each topic explains the idea at school, college, masters and research depth, shows the maths with worked problems, and has animations whose every setting you can change.',
+      tags: ['Tokenisation', 'Entropy', 'N-gram models', 'Smoothing', 'POS tagging', 'Parsing'],
+      modules: nlpModules().concat(iqModule('nlp'))
     },
     {
       id: 'cuda',
@@ -1260,6 +1255,7 @@ function iqModule(sid) {
     'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']],
     'ml-maths': ['content/ml-maths/interview-questions.html', 'Maths questions from machine learning interviews and certification theory sections: dot products, matrix shapes, eigenvalues and PCA, derivatives, backpropagation, gradient descent and Adam, Bayes, distributions, confidence intervals, A/B tests, entropy, losses and metrics, each solved step by step.', ['dot product', 'cosine similarity', 'matrix multiplication', 'eigenvalues', 'PCA', 'chain rule', 'sigmoid derivative', 'gradient descent', 'Adam', 'Bayes theorem', 'central limit theorem', 'p-value', 'A/B test', 'cross entropy', 'precision recall', 'ROC AUC']],
     'playwright': ['content/playwright/interview-questions.html', 'Playwright questions from automation interviews in TypeScript, JavaScript, Python and Java: how Playwright works, locators and strict mode, auto waiting, network mocking, fixtures, framework design, traces and reports, CI, sharding, flaky tests and the AI test agents, with real scenario questions.', ['playwright vs selenium', 'browser context', 'getByRole', 'strict mode', 'auto waiting', 'web first assertions', 'page.route', 'storageState', 'test.extend', 'pytest fixtures', 'trace viewer', 'sharding', 'flaky tests', 'test agents', 'playwright mcp']],
+    'nlp': ['content/nlp/interview-questions.html', 'NLP interview questions on tokenisation, stemming and lemmatisation, Zipf, entropy, cross entropy and KL, perplexity, n-gram models, add-k, Good-Turing, Kneser-Ney, backoff and interpolation, HMM tagging, Viterbi, parsing and evaluation, with scenario questions.', ['tokenisation', 'stemming vs lemmatisation', 'Zipf law', 'entropy', 'cross entropy', 'perplexity', 'n-gram', 'Laplace smoothing', 'Kneser-Ney', 'interpolation', 'OOV', 'HMM', 'Viterbi', 'POS tagging', 'CKY', 'BLEU']],
     'computer-vision': ['content/computer-vision/interview-questions.html', 'Computer vision interview questions on images and filters, edges, Harris, SIFT and HOG, optical flow, CNN arithmetic, anchors, IoU, NMS, focal loss, precision, recall and mAP, segmentation metrics, U-Net, ViT, CLIP and SAM, with debugging scenarios and system design.', ['convolution output size', 'parameter count', 'receptive field', 'Harris', 'optical flow', 'IoU', 'NMS', 'anchor boxes', 'focal loss', 'mAP50-95', 'mIoU', 'Dice', 'U-Net', 'transposed convolution', 'ViT', 'CLIP', 'SAM', 'domain shift']],
     'master-claude': ['content/claude/interview-questions.html', 'Claude interview questions on prompting, context engineering, CLAUDE.md and rules, skills, permissions and hooks, subagents, MCP, claude -p and GitHub Actions, the Claude API, agents, cost and safety, with real scenario questions.', ['prompt engineering', 'context rot', 'CLAUDE.md', 'rules.md', 'SKILL.md', 'hooks exit code 2', 'subagents', 'MCP', '.mcp.json', 'claude -p', 'tool use loop', 'prompt caching', 'agent safety']]
   }[sid];
@@ -3994,3 +3990,107 @@ function cvModules() {
   ];
 }
 /* ===== end of cv-build ===== */
+
+/* ===== nlp-build: Natural Language Processing chapters. Generated by tools/nlp-build/build.py, edit the topic files instead. ===== */
+function nlpModules() {
+  return [
+    { id: "nlp-language", title: "Language and meaning", emoji: "1", step: 1, level: "School and college", blurb: "What language is, why it is ambiguous, and what it would mean for a machine to understand it.", topics: [
+      { id: "what-is-language", title: "What language is", emoji: "1.1", page: "content/nlp/what-is-language.html",
+        summary: "The working definition, six levels from phonetics to pragmatics, symbols and the semiotic triangle, the speaker and hearer chain, Zipf and Grice, and recursion.",
+        keywords: ["language", "linguistics", "six levels", "phonetics", "phonology", "morphology", "syntax", "semantics", "pragmatics", "semiotic triangle", "Grice", "recursion", "Piraha"],
+        minutes: 35, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "definition", title: "What language is", emoji: "", group: "Lesson", keywords: ["what is language", "definition of language", "systematic symbolic structured", "idea conceptualise articulate", "window to the mind", "structure creates meaning", "two questions"] },
+        { id: "six-levels", title: "The six levels of linguistic structure", emoji: "", group: "Lesson", keywords: ["six levels", "phonetics", "phonology", "morphology", "syntax", "semantics", "pragmatics", "phoneme", "morpheme", "free morpheme", "bound morpheme", "prefix", "suffix", "infix", "circumfix"] },
+        { id: "symbolic", title: "The symbolic function: words stand for concepts", emoji: "", group: "Lesson", keywords: ["symbolic function", "form meaning pair", "semiotic triangle", "Ogden and Richards", "percept concept meaning form", "IPA", "convention", "TAM", "tense aspect mood", "sense and reference", "material conditional"] },
+        { id: "interactive", title: "The interactive function: from one mind to another", emoji: "", group: "Lesson", keywords: ["interactive function", "speaker and hearer", "encoder decoder", "two body problem", "Shannon Weaver model", "speech chain", "Zipf least effort", "Grice maxims", "cooperative principle", "quantity quality relation manner"] },
+        { id: "recursion", title: "Recursion and the Pirahã debate", emoji: "", group: "Lesson", keywords: ["recursion", "matrix clause", "embedded clause", "Piraha", "Pirahã", "Daniel Everett", "Hauser Chomsky Fitch", "immediacy of experience", "low resource language", "centre embedding"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ambiguity", title: "Ambiguity: why language is hard for machines", emoji: "1.2", page: "content/nlp/ambiguity.html",
+        summary: "Lexical against structural ambiguity, the Lesk method, PP attachment, Catalan growth of parse trees and how machines resolve ambiguity.",
+        keywords: ["ambiguity", "lexical ambiguity", "structural ambiguity", "word sense disambiguation", "Lesk", "PP attachment", "Catalan numbers", "homonymy", "polysemy", "telescope"],
+        minutes: 35, counts: {"lessons": 3, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "lexical", title: "Lexical ambiguity: one word, several meanings", emoji: "", group: "Lesson", keywords: ["lexical ambiguity", "homonymy", "polysemy", "homophone", "homograph", "word sense disambiguation", "WSD", "Lesk algorithm", "gloss overlap", "bank", "over", "Lakoff"] },
+        { id: "structural", title: "Structural ambiguity: one string, several trees", emoji: "", group: "Lesson", keywords: ["structural ambiguity", "PP attachment", "prepositional phrase attachment", "telescope", "high attachment", "low attachment", "Catalan numbers", "Church and Patil", "understands you like your mother", "local patient files", "ASR ambiguity"] },
+        { id: "resolving", title: "How machines resolve ambiguity", emoji: "", group: "Lesson", keywords: ["resolving ambiguity", "right association", "late closure", "treebank", "Penn Treebank", "lexical association", "Hindle and Rooth", "contextual embeddings", "clarifying question"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "understanding", title: "Can machines understand language?", emoji: "1.3", page: "content/nlp/machine-understanding.html",
+        summary: "Marr's levels, Turing and Total Turing tests, ELIZA against SHRDLU, how NLU systems are built and scored, and the debate on form and meaning.",
+        keywords: ["natural language understanding", "Marr", "Turing test", "ELIZA", "SHRDLU", "BLEU", "F1", "surprisal", "octopus test", "symbol grounding", "NLP trinity"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "marr", title: "Marr's three levels and the robot that flies", emoji: "", group: "Lesson", keywords: ["Marr", "tri-level hypothesis", "computational level", "algorithmic level", "implementational level", "robot fly", "cash register", "information processing", "reverse engineering cognition"] },
+        { id: "turing", title: "The Turing test and what it misses", emoji: "", group: "Lesson", keywords: ["Turing test", "imitation game", "operational definition", "Russell and Norvig", "four camps of AI", "qualia", "hard problem", "Mary room", "Total Turing Test", "Harnad"] },
+        { id: "eliza-shrdlu", title: "ELIZA and SHRDLU: talking against understanding", emoji: "", group: "Lesson", keywords: ["ELIZA", "Weizenbaum", "Rogerian", "pattern matching", "ELIZA effect", "SHRDLU", "Winograd", "blocks world", "grounding", "declarative and procedural knowledge"] },
+        { id: "building", title: "NLP, CL and NLU, and how systems are measured", emoji: "", group: "Lesson", keywords: ["NLP vs CL vs NLU", "computational linguistics", "corpus", "annotation", "Universal Dependencies", "precision", "recall", "F1", "BLEU", "brevity penalty", "surprisal", "dependency length", "cognitive metrics"] },
+        { id: "form-meaning", title: "Can form alone give meaning?", emoji: "", group: "Lesson", keywords: ["Firth", "distributional hypothesis", "Shannon information", "octopus test", "Bender and Koller", "Ettinger", "negation", "symbol grounding", "Chinese room", "NLP trinity", "coreference", "low resource"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "nlp-text", title: "Text as data", emoji: "2", step: 2, level: "School and college", blurb: "Turn raw text into sentences, tokens, stems, lemmas and counts, exactly as the NLTK notebook does.", topics: [
+      { id: "tokenisation", title: "Sentences, tokens and vocabularies", emoji: "2.1", page: "content/nlp/tokenisation.html",
+        summary: "The preprocessing pipeline, tokens and types, Punkt sentence splitting, Treebank word tokens, vocabularies and BPE subwords.",
+        keywords: ["tokenisation", "tokenization", "sentence segmentation", "Punkt", "word_tokenize", "tokens", "types", "vocabulary", "BPE", "subword", "NLTK"],
+        minutes: 35, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "pipeline", title: "The preprocessing pipeline", emoji: "", group: "Lesson", keywords: ["preprocessing pipeline", "NLTK", "token", "type", "vocabulary", "type token ratio", "word index", "tokens and types"] },
+        { id: "sentences", title: "Sentence segmentation", emoji: "", group: "Lesson", keywords: ["sentence segmentation", "sentence tokenization", "sent_tokenize", "Punkt", "abbreviation", "full stop ambiguity"] },
+        { id: "words", title: "Word tokenisation", emoji: "", group: "Lesson", keywords: ["word tokenization", "word_tokenize", "Penn Treebank tokenizer", "contractions", "n't", "punctuation tokens", "hyphens", "code mixing"] },
+        { id: "subwords", title: "Beyond words: subword tokens", emoji: "", group: "Lesson", keywords: ["subword", "byte pair encoding", "BPE", "WordPiece", "SentencePiece", "out of vocabulary", "OOV", "vocabulary size"] },
+        { id: "files", title: "Reading text files in Python", emoji: "", group: "Lesson", keywords: ["reading files", "open", "with statement", "readlines", "context manager", "one sentence per line"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "stemming", title: "Stems and lemmas", emoji: "2.2", page: "content/nlp/stemming-lemmatisation.html",
+        summary: "Inflection and derivation, Porter stemming and the measure m, Snowball and Lancaster, WordNet lemmatisation, stem against lemma, and the precision and recall trade off.",
+        keywords: ["stemming", "lemmatisation", "lemmatization", "Porter", "Snowball", "Lancaster", "WordNet", "lemma", "stem", "morphology", "measure"],
+        minutes: 35, counts: {"lessons": 5, "problems": 11, "quiz": 13, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "morphology", title: "Words have parts", emoji: "", group: "Lesson", keywords: ["morphology", "morpheme", "free morpheme", "bound morpheme", "inflection", "derivation", "affix", "normalisation", "conflation"] },
+        { id: "stemming", title: "Stemming: chop with rules", emoji: "", group: "Lesson", keywords: ["stemming", "stem", "Porter stemmer", "measure", "consonant", "vowel", "suffix stripping", "leav"] },
+        { id: "porter-steps", title: "Inside the Porter algorithm", emoji: "", group: "Lesson", keywords: ["Porter algorithm", "step 1a", "step 1b", "Snowball", "Porter2", "Lancaster", "Paice Husk", "NLTK_EXTENSIONS", "suffix rules"] },
+        { id: "lemmatisation", title: "Lemmatisation: look it up", emoji: "", group: "Lesson", keywords: ["lemmatisation", "lemmatization", "lemma", "WordNet", "WordNetLemmatizer", "morphy", "part of speech", "dictionary form"] },
+        { id: "compare", title: "Stem or lemma: choosing well", emoji: "", group: "Lesson", keywords: ["stem vs lemma", "over stemming", "under stemming", "precision", "recall", "F1", "information retrieval", "alumnus"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "counting", title: "Counting words and tags", emoji: "2.3", page: "content/nlp/counting-corpora.html",
+        summary: "FreqDist, the Brown corpus and the Penn Treebank with real counts, tagsets and tag mapping, and the first bigram probabilities.",
+        keywords: ["FreqDist", "Brown corpus", "Penn Treebank", "tagset", "universal tagset", "POS tags", "counting", "bigram", "NLTK"],
+        minutes: 35, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "freqdist", title: "Counting with FreqDist", emoji: "", group: "Lesson", keywords: ["FreqDist", "frequency distribution", "counting", "N()", "B()", "freq", "most_common", "relative frequency", "hapax"] },
+        { id: "corpora", title: "Corpora: Brown and the Penn Treebank", emoji: "", group: "Lesson", keywords: ["corpus", "Brown corpus", "Penn Treebank", "PTB", "tagged corpus", "gold standard", "-NONE-", "empty element", "word/tag"] },
+        { id: "tagsets", title: "How many tags? Tagsets", emoji: "", group: "Lesson", keywords: ["tagset", "universal tagset", "Penn Treebank tagset", "Brown tagset", "UPOS", "coarse", "fine", "tag mapping", "ADV", "RB"] },
+        { id: "sequences", title: "Counting pairs: towards language models", emoji: "", group: "Lesson", keywords: ["bigram", "counting pairs", "maximum likelihood", "most frequent tag", "language model", "conditional probability"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of nlp-build ===== */

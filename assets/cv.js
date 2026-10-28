@@ -12,9 +12,11 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  /* Computer Vision keeps its original keys. Other subjects add their name so equal slugs do not share progress. */
+  const KEY = !D.subject || D.subject === 'computer-vision' ? 'cv-' : 'cv-' + D.subject + '-';
   const store = {
-    get(k, d) { try { const v = localStorage.getItem('cv-' + D.slug + '-' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem('cv-' + D.slug + '-' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
+    get(k, d) { try { const v = localStorage.getItem(KEY + D.slug + '-' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(KEY + D.slug + '-' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
   };
 
   /* ---------- theme button on the standalone page ---------- */
@@ -54,7 +56,7 @@
     if (on) { const ol = on.closest('.cv-stepper'), li = on.parentElement; ol.scrollLeft = Math.max(0, li.offsetLeft - ol.offsetLeft - (ol.clientWidth - li.offsetWidth) / 2); }
     const art = lessons.find(l => l.dataset.l === id);
     if (art && typeof CVZ !== 'undefined') CVZ.mountAll(art);
-    if (art) $$('.cv-code', art).forEach(mountCode);
+    if (art) $$('.cv-code[data-k]', art).forEach(mountCode);
   }
   tabs.forEach(t => t.addEventListener('click', () => openTab(t.dataset.tab, null, false)));
   stepLinks.forEach(a => a.addEventListener('click', e => { e.preventDefault(); showLesson(a.dataset.l); setHash(a.dataset.l); }));
