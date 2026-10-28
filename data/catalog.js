@@ -4198,6 +4198,83 @@ function nlpModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "nlp-syntax", title: "Tagging and syntax", emoji: "5", step: 5, level: "College and masters", blurb: "Tag every word with its part of speech using HMMs and Viterbi, mark chunks and names with IOB, and draw constituency and dependency trees.", topics: [
+      { id: "postag", title: "Part of speech tagging", emoji: "5.1", page: "content/nlp/pos-tagging.html",
+        summary: "The tagging task, tagsets, ambiguity, look up and backoff taggers, and generative against discriminative models.",
+        keywords: ["POS tagging", "tagset", "Penn Treebank", "universal tags", "backoff tagger", "perceptron", "generative", "discriminative"],
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "task", title: "What part of speech tagging is", emoji: "", group: "Lesson", keywords: ["POS tagging", "part of speech", "book noun verb", "can modal", "British Left Waffles", "headline", "sequence tagging", "gold standard"] },
+        { id: "tagsets", title: "How many tags are there?", emoji: "", group: "Lesson", keywords: ["tagset", "universal tagset", "Penn Treebank", "Brown tagset", "UPOS", "ambiguous types", "most frequent tag baseline", "accuracy"] },
+        { id: "taggers", title: "Kinds of tagger", emoji: "", group: "Lesson", keywords: ["rule based tagger", "look up tagger", "unigram tagger", "bigram tagger", "backoff", "HMM tagger", "perceptron", "maximum entropy", "CRF", "neural tagger"] },
+        { id: "genvsdisc", title: "Generative or discriminative", emoji: "", group: "Lesson", keywords: ["generative model", "discriminative model", "joint probability", "conditional probability", "Bayes", "argmax", "Baum-Welch", "supervised"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "hmm", title: "Finite state machines and the HMM", emoji: "5.2", page: "content/nlp/hmm.html",
+        summary: "FSAs, the HMM five tuple, the joint probability, validity checks, training by counting and enumeration.",
+        keywords: ["FSA", "finite state automaton", "HMM", "transition", "emission", "Moore machine", "killer clown", "training"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "fsa", title: "Finite state automata", emoji: "", group: "Lesson", keywords: ["finite state automaton", "FSA", "five tuple", "states", "transition function", "final state", "accept", "reject", "sheep talk", "regular expression", "Kleene"] },
+        { id: "hmm", title: "The hidden Markov model", emoji: "", group: "Lesson", keywords: ["hidden Markov model", "HMM", "five tuple", "transition", "emission", "start probability", "Markov assumption", "output independence", "joint probability", "Mealy", "Moore"] },
+        { id: "valid", title: "Is this HMM valid?", emoji: "", group: "Lesson", keywords: ["valid HMM", "rows sum to one", "killer clown", "crazy", "missing cell", "stochastic matrix"] },
+        { id: "train", title: "Training an HMM is counting", emoji: "", group: "Lesson", keywords: ["training", "MLE", "counting", "start probability", "transition count", "emission count", "zeros", "smoothing", "Baum-Welch", "EM"] },
+        { id: "score", title: "Scoring every tag sequence", emoji: "", group: "Lesson", keywords: ["enumeration", "score tag sequence", "killer clown", "slide 27", "zero emission", "two HMMs"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "viterbi", title: "Decoding with Viterbi", emoji: "5.3", page: "content/nlp/viterbi.html",
+        summary: "Brute force against dynamic programming, the Viterbi and forward recursions, posteriors, ties and trigram HMMs.",
+        keywords: ["Viterbi", "trellis", "back pointer", "forward algorithm", "posterior", "dynamic programming", "TnT", "search space"],
+        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "brute", title: "Why brute force fails", emoji: "", group: "Lesson", keywords: ["brute force", "search space", "q to the T", "exponential", "decoding objective", "argmax", "Penn Treebank 45 tags", "Brown 87 tags"] },
+        { id: "viterbi", title: "The Viterbi algorithm", emoji: "", group: "Lesson", keywords: ["Viterbi", "dynamic programming", "trellis", "back pointer", "principle of optimality", "Bellman", "they can fish", "recursion", "exam recipe"] },
+        { id: "forward", title: "The forward algorithm and confidence", emoji: "", group: "Lesson", keywords: ["forward algorithm", "sum instead of max", "sentence probability", "posterior", "confidence", "forward backward", "posterior decoding", "G9", "G10"] },
+        { id: "beyond", title: "Ties, trigrams and real taggers", emoji: "", group: "Lesson", keywords: ["tie breaking", "k best", "trigram HMM", "TnT", "second order", "British Left Waffles", "H8", "speech recognition", "semiring"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "chunking", title: "Chunking and named entities", emoji: "5.4", page: "content/nlp/chunking.html",
+        summary: "Chunks, regex chunkers, IOB and BIOES encoding, NER models and entity level F1.",
+        keywords: ["chunking", "IOB", "BIOES", "NER", "named entity", "CRF", "F1", "shallow parsing"],
+        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "chunks", title: "What a chunk is", emoji: "", group: "Lesson", keywords: ["chunk", "chunking", "shallow parsing", "base noun phrase", "constituent", "flat", "nested", "regular expression chunker", "RegexpParser"] },
+        { id: "iob", title: "IOB: spans as tags", emoji: "", group: "Lesson", keywords: ["IOB", "BIO", "B- tag", "I- tag", "O tag", "span encoding", "H4", "IOB2", "BIOES", "BILOU", "repair"] },
+        { id: "ner", title: "Named entity tagging", emoji: "", group: "Lesson", keywords: ["named entity recognition", "NER", "PER ORG LOC", "gazetteer", "perceptron", "CRF", "BiLSTM CRF", "BERT", "entity level F1", "precision", "recall"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "syntax", title: "Constituency and dependency syntax", emoji: "5.5", page: "content/nlp/syntax.html",
+        summary: "Constituency tests, CFGs, dependency trees, PCFGs, attachment ambiguity and Catalan growth.",
+        keywords: ["constituency", "dependency", "CFG", "PCFG", "parse tree", "attachment ambiguity", "Universal Dependencies", "Catalan"],
+        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "constituency", title: "Constituents and phrase structure", emoji: "", group: "Lesson", keywords: ["constituent", "phrase", "phrase structure", "bracket notation", "treebank", "head", "movement test", "substitution", "fragment", "coordination", "cleft", "H5", "H6"] },
+        { id: "cfg", title: "Context free grammars", emoji: "", group: "Lesson", keywords: ["context free grammar", "CFG", "rules", "non terminal", "terminal", "start symbol", "lexicon", "Penn Treebank", "centre embedding", "CKY"] },
+        { id: "dependency", title: "Dependency structure", emoji: "", group: "Lesson", keywords: ["dependency", "head", "dependent", "root", "nsubj", "obj", "det", "Universal Dependencies", "projective", "tree", "DAG", "H7"] },
+        { id: "attachment", title: "Attachment ambiguity and PCFGs", emoji: "", group: "Lesson", keywords: ["attachment ambiguity", "elephant in my pajamas", "PCFG", "rule probability", "H9", "Catalan", "H10", "CKY", "NLTK", "spaCy", "Stanza"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

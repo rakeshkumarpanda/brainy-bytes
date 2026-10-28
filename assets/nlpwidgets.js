@@ -2005,3 +2005,487 @@ const NLZ = (() => {
     }
   });
 })();
+
+/* ===== Step 5: tagging, finite state machines, HMMs, Viterbi, chunking and syntax ===== */
+(() => {
+  const { def, D, esc } = CVZ;
+  const { tw, rr, pill, flow, wrap, fit, fmt } = NLZ;
+  const toks = s => String(s).trim().split(/\s+/).filter(Boolean);
+  const nums = NLZ.nums;
+  /* a small fraction such as 3/5 when the value is one, else a decimal */
+  function frac(n, d) { if (!d) return '–'; if (!n) return '0'; const g = (a, b) => b ? g(b, a % b) : a, k = g(n, d); return d / k === 1 ? String(n / k) : `${n / k}/${d / k}`; }
+  const sci = v => v === 0 ? '0' : (v >= 0.001 ? fmt(v, 5) : v.toExponential(2).replace('-', '−'));
+  const andList = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+
+  /* ---------------------------------------------------------------- Chapter 5.1: look up taggers with backoff */
+  const TAGGED = 'I/PRP read/VBP a/DT book/NN ./.\nPlease/UH book/VB a/DT ticket/NN ./.\nShe/PRP can/MD dance/VB ./.\nA/DT can/NN of/IN soda/NN ./.\nThey/PRP can/MD fish/VB ./.\nThe/DT student/NN reads/VBZ books/NNS ./.\nWe/PRP book/VBP rooms/NNS early/RB ./.';
+  const readTagged = s => String(s).split('\n').map(l => toks(l).map(t => { const i = t.lastIndexOf('/'); return i > 0 ? [t.slice(0, i), t.slice(i + 1)] : [t, '?']; })).filter(a => a.length);
+  const best = m => { let bk = null, bv = -1; m.forEach((v, k) => { if (v > bv) { bv = v; bk = k; } }); return bk; };
+  def('lookup', {
+    title: 'Look up taggers chained with backoff',
+    sub: 'Each word is tagged by the most specific tagger that has seen it. The colour shows which one decided: bigram, unigram or the default.',
+    W: 560, H: 230,
+    params: [
+      { k: 'train', label: 'Tagged training sentences (word/TAG)', type: 'area', v: TAGGED },
+      { k: 'test', label: 'Sentence to tag', type: 'text', v: 'Please book a can of fish .' },
+      { k: 'chain', label: 'Tagger', type: 'select', v: 'bigram', opts: [['default', 'Default tagger only'], ['unigram', 'Unigram, backing off to the default'], ['bigram', 'Bigram, backing off to unigram, then default']] },
+      { k: 'dflt', label: 'Tag used by the default tagger', type: 'text', v: 'NN' }
+    ],
+    tips: [
+      { t: 'Use the default tagger alone. Every word becomes NN. That is the floor every real tagger must beat.', set: { chain: 'default' } },
+      { t: 'Use the unigram tagger. book gets its most frequent tag, but it is the same in every sentence, whatever the context.', set: { chain: 'unigram', test: 'I book a ticket .' } },
+      { t: 'Use the bigram tagger on "I book a ticket". After a pronoun, book is now a verb, because the pair (PRP, book) was seen.', set: { chain: 'bigram', test: 'I book a ticket .' } },
+      { t: 'Tag "Please book a can of fish". fish after of was never seen, so the bigram backs off and the unigram says VB. Look up taggers know only what they have counted.', set: { chain: 'bigram', test: 'Please book a can of fish .' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const sents = readTagged(p.train);
+      const uni = new Map(), bi = new Map();
+      sents.forEach(s => { let prev = '<s>'; s.forEach(([w, t]) => { if (!uni.has(w)) uni.set(w, new Map()); uni.get(w).set(t, (uni.get(w).get(t) || 0) + 1); const k = prev + '|' + w; if (!bi.has(k)) bi.set(k, new Map()); bi.get(k).set(t, (bi.get(k).get(t) || 0) + 1); prev = t; }); });
+      const words = toks(p.test).slice(0, 9);
+      if (!words.length) return 'Type a sentence.';
+      const dflt = String(p.dflt).trim() || 'NN';
+      let prev = '<s>';
+      const out = words.map(w => {
+        let t, by;
+        if (p.chain === 'bigram' && bi.has(prev + '|' + w)) { t = best(bi.get(prev + '|' + w)); by = 'bigram'; }
+        else if (p.chain !== 'default' && uni.has(w)) { t = best(uni.get(w)); by = 'unigram'; }
+        else { t = dflt; by = 'default'; }
+        const r = { w, t, by, prev }; prev = t; return r;
+      });
+      const col = { bigram: z.col.cv, unigram: z.col.purple, default: z.col.orange };
+      const cw = Math.min(64, (z.W - 24) / words.length);
+      out.forEach((r, i) => {
+        const x = 12 + i * cw;
+        rr(g, x + 2, 26, cw - 4, 34, 7, { fill: z.col.surf, stroke: z.col.line });
+        D.text(g, r.w, x + cw / 2, 48, { a: 'center', s: fit(g, r.w, cw - 10, 13.5), b: true, c: z.col.ink });
+        D.arrow(g, x + cw / 2, 62, x + cw / 2, 82, z.col.ink2, 1.4);
+        rr(g, x + 4, 86, cw - 8, 28, 7, { fill: col[r.by] });
+        D.text(g, r.t, x + cw / 2, 105, { a: 'center', s: fit(g, r.t, cw - 12, 13), b: true, mono: true, c: '#fff' });
+        D.text(g, r.by, x + cw / 2, 130, { a: 'center', s: fit(g, r.by, cw - 4, 10.5), c: col[r.by] });
+        if (r.by === 'bigram') D.text(g, `after ${r.prev}`, x + cw / 2, 145, { a: 'center', s: fit(g, `after ${r.prev}`, cw - 4, 10), c: z.col.ink2 });
+      });
+      [['bigram: (previous tag, word) was seen', 'bigram'], ['unigram: the word was seen', 'unigram'], ['default: nothing was seen', 'default']].forEach(([t, k], i) => { rr(g, 14, 172 + i * 18, 12, 12, 3, { fill: col[k] }); D.text(g, t, 32, 182 + i * 18, { s: 11.5, c: z.col.ink }); });
+      const amb = [...uni.entries()].filter(([w, m]) => m.size > 1).map(([w, m]) => `${esc(w)} (${[...m.keys()].join(', ')})`);
+      return `The chain is the backoff idea of chapter 4.3 applied to tags. In NLTK: BigramTagger(train, backoff=UnigramTagger(train, backoff=DefaultTagger("${esc(dflt)}"))). Ambiguous words in this training data: ${amb.join(', ') || 'none'}.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- Chapter 5.2: finite state automata */
+  const FSA = {
+    catcar: ['q0 c q1\nq1 a q2\nq2 t q3\nq2 r q3', 'q3', 'char'],
+    sheep: ['q0 b q1\nq1 a q2\nq2 a q3\nq3 a q3\nq3 ! q4', 'q4', 'char'],
+    words: ['q0 he q1\nq0 she q1\nq1 is q2\nq1 was q2\nq2 happy q3\nq2 sad q3', 'q3', 'word']
+  };
+  def('fsa', {
+    title: 'A finite state automaton reads a string',
+    sub: 'Press Play. The machine follows one arrow per symbol. It accepts only if every symbol has an arrow and it ends in a final state (double circle).',
+    W: 560, H: 250,
+    params: [
+      { k: 'delta', label: 'Transitions: from, symbol, to (one per line)', type: 'area', v: FSA.catcar[0] },
+      { k: 'final', label: 'Final states', type: 'text', v: 'q3' },
+      { k: 'unit', label: 'Symbols are', type: 'select', v: 'char', opts: [['char', 'single characters'], ['word', 'whole words']] },
+      { k: 'input', label: 'Input', type: 'text', v: 'cat' }
+    ],
+    steps: z => (z.p.unit === 'word' ? toks(z.p.input) : [...String(z.p.input).replace(/\s/g, '')]).length, startAtZero: true,
+    tips: [
+      { t: 'Play "cat", then try "ca". ca stops in q2, which is not final, so it is rejected.', set: { delta: FSA.catcar[0], final: 'q3', unit: 'char', input: 'ca' }, play: true },
+      { t: 'Try "cut". In q1 there is no arrow for u, so the machine is stuck and rejects at once.', set: { delta: FSA.catcar[0], final: 'q3', unit: 'char', input: 'cut' }, play: true },
+      { t: 'Load sheep talk /baa+!/ and play "baaaa!". The self loop on q3 eats the extra a\'s.', set: { delta: FSA.sheep[0], final: 'q4', unit: 'char', input: 'baaaa!' }, play: true },
+      { t: 'Sheep talk with "ba!". Only one a, so q2 has no arrow for ! and the string is rejected.', set: { delta: FSA.sheep[0], final: 'q4', unit: 'char', input: 'ba!' }, play: true },
+      { t: 'Problem H3: a machine over words. "she was happy" is one of its 2 × 2 × 2 = 8 sentences.', set: { delta: FSA.words[0], final: 'q3', unit: 'word', input: 'she was happy' }, play: true }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const T = String(p.delta).split('\n').map(toks).filter(a => a.length === 3);
+      if (!T.length) return 'Write transitions like "q0 c q1".';
+      const S = []; T.forEach(([a, , b]) => { if (!S.includes(a)) S.push(a); if (!S.includes(b)) S.push(b); });
+      const F = new Set(toks(String(p.final).replace(/,/g, ' ')));
+      const syms = p.unit === 'word' ? toks(p.input) : [...String(p.input).replace(/\s/g, '')];
+      /* run the machine */
+      let cur = S[0], stuck = -1; const path = [cur];
+      for (let i = 0; i < syms.length; i++) { const tr = T.find(t => t[0] === cur && t[1] === syms[i]); if (!tr) { stuck = i; break; } cur = tr[2]; path.push(cur); }
+      const shown = Math.min(z.step, syms.length);
+      const live = stuck >= 0 && shown > stuck ? null : path[Math.min(shown, path.length - 1)];
+      const n = S.length, R = 22, y0 = 150;
+      const X = i => 50 + i * (z.W - 100) / Math.max(1, n - 1);
+      /* merge arcs with the same endpoints */
+      const E = new Map(); T.forEach(([a, s, b]) => { const k = a + '>' + b; if (!E.has(k)) E.set(k, []); E.get(k).push(s); });
+      const usedEdge = new Set(); for (let i = 0; i < Math.min(shown, path.length - 1); i++) usedEdge.add(path[i] + '>' + path[i + 1]);
+      E.forEach((ss, k) => {
+        const [a, b] = k.split('>'), i = S.indexOf(a), j = S.indexOf(b), on = usedEdge.has(k);
+        const c = on ? z.col.orange : z.col.ink2, w = on ? 3 : 1.6, lab = ss.join(', ');
+        let at;
+        if (i === j) at = NLZ.loop(g, X(i), y0, R, -Math.PI / 2, c, w);
+        else if (j === i + 1) { D.arrow(g, X(i) + R, y0, X(j) - R - 1, y0, c, w); at = [(X(i) + X(j)) / 2, y0 - 12]; }
+        else at = NLZ.carc(g, X(i), y0, X(j), y0, R, (j > i ? -1 : 1) * Math.min(90, 26 * Math.abs(j - i)), c, w);
+        const tw0 = tw(g, lab, { s: 12, b: true, mono: true }) + 10;
+        rr(g, at[0] - tw0 / 2, at[1] - 10, tw0, 19, 5, { fill: on ? z.col.orange : z.col.surf, stroke: on ? z.col.orange : z.col.line, w: 1 });
+        D.text(g, lab, at[0], at[1] + 4, { a: 'center', s: 12, b: true, mono: true, c: on ? '#fff' : z.col.ink });
+      });
+      D.arrow(g, X(0) - R - 26, y0, X(0) - R - 1, y0, z.col.purple, 2);
+      S.forEach((s, i) => {
+        const on = s === live;
+        D.circle(g, X(i), y0, R, { fill: on ? z.col.cv : z.col.surf, stroke: z.col.cv, w: 2.2 });
+        if (F.has(s)) D.circle(g, X(i), y0, R - 4, { stroke: on ? '#fff' : z.col.cv, w: 1.5 });
+        D.text(g, s, X(i), y0 + 5, { a: 'center', s: 12.5, b: true, mono: true, c: on ? '#fff' : z.col.ink });
+      });
+      /* the tape */
+      const cw = Math.min(34, (z.W - 40) / Math.max(1, syms.length)), tx = 20;
+      syms.forEach((s, i) => {
+        const done = i < shown, bad = i === stuck && shown > stuck;
+        rr(g, tx + i * (p.unit === 'word' ? 70 : cw), 12, (p.unit === 'word' ? 66 : cw - 4), 28, 5, { fill: bad ? z.col.red : done ? z.col.cv : z.col.bg, stroke: z.col.line, w: 1 });
+        D.text(g, s, tx + i * (p.unit === 'word' ? 70 : cw) + (p.unit === 'word' ? 33 : (cw - 4) / 2), 31, { a: 'center', s: fit(g, s, p.unit === 'word' ? 60 : cw - 8, 13), b: true, mono: true, c: done || bad ? '#fff' : z.col.ink });
+      });
+      let verdict;
+      if (shown < syms.length && !(stuck >= 0 && shown > stuck)) verdict = `Read ${shown} of ${syms.length} symbols. Now in <b>${esc(live)}</b>.`;
+      else if (stuck >= 0) verdict = `<b>Rejected</b>: in ${esc(path[path.length - 1])} there is no arrow for "${esc(syms[stuck])}".`;
+      else verdict = F.has(cur) ? `<b>Accepted</b>: the input ended in the final state ${esc(cur)}.` : `<b>Rejected</b>: the input ended in ${esc(cur)}, which is not a final state.`;
+      return `${verdict} Five parts define the machine: states Q = {${S.map(esc).join(', ')}}, alphabet Σ = {${[...new Set(T.map(t => t[1]))].map(esc).join(', ')}}, start ${esc(S[0])}, transitions δ (${T.length} arrows) and finals F = {${[...F].map(esc).join(', ')}}.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- Chapter 5.2: training an HMM by counting */
+  const G5 = 'they/N can/M fish/V\nthey/N fish/V\nfish/N can/M swim/V\nthey/N can/V fish/N\nswim/V';
+  def('hmmtrain', {
+    title: 'Training an HMM is counting',
+    sub: 'From tagged sentences, fill three tables: where sentences start (π), which tag follows which (A), and which word each tag emits (B).',
+    W: 560, H: 270,
+    params: [
+      { k: 'train', label: 'Tagged sentences (word/TAG)', type: 'area', v: G5 },
+      { k: 'view', label: 'Show', type: 'select', v: 'prob', opts: [['prob', 'probabilities (MLE)'], ['count', 'counts']] }
+    ],
+    tips: [
+      { t: 'Problem G5. π = (N 4/5, V 1/5). N is followed by M or V half the time each. Read the zeros: N never follows N in this data.', set: { train: G5, view: 'prob' } },
+      { t: 'Switch to counts to see where each fraction comes from. Every row of A and B is divided by its own total.', set: { view: 'count' } },
+      { t: 'Add the sentence "fish/N fish/N". The cell N → N stops being 0 and the row of N is re-shared.', set: { train: G5 + '\nfish/N fish/N', view: 'prob' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const sents = readTagged(p.train);
+      if (!sents.length) return 'Write tagged sentences such as "they/N can/M fish/V".';
+      const tags = [], words = [];
+      sents.flat().forEach(([w, t]) => { if (!tags.includes(t)) tags.push(t); if (!words.includes(w)) words.push(w); });
+      tags.sort(); const Tg = tags.slice(0, 5), W = words.slice(0, 7);
+      const st = new Map(), tr = new Map(), em = new Map(), outT = new Map(), outE = new Map();
+      sents.forEach(s => { st.set(s[0][1], (st.get(s[0][1]) || 0) + 1); s.forEach(([w, t], i) => { em.set(t + '|' + w, (em.get(t + '|' + w) || 0) + 1); outE.set(t, (outE.get(t) || 0) + 1); if (i) { const k = s[i - 1][1] + '|' + t; tr.set(k, (tr.get(k) || 0) + 1); outT.set(s[i - 1][1], (outT.get(s[i - 1][1]) || 0) + 1); } }); });
+      const cell = (n, d) => p.view === 'count' ? String(n) : frac(n, d);
+      const box = (x, y, rows, cols, get, title, cw) => {
+        D.text(g, title, x, y - 8, { s: 12, b: true, c: z.col.ink });
+        cols.forEach((c, j) => D.text(g, c, x + 30 + j * cw + cw / 2, y + 14, { a: 'center', s: fit(g, c, cw - 4, 13), b: true, mono: true, c: z.col.ink2 }));
+        rows.forEach((r, i) => {
+          const yy = y + 22 + i * 28;
+          D.text(g, r, x + 24, yy + 18, { a: 'right', s: 13, b: true, mono: true, c: z.col.ink2 });
+          cols.forEach((c, j) => { const [n, d] = get(r, c); rr(g, x + 30 + j * cw + 1, yy + 1, cw - 2, 26, 5, { fill: n ? z.col.bg : 'transparent', stroke: z.col.line, w: 0.8 }); D.text(g, cell(n, d), x + 30 + j * cw + cw / 2, yy + 18, { a: 'center', s: fit(g, cell(n, d), cw - 6, 13), mono: true, b: !!n, c: n ? z.col.ink : z.col.red }); });
+        });
+      };
+      box(10, 28, ['π'], Tg, (r, c) => [st.get(c) || 0, sents.length], 'Start π', 52);
+      box(10, 112, Tg, Tg, (r, c) => [tr.get(r + '|' + c) || 0, outT.get(r) || 0], 'Transitions A (row → column)', 52);
+      box(232, 28, Tg, W, (r, c) => [em.get(r + '|' + c) || 0, outE.get(r) || 0], 'Emissions B (tag → word)', Math.min(64, 290 / W.length));
+      const zeros = [];
+      Tg.forEach(a => Tg.forEach(b => { if (!tr.get(a + '|' + b) && outT.get(a)) zeros.push(`${a}→${b}`); }));
+      return `MLE: π(t) = C(start with t) ÷ ${sents.length}, a(t → u) = C(t u) ÷ C(t followed by anything), b(w | t) = C(w tagged t) ÷ C(t). Unseen transitions such as ${zeros.slice(0, 4).map(esc).join(', ') || 'none'} are 0, so any tag sequence using them gets probability 0. Real taggers smooth A and B and add an end state.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- Chapter 5.3: Viterbi and forward */
+  const VB = {
+    tags: 'N, M, V', pi: '0.7 0.1 0.2', A: '0.2 0.4 0.4\n0.1 0 0.9\n0.6 0.1 0.3',
+    B: 'they 0.3 0 0\ncan 0.2 1 0.3\nfish 0.5 0 0.7'
+  };
+  def('viterbi', {
+    title: 'The Viterbi trellis',
+    sub: 'Columns are words, rows are tags. Each cell keeps only the best path into it and an arrow to where that path came from. Press Play to fill one column at a time.',
+    W: 560, H: 236,
+    params: [
+      { k: 'tags', label: 'Tags', type: 'text', v: VB.tags },
+      { k: 'pi', label: 'Start probabilities π', type: 'text', v: VB.pi },
+      { k: 'A', label: 'Transitions A: one row per tag, P(next tag | this tag)', type: 'area', v: VB.A },
+      { k: 'B', label: 'Emissions B: a word, then P(word | tag) for each tag', type: 'area', v: VB.B },
+      { k: 'sent', label: 'Sentence', type: 'text', v: 'they can fish' },
+      { k: 'mode', label: 'Combine paths with', type: 'select', v: 'max', opts: [['max', 'max (Viterbi: the best path)'], ['sum', 'sum (forward: the sentence probability)']] }
+    ],
+    steps: z => toks(z.p.sent).length, startAtZero: true,
+    tips: [
+      { t: 'Play "they can fish". The best path is N M V with 0.05292, "they are able to fish". The runner up N V N scores 0.00756.', set: { tags: VB.tags, pi: VB.pi, A: VB.A, B: VB.B, sent: 'they can fish', mode: 'max' }, play: true },
+      { t: 'Problem G8: decode "fish can fish". The first word is ambiguous, yet the answer is again N M V, with 0.0882.', set: { tags: VB.tags, pi: VB.pi, A: VB.A, B: VB.B, sent: 'fish can fish', mode: 'max' }, play: true },
+      { t: 'Switch to sum. The same table now adds the paths: P(they can fish) = 0.073164, so the model is 72% sure of N M V.', set: { tags: VB.tags, pi: VB.pi, A: VB.A, B: VB.B, sent: 'they can fish', mode: 'sum' }, play: true },
+      { t: 'Make "can" more often a verb: set the can row to 0.2 0.3 0.9. The reading "they put fish in cans" now wins.', set: { tags: VB.tags, pi: VB.pi, A: VB.A, B: 'they 0.3 0 0\ncan 0.2 0.3 0.9\nfish 0.5 0 0.7', sent: 'they can fish', mode: 'max' }, play: true },
+      { t: 'Problem G7: the HMM trained from the G5 corpus. Viterbi again picks N M V, now with 12/125 = 0.096.', set: { tags: 'N, M, V', pi: '0.8 0 0.2', A: '0 0.5 0.5\n0 0 1\n1 0 0', B: 'they 0.6 0 0\ncan 0 1 0.2\nfish 0.4 0 0.4\nswim 0 0 0.4', sent: 'they can fish', mode: 'max' }, play: true },
+      { t: 'The slide 27 killer clown HMM with two tags. Only N N survives, with 0.045.', set: { tags: 'A, N', pi: '0.25 0.75', A: '0 1\n0.5 0.5', B: 'killer 0 0.3\nclown 0 0.4', sent: 'killer clown', mode: 'max' }, play: true },
+      { t: 'Problem H8: British left waffles on Falkland Islands, with practice tables. Left as a verb wins, N V N P N N, 12.5 times ahead of the political reading.', set: { tags: 'N, V, P', pi: '0.6 0.3 0.1', A: '0.3 0.4 0.3\n0.5 0.1 0.4\n0.9 0.05 0.05', B: 'British 0.02 0 0\nleft 0.01 0.02 0\nwaffles 0.005 0.001 0\non 0 0 0.3\nFalkland 0.01 0 0\nIslands 0.01 0 0', sent: 'British left waffles on Falkland Islands', mode: 'max' }, play: true }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const tags = String(p.tags).split(',').map(s => s.trim()).filter(Boolean).slice(0, 4), q = tags.length;
+      if (!q) return 'Name at least one tag.';
+      const pi = nums(p.pi).slice(0, q); while (pi.length < q) pi.push(0);
+      const A = String(p.A).split('\n').map(l => nums(l).slice(0, q)).filter(r => r.length).slice(0, q);
+      while (A.length < q) A.push(Array(q).fill(0)); A.forEach(r => { while (r.length < q) r.push(0); });
+      const B = new Map(); String(p.B).split('\n').forEach(l => { const t = toks(l); if (t.length >= 2) B.set(t[0], t.slice(1, q + 1).map(Number).concat(Array(q).fill(0)).slice(0, q)); });
+      const ws = toks(p.sent).slice(0, 6), T = ws.length;
+      if (!T) return 'Type a sentence.';
+      const b = (j, w) => (B.get(w) || Array(q).fill(0))[j];
+      const v = [], bp = [];
+      for (let t = 0; t < T; t++) {
+        v.push([]); bp.push([]);
+        for (let j = 0; j < q; j++) {
+          if (!t) { v[t][j] = pi[j] * b(j, ws[0]); bp[t][j] = -1; continue; }
+          let best = -1, arg = -1, sum = 0;
+          for (let i = 0; i < q; i++) { const c = v[t - 1][i] * A[i][j]; sum += c; if (c > best) { best = c; arg = i; } }
+          v[t][j] = (p.mode === 'sum' ? sum : best) * b(j, ws[t]); bp[t][j] = v[t][j] > 0 ? arg : -1;
+        }
+      }
+      const shown = Math.min(z.step, T);
+      const x0 = 70, cw = (z.W - x0 - 14) / T, y0 = 44, rh = Math.min(58, 180 / q);
+      const cx = t => x0 + t * cw + cw / 2, cy = j => y0 + j * rh + rh / 2;
+      ws.forEach((w, t) => D.text(g, w, cx(t), 26, { a: 'center', s: fit(g, w, cw - 6, 14), b: true, c: t < shown ? z.col.ink : z.col.ink2 }));
+      tags.forEach((s, j) => D.text(g, s, x0 - 14, cy(j) + 5, { a: 'right', s: 14, b: true, mono: true, c: z.col.ink }));
+      /* best final cell and the back trace */
+      const done = shown === T;
+      let path = [];
+      if (done && p.mode === 'max') { let j = 0; for (let k = 1; k < q; k++) if (v[T - 1][k] > v[T - 1][j]) j = k; if (v[T - 1][j] > 0) { for (let t = T - 1; t >= 0; t--) { path.unshift(j); j = bp[t][j]; } } }
+      const onPath = (t, j) => path.length && path[t] === j;
+      for (let t = 1; t < shown; t++) for (let j = 0; j < q; j++) {
+        if (p.mode === 'max') { const i = bp[t][j]; if (i >= 0) D.arrow(g, cx(t - 1) + 38, cy(i), cx(t) - 40, cy(j), onPath(t, j) && onPath(t - 1, i) ? z.col.orange : z.col.line, onPath(t, j) && onPath(t - 1, i) ? 3 : 1.4); }
+        else for (let i = 0; i < q; i++) if (v[t - 1][i] * A[i][j] > 0 && v[t][j] > 0) D.line(g, cx(t - 1) + 38, cy(i), cx(t) - 40, cy(j), z.col.line, 1);
+      }
+      for (let t = 0; t < T; t++) for (let j = 0; j < q; j++) {
+        const vis = t < shown, val = v[t][j], hot = onPath(t, j);
+        rr(g, cx(t) - 38, cy(j) - rh / 2 + 5, 76, rh - 10, 8, { fill: !vis ? z.col.bg : hot ? z.col.orange : val > 0 ? z.col.surf : z.col.bg, stroke: hot ? z.col.orange : z.col.line, w: 1.2 });
+        if (vis) D.text(g, sci(val), cx(t), cy(j) + 5, { a: 'center', s: fit(g, sci(val), 70, 13), mono: true, b: val > 0, c: hot ? '#fff' : val > 0 ? z.col.ink : z.col.ink2 });
+      }
+      let msg;
+      if (!shown) msg = 'Press Play or Step to fill the first column.';
+      else if (!done) {
+        const t = shown - 1;
+        msg = t === 0 ? `Column 1: v(j) = π(j) × b<sub>j</sub>(${esc(ws[0])}). ${tags.map((s, j) => `${esc(s)}: ${fmt(pi[j], 3)} × ${fmt(b(j, ws[0]), 3)} = ${sci(v[0][j])}`).join(', ')}.`
+          : `Column ${t + 1}: for each tag, ${p.mode === 'max' ? 'take the best' : 'add up'} v<sub>${t}</sub>(i) × a(i → j) over the ${q} previous tags, then multiply by b<sub>j</sub>(${esc(ws[t])}).${p.mode === 'max' ? ' The arrow points to the winning previous tag.' : ''}`;
+      } else if (p.mode === 'max') {
+        const pr = path.length ? v[T - 1][path[T - 1]] : 0;
+        msg = path.length ? `Best path: <b>${ws.map((w, t) => `${esc(w)}/${esc(tags[path[t]])}`).join(' ')}</b> with P(words, tags) = <b>${sci(pr)}</b>. Found with ${T} × ${q}² = ${T * q * q} comparisons instead of scoring all ${q}<sup>${T}</sup> = ${q ** T} sequences.` : 'Every path has probability 0. Some word cannot be emitted by any reachable tag.';
+      } else {
+        const PW = v[T - 1].reduce((a, c) => a + c, 0);
+        msg = `Forward: P(${esc(ws.join(' '))}) = Σ over all tag paths = <b>${sci(PW)}</b>. Divide the Viterbi score by this to get how sure the model is of its best path.`;
+      }
+      const bad = A.map((r, i) => Math.abs(r.reduce((a, c) => a + c, 0) - 1) > 1e-6 ? tags[i] : null).filter(Boolean);
+      return msg + (bad.length ? ` <b>Check A:</b> the row of ${bad.map(esc).join(', ')} does not add to 1.` : '');
+    }
+  });
+
+  def('searchsize', {
+    title: 'Why brute force fails: q to the power T',
+    sub: 'Brute force scores every tag sequence, q<sup>T</sup> of them. Viterbi does about T × q² steps. The vertical axis is a power of ten.',
+    W: 560, H: 250,
+    params: [
+      { k: 'q', label: 'Number of tags q', type: 'range', min: 2, max: 90, v: 45 },
+      { k: 'T', label: 'Sentence length T', type: 'range', min: 1, max: 40, v: 25 }
+    ],
+    tips: [
+      { t: 'Penn Treebank, 45 tags, 25 words: 2.1 × 10⁴¹ sequences against 50,625 Viterbi steps.', set: { q: 45, T: 25 } },
+      { t: 'Brown, 87 tags, 10 words: 2.5 × 10¹⁹ sequences against 75,690 steps.', set: { q: 87, T: 10 } },
+      { t: 'The killer clown: 2 tags, 2 words. Brute force is fine for tiny cases, which is how the slide solved it.', set: { q: 2, T: 2 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const box = [62, 16, 330, 190];
+      const brute = t => t * Math.log10(p.q), vit = t => Math.log10(t * p.q * p.q);
+      const ymax = Math.max(4, Math.ceil(brute(40)));
+      const m = D.axes(g, z, box, [1, 40], [0, ymax], { nx: 4, ny: 4, xl: 'sentence length T', fy: v => '10' + String(Math.round(v)).split('').map(c => ({ 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' }[c])).join(''), fx: v => String(Math.round(v)) });
+      D.curve(g, brute, [1, 40], m, z.col.red, 2.4);
+      D.curve(g, vit, [1, 40], m, z.col.purple, 2.4);
+      D.line(g, m.sx(p.T), box[1], m.sx(p.T), box[1] + box[3], z.col.orange, 1.5, [4, 4]);
+      D.circle(g, m.sx(p.T), m.sy(brute(p.T)), 5, { fill: z.col.red });
+      D.circle(g, m.sx(p.T), m.sy(vit(p.T)), 5, { fill: z.col.purple });
+      const lx = 412;
+      D.text(g, 'brute force qᵀ', lx, 34, { s: 12, b: true, c: z.col.red });
+      D.text(g, (p.q ** p.T).toExponential(2).replace('+', ''), lx, 54, { s: 13, mono: true, b: true, c: z.col.ink });
+      D.text(g, 'Viterbi T × q²', lx, 90, { s: 12, b: true, c: z.col.purple });
+      D.text(g, (p.T * p.q * p.q).toLocaleString(), lx, 110, { s: 13, mono: true, b: true, c: z.col.ink });
+      wrap(g, 'At a billion sequences per second, 10⁴¹ would take far longer than the age of the universe.', lx, 150, 140, { s: 11.5, c: z.col.ink2 });
+      return `With q = ${p.q} and T = ${p.T}: q<sup>T</sup> = ${(p.q ** p.T).toExponential(3).replace('e+', ' × 10<sup>') + '</sup>'} sequences, against ${(p.T * p.q * p.q).toLocaleString()} Viterbi steps. The red line is straight on this scale because it is exponential in T. The purple one is almost flat.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- Chapter 5.4: IOB chunks and entities */
+  def('iob', {
+    title: 'IOB tags turn spans into a tagging problem',
+    sub: 'B- begins a chunk, I- continues it, O is outside. Edit the tags and watch the spans change.',
+    W: 560, H: 230,
+    params: [
+      { k: 'text', label: 'Tokens with tags (word/TAG)', type: 'area', v: 'United/B-ORG cancelled/O the/O flight/O from/O San/B-LOC Francisco/I-LOC' },
+      { k: 'scheme', label: 'Also show', type: 'select', v: 'bioes', opts: [['none', 'nothing else'], ['bioes', 'the same spans in BIOES'], ['brackets', 'bracket notation']] }
+    ],
+    tips: [
+      { t: 'The NER slide: two entities, [United] as an organisation and [San Francisco] as a location.', set: { text: 'United/B-ORG cancelled/O the/O flight/O from/O San/B-LOC Francisco/I-LOC' } },
+      { t: 'Chunking with the same idea: [the yellow dog] is one noun phrase.', set: { text: 'We/B-NP saw/B-VP the/B-NP yellow/I-NP dog/I-NP ./O' } },
+      { t: 'Problem H4: decode Sidharth Ranjan teaches at IIT Jodhpur.', set: { text: 'Sidharth/B-PER Ranjan/I-PER teaches/O at/O IIT/B-ORG Jodhpur/I-ORG' } },
+      { t: 'Break it: change San to O. An I- after O is ill formed, and is repaired by treating it as a B-.', set: { text: 'United/B-ORG cancelled/O the/O flight/O from/O San/O Francisco/I-LOC' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const T = toks(p.text).slice(0, 10).map(t => { const i = t.lastIndexOf('/'); return i > 0 ? [t.slice(0, i), t.slice(i + 1)] : [t, 'O']; });
+      if (!T.length) return 'Write tokens like "San/B-LOC".';
+      const spans = []; let cur = null, fixed = 0;
+      T.forEach(([w, t], i) => {
+        const m = t.match(/^([BI])-(.+)$/);
+        if (!m) { cur = null; return; }
+        if (m[1] === 'B' || !cur || cur.type !== m[2]) { if (m[1] === 'I') fixed++; cur = { type: m[2], a: i, b: i }; spans.push(cur); }
+        else cur.b = i;
+      });
+      const types = [...new Set(spans.map(s => s.type))];
+      const pal = [z.col.cv, z.col.orange, z.col.purple, z.col.green, z.col.pink];
+      const colOf = ty => pal[types.indexOf(ty) % pal.length];
+      const gap = 6, fs = 13;
+      const ws = T.map(([w]) => tw(g, w, { s: fs, b: true }) + 18);
+      const tot = ws.reduce((a, c) => a + c, 0) + gap * (T.length - 1), sc = Math.min(1, (z.W - 24) / tot);
+      let x = 12; const xs = [];
+      T.forEach(([w, t], i) => { xs.push(x); const ww = ws[i] * sc; const sp = spans.find(s => i >= s.a && i <= s.b); rr(g, x, 40, ww, 30, 7, { fill: sp ? colOf(sp.type) : z.col.surf, stroke: sp ? colOf(sp.type) : z.col.line }); D.text(g, w, x + ww / 2, 60, { a: 'center', s: fit(g, w, ww - 6, fs), b: true, c: sp ? '#fff' : z.col.ink }); D.text(g, t, x + ww / 2, 90, { a: 'center', s: fit(g, t, ww, 11.5), mono: true, b: true, c: sp ? colOf(sp.type) : z.col.ink2 }); x += ww + gap * sc; });
+      spans.forEach(s => { const x1 = xs[s.a], x2 = xs[s.b] + ws[s.b] * sc; D.line(g, x1, 104, x2, 104, colOf(s.type), 3); D.text(g, s.type, (x1 + x2) / 2, 122, { a: 'center', s: 12, b: true, c: colOf(s.type) }); });
+      D.text(g, 'tags', 12, 28, { s: 11, b: true, c: z.col.ink2 });
+      if (p.scheme !== 'none') {
+        D.text(g, p.scheme === 'bioes' ? 'BIOES' : 'brackets', 12, 160, { s: 11, b: true, c: z.col.ink2 });
+        if (p.scheme === 'bioes') T.forEach(([w], i) => { const s = spans.find(s => i >= s.a && i <= s.b); const t = !s ? 'O' : s.a === s.b ? 'S-' + s.type : i === s.a ? 'B-' + s.type : i === s.b ? 'E-' + s.type : 'I-' + s.type; D.text(g, t, xs[i] + ws[i] * sc / 2, 182, { a: 'center', s: fit(g, t, ws[i] * sc, 11.5), mono: true, b: true, c: s ? colOf(s.type) : z.col.ink2 }); });
+        else { let s = ''; T.forEach(([w], i) => { const a = spans.find(q => q.a === i), b = spans.find(q => q.b === i); s += (a ? '[' : '') + w + (b ? ']' + b.type : '') + ' '; }); wrap(g, s.trim(), 12, 182, z.W - 24, { s: 13, mono: true, b: true, c: z.col.ink }); }
+      }
+      return `${spans.length} span${spans.length === 1 ? '' : 's'}: ${spans.map(s => `[${esc(T.slice(s.a, s.b + 1).map(r => r[0]).join(' '))}] ${esc(s.type)}`).join(', ') || 'none'}. ${fixed ? `<b>${fixed} ill formed I- tag${fixed > 1 ? 's were' : ' was'} repaired</b> by starting a new span. ` : ''}Chunks are flat and never nest, which is why chunking is called shallow parsing. Any tagger (HMM, CRF, neural) can learn these tags.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- Chapter 5.5: trees */
+  function parseS(s) {
+    const t = String(s).replace(/\(/g, ' ( ').replace(/\)/g, ' ) ').split(/\s+/).filter(Boolean);
+    let i = 0, id = 0;
+    function node() {
+      if (t[i] !== '(') return { label: t[i++], leaf: true, id: id++ };
+      i++; const n = { label: t[i++] || '?', kids: [], id: id++ };
+      while (i < t.length && t[i] !== ')') n.kids.push(node());
+      i++; return n;
+    }
+    try { const r = node(); return r && r.label ? r : null; } catch (e) { return null; }
+  }
+  NLZ.parseS = parseS;
+  /* lay out a tree: leaves evenly spaced on the bottom row, parents centred over their children */
+  function drawTree(g, z, root, box, o = {}) {
+    const [X, Y, W, H] = box;
+    const leaves = []; let depth = 0;
+    (function walk(n, d) { n.d = d; depth = Math.max(depth, d); if (n.leaf) leaves.push(n); else n.kids.forEach(k => walk(k, d + 1)); })(root, 0);
+    const lw = W / Math.max(1, leaves.length), lh = Math.min(o.lh || 46, H / Math.max(1, depth));
+    leaves.forEach((n, i) => { n.x = X + lw * (i + 0.5); n.y = Y + H; });
+    (function pos(n) { if (n.leaf) return; n.kids.forEach(pos); n.x = (n.kids[0].x + n.kids[n.kids.length - 1].x) / 2; n.y = Y + n.d * lh; })(root);
+    (function edges(n) { if (n.leaf) return; n.kids.forEach(k => { const hot = o.hi && o.hi(n, k); D.line(g, n.x, n.y + 9, k.x, k.y - 10, hot ? z.col.orange : z.col.line, hot ? 3 : 1.5); edges(k); }); })(root);
+    (function nodes(n) {
+      const s = n.label, fs = n.leaf ? 12.5 : 12;
+      const w = Math.min(lw * (n.leaf ? 1.45 : 1.6), tw(g, s, { s: fs, b: true, mono: !n.leaf }) + 12);
+      const hot = o.hiNode && o.hiNode(n);
+      if (!n.leaf) rr(g, n.x - w / 2, n.y - 10, w, 20, 6, { fill: hot ? z.col.orange : z.col.cv });
+      D.text(g, s, n.x, n.y + 4.5, { a: 'center', s: fit(g, s, w - 4, fs, { b: true, mono: !n.leaf }), b: true, mono: !n.leaf, c: n.leaf ? z.col.ink : '#fff' });
+      if (!n.leaf) n.kids.forEach(nodes);
+    })(root);
+    return { leaves, depth };
+  }
+  NLZ.drawTree = drawTree;
+  const span = n => n.leaf ? [n.label] : n.kids.flatMap(span);
+  def('parsetree', {
+    title: 'Constituency trees from bracket notation',
+    sub: 'Type a tree in brackets, as treebanks store it. Each coloured node is a constituent: a group of words that acts as one unit.',
+    W: 560, H: 260,
+    params: [
+      { k: 'tree', label: 'Tree in brackets', type: 'area', v: '(S (NP (N Fed)) (VP (V raises) (NP (N interest) (N rates))))' }
+    ],
+    tips: [
+      { t: 'The slide\'s headline: Fed raises interest rates, with the verb phrase "raises interest rates" as the predicate.', set: { tree: '(S (NP (N Fed)) (VP (V raises) (NP (N interest) (N rates))))' } },
+      { t: 'The other reading of the same headline: "Fed raises" are the subject and "interest" is the verb, as in "Fed raises interest rates of teenagers".', set: { tree: '(S (NP (N Fed) (N raises)) (VP (V interest) (NP (N rates))))' } },
+      { t: 'Problem H5: the dog chased a cat. Count 4 phrase nodes, 5 part of speech nodes and 5 leaves.', set: { tree: '(S (NP (Det the) (N dog)) (VP (V chased) (NP (Det a) (N cat))))' } },
+      { t: 'The elephant with the PP inside the verb phrase: I was in my pajamas.', set: { tree: '(S (NP (Pro I)) (VP (VP (V shot) (NP (Det an) (N elephant))) (PP (P in) (NP (Det my) (N pajamas)))))' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const r = parseS(p.tree);
+      if (!r || r.leaf) return 'Write a tree such as (S (NP (N Fed)) (VP (V raises))).';
+      const { leaves } = drawTree(g, z, r, [16, 24, z.W - 32, z.H - 50]);
+      let phr = 0, pre = 0; const cons = [];
+      (function walk(n) { if (n.leaf) return; if (n.kids.length === 1 && n.kids[0].leaf) pre++; else { phr++; cons.push(`[${esc(span(n).join(' '))}]<sub>${esc(n.label)}</sub>`); } n.kids.forEach(walk); })(r);
+      return `${phr} phrase nodes, ${pre} part of speech nodes, ${leaves.length} words. Constituents: ${cons.join(', ')}. Each phrase contains a head of its own kind: an NP has a noun, a VP a verb.`;
+    }
+  });
+
+  def('deptree', {
+    title: 'Dependency trees: every word points to its head',
+    sub: 'Each line gives a word, the number of its head (0 for the root) and the relation. Arcs go from head to dependent.',
+    W: 560, H: 240,
+    params: [
+      { k: 'rows', label: 'word head relation (one per line, words numbered from 1)', type: 'area', v: 'The 2 det\nboy 3 subj\nput 0 root\nthe 5 det\ntortoise 3 obj\non 3 prep\nthe 8 det\nrug 6 pobj' }
+    ],
+    tips: [
+      { t: 'The slide: put has three children, boy, tortoise and on. The and rug are grandchildren, not children.', set: { rows: 'The 2 det\nboy 3 subj\nput 0 root\nthe 5 det\ntortoise 3 obj\non 3 prep\nthe 8 det\nrug 6 pobj' } },
+      { t: 'Universal Dependencies makes content words heads: put → rug (obl) and rug → on (case). Same sentence, different design choice.', set: { rows: 'The 2 det\nboy 3 nsubj\nput 0 root\nthe 5 det\ntortoise 3 obj\non 8 case\nthe 8 det\nrug 3 obl' } },
+      { t: 'Problem H7: The student reads books. Four words, four arcs including the root.', set: { rows: 'The 2 det\nstudent 3 nsubj\nreads 0 root\nbooks 3 obj' } },
+      { t: 'Break it: make boy\'s head 5 and tortoise\'s head 2. The arcs now cycle, and the readout says it is not a tree.', set: { rows: 'The 2 det\nboy 5 subj\nput 0 root\nthe 5 det\ntortoise 2 obj\non 3 prep\nthe 8 det\nrug 6 pobj' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const R = String(p.rows).split('\n').map(toks).filter(a => a.length >= 2).slice(0, 10).map(a => ({ w: a[0], h: +a[1] || 0, rel: a[2] || '' }));
+      const n = R.length;
+      if (!n) return 'Write lines like "boy 3 subj".';
+      const fs = 13.5, wsz = R.map(r => tw(g, r.w, { s: fs, b: true }) + 14);
+      const tot = wsz.reduce((a, c) => a + c, 0), gap = Math.max(6, (z.W - 24 - tot) / Math.max(1, n - 1));
+      let x = 12; const cx = [];
+      R.forEach((r, i) => { cx.push(x + wsz[i] / 2); x += wsz[i] + gap; });
+      const base = z.H - 34;
+      R.forEach((r, i) => { rr(g, cx[i] - wsz[i] / 2, base, wsz[i], 26, 6, { fill: r.h === 0 ? z.col.cv : z.col.surf, stroke: z.col.cv }); D.text(g, r.w, cx[i], base + 18, { a: 'center', s: fs, b: true, c: r.h === 0 ? '#fff' : z.col.ink }); D.text(g, String(i + 1), cx[i], base + 40, { a: 'center', s: 10, c: z.col.ink2 }); });
+      /* arcs: height grows with distance */
+      const arcs = R.map((r, i) => ({ d: i, h: r.h - 1, rel: r.rel })).filter(a => a.h >= 0 && a.h < n && a.h !== a.d);
+      const crosses = (a, b) => { const [a1, a2] = [Math.min(a.d, a.h), Math.max(a.d, a.h)], [b1, b2] = [Math.min(b.d, b.h), Math.max(b.d, b.h)]; return (a1 < b1 && b1 < a2 && a2 < b2) || (b1 < a1 && a1 < b2 && b2 < a2); };
+      let cross = 0; arcs.forEach((a, i) => arcs.forEach((b, j) => { if (i < j && crosses(a, b)) cross++; }));
+      arcs.forEach(a => {
+        const x1 = cx[a.h], x2 = cx[a.d], ht = Math.min(base - 30, 26 + 30 * Math.abs(a.d - a.h));
+        g.save(); g.strokeStyle = z.col.purple; g.lineWidth = 1.8; g.beginPath(); g.moveTo(x1, base - 2); g.bezierCurveTo(x1, base - ht, x2, base - ht, x2, base - 4); g.stroke(); g.restore();
+        D.arrow(g, x2, base - 12, x2, base - 2, z.col.purple, 1.8);
+        const lx = (x1 + x2) / 2, ly = base - ht * 0.75 - 4, lwid = tw(g, a.rel, { s: 11, b: true }) + 8;
+        rr(g, lx - lwid / 2, ly - 9, lwid, 16, 4, { fill: z.col.surf });
+        D.text(g, a.rel, lx, ly + 3, { a: 'center', s: 11, b: true, c: z.col.purple });
+      });
+      const roots = R.filter(r => r.h === 0).length;
+      let cyc = false;
+      R.forEach((r, i) => { let k = i, seen = new Set(); while (k >= 0 && R[k] && R[k].h !== 0) { if (seen.has(k)) { cyc = true; break; } seen.add(k); k = R[k].h - 1; } });
+      const kids = R.map((r, i) => ({ w: r.w, c: R.filter(q => q.h === i + 1).map(q => q.w) })).filter(k => k.c.length);
+      const ok = roots === 1 && !cyc;
+      return `${ok ? '<b>A valid tree</b>: one root, every word has one head, no cycles, ' + n + ' arcs including the root.' : `<b>Not a tree</b>: ${roots !== 1 ? `${roots} roots` : ''}${roots !== 1 && cyc ? ' and ' : ''}${cyc ? 'a cycle' : ''}.`} ${cross ? `${cross} pair${cross > 1 ? 's' : ''} of arcs cross, so it is not projective.` : 'No arcs cross, so it is projective.'} ${kids.map(k => `${esc(k.w)} has ${andList(k.c.map(esc))} as ${k.c.length > 1 ? 'children' : 'its child'}.`).join(' ')}`;
+    }
+  });
+
+  def('pcfg', {
+    title: 'A PCFG decides who wore the pajamas',
+    sub: 'Both parses use the same rules except one. Change the rule probabilities and see which attachment wins.',
+    W: 560, H: 280,
+    params: [
+      { k: 'vppp', label: 'P(VP → VP PP)', type: 'range', min: 0, max: 1, step: 0.01, v: 0.3 },
+      { k: 'nppp', label: 'P(NP → NP PP)', type: 'range', min: 0, max: 1, step: 0.01, v: 0.2 },
+      { k: 'npdn', label: 'P(NP → Det N)', type: 'range', min: 0, max: 1, step: 0.01, v: 0.5 }
+    ],
+    tips: [
+      { t: 'Problem H9: VP → VP PP 0.3, NP → NP PP 0.2. The verb attachment wins by 0.21 to 0.14, a ratio of 1.5: I was in my pajamas.', set: { vppp: 0.3, nppp: 0.2, npdn: 0.5 } },
+      { t: 'Raise NP → NP PP to 0.4. Now the elephant wears the pajamas. Nothing about elephants or pajamas was used: a plain PCFG only sees rule counts.', set: { vppp: 0.3, nppp: 0.4, npdn: 0.5 } },
+      { t: 'Find the tie: with VP → VP PP = 0.3, the parses are equal when (1 − 0.3) × NP → NP PP equals 0.3 × 0.7, that is NP → NP PP = 0.3.', set: { vppp: 0.3, nppp: 0.3, npdn: 0.5 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const vpv = 1 - p.vppp, pro = 1 - p.nppp - p.npdn;
+      const t1 = parseS('(S (NP (Pro I)) (VP (VP (V shot) (NP (Det an) (N elephant))) (PP (P in) (NP (Det my) (N pajamas)))))');
+      const t2 = parseS('(S (NP (Pro I)) (VP (V shot) (NP (NP (Det an) (N elephant)) (PP (P in) (NP (Det my) (N pajamas))))))');
+      const hi1 = (n, k) => n.label === 'VP' && k.label === 'PP', hi2 = (n, k) => n.label === 'NP' && k.label === 'PP';
+      drawTree(g, z, t1, [8, 28, 268, 196], { hi: hi1, hiNode: n => n.label === 'VP' && n.kids.some(k => k.label === 'PP') });
+      drawTree(g, z, t2, [284, 28, 268, 196], { hi: hi2, hiNode: n => n.label === 'NP' && n.kids.some(k => k.label === 'PP') });
+      const shared = 1 * Math.max(0, pro) * p.npdn * 1 * p.npdn;
+      const P1 = shared * p.vppp * vpv, P2 = shared * vpv * p.nppp;
+      D.text(g, 'PP attached to the verb phrase', 142, 14, { a: 'center', s: 12, b: true, c: P1 >= P2 ? z.col.orange : z.col.ink2 });
+      D.text(g, 'PP attached to the noun phrase', 418, 14, { a: 'center', s: 12, b: true, c: P2 > P1 ? z.col.orange : z.col.ink2 });
+      D.text(g, `rules ∝ ${fmt(p.vppp, 2)} × ${fmt(vpv, 2)} = ${fmt(p.vppp * vpv, 4)}`, 142, 266, { a: 'center', s: 12, mono: true, b: true, c: z.col.ink });
+      D.text(g, `rules ∝ ${fmt(vpv, 2)} × ${fmt(p.nppp, 2)} = ${fmt(vpv * p.nppp, 4)}`, 418, 266, { a: 'center', s: 12, mono: true, b: true, c: z.col.ink });
+      const warn = pro < -1e-9 ? ` <b>Check the NP rules:</b> NP → NP PP and NP → Det N already add to ${fmt(p.nppp + p.npdn, 2)}, leaving nothing for NP → Pro.` : '';
+      const ratio = P2 > 0 ? P1 / P2 : Infinity;
+      return `VP → V NP = 1 − ${fmt(p.vppp, 2)} = ${fmt(vpv, 2)} and NP → Pro = ${fmt(Math.max(0, pro), 2)}, so each left hand side adds to 1. The shared rules give the same factor ${fmt(shared, 4)} to both trees, so only the orange rules decide. Full rule products: ${fmt(P1, 5)} against ${fmt(P2, 5)}, ratio ${isFinite(ratio) ? fmt(ratio, 3) : '∞'}. ${P1 > P2 ? 'Verb attachment: I was wearing them.' : P2 > P1 ? 'Noun attachment: the elephant was wearing them.' : 'A tie.'}${warn}`;
+    }
+  });
+})();
