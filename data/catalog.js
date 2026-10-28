@@ -4090,6 +4090,53 @@ function nlpModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "nlp-info", title: "Information and surprise", emoji: "3", step: 3, level: "College and masters", blurb: "Measure how predictable language is with Zipf's law, entropy, mutual information and the noisy channel.", topics: [
+      { id: "zipf", title: "Zipf's law and the shape of vocabulary", emoji: "3.1", page: "content/nlp/zipfs-law.html",
+        summary: "Zipf's law f = k/r, the Brown check, coverage by harmonic numbers, least effort, Mandelbrot and Heaps, and why random typing is also Zipfian.",
+        keywords: ["Zipf's law", "rank frequency", "power law", "harmonic number", "least effort", "monkey typing", "Heaps' law", "Mandelbrot"],
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 4},
+        added: "2026-10-27",
+        sections: [
+        { id: "frequency", title: "Do words have an average frequency?", emoji: "", group: "Lesson", keywords: ["corpus", "normal distribution", "heavy tail", "function words", "content words", "word frequency", "dice"] },
+        { id: "law", title: "Zipf's law", emoji: "", group: "Lesson", keywords: ["Zipf's law", "rank", "frequency", "power law", "log log plot", "Estoup", "slope minus one", "f times r"] },
+        { id: "coverage", title: "How much text do the top words cover?", emoji: "", group: "Lesson", keywords: ["coverage", "harmonic number", "Euler Mascheroni", "least effort", "law of abbreviation", "Mandelbrot", "Heaps' law", "vocabulary growth"] },
+        { id: "monkey", title: "The Zipf mystery: monkey typing", emoji: "", group: "Lesson", keywords: ["Zipf mystery", "monkey typing", "random text", "Miller", "Li", "exponent", "staircase", "bigram Zipf"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "entropy", title: "Surprise, entropy and redundancy", emoji: "3.2", page: "content/nlp/entropy.html",
+        summary: "Surprisal, entropy and its bounds, Huffman codes and the source coding limit, Shannon's approximations, context and the 50% redundancy of English.",
+        keywords: ["entropy", "surprisal", "information theory", "Shannon", "Huffman", "redundancy", "bits", "source coding"],
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "surprisal", title: "Information is surprise", emoji: "", group: "Lesson", keywords: ["surprisal", "self information", "information", "bits", "nats", "hartleys", "Shannon", "Turing", "weight of evidence"] },
+        { id: "entropy", title: "Entropy: average surprise", emoji: "", group: "Lesson", keywords: ["entropy", "expected surprise", "uncertainty", "binary entropy", "Hartley", "Jensen", "maximum entropy", "uniform distribution"] },
+        { id: "coding", title: "Entropy as the shortest code", emoji: "", group: "Lesson", keywords: ["source coding", "Huffman", "prefix code", "code length", "compression", "ZIP", "DEFLATE", "fixed length code"] },
+        { id: "redundancy", title: "Context and redundancy", emoji: "", group: "Lesson", keywords: ["redundancy", "u after q", "n-th order approximation", "Shannon", "context", "reading lamp", "conditional entropy", "English entropy"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "information", title: "Mutual information, KL and the noisy channel", emoji: "3.3", page: "content/nlp/information.html",
+        summary: "Joint and conditional entropy, the chain rule, mutual information and PMI, KL divergence and cross entropy, and noisy channel decoding.",
+        keywords: ["mutual information", "conditional entropy", "chain rule", "PMI", "collocation", "KL divergence", "cross entropy", "noisy channel"],
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "joint", title: "Joint and conditional entropy", emoji: "", group: "Lesson", keywords: ["joint entropy", "conditional entropy", "chain rule", "umbrella example", "conditioning reduces entropy", "sentence probability"] },
+        { id: "mutual", title: "Mutual information", emoji: "", group: "Lesson", keywords: ["mutual information", "PMI", "pointwise mutual information", "collocation", "association", "symmetry", "independence", "New Delhi"] },
+        { id: "kl", title: "KL divergence and cross entropy", emoji: "", group: "Lesson", keywords: ["KL divergence", "relative entropy", "cross entropy", "Gibbs' inequality", "asymmetric", "domain shift", "zero probability", "smoothing"] },
+        { id: "channel", title: "The noisy channel", emoji: "", group: "Lesson", keywords: ["noisy channel", "Bayes rule", "language model", "channel model", "spelling correction", "acress", "channel capacity", "binary symmetric channel"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

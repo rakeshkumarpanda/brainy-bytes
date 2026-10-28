@@ -775,3 +775,494 @@ const NLZ = (() => {
     }
   });
 })();
+
+/* ---------------------------------------------------------------- Step 3: Zipf, entropy and information */
+(() => {
+  const { def, D, esc, rng } = CVZ;
+  const { tw, rr, pill, wrap, fit, log2, fmt } = NLZ;
+
+  /* a short original English passage used to train the small models below */
+  const SAMPLE = `the history of the written word is a history of people trying to say more with less. a farmer who sends a message to the market town does not write every word he would say aloud. he writes the name of the crop, the number of bags and the day he will arrive, and he trusts the reader to fill in the rest. the reader can do this because the language is full of patterns. after the word number we expect the word of, after a full stop we expect a capital letter, and after the letter q we expect the letter u. these patterns are what make a language easy to learn and easy to understand, and they are also what make it possible to send a long message in a short form. in the same way a student who takes notes in class writes only the words that matter and leaves out the words that anyone could guess. the notes are short, but the student can read them again a month later and remember the whole lecture. a good teacher knows this and speaks so that the important words stand out from the words that only hold the sentence together. the small words of the language, such as the, of, and, to, a and in, appear again and again in every kind of text. the large words, such as harvest, telescope or parliament, appear only when the topic calls for them. if you count the words in any book you will find that a few words fill most of the pages and most of the words appear only once or twice. this simple fact was noticed long ago by people who printed books and by people who taught shorthand, and it was later studied with great care by scientists who wanted to know how much information a message really carries. their answer was that the information in a message depends on how surprising it is. a word that the reader could have guessed carries little information, and a word that nobody expected carries a great deal. when the reader knows the topic, the speaker and the words that came before, many words become easy to guess, and the message can be made shorter without any loss. this is the idea behind the compressed files on a computer, the short forms in a text message and the models that predict the next word on a phone keyboard.`;
+  NLZ.SAMPLE = SAMPLE;
+
+  /* least squares slope of y on x */
+  function slope(xs, ys) {
+    const n = xs.length; if (n < 2) return NaN;
+    const mx = xs.reduce((a, b) => a + b, 0) / n, my = ys.reduce((a, b) => a + b, 0) / n;
+    let sxy = 0, sxx = 0;
+    for (let i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) ** 2; }
+    return sxx ? sxy / sxx : NaN;
+  }
+  const SUP = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+  /* log-log axes with ticks at powers of ten */
+  function loglog(g, z, box, xmax, ymax, ymin = 1) {
+    const [X, Y, W, H] = box;
+    const lx0 = 0, lx1 = Math.max(1, Math.ceil(Math.log10(xmax)));
+    const ly0 = Math.floor(Math.log10(Math.max(ymin, 1e-9))), ly1 = Math.max(ly0 + 1, Math.ceil(Math.log10(ymax)));
+    const sx = v => X + (Math.log10(v) - lx0) / (lx1 - lx0) * W;
+    const sy = v => Y + H - (Math.log10(v) - ly0) / (ly1 - ly0) * H;
+    D.rect(g, X, Y, W, H, { stroke: z.col.line, w: 1 });
+    const lab = e => e >= 0 && e < 4 ? String(10 ** e) : '10' + String(e).split('').map(ch => SUP[ch]).join('');
+    for (let e = lx0; e <= lx1; e++) { D.line(g, sx(10 ** e), Y + H, sx(10 ** e), Y + H + 4, z.col.ink2, 1); D.text(g, lab(e), sx(10 ** e), Y + H + 16, { a: 'center', s: 10.5, c: z.col.ink2 }); }
+    for (let e = ly0; e <= ly1; e++) { D.line(g, X - 4, sy(10 ** e), X, sy(10 ** e), z.col.ink2, 1); D.text(g, lab(e), X - 6, sy(10 ** e) + 4, { a: 'right', s: 10.5, c: z.col.ink2 }); }
+    return { sx, sy };
+  }
+
+  /* ---------------------------------------------------------------- Chapter 3.1: Zipf */
+  const BROWN_ZIPF = [[1, 'the', 69971], [2, 'of', 36412], [3, 'and', 28853], [10, 'he', 9548], [50, 'no', 2139], [100, 'well', 897], [150, 'three', 610], [500, 'private', 191], [1000, 'eight', 104], [5000, 'dairy', 19], [10000, 'incredibly', 7]];
+  def('zipf', {
+    title: "Zipf's law: frequency falls like one over rank",
+    sub: 'Dots are real counts. The line is the law f = k ÷ (r + b)^a. Change k, a and b until the line passes through the dots.',
+    W: 560, H: 300,
+    params: [
+      { k: 'src', label: 'Data', type: 'select', v: 'brown', opts: [['brown', 'Brown corpus, lower cased (11 ranks)'], ['text', 'Count the words of my own text']] },
+      { k: 'text', label: 'Your text', type: 'area', v: SAMPLE, show: p => p.src === 'text' },
+      { k: 'k', label: 'k, the frequency of rank 1', type: 'range', min: 10, max: 150000, step: 10, v: 69970 },
+      { k: 'a', label: 'Exponent a (Zipf: 1)', type: 'range', min: 0.5, max: 1.5, step: 0.01, v: 1 },
+      { k: 'b', label: 'Mandelbrot shift b (Zipf: 0)', type: 'range', min: 0, max: 10, step: 0.1, v: 0 },
+      { k: 'log', label: 'Log scale on both axes', type: 'check', v: true }
+    ],
+    tips: [
+      { t: 'Untick the log scale. The same data is a steep hyperbola: a handful of words tower over a very long tail.', set: { log: false } },
+      { t: 'Set a to 1.08, the slope measured on Brown for ranks 10 to 10,000. The line now follows the tail more closely.', set: { a: 1.08, k: 100000, log: true } },
+      { t: 'Switch to your own text. Even this short passage shows the falling line, though its tail is a staircase of words seen once or twice.', set: { src: 'text', k: 60, a: 1, b: 0 } },
+      { t: 'Set b to 2.7 and k to 100000. The Mandelbrot shift flattens the top of the curve, as real corpora do.', set: { src: 'brown', k: 100000, a: 1, b: 2.7 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      let pts;
+      if (p.src === 'brown') pts = BROWN_ZIPF.map(r => [r[0], r[2], r[1]]);
+      else {
+        const c = new Map();
+        (String(p.text).toLowerCase().match(/[a-z']+/g) || []).forEach(w => c.set(w, (c.get(w) || 0) + 1));
+        pts = [...c.entries()].sort((x, y) => y[1] - x[1]).map((e, i) => [i + 1, e[1], e[0]]);
+      }
+      if (!pts.length) return 'Type some text.';
+      const law = r => p.k / Math.pow(r + p.b, p.a);
+      const rmax = Math.max(...pts.map(q => q[0])), fmax = Math.max(pts[0][1], law(1));
+      const box = [62, 16, 300, 236];
+      let m;
+      if (p.log) m = loglog(g, z, box, rmax, fmax, Math.min(1, ...pts.map(q => q[1])));
+      else m = D.axes(g, z, box, [0, rmax], [0, fmax], { nx: 4, ny: 4, fx: v => Math.round(v).toLocaleString(), fy: v => Math.round(v).toLocaleString() });
+      D.text(g, 'rank r', box[0] + box[2] / 2, box[1] + box[3] + 32, { a: 'center', s: 11.5, b: true, c: z.col.ink2 });
+      g.save(); g.beginPath(); g.rect(box[0], box[1], box[2], box[3]); g.clip();
+      D.curve(g, r => law(r), [1, rmax], { sx: m.sx, sy: m.sy }, z.col.orange, 2, 300);
+      pts.forEach(q => D.circle(g, m.sx(q[0]), m.sy(q[1]), 3.5, { fill: z.col.cv }));
+      g.restore();
+      /* right panel: f × r for the listed ranks */
+      const show = p.src === 'brown' ? pts : pts.filter((q, i) => i < 5 || [10, 20, 50, 100].includes(q[0])).slice(0, 10);
+      D.text(g, 'rank', 414, 26, { a: 'right', s: 11.5, b: true, c: z.col.ink2 });
+      D.text(g, 'word', 422, 26, { s: 11.5, b: true, c: z.col.ink2 });
+      D.text(g, 'f × r', 548, 26, { a: 'right', s: 11.5, b: true, c: z.col.ink2 });
+      show.slice(0, 11).forEach((q, i) => {
+        const y = 46 + i * 21;
+        D.text(g, String(q[0]), 414, y, { a: 'right', s: 11, c: z.col.ink, mono: true });
+        D.text(g, q[2], 422, y, { s: fit(g, q[2], 64, 11.5), c: z.col.ink });
+        D.text(g, (q[0] * q[1]).toLocaleString(), 548, y, { a: 'right', s: 11.5, c: z.col.cv, mono: true, b: true });
+      });
+      const fitp = pts.filter(q => q[0] >= 2);
+      const sl = slope(fitp.map(q => Math.log10(q[0])), fitp.map(q => Math.log10(q[1])));
+      return `Fitted slope of the dots on log log axes: <b>${isFinite(sl) ? sl.toFixed(2).replace('-', '−') : '-'}</b> (Zipf predicts −1). The law with your values gives rank 2 a frequency of <b>${Math.round(law(2)).toLocaleString()}</b> and rank 10 <b>${Math.round(law(10)).toLocaleString()}</b>. If f × r were exactly constant, the last column would show one number. On Brown it stays between about 70,000 and 107,000 across four powers of ten.`;
+    }
+  });
+
+  def('monkey', {
+    title: 'Monkey typing: random keys also give a power law',
+    sub: 'A monkey presses M letter keys and a space bar at random. A word is whatever falls between two spaces. Count the words, rank them and plot.',
+    W: 560, H: 300,
+    params: [
+      { k: 'M', label: 'Number of letter keys M', type: 'range', min: 2, max: 26, v: 4 },
+      { k: 's', label: 'Probability of the space bar s', type: 'range', min: 0.02, max: 0.5, step: 0.001, v: 0.2 },
+      { k: 'n', label: 'Characters typed', type: 'range', min: 20000, max: 300000, step: 10000, v: 200000 },
+      { k: 'seed', label: 'Random seed', type: 'range', min: 1, max: 50, v: 7 }
+    ],
+    tips: [
+      { t: 'Use the lecture setting: 26 letters and a space, all 1/27. The predicted exponent is ln 27 ÷ ln 26 = 1.0116, almost exactly Zipf. Most words are now long and seen once, so only the top of the curve shows the steps.', set: { M: 26, s: 0.037, n: 300000 } },
+      { t: 'Use 2 letters with s = 0.33. The exponent becomes 1 − ln(0.67) ÷ ln 2 ≈ 1.58 and the staircase steps are large.', set: { M: 2, s: 0.33 } },
+      { t: 'Change only the seed. The steps move a little but the slope stays, because it comes from counting, not from luck.', set: { seed: 23 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const r = rng(p.seed * 7919);
+      const letters = 'etaoinshrdlucmfwypvbgkqjxz'.slice(0, p.M);
+      const c = new Map();
+      let w = '';
+      for (let i = 0; i < p.n; i++) {
+        if (r() < p.s) { if (w) c.set(w, (c.get(w) || 0) + 1); w = ''; }
+        else w += letters[Math.floor(r() * p.M)];
+      }
+      const f = [...c.values()].sort((a, b) => b - a);
+      const alpha = 1 - Math.log(1 - p.s) / Math.log(p.M);
+      const box = [62, 16, 330, 236];
+      const m = loglog(g, z, box, f.length, f[0], 1);
+      D.text(g, 'rank r', box[0] + box[2] / 2, box[1] + box[3] + 32, { a: 'center', s: 11.5, b: true, c: z.col.ink2 });
+      g.save(); g.beginPath(); g.rect(box[0], box[1], box[2], box[3]); g.clip();
+      for (let i = 0; i < f.length; i += i < 2000 ? 1 : Math.max(1, Math.floor(f.length / 2000))) D.circle(g, m.sx(i + 1), m.sy(f[i]), 1.6, { fill: z.col.cv });
+      /* predicted line through the middle of the data */
+      const mid = Math.max(1, Math.floor(Math.sqrt(f.length)));
+      const k = f[mid - 1] * Math.pow(mid, alpha);
+      D.curve(g, x => k / Math.pow(x, alpha), [1, f.length], { sx: m.sx, sy: m.sy }, z.col.orange, 2, 200, [6, 4]);
+      g.restore();
+      const xs = [], ys = [];
+      for (let i = 9; i < f.length; i++) if (f[i] >= 3) { xs.push(Math.log10(i + 1)); ys.push(Math.log10(f[i])); }
+      const sl = slope(xs, ys);
+      D.text(g, 'What the monkey typed', 410, 30, { s: 12, b: true, c: z.col.ink });
+      let y = 52;
+      [...c.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).forEach(([wd, n]) => { D.text(g, wd, 410, y, { s: 12, mono: true, c: z.col.ink }); D.text(g, n.toLocaleString(), 548, y, { a: 'right', s: 12, mono: true, c: z.col.ink2 }); y += 19; });
+      D.text(g, `${f.length.toLocaleString()} distinct words`, 410, y + 8, { s: 11.5, c: z.col.ink2 });
+      return `Predicted exponent α = 1 − ln(1 − s) ÷ ln M = <b>${fmt(alpha, 4)}</b>. Slope fitted to the dots (words seen 3 or more times, from rank 10): <b>${fmt(-sl, 3)}</b>. The flat steps are words of the same length, which all have the same probability. The monkey gets the power law but none of the predictability of real language.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- Chapter 3.2: entropy and codes */
+  const UNIT = { '2': 'bits', e: 'nats', '10': 'hartleys' };
+  const lg = (x, base) => Math.log(x) / (base === 'e' ? 1 : Math.log(+base));
+  def('entropy', {
+    title: 'Entropy: the average surprise of a distribution',
+    sub: 'Edit the outcomes and their probabilities. Each orange bar is one term −p log p of the sum.',
+    W: 560, H: 280,
+    params: [
+      { k: 'list', label: 'Outcome and probability, one per line', type: 'area', v: 'heads 0.5\ntails 0.5' },
+      { k: 'base', label: 'Logarithm base', type: 'select', v: '2', opts: [['2', 'base 2 (bits)'], ['e', 'base e (nats)'], ['10', 'base 10 (hartleys)']] }
+    ],
+    tips: [
+      { t: 'Make the coin 0.9 and 0.1. The entropy falls from 1 bit to 0.469, the dot slides down the curve on the right.', set: { list: 'heads 0.9\ntails 0.1' } },
+      { t: 'Load the fair 8 sided die from class. Eight equal outcomes give exactly log₂ 8 = 3 bits.', set: { list: '1 0.125\n2 0.125\n3 0.125\n4 0.125\n5 0.125\n6 0.125\n7 0.125\n8 0.125' } },
+      { t: 'Load a die with P(6) = 0.5. Entropy drops from 2.585 to 2.161 bits. Skewed means less uncertain.', set: { list: '1 0.1\n2 0.1\n3 0.1\n4 0.1\n5 0.1\n6 0.5' } },
+      { t: 'Make one outcome certain with probability 1. Every term is 0 and so is the entropy.', set: { list: 'sunrise 1\nno sunrise 0' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const rows = NLZ.pairs(p.list).filter(r => r[1] >= 0).slice(0, 10);
+      const tot = rows.reduce((a, r) => a + r[1], 0);
+      if (!rows.length || tot <= 0) return 'Write lines like "heads 0.5".';
+      const P = rows.map(r => r[1] / tot);
+      const T = P.map(q => q > 0 ? -q * lg(q, p.base) : 0);
+      const H = T.reduce((a, b) => a + b, 0), Hmax = lg(rows.length, p.base);
+      const twoPanel = rows.length === 2;
+      const W1 = twoPanel ? 300 : 528;
+      const rh = Math.min(24, 220 / rows.length);
+      D.text(g, 'p', 120 + 60, 22, { a: 'center', s: 11.5, b: true, c: z.col.ink2 });
+      D.text(g, '−p log p', 120 + (W1 - 110) * 0.75, 22, { a: 'center', s: 11.5, b: true, c: z.col.ink2 });
+      const half = (W1 - 120) / 2 - 10;
+      const tmax = Math.max(...T, 1e-9);
+      rows.forEach((r, i) => {
+        const y = 32 + i * rh;
+        D.text(g, r[0], 110, y + rh * 0.66, { a: 'right', s: fit(g, r[0], 95, 12), c: z.col.ink });
+        rr(g, 120, y + 3, Math.max(2, P[i] * (half - 36)), rh - 7, 4, { fill: z.col.cv });
+        D.text(g, fmt(P[i], 3), 124 + P[i] * (half - 36), y + rh * 0.66, { s: 10.5, c: z.col.ink2 });
+        const x2 = 130 + half;
+        rr(g, x2, y + 3, Math.max(2, T[i] / tmax * (half - 40)), rh - 7, 4, { fill: z.col.orange });
+        D.text(g, fmt(T[i], 3), x2 + 4 + T[i] / tmax * (half - 40), y + rh * 0.66, { s: 10.5, c: z.col.ink2 });
+      });
+      const yb = 32 + rows.length * rh + 22;
+      if (yb < z.H - 8) D.text(g, `H = ${fmt(H, 4)} ${UNIT[p.base]}     maximum log n = ${fmt(Hmax, 4)}`, 16, yb, { b: true, s: 13, c: z.col.cv });
+      if (twoPanel) {
+        const m = D.axes(g, z, [366, 20, 180, 200], [0, 1], [0, lg(2, p.base)], { nx: 2, ny: 2, xl: `P(${rows[0][0]})` });
+        D.curve(g, x => x <= 0 || x >= 1 ? 0 : -(x * lg(x, p.base) + (1 - x) * lg(1 - x, p.base)), [0, 1], m, z.col.orange, 2);
+        D.circle(g, m.sx(P[0]), m.sy(H), 6, { fill: z.col.cv, stroke: '#fff', w: 2 });
+      }
+      return `Entropy H = −Σ p log p = <b>${fmt(H, 4)} ${UNIT[p.base]}</b>. The most it could be for ${rows.length} outcomes is log ${rows.length} = ${fmt(Hmax, 4)}, reached only when all are equally likely. ${Math.abs(tot - 1) > 1e-6 ? `Your numbers added to ${fmt(tot, 3)} and were rescaled. ` : ''}In bits this is also the fewest yes or no questions needed on average to learn the outcome with the best strategy.`;
+    }
+  });
+
+  def('huffman', {
+    title: 'Huffman coding: frequent symbols get short codes',
+    sub: 'Play to merge the two least likely items again and again. When the tree is complete, read each code from the root: left is 0, right is 1.',
+    W: 560, H: 300,
+    params: [
+      { k: 'list', label: 'Symbol and probability, one per line', type: 'area', v: 'a 0.4\nb 0.3\nc 0.2\nd 0.1' }
+    ],
+    tips: [
+      { t: 'Use the dyadic source 1/2, 1/4, 1/8, 1/8. The average code length equals the entropy, 1.75 bits.', set: { list: 'A 0.5\nB 0.25\nC 0.125\nD 0.125' }, play: true },
+      { t: 'Make all four equal. Every code has 2 bits, the same as a fixed length code. Huffman only helps when the probabilities are unequal.', set: { list: 'a 0.25\nb 0.25\nc 0.25\nd 0.25' } },
+      { t: 'Try the most common English letters. e and t get the shortest codes, as in Morse code.', set: { list: 'e 0.125\nt 0.093\na 0.081\no 0.075\ni 0.07\nn 0.067\ns 0.063\nh 0.06' } }
+    ],
+    steps: z => Math.max(1, NLZ.pairs(z.p.list).filter(r => r[1] > 0).slice(0, 8).length - 1) + 1,
+    draw(z) {
+      const { g, p } = z;
+      const rows = NLZ.pairs(p.list).filter(r => r[1] > 0).slice(0, 8);
+      if (rows.length < 2) return 'Give at least two symbols.';
+      const tot = rows.reduce((a, r) => a + r[1], 0);
+      const nodes = rows.map((r, i) => ({ s: r[0], p: r[1] / tot, ord: i, leaf: true }));
+      let q = nodes.slice(), ord = nodes.length;
+      const merges = [];
+      while (q.length > 1) {
+        q.sort((a, b) => (a.p - b.p) || (a.ord - b.ord));
+        const x = q.shift(), y = q.shift();
+        const [L, R] = x.ord < y.ord ? [x, y] : [y, x];
+        const n = { s: '', p: x.p + y.p, ord: ord++, L, R, at: merges.length + 1 };
+        merges.push(n); q.push(n);
+      }
+      const root = q[0];
+      const codes = {};
+      const walk = (n, c, d) => { n.d = d; if (n.leaf) { codes[n.s] = c || '0'; return; } walk(n.L, c + '0', d + 1); walk(n.R, c + '1', d + 1); };
+      walk(root, '', 0);
+      /* place leaves left to right in tree order, parents above the middle of their children */
+      const leaves = []; const coll = n => { if (n.leaf) leaves.push(n); else { coll(n.L); coll(n.R); } }; coll(root);
+      const depth = Math.max(...leaves.map(l => l.d));
+      const gap = 528 / leaves.length;
+      leaves.forEach((l, i) => { l.x = 16 + gap * (i + 0.5); });
+      const lev = d => 36 + (depth - d) / Math.max(1, depth) * 0 + d * Math.min(52, 190 / Math.max(1, depth));
+      const pos = n => { if (n.leaf) { n.y = 240; return; } pos(n.L); pos(n.R); n.x = (n.L.x + n.R.x) / 2; n.y = lev(n.d); };
+      pos(root);
+      const shown = n => n.leaf || n.at <= z.step;
+      const edges = n => { if (n.leaf) return; edges(n.L); edges(n.R); if (shown(n)) { D.line(g, n.x, n.y, n.L.x, n.L.y, z.col.ink2, 1.6); D.line(g, n.x, n.y, n.R.x, n.R.y, z.col.ink2, 1.6); if (z.step >= z.n) { D.text(g, '0', (n.x + n.L.x) / 2 - 8, (n.y + n.L.y) / 2, { a: 'center', s: 11, b: true, c: z.col.cv }); D.text(g, '1', (n.x + n.R.x) / 2 + 8, (n.y + n.R.y) / 2, { a: 'center', s: 11, b: true, c: z.col.orange }); } } };
+      edges(root);
+      const dots = n => { if (!n.leaf) { dots(n.L); dots(n.R); } if (!shown(n)) return; const last = !n.leaf && n.at === z.step && z.step < z.n; D.circle(g, n.x, n.y, n.leaf ? 17 : 15, { fill: last ? z.col.orange : n.leaf ? z.col.cv : z.col.bg, stroke: z.col.line, w: 1.2 }); D.text(g, n.leaf ? n.s : fmt(n.p, 3), n.x, n.y + (n.leaf ? 1 : 1), { a: 'center', bl: 'middle', s: n.leaf ? fit(g, n.s, 28, 13) : 10, b: true, c: n.leaf || last ? '#fff' : z.col.ink }); };
+      dots(root);
+      leaves.forEach(l => { D.text(g, fmt(l.p, 3), l.x, 272, { a: 'center', s: 10.5, c: z.col.ink2 }); if (z.step >= z.n) D.text(g, codes[l.s], l.x, 290, { a: 'center', s: 12, b: true, mono: true, c: z.col.cv }); });
+      const H = leaves.reduce((a, l) => a - l.p * log2(l.p), 0), Lbar = leaves.reduce((a, l) => a + l.p * codes[l.s].length, 0);
+      const fixed = Math.ceil(log2(leaves.length));
+      if (z.step < z.n) { const m = merges[z.step]; return z.step === 0 ? 'Start: every symbol is its own small tree. Press Step to merge the two least likely.' : `Merge ${z.step}: joined two items into a node of probability <b>${fmt(merges[z.step - 1].p, 3)}</b>. ${m ? 'Next, the two smallest remaining are joined again.' : ''}`; }
+      return `Codes: ${leaves.map(l => `${esc(l.s)} = <b>${codes[l.s]}</b>`).join(', ')}. Average length = Σ p × length = <b>${fmt(Lbar, 3)} bits</b>, entropy H = <b>${fmt(H, 3)} bits</b>, a fixed length code needs ${fixed} bits. No code is the start of another, so a string of bits decodes in only one way.`;
+    }
+  });
+
+  def('shannon', {
+    title: "Shannon's approximations to English",
+    sub: 'Text is generated from the statistics of a training passage. Raise the order and the output looks more and more like English.',
+    W: 560, H: 200,
+    params: [
+      { k: 'unit', label: 'Unit', type: 'select', v: 'char', opts: [['char', 'letters (27 symbols: a to z and space)'], ['word', 'words']] },
+      { k: 'n', label: 'Order (how many symbols of context plus one)', type: 'range', min: 0, max: 5, v: 2 },
+      { k: 'len', label: 'Length to generate', type: 'range', min: 40, max: 300, step: 10, v: 160 },
+      { k: 'seed', label: 'Random seed', type: 'range', min: 1, max: 99, v: 3 },
+      { k: 'text', label: 'Training text', type: 'area', v: SAMPLE }
+    ],
+    tips: [
+      { t: 'Order 0 picks each of the 27 symbols with equal chance. It is gibberish like Shannon\'s XFOML RXKHRJFF.', set: { unit: 'char', n: 0 } },
+      { t: 'Order 1 uses letter frequencies only. You see many e, t and spaces, and word lengths start to look right.', set: { unit: 'char', n: 1 } },
+      { t: 'Order 3 uses the two previous letters. Real words like the, and, of appear.', set: { unit: 'char', n: 3 } },
+      { t: 'Switch to words, order 2. Pairs of words read naturally but the whole is meaningless, just like Shannon\'s second order word sample.', set: { unit: 'word', n: 2, len: 40 } },
+      { t: 'Go to letters, order 5. The text copies long chunks of the training passage. That is over fitting: too little data for so much context.', set: { unit: 'char', n: 5 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const clean = String(p.text).toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (clean.length < 20) return 'Paste a longer training text.';
+      const r = rng(p.seed * 104729);
+      const word = p.unit === 'word';
+      const seq = word ? clean.split(' ') : clean.split('');
+      const alpha = word ? [...new Set(seq)] : 'abcdefghijklmnopqrstuvwxyz '.split('');
+      const n = word ? Math.min(p.n, 3) : p.n;
+      const ctxLen = Math.max(0, n - 1);
+      const table = new Map();
+      if (n >= 1) for (let i = ctxLen; i < seq.length; i++) {
+        const k = seq.slice(i - ctxLen, i).join('\u0001');
+        if (!table.has(k)) table.set(k, new Map());
+        const m = table.get(k); m.set(seq[i], (m.get(seq[i]) || 0) + 1);
+      }
+      const pick = m => { let t = 0; m.forEach(v => t += v); let u = r() * t; for (const [k, v] of m) { u -= v; if (u <= 0) return k; } return [...m.keys()][0]; };
+      const out = [];
+      const start = Math.floor(r() * Math.max(1, seq.length - ctxLen));
+      for (let i = 0; i < ctxLen; i++) out.push(seq[start + i]);
+      const L = word ? Math.round(p.len / 5) : p.len;
+      while (out.length < L) {
+        if (n === 0) { out.push(alpha[Math.floor(r() * alpha.length)]); continue; }
+        const k = out.slice(out.length - ctxLen).join('\u0001');
+        const m = table.get(k);
+        if (!m) { out.push(seq[Math.floor(r() * seq.length)]); continue; }
+        out.push(pick(m));
+      }
+      const txt = (word ? out.join(' ') : out.join('')).toUpperCase();
+      D.text(g, `${word ? 'Word' : 'Letter'} approximation of order ${n}${word && p.n > 3 ? ' (words stop at order 3)' : ''}`, 16, 24, { b: true, s: 13, c: z.col.ink });
+      rr(g, 12, 36, 536, 154, 10, { fill: z.col.bg });
+      wrap(g, txt, 24, 60, 512, { s: 13, mono: true, c: z.col.ink, lh: 20 });
+      /* plug-in conditional entropy of the next symbol given the context, on the training text */
+      let Hc = 0, N = 0;
+      if (n === 0) Hc = log2(alpha.length);
+      else { table.forEach(m => { let t = 0; m.forEach(v => t += v); m.forEach(v => { Hc -= v * log2(v / t); }); N += t; }); Hc /= N; }
+      const Hmax = log2(alpha.length);
+      return `Estimated entropy of the next ${word ? 'word' : 'letter'} with ${ctxLen} symbol${ctxLen === 1 ? '' : 's'} of context: <b>${fmt(Hc, 3)} bits</b> out of a maximum of log₂ ${alpha.length} = ${fmt(Hmax, 2)}. Redundancy 1 − H ÷ H<sub>max</sub> = <b>${fmt(100 * (1 - Hc / Hmax), 1)}%</b>. With a short training text, high orders look certain only because most contexts were seen once.`;
+    }
+  });
+
+  /* ---------------------------------------------------------------- Chapter 3.3: two variables */
+  const H2 = arr => arr.reduce((a, q) => a - (q > 0 ? q * log2(q) : 0), 0);
+  def('jointent', {
+    title: 'Joint entropy, conditional entropy and mutual information',
+    sub: 'Set how X affects Y. The bars show how the joint uncertainty splits into what each variable keeps to itself and what they share.',
+    W: 560, H: 290,
+    params: [
+      { k: 'xn', label: 'Names of X and its two values', type: 'text', v: 'weather: sunny, rainy' },
+      { k: 'yn', label: 'Names of Y and its two values', type: 'text', v: 'umbrella: yes, no' },
+      { k: 'px', label: 'P(first value of X)', type: 'range', min: 0, max: 1, step: 0.01, v: 0.6 },
+      { k: 'a', label: 'P(first Y | first X)', type: 'range', min: 0, max: 1, step: 0.01, v: 0.2 },
+      { k: 'b', label: 'P(first Y | second X)', type: 'range', min: 0, max: 1, step: 0.01, v: 0.9 }
+    ],
+    tips: [
+      { t: 'Set both conditional probabilities to 0.48. Y no longer depends on X, the shared part I(X : Y) shrinks to 0, and H(X,Y) = H(X) + H(Y).', set: { a: 0.48, b: 0.48 } },
+      { t: 'Set them to 0 and 1. Knowing X now fixes Y, so H(Y|X) = 0 and all of H(Y) is shared.', set: { a: 0, b: 1 } },
+      { t: 'Load the studying and passing example: 60% study, 90% of those pass, 20% of the rest pass. I(X : Y) = 0.388 bits.', set: { xn: 'student: studies, does not', yn: 'result: pass, fail', px: 0.6, a: 0.9, b: 0.2 } },
+      { t: 'Load practice problem P5: P(X = a) = 0.5, P(Y = 0 | a) = 0.5, P(Y = 0 | b) = 0.8. I(X : Y) is only 0.073 bits.', set: { xn: 'X: a, b', yn: 'Y: 0, 1', px: 0.5, a: 0.5, b: 0.8 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const parse = s => { const m = String(s).split(':'); const vals = (m[1] || 'x1, x2').split(',').map(t => t.trim()).filter(Boolean); return [m[0].trim() || 'X', vals[0] || 'v1', vals[1] || 'v2']; };
+      const [XN, x1, x2] = parse(p.xn), [YN, y1, y2] = parse(p.yn);
+      const J = [[p.px * p.a, p.px * (1 - p.a)], [(1 - p.px) * p.b, (1 - p.px) * (1 - p.b)]];
+      const PX = [p.px, 1 - p.px], PY = [J[0][0] + J[1][0], J[0][1] + J[1][1]];
+      const HX = H2(PX), HY = H2(PY), HXY = H2(J.flat()), HYgX = HXY - HX, HXgY = HXY - HY, I = HX + HY - HXY;
+      /* joint table */
+      const tx = 16, ty = 34, cw = 74, ch = 30;
+      D.text(g, 'Joint probabilities p(x, y)', tx, 20, { b: true, s: 12.5, c: z.col.ink });
+      [y1, y2].forEach((v, j) => D.text(g, v, tx + 92 + j * cw + cw / 2, ty + 14, { a: 'center', s: fit(g, v, cw - 6, 12), b: true, c: z.col.ink2 }));
+      D.text(g, 'p(x)', tx + 92 + 2 * cw + 30, ty + 14, { a: 'center', s: 11.5, b: true, c: z.col.ink2 });
+      [x1, x2].forEach((v, i) => {
+        const y = ty + 22 + i * ch;
+        D.text(g, v, tx + 86, y + ch / 2 + 4, { a: 'right', s: fit(g, v, 82, 12), b: true, c: z.col.ink2 });
+        J[i].forEach((q, j) => { rr(g, tx + 92 + j * cw + 2, y + 2, cw - 4, ch - 4, 5, { fill: z.col.bg, stroke: z.col.line }); D.text(g, fmt(q, 3), tx + 92 + j * cw + cw / 2, y + ch / 2 + 4, { a: 'center', s: 12.5, mono: true, c: z.col.ink }); });
+        D.text(g, fmt(PX[i], 3), tx + 92 + 2 * cw + 30, y + ch / 2 + 4, { a: 'center', s: 12, mono: true, c: z.col.ink2 });
+      });
+      const yr = ty + 22 + 2 * ch;
+      D.text(g, 'p(y)', tx + 86, yr + 16, { a: 'right', s: 11.5, b: true, c: z.col.ink2 });
+      PY.forEach((q, j) => D.text(g, fmt(q, 3), tx + 92 + j * cw + cw / 2, yr + 16, { a: 'center', s: 12, mono: true, c: z.col.ink2 }));
+      /* entropy list */
+      const lx = 360;
+      [['H(X)', HX], ['H(Y)', HY], ['H(X, Y)', HXY], ['H(Y | X)', HYgX], ['H(X | Y)', HXgY], ['I(X : Y)', I]].forEach(([l, v], i) => {
+        D.text(g, l, lx, 30 + i * 21, { s: 12.5, b: true, c: i === 5 ? z.col.orange : z.col.ink });
+        D.text(g, `${fmt(v, 3)} bits`, 548, 30 + i * 21, { a: 'right', s: 12.5, mono: true, c: i === 5 ? z.col.orange : z.col.ink });
+      });
+      /* information diagram as aligned bars */
+      const bx = 110, bw = 420, sc = bw / Math.max(HXY, 1e-9), by = 182;
+      D.text(g, `H(${XN})`, bx - 8, by + 15, { a: 'right', s: fit(g, `H(${XN})`, 92, 12), b: true, c: z.col.ink });
+      rr(g, bx, by, HXgY * sc, 22, 4, { fill: z.col.cv });
+      rr(g, bx + HXgY * sc, by, I * sc, 22, 4, { fill: z.col.orange });
+      D.text(g, `H(${YN})`, bx - 8, by + 47, { a: 'right', s: fit(g, `H(${YN})`, 92, 12), b: true, c: z.col.ink });
+      rr(g, bx + HXgY * sc, by + 32, I * sc, 22, 4, { fill: z.col.orange });
+      rr(g, bx + (HXgY + I) * sc, by + 32, HYgX * sc, 22, 4, { fill: z.col.purple });
+      D.line(g, bx, by + 66, bx + HXY * sc, by + 66, z.col.ink2, 1.5);
+      D.text(g, `H(X, Y) = ${fmt(HXY, 3)}`, bx + HXY * sc / 2, by + 82, { a: 'center', s: 11.5, b: true, c: z.col.ink2 });
+      const lab = (t, x, w, y) => { if (w > tw(g, t, { s: 10.5, b: true }) + 6) D.text(g, t, x + w / 2, y, { a: 'center', s: 10.5, b: true, c: '#fff' }); };
+      lab('H(X|Y)', bx, HXgY * sc, by + 15); lab('I', bx + HXgY * sc, I * sc, by + 15); lab('I', bx + HXgY * sc, I * sc, by + 47); lab('H(Y|X)', bx + (HXgY + I) * sc, HYgX * sc, by + 47);
+      return `Chain rule: H(X) + H(Y|X) = ${fmt(HX, 3)} + ${fmt(HYgX, 3)} = <b>${fmt(HXY, 3)}</b> = H(X, Y). Knowing ${esc(XN)} lowers the uncertainty about ${esc(YN)} from ${fmt(HY, 3)} to ${fmt(HYgX, 3)} bits. The saving, <b>I(X : Y) = ${fmt(I, 3)} bits</b>, is the orange overlap, and it is the same in both directions.`;
+    }
+  });
+
+  def('pmi', {
+    title: 'Pointwise mutual information: which word pairs belong together',
+    sub: 'Each line is a pair with three counts: c(x), c(y) and c(x y). PMI compares how often the pair occurs with how often chance alone would put them together.',
+    W: 560, H: 270,
+    params: [
+      { k: 'N', label: 'Corpus size N (tokens)', type: 'range', min: 100000, max: 5000000, step: 100000, v: 1000000 },
+      { k: 'list', label: 'x y c(x) c(y) c(x y), one pair per line', type: 'area', v: 'New Delhi 2000 500 400\nice cream 3000 2500 900\nwhite house 6000 4000 700\nnew car 2000 1000 20\nof the 40000 70000 10000\npowerful tea 800 600 0' },
+      { k: 'min', label: 'Ignore pairs seen fewer than this many times', type: 'range', min: 0, max: 50, v: 0 }
+    ],
+    tips: [
+      { t: 'Look at "of the". It is by far the most frequent pair, yet its PMI is only 1.84 bits: of and the are so common that they meet by chance.', set: {} },
+      { t: 'Add a pair of two rare words seen once together: "zygote zebra 1 1 1". Its PMI is about 20 bits, higher than New Delhi. Raise the minimum count to 5 to remove it.', set: { list: 'New Delhi 2000 500 400\nice cream 3000 2500 900\nof the 40000 70000 10000\nzygote zebra 1 1 1' } },
+      { t: 'Double N. Every PMI rises by exactly 1 bit, because the chance level halves. Compare scores only inside one corpus.', set: { N: 2000000 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const rows = String(p.list).split('\n').map(l => l.trim().split(/\s+/)).filter(a => a.length >= 5).map(a => { const n = a.slice(-3).map(Number); return { pair: a.slice(0, a.length - 3).join(' '), cx: n[0], cy: n[1], cxy: n[2] }; }).filter(r => r.cx > 0 && r.cy > 0).slice(0, 8);
+      if (!rows.length) return 'Write lines like "New Delhi 2000 500 400".';
+      rows.forEach(r => { r.pmi = r.cxy > 0 ? log2(r.cxy * p.N / (r.cx * r.cy)) : -Infinity; r.skip = r.cxy < p.min; });
+      const fin = rows.filter(r => isFinite(r.pmi) && !r.skip).map(r => r.pmi);
+      const pos = Math.max(1, ...fin), neg = Math.max(0, ...fin.map(v => -v));
+      const x0 = neg > 0 ? 220 : 140, sc = Math.min(290 / pos, neg > 0 ? 90 / neg : Infinity);
+      D.line(g, x0, 18, x0, 30 + rows.length * 28, z.col.ink2, 1.5);
+      D.text(g, 'PMI in bits', x0, 14, { a: 'center', s: 11, b: true, c: z.col.ink2 });
+      D.text(g, 'P(y | x)', 548, 14, { a: 'right', s: 11, b: true, c: z.col.ink2 });
+      rows.forEach((r, i) => {
+        const y = 26 + i * 28;
+        D.text(g, r.pair, x0 - (neg > 0 ? 96 : 8), y + 15, { a: 'right', s: fit(g, r.pair, 110, 12.5), b: true, c: r.skip ? z.col.ink2 : z.col.ink });
+        D.text(g, fmt(r.cxy / r.cx, 3), 548, y + 15, { a: 'right', s: 11, mono: true, c: z.col.ink2 });
+        if (r.skip) { D.text(g, 'below the minimum count', x0 + 8, y + 15, { s: 11, c: z.col.ink2 }); return; }
+        if (!isFinite(r.pmi)) { D.text(g, '−∞, never seen together', x0 + 8, y + 15, { s: 11, b: true, c: z.col.red }); return; }
+        const w = r.pmi * sc;
+        rr(g, w >= 0 ? x0 : x0 + w, y + 4, Math.max(2, Math.abs(w)), 18, 4, { fill: w >= 0 ? z.col.orange : z.col.purple });
+        D.text(g, fmt(r.pmi, 2), w >= 0 ? x0 + w + 5 : x0 + 5, y + 17, { s: 11.5, b: true, c: z.col.ink });
+      });
+      const top = rows.filter(r => !r.skip && isFinite(r.pmi)).sort((a, b) => b.pmi - a.pmi)[0];
+      return `PMI(x, y) = log₂ [ c(x y) × N ÷ (c(x) × c(y)) ]. Above 0 the words attract, at 0 they are independent, below 0 they avoid each other. ${top ? `The strongest pair is <b>${esc(top.pair)}</b> at ${fmt(top.pmi, 2)} bits: after x, y is ${fmt(top.cxy / top.cx / (top.cy / p.N), 1)} times more likely than usual.` : ''}`;
+    }
+  });
+
+  def('kl', {
+    title: 'KL divergence and cross entropy: the cost of the wrong model',
+    sub: 'p is the truth, q is the model. Edit both. KL counts the extra bits per symbol you pay for coding p with a code built for q.',
+    W: 560, H: 270,
+    params: [
+      { k: 'p', label: 'True distribution p (outcome and probability per line)', type: 'area', v: 'sunny 0.7\ncloudy 0.2\nrainy 0.1' },
+      { k: 'q', label: 'Model q (same outcomes)', type: 'area', v: 'sunny 0.3\ncloudy 0.3\nrainy 0.4' }
+    ],
+    tips: [
+      { t: 'Make q equal to p. Every bar meets its partner, KL is 0 and cross entropy equals entropy.', set: { q: 'sunny 0.7\ncloudy 0.2\nrainy 0.1' } },
+      { t: 'Load the lecture example p = (0.5, 0.25, 0.25), q uniform. D(p‖q) = 0.085 but D(q‖p) = 0.082. KL is not symmetric.', set: { p: 'a 0.5\nb 0.25\nc 0.25', q: 'a 0.3333\nb 0.3333\nc 0.3334' } },
+      { t: 'Give rainy probability 0 in the model. Any rainy day now costs infinitely many bits. This is why language models must be smoothed.', set: { q: 'sunny 0.5\ncloudy 0.5\nrainy 0' } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const P = NLZ.pairs(p.p), Q = new Map(NLZ.pairs(p.q).map(r => [r[0], r[1]]));
+      if (!P.length) return 'Write lines like "sunny 0.7".';
+      const ps = P.reduce((a, r) => a + r[1], 0), qs = P.reduce((a, r) => a + (Q.get(r[0]) || 0), 0) || 1;
+      const rows = P.slice(0, 8).map(r => ({ s: r[0], p: r[1] / ps, q: (Q.get(r[0]) || 0) / qs }));
+      const Hp = rows.reduce((a, r) => a - (r.p > 0 ? r.p * log2(r.p) : 0), 0);
+      const Hpq = rows.reduce((a, r) => a + (r.p > 0 ? (r.q > 0 ? -r.p * log2(r.q) : Infinity) : 0), 0);
+      const Dpq = rows.reduce((a, r) => a + (r.p > 0 ? (r.q > 0 ? r.p * log2(r.p / r.q) : Infinity) : 0), 0);
+      const Dqp = rows.reduce((a, r) => a + (r.q > 0 ? (r.p > 0 ? r.q * log2(r.q / r.p) : Infinity) : 0), 0);
+      const gw = 300 / rows.length, bh = 170;
+      D.text(g, 'p (truth)', 24, 18, { s: 11.5, b: true, c: z.col.cv });
+      D.text(g, 'q (model)', 100, 18, { s: 11.5, b: true, c: z.col.orange });
+      rows.forEach((r, i) => {
+        const x = 20 + i * gw, base = 206;
+        rr(g, x + gw * 0.12, base - r.p * bh, gw * 0.36, Math.max(1, r.p * bh), 3, { fill: z.col.cv });
+        rr(g, x + gw * 0.52, base - r.q * bh, gw * 0.36, Math.max(1, r.q * bh), 3, { fill: z.col.orange });
+        D.text(g, r.s, x + gw / 2, base + 16, { a: 'center', s: fit(g, r.s, gw - 4, 12), b: true, c: z.col.ink });
+        const term = r.p > 0 ? (r.q > 0 ? r.p * log2(r.p / r.q) : Infinity) : 0;
+        D.text(g, fmt(term, 3), x + gw / 2, base + 34, { a: 'center', s: 11, mono: true, c: term < 0 ? z.col.purple : z.col.ink2 });
+      });
+      D.text(g, 'term p log₂(p/q)', 20, 258, { s: 10.5, c: z.col.ink2 });
+      const lx = 350;
+      [['H(p)', Hp], ['H(p, q)', Hpq], ['D(p ‖ q)', Dpq], ['D(q ‖ p)', Dqp]].forEach(([l, v], i) => {
+        rr(g, lx, 26 + i * 50, 198, 40, 8, { fill: i === 2 ? z.col.orange : z.col.bg });
+        D.text(g, l, lx + 12, 51 + i * 50, { s: 13, b: true, c: i === 2 ? '#fff' : z.col.ink });
+        D.text(g, `${fmt(v, 4)} bits`, lx + 186, 51 + i * 50, { a: 'right', s: 13, mono: true, b: true, c: i === 2 ? '#fff' : z.col.ink });
+      });
+      return `Cross entropy = entropy + KL: ${fmt(Hpq, 4)} = ${fmt(Hp, 4)} + ${fmt(Dpq, 4)}. Single terms can be negative (purple) but the total D(p‖q) never is, by Gibbs' inequality. Swapping p and q changes the value, so KL is not a distance. A language model trained by cross entropy loss is pushed to lower exactly this KL.`;
+    }
+  });
+
+  def('noisychannel', {
+    title: 'The noisy channel: correcting a typo',
+    sub: 'For each candidate, multiply how common the word is (the language model) by how likely this typo is from it (the channel model). The largest product wins.',
+    W: 560, H: 200,
+    params: [
+      { k: 'obs', label: 'What was typed', type: 'text', v: 'acress' },
+      { k: 'list', label: 'Candidate, P(word), P(typo | word), one per line', type: 'area', v: 'actress 1.4e-5 1.2e-4\nacross 2.9e-4 2.1e-6\nacres 3.2e-5 3.1e-5\naccess 1.8e-4 1.0e-6' },
+      { k: 'ctx', label: 'Context boost: multiply P(word) of the first candidate by', type: 'range', min: 0.1, max: 10, step: 0.1, v: 1 }
+    ],
+    tips: [
+      { t: 'Ignore the channel by giving every candidate the same P(typo | word). Now the most common word, across, wins. The channel model is what saves actress.', set: { list: 'actress 1.4e-5 1e-5\nacross 2.9e-4 1e-5\nacres 3.2e-5 1e-5\naccess 1.8e-4 1e-5' } },
+      { t: 'Imagine the context "a versatile ___". Boost actress by 5 and its share of the posterior rises from 0.485 to about 0.825.', set: { ctx: 5 } },
+      { t: 'Imagine a context where actress is unlikely. A boost of 0.2 drops it below acres, which now wins.', set: { ctx: 0.2 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const rows = String(p.list).split('\n').map(l => l.trim().split(/[\s,]+/)).filter(a => a.length >= 3).map(a => ({ w: a[0], pw: +a[1], po: +a[2] })).filter(r => r.pw > 0 && r.po >= 0).slice(0, 6);
+      if (!rows.length) return 'Write lines like "actress 1.4e-5 1.2e-4".';
+      rows[0].pw *= p.ctx;
+      rows.forEach(r => { r.s = r.pw * r.po; });
+      const tot = rows.reduce((a, r) => a + r.s, 0) || 1;
+      const best = rows.reduce((a, r) => r.s > a.s ? r : a, rows[0]);
+      pill(g, `typed: ${p.obs}`, 16, 10, { s: 13, b: true, mono: true, fill: z.col.red, c: '#fff' });
+      const cols = [['P(word)', 'pw', z.col.cv], ['P(typo | word)', 'po', z.col.purple], ['share of P(word | typo)', 'sh', z.col.orange]];
+      const x0 = 110, cw = 146;
+      cols.forEach((c, j) => D.text(g, c[0], x0 + j * cw + cw / 2, 56, { a: 'center', s: 11.5, b: true, c: z.col.ink2 }));
+      const mxs = { pw: Math.max(...rows.map(r => r.pw)), po: Math.max(...rows.map(r => r.po), 1e-30), sh: 1 };
+      rows.forEach((r, i) => {
+        const y = 66 + i * 30;
+        r.sh = r.s / tot;
+        D.text(g, r.w, x0 - 10, y + 17, { a: 'right', s: fit(g, r.w, 90, 13), b: r === best, mono: true, c: r === best ? z.col.orange : z.col.ink });
+        cols.forEach((c, j) => {
+          const v = r[c[1]], w = Math.max(2, v / mxs[c[1]] * (cw - 64));
+          rr(g, x0 + j * cw, y + 6, w, 16, 4, { fill: c[2] });
+          D.text(g, c[1] === 'sh' ? fmt(v, 3) : v.toExponential(1), x0 + j * cw + w + 4, y + 18, { s: 10.5, c: z.col.ink2 });
+        });
+      });
+      return `Best correction: <b>${esc(best.w)}</b>, with P(word) × P(typo | word) = ${best.s.toExponential(2)} and a posterior share of <b>${fmt(best.sh, 3)}</b>. Bayes' rule gives P(word | typo) = P(word) P(typo | word) ÷ P(typo). P(typo) is the same for every candidate, so it can be dropped when choosing the winner.`;
+    }
+  });
+})();
