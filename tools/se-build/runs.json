@@ -23,6 +23,12 @@
   "out": "1 Web form\n2 XHTML Test Page at https://www.selenium.dev/selenium/web/xhtmlTest.html\n3 Web form\n4 XHTML Test Page\n5 XHTML Test Page",
   "rc": 0
  },
+ "085b37393692dc1f96bb8f7c": {
+  "label": "interacterr",
+  "lang": "java",
+  "out": "type into disabled: ElementNotInteractableException, element not interactable\nclear readonly: InvalidElementStateException, invalid element state\nclick under banner: ElementClickInterceptedException, element click intercepted",
+  "rc": 0
+ },
  "0dcf86455b83a7de3cfa0538": {
   "label": "locators",
   "lang": "js",
@@ -39,6 +45,12 @@
   "label": "findall",
   "lang": "py",
   "out": "inputs: 6\n  radio gender\n  radio gender\n  text fname\n  text lname\n  checkbox newsletter\n  submit \nemail boxes: 0\nfind_element: NoSuchElementException",
+  "rc": 0
+ },
+ "1e1c014d629309666d34132d": {
+  "label": "upload",
+  "lang": "js",
+  "out": "browser shows: C:\\fakepath\\report.txt",
   "rc": 0
  },
  "281beaf8398bb8b26819e010": {
@@ -63,6 +75,12 @@
   "label": "rawhttp",
   "lang": "java",
   "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/url  ->  {\"value\":null}\nGET /session/95d0fe61737b4d163eb18144987aeb9c/title  ->  {\"value\":\"Web form\"}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.6/value  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.21/click  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nGET /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.E152AD2C20E2F888566D70528E29A501.e.26/text  ->  {\"value\":\"Received!\"}\nDELETE /session/95d0fe61737b4d163eb18144987aeb9c  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "40c7532883ced1ae87f6b440": {
+  "label": "interacterr",
+  "lang": "py",
+  "out": "type into disabled: ElementNotInteractableException, element not interactable\nclear readonly: InvalidElementStateException, invalid element state\nclick under banner: ElementClickInterceptedException, element click intercepted",
   "rc": 0
  },
  "4219ba29387fbbbc334796c8": {
@@ -113,10 +131,22 @@
   "out": "from the page: 0\nfrom the shadow root: checkbox\nxpath in shadow root: invalid argument: invalid locator",
   "rc": 0
  },
+ "5f8f724b625bee27b29893f5": {
+  "label": "typeclick",
+  "lang": "py",
+  "out": "check 2 before: False\ncheck 2 after: True\nradio 1 now: False\nReceived!",
+  "rc": 0
+ },
  "62080922edee8e65418e224e": {
   "label": "window",
   "lang": "py",
   "out": "size 1024 x 768\nposition 40, 30\nrect {'height': 768, 'width': 1024, 'x': 40, 'y': 30}",
+  "rc": 0
+ },
+ "63dbece7a8196a5fe85f4748": {
+  "label": "info",
+  "lang": "py",
+  "out": "displayed: True , enabled: True\ndisabled box enabled: False\ntag: input , rect: 296 x 38\nget_attribute(value): hello\nget_dom_attribute(value): None\nget_property(value): hello\nget_dom_attribute(myprop): myvalue\nbutton colour: rgba(13, 110, 253, 1)\nheading text: Web form",
   "rc": 0
  },
  "649148be6d0d418840c0ff0e": {
@@ -143,6 +173,12 @@
   "out": "Driver URL: http://localhost:9600\nready: True",
   "rc": 0
  },
+ "70c5a1ff2de67edfb3697de4": {
+  "label": "upload",
+  "lang": "py",
+  "out": "browser shows: C:\\fakepath\\report.txt",
+  "rc": 0
+ },
  "715f9a1eec2aefdd34b1b92a": {
   "label": "scope",
   "lang": "java",
@@ -161,10 +197,28 @@
   "out": "browserName: chrome\nbrowserVersion: 153.0.8010.12\nplatformName: linux\npageLoadStrategy: eager\nunhandledPromptBehavior: dismiss and notify",
   "rc": 0
  },
+ "7997d649dff59efef212712b": {
+  "label": "typeclick",
+  "lang": "java",
+  "out": "check 2 before: false\ncheck 2 after: true\nradio 1 now: false\nReceived!",
+  "rc": 0
+ },
+ "7a3f2b4c8e799745506800b8": {
+  "label": "select",
+  "lang": "py",
+  "out": "options: 4 , multiple: None\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
+  "rc": 0
+ },
  "8a5ebe75fe5d30cd51c32ae1": {
   "label": "tidy",
   "lang": "js",
   "out": "Failed: no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"*[id=\"no-such-id\"]\"}\nBrowser closed",
+  "rc": 0
+ },
+ "8a968821257bf9817d4a1371": {
+  "label": "select",
+  "lang": "js",
+  "out": "options: 4\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
   "rc": 0
  },
  "8cacf6e645e46969f2b004e2": {
@@ -179,6 +233,12 @@
   "out": "at start: body\nafter click: my-text\nafter Tab: my-password",
   "rc": 0
  },
+ "907ac1fc49d8191111dad540": {
+  "label": "select",
+  "lang": "java",
+  "out": "options: 4, multiple: false\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
+  "rc": 0
+ },
  "92e5d7f1dc5a0913077d7e03": {
   "label": "findall",
   "lang": "js",
@@ -189,6 +249,12 @@
   "label": "relative",
   "lang": "js",
   "out": "below last name label -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nabove lname -> <input class=\"information\" type=\"text\" id=\"fname\" name=\"fname\" value=\"Jane\">\nright of Male -> <input type=\"radio\" name=\"gender\" value=\"f\">\nbelow fname and above the checkbox -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nnear Newsletter label -> <input type=\"submit\" value=\"Submit\">\nleft of password -> <input type=\"text\" name=\"username\" id=\"username-field\" class=\"login-form-field\" placeholder=\"Username\">",
+  "rc": 0
+ },
+ "9a030e24be37029e04604d0d": {
+  "label": "select",
+  "lang": "py",
+  "out": "options: 4\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
   "rc": 0
  },
  "9b729da6a7628cf71aac9b7b": {
@@ -221,10 +287,46 @@
   "out": "title is Web form",
   "rc": 0
  },
+ "a107445a1d043e78f6511d85": {
+  "label": "typeclick",
+  "lang": "java",
+  "out": "check 2 before: false\ncheck 2 after: true\nradio 1 now: false\nReceived!",
+  "rc": 0
+ },
  "a5b4644a9c1c9eb9d4ca5752": {
   "label": "eight",
   "lang": "py",
   "out": "Title: Web form\nMessage: Received!",
+  "rc": 0
+ },
+ "aa66b30a2c1122fd63957c17": {
+  "label": "info",
+  "lang": "js",
+  "out": "displayed: true, enabled: true\ndisabled box enabled: false\ntag: input, rect: 296 x 38\ngetAttribute(value): hello\ngetDomAttribute(value): null\ngetProperty(value): hello\ngetDomAttribute(myprop): myvalue\nbutton colour: rgba(13, 110, 253, 1)\nheading text: Web form",
+  "rc": 0
+ },
+ "abc1417b2000cb59ef5d5fda": {
+  "label": "upload",
+  "lang": "java",
+  "out": "browser shows: C:\\fakepath\\report.txt",
+  "rc": 0
+ },
+ "af214618b5b694f27e36a46b": {
+  "label": "typeclick",
+  "lang": "js",
+  "out": "check 2 before: false\ncheck 2 after: true\nradio 1 now: false\nReceived!",
+  "rc": 0
+ },
+ "b2797653b3f76dd0a6b2e614": {
+  "label": "interacterr",
+  "lang": "js",
+  "out": "type into disabled: ElementNotInteractableError, element not interactable\nclear readonly: InvalidElementStateError, invalid element state\nclick under banner: ElementClickInterceptedError, element click intercepted",
+  "rc": 0
+ },
+ "b48b56a81c5af551017681a4": {
+  "label": "select",
+  "lang": "js",
+  "out": "options: 4, multiple: undefined\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
   "rc": 0
  },
  "b4bccbac54459b1c4874632c": {
@@ -251,11 +353,23 @@
   "out": "at start: body\nafter click: my-text\nafter Tab: my-password",
   "rc": 0
  },
+ "c82160d65df64e227b355e59": {
+  "label": "info",
+  "lang": "java",
+  "out": "displayed: true, enabled: true\ndisabled box enabled: false\ntag: input, rect: 296 x 38\ngetAttribute(value): hello\ngetDomAttribute(value): null\ngetDomProperty(value): hello\ngetDomAttribute(myprop): myvalue\nbutton colour: rgba(13, 110, 253, 1)\nheading text: Web form",
+  "rc": 0
+ },
  "c8b8e97947cde3d0a97d1df8": {
   "label": "service",
   "lang": "java",
   "out": "Driver URL: http://localhost:9600\nready: true",
   "rc": 0
+ },
+ "caddcdc16a2fab88b0562418": {
+  "label": "typeclick",
+  "lang": "py",
+  "out": "check 2 before: False\ncheck 2 after: True\nradio 1 now: False\n\nTraceback (most recent call last):\n  File \"main.py\", line 17, in <module>\n    print(driver.find_element(By.ID, \"message\").text)\n          ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^\n  File \"/home/user/brainy-bytes/tools/se-build/box/.venv/lib/python3.13/site-packages/selenium/webdriver/remote/webdriver.py\", line 914, in find_element\n    return self.execute(Command.FIND_ELEMENT, {\"using\": by, \"value\": value})[\"value\"]\n           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/user/brainy-bytes/tools/se-build/box/.venv/lib/python3.13/site-packages/selenium/webdriver/remote/webdriver.py\", line 506, in execute\n    self.error_handler.check_response(response)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^\n  File \"/home/user/brainy-bytes/tools/se-build/box/.venv/lib/python3.13/site-packages/selenium/webdriver/remote/errorhandler.py\", line 232, in check_response\n    raise exception_class(message, screen, stacktrace)\nselenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"[id=\"message\"]\"}\n  (Session info: chrome=153.0.8010.12); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception\nStacktrace:\n#0 0x561728f585ca <unknown>\n#1 0x56172888c759 <unknown>\n#2 0x5617288e2ffc <unknown>\n#3 0x5617288e3271 <unknown>\n#4 0x56172892f884 <unknown>\n#5 0x56172892caef <unknown>\n#6 0x5617288d5d9b <unknown>\n#7 0x5617288d6b81 <unknown>\n#8 0x561728f1b017 <unknown>\n#9 0x561728f19845 <unknown>\n#10 0x561728f048c5 <unknown>\n#11 0x561728f1a49a <unknown>\n#12 0x561728eecef9 <unknown>\n#13 0x561728f42478 <unknown>\n#14 0x561728f42615 <unknown>\n#15 0x561728f56f13 <unknown>\n#16 0x7f897909cb84 <unknown>\n#17 0x7f8979129ecc <unknown>",
+  "rc": 1
  },
  "d269d1e898c759142f4ff627": {
   "label": "relative",
@@ -267,6 +381,12 @@
   "label": "rawhttp",
   "lang": "java",
   "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/timeouts  ->  {\"value\":null}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/url  ->  {\"value\":null}\nGET /session/1572ea8ca4df6e7f14c3a8d4adc84e28/title  ->  {\"value\":\"Web form\"}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.CEA8EA828217AE4BDE1...\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element/f.CEA8EA828217AE4BDE1BBE3050CC97CF.d.298B371AFB4A8DB17596DA16CFED7B72.e.6/value  ->  {\"value\":null}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.CEA8EA828217AE4BDE1...\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element/f.CEA8EA828217AE4BDE1BBE3050CC97CF.d.298B371AFB4A8DB17596DA16CFED7B72.e.21/click  ->  {\"value\":null}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.CEA8EA828217AE4BDE1...\nGET /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element/f.CEA8EA828217AE4BDE1BBE3050CC97CF.d.C670560C5CAD8B17CAC20EB9BA743FEC.e.27/text  ->  {\"value\":\"Received!\"}\nDELETE /session/1572ea8ca4df6e7f14c3a8d4adc84e28  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "d5460fba3fa45f4a7c83df50": {
+  "label": "select",
+  "lang": "java",
+  "out": "options: 4\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
   "rc": 0
  },
  "dbe3cc4ab0eab138d8f86abb": {

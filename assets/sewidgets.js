@@ -506,3 +506,72 @@ const SEZ = (() => {
     }
   });
 })();
+
+(() => {
+  const { def, D, esc } = CVZ;
+  const { rr, wrap, box } = SEZ;
+
+  /* ---------------------------------------------------------------- Chapter 3.3: what Element Click checks */
+  /* the order follows the Selenium documentation and the W3C Element Click command: scroll the element into view,
+     check that it can be interacted with, check that nothing covers its centre point, then send the mouse events. */
+  function plan(p) {
+    const out = [['Click requested', 'The binding sends POST /session/{id}/element/{id}/click.', 'ink']];
+    if (p.where === 'below') out.push(['Scroll into view', 'The element is below the visible area, so the driver scrolls until its bottom edge lines up with the bottom of the viewport.', 'accent']);
+    else out.push(['Already in view', 'The element is inside the viewport, so no scrolling is needed.', 'green']);
+    if (p.state === 'hidden') { out.push(['Not displayed', 'The element has display: none, so it has no box to click.', 'red']); out.push(['Error: element not interactable', 'HTTP 400. Your code gets ElementNotInteractableException.', 'red']); return out; }
+    out.push(['It can be interacted with', 'The element is displayed and has a size, so the driver can aim at it.', 'green']);
+    out.push(['Find the centre point', 'The driver takes the centre of the element as the place to click.', 'accent']);
+    if (p.state === 'disabled') { out.push(['The centre belongs to the parent', 'Chrome does not let a disabled button receive pointer events, so its parent counts as the element at that point.', 'red']); out.push(['Error: element click intercepted', 'This is what Chrome 153 answered when this page was built: "Other element would receive the click" naming the parent div. Check isEnabled() first so the failure message makes sense.', 'red']); return out; }
+    if (p.cover) { out.push(['Something covers the centre', 'A cookie banner lies on top. The element at that point is the banner, not the button.', 'red']); out.push(['Error: element click intercepted', 'HTTP 400 with "Other element would receive the click". Your code gets ElementClickInterceptedException.', 'red']); return out; }
+    out.push(['The centre is clear', 'The topmost element at the centre is the button itself.', 'green']);
+    out.push(['Mouse events', 'The driver moves the pointer there and sends mouse down, mouse up and click, like a real hand.', 'accent']);
+    out.push(['Done', 'The page reacts to the click. The command answers HTTP 200 with value null.', 'green']);
+    return out;
+  }
+  def('se-click', {
+    title: 'What happens inside one click',
+    sub: 'Change where the button is and what is wrong with it, then step through the checks the driver makes.',
+    W: 660, H: 400,
+    params: [
+      { k: 'where', label: 'Button position', type: 'select', v: 'below', opts: [['view', 'Inside the viewport'], ['below', 'Below the fold']] },
+      { k: 'state', label: 'Button state', type: 'select', v: 'ok', opts: [['ok', 'Normal'], ['hidden', 'display: none'], ['disabled', 'disabled']] },
+      { k: 'cover', label: 'A cookie banner covers it', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'The happy path: the driver scrolls, checks, aims at the centre and clicks.', set: { where: 'below', state: 'ok', cover: false }, play: true },
+      { t: 'Add the cookie banner. The click is intercepted. Close the banner in your test first, or wait for it to go.', set: { cover: true, state: 'ok' }, play: true },
+      { t: 'Hide the button. The driver stops early with element not interactable.', set: { state: 'hidden', cover: false }, play: true },
+      { t: 'Disable the button. Chrome reports the click as intercepted by the parent, a confusing message unless you check isEnabled() first.', set: { state: 'disabled', cover: false }, play: true }
+    ],
+    steps: z => plan(z.p).length - 1,
+    startAtZero: true,
+    speed: () => 1100,
+    draw(z) {
+      const g = z.g, c = z.col, p = z.p, P = plan(p), s = z.step, cur = P[s];
+      /* left: a page with a viewport frame */
+      const vx = 24, vy = 20, vw = 230, vh = 200;
+      const scrolled = p.where === 'below' && s >= 1;
+      const by = p.where === 'below' ? (scrolled ? vy + vh - 48 : vy + vh + 50) : vy + 90;
+      rr(g, vx, vy, vw, vh + 110, 10, { fill: c.surf, stroke: c.line });
+      rr(g, vx, vy, vw, vh, 10, { stroke: c.accent, w: 2.5 });
+      D.text(g, 'viewport', vx + 8, vy + 16, { s: 11, b: true, c: c.accent });
+      for (let i = 0; i < 4; i++) rr(g, vx + 16, (scrolled ? vy + 30 : vy + 34) + i * 26, vw - 32, 12, 4, { fill: c.bg });
+      if (p.state !== 'hidden') {
+        rr(g, vx + 60, by, 110, 36, 8, { fill: p.state === 'disabled' ? c.line : c.cv });
+        D.text(g, 'Submit', vx + 115, by + 23, { a: 'center', b: true, s: 13, c: '#fff' });
+        if (s >= 3) { D.circle(g, vx + 115, by + 18, 5, { fill: c.red }); }
+      } else rr(g, vx + 60, by, 110, 36, 8, { stroke: c.line, dash: [4, 4] });
+      if (p.cover && p.state !== 'hidden') { g.save(); g.globalAlpha = 0.92; rr(g, vx + 4, by + 4, vw - 8, 46, 6, { fill: c.orange }); g.restore(); D.text(g, 'We use cookies. Accept?', vx + 115, by + 32, { a: 'center', b: true, s: 12, c: '#fff' }); }
+      /* right: the list of checks */
+      const lx = 280, lw = z.W - lx - 20;
+      P.forEach((it, i) => {
+        const y = 20 + i * 34, on = i <= s, col = c[it[2]] || c.ink;
+        rr(g, lx, y, lw, 28, 8, { fill: i === s ? c.bg : c.surf, stroke: on ? col : c.line, w: i === s ? 2.2 : 1.2 });
+        D.text(g, it[0], lx + 12, y + 19, { s: 13, b: i === s, c: on ? c.ink : c.ink2 });
+      });
+      rr(g, 24, z.H - 76, z.W - 48, 64, 10, { fill: c.bg, stroke: c[cur[2]] || c.line, w: 2 });
+      wrap(g, cur[1], 38, z.H - 50, z.W - 76, { s: 13.5, c: c.ink, lh: 19 });
+      return `<b>${esc(cur[0])}</b>`;
+    }
+  });
+})();

@@ -4403,6 +4403,21 @@ function seModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "interacting", title: "Interacting with elements and reading them", emoji: "3.3", page: "content/selenium/interacting.html",
+        summary: "Click, type, clear, the checks before every action and their errors, element information, select lists and uploads.",
+        keywords: ["click", "send keys", "clear", "select", "upload", "is displayed", "attribute", "property", "interactable", "intercepted"],
+        minutes: 55, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "commands", title: "Click, type and clear", emoji: "", group: "Lesson", keywords: ["click", "send keys", "clear", "submit", "element not interactable", "element click intercepted", "invalid element state", "scroll into view", "interactable", "checkbox", "radio button"] },
+        { id: "info", title: "Read information about an element", emoji: "", group: "Lesson", keywords: ["is displayed", "is enabled", "is selected", "tag name", "rect", "css value", "text", "attribute", "property", "getDomAttribute", "getDomProperty", "get_property"] },
+        { id: "selectlists", title: "Select lists", emoji: "", group: "Lesson", keywords: ["select", "drop down", "select by visible text", "select by value", "select by index", "multiple select", "deselect", "options", "support package"] },
+        { id: "upload", title: "File upload", emoji: "", group: "Lesson", keywords: ["file upload", "input type file", "send keys path", "fakepath", "file dialog", "file detector"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
