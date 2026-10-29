@@ -4340,6 +4340,38 @@ function seModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "se-browser", title: "Control the browser", emoji: "2", step: 2, level: "Beginner", blurb: "Options, capabilities, page load strategy, timeouts, the driver service, navigation, windows and screenshots.", topics: [
+      { id: "sessions-options", title: "Sessions, options and timeouts", emoji: "2.1", page: "content/selenium/sessions-options.html",
+        summary: "Options and capabilities, page load strategy, the three session timeouts and the driver service, shown with real runs.",
+        keywords: ["session", "options", "capabilities", "page load strategy", "timeouts", "service", "headless", "chromeoptions"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "options", title: "Options and capabilities", emoji: "", group: "Lesson", keywords: ["options", "capabilities", "ChromeOptions", "DesiredCapabilities", "browserName", "browserVersion", "platformName", "acceptInsecureCerts", "vendor prefix", "goog:chromeOptions", "headless", "arguments"] },
+        { id: "loading", title: "Page load strategy", emoji: "", group: "Lesson", keywords: ["page load strategy", "normal", "eager", "none", "document.readyState", "complete", "interactive", "DOMContentLoaded", "load event", "single page application"] },
+        { id: "timeouts", title: "The three session timeouts", emoji: "", group: "Lesson", keywords: ["timeouts", "implicit wait", "page load timeout", "script timeout", "300000", "30000", "ScriptTimeoutException", "TimeoutException", "Duration"] },
+        { id: "service", title: "The driver service", emoji: "", group: "Lesson", keywords: ["service", "driver service", "port", "status endpoint", "log output", "ChromeDriverService", "ServiceBuilder", "local driver", "remote driver"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "navigate-screenshots", title: "Navigation, window size, screenshots and PDF", emoji: "2.2", page: "content/selenium/navigate-screenshots.html",
+        summary: "Navigation and history, title and URL, window size and position, screenshots and printing pages to PDF.",
+        keywords: ["navigation", "back", "forward", "refresh", "title", "current url", "window size", "screenshot", "print", "pdf"],
+        minutes: 40, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "navigate", title: "Navigate and ask where you are", emoji: "", group: "Lesson", keywords: ["navigate", "get", "navigate to", "back", "forward", "refresh", "title", "current url", "history", "redirect"] },
+        { id: "windowsize", title: "Window size and position", emoji: "", group: "Lesson", keywords: ["window size", "window position", "window rect", "maximize", "minimize", "fullscreen", "responsive", "Dimension", "Point"] },
+        { id: "screenshots", title: "Screenshots", emoji: "", group: "Lesson", keywords: ["screenshot", "take screenshot", "element screenshot", "png", "base64", "TakesScreenshot", "save_screenshot", "viewport"] },
+        { id: "print", title: "Print a page to PDF", emoji: "", group: "Lesson", keywords: ["print page", "pdf", "PrintOptions", "headless", "orientation", "landscape", "base64", "archive"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

@@ -1,8 +1,32 @@
 {
+ "0314641977701f640b33909a": {
+  "label": "caps",
+  "lang": "java",
+  "out": "browserName: chrome\nbrowserVersion: 153.0.8010.12\nplatformName: linux\npageLoadStrategy: eager\nunhandledPromptBehavior: dismiss and notify",
+  "rc": 0
+ },
+ "07ff8ec6af819bb87d8577c3": {
+  "label": "nav",
+  "lang": "js",
+  "out": "1 Web form\n2 XHTML Test Page at https://www.selenium.dev/selenium/web/xhtmlTest.html\n3 Web form\n4 XHTML Test Page\n5 XHTML Test Page",
+  "rc": 0
+ },
  "17c1fc04639dc49d5f1f2bf9": {
   "label": "rawhttp",
   "lang": "py",
   "out": "POST /session  ->  {\"value\": {\"capabilities\": {\"acceptInsecureCerts\": false, \"browserName...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/timeouts  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/url  ->  {\"value\": null}\nGET /session/8676a175324f14ce9347b93a7adbc2bc/title  ->  {\"value\": \"Web form\"}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.D9093E4BCA0DE174FCE7E68286174CFD.e.6/value  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.D9093E4BCA0DE174FCE7E68286174CFD.e.21/click  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nGET /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.EA8082E1511DC98290D1B66DBB605CA8.e.27/text  ->  {\"value\": \"Received!\"}\nDELETE /session/8676a175324f14ce9347b93a7adbc2bc  ->  {\"value\": null}",
+  "rc": 0
+ },
+ "281beaf8398bb8b26819e010": {
+  "label": "timeouts",
+  "lang": "java",
+  "out": "implicit: PT0S\npageLoad: PT5M\nscript: PT30S\nCaught ScriptTimeoutException",
+  "rc": 0
+ },
+ "2c39bf7bb59a2d03199bbcbd": {
+  "label": "window",
+  "lang": "java",
+  "out": "size 1024 x 768\nposition 40, 30",
   "rc": 0
  },
  "30980d07646aa05d16565268": {
@@ -17,6 +41,12 @@
   "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/url  ->  {\"value\":null}\nGET /session/95d0fe61737b4d163eb18144987aeb9c/title  ->  {\"value\":\"Web form\"}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.6/value  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.21/click  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nGET /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.E152AD2C20E2F888566D70528E29A501.e.26/text  ->  {\"value\":\"Received!\"}\nDELETE /session/95d0fe61737b4d163eb18144987aeb9c  ->  {\"value\":null}",
   "rc": 0
  },
+ "4219ba29387fbbbc334796c8": {
+  "label": "printpdf",
+  "lang": "js",
+  "out": "page.pdf starts with %PDF-",
+  "rc": 0
+ },
  "494c184918c253b57f6c385a": {
   "label": "hello",
   "lang": "js",
@@ -29,10 +59,58 @@
   "out": "Failed: no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"#no\\-such\\-id\"}\nBrowser closed",
   "rc": 0
  },
+ "4bee7c87ac09f14201a47eea": {
+  "label": "caps",
+  "lang": "py",
+  "out": "browserName: chrome\nbrowserVersion: 153.0.8010.12\nplatformName: linux\npageLoadStrategy: eager\nunhandledPromptBehavior: dismiss and notify",
+  "rc": 0
+ },
+ "51370ebea0d77bbb6c6989ba": {
+  "label": "printpdf",
+  "lang": "java",
+  "out": "page.pdf starts with %PDF-",
+  "rc": 0
+ },
+ "585354cc5f96d91933364e9f": {
+  "label": "printpdf",
+  "lang": "py",
+  "out": "page.pdf starts with %PDF-",
+  "rc": 0
+ },
+ "62080922edee8e65418e224e": {
+  "label": "window",
+  "lang": "py",
+  "out": "size 1024 x 768\nposition 40, 30\nrect {'height': 768, 'width': 1024, 'x': 40, 'y': 30}",
+  "rc": 0
+ },
  "6698c67d4818c41a381c318d": {
   "label": "rawhttp",
   "lang": "js",
   "out": "Starting ChromeDriver 153.0.8010.12 (971a7443b0c9b0a9b2860529b33331b76077ec62-refs/branch-heads/8010@{#343}) on port 9515\nOnly local connections are allowed.\nPlease see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.\nChromeDriver was started successfully on port 9515.\nPOST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/url  ->  {\"value\":null}\nGET /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/title  ->  {\"value\":\"Web form\"}\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.2AD4390301472F13246...\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element/f.2AD4390301472F13246C70725535C01F.d.F46076912A6B8A194F64435F8B2CD478.e.6/value  ->  {\"value\":null}\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.2AD4390301472F13246...\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element/f.2AD4390301472F13246C70725535C01F.d.F46076912A6B8A194F64435F8B2CD478.e.21/click  ->  {\"value\":null}\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element  ->  {\"value\":{\"error\":\"no such element\",\"message\":\"no such element: Unable...\nGET /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element/undefined/text  ->  {\"value\":{\"error\":\"no such element\",\"message\":\"no such element: the el...\nDELETE /session/4db6cdc5cae25e9b2a4cf2af7f3884b9  ->  {\"value\":null}\n\n[1793238577.255][SEVERE]: CreatePlatformSocket() failed: Address family not supported by protocol (97)\n[1793238578.545][SEVERE]: CreatePlatformSocket() failed: Address family not supported by protocol (97)",
+  "rc": 0
+ },
+ "6e67be77e92efc7c2c1d96a4": {
+  "label": "service",
+  "lang": "js",
+  "out": "Driver URL: http://localhost:9600\nready: true",
+  "rc": 0
+ },
+ "6f4fa6df317bea938922ee93": {
+  "label": "service",
+  "lang": "py",
+  "out": "Driver URL: http://localhost:9600\nready: True",
+  "rc": 0
+ },
+ "73ffe0d6f3fd811a2bce0124": {
+  "label": "shots",
+  "lang": "java",
+  "out": "page.png: 1024 x 625\nbutton.png: 79 x 38",
+  "rc": 0
+ },
+ "77a193bca6ca4d600dc11010": {
+  "label": "caps",
+  "lang": "js",
+  "out": "browserName: chrome\nbrowserVersion: 153.0.8010.12\nplatformName: linux\npageLoadStrategy: eager\nunhandledPromptBehavior: dismiss and notify",
   "rc": 0
  },
  "8a5ebe75fe5d30cd51c32ae1": {
@@ -45,6 +123,12 @@
   "label": "wirelog",
   "lang": "py",
   "out": "POST http://localhost:47995/session {'capabilities': {'firstMatch': [{}], 'alwaysMatch': {'browserName': 'chrome', 'pageLoadStrategy': <PageLoadStrategy.normal: 'normal'>, 'goog:chromeOptions': {'extensions': [], 'args': []}}}}\nRemote response: status=200 | data={\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"chrome\",\"browserVersion\":\"153.0.8010.12\",\"chrome\":{\"chromedriverVersion\":\"153.0.8010.12 (971a7443b0c9b0a9b2860529b33331b76077ec62-refs/branch-heads/8010@{#343})\",\"userDataDir\":\"/tmp/org.chromium.Chromium.scoped_dir.xIOqAL\"},\"fedcm:accounts\":true,\"goog:chromeOptions\":{\"debuggerAddress\":\"localhost:36071\"},\"goog:processID\":5976,\"networkConnectionEnabled\":false,\"pageLoadStrategy\":\"normal\",\"platformName\":\"linux\",\"proxy\":{},\"setWindowRect\":true,\"strictFileInteractability\":false,\"timeouts\":{\"implicit\":0,\"pageLoad\":300000,\"script\":30000},\"unhandledPromptBehavior\":\"dismiss and notify\",\"webauthn:extension:cmtgKey\":true,\"webauthn:extension:credBlob\":true,\"webauthn:extension:largeBlob\":true,\"webauthn:extension:minPinLength\":true,\"webauthn:extension:prf\":true,\"webauthn:virtualAuthenticators\":true},\"sessionId\":\"d22f625b78c052911ff513d44ee74914\"}} | headers=HTTPHeaderDict({'Content-Length': '913', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/url {'url': 'https://www.selenium.dev/selenium/web/web-form.html'}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/element {'using': 'css selector', 'value': '[name=\"my-text\"]'}\nRemote response: status=200 | data={\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.0C92C16D926BE0471F7373028EABCFEF.d.73441B1E15E59DD3679B0F54BF11DFB0.e.6\"}} | headers=HTTPHeaderDict({'Content-Length': '125', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/element/f.0C92C16D926BE0471F7373028EABCFEF.d.73441B1E15E59DD3679B0F54BF11DFB0.e.6/value {'text': 'Hi', 'value': ['H', 'i']}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nGET http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/title {}\nRemote response: status=200 | data={\"value\":\"Web form\"} | headers=HTTPHeaderDict({'Content-Length': '20', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\ntitle is Web form\nDELETE http://localhost:47995/session/d22f625b78c052911ff513d44ee74914 {}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request",
+  "rc": 0
+ },
+ "9b729da6a7628cf71aac9b7b": {
+  "label": "nav",
+  "lang": "py",
+  "out": "1 Web form\n2 XHTML Test Page at https://www.selenium.dev/selenium/web/xhtmlTest.html\n3 Web form\n4 XHTML Test Page\n5 XHTML Test Page",
   "rc": 0
  },
  "9c18a95c07f3d1b1d6382141": {
@@ -83,10 +167,22 @@
   "out": "Title: Web form\nURL: https://www.selenium.dev/selenium/web/web-form.html",
   "rc": 0
  },
+ "c8b8e97947cde3d0a97d1df8": {
+  "label": "service",
+  "lang": "java",
+  "out": "Driver URL: http://localhost:9600\nready: true",
+  "rc": 0
+ },
  "d370a2e8923b444db16ff372": {
   "label": "rawhttp",
   "lang": "java",
   "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/timeouts  ->  {\"value\":null}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/url  ->  {\"value\":null}\nGET /session/1572ea8ca4df6e7f14c3a8d4adc84e28/title  ->  {\"value\":\"Web form\"}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.CEA8EA828217AE4BDE1...\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element/f.CEA8EA828217AE4BDE1BBE3050CC97CF.d.298B371AFB4A8DB17596DA16CFED7B72.e.6/value  ->  {\"value\":null}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.CEA8EA828217AE4BDE1...\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element/f.CEA8EA828217AE4BDE1BBE3050CC97CF.d.298B371AFB4A8DB17596DA16CFED7B72.e.21/click  ->  {\"value\":null}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.CEA8EA828217AE4BDE1...\nGET /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element/f.CEA8EA828217AE4BDE1BBE3050CC97CF.d.C670560C5CAD8B17CAC20EB9BA743FEC.e.27/text  ->  {\"value\":\"Received!\"}\nDELETE /session/1572ea8ca4df6e7f14c3a8d4adc84e28  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "dbe3cc4ab0eab138d8f86abb": {
+  "label": "nav",
+  "lang": "java",
+  "out": "1 Web form\n2 XHTML Test Page at https://www.selenium.dev/selenium/web/xhtmlTest.html\n3 Web form\n4 XHTML Test Page\n5 XHTML Test Page",
   "rc": 0
  },
  "e394d701d106bde6d0f15a5c": {
@@ -95,10 +191,40 @@
   "out": "Title: Web form\nMessage: Received!",
   "rc": 0
  },
+ "e4e5583a2ca6c6f9675345fe": {
+  "label": "shots",
+  "lang": "js",
+  "out": "page.png: 1024 x 625\nbutton.png: 79 x 38",
+  "rc": 0
+ },
+ "e51f050c4f7d2e88effa53c6": {
+  "label": "timeouts",
+  "lang": "js",
+  "out": "{ implicit: 0, pageLoad: 300000, script: 30000 }\nCaught ScriptTimeoutError",
+  "rc": 0
+ },
+ "e6fa3c173fd9b255c0118ac7": {
+  "label": "window",
+  "lang": "js",
+  "out": "size 1024 x 768\nposition 40, 30",
+  "rc": 0
+ },
  "e9dcc105cb682fe3c24cf35b": {
   "label": "rawhttp",
   "lang": "js",
   "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/timeouts  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/url  ->  {\"value\":null}\nGET /session/fe3fd9b77d510e3774c3e96a1d79dfa7/title  ->  {\"value\":\"Web form\"}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.FFD99782F6866C71F9472FF7B365A671.e.6/value  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.FFD99782F6866C71F9472FF7B365A671.e.21/click  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nGET /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.7A3C754C59BC38B27A8501799597EA4E.e.27/text  ->  {\"value\":\"Received!\"}\nDELETE /session/fe3fd9b77d510e3774c3e96a1d79dfa7  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "f7224ab61cf2d1986a8f162d": {
+  "label": "timeouts",
+  "lang": "py",
+  "out": "implicit: 0.0\npageLoad: 300.0\nscript: 30.0\nCaught TimeoutException",
+  "rc": 0
+ },
+ "fc298790969c8d78e776e164": {
+  "label": "shots",
+  "lang": "py",
+  "out": "page.png: 1024 x 625\nbutton.png: 79 x 38",
   "rc": 0
  },
  "fd66754d7b7d6f30212dfdd5": {

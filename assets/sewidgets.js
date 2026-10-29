@@ -222,3 +222,132 @@ const SEZ = (() => {
     }
   });
 })();
+
+(() => {
+  const { def, D, esc } = CVZ;
+  const { rr, wrap, box } = SEZ;
+
+  /* ---------------------------------------------------------------- Chapter 2.1: page load strategy */
+  /* normal waits for readyState complete (the load event), eager for interactive (DOMContentLoaded), none only for the
+     first download of the page. The times are a made up page so the reader can change them. */
+  def('se-loadstrategy', {
+    title: 'When does get() hand control back?',
+    sub: 'A page loads in stages. Pick a strategy and change how slow the parts are, then step through the load.',
+    W: 660, H: 330,
+    params: [
+      { k: 'st', label: 'pageLoadStrategy', type: 'select', v: 'normal', opts: [['normal', 'normal (default)'], ['eager', 'eager'], ['none', 'none']] },
+      { k: 'html', label: 'HTML download (ms)', type: 'range', v: 400, min: 100, max: 2000, step: 100 },
+      { k: 'dom', label: 'Parsing and scripts (ms)', type: 'range', v: 300, min: 100, max: 2000, step: 100 },
+      { k: 'img', label: 'Images, fonts and styles (ms)', type: 'range', v: 2500, min: 0, max: 6000, step: 250 }
+    ],
+    tips: [
+      { t: 'With normal, get() waits for every image. Drag the images slider and watch the return time move.', set: { st: 'normal' }, play: true },
+      { t: 'Switch to eager. get() returns at DOMContentLoaded, while the images still load. Elements exist, pictures may not.', set: { st: 'eager' }, play: true },
+      { t: 'Switch to none. get() returns as soon as the first bytes are in. Your waits now carry all the weight.', set: { st: 'none' }, play: true }
+    ],
+    steps: () => 4,
+    startAtZero: true,
+    draw(z) {
+      const g = z.g, c = z.col, p = z.p, s = z.step;
+      const t1 = p.html, t2 = t1 + p.dom, t3 = t2 + p.img;
+      const ret = { normal: t3, eager: t2, none: t1 }[p.st];
+      const L = 40, R = z.W - 40, y = 120, scale = (R - L) / Math.max(t3, 1);
+      const X = t => L + t * scale;
+      D.text(g, 'time since get() was called', L, 30, { s: 12, c: c.ink2 });
+      const bars = [[0, t1, 'download HTML', c.accent], [t1, t2, 'parse, run scripts', c.purple], [t2, t3, 'images, fonts, styles', c.orange]];
+      bars.forEach((b, i) => {
+        if (i > s - 1 && s < 4) return;
+        if (b[1] <= b[0]) return;
+        rr(g, X(b[0]), y - 22, Math.max(2, X(b[1]) - X(b[0])), 26, 6, { fill: b[3] });
+        if (X(b[1]) - X(b[0]) > 90) D.text(g, b[2], (X(b[0]) + X(b[1])) / 2, y - 4, { a: 'center', s: 11.5, b: true, c: '#fff' });
+      });
+      D.line(g, L, y + 14, R, y + 14, c.line, 2);
+      const marks = [[0, 'get() sent', 'loading'], [t1, 'first bytes in', 'loading'], [t2, 'DOMContentLoaded', 'interactive'], [t3, 'load event', 'complete']];
+      marks.forEach((m, i) => {
+        if (i > s) return;
+        const x = X(m[0]);
+        D.line(g, x, y + 8, x, y + 20, c.ink, 2);
+        const lab = i % 2 ? 46 : 62;
+        D.text(g, m[1], x, y + lab, { a: i === 0 ? 'left' : i === 3 ? 'right' : 'center', s: 11.5, b: true, c: c.ink });
+        D.text(g, 'readyState ' + m[2], x, y + lab + 15, { a: i === 0 ? 'left' : i === 3 ? 'right' : 'center', s: 10.5, c: c.ink2 });
+      });
+      const retIdx = { none: 1, eager: 2, normal: 3 }[p.st];
+      if (s >= retIdx) {
+        const x = X(ret);
+        D.arrow(g, x, 46, x, y - 26, c.green, 3);
+        D.text(g, 'get() returns at ' + ret + ' ms', Math.min(Math.max(x, L + 70), R - 70), 52 - 12, { a: 'center', b: true, s: 13, c: c.green });
+      }
+      rr(g, 20, 222, z.W - 40, 92, 12, { fill: c.bg, stroke: c.line });
+      const msg = [
+        'get() sends the address. The browser starts to fetch the page.',
+        'The first bytes of HTML arrive. With none, WebDriver stops waiting here.',
+        'The HTML is parsed and its scripts have run: DOMContentLoaded fires and readyState becomes interactive. With eager, WebDriver stops waiting here.',
+        'Every image, font and style sheet is in: the load event fires and readyState becomes complete. With normal, WebDriver stops waiting here.',
+        p.st === 'normal' ? `normal saved nothing but is the safest: every element and every resource is ready when get() returns at ${ret} ms.` : `${p.st} returned ${t3 - ret} ms earlier than normal would. Anything that loads later needs an explicit wait in your test.`
+      ][s];
+      wrap(g, msg, 36, 248, z.W - 72, { s: 13.5, c: c.ink, lh: 20 });
+      return `With <b>${esc(p.st)}</b>, get() returns after ${ret} ms. The whole page takes ${t3} ms.`;
+    }
+  });
+})();
+
+(() => {
+  const { def, D, esc } = CVZ;
+  const { rr, wrap, fit } = SEZ;
+
+  /* ---------------------------------------------------------------- Chapter 2.2: browser history */
+  /* the session history of one tab: get adds a page and throws away anything ahead, back and forward move the
+     pointer, refresh reloads the current page. Mirrors what a user does with the toolbar buttons. */
+  const PLANS = {
+    shop: ['get home', 'get search', 'get product', 'back', 'back', 'forward', 'refresh', 'get basket'],
+    simple: ['get home', 'get search', 'back', 'forward'],
+    edge: ['get home', 'back', 'get search', 'forward', 'back', 'back']
+  };
+  function run(plan, upto) {
+    let hist = [], at = -1, msg = '';
+    plan.slice(0, upto + 1).forEach(a => {
+      const [cmd, page] = a.split(' ');
+      if (cmd === 'get') { hist = hist.slice(0, at + 1); hist.push(page); at = hist.length - 1; msg = `get opens ${page}. Any pages ahead of the current one are thrown away.`; }
+      if (cmd === 'back') { if (at > 0) { at--; msg = `back moves to ${hist[at]}, the same as the toolbar Back button.`; } else msg = 'back with nothing behind: the browser stays where it is and no error is raised.'; }
+      if (cmd === 'forward') { if (at < hist.length - 1) { at++; msg = `forward moves to ${hist[at]}.`; } else msg = 'forward with nothing ahead: nothing happens.'; }
+      if (cmd === 'refresh') msg = `refresh reloads ${hist[at]}. Form fields typed into may be cleared, and any element you found before is now stale.`;
+    });
+    return { hist, at, msg };
+  }
+  const CALL = { java: { get: p => `driver.get(".../${p}")`, back: () => 'driver.navigate().back()', forward: () => 'driver.navigate().forward()', refresh: () => 'driver.navigate().refresh()' },
+    py: { get: p => `driver.get(".../${p}")`, back: () => 'driver.back()', forward: () => 'driver.forward()', refresh: () => 'driver.refresh()' },
+    js: { get: p => `await driver.get('.../${p}')`, back: () => 'await driver.navigate().back()', forward: () => 'await driver.navigate().forward()', refresh: () => 'await driver.navigate().refresh()' } };
+  def('se-history', {
+    title: 'Back, forward and the history of a tab',
+    sub: 'Pick a plan and step through it. The highlighted card is the page the browser shows.',
+    W: 640, H: 300,
+    params: [
+      { k: 'plan', label: 'Plan', type: 'select', v: 'shop', opts: [['shop', 'Shopping trip'], ['simple', 'Short trip'], ['edge', 'Pressing too far']] },
+      { k: 'lang', label: 'Show the code in', type: 'select', v: 'py', opts: [['java', 'Java'], ['py', 'Python'], ['js', 'JavaScript']] }
+    ],
+    tips: [
+      { t: 'In the shopping trip, watch what happens to product when you go back and then get basket. A new get cuts off the pages ahead.', set: { plan: 'shop' }, play: true },
+      { t: 'Pressing too far: back on the first page does nothing and raises no error. Check the title if your test depends on it.', set: { plan: 'edge' }, play: true }
+    ],
+    steps: z => PLANS[z.p.plan].length - 1,
+    startAtZero: true,
+    draw(z) {
+      const g = z.g, c = z.col, plan = PLANS[z.p.plan], s = z.step;
+      const { hist, at, msg } = run(plan, s);
+      const [cmd, page] = plan[s].split(' ');
+      D.text(g, 'Line run: ' + CALL[z.p.lang][cmd](page), 24, 30, { mono: true, s: 13, b: true, c: c.cv });
+      const w = 120, gap = 16, x0 = 24, y = 70;
+      hist.forEach((p, i) => {
+        const x = x0 + i * (w + gap), cur = i === at;
+        rr(g, x, y, w, 70, 12, { fill: cur ? c.bg : c.surf, stroke: cur ? c.cv : c.line, w: cur ? 3 : 1.5 });
+        D.text(g, p, x + w / 2, y + 32, { a: 'center', b: true, s: fit(g, p, w - 12, 15, { b: true }), c: cur ? c.ink : c.ink2 });
+        D.text(g, i < at ? 'behind' : i > at ? 'ahead' : 'showing', x + w / 2, y + 54, { a: 'center', s: 11.5, c: cur ? c.cv : c.ink2 });
+        if (i) D.arrow(g, x - gap + 2, y + 35, x - 2, y + 35, c.line, 1.5);
+      });
+      rr(g, 24, 170, z.W - 48, 110, 12, { fill: c.bg, stroke: c.line });
+      wrap(g, msg, 40, 198, z.W - 80, { s: 14, c: c.ink, lh: 21 });
+      D.text(g, `getTitle() would now return the title of ${hist[at]}`, 40, 262, { s: 12.5, c: c.ink2 });
+      return `Showing <b>${esc(hist[at])}</b>, with ${at} page${at === 1 ? '' : 's'} behind and ${hist.length - 1 - at} ahead.`;
+    }
+  });
+})();

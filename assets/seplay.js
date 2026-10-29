@@ -396,7 +396,7 @@ const SEPLAY = (() => {
 
     async function startSession() {
       if (S.session) throw new SeError('invalid argument', 'A session is already running.');
-      send('POST', '/session', { capabilities: { firstMatch: [{ browserName: 'chrome', 'goog:chromeOptions': {} }] } }, () => {
+      send('POST', '/session', { capabilities: { firstMatch: [{}], alwaysMatch: { browserName: 'chrome', 'goog:chromeOptions': {} } } }, () => {
         S.session = Array.from({ length: 32 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
         return { sessionId: S.session, capabilities: { browserName: 'chrome', browserVersion: '153.0', pageLoadStrategy: 'normal', timeouts: { implicit: 0, pageLoad: 300000, script: 30000 } } };
       });
