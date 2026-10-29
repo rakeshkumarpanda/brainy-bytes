@@ -1,6 +1,6 @@
 """A local HTTPS copy of https://www.selenium.dev/selenium/web/ for the examples, with the CDN files those pages load.
 
-The Chromium wrapper written by setup.sh sends www.selenium.dev, cdn.jsdelivr.net, unpkg.com and code.jquery.com to
+The Chromium wrapper written by setup.sh sends www.selenium.dev, selenium.dev, cdn.jsdelivr.net, unpkg.com and code.jquery.com to
 127.0.0.1:8443, so an example can keep the real URL a reader would type and still run without the internet.
 The pages in site/selenium/web/ are copied unchanged from the Selenium repository (common/src/web, Apache 2.0).
 
@@ -30,6 +30,12 @@ def resolve(host, path):
         return os.path.join(NODE, pkg.split('@')[0], rest)
     if host == 'code.jquery.com':
         return os.path.join(NODE, 'jquery', 'dist', 'jquery.min.js') if path.startswith('/jquery-') else None
+    if path.startswith('/selenium/web/js/jquery-ui'):
+        return os.path.join(NODE, 'jquery-ui-dist', 'jquery-ui.min.js')
+    if path.startswith('/selenium/web/js/jquery-'):
+        return os.path.join(NODE, 'jquery', 'dist', 'jquery.min.js')
+    if path.startswith('/selenium/web/css/ui-lightness/jquery-ui'):
+        return os.path.join(NODE, 'jquery-ui-dist', 'jquery-ui.min.css')
     full = os.path.normpath(os.path.join(SITE, path.lstrip('/')))
     if full.endswith(os.sep) or os.path.isdir(full):
         full = os.path.join(full, 'index.html')

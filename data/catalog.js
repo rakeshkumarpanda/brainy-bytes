@@ -4449,6 +4449,20 @@ function seModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "actions", title: "The Actions API: mouse, keyboard and wheel", emoji: "4.3", page: "content/selenium/actions.html",
+        summary: "Mouse, keyboard and wheel actions, and how a chain becomes ticks.",
+        keywords: ["actions", "action chains", "mouse", "keyboard", "drag and drop", "hover", "double click", "right click", "scroll", "wheel", "ticks"],
+        minutes: 55, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "mouse", title: "How actions work, and the mouse", emoji: "", group: "Lesson", keywords: ["actions api", "action chains", "perform", "ticks", "input source", "double click", "context click", "right click", "hover", "drag and drop", "move to element", "move by offset", "release actions"] },
+        { id: "keyboard", title: "Keyboard actions", emoji: "", group: "Lesson", keywords: ["keyboard actions", "key down", "key up", "shift", "control", "command", "select all", "send keys", "special keys", "unicode keys"] },
+        { id: "wheel", title: "Scroll wheel actions", emoji: "", group: "Lesson", keywords: ["scroll", "wheel", "scroll to element", "scroll by amount", "scroll from origin", "infinite scroll", "scroll origin"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

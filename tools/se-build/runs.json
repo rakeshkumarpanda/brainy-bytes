@@ -107,10 +107,22 @@
   "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/url  ->  {\"value\":null}\nGET /session/95d0fe61737b4d163eb18144987aeb9c/title  ->  {\"value\":\"Web form\"}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.6/value  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.21/click  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nGET /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.E152AD2C20E2F888566D70528E29A501.e.26/text  ->  {\"value\":\"Received!\"}\nDELETE /session/95d0fe61737b4d163eb18144987aeb9c  ->  {\"value\":null}",
   "rc": 0
  },
+ "3e1b8c40233a21b8dfe035fc": {
+  "label": "keys",
+  "lang": "js",
+  "out": "typed: ABCdef\nafter select all and delete: ''\ntyped into element: Selenium!",
+  "rc": 0
+ },
  "40c7532883ced1ae87f6b440": {
   "label": "interacterr",
   "lang": "py",
   "out": "type into disabled: ElementNotInteractableException, element not interactable\nclear readonly: InvalidElementStateException, invalid element state\nclick under banner: ElementClickInterceptedException, element click intercepted",
+  "rc": 0
+ },
+ "41318b099ac1b20f189fc81b": {
+  "label": "wheel",
+  "lang": "py",
+  "out": "frame in view before: False\nframe in view after: True\nscrollY right after perform: 0\nscrollY after waiting: 300\nframe scrollY: 118 of at most 118",
   "rc": 0
  },
  "41fa548a2acbf3aace5a9c39": {
@@ -173,6 +185,12 @@
   "out": "page.pdf starts with %PDF-",
   "rc": 0
  },
+ "586f43fdfa5a2a1b927e8cec": {
+  "label": "wheel",
+  "lang": "java",
+  "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 4505\nscrollY after waiting: 4505\nframe scrollY: 118 of at most 118",
+  "rc": 0
+ },
  "5cfb4b591f2f50e81e6c8750": {
   "label": "shadow",
   "lang": "py",
@@ -183,6 +201,12 @@
   "label": "typeclick",
   "lang": "py",
   "out": "check 2 before: False\ncheck 2 after: True\nradio 1 now: False\nReceived!",
+  "rc": 0
+ },
+ "608363cd1d98cb9a082ed51b": {
+  "label": "mouse",
+  "lang": "js",
+  "out": "double: double-clicked\nright: context-clicked\nhover: hovered\ndrag: dropped\nat: 8, 12\nmoved by: 21, 27",
   "rc": 0
  },
  "62080922edee8e65418e224e": {
@@ -219,6 +243,12 @@
   "label": "service",
   "lang": "py",
   "out": "Driver URL: http://localhost:9600\nready: True",
+  "rc": 0
+ },
+ "703d377c4bbdeda02d20fe99": {
+  "label": "mouse",
+  "lang": "java",
+  "out": "double: double-clicked\nright: context-clicked\nhover: hovered\ndrag: dropped\nat: 8, 12\nmoved by: 21, 27",
   "rc": 0
  },
  "70c5a1ff2de67edfb3697de4": {
@@ -267,6 +297,12 @@
   "label": "race",
   "lang": "py",
   "out": "too early: no such element",
+  "rc": 0
+ },
+ "869ebf2fd4054bd862190e20": {
+  "label": "wheel",
+  "lang": "js",
+  "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 0\nscrollY after waiting: 300\nframe scrollY: 118 of at most 118",
   "rc": 0
  },
  "87ead572ac21a49afd6904ea": {
@@ -371,6 +407,12 @@
   "out": "check 2 before: false\ncheck 2 after: true\nradio 1 now: false\nReceived!",
   "rc": 0
  },
+ "a374b3df987d3e40f0319795": {
+  "label": "keys",
+  "lang": "java",
+  "out": "typed: ABCdef\nafter select all and delete: ''\ntyped into element: Selenium!",
+  "rc": 0
+ },
  "a5b4644a9c1c9eb9d4ca5752": {
   "label": "eight",
   "lang": "py",
@@ -381,6 +423,12 @@
   "label": "info",
   "lang": "js",
   "out": "displayed: true, enabled: true\ndisabled box enabled: false\ntag: input, rect: 296 x 38\ngetAttribute(value): hello\ngetDomAttribute(value): null\ngetProperty(value): hello\ngetDomAttribute(myprop): myvalue\nbutton colour: rgba(13, 110, 253, 1)\nheading text: Web form",
+  "rc": 0
+ },
+ "aa6daa6c7d50240bb5a1d078": {
+  "label": "mouse",
+  "lang": "py",
+  "out": "double: double-clicked\nright: context-clicked\nhover: hovered\ndrag: dropped\nat: 8, 12\nmoved by: 21, 27",
   "rc": 0
  },
  "abc1417b2000cb59ef5d5fda": {
@@ -417,6 +465,12 @@
   "label": "frames",
   "lang": "py",
   "out": "email boxes seen from the top: 0\nby element: email\nby name: 1 email box\ntitle inside the frame: This page has iframes\nheading: This is the heading",
+  "rc": 0
+ },
+ "b615870a1f10afdd6c5e6fa4": {
+  "label": "wheel",
+  "lang": "py",
+  "out": "frame in view before: False\nframe in view after: True\nscrollY right after perform: 4475\nscrollY after waiting: 4505\nframe scrollY: 118 of at most 118",
   "rc": 0
  },
  "b73cc4b128da5f59a4d1ba73": {
@@ -575,6 +629,18 @@
   "out": "size 1024 x 768\nposition 40, 30",
   "rc": 0
  },
+ "e8c6ad839cb7045e526348ea": {
+  "label": "wheel",
+  "lang": "java",
+  "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 300\nscrollY after waiting: 300\nframe scrollY: 118 of at most 118",
+  "rc": 0
+ },
+ "e95c7a70ce9158c708ff5912": {
+  "label": "wheel",
+  "lang": "js",
+  "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 4475\nscrollY after waiting: 4505\nframe scrollY: 118 of at most 118",
+  "rc": 0
+ },
  "e9dcc105cb682fe3c24cf35b": {
   "label": "rawhttp",
   "lang": "js",
@@ -609,6 +675,12 @@
   "label": "mismatch",
   "lang": "py",
   "out": "session not created: This version of ChromeDriver only supports Chrome version 147",
+  "rc": 0
+ },
+ "fd8a5e47446c218f200f15b2": {
+  "label": "keys",
+  "lang": "py",
+  "out": "typed: ABCdef\nafter select all and delete: ''\ntyped into element: Selenium!",
   "rc": 0
  }
 }

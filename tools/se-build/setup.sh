@@ -16,7 +16,7 @@ cp "$("$BOX/.venv/bin/python" -c 'import chromedriver_py, os; print(os.path.dirn
 
 # JavaScript: the bindings, Mocha, and local copies of the CDN files the Selenium test pages load
 cd "$BOX/node" && [ -f package.json ] || npm init -y >/dev/null
-npm i -s "selenium-webdriver@$SE" mocha@10 bootstrap@5.1.0 bootstrap-datepicker@1.9.0 jquery@3.6.0
+npm i -s "selenium-webdriver@$SE" mocha@10 bootstrap@5.1.0 bootstrap-datepicker@1.9.0 jquery@3.6.0 jquery-ui-dist@1.12.1
 
 # Java: every jar of selenium-java, the Grid server and JUnit 5 in box/java/lib
 cat > "$BOX/java/pom.xml" <<POM
@@ -39,7 +39,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=www.selenium.dev
 mkdir -p /opt/google/chrome
 cat > /opt/google/chrome/chrome <<SH
 #!/bin/sh
-exec "$CHROMIUM" --no-sandbox --no-proxy-server --ignore-certificate-errors --host-resolver-rules="MAP www.selenium.dev:443 127.0.0.1:8443, MAP cdn.jsdelivr.net:443 127.0.0.1:8443, MAP unpkg.com:443 127.0.0.1:8443, MAP code.jquery.com:443 127.0.0.1:8443" "\$@"
+exec "$CHROMIUM" --no-sandbox --no-proxy-server --ignore-certificate-errors --host-resolver-rules="MAP www.selenium.dev:443 127.0.0.1:8443, MAP selenium.dev:443 127.0.0.1:8443, MAP cdn.jsdelivr.net:443 127.0.0.1:8443, MAP unpkg.com:443 127.0.0.1:8443, MAP code.jquery.com:443 127.0.0.1:8443" "\$@"
 SH
 chmod +x /opt/google/chrome/chrome
 echo "Set up done in $BOX"

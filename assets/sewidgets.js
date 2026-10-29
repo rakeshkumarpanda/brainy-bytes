@@ -665,7 +665,7 @@ const SEZ = (() => {
 
 (() => {
   const { def, D, esc } = CVZ;
-  const { rr, wrap, fit } = SEZ;
+  const { rr, wrap, fit, ms } = SEZ;
 
   /* ---------------------------------------------------------------- Chapter 4.2: the current browsing context */
   /* WebDriver sends every command to one browsing context: one window or tab, and inside it the top document or a
@@ -739,4 +739,68 @@ const SEZ = (() => {
       return `Commands now go to: <b>${cur[1] === 'gone' ? 'a closed window' : cur[2] === 'top' ? 'the top document' : cur[2] === 'frame' ? 'the frame' : 'the inner frame'}</b>.`;
     }
   });
+  /* ---------------------------------------------------------------- Chapter 4.3: the Actions API */
+  /* Each plan is the real payload Python sent to POST /session/{id}/actions on this site. 'M' marks a pointerMove whose
+     duration comes from the slider, as the bindings use one default for every move they build. */
+  const TICKS = {
+    hover: { name: 'move_to_element(hover).click()', src: {
+      pointer: [['pointerMove', 'M', 'to #hover'], ['pointerDown', 0, 'button 0'], ['pointerUp', 0, 'button 0']],
+      key: [['pause', 0, ''], ['pause', 0, ''], ['pause', 0, '']] } },
+    drag: { name: 'drag_and_drop(draggable, droppable)', src: {
+      pointer: [['pointerMove', 'M', 'to #draggable'], ['pointerDown', 0, 'button 0'], ['pointerMove', 'M', 'to #droppable'], ['pointerUp', 0, 'button 0']],
+      key: [['pause', 0, ''], ['pause', 0, ''], ['pause', 0, ''], ['pause', 0, '']] } },
+    shift: { name: 'key_down(SHIFT).send_keys("ab").key_up(SHIFT)', src: {
+      pointer: [['pause', 0, ''], ['pause', 0, ''], ['pause', 0, ''], ['pause', 0, ''], ['pause', 0, ''], ['pause', 0, '']],
+      key: [['keyDown', 0, 'SHIFT \\ue008'], ['keyDown', 0, 'a'], ['keyUp', 0, 'a'], ['keyDown', 0, 'b'], ['keyUp', 0, 'b'], ['keyUp', 0, 'SHIFT \\ue008']] } },
+    wheel: { name: 'scroll_by_amount(0, 300)', src: {
+      wheel: [['scroll', 0, 'deltaY 300 from the viewport']] } }
+  };
+  def('se-ticks', {
+    title: 'How a chain of actions becomes ticks',
+    sub: 'Every input source gets one list of actions. The driver runs them column by column. Each column, a tick, lasts as long as its slowest action.',
+    W: 660, H: 360,
+    params: [
+      { k: 'plan', label: 'Chain', type: 'select', v: 'drag', opts: [['hover', 'Hover, then click'], ['drag', 'Drag and drop'], ['shift', 'Shift plus a and b'], ['wheel', 'Scroll the wheel']] },
+      { k: 'dur', label: 'Pointer move duration (ms)', type: 'range', v: 250, min: 0, max: 1000, step: 50 }
+    ],
+    tips: [
+      { t: 'In the drag plan, look at the key row: Python filled it with pauses so both rows have the same number of ticks.', set: { plan: 'drag', dur: 250 }, play: true },
+      { t: 'Set the move duration to 0. The drag now takes 0 ms of pointer movement, which some drag libraries do not notice.', set: { plan: 'drag', dur: 0 }, play: true },
+      { t: 'In the Shift plan, SHIFT stays down from the first tick to the last, so a and b arrive as capitals.', set: { plan: 'shift' }, play: true }
+    ],
+    steps: z => Object.values(TICKS[z.p.plan].src)[0].length,
+    startAtZero: true,
+    speed: () => 1100,
+    draw(z) {
+      const g = z.g, c = z.col, P = TICKS[z.p.plan], rows = Object.keys(P.src), n = P.src[rows[0]].length, s = z.step;
+      const durOf = a => a[1] === 'M' ? z.p.dur : a[1];
+      const tickDur = i => Math.max(...rows.map(r => durOf(P.src[r][i])));
+      D.text(g, 'actions.perform() sends: ' + P.name, 24, 26, { s: fit(g, 'actions.perform() sends: ' + P.name, z.W - 48, 13, { mono: true }), mono: true, b: true, c: c.cv });
+      const x0 = 110, cw = Math.min(124, (z.W - x0 - 24) / n), y0 = 50, rh = 62;
+      for (let i = 0; i < n; i++) {
+        const x = x0 + i * cw, on = s === i + 1, done = s > i + 1;
+        if (on) rr(g, x + 1, y0 - 4, cw - 2, rows.length * rh + 34, 8, { fill: c.bg, stroke: c.cv, w: 2.5 });
+        D.text(g, 'tick ' + (i + 1), x + cw / 2, y0 + 10, { a: 'center', s: 11, b: true, c: on ? c.cv : c.ink2 });
+        rows.forEach((r, j) => {
+          const a = P.src[r][i], y = y0 + 20 + j * rh, pause = a[0] === 'pause';
+          rr(g, x + 5, y, cw - 10, rh - 10, 8, { fill: pause ? 'transparent' : c.surf, stroke: pause ? c.line : (done || on ? c.green : c.purple), dash: pause ? [4, 3] : null, w: 1.5 });
+          D.text(g, a[0], x + cw / 2, y + 17, { a: 'center', s: fit(g, a[0], cw - 14, 11.5, { mono: true }), mono: true, b: !pause, c: pause ? c.ink2 : c.ink });
+          if (a[2]) wrap(g, a[2], x + 10, y + 32, cw - 20, { s: 10, c: c.ink2, lh: 12 });
+          D.text(g, ms(durOf(a)), x + cw - 9, y + rh - 14, { a: 'right', s: 10, c: c.ink2 });
+        });
+        D.text(g, ms(tickDur(i)), x + cw / 2, y0 + 30 + rows.length * rh, { a: 'center', s: 11.5, b: true, c: on ? c.cv : c.ink2 });
+      }
+      rows.forEach((r, j) => D.text(g, r === 'key' ? 'key' : r, 24, y0 + 50 + j * rh, { s: 13, b: true, mono: true, c: c.ink }));
+      D.text(g, 'lasts', 24, y0 + 30 + rows.length * rh, { s: 12, b: true, c: c.ink2 });
+      let t = 0; for (let i = 0; i < s; i++) t += tickDur(i);
+      let total = 0; for (let i = 0; i < n; i++) total += tickDur(i);
+      const yb = y0 + 50 + rows.length * rh;
+      rr(g, 20, yb, z.W - 40, z.H - yb - 14, 10, { fill: c.bg, stroke: c.line });
+      const msg = s === 0 ? `${rows.length} input source${rows.length > 1 ? 's' : ''}, ${n} tick${n > 1 ? 's' : ''}. Press Play to run them.`
+        : `Tick ${s}: ` + rows.map(r => r + ' ' + P.src[r][s - 1][0]).join(', ') + `. The tick lasts ${ms(tickDur(s - 1))}, the longest action in its column.`;
+      wrap(g, msg, 34, yb + 24, z.W - 68, { s: 13, c: c.ink, lh: 18 });
+      return `Time used so far: <b>${ms(t)}</b> of ${ms(total)}.`;
+    }
+  });
+
 })();
