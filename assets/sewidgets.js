@@ -933,4 +933,58 @@ const SEZ = (() => {
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 5.2: page objects */
+  const POMSTEPS = [
+    'Every test below opens the checkout and presses the submit button.',
+    'The developers rename the button. Its old locator no longer matches anything.',
+    'The suite runs. Every place that holds the old locator fails with no such element.',
+    'Someone edits every copy of the locator.',
+    'The suite runs again.'
+  ];
+  def('se-pom', {
+    title: 'One renamed button, with and without a page object',
+    sub: 'Choose how many tests use the page and how often each one uses the button, then step through a UI change.',
+    W: 660, H: 340,
+    params: [
+      { k: 'mode', label: 'Tests use', type: 'select', v: 'raw', opts: [['raw', 'Locators copied into each test'], ['pom', 'A page object']] },
+      { k: 'tests', label: 'Tests that use the page', type: 'range', v: 30, min: 5, max: 60, step: 5 },
+      { k: 'uses', label: 'Uses of the button per test', type: 'range', v: 2, min: 1, max: 3, step: 1 },
+      { k: 'min', label: 'Minutes to fix one copy', type: 'range', v: 2, min: 1, max: 10, step: 1 }
+    ],
+    tips: [
+      { t: 'Step to the end with copied locators and note the number of places to edit.', set: { mode: 'raw', tests: 30, uses: 2 }, play: true },
+      { t: 'Switch to a page object and step again. The tests still fail in step 3, but the fix is one edit.', set: { mode: 'pom' }, play: true },
+      { t: 'Raise the number of tests to 60. The page object number does not move.', set: { tests: 60 }, play: true }
+    ],
+    steps: () => POMSTEPS.length,
+    startAtZero: true,
+    speed: () => 1400,
+    draw(z) {
+      const g = z.g, c = z.col, s = z.step, pom = z.p.mode === 'pom', n = +z.p.tests, u = +z.p.uses;
+      const copies = pom ? 1 : n * u, cols = 10, cell = 30, gx = 24, gy = 26;
+      const broken = s >= 2 && s < 4, red = s === 3, fixed = s >= 4, green = s === 5;
+      for (let i = 0; i < n; i++) {
+        const x = gx + (i % cols) * (cell + 4), y = gy + Math.floor(i / cols) * (cell + 4);
+        const fill = red ? c.red : green ? c.green : c.surf;
+        rr(g, x, y, cell, cell, 5, { fill, stroke: c.line });
+        if (!pom) for (let k = 0; k < u; k++) rr(g, x + 5 + k * 8, y + cell - 10, 6, 6, 2, { fill: broken ? c.orange : fixed ? c.cv : c.purple });
+      }
+      const gw = cols * (cell + 4), rows = Math.ceil(n / cols);
+      D.text(g, n + ' tests' + (pom ? '' : ', ' + u + ' locator cop' + (u > 1 ? 'ies' : 'y') + ' in each'), gx, gy + rows * (cell + 4) + 16, { s: 12, b: true, c: c.ink2 });
+      if (pom) {
+        const bx = gx + gw + 20, by = gy + 40;
+        g.save(); g.strokeStyle = c.line; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(gx + gw - 4, by + 30); g.lineTo(bx, by + 30); g.stroke(); g.restore();
+        rr(g, bx, by, z.W - bx - 20, 70, 10, { fill: c.surf, stroke: broken ? c.orange : fixed ? c.cv : c.purple, w: 2.5 });
+        D.text(g, 'CheckoutPage', bx + 12, by + 24, { s: 13, b: true, mono: true, c: c.ink });
+        D.text(g, 'submitBy: 1 locator', bx + 12, by + 48, { s: 12, mono: true, c: broken ? c.orange : c.ink2 });
+      }
+      const fixMin = copies * +z.p.min;
+      const py = z.H - 96;
+      rr(g, 20, py, z.W - 40, 80, 10, { fill: c.bg, stroke: red ? c.red : green ? c.green : c.line, w: 2 });
+      wrap(g, s ? (pom && s === 4 ? 'Someone edits the one locator inside CheckoutPage. No test file changes.' : POMSTEPS[s - 1]) : 'Press Play to change the button.', 34, py + 24, z.W - 68, { s: 13.5, c: c.ink, lh: 18 });
+      if (s >= 3) D.text(g, 'Places to edit: ' + copies + '    Time to fix: ' + fixMin + ' min', 34, py + 62, { s: 13, b: true, c: c.cv });
+      return s >= 3 ? `<b>${copies}</b> place${copies > 1 ? 's' : ''} to edit, about <b>${fixMin} minutes</b> of fixing.` : 'Step through the change.';
+    }
+  });
+
 })();

@@ -4493,6 +4493,20 @@ function seModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "page-objects", title: "Page objects and page components", emoji: "5.2", page: "content/selenium/page-objects.html",
+        summary: "Page objects, page component objects and the rules for writing them.",
+        keywords: ["page object", "page object model", "pom", "page component", "design pattern", "maintainability", "page factory"],
+        minutes: 50, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "why", title: "Why page objects", emoji: "", group: "Lesson", keywords: ["page object", "page object model", "pom", "design pattern", "maintenance", "duplication", "locators in one place"] },
+        { id: "pom", title: "Write page objects and components", emoji: "", group: "Lesson", keywords: ["page object", "page component", "component object", "constructor check", "return page object", "fluent", "no assertions in page objects", "encapsulation"] },
+        { id: "design", title: "Design choices and the limits of page objects", emoji: "", group: "Lesson", keywords: ["page factory", "findby", "base page", "domain specific language", "component", "design", "loadable component"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
