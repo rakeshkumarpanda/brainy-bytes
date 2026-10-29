@@ -4507,6 +4507,20 @@ function seModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "practices", title: "Good practices and things to avoid", emoji: "5.3", page: "content/selenium/practices.html",
+        summary: "Test design, encouraged practices and the things the documentation says to avoid.",
+        keywords: ["best practices", "test design", "fresh browser", "application state", "shared state", "test independence", "captcha", "file download", "performance testing", "2fa"],
+        minutes: 40, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "shape", title: "The shape of a good browser test", emoji: "", group: "Lesson", keywords: ["test design", "set up act evaluate", "small tests", "happy path", "testing types", "acceptance", "functional", "regression", "unicorn"] },
+        { id: "encouraged", title: "Encouraged practices", emoji: "", group: "Lesson", keywords: ["fresh browser", "clean state", "application state", "api login", "cookie", "independent tests", "shared state", "mock services", "reporting"] },
+        { id: "discouraged", title: "Things to avoid", emoji: "", group: "Lesson", keywords: ["captcha", "file download", "status code", "gmail", "facebook login", "test dependency", "performance testing", "link spidering", "two factor authentication", "2fa"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

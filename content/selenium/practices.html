@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Good practices and things to avoid · Selenium</title>
+<meta name="description" content="When to use a browser test, set up, perform and evaluate, an animation of one grand test against small tests, testing types, a real run proving a new driver starts clean, application state through cookies, and the encouraged and discouraged practices from the documentation.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/se.css">
+</head>
+<body class="cvp sep">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=selenium">Selenium learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=selenium" target="_top">Selenium</a><span>›</span><span>Step 5: Build a test suite</span><span>›</span><span>Good practices</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 3 of 3 · Intermediate</div>
+    <h1>Good practices and things to avoid</h1>
+    <p class="lead">Design browser tests the way the Selenium documentation recommends: short, independent and starting clean, with state prepared through APIs, and without the jobs Selenium is not made for.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">3 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#shape" data-l="shape"><span class="n">1</span><span class="t">The shape of a good browser test</span></a></li><li><a href="#encouraged" data-l="encouraged"><span class="n">2</span><span class="t">Encouraged practices</span></a></li><li><a href="#discouraged" data-l="discouraged"><span class="n">3</span><span class="t">Things to avoid</span></a></li></ol>
+    <article class="cv-lesson" id="shape" data-l="shape" hidden><div class="cv-lno">Lesson 1 of 3</div><h2>The shape of a good browser test</h2>
+<p>The documentation starts its advice with a question: do you really need a browser for this? Browser tests are the most expensive tests you have. They need browsers, drivers and often a Grid, and they take seconds where a unit test takes milliseconds. Their strength is that they test the whole application, from the database to the screen, as a user sees it.</p>
+<p>When a browser test is the right tool, the documentation says it should do three things, and keep each short: <b>set up the data</b>, <b>perform a discrete set of actions</b>, and <b>evaluate the results</b>. One or two operations are enough most of the time.</p>
+<div class="cvz" data-viz="se-split"></div>
+<p>The documentation tells the story of Larry's unicorn shop: create an account, configure a unicorn, add it to the cart, check out and pay, give feedback. The temptation is one grand script for the whole journey. The documentation says to resist it, because such a test is slow, more exposed to timing problems, and when it fails it does not tell you at a glance what broke. Break it into small independent tests, each with one reason to exist.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Testing type</th><th>Question it answers</th><th>Selenium fits?</th></tr></thead><tbody><tr><td>Acceptance</td><td>Are we building the right product?</td><td>Yes, by simulating what the user expects</td></tr><tr><td>Functional</td><td>Are we building the product right?</td><td>Yes</td></tr><tr><td>Integration</td><td>Do the modules work together, for example order plus payment?</td><td>Yes, for flows through the UI</td></tr><tr><td>System</td><td>Does the whole product work end to end, in an environment like production?</td><td>Yes, a few journeys</td></tr><tr><td>Performance (load and stress)</td><td>How fast is it, and does it survive a peak?</td><td>Not as the measuring tool. The documentation points to tools such as JMeter</td></tr><tr><td>Regression</td><td>Did a change break what worked?</td><td>Yes, by running the existing tests again</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="encouraged" data-l="encouraged" hidden><div class="cv-lno">Lesson 2 of 3</div><h2>Encouraged practices</h2>
+<p>These practices come from the encouraged behaviours section of the documentation. The first two are shown with real runs.</p>
+<p><b>Fresh browser per test.</b> Start each test from a clean, known state. The documentation notes that drivers such as ChromeDriver and GeckoDriver start with a new user profile by default. The run below proves it: the second browser sees none of the cookie or storage the first one left.</p>
+<div class="se-tri" data-k="fresh"><div class="cc-bar se-bar"><span class="lbl">A new driver starts with a clean profile</span><span class="se-lts" role="tablist"><button type="button" class="se-lt" data-lang="java">Java</button><button type="button" class="se-lt" data-lang="py">Python</button><button type="button" class="se-lt" data-lang="js">JavaScript</button></span><span class="grow"></span><button type="button" class="se-walk">Explain line by line</button><button type="button" class="se-copy">Copy</button></div><div class="se-pane" data-lang="java"><div class="se-file" data-lang="java"><div class="se-fname">FreshBrowser.java</div><pre class="cc-src se-src"><span class="ln">import org.openqa.selenium.Cookie;</span><span class="ln">import org.openqa.selenium.JavascriptExecutor;</span><span class="ln">import org.openqa.selenium.WebDriver;</span><span class="ln">import org.openqa.selenium.chrome.ChromeDriver;</span><span class="ln"> </span><span class="ln">public class FreshBrowser {</span><span class="ln">    static final String PAGE = &quot;https://www.selenium.dev/selenium/web/blank.html&quot;;</span><span class="ln"> </span><span class="ln">    public static void main(String[] args) {</span><span class="ln">        WebDriver first = new ChromeDriver();</span><span class="ln">        first.get(PAGE);</span><span class="ln" data-n="12">        first.manage().addCookie(new Cookie(&quot;cart&quot;, &quot;3 items&quot;));</span><span class="ln" data-n="13">        ((JavascriptExecutor) first).executeScript(&quot;localStorage.setItem(&#x27;theme&#x27;, &#x27;dark&#x27;)&quot;);</span><span class="ln">        System.out.println(&quot;first browser: &quot; + first.manage().getCookies().size() + &quot; cookie, storage &quot; + ((JavascriptExecutor) first).executeScript(&quot;return localStorage.length&quot;));</span><span class="ln">        first.quit();</span><span class="ln"> </span><span class="ln" data-n="17">        WebDriver second = new ChromeDriver();</span><span class="ln">        second.get(PAGE);</span><span class="ln">        System.out.println(&quot;second browser: &quot; + second.manage().getCookies().size() + &quot; cookies, storage &quot; + ((JavascriptExecutor) second).executeScript(&quot;return localStorage.length&quot;));</span><span class="ln">        second.quit();</span><span class="ln">    }</span><span class="ln">}</span></pre><ol class="se-notes" hidden><li data-n="12">State a first test leaves behind: a cookie</li><li data-n="13">and a value in local storage.</li><li data-n="17">A new driver gets a new, empty profile by default.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153)</div><pre class="cc-out">first browser: 1 cookie, storage 1
+second browser: 0 cookies, storage 0</pre></div><div class="se-pane" data-lang="py" hidden><div class="se-file" data-lang="py"><div class="se-fname">main.py</div><pre class="cc-src se-src"><span class="ln">from selenium import webdriver</span><span class="ln"> </span><span class="ln">PAGE = &quot;https://www.selenium.dev/selenium/web/blank.html&quot;</span><span class="ln"> </span><span class="ln">first = webdriver.Chrome()</span><span class="ln">first.get(PAGE)</span><span class="ln" data-n="7">first.add_cookie({&quot;name&quot;: &quot;cart&quot;, &quot;value&quot;: &quot;3 items&quot;})</span><span class="ln" data-n="8">first.execute_script(&quot;localStorage.setItem(&#x27;theme&#x27;, &#x27;dark&#x27;)&quot;)</span><span class="ln">print(&quot;first browser:&quot;, len(first.get_cookies()), &quot;cookie, storage&quot;, first.execute_script(&quot;return localStorage.length&quot;))</span><span class="ln">first.quit()</span><span class="ln"> </span><span class="ln" data-n="12">second = webdriver.Chrome()</span><span class="ln">second.get(PAGE)</span><span class="ln">print(&quot;second browser:&quot;, len(second.get_cookies()), &quot;cookies, storage&quot;, second.execute_script(&quot;return localStorage.length&quot;))</span><span class="ln">second.quit()</span></pre><ol class="se-notes" hidden><li data-n="7">State a first test leaves behind: a cookie</li><li data-n="8">and a value in local storage.</li><li data-n="12">A new driver gets a new, empty profile by default.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153)</div><pre class="cc-out">first browser: 1 cookie, storage 1
+second browser: 0 cookies, storage 0</pre></div><div class="se-pane" data-lang="js" hidden><div class="se-file" data-lang="js"><div class="se-fname">main.js</div><pre class="cc-src se-src"><span class="ln">const { Builder, Browser } = require(&#x27;selenium-webdriver&#x27;);</span><span class="ln"> </span><span class="ln">const PAGE = &#x27;https://www.selenium.dev/selenium/web/blank.html&#x27;;</span><span class="ln">(async function freshBrowser() {</span><span class="ln">  const first = await new Builder().forBrowser(Browser.CHROME).build();</span><span class="ln">  await first.get(PAGE);</span><span class="ln" data-n="7">  await first.manage().addCookie({ name: &#x27;cart&#x27;, value: &#x27;3 items&#x27; });</span><span class="ln" data-n="8">  await first.executeScript(&quot;localStorage.setItem(&#x27;theme&#x27;, &#x27;dark&#x27;)&quot;);</span><span class="ln">  console.log(&#x27;first browser: &#x27; + (await first.manage().getCookies()).length + &#x27; cookie, storage &#x27; + await first.executeScript(&#x27;return localStorage.length&#x27;));</span><span class="ln">  await first.quit();</span><span class="ln"> </span><span class="ln" data-n="12">  const second = await new Builder().forBrowser(Browser.CHROME).build();</span><span class="ln">  await second.get(PAGE);</span><span class="ln">  console.log(&#x27;second browser: &#x27; + (await second.manage().getCookies()).length + &#x27; cookies, storage &#x27; + await second.executeScript(&#x27;return localStorage.length&#x27;));</span><span class="ln">  await second.quit();</span><span class="ln">})();</span></pre><ol class="se-notes" hidden><li data-n="7">State a first test leaves behind: a cookie</li><li data-n="8">and a value in local storage.</li><li data-n="12">A new driver gets a new, empty profile by default.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153)</div><pre class="cc-out">first browser: 1 cookie, storage 1
+second browser: 0 cookies, storage 0</pre></div></div>
+<p><b>Generate application state.</b> Selenium should not be used to prepare a test case. Logging in through the form before every test is slow and adds a place to fail. The documentation suggests creating a method that logs in through an API and sets a cookie. Here the session cookie is set directly and the page under test reads it on load.</p>
+<div class="se-tri" data-k="appstate"><div class="cc-bar se-bar"><span class="lbl">Prepare the state without clicking through the user interface</span><span class="se-lts" role="tablist"><button type="button" class="se-lt" data-lang="java">Java</button><button type="button" class="se-lt" data-lang="py">Python</button><button type="button" class="se-lt" data-lang="js">JavaScript</button></span><span class="grow"></span><button type="button" class="se-walk">Explain line by line</button><button type="button" class="se-copy">Copy</button></div><div class="se-pane" data-lang="java"><div class="se-file" data-lang="java"><div class="se-fname">AppState.java</div><pre class="cc-src se-src"><span class="ln">import org.openqa.selenium.By;</span><span class="ln">import org.openqa.selenium.Cookie;</span><span class="ln">import org.openqa.selenium.WebDriver;</span><span class="ln">import org.openqa.selenium.chrome.ChromeDriver;</span><span class="ln"> </span><span class="ln">public class AppState {</span><span class="ln">    public static void main(String[] args) {</span><span class="ln">        WebDriver driver = new ChromeDriver();</span><span class="ln" data-n="9">        String session = &quot;abc123&quot;;</span><span class="ln" data-n="10">        driver.get(&quot;https://www.selenium.dev/selenium/web/blank.html&quot;);</span><span class="ln">        driver.manage().addCookie(new Cookie(&quot;session&quot;, session));</span><span class="ln" data-n="12">        driver.get(&quot;https://www.selenium.dev/selenium/web/cookies.html&quot;);</span><span class="ln">        System.out.println(&quot;page shows: &quot; + driver.findElement(By.id(&quot;result&quot;)).getText());</span><span class="ln">        driver.quit();</span><span class="ln">    }</span><span class="ln">}</span></pre><ol class="se-notes" hidden><li data-n="9">In a real suite this value comes from a login API call, not from the login form.</li><li data-n="10">A small page on the domain, only to be allowed to set the cookie.</li><li data-n="12">Now open the page under test. It reads its cookies on load.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153)</div><pre class="cc-out">page shows: session=abc123</pre></div><div class="se-pane" data-lang="py" hidden><div class="se-file" data-lang="py"><div class="se-fname">main.py</div><pre class="cc-src se-src"><span class="ln">from selenium import webdriver</span><span class="ln">from selenium.webdriver.common.by import By</span><span class="ln"> </span><span class="ln">driver = webdriver.Chrome()</span><span class="ln" data-n="5">session = &quot;abc123&quot;</span><span class="ln" data-n="6">driver.get(&quot;https://www.selenium.dev/selenium/web/blank.html&quot;)</span><span class="ln">driver.add_cookie({&quot;name&quot;: &quot;session&quot;, &quot;value&quot;: session})</span><span class="ln" data-n="8">driver.get(&quot;https://www.selenium.dev/selenium/web/cookies.html&quot;)</span><span class="ln">print(&quot;page shows:&quot;, driver.find_element(By.ID, &quot;result&quot;).text)</span><span class="ln">driver.quit()</span></pre><ol class="se-notes" hidden><li data-n="5">In a real suite this value comes from a login API call, not from the login form.</li><li data-n="6">A small page on the domain, only to be allowed to set the cookie.</li><li data-n="8">Now open the page under test. It reads its cookies on load.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153)</div><pre class="cc-out">page shows: session=abc123</pre></div><div class="se-pane" data-lang="js" hidden><div class="se-file" data-lang="js"><div class="se-fname">main.js</div><pre class="cc-src se-src"><span class="ln">const { Builder, Browser, By } = require(&#x27;selenium-webdriver&#x27;);</span><span class="ln"> </span><span class="ln">(async function appState() {</span><span class="ln">  const driver = await new Builder().forBrowser(Browser.CHROME).build();</span><span class="ln" data-n="5">  const session = &#x27;abc123&#x27;;</span><span class="ln" data-n="6">  await driver.get(&#x27;https://www.selenium.dev/selenium/web/blank.html&#x27;);</span><span class="ln">  await driver.manage().addCookie({ name: &#x27;session&#x27;, value: session });</span><span class="ln" data-n="8">  await driver.get(&#x27;https://www.selenium.dev/selenium/web/cookies.html&#x27;);</span><span class="ln">  console.log(&#x27;page shows: &#x27; + await driver.findElement(By.id(&#x27;result&#x27;)).getText());</span><span class="ln">  await driver.quit();</span><span class="ln">})();</span></pre><ol class="se-notes" hidden><li data-n="5">In a real suite this value comes from a login API call, not from the login form.</li><li data-n="6">A small page on the domain, only to be allowed to set the cookie.</li><li data-n="8">Now open the page under test. It reads its cookies on load.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153)</div><pre class="cc-out">page shows: session=abc123</pre></div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Practice</th><th>What the documentation says</th></tr></thead><tbody><tr><td>Avoid sharing state</td><td>Do not share test data, clean up stale data, and create a new WebDriver per test</td></tr><tr><td>Test independency</td><td>Write each test as its own unit, not relying on another test to complete</td></tr><tr><td>Mock external services</td><td>Removing dependencies on external services improves speed and stability</td></tr><tr><td>Improved reporting</td><td>Selenium does not report. Use the reports of your test framework, such as xUnit XML or HTML</td></tr><tr><td>Locators</td><td>Unique ids first, then a well written CSS selector. XPath is flexible but harder to debug and often slower</td></tr><tr><td>Page objects and a fluent API</td><td>Chapter 5.2. Methods can return the page for chained calls</td></tr><tr><td>Domain specific language</td><td>Business level methods on top of page objects</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: one order, two tests</div><p>Two tests each query the database for a valid order and act on the first one they find. On a busy night both pick order 1042, one cancels it, and the other fails because the order is gone. The fix from the documentation: each test creates its own order through the API and cleans it up afterwards.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="discouraged" data-l="discouraged" hidden><div class="cv-lno">Lesson 3 of 3</div><h2>Things to avoid</h2>
+<p>The documentation also lists jobs that Selenium can technically do but should not, with what to do instead.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Avoid</th><th>Why</th><th>Do instead</th></tr></thead><tbody><tr><td>CAPTCHAs</td><td>They are built to stop automation</td><td>Disable them in the test environment, or add a hook that lets tests bypass them</td></tr><tr><td>File downloads</td><td>The API does not expose download progress</td><td>Find the link with Selenium and fetch it with an HTTP library such as curl, using any cookies it needs</td></tr><tr><td>HTTP status codes</td><td>WebDriver acts like a user, and a status code is rarely the useful detail of a failure</td><td>Check what the user sees, such as an error page. Chapter 6.2 shows BiDi network events if you really need codes</td></tr><tr><td>Logging in to Gmail or Facebook</td><td>Against their terms, slow and unreliable</td><td>Use the APIs or test account tools they provide</td></tr><tr><td>Test dependency</td><td>Tests must run in any order</td><td>Make each test set up its own state</td></tr><tr><td>Performance testing</td><td>Browser start, servers and third parties add noise to every number</td><td>Use performance tools, and keep Selenium for function</td></tr><tr><td>Link spidering</td><td>A browser takes seconds per page</td><td>Use curl or a library such as BeautifulSoup</td></tr><tr><td>Two factor authentication</td><td>Automating it is hard and less secure</td><td>A test only token, or 2FA turned off for test users, test IPs or the test environment</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Every row has the same shape: Selenium is a tool for what a user does in a browser. When the job is not that, a lighter tool is faster and more reliable.</div></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Use a browser test only when you need one, keep it short, start it clean, and do not make Selenium do jobs other tools do better.</p></div><div class="ld-p" data-ld="college" hidden><p>Each test sets up its data, performs a few actions and checks the result. Fresh browser per test, no shared data, state prepared through APIs and cookies, reports from the framework.</p></div><div class="ld-p" data-ld="masters" hidden><p>The encouraged and discouraged lists in the documentation all serve two goals: tests that are independent, so they can run in any order and in parallel, and tests that fail for one clear reason.</p></div><div class="ld-p" data-ld="research" hidden><p>Large suites add test data factories, service mocks at the network edge, contract tests for APIs and a small set of end to end browser journeys on top of many fast lower level tests.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./page-objects.html" data-topic="page-objects"><small>Previous topic</small><b>Page objects</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "practices", "topic": "practices", "subject": "selenium", "title": "Good practices and things to avoid", "codes": {}, "quiz": [{"lv": "e", "q": "What does the documentation ask first, before writing a Selenium test?", "o": ["Which browser to use", "Whether you really need a browser for it", "How many locators you need", "Which Grid to use"], "a": 1, "hint": "Browser tests are expensive.", "why": "Always ask whether a lighter test, such as a unit test, can do the job."}, {"lv": "e", "q": "What are the three steps of a browser test?", "o": ["Open, wait, close", "Set up the data, perform the actions, evaluate the results", "Find, click, type", "Build, run, report"], "a": 1, "hint": "Arrange, act, assert.", "why": "The documentation names set up, perform and evaluate, each kept short."}, {"lv": "e", "q": "How should a test deal with a CAPTCHA?", "o": ["Solve it with OCR", "Disable it in the test environment or add a bypass hook", "Click it many times", "Wait for it to disappear"], "a": 1, "hint": "It is built to stop automation.", "why": "The documentation says do not try. Disable it or bypass it in test."}, {"lv": "m", "q": "Why prefer several small tests over one grand journey?", "o": ["Fewer files", "They are faster, less exposed to timing issues, and a failure points to one cause", "Grid requires it", "Reports are shorter"], "a": 1, "hint": "Larry and the unicorns.", "why": "Small independent tests fail for one clear reason."}, {"lv": "m", "q": "A new ChromeDriver session starts. What does it know about cookies from an earlier session?", "o": ["Everything", "Nothing, it starts with a new profile", "Only secure cookies", "Only localStorage"], "a": 1, "hint": "Look at the second browser line.", "why": "A new driver gets a new, empty user profile by default."}, {"lv": "m", "q": "How does the documentation suggest preparing a logged in state?", "o": ["Click through the login form each time", "Log in through an API and set a cookie", "Share one browser", "Use the Remember me box"], "a": 1, "hint": "Generating application state.", "why": "Selenium should not prepare a test. Use an API and a cookie."}, {"lv": "m", "q": "How should a test check a file download?", "o": ["Watch the progress bar", "Read the link with Selenium and fetch it with an HTTP library", "Take a screenshot", "It cannot be tested"], "a": 1, "hint": "The API has no progress.", "why": "Get the URL and cookies, then download outside the browser."}, {"lv": "h", "q": "Why is Selenium a poor tool for performance numbers?", "o": ["It cannot measure time", "Browser start, servers, third party files and the driver itself add variation", "It is too fast", "It blocks images"], "a": 1, "hint": "Noise.", "why": "Many points of fragility outside your control change the results."}, {"lv": "h", "q": "Two tests pick the same order from the database. What does the documentation advise?", "o": ["Run them one after the other", "Do not share test data, each test creates its own", "Retry on failure", "Use a longer wait"], "a": 1, "hint": "Avoid sharing state.", "why": "Shared data makes tests interfere, so each creates its own."}, {"lv": "x", "q": "Each of 5 steps in a journey fails randomly 2 % of the time. Roughly how often does the whole journey pass?", "o": ["98 %", "About 90 %", "50 %", "10 %"], "a": 1, "hint": "Multiply the pass chances.", "why": "0.98 to the power 5 is about 0.904, so about 90 %."}], "calc": [{"lv": "e", "q": "A unit test takes 5 ms and a browser test 4 s. How many unit tests run in the time of one browser test?", "ans": "800", "hint": "Same units first.", "steps": ["4 s is 4,000 ms.", "Divide by 5 ms.", "<span class=\"eq\">4,000 ÷ 5 = 800 unit tests<\/span>"]}, {"lv": "e", "q": "A login through the form takes 3 s and through an API 0.3 s. How many seconds does a test save?", "ans": "2.7", "hint": "Subtract.", "steps": ["Form: 3 s.", "API: 0.3 s.", "<span class=\"eq\">3 − 0.3 = 2.7 s<\/span>"], "unit": "s"}, {"lv": "m", "q": "A journey has 5 steps and each passes 98 % of the time. What is the chance, in percent to one decimal, that the whole journey passes?", "ans": "90.4", "hint": "Multiply.", "steps": ["Pass chance per step: 0.98.", "0.98<sup>5<\/sup> ≈ 0.904.", "<span class=\"eq\">About 90.4 %<\/span>"], "unit": "%"}, {"lv": "m", "q": "With the same steps as 5 separate tests, how many tests fail on average per 100 runs of the set?", "ans": "10", "hint": "Each test fails 2 %.", "steps": ["Each test fails 2 times per 100 runs.", "There are 5 tests.", "<span class=\"eq\">5 × 2 = 10 failures per 100 runs of the set, each naming its step<\/span>"]}, {"lv": "h", "q": "A suite of 400 tests logs in through the form at 3 s each. Switching to API login at 0.3 s, how many minutes does a run save?", "ans": "18", "hint": "Saving per test times tests.", "steps": ["Saving per test: 2.7 s.", "400 × 2.7 = 1,080 s.", "<span class=\"eq\">1,080 ÷ 60 = 18 minutes<\/span>"], "unit": "min"}, {"lv": "x", "q": "A spider must visit 600 pages. A browser needs 2.5 s per page, curl needs 0.1 s. How many minutes does curl save?", "ans": "24", "hint": "Time each, then subtract.", "steps": ["Browser: 600 × 2.5 = 1,500 s.", "curl: 600 × 0.1 = 60 s.", "<span class=\"eq\">1,440 s saved, which is 24 minutes<\/span>"], "unit": "min"}], "assign": [{"id": "journey", "lv": "e", "title": "Chance that a journey passes", "task": "<p>Write <code>pass_chance(steps, flake)<\/code>. Each of <code>steps<\/code> steps fails at random with probability <code>flake<\/code> (for example 0.02). Return the chance that all steps pass, rounded to 3 decimals.<\/p>", "starter": "def pass_chance(steps, flake):\n    # your code here\n    pass\n", "tests": [{"call": "pass_chance(5, 0.02)", "want": 0.904}, {"call": "pass_chance(1, 0.1)", "want": 0.9}, {"call": "pass_chance(10, 0.0)", "want": 1.0}], "solution": "def pass_chance(steps, flake):\n    return round((1 - flake) ** steps, 3)\n", "hint": "Multiply the pass chance of each step.", "why": "<p>This is why the documentation warns about one grand test: the chances multiply, so a long journey fails more often than any of its steps.<\/p>"}, {"id": "ordercheck", "lv": "m", "title": "Do the tests depend on their order?", "task": "<p>Write <code>order_independent(results_a, results_b)<\/code>. Each argument maps test names to \"pass\" or \"fail\" from one run, the two runs used different orders. Return True if every test has the same result in both runs.<\/p>", "starter": "def order_independent(results_a, results_b):\n    # your code here\n    pass\n", "tests": [{"call": "order_independent({\"a\": \"pass\", \"b\": \"pass\"}, {\"b\": \"pass\", \"a\": \"pass\"})", "want": true}, {"call": "order_independent({\"a\": \"pass\", \"b\": \"pass\"}, {\"b\": \"fail\", \"a\": \"pass\"})", "want": false}, {"call": "order_independent({}, {})", "want": true}], "solution": "def order_independent(results_a, results_b):\n    if results_a.keys() != results_b.keys():\n        return False\n    for name in results_a:\n        if results_a[name] != results_b[name]:\n            return False\n    return True\n", "hint": "Compare result by result.", "why": "<p>Plugins such as pytest-randomly run tests in a random order on purpose, to find this kind of hidden dependency early.<\/p>"}], "must": [["Need a browser?", "Ask first whether a lighter test can do the job. Browser tests are the most expensive kind."], ["Short and focused", "Set up the data, perform a few actions, evaluate the result. Many small independent tests beat one grand journey."], ["Clean start", "A new driver starts with a new profile. Use a fresh browser per test and never share test data."], ["Prepare state outside the UI", "Log in and create data through APIs, then set cookies, instead of clicking through forms."], ["Avoid", "CAPTCHAs, download progress, status codes, third party logins, test order, performance numbers, spidering and 2FA are jobs for other tools or test hooks."]], "summary": "<p>Use a browser only when you need one. Keep each test to set up, a few actions and a check. Start every test with a fresh browser, never share data, prepare state through APIs and cookies, and leave CAPTCHAs, downloads, status codes, performance numbers and 2FA to other tools or test hooks.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/setri.js"></script>
+<script src="../../assets/seplay.js"></script>
+<script src="../../assets/sewidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

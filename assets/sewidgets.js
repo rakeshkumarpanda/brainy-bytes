@@ -987,4 +987,55 @@ const SEZ = (() => {
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 5.3: one grand test or small tests */
+  const JOURNEY = ['Create an account', 'Configure the unicorn', 'Add it to the cart', 'Check out and pay', 'Give feedback'];
+  def('se-split', {
+    title: 'One grand test, or one small test per step',
+    sub: 'The journey from the documentation. Change how often a step fails at random and which step really breaks.',
+    W: 660, H: 330,
+    params: [
+      { k: 'flake', label: 'Random failure per step (%)', type: 'range', v: 2, min: 0, max: 10, step: 0.5 },
+      { k: 'broken', label: 'Really broken step (0 for none)', type: 'range', v: 3, min: 0, max: 5, step: 1 }
+    ],
+    tips: [
+      { t: 'With a broken step 3, compare what the two reports tell you in the last step.', set: { broken: 3 }, play: true },
+      { t: 'Set no broken step and raise the random failure to 5 %. The grand test now fails more than one run in five.', set: { broken: 0, flake: 5 }, play: true }
+    ],
+    steps: () => 4,
+    startAtZero: true,
+    speed: () => 1500,
+    draw(z) {
+      const g = z.g, c = z.col, s = z.step, f = z.p.flake / 100, b = +z.p.broken;
+      const n = JOURNEY.length, bw = (z.W - 48 - (n - 1) * 8) / n;
+      const pGrand = Math.pow(1 - f, n);
+      D.text(g, 'One grand test', 24, 26, { s: 13, b: true, c: c.ink });
+      JOURNEY.forEach((t, i) => {
+        const x = 24 + i * (bw + 8), st = i + 1;
+        const ran = s >= 2 && (!b || st <= b), bad = s >= 2 && b === st, skipped = s >= 2 && b && st > b;
+        rr(g, x, 36, bw, 46, 8, { fill: bad ? c.red : ran ? c.green : c.surf, stroke: skipped ? c.line : c.line, dash: skipped ? [4, 3] : null });
+        wrap(g, t, x + 6, 54, bw - 12, { s: 11.5, c: bad || ran ? '#fff' : skipped ? c.ink2 : c.ink, lh: 14 });
+      });
+      if (s >= 1) D.text(g, `Passes when all 5 steps pass: ${(100 * pGrand).toFixed(1)} % of runs when nothing is broken`, 24, 104, { s: 12, c: c.ink2 });
+      if (s >= 3) {
+        D.text(g, 'Five small tests', 24, 140, { s: 13, b: true, c: c.ink });
+        JOURNEY.forEach((t, i) => {
+          const x = 24 + i * (bw + 8), bad = s >= 4 && b === i + 1, done = s >= 4;
+          rr(g, x, 150, bw, 46, 8, { fill: bad ? c.red : done ? c.green : c.surf, stroke: c.line });
+          wrap(g, t, x + 6, 168, bw - 12, { s: 11.5, c: done ? '#fff' : c.ink, lh: 14 });
+        });
+        D.text(g, `Each passes ${(100 * (1 - f)).toFixed(1)} % of runs on its own`, 24, 218, { s: 12, c: c.ink2 });
+      }
+      const msg = [
+        'The journey from Larry\'s unicorn shop, as one test or as five.',
+        `One test runs all five steps. With ${z.p.flake} % random failure per step, the chances multiply: ${(100 * pGrand).toFixed(1)} % of clean runs pass.`,
+        b ? (b === n ? `Step ${b} is really broken. It is the last step, and the report only says that the long test failed.` : `Step ${b} is really broken. The grand test stops there, so steps ${b + 1} to ${n} are never checked, and the report only says the test failed.`) : 'Nothing is really broken. Every failure of the grand test is noise that someone must investigate.',
+        'Each small test sets up its own state, through an API for example, and checks one step.',
+        b ? `Only the test for step ${b} is red. The other four still give a result, and the report names the broken step at a glance.` : 'All five are green, and a random failure would hit one small test that is quick to rerun.'
+      ][s];
+      rr(g, 20, z.H - 82, z.W - 40, 66, 10, { fill: c.bg, stroke: c.line });
+      wrap(g, msg, 34, z.H - 58, z.W - 68, { s: 13, c: c.ink, lh: 18 });
+      return `Grand test pass rate with nothing broken: <b>${(100 * pGrand).toFixed(1)} %</b>.`;
+    }
+  });
+
 })();
