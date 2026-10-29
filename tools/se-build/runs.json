@@ -71,6 +71,12 @@
   "out": "POST /session  ->  {\"value\": {\"capabilities\": {\"acceptInsecureCerts\": false, \"browserName...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/timeouts  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/url  ->  {\"value\": null}\nGET /session/8676a175324f14ce9347b93a7adbc2bc/title  ->  {\"value\": \"Web form\"}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.D9093E4BCA0DE174FCE7E68286174CFD.e.6/value  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.D9093E4BCA0DE174FCE7E68286174CFD.e.21/click  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nGET /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.EA8082E1511DC98290D1B66DBB605CA8.e.27/text  ->  {\"value\": \"Received!\"}\nDELETE /session/8676a175324f14ce9347b93a7adbc2bc  ->  {\"value\": null}",
   "rc": 0
  },
+ "17d86fe5525284829212ad6d": {
+  "label": "logs",
+  "lang": "js",
+  "out": "GET /status\nPOST /session\nPOST /session/{id}/url\nGET /session/{id}/title\nDELETE /session/{id}",
+  "rc": 0
+ },
  "1dc3cf161202be82037e32f0": {
   "label": "findall",
   "lang": "py",
@@ -93,6 +99,12 @@
   "label": "windows",
   "lang": "js",
   "out": "windows at start: 1\nnew window: This page has iframes\nback to: XHTML Test Page\nnew tab: We Arrive Here, windows: 2",
+  "rc": 0
+ },
+ "20eaeacff2a135afdaa2b18d": {
+  "label": "driverlog",
+  "lang": "js",
+  "out": "InitSession\nNavigate\nQuit",
   "rc": 0
  },
  "271cb09cf25f0f31e6c1b997": {
@@ -209,6 +221,12 @@
   "out": "...                                                                      [100%]\n3 passed in 3.20s",
   "rc": 0
  },
+ "512011a668adf5e893660a53": {
+  "label": "logs",
+  "lang": "py",
+  "out": "POST /session\nPOST /session/{id}/url\nGET /session/{id}/title\nDELETE /session/{id}",
+  "rc": 0
+ },
  "51370ebea0d77bbb6c6989ba": {
   "label": "printpdf",
   "lang": "java",
@@ -309,6 +327,12 @@
   "label": "fresh",
   "lang": "java",
   "out": "first browser: 1 cookie, storage 1\nsecond browser: 0 cookies, storage 0",
+  "rc": 0
+ },
+ "6a567ab02ab4b44ce3520d37": {
+  "label": "logs",
+  "lang": "java",
+  "out": "POST /session\nGET /json/version\nPOST /session/{id}/url\nGET /session/{id}/title\nDELETE /session/{id}",
   "rc": 0
  },
  "6e67be77e92efc7c2c1d96a4": {
@@ -465,6 +489,12 @@
   "label": "findall",
   "lang": "js",
   "out": "inputs: 6\n  radio gender\n  radio gender\n  text fname\n  text lname\n  checkbox newsletter\n  submit \nemail boxes: 0\nfindElement: NoSuchElementError",
+  "rc": 0
+ },
+ "958cc41b71656833957155bf": {
+  "label": "stale",
+  "lang": "js",
+  "out": "1. after refresh: StaleElementReferenceError\n   fixed: found again\n2. outside its frame: NoSuchElementError\n   fixed: email\n3. after leaving the page: NoSuchElementError",
   "rc": 0
  },
  "96dcfcffa27cab4e5e37fd2b": {
@@ -659,6 +689,12 @@
   "out": "typed: Displayed",
   "rc": 0
  },
+ "c567f50ee085807d1a9fffd8": {
+  "label": "driverlog",
+  "lang": "py",
+  "out": "InitSession\nNavigate\nQuit",
+  "rc": 0
+ },
  "c5c0848b4412e50a008bb49e": {
   "label": "datadriven",
   "lang": "java",
@@ -682,6 +718,12 @@
   "lang": "py",
   "out": "check 2 before: False\ncheck 2 after: True\nradio 1 now: False\n\nTraceback (most recent call last):\n  File \"main.py\", line 17, in <module>\n    print(driver.find_element(By.ID, \"message\").text)\n          ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^\n  File \"/home/user/brainy-bytes/tools/se-build/box/.venv/lib/python3.13/site-packages/selenium/webdriver/remote/webdriver.py\", line 914, in find_element\n    return self.execute(Command.FIND_ELEMENT, {\"using\": by, \"value\": value})[\"value\"]\n           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/user/brainy-bytes/tools/se-build/box/.venv/lib/python3.13/site-packages/selenium/webdriver/remote/webdriver.py\", line 506, in execute\n    self.error_handler.check_response(response)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^\n  File \"/home/user/brainy-bytes/tools/se-build/box/.venv/lib/python3.13/site-packages/selenium/webdriver/remote/errorhandler.py\", line 232, in check_response\n    raise exception_class(message, screen, stacktrace)\nselenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"[id=\"message\"]\"}\n  (Session info: chrome=153.0.8010.12); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception\nStacktrace:\n#0 0x561728f585ca <unknown>\n#1 0x56172888c759 <unknown>\n#2 0x5617288e2ffc <unknown>\n#3 0x5617288e3271 <unknown>\n#4 0x56172892f884 <unknown>\n#5 0x56172892caef <unknown>\n#6 0x5617288d5d9b <unknown>\n#7 0x5617288d6b81 <unknown>\n#8 0x561728f1b017 <unknown>\n#9 0x561728f19845 <unknown>\n#10 0x561728f048c5 <unknown>\n#11 0x561728f1a49a <unknown>\n#12 0x561728eecef9 <unknown>\n#13 0x561728f42478 <unknown>\n#14 0x561728f42615 <unknown>\n#15 0x561728f56f13 <unknown>\n#16 0x7f897909cb84 <unknown>\n#17 0x7f8979129ecc <unknown>",
   "rc": 1
+ },
+ "cc231636bfa556a9dacbe68a": {
+  "label": "stale",
+  "lang": "py",
+  "out": "1. after refresh: StaleElementReferenceException\n   fixed: found again\n2. outside its frame: NoSuchElementException\n   fixed: email\n3. after leaving the page: NoSuchElementException",
+  "rc": 0
  },
  "ccf66642e4a4a54c2c90efd6": {
   "label": "mixwait",
@@ -785,6 +827,12 @@
   "out": "size 1024 x 768\nposition 40, 30",
   "rc": 0
  },
+ "e7921ff0045fdf2656d3091d": {
+  "label": "logs",
+  "lang": "js",
+  "out": "",
+  "rc": 0
+ },
  "e8c6ad839cb7045e526348ea": {
   "label": "wheel",
   "lang": "java",
@@ -801,6 +849,12 @@
   "label": "rawhttp",
   "lang": "js",
   "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/timeouts  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/url  ->  {\"value\":null}\nGET /session/fe3fd9b77d510e3774c3e96a1d79dfa7/title  ->  {\"value\":\"Web form\"}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.FFD99782F6866C71F9472FF7B365A671.e.6/value  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.FFD99782F6866C71F9472FF7B365A671.e.21/click  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nGET /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.7A3C754C59BC38B27A8501799597EA4E.e.27/text  ->  {\"value\":\"Received!\"}\nDELETE /session/fe3fd9b77d510e3774c3e96a1d79dfa7  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "ef7b29bcf94a75c543624ea1": {
+  "label": "driverlog",
+  "lang": "java",
+  "out": "InitSession\nNavigate\nQuit",
   "rc": 0
  },
  "f158c67091b04830989ff649": {
@@ -821,10 +875,22 @@
   "out": "implicit: 0.0\npageLoad: 300.0\nscript: 30.0\nCaught TimeoutException",
   "rc": 0
  },
+ "f871f96509c463f8ee34fa92": {
+  "label": "stale",
+  "lang": "java",
+  "out": "1. after refresh: StaleElementReferenceException\n   fixed: found again\n2. outside its frame: NoSuchElementException\n   fixed: email\n3. after leaving the page: NoSuchElementException",
+  "rc": 0
+ },
  "fc298790969c8d78e776e164": {
   "label": "shots",
   "lang": "py",
   "out": "page.png: 1024 x 625\nbutton.png: 79 x 38",
+  "rc": 0
+ },
+ "fcc7a79a80a0ec7c7e018970": {
+  "label": "logs",
+  "lang": "java",
+  "out": "(POST) /session\n(GET) /json/version\n(POST) /session/{id}/url\n(GET) /session/{id}/title\n(DELETE) /session/{id}",
   "rc": 0
  },
  "fcff86be7b675ccd88a10c61": {

@@ -1038,4 +1038,66 @@ const SEZ = (() => {
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 5.4: the element store */
+  const STORE = {
+    refresh: { name: 'Refresh the page', steps: [
+      ['find', 'findElement(By.name("my-text")) stores the input in the top page store and returns id e.1.', 'top', 'live', null],
+      ['refresh', 'refresh() rebuilds the page. A new input appears. The stored node is no longer in the document.', 'top', 'gone', null],
+      ['use', 'sendKeys on e.1: the id is known, but its node is gone.', 'top', 'gone', 'stale element reference'],
+      ['find', 'Find it again: the new input is stored as e.2.', 'top', 'new', null]] },
+    frame: { name: 'Leave the frame', steps: [
+      ['find', 'Inside iframe1, findElement(By.id("email")) stores the input in the frame store as e.1.', 'frame', 'live', null],
+      ['switch', 'defaultContent() makes the top page the current context.', 'top', 'live', null],
+      ['use', 'getAttribute on e.1: the top page store has never seen e.1.', 'top', 'live', 'no such element'],
+      ['switch', 'frame("iframe1") switches back. e.1 works again.', 'frame', 'live', null]] },
+    page: { name: 'Leave the page', steps: [
+      ['find', 'findElement(By.id("email")) stores the input as e.1.', 'frame', 'live', null],
+      ['navigate', 'get(blank.html) replaces the document. Its stores go with it.', 'top', 'gone', null],
+      ['use', 'getAttribute on e.1: no store in the current context knows it.', 'top', 'gone', 'no such element'],
+      ['find', 'Go back to the page and find the element again.', 'frame', 'new', null]] }
+  };
+  def('se-stale', {
+    title: 'Where an element reference lives',
+    sub: 'The driver keeps a store of found elements for each window or frame. Pick what happens to the page and step through.',
+    W: 660, H: 320,
+    params: [{ k: 'plan', label: 'What happens', type: 'select', v: 'refresh', opts: Object.entries(STORE).map(([k, v]) => [k, v.name]) }],
+    tips: [
+      { t: 'Refresh: the id survives but its node does not. That is the classic stale element.', set: { plan: 'refresh' }, play: true },
+      { t: 'Leave the frame: the node is fine, but the store of the current context has never seen the id.', set: { plan: 'frame' }, play: true }
+    ],
+    steps: z => STORE[z.p.plan].steps.length,
+    startAtZero: true,
+    speed: () => 1500,
+    draw(z) {
+      const g = z.g, c = z.col, P = STORE[z.p.plan], s = z.step, cur = s ? P.steps[s - 1] : null;
+      rr(g, 24, 20, 150, 120, 10, { fill: c.surf, stroke: c.line });
+      D.text(g, 'Your test', 99, 42, { a: 'center', b: true, s: 13, c: c.ink });
+      const id = cur && cur[3] === 'new' ? 'e.2' : 'e.1';
+      if (s) { rr(g, 50, 60, 98, 30, 6, { fill: c.bg, stroke: c.cv }); D.text(g, 'element ' + id, 99, 80, { a: 'center', mono: true, s: 12, b: true, c: c.cv }); }
+      const sx = 200, sw = z.W - sx - 24;
+      rr(g, sx, 20, sw, 120, 10, { fill: c.surf, stroke: c.line });
+      D.text(g, 'Driver: element stores', sx + 12, 40, { b: true, s: 13, c: c.ink });
+      const half = (sw - 36) / 2;
+      [['top', 'top page store'], ['frame', 'iframe1 store']].forEach(([k, label], i) => {
+        if (z.p.plan === 'refresh' && k === 'frame') return;
+        const x = sx + 12 + i * (half + 12), on = cur && cur[2] === k;
+        rr(g, x, 52, half, 76, 8, { fill: c.bg, stroke: on ? c.cv : c.line, w: on ? 2.5 : 1.5 });
+        D.text(g, label + (on ? ' (current)' : ''), x + 8, 70, { s: 11.5, b: true, c: on ? c.cv : c.ink2 });
+        const holds = s && (z.p.plan === 'refresh' ? k === 'top' : k === 'frame');
+        if (holds) {
+          const gone = cur[3] === 'gone', nw = cur[3] === 'new';
+          D.text(g, 'e.1 → ' + (gone || nw ? 'removed node' : '<input>'), x + 8, 92, { s: 12, mono: true, c: gone || nw ? c.red : c.ink });
+          if (nw) D.text(g, 'e.2 → <input>', x + 8, 112, { s: 12, mono: true, c: c.green });
+        }
+      });
+      rr(g, 20, 160, z.W - 40, z.H - 176, 10, { fill: c.bg, stroke: cur && cur[4] ? c.red : c.line, w: 2 });
+      if (cur) {
+        D.text(g, cur[0], 34, 186, { s: 13, b: true, mono: true, c: c.cv });
+        const y = wrap(g, cur[1], 34, 210, z.W - 68, { s: 13.5, c: c.ink, lh: 19 });
+        if (cur[4]) D.text(g, 'Error: ' + cur[4], 34, y + 8, { s: 14, b: true, c: c.red });
+      } else wrap(g, 'Press Play. The scenarios match the real runs on this page in Chrome 153.', 34, 190, z.W - 68, { s: 13.5, c: c.ink, lh: 19 });
+      return cur && cur[4] ? `The driver answers <b>${cur[4]}</b>.` : 'Step through.';
+    }
+  });
+
 })();

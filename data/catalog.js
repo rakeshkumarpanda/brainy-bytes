@@ -4521,6 +4521,20 @@ function seModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "troubleshooting", title: "Troubleshooting: errors, stale elements and logs", emoji: "5.4", page: "content/selenium/troubleshooting.html",
+        summary: "Common errors, stale elements and logging in Java, Python and JavaScript.",
+        keywords: ["troubleshooting", "errors", "exceptions", "stale element", "no such element", "logging", "debug", "chromedriver log", "session not created"],
+        minutes: 50, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "errors", title: "Read an error the right way", emoji: "", group: "Lesson", keywords: ["errors", "exceptions", "no such element", "stale element", "click intercepted", "not interactable", "invalid selector", "timeout", "session not created", "stack trace"] },
+        { id: "stale", title: "Stale elements and the element store", emoji: "", group: "Lesson", keywords: ["stale element", "stale element reference", "element reference", "element store", "refresh", "relocate", "browsing context", "no such element"] },
+        { id: "logs", title: "Logs: what the client sent and what the driver did", emoji: "", group: "Lesson", keywords: ["logging", "logs", "debug", "client log", "driver log", "chromedriver log", "log level", "java util logging", "pytest logs"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
