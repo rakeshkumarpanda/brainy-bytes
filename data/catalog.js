@@ -4478,6 +4478,22 @@ function seModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "se-suite", title: "Build a test suite", emoji: "5", step: 5, level: "Intermediate", blurb: "Test frameworks, page objects, good practices and the errors you will meet.", topics: [
+      { id: "test-frameworks", title: "Test frameworks: JUnit 5, pytest and Mocha", emoji: "5.1", page: "content/selenium/test-frameworks.html",
+        summary: "Running Selenium inside JUnit 5, pytest and Mocha, with data-driven tests and screenshots on failure.",
+        keywords: ["junit", "pytest", "mocha", "test framework", "fixture", "before each", "after each", "parameterized", "data driven", "screenshot on failure"],
+        minutes: 55, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "runners", title: "Selenium inside a test framework", emoji: "", group: "Lesson", keywords: ["test framework", "junit 5", "pytest", "mocha", "before each", "after each", "fixture", "yield", "assert", "assertion", "test runner", "fresh browser per test"] },
+        { id: "datadriven", title: "Data-driven tests", emoji: "", group: "Lesson", keywords: ["data driven", "parameterized test", "parametrize", "csv source", "test data", "rows"] },
+        { id: "failshot", title: "A screenshot when a test fails", emoji: "", group: "Lesson", keywords: ["screenshot on failure", "test watcher", "extension", "conftest", "makereport", "current test state", "failure", "report"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

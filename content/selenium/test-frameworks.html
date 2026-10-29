@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test frameworks: JUnit 5, pytest and Mocha · Selenium</title>
+<meta name="description" content="JUnit 5, pytest and Mocha with real runs, an animation of the test lifecycle, before each and after each, fixtures with yield, assertions, parameterized tests with CsvSource, parametrize and a loop, and a screenshot on failure through a JUnit extension, a pytest hook and a Mocha hook.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/se.css">
+</head>
+<body class="cvp sep">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=selenium">Selenium learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=selenium" target="_top">Selenium</a><span>›</span><span>Step 5: Build a test suite</span><span>›</span><span>Test frameworks</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 1 of 1 · Intermediate</div>
+    <h1>Test frameworks: JUnit 5, pytest and Mocha</h1>
+    <p class="lead">Turn Selenium scripts into real tests: setup and teardown with a fresh browser for each test, assertions, data-driven tests, and a screenshot whenever a test fails.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">3 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#runners" data-l="runners"><span class="n">1</span><span class="t">Selenium inside a test framework</span></a></li><li><a href="#datadriven" data-l="datadriven"><span class="n">2</span><span class="t">Data-driven tests</span></a></li><li><a href="#failshot" data-l="failshot"><span class="n">3</span><span class="t">A screenshot when a test fails</span></a></li></ol>
+    <article class="cv-lesson" id="runners" data-l="runners" hidden><div class="cv-lno">Lesson 1 of 3</div><h2>Selenium inside a test framework</h2>
+<p>Selenium drives the browser. It does not decide whether a test passed, it does not group tests, and it does not write a report. A <b>test framework</b> does that: JUnit 5 for Java, pytest for Python and Mocha for JavaScript are the ones the Selenium documentation uses in its own examples. The framework finds your tests, runs setup before each one and teardown after it, compares values with assertions and reports what passed and failed.</p>
+<div class="cvz" data-viz="se-lifecycle"></div>
+<div class="se-tri" data-k="suite"><div class="cc-bar se-bar"><span class="lbl">A first test class: a fresh browser for every test</span><span class="se-lts" role="tablist"><button type="button" class="se-lt" data-lang="java">Java</button><button type="button" class="se-lt" data-lang="py">Python</button><button type="button" class="se-lt" data-lang="js">JavaScript</button></span><span class="grow"></span><button type="button" class="se-walk">Explain line by line</button><button type="button" class="se-copy">Copy</button></div><div class="se-pane" data-lang="java"><div class="se-file" data-lang="java"><div class="se-fname">WebFormTest.java</div><pre class="cc-src se-src"><span class="ln">import static org.junit.jupiter.api.Assertions.assertEquals;</span><span class="ln"> </span><span class="ln">import org.junit.jupiter.api.AfterEach;</span><span class="ln">import org.junit.jupiter.api.BeforeEach;</span><span class="ln">import org.junit.jupiter.api.Test;</span><span class="ln">import org.openqa.selenium.By;</span><span class="ln">import org.openqa.selenium.WebDriver;</span><span class="ln">import org.openqa.selenium.chrome.ChromeDriver;</span><span class="ln"> </span><span class="ln">public class WebFormTest {</span><span class="ln" data-n="11">    WebDriver driver;</span><span class="ln"> </span><span class="ln" data-n="13">    @BeforeEach</span><span class="ln">    void startBrowser() {</span><span class="ln">        driver = new ChromeDriver();</span><span class="ln">        driver.get(&quot;https://www.selenium.dev/selenium/web/web-form.html&quot;);</span><span class="ln">    }</span><span class="ln"> </span><span class="ln" data-n="19">    @Test</span><span class="ln">    void pageHasTheRightTitle() {</span><span class="ln" data-n="21">        assertEquals(&quot;Web form&quot;, driver.getTitle());</span><span class="ln">    }</span><span class="ln"> </span><span class="ln">    @Test</span><span class="ln">    void submittingShowsReceived() {</span><span class="ln">        driver.findElement(By.name(&quot;my-text&quot;)).sendKeys(&quot;Selenium&quot;);</span><span class="ln">        driver.findElement(By.cssSelector(&quot;button&quot;)).click();</span><span class="ln">        assertEquals(&quot;Received!&quot;, driver.findElement(By.id(&quot;message&quot;)).getText());</span><span class="ln">    }</span><span class="ln"> </span><span class="ln" data-n="31">    @AfterEach</span><span class="ln">    void quitBrowser() {</span><span class="ln">        driver.quit();</span><span class="ln">    }</span><span class="ln">}</span></pre><ol class="se-notes" hidden><li data-n="11">A field, so every method of this test can reach the driver.</li><li data-n="13">Runs before every test method.</li><li data-n="19">One test: one behaviour, one reason to fail.</li><li data-n="21">Expected value first in JUnit, then the actual one.</li><li data-n="31">Runs after every test, also when the test failed.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153) run with JUnit 5</div><pre class="cc-out">╷
+├─ JUnit Platform Suite ✔
+├─ JUnit Jupiter ✔
+│  └─ WebFormTest ✔
+│     ├─ submittingShowsReceived() ✔
+│     └─ pageHasTheRightTitle() ✔
+└─ JUnit Vintage ✔
+
+Test run finished after 2285 ms
+[         4 containers found      ]
+[         0 containers skipped    ]
+[         4 containers started    ]
+[         0 containers aborted    ]
+[         4 containers successful ]
+[         0 containers failed     ]
+[         2 tests found           ]
+[         0 tests skipped         ]
+[         2 tests started         ]
+[         0 tests aborted         ]
+[         2 tests successful      ]
+[         0 tests failed          ]</pre></div><div class="se-pane" data-lang="py" hidden><div class="se-file" data-lang="py"><div class="se-fname">test_example.py</div><pre class="cc-src se-src"><span class="ln">import pytest</span><span class="ln">from selenium import webdriver</span><span class="ln">from selenium.webdriver.common.by import By</span><span class="ln"> </span><span class="ln"> </span><span class="ln" data-n="6">@pytest.fixture</span><span class="ln">def driver():</span><span class="ln">    driver = webdriver.Chrome()</span><span class="ln">    driver.get(&quot;https://www.selenium.dev/selenium/web/web-form.html&quot;)</span><span class="ln" data-n="10">    yield driver</span><span class="ln" data-n="11">    driver.quit()</span><span class="ln"> </span><span class="ln"> </span><span class="ln" data-n="14">def test_page_has_the_right_title(driver):</span><span class="ln" data-n="15">    assert driver.title == &quot;Web form&quot;</span><span class="ln"> </span><span class="ln"> </span><span class="ln">def test_submitting_shows_received(driver):</span><span class="ln">    driver.find_element(By.NAME, &quot;my-text&quot;).send_keys(&quot;Selenium&quot;)</span><span class="ln">    driver.find_element(By.CSS_SELECTOR, &quot;button&quot;).click()</span><span class="ln">    assert driver.find_element(By.ID, &quot;message&quot;).text == &quot;Received!&quot;</span></pre><ol class="se-notes" hidden><li data-n="6">A fixture is pytest's setup and teardown in one function.</li><li data-n="10">Everything before yield is setup. The test runs here.</li><li data-n="11">Everything after yield is teardown, and runs also when the test failed.</li><li data-n="14">Asking for a parameter called driver makes pytest run the fixture.</li><li data-n="15">A plain assert. pytest shows both sides when it fails.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153) run with pytest</div><pre class="cc-out">..                                                                       [100%]
+2 passed in 1.82s</pre></div><div class="se-pane" data-lang="js" hidden><div class="se-file" data-lang="js"><div class="se-fname">example.spec.js</div><pre class="cc-src se-src"><span class="ln">const { Builder, Browser, By } = require(&#x27;selenium-webdriver&#x27;);</span><span class="ln">const assert = require(&#x27;assert&#x27;);</span><span class="ln"> </span><span class="ln" data-n="4">describe(&#x27;Web form&#x27;, function () {</span><span class="ln">  let driver;</span><span class="ln"> </span><span class="ln" data-n="7">  beforeEach(async function () {</span><span class="ln">    driver = await new Builder().forBrowser(Browser.CHROME).build();</span><span class="ln">    await driver.get(&#x27;https://www.selenium.dev/selenium/web/web-form.html&#x27;);</span><span class="ln">  });</span><span class="ln"> </span><span class="ln" data-n="12">  it(&#x27;has the right title&#x27;, async function () {</span><span class="ln" data-n="13">    assert.strictEqual(await driver.getTitle(), &#x27;Web form&#x27;);</span><span class="ln">  });</span><span class="ln"> </span><span class="ln">  it(&#x27;shows Received! after submit&#x27;, async function () {</span><span class="ln">    await driver.findElement(By.name(&#x27;my-text&#x27;)).sendKeys(&#x27;Selenium&#x27;);</span><span class="ln">    await driver.findElement(By.css(&#x27;button&#x27;)).click();</span><span class="ln">    assert.strictEqual(await driver.findElement(By.id(&#x27;message&#x27;)).getText(), &#x27;Received!&#x27;);</span><span class="ln">  });</span><span class="ln"> </span><span class="ln" data-n="22">  afterEach(async function () {</span><span class="ln">    await driver.quit();</span><span class="ln">  });</span><span class="ln">});</span></pre><ol class="se-notes" hidden><li data-n="4">describe groups tests. Mocha gives every test a name.</li><li data-n="7">Runs before every test.</li><li data-n="12">One test.</li><li data-n="13">Node's own assert module. Actual first, then expected.</li><li data-n="22">Runs after every test, also when the test failed.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153) run with Mocha</div><pre class="cc-out">
+
+  Web form
+    ✔ has the right title
+    ✔ shows Received! after submit (229ms)
+
+
+  2 passing (2s)</pre></div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Job</th><th>JUnit 5</th><th>pytest</th><th>Mocha</th></tr></thead><tbody><tr><td>Before every test</td><td><code>@BeforeEach</code></td><td>fixture code before <code>yield</code></td><td><code>beforeEach</code></td></tr><tr><td>After every test</td><td><code>@AfterEach</code></td><td>fixture code after <code>yield</code></td><td><code>afterEach</code></td></tr><tr><td>Once for the class or file</td><td><code>@BeforeAll</code>, <code>@AfterAll</code></td><td><code>scope="module"</code> or <code>"session"</code></td><td><code>before</code>, <code>after</code></td></tr><tr><td>Check a value</td><td><code>assertEquals(expected, actual)</code></td><td><code>assert actual == expected</code></td><td><code>assert.strictEqual(actual, expected)</code></td></tr><tr><td>Run it</td><td>build tool or console launcher</td><td><code>pytest</code></td><td><code>mocha</code> or <code>npx mocha</code></td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>The Selenium documentation recommends a fresh browser for every test. Then no cookie, login or open dialog can leak from one test into the next, and the tests can run in any order or in parallel. It costs a browser start per test, a price that is almost always worth paying.</div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the flaky Friday test</div><p>A team shares one browser across a whole test class to save time. One test logs out at the end, and on Friday the runner orders the tests differently: the logout test runs before the cart test, and the cart test fails with a login page. Nothing in the cart test is wrong. Moving the driver into a before each and after each pair makes the failure disappear for good.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="datadriven" data-l="datadriven" hidden><div class="cv-lno">Lesson 2 of 3</div><h2>Data-driven tests</h2>
+<p>The login page has one form and many cases: right user and password, wrong password, unknown user. Copying the test three times means three places to fix when the form changes. A <b>parameterized test</b> writes the steps once and feeds them a table of data. The report shows one result per row.</p>
+<div class="se-tri" data-k="datadriven"><div class="cc-bar se-bar"><span class="lbl">One test, three rows of data</span><span class="se-lts" role="tablist"><button type="button" class="se-lt" data-lang="java">Java</button><button type="button" class="se-lt" data-lang="py">Python</button><button type="button" class="se-lt" data-lang="js">JavaScript</button></span><span class="grow"></span><button type="button" class="se-walk">Explain line by line</button><button type="button" class="se-copy">Copy</button></div><div class="se-pane" data-lang="java"><div class="se-file" data-lang="java"><div class="se-fname">LoginTest.java</div><pre class="cc-src se-src"><span class="ln">import static org.junit.jupiter.api.Assertions.assertEquals;</span><span class="ln"> </span><span class="ln">import java.time.Duration;</span><span class="ln">import org.junit.jupiter.api.AfterEach;</span><span class="ln">import org.junit.jupiter.api.BeforeEach;</span><span class="ln">import org.junit.jupiter.params.ParameterizedTest;</span><span class="ln">import org.junit.jupiter.params.provider.CsvSource;</span><span class="ln">import org.openqa.selenium.Alert;</span><span class="ln">import org.openqa.selenium.By;</span><span class="ln">import org.openqa.selenium.WebDriver;</span><span class="ln">import org.openqa.selenium.chrome.ChromeDriver;</span><span class="ln">import org.openqa.selenium.support.ui.ExpectedConditions;</span><span class="ln">import org.openqa.selenium.support.ui.WebDriverWait;</span><span class="ln"> </span><span class="ln">public class LoginTest {</span><span class="ln">    WebDriver driver;</span><span class="ln"> </span><span class="ln">    @BeforeEach</span><span class="ln">    void open() {</span><span class="ln">        driver = new ChromeDriver();</span><span class="ln">        driver.get(&quot;https://www.selenium.dev/selenium/web/login.html&quot;);</span><span class="ln">    }</span><span class="ln"> </span><span class="ln" data-n="24">    @ParameterizedTest(name = &quot;{0} / {1}&quot;)</span><span class="ln" data-n="25">    @CsvSource({</span><span class="ln">        &quot;username, password, You have successfully logged in.&quot;,</span><span class="ln">        &quot;username, wrong, Please enter valid credentials&quot;,</span><span class="ln">        &quot;admin, password, Please enter valid credentials&quot;</span><span class="ln">    })</span><span class="ln" data-n="30">    void login(String user, String password, String expected) {</span><span class="ln">        driver.findElement(By.id(&quot;username-field&quot;)).sendKeys(user);</span><span class="ln">        driver.findElement(By.id(&quot;password-field&quot;)).sendKeys(password);</span><span class="ln">        driver.findElement(By.id(&quot;login-form-submit&quot;)).click();</span><span class="ln" data-n="34">        Alert alert = new WebDriverWait(driver, Duration.ofSeconds(2)).until(ExpectedConditions.alertIsPresent());</span><span class="ln">        assertEquals(expected, alert.getText());</span><span class="ln">        alert.accept();</span><span class="ln">    }</span><span class="ln"> </span><span class="ln">    @AfterEach</span><span class="ln">    void close() {</span><span class="ln">        driver.quit();</span><span class="ln">    }</span><span class="ln">}</span></pre><ol class="se-notes" hidden><li data-n="24">The name shows the data of each run in the report.</li><li data-n="25">Each line is one run of the test: username, password, expected message.</li><li data-n="30">JUnit passes the columns in as parameters.</li><li data-n="34">The page answers with an alert.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153) run with JUnit 5</div><pre class="cc-out">╷
+├─ JUnit Platform Suite ✔
+├─ JUnit Jupiter ✔
+│  └─ LoginTest ✔
+│     └─ login(String, String, String) ✔
+│        ├─ username / password ✔
+│        ├─ username / wrong ✔
+│        └─ admin / password ✔
+└─ JUnit Vintage ✔
+
+Test run finished after 3574 ms
+[         5 containers found      ]
+[         0 containers skipped    ]
+[         5 containers started    ]
+[         0 containers aborted    ]
+[         5 containers successful ]
+[         0 containers failed     ]
+[         3 tests found           ]
+[         0 tests skipped         ]
+[         3 tests started         ]
+[         0 tests aborted         ]
+[         3 tests successful      ]
+[         0 tests failed          ]</pre></div><div class="se-pane" data-lang="py" hidden><div class="se-file" data-lang="py"><div class="se-fname">test_example.py</div><pre class="cc-src se-src"><span class="ln">import pytest</span><span class="ln">from selenium import webdriver</span><span class="ln">from selenium.webdriver.common.by import By</span><span class="ln">from selenium.webdriver.support import expected_conditions as EC</span><span class="ln">from selenium.webdriver.support.wait import WebDriverWait</span><span class="ln"> </span><span class="ln"> </span><span class="ln">@pytest.fixture</span><span class="ln">def driver():</span><span class="ln">    driver = webdriver.Chrome()</span><span class="ln">    driver.get(&quot;https://www.selenium.dev/selenium/web/login.html&quot;)</span><span class="ln">    yield driver</span><span class="ln">    driver.quit()</span><span class="ln"> </span><span class="ln"> </span><span class="ln" data-n="16">@pytest.mark.parametrize(&quot;user, password, expected&quot;, [</span><span class="ln">    (&quot;username&quot;, &quot;password&quot;, &quot;You have successfully logged in.&quot;),</span><span class="ln">    (&quot;username&quot;, &quot;wrong&quot;, &quot;Please enter valid credentials&quot;),</span><span class="ln">    (&quot;admin&quot;, &quot;password&quot;, &quot;Please enter valid credentials&quot;),</span><span class="ln">])</span><span class="ln" data-n="21">def test_login(driver, user, password, expected):</span><span class="ln">    driver.find_element(By.ID, &quot;username-field&quot;).send_keys(user)</span><span class="ln">    driver.find_element(By.ID, &quot;password-field&quot;).send_keys(password)</span><span class="ln">    driver.find_element(By.ID, &quot;login-form-submit&quot;).click()</span><span class="ln" data-n="25">    alert = WebDriverWait(driver, 2).until(EC.alert_is_present())</span><span class="ln">    assert alert.text == expected</span><span class="ln">    alert.accept()</span></pre><ol class="se-notes" hidden><li data-n="16">Each tuple is one run of the test.</li><li data-n="21">pytest passes the columns in as parameters, next to the fixture.</li><li data-n="25">The page answers with an alert.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153) run with pytest</div><pre class="cc-out">...                                                                      [100%]
+3 passed in 3.00s</pre></div><div class="se-pane" data-lang="js" hidden><div class="se-file" data-lang="js"><div class="se-fname">example.spec.js</div><pre class="cc-src se-src"><span class="ln">const { Builder, Browser, By, until } = require(&#x27;selenium-webdriver&#x27;);</span><span class="ln">const assert = require(&#x27;assert&#x27;);</span><span class="ln"> </span><span class="ln" data-n="4">const rows = [</span><span class="ln">  [&#x27;username&#x27;, &#x27;password&#x27;, &#x27;You have successfully logged in.&#x27;],</span><span class="ln">  [&#x27;username&#x27;, &#x27;wrong&#x27;, &#x27;Please enter valid credentials&#x27;],</span><span class="ln">  [&#x27;admin&#x27;, &#x27;password&#x27;, &#x27;Please enter valid credentials&#x27;],</span><span class="ln">];</span><span class="ln"> </span><span class="ln">describe(&#x27;Login&#x27;, function () {</span><span class="ln">  let driver;</span><span class="ln">  beforeEach(async function () {</span><span class="ln">    driver = await new Builder().forBrowser(Browser.CHROME).build();</span><span class="ln">    await driver.get(&#x27;https://www.selenium.dev/selenium/web/login.html&#x27;);</span><span class="ln">  });</span><span class="ln"> </span><span class="ln" data-n="17">  for (const [user, password, expected] of rows) {</span><span class="ln">    it(`${user} / ${password}`, async function () {</span><span class="ln">      await driver.findElement(By.id(&#x27;username-field&#x27;)).sendKeys(user);</span><span class="ln">      await driver.findElement(By.id(&#x27;password-field&#x27;)).sendKeys(password);</span><span class="ln">      await driver.findElement(By.id(&#x27;login-form-submit&#x27;)).click();</span><span class="ln" data-n="22">      const alert = await driver.wait(until.alertIsPresent(), 2000);</span><span class="ln">      assert.strictEqual(await alert.getText(), expected);</span><span class="ln">      await alert.accept();</span><span class="ln">    });</span><span class="ln">  }</span><span class="ln"> </span><span class="ln">  afterEach(async function () {</span><span class="ln">    await driver.quit();</span><span class="ln">  });</span><span class="ln">});</span></pre><ol class="se-notes" hidden><li data-n="4">Each row is one run of the test.</li><li data-n="17">Mocha has no data annotation. A loop that calls it() once per row does the same job.</li><li data-n="22">The page answers with an alert.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153) run with Mocha</div><pre class="cc-out">
+
+  Login
+    ✔ username / password (183ms)
+    ✔ username / wrong (231ms)
+    ✔ admin / password (187ms)
+
+
+  3 passing (2s)</pre></div></div>
+<p>Look at each report. JUnit used the name pattern for every row and Mocha used the title built by the loop. pytest ran in quiet mode, so it printed one dot per row, three dots for three runs. Run it with <code>-v</code> and it lists each row with its data in the test id. When the second row fails one day, the report says which row, without opening the code.</p>
+<div class="note note-tip"><b>Remember</b><div>Keep the data close to the test while it is small. When it grows, move it to a CSV or JSON file: JUnit has @CsvFileSource, and pytest and Mocha can read any file into the same list.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="failshot" data-l="failshot" hidden><div class="cv-lno">Lesson 3 of 3</div><h2>A screenshot when a test fails</h2>
+<p>A red test in a report from the night run says what was expected, not what the page looked like. A screenshot taken at the moment of failure answers that. The trick is the order: the picture must be taken <b>after</b> the test failed but <b>before</b> the browser is closed. Each framework has its own place for that.</p>
+<div class="se-tri" data-k="failshot"><div class="cc-bar se-bar"><span class="lbl">A failing test that saves a screenshot before the browser closes</span><span class="se-lts" role="tablist"><button type="button" class="se-lt" data-lang="java">Java</button><button type="button" class="se-lt" data-lang="py">Python</button><button type="button" class="se-lt" data-lang="js">JavaScript</button></span><span class="grow"></span><button type="button" class="se-walk">Explain line by line</button><button type="button" class="se-copy">Copy</button></div><div class="se-pane" data-lang="java"><div class="se-file" data-lang="java"><div class="se-fname">ScreenshotOnFailure.java</div><pre class="cc-src se-src"><span class="ln">import java.nio.file.Files;</span><span class="ln">import java.nio.file.Path;</span><span class="ln">import java.nio.file.StandardCopyOption;</span><span class="ln">import org.junit.jupiter.api.extension.AfterTestExecutionCallback;</span><span class="ln">import org.junit.jupiter.api.extension.ExtensionContext;</span><span class="ln">import org.openqa.selenium.OutputType;</span><span class="ln">import org.openqa.selenium.TakesScreenshot;</span><span class="ln">import org.openqa.selenium.WebDriver;</span><span class="ln"> </span><span class="ln" data-n="10">public class ScreenshotOnFailure implements AfterTestExecutionCallback {</span><span class="ln">    @Override</span><span class="ln">    public void afterTestExecution(ExtensionContext context) throws Exception {</span><span class="ln" data-n="13">        if (context.getExecutionException().isPresent()) {</span><span class="ln">            WebDriver driver = ((TitleTest) context.getRequiredTestInstance()).driver;</span><span class="ln">            Path shot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE).toPath();</span><span class="ln" data-n="16">            Path target = Path.of(&quot;failure-&quot; + context.getRequiredTestMethod().getName() + &quot;.png&quot;);</span><span class="ln">            Files.copy(shot, target, StandardCopyOption.REPLACE_EXISTING);</span><span class="ln">            System.out.println(&quot;saved &quot; + target + &quot; &quot; + (Files.size(target) &gt; 0));</span><span class="ln">        }</span><span class="ln">    }</span><span class="ln">}</span></pre><ol class="se-notes" hidden><li data-n="10">Called right after the test method, before any AfterEach method.</li><li data-n="13">Present only when the test threw, so only when it failed.</li><li data-n="16">Name the file after the test.</li></ol></div><div class="se-file" data-lang="java"><div class="se-fname">TitleTest.java</div><pre class="cc-src se-src"><span class="ln">import static org.junit.jupiter.api.Assertions.assertEquals;</span><span class="ln"> </span><span class="ln">import org.junit.jupiter.api.AfterEach;</span><span class="ln">import org.junit.jupiter.api.BeforeEach;</span><span class="ln">import org.junit.jupiter.api.Test;</span><span class="ln">import org.junit.jupiter.api.extension.ExtendWith;</span><span class="ln">import org.openqa.selenium.WebDriver;</span><span class="ln">import org.openqa.selenium.chrome.ChromeDriver;</span><span class="ln"> </span><span class="ln" data-n="10">@ExtendWith(ScreenshotOnFailure.class)</span><span class="ln">public class TitleTest {</span><span class="ln" data-n="12">    WebDriver driver;</span><span class="ln"> </span><span class="ln">    @BeforeEach</span><span class="ln">    void open() {</span><span class="ln">        driver = new ChromeDriver();</span><span class="ln">        driver.get(&quot;https://www.selenium.dev/selenium/web/web-form.html&quot;);</span><span class="ln">    }</span><span class="ln"> </span><span class="ln">    @Test</span><span class="ln">    void titleIsWrongOnPurpose() {</span><span class="ln" data-n="22">        assertEquals(&quot;Web form!&quot;, driver.getTitle());</span><span class="ln">    }</span><span class="ln"> </span><span class="ln" data-n="25">    @AfterEach</span><span class="ln">    void close() {</span><span class="ln">        driver.quit();</span><span class="ln">    }</span><span class="ln">}</span></pre><ol class="se-notes" hidden><li data-n="10">Plug the extension into this test class.</li><li data-n="12">The extension reads this field.</li><li data-n="22">Wrong on purpose, so the test fails.</li><li data-n="25">Runs after the extension, so the browser is still open when the screenshot is taken.</li></ol></div><div class="cc-cap">Real error from this run (Selenium 4.51.0 with Chrome 153) run with JUnit 5</div><pre class="cc-out">saved failure-titleIsWrongOnPurpose.png true
+╷
+├─ JUnit Platform Suite ✔
+├─ JUnit Jupiter ✔
+│  └─ TitleTest ✔
+│     └─ titleIsWrongOnPurpose() ✘ expected: &lt;Web form!&gt; but was: &lt;Web form&gt;
+└─ JUnit Vintage ✔
+
+Failures (1):
+  JUnit Jupiter:TitleTest:titleIsWrongOnPurpose()
+    MethodSource [className = &#x27;TitleTest&#x27;, methodName = &#x27;titleIsWrongOnPurpose&#x27;, methodParameterTypes = &#x27;&#x27;]
+    =&gt; org.opentest4j.AssertionFailedError: expected: &lt;Web form!&gt; but was: &lt;Web form&gt;
+       org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+       org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+       org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+       org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+       org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:177)
+       org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1145)
+       TitleTest.titleIsWrongOnPurpose(TitleTest.java:22)
+       java.base/java.lang.reflect.Method.invoke(Method.java:580)
+       java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+       java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+Test run finished after 1368 ms
+[         4 containers found      ]
+[         0 containers skipped    ]
+[         4 containers started    ]
+[         0 containers aborted    ]
+[         4 containers successful ]
+[         0 containers failed     ]
+[         1 tests found           ]
+[         0 tests skipped         ]
+[         1 tests started         ]
+[         0 tests aborted         ]
+[         0 tests successful      ]
+[         1 tests failed          ]</pre></div><div class="se-pane" data-lang="py" hidden><div class="se-file" data-lang="py"><div class="se-fname">conftest.py</div><pre class="cc-src se-src"><span class="ln">import os</span><span class="ln"> </span><span class="ln">import pytest</span><span class="ln">from selenium import webdriver</span><span class="ln"> </span><span class="ln"> </span><span class="ln" data-n="7">@pytest.hookimpl(wrapper=True, tryfirst=True)</span><span class="ln">def pytest_runtest_makereport(item, call):</span><span class="ln">    report = yield</span><span class="ln" data-n="10">    setattr(item, &quot;rep_&quot; + report.when, report)</span><span class="ln">    return report</span><span class="ln"> </span><span class="ln"> </span><span class="ln">@pytest.fixture</span><span class="ln">def driver(request):</span><span class="ln">    driver = webdriver.Chrome()</span><span class="ln">    yield driver</span><span class="ln" data-n="18">    if request.node.rep_call.failed:</span><span class="ln" data-n="19">        name = f&quot;failure-{request.node.name}.png&quot;</span><span class="ln" data-n="20">        driver.save_screenshot(name)</span><span class="ln">        print(&quot;saved&quot;, name, os.path.getsize(name) &gt; 0)</span><span class="ln">    driver.quit()</span></pre><ol class="se-notes" hidden><li data-n="7">A hook that sees every test report as pytest builds it.</li><li data-n="10">Keep the report on the test item: rep_setup, rep_call and rep_teardown.</li><li data-n="18">Did the test body fail?</li><li data-n="19">Name the file after the test.</li><li data-n="20">Take the picture before quit.</li></ol></div><div class="se-file" data-lang="py"><div class="se-fname">test_example.py</div><pre class="cc-src se-src"><span class="ln">from selenium import webdriver</span><span class="ln"> </span><span class="ln"> </span><span class="ln" data-n="4">def test_title_is_wrong_on_purpose(driver):</span><span class="ln">    driver.get(&quot;https://www.selenium.dev/selenium/web/web-form.html&quot;)</span><span class="ln" data-n="6">    assert driver.title == &quot;Web form!&quot;</span></pre><ol class="se-notes" hidden><li data-n="4">The driver fixture comes from conftest.py.</li><li data-n="6">Wrong on purpose, so the test fails.</li></ol></div><div class="cc-cap">Real error from this run (Selenium 4.51.0 with Chrome 153) run with pytest</div><pre class="cc-out">F                                                                        [100%]
+=================================== FAILURES ===================================
+________________________ test_title_is_wrong_on_purpose ________________________
+
+driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;25c17be969e4239e647e307513ab5469&quot;)&gt;
+
+    def test_title_is_wrong_on_purpose(driver):
+        driver.get(&quot;https://www.selenium.dev/selenium/web/web-form.html&quot;)
+&gt;       assert driver.title == &quot;Web form!&quot;
+E       AssertionError: assert &#x27;Web form&#x27; == &#x27;Web form!&#x27;
+E         
+E         - Web form!
+E         ?         -
+E         + Web form
+
+test_example.py:6: AssertionError
+--------------------------- Captured stdout teardown ---------------------------
+saved failure-test_title_is_wrong_on_purpose.png True
+=========================== short test summary info ============================
+FAILED test_example.py::test_title_is_wrong_on_purpose - AssertionError: asse...
+1 failed in 0.90s</pre></div><div class="se-pane" data-lang="js" hidden><div class="se-file" data-lang="js"><div class="se-fname">example.spec.js</div><pre class="cc-src se-src"><span class="ln">const { Builder, Browser } = require(&#x27;selenium-webdriver&#x27;);</span><span class="ln">const assert = require(&#x27;assert&#x27;);</span><span class="ln">const fs = require(&#x27;fs&#x27;);</span><span class="ln"> </span><span class="ln">describe(&#x27;Title&#x27;, function () {</span><span class="ln">  let driver;</span><span class="ln">  beforeEach(async function () {</span><span class="ln">    driver = await new Builder().forBrowser(Browser.CHROME).build();</span><span class="ln">    await driver.get(&#x27;https://www.selenium.dev/selenium/web/web-form.html&#x27;);</span><span class="ln">  });</span><span class="ln"> </span><span class="ln">  it(&#x27;is wrong on purpose&#x27;, async function () {</span><span class="ln" data-n="13">    assert.strictEqual(await driver.getTitle(), &#x27;Web form!&#x27;);</span><span class="ln">  });</span><span class="ln"> </span><span class="ln">  afterEach(async function () {</span><span class="ln" data-n="17">    if (this.currentTest.state === &#x27;failed&#x27;) {</span><span class="ln">      const name = &#x27;failure-&#x27; + this.currentTest.title.replace(/ /g, &#x27;-&#x27;) + &#x27;.png&#x27;;</span><span class="ln" data-n="19">      fs.writeFileSync(name, await driver.takeScreenshot(), &#x27;base64&#x27;);</span><span class="ln">      console.log(&#x27;saved &#x27; + name + &#x27; &#x27; + (fs.statSync(name).size &gt; 0));</span><span class="ln">    }</span><span class="ln">    await driver.quit();</span><span class="ln">  });</span><span class="ln">});</span></pre><ol class="se-notes" hidden><li data-n="13">Wrong on purpose, so the test fails.</li><li data-n="17">Mocha tells the hook how the test ended.</li><li data-n="19">Take the picture before quit.</li></ol></div><div class="cc-cap">Real error from this run (Selenium 4.51.0 with Chrome 153) run with Mocha</div><pre class="cc-out">
+
+  Title
+    1) is wrong on purpose
+saved failure-is-wrong-on-purpose.png true
+
+
+  0 passing (838ms)
+  1 failing
+
+  1) Title
+       is wrong on purpose:
+
+      AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ &#x27;Web form&#x27;
+- &#x27;Web form!&#x27;
+           ^
+
+      + expected - actual
+
+      -Web form
+      +Web form!
+      
+      at Context.&lt;anonymous&gt; (example.spec.js:13:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)</pre></div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Framework</th><th>Where the screenshot code goes</th><th>How it knows the test failed</th></tr></thead><tbody><tr><td>JUnit 5</td><td>An extension with <code>AfterTestExecutionCallback</code>, which runs before <code>@AfterEach</code></td><td><code>context.getExecutionException()</code> is present</td></tr><tr><td>pytest</td><td>The fixture, after <code>yield</code> and before <code>quit()</code></td><td>A <code>pytest_runtest_makereport</code> hook in conftest.py stores the report on the test</td></tr><tr><td>Mocha</td><td>The <code>afterEach</code> hook, before <code>quit()</code></td><td><code>this.currentTest.state</code> is "failed"</td></tr></tbody></table></div>
+<p>The run on this page failed on purpose, and each language printed "saved" followed by true, which means the file was written and is not empty. The failure message itself shows the expected title "Web form!" and the real one, "Web form".</p>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A test framework runs your Selenium code as tests: setup before, the test, teardown after, and a pass or fail for each.</p></div><div class="ld-p" data-ld="college" hidden><p>Start a fresh browser in the before each step and quit it in the after each step. Use parameterized tests for many rows of data and take a screenshot in the after step when the test failed.</p></div><div class="ld-p" data-ld="masters" hidden><p>Each framework has hooks at different points: JUnit extensions, pytest fixtures and hook functions, Mocha hooks with this.currentTest. Teardown runs whatever happened in the test, which is why quit belongs there.</p></div><div class="ld-p" data-ld="research" hidden><p>Fixtures with a wider scope, such as one browser per worker, trade isolation for speed. Combine them with deleteAllCookies and a fresh page in a function scoped fixture, and with parallel runners such as pytest-xdist or JUnit parallel execution.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./javascript-cookies.html" data-topic="javascript-cookies"><small>Previous topic</small><b>JavaScript and cookies</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "test-frameworks", "topic": "test-frameworks", "subject": "selenium", "title": "Test frameworks: JUnit 5, pytest and Mocha", "codes": {}, "quiz": [{"lv": "e", "q": "Which part decides whether a Selenium test passed?", "o": ["The driver", "The browser", "The test framework and its assertions", "Selenium Manager"], "a": 2, "hint": "Selenium only drives.", "why": "Assertions and pass or fail come from the test framework."}, {"lv": "e", "q": "In a pytest fixture, where does the teardown code go?", "o": ["Before yield", "After yield", "In the test", "In conftest only"], "a": 1, "hint": "yield hands over the driver.", "why": "Code after yield runs when the test is finished."}, {"lv": "e", "q": "Which JUnit 5 annotation runs before every test method?", "o": ["@BeforeAll", "@BeforeEach", "@Test", "@Setup"], "a": 1, "hint": "Each.", "why": "@BeforeEach runs before every test method."}, {"lv": "m", "q": "Why does the documentation recommend a fresh browser per test?", "o": ["It is faster", "No state leaks between tests, so they run in any order", "Browsers crash otherwise", "Grid requires it"], "a": 1, "hint": "Think of cookies and logins.", "why": "Fresh browsers keep tests independent of each other and of their order."}, {"lv": "m", "q": "A test fails at its assertion. Does @AfterEach, the fixture teardown or afterEach still run?", "o": ["No", "Yes", "Only in pytest", "Only if the browser is open"], "a": 1, "hint": "That is what teardown is for.", "why": "Teardown runs whether the test passed or failed, so quit is never skipped."}, {"lv": "m", "q": "A parameterized test has 3 rows. How many test results does the report show?", "o": ["1", "3", "6", "It depends on the browser"], "a": 1, "hint": "One per row.", "why": "Each row is a separate run with its own result."}, {"lv": "m", "q": "Mocha has no parameter annotation. How did the example run one test per row?", "o": ["With describe.each", "A loop that calls it() for each row", "A CSV plugin", "It cannot"], "a": 1, "hint": "Plain JavaScript.", "why": "A for loop around it() creates one test per row."}, {"lv": "h", "q": "Why does the JUnit example use AfterTestExecutionCallback and not a TestWatcher?", "o": ["It is newer", "It runs before @AfterEach, while the browser is still open", "TestWatcher cannot read fields", "It runs faster"], "a": 1, "hint": "Order matters.", "why": "The screenshot needs the browser, and @AfterEach quits it."}, {"lv": "h", "q": "In the pytest example, what does request.node.rep_call.failed tell the fixture?", "o": ["That setup failed", "That the test body failed", "That teardown failed", "That the browser crashed"], "a": 1, "hint": "call is the test body.", "why": "The hook stores one report per phase: setup, call and teardown. call is the test body."}, {"lv": "x", "q": "A suite shares one browser for a whole class to save time. What is the main risk?", "o": ["Slower tests", "State from one test changes the result of another", "More memory", "No screenshots"], "a": 1, "hint": "Order dependence.", "why": "Shared state makes results depend on test order, the classic flaky test."}], "calc": [{"lv": "e", "q": "A class has 4 tests with a fresh browser per test. How many browsers start?", "ans": "4", "hint": "One per test.", "steps": ["@BeforeEach runs once per test.", "There are 4 tests.", "<span class=\"eq\">4 browsers<\/span>"]}, {"lv": "e", "q": "A parameterized test has 5 rows and the class has 2 other tests. How many results are in the report?", "ans": "7", "hint": "Rows count as tests.", "steps": ["The parameterized test gives 5 results.", "The other tests give 2.", "<span class=\"eq\">5 + 2 = 7<\/span>"]}, {"lv": "m", "q": "A browser starts in 1.5 s. A suite of 120 tests uses a fresh browser per test. How many minutes are spent starting browsers?", "ans": "3", "hint": "Total seconds, then minutes.", "steps": ["120 × 1.5 = 180 s.", "There are 60 s in a minute.", "<span class=\"eq\">180 ÷ 60 = 3 minutes<\/span>"], "unit": "min"}, {"lv": "m", "q": "The same suite runs on 4 parallel workers. Roughly how long do browser starts take now, in seconds?", "ans": "45", "hint": "Shared across workers.", "steps": ["180 s of starts in total.", "Each worker does a quarter.", "<span class=\"eq\">180 ÷ 4 = 45 s<\/span>"], "unit": "s"}, {"lv": "h", "q": "A nightly run of 400 tests fails 6 tests. Each screenshot is 60 KB. How many KB of screenshots does it store?", "ans": "360", "hint": "Only failures.", "steps": ["Screenshots are taken only for failed tests.", "6 failures.", "<span class=\"eq\">6 × 60 = 360 KB<\/span>"], "unit": "KB"}, {"lv": "x", "q": "A test has 3 rows of data and runs in 3 browsers. Each run takes 4 s. With 3 parallel workers, how many seconds does it take at least?", "ans": "12", "hint": "Count runs, then share.", "steps": ["Runs: 3 rows × 3 browsers = 9.", "Total time: 9 × 4 = 36 s.", "<span class=\"eq\">36 ÷ 3 workers = 12 s<\/span>"], "unit": "s"}], "assign": [{"id": "hookorder", "lv": "e", "title": "Write down the hook order", "task": "<p>Write <code>hook_order(tests)<\/code>. <code>tests<\/code> is a list of test names. Return the list of steps a framework runs, with \"before\" and \"after\" around each test, like this: before, test name, after, before, next test, after.<\/p>", "starter": "def hook_order(tests):\n    # your code here\n    pass\n", "tests": [{"call": "hook_order([\"a\"])", "want": ["before", "a", "after"]}, {"call": "hook_order([\"a\", \"b\"])", "want": ["before", "a", "after", "before", "b", "after"]}, {"call": "hook_order([])", "want": []}], "solution": "def hook_order(tests):\n    steps = []\n    for name in tests:\n        steps += [\"before\", name, \"after\"]\n    return steps\n", "hint": "Three entries per test.", "why": "<p>This is the order of @BeforeEach and @AfterEach in JUnit, a function scoped fixture in pytest and beforeEach and afterEach in Mocha.<\/p>"}, {"id": "shotname", "lv": "m", "title": "Name the failure screenshot", "task": "<p>Write <code>shot_name(test, row)<\/code>. Return a file name for the screenshot of a failed test: \"failure-\", then the test name with spaces replaced by dashes, then \"-\" and the row number when <code>row<\/code> is not None, then \".png\".<\/p>", "starter": "def shot_name(test, row):\n    # your code here\n    pass\n", "tests": [{"call": "shot_name(\"is wrong on purpose\", None)", "want": "failure-is-wrong-on-purpose.png"}, {"call": "shot_name(\"login\", 2)", "want": "failure-login-2.png"}, {"call": "shot_name(\"a b\", 0)", "want": "failure-a-b-0.png"}], "solution": "def shot_name(test, row):\n    name = \"failure-\" + test.replace(\" \", \"-\")\n    if row is not None:\n        name += \"-\" + str(row)\n    return name + \".png\"\n", "hint": "Check row against None, because row 0 is a real row.", "why": "<p>A name with the row number tells you which data row failed. Testing <code>if row:<\/code> would drop row 0.<\/p>"}], "must": [["Framework jobs", "Selenium drives the browser. JUnit 5, pytest or Mocha find the tests, run setup and teardown, assert and report."], ["Fresh browser", "Start the driver in the before each step and quit it in the after each step, so tests stay independent and can run in any order."], ["Teardown always runs", "@AfterEach, code after yield and afterEach run also when the test failed, so quit belongs there."], ["Data-driven", "@ParameterizedTest with @CsvSource, @pytest.mark.parametrize, or a loop around it() in Mocha. One result per row."], ["Screenshot on failure", "Take it after the test failed and before quit: a JUnit AfterTestExecutionCallback, a pytest makereport hook plus fixture, or Mocha this.currentTest.state."]], "summary": "<p>A test framework runs Selenium code as tests. Start a fresh browser before each test and quit it after, because teardown runs whether the test passed or failed. Use parameterized tests for many rows of data, and take a screenshot after a failure and before quit.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/setri.js"></script>
+<script src="../../assets/seplay.js"></script>
+<script src="../../assets/sewidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

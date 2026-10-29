@@ -1,4 +1,10 @@
 {
+ "00b39db642caa713a11358e2": {
+  "label": "suite",
+  "lang": "js",
+  "out": "\n\n  Web form\n    ✔ has the right title\n    ✔ shows Received! after submit (229ms)\n\n\n  2 passing (2s)",
+  "rc": 0
+ },
  "01231bc220a9fbe8698928da": {
   "label": "scope",
   "lang": "js",
@@ -28,6 +34,12 @@
   "lang": "java",
   "out": "type into disabled: ElementNotInteractableException, element not interactable\nclear readonly: InvalidElementStateException, invalid element state\nclick under banner: ElementClickInterceptedException, element click intercepted",
   "rc": 0
+ },
+ "0d3926fd678c565167090cc0": {
+  "label": "failshot",
+  "lang": "js",
+  "out": "\n\n  Title\n    1) is wrong on purpose\nsaved failure-is-wrong-on-purpose.png true\n\n\n  0 passing (838ms)\n  1 failing\n\n  1) Title\n       is wrong on purpose:\n\n      AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Web form'\n- 'Web form!'\n           ^\n\n      + expected - actual\n\n      -Web form\n      +Web form!\n      \n      at Context.<anonymous> (example.spec.js:13:12)\n      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "rc": 1
  },
  "0d7b13b7198ba2051788bea0": {
   "label": "fluent",
@@ -311,6 +323,12 @@
   "out": "options: 4 , multiple: None\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
   "rc": 0
  },
+ "7c2c47815ea0c81489978650": {
+  "label": "failshot",
+  "lang": "py",
+  "out": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________________________ test_title_is_wrong_on_purpose ________________________\n\ndriver = <selenium.webdriver.chrome.webdriver.WebDriver (session=\"25c17be969e4239e647e307513ab5469\")>\n\n    def test_title_is_wrong_on_purpose(driver):\n        driver.get(\"https://www.selenium.dev/selenium/web/web-form.html\")\n>       assert driver.title == \"Web form!\"\nE       AssertionError: assert 'Web form' == 'Web form!'\nE         \nE         - Web form!\nE         ?         -\nE         + Web form\n\ntest_example.py:6: AssertionError\n--------------------------- Captured stdout teardown ---------------------------\nsaved failure-test_title_is_wrong_on_purpose.png True\n=========================== short test summary info ============================\nFAILED test_example.py::test_title_is_wrong_on_purpose - AssertionError: asse...\n1 failed in 0.90s",
+  "rc": 1
+ },
  "7cd12ada230b5f8288ddafce": {
   "label": "race",
   "lang": "py",
@@ -323,10 +341,22 @@
   "out": "before visiting: invalid cookie domain\nkey: value, domain www.selenium.dev, sameSite Lax, secure true, httpOnly false\ncookies: 3\npage script sees: key=value; foo=bar\nmissing cookie: null\nafter delete all: 0",
   "rc": 0
  },
+ "83525f070cfb48f9ef58db46": {
+  "label": "datadriven",
+  "lang": "py",
+  "out": "...                                                                      [100%]\n3 passed in 3.00s",
+  "rc": 0
+ },
  "869ebf2fd4054bd862190e20": {
   "label": "wheel",
   "lang": "js",
   "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 0\nscrollY after waiting: 300\nframe scrollY: 118 of at most 118",
+  "rc": 0
+ },
+ "86c60529fa01f846cd03f879": {
+  "label": "datadriven",
+  "lang": "js",
+  "out": "\n\n  Login\n    ✔ username / password (183ms)\n    ✔ username / wrong (231ms)\n    ✔ admin / password (187ms)\n\n\n  3 passing (2s)",
   "rc": 0
  },
  "87ead572ac21a49afd6904ea": {
@@ -351,6 +381,12 @@
   "label": "select",
   "lang": "js",
   "out": "options: 4\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
+  "rc": 0
+ },
+ "8c5250fe991cf5c66a3e4a24": {
+  "label": "suite",
+  "lang": "py",
+  "out": "..                                                                       [100%]\n2 passed in 1.82s",
   "rc": 0
  },
  "8cacf6e645e46969f2b004e2": {
@@ -461,6 +497,12 @@
   "out": "browser shows: C:\\fakepath\\report.txt",
   "rc": 0
  },
+ "adb030a3229c257a09e625fa": {
+  "label": "suite",
+  "lang": "java",
+  "out": "╷\n├─ JUnit Platform Suite ✔\n├─ JUnit Jupiter ✔\n│  └─ WebFormTest ✔\n│     ├─ submittingShowsReceived() ✔\n│     └─ pageHasTheRightTitle() ✔\n└─ JUnit Vintage ✔\n\nTest run finished after 2285 ms\n[         4 containers found      ]\n[         0 containers skipped    ]\n[         4 containers started    ]\n[         0 containers aborted    ]\n[         4 containers successful ]\n[         0 containers failed     ]\n[         2 tests found           ]\n[         0 tests skipped         ]\n[         2 tests started         ]\n[         0 tests aborted         ]\n[         2 tests successful      ]\n[         0 tests failed          ]",
+  "rc": 0
+ },
  "af214618b5b694f27e36a46b": {
   "label": "typeclick",
   "lang": "js",
@@ -496,6 +538,12 @@
   "lang": "py",
   "out": "frame in view before: False\nframe in view after: True\nscrollY right after perform: 4475\nscrollY after waiting: 4505\nframe scrollY: 118 of at most 118",
   "rc": 0
+ },
+ "b703230f05514489a7b81b9a": {
+  "label": "failshot",
+  "lang": "java",
+  "out": "saved failure-titleIsWrongOnPurpose.png true\n╷\n├─ JUnit Platform Suite ✔\n├─ JUnit Jupiter ✔\n│  └─ TitleTest ✔\n│     └─ titleIsWrongOnPurpose() ✘ expected: <Web form!> but was: <Web form>\n└─ JUnit Vintage ✔\n\nFailures (1):\n  JUnit Jupiter:TitleTest:titleIsWrongOnPurpose()\n    MethodSource [className = 'TitleTest', methodName = 'titleIsWrongOnPurpose', methodParameterTypes = '']\n    => org.opentest4j.AssertionFailedError: expected: <Web form!> but was: <Web form>\n       org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)\n       org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)\n       org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)\n       org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n       org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:177)\n       org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1145)\n       TitleTest.titleIsWrongOnPurpose(TitleTest.java:22)\n       java.base/java.lang.reflect.Method.invoke(Method.java:580)\n       java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n       java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\nTest run finished after 1368 ms\n[         4 containers found      ]\n[         0 containers skipped    ]\n[         4 containers started    ]\n[         0 containers aborted    ]\n[         4 containers successful ]\n[         0 containers failed     ]\n[         1 tests found           ]\n[         0 tests skipped         ]\n[         1 tests started         ]\n[         0 tests aborted         ]\n[         0 tests successful      ]\n[         1 tests failed          ]",
+  "rc": 1
  },
  "b73cc4b128da5f59a4d1ba73": {
   "label": "hello",
@@ -555,6 +603,12 @@
   "label": "explicit",
   "lang": "py",
   "out": "typed: Displayed",
+  "rc": 0
+ },
+ "c5c0848b4412e50a008bb49e": {
+  "label": "datadriven",
+  "lang": "java",
+  "out": "╷\n├─ JUnit Platform Suite ✔\n├─ JUnit Jupiter ✔\n│  └─ LoginTest ✔\n│     └─ login(String, String, String) ✔\n│        ├─ username / password ✔\n│        ├─ username / wrong ✔\n│        └─ admin / password ✔\n└─ JUnit Vintage ✔\n\nTest run finished after 3574 ms\n[         5 containers found      ]\n[         0 containers skipped    ]\n[         5 containers started    ]\n[         0 containers aborted    ]\n[         5 containers successful ]\n[         0 containers failed     ]\n[         3 tests found           ]\n[         0 tests skipped         ]\n[         3 tests started         ]\n[         0 tests aborted         ]\n[         3 tests successful      ]\n[         0 tests failed          ]",
   "rc": 0
  },
  "c82160d65df64e227b355e59": {

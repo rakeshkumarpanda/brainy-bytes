@@ -13,6 +13,7 @@ needs='grid' starts a Selenium Grid standalone server on http://localhost:4444 b
 
 Set up the tools once with tools/se-build/setup.sh.
 """
+import glob
 import hashlib
 import json
 import os
@@ -122,7 +123,10 @@ def _exec(lang, mode, files, d):
             pkg = re.search(r'^package\s+([\w.]+);', files[main], re.M)
             cls = (pkg.group(1) + '.' if pkg else '') + cls
             jar = os.path.join(BOX, 'java', 'lib', 'junit-platform-console-standalone-1.11.4.jar')
-            cmd = ['java', '-jar', jar, 'execute', '--class-path', 'classes' + os.pathsep + cp, '--select-class', cls,
+            # The console launcher does not expand lib/*, so list every jar.
+            jars = sorted(glob.glob(os.path.join(BOX, 'java', 'lib', '*.jar')))
+            cpx = os.pathsep.join(['classes'] + [j for j in jars if j != jar])
+            cmd = ['java', '-jar', jar, 'execute', '--class-path', cpx, '--select-class', cls,
                    '--disable-banner', '--details=tree', '--disable-ansi-colors']
         elif len(files) > 1:
             r = subprocess.run(['javac', '-cp', cp, '-d', 'classes', *files], cwd=d, capture_output=True, text=True, env=e)

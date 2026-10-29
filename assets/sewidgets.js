@@ -864,4 +864,73 @@ const SEZ = (() => {
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 5.1: test frameworks */
+  const HOOKS = {
+    junit: { start: '@BeforeEach', test: '@Test', shot: 'AfterTestExecutionCallback', stop: '@AfterEach', startAll: '@BeforeAll', stopAll: '@AfterAll' },
+    pytest: { start: 'fixture, before yield', test: 'test_ function', shot: 'fixture sees rep_call.failed', stop: 'fixture, after yield', startAll: 'module fixture, before yield', stopAll: 'module fixture, after yield' },
+    mocha: { start: 'beforeEach', test: 'it()', shot: 'afterEach, state failed', stop: 'afterEach, quit', startAll: 'before', stopAll: 'after' }
+  };
+  function lifecycle(p) {
+    const H = HOOKS[p.fw], ev = [], n = +p.tests, bad = +p.fail;
+    const T = i => ({ k: 'test', h: H.test, t: `Test ${i} ` + (i === bad ? 'fails' : 'passes') + (p.scope === 'all' && i > 1 ? ', in a browser earlier tests used.' : '.'), i, bad: i === bad });
+    if (p.scope === 'all') ev.push({ k: 'start', h: H.startAll, t: 'Start one browser for the whole class or file.' });
+    for (let i = 1; i <= n; i++) {
+      if (p.scope === 'each') ev.push({ k: 'start', h: H.start, t: `Start a fresh browser for test ${i}.` });
+      ev.push(T(i));
+      if (i === bad) ev.push({ k: 'shot', h: H.shot, t: `The browser is still open, so take failure-test${i}.png.` });
+      if (p.scope === 'each') ev.push({ k: 'stop', h: H.stop, t: i === bad ? 'Quit runs even though the test failed.' : 'Quit the browser.' });
+    }
+    if (p.scope === 'all') ev.push({ k: 'stop', h: H.stopAll, t: 'Quit the shared browser.' });
+    return ev;
+  }
+  def('se-lifecycle', {
+    title: 'What a test framework runs, and in which order',
+    sub: 'Choose the framework, the number of tests and which one fails. Step through the hooks and watch the browsers.',
+    W: 660, H: 340,
+    params: [
+      { k: 'fw', label: 'Framework', type: 'select', v: 'junit', opts: [['junit', 'JUnit 5'], ['pytest', 'pytest'], ['mocha', 'Mocha']] },
+      { k: 'tests', label: 'Tests', type: 'range', v: 3, min: 1, max: 4, step: 1 },
+      { k: 'fail', label: 'Failing test (0 for none)', type: 'range', v: 2, min: 0, max: 4, step: 1 },
+      { k: 'scope', label: 'Browser', type: 'select', v: 'each', opts: [['each', 'A fresh browser per test'], ['all', 'One browser for all tests']] }
+    ],
+    tips: [
+      { t: 'With a failing test, watch the screenshot step: it comes before quit, while the page is still there.', set: { fail: 2, scope: 'each' }, play: true },
+      { t: 'Switch to one browser for all tests. Fewer starts, but every later test inherits what the earlier ones left behind.', set: { scope: 'all' }, play: true },
+      { t: 'Switch the framework. The order stays the same, only the names of the hooks change.', set: { fw: 'pytest' }, play: true }
+    ],
+    steps: z => lifecycle(z.p).length,
+    startAtZero: true,
+    speed: () => 900,
+    draw(z) {
+      const g = z.g, c = z.col, ev = lifecycle(z.p), s = z.step;
+      const rh = Math.min(26, (z.H - 40) / ev.length), x = 24, lw = 230;
+      let open = 0, started = 0;
+      const res = [];
+      ev.forEach((e, i) => {
+        const y = 22 + i * rh, on = s === i + 1, done = s > i + 1;
+        if (done || on) {
+          if (e.k === 'start') { open++; started++; }
+          if (e.k === 'stop') open--;
+          if (e.k === 'test') res.push(e.bad ? 'fail' : 'pass');
+        }
+        const col = e.k === 'test' ? (e.bad ? c.red : c.green) : e.k === 'shot' ? c.orange : e.k === 'start' ? c.cv : c.purple;
+        if (on) rr(g, x - 6, y - 2, z.W - 2 * x + 12 - 170, rh - 2, 6, { fill: c.bg, stroke: c.cv, w: 2 });
+        rr(g, x, y + 2, 8, rh - 8, 3, { fill: done || on ? col : c.line });
+        D.text(g, e.h, x + 16, y + rh / 2 + 3, { s: fit(g, e.h, lw - 20, 12, { mono: true }), mono: true, b: on, c: done || on ? c.ink : c.ink2 });
+        D.text(g, e.t, x + lw, y + rh / 2 + 3, { s: fit(g, e.t, z.W - lw - x - 200, 11.5), c: done || on ? c.ink : c.ink2 });
+      });
+      const px = z.W - 176;
+      rr(g, px, 22, 156, 150, 10, { fill: c.surf, stroke: c.line });
+      D.text(g, 'Browsers open', px + 12, 46, { s: 12, b: true, c: c.ink2 });
+      D.text(g, String(open), px + 12, 76, { s: 26, b: true, c: open ? c.cv : c.ink2 });
+      D.text(g, 'Browsers started', px + 12, 104, { s: 12, b: true, c: c.ink2 });
+      D.text(g, String(started), px + 12, 134, { s: 26, b: true, c: c.ink });
+      rr(g, px, 184, 156, 80, 10, { fill: c.surf, stroke: c.line });
+      D.text(g, 'Results', px + 12, 206, { s: 12, b: true, c: c.ink2 });
+      res.forEach((r, i) => { rr(g, px + 12 + i * 34, 220, 28, 28, 6, { fill: r === 'pass' ? c.green : c.red }); D.text(g, r === 'pass' ? 'P' : 'F', px + 26 + i * 34, 239, { a: 'center', b: true, s: 13, c: '#fff' }); });
+      const cur = ev[s - 1];
+      return cur ? `<b>${esc(cur.h)}</b>: ${esc(cur.t)}` : `${ev.length} steps. Press Play.`;
+    }
+  });
+
 })();
