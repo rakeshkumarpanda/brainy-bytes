@@ -4419,6 +4419,23 @@ function seModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "se-control", title: "Synchronise and control", emoji: "4", step: 4, level: "Intermediate", blurb: "Waits, windows, tabs, frames and alerts, the Actions API, JavaScript, cookies and print.", topics: [
+      { id: "waits", title: "Waiting strategies: implicit, explicit and fluent", emoji: "4.1", page: "content/selenium/waits.html",
+        summary: "Why tests race the page, implicit and explicit waits, expected conditions, custom waits and why not to mix them.",
+        keywords: ["waits", "implicit wait", "explicit wait", "webdriverwait", "expected conditions", "fluentwait", "flaky tests", "synchronization"],
+        minutes: 55, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "race", title: "The race between your code and the page", emoji: "", group: "Lesson", keywords: ["race condition", "flaky test", "synchronisation", "sleep", "dynamic content", "single page application", "dynamic.html"] },
+        { id: "implicit", title: "Implicit waits", emoji: "", group: "Lesson", keywords: ["implicit wait", "implicitly wait", "session timeout", "presence", "global setting"] },
+        { id: "explicit", title: "Explicit waits and expected conditions", emoji: "", group: "Lesson", keywords: ["explicit wait", "WebDriverWait", "expected conditions", "until", "polling interval", "timeout exception", "visibility", "presence", "clickable", "driver.wait"] },
+        { id: "custom", title: "Customising waits, and never mixing them", emoji: "", group: "Lesson", keywords: ["FluentWait", "polling", "ignored exceptions", "custom wait", "mixing waits", "implicit and explicit", "unpredictable wait times", "timeout message"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

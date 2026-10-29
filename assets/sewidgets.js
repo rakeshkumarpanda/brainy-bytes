@@ -575,3 +575,90 @@ const SEZ = (() => {
     }
   });
 })();
+
+(() => {
+  const { def, D, esc } = CVZ;
+  const { rr, wrap } = SEZ;
+
+  /* ---------------------------------------------------------------- Chapter 4.1: waiting strategies on one timeline */
+  /* the explicit wait loop follows the Python WebDriverWait: check, give up if the time is past the timeout,
+     otherwise sleep for the poll interval and check again. A check that uses find element blocks for the implicit wait when the element is
+     missing, which is how mixing the two stretches the wait, as the Selenium documentation warns. Times in seconds. */
+  function simulate(p) {
+    const appear = p.never ? Infinity : p.appear;
+    const ev = [];
+    if (p.mode === 'none') {
+      ev.push(appear <= 0 ? [0, 'hit', 'find succeeds at once'] : [0, 'fail', 'find fails at once: no such element']);
+      return ev;
+    }
+    if (p.mode === 'sleep') {
+      ev.push([0, 'sleep', `sleep(${p.sleep}) starts`]);
+      ev.push(appear <= p.sleep ? [p.sleep, 'hit', `find after the sleep succeeds, but ${(p.sleep - Math.min(appear, p.sleep)).toFixed(1)} s were wasted`] : [p.sleep, 'fail', 'find after the sleep fails: the sleep was too short']);
+      return ev;
+    }
+    if (p.mode === 'implicit') {
+      ev.push([0, 'start', `find starts, the driver keeps looking for up to ${p.imp} s`]);
+      ev.push(appear <= p.imp ? [appear, 'hit', 'the element appears and find returns at once'] : [p.imp, 'fail', 'implicit wait used up: no such element']);
+      return ev;
+    }
+    const imp = p.mode === 'mixed' ? p.imp : 0, T = p.exp, P = p.poll;
+    let t = 0, guard = 0;
+    while (guard++ < 60) {
+      if (appear <= t) { ev.push([t, 'hit', `check at ${t.toFixed(1)} s: condition true, the wait returns`]); return ev; }
+      if (imp && appear <= t + imp) { ev.push([appear, 'hit', `the find inside the check at ${t.toFixed(1)} s was still waiting (implicit), and returns when the element appears`]); return ev; }
+      const end = t + imp;
+      ev.push([end, 'miss', imp ? `check started at ${t.toFixed(1)} s blocked ${imp} s on the implicit wait, then failed` : `check at ${t.toFixed(1)} s: not yet`]);
+      if (end > T) { ev.push([end, 'fail', `${end.toFixed(1)} s is past the ${T} s timeout, so the wait raises TimeoutException instead of sleeping again`]); return ev; }
+      t = end + P;
+    }
+    return ev;
+  }
+  def('se-waits', {
+    title: 'Four ways to wait, on one clock',
+    sub: 'The element appears after a delay. Pick a strategy and change the numbers, then step through what your code and the driver do.',
+    W: 660, H: 300,
+    params: [
+      { k: 'mode', label: 'Strategy', type: 'select', v: 'explicit', opts: [['none', 'No wait'], ['sleep', 'Fixed sleep'], ['implicit', 'Implicit wait'], ['explicit', 'Explicit wait'], ['mixed', 'Implicit and explicit mixed']] },
+      { k: 'appear', label: 'Element appears after (s)', type: 'range', v: 1, min: 0, max: 25, step: 0.5 },
+      { k: 'never', label: 'The element never appears', type: 'check', v: false },
+      { k: 'sleep', label: 'Sleep length (s)', type: 'range', v: 3, min: 0.5, max: 10, step: 0.5, show: p => p.mode === 'sleep' },
+      { k: 'imp', label: 'Implicit wait (s)', type: 'range', v: 10, min: 0.5, max: 15, step: 0.5, show: p => p.mode === 'implicit' || p.mode === 'mixed' },
+      { k: 'exp', label: 'Explicit timeout (s)', type: 'range', v: 15, min: 1, max: 20, step: 1, show: p => p.mode === 'explicit' || p.mode === 'mixed' },
+      { k: 'poll', label: 'Polling interval (s)', type: 'range', v: 0.5, min: 0.1, max: 3, step: 0.1, show: p => p.mode === 'explicit' || p.mode === 'mixed' }
+    ],
+    tips: [
+      { t: 'No wait: the box from dynamic.html appears 1 s after the click, so the find fails straight away. This is the race the documentation describes.', set: { mode: 'none', appear: 1, never: false }, play: true },
+      { t: 'A 3 s sleep works, but wastes 2 s every time. Make the box take 4 s and the sleep fails.', set: { mode: 'sleep', appear: 1, sleep: 3, never: false }, play: true },
+      { t: 'Explicit wait with polls every 0.5 s: it returns at the first check after the box appears.', set: { mode: 'explicit', appear: 1, exp: 15, poll: 0.5, never: false }, play: true },
+      { t: 'The documentation warning: implicit 10 s mixed with explicit 15 s, and the element never comes. The wait ends after about 20.5 s, not 15.', set: { mode: 'mixed', imp: 10, exp: 15, poll: 0.5, never: true }, play: true }
+    ],
+    steps: z => simulate(z.p).length,
+    startAtZero: true,
+    speed: () => 900,
+    draw(z) {
+      const g = z.g, c = z.col, p = z.p, ev = simulate(p), s = z.step;
+      const last = ev[ev.length - 1][0];
+      const appear = p.never ? Infinity : p.appear;
+      const tmax = Math.max(2, last, isFinite(appear) ? appear : 0, p.mode === 'explicit' || p.mode === 'mixed' ? p.exp : 0) * 1.08;
+      const L = 30, R = z.W - 30, Y = 120, X = t => L + (R - L) * Math.min(t, tmax) / tmax;
+      D.line(g, L, Y, R, Y, c.line, 3);
+      for (let t = 0; t <= tmax; t += tmax > 12 ? 5 : 1) { D.line(g, X(t), Y - 5, X(t), Y + 5, c.line, 1.5); D.text(g, t + ' s', X(t), Y + 22, { a: 'center', s: 11, c: c.ink2 }); }
+      if (isFinite(appear)) { rr(g, X(appear), Y - 46, Math.max(3, R - X(appear)), 20, 6, { fill: c.cv }); D.text(g, 'element present', X(appear) + 6, Y - 32, { s: 11.5, b: true, c: '#fff' }); }
+      else D.text(g, 'the element never appears', L, Y - 32, { s: 12, b: true, c: c.ink2 });
+      if (p.mode === 'explicit' || p.mode === 'mixed') { D.line(g, X(p.exp), Y - 60, X(p.exp), Y + 30, c.orange, 2); D.text(g, 'timeout ' + p.exp + ' s', X(p.exp), Y - 66, { a: 'center', s: 11.5, b: true, c: c.orange }); }
+      let prev = 0;
+      ev.slice(0, s).forEach((e, i) => {
+        const col = e[1] === 'hit' ? c.green : e[1] === 'fail' ? c.red : e[1] === 'miss' ? c.accent : c.purple;
+        if (e[0] > prev) rr(g, X(prev), Y + 34 + (i % 2) * 8, Math.max(2, X(e[0]) - X(prev)), 6, 3, { fill: col });
+        D.circle(g, X(e[0]), Y, e[1] === 'hit' || e[1] === 'fail' ? 8 : 5, { fill: col });
+        prev = e[0];
+      });
+      const cur = s ? ev[s - 1] : null;
+      rr(g, 20, 200, z.W - 40, 86, 12, { fill: c.bg, stroke: cur ? (cur[1] === 'hit' ? c.green : cur[1] === 'fail' ? c.red : c.line) : c.line, w: 2 });
+      const msg = cur ? `At ${cur[0].toFixed(1)} s: ${cur[2]}.` : 'Your code clicks the button at 0 s. Press Step or Play.';
+      wrap(g, msg, 36, 228, z.W - 72, { s: 14, c: c.ink, lh: 20 });
+      const end = ev[ev.length - 1];
+      return `Result: <b>${end[1] === 'hit' ? 'found' : 'failed'}</b> after ${end[0].toFixed(1)} s.`;
+    }
+  });
+})();

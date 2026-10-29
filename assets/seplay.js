@@ -12,7 +12,7 @@ const SEPLAY = (() => {
   const BASE = 'https://www.selenium.dev/selenium/web/';
 
   /* ---------------- practice pages: small copies of https://www.selenium.dev/selenium/web/ ---------------- */
-  const CSS = '<style>body{font-family:system-ui,sans-serif;font-size:14px;margin:10px;color:#1b2a3c}label{display:block;margin:6px 0}input,select,textarea,button{font:inherit;margin-top:2px}h1,h2{font-size:20px;margin:0 0 8px}.redbox{background:red;width:60px;height:60px;border:1px solid #000;margin:5px;display:inline-block}</style>';
+  const CSS = '<style>body{font-family:system-ui,sans-serif;font-size:14px;margin:10px;color:#1b2a3c}label{display:block;margin:6px 0}input,select,textarea,button{font:inherit;margin-top:2px}h1,h2{font-size:20px;margin:0 0 8px}.redbox{background:red;width:60px;height:60px;border:1px solid #000;margin:5px;display:inline-block}[data-sp-hit]{outline:3px solid #f59e0b;outline-offset:2px}</style>';
   const PAGES = {
     'web-form.html': {
       title: 'Web form',
@@ -263,6 +263,7 @@ const SEPLAY = (() => {
       S = Sim(ui); vars = {}; pc = 0;
       lines = ed.value.split('\n');
       logEl.innerHTML = '';
+      frame.onload = null;
       frame.srcdoc = '<body style="font-family:system-ui;color:#556;padding:10px">No browser yet. Run the line that starts the driver.</body>';
       urlEl.textContent = 'no session';
       pos.textContent = '';
@@ -296,6 +297,7 @@ const SEPLAY = (() => {
       S.frame = null; S.queue = [];
       return new Promise(res => {
         frame.onload = () => {
+          frame.onload = null;
           const d = frame.contentDocument, w = frame.contentWindow;
           w.alert = t => { S.dialog = { type: 'alert', text: String(t) }; S.note('The page opened an alert.'); };
           w.confirm = t => { S.dialog = { type: 'confirm', text: String(t), wait: true }; S.note('The page opened a confirm box.'); return S._answer === true; };
@@ -359,8 +361,9 @@ const SEPLAY = (() => {
       if (e.stale || !e.node.isConnected || e.node.ownerDocument !== doc()) throw new SeError('stale element reference', 'stale element reference: element is not attached to the page document');
     }
     function hit(node) {
-      try { doc().querySelectorAll('.sp-hit').forEach(n => n.classList.remove('sp-hit')); } catch (e) { /* page changed */ }
-      if (node && node.classList) { node.classList.add('sp-hit'); node.scrollIntoView({ block: 'nearest' }); }
+      /* a data attribute, not a class, so the outline never shows up in what the script reads from the page */
+      try { doc().querySelectorAll('[data-sp-hit]').forEach(n => n.removeAttribute('data-sp-hit')); } catch (e) { /* page changed */ }
+      if (node && node.setAttribute) { node.setAttribute('data-sp-hit', ''); node.scrollIntoView({ block: 'nearest' }); }
     }
 
     /* find with the implicit wait: the driver keeps looking until the element shows up or the time runs out */
