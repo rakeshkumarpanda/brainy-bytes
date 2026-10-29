@@ -4566,6 +4566,21 @@ function seModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "se-revision", title: "Revise and practise", emoji: "7", step: 7, level: "All levels", blurb: "Revise the whole path with output tracing, bug hunts, design and sizing questions, a cheat sheet in three languages and a mock quiz.", topics: [
+      { id: "revision", title: "Revision: predict, debug and design", emoji: "7.1", page: "content/selenium/revision.html",
+        summary: "Predict the output, find the bug, design and sizing questions, a cheat sheet in three languages and a mock quiz.",
+        keywords: ["revision", "exam", "interview", "mock quiz", "cheat sheet", "predict output", "find the bug", "framework design", "grid sizing"],
+        minutes: 60, counts: {"lessons": 5, "problems": 9, "quiz": 16, "assign": 0},
+        added: "2026-10-29",
+        sections: [
+        { id: "map", title: "How Selenium skills are tested", emoji: "", group: "Lesson", keywords: ["revision", "exam", "interview", "practice", "question types", "selenium topics"] },
+        { id: "trace", title: "Predict the output", emoji: "", group: "Lesson", keywords: ["predict the output", "trace", "actions", "shift", "invalid cookie domain", "stale element", "no such element", "return types"] },
+        { id: "bugs", title: "Find the bug", emoji: "", group: "Lesson", keywords: ["find the bug", "sleep", "mix waits", "quit", "finally", "absolute xpath", "flaky", "login through api"] },
+        { id: "design", title: "Design and sizing questions", emoji: "", group: "Lesson", keywords: ["framework design", "layers", "driver factory", "grid sizing", "formula", "flaky tests", "triage"] },
+        { id: "sheet", title: "Cheat sheet in three languages", emoji: "", group: "Lesson", keywords: ["cheat sheet", "java", "python", "javascript", "commands", "defaults", "timeouts"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

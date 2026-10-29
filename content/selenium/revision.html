@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revision: predict, debug and design · Selenium</title>
+<meta name="description" content="The twenty most asked Selenium ideas with chapter links, predict the output questions from real runs, five bug hunts with causes and fixes, framework design, Grid sizing and flaky test triage, a cheat sheet in Java, Python and JavaScript, a mock quiz and worked problems.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/se.css">
+</head>
+<body class="cvp sep">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=selenium">Selenium learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=selenium" target="_top">Selenium</a><span>›</span><span>Step 7: Revise and practise</span><span>›</span><span>Revision</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 7 · Topic 1 of 1 · All levels</div>
+    <h1>Revision: predict, debug and design</h1>
+    <p class="lead">Practise the question shapes you will meet in interviews and reviews: predict what a test prints, find why a test fails, design a framework and size a Grid, all with worked answers.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">5 formulas</span><span class="cv-chip">9 worked problems</span><span class="cv-chip">16 quiz questions</span></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Revise</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#map" data-l="map"><span class="n">1</span><span class="t">How Selenium skills are tested</span></a></li><li><a href="#trace" data-l="trace"><span class="n">2</span><span class="t">Predict the output</span></a></li><li><a href="#bugs" data-l="bugs"><span class="n">3</span><span class="t">Find the bug</span></a></li><li><a href="#design" data-l="design"><span class="n">4</span><span class="t">Design and sizing questions</span></a></li><li><a href="#sheet" data-l="sheet"><span class="n">5</span><span class="t">Cheat sheet in three languages</span></a></li></ol>
+    <article class="cv-lesson" id="map" data-l="map" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>How Selenium skills are tested</h2>
+<p>This chapter is for the week before an interview, a certification style test or a code review of your own framework. It teaches nothing new. It shows the four shapes Selenium questions take, with worked answers, and points back to the chapter where each idea is taught. The questions are original practice questions written for this course.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Question shape</th><th>What it looks like</th><th>What earns the marks</th><th>Lesson</th></tr></thead><tbody><tr><td>Predict the output</td><td>A short program and the question: what does it print, or which error comes back</td><td>Knowing what the driver really does, not what the code seems to say</td><td>2</td></tr><tr><td>Find the bug</td><td>A test that is slow, flaky or fails, and the question: why, and how do you fix it</td><td>Naming the cause first, then a fix that removes it</td><td>3</td></tr><tr><td>Design and sizing</td><td>Plan a framework, size a Grid, triage a flaky suite</td><td>Clear layers, numbers from a formula, a reason for each choice</td><td>4</td></tr><tr><td>Write it in another language</td><td>The same step in Java, Python or JavaScript</td><td>The right method name and the right unit for time</td><td>5</td></tr></tbody></table></div>
+<h3>The twenty ideas asked about most</h3>
+<ol>
+<li>Selenium is a family: WebDriver, IDE and Grid (chapter 1.1).</li>
+<li>Every command is an HTTP request to a driver, which answers with JSON (chapter 1.2).</li>
+<li>Selenium Manager finds or downloads the right driver (chapter 1.3).</li>
+<li>Options and capabilities, page load strategies and the three timeouts (chapter 2.1).</li>
+<li>get, back, forward, refresh and screenshots (chapter 2.2).</li>
+<li>The eight locator strategies, CSS against XPath, relative locators (chapter 3.1).</li>
+<li>find_element against find_elements, searching inside an element, shadow roots (chapter 3.2).</li>
+<li>click, send keys, clear, select lists and what the driver checks before a click (chapter 3.3).</li>
+<li>Why sleeps fail, implicit against explicit waits, and why the two must not be mixed (chapter 4.1).</li>
+<li>Window handles, frames and alerts (chapter 4.2).</li>
+<li>The Actions API: ticks, pointer, keys and wheel (chapter 4.3).</li>
+<li>execute_script return types, async scripts and cookies (chapter 4.4).</li>
+<li>JUnit, pytest and Mocha set up and tear down, a screenshot on failure (chapter 5.1).</li>
+<li>Page objects and components (chapter 5.2).</li>
+<li>A fresh browser per test, set up state through an API, small tests (chapter 5.3).</li>
+<li>Stale elements, no such element and reading the logs (chapter 5.4).</li>
+<li>Grid roles: Router, Session Queue, Distributor, Session Map, Node and Event Bus (chapter 6.1).</li>
+<li>RemoteWebDriver and parallel runs, the sizing formula (chapter 6.1).</li>
+<li>WebDriver BiDi events against classic request and response (chapter 6.2).</li>
+<li>CDP for Chromium extras and GraphQL to look inside a Grid (chapter 6.2).</li>
+</ol>
+<div class="note note-tip"><b>Remember</b><div>Use the Revise lessons in order the first time, then use the Quiz and Worked problems tabs as a timed mock test. Each answer says which chapter to reread if you got it wrong.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="trace" data-l="trace" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Predict the output</h2>
+<p>These questions show a few lines of code and ask what happens. Every answer below is what a real run printed in an earlier chapter, so you can trust it more than intuition.</p>
+<div class="walk"><div class="walk-h"><span>Question 1. The pointer is moved to (8, 12) in the viewport, then moved by an offset of (13, 15). What does the page report?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>move to location sets an absolute point, so the pointer is at (8, 12).</li><li>move by offset adds to where the pointer already is.</li><li>8 + 13 = 21 and 12 + 15 = 27, so the page printed 21, 27 (chapter 4.3).</li></ol></div>
+<div class="se-snip" data-lang="py"><div class=se-fname>Question 2</div><pre class="cc-src se-hl" data-hl="py">ActionChains(driver).key_down(Keys.SHIFT).send_keys(&quot;abc&quot;).key_up(Keys.SHIFT).send_keys(&quot;def&quot;).perform()
+print(field.get_attribute(&quot;value&quot;))</pre></div>
+<div class="walk"><div class="walk-h"><span>Question 2. What is printed?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Shift is held while a, b and c are typed, so they arrive as capitals.</li><li>Shift is released before d, e and f.</li><li>The real run printed ABCdef (chapter 4.3).</li></ol></div>
+<div class="se-snip" data-lang="py"><div class=se-fname>Question 3</div><pre class="cc-src se-hl" data-hl="py">driver = webdriver.Chrome()
+driver.add_cookie({&quot;name&quot;: &quot;k&quot;, &quot;value&quot;: &quot;v&quot;})</pre></div>
+<div class="walk"><div class="walk-h"><span>Question 3. What happens?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>A new session sits on a blank page with no domain.</li><li>A cookie belongs to a domain, so there is nothing to attach it to.</li><li>The driver answers with the invalid cookie domain error. Navigate to the site first, then add the cookie (chapter 4.4).</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 4. execute_script("return 7") is called in each language. What type comes back?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The browser sends back a JSON number.</li><li>Each binding maps it to its own type: Java gives a Long, Python an int and JavaScript a number.</li><li>A decimal such as 7.5 comes back as a Double in Java and a float in Python (chapter 4.4).</li></ol></div>
+<div class="se-snip" data-lang="py"><div class=se-fname>Question 5</div><pre class="cc-src se-hl" data-hl="py">el = driver.find_element(By.ID, &quot;my-text-id&quot;)
+driver.refresh()
+el.send_keys(&quot;hi&quot;)</pre></div>
+<div class="walk"><div class="walk-h"><span>Question 5. What happens on the last line?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>refresh builds a brand new document.</li><li>The reference in el points to an element of the old document.</li><li>The run raised StaleElementReferenceException. Find the element again after the refresh (chapter 5.4).</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 6. A test switches into an iframe, then looks for a heading that is in the main page. What happens?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>After the switch, every find searches only inside the frame.</li><li>The heading is not in the frame, so the search finds nothing.</li><li>The real run raised NoSuchElementException. Switch back with default content first (chapters 4.2 and 5.4).</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 7. A test asks for a cookie that does not exist. What comes back?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Java returned null.</li><li>Python returned None.</li><li>JavaScript threw NoSuchCookieError. The same question has three answers, so know your binding (chapter 4.4).</li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="bugs" data-l="bugs" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Find the bug</h2>
+<p>Each test below runs, but it is slow, flaky or wrong. Say the cause first, then the fix. The cause is what earns the marks.</p>
+<h3>Bug 1. A sleep before the click</h3>
+<div class="se-snip" data-lang="py"><pre class="cc-src se-hl" data-hl="py">driver.find_element(By.ID, &quot;search&quot;).click()
+time.sleep(5)
+driver.find_element(By.CSS_SELECTOR, &quot;.result&quot;).click()</pre></div>
+<div class="walk"><div class="walk-h"><span>Cause and fix</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Cause: the sleep always waits 5 seconds. When results come in 1 second it wastes 4. When they need 6 seconds the test still fails.</li><li>Fix: wait for the condition you need, for example WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".result"))).</li><li>The explicit wait returns as soon as the condition holds, checking every 0.5 seconds in Python and Java (chapter 4.1).</li></ol></div>
+<h3>Bug 2. Implicit and explicit waits together</h3>
+<div class="se-snip" data-lang="java"><pre class="cc-src se-hl" data-hl="java">driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+new WebDriverWait(driver, Duration.ofSeconds(15)).until(ExpectedConditions.visibilityOfElementLocated(By.id(&quot;late&quot;)));</pre></div>
+<div class="walk"><div class="walk-h"><span>Cause and fix</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Cause: every check inside the explicit wait is a find that itself blocks for up to 10 seconds.</li><li>With the numbers from the documentation the wait gave up after about 20.5 seconds, not 15.</li><li>Fix: keep the implicit wait at 0 and use explicit waits only. The documentation says do not mix them (chapter 4.1).</li></ol></div>
+<h3>Bug 3. A test that never closes its browser</h3>
+<div class="se-snip" data-lang="py"><pre class="cc-src se-hl" data-hl="py">driver = webdriver.Chrome()
+driver.get(url)
+assert driver.title == &quot;Web form&quot;
+driver.quit()</pre></div>
+<div class="walk"><div class="walk-h"><span>Cause and fix</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Cause: when the assert fails, the line with quit never runs, so Chrome and the driver stay open.</li><li>On a long run these leftovers fill the memory of the machine.</li><li>Fix: quit in a finally block, or in the tear down of the test framework (chapters 1.3 and 5.1).</li></ol></div>
+<h3>Bug 4. An absolute XPath</h3>
+<div class="se-snip" data-lang="py"><pre class="cc-src se-hl" data-hl="py">driver.find_element(By.XPATH, &quot;/html/body/main/div[2]/form/div[1]/input&quot;)</pre></div>
+<div class="walk"><div class="walk-h"><span>Cause and fix</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Cause: the locator depends on six levels of page structure. Any change to any level breaks it.</li><li>Fix: use the id or name if there is one, otherwise a short CSS selector tied to a stable attribute.</li><li>Keep the locator in a page object so a change is fixed in one place (chapters 3.1 and 5.2).</li></ol></div>
+<h3>Bug 5. Logging in through the form in every test</h3>
+<div class="walk"><div class="walk-h"><span>Cause and fix</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Cause: each test spends seconds typing a user name and password that are not what the test checks.</li><li>Fix: get a session through an API or set the session cookie, then open the page under test.</li><li>Keep one test that logs in through the form, because that form is a feature too (chapter 5.3).</li></ol></div>
+<div class="note note-warn"><b>Common mistake</b><div>A good bug answer has three parts: what the code really does, why that breaks, and a fix that removes the cause. A retry that hides the failure is not a fix.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="design" data-l="design" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Design and sizing questions</h2>
+<p>Senior interviews and code reviews ask you to plan, not to recite. Answer with layers, numbers and reasons.</p>
+<h3>Question 1. Design a test framework for a shop</h3>
+<ol class="se-flow"><li><b>Tests</b><span>Read like a story: open the product, add to cart, check the total.</span></li><li><b>Page objects and components</b><span>One class per page and per repeated part, holding the locators and the actions.</span></li><li><b>Driver factory</b><span>Builds a local or remote driver from configuration, with the options for each browser.</span></li><li><b>Support</b><span>API helpers for set up, test data, a screenshot on failure, logs.</span></li></ol>
+<p>Say why each layer exists. Tests change when the behaviour changes. Page objects change when the page changes. The driver factory changes when the place you run changes, for example from a laptop to a Grid. Each change then touches one layer only.</p>
+<h3>Question 2. Size a Grid</h3>
+<div class="fx fx-key"><div class="fx-h"><span>Suite time on a Grid</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">total time = <span class="fr"><span>number of tests × average test time</span><span>number of nodes</span></span></div><div class="fx-n">From the Grid documentation. Each node here runs one test at a time.</div></div>
+<div class="walk"><div class="walk-h"><span>900 tests of 30 s must finish in 10 minutes. How many one slot nodes are needed?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Rearrange the formula: nodes = tests × average time ÷ allowed time.</li><li>The allowed time is 10 × 60 = 600 s.</li><li><span class="eq">nodes = 900 × 30 ÷ 600 = 45</span></li><li>The documentation suggests about one CPU and 1 GB of RAM per browser, so plan about 45 CPUs and 45 GB across the nodes (chapter 6.1).</li></ol></div>
+<h3>Question 3. Triage a flaky suite</h3>
+<div class="walk"><div class="walk-h"><span>A suite fails a few different tests on each run. What do you do?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Group the failures by error. no such element and stale element usually mean timing or a page that changed under the test.</li><li>Read the screenshot and the logs of one failure from each group before changing code.</li><li>Replace sleeps with explicit waits for the exact condition, and find elements again after the page changes.</li><li>Make each test start from a fresh browser and its own data, so tests cannot affect each other.</li><li>Track the failure rate after the fix. A retry may keep a release moving, but it does not count as the fix (chapters 5.3 and 5.4).</li></ol></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Selenium tests are small programs. Revise by predicting what they do, finding what is wrong, and planning how many machines they need.</p></div><div class="ld-p" data-ld="college" hidden><p>Know the layers of a framework, the waits and the errors well enough to explain a failure from its message alone.</p></div><div class="ld-p" data-ld="masters" hidden><p>Size a Grid from the formula and the resources per browser, and read the queue size to scale it.</p></div><div class="ld-p" data-ld="research" hidden><p>Compare WebDriver Classic, CDP and BiDi as protocols, and explain why events need a two way connection.</p></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sheet" data-l="sheet" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Cheat sheet in three languages</h2>
+<p>The same common steps in each binding. Time is a Duration in Java, seconds in Python and milliseconds in JavaScript.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Step</th><th>Java</th><th>Python</th><th>JavaScript</th></tr></thead><tbody><tr><td>Start Chrome</td><td><code>new ChromeDriver()</code></td><td><code>webdriver.Chrome()</code></td><td><code>await new Builder().forBrowser(Browser.CHROME).build()</code></td></tr><tr><td>Open a page</td><td><code>driver.get(url)</code></td><td><code>driver.get(url)</code></td><td><code>await driver.get(url)</code></td></tr><tr><td>Find one element</td><td><code>driver.findElement(By.id("q"))</code></td><td><code>driver.find_element(By.ID, "q")</code></td><td><code>await driver.findElement(By.id("q"))</code></td></tr><tr><td>Type</td><td><code>el.sendKeys("text")</code></td><td><code>el.send_keys("text")</code></td><td><code>await el.sendKeys("text")</code></td></tr><tr><td>Wait for an element</td><td><code>new WebDriverWait(driver, Duration.ofSeconds(5)).until(ExpectedConditions.visibilityOfElementLocated(By.id("q")))</code></td><td><code>WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.ID, "q")))</code></td><td><code>await driver.wait(until.elementLocated(By.id("q")), 5000)</code></td></tr><tr><td>Into a frame</td><td><code>driver.switchTo().frame(el)</code></td><td><code>driver.switch_to.frame(el)</code></td><td><code>await driver.switchTo().frame(el)</code></td></tr><tr><td>Back to the page</td><td><code>driver.switchTo().defaultContent()</code></td><td><code>driver.switch_to.default_content()</code></td><td><code>await driver.switchTo().defaultContent()</code></td></tr><tr><td>Run a script</td><td><code>((JavascriptExecutor) driver).executeScript("return 1")</code></td><td><code>driver.execute_script("return 1")</code></td><td><code>await driver.executeScript("return 1")</code></td></tr><tr><td>Add a cookie</td><td><code>driver.manage().addCookie(new Cookie("k", "v"))</code></td><td><code>driver.add_cookie({{"name": "k", "value": "v"}})</code></td><td><code>await driver.manage().addCookie({{name: "k", value: "v"}})</code></td></tr><tr><td>Use a Grid</td><td><code>new RemoteWebDriver(new URL("http://localhost:4444"), new ChromeOptions())</code></td><td><code>webdriver.Remote(command_executor="http://localhost:4444", options=webdriver.ChromeOptions())</code></td><td><code>await new Builder().usingServer("http://localhost:4444").forBrowser(Browser.CHROME).build()</code></td></tr><tr><td>End the session</td><td><code>driver.quit()</code></td><td><code>driver.quit()</code></td><td><code>await driver.quit()</code></td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Explicit wait poll</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">500 ms</div><div class="fx-n">The default check interval in Java and Python.</div></div><div class="fx"><div class="fx-h"><span>Page load timeout</span></div><div class="fx-b">300,000 ms</div><div class="fx-n">Five minutes by default.</div></div><div class="fx"><div class="fx-h"><span>Script timeout</span></div><div class="fx-b">30,000 ms</div><div class="fx-n">Thirty seconds by default.</div></div><div class="fx fx-key"><div class="fx-h"><span>Implicit wait</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">0</div><div class="fx-n">The default. Keep it there when you use explicit waits.</div></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./bidi-cdp.html" data-topic="bidi-cdp"><small>Previous topic</small><b>BiDi, CDP, GraphQL</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "revision", "topic": "revision", "subject": "selenium", "title": "Revision: predict, debug and design", "codes": {}, "quiz": [{"lv": "e", "q": "Which part of Selenium runs tests on many machines at once?", "o": ["Selenium IDE", "Selenium Grid", "Selenium Manager", "ChromeDriver"], "a": 1, "hint": "Think of scale.", "why": "Grid routes sessions to many nodes. Chapter 6.1."}, {"lv": "e", "q": "How does a binding send a command to the driver?", "o": ["Over a shared file", "As an HTTP request with a JSON body", "By keyboard events", "Through the browser address bar"], "a": 1, "hint": "The W3C protocol.", "why": "Every WebDriver Classic command is an HTTP request. Chapter 1.2."}, {"lv": "e", "q": "What does find_elements return when nothing matches?", "o": ["An error", "None", "An empty list", "The first element"], "a": 2, "hint": "Plural.", "why": "Only find_element raises no such element. Chapter 3.2."}, {"lv": "e", "q": "Which call ends the session and closes every window?", "o": ["close", "quit", "refresh", "back"], "a": 1, "hint": "The whole session.", "why": "close closes one window. quit ends the session. Chapters 1.3 and 4.2."}, {"lv": "m", "q": "What is the default implicit wait?", "o": ["0", "500 ms", "10 s", "30 s"], "a": 0, "hint": "Off by default.", "why": "Find Element checks once unless you set it. Chapter 2.1."}, {"lv": "m", "q": "A test adds a cookie right after starting the browser. Which error comes back?", "o": ["no such element", "invalid cookie domain", "stale element reference", "timeout"], "a": 1, "hint": "There is no site yet.", "why": "Navigate to the domain first. Chapter 4.4."}, {"lv": "m", "q": "Why should implicit and explicit waits not be mixed?", "o": ["It is not allowed by the API", "The wait times become unpredictable", "Explicit waits stop working", "It disables screenshots"], "a": 1, "hint": "Each check blocks.", "why": "Each check of the explicit wait can block for the implicit time. Chapter 4.1."}, {"lv": "m", "q": "An element was found, then the page was refreshed. Using the old reference raises", "o": ["NoSuchElementException", "StaleElementReferenceException", "TimeoutException", "Nothing"], "a": 1, "hint": "The document is new.", "why": "The reference belongs to the old document. Chapter 5.4."}, {"lv": "m", "q": "Which layer should hold the locators in a well built framework?", "o": ["The tests", "The page objects", "The driver factory", "The CI pipeline"], "a": 1, "hint": "One home for each locator.", "why": "Tests stay readable and a change is fixed once. Chapter 5.2."}, {"lv": "h", "q": "In a Grid, which component keeps the link from a session id to its node?", "o": ["Distributor", "Session Map", "Session Queue", "Event Bus"], "a": 1, "hint": "A map.", "why": "The Router asks the Session Map where to send each command. Chapter 6.1."}, {"lv": "h", "q": "A command for a running session reaches the Router. Where does it go next?", "o": ["The New Session Queue", "The Distributor", "Straight to the node, found through the Session Map", "Back to the client"], "a": 2, "hint": "Only new sessions queue.", "why": "Commands skip the queue and the Distributor. Chapter 6.1."}, {"lv": "h", "q": "What type does Java return for execute script with \"return 7\"?", "o": ["Integer", "Long", "Double", "String"], "a": 1, "hint": "Java maps JSON numbers widely.", "why": "The real run printed Long. Chapter 4.4."}, {"lv": "h", "q": "Which protocol lets the browser push console messages to a test as they happen?", "o": ["WebDriver Classic", "WebDriver BiDi", "GraphQL", "SMTP"], "a": 1, "hint": "Two way.", "why": "BiDi adds a WebSocket for events. Chapter 6.2."}, {"lv": "x", "q": "15 tests of 45 s run on 5 one slot nodes. How long does the suite take by the Grid formula?", "o": ["45 s", "135 s", "225 s", "675 s"], "a": 1, "hint": "tests × time ÷ nodes.", "why": "15 × 45 ÷ 5 = 135 s. Chapter 6.1."}, {"lv": "x", "q": "Why does the documentation call CDP a poor base for long lived tests?", "o": ["It is slow", "It has no stable API and depends on the browser version", "It needs a Grid", "It only works in Firefox"], "a": 1, "hint": "Compatibility.", "why": "Selenium supports only the three newest Chrome versions for its CDP classes. Chapter 6.2."}, {"lv": "x", "q": "A journey has 5 steps that each pass 98 % of the time. Roughly how often does the whole journey pass?", "o": ["98 %", "95 %", "90 %", "80 %"], "a": 2, "hint": "Multiply.", "why": "0.98<sup>5<\/sup> ≈ 0.904. Long tests fail more. Chapter 5.3."}], "calc": [{"lv": "e", "q": "An explicit wait checks every 0.5 s starting at 0 s. The element appears at 2.1 s. At which check, in seconds, does the wait return?", "ans": "2.5", "hint": "The first check at or after 2.1 s.", "steps": ["Checks run at 0, 0.5, 1.0, 1.5, 2.0, 2.5 seconds.", "At 2.0 s the element is not there yet.", "<span class=\"eq\">the check at 2.5 s finds it<\/span>"], "tol": 0.001, "unit": "s"}, {"lv": "e", "q": "The pointer is at (8, 12). A move by offset of (13, 15) follows. What is the new x?", "ans": "21", "hint": "Offsets add.", "steps": ["Start x is 8.", "The offset in x is 13.", "<span class=\"eq\">8 + 13 = 21<\/span>"], "tol": 0.01}, {"lv": "m", "q": "Implicit wait 4 s, explicit wait 6 s, poll 0.5 s, and the element never comes. When does the explicit wait give up, in seconds?", "ans": "8.5", "hint": "Each check blocks for the implicit time.", "steps": ["The check at 0 s blocks until 4 s. 4 s is not past 6 s, so it sleeps 0.5 s.", "The next check starts at 4.5 s and blocks until 8.5 s.", "<span class=\"eq\">8.5 s is past 6 s, so it gives up at 8.5 s<\/span>"], "tol": 0.001, "unit": "s"}, {"lv": "m", "q": "300 tests of 60 s run on 20 one slot nodes. How many minutes does the suite take?", "ans": "15", "hint": "Use the Grid formula, then convert.", "steps": ["300 × 60 = 18,000 s of testing.", "18,000 ÷ 20 = 900 s.", "<span class=\"eq\">900 ÷ 60 = 15 minutes<\/span>"], "tol": 0.01, "unit": "min"}, {"lv": "m", "q": "A journey has 4 steps that each pass 99 % of the time. What is the chance in percent that it passes, to two decimals?", "ans": "96.06", "hint": "Multiply the chances.", "steps": ["0.99 × 0.99 = 0.9801.", "0.9801 × 0.99 × 0.99 = 0.96059601.", "<span class=\"eq\">≈ 96.06 %<\/span>"], "tol": 0.006, "unit": "%"}, {"lv": "h", "q": "250 tests each log in through a form in 3.5 s. Logging in through an API takes 0.5 s. How many minutes does a run save?", "ans": "12.5", "hint": "Saving per test, then total.", "steps": ["Each test saves 3.5 − 0.5 = 3 s.", "250 × 3 = 750 s.", "<span class=\"eq\">750 ÷ 60 = 12.5 minutes<\/span>"], "tol": 0.01, "unit": "min"}, {"lv": "h", "q": "A screenshot comes back as a base64 string of 8,000 characters. About how many bytes is the PNG?", "ans": "6000", "hint": "Base64 turns 3 bytes into 4 characters.", "steps": ["Each 4 characters carry 3 bytes.", "8,000 ÷ 4 = 2,000 groups.", "<span class=\"eq\">2,000 × 3 = 6,000 bytes<\/span>"], "tol": 0.5, "unit": "bytes"}, {"lv": "x", "q": "900 tests of 30 s must finish in 10 minutes. How many one slot nodes are needed?", "ans": "45", "hint": "Rearrange the formula.", "steps": ["Allowed time is 600 s.", "Total test time is 900 × 30 = 27,000 s.", "<span class=\"eq\">27,000 ÷ 600 = 45 nodes<\/span>"], "tol": 0.01}, {"lv": "x", "q": "An implicit wait of 3 s is set. A test checks that 5 different banners are absent using find_elements. How many seconds does that add?", "ans": "15", "hint": "Absence takes the full wait.", "steps": ["find_elements keeps looking for the whole implicit wait when nothing matches.", "Each check costs 3 s.", "<span class=\"eq\">5 × 3 = 15 s<\/span>"], "tol": 0.01, "unit": "s"}], "assign": [], "must": [["Predict, then run", "The driver does what the protocol says, not what the code seems to say. Offsets add, Shift changes case, a refresh makes references stale."], ["Cause before fix", "Name why a test is slow or flaky before changing it. Sleeps, mixed waits and missing quit calls are the usual causes."], ["Layers", "Tests, page objects and components, a driver factory and support code. Each change should touch one layer."], ["Size with the formula", "Suite time = tests × average time ÷ nodes, with about one CPU and 1 GB of RAM per browser."], ["Know your binding", "Time is a Duration in Java, seconds in Python and milliseconds in JavaScript, and a missing cookie gives null, None or an error."]], "summary": ""}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/setri.js"></script>
+<script src="../../assets/seplay.js"></script>
+<script src="../../assets/sewidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>
