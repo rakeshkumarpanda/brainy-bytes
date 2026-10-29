@@ -1,0 +1,66 @@
+/* ===== Selenium chapter pages: the Computer Vision and NLP layout (cv.css) in Selenium green, plus the three language examples ===== */
+:root{--cv:#2f8a1d; --cv-soft:#ebf7e6; --cv-line:#a9dc9b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cv:#6fd157; --cv-soft:#142d10; --cv-line:#2f5a25}}
+:root[data-theme="dark"]{--cv:#6fd157; --cv-soft:#142d10; --cv-line:#2f5a25}
+
+/* one example in Java, Python and JavaScript */
+.se-tri{border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:16px 0; background:var(--surface)}
+.se-bar .lbl{margin-right:0 !important}
+.se-bar .grow{flex:1}
+.se-lts{display:inline-flex; gap:2px; background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:2px}
+.se-bar .se-lt{border:0; background:transparent; border-radius:7px; padding:3px 10px}
+.se-bar .se-lt.on{background:var(--cv); color:#fff}
+.se-bar .se-lt:disabled{opacity:1; cursor:default}
+.se-why{padding:8px 14px; font-size:14px; color:var(--ink2); border-bottom:1px solid var(--line)}
+.se-file+.se-file{border-top:1px solid #23324d}
+.se-fname{font-family:var(--font-mono); font-size:12px; font-weight:700; color:#9fb3d1; background:var(--code-bg); padding:8px 14px 0}
+.se-src .ln[data-n]{cursor:pointer}
+.se-src .ln[data-n]::before{color:#9fe08c}
+.se-src .ln[data-n]:hover{background:rgba(127,211,255,.08)}
+.se-tri.walking .se-src .ln:not([data-n]){opacity:.55}
+.se-ex{display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; align-items:start; padding:12px 14px; border-top:1px solid var(--line); background:var(--cv-soft)}
+.se-ex .se-exn{font-family:var(--font-mono); font-size:12px; font-weight:800; color:var(--cv); white-space:nowrap; padding-top:3px}
+.se-ex .se-ext{font-size:15px; line-height:1.55}
+.se-ex .se-exl{grid-column:1/-1; font-family:var(--font-mono); font-size:12.5px; background:var(--code-bg); color:var(--code-ink); border-radius:8px; padding:6px 10px; overflow-x:auto; white-space:pre}
+.se-ex .se-exc{grid-column:1/-1; display:flex; gap:6px; flex-wrap:wrap; align-items:center}
+.se-ex button{border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:8px; padding:4px 10px; font:inherit; font-size:13px; font-weight:700; cursor:pointer}
+.se-ex button.pri{background:var(--cv); border-color:var(--cv); color:#fff}
+.se-ex .se-exp{font-size:12.5px; color:var(--ink2); font-weight:700; margin-left:auto}
+.se-allnotes{margin:0; padding:10px 14px 12px 42px; border-top:1px solid var(--line); font-size:14.5px}
+.se-allnotes li{margin:4px 0}
+.se-allnotes li code{font-size:.85em}
+.se-shell .cc-src .ln::before{content:'$'; counter-increment:none; width:24px; color:#9fe08c}
+.se-snip{margin:12px 0; border-radius:12px; overflow:hidden; border:1px solid var(--line)}
+.se-snip .cc-src{padding:10px 14px}
+
+/* a numbered journey of boxes */
+.se-flow{list-style:none; counter-reset:fl; display:flex; flex-wrap:wrap; gap:8px; padding:0; margin:14px 0}
+.se-flow li{counter-increment:fl; flex:1 1 150px; min-width:0; border:1px solid var(--cv-line); background:var(--cv-soft); border-radius:12px; padding:8px 12px; position:relative}
+.se-flow li::before{content:counter(fl); position:absolute; top:-9px; left:10px; width:20px; height:20px; border-radius:50%; background:var(--cv); color:#fff; font-size:11.5px; font-weight:800; display:grid; place-items:center}
+.se-flow b{display:block; font-size:14px; margin-top:4px}
+.se-flow span{display:block; font-size:13.5px; color:var(--ink2); line-height:1.45}
+
+/* the pretend browser playground */
+.sp{border:1px solid var(--line); border-radius:14px; margin:16px 0; background:var(--surface); overflow:hidden}
+.sp-head{padding:10px 14px; background:var(--surface2); border-bottom:1px solid var(--line)}
+.sp-head b{display:block}
+.sp-head span{font-size:13.5px; color:var(--ink2)}
+.sp-body{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+.sp-left{border-right:1px solid var(--line); min-width:0}
+.sp-ed{display:block; width:100%; min-height:230px; border:0; margin:0; padding:12px 14px; background:var(--code-bg); color:var(--code-ink); font-family:var(--font-mono); font-size:13px; line-height:1.6; resize:vertical; outline:none; white-space:pre; overflow:auto}
+.sp-ctl{display:flex; gap:6px; flex-wrap:wrap; padding:8px 10px; border-top:1px solid var(--line); align-items:center}
+.sp-ctl button,.sp-ctl select{border:1px solid var(--line); background:var(--surface2); color:var(--ink); border-radius:8px; padding:4px 10px; font:inherit; font-size:13px; font-weight:700; cursor:pointer}
+.sp-ctl button.pri{background:var(--cv); border-color:var(--cv); color:#fff}
+.sp-ctl .pos{font-size:12.5px; color:var(--ink2); font-weight:700}
+.sp-page{padding:10px; background:var(--surface2); min-width:0}
+.sp-url{font-family:var(--font-mono); font-size:12px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px 10px; margin-bottom:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.sp-frame{background:#fff; color:#1b2a3c; border:1px solid var(--line); border-radius:10px; padding:12px; min-height:200px; font-family:Nunito, system-ui, sans-serif; font-size:14px; overflow:auto}
+.sp-frame *{max-width:100%}
+.sp-log{border-top:1px solid var(--line); font-family:var(--font-mono); font-size:12.5px; max-height:260px; overflow:auto}
+.sp-log>div{padding:6px 12px; border-bottom:1px dashed var(--line); white-space:pre-wrap; word-break:break-word}
+.sp-log .rq{color:var(--accent-deep)}
+.sp-log .ok{color:var(--green)}
+.sp-log .bad{color:var(--red)}
+.sp-log .cur{background:var(--cv-soft)}
+@media (max-width:760px){.sp-body{grid-template-columns:minmax(0,1fr)} .sp-left{border-right:0; border-bottom:1px solid var(--line)}}
+@media (max-width:520px){.se-bar .lbl{flex-basis:100%}}

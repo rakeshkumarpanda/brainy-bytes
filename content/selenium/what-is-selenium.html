@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What Selenium is and where it came from · Selenium</title>
+<meta name="description" content="What Selenium is, its uses, WebDriver, IDE and Grid, the words API, library, driver and framework, the history from JavaScriptTestRunner to Selenium 4 and the W3C Recommendation, and a first program in Java, Python and JavaScript run for real.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/se.css">
+</head>
+<body class="cvp sep">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=selenium">Selenium learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=selenium" target="_top">Selenium</a><span>›</span><span>Step 1: Meet Selenium</span><span>›</span><span>What Selenium is</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 1 of 3 · Beginner</div>
+    <h1>What Selenium is and where it came from</h1>
+    <p class="lead">Meet the tools that let a program use a real browser the way you do, see the three parts of the project, and follow twenty years of history to the W3C standard.</p>
+    <div class="cv-chips"><span class="cv-chip">About 30 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#what" data-l="what"><span class="n">1</span><span class="t">What Selenium is</span></a></li><li><a href="#family" data-l="family"><span class="n">2</span><span class="t">WebDriver, IDE and Grid</span></a></li><li><a href="#history" data-l="history"><span class="n">3</span><span class="t">How Selenium grew</span></a></li><li><a href="#look" data-l="look"><span class="n">4</span><span class="t">A first look at real code</span></a></li></ol>
+    <article class="cv-lesson" id="what" data-l="what" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>What Selenium is</h2>
+<p>Think about the last time you bought a train ticket online. You opened a website, typed two station names, picked a date, clicked Search, chose a seat and paid. Every one of those steps is something a person does with a browser. Selenium is a set of free, open source tools that lets a program do the same steps in a real browser, as fast and as often as you like.</p>
+<p>The official documentation puts it this way: Selenium is an umbrella project for a range of tools and libraries that enable and support the automation of web browsers. At its core it is a <b>browser user agent library</b>: a library your code calls to control a browser the way a user would. It can type into fields, choose from drop downs, tick boxes, click links, move the mouse and run JavaScript.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>What people use Selenium for</th><th>An everyday example</th></tr></thead><tbody><tr><td>Testing web applications</td><td>Before a bank releases a new version of its login page, a test opens the page in Chrome, Firefox and Edge, logs in with a test account and checks the balance appears.</td></tr><tr><td>Repetitive tasks</td><td>A script logs into a supplier portal every morning at 6 and downloads the order report for the day.</td></tr><tr><td>Collecting data from pages</td><td>A researcher reads prices from a site that has no API. The docs ask you to check the terms of service of the site first, because some sites forbid it and some block Selenium.</td></tr></tbody></table></div>
+<p>Most people use it for the first one: automated testing. That is why most of this subject is about testing, but every command you learn works for any browser job.</p>
+<div class="scene"><div class="scene-h">Real world scenario: a shopping site on sale day</div><p>A shop changes its checkout page on Friday. On Saturday thousands of people buy during a sale. If the Pay button stopped working in Firefox, the shop loses money every minute. A Selenium test that runs on every change opens the checkout in each browser, fills the form and presses Pay, so the broken button is caught on Friday afternoon instead of by customers on Saturday.</p></div>
+<h3>One interface for every browser</h3>
+<p>Chrome, Firefox, Edge and Safari are built very differently inside, even when the pages look the same. A guiding principle of the project is one common interface for all major browsers. Selenium hides the differences, so the same few lines of your code run on each browser. You learn the commands once.</p>
+<div class="note note-warn"><b>Common mistake</b><div>Selenium only controls the browser. It does not decide whether a test passed, it does not write reports and it does not give you Given, When, Then syntax. Those come from a test framework such as JUnit, pytest or Mocha. Chapter 5.1 joins the two.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="family" data-l="family" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>WebDriver, IDE and Grid</h2>
+<p>Selenium is not one tool. The documentation names three parts, and each one answers a different need.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Part</th><th>What it is</th><th>Use it when</th></tr></thead><tbody><tr><td><b>WebDriver</b></td><td>A library for your programming language plus a driver for each browser. Your code sends commands, the driver makes the browser carry them out.</td><td>You write automated tests or scripts in Java, Python, JavaScript, C# or Ruby. This is what most of this subject teaches.</td></tr><tr><td><b>IDE</b></td><td>A Chrome and Firefox extension that records what you do in the browser and plays it back as Selenium commands.</td><td>You want a quick recording, or you are learning which command matches which action.</td></tr><tr><td><b>Grid</b></td><td>A server that spreads WebDriver sessions over many machines, browsers and operating systems.</td><td>One machine is too slow, or you must test on browser and operating system pairs you do not have.</td></tr></tbody></table></div>
+<h3>Four words you will hear every day</h3>
+<div class="tw"><table class="cvt "><thead><tr><th>Word</th><th>Meaning in the Selenium documentation</th></tr></thead><tbody><tr><td>API</td><td>The set of commands you use to control WebDriver, such as get, findElement and click.</td></tr><tr><td>Library</td><td>The code module that holds those commands for one language: a .jar file for Java, a pip package for Python, an npm package for JavaScript.</td></tr><tr><td>Driver</td><td>The program that controls one browser, such as chromedriver for Chrome and geckodriver for Firefox. Browser vendors write most of them. It usually runs on the same machine as the browser.</td></tr><tr><td>Framework</td><td>An extra library that supports a test suite: test runners such as JUnit, pytest or Mocha, or tools such as Cucumber.</td></tr></tbody></table></div>
+<ol class="se-flow"><li><b>Your code</b><span>Calls the WebDriver API in your language.</span></li><li><b>Language binding</b><span>The Selenium library turns each call into a command.</span></li><li><b>Driver</b><span>chromedriver receives the command.</span></li><li><b>Browser</b><span>Chrome does the work and the answer travels back.</span></li></ol>
+<p>Chapter 1.2 opens up that chain and shows the real messages that travel along it.</p>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Selenium is a remote control for a web browser. Your program presses the buttons, the browser does what a person would do.</p></div><div class="ld-p" data-ld="college" hidden><p>WebDriver is a library plus a browser specific driver. The library sends commands, the driver executes them in the browser, and results come back. IDE records and replays, and Grid runs many sessions on many machines.</p></div><div class="ld-p" data-ld="masters" hidden><p>WebDriver is a client and server design: the language binding is the local end and the driver is the remote end of the W3C WebDriver protocol. Because the browser is driven through vendor automation APIs and not through code compiled into the app, the build you test is the build you ship.</p></div><div class="ld-p" data-ld="research" hidden><p>The W3C protocol separates intent from mechanism. Ongoing work in WebDriver BiDi adds a two way event channel over WebSocket, so a client can listen to console logs, network traffic and DOM changes as they happen, which the request and response design of classic WebDriver cannot do.</p></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="history" data-l="history" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>How Selenium grew</h2>
+<p>Selenium is more than twenty years old, and its history explains its design. The early versions ran JavaScript inside the page. That broke on many browser rules, so the project moved to driving the browser from outside, and in the end the browser makers agreed on a standard.</p>
+<div class="cvz" data-viz="se-timeline"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Version</th><th>Released</th><th>What changed</th></tr></thead><tbody><tr><td>Selenium 2.0</td><td>8 July 2011</td><td>The WebDriver APIs became the heart of Selenium. Selenium 1 code still ran.</td></tr><tr><td>Selenium 3.0</td><td>13 October 2016</td><td>The original Selenium Core implementation was removed. Every major browser vendor now ships its own driver.</td></tr><tr><td>W3C WebDriver</td><td>5 June 2018</td><td>WebDriver became a W3C Recommendation, a standard every browser can implement the same way.</td></tr><tr><td>Selenium 4.0</td><td>13 October 2021</td><td>Support for the old JSON Wire Protocol was removed. Only the W3C protocol is used. Relative locators and a rebuilt Grid arrived.</td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>Interviewers like to ask what changed in Selenium 4. The short answer: W3C protocol only, so capabilities must follow the W3C names (browserVersion, platformName) or carry a vendor prefix such as goog:chromeOptions. Options classes replaced DesiredCapabilities, Java lost the findElementById style helpers, and relative locators and Grid 4 arrived. Selenium Manager came later, in 4.6.</div></div>
+<details class="deep"><summary>Going deeper: Why driving from outside the page matters</summary><div class="deep-b"><p>A script running inside the page follows the same rules as the page. The browser same origin policy stops a page from one site touching another, so Selenium Core needed a proxy server to pretend every page came from the same place. Events made by JavaScript are also not the same as real ones: the Selenium 2 release notes describe how native events, sent at the operating system level, avoid browser quirks of JavaScript made events. WebDriver lets the browser vendor build the automation into the browser itself, which is why the vendors write the drivers today.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="look" data-l="look" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>A first look at real code</h2>
+<p>Here is the smallest useful Selenium program, written three times. Pick your language with the buttons, then press <b>Explain line by line</b> to read what each line does. The output under the code is real: this page was built by running each program in Chrome.</p>
+<div class="se-tri" data-k="hello"><div class="cc-bar se-bar"><span class="lbl">A first look: open a page, read its title, close the browser</span><span class="se-lts" role="tablist"><button type="button" class="se-lt" data-lang="java">Java</button><button type="button" class="se-lt" data-lang="py">Python</button><button type="button" class="se-lt" data-lang="js">JavaScript</button></span><span class="grow"></span><button type="button" class="se-walk">Explain line by line</button><button type="button" class="se-copy">Copy</button></div><div class="se-pane" data-lang="java"><div class="se-file" data-lang="java"><div class="se-fname">FirstLook.java</div><pre class="cc-src se-src"><span class="ln" data-n="1">import org.openqa.selenium.WebDriver;</span><span class="ln" data-n="2">import org.openqa.selenium.chrome.ChromeDriver;</span><span class="ln"> </span><span class="ln" data-n="4">public class FirstLook {</span><span class="ln">    public static void main(String[] args) {</span><span class="ln" data-n="6">        WebDriver driver = new ChromeDriver();</span><span class="ln" data-n="7">        driver.get(&quot;https://www.selenium.dev/selenium/web/web-form.html&quot;);</span><span class="ln" data-n="8">        System.out.println(&quot;Title: &quot; + driver.getTitle());</span><span class="ln" data-n="9">        System.out.println(&quot;URL: &quot; + driver.getCurrentUrl());</span><span class="ln" data-n="10">        driver.quit();</span><span class="ln">    }</span><span class="ln">}</span></pre><ol class="se-notes" hidden><li data-n="1">Bring in the WebDriver interface. Every browser driver in Java speaks through it.</li><li data-n="2">ChromeDriver is the class that starts and talks to Chrome.</li><li data-n="4">A plain Java class. Java runs the main method below.</li><li data-n="6">Start Chrome. Selenium Manager finds a matching chromedriver for you, then a new browser session begins.</li><li data-n="7">Ask the browser to open the page and wait until it has loaded.</li><li data-n="8">Ask the browser for the page title and print it.</li><li data-n="9">Ask which address the browser is showing now.</li><li data-n="10">End the session. This closes every window and stops the driver process.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153)</div><pre class="cc-out">Title: Web form
+URL: https://www.selenium.dev/selenium/web/web-form.html</pre></div><div class="se-pane" data-lang="py" hidden><div class="se-file" data-lang="py"><div class="se-fname">main.py</div><pre class="cc-src se-src"><span class="ln" data-n="1">from selenium import webdriver</span><span class="ln"> </span><span class="ln" data-n="3">driver = webdriver.Chrome()</span><span class="ln" data-n="4">driver.get(&quot;https://www.selenium.dev/selenium/web/web-form.html&quot;)</span><span class="ln" data-n="5">print(&quot;Title:&quot;, driver.title)</span><span class="ln" data-n="6">print(&quot;URL:&quot;, driver.current_url)</span><span class="ln" data-n="7">driver.quit()</span></pre><ol class="se-notes" hidden><li data-n="1">Import the webdriver package, which holds one class per browser.</li><li data-n="3">Start Chrome. Selenium Manager finds a matching chromedriver, then a new session begins.</li><li data-n="4">Open the page and wait until it has loaded.</li><li data-n="5">driver.title asks the browser for the page title.</li><li data-n="6">current_url asks which address the browser is showing.</li><li data-n="7">End the session, close every window and stop chromedriver.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153)</div><pre class="cc-out">Title: Web form
+URL: https://www.selenium.dev/selenium/web/web-form.html</pre></div><div class="se-pane" data-lang="js" hidden><div class="se-file" data-lang="js"><div class="se-fname">main.js</div><pre class="cc-src se-src"><span class="ln" data-n="1">const { Builder, Browser } = require(&#x27;selenium-webdriver&#x27;);</span><span class="ln"> </span><span class="ln" data-n="3">(async function firstLook() {</span><span class="ln" data-n="4">  const driver = await new Builder().forBrowser(Browser.CHROME).build();</span><span class="ln" data-n="5">  await driver.get(&#x27;https://www.selenium.dev/selenium/web/web-form.html&#x27;);</span><span class="ln" data-n="6">  console.log(&#x27;Title: &#x27; + await driver.getTitle());</span><span class="ln" data-n="7">  console.log(&#x27;URL: &#x27; + await driver.getCurrentUrl());</span><span class="ln" data-n="8">  await driver.quit();</span><span class="ln">})();</span></pre><ol class="se-notes" hidden><li data-n="1">Load the two pieces we need from the selenium-webdriver package.</li><li data-n="3">Every Selenium call in JavaScript returns a promise, so we work inside an async function.</li><li data-n="4">Build a driver for Chrome. Selenium Manager finds chromedriver and a session starts.</li><li data-n="5">Open the page and wait for it to load.</li><li data-n="6">Ask for the title. await waits for the browser to answer.</li><li data-n="7">Ask which address the browser shows.</li><li data-n="8">End the session and close the browser.</li></ol></div><div class="cc-cap">Real output from this run (Selenium 4.51.0 with Chrome 153)</div><pre class="cc-out">Title: Web form
+URL: https://www.selenium.dev/selenium/web/web-form.html</pre></div></div>
+<p>All three programs do the same four things: start a session, send the browser somewhere, ask it a question, and end the session. Every Selenium program you will ever write follows that shape. Chapter 1.3 grows it into the eight standard steps.</p>
+<div class="note note-tip"><b>Remember</b><div>Always end with quit. If a program stops without it, the driver process and the browser keep running in the background and hold memory and ports. On a busy test machine those leftovers pile up quickly.</div></div>
+<div class="walk"><div class="walk-h"><span>What happened when the Python version ran</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li><code>webdriver.Chrome()</code> asked Selenium Manager for a chromedriver that matches the installed Chrome, started it, and sent it a New Session request.</li><li>chromedriver launched Chrome with a fresh, empty profile and replied with a session id.</li><li><code>get</code> sent the address. The driver waited until the page reported it had finished loading, then answered.</li><li><code>title</code> and <code>current_url</code> were two more small questions, each with an answer.</li><li><code>quit</code> sent Delete Session. Chrome and chromedriver both closed.</li></ol></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><span></span><a class="next" href="./architecture.html" data-topic="architecture"><small>Next topic</small><b>Architecture</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "what-is-selenium", "topic": "what-is-selenium", "subject": "selenium", "title": "What Selenium is and where it came from", "codes": {}, "quiz": [{"lv": "e", "q": "What is Selenium at its core, according to its documentation?", "o": ["A test framework with assertions", "A browser user agent library that automates browsers", "A load testing tool", "A programming language"], "a": 1, "hint": "It controls something. What?", "why": "Selenium is a library that drives a real browser the way a user would. Assertions and reports come from a test framework."}, {"lv": "e", "q": "Which Selenium part records your clicks in the browser and plays them back?", "o": ["WebDriver", "Grid", "IDE", "Selenium Manager"], "a": 2, "hint": "It is a browser extension.", "why": "Selenium IDE is a Chrome and Firefox extension that records and replays actions."}, {"lv": "e", "q": "Which part runs many sessions across many machines?", "o": ["IDE", "Grid", "chromedriver", "pytest"], "a": 1, "hint": "Think of scale.", "why": "Selenium Grid routes sessions to nodes on other machines so tests run in parallel and on more browser and OS pairs."}, {"lv": "e", "q": "Who writes most browser drivers such as chromedriver and geckodriver today?", "o": ["The Selenium project only", "The browser vendors", "Test framework authors", "Cloud providers"], "a": 1, "hint": "Who knows the browser best?", "why": "Since Selenium 3, every major browser vendor ships its own driver, built close to the browser."}, {"lv": "m", "q": "Which of these does Selenium itself NOT do?", "o": ["Click a button", "Type into a field", "Decide whether a test passed and write a report", "Run JavaScript in the page"], "a": 2, "hint": "Where do assertions come from?", "why": "Pass or fail, assertions and reports come from the test framework, such as JUnit, pytest or Mocha."}, {"lv": "m", "q": "Which protocol does Selenium 4 use to talk to drivers?", "o": ["The JSON Wire Protocol only", "Both JSON Wire and W3C, chosen at random", "The W3C WebDriver protocol only", "SOAP"], "a": 2, "hint": "Selenium 4 removed something.", "why": "Selenium 4 removed support for the legacy JSON Wire Protocol and uses the W3C standard."}, {"lv": "m", "q": "When did WebDriver become a W3C Recommendation?", "o": ["July 2011", "October 2016", "June 2018", "October 2021"], "a": 2, "hint": "Between Selenium 3 and 4.", "why": "The W3C published WebDriver as a Recommendation on 5 June 2018."}, {"lv": "m", "q": "What did Selenium 3.0 remove?", "o": ["WebDriver", "The original Selenium Core implementation", "Python support", "Grid"], "a": 1, "hint": "The oldest piece.", "why": "The Selenium 3.0 post says the original Selenium Core implementation was removed and replaced by one backed by WebDriver."}, {"lv": "h", "q": "A tester says: we test the same build we ship, because WebDriver does not need to be compiled into the application. Why is that true?", "o": ["WebDriver patches the app at run time", "WebDriver drives the browser through vendor automation APIs, outside the app", "The app must import Selenium", "It is not true"], "a": 1, "hint": "Where does the automation live?", "why": "WebDriver uses browser automation APIs from the vendors, so nothing is added to your app. The docs call this non intrusive."}, {"lv": "x", "q": "Why did early Selenium need a proxy server to test sites on other domains?", "o": ["To speed pages up", "Because JavaScript inside a page is bound by the same origin policy", "Because browsers had no JavaScript", "To record videos"], "a": 1, "hint": "Selenium Core ran inside the page.", "why": "Code inside a page cannot touch pages of other origins. Selenium RC worked around the policy, and WebDriver later removed the need by driving from outside."}], "calc": [{"lv": "e", "q": "Selenium Manager versions use major version 0 and follow Selenium, so Selenium 4.12.0 ships Selenium Manager 0.4.12. Which Selenium Manager version ships with Selenium 4.51.0?", "ans": "0.4.51", "hint": "Keep the 0, then the Selenium minor numbers.", "steps": ["The rule from the docs: Selenium 4.12.0 ships 0.4.12.", "So the pattern is 0, then the major 4, then the minor.", "<span class=\"eq\">Selenium 4.51.0 ships Selenium Manager 0.4.51<\/span>"]}, {"lv": "e", "q": "How many years passed between Selenium 2.0 (2011) and Selenium 3.0 (2016)?", "ans": "5", "hint": "Subtract the years.", "steps": ["Selenium 2.0: 8 July 2011.", "Selenium 3.0: 13 October 2016.", "<span class=\"eq\">2016 − 2011 = 5 years, as the Selenium 3 post itself says<\/span>"]}, {"lv": "m", "q": "A manual regression check has 40 steps per browser and takes 3 minutes per step. You check 3 browsers. How many minutes is that by hand?", "ans": "360", "hint": "Steps × minutes × browsers.", "steps": ["Per browser: 40 × 3 = 120 minutes.", "Three browsers: 120 × 3.", "<span class=\"eq\">360 minutes, which is 6 hours<\/span>"]}, {"lv": "m", "q": "The same 40 steps run in Selenium at 20 seconds each, one browser after another. How many minutes do the 3 browsers take?", "ans": "40", "hint": "Convert seconds to minutes at the end.", "steps": ["Per browser: 40 × 20 = 800 seconds.", "Three browsers: 2,400 seconds.", "<span class=\"eq\">2,400 ÷ 60 = 40 minutes<\/span>"]}, {"lv": "h", "q": "A suite has 200 tests. Each test opens a fresh browser (2 seconds) and then runs its steps (6 seconds). What percentage of the total time is spent starting browsers?", "ans": "25", "hint": "Start time divided by start plus steps.", "steps": ["Each test takes 2 + 6 = 8 seconds.", "The share of starting is 2 ÷ 8 for every test, so the number of tests does not change it.", "<span class=\"eq\">2 ÷ 8 = 0.25 = 25 %<\/span>"], "unit": "%"}, {"lv": "x", "q": "The Grid documentation gives total time = tests × average test time ÷ nodes. How many seconds do 15 tests of 45 seconds take on 15 nodes?", "ans": "45", "hint": "Every node runs one test at the same time.", "steps": ["On one machine: 15 × 45 = 675 seconds, which is 11 minutes 15 seconds.", "Divide by 15 nodes.", "<span class=\"eq\">675 ÷ 15 = 45 seconds<\/span>"]}], "assign": [{"id": "smver", "lv": "e", "title": "Which Selenium Manager comes with this Selenium?", "task": "<p>Write <code>manager_version(selenium)<\/code>. It takes a Selenium version such as <code>\"4.12.0\"<\/code> and returns the Selenium Manager version that ships with it, such as <code>\"0.4.12\"<\/code>. The rule from the docs: major version 0, then the Selenium major and minor numbers.<\/p>", "starter": "def manager_version(selenium):\n    # your code here\n    pass\n", "tests": [{"call": "manager_version(\"4.12.0\")", "want": "0.4.12"}, {"call": "manager_version(\"4.51.0\")", "want": "0.4.51"}, {"call": "manager_version(\"4.6.0\")", "want": "0.4.6"}], "solution": "def manager_version(selenium):\n    major, minor = selenium.split(\".\")[:2]\n    return \"0.\" + major + \".\" + minor\n", "hint": "Split the string on dots and keep the first two parts.", "why": "<p>Splitting on dots gives the parts as strings, so no number conversion is needed. The patch number is not used.<\/p>"}, {"id": "era", "lv": "m", "title": "Which Selenium was current on a date?", "task": "<p>Write <code>selenium_major(date)<\/code>. date is a string <code>\"YYYY-MM-DD\"<\/code>. Return the major version of the newest Selenium released on or before that date: 1 before 2011-07-08, 2 from 2011-07-08, 3 from 2016-10-13 and 4 from 2021-10-13.<\/p>", "starter": "def selenium_major(date):\n    # your code here\n    pass\n", "tests": [{"call": "selenium_major(\"2010-01-01\")", "want": 1}, {"call": "selenium_major(\"2011-07-08\")", "want": 2}, {"call": "selenium_major(\"2018-06-05\")", "want": 3}, {"call": "selenium_major(\"2026-10-29\")", "want": 4}], "solution": "def selenium_major(date):\n    releases = [(\"2011-07-08\", 2), (\"2016-10-13\", 3), (\"2021-10-13\", 4)]\n    major = 1\n    for day, version in releases:\n        if date >= day:\n            major = version\n    return major\n", "hint": "Dates written as YYYY-MM-DD sort correctly as plain strings.", "why": "<p>Because the year comes first and every part has a fixed width, comparing the strings compares the dates. The W3C Recommendation date falls in the Selenium 3 era.<\/p>"}], "must": [["What Selenium is", "An umbrella project of tools and libraries that automate real browsers the way a user would. At its core, a browser user agent library."], ["Three parts", "WebDriver (library plus browser driver, for code), IDE (record and play back extension), Grid (many sessions on many machines)."], ["Not a test framework", "Selenium drives the browser. Assertions, test structure and reports come from JUnit, pytest, Mocha and similar tools."], ["Key dates", "Selenium 2.0 on 8 July 2011, 3.0 on 13 October 2016, W3C Recommendation on 5 June 2018, Selenium 4.0 on 13 October 2021."], ["Program shape", "Start a session, send the browser somewhere, ask or act, and always quit at the end."]], "summary": "<p>Selenium automates real browsers. WebDriver is the library you call plus a driver per browser, IDE records and replays, and Grid scales out. It started as JavaScript inside the page, moved outside the page with WebDriver, and became a W3C standard in 2018. Selenium 4 speaks only that standard.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/setri.js"></script>
+<script src="../../assets/seplay.js"></script>
+<script src="../../assets/sewidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

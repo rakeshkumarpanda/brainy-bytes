@@ -269,16 +269,11 @@ window.CATALOG = {
       title: 'Selenium',
       emoji: '🕸️',
       color: '#43b02a',
-      blurb: 'Automate real browsers with Selenium WebDriver, from the first locator to a full framework.',
-      intro: 'Learn Selenium WebDriver from setup to a Page Object framework with waits, data driven tests, parallel runs on Selenium Grid and reports.',
-      tags: ['WebDriver', 'Locators', 'Waits', 'Page Object', 'Grid'],
-      modules: [soonModule([
-        ['Selenium setup and first test', '🚀', 'Install the driver and open your first page.'],
-        ['Locators and XPath', '🎯', 'Find any element with CSS selectors and XPath.'],
-        ['Waits and synchronisation', '⏳', 'Implicit, explicit and fluent waits without flaky tests.'],
-        ['Page Object Model', '🧱', 'Keep tests clean with page classes.'],
-        ['Selenium Grid and parallel runs', '🖧', 'Run tests on many browsers at once.']
-      ])]
+      layout: 'path',
+      blurb: 'A step by step path from how WebDriver talks to a browser to locators, waits, page objects and Selenium Grid, in Java, Python and JavaScript.',
+      intro: 'Follow the path one step at a time. You start with what Selenium is and how the W3C WebDriver protocol carries each command from your code to the browser, set up Selenium Manager and write a first script, then learn sessions, navigation, locators, element actions, waits, windows, frames, alerts, the Actions API, test frameworks, page objects, good practice and troubleshooting, and finish with Selenium Grid 4, WebDriver BiDi, a revision step and interview questions. Every example is written in Java, Python and JavaScript with a note for each line, and was run for real in Chrome to record its output. A pretend browser lets you type Selenium lines and watch each request, and the animations show what happens inside.',
+      tags: ['WebDriver', 'W3C protocol', 'Locators', 'Waits', 'Page Object', 'Grid 4'],
+      modules: seModules().concat(iqModule('selenium'))
     },
     {
       id: 'playwright',
@@ -1257,6 +1252,7 @@ function iqModule(sid) {
     'playwright': ['content/playwright/interview-questions.html', 'Playwright questions from automation interviews in TypeScript, JavaScript, Python and Java: how Playwright works, locators and strict mode, auto waiting, network mocking, fixtures, framework design, traces and reports, CI, sharding, flaky tests and the AI test agents, with real scenario questions.', ['playwright vs selenium', 'browser context', 'getByRole', 'strict mode', 'auto waiting', 'web first assertions', 'page.route', 'storageState', 'test.extend', 'pytest fixtures', 'trace viewer', 'sharding', 'flaky tests', 'test agents', 'playwright mcp']],
     'nlp': ['content/nlp/interview-questions.html', 'NLP interview questions on tokenisation, stemming and lemmatisation, Zipf, entropy, cross entropy and KL, perplexity, n-gram models, add-k, Good-Turing, Kneser-Ney, backoff and interpolation, HMM tagging, Viterbi, parsing and evaluation, with scenario questions.', ['tokenisation', 'stemming vs lemmatisation', 'Zipf law', 'entropy', 'cross entropy', 'perplexity', 'n-gram', 'Laplace smoothing', 'Kneser-Ney', 'interpolation', 'OOV', 'HMM', 'Viterbi', 'POS tagging', 'CKY', 'BLEU']],
     'computer-vision': ['content/computer-vision/interview-questions.html', 'Computer vision interview questions on images and filters, edges, Harris, SIFT and HOG, optical flow, CNN arithmetic, anchors, IoU, NMS, focal loss, precision, recall and mAP, segmentation metrics, U-Net, ViT, CLIP and SAM, with debugging scenarios and system design.', ['convolution output size', 'parameter count', 'receptive field', 'Harris', 'optical flow', 'IoU', 'NMS', 'anchor boxes', 'focal loss', 'mAP50-95', 'mIoU', 'Dice', 'U-Net', 'transposed convolution', 'ViT', 'CLIP', 'SAM', 'domain shift']],
+    'selenium': ['content/selenium/interview-questions.html', 'Selenium questions from automation and SDET interviews on how WebDriver works, sessions and options, locators, waits, windows, frames, alerts, Actions, JavaScript and cookies, frameworks and page objects, flaky tests and debugging, and Selenium Grid 4 with BiDi and CDP, with code in Java, Python and JavaScript.', ['selenium architecture', 'W3C WebDriver', 'Selenium Manager', 'close vs quit', 'CSS vs XPath', 'relative locators', 'shadow root', 'implicit vs explicit wait', 'FluentWait', 'window handles', 'iframe', 'Actions API', 'stale element', 'click intercepted', 'page object model', 'Selenium Grid', 'BiDi', 'CDP']],
     'master-claude': ['content/claude/interview-questions.html', 'Claude interview questions on prompting, context engineering, CLAUDE.md and rules, skills, permissions and hooks, subagents, MCP, claude -p and GitHub Actions, the Claude API, agents, cost and safety, with real scenario questions.', ['prompt engineering', 'context rot', 'CLAUDE.md', 'rules.md', 'SKILL.md', 'hooks exit code 2', 'subagents', 'MCP', '.mcp.json', 'claude -p', 'tool use loop', 'prompt caching', 'agent safety']]
   }[sid];
   return {
@@ -4295,3 +4291,298 @@ function nlpModules() {
   ];
 }
 /* ===== end of nlp-build ===== */
+
+/* ===== se-build: Selenium chapters. Generated by tools/se-build/build.py, edit the topic files instead. ===== */
+function seModules() {
+  return [
+    { id: "se-meet", title: "Meet Selenium", emoji: "1", step: 1, level: "Beginner", blurb: "What Selenium is, how it talks to a browser through the W3C WebDriver protocol, and your first script in Java, Python and JavaScript.", topics: [
+      { id: "what-is-selenium", title: "What Selenium is and where it came from", emoji: "1.1", page: "content/selenium/what-is-selenium.html",
+        summary: "What Selenium does, its three parts, the key words, its history to the W3C standard and a first real program.",
+        keywords: ["selenium", "what is selenium", "webdriver", "selenium ide", "selenium grid", "history", "selenium 4", "w3c"],
+        minutes: 30, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "what", title: "What Selenium is", emoji: "", group: "Lesson", keywords: ["what is selenium", "browser automation", "user agent library", "umbrella project", "open source", "testing", "web scraping", "repetitive tasks", "cross browser"] },
+        { id: "family", title: "WebDriver, IDE and Grid", emoji: "", group: "Lesson", keywords: ["WebDriver", "Selenium IDE", "Selenium Grid", "API", "library", "driver", "framework", "chromedriver", "geckodriver", "components"] },
+        { id: "history", title: "How Selenium grew", emoji: "", group: "Lesson", keywords: ["history", "Jason Huggins", "Selenium RC", "Selenium Core", "Simon Stewart", "Selenium 2", "Selenium 3", "Selenium 4", "W3C Recommendation", "JSON Wire Protocol"] },
+        { id: "look", title: "A first look at real code", emoji: "", group: "Lesson", keywords: ["first program", "quit", "session", "get", "title", "current url", "Java", "Python", "JavaScript"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "architecture", title: "Architecture and the W3C WebDriver protocol", emoji: "1.2", page: "content/selenium/architecture.html",
+        summary: "How a command travels from your code to the browser over the W3C WebDriver protocol, shown with real HTTP traffic.",
+        keywords: ["architecture", "w3c webdriver protocol", "json wire", "http", "endpoint", "session", "driver", "chromedriver", "bidi", "error codes"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "pieces", title: "The pieces between your code and the browser", emoji: "", group: "Lesson", keywords: ["architecture", "local end", "remote end", "language binding", "driver", "chromedriver", "geckodriver", "intermediary node", "endpoint node", "client server"] },
+        { id: "protocol", title: "The W3C WebDriver protocol", emoji: "", group: "Lesson", keywords: ["W3C WebDriver", "protocol", "HTTP", "JSON", "endpoint", "session id", "element reference", "element-6066-11e4-a52e-4f735466cecf", "error codes", "HTTP status"] },
+        { id: "wire", title: "See the wire for yourself", emoji: "", group: "Lesson", keywords: ["raw HTTP", "chromedriver port 9515", "curl", "fetch", "urllib", "HttpClient", "logging", "debug log", "wire log", "debuggerAddress"] },
+        { id: "remote", title: "Local, remote and Grid, plus BiDi", emoji: "", group: "Lesson", keywords: ["RemoteWebDriver", "remote", "Selenium Server", "Grid", "WebDriver BiDi", "WebSocket", "CDP", "Chrome DevTools Protocol", "events"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "setup-first-script", title: "Setup, Selenium Manager and your first script", emoji: "1.3", page: "content/selenium/setup-first-script.html",
+        summary: "Install Selenium, let Selenium Manager match the driver, and write and tidy up your first real script.",
+        keywords: ["setup", "install", "selenium manager", "first script", "eight components", "quit", "close", "chromedriver"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "install", title: "Install Selenium for your language", emoji: "", group: "Lesson", keywords: ["install", "maven", "gradle", "pip install selenium", "npm install selenium-webdriver", "requirements", "java 11", "python 3.10", "node 22", "virtual environment"] },
+        { id: "manager", title: "Selenium Manager finds the driver", emoji: "", group: "Lesson", keywords: ["selenium manager", "driver management", "chromedriver", "evergreen", "session not created", "cache", "se-config.toml", "SE_OFFLINE", "chrome for testing", "browserVersion", "PATH"] },
+        { id: "eight", title: "The eight steps of a first script", emoji: "", group: "Lesson", keywords: ["first script", "eight components", "start session", "navigate", "title", "implicit wait", "find element", "send keys", "click", "get text", "quit", "playground"] },
+        { id: "tidy", title: "Always end the session", emoji: "", group: "Lesson", keywords: ["quit", "close", "finally", "with statement", "context manager", "teardown", "resource leak", "service"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "se-browser", title: "Control the browser", emoji: "2", step: 2, level: "Beginner", blurb: "Options, capabilities, page load strategy, timeouts, the driver service, navigation, windows and screenshots.", topics: [
+      { id: "sessions-options", title: "Sessions, options and timeouts", emoji: "2.1", page: "content/selenium/sessions-options.html",
+        summary: "Options and capabilities, page load strategy, the three session timeouts and the driver service, shown with real runs.",
+        keywords: ["session", "options", "capabilities", "page load strategy", "timeouts", "service", "headless", "chromeoptions"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "options", title: "Options and capabilities", emoji: "", group: "Lesson", keywords: ["options", "capabilities", "ChromeOptions", "DesiredCapabilities", "browserName", "browserVersion", "platformName", "acceptInsecureCerts", "vendor prefix", "goog:chromeOptions", "headless", "arguments"] },
+        { id: "loading", title: "Page load strategy", emoji: "", group: "Lesson", keywords: ["page load strategy", "normal", "eager", "none", "document.readyState", "complete", "interactive", "DOMContentLoaded", "load event", "single page application"] },
+        { id: "timeouts", title: "The three session timeouts", emoji: "", group: "Lesson", keywords: ["timeouts", "implicit wait", "page load timeout", "script timeout", "300000", "30000", "ScriptTimeoutException", "TimeoutException", "Duration"] },
+        { id: "service", title: "The driver service", emoji: "", group: "Lesson", keywords: ["service", "driver service", "port", "status endpoint", "log output", "ChromeDriverService", "ServiceBuilder", "local driver", "remote driver"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "navigate-screenshots", title: "Navigation, window size, screenshots and PDF", emoji: "2.2", page: "content/selenium/navigate-screenshots.html",
+        summary: "Navigation and history, title and URL, window size and position, screenshots and printing pages to PDF.",
+        keywords: ["navigation", "back", "forward", "refresh", "title", "current url", "window size", "screenshot", "print", "pdf"],
+        minutes: 40, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "navigate", title: "Navigate and ask where you are", emoji: "", group: "Lesson", keywords: ["navigate", "get", "navigate to", "back", "forward", "refresh", "title", "current url", "history", "redirect"] },
+        { id: "windowsize", title: "Window size and position", emoji: "", group: "Lesson", keywords: ["window size", "window position", "window rect", "maximize", "minimize", "fullscreen", "responsive", "Dimension", "Point"] },
+        { id: "screenshots", title: "Screenshots", emoji: "", group: "Lesson", keywords: ["screenshot", "take screenshot", "element screenshot", "png", "base64", "TakesScreenshot", "save_screenshot", "viewport"] },
+        { id: "print", title: "Print a page to PDF", emoji: "", group: "Lesson", keywords: ["print page", "pdf", "PrintOptions", "headless", "orientation", "landscape", "base64", "archive"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "se-elements", title: "Find and use elements", emoji: "3", step: 3, level: "Beginner", blurb: "Locators, finding elements, interacting with inputs, reading element information, select lists and file upload.", topics: [
+      { id: "locators", title: "Locators: how Selenium finds an element", emoji: "3.1", page: "content/selenium/locators.html",
+        summary: "All eight locator strategies, CSS and XPath, relative locators and how to choose a locator that lasts.",
+        keywords: ["locators", "by", "css selector", "xpath", "id", "name", "class name", "relative locators", "link text", "tag name"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "strategies", title: "The eight locator strategies", emoji: "", group: "Lesson", keywords: ["locator", "By", "id", "name", "class name", "css selector", "xpath", "tag name", "link text", "partial link text", "locator strategies"] },
+        { id: "cssxpath", title: "CSS selectors and XPath", emoji: "", group: "Lesson", keywords: ["css selector", "xpath", "absolute xpath", "relative xpath", "contains", "starts-with", "text()", "nth-of-type", "following-sibling", "parent", "devtools"] },
+        { id: "relative", title: "Relative locators", emoji: "", group: "Lesson", keywords: ["relative locators", "friendly locators", "above", "below", "toLeftOf", "toRightOf", "near", "50 pixels", "getBoundingClientRect", "locate_with", "locateWith", "chaining"] },
+        { id: "choose", title: "Choosing a good locator", emoji: "", group: "Lesson", keywords: ["best locator", "stable locator", "data-test", "id first", "fragile locators", "generated ids", "encouraged practices", "page object"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "finding-elements", title: "Finding elements: one, many, scoped and in shadow DOM", emoji: "3.2", page: "content/selenium/finding-elements.html",
+        summary: "Singular and plural finds, scoped searches and the XPath trap, shadow DOM and the active element.",
+        keywords: ["find element", "find elements", "search context", "shadow dom", "shadow root", "active element", "xpath scope", "nosuchelement"],
+        minutes: 40, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "oneormany", title: "Find one or find many", emoji: "", group: "Lesson", keywords: ["find element", "find elements", "first match", "empty list", "NoSuchElementException", "list", "loop", "count elements"] },
+        { id: "scope", title: "Search inside an element", emoji: "", group: "Lesson", keywords: ["search context", "find from element", "scope", "subset of the DOM", "xpath dot", "relative xpath", "optimized locator", "nested find"] },
+        { id: "shadow", title: "The shadow DOM", emoji: "", group: "Lesson", keywords: ["shadow dom", "shadow root", "shadow host", "getShadowRoot", "shadow_root", "web components", "custom element", "invalid locator"] },
+        { id: "activeel", title: "The active element", emoji: "", group: "Lesson", keywords: ["active element", "focus", "switchTo activeElement", "keyboard", "tab order", "accessibility", "Keys.TAB"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "interacting", title: "Interacting with elements and reading them", emoji: "3.3", page: "content/selenium/interacting.html",
+        summary: "Click, type, clear, the checks before every action and their errors, element information, select lists and uploads.",
+        keywords: ["click", "send keys", "clear", "select", "upload", "is displayed", "attribute", "property", "interactable", "intercepted"],
+        minutes: 55, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "commands", title: "Click, type and clear", emoji: "", group: "Lesson", keywords: ["click", "send keys", "clear", "submit", "element not interactable", "element click intercepted", "invalid element state", "scroll into view", "interactable", "checkbox", "radio button"] },
+        { id: "info", title: "Read information about an element", emoji: "", group: "Lesson", keywords: ["is displayed", "is enabled", "is selected", "tag name", "rect", "css value", "text", "attribute", "property", "getDomAttribute", "getDomProperty", "get_property"] },
+        { id: "selectlists", title: "Select lists", emoji: "", group: "Lesson", keywords: ["select", "drop down", "select by visible text", "select by value", "select by index", "multiple select", "deselect", "options", "support package"] },
+        { id: "upload", title: "File upload", emoji: "", group: "Lesson", keywords: ["file upload", "input type file", "send keys path", "fakepath", "file dialog", "file detector"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "se-control", title: "Synchronise and control", emoji: "4", step: 4, level: "Intermediate", blurb: "Waits, windows, tabs, frames and alerts, the Actions API, JavaScript, cookies and print.", topics: [
+      { id: "waits", title: "Waiting strategies: implicit, explicit and fluent", emoji: "4.1", page: "content/selenium/waits.html",
+        summary: "Why tests race the page, implicit and explicit waits, expected conditions, custom waits and why not to mix them.",
+        keywords: ["waits", "implicit wait", "explicit wait", "webdriverwait", "expected conditions", "fluentwait", "flaky tests", "synchronization"],
+        minutes: 55, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "race", title: "The race between your code and the page", emoji: "", group: "Lesson", keywords: ["race condition", "flaky test", "synchronisation", "sleep", "dynamic content", "single page application", "dynamic.html"] },
+        { id: "implicit", title: "Implicit waits", emoji: "", group: "Lesson", keywords: ["implicit wait", "implicitly wait", "session timeout", "presence", "global setting"] },
+        { id: "explicit", title: "Explicit waits and expected conditions", emoji: "", group: "Lesson", keywords: ["explicit wait", "WebDriverWait", "expected conditions", "until", "polling interval", "timeout exception", "visibility", "presence", "clickable", "driver.wait"] },
+        { id: "custom", title: "Customising waits, and never mixing them", emoji: "", group: "Lesson", keywords: ["FluentWait", "polling", "ignored exceptions", "custom wait", "mixing waits", "implicit and explicit", "unpredictable wait times", "timeout message"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "windows-frames-alerts", title: "Windows, tabs, frames and alerts", emoji: "4.2", page: "content/selenium/windows-frames-alerts.html",
+        summary: "Switching windows and tabs, working inside iframes, and handling alerts, confirms and prompts.",
+        keywords: ["windows", "tabs", "window handle", "iframe", "frames", "alerts", "confirm", "prompt", "switch to", "unhandledpromptbehavior"],
+        minutes: 50, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "windows", title: "Windows and tabs", emoji: "", group: "Lesson", keywords: ["window handle", "tabs", "switch to window", "new window", "new tab", "close", "no such window", "getWindowHandles", "target blank"] },
+        { id: "frames", title: "Frames and iframes", emoji: "", group: "Lesson", keywords: ["iframe", "frame", "switch to frame", "default content", "parent frame", "frame index", "frame name", "nested frames"] },
+        { id: "alerts", title: "Alerts, confirms and prompts", emoji: "", group: "Lesson", keywords: ["alert", "confirm", "prompt", "accept", "dismiss", "switch to alert", "alert is present", "unexpected alert open", "unhandledPromptBehavior", "beforeunload"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "actions", title: "The Actions API: mouse, keyboard and wheel", emoji: "4.3", page: "content/selenium/actions.html",
+        summary: "Mouse, keyboard and wheel actions, and how a chain becomes ticks.",
+        keywords: ["actions", "action chains", "mouse", "keyboard", "drag and drop", "hover", "double click", "right click", "scroll", "wheel", "ticks"],
+        minutes: 55, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "mouse", title: "How actions work, and the mouse", emoji: "", group: "Lesson", keywords: ["actions api", "action chains", "perform", "ticks", "input source", "double click", "context click", "right click", "hover", "drag and drop", "move to element", "move by offset", "release actions"] },
+        { id: "keyboard", title: "Keyboard actions", emoji: "", group: "Lesson", keywords: ["keyboard actions", "key down", "key up", "shift", "control", "command", "select all", "send keys", "special keys", "unicode keys"] },
+        { id: "wheel", title: "Scroll wheel actions", emoji: "", group: "Lesson", keywords: ["scroll", "wheel", "scroll to element", "scroll by amount", "scroll from origin", "infinite scroll", "scroll origin"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "javascript-cookies", title: "JavaScript execution and cookies", emoji: "4.4", page: "content/selenium/javascript-cookies.html",
+        summary: "Running JavaScript in the page, async scripts, and working with cookies.",
+        keywords: ["execute script", "javascript executor", "async script", "promise", "script timeout", "cookies", "httponly", "samesite", "invalid cookie domain"],
+        minutes: 45, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "javascript", title: "Run JavaScript in the page", emoji: "", group: "Lesson", keywords: ["execute script", "javascript executor", "arguments", "return value", "javascript click", "types", "executeScript"] },
+        { id: "async", title: "Asynchronous scripts and the script timeout", emoji: "", group: "Lesson", keywords: ["execute async script", "callback", "promise", "script timeout", "javascript error", "asynchronous"] },
+        { id: "cookies", title: "Cookies", emoji: "", group: "Lesson", keywords: ["cookies", "add cookie", "get cookie", "delete cookie", "httpOnly", "sameSite", "secure", "invalid cookie domain", "session cookie", "login"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "se-suite", title: "Build a test suite", emoji: "5", step: 5, level: "Intermediate", blurb: "Test frameworks, page objects, good practices and the errors you will meet.", topics: [
+      { id: "test-frameworks", title: "Test frameworks: JUnit 5, pytest and Mocha", emoji: "5.1", page: "content/selenium/test-frameworks.html",
+        summary: "Running Selenium inside JUnit 5, pytest and Mocha, with data-driven tests and screenshots on failure.",
+        keywords: ["junit", "pytest", "mocha", "test framework", "fixture", "before each", "after each", "parameterized", "data driven", "screenshot on failure"],
+        minutes: 55, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "runners", title: "Selenium inside a test framework", emoji: "", group: "Lesson", keywords: ["test framework", "junit 5", "pytest", "mocha", "before each", "after each", "fixture", "yield", "assert", "assertion", "test runner", "fresh browser per test"] },
+        { id: "datadriven", title: "Data-driven tests", emoji: "", group: "Lesson", keywords: ["data driven", "parameterized test", "parametrize", "csv source", "test data", "rows"] },
+        { id: "failshot", title: "A screenshot when a test fails", emoji: "", group: "Lesson", keywords: ["screenshot on failure", "test watcher", "extension", "conftest", "makereport", "current test state", "failure", "report"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "page-objects", title: "Page objects and page components", emoji: "5.2", page: "content/selenium/page-objects.html",
+        summary: "Page objects, page component objects and the rules for writing them.",
+        keywords: ["page object", "page object model", "pom", "page component", "design pattern", "maintainability", "page factory"],
+        minutes: 50, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "why", title: "Why page objects", emoji: "", group: "Lesson", keywords: ["page object", "page object model", "pom", "design pattern", "maintenance", "duplication", "locators in one place"] },
+        { id: "pom", title: "Write page objects and components", emoji: "", group: "Lesson", keywords: ["page object", "page component", "component object", "constructor check", "return page object", "fluent", "no assertions in page objects", "encapsulation"] },
+        { id: "design", title: "Design choices and the limits of page objects", emoji: "", group: "Lesson", keywords: ["page factory", "findby", "base page", "domain specific language", "component", "design", "loadable component"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "practices", title: "Good practices and things to avoid", emoji: "5.3", page: "content/selenium/practices.html",
+        summary: "Test design, encouraged practices and the things the documentation says to avoid.",
+        keywords: ["best practices", "test design", "fresh browser", "application state", "shared state", "test independence", "captcha", "file download", "performance testing", "2fa"],
+        minutes: 40, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "shape", title: "The shape of a good browser test", emoji: "", group: "Lesson", keywords: ["test design", "set up act evaluate", "small tests", "happy path", "testing types", "acceptance", "functional", "regression", "unicorn"] },
+        { id: "encouraged", title: "Encouraged practices", emoji: "", group: "Lesson", keywords: ["fresh browser", "clean state", "application state", "api login", "cookie", "independent tests", "shared state", "mock services", "reporting"] },
+        { id: "discouraged", title: "Things to avoid", emoji: "", group: "Lesson", keywords: ["captcha", "file download", "status code", "gmail", "facebook login", "test dependency", "performance testing", "link spidering", "two factor authentication", "2fa"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "troubleshooting", title: "Troubleshooting: errors, stale elements and logs", emoji: "5.4", page: "content/selenium/troubleshooting.html",
+        summary: "Common errors, stale elements and logging in Java, Python and JavaScript.",
+        keywords: ["troubleshooting", "errors", "exceptions", "stale element", "no such element", "logging", "debug", "chromedriver log", "session not created"],
+        minutes: 50, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "errors", title: "Read an error the right way", emoji: "", group: "Lesson", keywords: ["errors", "exceptions", "no such element", "stale element", "click intercepted", "not interactable", "invalid selector", "timeout", "session not created", "stack trace"] },
+        { id: "stale", title: "Stale elements and the element store", emoji: "", group: "Lesson", keywords: ["stale element", "stale element reference", "element reference", "element store", "refresh", "relocate", "browsing context", "no such element"] },
+        { id: "logs", title: "Logs: what the client sent and what the driver did", emoji: "", group: "Lesson", keywords: ["logging", "logs", "debug", "client log", "driver log", "chromedriver log", "log level", "java util logging", "pytest logs"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "se-scale", title: "Scale out with Grid", emoji: "6", step: 6, level: "Advanced", blurb: "Selenium Grid 4: components, roles, remote sessions and parallel runs, then BiDi, CDP and Grid features.", topics: [
+      { id: "grid", title: "Selenium Grid 4", emoji: "6.1", page: "content/selenium/grid.html",
+        summary: "Selenium Grid 4 components, roles, remote sessions and parallel runs.",
+        keywords: ["selenium grid", "grid 4", "remote webdriver", "router", "distributor", "node", "hub", "standalone", "parallel", "se:name", "file detector"],
+        minutes: 55, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "why", title: "When and why to use a Grid", emoji: "", group: "Lesson", keywords: ["selenium grid", "grid 4", "node", "parallel", "remote", "status", "slots", "standalone", "execution time"] },
+        { id: "components", title: "Components, roles and ports", emoji: "", group: "Lesson", keywords: ["router", "distributor", "session map", "new session queue", "event bus", "node", "hub", "standalone", "distributed", "ports", "4444", "queue"] },
+        { id: "remote", title: "Remote sessions, metadata and files", emoji: "", group: "Lesson", keywords: ["remote webdriver", "remote", "se:name", "metadata", "se:cdp", "file detector", "local file detector", "upload", "capabilities"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "bidi-cdp", title: "WebDriver BiDi, CDP and Grid features", emoji: "6.2", page: "content/selenium/bidi-cdp.html",
+        summary: "WebDriver BiDi events, Chrome DevTools Protocol commands and Grid GraphQL.",
+        keywords: ["bidi", "webdriver bidi", "cdp", "devtools", "websocket", "events", "log inspector", "graphql", "grid endpoints", "drain"],
+        minutes: 50, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "bidi", title: "WebDriver BiDi: the browser talks back", emoji: "", group: "Lesson", keywords: ["bidi", "webdriver bidi", "websocket", "events", "console log", "javascript error", "log inspector", "bidirectional"] },
+        { id: "cdp", title: "The Chrome DevTools Protocol", emoji: "", group: "Lesson", keywords: ["cdp", "chrome devtools protocol", "devtools", "execute cdp command", "emulation", "time zone", "browser version", "chromium"] },
+        { id: "gridplus", title: "Grid features: GraphQL and endpoints", emoji: "", group: "Lesson", keywords: ["graphql", "grid endpoints", "drain node", "remove node", "status", "session queue size", "observability"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "se-revision", title: "Revise and practise", emoji: "7", step: 7, level: "All levels", blurb: "Revise the whole path with output tracing, bug hunts, design and sizing questions, a cheat sheet in three languages and a mock quiz.", topics: [
+      { id: "revision", title: "Revision: predict, debug and design", emoji: "7.1", page: "content/selenium/revision.html",
+        summary: "Predict the output, find the bug, design and sizing questions, a cheat sheet in three languages and a mock quiz.",
+        keywords: ["revision", "exam", "interview", "mock quiz", "cheat sheet", "predict output", "find the bug", "framework design", "grid sizing"],
+        minutes: 60, counts: {"lessons": 5, "problems": 9, "quiz": 16, "assign": 0},
+        added: "2026-10-29",
+        sections: [
+        { id: "map", title: "How Selenium skills are tested", emoji: "", group: "Lesson", keywords: ["revision", "exam", "interview", "practice", "question types", "selenium topics"] },
+        { id: "trace", title: "Predict the output", emoji: "", group: "Lesson", keywords: ["predict the output", "trace", "actions", "shift", "invalid cookie domain", "stale element", "no such element", "return types"] },
+        { id: "bugs", title: "Find the bug", emoji: "", group: "Lesson", keywords: ["find the bug", "sleep", "mix waits", "quit", "finally", "absolute xpath", "flaky", "login through api"] },
+        { id: "design", title: "Design and sizing questions", emoji: "", group: "Lesson", keywords: ["framework design", "layers", "driver factory", "grid sizing", "formula", "flaky tests", "triage"] },
+        { id: "sheet", title: "Cheat sheet in three languages", emoji: "", group: "Lesson", keywords: ["cheat sheet", "java", "python", "javascript", "commands", "defaults", "timeouts"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of se-build ===== */
