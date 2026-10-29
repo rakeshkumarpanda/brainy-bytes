@@ -17,6 +17,18 @@
   "out": "browserName: chrome\nbrowserVersion: 153.0.8010.12\nplatformName: linux\npageLoadStrategy: eager\nunhandledPromptBehavior: dismiss and notify",
   "rc": 0
  },
+ "05698c4f554efa4d53fc1ac5": {
+  "label": "queue",
+  "lang": "py",
+  "out": "got a browser after: ['1 s', '1 s', '4 s']",
+  "rc": 0
+ },
+ "064f1034df5cc086f13ff5e6": {
+  "label": "gridstatus",
+  "lang": "js",
+  "out": "ready: true, Selenium Grid ready.\nnodes: 1, max sessions: 2\nslot: chrome\nslot: MicrosoftEdge\nslot: chrome\nslot: MicrosoftEdge\nslot: firefox\nslot: firefox",
+  "rc": 0
+ },
  "069ab35a668a3b5ff0c311e7": {
   "label": "active",
   "lang": "java",
@@ -137,6 +149,12 @@
   "out": "size 1024 x 768\nposition 40, 30",
   "rc": 0
  },
+ "2d8a274bf6d4bd57963c0b4f": {
+  "label": "remote",
+  "lang": "js",
+  "out": "browserName: chrome\nplatformName: linux\nse:name: upload on the grid\nse:cdp: ws://localhost:4444/session/{id}/se/cdp\nattached: report.txt",
+  "rc": 0
+ },
  "30980d07646aa05d16565268": {
   "label": "hello",
   "lang": "java",
@@ -153,6 +171,12 @@
   "label": "rawhttp",
   "lang": "java",
   "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/url  ->  {\"value\":null}\nGET /session/95d0fe61737b4d163eb18144987aeb9c/title  ->  {\"value\":\"Web form\"}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.6/value  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.21/click  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nGET /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.E152AD2C20E2F888566D70528E29A501.e.26/text  ->  {\"value\":\"Received!\"}\nDELETE /session/95d0fe61737b4d163eb18144987aeb9c  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "39d22379effab5d43af33a0e": {
+  "label": "remote",
+  "lang": "java",
+  "out": "browserName: chrome\nplatformName: linux\nse:name: upload on the grid\nse:cdp: ws://localhost:4444/session/{id}/se/cdp\nattached: report.txt",
   "rc": 0
  },
  "3a08838a17213ea3c286b1d0": {
@@ -195,6 +219,12 @@
   "label": "explicit",
   "lang": "js",
   "out": "typed: Displayed",
+  "rc": 0
+ },
+ "47f0ceea4aeabb950b7c3113": {
+  "label": "gridstatus",
+  "lang": "py",
+  "out": "ready: True, Selenium Grid ready.\nnodes: 1, max sessions: 2\nslot: firefox\nslot: MicrosoftEdge\nslot: MicrosoftEdge\nslot: firefox\nslot: chrome\nslot: chrome",
   "rc": 0
  },
  "494c184918c253b57f6c385a": {
@@ -261,6 +291,12 @@
   "label": "wheel",
   "lang": "java",
   "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 4505\nscrollY after waiting: 4505\nframe scrollY: 118 of at most 118",
+  "rc": 0
+ },
+ "58fca6ad8f28e7cb37e152ce": {
+  "label": "remote",
+  "lang": "java",
+  "out": "browserName: chrome\nplatformName: linux\nse:name: upload on the grid\nse:cdp: ws://localhost:4444/session/{id}/se/cdp\nattached: report14899157568107126915.txt",
   "rc": 0
  },
  "5be3ea4b72bfd3c478836343": {
@@ -335,6 +371,12 @@
   "out": "POST /session\nGET /json/version\nPOST /session/{id}/url\nGET /session/{id}/title\nDELETE /session/{id}",
   "rc": 0
  },
+ "6b10b983abcc61e9cc231e64": {
+  "label": "queue",
+  "lang": "java",
+  "out": "got a browser after: [2 s, 2 s, 5 s]",
+  "rc": 0
+ },
  "6e67be77e92efc7c2c1d96a4": {
   "label": "service",
   "lang": "js",
@@ -407,6 +449,12 @@
   "out": "too early: no such element",
   "rc": 0
  },
+ "7e7d863cc82315fbc7b705ac": {
+  "label": "remote",
+  "lang": "py",
+  "out": "browserName: chrome\nplatformName: linux\nse:name: upload on the grid\nse:cdp: ws://localhost:4444/session/{id}/se/cdp\nattached: report.txt",
+  "rc": 0
+ },
  "80d85d5ef7ae38697fdaa291": {
   "label": "cookies",
   "lang": "java",
@@ -441,6 +489,12 @@
   "label": "frames",
   "lang": "js",
   "out": "email boxes seen from the top: 0\nby element: email\nby name: 1 email box\ntitle inside the frame: This page has iframes\nheading: This is the heading",
+  "rc": 0
+ },
+ "89899e6d45dafcd5c6557dbb": {
+  "label": "gridstatus",
+  "lang": "java",
+  "out": "ready: true, Selenium Grid ready.\nnodes: 1, max sessions: 2\nslot: chrome\nslot: MicrosoftEdge\nslot: chrome\nslot: MicrosoftEdge\nslot: firefox\nslot: firefox",
   "rc": 0
  },
  "8a5ebe75fe5d30cd51c32ae1": {
@@ -839,6 +893,12 @@
   "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 300\nscrollY after waiting: 300\nframe scrollY: 118 of at most 118",
   "rc": 0
  },
+ "e93a6a620840f91f25e92df0": {
+  "label": "gridstatus",
+  "lang": "py",
+  "out": "ready: True , Selenium Grid ready.\nnodes: 1 , max sessions: 2\nslot: chrome\nslot: MicrosoftEdge\nslot: chrome\nslot: MicrosoftEdge\nslot: firefox\nslot: firefox",
+  "rc": 0
+ },
  "e95c7a70ce9158c708ff5912": {
   "label": "wheel",
   "lang": "js",
@@ -873,6 +933,12 @@
   "label": "timeouts",
   "lang": "py",
   "out": "implicit: 0.0\npageLoad: 300.0\nscript: 30.0\nCaught TimeoutException",
+  "rc": 0
+ },
+ "f7b46246475ef43b89ae3c3f": {
+  "label": "queue",
+  "lang": "js",
+  "out": "got a browser after: [\"1 s\",\"1 s\",\"4 s\"]",
   "rc": 0
  },
  "f871f96509c463f8ee34fa92": {

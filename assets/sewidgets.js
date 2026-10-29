@@ -1100,4 +1100,68 @@ const SEZ = (() => {
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 6.1: Selenium Grid */
+  def('se-grid', {
+    title: 'A new session travels through the Grid',
+    sub: 'Choose how many nodes and slots the Grid has and how many tests ask for a browser at once.',
+    W: 660, H: 380,
+    params: [
+      { k: 'nodes', label: 'Nodes', type: 'range', v: 2, min: 1, max: 3, step: 1 },
+      { k: 'slots', label: 'Slots per node', type: 'range', v: 1, min: 1, max: 3, step: 1 },
+      { k: 'req', label: 'Tests asking at once', type: 'range', v: 3, min: 1, max: 6, step: 1 }
+    ],
+    tips: [
+      { t: 'With 2 slots and 3 tests, step 2 leaves one request in the queue. Watch step 5 to see when it gets a slot.', set: { nodes: 2, slots: 1, req: 3 }, play: true },
+      { t: 'Give the Grid as many slots as tests. The queue empties in one step.', set: { nodes: 3, slots: 2, req: 6 }, play: true },
+      { t: 'Step 4 is a command for a running session. It skips the queue and the Distributor completely.', set: { nodes: 2, slots: 1, req: 2 }, play: true }
+    ],
+    steps: () => 5,
+    startAtZero: true,
+    speed: () => 1600,
+    draw(z) {
+      const g = z.g, c = z.col, s = z.step, N = +z.p.nodes, S = +z.p.slots, R = +z.p.req, cap = N * S;
+      const first = Math.min(R, cap), waiting = R - first;
+      const afterQuit = s >= 5 && waiting > 0 ? 1 : 0;
+      const running = s >= 2 ? first - (s >= 5 ? 1 : 0) + afterQuit : 0;
+      const queued = s === 1 ? R : s >= 2 ? waiting - afterQuit : 0;
+      const box2 = (x, y, w, h, t, on) => { rr(g, x, y, w, h, 10, { fill: c.surf, stroke: on ? c.cv : c.line, w: on ? 3 : 1.5 }); D.text(g, t, x + w / 2, y + 20, { a: 'center', b: true, s: 12.5, c: on ? c.cv : c.ink }); };
+      box2(24, 24, 120, 60, 'Router :4444', s === 1 || s === 4);
+      box2(24, 104, 120, 120, 'Session Queue', s === 1);
+      for (let i = 0; i < queued; i++) { const k = R - queued + i + 1; rr(g, 36, 132 + i * 15, 96, 12, 3, { fill: c.orange }); D.text(g, 'test ' + k, 84, 142 + i * 15, { a: 'center', s: 9.5, b: true, c: '#fff' }); }
+      box2(164, 24, 130, 60, 'Distributor', s === 2 || s === 5);
+      box2(164, 104, 130, 120, 'Session Map', s === 3 || s === 4);
+      const ids = [];
+      if (s >= 3) for (let i = 0; i < R; i++) {
+        const started = i < first ? (s >= 5 && i === 0 ? false : true) : (s >= 5 && i === first && waiting > 0);
+        if (started) ids.push(i);
+      }
+      ids.slice(0, 6).forEach((i, r) => D.text(g, 'test ' + (i + 1) + ' → node ' + (Math.floor((i < first ? i : 0) / S) + 1), 176, 148 + r * 15, { s: 10.5, mono: true, c: s === 4 && i === 1 ? c.cv : c.ink }));
+      const nx = 320, nw = z.W - nx - 24, nh = Math.min(64, (200 - (N - 1) * 10) / N);
+      for (let n = 0; n < N; n++) {
+        const y = 24 + n * (nh + 10);
+        rr(g, nx, y, nw, nh, 10, { fill: c.surf, stroke: s === 4 && n === Math.floor(1 / S) && R > 1 ? c.cv : c.line, w: 1.5 });
+        D.text(g, 'Node ' + (n + 1) + ' :5555', nx + 10, y + 18, { s: 12, b: true, c: c.ink });
+        for (let k = 0; k < S; k++) {
+          const slot = n * S + k, sw = (nw - 30) / S;
+          let who = null;
+          if (s >= 2 && slot < first) who = slot + 1;
+          if (s >= 5 && slot === 0) who = waiting > 0 ? first + 1 : null;
+          rr(g, nx + 10 + k * sw, y + 26, sw - 8, nh - 34, 6, { fill: who ? c.green : c.bg, stroke: c.line });
+          D.text(g, who ? 'test ' + who : 'free slot', nx + 10 + k * sw + (sw - 8) / 2, y + 26 + (nh - 34) / 2 + 4, { a: 'center', s: 10.5, b: true, c: who ? '#fff' : c.ink2 });
+        }
+      }
+      const msg = [
+        `${R} test${R > 1 ? 's' : ''} ask for a browser. The Grid has ${N} node${N > 1 ? 's' : ''} with ${S} slot${S > 1 ? 's' : ''} each, ${cap} in total.`,
+        `Every POST /session reaches the Router, which puts it in the New Session Queue in arrival order.`,
+        waiting ? `The Distributor fills the ${cap} free slot${cap > 1 ? 's' : ''}. ${waiting} request${waiting > 1 ? 's wait' : ' waits'} in the queue.` : `The Distributor finds a free slot for every request. The queue is empty.`,
+        `The Session Map records which node runs each new session id. The answers go back to the tests.`,
+        R > 1 ? `Test 2 sends a command. The Router asks the Session Map for its node and forwards the command there. No queue, no Distributor.` : `Test 1 sends a command. The Router asks the Session Map and forwards it to the node.`,
+        waiting ? `Test 1 quits and frees its slot. The Distributor takes test ${first + 1} from the front of the queue.` : `Test 1 quits and frees its slot. Nothing is waiting.`
+      ][s];
+      rr(g, 20, z.H - 120, z.W - 40, 100, 10, { fill: c.bg, stroke: c.line });
+      wrap(g, msg, 34, z.H - 92, z.W - 68, { s: 13.5, c: c.ink, lh: 19 });
+      return `Running: <b>${running}</b>, waiting in the queue: <b>${Math.max(0, queued)}</b>.`;
+    }
+  });
+
 })();

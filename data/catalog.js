@@ -4536,6 +4536,22 @@ function seModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "se-scale", title: "Scale out with Grid", emoji: "6", step: 6, level: "Advanced", blurb: "Selenium Grid 4: components, roles, remote sessions and parallel runs, then BiDi, CDP and Grid features.", topics: [
+      { id: "grid", title: "Selenium Grid 4", emoji: "6.1", page: "content/selenium/grid.html",
+        summary: "Selenium Grid 4 components, roles, remote sessions and parallel runs.",
+        keywords: ["selenium grid", "grid 4", "remote webdriver", "router", "distributor", "node", "hub", "standalone", "parallel", "se:name", "file detector"],
+        minutes: 55, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "why", title: "When and why to use a Grid", emoji: "", group: "Lesson", keywords: ["selenium grid", "grid 4", "node", "parallel", "remote", "status", "slots", "standalone", "execution time"] },
+        { id: "components", title: "Components, roles and ports", emoji: "", group: "Lesson", keywords: ["router", "distributor", "session map", "new session queue", "event bus", "node", "hub", "standalone", "distributed", "ports", "4444", "queue"] },
+        { id: "remote", title: "Remote sessions, metadata and files", emoji: "", group: "Lesson", keywords: ["remote webdriver", "remote", "se:name", "metadata", "se:cdp", "file detector", "local file detector", "upload", "capabilities"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
