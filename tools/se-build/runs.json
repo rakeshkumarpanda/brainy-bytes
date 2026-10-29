@@ -1,8 +1,20 @@
 {
+ "01231bc220a9fbe8698928da": {
+  "label": "scope",
+  "lang": "js",
+  "out": "inputs in form: 6\nlinks via //a: 1\nlinks via .//a: 0\nsame element: true",
+  "rc": 0
+ },
  "0314641977701f640b33909a": {
   "label": "caps",
   "lang": "java",
   "out": "browserName: chrome\nbrowserVersion: 153.0.8010.12\nplatformName: linux\npageLoadStrategy: eager\nunhandledPromptBehavior: dismiss and notify",
+  "rc": 0
+ },
+ "069ab35a668a3b5ff0c311e7": {
+  "label": "active",
+  "lang": "java",
+  "out": "at start: body\nafter click: my-text\nafter Tab: my-password",
   "rc": 0
  },
  "07ff8ec6af819bb87d8577c3": {
@@ -21,6 +33,12 @@
   "label": "rawhttp",
   "lang": "py",
   "out": "POST /session  ->  {\"value\": {\"capabilities\": {\"acceptInsecureCerts\": false, \"browserName...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/timeouts  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/url  ->  {\"value\": null}\nGET /session/8676a175324f14ce9347b93a7adbc2bc/title  ->  {\"value\": \"Web form\"}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.D9093E4BCA0DE174FCE7E68286174CFD.e.6/value  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.D9093E4BCA0DE174FCE7E68286174CFD.e.21/click  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nGET /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.EA8082E1511DC98290D1B66DBB605CA8.e.27/text  ->  {\"value\": \"Received!\"}\nDELETE /session/8676a175324f14ce9347b93a7adbc2bc  ->  {\"value\": null}",
+  "rc": 0
+ },
+ "1dc3cf161202be82037e32f0": {
+  "label": "findall",
+  "lang": "py",
+  "out": "inputs: 6\n  radio gender\n  radio gender\n  text fname\n  text lname\n  checkbox newsletter\n  submit \nemail boxes: 0\nfind_element: NoSuchElementException",
   "rc": 0
  },
  "281beaf8398bb8b26819e010": {
@@ -77,16 +95,34 @@
   "out": "page.pdf starts with %PDF-",
   "rc": 0
  },
+ "54e984066e4f7d76ffed8e03": {
+  "label": "shadow",
+  "lang": "js",
+  "out": "from the page: 0\nfrom the shadow root: checkbox\nxpath in shadow root: invalid argument: invalid locator",
+  "rc": 0
+ },
  "585354cc5f96d91933364e9f": {
   "label": "printpdf",
   "lang": "py",
   "out": "page.pdf starts with %PDF-",
   "rc": 0
  },
+ "5cfb4b591f2f50e81e6c8750": {
+  "label": "shadow",
+  "lang": "py",
+  "out": "from the page: 0\nfrom the shadow root: checkbox\nxpath in shadow root: invalid argument: invalid locator",
+  "rc": 0
+ },
  "62080922edee8e65418e224e": {
   "label": "window",
   "lang": "py",
   "out": "size 1024 x 768\nposition 40, 30\nrect {'height': 768, 'width': 1024, 'x': 40, 'y': 30}",
+  "rc": 0
+ },
+ "649148be6d0d418840c0ff0e": {
+  "label": "findall",
+  "lang": "java",
+  "out": "inputs: 6\n  radio gender\n  radio gender\n  text fname\n  text lname\n  checkbox newsletter\n  submit \nemail boxes: 0\nfindElement: NoSuchElementException",
   "rc": 0
  },
  "6698c67d4818c41a381c318d": {
@@ -105,6 +141,12 @@
   "label": "service",
   "lang": "py",
   "out": "Driver URL: http://localhost:9600\nready: True",
+  "rc": 0
+ },
+ "715f9a1eec2aefdd34b1b92a": {
+  "label": "scope",
+  "lang": "java",
+  "out": "inputs in form: 6\nlinks via //a: 1\nlinks via .//a: 0\nsame element: true",
   "rc": 0
  },
  "73ffe0d6f3fd811a2bce0124": {
@@ -129,6 +171,18 @@
   "label": "wirelog",
   "lang": "py",
   "out": "POST http://localhost:47995/session {'capabilities': {'firstMatch': [{}], 'alwaysMatch': {'browserName': 'chrome', 'pageLoadStrategy': <PageLoadStrategy.normal: 'normal'>, 'goog:chromeOptions': {'extensions': [], 'args': []}}}}\nRemote response: status=200 | data={\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"chrome\",\"browserVersion\":\"153.0.8010.12\",\"chrome\":{\"chromedriverVersion\":\"153.0.8010.12 (971a7443b0c9b0a9b2860529b33331b76077ec62-refs/branch-heads/8010@{#343})\",\"userDataDir\":\"/tmp/org.chromium.Chromium.scoped_dir.xIOqAL\"},\"fedcm:accounts\":true,\"goog:chromeOptions\":{\"debuggerAddress\":\"localhost:36071\"},\"goog:processID\":5976,\"networkConnectionEnabled\":false,\"pageLoadStrategy\":\"normal\",\"platformName\":\"linux\",\"proxy\":{},\"setWindowRect\":true,\"strictFileInteractability\":false,\"timeouts\":{\"implicit\":0,\"pageLoad\":300000,\"script\":30000},\"unhandledPromptBehavior\":\"dismiss and notify\",\"webauthn:extension:cmtgKey\":true,\"webauthn:extension:credBlob\":true,\"webauthn:extension:largeBlob\":true,\"webauthn:extension:minPinLength\":true,\"webauthn:extension:prf\":true,\"webauthn:virtualAuthenticators\":true},\"sessionId\":\"d22f625b78c052911ff513d44ee74914\"}} | headers=HTTPHeaderDict({'Content-Length': '913', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/url {'url': 'https://www.selenium.dev/selenium/web/web-form.html'}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/element {'using': 'css selector', 'value': '[name=\"my-text\"]'}\nRemote response: status=200 | data={\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.0C92C16D926BE0471F7373028EABCFEF.d.73441B1E15E59DD3679B0F54BF11DFB0.e.6\"}} | headers=HTTPHeaderDict({'Content-Length': '125', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/element/f.0C92C16D926BE0471F7373028EABCFEF.d.73441B1E15E59DD3679B0F54BF11DFB0.e.6/value {'text': 'Hi', 'value': ['H', 'i']}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nGET http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/title {}\nRemote response: status=200 | data={\"value\":\"Web form\"} | headers=HTTPHeaderDict({'Content-Length': '20', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\ntitle is Web form\nDELETE http://localhost:47995/session/d22f625b78c052911ff513d44ee74914 {}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request",
+  "rc": 0
+ },
+ "8edaf123a6dc8a93b8dc8976": {
+  "label": "active",
+  "lang": "js",
+  "out": "at start: body\nafter click: my-text\nafter Tab: my-password",
+  "rc": 0
+ },
+ "92e5d7f1dc5a0913077d7e03": {
+  "label": "findall",
+  "lang": "js",
+  "out": "inputs: 6\n  radio gender\n  radio gender\n  text fname\n  text lname\n  checkbox newsletter\n  submit \nemail boxes: 0\nfindElement: NoSuchElementError",
   "rc": 0
  },
  "96dcfcffa27cab4e5e37fd2b": {
@@ -191,6 +245,12 @@
   "out": "below last name label -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nabove lname -> <input class=\"information\" type=\"text\" id=\"fname\" name=\"fname\" value=\"Jane\">\nright of Male -> <input type=\"radio\" name=\"gender\" value=\"f\">\nbelow fname and above the checkbox -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nnear Newsletter label -> <input type=\"submit\" value=\"Submit\">\nleft of password -> <input type=\"text\" name=\"username\" id=\"username-field\" class=\"login-form-field\" placeholder=\"Username\">",
   "rc": 0
  },
+ "c149c3517fdf31764690f9b2": {
+  "label": "active",
+  "lang": "py",
+  "out": "at start: body\nafter click: my-text\nafter Tab: my-password",
+  "rc": 0
+ },
  "c8b8e97947cde3d0a97d1df8": {
   "label": "service",
   "lang": "java",
@@ -215,6 +275,12 @@
   "out": "1 Web form\n2 XHTML Test Page at https://www.selenium.dev/selenium/web/xhtmlTest.html\n3 Web form\n4 XHTML Test Page\n5 XHTML Test Page",
   "rc": 0
  },
+ "e31fe61ee43d461b0445f3ee": {
+  "label": "shadow",
+  "lang": "java",
+  "out": "from the page: 0\nfrom the shadow root: checkbox\nxpath in shadow root: invalid argument: invalid locator",
+  "rc": 0
+ },
  "e394d701d106bde6d0f15a5c": {
   "label": "eight",
   "lang": "java",
@@ -237,6 +303,12 @@
   "label": "timeouts",
   "lang": "js",
   "out": "{ implicit: 0, pageLoad: 300000, script: 30000 }\nCaught ScriptTimeoutError",
+  "rc": 0
+ },
+ "e6b7141d676c2f15fe6e3b6d": {
+  "label": "scope",
+  "lang": "py",
+  "out": "inputs in form: 6\nlinks via //a: 1\nlinks via .//a: 0\nsame element: True",
   "rc": 0
  },
  "e6fa3c173fd9b255c0118ac7": {

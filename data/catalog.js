@@ -4388,6 +4388,21 @@ function seModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "finding-elements", title: "Finding elements: one, many, scoped and in shadow DOM", emoji: "3.2", page: "content/selenium/finding-elements.html",
+        summary: "Singular and plural finds, scoped searches and the XPath trap, shadow DOM and the active element.",
+        keywords: ["find element", "find elements", "search context", "shadow dom", "shadow root", "active element", "xpath scope", "nosuchelement"],
+        minutes: 40, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "oneormany", title: "Find one or find many", emoji: "", group: "Lesson", keywords: ["find element", "find elements", "first match", "empty list", "NoSuchElementException", "list", "loop", "count elements"] },
+        { id: "scope", title: "Search inside an element", emoji: "", group: "Lesson", keywords: ["search context", "find from element", "scope", "subset of the DOM", "xpath dot", "relative xpath", "optimized locator", "nested find"] },
+        { id: "shadow", title: "The shadow DOM", emoji: "", group: "Lesson", keywords: ["shadow dom", "shadow root", "shadow host", "getShadowRoot", "shadow_root", "web components", "custom element", "invalid locator"] },
+        { id: "activeel", title: "The active element", emoji: "", group: "Lesson", keywords: ["active element", "focus", "switchTo activeElement", "keyboard", "tab order", "accessibility", "Keys.TAB"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

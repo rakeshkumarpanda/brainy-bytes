@@ -437,3 +437,72 @@ const SEZ = (() => {
     }
   });
 })();
+
+(() => {
+  const { def, D, esc } = CVZ;
+  const { rr, wrap, fit } = SEZ;
+
+  /* ---------------------------------------------------------------- Chapter 3.2: where a search looks */
+  /* the rules shown here were checked against Chrome 153: CSS from an element only looks inside it, an XPath that
+     starts with // always starts at the document, .// starts at the element, nothing crosses into a shadow root
+     except a search from that shadow root, and Chrome rejects XPath and tag name inside a shadow root. */
+  const T = [
+    ['body', 0, 'doc'], ['h2', 1, 'doc'], ['form', 1, 'doc'], ['input radio', 2, 'form', 'input'], ['input radio', 2, 'form', 'input'],
+    ['input #fname', 2, 'form', 'input'], ['input #lname', 2, 'form', 'input'], ['input checkbox', 2, 'form', 'input'], ['input submit', 2, 'form', 'input'],
+    ['p', 1, 'doc'], ['a', 2, 'doc', 'a'], ['custom-checkbox-element', 1, 'doc'], ['#shadow-root', 2, 'host'], ['div', 3, 'shadow'], ['input checkbox', 4, 'shadow', 'input']
+  ];
+  const LOC = {
+    css_input: ['css selector', 'input'], xp_a: ['xpath', '//a'], xp_dot: ['xpath', './/input'], css_box: ['css selector', "input[type='checkbox']"]
+  };
+  function search(ctx, loc) {
+    const [using, v] = LOC[loc];
+    if (ctx === 'shadow' && using === 'xpath') return { err: 'invalid argument: invalid locator. Chrome rejected XPath and tag name inside a shadow root when this page was built. Use a CSS selector there.' };
+    const inScope = n => ctx === 'shadow' ? n[2] === 'shadow' : ctx === 'form' ? (using === 'xpath' && !v.startsWith('.') ? n[2] !== 'shadow' && n[2] !== 'host' : n[2] === 'form') : n[2] !== 'shadow' && n[2] !== 'host';
+    const want = n => loc === 'css_input' || loc === 'xp_dot' ? n[3] === 'input' : loc === 'xp_a' ? n[3] === 'a' : n[3] === 'input' && n[0] === 'input checkbox';
+    const visit = T.map((n, i) => i).filter(i => inScope(T[i]));
+    return { visit, hits: visit.filter(i => want(T[i])) };
+  }
+  def('se-scope', {
+    title: 'Where does a search look?',
+    sub: 'A small page made of the locators example plus a shadow root. Pick where you call find from and a locator, then watch which elements the browser checks.',
+    W: 660, H: 470,
+    params: [
+      { k: 'ctx', label: 'Search from', type: 'select', v: 'form', opts: [['doc', 'the driver (whole page)'], ['form', 'the form element'], ['shadow', 'the shadow root']] },
+      { k: 'loc', label: 'Locator', type: 'select', v: 'css_input', opts: [['css_input', 'css selector input'], ['xp_a', 'xpath //a'], ['xp_dot', 'xpath .//input'], ['css_box', "css selector input[type='checkbox']"]] }
+    ],
+    tips: [
+      { t: 'From the form, css input finds the six inputs of the form and nothing else.', set: { ctx: 'form', loc: 'css_input' }, play: true },
+      { t: 'From the form, xpath //a still finds the link outside the form. // means start at the top of the document, whatever you call it on.', set: { ctx: 'form', loc: 'xp_a' }, play: true },
+      { t: 'From the whole page, look for the checkbox. Only the one in the form is found: the search never enters the shadow root.', set: { ctx: 'doc', loc: 'css_box' }, play: true },
+      { t: 'Now search from the shadow root itself. The hidden checkbox is found. Switch to an XPath and Chrome refuses it.', set: { ctx: 'shadow', loc: 'css_box' }, play: true }
+    ],
+    steps: z => { const r = search(z.p.ctx, z.p.loc); return r.err ? 0 : r.visit.length; },
+    startAtZero: true,
+    speed: () => 380,
+    draw(z) {
+      const g = z.g, c = z.col, r = search(z.p.ctx, z.p.loc), s = z.step;
+      const y0 = 14, h = 24;
+      const seen = r.err ? [] : r.visit.slice(0, s);
+      T.forEach((n, i) => {
+        const y = y0 + i * h, x = 24 + n[1] * 22;
+        const inSc = !r.err && r.visit.includes(i), hit = !r.err && r.hits.includes(i) && seen.includes(i), cur = !r.err && r.visit[s - 1] === i;
+        const shadowBox = n[2] === 'shadow' || n[2] === 'host';
+        if (shadowBox) rr(g, x - 8, y - 1, z.W - x - 16, h - 4, 6, { stroke: c.purple, dash: [4, 3], w: 1.2 });
+        if (hit) rr(g, x - 6, y, z.W - x - 20, h - 6, 6, { fill: c.cv });
+        else if (cur) rr(g, x - 6, y, z.W - x - 20, h - 6, 6, { fill: c.bg, stroke: c.cv, w: 2 });
+        D.text(g, '<' + n[0] + '>', x, y + 13, { mono: true, s: 12.5, b: hit || cur, c: hit ? '#fff' : inSc ? c.ink : c.ink2 });
+        if (!inSc && !r.err) D.text(g, 'not searched', z.W - 30, y + 13, { a: 'right', s: 11, c: c.ink2 });
+      });
+      const yb = y0 + T.length * h + 8;
+      rr(g, 16, yb, z.W - 32, z.H - yb - 10, 10, { fill: c.bg, stroke: r.err ? c.red : c.line });
+      const L = LOC[z.p.loc];
+      if (r.err) wrap(g, r.err, 30, yb + 24, z.W - 60, { s: 13.5, b: true, c: c.red, lh: 19 });
+      else {
+        const found = r.hits.filter(i => seen.includes(i)).length;
+        D.text(g, `${L[0]} "${L[1]}" from ${{ doc: 'the driver', form: 'the form', shadow: 'the shadow root' }[z.p.ctx]}`, 30, yb + 24, { b: true, s: 13.5, c: c.ink });
+        D.text(g, s >= r.visit.length ? `Done: find elements returns ${r.hits.length}, find element returns ${r.hits.length ? 'the first' : 'no such element'}.` : `Checked ${s} of ${r.visit.length} elements, ${found} matched so far.`, 30, yb + 46, { s: 13, c: c.ink2 });
+      }
+      return r.err ? 'Chrome rejects this locator in a shadow root.' : `<b>${r.hits.length}</b> match${r.hits.length === 1 ? '' : 'es'} in scope.`;
+    }
+  });
+})();
