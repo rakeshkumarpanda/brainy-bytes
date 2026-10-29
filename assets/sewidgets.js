@@ -1164,4 +1164,53 @@ const SEZ = (() => {
     }
   });
 
+  def('se-bidi', {
+    title: 'Asking again and again, or being told',
+    sub: 'The page logs three things over six seconds. Compare a test that polls over HTTP with a test that listens over the BiDi WebSocket.',
+    W: 660, H: 380,
+    params: [
+      { k: 'poll', label: 'HTTP test asks every (s)', type: 'range', v: 2, min: 1, max: 3, step: 1 }
+    ],
+    tips: [
+      { t: 'Ask every second. The HTTP test learns sooner, but it sends six requests and most come back empty.', set: { poll: 1 }, play: true },
+      { t: 'Ask every 3 seconds. Fewer requests, but the error at 2.4 s stays unseen until 3 s.', set: { poll: 3 }, play: true },
+      { t: 'Look at the BiDi lane at every step. Each event arrives at the moment it happens, with no request from the test.', set: { poll: 2 }, play: true }
+    ],
+    steps: () => 6,
+    startAtZero: true,
+    speed: () => 1400,
+    draw(z) {
+      const g = z.g, c = z.col, t = z.step, P = +z.p.poll;
+      const ev = [{ at: 0.7, k: 'console info' }, { at: 2.4, k: 'console error' }, { at: 4.2, k: 'JS error' }];
+      const x0 = 150, x1 = z.W - 56, X = s => x0 + (x1 - x0) * s / 6;
+      const lane = (y, name, sub2) => { rr(g, 20, y, z.W - 40, 70, 10, { fill: c.surf, stroke: c.line }); D.text(g, name, 32, y + 28, { s: 13, b: true, c: c.ink }); D.text(g, sub2, 32, y + 48, { s: 10.5, c: c.ink2 }); };
+      D.text(g, 'page', 32, 40, { s: 13, b: true, c: c.ink });
+      lane(70, 'HTTP polling', 'test asks, driver answers');
+      lane(160, 'BiDi events', 'browser pushes on a WebSocket');
+      for (let s = 0; s <= 6; s++) { D.line(g, X(s), 26, X(s), 250, c.line, 1); D.text(g, s + ' s', X(s), 268, { a: 'center', s: 10.5, c: c.ink2 }); }
+      D.line(g, X(t), 22, X(t), 254, c.cv, 2.5);
+      ev.forEach(e => { const on = e.at <= t; rr(g, X(e.at) - 40, 28, 80, 20, 5, { fill: on ? c.orange : c.bg, stroke: c.line }); D.text(g, e.k, X(e.at), 42, { a: 'center', s: 10, b: true, c: on ? '#fff' : c.ink2 }); });
+      let reqs = 0, seenPoll = 0, waitSum = 0;
+      for (let s = P; s <= 6; s += P) {
+        if (s > t) break;
+        reqs++;
+        const got = ev.filter(e => e.at <= s && e.at > s - P);
+        seenPoll += got.length;
+        got.forEach(e => { waitSum += s - e.at; });
+        rr(g, X(s) - 30, 86, 60, 18, 5, { fill: got.length ? c.green : c.bg, stroke: c.line });
+        D.text(g, got.length ? got.length + ' new' : 'empty', X(s), 99, { a: 'center', s: 10, b: true, c: got.length ? '#fff' : c.ink2 });
+      }
+      let seenBidi = 0;
+      ev.forEach(e => { if (e.at <= t) { seenBidi++; rr(g, X(e.at) - 30, 176, 60, 18, 5, { fill: c.green }); D.text(g, 'event', X(e.at), 189, { a: 'center', s: 10, b: true, c: '#fff' }); } });
+      const happened = ev.filter(e => e.at <= t).length;
+      const msg = t === 0
+        ? `Time 0. Both tests have opened the page. The HTTP test will ask every ${P} s. The BiDi test has subscribed to log events once and now waits.`
+        : `After ${t} s the page has logged ${happened} thing${happened === 1 ? '' : 's'}. The HTTP test sent ${reqs} request${reqs === 1 ? '' : 's'} and knows about ${seenPoll}. The BiDi test sent no request and knows about ${seenBidi}.`
+          + (t === 6 ? ` Polling saw each event ${(waitSum / 3).toFixed(1)} s late on average. BiDi saw each one when it happened.` : '');
+      rr(g, 20, z.H - 96, z.W - 40, 80, 10, { fill: c.bg, stroke: c.line });
+      wrap(g, msg, 34, z.H - 70, z.W - 68, { s: 13.5, c: c.ink, lh: 19 });
+      return `HTTP requests: <b>${reqs}</b>, events known by polling: <b>${seenPoll}</b>, by BiDi: <b>${seenBidi}</b>.`;
+    }
+  });
+
 })();

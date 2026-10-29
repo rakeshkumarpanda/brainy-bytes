@@ -77,6 +77,12 @@
   "out": "alert: cheese\nconfirm: Are you sure?\npage shows: Selenium\nslow: Slow\nleft open: unexpected alert open: {Alert text : cheese}",
   "rc": 0
  },
+ "174c8d5766b3b882f92c29c0": {
+  "label": "bidilog",
+  "lang": "java",
+  "out": "console info: Hello, world!\nconsole error: I am console error\npage error: Error: Not working",
+  "rc": 0
+ },
  "17c1fc04639dc49d5f1f2bf9": {
   "label": "rawhttp",
   "lang": "py",
@@ -227,6 +233,12 @@
   "out": "ready: True, Selenium Grid ready.\nnodes: 1, max sessions: 2\nslot: firefox\nslot: MicrosoftEdge\nslot: MicrosoftEdge\nslot: firefox\nslot: chrome\nslot: chrome",
   "rc": 0
  },
+ "489317d10c27e71ca938c9f0": {
+  "label": "graphql",
+  "lang": "js",
+  "out": "idle: {\"nodeCount\":1,\"totalSlots\":6,\"maxSession\":2,\"sessionCount\":0,\"sessionQueueSize\":0}\nbusy: {\"nodeCount\":1,\"totalSlots\":6,\"maxSession\":2,\"sessionCount\":1,\"sessionQueueSize\":0}\nnames: [\"graphql demo\"]",
+  "rc": 0
+ },
  "494c184918c253b57f6c385a": {
   "label": "hello",
   "lang": "js",
@@ -303,6 +315,12 @@
   "label": "pom",
   "lang": "js",
   "out": "\n\n  Web form with page objects\n    ✔ shows Received! after submitting text (523ms)\n    ✔ has only one disabled field (294ms)\n    ✔ refuses the wrong page (80ms)\n\n\n  3 passing (3s)",
+  "rc": 0
+ },
+ "5cbfa23652f1c482e1cedc93": {
+  "label": "cdp",
+  "lang": "js",
+  "out": "protocol 1.3, Chrome/153.0.8010.12\ntime zone before: UTC\ntime zone after: Asia/Calcutta",
   "rc": 0
  },
  "5cfb4b591f2f50e81e6c8750": {
@@ -413,6 +431,12 @@
   "out": "windows at start: 1\nnew window: This page has iframes\nback to: XHTML Test Page\nnew tab: We Arrive Here, windows: 2",
   "rc": 0
  },
+ "720f2ebafa51fd3ed6852d6d": {
+  "label": "cdp",
+  "lang": "java",
+  "out": "protocol 1.3, Chrome/153.0.8010.12\ntime zone before: UTC\ntime zone after: Asia/Calcutta",
+  "rc": 0
+ },
  "73ffe0d6f3fd811a2bce0124": {
   "label": "shots",
   "lang": "java",
@@ -423,6 +447,12 @@
   "label": "caps",
   "lang": "js",
   "out": "browserName: chrome\nbrowserVersion: 153.0.8010.12\nplatformName: linux\npageLoadStrategy: eager\nunhandledPromptBehavior: dismiss and notify",
+  "rc": 0
+ },
+ "78171b1de761d64cc8470b38": {
+  "label": "cdp",
+  "lang": "py",
+  "out": "protocol 1.3, Chrome/153.0.8010.12\ntime zone before: UTC\ntime zone after: Asia/Calcutta",
   "rc": 0
  },
  "7997d649dff59efef212712b": {
@@ -485,6 +515,12 @@
   "out": "found redbox after about 1 s",
   "rc": 0
  },
+ "8881248e81fc1927b606771b": {
+  "label": "graphql",
+  "lang": "java",
+  "out": "idle: {nodeCount=1, totalSlots=6, maxSession=2, sessionCount=0, sessionQueueSize=0}\nbusy: {nodeCount=1, totalSlots=6, maxSession=2, sessionCount=1, sessionQueueSize=0}\nnames: [graphql demo]",
+  "rc": 0
+ },
  "896f06a3338e0e1ef86d475f": {
   "label": "frames",
   "lang": "js",
@@ -531,6 +567,12 @@
   "label": "windows",
   "lang": "java",
   "out": "windows at start: 1\nnew window: This page has iframes\nback to: XHTML Test Page\nnew tab: We Arrive Here, windows: 2",
+  "rc": 0
+ },
+ "904d07bbca206efb0ba1fb20": {
+  "label": "bidilog",
+  "lang": "js",
+  "out": "console info: Hello, world!\nconsole error: I am console error\npage error: Error: Not working",
   "rc": 0
  },
  "907ac1fc49d8191111dad540": {
@@ -633,6 +675,12 @@
   "label": "suite",
   "lang": "java",
   "out": "╷\n├─ JUnit Platform Suite ✔\n├─ JUnit Jupiter ✔\n│  └─ WebFormTest ✔\n│     ├─ submittingShowsReceived() ✔\n│     └─ pageHasTheRightTitle() ✔\n└─ JUnit Vintage ✔\n\nTest run finished after 2285 ms\n[         4 containers found      ]\n[         0 containers skipped    ]\n[         4 containers started    ]\n[         0 containers aborted    ]\n[         4 containers successful ]\n[         0 containers failed     ]\n[         2 tests found           ]\n[         0 tests skipped         ]\n[         2 tests started         ]\n[         0 tests aborted         ]\n[         2 tests successful      ]\n[         0 tests failed          ]",
+  "rc": 0
+ },
+ "aec044f1d802e0f62553f9f9": {
+  "label": "graphql",
+  "lang": "py",
+  "out": "idle: {'nodeCount': 1, 'totalSlots': 6, 'maxSession': 2, 'sessionCount': 0, 'sessionQueueSize': 0}\nbusy: {'nodeCount': 1, 'totalSlots': 6, 'maxSession': 2, 'sessionCount': 1, 'sessionQueueSize': 0}\nnames: ['graphql demo']",
   "rc": 0
  },
  "af214618b5b694f27e36a46b": {
@@ -945,6 +993,12 @@
   "label": "stale",
   "lang": "java",
   "out": "1. after refresh: StaleElementReferenceException\n   fixed: found again\n2. outside its frame: NoSuchElementException\n   fixed: email\n3. after leaving the page: NoSuchElementException",
+  "rc": 0
+ },
+ "f8c31cfdc28099a0678eb48f": {
+  "label": "bidilog",
+  "lang": "py",
+  "out": "console info: Hello, world!\nconsole error: I am console error\npage error: Error: Not working",
   "rc": 0
  },
  "fc298790969c8d78e776e164": {

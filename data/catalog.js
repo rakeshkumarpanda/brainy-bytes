@@ -4551,6 +4551,20 @@ function seModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "bidi-cdp", title: "WebDriver BiDi, CDP and Grid features", emoji: "6.2", page: "content/selenium/bidi-cdp.html",
+        summary: "WebDriver BiDi events, Chrome DevTools Protocol commands and Grid GraphQL.",
+        keywords: ["bidi", "webdriver bidi", "cdp", "devtools", "websocket", "events", "log inspector", "graphql", "grid endpoints", "drain"],
+        minutes: 50, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "bidi", title: "WebDriver BiDi: the browser talks back", emoji: "", group: "Lesson", keywords: ["bidi", "webdriver bidi", "websocket", "events", "console log", "javascript error", "log inspector", "bidirectional"] },
+        { id: "cdp", title: "The Chrome DevTools Protocol", emoji: "", group: "Lesson", keywords: ["cdp", "chrome devtools protocol", "devtools", "execute cdp command", "emulation", "time zone", "browser version", "chromium"] },
+        { id: "gridplus", title: "Grid features: GraphQL and endpoints", emoji: "", group: "Lesson", keywords: ["graphql", "grid endpoints", "drain node", "remove node", "status", "session queue size", "observability"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
