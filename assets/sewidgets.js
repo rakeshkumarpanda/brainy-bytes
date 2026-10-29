@@ -662,3 +662,81 @@ const SEZ = (() => {
     }
   });
 })();
+
+(() => {
+  const { def, D, esc } = CVZ;
+  const { rr, wrap, fit } = SEZ;
+
+  /* ---------------------------------------------------------------- Chapter 4.2: the current browsing context */
+  /* WebDriver sends every command to one browsing context: one window or tab, and inside it the top document or a
+     frame. Switching moves that pointer. The plans below use the Selenium test pages of this chapter. */
+  const PLANS = {
+    tabs: [
+      ['', 'win1', 'top', 'The session starts with one window. Commands go to its top document.'],
+      ['click "Create a new anonymous window"', 'win1', 'top', 'A second window opens and the browser shows it, but WebDriver still points at the first one.', 'win2'],
+      ['switchTo().window(newHandle)', 'win2', 'top', 'Now commands go to the new window. getTitle() returns its title.', 'win2'],
+      ['close()', 'gone', 'top', 'close() shuts the current window. The pointer now points at a window that no longer exists.', 'closed'],
+      ['getTitle()', 'gone', 'top', 'Error: no such window. You must switch to a window that still exists.', 'closed', true],
+      ['switchTo().window(original)', 'win1', 'top', 'Back on the first window. Commands work again.', 'closed']
+    ],
+    frames: [
+      ['', 'win1', 'top', 'Commands go to the top document of iframes.html.'],
+      ['findElement(By.id("email"))', 'win1', 'top', 'Error: no such element. The email box lives inside the iframe, and the top document cannot see into it.', null, true],
+      ['switchTo().frame("iframe1")', 'win1', 'frame', 'Switch by id or name. Commands now go to the document inside the iframe.'],
+      ['findElement(By.id("email"))', 'win1', 'frame', 'Found. The search ran inside the frame.'],
+      ['switchTo().defaultContent()', 'win1', 'top', 'Back to the top document. The heading outside the frame is reachable again.']
+    ],
+    nested: [
+      ['', 'win1', 'top', 'A made up page with a frame, and a second frame inside that one.'],
+      ['switchTo().frame("outer")', 'win1', 'frame', 'Down one level, into the outer frame.'],
+      ['switchTo().frame(0)', 'win1', 'inner', 'Down another level by index: the first frame inside the current document.'],
+      ['switchTo().parentFrame()', 'win1', 'frame', 'Up one level only, back to the outer frame.'],
+      ['switchTo().defaultContent()', 'win1', 'top', 'All the way up to the top document, whatever the depth.']
+    ]
+  };
+  def('se-context', {
+    title: 'Where do my commands go?',
+    sub: 'WebDriver talks to one window and one document at a time. Step through a plan and watch the pointer move.',
+    W: 660, H: 340,
+    params: [{ k: 'plan', label: 'Plan', type: 'select', v: 'tabs', opts: [['tabs', 'A link opens a new window'], ['frames', 'An element inside an iframe'], ['nested', 'A frame inside a frame']] }],
+    tips: [
+      { t: 'In the window plan, notice step 2: the browser shows the new window, but WebDriver has not moved.', set: { plan: 'tabs' }, play: true },
+      { t: 'In the iframe plan, the first find fails for a reason that has nothing to do with waiting.', set: { plan: 'frames' }, play: true },
+      { t: 'parentFrame goes up one level, defaultContent goes to the top.', set: { plan: 'nested' }, play: true }
+    ],
+    steps: z => PLANS[z.p.plan].length - 1,
+    startAtZero: true,
+    speed: () => 1300,
+    draw(z) {
+      const g = z.g, c = z.col, P = PLANS[z.p.plan], s = z.step, cur = P[s];
+      const nested = z.p.plan === 'nested', two = z.p.plan === 'tabs';
+      const win2 = two && P.slice(0, s + 1).some(x => x[4] === 'win2') && !P.slice(0, s + 1).some(x => x[4] === 'closed');
+      const wins = [['win1', two ? 'xhtmlTest.html' : nested ? 'nested frames (made up page)' : 'iframes.html']];
+      if (win2) wins.push(['win2', 'iframes.html (new window)']);
+      const W = two ? 300 : 420, x0 = 24;
+      wins.forEach((w, i) => {
+        const x = x0 + i * (W + 20), y = 20, h = 200, on = cur[1] === w[0];
+        rr(g, x, y, W, h, 12, { fill: c.surf, stroke: on && cur[2] === 'top' ? c.cv : c.line, w: on && cur[2] === 'top' ? 3 : 1.5 });
+        rr(g, x, y, W, 26, 12, { fill: c.bg });
+        D.text(g, w[1], x + 12, y + 18, { s: 12, b: true, mono: true, c: c.ink2 });
+        if (!two || w[0] === 'win1') {
+          if (!two) {
+            const fx = x + 30, fy = y + 50, fw = W - 60, fh = 130;
+            const onF = on && (cur[2] === 'frame' || cur[2] === 'inner');
+            rr(g, fx, fy, fw, fh, 10, { fill: c.surf, stroke: cur[2] === 'frame' && on ? c.cv : c.purple, w: cur[2] === 'frame' && on ? 3 : 1.5, dash: [5, 3] });
+            D.text(g, nested ? 'iframe name="outer"' : 'iframe id="iframe1"', fx + 10, fy + 18, { s: 11.5, mono: true, c: c.purple });
+            if (nested) {
+              rr(g, fx + 30, fy + 34, fw - 60, 80, 10, { fill: c.surf, stroke: cur[2] === 'inner' && on ? c.cv : c.purple, w: cur[2] === 'inner' && on ? 3 : 1.5, dash: [5, 3] });
+              D.text(g, 'frame 0 inside it', fx + 40, fy + 52, { s: 11.5, mono: true, c: c.purple });
+            } else D.text(g, '<input id="email"> lives here', fx + 10, fy + 60, { s: 12, mono: true, c: onF ? c.ink : c.ink2 });
+          } else D.text(g, '<a target="_blank">Create a new anonymous window</a>', x + 12, y + 70, { s: fit(g, '<a target="_blank">Create a new anonymous window</a>', W - 24, 11.5, { mono: true }), mono: true, c: c.ink2 });
+        }
+      });
+      if (cur[1] === 'gone') { rr(g, x0 + W + 20, 20, W, 200, 12, { stroke: c.red, dash: [6, 4], w: 2 }); D.text(g, 'closed window', x0 + W + 20 + W / 2, 125, { a: 'center', b: true, s: 14, c: c.red }); }
+      D.text(g, cur[0] ? 'Command: ' + cur[0] : 'Start', 24, 250, { mono: true, b: true, s: 13, c: c.cv });
+      rr(g, 20, 262, z.W - 40, 66, 10, { fill: c.bg, stroke: cur[5] ? c.red : c.line, w: 2 });
+      wrap(g, cur[3], 34, 286, z.W - 68, { s: 13.5, c: cur[5] ? c.red : c.ink, lh: 19 });
+      return `Commands now go to: <b>${cur[1] === 'gone' ? 'a closed window' : cur[2] === 'top' ? 'the top document' : cur[2] === 'frame' ? 'the frame' : 'the inner frame'}</b>.`;
+    }
+  });
+})();

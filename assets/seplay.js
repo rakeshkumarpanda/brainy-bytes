@@ -71,11 +71,11 @@ const SEPLAY = (() => {
       html: `${CSS}<h1 id="iframe_page_heading">This page has iframes</h1><iframe id="iframe1" name="iframe1-name" style="width:100%;height:150px;border:1px solid #999"></iframe>`,
       init(sim, doc) {
         const f = doc.getElementById('iframe1');
-        f.srcdoc = `${CSS}<h2>Inside the frame</h2><label>Email <input type="text" name="email_input" id="email"></label><button id="submitButton">Sign in</button><p id="out"></p>`;
-        f.addEventListener('load', () => {
-          const d = f.contentDocument;
-          d.getElementById('submitButton').addEventListener('click', () => { d.getElementById('out').textContent = 'Signed in as ' + d.getElementById('email').value; });
-        });
+        const d = f.contentDocument;
+        d.open();
+        d.write(`<!doctype html><html><body>${CSS}<h2>Inside the frame</h2><label>Email <input type="text" name="email_input" id="email"></label><button id="submitButton">Sign in</button><p id="out"></p></body></html>`);
+        d.close();
+        d.getElementById('submitButton').addEventListener('click', () => { d.getElementById('out').textContent = 'Signed in as ' + d.getElementById('email').value; });
       }
     },
     'index.html': { title: 'Index of Available Pages', html: `${CSS}<h1>Index of Available Pages</h1><ul><li><a href="web-form.html">web-form.html</a></li><li><a href="dynamic.html">dynamic.html</a></li><li><a href="alerts.html">alerts.html</a></li><li><a href="iframes.html">iframes.html</a></li></ul>` }

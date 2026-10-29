@@ -4435,6 +4435,20 @@ function seModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "windows-frames-alerts", title: "Windows, tabs, frames and alerts", emoji: "4.2", page: "content/selenium/windows-frames-alerts.html",
+        summary: "Switching windows and tabs, working inside iframes, and handling alerts, confirms and prompts.",
+        keywords: ["windows", "tabs", "window handle", "iframe", "frames", "alerts", "confirm", "prompt", "switch to", "unhandledpromptbehavior"],
+        minutes: 50, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "windows", title: "Windows and tabs", emoji: "", group: "Lesson", keywords: ["window handle", "tabs", "switch to window", "new window", "new tab", "close", "no such window", "getWindowHandles", "target blank"] },
+        { id: "frames", title: "Frames and iframes", emoji: "", group: "Lesson", keywords: ["iframe", "frame", "switch to frame", "default content", "parent frame", "frame index", "frame name", "nested frames"] },
+        { id: "alerts", title: "Alerts, confirms and prompts", emoji: "", group: "Lesson", keywords: ["alert", "confirm", "prompt", "accept", "dismiss", "switch to alert", "alert is present", "unexpected alert open", "unhandledPromptBehavior", "beforeunload"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

@@ -41,6 +41,12 @@
   "out": "className -> <input> Jane \ncss -> <input> Jane \nid -> <input> Doe \nname -> <input> 1 \nlinkText -> <a> null Selenium Official Page\npartialLinkText -> <a> null Selenium Official Page\ntagName -> <a> null Selenium Official Page\nxpath -> <input> f",
   "rc": 0
  },
+ "13a338f962576956f37d7d55": {
+  "label": "alerts",
+  "lang": "js",
+  "out": "alert: cheese\nconfirm: Are you sure?\npage shows: Selenium\nslow: Slow\nleft open: unexpected alert open: {Alert text : cheese}",
+  "rc": 0
+ },
  "17c1fc04639dc49d5f1f2bf9": {
   "label": "rawhttp",
   "lang": "py",
@@ -63,6 +69,12 @@
   "label": "conditions",
   "lang": "java",
   "out": "present: box0\nvisible: true\nTimeoutException: Expected condition failed: the second box never came",
+  "rc": 0
+ },
+ "20ca7f53321b5abb1eaa2099": {
+  "label": "windows",
+  "lang": "js",
+  "out": "windows at start: 1\nnew window: This page has iframes\nback to: XHTML Test Page\nnew tab: We Arrive Here, windows: 2",
   "rc": 0
  },
  "281beaf8398bb8b26819e010": {
@@ -99,6 +111,12 @@
   "label": "interacterr",
   "lang": "py",
   "out": "type into disabled: ElementNotInteractableException, element not interactable\nclear readonly: InvalidElementStateException, invalid element state\nclick under banner: ElementClickInterceptedException, element click intercepted",
+  "rc": 0
+ },
+ "41fa548a2acbf3aace5a9c39": {
+  "label": "alerts",
+  "lang": "py",
+  "out": "alert: cheese\nconfirm: Are you sure?\npage shows: Selenium\nslow: Slow\nleft open: unexpected alert open: {Alert text : cheese}",
   "rc": 0
  },
  "4219ba29387fbbbc334796c8": {
@@ -215,6 +233,12 @@
   "out": "inputs in form: 6\nlinks via //a: 1\nlinks via .//a: 0\nsame element: true",
   "rc": 0
  },
+ "7201392c56aa1715ac865dbd": {
+  "label": "windows",
+  "lang": "py",
+  "out": "windows at start: 1\nnew window: This page has iframes\nback to: XHTML Test Page\nnew tab: We Arrive Here, windows: 2",
+  "rc": 0
+ },
  "73ffe0d6f3fd811a2bce0124": {
   "label": "shots",
   "lang": "java",
@@ -251,6 +275,12 @@
   "out": "found redbox after about 1 s",
   "rc": 0
  },
+ "896f06a3338e0e1ef86d475f": {
+  "label": "frames",
+  "lang": "js",
+  "out": "email boxes seen from the top: 0\nby element: email\nby name: 1 email box\ntitle inside the frame: This page has iframes\nheading: This is the heading",
+  "rc": 0
+ },
  "8a5ebe75fe5d30cd51c32ae1": {
   "label": "tidy",
   "lang": "js",
@@ -273,6 +303,12 @@
   "label": "active",
   "lang": "js",
   "out": "at start: body\nafter click: my-text\nafter Tab: my-password",
+  "rc": 0
+ },
+ "8f675e0b093e8ee370f0e02b": {
+  "label": "windows",
+  "lang": "java",
+  "out": "windows at start: 1\nnew window: This page has iframes\nback to: XHTML Test Page\nnew tab: We Arrive Here, windows: 2",
   "rc": 0
  },
  "907ac1fc49d8191111dad540": {
@@ -377,6 +413,12 @@
   "out": "CLASS_NAME -> <input> Jane \nCSS_SELECTOR -> <input> Jane \nID -> <input> Doe \nNAME -> <input> 1 \nLINK_TEXT -> <a> None Selenium Official Page\nPARTIAL_LINK_TEXT -> <a> None Selenium Official Page\nTAG_NAME -> <a> None Selenium Official Page\nXPATH -> <input> f",
   "rc": 0
  },
+ "b52b0ba04b1a3414d82c6d95": {
+  "label": "frames",
+  "lang": "py",
+  "out": "email boxes seen from the top: 0\nby element: email\nby name: 1 email box\ntitle inside the frame: This page has iframes\nheading: This is the heading",
+  "rc": 0
+ },
  "b73cc4b128da5f59a4d1ba73": {
   "label": "hello",
   "lang": "py",
@@ -387,6 +429,12 @@
   "label": "conditions",
   "lang": "py",
   "out": "present: box0\nvisible: True\nTimeoutException: the second box never came",
+  "rc": 0
+ },
+ "bad11f1c18e84628c16a873b": {
+  "label": "frames",
+  "lang": "java",
+  "out": "email boxes seen from the top: 0\nby element: email\nby name: 1 email box\ntitle inside the frame: This page has iframes\nheading: This is the heading",
   "rc": 0
  },
  "bff43ce7c3b5707bdf6f2780": {
@@ -531,6 +579,12 @@
   "label": "rawhttp",
   "lang": "js",
   "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/timeouts  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/url  ->  {\"value\":null}\nGET /session/fe3fd9b77d510e3774c3e96a1d79dfa7/title  ->  {\"value\":\"Web form\"}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.FFD99782F6866C71F9472FF7B365A671.e.6/value  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.FFD99782F6866C71F9472FF7B365A671.e.21/click  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nGET /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.7A3C754C59BC38B27A8501799597EA4E.e.27/text  ->  {\"value\":\"Received!\"}\nDELETE /session/fe3fd9b77d510e3774c3e96a1d79dfa7  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "f158c67091b04830989ff649": {
+  "label": "alerts",
+  "lang": "java",
+  "out": "alert: cheese\nconfirm: Are you sure?\npage shows: Selenium\nslow: Slow\nleft open: unexpected alert open: {Alert text : cheese}",
   "rc": 0
  },
  "f6b01632621a1ec4a7be272f": {
