@@ -1,0 +1,110 @@
+{
+ "17c1fc04639dc49d5f1f2bf9": {
+  "label": "rawhttp",
+  "lang": "py",
+  "out": "POST /session  ->  {\"value\": {\"capabilities\": {\"acceptInsecureCerts\": false, \"browserName...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/timeouts  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/url  ->  {\"value\": null}\nGET /session/8676a175324f14ce9347b93a7adbc2bc/title  ->  {\"value\": \"Web form\"}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.D9093E4BCA0DE174FCE7E68286174CFD.e.6/value  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.D9093E4BCA0DE174FCE7E68286174CFD.e.21/click  ->  {\"value\": null}\nPOST /session/8676a175324f14ce9347b93a7adbc2bc/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.BC5FF324B64207214...\nGET /session/8676a175324f14ce9347b93a7adbc2bc/element/f.BC5FF324B642072145DC3CDEE73ADF5C.d.EA8082E1511DC98290D1B66DBB605CA8.e.27/text  ->  {\"value\": \"Received!\"}\nDELETE /session/8676a175324f14ce9347b93a7adbc2bc  ->  {\"value\": null}",
+  "rc": 0
+ },
+ "30980d07646aa05d16565268": {
+  "label": "hello",
+  "lang": "java",
+  "out": "Title: Web form\nURL: https://www.selenium.dev/selenium/web/web-form.html",
+  "rc": 0
+ },
+ "3926aa70e32e94d70c552a1f": {
+  "label": "rawhttp",
+  "lang": "java",
+  "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/url  ->  {\"value\":null}\nGET /session/95d0fe61737b4d163eb18144987aeb9c/title  ->  {\"value\":\"Web form\"}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.6/value  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.21/click  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nGET /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.E152AD2C20E2F888566D70528E29A501.e.26/text  ->  {\"value\":\"Received!\"}\nDELETE /session/95d0fe61737b4d163eb18144987aeb9c  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "494c184918c253b57f6c385a": {
+  "label": "hello",
+  "lang": "js",
+  "out": "Title: Web form\nURL: https://www.selenium.dev/selenium/web/web-form.html",
+  "rc": 0
+ },
+ "4afd11bdc3ed9efcd4197c47": {
+  "label": "tidy",
+  "lang": "java",
+  "out": "Failed: no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"#no\\-such\\-id\"}\nBrowser closed",
+  "rc": 0
+ },
+ "6698c67d4818c41a381c318d": {
+  "label": "rawhttp",
+  "lang": "js",
+  "out": "Starting ChromeDriver 153.0.8010.12 (971a7443b0c9b0a9b2860529b33331b76077ec62-refs/branch-heads/8010@{#343}) on port 9515\nOnly local connections are allowed.\nPlease see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.\nChromeDriver was started successfully on port 9515.\nPOST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/url  ->  {\"value\":null}\nGET /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/title  ->  {\"value\":\"Web form\"}\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.2AD4390301472F13246...\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element/f.2AD4390301472F13246C70725535C01F.d.F46076912A6B8A194F64435F8B2CD478.e.6/value  ->  {\"value\":null}\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.2AD4390301472F13246...\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element/f.2AD4390301472F13246C70725535C01F.d.F46076912A6B8A194F64435F8B2CD478.e.21/click  ->  {\"value\":null}\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element  ->  {\"value\":{\"error\":\"no such element\",\"message\":\"no such element: Unable...\nGET /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element/undefined/text  ->  {\"value\":{\"error\":\"no such element\",\"message\":\"no such element: the el...\nDELETE /session/4db6cdc5cae25e9b2a4cf2af7f3884b9  ->  {\"value\":null}\n\n[1793238577.255][SEVERE]: CreatePlatformSocket() failed: Address family not supported by protocol (97)\n[1793238578.545][SEVERE]: CreatePlatformSocket() failed: Address family not supported by protocol (97)",
+  "rc": 0
+ },
+ "8a5ebe75fe5d30cd51c32ae1": {
+  "label": "tidy",
+  "lang": "js",
+  "out": "Failed: no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"*[id=\"no-such-id\"]\"}\nBrowser closed",
+  "rc": 0
+ },
+ "8cacf6e645e46969f2b004e2": {
+  "label": "wirelog",
+  "lang": "py",
+  "out": "POST http://localhost:47995/session {'capabilities': {'firstMatch': [{}], 'alwaysMatch': {'browserName': 'chrome', 'pageLoadStrategy': <PageLoadStrategy.normal: 'normal'>, 'goog:chromeOptions': {'extensions': [], 'args': []}}}}\nRemote response: status=200 | data={\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"chrome\",\"browserVersion\":\"153.0.8010.12\",\"chrome\":{\"chromedriverVersion\":\"153.0.8010.12 (971a7443b0c9b0a9b2860529b33331b76077ec62-refs/branch-heads/8010@{#343})\",\"userDataDir\":\"/tmp/org.chromium.Chromium.scoped_dir.xIOqAL\"},\"fedcm:accounts\":true,\"goog:chromeOptions\":{\"debuggerAddress\":\"localhost:36071\"},\"goog:processID\":5976,\"networkConnectionEnabled\":false,\"pageLoadStrategy\":\"normal\",\"platformName\":\"linux\",\"proxy\":{},\"setWindowRect\":true,\"strictFileInteractability\":false,\"timeouts\":{\"implicit\":0,\"pageLoad\":300000,\"script\":30000},\"unhandledPromptBehavior\":\"dismiss and notify\",\"webauthn:extension:cmtgKey\":true,\"webauthn:extension:credBlob\":true,\"webauthn:extension:largeBlob\":true,\"webauthn:extension:minPinLength\":true,\"webauthn:extension:prf\":true,\"webauthn:virtualAuthenticators\":true},\"sessionId\":\"d22f625b78c052911ff513d44ee74914\"}} | headers=HTTPHeaderDict({'Content-Length': '913', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/url {'url': 'https://www.selenium.dev/selenium/web/web-form.html'}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/element {'using': 'css selector', 'value': '[name=\"my-text\"]'}\nRemote response: status=200 | data={\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.0C92C16D926BE0471F7373028EABCFEF.d.73441B1E15E59DD3679B0F54BF11DFB0.e.6\"}} | headers=HTTPHeaderDict({'Content-Length': '125', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/element/f.0C92C16D926BE0471F7373028EABCFEF.d.73441B1E15E59DD3679B0F54BF11DFB0.e.6/value {'text': 'Hi', 'value': ['H', 'i']}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nGET http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/title {}\nRemote response: status=200 | data={\"value\":\"Web form\"} | headers=HTTPHeaderDict({'Content-Length': '20', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\ntitle is Web form\nDELETE http://localhost:47995/session/d22f625b78c052911ff513d44ee74914 {}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request",
+  "rc": 0
+ },
+ "9c18a95c07f3d1b1d6382141": {
+  "label": "eight",
+  "lang": "js",
+  "out": "Title: Web form\nMessage: Received!",
+  "rc": 0
+ },
+ "9c8c6afdec9f2279d98c8f84": {
+  "label": "rawhttp",
+  "lang": "py",
+  "out": "Starting ChromeDriver 153.0.8010.12 (971a7443b0c9b0a9b2860529b33331b76077ec62-refs/branch-heads/8010@{#343}) on port 9515\nOnly local connections are allowed.\nPlease see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.\nChromeDriver was started successfully on port 9515.\nPOST /session  ->  {\"value\": {\"capabilities\": {\"acceptInsecureCerts\": false, \"browserName...\nPOST /session/8f1e987665792411097e043f21437e29/url  ->  {\"value\": null}\nGET /session/8f1e987665792411097e043f21437e29/title  ->  {\"value\": \"Web form\"}\nPOST /session/8f1e987665792411097e043f21437e29/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.EB0F79E3E5AA9B4CA...\nPOST /session/8f1e987665792411097e043f21437e29/element/f.EB0F79E3E5AA9B4CAD3A145B267D8C89.d.245173BD27F487CBCF8611993EB890EE.e.6/value  ->  {\"value\": null}\nPOST /session/8f1e987665792411097e043f21437e29/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.EB0F79E3E5AA9B4CA...\nPOST /session/8f1e987665792411097e043f21437e29/element/f.EB0F79E3E5AA9B4CAD3A145B267D8C89.d.245173BD27F487CBCF8611993EB890EE.e.21/click  ->  {\"value\": null}\nPOST /session/8f1e987665792411097e043f21437e29/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.EB0F79E3E5AA9B4CA...\nGET /session/8f1e987665792411097e043f21437e29/element/f.EB0F79E3E5AA9B4CAD3A145B267D8C89.d.15F502B78A062BDA7ACDB2995D0DA9A8.e.26/text  ->  {\"value\": \"Received!\"}\nDELETE /session/8f1e987665792411097e043f21437e29  ->  {\"value\": null}",
+  "rc": 0
+ },
+ "9e326cd70d89d27ba475aff1": {
+  "label": "tidy",
+  "lang": "py",
+  "out": "Failed: no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"[id=\"no-such-id\"]\"}\nBrowser closed",
+  "rc": 0
+ },
+ "9e5e0aefe3271436d24de6fc": {
+  "label": "wirelog",
+  "lang": "py",
+  "out": "title is Web form",
+  "rc": 0
+ },
+ "a5b4644a9c1c9eb9d4ca5752": {
+  "label": "eight",
+  "lang": "py",
+  "out": "Title: Web form\nMessage: Received!",
+  "rc": 0
+ },
+ "b73cc4b128da5f59a4d1ba73": {
+  "label": "hello",
+  "lang": "py",
+  "out": "Title: Web form\nURL: https://www.selenium.dev/selenium/web/web-form.html",
+  "rc": 0
+ },
+ "d370a2e8923b444db16ff372": {
+  "label": "rawhttp",
+  "lang": "java",
+  "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/timeouts  ->  {\"value\":null}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/url  ->  {\"value\":null}\nGET /session/1572ea8ca4df6e7f14c3a8d4adc84e28/title  ->  {\"value\":\"Web form\"}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.CEA8EA828217AE4BDE1...\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element/f.CEA8EA828217AE4BDE1BBE3050CC97CF.d.298B371AFB4A8DB17596DA16CFED7B72.e.6/value  ->  {\"value\":null}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.CEA8EA828217AE4BDE1...\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element/f.CEA8EA828217AE4BDE1BBE3050CC97CF.d.298B371AFB4A8DB17596DA16CFED7B72.e.21/click  ->  {\"value\":null}\nPOST /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.CEA8EA828217AE4BDE1...\nGET /session/1572ea8ca4df6e7f14c3a8d4adc84e28/element/f.CEA8EA828217AE4BDE1BBE3050CC97CF.d.C670560C5CAD8B17CAC20EB9BA743FEC.e.27/text  ->  {\"value\":\"Received!\"}\nDELETE /session/1572ea8ca4df6e7f14c3a8d4adc84e28  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "e394d701d106bde6d0f15a5c": {
+  "label": "eight",
+  "lang": "java",
+  "out": "Title: Web form\nMessage: Received!",
+  "rc": 0
+ },
+ "e9dcc105cb682fe3c24cf35b": {
+  "label": "rawhttp",
+  "lang": "js",
+  "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/timeouts  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/url  ->  {\"value\":null}\nGET /session/fe3fd9b77d510e3774c3e96a1d79dfa7/title  ->  {\"value\":\"Web form\"}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.FFD99782F6866C71F9472FF7B365A671.e.6/value  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.FFD99782F6866C71F9472FF7B365A671.e.21/click  ->  {\"value\":null}\nPOST /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.925130A9C3CE63D590C...\nGET /session/fe3fd9b77d510e3774c3e96a1d79dfa7/element/f.925130A9C3CE63D590C8022B6F7B34FC.d.7A3C754C59BC38B27A8501799597EA4E.e.27/text  ->  {\"value\":\"Received!\"}\nDELETE /session/fe3fd9b77d510e3774c3e96a1d79dfa7  ->  {\"value\":null}",
+  "rc": 0
+ },
+ "fd66754d7b7d6f30212dfdd5": {
+  "label": "mismatch",
+  "lang": "py",
+  "out": "session not created: This version of ChromeDriver only supports Chrome version 147",
+  "rc": 0
+ }
+}

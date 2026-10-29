@@ -40,6 +40,7 @@ CFG = {
     'func': 'cvModules', 'marker': 'cv-build', 'builder': 'tools/cv-build/build.py', 'badge': 'CV',
     'widgets': ['cvviz.js', 'cvwidgets.js'], 'css': ['cv.css'], 'body': 'cvp',
 }
+# Other subjects may also set 'min_calc' (worked problems needed per chapter, 10 when not set).
 TRACER = os.path.join(ROOT, 'tools', 'py-build', 'pytrace.py')
 LVN = {'e': 'Easy', 'm': 'Medium', 'h': 'Hard', 'x': 'Expert'}
 EMOJI = re.compile('[\U0001F000-\U0001FAFF☀-➿⭐⬆↔-↪️]')
@@ -116,8 +117,8 @@ def content_errors(T, known_viz):
     if T.get('kind') != 'revision':
         if len(T['quiz']) < 10:
             bad.append(f'only {len(T["quiz"])} quiz questions, at least 10 are needed')
-        if len(T['calc']) < 10:
-            bad.append(f'only {len(T["calc"])} worked problems, at least 10 are needed')
+        if len(T['calc']) < CFG.get('min_calc', 10):
+            bad.append(f'only {len(T["calc"])} worked problems, at least {CFG.get("min_calc", 10)} are needed')
         if len(T['assign']) < 2:
             bad.append('at least 2 assignments are needed')
         if len(T['must']) < 5:
