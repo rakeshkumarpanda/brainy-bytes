@@ -83,6 +83,12 @@
   "out": "implicit: PT0S\npageLoad: PT5M\nscript: PT30S\nCaught ScriptTimeoutException",
   "rc": 0
  },
+ "2bedf313dbf9dca3c88f18dd": {
+  "label": "jsasync",
+  "lang": "java",
+  "out": "async: waited\npromise: from promise\ntoo slow: script timeout\nbroken script: javascript error: nosuch is not defined",
+  "rc": 0
+ },
  "2c39bf7bb59a2d03199bbcbd": {
   "label": "window",
   "lang": "java",
@@ -167,6 +173,12 @@
   "out": "page.pdf starts with %PDF-",
   "rc": 0
  },
+ "54054f5812cd380a6d47918d": {
+  "label": "cookies",
+  "lang": "js",
+  "out": "before visiting: invalid cookie domain\nkey: value, domain www.selenium.dev, sameSite Lax, secure true, httpOnly false\ncookies: 3\npage script sees: key=value; foo=bar\nmissing cookie: NoSuchCookieError\nafter delete all: 0",
+  "rc": 0
+ },
  "54e984066e4f7d76ffed8e03": {
   "label": "shadow",
   "lang": "js",
@@ -213,6 +225,12 @@
   "label": "window",
   "lang": "py",
   "out": "size 1024 x 768\nposition 40, 30\nrect {'height': 768, 'width': 1024, 'x': 40, 'y': 30}",
+  "rc": 0
+ },
+ "63ae8f178bc7dfc801c87a48": {
+  "label": "cookies",
+  "lang": "py",
+  "out": "before visiting: invalid cookie domain\nkey: value, domain www.selenium.dev, sameSite Lax, secure True, httpOnly False\ncookies: 3\npage script sees: key=value; foo=bar\nmissing cookie: None\nafter delete all: 0",
   "rc": 0
  },
  "63dbece7a8196a5fe85f4748": {
@@ -297,6 +315,12 @@
   "label": "race",
   "lang": "py",
   "out": "too early: no such element",
+  "rc": 0
+ },
+ "80d85d5ef7ae38697fdaa291": {
+  "label": "cookies",
+  "lang": "java",
+  "out": "before visiting: invalid cookie domain\nkey: value, domain www.selenium.dev, sameSite Lax, secure true, httpOnly false\ncookies: 3\npage script sees: key=value; foo=bar\nmissing cookie: null\nafter delete all: 0",
   "rc": 0
  },
  "869ebf2fd4054bd862190e20": {
@@ -491,6 +515,18 @@
   "out": "email boxes seen from the top: 0\nby element: email\nby name: 1 email box\ntitle inside the frame: This page has iframes\nheading: This is the heading",
   "rc": 0
  },
+ "bb6c861e70702a05ad4c6115": {
+  "label": "jsrun",
+  "lang": "js",
+  "out": "return 42 -> number\nreturn 4.5 -> number\nreturn 'hi' -> string\nreturn [1, 'a'] -> Array\nreturn {a: 1} -> Object\nreturn undefined -> null\nreturn document.getElementById('dynamo') -> WebElement\n1 + 1 -> null\narguments: What's for dinner? / 7\nafter js click: Fish and chips!",
+  "rc": 0
+ },
+ "bef94ca920c59bf26885c384": {
+  "label": "jsrun",
+  "lang": "java",
+  "out": "return 42 -> Long\nreturn 4.5 -> Double\nreturn 'hi' -> String\nreturn [1, 'a'] -> ArrayList\nreturn {a: 1} -> LinkedHashMap\nreturn undefined -> null\nreturn document.getElementById('dynamo') -> RemoteWebElement\n1 + 1 -> null\narguments: What's for dinner? / 7\nafter js click: Fish and chips!",
+  "rc": 0
+ },
  "bff43ce7c3b5707bdf6f2780": {
   "label": "fluent",
   "lang": "java",
@@ -545,6 +581,12 @@
   "out": "gave up after 4.6 s, not 3 s",
   "rc": 0
  },
+ "d201b70d78809f6dfacbe1b7": {
+  "label": "jsasync",
+  "lang": "js",
+  "out": "async: waited\npromise: from promise\ntoo slow: script timeout\nbroken script: javascript error: nosuch is not defined",
+  "rc": 0
+ },
  "d269d1e898c759142f4ff627": {
   "label": "relative",
   "lang": "py",
@@ -573,6 +615,12 @@
   "label": "race",
   "lang": "java",
   "out": "too early: no such element",
+  "rc": 0
+ },
+ "dad4511e4e65ca74cc6a43f6": {
+  "label": "jsrun",
+  "lang": "py",
+  "out": "return 42 -> int\nreturn 4.5 -> float\nreturn 'hi' -> str\nreturn [1, 'a'] -> list\nreturn {a: 1} -> dict\nreturn undefined -> NoneType\nreturn document.getElementById('dynamo') -> WebElement\n1 + 1 -> NoneType\narguments: What's for dinner? / 7\nafter js click: Fish and chips!",
   "rc": 0
  },
  "dbe3cc4ab0eab138d8f86abb": {
@@ -669,6 +717,12 @@
   "label": "shots",
   "lang": "py",
   "out": "page.png: 1024 x 625\nbutton.png: 79 x 38",
+  "rc": 0
+ },
+ "fcff86be7b675ccd88a10c61": {
+  "label": "jsasync",
+  "lang": "py",
+  "out": "async: waited\npromise: from promise\ntoo slow: script timeout\nbroken script: javascript error: nosuch is not defined",
   "rc": 0
  },
  "fd66754d7b7d6f30212dfdd5": {

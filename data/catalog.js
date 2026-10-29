@@ -4463,6 +4463,20 @@ function seModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "javascript-cookies", title: "JavaScript execution and cookies", emoji: "4.4", page: "content/selenium/javascript-cookies.html",
+        summary: "Running JavaScript in the page, async scripts, and working with cookies.",
+        keywords: ["execute script", "javascript executor", "async script", "promise", "script timeout", "cookies", "httponly", "samesite", "invalid cookie domain"],
+        minutes: 45, counts: {"lessons": 3, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "javascript", title: "Run JavaScript in the page", emoji: "", group: "Lesson", keywords: ["execute script", "javascript executor", "arguments", "return value", "javascript click", "types", "executeScript"] },
+        { id: "async", title: "Asynchronous scripts and the script timeout", emoji: "", group: "Lesson", keywords: ["execute async script", "callback", "promise", "script timeout", "javascript error", "asynchronous"] },
+        { id: "cookies", title: "Cookies", emoji: "", group: "Lesson", keywords: ["cookies", "add cookie", "get cookie", "delete cookie", "httpOnly", "sameSite", "secure", "invalid cookie domain", "session cookie", "login"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

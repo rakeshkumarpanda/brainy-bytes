@@ -803,4 +803,65 @@ const SEZ = (() => {
     }
   });
 
+  /* ---------------------------------------------------------------- Chapter 4.4: JavaScript execution */
+  /* Type names are the ones the Java, Python and JavaScript runs printed on the chapter page. */
+  const JSV = {
+    int: ['return 42', '42', 'Long', 'int', 'number'],
+    dec: ['return 4.5', '4.5', 'Double', 'float', 'number'],
+    str: ["return 'hi'", '"hi"', 'String', 'str', 'string'],
+    arr: ["return [1, 'a']", '[1, "a"]', 'ArrayList', 'list', 'Array'],
+    obj: ['return {a: 1}', '{"a": 1}', 'LinkedHashMap', 'dict', 'Object'],
+    undef: ['return undefined', 'null', 'null', 'NoneType (None)', 'null'],
+    el: ["return document.getElementById('dynamo')", '{"element-6066-11e4-a52e-4f735466cecf": "f.1...e.7"}', 'RemoteWebElement', 'WebElement', 'WebElement'],
+    noret: ['1 + 1', 'null', 'null', 'NoneType (None)', 'null']
+  };
+  def('se-script', {
+    title: 'What happens to an executeScript call',
+    sub: 'Pick a value to return and a language, then follow the script to the browser and the answer back.',
+    W: 660, H: 260,
+    params: [
+      { k: 'v', label: 'The script returns', type: 'select', v: 'int', opts: [['int', 'A whole number'], ['dec', 'A decimal'], ['str', 'Text'], ['arr', 'An array'], ['obj', 'An object'], ['undef', 'undefined'], ['el', 'A DOM element'], ['noret', 'Nothing (no return)']] },
+      { k: 'lang', label: 'Your language', type: 'select', v: 'java', opts: [['java', 'Java'], ['py', 'Python'], ['js', 'JavaScript']] },
+      { k: 'mode', label: 'Command', type: 'select', v: 'sync', opts: [['sync', 'executeScript'], ['async', 'executeAsyncScript']] }
+    ],
+    tips: [
+      { t: 'Return a whole number and switch the language. The JSON in step 4 stays the same, only the last step changes.', set: { v: 'int', lang: 'java' }, play: true },
+      { t: 'Pick Nothing (no return). The browser runs 1 + 1 but the function gives back undefined, which travels as null.', set: { v: 'noret' }, play: true },
+      { t: 'Switch to executeAsyncScript and watch step 3: the browser waits for the callback, not for return.', set: { mode: 'async' }, play: true }
+    ],
+    steps: () => 5,
+    startAtZero: true,
+    speed: () => 1300,
+    draw(z) {
+      const g = z.g, c = z.col, V = JSV[z.p.v], s = z.step, asy = z.p.mode === 'async';
+      const li = { java: 2, py: 3, js: 4 }[z.p.lang], lname = { java: 'Java', py: 'Python', js: 'JavaScript' }[z.p.lang];
+      const script = asy ? (V[0].startsWith('return ') ? 'arguments[arguments.length - 1](' + V[0].slice(7) + ')' : V[0]) : V[0];
+      const names = ['Your code', 'Request', 'Browser', 'Response', 'Your value'];
+      const bw = (z.W - 48 - 4 * 10) / 5;
+      names.forEach((n, i) => {
+        const x = 24 + i * (bw + 10), on = s === i + 1, done = s > i + 1;
+        rr(g, x, 20, bw, 40, 10, { fill: on ? c.bg : c.surf, stroke: on ? c.cv : done ? c.green : c.line, w: on ? 3 : 1.5 });
+        D.text(g, (i + 1) + '. ' + n, x + bw / 2, 45, { a: 'center', b: true, s: fit(g, (i + 1) + '. ' + n, bw - 10, 12.5, { b: true }), c: on ? c.cv : c.ink });
+      });
+      const detail = [
+        ['Press Play to send the script.', ''],
+        [lname + ' calls ' + (asy ? 'executeAsyncScript' : 'executeScript') + ' with the script text and no extra arguments.', script],
+        ['The binding posts the text and an empty args list to the driver.', 'POST /session/{id}/execute/' + (asy ? 'async' : 'sync') + '\n{"script": "' + script.replace(/"/g, '\\"') + '", "args": []}'],
+        [asy ? 'The browser makes a function from the text, adds a callback as the last argument and waits until the callback is called, or until the script timeout.' : 'The browser makes a function from the text and calls it. If it returns a promise, the browser waits for it.', 'function () { ' + script + ' }'],
+        ['The browser turns the result into JSON. A DOM node becomes an element reference. undefined becomes null.', '{"value": ' + V[1] + '}'],
+        ['The ' + lname + ' binding turns the JSON into a ' + lname + ' value.', lname + ' type: ' + V[li]]
+      ][s];
+      const never = asy && z.p.v === 'noret';
+      if (never && s === 4) { detail[0] = 'The script never calls the callback, so nothing comes back. After the script timeout, 30 s by default, the driver answers with an error.'; detail[1] = '{"value": {"error": "script timeout", ...}}'; }
+      if (never && s === 5) { detail[0] = 'The binding raises the timeout error.'; detail[1] = { java: 'ScriptTimeoutException', py: 'TimeoutException', js: 'ScriptTimeoutError' }[z.p.lang]; }
+      rr(g, 20, 78, z.W - 40, z.H - 98, 10, { fill: c.bg, stroke: never && s >= 4 ? c.red : c.line, w: never && s >= 4 ? 2 : 1.5 });
+      let y = wrap(g, detail[0], 36, 104, z.W - 72, { s: 13.5, c: c.ink, lh: 19 });
+      String(detail[1]).split('\n').forEach(line => {
+        if (!line) return;
+        y = wrap(g, line, 36, y + 10, z.W - 72, { s: fit(g, line.slice(0, 60), z.W - 72, 12.5, { mono: true }), mono: true, c: c.cv, lh: 18 });
+      });
+      return s === 5 ? (never ? 'The call failed with a <b>script timeout</b>.' : `The script came back as <b>${esc(V[li])}</b> in ${lname}.`) : 'Step through the call.';
+    }
+  });
+
 })();
