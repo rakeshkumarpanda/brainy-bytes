@@ -173,12 +173,6 @@
   "out": "typed: Displayed",
   "rc": 0
  },
- "3926aa70e32e94d70c552a1f": {
-  "label": "rawhttp",
-  "lang": "java",
-  "out": "POST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/url  ->  {\"value\":null}\nGET /session/95d0fe61737b4d163eb18144987aeb9c/title  ->  {\"value\":\"Web form\"}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.6/value  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.829422C5F05BD76385898913BF72F4DB.e.21/click  ->  {\"value\":null}\nPOST /session/95d0fe61737b4d163eb18144987aeb9c/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.006E531BCF48D9B2727...\nGET /session/95d0fe61737b4d163eb18144987aeb9c/element/f.006E531BCF48D9B27278B1C2C274072C.d.E152AD2C20E2F888566D70528E29A501.e.26/text  ->  {\"value\":\"Received!\"}\nDELETE /session/95d0fe61737b4d163eb18144987aeb9c  ->  {\"value\":null}",
-  "rc": 0
- },
  "39d22379effab5d43af33a0e": {
   "label": "remote",
   "lang": "java",
@@ -299,18 +293,6 @@
   "out": "page.pdf starts with %PDF-",
   "rc": 0
  },
- "586f43fdfa5a2a1b927e8cec": {
-  "label": "wheel",
-  "lang": "java",
-  "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 4505\nscrollY after waiting: 4505\nframe scrollY: 118 of at most 118",
-  "rc": 0
- },
- "58fca6ad8f28e7cb37e152ce": {
-  "label": "remote",
-  "lang": "java",
-  "out": "browserName: chrome\nplatformName: linux\nse:name: upload on the grid\nse:cdp: ws://localhost:4444/session/{id}/se/cdp\nattached: report14899157568107126915.txt",
-  "rc": 0
- },
  "5be3ea4b72bfd3c478836343": {
   "label": "pom",
   "lang": "js",
@@ -363,12 +345,6 @@
   "label": "findall",
   "lang": "java",
   "out": "inputs: 6\n  radio gender\n  radio gender\n  text fname\n  text lname\n  checkbox newsletter\n  submit \nemail boxes: 0\nfindElement: NoSuchElementException",
-  "rc": 0
- },
- "6698c67d4818c41a381c318d": {
-  "label": "rawhttp",
-  "lang": "js",
-  "out": "Starting ChromeDriver 153.0.8010.12 (971a7443b0c9b0a9b2860529b33331b76077ec62-refs/branch-heads/8010@{#343}) on port 9515\nOnly local connections are allowed.\nPlease see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.\nChromeDriver was started successfully on port 9515.\nPOST /session  ->  {\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"c...\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/url  ->  {\"value\":null}\nGET /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/title  ->  {\"value\":\"Web form\"}\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.2AD4390301472F13246...\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element/f.2AD4390301472F13246C70725535C01F.d.F46076912A6B8A194F64435F8B2CD478.e.6/value  ->  {\"value\":null}\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element  ->  {\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.2AD4390301472F13246...\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element/f.2AD4390301472F13246C70725535C01F.d.F46076912A6B8A194F64435F8B2CD478.e.21/click  ->  {\"value\":null}\nPOST /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element  ->  {\"value\":{\"error\":\"no such element\",\"message\":\"no such element: Unable...\nGET /session/4db6cdc5cae25e9b2a4cf2af7f3884b9/element/undefined/text  ->  {\"value\":{\"error\":\"no such element\",\"message\":\"no such element: the el...\nDELETE /session/4db6cdc5cae25e9b2a4cf2af7f3884b9  ->  {\"value\":null}\n\n[1793238577.255][SEVERE]: CreatePlatformSocket() failed: Address family not supported by protocol (97)\n[1793238578.545][SEVERE]: CreatePlatformSocket() failed: Address family not supported by protocol (97)",
   "rc": 0
  },
  "69d085e36b067186a8766b50": {
@@ -453,18 +429,6 @@
   "label": "cdp",
   "lang": "py",
   "out": "protocol 1.3, Chrome/153.0.8010.12\ntime zone before: UTC\ntime zone after: Asia/Calcutta",
-  "rc": 0
- },
- "7997d649dff59efef212712b": {
-  "label": "typeclick",
-  "lang": "java",
-  "out": "check 2 before: false\ncheck 2 after: true\nradio 1 now: false\nReceived!",
-  "rc": 0
- },
- "7a3f2b4c8e799745506800b8": {
-  "label": "select",
-  "lang": "py",
-  "out": "options: 4 , multiple: None\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
   "rc": 0
  },
  "7c2c47815ea0c81489978650": {
@@ -575,12 +539,6 @@
   "out": "console info: Hello, world!\nconsole error: I am console error\npage error: Error: Not working",
   "rc": 0
  },
- "907ac1fc49d8191111dad540": {
-  "label": "select",
-  "lang": "java",
-  "out": "options: 4, multiple: false\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
-  "rc": 0
- },
  "92e5d7f1dc5a0913077d7e03": {
   "label": "findall",
   "lang": "js",
@@ -617,22 +575,10 @@
   "out": "Title: Web form\nMessage: Received!",
   "rc": 0
  },
- "9c8c6afdec9f2279d98c8f84": {
-  "label": "rawhttp",
-  "lang": "py",
-  "out": "Starting ChromeDriver 153.0.8010.12 (971a7443b0c9b0a9b2860529b33331b76077ec62-refs/branch-heads/8010@{#343}) on port 9515\nOnly local connections are allowed.\nPlease see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.\nChromeDriver was started successfully on port 9515.\nPOST /session  ->  {\"value\": {\"capabilities\": {\"acceptInsecureCerts\": false, \"browserName...\nPOST /session/8f1e987665792411097e043f21437e29/url  ->  {\"value\": null}\nGET /session/8f1e987665792411097e043f21437e29/title  ->  {\"value\": \"Web form\"}\nPOST /session/8f1e987665792411097e043f21437e29/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.EB0F79E3E5AA9B4CA...\nPOST /session/8f1e987665792411097e043f21437e29/element/f.EB0F79E3E5AA9B4CAD3A145B267D8C89.d.245173BD27F487CBCF8611993EB890EE.e.6/value  ->  {\"value\": null}\nPOST /session/8f1e987665792411097e043f21437e29/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.EB0F79E3E5AA9B4CA...\nPOST /session/8f1e987665792411097e043f21437e29/element/f.EB0F79E3E5AA9B4CAD3A145B267D8C89.d.245173BD27F487CBCF8611993EB890EE.e.21/click  ->  {\"value\": null}\nPOST /session/8f1e987665792411097e043f21437e29/element  ->  {\"value\": {\"element-6066-11e4-a52e-4f735466cecf\": \"f.EB0F79E3E5AA9B4CA...\nGET /session/8f1e987665792411097e043f21437e29/element/f.EB0F79E3E5AA9B4CAD3A145B267D8C89.d.15F502B78A062BDA7ACDB2995D0DA9A8.e.26/text  ->  {\"value\": \"Received!\"}\nDELETE /session/8f1e987665792411097e043f21437e29  ->  {\"value\": null}",
-  "rc": 0
- },
  "9e326cd70d89d27ba475aff1": {
   "label": "tidy",
   "lang": "py",
   "out": "Failed: no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"[id=\"no-such-id\"]\"}\nBrowser closed",
-  "rc": 0
- },
- "9e5e0aefe3271436d24de6fc": {
-  "label": "wirelog",
-  "lang": "py",
-  "out": "title is Web form",
   "rc": 0
  },
  "a107445a1d043e78f6511d85": {
@@ -695,12 +641,6 @@
   "out": "type into disabled: ElementNotInteractableError, element not interactable\nclear readonly: InvalidElementStateError, invalid element state\nclick under banner: ElementClickInterceptedError, element click intercepted",
   "rc": 0
  },
- "b48b56a81c5af551017681a4": {
-  "label": "select",
-  "lang": "js",
-  "out": "options: 4, multiple: undefined\nnow: Four\nnow: Two\nnow: One\nmulti starts with: 2 selected\n  selected: Ham\n  selected: Sausages",
-  "rc": 0
- },
  "b4bccbac54459b1c4874632c": {
   "label": "locators",
   "lang": "py",
@@ -711,12 +651,6 @@
   "label": "frames",
   "lang": "py",
   "out": "email boxes seen from the top: 0\nby element: email\nby name: 1 email box\ntitle inside the frame: This page has iframes\nheading: This is the heading",
-  "rc": 0
- },
- "b615870a1f10afdd6c5e6fa4": {
-  "label": "wheel",
-  "lang": "py",
-  "out": "frame in view before: False\nframe in view after: True\nscrollY right after perform: 4475\nscrollY after waiting: 4505\nframe scrollY: 118 of at most 118",
   "rc": 0
  },
  "b703230f05514489a7b81b9a": {
@@ -814,12 +748,6 @@
   "lang": "java",
   "out": "Driver URL: http://localhost:9600\nready: true",
   "rc": 0
- },
- "caddcdc16a2fab88b0562418": {
-  "label": "typeclick",
-  "lang": "py",
-  "out": "check 2 before: False\ncheck 2 after: True\nradio 1 now: False\n\nTraceback (most recent call last):\n  File \"main.py\", line 17, in <module>\n    print(driver.find_element(By.ID, \"message\").text)\n          ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^\n  File \"/home/user/brainy-bytes/tools/se-build/box/.venv/lib/python3.13/site-packages/selenium/webdriver/remote/webdriver.py\", line 914, in find_element\n    return self.execute(Command.FIND_ELEMENT, {\"using\": by, \"value\": value})[\"value\"]\n           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/user/brainy-bytes/tools/se-build/box/.venv/lib/python3.13/site-packages/selenium/webdriver/remote/webdriver.py\", line 506, in execute\n    self.error_handler.check_response(response)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^\n  File \"/home/user/brainy-bytes/tools/se-build/box/.venv/lib/python3.13/site-packages/selenium/webdriver/remote/errorhandler.py\", line 232, in check_response\n    raise exception_class(message, screen, stacktrace)\nselenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"[id=\"message\"]\"}\n  (Session info: chrome=153.0.8010.12); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception\nStacktrace:\n#0 0x561728f585ca <unknown>\n#1 0x56172888c759 <unknown>\n#2 0x5617288e2ffc <unknown>\n#3 0x5617288e3271 <unknown>\n#4 0x56172892f884 <unknown>\n#5 0x56172892caef <unknown>\n#6 0x5617288d5d9b <unknown>\n#7 0x5617288d6b81 <unknown>\n#8 0x561728f1b017 <unknown>\n#9 0x561728f19845 <unknown>\n#10 0x561728f048c5 <unknown>\n#11 0x561728f1a49a <unknown>\n#12 0x561728eecef9 <unknown>\n#13 0x561728f42478 <unknown>\n#14 0x561728f42615 <unknown>\n#15 0x561728f56f13 <unknown>\n#16 0x7f897909cb84 <unknown>\n#17 0x7f8979129ecc <unknown>",
-  "rc": 1
  },
  "cc231636bfa556a9dacbe68a": {
   "label": "stale",
@@ -929,28 +857,10 @@
   "out": "size 1024 x 768\nposition 40, 30",
   "rc": 0
  },
- "e7921ff0045fdf2656d3091d": {
-  "label": "logs",
-  "lang": "js",
-  "out": "",
-  "rc": 0
- },
  "e8c6ad839cb7045e526348ea": {
   "label": "wheel",
   "lang": "java",
   "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 300\nscrollY after waiting: 300\nframe scrollY: 118 of at most 118",
-  "rc": 0
- },
- "e93a6a620840f91f25e92df0": {
-  "label": "gridstatus",
-  "lang": "py",
-  "out": "ready: True , Selenium Grid ready.\nnodes: 1 , max sessions: 2\nslot: chrome\nslot: MicrosoftEdge\nslot: chrome\nslot: MicrosoftEdge\nslot: firefox\nslot: firefox",
-  "rc": 0
- },
- "e95c7a70ce9158c708ff5912": {
-  "label": "wheel",
-  "lang": "js",
-  "out": "frame in view before: false\nframe in view after: true\nscrollY right after perform: 4475\nscrollY after waiting: 4505\nframe scrollY: 118 of at most 118",
   "rc": 0
  },
  "e9dcc105cb682fe3c24cf35b": {
@@ -1005,12 +915,6 @@
   "label": "shots",
   "lang": "py",
   "out": "page.png: 1024 x 625\nbutton.png: 79 x 38",
-  "rc": 0
- },
- "fcc7a79a80a0ec7c7e018970": {
-  "label": "logs",
-  "lang": "java",
-  "out": "(POST) /session\n(GET) /json/version\n(POST) /session/{id}/url\n(GET) /session/{id}/title\n(DELETE) /session/{id}",
   "rc": 0
  },
  "fcff86be7b675ccd88a10c61": {
