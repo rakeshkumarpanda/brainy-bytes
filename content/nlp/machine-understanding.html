@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Can machines understand language? · Natural Language Processing</title>
+<meta name="description" content="Marr&#x27;s tri-level hypothesis, the Turing test and the Total Turing Test, qualia, ELIZA and SHRDLU, NLP against CL against NLU, corpora and annotation, precision, recall, F1, BLEU, surprisal, dependency length, the octopus test, Ettinger and the NLP trinity.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/nlp.css">
+</head>
+<body class="cvp nlpp">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=nlp">Natural Language Processing learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=nlp" target="_top">Natural Language Processing</a><span>›</span><span>Step 1: Language and meaning</span><span>›</span><span>Machine understanding</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 3 of 3 · School and college</div>
+    <h1>Can machines understand language?</h1>
+    <p class="lead">Use Marr's three levels to frame the question, see why the Turing test is not enough, chat with an ELIZA and command a tiny SHRDLU, then learn how NLU systems are built and measured and why form alone may not give meaning.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">4 animations</span><span class="cv-chip">4 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">3 assignments</span></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#marr" data-l="marr"><span class="n">1</span><span class="t">Marr&#x27;s three levels and the robot that flies</span></a></li><li><a href="#turing" data-l="turing"><span class="n">2</span><span class="t">The Turing test and what it misses</span></a></li><li><a href="#eliza-shrdlu" data-l="eliza-shrdlu"><span class="n">3</span><span class="t">ELIZA and SHRDLU: talking against understanding</span></a></li><li><a href="#building" data-l="building"><span class="n">4</span><span class="t">NLP, CL and NLU, and how systems are measured</span></a></li><li><a href="#form-meaning" data-l="form-meaning"><span class="n">5</span><span class="t">Can form alone give meaning?</span></a></li></ol>
+    <article class="cv-lesson" id="marr" data-l="marr" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Marr&#x27;s three levels and the robot that flies</h2>
+<p>The lecture frames the course with one question: can machines understand language? Language is linked to thought, thought to thinking, and on the working view of cognitive science, thinking is information processing. If minds and computers both process information, we can ask whether a machine can carry out the same processing. That is why vision and language share one goal: reverse engineering human perception and language.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Level (Marr, 1982)</th><th>Question</th><th>What it specifies</th></tr></thead><tbody><tr><td>1. Computational</td><td>What and why?</td><td>The goal of the computation and why it is the right goal</td></tr><tr><td>2. Algorithmic or representational</td><td>How?</td><td>The representation of input and output, and the algorithm that turns one into the other</td></tr><tr><td>3. Implementational</td><td>Where?</td><td>The physical substrate: neurons, gears, silicon</td></tr></tbody></table></div>
+<p>The professor's summary: level 1 suggests level 2 and level 2 predicts level 3 when you design. When you validate, level 3 confirms level 2 and level 2 explains level 1.</p>
+<div class="walk"><div class="walk-h"><span>Class activity: make a robot fly</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Computational: the goal is flight, so produce an upward force greater than the weight (more than 9.8 newtons for every kilogram).</li><li>Algorithmic: flap the wings to make thrust, keep a streamlined body, run a control loop of ground, climb, balance, descend, ground.</li><li>Implementational: wings, motors, light materials and sensors.</li><li>Design runs top down. "Flap" in level 2 already predicts that level 3 needs a wing. Validation runs bottom up: a wing that flaps confirms the algorithm and the goal.</li></ol></div>
+<p>Marr's own textbook example is a cash register. Its goal is addition (level 1), done by column addition with carrying (level 2), in gears or transistors (level 3). An abacus and a chip both add with very different algorithms and hardware, which is why you cannot understand a system just by staring at its hardware.</p>
+<div class="note note-warn"><b>Common mistake</b><div>The professor calls jumping straight to hardware and algorithms "the rush that all computer engineers make". A purely data driven language model is tuned at levels 2 and 3 without a clear level 1 answer to what understanding is.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="turing" data-l="turing" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>The Turing test and what it misses</h2>
+<p>Definitions of AI fall into a two by two grid, the scheme of Russell and Norvig's textbook.</p>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>Like humans</th><th>Rationally</th></tr></thead><tbody><tr><td>Thinking</td><td>Systems that think like humans (Haugeland, Bellman)</td><td>Systems that think rationally (Charniak and McDermott, Winston)</td></tr><tr><td>Acting</td><td>Systems that act like humans (Kurzweil, Rich and Knight)</td><td>Systems that act rationally (Schalkoff, Luger and Stubblefield)</td></tr></tbody></table></div>
+<p>Alan Turing (1950) replaced "can machines think?" with an operational question. A judge chats by text with a hidden person and a hidden machine. If the judge cannot reliably tell which is which, the machine passes. This defines intelligence by behaviour, not by inner experience.</p>
+<h3>Two problems the lecture lists</h3>
+<ol>
+<li>It is not reproducible. The result depends on which judge asks and on the setup.</li>
+<li>There is no physical interaction. It tests only text, never seeing or acting.</li>
+</ol>
+<p>A student added that behaviour leaves out subjective experience. Philosophers call this <b>qualia</b>, the "what it is like" of seeing red. Nagel's bat (1974), Jackson's Mary who knows all the physics of colour but has never seen red (1982), and Chalmers's hard problem (1995) all point at the same gap.</p>
+<h3>The Total Turing Test</h3>
+<p>Stevan Harnad's Total Turing Test asks the machine to perceive and act in the world, not just chat. To pass it a computer needs seven capabilities.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Capability</th><th>Why</th></tr></thead><tbody><tr><td>Natural language processing</td><td>Talk with the examiner</td></tr><tr><td>Knowledge representation</td><td>Store what it is told</td></tr><tr><td>Automated reasoning</td><td>Answer questions and draw conclusions</td></tr><tr><td>Machine learning</td><td>Adapt and find patterns</td></tr><tr><td>Vision</td><td>Recognise the examiner's actions and objects</td></tr><tr><td>Motor control</td><td>Act on objects when asked</td></tr><tr><td>Other senses</td><td>Hearing, touch, smell</td></tr></tbody></table></div>
+<p>This is why the course is called Foundations of Vision and Language. Even a vending machine joins vision (reading the menu), action (the purchase) and, with speech, language.</p>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="eliza-shrdlu" data-l="eliza-shrdlu" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>ELIZA and SHRDLU: talking against understanding</h2>
+<p>Two famous systems from MIT give opposite answers to the question "if a machine fools you, does it understand?"</p>
+<div class="cvz" data-viz="eliza"></div>
+<p>Joseph Weizenbaum's ELIZA (1966) imitated a Rogerian therapist who reflects what the client says. It found keywords, swapped pronouns and pasted your own words into a template: "my boyfriend made me come here" became YOUR BOYFRIEND MADE YOU COME HERE. Users still confided in it, an effect now named the <b>ELIZA effect</b>. The slide says it in blue: <b>producing an appropriate looking response is not necessarily the same as understanding</b>.</p>
+<div class="cvz" data-viz="blocks"></div>
+<p>Terry Winograd's SHRDLU (around 1970) lived in a small simulated world of blocks, pyramids and a box. It parsed English commands, kept a model of the scene, reasoned and moved a simulated arm. It asked "I DON'T UNDERSTAND WHICH PYRAMID YOU MEAN" when a phrase fit two objects, resolved "it" to the right block, answered "how many blocks are not in the box?" from its world model, and said "I CAN'T" when asked to stack two pyramids.</p>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>ELIZA (1966)</th><th>SHRDLU (about 1970)</th></tr></thead><tbody><tr><td>Creator</td><td>Joseph Weizenbaum, MIT</td><td>Terry Winograd, MIT</td></tr><tr><td>Pipeline</td><td>Language → pattern match → response</td><td>Language → world model → reasoning → action → response</td></tr><tr><td>Grounding</td><td>None, text in and text out</td><td>In a simulated micro world</td></tr><tr><td>Domain</td><td>General chat</td><td>Blocks world only</td></tr><tr><td>Lesson</td><td>Fluent is not understanding</td><td>Language can be procedure tied to knowledge and action, at small scale</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>SHRDLU's "OK" matters because it reports that a grounded action was carried out, closing the loop between language and behaviour.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="building" data-l="building" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>NLP, CL and NLU, and how systems are measured</h2>
+<p>Students kept asking how the three names differ. They differ in what drives the work, not in subject.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Field</th><th>Orientation</th><th>Goal</th></tr></thead><tbody><tr><td>NLP</td><td>Engineering, application driven</td><td>Build tools: search, speech to text, translation, sentiment</td></tr><tr><td>Computational linguistics</td><td>Science, theory driven</td><td>Model the human cognitive system for language</td></tr><tr><td>NLU</td><td>The shared end goal</td><td>A system that really understands, built from description to representation to evaluation</td></tr></tbody></table></div>
+<h3>The building blocks</h3>
+<ol>
+<li><b>Corpus and annotation.</b> Text (or speech and video) with labels, such as part of speech tags for "John sat near the bank" or the root "run" for "running". Universal Dependencies gives one scheme across many languages. There are also child language, learner and eye tracking corpora.</li>
+<li><b>Model.</b> Hand built grammars such as the English Resource Grammar, or statistical and neural models learned from data.</li>
+<li><b>Validation</b> with performance metrics and cognitive metrics.</li>
+</ol>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Precision, recall, F1</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">P = <span class="fr"><span>TP</span><span>TP + FP</span></span>, R = <span class="fr"><span>TP</span><span>TP + FN</span></span>, F1 = <span class="fr"><span>2PR</span><span>P + R</span></span></div><div class="fx-n">Precision: how much of what you found is right. Recall: how much of the truth you found.</div></div><div class="fx fx-key"><div class="fx-h"><span>BLEU</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">BLEU = BP · exp(Σ<sub><i>n</i></sub> <i>w</i><sub><i>n</i></sub> log <i>p</i><sub><i>n</i></sub>)</div><div class="fx-n"><i>p</i><sub><i>n</i></sub> is clipped n-gram precision, BP = 1 if <i>c</i> &gt; <i>r</i>, else e<sup>1 − <i>r</i>/<i>c</i></sup>. Papineni et al. 2002.</div></div><div class="fx"><div class="fx-h"><span>Surprisal</span></div><div class="fx-b">S(<i>w</i>) = −log<sub>2</sub> P(<i>w</i> | context)</div><div class="fx-n">Surprising words take longer to read (Hale 2001, Levy 2008).</div></div><div class="fx"><div class="fx-h"><span>Dependency length</span></div><div class="fx-b">DL = Σ<sub><i>i</i></sub> |<i>i</i> − head(<i>i</i>)|</div><div class="fx-n">Human sentences keep related words close (Gibson 2000).</div></div></div>
+<div class="cv-code" data-k="metrics"></div>
+<div class="cvz" data-viz="bleu"></div>
+<div class="cvz" data-viz="surprisal"></div>
+<div class="cv-code" data-k="deplen"></div>
+<p>Cognitive metrics ask whether a model behaves like people, not just whether it scores well. "Apples and oranges" is expected, so it has low surprisal. "Apples and coconut" is surprising and carries more information.</p>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="form-meaning" data-l="form-meaning" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Can form alone give meaning?</h2>
+<p>Is NLP just a giant knowledge engineering project, solved by enough data? The lecture gives the case for and against.</p>
+<h3>The case for data</h3>
+<ul>
+<li><b>Firth (1957)</b>: "You shall know a word by the company it keeps." The distributional hypothesis behind word2vec, GloVe and the embeddings inside BERT.</li>
+<li><b>Shannon (1948)</b>: information depends on probability, not meaning, I(<i>x</i>) = −log<sub>2</sub> P(<i>x</i>). Next word prediction and cross entropy loss come straight from this.</li>
+</ul>
+<h3>The case against form alone</h3>
+<ul>
+<li>Huge models need data and compute most languages do not have, which splits the world into high and low resource languages.</li>
+<li><b>The octopus test</b> (Bender and Koller, 2020). An octopus taps a cable between two islanders and learns to imitate one perfectly. When a bear attacks and help is needed to build a weapon from sticks, it can only produce plausible text, because it never had access to sticks or bears. Form alone does not give meaning.</li>
+<li><b>Ettinger (2020)</b> ran psycholinguistic tests on BERT and found it largely insensitive to negation ("a robin is a ___" and "a robin is not a ___" get similar completions) and weak at predicting roles in events.</li>
+<li><b>Symbol grounding</b> (Harnad, 1990): symbols defined only by other symbols are like a dictionary in a language you cannot read. <b>The Chinese room</b> (Searle, 1980): following a rulebook to produce fluent output need not involve understanding.</li>
+<li>Rare events carry the most information, yet frequency based learning handles them worst.</li>
+</ul>
+<h3>The NLP trinity</h3>
+<p>Every NLP problem sits on three axes: the <b>language</b> (Hindi, Marathi, English, French), the <b>problem</b> in rising difficulty (morphology, POS tagging, chunking, parsing, semantics, discourse and coreference) and the <b>algorithm</b> (HMM, MEMM, CRF, RNN). A tagger built for one point does not move to another for free.</p>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A parrot can repeat words without knowing what they mean. A computer that copies patterns from text may also sound clever without understanding. To understand, words must connect to real things and real goals.</p></div><div class="ld-p" data-ld="college" hidden><p>Processing maps input text to output text with learned statistics. Understanding also links symbols to referents and intentions. ELIZA processes. SHRDLU understands a little, inside its blocks world.</p></div><div class="ld-p" data-ld="masters" hidden><p>The debate maps onto Marr: large models are optimised at the algorithmic level with a proxy goal (next token prediction) whose relation to the computational level goal (meaning, intent) is unclear. Diagnostic suites such as Ettinger's test specific competences rather than overall scores.</p></div><div class="ld-p" data-ld="research" hidden><p>Open questions include whether distributional signals implicitly encode reference, how multimodal and embodied training changes grounding, how to learn from rare but informative events, and how to evaluate understanding when benchmarks leak into training data.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./ambiguity.html" data-topic="ambiguity"><small>Previous topic</small><b>Ambiguity</b></a><a class="next" href="./tokenisation.html" data-topic="tokenisation"><small>Next topic</small><b>Tokenisation</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "machine-understanding", "topic": "understanding", "subject": "nlp", "title": "Can machines understand language?", "codes": {"metrics": {"src": "# Precision, recall and F1 for a tiny named entity tagger\ngold = {\"Ram\", \"Jodhpur\", \"IIT\"}            # entities a person marked\npred = {\"Ram\", \"Jodhpur\", \"Monday\"}         # entities the system found\n\ntp = len(gold & pred)                       # found and correct\nfp = len(pred - gold)                       # found but wrong\nfn = len(gold - pred)                       # missed\nprecision = tp / (tp + fp)\nrecall = tp / (tp + fn)\nf1 = 2 * precision * recall / (precision + recall)\nprint(\"tp, fp, fn =\", tp, fp, fn)\nprint(\"precision =\", round(precision, 3), \" recall =\", round(recall, 3), \" F1 =\", round(f1, 3))", "stdin": "", "out": "tp, fp, fn = 2 1 1\nprecision = 0.667  recall = 0.667  F1 = 0.667"}, "deplen": {"src": "# Total dependency length: add the distance from every word to its head\nwords = [\"John\", \"gave\", \"Mary\", \"a\", \"book\"]\nheads = [2, 0, 2, 5, 2]          # 1 based position of each head, 0 marks the root\n\ntotal = 0\nfor i, h in enumerate(heads, start=1):\n    if h:\n        d = abs(i - h)\n        total += d\n        print(f\"{words[i-1]:5} -> {words[h-1]:5} distance {d}\")\nprint(\"total dependency length =\", total)", "stdin": "", "out": "John  -> gave  distance 1\nMary  -> gave  distance 1\na     -> book  distance 1\nbook  -> gave  distance 3\ntotal dependency length = 6"}}, "quiz": [{"lv": "e", "q": "Which of Marr's levels answers the question \"what is the goal and why\"?", "o": ["Computational", "Algorithmic", "Implementational", "None"], "a": 0, "hint": "The top level.", "why": "The computational level states the goal and the logic of the strategy."}, {"lv": "e", "q": "ELIZA produced its replies by", "o": ["Deep semantic analysis", "Keyword pattern matching and templates", "A world model", "Neural networks"], "a": 1, "hint": "Remember the pronoun swap.", "why": "It matched keywords, swapped pronouns and filled templates. No meaning was represented."}, {"lv": "e", "q": "The Turing test judges a machine by", "o": ["Its hardware", "Whether a judge can tell it from a person in text conversation", "Its accuracy on a benchmark", "Its speed"], "a": 1, "hint": "An operational definition.", "why": "Intelligence is defined by indistinguishable behaviour in a text chat."}, {"lv": "m", "q": "What does SHRDLU do that ELIZA cannot?", "o": ["Use capital letters", "Ground words in a world model, reason and act", "Talk about mothers", "Run faster"], "a": 1, "hint": "Think of the blocks.", "why": "SHRDLU links phrases to objects, plans and moves them, and asks when a reference is ambiguous."}, {"lv": "m", "q": "Which is the engineering, application driven field?", "o": ["Computational linguistics", "NLP", "Phonology", "Philosophy of mind"], "a": 1, "hint": "Search, translation, speech to text.", "why": "NLP builds tools. CL models the human language system. NLU is the shared goal."}, {"lv": "m", "q": "Which is a cognitive metric rather than a performance metric?", "o": ["F1", "Accuracy", "Surprisal", "BLEU"], "a": 2, "hint": "Which one links to reading times?", "why": "Surprisal relates to human processing difficulty, measured for example with eye tracking."}, {"lv": "m", "q": "BLEU's brevity penalty exists because", "o": ["Long outputs are always wrong", "Precision alone rewards very short safe outputs", "References are short", "It speeds up scoring"], "a": 1, "hint": "What if the output is just \"the\"?", "why": "A tiny output can have perfect precision. The penalty e^(1 − r/c) lowers the score when c is shorter than r."}, {"lv": "h", "q": "The octopus test argues that", "o": ["Octopuses are intelligent", "A system trained only on linguistic form cannot learn meaning, which needs links to referents and intent", "BLEU is flawed", "Data is never useful"], "a": 1, "hint": "Bender and Koller, 2020.", "why": "The octopus masters the statistics of the messages but has never touched a coconut or a bear."}, {"lv": "h", "q": "Ettinger found that BERT was largely insensitive to", "o": ["Spelling", "Negation", "Punctuation", "Word length"], "a": 1, "hint": "A robin is (not) a ...", "why": "Its completions barely changed when \"not\" was added, a failure a system that understood would not make."}, {"lv": "h", "q": "Which capability is NOT on the Total Turing Test list?", "o": ["Vision", "Motor control", "Knowledge representation", "Quantum computing"], "a": 3, "hint": "Seven capabilities, all about perceiving, knowing and acting.", "why": "NLP, knowledge representation, reasoning, learning, vision, motor control and other senses."}, {"lv": "x", "q": "In Marr's terms, the main critique of pure next word prediction models is that", "o": ["They are slow at level 3", "They are optimised at levels 2 and 3 without a clear level 1 account of what understanding is", "They lack level 2", "They use the wrong hardware"], "a": 1, "hint": "Which level asks \"why this goal\"?", "why": "Next word prediction is a proxy goal. Whether it is the right computational goal for understanding is not argued."}, {"lv": "x", "q": "The NLP trinity says a solution at one point does not transfer for free. Which change moves along the problem axis?", "o": ["From Hindi to French", "From POS tagging to coreference resolution", "From HMM to CRF", "From GPU to CPU"], "a": 1, "hint": "The three axes are language, problem and algorithm.", "why": "Morphology, POS tagging, chunking, parsing, semantics and discourse are steps along the problem axis."}], "calc": [{"lv": "e", "q": "A tagger finds 8 entities, 6 of them correct. What is its precision?", "ans": "0.75", "hint": "Correct found ÷ all found.", "steps": ["TP = 6, everything found = 8.", "<span class=\"eq\">P = 6 ÷ 8 = 0.75<\/span>", "Three quarters of what it reports is right."]}, {"lv": "e", "q": "There are 10 true entities and the tagger finds 6 of them. What is its recall?", "ans": "0.6", "hint": "Correct found ÷ all true.", "steps": ["TP = 6, true entities = 10.", "<span class=\"eq\">R = 6 ÷ 10 = 0.6<\/span>", "It misses 4 of the 10."]}, {"lv": "m", "q": "With precision 0.75 and recall 0.6, what is F1? Give three decimals.", "ans": "0.667", "hint": "F1 = 2PR ÷ (P + R).", "steps": ["2 × 0.75 × 0.6 = 0.9.", "P + R = 1.35.", "<span class=\"eq\">F1 = 0.9 ÷ 1.35 ≈ 0.667<\/span>"], "tol": 0.0005}, {"lv": "e", "q": "P(oranges | apples and) = 0.5. What is its surprisal in bits?", "ans": "1", "hint": "S = −log<sub>2<\/sub> P.", "steps": ["log<sub>2<\/sub> 0.5 = −1.", "<span class=\"eq\">S = −(−1) = 1 bit<\/span>", "An even chance carries exactly one bit."]}, {"lv": "m", "q": "P(coconut | apples and) = 0.05. What is its surprisal? Give two decimals.", "ans": "4.32", "hint": "S = −log<sub>2<\/sub> 0.05.", "steps": ["log<sub>2<\/sub> 0.05 = ln 0.05 ÷ ln 2 = −2.9957 ÷ 0.6931.", "≈ −4.3219.", "<span class=\"eq\">S ≈ 4.32 bits<\/span>", "Over four times the surprisal of \"oranges\"."], "tol": 0.005}, {"lv": "m", "q": "Candidate \"the the the the\" against reference \"the cat is on the mat\". What is the clipped unigram precision?", "ans": "0.5", "hint": "\"the\" appears twice in the reference.", "steps": ["The candidate has 4 unigrams, all \"the\".", "Clip the count of \"the\" to its reference count, 2.", "<span class=\"eq\">p<sub>1<\/sub> = 2 ÷ 4 = 0.5<\/span>"]}, {"lv": "m", "q": "A candidate has 4 words and the closest reference has 6. What is the brevity penalty? Give four decimals.", "ans": "0.6065", "hint": "BP = e<sup>1 − r/c<\/sup> when c ≤ r.", "steps": ["r ÷ c = 6 ÷ 4 = 1.5.", "1 − 1.5 = −0.5.", "<span class=\"eq\">BP = e<sup>−0.5<\/sup> ≈ 0.6065<\/span>"], "tol": 6e-05}, {"lv": "h", "q": "BLEU with N = 2, BP = 1, p<sub>1<\/sub> = 0.8 and p<sub>2<\/sub> = 0.45. Give three decimals.", "ans": "0.6", "hint": "Geometric mean of the two precisions.", "steps": ["Uniform weights 1/2 each.", "exp(0.5 ln 0.8 + 0.5 ln 0.45) = √(0.8 × 0.45).", "<span class=\"eq\">√0.36 = 0.6<\/span>", "BLEU = 1 × 0.6 = 0.600."]}, {"lv": "h", "q": "For \"John gave Mary a book\" with heads John→gave, Mary→gave, a→book, book→gave, what is the total dependency length?", "ans": "6", "hint": "Add |position − head position| for every word except the root.", "steps": ["Positions: John 1, gave 2, Mary 3, a 4, book 5.", "Distances: John |1 − 2| = 1, Mary |3 − 2| = 1, a |4 − 5| = 1, book |5 − 2| = 3.", "<span class=\"eq\">DL = 1 + 1 + 1 + 3 = 6<\/span>"]}, {"lv": "x", "q": "A model gives P = 0.25 to each of 4 possible next words. What is the average surprisal (entropy) in bits?", "ans": "2", "hint": "Every word has the same surprisal.", "steps": ["Each surprisal is −log<sub>2<\/sub> 0.25 = 2 bits.", "The average of four equal values is that value.", "<span class=\"eq\">H = 4 × 0.25 × 2 = 2 bits<\/span>"]}, {"lv": "x", "q": "Two judges each guess \"human or machine\" for 100 chats. A machine passes if judges are right at most 55% of the time. Judge A is right 52 times and judge B 61 times. How many judges did the machine fool by this rule?", "ans": "1", "hint": "Compare each score with 55.", "steps": ["Judge A: 52 ≤ 55, fooled.", "Judge B: 61 &gt; 55, not fooled.", "<span class=\"eq\">fooled judges = 1<\/span>", "The same machine passes with one judge and fails with another, which is the reproducibility problem of the Turing test."]}], "assign": [{"id": "prf", "lv": "e", "title": "Precision, recall and F1", "task": "<p>Write <code>prf(gold, pred)<\/code> for two sets. Return <code>[precision, recall, f1]<\/code>, each rounded to 3 decimals. If a denominator is 0, use 0 for that value.<\/p>", "starter": "def prf(gold, pred):\n    # your code here\n    pass\n", "tests": [{"call": "prf({'Ram', 'Jodhpur', 'IIT'}, {'Ram', 'Jodhpur', 'Monday'})", "want": [0.667, 0.667, 0.667]}, {"call": "prf({'a', 'b'}, {'a'})", "want": [1.0, 0.5, 0.667]}, {"call": "prf({'a'}, set())", "want": [0, 0.0, 0]}], "solution": "def prf(gold, pred):\n    tp = len(gold & pred)\n    p = tp / len(pred) if pred else 0\n    r = tp / len(gold) if gold else 0\n    f = 2 * p * r / (p + r) if p + r else 0\n    return [round(p, 3), round(r, 3), round(f, 3)]\n", "hint": "tp is the size of the intersection.", "why": "<p>An empty prediction has undefined precision. Libraries such as scikit-learn report 0 and warn, which is the same choice made here.<\/p>"}, {"id": "bleu1", "lv": "m", "title": "Clipped unigram precision", "task": "<p>Write <code>p1(candidate, references)<\/code>. Both are strings of words separated by spaces, <code>references<\/code> is a list. Count each candidate word at most as many times as it appears in the reference where it appears most. Return matches ÷ candidate length, rounded to 4 decimals.<\/p>", "starter": "def p1(candidate, references):\n    # your code here\n    pass\n", "tests": [{"call": "p1('the the the the', ['the cat is on the mat'])", "want": 0.5}, {"call": "p1('the cat is on the mat', ['there is a cat on the mat', 'the cat sat on the mat'])", "want": 1.0}, {"call": "p1('a dog barked', ['the cat sat'])", "want": 0.0}], "solution": "def p1(candidate, references):\n    c = candidate.split()\n    match = 0\n    for w in set(c):\n        best = max(r.split().count(w) for r in references)\n        match += min(c.count(w), best)\n    return round(match / len(c), 4)\n", "hint": "Loop over the distinct candidate words, clip each count, and add.", "why": "<p>This is p<sub>1<\/sub> of BLEU. The full score multiplies the geometric mean of p<sub>1<\/sub> to p<sub>4<\/sub> by the brevity penalty.<\/p>"}, {"id": "deplen", "lv": "m", "title": "Total dependency length", "task": "<p>Write <code>dep_length(heads)<\/code>. <code>heads[i]<\/code> is the 1 based position of the head of word <code>i + 1<\/code>, or 0 for the root. Return the sum of |position − head| over all non root words.<\/p>", "starter": "def dep_length(heads):\n    # your code here\n    pass\n", "tests": [{"call": "dep_length([2, 0, 2, 5, 2])", "want": 6}, {"call": "dep_length([0])", "want": 0}, {"call": "dep_length([2, 0, 2])", "want": 2}, {"call": "dep_length([4, 4, 4, 0])", "want": 6}], "solution": "def dep_length(heads):\n    return sum(abs(i - h) for i, h in enumerate(heads, start=1) if h)\n", "hint": "Use enumerate with start=1 and skip the root.", "why": "<p>Comparing this sum for real sentences and for shuffled ones shows the dependency locality effect from the lecture.<\/p>"}], "must": [["Marr", "Computational (what and why), algorithmic (how, representation), implementational (where). Design top down, validate bottom up."], ["Turing test", "Operational, text only, not reproducible. Qualia are outside it. The Total Turing Test adds perception and action, seven capabilities."], ["ELIZA and SHRDLU", "ELIZA: keyword patterns, no understanding. SHRDLU: world model, reasoning, action and clarifying questions in a blocks world."], ["Fields and pipeline", "NLP builds tools, CL models cognition, NLU is the shared goal. Corpus and annotation, model, then validation."], ["Metrics", "P = TP ÷ (TP + FP), R = TP ÷ (TP + FN), F1 = 2PR ÷ (P + R). BLEU = BP · exp(Σ w log p). Surprisal −log₂ P. Dependency length."], ["Form against meaning", "Firth and Shannon support data. The octopus test, Ettinger, symbol grounding and the Chinese room warn that form is not meaning."]], "summary": "<p>Fluent output is not proof of understanding. Marr asks for the goal first, the Total Turing Test asks for perception and action, SHRDLU shows grounding at small scale, and metrics from F1 to surprisal measure different things.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"metrics": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.gold": "{'Jodhpur', 'IIT', 'Ram'}"}}, {"l": 5, "ev": "line", "d": {"G.pred": "{'Jodhpur', 'Monday', 'Ram'}"}}, {"l": 6, "ev": "line", "d": {"G.tp": "2"}}, {"l": 7, "ev": "line", "d": {"G.fp": "1"}}, {"l": 8, "ev": "line", "d": {"G.fn": "1"}}, {"l": 9, "ev": "line", "d": {"G.precision": "0.6666666666666666"}}, {"l": 10, "ev": "line", "d": {"G.recall": "0.6666666666666666"}}, {"l": 11, "ev": "line", "d": {"G.f1": "0.6666666666666666"}}, {"l": 12, "ev": "line", "o": "tp, fp, fn = 2 1 1\n"}, {"l": 12, "ev": "return", "o": "precision = 0.667  recall = 0.667  F1 = 0.667\n"}], "tail": "", "err": null, "cut": false}, "deplen": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.words": "['John', 'gave', 'Mary', 'a', 'book']"}}, {"l": 5, "ev": "line", "d": {"G.heads": "[2, 0, 2, 5, 2]"}}, {"l": 6, "ev": "line", "d": {"G.total": "0"}}, {"l": 7, "ev": "line", "d": {"G.i": "1", "G.h": "2"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.d": "1"}}, {"l": 10, "ev": "line", "d": {"G.total": "1"}}, {"l": 6, "ev": "line", "o": "John  -> gave  distance 1\n"}, {"l": 7, "ev": "line", "d": {"G.i": "2", "G.h": "0"}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.i": "3", "G.h": "2"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"G.total": "2"}}, {"l": 6, "ev": "line", "o": "Mary  -> gave  distance 1\n"}, {"l": 7, "ev": "line", "d": {"G.i": "4", "G.h": "5"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"G.total": "3"}}, {"l": 6, "ev": "line", "o": "a     -> book  distance 1\n"}, {"l": 7, "ev": "line", "d": {"G.i": "5", "G.h": "2"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.d": "3"}}, {"l": 10, "ev": "line", "d": {"G.total": "6"}}, {"l": 6, "ev": "line", "o": "book  -> gave  distance 3\n"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return", "o": "total dependency length = 6\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/nlpstem.js"></script>
+<script src="../../assets/nlpwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

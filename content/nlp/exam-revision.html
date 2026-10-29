@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam revision: from school to research universities · Natural Language Processing</title>
+<meta name="description" content="Exam patterns by tier, worked questions on tokens and types, Zipf, entropy, stems and lemmas, bigram probability, perplexity, Laplace, Viterbi, PCFG attachment, KL and PMI, derivations of the MLE, perplexity, Viterbi and Gibbs inequality, a formula sheet and common mistakes.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/nlp.css">
+</head>
+<body class="cvp nlpp">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=nlp">Natural Language Processing learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=nlp" target="_top">Natural Language Processing</a><span>›</span><span>Step 6: Exam revision</span><span>›</span><span>Exam revision</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 6 · Topic 1 of 1 · All levels</div>
+    <h1>Exam revision: from school to research universities</h1>
+    <p class="lead">Practise the question shapes of every level with worked answers: counting words, n-gram and perplexity numericals by hand, quick multiple choice tricks, and derivations with their assumptions.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">3 formulas</span><span class="cv-chip">14 worked problems</span><span class="cv-chip">12 quiz questions</span></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Revise</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#map" data-l="map"><span class="n">1</span><span class="t">How NLP is examined</span></a></li><li><a href="#school" data-l="school"><span class="n">2</span><span class="t">Tier 1: school and first year</span></a></li><li><a href="#semester" data-l="semester"><span class="n">3</span><span class="t">Tier 2: university semester and IIT course exams</span></a></li><li><a href="#mcq" data-l="mcq"><span class="n">4</span><span class="t">Tier 3: multiple choice and numerical answer papers</span></a></li><li><a href="#derive" data-l="derive"><span class="n">5</span><span class="t">Tier 4: derivations, design and critique</span></a></li><li><a href="#sheet" data-l="sheet"><span class="n">6</span><span class="t">Formula sheet and last minute checks</span></a></li></ol>
+    <article class="cv-lesson" id="map" data-l="map" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>How NLP is examined</h2>
+<p>This chapter is for the week before an exam. It does not teach new material. It shows the shapes questions take at each level, with worked answers, and points back to the chapter where each idea is taught. The questions are original practice questions written in the style of each tier, not copies of real past papers.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Tier</th><th>Typical format</th><th>What earns the marks</th><th>Where to practise</th></tr></thead><tbody><tr><td>School and first year</td><td>Short answers, counting, small probabilities</td><td>Clear definitions with an example, careful counting</td><td>Lesson 2</td></tr><tr><td>University semester and IIT course exams</td><td>Numericals by hand, short notes, compare and contrast</td><td>Formula first, every step shown, the final answer stated with its meaning</td><td>Lesson 3</td></tr><tr><td>NPTEL and GATE style papers</td><td>Multiple choice, multiple select and numerical answer type, no partial credit</td><td>Speed, recognising the trap option, exact rounding</td><td>Lesson 4</td></tr><tr><td>MIT, Stanford and Cambridge style</td><td>Derivations, proofs, design and critique</td><td>Assumptions named, a complete argument, when it breaks</td><td>Lesson 5</td></tr></tbody></table></div>
+<p>The professor of this course said three things plainly. Derivations will be examined: "if you know how to derive, you know how it works". Hand computation will be examined: given a word sequence and the emission, transition and start tables, you must find the most likely tag sequence. Definitions will be asked with examples: stem against lemma, why perplexities are only comparable with the same vocabulary, and why we never train on the test set.</p>
+<h3>The twelve ideas examined most often</h3>
+<ol>
+<li>Kinds of ambiguity with an example of each (chapter 1.2).</li>
+<li>Tokens against types, sentence segmentation traps (chapter 2.1).</li>
+<li>Stem against lemma, the Porter steps (chapter 2.2).</li>
+<li>Zipf's law, f × r ≈ constant (chapter 3.1).</li>
+<li>Surprisal, entropy and redundancy (chapter 3.2).</li>
+<li>Conditional entropy, mutual information, KL and cross entropy (chapter 3.3).</li>
+<li>Bigram MLE from a toy corpus with &lt;s&gt; and &lt;/s&gt; (chapter 4.1).</li>
+<li>Log probability, perplexity, and the effect of &lt;/s&gt; and OOVs (chapters 4.2 and 4.4).</li>
+<li>Laplace, add-k, interpolation and backoff (chapter 4.3).</li>
+<li>The HMM joint probability and a validity check (chapter 5.2).</li>
+<li>Viterbi by hand, forward and the posterior (chapter 5.3).</li>
+<li>IOB, constituency tests, dependency trees and PCFG attachment (chapters 5.4 and 5.5).</li>
+</ol>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="school" data-l="school" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Tier 1: school and first year</h2>
+<p>Questions at this level check that you can count words, read a simple probability and explain an idea with an example.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Type token ratio</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">TTR = <span class="fr"><span>number of types</span><span>number of tokens</span></span></div><div class="fx-n">Types are distinct words. Tokens are running words.</div></div><div class="fx fx-key"><div class="fx-h"><span>Zipf's law</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>f</i> × <i>r</i> ≈ <i>C</i></div><div class="fx-n">The word of rank r appears about C ÷ r times.</div></div><div class="fx"><div class="fx-h"><span>Entropy</span></div><div class="fx-b"><i>H</i> = −Σ <i>p</i> log₂ <i>p</i></div><div class="fx-n">Average surprise in bits. A fair coin has 1 bit.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Question 1. Count tokens and types in "the cat sat on the mat".</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Tokens: the, cat, sat, on, the, mat, so 6.</li><li>Types: the, cat, sat, on, mat, so 5, since the appears twice.</li><li>TTR = 5 ÷ 6 ≈ 0.833.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 2. The commonest word in a corpus appears 60,000 times. By Zipf's law, about how often does the third commonest appear?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>f × r ≈ C, so C ≈ 60,000 × 1 = 60,000.</li><li>For r = 3, f ≈ 60,000 ÷ 3.</li><li>≈ 20,000 times. Real counts wobble around this line, especially at the top ranks.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 3. Give the stem and the lemma of "studies" and of "better".</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>A stemmer chops suffixes by rule: studies → studi, better → better.</li><li>A lemmatiser looks words up: studies → study, better → good (as an adjective).</li><li>A stem need not be a real word, a lemma always is.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 4. Four outcomes have probabilities 1/2, 1/4, 1/8 and 1/8. Find the entropy.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Surprisals: 1, 2, 3 and 3 bits.</li><li>H = 1/2 × 1 + 1/4 × 2 + 1/8 × 3 + 1/8 × 3.</li><li>= 0.5 + 0.5 + 0.375 + 0.375 = 1.75 bits.</li></ol></div>
+<p>Short answer favourites: name the six levels of linguistic structure (chapter 1.1), give one lexical and one structural ambiguity (chapter 1.2), explain what the Turing test checks and what it misses (chapter 1.3), and say why "Mr. Smith arrived." is hard for a sentence splitter (chapter 2.1).</p>
+<div class="note note-warn"><b>Common mistake</b><div>Do not mix tokens and types. "How many words" is ambiguous in an exam. Say which you counted.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="semester" data-l="semester" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Tier 2: university semester and IIT course exams</h2>
+<p>Here the examiner gives a toy corpus or a set of tables and asks you to work by hand. Show every step. The corpus below is the one used in the n-gram chapters.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Training corpus</th></tr></thead><tbody><tr><td>&lt;s&gt; I am Sam &lt;/s&gt;</td></tr><tr><td>&lt;s&gt; Sam I am &lt;/s&gt;</td></tr><tr><td>&lt;s&gt; Sam I like &lt;/s&gt;</td></tr><tr><td>&lt;s&gt; Sam I do like &lt;/s&gt;</td></tr><tr><td>&lt;s&gt; do I like Sam &lt;/s&gt;</td></tr></tbody></table></div>
+<div class="cvz" data-viz="ngramlm"></div>
+<div class="walk"><div class="walk-h"><span>Question 5. Find P(I like Sam) with a bigram MLE model, including &lt;/s&gt;.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>P(I | &lt;s&gt;) = C(&lt;s&gt; I) ÷ C(&lt;s&gt;) = 1 ÷ 5 = 0.2.</li><li>P(like | I) = 2 ÷ 5 = 0.4. P(Sam | like) = 1 ÷ 3. P(&lt;/s&gt; | Sam) = 2 ÷ 5 = 0.4.</li><li><span class="eq">0.2 × 0.4 × 0.3333 × 0.4 = 0.010667</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 6. Find the perplexity of that sentence.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Predicted tokens: I, like, Sam and &lt;/s&gt;, so N = 4. &lt;s&gt; is only context.</li><li>PP = P<sup>−1/N</sup> = 0.010667<sup>−1/4</sup>.</li><li><span class="eq">PP ≈ 3.112</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 7. Redo P(I | &lt;s&gt;) with Laplace smoothing. The vocabulary has V = 6 types (I, am, Sam, like, do, &lt;/s&gt;).</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>P<sub>Lap</sub>(w | h) = (C(h w) + 1) ÷ (C(h) + V).</li><li>(1 + 1) ÷ (5 + 6) = 2 ÷ 11.</li><li><span class="eq">≈ 0.1818, a little lower than 0.2, since mass moved to unseen pairs</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 8. Decode "they can fish" with the three tag HMM of chapter 5.3.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>t = 1: v(N) = 0.7 × 0.3 = 0.21, M and V are 0.</li><li>t = 2: v(M) = 0.21 × 0.4 × 1.0 = 0.084, v(V) = 0.21 × 0.4 × 0.3 = 0.0252, v(N) = 0.0084.</li><li>t = 3: v(V) = max(0.00336, 0.0756, 0.00756) × 0.7 = 0.05292 from M.</li><li><span class="eq">they/N can/M fish/V, P = 0.05292</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 9. A PCFG gives P(VP → VP PP) = 0.3 and P(NP → NP PP) = 0.2, and the two parses of "I shot an elephant in my pajamas" share every other rule. Which wins?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Shared rules cancel in the ratio.</li><li>VP attachment ∝ 0.3 × P(VP → V NP) = 0.3 × 0.7 = 0.21. NP attachment ∝ 0.7 × 0.2 = 0.14.</li><li>Ratio 1.5, so VP attachment: I wore the pajamas.</li></ol></div>
+<p>Short notes and compare questions at this level: stemming against lemmatisation (chapter 2.2), backoff against interpolation (chapter 4.3), PP against PP1 in SRILM (chapter 4.4), generative against discriminative taggers (chapter 5.1), Mealy against Moore machines (chapter 5.2), chunks against constituents (chapter 5.4), dependency against phrase structure (chapter 5.5).</p>
+<div class="note note-warn"><b>Common mistake</b><div>State your convention for &lt;s&gt; and &lt;/s&gt; before computing. Counting &lt;/s&gt; as a predicted token changes both the probability and the N in perplexity.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="mcq" data-l="mcq" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Tier 3: multiple choice and numerical answer papers</h2>
+<p>NPTEL course exams and GATE style papers use multiple choice, multiple select and numerical answer questions with no partial credit. Learn the shortcuts and the trap options.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Shortcut</th><th>Use it for</th></tr></thead><tbody><tr><td>Uniform over k outcomes: H = log₂ k, PP = k</td><td>Instant entropy and perplexity of a uniform model</td></tr><tr><td>PP = 2<sup>H</sup> = 10<sup>−log10 P ÷ N</sup></td><td>Switching between bits and SRILM's base 10</td></tr><tr><td>n-gram table size V<sup>n</sup></td><td>Why trigrams are sparse</td></tr><tr><td>IOB labels 2k + 1, BIOES 4k + 1</td><td>Label counts for k entity types</td></tr><tr><td>Brute force q<sup>T</sup>, Viterbi T q², trigram HMM T q³</td><td>Complexity questions</td></tr><tr><td>Dependency tree: n words, n arcs with ROOT</td><td>Counting arcs</td></tr><tr><td>KL ≥ 0, equal to 0 only when P = Q</td><td>True or false on divergences</td></tr><tr><td>H(X, Y) = H(X) + H(Y | X)</td><td>Chain rule for entropy</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Question 10. P = (1/2, 1/2), Q = (3/4, 1/4). Find KL(P ‖ Q) in bits.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>KL = Σ P log₂(P ÷ Q).</li><li>= 0.5 log₂(0.5 ÷ 0.75) + 0.5 log₂(0.5 ÷ 0.25) = 0.5 × (−0.585) + 0.5 × 1.</li><li><span class="eq">≈ 0.2075 bits. Cross entropy H(P, Q) = H(P) + KL = 1.2075 bits</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 11. P(x, y) = 0.01, P(x) = 0.05 and P(y) = 0.1. Find the pointwise mutual information.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>PMI = log₂ P(x, y) ÷ (P(x) P(y)).</li><li>P(x) P(y) = 0.005, so the ratio is 2.</li><li><span class="eq">PMI = 1 bit: they occur together twice as often as chance</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 12. A model gives every word of a 1,000 word vocabulary the same probability. What is its perplexity?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>P(w) = 1 ÷ 1,000 for every word.</li><li>H = log₂ 1,000 ≈ 9.97 bits.</li><li><span class="eq">PP = 2<sup>H</sup> = 1,000</span></li></ol></div>
+<div class="note note-exam"><b>In the exam</b><div>Trap options to expect: counting &lt;s&gt; as a predicted token, mixing log base 2 and 10, forgetting to add V in the Laplace denominator, treating columns of an HMM table as summing to 1, and calling a chunk a constituent.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="derive" data-l="derive" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Tier 4: derivations, design and critique</h2>
+<p>Research university exams in the style of MIT, Stanford and Cambridge reward a complete argument more than a final number. State assumptions, derive the result, then say when it fails.</p>
+<h3>Question 13. Show that the bigram MLE is a relative frequency.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>For one history h, maximise L = Σ<sub>w</sub> C(h w) log θ<sub>w</sub> subject to Σ<sub>w</sub> θ<sub>w</sub> = 1.</li><li>Lagrangian: Σ C(h w) log θ<sub>w</sub> − λ (Σ θ<sub>w</sub> − 1). Setting the derivative to 0 gives C(h w) ÷ θ<sub>w</sub> = λ.</li><li>So θ<sub>w</sub> = C(h w) ÷ λ. Summing over w gives λ = Σ C(h w) = C(h).</li><li><span class="eq">θ<sub>w</sub> = C(h w) ÷ C(h)</span></li><li>It fails for unseen pairs, which get 0. That is why we smooth.</li></ol></div>
+<h3>Question 14. Show that perplexity is 2 to the power of the cross entropy.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Per token cross entropy of the test text: H = −(1 ÷ N) log₂ P(w₁ … w<sub>N</sub>).</li><li>Then 2<sup>H</sup> = 2<sup>−(1/N) log₂ P</sup> = P<sup>−1/N</sup>.</li><li>That is the definition PP = P<sup>−1/N</sup>. A perplexity of k means the model is as unsure as a fair choice among k words.</li><li>It is only comparable across models with the same vocabulary and tokenisation, since N and the event space must match.</li></ol></div>
+<h3>Question 15. Show that a generative tagger and a discriminative tagger choose the same sequence, and prove Viterbi is exact.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>P(T | W) = P(W, T) ÷ P(W), and P(W) is one positive constant for the fixed sentence, so the argmax is unchanged.</li><li>Viterbi: under the Markov assumption, the score after time t depends on the past only through the tag at t.</li><li>If a best path used a non best prefix into its tag at t, swapping in the best prefix would raise its score, a contradiction.</li><li>So one best score per (t, tag) suffices, costing T q² instead of q<sup>T</sup>. It breaks when the model is not Markov, for example with features of the whole tag sequence, which is why CRFs with global features need other inference.</li></ol></div>
+<h3>Question 16. Show that KL divergence is never negative.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>−KL(P ‖ Q) = Σ P log(Q ÷ P).</li><li>log is concave, so by Jensen's inequality Σ P log(Q ÷ P) ≤ log Σ P (Q ÷ P) = log Σ Q ≤ log 1 = 0.</li><li>So KL ≥ 0, with equality only when Q ÷ P is constant, that is P = Q.</li><li>Consequence: cross entropy H(P, Q) = H(P) + KL ≥ H(P). No model beats the true entropy on average.</li></ol></div>
+<h3>Design and critique questions</h3>
+<p>A design question such as build a tagger for tweets in Hinglish has no single answer. Structure it as: the data and labels you need, the tagset, the model family and why, how you handle unknown words (suffixes, capitals, subwords), the metric, the error analysis, and the failure cases. A critique question gives an experiment, for example "the new language model has perplexity 40 against 65", and asks what could be wrong: a different vocabulary, a different tokeniser, tuning on the test set, or a test set that overlaps the training data.</p>
+<div class="note note-exam"><b>In the exam</b><div>In derivations, name each assumption when you use it: Markov, output independence, a fixed vocabulary, independent sentences. Examiners often ask what breaks when one fails.</div></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>At school you count words, read small probabilities and explain ideas with examples.</p></div><div class="ld-p" data-ld="college" hidden><p>At university you are given a toy corpus or HMM tables and must compute probabilities, perplexity and the best tag sequence by hand, step by step.</p></div><div class="ld-p" data-ld="masters" hidden><p>In competitive papers you must recognise the right formula quickly, avoid the traps around &lt;s&gt;, &lt;/s&gt;, log bases and smoothing, and round only at the end.</p></div><div class="ld-p" data-ld="research" hidden><p>At research universities you derive MLE, perplexity, Viterbi and KL from first principles, state the assumptions and argue when they fail.</p></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sheet" data-l="sheet" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Formula sheet and last minute checks</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Topic</th><th>Formula</th></tr></thead><tbody><tr><td>Zipf</td><td>f × r ≈ C</td></tr><tr><td>Surprisal, entropy</td><td>I(x) = −log₂ p(x), &nbsp; H = −Σ p log₂ p</td></tr><tr><td>Conditional entropy, chain rule</td><td>H(Y | X) = H(X, Y) − H(X)</td></tr><tr><td>Mutual information</td><td>I(X : Y) = H(X) − H(X | Y), &nbsp; PMI = log₂ P(x, y) ÷ P(x) P(y)</td></tr><tr><td>KL, cross entropy</td><td>KL(P ‖ Q) = Σ P log₂(P ÷ Q), &nbsp; H(P, Q) = H(P) + KL</td></tr><tr><td>Bigram MLE</td><td>P(w | h) = C(h w) ÷ C(h)</td></tr><tr><td>Laplace, add-k</td><td>(C(h w) + 1) ÷ (C(h) + V), &nbsp; (C(h w) + k) ÷ (C(h) + kV)</td></tr><tr><td>Interpolation</td><td>λ₃ P(w | u v) + λ₂ P(w | v) + λ₁ P(w), λs sum to 1</td></tr><tr><td>Perplexity</td><td>P<sup>−1/N</sup> = 2<sup>H</sup>, &nbsp; SRILM ppl = 10<sup>−lp ÷ (words − OOV + sents)</sup></td></tr><tr><td>HMM joint</td><td>π(t₁) b(w₁ | t₁) ∏ a(t<sub>i−1</sub> → t<sub>i</sub>) b(w<sub>i</sub> | t<sub>i</sub>)</td></tr><tr><td>Viterbi, forward</td><td>v<sub>t</sub>(j) = max<sub>i</sub> v<sub>t−1</sub>(i) a<sub>ij</sub> b<sub>j</sub>(w<sub>t</sub>), &nbsp; α with Σ</td></tr><tr><td>Entity F1</td><td>2PR ÷ (P + R) on exact spans</td></tr><tr><td>PCFG</td><td>P(tree) = ∏ P(rule)</td></tr><tr><td>Catalan</td><td>C<sub>n</sub> = (2n)! ÷ ((n + 1)! n!)</td></tr></tbody></table></div>
+<div class="cv-code" data-k="drill"></div>
+<h3>Ten mistakes that cost marks</h3>
+<ol>
+<li>Counting &lt;s&gt; as a predicted token.</li>
+<li>Forgetting &lt;/s&gt; when the question includes it.</li>
+<li>Using V without &lt;unk&gt; when the question adds it, or the other way round.</li>
+<li>Mixing log base 2 and log base 10.</li>
+<li>Rounding in the middle of a long product.</li>
+<li>Summing columns instead of rows when checking an HMM.</li>
+<li>Forgetting the start probability in the first Viterbi column.</li>
+<li>Reporting the best final cell without tracing the back pointers.</li>
+<li>Calling a stem a lemma.</li>
+<li>Comparing perplexities across different vocabularies.</li>
+</ol>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./syntax.html" data-topic="syntax"><small>Previous topic</small><b>Syntax</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "exam-revision", "topic": "exam-revision", "subject": "nlp", "title": "Exam revision: from school to research universities", "codes": {"drill": {"src": "# Exam drill: from the probability of each predicted token to log probability and perplexity\nimport math\nprobs = [float(x) for x in input(\"probabilities of each predicted token (<\/s> included): \").split()]\nlp10 = sum(math.log10(p) for p in probs)\nlp2 = sum(math.log2(p) for p in probs)\nn = len(probs)\nprint(\"P(sentence)        =\", round(math.prod(probs), 6))\nprint(\"log10 probability  =\", round(lp10, 5))\nprint(\"cross entropy H    =\", round(-lp2 / n, 4), \"bits per token\")\nprint(\"perplexity 2 ** H  =\", round(2 ** (-lp2 / n), 4))\nprint(\"same as 10 ** (-lp10 / n) =\", round(10 ** (-lp10 / n), 4))", "stdin": "0.2 0.4 0.3333333 0.4\n", "out": "probabilities of each predicted token (<\/s> included): P(sentence)        = 0.010667\nlog10 probability  = -1.97197\ncross entropy H    = 1.6377 bits per token\nperplexity 2 ** H  = 3.1117\nsame as 10 ** (-lp10 / n) = 3.1117"}}, "quiz": [{"lv": "e", "q": "How many types are in \"to be or not to be\"?", "o": ["6", "4", "3", "5"], "a": 1, "hint": "Distinct words.", "why": "to, be, or, not."}, {"lv": "e", "q": "A lemmatiser maps \"mice\" to", "o": ["mic", "mouse", "mice", "mi"], "a": 1, "hint": "A dictionary form.", "why": "Lemmas are real dictionary words."}, {"lv": "e", "q": "The entropy of a fair coin is", "o": ["0 bits", "0.5 bits", "1 bit", "2 bits"], "a": 2, "hint": "Two equal outcomes.", "why": "log₂ 2 = 1."}, {"lv": "m", "q": "In a bigram model, &lt;s&gt; is", "o": ["Predicted", "Only context", "Ignored entirely", "Counted in V"], "a": 1, "hint": "It is never generated.", "why": "It conditions the first word but is never a predicted token."}, {"lv": "m", "q": "Laplace smoothing adds 1 to every bigram count and adds what to the denominator?", "o": ["1", "N", "V", "V²"], "a": 2, "hint": "One per possible next word.", "why": "There are V possible next words, each gets 1."}, {"lv": "m", "q": "A uniform model over 64 words has perplexity", "o": ["6", "8", "64", "4,096"], "a": 2, "hint": "Uniform over k gives k.", "why": "H = 6 bits and 2⁶ = 64."}, {"lv": "m", "q": "Which rows of an HMM must sum to 1?", "o": ["Columns of A", "Rows of A and rows of B", "Only π", "The diagonal"], "a": 1, "hint": "Outgoing from each state.", "why": "Each state's transitions and emissions are distributions."}, {"lv": "h", "q": "KL(P ‖ Q) = 0 means", "o": ["P and Q are independent", "P = Q", "Q is uniform", "H(P) = 0"], "a": 1, "hint": "Gibbs inequality.", "why": "Equality holds only when the two distributions are the same."}, {"lv": "h", "q": "Viterbi on 20 words with 12 tags takes about how many steps?", "o": ["240", "2,880", "12²⁰", "20¹²"], "a": 1, "hint": "T × q².", "why": "20 × 144 = 2,880."}, {"lv": "h", "q": "Why can perplexities of a word model and a subword model not be compared directly?", "o": ["Different hardware", "They predict different units, so N and the event space differ", "Subwords have no perplexity", "They can"], "a": 1, "hint": "Per what?", "why": "Perplexity is per predicted unit, so the units must match."}, {"lv": "x", "q": "The MLE of a bigram is derived with", "o": ["Gradient descent only", "A Lagrange multiplier for the sum to 1 constraint", "Bayes rule", "Viterbi"], "a": 1, "hint": "Constrained maximisation.", "why": "The multiplier comes out as C(h), giving C(h w) ÷ C(h)."}, {"lv": "x", "q": "With k PPs after \"V NP\", the number of projective attachments is", "o": ["2<sup>k<\/sup>", "k!", "the Catalan number C<sub>k+1<\/sub>", "k²"], "a": 2, "hint": "2, 5, 14, 42 …", "why": "Catalan growth, which is why chart parsing shares sub trees."}], "calc": [{"lv": "e", "q": "Type token ratio of \"the cat sat on the mat\"? Three decimals.", "ans": "0.833", "hint": "Types ÷ tokens.", "steps": ["Tokens: 6.", "Types: 5.", "<span class=\"eq\">5 ÷ 6 = 0.833<\/span>"], "tol": 0.0005}, {"lv": "e", "q": "By Zipf's law, if rank 1 appears 60,000 times, how often does rank 3 appear?", "ans": "20000", "hint": "f × r ≈ C.", "steps": ["C ≈ 60,000.", "f = C ÷ r.", "<span class=\"eq\">60,000 ÷ 3 = 20,000<\/span>"], "tol": 0.5}, {"lv": "e", "q": "Entropy of (1/2, 1/4, 1/8, 1/8) in bits?", "ans": "1.75", "hint": "Sum p × surprisal.", "steps": ["Surprisals 1, 2, 3, 3.", "0.5 + 0.5 + 0.375 + 0.375.", "<span class=\"eq\">1.75 bits<\/span>"], "tol": 0.001}, {"lv": "m", "q": "Toy corpus: P(I like Sam) with &lt;/s&gt;, bigram MLE. Six decimals.", "ans": "0.010667", "hint": "Four bigrams.", "steps": ["0.2 × 0.4 = 0.08.", "× 1/3 = 0.026667.", "<span class=\"eq\">× 0.4 = 0.010667<\/span>"], "tol": 5e-07}, {"lv": "m", "q": "Perplexity of that sentence (N = 4 predicted tokens)? Three decimals.", "ans": "3.112", "hint": "P to the power −1/N.", "steps": ["P = 0.010667.", "PP = 0.010667<sup>−1/4<\/sup>.", "<span class=\"eq\">≈ 3.112<\/span>"], "tol": 0.0005}, {"lv": "m", "q": "Laplace P(I | &lt;s&gt;) with C(&lt;s&gt; I) = 1, C(&lt;s&gt;) = 5, V = 6? Four decimals.", "ans": "0.1818", "hint": "(C + 1) ÷ (C(h) + V).", "steps": ["Numerator 1 + 1 = 2.", "Denominator 5 + 6 = 11.", "<span class=\"eq\">2 ÷ 11 = 0.1818<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "KL(P ‖ Q) for P = (1/2, 1/2), Q = (3/4, 1/4) in bits? Four decimals.", "ans": "0.2075", "hint": "Σ P log₂(P ÷ Q).", "steps": ["0.5 log₂(2/3) = −0.2925.", "0.5 log₂ 2 = 0.5.", "<span class=\"eq\">0.5 − 0.2925 = 0.2075<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "PMI for P(x, y) = 0.01, P(x) = 0.05, P(y) = 0.1, in bits?", "ans": "1", "hint": "log₂ of the ratio.", "steps": ["P(x) P(y) = 0.005.", "Ratio 0.01 ÷ 0.005 = 2.", "<span class=\"eq\">log₂ 2 = 1 bit<\/span>"], "tol": 0.001}, {"lv": "h", "q": "Viterbi v₃(V) for they can fish, from v₂(M) = 0.084, a(M → V) = 0.9, b<sub>V<\/sub>(fish) = 0.7 (the best predecessor)? Five decimals.", "ans": "0.05292", "hint": "Best predecessor times emission.", "steps": ["0.084 × 0.9 = 0.0756.", "It beats 0.00336 and 0.00756.", "<span class=\"eq\">0.0756 × 0.7 = 0.05292<\/span>"], "tol": 5e-06}, {"lv": "h", "q": "Posterior of N M V given P(W) = 0.073164? Four decimals.", "ans": "0.7233", "hint": "Joint ÷ P(W).", "steps": ["P(W, N M V) = 0.05292.", "0.05292 ÷ 0.073164.", "<span class=\"eq\">= 0.7233<\/span>"], "tol": 0.0001}, {"lv": "h", "q": "Perplexity of a model with cross entropy 9.97 bits per word? Nearest whole number.", "ans": "1003", "hint": "2<sup>H<\/sup>.", "steps": ["PP = 2<sup>9.97<\/sup>.", "2¹⁰ = 1,024 and 2<sup>−0.03<\/sup> ≈ 0.9794.", "<span class=\"eq\">1,024 × 0.9794 ≈ 1,003<\/span>"], "tol": 0.6}, {"lv": "x", "q": "Cross entropy H(P, Q) for P = (1/2, 1/2), Q = (3/4, 1/4)? Four decimals.", "ans": "1.2075", "hint": "H(P) + KL.", "steps": ["H(P) = 1 bit.", "KL = 0.2075 bits.", "<span class=\"eq\">H(P, Q) = 1.2075 bits<\/span>"], "tol": 5e-05}, {"lv": "x", "q": "Number of possible trigrams over a 20,000 word vocabulary?", "ans": "8000000000000", "hint": "V³.", "steps": ["V = 2 × 10⁴.", "V³ = 8 × 10¹².", "<span class=\"eq\">8,000,000,000,000, far more than any corpus can fill<\/span>"], "tol": 0.5}, {"lv": "x", "q": "Parses for 5 PPs after \"V NP\" (Catalan C₆ = 12! ÷ (7! 6!))?", "ans": "132", "hint": "Compute the factorials.", "steps": ["12! = 479,001,600.", "7! × 6! = 5,040 × 720 = 3,628,800.", "<span class=\"eq\">479,001,600 ÷ 3,628,800 = 132<\/span>"], "tol": 0.01}], "assign": [], "must": [], "summary": ""}</script>
+<script type="application/json" id="cvtrace">{"drill": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line", "o": "probabilities of each predicted token (<\/s> included): "}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.probs": "[0.2, 0.4, 0.3333333, 0.4]"}}, {"l": 4, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7ff1d63b1d50>"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return", "d": {"L.p": "0.2"}}, {"l": 4, "ev": "call"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return", "d": {"L.p": "0.4"}}, {"l": 4, "ev": "call"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return", "d": {"L.p": "0.3333333"}}, {"l": 4, "ev": "call"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return", "d": {"L.p": "0.4"}}, {"l": 4, "ev": "call"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return"}, {"l": 5, "ev": "line", "s": ["module"], "d": {"G.lp10": "-1.9719713198292068", "L..0": null, "L.p": null}}, {"l": 5, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7ff1d63b1fc0>"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L.p": "0.2"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L.p": "0.4"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L.p": "0.3333333"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L.p": "0.4"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 6, "ev": "line", "s": ["module"], "d": {"G.lp2": "-6.550746929652754", "L..0": null, "L.p": null}}, {"l": 7, "ev": "line", "d": {"G.n": "4"}}, {"l": 8, "ev": "line", "o": "P(sentence)        = 0.010667\n"}, {"l": 9, "ev": "line", "o": "log10 probability  = -1.97197\n"}, {"l": 10, "ev": "line", "o": "cross entropy H    = 1.6377 bits per token\n"}, {"l": 11, "ev": "line", "o": "perplexity 2 ** H  = 3.1117\n"}, {"l": 11, "ev": "return", "o": "same as 10 ** (-lp10 / n) = 3.1117\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/nlpstem.js"></script>
+<script src="../../assets/nlpwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

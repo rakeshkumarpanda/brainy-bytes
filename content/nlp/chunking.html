@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chunking and named entities · Natural Language Processing</title>
+<meta name="description" content="Chunks against constituents, a regular expression chunker over POS tags, IOB encoding and decoding with problem H4, IOB2 and BIOES, named entity recognition with the United and San Francisco example, the perceptron and CRF, and entity level precision, recall and F1.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/nlp.css">
+</head>
+<body class="cvp nlpp">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=nlp">Natural Language Processing learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=nlp" target="_top">Natural Language Processing</a><span>›</span><span>Step 5: Tagging and syntax</span><span>›</span><span>Chunking and NER</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 4 of 5 · College and masters</div>
+    <h1>Chunking and named entities</h1>
+    <p class="lead">Group words into flat chunks, turn spans into tags with IOB, find people, places and organisations, and score them fairly.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">3 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">2 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">3 assignments</span></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#chunks" data-l="chunks"><span class="n">1</span><span class="t">What a chunk is</span></a></li><li><a href="#iob" data-l="iob"><span class="n">2</span><span class="t">IOB: spans as tags</span></a></li><li><a href="#ner" data-l="ner"><span class="n">3</span><span class="t">Named entity tagging</span></a></li></ol>
+    <article class="cv-lesson" id="chunks" data-l="chunks" hidden><div class="cv-lno">Lesson 1 of 3</div><h2>What a chunk is</h2>
+<p>"Fast" is a word and "food" is a word, but "fast food" is one unit of meaning. So are "heavy rain", "the yellow dog" and "cats and dogs". Chunking finds these groups in a sentence. It is called shallow parsing because it finds flat, non overlapping pieces instead of a full tree.</p>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>Chunk</th><th>Constituent</th></tr></thead><tbody><tr><td>Shape</td><td>flat, never nested</td><td>nested inside a full tree</td></tr><tr><td>Example</td><td>[the yellow dog]</td><td>[[the yellow dog] [in [the park]]]</td></tr><tr><td>Defined by</td><td>any useful group, often base noun and verb phrases</td><td>grammar: noun phrase, verb phrase, adjective phrase</td></tr><tr><td>Cost</td><td>fast and robust, a tagging problem</td><td>slower, needs a parser (chapter 5.5)</td></tr></tbody></table></div>
+<p>In class: "A constituent is more grammatical, a syntactic category like a noun phrase. A chunk is any meaningful group of units that we may not always annotate grammatically."</p>
+<h3>A rule based chunker</h3>
+<p>The quickest chunker is a regular expression over POS tags. "An optional determiner, any number of adjectives, then one or more nouns" catches most base noun phrases. NLTK writes it as <code>NP: {&lt;DT&gt;?&lt;JJ&gt;*&lt;NN.*&gt;+}</code>.</p>
+<div class="cv-code" data-k="regex"></div>
+<div class="note note-tip"><b>Remember</b><div>This is why POS tagging comes first. The chunker never looks at the words, only at the tags, so tagging errors flow straight into chunking errors.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="iob" data-l="iob" hidden><div class="cv-lno">Lesson 2 of 3</div><h2>IOB: spans as tags</h2>
+<p>Finding spans sounds like a new problem, but a small trick turns it into tagging, so every tagger from the last three chapters can do it. Give each word one of three kinds of label.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>IOB tags</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><b>B-</b><i>X</i> begins a chunk of type <i>X</i> &nbsp; <b>I-</b><i>X</i> is inside it &nbsp; <b>O</b> is outside every chunk</div><div class="fx-n">With k chunk types there are 2k + 1 labels. The input can be the words and their POS tags.</div></div></div>
+<p>"We saw the yellow dog ." becomes We/B-NP saw/B-VP the/B-NP yellow/I-NP dog/I-NP ./O, which is [NP We] [VP saw] [NP the yellow dog] in brackets. As the professor put it, "everything remains the same" as POS tagging: same models, new tag set.</p>
+<div class="cvz" data-viz="iob"></div>
+<div class="walk"><div class="walk-h"><span>Problem H4, both directions</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Encode [NP The quick brown fox] [VP jumped] over [NP the lazy dog].</li><li>The/B-NP quick/I-NP brown/I-NP fox/I-NP jumped/B-VP over/O the/B-NP lazy/I-NP dog/I-NP.</li><li>over is outside every chunk, so it gets O. Each chunk starts with B and continues with I of the same type.</li><li>Decode Sidharth/B-PER Ranjan/I-PER teaches/O at/O IIT/B-ORG Jodhpur/I-ORG.</li><li>A span is one B-X plus the I-X tags that follow it: [Sidharth Ranjan] PER and [IIT Jodhpur] ORG.</li></ol></div>
+<div class="cv-code" data-k="encode"></div>
+<div class="cv-code" data-k="decode"></div>
+<div class="note note-tip"><b>Remember</b><div>Why B at all? Two chunks of the same type can sit side by side: "gave [the girl] [a book]". With only I and O, the girl a book would merge into one span. B marks where the second one starts.</div></div>
+<details class="deep"><summary>Going deeper: IOB1, IOB2 and BIOES</summary><div class="deep-b"><p>IOB2, used above, puts B on the first word of every chunk. The older IOB1 (Ramshaw and Marcus 1995) uses B only when a chunk directly follows another of the same type. BIOES, also called BILOU, adds E for the last word and S for a single word chunk, giving 4k + 1 labels. The extra labels give the model more precise targets and often help slightly for named entities. Ill formed sequences such as O then I-X are usually repaired by reading the I-X as B-X.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="ner" data-l="ner" hidden><div class="cv-lno">Lesson 3 of 3</div><h2>Named entity tagging</h2>
+<p>Named entity recognition (NER) finds names of people, organisations, places, dates and amounts. It is chunking with entity types instead of phrase types.</p>
+<div class="walk"><div class="walk-h"><span>Reading the slide example</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>United/B-ORG cancelled/O the/O flight/O from/O San/B-LOC Francisco/I-LOC.</li><li>A span starts at each B- and continues through the following I- tags of the same type.</li><li>Spans: [United] ORG and [San Francisco] LOC. Everything tagged O is outside any entity.</li></ol></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Type</th><th>Examples</th></tr></thead><tbody><tr><td>PER (person)</td><td>Sidharth Ranjan, Marie Curie</td></tr><tr><td>ORG (organisation)</td><td>United, IIT Jodhpur, the World Health Organization</td></tr><tr><td>LOC or GPE (place)</td><td>San Francisco, the Falkland Islands, India</td></tr><tr><td>DATE, MONEY, PERCENT</td><td>next Tuesday, 500 rupees, 12%</td></tr></tbody></table></div>
+<h3>Models</h3>
+<p>The same families as POS tagging. Features matter even more: a capital letter, a title such as Dr., a word shape such as Xxxx, a gazetteer list of known cities, and the neighbouring words. The perceptron (Collins 2002) learns from its errors with these features. A conditional random field (CRF) normalises over the whole tag sequence, so it can learn that I-LOC never follows B-PER. Neural taggers, BiLSTM with a CRF layer or a fine tuned BERT, lead today.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Entity level F1</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">P = <span class="fr"><span>correct spans</span><span>predicted spans</span></span> &nbsp; R = <span class="fr"><span>correct spans</span><span>gold spans</span></span> &nbsp; F1 = <span class="fr"><span>2PR</span><span>P + R</span></span></div><div class="fx-n">A predicted span counts only if its start, end and type all match. Token accuracy is misleading because most tokens are O.</div></div></div>
+<div class="cv-code" data-k="spanf1"></div>
+<div class="scene"><div class="scene-h">Real world scenario: a bank reading cheque requests</div><p>A bank's email system receives "Please transfer 25,000 rupees to Asha Verma at Kotak Mahindra Bank by Friday". An NER tagger marks MONEY, PER, ORG and DATE spans, and a form is filled in for a human to approve. A missed boundary, such as tagging only "Kotak" as ORG, would count as wrong under entity level scoring, which is exactly the strictness the bank needs.</p></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Mark groups of words that belong together, and names of people and places, by giving every word a small label: begin, inside or outside.</p></div><div class="ld-p" data-ld="college" hidden><p>IOB turns span finding into tagging with 2k + 1 labels. Rule chunkers use regular expressions over POS tags. NER uses the same taggers with richer features and is scored with entity level precision, recall and F1.</p></div><div class="ld-p" data-ld="masters" hidden><p>Linear chain CRFs model P(Y | X) ∝ exp(Σ θ · f(y<sub>i−1</sub>, y<sub>i</sub>, X, i)) and decode with Viterbi. They avoid the label bias of left to right classifiers (MEMMs). Encoding choice (IOB2 or BIOES) changes what the transition weights can express.</p></div><div class="ld-p" data-ld="research" hidden><p>Nested NER (an organisation inside a location name) breaks flat IOB and uses span based or hypergraph models. Low resource NER uses cross lingual transfer, and large language models can extract entities from instructions with few or no examples.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./viterbi.html" data-topic="viterbi"><small>Previous topic</small><b>Viterbi</b></a><a class="next" href="./syntax.html" data-topic="syntax"><small>Next topic</small><b>Syntax</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "chunking", "topic": "chunking", "subject": "nlp", "title": "Chunking and named entities", "codes": {"encode": {"src": "# Spans to IOB tags: B- on the first word of a chunk, I- on the rest, O outside\nwords = [\"The\", \"quick\", \"brown\", \"fox\", \"jumped\", \"over\", \"the\", \"lazy\", \"dog\"]\nspans = [(0, 4, \"NP\"), (4, 5, \"VP\"), (6, 9, \"NP\")]       # (start, end, type), end not included\ntags = [\"O\"] * len(words)\nfor s, e, typ in spans:\n    tags[s] = \"B-\" + typ\n    for i in range(s + 1, e):\n        tags[i] = \"I-\" + typ\nprint(list(zip(words, tags)))", "stdin": "", "out": "[('The', 'B-NP'), ('quick', 'I-NP'), ('brown', 'I-NP'), ('fox', 'I-NP'), ('jumped', 'B-VP'), ('over', 'O'), ('the', 'B-NP'), ('lazy', 'I-NP'), ('dog', 'I-NP')]"}, "decode": {"src": "# IOB tags back to spans. An I- after O (or after another type) is repaired as a B-\nwords = [\"Sidharth\", \"Ranjan\", \"teaches\", \"at\", \"IIT\", \"Jodhpur\"]\ntags = [\"B-PER\", \"I-PER\", \"O\", \"O\", \"B-ORG\", \"I-ORG\"]\nspans, cur = [], None\nfor i, t in enumerate(tags + [\"O\"]):\n    if cur and not (t.startswith(\"I-\") and t[2:] == cur[2]):\n        spans.append((\" \".join(words[cur[0]:i]), cur[2]))\n        cur = None\n    if t.startswith(\"B-\") or (t.startswith(\"I-\") and cur is None):\n        cur = (i, i, t[2:])\nprint(spans)", "stdin": "", "out": "[('Sidharth Ranjan', 'PER'), ('IIT Jodhpur', 'ORG')]"}, "regex": {"src": "# A tiny regular expression chunker over POS tags, like NLTK's RegexpParser with NP: {<DT>?<JJ>*<NN.*>+}\nimport re\nsent = [(\"We\", \"PRP\"), (\"saw\", \"VBD\"), (\"the\", \"DT\"), (\"yellow\", \"JJ\"), (\"dog\", \"NN\"), (\"near\", \"IN\"),\n        (\"heavy\", \"JJ\"), (\"rain\", \"NN\"), (\"clouds\", \"NNS\")]\ntagstr = \"\".join(\"<\" + t + \">\" for _, t in sent)\npattern = r\"(<DT>)?(<JJ>)*(<NN[A-Z]*>)+\"\nfor m in re.finditer(pattern, tagstr):\n    start = tagstr[:m.start()].count(\"<\")\n    n = m.group(0).count(\"<\")\n    print(\"NP:\", \" \".join(w for w, _ in sent[start:start + n]))", "stdin": "", "out": "NP: the yellow dog\nNP: heavy rain clouds"}, "spanf1": {"src": "# Entity level scoring: a predicted span counts only if its start, end and type all match\ngold = {(0, 2, \"PER\"), (4, 6, \"ORG\"), (8, 9, \"LOC\")}\npred = {(0, 2, \"PER\"), (4, 5, \"ORG\"), (8, 9, \"LOC\"), (10, 11, \"LOC\")}\ntp = len(gold & pred)\np, r = tp / len(pred), tp / len(gold)\nprint(\"true positives:\", tp, \" precision:\", p, \" recall:\", round(r, 3), \" F1:\", round(2 * p * r / (p + r), 3))", "stdin": "", "out": "true positives: 2  precision: 0.5  recall: 0.667  F1: 0.571"}}, "quiz": [{"lv": "e", "q": "In IOB, the tag O means", "o": ["Object", "Outside any chunk", "Open chunk", "Ordinal"], "a": 1, "hint": "Three letters: B, I, O.", "why": "The word belongs to no chunk."}, {"lv": "e", "q": "Which is a chunk?", "o": ["\"the\"", "\"heavy rain\"", "\".\"", "\"is\""], "a": 1, "hint": "A group of words that belong together.", "why": "heavy rain is one unit of meaning."}, {"lv": "e", "q": "Chunking is also called", "o": ["Deep parsing", "Shallow parsing", "Stemming", "Smoothing"], "a": 1, "hint": "Flat pieces, no full tree.", "why": "It finds non overlapping groups without building a full tree."}, {"lv": "m", "q": "Decode San/B-LOC Francisco/I-LOC. The span is", "o": ["[San] [Francisco]", "[San Francisco] LOC", "No span", "[Francisco] LOC"], "a": 1, "hint": "B plus following I of the same type.", "why": "One location span of two words."}, {"lv": "m", "q": "How many IOB2 labels are needed for 4 entity types?", "o": ["4", "8", "9", "17"], "a": 2, "hint": "2k + 1.", "why": "4 B tags, 4 I tags and O."}, {"lv": "m", "q": "Why do we need B and not only I and O?", "o": ["For speed", "To separate two adjacent chunks of the same type", "For punctuation", "Because O is ambiguous"], "a": 1, "hint": "gave [the girl] [a book].", "why": "Without B the two noun phrases would merge."}, {"lv": "m", "q": "How is a chunk different from a constituent?", "o": ["Chunks are nested", "Chunks are flat and never nested, constituents form a nested tree", "They are the same", "Constituents are single words"], "a": 1, "hint": "Think of [[the dog] [in the park]].", "why": "Chunks do not contain other chunks."}, {"lv": "m", "q": "A tag sequence O I-PER is", "o": ["Valid", "Ill formed, usually repaired as O B-PER", "A new entity type", "Always an error to drop"], "a": 1, "hint": "I must continue something.", "why": "An I with nothing to continue is read as the start of a span."}, {"lv": "h", "q": "Why is token accuracy a poor score for NER?", "o": ["Too slow", "Most tokens are O, so tagging everything O already scores high", "It ignores O", "It needs gold spans"], "a": 1, "hint": "Class imbalance.", "why": "Entity level F1 counts only whole correct spans."}, {"lv": "h", "q": "A model predicts [IIT] ORG where gold has [IIT Jodhpur] ORG. Under entity level scoring this is", "o": ["Correct", "Wrong, a boundary error counts as both a false positive and a false negative", "Half correct", "Ignored"], "a": 1, "hint": "Start, end and type must all match.", "why": "The predicted span is wrong and the gold span is missed."}, {"lv": "h", "q": "Which model normalises over the whole tag sequence and avoids label bias?", "o": ["MEMM", "CRF", "Unigram tagger", "Regex chunker"], "a": 1, "hint": "Global normalisation.", "why": "A linear chain CRF divides by a sum over all label sequences."}, {"lv": "x", "q": "How many BIOES labels are needed for k types?", "o": ["2k + 1", "3k + 1", "4k + 1", "5k"], "a": 2, "hint": "B, I, E and S for each type, plus O.", "why": "4k + 1."}], "calc": [{"lv": "e", "q": "With 3 entity types (PER, ORG, LOC), how many IOB2 labels are there?", "ans": "7", "hint": "2k + 1.", "steps": ["B- for each type: 3.", "I- for each type: 3.", "<span class=\"eq\">3 + 3 + O = 7<\/span>"], "tol": 0.01}, {"lv": "e", "q": "How many chunks are in The/B-NP quick/I-NP brown/I-NP fox/I-NP jumped/B-VP over/O the/B-NP lazy/I-NP dog/I-NP?", "ans": "3", "hint": "Count the B tags.", "steps": ["Each chunk starts with exactly one B.", "B tags: The, jumped, the.", "<span class=\"eq\">3 chunks<\/span>"], "tol": 0.01}, {"lv": "e", "q": "In the sentence above, how many tokens are tagged O?", "ans": "1", "hint": "Words outside every chunk.", "steps": ["List the tags.", "Only over has O.", "<span class=\"eq\">1<\/span>"], "tol": 0.01}, {"lv": "m", "q": "A tagger predicts 8 entity spans. 6 are exactly right. Gold has 10 spans. What is precision?", "ans": "0.75", "hint": "Correct over predicted.", "steps": ["Correct spans: 6.", "Predicted spans: 8.", "<span class=\"eq\">6 ÷ 8 = 0.75<\/span>"], "tol": 0.001}, {"lv": "m", "q": "Same tagger: what is recall?", "ans": "0.6", "hint": "Correct over gold.", "steps": ["Correct spans: 6.", "Gold spans: 10.", "<span class=\"eq\">6 ÷ 10 = 0.6<\/span>"], "tol": 0.001}, {"lv": "m", "q": "Same tagger: what is F1? Four decimals.", "ans": "0.6667", "hint": "Harmonic mean.", "steps": ["P = 0.75, R = 0.6.", "2PR = 0.9 and P + R = 1.35.", "<span class=\"eq\">0.9 ÷ 1.35 = 0.6667<\/span>"], "tol": 0.0001}, {"lv": "m", "q": "In a 1,000 token NER test set, 880 tokens are O. What token accuracy does a tagger get by tagging everything O? Two decimals.", "ans": "0.88", "hint": "Share of O tokens.", "steps": ["Right on every O token: 880.", "Wrong on every entity token: 120.", "<span class=\"eq\">880 ÷ 1,000 = 0.88, with entity F1 = 0<\/span>"], "tol": 0.001}, {"lv": "h", "q": "Gold spans {(0,2,PER), (4,6,ORG), (8,9,LOC)}, predicted {(0,2,PER), (4,5,ORG), (8,9,LOC), (10,11,LOC)}. What is the entity F1? Three decimals.", "ans": "0.571", "hint": "Only exact matches count.", "steps": ["Exact matches: (0,2,PER) and (8,9,LOC), so 2.", "P = 2 ÷ 4 = 0.5, R = 2 ÷ 3 = 0.667.", "F1 = 2 × 0.5 × 0.667 ÷ (0.5 + 0.667).", "<span class=\"eq\">= 0.571<\/span>"], "tol": 0.0005}, {"lv": "h", "q": "How many BIOES labels are needed for 4 entity types?", "ans": "17", "hint": "B, I, E, S per type, plus O.", "steps": ["Four labels per type.", "4 × 4 = 16.", "<span class=\"eq\">16 + 1 = 17<\/span>"], "tol": 0.01}, {"lv": "h", "q": "An HMM chunker with 2k + 1 = 7 labels has how many transition parameters (a full 7 × 7 table)?", "ans": "49", "hint": "q².", "steps": ["q = 7 labels.", "Every pair (previous, next) has a parameter.", "<span class=\"eq\">7 × 7 = 49, though moves like O → I-PER should get 0<\/span>"], "tol": 0.01}, {"lv": "x", "q": "With k types under IOB2, how many transitions into an I- tag are valid (from B-X or I-X of the same type X)? Give it for k = 3.", "ans": "6", "hint": "Two valid sources per I tag.", "steps": ["There are k I tags.", "Each I-X may follow only B-X or I-X.", "<span class=\"eq\">2k = 6 for k = 3<\/span>"], "tol": 0.01}], "assign": [{"id": "enc", "lv": "e", "title": "Spans to IOB", "task": "<p>Write <code>to_iob(n, spans)<\/code>. n is the number of words and spans is a list of (start, end, type) with end not included. Return the list of IOB2 tags.<\/p>", "starter": "def to_iob(n, spans):\n    # your code here\n    pass\n", "tests": [{"call": "to_iob(9, [(0, 4, \"NP\"), (4, 5, \"VP\"), (6, 9, \"NP\")])", "want": ["B-NP", "I-NP", "I-NP", "I-NP", "B-VP", "O", "B-NP", "I-NP", "I-NP"]}, {"call": "to_iob(4, [(1, 2, \"NP\"), (2, 4, \"NP\")])", "want": ["O", "B-NP", "B-NP", "I-NP"]}], "solution": "def to_iob(n, spans):\n    tags = [\"O\"] * n\n    for s, e, typ in spans:\n        tags[s] = \"B-\" + typ\n        for i in range(s + 1, e):\n            tags[i] = \"I-\" + typ\n    return tags\n", "hint": "Fill with O, then write B on each start and I on the rest.", "why": "<p>The second test has two adjacent noun phrases. Only the B tells them apart.<\/p>"}, {"id": "dec", "lv": "m", "title": "IOB to spans", "task": "<p>Write <code>from_iob(tags)<\/code> that returns a list of (start, end, type) with end not included. An I-X that does not continue a span of type X starts a new span.<\/p>", "starter": "def from_iob(tags):\n    # your code here\n    pass\n", "tests": [{"call": "from_iob([\"B-PER\", \"I-PER\", \"O\", \"O\", \"B-ORG\", \"I-ORG\"])", "want": [[0, 2, "PER"], [4, 6, "ORG"]]}, {"call": "from_iob([\"O\", \"I-LOC\", \"I-LOC\", \"B-LOC\"])", "want": [[1, 3, "LOC"], [3, 4, "LOC"]]}, {"call": "from_iob([\"B-PER\", \"I-ORG\"])", "want": [[0, 1, "PER"], [1, 2, "ORG"]]}], "solution": "def from_iob(tags):\n    spans, cur = [], None\n    for i, t in enumerate(tags + [\"O\"]):\n        if cur and not (t.startswith(\"I-\") and t[2:] == cur[1]):\n            spans.append((cur[0], i, cur[1]))\n            cur = None\n        if t.startswith(\"B-\") or (t.startswith(\"I-\") and cur is None):\n            cur = (i, t[2:])\n    return spans\n", "hint": "Close the open span whenever the next tag does not continue it. A sentinel O at the end closes the last one.", "why": "<p>The second and third tests check the repair rule for ill formed input.<\/p>"}, {"id": "f1", "lv": "m", "title": "Entity level F1", "task": "<p>Write <code>span_f1(gold, pred)<\/code> where both are lists of (start, end, type). Return (precision, recall, F1), each rounded to 3 decimals. If there are no predictions or no gold spans, the corresponding value is 0, and F1 is 0 when P + R is 0.<\/p>", "starter": "def span_f1(gold, pred):\n    # your code here\n    pass\n", "tests": [{"call": "span_f1([(0, 2, \"PER\"), (4, 6, \"ORG\"), (8, 9, \"LOC\")], [(0, 2, \"PER\"), (4, 5, \"ORG\"), (8, 9, \"LOC\"), (10, 11, \"LOC\")])", "want": [0.5, 0.667, 0.571]}, {"call": "span_f1([(0, 1, \"PER\"), (3, 5, \"LOC\")], [(0, 1, \"PER\"), (3, 5, \"LOC\")])", "want": [1.0, 1.0, 1.0]}], "solution": "def span_f1(gold, pred):\n    tp = len(set(gold) & set(pred))\n    p = tp / len(pred) if pred else 0\n    r = tp / len(gold) if gold else 0\n    f = 2 * p * r / (p + r) if p + r else 0\n    return (round(p, 3), round(r, 3), round(f, 3))\n", "hint": "Use sets of tuples so exact matches are a set intersection.", "why": "<p>The boundary error on ORG costs both a false positive and a false negative.<\/p>"}], "must": [["Chunk", "A flat, non overlapping group of words such as [the yellow dog]. Chunking is shallow parsing. Constituents nest, chunks do not."], ["IOB", "B-X begins, I-X continues, O is outside. 2k + 1 labels. Turns span finding into tagging with the same models."], ["Decoding IOB", "A span is a B-X plus the following I-X tags. An I-X after O or another type is repaired as B-X."], ["NER", "PER, ORG, LOC, DATE, MONEY. Perceptron, CRF, BiLSTM CRF and BERT. Features: capitals, shape, gazetteers, neighbours."], ["Scoring", "Entity level precision, recall and F1 with exact start, end and type. Token accuracy is inflated by O."]], "summary": "<p>Chunking finds flat groups of words. IOB tags turn those groups into a tagging problem, so HMMs, CRFs and neural taggers all apply. Named entity recognition is chunking with entity types, scored by exact span precision, recall and F1.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"encode": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.words": "['The', 'quick', 'brown', 'fox', 'jumped', 'over', 'the', 'lazy', 'dog']"}}, {"l": 4, "ev": "line", "d": {"G.spans": "[(0, 4, 'NP'), (4, 5, 'VP'), (6, 9, 'NP')]"}}, {"l": 5, "ev": "line", "d": {"G.tags": "['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O']"}}, {"l": 6, "ev": "line", "d": {"G.s": "0", "G.e": "4", "G.typ": "'NP'"}}, {"l": 7, "ev": "line", "d": {"G.tags": "['B-NP', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O']"}}, {"l": 8, "ev": "line", "d": {"G.i": "1"}}, {"l": 7, "ev": "line", "d": {"G.tags": "['B-NP', 'I-NP', 'O', 'O', 'O', 'O', 'O', 'O', 'O']"}}, {"l": 8, "ev": "line", "d": {"G.i": "2"}}, {"l": 7, "ev": "line", "d": {"G.tags": "['B-NP', 'I-NP', 'I-NP', 'O', 'O', 'O', 'O', 'O', 'O']"}}, {"l": 8, "ev": "line", "d": {"G.i": "3"}}, {"l": 7, "ev": "line", "d": {"G.tags": "['B-NP', 'I-NP', 'I-NP', 'I-NP', 'O', 'O', 'O', 'O', 'O']"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.s": "4", "G.e": "5", "G.typ": "'VP'"}}, {"l": 7, "ev": "line", "d": {"G.tags": "['B-NP', 'I-NP', 'I-NP', 'I-NP', 'B-VP', 'O', 'O', 'O', 'O']"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.s": "6", "G.e": "9", "G.typ": "'NP'"}}, {"l": 7, "ev": "line", "d": {"G.tags": "['B-NP', 'I-NP', 'I-NP', 'I-NP', 'B-VP', 'O', 'B-NP', 'O', 'O']"}}, {"l": 8, "ev": "line", "d": {"G.i": "7"}}, {"l": 7, "ev": "line", "d": {"G.tags": "['B-NP', 'I-NP', 'I-NP', 'I-NP', 'B-VP', 'O', 'B-NP', 'I-NP', 'O']"}}, {"l": 8, "ev": "line", "d": {"G.i": "8"}}, {"l": 7, "ev": "line", "d": {"G.tags": "['B-NP', 'I-NP', 'I-NP', 'I-NP', 'B-VP', 'O', 'B-NP', 'I-NP', 'I-NP']"}}, {"l": 5, "ev": "line"}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "return", "o": "[('The', 'B-NP'), ('quick', 'I-NP'), ('brown', 'I-NP'), ('fox', 'I-NP'), ('jumped', 'B-VP'), ('over', 'O'), ('the', 'B-NP'), ('lazy', 'I-NP'), ('dog', 'I-NP')]\n"}], "tail": "", "err": null, "cut": false}, "decode": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.words": "['Sidharth', 'Ranjan', 'teaches', 'at', 'IIT', 'Jodhpur']"}}, {"l": 4, "ev": "line", "d": {"G.tags": "['B-PER', 'I-PER', 'O', 'O', 'B-ORG', 'I-ORG']"}}, {"l": 5, "ev": "line", "d": {"G.spans": "[]", "G.cur": "None"}}, {"l": 6, "ev": "line", "d": {"G.i": "0", "G.t": "'B-PER'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.cur": "(0, 0, 'PER')"}}, {"l": 6, "ev": "line", "d": {"G.i": "1", "G.t": "'I-PER'"}}, {"l": 9, "ev": "line"}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.i": "2", "G.t": "'O'"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"G.spans": "[('Sidharth Ranjan', 'PER')]"}}, {"l": 9, "ev": "line", "d": {"G.cur": "None"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.i": "3"}}, {"l": 9, "ev": "line"}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.i": "4", "G.t": "'B-ORG'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.cur": "(4, 4, 'ORG')"}}, {"l": 6, "ev": "line", "d": {"G.i": "5", "G.t": "'I-ORG'"}}, {"l": 9, "ev": "line"}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.i": "6", "G.t": "'O'"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"G.spans": "[('Sidharth Ranjan', 'PER'), ('IIT Jodhpur', 'ORG')]"}}, {"l": 9, "ev": "line", "d": {"G.cur": "None"}}, {"l": 5, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return", "o": "[('Sidharth Ranjan', 'PER'), ('IIT Jodhpur', 'ORG')]\n"}], "tail": "", "err": null, "cut": false}, "regex": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.sent": "[('We', 'PRP'), ('saw', 'VBD'), ('the', 'DT'), ('yellow', 'JJ'), ('dog', 'NN'), ('near'..."}}, {"l": 5, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f37915cd1b0>"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L._": "'We'", "L.t": "'PRP'"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L._": "'saw'", "L.t": "'VBD'"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L._": "'the'", "L.t": "'DT'"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L._": "'yellow'", "L.t": "'JJ'"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L._": "'dog'", "L.t": "'NN'"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L._": "'near'", "L.t": "'IN'"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L._": "'heavy'", "L.t": "'JJ'"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L._": "'rain'", "L.t": "'NN'"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L._": "'clouds'", "L.t": "'NNS'"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 6, "ev": "line", "s": ["module"], "d": {"G.tagstr": "'<PRP><VBD><DT><JJ><NN><IN><JJ><NN><NNS>'", "L..0": null, "L._": null, "L.t": null}}, {"l": 7, "ev": "line", "d": {"G.pattern": "'(<DT>)?(<JJ>)*(<NN[A-Z]*>)+'"}}, {"l": 8, "ev": "line", "d": {"G.m": "<re.Match object; span=(10, 22), match='<DT><JJ><NN>'>"}}, {"l": 9, "ev": "line", "d": {"G.start": "2"}}, {"l": 10, "ev": "line", "d": {"G.n": "3"}}, {"l": 10, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f37915cd1b0>"}}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "return", "d": {"L.w": "'the'", "L._": "'DT'"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "return", "d": {"L.w": "'yellow'", "L._": "'JJ'"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "return", "d": {"L.w": "'dog'", "L._": "'NN'"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "return"}, {"l": 7, "ev": "line", "s": ["module"], "d": {"L..0": null, "L.w": null, "L._": null}, "o": "NP: the yellow dog\n"}, {"l": 8, "ev": "line", "d": {"G.m": "<re.Match object; span=(26, 39), match='<JJ><NN><NNS>'>"}}, {"l": 9, "ev": "line", "d": {"G.start": "6"}}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f37915ce530>"}}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "return", "d": {"L.w": "'heavy'", "L._": "'JJ'"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "return", "d": {"L.w": "'rain'", "L._": "'NN'"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "return", "d": {"L.w": "'clouds'", "L._": "'NNS'"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "return"}, {"l": 7, "ev": "line", "s": ["module"], "d": {"L..0": null, "L.w": null, "L._": null}, "o": "NP: heavy rain clouds\n"}, {"l": 7, "ev": "return"}], "tail": "", "err": null, "cut": false}, "spanf1": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.gold": "{(4, 6, 'ORG'), (8, 9, 'LOC'), (0, 2, 'PER')}"}}, {"l": 4, "ev": "line", "d": {"G.pred": "{(8, 9, 'LOC'), (0, 2, 'PER'), (10, 11, 'LOC'), (4, 5, 'ORG')}"}}, {"l": 5, "ev": "line", "d": {"G.tp": "2"}}, {"l": 6, "ev": "line", "d": {"G.p": "0.5", "G.r": "0.6666666666666666"}}, {"l": 6, "ev": "return", "o": "true positives: 2  precision: 0.5  recall: 0.667  F1: 0.571\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/nlpstem.js"></script>
+<script src="../../assets/nlpwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

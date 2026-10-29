@@ -33,12 +33,20 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-TOPICS = os.path.join(HERE, 'topics')
-OUT = os.path.join(ROOT, 'content', 'computer-vision')
-SUBJECT = 'computer-vision'
+
+# Everything that differs between subjects. tools/nlp-build/build.py changes these and then calls main().
+CFG = {
+    'subject': 'computer-vision', 'name': 'Computer Vision', 'topics': os.path.join(HERE, 'topics'),
+    'func': 'cvModules', 'marker': 'cv-build', 'builder': 'tools/cv-build/build.py', 'badge': 'CV',
+    'widgets': ['cvviz.js', 'cvwidgets.js'], 'css': ['cv.css'], 'body': 'cvp',
+}
 TRACER = os.path.join(ROOT, 'tools', 'py-build', 'pytrace.py')
 LVN = {'e': 'Easy', 'm': 'Medium', 'h': 'Hard', 'x': 'Expert'}
 EMOJI = re.compile('[\U0001F000-\U0001FAFF☀-➿⭐⬆↔-↪️]')
+
+
+def out_dir():
+    return os.path.join(ROOT, 'content', CFG['subject'])
 
 
 def js(v):
@@ -50,8 +58,8 @@ def chapters():
     if HERE not in sys.path:
         sys.path.insert(0, HERE)
     out = []
-    for f in sorted(f for f in os.listdir(TOPICS) if re.match(r'\d\d-.*\.py$', f)):
-        spec = importlib.util.spec_from_file_location(f[:-3], os.path.join(TOPICS, f))
+    for f in sorted(f for f in os.listdir(CFG['topics']) if re.match(r'\d\d-.*\.py$', f)):
+        spec = importlib.util.spec_from_file_location(f[:-3], os.path.join(CFG['topics'], f))
         m = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(m)
         T = m.T
@@ -144,7 +152,7 @@ def content_errors(T, known_viz):
     for k in set(T['codes']) - used:
         bad.append(f'code block {k} is written but never shown')
     for v in set(re.findall(r'data-viz="([^"]+)"', allhtml)) - known_viz:
-        bad.append(f'animation {v} is not defined in assets/cvwidgets.js')
+        bad.append(f'animation {v} is not defined in assets/' + CFG['widgets'][-1])
     ids = [p['id'] for p in T['lessons']]
     reserved = {'formulas', 'problems', 'quiz', 'assign', 'summary', 'learn'}
     if len(set(ids)) != len(ids) or reserved & set(ids):
@@ -153,7 +161,7 @@ def content_errors(T, known_viz):
 
 
 def viz_names():
-    src = ''.join(open(os.path.join(ROOT, 'assets', f), encoding='utf-8').read() for f in ('cvviz.js', 'cvwidgets.js'))
+    src = ''.join(open(os.path.join(ROOT, 'assets', f), encoding='utf-8').read() for f in CFG['widgets'])
     return set(re.findall(r"def\('([\w-]+)'", src))
 
 
@@ -264,27 +272,29 @@ def page(T, chs, steps_by_id):
     pager = (link(pv, ('prev', 'Previous topic')) if pv else '<span></span>') + \
         (link(nx, ('next', 'Next topic')) if nx else '<a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a>')
 
-    data = {'slug': T['slug'], 'topic': T['topic'], 'subject': SUBJECT, 'title': T['title'],
+    data = {'slug': T['slug'], 'topic': T['topic'], 'subject': CFG['subject'], 'title': T['title'],
             'codes': {k: {'src': c['src'], 'stdin': c['stdin'], 'out': outs[k]} for k, c in T['codes'].items()},
             'quiz': T['quiz'], 'calc': [{k: v for k, v in c.items() if k != 'check'} for c in T['calc']],
             'assign': [{k: v for k, v in a.items()} for a in T['assign']], 'must': T['must'],
             'summary': T.get('recap', '')}
+    css = '\n'.join(f'<link rel="stylesheet" href="../../assets/{c}">' for c in CFG['css'])
+    scripts = '\n'.join(f'<script src="../../assets/{w}"></script>' for w in CFG['widgets'])
     out = f'''<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{html.escape(T["title"])} · Computer Vision</title>
+<title>{html.escape(T["title"])} · {CFG["name"]}</title>
 <meta name="description" content="{html.escape(T["desc"])}">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/theme.css">
 <link rel="stylesheet" href="../../assets/learn.css">
-<link rel="stylesheet" href="../../assets/cv.css">
+{css}
 </head>
-<body class="cvp">
-<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s={SUBJECT}">Computer Vision learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<body class="{CFG["body"]}">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s={CFG["subject"]}">{CFG["name"]} learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
 <div class="cv-wrap">
-  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s={SUBJECT}" target="_top">Computer Vision</a><span>›</span><span>Step {stp[0]}: {html.escape(stp[1])}</span><span>›</span><span>{html.escape(T["short"])}</span></div>
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s={CFG["subject"]}" target="_top">{CFG["name"]}</a><span>›</span><span>Step {stp[0]}: {html.escape(stp[1])}</span><span>›</span><span>{html.escape(T["short"])}</span></div>
   <header class="cv-hero">
     <div class="cv-kicker">Step {stp[0]} · Topic {pos} of {len(in_step)} · {html.escape(stp[4])}</div>
     <h1>{html.escape(T["title"])}</h1>
@@ -305,13 +315,12 @@ def page(T, chs, steps_by_id):
 <script src="../../assets/fun.js"></script>
 <script src="../../assets/learn.js"></script>
 <script src="../../assets/pyplay.js"></script>
-<script src="../../assets/cvviz.js"></script>
-<script src="../../assets/cvwidgets.js"></script>
+{scripts}
 <script src="../../assets/cv.js"></script>
 </body>
 </html>
 '''
-    dest = os.path.join(OUT, T['slug'] + '.html')
+    dest = os.path.join(out_dir(), T['slug'] + '.html')
     open(dest, 'w', encoding='utf-8').write(out)
     print(f'{T["slug"]}: {len(lessons)} lessons, {n_viz} animations, {len(T["codes"])} programs, '
           f'{len(T["calc"])} problems, {len(T["quiz"])} quiz, {len(T["assign"])} assignments, {len(out) // 1024} KB')
@@ -324,7 +333,7 @@ def catalog(chs):
         if not mods or mods[-1]['step'] != T['step']:
             mods.append({'step': T['step'], 'topics': []})
         mods[-1]['topics'].append(T)
-    L = ['function cvModules() {', '  return [']
+    L = [f'function {CFG["func"]}() {{', '  return [']
     for mi, m in enumerate(mods):
         n, title, mid, blurb, level = m['step']
         L.append(f'    {{ id: {js(mid)}, title: {js(title)}, emoji: {js(str(n))}, step: {n}, level: {js(level)}, blurb: {js(blurb)}, topics: [')
@@ -338,7 +347,7 @@ def catalog(chs):
             else:
                 secs += ["        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }"]
             cnt = {'lessons': len(T['lessons']), 'problems': len(T['calc']), 'quiz': len(T['quiz']), 'assign': len(T['assign'])}
-            L.append(f'      {{ id: {js(T["topic"])}, title: {js(T["title"])}, emoji: {js(T.get("badge", "CV"))}, page: {js("content/computer-vision/" + T["slug"] + ".html")},')
+            L.append(f'      {{ id: {js(T["topic"])}, title: {js(T["title"])}, emoji: {js(T.get("badge", CFG["badge"]))}, page: {js("content/" + CFG["subject"] + "/" + T["slug"] + ".html")},')
             L.append(f'        summary: {js(T["summary"])},')
             L.append(f'        keywords: {js(T["keywords"])},')
             L.append(f'        minutes: {T["minutes"]}, counts: {js(cnt)},')
@@ -350,8 +359,8 @@ def catalog(chs):
     L += ['  ];', '}']
     path = os.path.join(ROOT, 'data', 'catalog.js')
     src = open(path, encoding='utf-8').read()
-    start = '/* ===== cv-build: Computer Vision chapters. Generated by tools/cv-build/build.py, edit the topic files instead. ===== */'
-    end = '/* ===== end of cv-build ===== */'
+    start = f'/* ===== {CFG["marker"]}: {CFG["name"]} chapters. Generated by {CFG["builder"]}, edit the topic files instead. ===== */'
+    end = f'/* ===== end of {CFG["marker"]} ===== */'
     new = f'{start}\n' + '\n'.join(L) + f'\n{end}'
     if start in src:
         src = re.sub(re.escape(start) + r'[\s\S]*?' + re.escape(end), lambda _: new, src)
@@ -371,7 +380,7 @@ def main():
             errs.append(f'{T["slug"]}:\n  ' + '\n  '.join(e))
     if errs:
         raise SystemExit('\n'.join(errs))
-    os.makedirs(OUT, exist_ok=True)
+    os.makedirs(out_dir(), exist_ok=True)
     want = sys.argv[1:]
     for T in chs:
         if not want or T['slug'] in want:

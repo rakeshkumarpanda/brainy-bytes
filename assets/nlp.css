@@ -1,0 +1,4 @@
+/* ===== Natural Language Processing chapter pages: the Computer Vision layout (cv.css) in the subject's orange ===== */
+:root{--cv:#c2410c; --cv-soft:#fff1e6; --cv-line:#fdba8c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cv:#fb923c; --cv-soft:#3b1d0c; --cv-line:#7c3a12}}
+:root[data-theme="dark"]{--cv:#fb923c; --cv-soft:#3b1d0c; --cv-line:#7c3a12}
