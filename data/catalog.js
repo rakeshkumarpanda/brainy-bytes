@@ -4372,6 +4372,23 @@ function seModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "se-elements", title: "Find and use elements", emoji: "3", step: 3, level: "Beginner", blurb: "Locators, finding elements, interacting with inputs, reading element information, select lists and file upload.", topics: [
+      { id: "locators", title: "Locators: how Selenium finds an element", emoji: "3.1", page: "content/selenium/locators.html",
+        summary: "All eight locator strategies, CSS and XPath, relative locators and how to choose a locator that lasts.",
+        keywords: ["locators", "by", "css selector", "xpath", "id", "name", "class name", "relative locators", "link text", "tag name"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-10-29",
+        sections: [
+        { id: "strategies", title: "The eight locator strategies", emoji: "", group: "Lesson", keywords: ["locator", "By", "id", "name", "class name", "css selector", "xpath", "tag name", "link text", "partial link text", "locator strategies"] },
+        { id: "cssxpath", title: "CSS selectors and XPath", emoji: "", group: "Lesson", keywords: ["css selector", "xpath", "absolute xpath", "relative xpath", "contains", "starts-with", "text()", "nth-of-type", "following-sibling", "parent", "devtools"] },
+        { id: "relative", title: "Relative locators", emoji: "", group: "Lesson", keywords: ["relative locators", "friendly locators", "above", "below", "toLeftOf", "toRightOf", "near", "50 pixels", "getBoundingClientRect", "locate_with", "locateWith", "chaining"] },
+        { id: "choose", title: "Choosing a good locator", emoji: "", group: "Lesson", keywords: ["best locator", "stable locator", "data-test", "id first", "fragile locators", "generated ids", "encouraged practices", "page object"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

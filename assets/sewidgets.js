@@ -351,3 +351,89 @@ const SEZ = (() => {
     }
   });
 })();
+
+(() => {
+  const { def, D, esc } = CVZ;
+  const { rr, wrap, fit } = SEZ;
+
+  /* ---------------------------------------------------------------- Chapter 3.1: the eight locator strategies */
+  /* the page is the locators example of the Selenium documentation. Matching uses the real browser: querySelectorAll
+     for CSS, document.evaluate for XPath. id, name and class name are turned into CSS the way the Python binding does. */
+  const HTML = `<h2>Contact Selenium</h2><form>
+<input type="radio" name="gender" value="m">Male <input type="radio" name="gender" value="f">Female<br>
+<label for="fname">First name:</label><input class="information" type="text" id="fname" name="fname" value="Jane">
+<label for="lname">Last name:</label><input class="information" type="text" id="lname" name="lname" value="Doe">
+<label for="newsletter">Newsletter:</label><input type="checkbox" name="newsletter" value="1">
+<input type="submit" value="Submit"></form>
+<p>To know more about Selenium, visit the official page <a href="https://www.selenium.dev/">Selenium Official Page</a></p>`;
+  let docCache = null;
+  const doc = () => docCache || (docCache = new DOMParser().parseFromString('<!doctype html><html><body>' + HTML + '</body></html>', 'text/html'));
+  const cssq = s => '"' + s.replace(/["\\]/g, '\\$&') + '"';
+  function locate(by, v) {
+    const d = doc();
+    let using = 'css selector', value = v, list = [];
+    try {
+      if (by === 'id') value = `[id=${cssq(v)}]`;
+      if (by === 'name') value = `[name=${cssq(v)}]`;
+      if (by === 'class') { if (/\s/.test(v.trim())) throw new Error('compound class names are not permitted'); value = '.' + v; }
+      if (by === 'tag') { using = 'tag name'; list = [...d.body.getElementsByTagName(v)]; }
+      else if (by === 'link' || by === 'partial') {
+        using = by === 'link' ? 'link text' : 'partial link text';
+        list = [...d.body.querySelectorAll('a')].filter(a => { const t = a.textContent.trim(); return by === 'link' ? t === v : t.includes(v); });
+      } else if (by === 'xpath') {
+        using = 'xpath';
+        const r = d.evaluate(v, d, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        for (let i = 0; i < r.snapshotLength; i++) if (r.snapshotItem(i).nodeType === 1) list.push(r.snapshotItem(i));
+      } else list = [...d.body.querySelectorAll(value)];
+    } catch (e) { return { using, value, err: e.message.split('\n')[0] }; }
+    return { using, value, list };
+  }
+  function label(el) {
+    let s = '<' + el.tagName.toLowerCase();
+    ['type', 'id', 'name', 'class', 'value', 'for', 'href'].forEach(a => { if (el.hasAttribute(a)) s += ` ${a}="${el.getAttribute(a)}"`; });
+    s += '>';
+    const t = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent.trim()).join(' ').trim();
+    return t && el.tagName !== 'P' ? s + t : s;
+  }
+  const PRESET = { id: 'lname', name: 'newsletter', class: 'information', css: '#fname', xpath: "//input[@value='f']", tag: 'a', link: 'Selenium Official Page', partial: 'Official' };
+  def('se-locate', {
+    title: 'Try every locator strategy on one page',
+    sub: 'Pick a strategy and type a value. Every element that matches lights up, and the first one is what find element returns.',
+    W: 660, H: 470,
+    params: [
+      { k: 'by', label: 'Strategy', type: 'select', v: 'id', opts: [['id', 'id'], ['name', 'name'], ['class', 'class name'], ['css', 'css selector'], ['xpath', 'xpath'], ['tag', 'tag name'], ['link', 'link text'], ['partial', 'partial link text']] },
+      { k: 'v', label: 'Value', type: 'text', v: 'lname' }
+    ],
+    tips: [
+      { t: 'class name "information" matches two inputs. find element returns the first, First name, and find elements returns both.', set: { by: 'class', v: 'information' } },
+      { t: 'Try tag name "input". Seven matches: the documentation calls tag name dangerous for a single element for this reason.', set: { by: 'tag', v: 'input' } },
+      { t: 'Try class name "information extra". Compound class names are not allowed. Use the css selector .information.extra instead.', set: { by: 'class', v: 'information extra' } },
+      { t: 'An XPath with text(): //label[text()="Last name:"]. XPath can match on text, CSS cannot.', set: { by: 'xpath', v: '//label[text()="Last name:"]' } },
+      { t: 'id "email" matches nothing. find element raises no such element, find elements returns an empty list.', set: { by: 'id', v: 'email' } }
+    ],
+    change(z, k) { if (k === 'by' && PRESET[z.p.by]) z.set({ v: PRESET[z.p.by] }); },
+    draw(z) {
+      const g = z.g, c = z.col;
+      const r = locate(z.p.by, z.p.v || '');
+      const rows = [...doc().body.querySelectorAll('*')].filter(e => e.tagName !== 'BR');
+      const depth = e => { let n = 0; while (e.parentElement && e.parentElement !== doc().body) { n++; e = e.parentElement; } return n; };
+      const y0 = 16, h = 25;
+      rows.forEach((el, i) => {
+        const y = y0 + i * h, x = 20 + depth(el) * 22;
+        const k = r.list ? r.list.indexOf(el) : -1;
+        if (k >= 0) rr(g, x - 6, y - 2, z.W - x - 14, h - 4, 6, { fill: k === 0 ? c.cv : c.bg, stroke: c.cv, w: 1.5 });
+        const t = label(el);
+        D.text(g, t, x, y + 15, { mono: true, s: fit(g, t, z.W - x - 30, 12, { mono: true }), c: k === 0 ? '#fff' : k > 0 ? c.cv : c.ink2, b: k >= 0 });
+      });
+      const yb = y0 + rows.length * h + 10;
+      rr(g, 16, yb, z.W - 32, z.H - yb - 10, 10, { fill: c.bg, stroke: c.line });
+      D.text(g, 'W3C request body: ' + JSON.stringify({ using: r.using, value: r.value }), 30, yb + 24, { mono: true, s: fit(g, 'W3C request body: ' + JSON.stringify({ using: r.using, value: r.value }), z.W - 60, 12, { mono: true }), c: c.ink });
+      let msg;
+      if (r.err) msg = 'invalid selector: ' + r.err;
+      else if (!r.list.length) msg = 'No match. find element raises no such element (NoSuchElementException), find elements returns an empty list.';
+      else msg = `${r.list.length} match${r.list.length > 1 ? 'es' : ''}. find element returns the first one (filled). find elements returns all ${r.list.length}, in page order.`;
+      wrap(g, msg, 30, yb + 48, z.W - 60, { s: 13, c: r.err || !r.list.length ? c.red : c.ink, lh: 18, b: true });
+      return r.err ? 'The locator is invalid.' : `<b>${r.list.length}</b> element${r.list.length === 1 ? '' : 's'} match.`;
+    }
+  });
+})();

@@ -11,6 +11,12 @@
   "out": "1 Web form\n2 XHTML Test Page at https://www.selenium.dev/selenium/web/xhtmlTest.html\n3 Web form\n4 XHTML Test Page\n5 XHTML Test Page",
   "rc": 0
  },
+ "0dcf86455b83a7de3cfa0538": {
+  "label": "locators",
+  "lang": "js",
+  "out": "className -> <input> Jane \ncss -> <input> Jane \nid -> <input> Doe \nname -> <input> 1 \nlinkText -> <a> null Selenium Official Page\npartialLinkText -> <a> null Selenium Official Page\ntagName -> <a> null Selenium Official Page\nxpath -> <input> f",
+  "rc": 0
+ },
  "17c1fc04639dc49d5f1f2bf9": {
   "label": "rawhttp",
   "lang": "py",
@@ -125,6 +131,12 @@
   "out": "POST http://localhost:47995/session {'capabilities': {'firstMatch': [{}], 'alwaysMatch': {'browserName': 'chrome', 'pageLoadStrategy': <PageLoadStrategy.normal: 'normal'>, 'goog:chromeOptions': {'extensions': [], 'args': []}}}}\nRemote response: status=200 | data={\"value\":{\"capabilities\":{\"acceptInsecureCerts\":false,\"browserName\":\"chrome\",\"browserVersion\":\"153.0.8010.12\",\"chrome\":{\"chromedriverVersion\":\"153.0.8010.12 (971a7443b0c9b0a9b2860529b33331b76077ec62-refs/branch-heads/8010@{#343})\",\"userDataDir\":\"/tmp/org.chromium.Chromium.scoped_dir.xIOqAL\"},\"fedcm:accounts\":true,\"goog:chromeOptions\":{\"debuggerAddress\":\"localhost:36071\"},\"goog:processID\":5976,\"networkConnectionEnabled\":false,\"pageLoadStrategy\":\"normal\",\"platformName\":\"linux\",\"proxy\":{},\"setWindowRect\":true,\"strictFileInteractability\":false,\"timeouts\":{\"implicit\":0,\"pageLoad\":300000,\"script\":30000},\"unhandledPromptBehavior\":\"dismiss and notify\",\"webauthn:extension:cmtgKey\":true,\"webauthn:extension:credBlob\":true,\"webauthn:extension:largeBlob\":true,\"webauthn:extension:minPinLength\":true,\"webauthn:extension:prf\":true,\"webauthn:virtualAuthenticators\":true},\"sessionId\":\"d22f625b78c052911ff513d44ee74914\"}} | headers=HTTPHeaderDict({'Content-Length': '913', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/url {'url': 'https://www.selenium.dev/selenium/web/web-form.html'}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/element {'using': 'css selector', 'value': '[name=\"my-text\"]'}\nRemote response: status=200 | data={\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"f.0C92C16D926BE0471F7373028EABCFEF.d.73441B1E15E59DD3679B0F54BF11DFB0.e.6\"}} | headers=HTTPHeaderDict({'Content-Length': '125', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nPOST http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/element/f.0C92C16D926BE0471F7373028EABCFEF.d.73441B1E15E59DD3679B0F54BF11DFB0.e.6/value {'text': 'Hi', 'value': ['H', 'i']}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\nGET http://localhost:47995/session/d22f625b78c052911ff513d44ee74914/title {}\nRemote response: status=200 | data={\"value\":\"Web form\"} | headers=HTTPHeaderDict({'Content-Length': '20', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request\ntitle is Web form\nDELETE http://localhost:47995/session/d22f625b78c052911ff513d44ee74914 {}\nRemote response: status=200 | data={\"value\":null} | headers=HTTPHeaderDict({'Content-Length': '14', 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-cache'})\nFinished Request",
   "rc": 0
  },
+ "96dcfcffa27cab4e5e37fd2b": {
+  "label": "relative",
+  "lang": "js",
+  "out": "below last name label -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nabove lname -> <input class=\"information\" type=\"text\" id=\"fname\" name=\"fname\" value=\"Jane\">\nright of Male -> <input type=\"radio\" name=\"gender\" value=\"f\">\nbelow fname and above the checkbox -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nnear Newsletter label -> <input type=\"submit\" value=\"Submit\">\nleft of password -> <input type=\"text\" name=\"username\" id=\"username-field\" class=\"login-form-field\" placeholder=\"Username\">",
+  "rc": 0
+ },
  "9b729da6a7628cf71aac9b7b": {
   "label": "nav",
   "lang": "py",
@@ -161,16 +173,34 @@
   "out": "Title: Web form\nMessage: Received!",
   "rc": 0
  },
+ "b4bccbac54459b1c4874632c": {
+  "label": "locators",
+  "lang": "py",
+  "out": "CLASS_NAME -> <input> Jane \nCSS_SELECTOR -> <input> Jane \nID -> <input> Doe \nNAME -> <input> 1 \nLINK_TEXT -> <a> None Selenium Official Page\nPARTIAL_LINK_TEXT -> <a> None Selenium Official Page\nTAG_NAME -> <a> None Selenium Official Page\nXPATH -> <input> f",
+  "rc": 0
+ },
  "b73cc4b128da5f59a4d1ba73": {
   "label": "hello",
   "lang": "py",
   "out": "Title: Web form\nURL: https://www.selenium.dev/selenium/web/web-form.html",
   "rc": 0
  },
+ "c05df311bb8748ca8f890279": {
+  "label": "relative",
+  "lang": "java",
+  "out": "below last name label -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nabove lname -> <input class=\"information\" type=\"text\" id=\"fname\" name=\"fname\" value=\"Jane\">\nright of Male -> <input type=\"radio\" name=\"gender\" value=\"f\">\nbelow fname and above the checkbox -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nnear Newsletter label -> <input type=\"submit\" value=\"Submit\">\nleft of password -> <input type=\"text\" name=\"username\" id=\"username-field\" class=\"login-form-field\" placeholder=\"Username\">",
+  "rc": 0
+ },
  "c8b8e97947cde3d0a97d1df8": {
   "label": "service",
   "lang": "java",
   "out": "Driver URL: http://localhost:9600\nready: true",
+  "rc": 0
+ },
+ "d269d1e898c759142f4ff627": {
+  "label": "relative",
+  "lang": "py",
+  "out": "below last name label -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nabove lname -> <input class=\"information\" type=\"text\" id=\"fname\" name=\"fname\" value=\"Jane\">\nright of Male -> <input type=\"radio\" name=\"gender\" value=\"f\">\nbelow fname and above the checkbox -> <input class=\"information\" type=\"text\" id=\"lname\" name=\"lname\" value=\"Doe\">\nnear Newsletter label -> <input type=\"submit\" value=\"Submit\">\nleft of password -> <input type=\"text\" name=\"username\" id=\"username-field\" class=\"login-form-field\" placeholder=\"Username\">",
   "rc": 0
  },
  "d370a2e8923b444db16ff372": {
@@ -189,6 +219,12 @@
   "label": "eight",
   "lang": "java",
   "out": "Title: Web form\nMessage: Received!",
+  "rc": 0
+ },
+ "e40639ff881970b406282af6": {
+  "label": "locators",
+  "lang": "java",
+  "out": "className -> <input> Jane \ncssSelector -> <input> Jane \nid -> <input> Doe \nname -> <input> 1 \nlinkText -> <a> null Selenium Official Page\npartialLinkText -> <a> null Selenium Official Page\ntagName -> <a> null Selenium Official Page\nxpath -> <input> f",
   "rc": 0
  },
  "e4e5583a2ca6c6f9675345fe": {
