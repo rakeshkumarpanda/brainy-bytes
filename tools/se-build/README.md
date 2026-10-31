@@ -51,3 +51,7 @@ delete its entries from `runs.json` (keep `indent=1, sort_keys=True` when you wr
 2. Use facts from the selenium.dev documentation, and let the real run decide what the prose says about output.
 3. Build with `SE_RUN=1`, read the outputs in `runs.json`, and fix any sentence that does not match.
 4. Check the page at 1280 and 390 pixels wide.
+
+## Cheatsheets
+
+A full build also writes one full and one compact cheatsheet per language, each with a PDF, through tools/sheet-build/langsheet.py. Each sheet shows only that language's code. To rebuild only the cheatsheets, run `python3 tools/sheet-build/langsheet.py selenium` (needs node with playwright for the PDFs).

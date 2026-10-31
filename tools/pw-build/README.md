@@ -67,3 +67,7 @@ To rerun a single cached example, delete its cache file. The key is the first 24
 - TestNG calls `onTestFailure` before `@AfterMethod`, so a listener can still screenshot the page.
 - `-Dtest` overrides the Surefire suite files, so listeners declared in `testng.xml` do not load with it.
 - Do not use `pkill -f` with a pattern that matches your own shell.
+
+## Cheatsheets
+
+A full build also writes one full and one compact cheatsheet per language, each with a PDF, through tools/sheet-build/langsheet.py. Each sheet shows only that language's code. To rebuild only the cheatsheets, run `python3 tools/sheet-build/langsheet.py playwright` (needs node with playwright for the PDFs).

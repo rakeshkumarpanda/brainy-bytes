@@ -273,7 +273,7 @@ window.CATALOG = {
       blurb: 'A step by step path from how WebDriver talks to a browser to locators, waits, page objects and Selenium Grid, in Java, Python and JavaScript.',
       intro: 'Follow the path one step at a time. You start with what Selenium is and how the W3C WebDriver protocol carries each command from your code to the browser, set up Selenium Manager and write a first script, then learn sessions, navigation, locators, element actions, waits, windows, frames, alerts, the Actions API, test frameworks, page objects, good practice and troubleshooting, and finish with Selenium Grid 4, WebDriver BiDi, a revision step and interview questions. Every example is written in Java, Python and JavaScript with a note for each line, and was run for real in Chrome to record its output. A pretend browser lets you type Selenium lines and watch each request, and the animations show what happens inside.',
       tags: ['WebDriver', 'W3C protocol', 'Locators', 'Waits', 'Page Object', 'Grid 4'],
-      modules: seModules().concat(iqModule('selenium'))
+      modules: seModules().concat(langSheetModule('selenium'), iqModule('selenium'))
     },
     {
       id: 'playwright',
@@ -283,7 +283,7 @@ window.CATALOG = {
       blurb: 'Browser tests in Java, Python, JavaScript and TypeScript, from setup to a company style framework, reporting labs and CI.',
       intro: 'Learn Playwright in TypeScript, JavaScript, Python and Java, from setup and browser handling to locators, network mocking, fixtures, a company style framework built step by step, reporting labs, CI pipelines and the AI test agents.',
       tags: ['Java', 'Python', 'JS and TS', 'Framework', 'Reports', 'CI'],
-      modules: pwModules().concat(iqModule('playwright'))
+      modules: pwModules().concat(langSheetModule('playwright'), iqModule('playwright'))
     },
     {
       id: 'python',
@@ -1260,6 +1260,39 @@ function sheetModule(sid) {
       keywords: ['compact cheatsheet', 'short cheatsheet', 'one page revision', 'last minute revision', 'exam favourite formulas', 'PDF', 'download'],
       added: '2026-10-31'
     }]
+  };
+}
+
+/* Cheatsheets for subjects taught in several programming languages (Selenium, Playwright). Each language has its own
+   full and compact cheatsheet with only that language's code. The pages and PDFs are built by tools/sheet-build/langsheet.py. */
+function langSheetModule(sid) {
+  const info = {
+    'selenium': ['Selenium', [['java', 'Java'], ['py', 'Python'], ['js', 'JavaScript']], ['WebDriver', 'locators', 'waits', 'Grid']],
+    'playwright': ['Playwright', [['java', 'Java'], ['py', 'Python'], ['js', 'JavaScript'], ['ts', 'TypeScript']], ['locators', 'expect', 'fixtures', 'trace']]
+  }[sid];
+  const topics = [{
+    id: 'cheatsheet', title: 'Pick your cheatsheet', emoji: '📄', page: 'content/' + sid + '/cheatsheet.html',
+    summary: 'Choose the language you write tests in. Each language has its own full and compact ' + info[0] + ' cheatsheet with a PDF, and shows only that language\'s code.',
+    keywords: ['cheatsheet', 'cheat sheet', 'revision', 'PDF', 'download', 'quick reference'],
+    added: '2026-10-31'
+  }];
+  info[1].forEach(([lang, name]) => {
+    topics.push({
+      id: 'cheatsheet-' + lang, title: name + ' cheatsheet', emoji: '📄', page: 'content/' + sid + '/cheatsheet-' + lang + '.html',
+      summary: 'Every key idea, ' + name + ' example, table and common mistake from the ' + info[0] + ' chapters, with only ' + name + ' code. Search it, filter it, print it or download the PDF.',
+      keywords: [name + ' cheatsheet', 'cheatsheet', 'cheat sheet', 'revision', 'PDF', 'download', name].concat(info[2]),
+      added: '2026-10-31'
+    }, {
+      id: 'cheatsheet-' + lang + '-compact', title: name + ' compact cheatsheet', emoji: '📄', page: 'content/' + sid + '/cheatsheet-' + lang + '-compact.html',
+      summary: 'The key ideas, the ' + name + ' lines you type most and the common traps of every chapter in at most six printed pages. Download the PDF or print it.',
+      keywords: [name + ' compact cheatsheet', 'compact cheatsheet', 'short cheatsheet', 'last minute revision', 'PDF', 'download', name],
+      added: '2026-10-31'
+    });
+  });
+  return {
+    id: 'cheatsheet', title: 'Cheatsheets', emoji: '📄',
+    blurb: 'Revise the whole subject in the language you use. Each language has a full cheatsheet and a compact one of at most six pages, both with a PDF that works offline, and each shows only that language\'s code.',
+    topics: topics
   };
 }
 
