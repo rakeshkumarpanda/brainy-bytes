@@ -133,13 +133,36 @@
   try { JSON.parse(localStorage.getItem('lh-open-' + subj.id) || '[]').forEach(x => openSteps.add(x)); } catch (e) { /* storage unavailable */ }
   const mins = ts => ts.reduce((a, t) => a + (t.minutes || 0), 0);
   const hrs = m => m >= 90 ? `about ${Math.round(m / 6) / 10} hours` : `about ${m} min`;
+  /* a path subject may be split into sections (subj.parts, each module names its part). The path shows one section
+     at a time with a switcher on top, so a reader never faces every step of every section at once. */
+  const parts = Array.isArray(subj.parts) && subj.parts.length ? subj.parts : null;
+  function pickPart(focusModule) {
+    const want = new URLSearchParams(location.search).get('p');
+    if (want && parts.some(x => x.id === want)) return want;
+    const fm = subj.modules.find(m => m.id === focusModule);
+    if (fm && fm.part) return fm.part;
+    const r = PROGRESS.lastTopic(cat);
+    if (r && r.topic.subject === subj && r.topic.module.part) return r.topic.module.part;
+    const ready = parts.find(x => subj.modules.some(m => m.part === x.id && m.topics.some(t => !t.soon)));
+    return (ready || parts[0]).id;
+  }
   function pathOverview(focusModule) {
-    const steps = subj.modules.filter(m => m.step), extra = subj.modules.filter(m => !m.step);
+    const part = parts ? pickPart(focusModule) : null;
+    const inPart = m => !parts || m.part === part;
+    const steps = subj.modules.filter(m => m.step && inPart(m)), extra = subj.modules.filter(m => !m.step && inPart(m));
+    const partInfo = parts ? parts.find(x => x.id === part) : null;
+    const partTabs = parts ? `<nav class="lp-parts" aria-label="Sections of this subject">${parts.map((x, i) => {
+      const ms = subj.modules.filter(m => m.part === x.id), ts = ms.flatMap(m => m.topics), ready = ts.filter(t => !t.soon);
+      const n = ms.filter(m => m.step).length;
+      return `<a class="lp-part${x.id === part ? ' on' : ''}" href="${LH.subjectUrl(subj)}&p=${encodeURIComponent(x.id)}" data-part="${esc(x.id)}" aria-current="${x.id === part}">
+        <span class="lp-pk">Section ${String.fromCharCode(65 + i)}</span><b>${esc(x.title)}</b><span class="lp-pb">${esc(x.blurb || '')}</span>
+        <span class="lp-pc">${n} step${n === 1 ? '' : 's'} · ${ready.length ? `${ready.length} of ${ts.length} topics ready` : `${ts.length} topics planned, coming soon`}</span></a>`;
+    }).join('')}</nav>` : '';
     const all = steps.flatMap(m => m.topics.filter(t => !t.soon));
     const firstOpen = all.find(t => !PROGRESS.isDone(t));
     const curStep = firstOpen ? firstOpen.module : null;
     const r = PROGRESS.lastTopic(cat);
-    const resume = r && r.topic.subject === subj ? r : null;
+    const resume = r && r.topic.subject === subj && inPart(r.topic.module) ? r : null;
     const target = resume ? resume.topic : (firstOpen || all[0]);
     const count = k => all.reduce((a, t) => a + ((t.counts && t.counts[k]) || 0), 0);
     const p = PROGRESS.stats(all);
@@ -169,16 +192,24 @@
     };
     main.innerHTML = `<div class="lpath">
       <header class="lp-hero">
-        <div class="lp-kicker">Learning path</div>
+        <div class="lp-kicker">Learning path${partInfo ? ' · ' + esc(partInfo.title) : ''}</div>
         <h1>${esc(subj.title)}</h1>
         <p class="lede">${esc(subj.intro || subj.blurb || '')}</p>
+        ${partTabs}
+        ${partInfo && partInfo.intro ? `<p class="lede lp-pintro">${esc(partInfo.intro)}</p>` : ''}
         <div class="lp-stats"><span><b>${steps.length}</b> steps</span><span><b>${all.length}</b> topics</span><span><b>${count('problems')}</b> worked problems</span><span><b>${count('quiz')}</b> quiz questions</span><span><b>${count('assign')}</b> assignments</span><span><b>${hrs(mins(all))}</b></span></div>
         <div class="lp-prog"><div class="meter"><i style="width:${pct}%"></i></div><span>${p.done ? `${p.done} of ${p.total} topics complete` : 'Not started yet. Follow the steps in order, each one builds on the last.'}</span></div>
-        ${target ? `<a class="ibtn primary lp-go" href="${LH.topicUrl(target)}${resume && resume.hash ? '#' + esc(resume.hash) : ''}" data-t="${esc(target.id)}" data-h="${esc(resume ? resume.hash : '')}">${resume ? 'Continue: ' + esc(target.title) : 'Start step 1: ' + esc(target.title)}</a>` : ''}
+        ${target ? `<a class="ibtn primary lp-go" href="${LH.topicUrl(target)}${resume && resume.hash ? '#' + esc(resume.hash) : ''}" data-t="${esc(target.id)}" data-h="${esc(resume ? resume.hash : '')}">${resume ? 'Continue: ' + esc(target.title) : 'Start step 1: ' + esc(target.title)}</a>` : (parts ? '<p class="lp-soonmsg">The topics of this section are being written. Switch to the other section to start learning now.</p>' : '')}
       </header>
       <ol class="lp-steps">${steps.map(stepHtml).join('')}</ol>
       ${extra.map(m => `<div class="lp-extra"><h3>${esc(m.title)}</h3><p class="lede">${esc(m.blurb || '')}</p><ol class="lp-topics">${m.topics.map(topicRow).join('')}</ol></div>`).join('')}
     </div>`;
+    main.querySelectorAll('[data-part]').forEach(a => a.addEventListener('click', e => {
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+      e.preventDefault();
+      history.pushState(null, '', a.getAttribute('href'));
+      pathOverview();
+    }));
     main.querySelectorAll('.lp-head').forEach(b => b.addEventListener('click', () => {
       const li = b.closest('.lp-step'), on = !li.classList.contains('open');
       li.classList.toggle('open', on); b.setAttribute('aria-expanded', on);
@@ -224,7 +255,8 @@
     const prev = live[i - 1], next = live[i + 1];
     const src = t.page + (hash ? '#' + hash : '');
     const inStep = t.module.topics.filter(x => !x.soon);
-    const where = pathMode ? (t.module.step ? `Step ${t.module.step}: ${t.module.title} · Topic ${inStep.indexOf(t) + 1} of ${inStep.length}` : t.module.title) : '';
+    const partName = parts && t.module.part ? (parts.find(x => x.id === t.module.part) || {}).title : '';
+    const where = pathMode ? (partName ? partName + ' · ' : '') + (t.module.step ? `Step ${t.module.step}: ${t.module.title} · Topic ${inStep.indexOf(t) + 1} of ${inStep.length}` : t.module.title) : '';
     main.innerHTML = `<div class="toolbar">
         ${pathMode ? `<a class="ibtn pathbtn" href="${LH.subjectUrl(subj)}" data-path title="Back to the learning path">← <span class="lbl">Learning path</span></a>` : ''}
         <div class="tt">${pathMode ? '' : `<span class="em">${esc(t.emoji)}</span>`}<div style="min-width:0"><h1>${esc(t.title)}</h1><div class="sum">${esc(pathMode ? where : t.summary || '')}</div></div></div>

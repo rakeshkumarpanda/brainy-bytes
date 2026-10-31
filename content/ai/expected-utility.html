@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expected utility and compound lotteries · Advanced AI</title>
+<meta name="description" content="Expected utility in discrete and continuous form, expected payoff against expected outcome, the R&amp;D compound lottery and its reduction, optimistic and pessimistic rules, the lecture 2 reversal, positive affine transformations, the von Neumann and Morgenstern axioms, and present value.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/ai.css">
+</head>
+<body class="cvp aip">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=ai&amp;p=advanced">Advanced AI learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=ai&amp;p=advanced" target="_top">Advanced AI</a><span>›</span><span>Advanced AI</span><span>›</span><span>Step 2: Choice under risk</span><span>›</span><span>Expected utility</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 2 of 3 · College</div>
+    <h1>Expected utility and compound lotteries</h1>
+    <p class="lead">Score each lottery by its expected utility, reduce the R&D compound lottery step by step, and see why a mere ranking cannot compare risky choices.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">3 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">7 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#expected-utility" data-topic="cheatsheet" data-h="expected-utility">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#eu" data-l="eu"><span class="n">1</span><span class="t">Expected utility</span></a></li><li><a href="#compound" data-l="compound"><span class="n">2</span><span class="t">Compound lotteries: the R&amp;D example</span></a></li><li><a href="#affine" data-l="affine"><span class="n">3</span><span class="t">Why ranking is not enough under risk</span></a></li></ol>
+    <article class="cv-lesson" id="eu" data-l="eu" hidden><div class="cv-lno">Lesson 1 of 3</div><h2>Expected utility</h2>
+<p>Once each action is a lottery, how do we compare two lotteries? The course uses the most common answer: weight each outcome's utility by its probability and add. The result is the expected utility of the action, and the rational agent picks the action with the largest.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Expected utility, discrete</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>EU</i>(<i>a</i>) = ∑<sub><i>i</i></sub> <i>P</i>( <i>x</i><sub><i>i</i></sub> | <i>a</i> ) <i>u</i>( <i>x</i><sub><i>i</i></sub> )</div><div class="fx-n">Probability times utility, summed over outcomes.</div></div><div class="fx"><div class="fx-h"><span>Expected utility, continuous</span></div><div class="fx-b"><i>EU</i>(<i>a</i>) = ∫ <i>u</i>(<i>x</i>) d<i>F</i><sub><i>a</i></sub>(<i>x</i>) = ∫ <i>u</i>(<i>x</i>) <i>f</i><sub><i>a</i></sub>(<i>x</i>) d<i>x</i></div><div class="fx-n">The second form needs a density.</div></div><div class="fx fx-key"><div class="fx-h"><span>Rational choice under risk</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>a</i>* ∈ arg max<sub><i>a</i></sub> E[ <i>u</i>(<i>X</i>) | <i>a</i> ]</div><div class="fx-n">Maximize expected utility, not expected money.</div></div></div>
+<h3>Expected payoff is not expected outcome</h3>
+<p>The professor stressed this. Multiply probability by the utility of the outcome, not by the outcome itself. The two agree only when u(x) = x.</p>
+<div class="walk"><div class="walk-h"><span>Practice problems 5 and 6: 100 with 0.3, 40 with 0.7</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>With u(x) = x: EU = 0.3 × 100 + 0.7 × 40 = 30 + 28 = 58.</li><li>With u(x) = √x: u(100) = 10 and u(40) = 6.325.</li><li>EU = 0.3 × 10 + 0.7 × 6.325 = 3 + 4.427 = 7.43.</li><li><span class="eq">u(E[X]) = √58 = 7.616, which is not E[u(X)] = 7.43</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Practice problem 9: compare two risky actions</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Action A: 20 with 0.4, 0 with 0.6, so EU(A) = 8.</li><li>Action B: 12 with 0.8, 0 with 0.2, so EU(B) = 9.6.</li><li><span class="eq">9.6 &gt; 8, choose B</span></li><li>B has the smaller prize but a much better chance of getting it.</li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="compound" data-l="compound" hidden><div class="cv-lno">Lesson 2 of 3</div><h2>Compound lotteries: the R&amp;D example</h2>
+<p>A firm decides whether to invest in research (action G) or not (action S). Research succeeds with probability 0.625. After success the market is good with probability 0.9. After failure it is good with probability 0.5. A good market pays 10 and a bad one 0. Without research the market is good with probability 0.5.</p>
+<p>Action G is a compound lottery: a lottery whose prizes are themselves lotteries. To compare it with S, reduce it to a simple lottery over final payoffs.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Reduction of compound lotteries</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>P</i>(final outcome) = ∑<sub>paths</sub> ∏<sub>branches on the path</sub> <i>P</i>(branch)</div><div class="fx-n">Multiply along each path, then add the paths that end at the same outcome.</div></div></div>
+<div class="cvz" data-viz="compound"></div>
+<div class="walk"><div class="walk-h"><span>Reduce action G</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Success and good: 0.625 × 0.9 = 0.5625.</li><li>Success and bad: 0.625 × 0.1 = 0.0625.</li><li>Failure and good: 0.375 × 0.5 = 0.1875. Failure and bad: 0.1875.</li><li>Check: 0.5625 + 0.0625 + 0.1875 + 0.1875 = 1.</li><li><span class="eq">P(10 | G) = 0.5625 + 0.1875 = 0.75, so EU(G) = 7.5 against EU(S) = 5</span></li></ol></div>
+<div class="cv-code" data-k="reduce"></div>
+<h3>Other ways to compare lotteries</h3>
+<div class="tw"><table class="cvt "><thead><tr><th>Rule</th><th>Looks at</th><th>R&D answer</th></tr></thead><tbody><tr><td>Expected utility</td><td>Σ p u</td><td>G: 7.5 against 5</td></tr><tr><td>Optimistic</td><td>Chance of the best outcome</td><td>G: 0.75 against 0.5</td></tr><tr><td>Pessimistic</td><td>Chance of the worst outcome, lower is better</td><td>G: 0.25 against 0.5</td></tr><tr><td>Others</td><td>Median, quantiles, worst case, variance, chance of beating a target</td><td>Depends on the rule</td></tr></tbody></table></div>
+<p>Here every rule agrees. They need not. The course uses expected utility because it has a clean mathematical justification, which is the von Neumann and Morgenstern theorem in the deep box below.</p>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="affine" data-l="affine" hidden><div class="cv-lno">Lesson 3 of 3</div><h2>Why ranking is not enough under risk</h2>
+<p>Chapter 1.2 showed that any increasing transformation of a utility function keeps the ranking. Under risk that is no longer true. Lecture 2 gives a sharp example.</p>
+<div class="walk"><div class="walk-h"><span>Same ranking, opposite choice</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Outcomes A, B, C, D with u = 9, −1, 10, 0. The ranking is C ≻ A ≻ D ≻ B.</li><li>G gives A with 0.75 and B with 0.25. S gives C with 0.5 and D with 0.5.</li><li>EU(G) = 0.75 × 9 + 0.25 × (−1) = 6.5 and EU(S) = 5. Choose G.</li><li>Now change only u(B) to −8. The ranking C ≻ A ≻ D ≻ B is unchanged.</li><li><span class="eq">EU(G) = 6.75 − 2 = 4.75 &lt; EU(S) = 5. Now choose S.</span></li></ol></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Positive affine transformation</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>v</i>(<i>x</i>) = <i>a</i> <i>u</i>(<i>x</i>) + <i>b</i>, &nbsp; <i>a</i> &gt; 0</div><div class="fx-n">The only transformations that keep every expected utility comparison.</div></div><div class="fx"><div class="fx-h"><span>Why it works</span></div><div class="fx-b">E[ <i>a u</i>(<i>X</i>) + <i>b</i> ] = <i>a</i> E[ <i>u</i>(<i>X</i>) ] + <i>b</i></div><div class="fx-n">Expectation is linear. Scaling by a positive a and shifting by b keeps the order of the expected values.</div></div></div>
+<div class="cvz" data-viz="affine"></div>
+<div class="cv-code" data-k="affine"></div>
+<div class="note note-exam"><b>In the exam</b><div>Moving u(B) from −1 to −8 is not affine: it stretches one gap and leaves the others alone. Under risk the sizes of the gaps matter, so expected utility needs cardinal utility, unique up to a u + b with a &gt; 0.</div></div>
+<details class="deep"><summary>Going deeper: The von Neumann and Morgenstern theorem</summary><div class="deep-b"><p>Suppose a preference over lotteries is complete and transitive, continuous (if L ≻ M ≻ N there is a mix of L and N indifferent to M) and independent (mixing both sides with the same third lottery does not change the comparison). Then there is a utility u over outcomes such that L ⪰ M exactly when E<sub>L</sub>[u] ≥ E<sub>M</sub>[u], and u is unique up to positive affine transformations. Independence is the axiom that the Allais paradox shows people often break.</p></div></details>
+<h3>A look ahead: money later is worth less</h3>
+<p>If research pays off in t years, its payoff should be discounted. With interest rate r, a future value FV is worth PV = FV ÷ (1 + r)<sup>t</sup> today. Chapter 3.2 develops this fully.</p>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Present value</span></div><div class="fx-b">PV = <span class="fr"><span>FV</span><span>(1 + <i>r</i>)<sup><i>t</i></sup></span></span></div><div class="fx-n">For a risky payoff: E[u(X<sub>t</sub>)] ÷ (1 + r)<sup>t</sup>.</div></div></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>To compare two gambles, multiply what each result is worth to you by how likely it is, add up, and pick the bigger total.</p></div><div class="ld-p" data-ld="college" hidden><p>EU(a) = Σ P(xᵢ | a) u(xᵢ). Reduce compound lotteries by multiplying along paths. Expected utility choices survive a u + b with a &gt; 0 but not other increasing transforms, so utility under risk is cardinal.</p></div><div class="ld-p" data-ld="masters" hidden><p>The von Neumann and Morgenstern axioms (completeness, transitivity, continuity, independence) are exactly what is needed for an expected utility representation. Reduction of compound lotteries is an extra assumption that experiments on ambiguity question.</p></div><div class="ld-p" data-ld="research" hidden><p>The Allais paradox breaks independence, and Kahneman and Tversky's prospect theory replaces probabilities with decision weights and utility with a value function around a reference point. Rank dependent utility and Choquet expected utility are formal models that relax independence.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./lotteries-cdf.html" data-topic="lotteries-cdf"><small>Previous topic</small><b>Lotteries</b></a><a class="next" href="./risk-attitudes.html" data-topic="risk-attitudes"><small>Next topic</small><b>Risk attitudes</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "expected-utility", "topic": "expected-utility", "subject": "ai", "title": "Expected utility and compound lotteries", "codes": {"reduce": {"src": "# Reduce the R&D compound lottery: multiply along each path, add the paths with the same payoff\ntree = {\"G\": [(0.625, [(0.9, 10), (0.1, 0)]),      # success, then market good or bad\n              (0.375, [(0.5, 10), (0.5, 0)])],     # failure, then market good or bad\n        \"S\": [(1.0,   [(0.5, 10), (0.5, 0)])]}     # no research: only the market\n\nfor action, branches in tree.items():\n    simple = {}\n    for p1, leaves in branches:\n        for p2, pay in leaves:\n            simple[pay] = simple.get(pay, 0) + p1 * p2\n    eu = sum(p * pay for pay, p in simple.items())\n    print(action, {k: round(v, 4) for k, v in simple.items()}, \" EU =\", round(eu, 3))", "stdin": "", "out": "G {10: 0.75, 0: 0.25}  EU = 7.5\nS {10: 0.5, 0: 0.5}  EU = 5.0"}, "affine": {"src": "# Same ranking C > A > D > B, two utility scales, opposite choices\ndef eu(u, lottery):\n    return sum(p * u[x] for x, p in lottery)\n\nG = [(\"A\", 0.75), (\"B\", 0.25)]\nS = [(\"C\", 0.5), (\"D\", 0.5)]\nu1 = {\"A\": 9, \"B\": -1, \"C\": 10, \"D\": 0}\nu2 = {\"A\": 9, \"B\": -8, \"C\": 10, \"D\": 0}\nv = {x: 2 * t + 3 for x, t in u1.items()}            # a positive affine copy of u1\n\nfor name, u in [(\"u\", u1), (\"u'\", u2), (\"2u + 3\", v)]:\n    g, s = eu(u, G), eu(u, S)\n    print(f\"{name:7} EU(G) = {g:6.2f}  EU(S) = {s:6.2f}  choose {'G' if g > s else 'S'}\")", "stdin": "", "out": "u       EU(G) =   6.50  EU(S) =   5.00  choose G\nu'      EU(G) =   4.75  EU(S) =   5.00  choose S\n2u + 3  EU(G) =  16.00  EU(S) =  13.00  choose G"}}, "quiz": [{"lv": "e", "q": "EU(a) for a discrete lottery is", "o": ["Σ pᵢ xᵢ", "Σ pᵢ u(xᵢ)", "max u(xᵢ)", "u(Σ pᵢ xᵢ)"], "a": 1, "hint": "Utility, weighted by probability.", "why": "Expected utility weights each outcome's utility by its probability."}, {"lv": "e", "q": "R&D: what is P(10) for action G after reduction?", "o": ["0.5", "0.625", "0.75", "0.9"], "a": 2, "hint": "0.625 × 0.9 + 0.375 × 0.5.", "why": "0.5625 + 0.1875 = 0.75."}, {"lv": "e", "q": "R&D with u(10) = 10 and u(0) = 0: EU(G) and EU(S) are", "o": ["7.5 and 5", "10 and 5", "6.25 and 5", "7.5 and 7.5"], "a": 0, "hint": "Probability of 10 times 10.", "why": "0.75 × 10 = 7.5 and 0.5 × 10 = 5."}, {"lv": "e", "q": "To reduce a compound lottery you", "o": ["Add along paths, multiply across", "Multiply along each path and add paths with the same outcome", "Take the largest branch", "Average the branches"], "a": 1, "hint": "Paths and products.", "why": "Each path's probability is a product. Paths that end at the same payoff add."}, {"lv": "m", "q": "Which transformation always keeps expected utility choices?", "o": ["u³", "eᵘ", "3u − 4", "−u"], "a": 2, "hint": "a u + b with a > 0.", "why": "3u − 4 is positive affine. u³ and eᵘ keep ranking but can flip lottery choices."}, {"lv": "m", "q": "In the lecture reversal, changing u(B) from −1 to −8 makes EU(G)", "o": ["6.5", "5", "4.75", "2"], "a": 2, "hint": "0.75 × 9 + 0.25 × (−8).", "why": "6.75 − 2 = 4.75, now below EU(S) = 5."}, {"lv": "m", "q": "The pessimistic rule prefers the lottery with", "o": ["The higher chance of the best outcome", "The lower chance of the worst outcome", "The higher mean", "More outcomes"], "a": 1, "hint": "Fear the worst.", "why": "It compares the probabilities of the worst outcome and picks the lower one."}, {"lv": "m", "q": "With u(x) = √x, 100 with 0.3 and 40 with 0.7, is E[u(X)] equal to u(E[X])?", "o": ["Yes", "No, 7.43 against 7.62", "Only if p = 0.5", "No, 58 against 7.62"], "a": 1, "hint": "Compute both.", "why": "E[u] = 7.43 and u(58) = 7.616."}, {"lv": "h", "q": "Why does expected utility need cardinal utility?", "o": ["Probabilities are cardinal", "Weighted sums depend on the sizes of utility gaps, not just their order", "Utility must be money", "It does not"], "a": 1, "hint": "Look at the reversal.", "why": "Changing one gap without changing the order flipped the choice."}, {"lv": "h", "q": "Which axiom does the Allais paradox show people break?", "o": ["Completeness", "Transitivity", "Independence", "Reflexivity"], "a": 2, "hint": "Mixing with a common lottery.", "why": "People's choices change when a common consequence is changed, which breaks independence."}, {"lv": "x", "q": "If v = a u + b with a > 0, then EU_v(L) − EU_v(M) equals", "o": ["EU_u(L) − EU_u(M)", "a (EU_u(L) − EU_u(M))", "a EU_u(L) − EU_u(M) + b", "b"], "a": 1, "hint": "The b cancels.", "why": "Both sides gain b, which cancels, and the difference is scaled by a > 0, so its sign is kept."}], "calc": [{"lv": "e", "q": "Practice problem 5: 100 with 0.3, 40 with 0.7, u(x) = x. What is EU?", "ans": "58", "hint": "Σ p x.", "steps": ["0.3 × 100 = 30.", "0.7 × 40 = 28.", "<span class=\"eq\">EU = 30 + 28 = 58<\/span>"]}, {"lv": "e", "q": "Practice problem 9: action B gives 12 with 0.8 and 0 otherwise. What is EU(B)?", "ans": "9.6", "hint": "p × payoff.", "steps": ["0.8 × 12 = 9.6.", "0.2 × 0 = 0.", "<span class=\"eq\">EU(B) = 9.6<\/span>"]}, {"lv": "e", "q": "R&D: what is P(success and good market)?", "ans": "0.5625", "hint": "Multiply along the path.", "steps": ["P(success) = 0.625.", "P(good | success) = 0.9.", "<span class=\"eq\">0.625 × 0.9 = 0.5625<\/span>"]}, {"lv": "m", "q": "Practice problem 6: 100 with 0.3, 40 with 0.7, u = √x. What is EU? Two decimals.", "ans": "7.43", "hint": "√100 = 10, √40 ≈ 6.325.", "steps": ["0.3 × 10 = 3.", "0.7 × 6.325 = 4.427.", "<span class=\"eq\">EU = 3 + 4.427 = 7.43<\/span>"], "tol": 0.005}, {"lv": "m", "q": "Lecture reversal: u = 9, −1, 10, 0 for A, B, C, D. G gives A with 0.75 and B with 0.25. What is EU(G)?", "ans": "6.5", "hint": "Weighted sum.", "steps": ["0.75 × 9 = 6.75.", "0.25 × (−1) = −0.25.", "<span class=\"eq\">EU(G) = 6.5<\/span>"]}, {"lv": "m", "q": "With u'(B) = −8 instead, what is EU(G)?", "ans": "4.75", "hint": "Only one term changes.", "steps": ["0.75 × 9 = 6.75.", "0.25 × (−8) = −2.", "<span class=\"eq\">EU(G) = 4.75 &lt; EU(S) = 5<\/span>"]}, {"lv": "m", "q": "Apply v = 2u + 3 to u = 9, −1, 10, 0. What is EU_v(G) − EU_v(S)?", "ans": "3", "hint": "The gap is multiplied by a = 2.", "steps": ["EU_u(G) − EU_u(S) = 6.5 − 5 = 1.5.", "An affine map multiplies the gap by a and cancels b.", "<span class=\"eq\">2 × 1.5 = 3<\/span>"]}, {"lv": "h", "q": "R&D: what P(success) makes EU(G) = EU(S) = 5, keeping 0.9 and 0.5 for the market?", "ans": "0", "hint": "Solve p × 0.9 + (1 − p) × 0.5 = 0.5.", "steps": ["P(10 | G) = 0.9p + 0.5(1 − p) = 0.5 + 0.4p.", "Equal to 0.5 only when 0.4p = 0.", "<span class=\"eq\">p = 0<\/span>", "Any chance of success helps, because failure is no worse than not investing."]}, {"lv": "h", "q": "R&D with P(good | failure) = 0.2 and the rest as in class. What is EU(G)?", "ans": "6.375", "hint": "Recompute the failure branch.", "steps": ["Success then good: 0.625 × 0.9 = 0.5625.", "Failure then good: 0.375 × 0.2 = 0.075.", "P(10) = 0.6375.", "<span class=\"eq\">EU(G) = 6.375, still above 5<\/span>"]}, {"lv": "h", "q": "Which value of u(B) makes G and S tie, with u(A) = 9, u(C) = 10, u(D) = 0?", "ans": "-7", "hint": "Solve 0.75 × 9 + 0.25 u(B) = 5.", "steps": ["EU(S) = 5.", "6.75 + 0.25 u(B) = 5.", "<span class=\"eq\">u(B) = −1.75 ÷ 0.25 = −7<\/span>", "Below −7 the choice flips to S."]}, {"lv": "x", "q": "A research payoff of 10 arrives in 3 years with probability 0.75 (0 otherwise). With r = 10%, what is its expected present value? Three decimals.", "ans": "5.635", "hint": "Discount the expected payoff.", "steps": ["Expected payoff = 0.75 × 10 = 7.5.", "Discount factor = 1 ÷ 1.1³ = 1 ÷ 1.331 = 0.7513.", "<span class=\"eq\">PV = 7.5 × 0.7513 = 5.635<\/span>", "It still beats the sure 5 from not investing. If that 5 also arrived in year 3, it would be worth only 3.757 today."], "tol": 0.0005}], "assign": [{"id": "eu", "lv": "e", "title": "Expected utility", "task": "<p>Write <code>expected_utility(lot, u)<\/code> where lot is a list of (outcome, probability) pairs and u is a function. Return Σ p u(x) rounded to 4 decimals.<\/p>", "starter": "def expected_utility(lot, u):\n    # your code here\n    pass\n", "tests": [{"call": "expected_utility([(100, 0.3), (40, 0.7)], lambda x: x)", "want": 58.0}, {"call": "expected_utility([(100, 0.3), (40, 0.7)], lambda x: x ** 0.5)", "want": 7.4272}, {"call": "expected_utility([(10, 0.75), (0, 0.25)], lambda x: x)", "want": 7.5}], "solution": "def expected_utility(lot, u):\n    return round(sum(p * u(x) for x, p in lot), 4)\n", "hint": "Apply u to the outcome before multiplying by its probability.", "why": "<p>The first two tests are practice problems 5 and 6 from the notes.<\/p>"}, {"id": "reduce", "lv": "m", "title": "Reduce a two stage lottery", "task": "<p>Write <code>reduce(stages)<\/code>. stages is a list of (p, lottery) pairs, where lottery is a list of (payoff, q) pairs. Return a dictionary from payoff to its total probability p × q summed over paths, each rounded to 4 decimals.<\/p>", "starter": "def reduce(stages):\n    # your code here\n    pass\n", "tests": [{"call": "reduce([(0.625, [(10, 0.9), (0, 0.1)]), (0.375, [(10, 0.5), (0, 0.5)])])", "want": {"10": 0.75, "0": 0.25}}, {"call": "reduce([(0.6, [(10, 0.8), (0, 0.2)]), (0.4, [(10, 0.3), (0, 0.7)])])", "want": {"10": 0.6, "0": 0.4}}], "solution": "def reduce(stages):\n    out = {}\n    for p, lot in stages:\n        for pay, q in lot:\n            out[str(pay)] = out.get(str(pay), 0) + p * q\n    return {k: round(v, 4) for k, v in out.items()}\n", "hint": "Use str(payoff) as the key so the result stays JSON friendly.", "why": "<p>The tests are the R&D example and practice problem 10. Keys are strings so the answer compares cleanly.<\/p>"}], "must": [["Expected utility", "EU(a) = Σ P(xᵢ | a) u(xᵢ), or ∫ u dF. Choose arg max EU, not arg max E[X]."], ["R&D compound lottery", "P(10 | G) = 0.625 × 0.9 + 0.375 × 0.5 = 0.75, EU(G) = 7.5 > EU(S) = 5. Multiply along paths, add paths."], ["Reversal", "u = 9, −1, 10, 0: EU(G) 6.5 > 5. u(B) = −8: 4.75 < 5. Same ranking, opposite choice."], ["Affine invariance", "Only v = a u + b with a > 0 keeps every EU comparison. Utility under risk is cardinal."], ["Other rules and PV", "Optimistic (P best), pessimistic (P worst). PV = FV ÷ (1 + r)ᵗ. vNM axioms give EU."]], "summary": "<p>Weight each outcome's utility by its probability. Compound lotteries reduce by multiplying along paths. Only positive affine changes of utility keep every risky choice the same.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"reduce": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 2, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 2, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.tree": "{'G': [(0.625, [(0.9, 10), (0.1, 0)]), (0.375, [(0.5, 10), (0.5, 0)])], 'S': [(1.0, [(0..."}}, {"l": 7, "ev": "line", "d": {"G.action": "'G'", "G.branches": "[(0.625, [(0.9, 10), (0.1, 0)]), (0.375, [(0.5, 10), (0.5, 0)])]"}}, {"l": 8, "ev": "line", "d": {"G.simple": "{}"}}, {"l": 9, "ev": "line", "d": {"G.p1": "0.625", "G.leaves": "[(0.9, 10), (0.1, 0)]"}}, {"l": 10, "ev": "line", "d": {"G.p2": "0.9", "G.pay": "10"}}, {"l": 9, "ev": "line", "d": {"G.simple": "{10: 0.5625}"}}, {"l": 10, "ev": "line", "d": {"G.p2": "0.1", "G.pay": "0"}}, {"l": 9, "ev": "line", "d": {"G.simple": "{10: 0.5625, 0: 0.0625}"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.p1": "0.375", "G.leaves": "[(0.5, 10), (0.5, 0)]"}}, {"l": 10, "ev": "line", "d": {"G.p2": "0.5", "G.pay": "10"}}, {"l": 9, "ev": "line", "d": {"G.simple": "{10: 0.75, 0: 0.0625}"}}, {"l": 10, "ev": "line", "d": {"G.pay": "0"}}, {"l": 9, "ev": "line", "d": {"G.simple": "{10: 0.75, 0: 0.25}"}}, {"l": 8, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<dict_itemiterator object at 0x7f05eefbf420>"}}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return", "d": {"L.pay": "10", "L.p": "0.75"}}, {"l": 11, "ev": "call"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return", "d": {"L.pay": "0", "L.p": "0.25"}}, {"l": 11, "ev": "call"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 12, "ev": "line", "s": ["module"], "d": {"G.eu": "7.5", "L..0": null, "L.pay": null, "L.p": null}}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 6, "ev": "line", "o": "G {10: 0.75, 0: 0.25}  EU = 7.5\n"}, {"l": 7, "ev": "line", "d": {"G.action": "'S'", "G.branches": "[(1.0, [(0.5, 10), (0.5, 0)])]"}}, {"l": 8, "ev": "line", "d": {"G.simple": "{}"}}, {"l": 9, "ev": "line", "d": {"G.p1": "1.0"}}, {"l": 10, "ev": "line", "d": {"G.pay": "10"}}, {"l": 9, "ev": "line", "d": {"G.simple": "{10: 0.5}"}}, {"l": 10, "ev": "line", "d": {"G.pay": "0"}}, {"l": 9, "ev": "line", "d": {"G.simple": "{10: 0.5, 0: 0.5}"}}, {"l": 8, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<dict_itemiterator object at 0x7f05eefbf650>"}}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return", "d": {"L.pay": "10", "L.p": "0.5"}}, {"l": 11, "ev": "call"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return", "d": {"L.pay": "0"}}, {"l": 11, "ev": "call"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 12, "ev": "line", "s": ["module"], "d": {"G.eu": "5.0", "L..0": null, "L.pay": null, "L.p": null}}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 6, "ev": "line", "o": "S {10: 0.5, 0: 0.5}  EU = 5.0\n"}, {"l": 6, "ev": "return"}], "tail": "", "err": null, "cut": false}, "affine": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 5, "ev": "line", "d": {"G.eu": "<function eu>"}}, {"l": 6, "ev": "line", "d": {"G.G": "[('A', 0.75), ('B', 0.25)]"}}, {"l": 7, "ev": "line", "d": {"G.S": "[('C', 0.5), ('D', 0.5)]"}}, {"l": 8, "ev": "line", "d": {"G.u1": "{'A': 9, 'B': -1, 'C': 10, 'D': 0}"}}, {"l": 9, "ev": "line", "d": {"G.u2": "{'A': 9, 'B': -8, 'C': 10, 'D': 0}"}}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "line"}, {"l": 11, "ev": "line", "d": {"G.v": "{'A': 21, 'B': 1, 'C': 23, 'D': 3}"}}, {"l": 12, "ev": "line", "d": {"G.name": "'u'", "G.u": "{'A': 9, 'B': -1, 'C': 10, 'D': 0}"}}, {"l": 2, "ev": "call", "s": ["module", "eu()"], "d": {"L.u": "{'A': 9, 'B': -1, 'C': 10, 'D': 0}", "L.lottery": "[('A', 0.75), ('B', 0.25)]"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "eu()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f0c2f518c40>", "L.lottery": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'A'", "L.p": "0.75"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'B'", "L.p": "0.25"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 3, "ev": "return", "s": ["module", "eu()"], "d": {"L.lottery": "[('A', 0.75), ('B', 0.25)]", "L..0": null, "L.x": null, "L.p": null}}, {"l": 2, "ev": "call", "d": {"L.lottery": "[('C', 0.5), ('D', 0.5)]"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "eu()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f0c2f519150>", "L.lottery": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'C'", "L.p": "0.5"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'D'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 3, "ev": "return", "s": ["module", "eu()"], "d": {"L.lottery": "[('C', 0.5), ('D', 0.5)]", "L..0": null, "L.x": null, "L.p": null}}, {"l": 13, "ev": "line", "s": ["module"], "d": {"G.g": "6.5", "G.s": "5.0", "L.u": null, "L.lottery": null}}, {"l": 11, "ev": "line", "o": "u       EU(G) =   6.50  EU(S) =   5.00  choose G\n"}, {"l": 12, "ev": "line", "d": {"G.name": "\"u'\"", "G.u": "{'A': 9, 'B': -8, 'C': 10, 'D': 0}"}}, {"l": 2, "ev": "call", "s": ["module", "eu()"], "d": {"L.u": "{'A': 9, 'B': -8, 'C': 10, 'D': 0}", "L.lottery": "[('A', 0.75), ('B', 0.25)]"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "eu()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f0c2f5199c0>", "L.lottery": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'A'", "L.p": "0.75"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'B'", "L.p": "0.25"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 3, "ev": "return", "s": ["module", "eu()"], "d": {"L.lottery": "[('A', 0.75), ('B', 0.25)]", "L..0": null, "L.x": null, "L.p": null}}, {"l": 2, "ev": "call", "d": {"L.lottery": "[('C', 0.5), ('D', 0.5)]"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "eu()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f0c2f519b10>", "L.lottery": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'C'", "L.p": "0.5"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'D'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 3, "ev": "return", "s": ["module", "eu()"], "d": {"L.lottery": "[('C', 0.5), ('D', 0.5)]", "L..0": null, "L.x": null, "L.p": null}}, {"l": 13, "ev": "line", "s": ["module"], "d": {"G.g": "4.75", "L.u": null, "L.lottery": null}}, {"l": 11, "ev": "line", "o": "u'      EU(G) =   4.75  EU(S) =   5.00  choose S\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'2u + 3'", "G.u": "{'A': 21, 'B': 1, 'C': 23, 'D': 3}"}}, {"l": 2, "ev": "call", "s": ["module", "eu()"], "d": {"L.u": "{'A': 21, 'B': 1, 'C': 23, 'D': 3}", "L.lottery": "[('A', 0.75), ('B', 0.25)]"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "eu()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f0c2f519b40>", "L.lottery": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'A'", "L.p": "0.75"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'B'", "L.p": "0.25"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 3, "ev": "return", "s": ["module", "eu()"], "d": {"L.lottery": "[('A', 0.75), ('B', 0.25)]", "L..0": null, "L.x": null, "L.p": null}}, {"l": 2, "ev": "call", "d": {"L.lottery": "[('C', 0.5), ('D', 0.5)]"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "eu()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f0c2f519330>", "L.lottery": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'C'", "L.p": "0.5"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'D'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 3, "ev": "return", "s": ["module", "eu()"], "d": {"L.lottery": "[('C', 0.5), ('D', 0.5)]", "L..0": null, "L.x": null, "L.p": null}}, {"l": 13, "ev": "line", "s": ["module"], "d": {"G.g": "16.0", "G.s": "13.0", "L.u": null, "L.lottery": null}}, {"l": 11, "ev": "line", "o": "2u + 3  EU(G) =  16.00  EU(S) =  13.00  choose G\n"}, {"l": 11, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/aiwidgets.js"></script>
+<script src="../../assets/aigames.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

@@ -173,6 +173,7 @@ def page(chs, cfg, meta):
     size = pdf_label(meta['full'])
     cpages = meta['compact'].get('pages')
     sub = cfg['subject']
+    home = 's=' + sub + (f'&amp;p={cfg["part"]}' if cfg.get('part') else '')
     css = '\n'.join(f'<link rel="stylesheet" href="../../assets/{c}">' for c in cfg['css'] + ['sheet.css'])
     return f'''<!doctype html>
 <html lang="en">
@@ -186,9 +187,9 @@ def page(chs, cfg, meta):
 {css}
 </head>
 <body class="{cfg["body"]} sheetp" data-subject="{sub}">
-<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s={sub}">{cfg["name"]} learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?{home}">{cfg["name"]} learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
 <div class="cv-wrap sh-wrap">
-  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s={sub}" target="_top">{cfg["name"]}</a><span>›</span><span>Cheatsheet</span></div>
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?{home}" target="_top">{cfg["name"]}</a><span>›</span><span>Cheatsheet</span></div>
   <header class="cv-hero">
     <div class="cv-kicker">Cheatsheet · {len(chs)} chapters on one page</div>
     <h1>{cfg["name"]} cheatsheet</h1>
@@ -267,6 +268,7 @@ def compact_page(chs, cfg, meta):
             body.append(f'<section class="sh-step cs-step" id="step-{n}"><h2><span>Step {n}</span>{html.escape(stp[1])}</h2>{"".join(arts)}</section>')
     pdf = file_name(cfg, True)
     sub = cfg['subject']
+    home = 's=' + sub + (f'&amp;p={cfg["part"]}' if cfg.get('part') else '')
     css = '\n'.join(f'<link rel="stylesheet" href="../../assets/{c}">' for c in cfg['css'] + ['sheet.css'])
     return f'''<!doctype html>
 <html lang="en">
@@ -280,9 +282,9 @@ def compact_page(chs, cfg, meta):
 {css}
 </head>
 <body class="{cfg["body"]} sheetp compactp" data-subject="{sub}">
-<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s={sub}">{cfg["name"]} learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?{home}">{cfg["name"]} learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
 <div class="cv-wrap sh-wrap">
-  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s={sub}" target="_top">{cfg["name"]}</a><span>›</span><span>Compact cheatsheet</span></div>
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?{home}" target="_top">{cfg["name"]}</a><span>›</span><span>Compact cheatsheet</span></div>
   <header class="cv-hero">
     <div class="cv-kicker">Compact cheatsheet · at most {COMPACT_MAX} printed pages</div>
     <h1>{cfg["name"]} compact cheatsheet</h1>

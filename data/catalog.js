@@ -383,6 +383,23 @@ window.CATALOG = {
       modules: nlpModules().concat(sheetModule('nlp'), iqModule('nlp'))
     },
     {
+      id: 'ai',
+      title: 'Artificial Intelligence',
+      emoji: '🧠',
+      color: '#7c3aed',
+      layout: 'path',
+      blurb: 'Two sections in one path. Core AI covers agents, search, logic, probability and learning. Advanced AI covers rational choice, risk, decisions over time and game theory.',
+      intro: 'Pick a section, then follow its steps in order. Each topic explains the idea at school, college, masters and research depth, shows the maths with highlighted formulas and worked problems, and has animations whose every setting you can change, with suggestions of what to change and what to watch for.',
+      tags: ['Rational agents', 'Utility', 'Expected utility', 'Game theory', 'Dominance', 'Search', 'Logic'],
+      parts: [
+        { id: 'core', title: 'Core AI', blurb: 'The foundations: intelligent agents, search, games, constraints, logic, planning, probability and learning.',
+          intro: 'Core AI is planned around the standard first course in artificial intelligence. The chapters below open one by one as they are written.' },
+        { id: 'advanced', title: 'Advanced AI', blurb: 'How a rational agent decides: preferences and utility, risk and lotteries, decisions over time, games, dominance and iterated elimination.',
+          intro: 'Advanced AI follows the course lectures 1 to 6 and Quiz 1. You start with one agent choosing under certainty, add risk, then time, then other agents, and finish with dominance, iterated elimination, the solved quiz and an exam revision step.' }
+      ],
+      modules: coreAiModules().concat(advAiModules(), [sheetModule('ai'), iqModule('ai')].map(m => Object.assign(m, { part: 'advanced' })))
+    },
+    {
       id: 'cuda',
       title: 'GPU Programming with CUDA',
       emoji: '⚡',
@@ -1244,6 +1261,7 @@ function javaModules() {
 function sheetModule(sid) {
   const info = {
     'computer-vision': ['content/computer-vision/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Computer Vision chapters on one page, from pixels and filters to detection, segmentation and CLIP. Search it, filter it, print it or download the PDF.', ['image size formula', 'convolution output size', 'Sobel', 'Harris', 'optical flow', 'IoU', 'NMS', 'focal loss', 'mAP', 'Dice', 'mIoU']],
+    'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Advanced AI chapters on one page, from preferences and utility to expected utility, risk, discounting, Nash style games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['utility', 'expected utility', 'certainty equivalent', 'discount factor', 'value of information', 'Cournot', 'Pareto', 'dominance', 'IESDS']],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the NLP chapters on one page, from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'cross entropy', 'perplexity', 'MLE', 'Laplace', 'Good-Turing', 'Kneser-Ney', 'interpolation', 'HMM', 'Viterbi']]
   }[sid];
   return {
@@ -1307,6 +1325,7 @@ function iqModule(sid) {
     'manual-testing': ['content/manual-testing/interview-questions.html', 'Manual and QA interview questions on testing principles, SDLC and STLC, levels and types, test design techniques, the bug life cycle, test planning and real project scenarios.', ['verification vs validation', 'smoke vs sanity', 'retesting vs regression', 'severity vs priority', 'bug life cycle', 'boundary value analysis', 'test plan', 'RTM', 'how to test a login page', 'test a pen']],
     'ml-maths': ['content/ml-maths/interview-questions.html', 'Maths questions from machine learning interviews and certification theory sections: dot products, matrix shapes, eigenvalues and PCA, derivatives, backpropagation, gradient descent and Adam, Bayes, distributions, confidence intervals, A/B tests, entropy, losses and metrics, each solved step by step.', ['dot product', 'cosine similarity', 'matrix multiplication', 'eigenvalues', 'PCA', 'chain rule', 'sigmoid derivative', 'gradient descent', 'Adam', 'Bayes theorem', 'central limit theorem', 'p-value', 'A/B test', 'cross entropy', 'precision recall', 'ROC AUC']],
     'playwright': ['content/playwright/interview-questions.html', 'Playwright questions from automation interviews in TypeScript, JavaScript, Python and Java: how Playwright works, locators and strict mode, auto waiting, network mocking, fixtures, framework design, traces and reports, CI, sharding, flaky tests and the AI test agents, with real scenario questions.', ['playwright vs selenium', 'browser context', 'getByRole', 'strict mode', 'auto waiting', 'web first assertions', 'page.route', 'storageState', 'test.extend', 'pytest fixtures', 'trace viewer', 'sharding', 'flaky tests', 'test agents', 'playwright mcp']],
+    'ai': ['content/ai/interview-questions.html', 'Advanced AI interview and viva questions on rational preferences, utility representation, expected utility and risk attitudes, backward induction, discounting, value of information, normal form games, Pareto optimality, dominance and IESDS, with numerical questions solved step by step.', ['rational preference', 'utility function', 'ordinal vs cardinal', 'expected utility', 'certainty equivalent', 'St Petersburg', 'backward induction', 'discount factor', 'value of information', 'prisoners dilemma', 'Cournot', 'Bertrand', 'Pareto optimal', 'dominant strategy', 'IESDS']],
     'nlp': ['content/nlp/interview-questions.html', 'NLP interview questions on tokenisation, stemming and lemmatisation, Zipf, entropy, cross entropy and KL, perplexity, n-gram models, add-k, Good-Turing, Kneser-Ney, backoff and interpolation, HMM tagging, Viterbi, parsing and evaluation, with scenario questions.', ['tokenisation', 'stemming vs lemmatisation', 'Zipf law', 'entropy', 'cross entropy', 'perplexity', 'n-gram', 'Laplace smoothing', 'Kneser-Ney', 'interpolation', 'OOV', 'HMM', 'Viterbi', 'POS tagging', 'CKY', 'BLEU']],
     'computer-vision': ['content/computer-vision/interview-questions.html', 'Computer vision interview questions on images and filters, edges, Harris, SIFT and HOG, optical flow, CNN arithmetic, anchors, IoU, NMS, focal loss, precision, recall and mAP, segmentation metrics, U-Net, ViT, CLIP and SAM, with debugging scenarios and system design.', ['convolution output size', 'parameter count', 'receptive field', 'Harris', 'optical flow', 'IoU', 'NMS', 'anchor boxes', 'focal loss', 'mAP50-95', 'mIoU', 'Dice', 'U-Net', 'transposed convolution', 'ViT', 'CLIP', 'SAM', 'domain shift']],
     'selenium': ['content/selenium/interview-questions.html', 'Selenium questions from automation and SDET interviews on how WebDriver works, sessions and options, locators, waits, windows, frames, alerts, Actions, JavaScript and cookies, frameworks and page objects, flaky tests and debugging, and Selenium Grid 4 with BiDi and CDP, with code in Java, Python and JavaScript.', ['selenium architecture', 'W3C WebDriver', 'Selenium Manager', 'close vs quit', 'CSS vs XPath', 'relative locators', 'shadow root', 'implicit vs explicit wait', 'FluentWait', 'window handles', 'iframe', 'Actions API', 'stale element', 'click intercepted', 'page object model', 'Selenium Grid', 'BiDi', 'CDP']],
@@ -4643,3 +4662,292 @@ function seModules() {
   ];
 }
 /* ===== end of se-build ===== */
+
+/* Core AI: the first section of the Artificial Intelligence subject. Planned chapters, written by hand.
+   A chapter opens when its topic gets a page. */
+function coreAiModules() {
+  const step = (n, id, title, level, blurb, rows) => ({
+    id: id, title: title, emoji: String(n), step: n, part: 'core', level: level, blurb: blurb,
+    topics: rows.map(([tid, t, summary], i) => ({ id: tid, title: t, emoji: n + '.' + (i + 1), summary: summary, soon: true }))
+  });
+  return [
+    step(1, 'core-agents', 'What AI is and intelligent agents', 'School and college', 'What artificial intelligence means, where it came from, and how an agent senses and acts in an environment.', [
+      ['core-what-is-ai', 'What AI is', 'Thinking and acting humanly or rationally, the Turing test, and a short history from 1956 to large language models.'],
+      ['core-agents-env', 'Agents and environments', 'Percepts, actions, PEAS descriptions, environment types and the four kinds of agent program.']]),
+    step(2, 'core-search', 'Solving problems by searching', 'College', 'Turn a goal into a search problem and explore it blindly, with a heuristic, or locally.', [
+      ['core-uninformed', 'Uninformed search', 'Breadth first, depth first, uniform cost and iterative deepening search, with completeness, optimality and complexity.'],
+      ['core-informed', 'Informed search and A*', 'Greedy best first and A*, admissible and consistent heuristics, and how to design a heuristic.'],
+      ['core-local', 'Local search and optimisation', 'Hill climbing, simulated annealing, local beam search and genetic algorithms.']]),
+    step(3, 'core-games', 'Adversarial search and constraints', 'College and masters', 'Play two player games with minimax and alpha beta, and solve puzzles stated as constraints.', [
+      ['core-adversarial', 'Adversarial search', 'Minimax, alpha beta pruning, evaluation functions and Monte Carlo tree search.'],
+      ['core-csp', 'Constraint satisfaction problems', 'Variables, domains and constraints, backtracking, forward checking and arc consistency.']]),
+    step(4, 'core-logic', 'Knowledge, logic and planning', 'College and masters', 'Represent what an agent knows with logic, draw conclusions, and plan a sequence of actions.', [
+      ['core-prop-logic', 'Propositional logic and inference', 'Syntax and semantics, entailment, resolution, forward and backward chaining.'],
+      ['core-fol', 'First order logic', 'Objects, relations, quantifiers, unification and inference in first order logic.'],
+      ['core-planning', 'Classical planning', 'STRIPS and PDDL, forward and backward state space planning, and planning graphs.']]),
+    step(5, 'core-uncertainty', 'Reasoning under uncertainty', 'Masters', 'Measure belief with probability, update it with Bayes, and reason over time.', [
+      ['core-probability', 'Probability and Bayes rule', 'Random variables, joint and conditional probability, independence and Bayes rule.'],
+      ['core-bayesnets', 'Bayesian networks', 'Conditional independence, network structure, exact and approximate inference.'],
+      ['core-temporal', 'Probabilistic reasoning over time', 'Markov chains, hidden Markov models, filtering, smoothing and the Kalman filter.']]),
+    step(6, 'core-learning', 'Learning agents', 'Masters', 'Let an agent improve from data and from reward.', [
+      ['core-supervised', 'Learning from examples', 'Decision trees, linear models, overfitting, validation and evaluation.'],
+      ['core-rl', 'Reinforcement learning', 'Markov decision processes, value iteration, Q learning and exploration.']])
+  ];
+}
+
+/* ===== ai-build: Advanced AI chapters. Generated by tools/ai-build/build.py, edit the topic files instead. ===== */
+function advAiModules() {
+  return [
+    { id: "aai-choice", title: "Rational choice", emoji: "1", step: 1, part: "advanced", level: "School and college", blurb: "Turn choice into mathematics: preferences, utility functions and picking the best action when outcomes are certain.", topics: [
+      { id: "decision-problems", title: "Decision problems and preferences", emoji: "1.1", page: "content/ai/decision-problems.html",
+        summary: "Decision problems, the three preference relations, completeness, transitivity, cycles and what carries over from weak to strict preference.",
+        keywords: ["decision problem", "preference relation", "weak preference", "strict preference", "indifference", "completeness", "transitivity", "rationality"],
+        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "problem", title: "What a decision problem is", emoji: "", group: "Lesson", keywords: ["decision problem", "actions", "outcomes", "consequence function", "action value", "rational agent"] },
+        { id: "relations", title: "Weak preference, strict preference and indifference", emoji: "", group: "Lesson", keywords: ["weak preference", "strict preference", "indifference", "relation", "ordered pairs", "reflexive"] },
+        { id: "rational", title: "Completeness and transitivity", emoji: "", group: "Lesson", keywords: ["completeness", "transitivity", "rational preference", "money pump", "cycle", "incomplete preference", "homework", "total preorder"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "utility-functions", title: "Utility functions", emoji: "1.2", page: "content/ai/utility-functions.html",
+        summary: "Utility representation, ordinal invariance, the existence theorem with its construction proof, and counting rankings.",
+        keywords: ["utility function", "ordinal utility", "cardinal utility", "existence theorem", "representation", "increasing transformation", "n factorial"],
+        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "represent", title: "A number for every outcome", emoji: "", group: "Lesson", keywords: ["utility function", "payoff", "representation", "real numbers", "utility is not money"] },
+        { id: "ordinal", title: "Ordinal and cardinal utility", emoji: "", group: "Lesson", keywords: ["ordinal utility", "cardinal utility", "increasing transformation", "invariance", "utility differences"] },
+        { id: "existence", title: "When does a utility function exist?", emoji: "", group: "Lesson", keywords: ["existence theorem", "proof by construction", "top ranked", "indifference class", "n factorial", "lexicographic", "Debreu"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "choosing-best-action", title: "Choosing the best action", emoji: "1.3", page: "content/ai/choosing-best-action.html",
+        summary: "Rational choice as arg max, decision trees, the movie, fruit tree and city park problems, and constrained optimization on an interval.",
+        keywords: ["rational choice", "arg max", "decision tree", "problem 1.6", "problem 1.7", "corner solution", "satisficing", "optimization"],
+        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "rational", title: "From preferences to the best action", emoji: "", group: "Lesson", keywords: ["rational choice", "arg max", "action value", "satisficing", "maximizing", "loss function", "regression", "Herbert Simon"] },
+        { id: "trees", title: "Decision trees: the movie problem", emoji: "", group: "Lesson", keywords: ["decision tree", "decision node", "leaf", "movie problem", "INOX", "PVR", "walking cost"] },
+        { id: "fruit", title: "Problem 1.6: the fruit trees", emoji: "", group: "Lesson", keywords: ["problem 1.6", "fruit trees", "apple", "orange", "pear", "variety", "diminishing returns", "expenditure"] },
+        { id: "parks", title: "Problem 1.7: how much to spend on parks", emoji: "", group: "Lesson", keywords: ["problem 1.7", "city parks", "square root", "first order condition", "concave", "corner solution", "budget constraint", "marginal benefit"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "aai-risk", title: "Choice under risk", emoji: "2", step: 2, part: "advanced", level: "College", blurb: "Choose when outcomes are uncertain: lotteries, CDFs, expected utility, compound lotteries and attitudes to risk.", topics: [
+      { id: "lotteries-cdf", title: "Lotteries and distributions", emoji: "2.1", page: "content/ai/lotteries-cdf.html",
+        summary: "Lotteries, the CDF and its properties, intervals, densities and continuous outcomes.",
+        keywords: ["lottery", "CDF", "PDF", "nature", "interval probability", "uniform distribution", "stochastic dominance"],
+        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "nature", title: "When an action has more than one outcome", emoji: "", group: "Lesson", keywords: ["lottery", "nature", "uncertainty", "chance node", "simple lottery", "conditional distribution"] },
+        { id: "cdf", title: "The cumulative distribution function", emoji: "", group: "Lesson", keywords: ["CDF", "cumulative distribution function", "right continuous", "non decreasing", "interval probability", "crop yield"] },
+        { id: "pdf", title: "Densities and continuous outcomes", emoji: "", group: "Lesson", keywords: ["PDF", "density", "uniform", "exponential", "normal", "stochastic dominance", "continuous outcome"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "expected-utility", title: "Expected utility and compound lotteries", emoji: "2.2", page: "content/ai/expected-utility.html",
+        summary: "Expected utility, reducing compound lotteries, the R&D example, the reversal under non affine changes and why utility under risk is cardinal.",
+        keywords: ["expected utility", "compound lottery", "R&D", "affine transformation", "cardinal utility", "von Neumann Morgenstern", "present value"],
+        minutes: 45, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "eu", title: "Expected utility", emoji: "", group: "Lesson", keywords: ["expected utility", "expected payoff", "expected outcome", "rational choice under risk", "arg max", "practice problems"] },
+        { id: "compound", title: "Compound lotteries: the R&D example", emoji: "", group: "Lesson", keywords: ["compound lottery", "reduction", "R&D", "optimistic", "pessimistic", "decision tree with chance nodes"] },
+        { id: "affine", title: "Why ranking is not enough under risk", emoji: "", group: "Lesson", keywords: ["affine transformation", "cardinal utility", "reversal", "von Neumann Morgenstern", "independence axiom", "Allais paradox", "present value"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "risk-attitudes", title: "Risk attitudes and the St Petersburg paradox", emoji: "2.3", page: "content/ai/risk-attitudes.html",
+        summary: "Risk attitudes from concavity, certainty equivalent and risk premium, and the St Petersburg paradox with its log utility resolution.",
+        keywords: ["risk aversion", "certainty equivalent", "risk premium", "St Petersburg paradox", "log utility", "concave utility", "Jensen inequality"],
+        minutes: 45, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "attitudes", title: "Three attitudes to risk", emoji: "", group: "Lesson", keywords: ["risk averse", "risk neutral", "risk loving", "concave", "convex", "Jensen", "fair gamble"] },
+        { id: "ce", title: "The certainty equivalent", emoji: "", group: "Lesson", keywords: ["certainty equivalent", "risk premium", "insurance", "inverse utility", "practice problem 4"] },
+        { id: "stpete", title: "The St Petersburg paradox", emoji: "", group: "Lesson", keywords: ["St Petersburg paradox", "Bernoulli", "log utility", "infinite expectation", "bounded utility", "Menger", "Arrow Pratt"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "aai-time", title: "Decisions over time", emoji: "3", step: 3, part: "advanced", level: "College and masters", blurb: "Plan several moves ahead: backward induction, discounting, consumption over time and the value of information.", topics: [
+      { id: "backward-induction", title: "Backward induction", emoji: "3.1", page: "content/ai/backward-induction.html",
+        summary: "Backward induction on the R&D and marketing tree, full strategies, the film studio problem and Bellman's principle.",
+        keywords: ["backward induction", "decision tree", "strategy", "dynamic programming", "principle of optimality", "R&D", "expected value"],
+        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Decisions that unfold over time", emoji: "", group: "Lesson", keywords: ["decision over time", "sequential decision", "R&D", "marketing", "decision tree", "backward induction"] },
+        { id: "solve", title: "Solving the R&D and marketing tree", emoji: "", group: "Lesson", keywords: ["backward induction", "expected value", "strategy", "full plan", "cross check", "enumeration", "8.375"] },
+        { id: "practice", title: "Practice problem A: the film studio", emoji: "", group: "Lesson", keywords: ["practice problem A", "film studio", "principle of optimality", "Bellman", "dynamic programming", "MDP"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "discounting-consumption", title: "Discounting and consumption over time", emoji: "3.2", page: "content/ai/discounting-consumption.html",
+        summary: "Discount factors and present value, optimal consumption with ln and √x, corner solutions, and the time consistency of exponential discounting.",
+        keywords: ["discount factor", "present value", "consumption smoothing", "time consistency", "hyperbolic discounting", "corner solution", "first order conditions"],
+        minutes: 50, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "discount", title: "Why money later is worth less", emoji: "", group: "Lesson", keywords: ["discount factor", "present value", "interest rate", "patience", "delta", "time value of money", "practice problem B"] },
+        { id: "consume", title: "Spreading consumption over time", emoji: "", group: "Lesson", keywords: ["consumption smoothing", "two period", "three period", "first order conditions", "diminishing marginal utility", "practice problem D", "Euler equation"] },
+        { id: "corners", title: "Corners, homework and time consistency", emoji: "", group: "Lesson", keywords: ["corner solution", "linear utility", "convex utility", "time consistency", "exponential discounting", "hyperbolic discounting", "homework"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "value-of-information", title: "The value of information", emoji: "3.3", page: "content/ai/value-of-information.html",
+        summary: "The value of perfect and imperfect information, the MBA and venue examples, and why information is never worth less than zero.",
+        keywords: ["value of information", "perfect information", "oracle", "Bayes rule", "MBA", "forecast", "decision analysis"],
+        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "mba", title: "What is it worth to know first?", emoji: "", group: "Lesson", keywords: ["value of information", "MBA", "oracle", "perfect information", "decide first", "job market"] },
+        { id: "never", title: "Information is never worth less than zero", emoji: "", group: "Lesson", keywords: ["VOI non negative", "proof", "practice problem C", "venue", "weather forecast", "drilling", "lease"] },
+        { id: "imperfect", title: "Imperfect information and Bayes", emoji: "", group: "Lesson", keywords: ["imperfect information", "Bayes rule", "posterior", "forecast accuracy", "Blackwell", "value of sample information", "active learning"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "aai-games", title: "Games between rational agents", emoji: "4", step: 4, part: "advanced", level: "College and masters", blurb: "Model interactions between several rational agents: normal form games, Cournot, Bertrand, public goods, solution concepts and Pareto optimality.", topics: [
+      { id: "normal-form-games", title: "Static games and the normal form", emoji: "4.1", page: "content/ai/normal-form-games.html",
+        summary: "Static games of complete information, common knowledge, the normal form, the Prisoner's Dilemma and best responses.",
+        keywords: ["game theory", "normal form", "static game", "common knowledge", "Prisoner's Dilemma", "best response", "bimatrix"],
+        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "static", title: "Many agents: static games of complete information", emoji: "", group: "Lesson", keywords: ["static game", "dynamic game", "complete information", "common knowledge", "mutual knowledge", "practice problem D"] },
+        { id: "normal", title: "The normal form of a game", emoji: "", group: "Lesson", keywords: ["normal form", "strategic form", "strategy profile", "payoff function", "bimatrix", "Prisoner's Dilemma", "s minus i"] },
+        { id: "br", title: "Best responses and unilateral deviation", emoji: "", group: "Lesson", keywords: ["best response", "unilateral deviation", "self enforcing", "extensive form", "information set", "dominance preview"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "modelling-games", title: "Modelling games: Cournot, Bertrand and the streetlamp", emoji: "4.2", page: "content/ai/modelling-games.html",
+        summary: "The modelling recipe, Cournot and Bertrand duopoly, and the streetlamp public good with free riding.",
+        keywords: ["Cournot", "Bertrand", "public good", "streetlamp", "best response function", "duopoly", "free rider"],
+        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "recipe", title: "How to write any game down", emoji: "", group: "Lesson", keywords: ["modelling", "recipe", "players", "strategies", "payoffs by cases"] },
+        { id: "cournot", title: "Cournot: competing in quantities", emoji: "", group: "Lesson", keywords: ["Cournot", "quantity competition", "inverse demand", "best response function", "reaction curve", "practice problem F", "duopoly"] },
+        { id: "bertrand", title: "Bertrand: competing in prices", emoji: "", group: "Lesson", keywords: ["Bertrand", "price competition", "strategy set", "discontinuous payoff", "undercutting", "Bertrand paradox", "MRP"] },
+        { id: "lamp", title: "The streetlamp: a public good", emoji: "", group: "Lesson", keywords: ["streetlamp", "public good", "free rider", "indicator function", "threshold", "pivotal", "crowdfunding"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "solution-concepts-pareto", title: "Solution concepts and Pareto optimality", emoji: "4.3", page: "content/ai/solution-concepts-pareto.html",
+        summary: "What solution concepts are, the assumptions behind them, and Pareto optimality with worked games and the zero sum proof.",
+        keywords: ["solution concept", "Pareto optimality", "equilibrium", "zero sum", "altruism", "self enforcement", "tragedy of the commons"],
+        minutes: 45, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "concepts", title: "What a solution concept is for", emoji: "", group: "Lesson", keywords: ["solution concept", "equilibrium", "rational", "intelligent", "common knowledge", "self enforcement", "existence", "uniqueness", "invariance"] },
+        { id: "pareto", title: "Pareto optimality", emoji: "", group: "Lesson", keywords: ["Pareto optimal", "Pareto dominance", "Pareto efficient", "direct test", "improvement test", "Marketing Campaign War", "fairness"] },
+        { id: "zerosum", title: "Zero sum games, altruism and the practice problems", emoji: "", group: "Lesson", keywords: ["zero sum", "Rock Paper Scissors", "altruism", "practice problem A", "practice problem C", "tragedy of the commons", "price of anarchy"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "aai-dom", title: "Dominance and iterated elimination", emoji: "5", step: 5, part: "advanced", level: "Masters", blurb: "Predict play without guessing: dominance, the dominant strategy equilibrium, iterated elimination, and applications to Cournot, auctions and voting.", topics: [
+      { id: "dominance", title: "Dominance and the dominant strategy equilibrium", emoji: "5.1", page: "content/ai/dominance.html",
+        summary: "Strict and weak dominance, the four dominance words, the dominant strategy equilibrium with its uniqueness proof, and its limits.",
+        keywords: ["dominance", "strictly dominated", "dominant strategy", "dominant strategy equilibrium", "partial order", "altruism", "rationality"],
+        minutes: 50, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "strict", title: "Strict domination", emoji: "", group: "Lesson", keywords: ["strict domination", "weak domination", "dominance check", "row player", "column player", "altruism reversal"] },
+        { id: "vocab", title: "Dominating, dominated, dominant, submissive", emoji: "", group: "Lesson", keywords: ["dominant", "dominated", "dominating", "submissive", "partial order", "mixed strategy domination", "voting", "Gibbard Satterthwaite"] },
+        { id: "dse", title: "The dominant strategy equilibrium", emoji: "", group: "Lesson", keywords: ["dominant strategy equilibrium", "uniqueness proof", "rationality theorem", "beliefs", "existence", "invariance", "strategy proof"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "iesds", title: "Iterated elimination of dominated strategies", emoji: "5.2", page: "content/ai/iesds.html",
+        summary: "The IESDS algorithm, the slide 11 and Marketing War examples, theorems about IESDS and Nash equilibrium, and why weak elimination depends on order.",
+        keywords: ["IESDS", "iterated elimination", "dominated strategies", "common knowledge", "Nash equilibrium", "order independence", "rationalizability"],
+        minutes: 50, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "why", title: "Why we may eliminate again and again", emoji: "", group: "Lesson", keywords: ["IESDS", "common knowledge of rationality", "layers of reasoning", "algorithm", "blue eyed islanders", "guess two thirds"] },
+        { id: "slide11", title: "Worked examples: the Marketing War and slide 11", emoji: "", group: "Lesson", keywords: ["Marketing War", "slide 11", "worked example", "self enforcing", "practice problem E", "Pareto dominated equilibrium"] },
+        { id: "theorems", title: "Theorems about IESDS", emoji: "", group: "Lesson", keywords: ["theorems", "Nash equilibrium preview", "order independence", "weak elimination", "rationalizability", "report card", "level k"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "dominance-applications", title: "Dominance at work: Cournot, auctions and voting", emoji: "5.3", page: "content/ai/dominance-applications.html",
+        summary: "Cournot solved by iterated elimination, truthful bidding in second price auctions, the median voter, and where weak dominance misleads.",
+        keywords: ["Cournot", "IESDS", "Vickrey auction", "first price auction", "Hotelling", "median voter", "mechanism design"],
+        minutes: 45, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "cournot", title: "IESDS solves the Cournot duopoly", emoji: "", group: "Lesson", keywords: ["Cournot IESDS", "halving interval", "monopoly quantity", "best response", "completing the square", "practice E1"] },
+        { id: "auctions", title: "Auctions: when truth telling is dominant", emoji: "", group: "Lesson", keywords: ["auction", "second price", "Vickrey", "first price", "truthful bidding", "weakly dominant", "bid shading"] },
+        { id: "more", title: "Voting, prices and puzzles", emoji: "", group: "Lesson", keywords: ["Hotelling", "median voter", "location game", "discrete Bertrand", "below cost prices", "streetlamp refunds", "guess two thirds", "mechanism design"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "aai-review", title: "Quiz and exam revision", emoji: "6", step: 6, part: "advanced", level: "All levels", blurb: "Check yourself with Quiz 1 fully solved, then revise the whole subject by exam style from school level to IIT, MIT and Cambridge.", topics: [
+      { id: "quiz1-solved", title: "Quiz 1 solved: all four questions", emoji: "6.1", page: "content/ai/quiz1-solved.html",
+        summary: "Worked answers to Quiz 1: B, A, A and B under the standard reading, and (K, 0, 0).",
+        keywords: ["Quiz 1", "solutions", "Cournot", "lottery", "consumption", "marginal value", "CSL 7580"],
+        minutes: 45, counts: {"lessons": 4, "problems": 10, "quiz": 10, "assign": 0},
+        added: "2026-10-27",
+        sections: [
+        { id: "q1", title: "Question 1: Cournot with a curved demand", emoji: "", group: "Lesson", keywords: ["Quiz 1", "question 1", "Cournot", "nonlinear demand", "first order condition", "monopoly", "answer B"] },
+        { id: "q2", title: "Question 2: bananas and candy", emoji: "", group: "Lesson", keywords: ["Quiz 1", "question 2", "marginal value", "budget", "diminishing value", "answer A"] },
+        { id: "q3", title: "Question 3: buying a lottery ticket", emoji: "", group: "Lesson", keywords: ["Quiz 1", "question 3", "lottery", "square root utility", "break even price", "certainty equivalent", "ambiguous question"] },
+        { id: "q4", title: "Question 4: consumption with a convex payoff", emoji: "", group: "Lesson", keywords: ["Quiz 1", "question 4", "convex", "corner solution", "consumption", "Lagrange", "answer K squared"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "exam-revision", title: "Exam revision: from school to research universities", emoji: "6.2", page: "content/ai/exam-revision.html",
+        summary: "Exam style questions from school level to research universities, with worked answers, a formula sheet and a mock quiz.",
+        keywords: ["exam", "revision", "formula sheet", "mock quiz", "numericals", "proofs", "IIT", "NPTEL", "GATE", "MIT", "Cambridge"],
+        minutes: 60, counts: {"lessons": 6, "problems": 13, "quiz": 12, "assign": 0},
+        added: "2026-10-27",
+        sections: [
+        { id: "map", title: "How Advanced AI is examined", emoji: "", group: "Lesson", keywords: ["exam pattern", "revision", "school", "university exam", "IIT", "NPTEL", "GATE", "MIT", "Cambridge", "derivations"] },
+        { id: "school", title: "Tier 1: school and first year", emoji: "", group: "Lesson", keywords: ["expected value", "present value", "orderings", "money pump", "transitivity", "Prisoner's Dilemma", "short answer"] },
+        { id: "semester", title: "Tier 2: university semester and IIT course exams", emoji: "", group: "Lesson", keywords: ["certainty equivalent", "risk premium", "Cournot", "best response", "value of information", "consumption", "ln utility", "hand computation"] },
+        { id: "mcq", title: "Tier 3: multiple choice and numerical answer papers", emoji: "", group: "Lesson", keywords: ["MCQ", "numerical answer type", "GATE", "NPTEL", "quick checks", "present value", "pure strategies", "St Petersburg"] },
+        { id: "derive", title: "Tier 4: proofs, derivations and critique", emoji: "", group: "Lesson", keywords: ["proof", "utility existence", "Jensen", "risk premium proof", "affine invariance", "dominant strategy uniqueness", "critique", "MIT", "Cambridge"] },
+        { id: "sheet", title: "Formula sheet and last minute checks", emoji: "", group: "Lesson", keywords: ["formula sheet", "common mistakes", "last minute revision", "expected utility", "Cournot", "VOI", "present value"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of ai-build ===== */

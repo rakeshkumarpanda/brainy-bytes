@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam revision: from school to research universities · Advanced AI</title>
+<meta name="description" content="Exam patterns by tier, worked questions on rational preference, expected value, certainty equivalent, Cournot, value of information, consumption, present value and strategies, proofs of utility existence, risk aversion, affine invariance and dominant strategy uniqueness, a formula sheet and common mistakes.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/ai.css">
+</head>
+<body class="cvp aip">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=ai&amp;p=advanced">Advanced AI learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=ai&amp;p=advanced" target="_top">Advanced AI</a><span>›</span><span>Advanced AI</span><span>›</span><span>Step 6: Quiz and exam revision</span><span>›</span><span>Exam revision</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 6 · Topic 2 of 2 · All levels</div>
+    <h1>Exam revision: from school to research universities</h1>
+    <p class="lead">Practise the question shapes of every level with worked answers: expected values and money pumps, trees, lotteries and Cournot by hand, quick multiple choice checks, and proofs with their assumptions.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">5 animations</span><span class="cv-chip">3 formulas</span><span class="cv-chip">13 worked problems</span><span class="cv-chip">12 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#exam-revision" data-topic="cheatsheet" data-h="exam-revision">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Revise</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#map" data-l="map"><span class="n">1</span><span class="t">How Advanced AI is examined</span></a></li><li><a href="#school" data-l="school"><span class="n">2</span><span class="t">Tier 1: school and first year</span></a></li><li><a href="#semester" data-l="semester"><span class="n">3</span><span class="t">Tier 2: university semester and IIT course exams</span></a></li><li><a href="#mcq" data-l="mcq"><span class="n">4</span><span class="t">Tier 3: multiple choice and numerical answer papers</span></a></li><li><a href="#derive" data-l="derive"><span class="n">5</span><span class="t">Tier 4: proofs, derivations and critique</span></a></li><li><a href="#sheet" data-l="sheet"><span class="n">6</span><span class="t">Formula sheet and last minute checks</span></a></li></ol>
+    <article class="cv-lesson" id="map" data-l="map" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>How Advanced AI is examined</h2>
+<p>This chapter is for the week before an exam. It does not teach new material. It shows the shapes questions take at each level, with worked answers, and points back to the chapter where each idea is taught. The questions are original practice questions written in the style of each tier, not copies of real past papers.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Tier</th><th>Typical format</th><th>What earns the marks</th><th>Where to practise</th></tr></thead><tbody><tr><td>School and first year</td><td>Short answers, expected values, simple tables</td><td>A clear definition with an example, careful arithmetic</td><td>Lesson 2</td></tr><tr><td>University semester and IIT course exams</td><td>Numericals by hand on trees, lotteries and games</td><td>Formula first, every step shown, the answer stated with its meaning</td><td>Lesson 3</td></tr><tr><td>NPTEL and GATE style papers</td><td>Multiple choice, multiple select and numerical answer type</td><td>Speed, spotting the trap option, exact rounding</td><td>Lesson 4</td></tr><tr><td>MIT and Cambridge style</td><td>Proofs, derivations and critique of a model</td><td>Assumptions named, a complete argument, when it breaks</td><td>Lesson 5</td></tr></tbody></table></div>
+<h3>The twelve ideas examined most often</h3>
+<ol>
+<li>Completeness and transitivity, and why a cycle allows a money pump (chapter 1.1).</li>
+<li>Ordinal utility and its existence on a finite set (chapter 1.2).</li>
+<li>Choosing the best action, with constraints (chapter 1.3).</li>
+<li>Lotteries, CDFs and first order stochastic dominance (chapter 2.1).</li>
+<li>Expected utility, compound lotteries and affine invariance (chapter 2.2).</li>
+<li>Risk attitudes, certainty equivalent and risk premium (chapter 2.3).</li>
+<li>Backward induction on a decision tree (chapter 3.1).</li>
+<li>Discounting and the consumption problem (chapter 3.2).</li>
+<li>The value of information (chapter 3.3).</li>
+<li>Normal form games, best responses and Pareto optimality (chapters 4.1 to 4.3).</li>
+<li>Strict and weak dominance, and the dominant strategy equilibrium (chapter 5.1).</li>
+<li>IESDS and its order independence, Cournot by elimination (chapters 5.2 and 5.3).</li>
+</ol>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="school" data-l="school" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Tier 1: school and first year</h2>
+<p>Questions at this level check that you can read a preference, compute an average over chances and spot a choice that is always better.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Expected value</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">E[X] = Σ <i>p</i><sub>i</sub> <i>x</i><sub>i</sub></div><div class="fx-n">Weight each prize by its chance and add.</div></div><div class="fx fx-key"><div class="fx-h"><span>Present value</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">PV = Σ δ<sup>t</sup> <i>x</i><sub>t</sub></div><div class="fx-n">A payment t periods away is worth δ<sup>t</sup> of its face value today.</div></div><div class="fx"><div class="fx-h"><span>Strict orderings</span></div><div class="fx-b">n!</div><div class="fx-n">The number of ways to rank n outcomes with no ties.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Question 1. Riya prefers tea to coffee and coffee to juice, but juice to tea. Is she rational in the sense of this course?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Rational preferences must be complete and transitive.</li><li>Transitivity needs tea preferred to juice, but she says juice is preferred to tea.</li><li>So she is not rational. A trader could sell her each swap for a small fee and take her money round the cycle, the money pump of chapter 1.1.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 2. A raffle ticket wins 100 rupees with probability 0.3 and nothing otherwise. What is its expected value?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>E = 0.3 × 100 + 0.7 × 0.</li><li>= 30 rupees.</li><li>A risk neutral buyer would pay up to 30 for it. A risk averse buyer would pay less.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 3. In how many ways can you rank 4 films with no ties?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The first place has 4 choices, then 3, then 2, then 1.</li><li>4 × 3 × 2 × 1.</li><li>= 24 strict orderings.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 4. Two players each pick Quiet or Confess. Confessing is better for you whatever the other does. Why do both confess?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Confess strictly dominates Quiet for each player.</li><li>A rational player never plays a strictly dominated strategy.</li><li>So (Confess, Confess) is played, even though (Quiet, Quiet) is better for both. That gap is the lesson of the Prisoner's Dilemma.</li></ol></div>
+<div class="cvz" data-viz="bimatrix" data-cfg="{&quot;pre&quot;: &quot;pd&quot;}"></div>
+<div class="note note-tip"><b>Remember</b><div>Try the presets stag and pennies in the game above. Stag has two equilibria and pennies has none in pure strategies.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="semester" data-l="semester" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Tier 2: university semester and IIT course exams</h2>
+<p>Here the examiner gives a tree, a lottery or a game and asks you to work it by hand. State the formula, then show each step.</p>
+<div class="walk"><div class="walk-h"><span>Question 5. With u(w) = √w, find the certainty equivalent and risk premium of a lottery paying 100 or 0 with equal chance.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>EU = 0.5 × √100 + 0.5 × √0 = 5.</li><li>CE solves √CE = 5, so CE = 25.</li><li>EV = 50, so the risk premium is 50 − 25 = 25.</li><li>The person would swap the lottery for a sure 25. Concave utility means risk aversion.</li></ol></div>
+<div class="cv-code" data-k="drill"></div>
+<div class="cvz" data-viz="risk"></div>
+<div class="walk"><div class="walk-h"><span>Question 6. Two firms face p = 100 − (q₁ + q₂) with unit cost 10. Find the Cournot equilibrium.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Firm 1 maximises (100 − q₁ − q₂ − 10) q₁. The first order condition is 90 − 2q₁ − q₂ = 0.</li><li>Best response q₁ = (90 − q₂) ÷ 2, and the same for firm 2.</li><li>By symmetry q = (90 − q) ÷ 2, so q* = 30 each.</li><li>Price 100 − 60 = 40, profit (40 − 10) × 30 = 900 each.</li></ol></div>
+<div class="cv-code" data-k="cournot"></div>
+<div class="cvz" data-viz="cournot"></div>
+<div class="walk"><div class="walk-h"><span>Question 7. Action A pays 10 if the market is good and 0 if bad. Action B pays 4 for sure. The market is good with probability 0.6. What is the value of perfect information?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Without information: E(A) = 6, E(B) = 4, so pick A for 6.</li><li>With information: if good pick A for 10, if bad pick B for 4.</li><li>Expected value with information = 0.6 × 10 + 0.4 × 4 = 7.6.</li><li>VOI = 7.6 − 6 = 1.6. Never pay more than 1.6 for the forecast.</li></ol></div>
+<div class="cvz" data-viz="voi" data-cfg="{&quot;names&quot;: &quot;A, B&quot;, &quot;tab&quot;: &quot;Good 0.6 10 4\nBad 0.4 0 4&quot;, &quot;fee&quot;: 1}"></div>
+<div class="walk"><div class="walk-h"><span>Question 8. Split K = 100 over two periods to maximise ln x₁ + δ ln x₂ with δ = 0.9.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The first order conditions give 1 ÷ x₁ = δ ÷ x₂, so x₂ = δ x₁.</li><li>Budget x₁ + δ x₁ = 100, so x₁ = 100 ÷ 1.9.</li><li><span class="eq">x₁ = 52.63, x₂ = 47.37</span></li><li>A more patient person (δ closer to 1) spreads consumption more evenly.</li></ol></div>
+<div class="cvz" data-viz="consume"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="mcq" data-l="mcq" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Tier 3: multiple choice and numerical answer papers</h2>
+<p>In these papers there is no partial credit and often a penalty for a wrong option. Learn the quick checks below and use them to rule options out before you compute.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Quick check</th><th>Use it to</th></tr></thead><tbody><tr><td>A strictly dominant strategy equilibrium, if it exists, is unique</td><td>Reject any option listing two</td></tr><tr><td>Affine change a u + b with a &gt; 0 keeps every expected utility ranking</td><td>Reject options where a rescaled utility flips a choice</td></tr><tr><td>Concave u means CE &lt; EV and a positive risk premium</td><td>Spot a risk averse answer at a glance</td></tr><tr><td>VOI is never negative</td><td>Reject a negative VOI at once</td></tr><tr><td>IESDS order does not change the result, iterated weak dominance can</td><td>Answer order questions in one line</td></tr><tr><td>Linear Cournot q* = (a − c) ÷ 3b, Bertrand price = c</td><td>Compute in seconds</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Question 9 (numerical answer). A payment of 100 arrives in 2 years with δ = 0.9. Its present value is</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>PV = δ² × 100.</li><li>= 0.81 × 100.</li><li>= 81.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 10 (multiple select). Which are true for u(w) = w²? (a) risk loving (b) CE &gt; EV (c) risk premium &lt; 0 (d) concave</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>u is convex, so the person is risk loving. (a) is true.</li><li>For a convex u, Jensen gives u(EV) ≤ EU, so CE ≥ EV. (b) is true for a lottery with real risk.</li><li>Risk premium = EV − CE &lt; 0. (c) is true.</li><li>(d) is false. Answer: a, b, c.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 11 (numerical answer). A player has 3 decision nodes with 2 actions at each. How many pure strategies?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>A strategy names one action at every node, even nodes it never reaches.</li><li>2 × 2 × 2.</li><li>= 8. The R&amp;D tree of chapter 3.1 had 2 nodes and 4 strategies, MM, MD, DM and DD.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 12 (numerical answer). A lottery pays 2<sup>k</sup> with probability 2<sup>−k</sup> for k = 1 to 10. Its expected value is</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Each term is 2<sup>−k</sup> × 2<sup>k</sup> = 1.</li><li>Ten terms.</li><li>= 10. Without the cap the sum grows without bound, the St Petersburg paradox.</li></ol></div>
+<div class="note note-exam"><b>In the exam</b><div>Round only at the very end. A numerical answer type key often has a narrow range such as 52.6 to 52.7.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="derive" data-l="derive" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Tier 4: proofs, derivations and critique</h2>
+<p>Exams in the style of MIT and Cambridge reward a complete argument more than a final number. State the assumptions, prove the claim, then say when it fails.</p>
+<h3>Question 13. Show that every complete and transitive preference on a finite set has a utility function.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>For each outcome x, let u(x) be the number of outcomes y with x ⪰ y.</li><li>If x ⪰ z then, by transitivity, every y below z is also below x, so u(x) ≥ u(z).</li><li>If x ≻ z then z ⪰ x fails, so x is counted for x but not for z, and u(x) &gt; u(z).</li><li>Completeness makes sure every pair is compared, so u represents ⪰.</li><li>It fails on some infinite sets, for example lexicographic preferences on the plane have no real valued utility.</li></ol></div>
+<h3>Question 14. Show that a concave utility gives a positive risk premium.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Jensen: for concave u, E[u(X)] ≤ u(E[X]).</li><li>The certainty equivalent satisfies u(CE) = E[u(X)] ≤ u(E[X]).</li><li>u is increasing, so CE ≤ E[X], and the risk premium E[X] − CE ≥ 0.</li><li>Equality holds only for a lottery with no real risk or a linear u.</li></ol></div>
+<h3>Question 15. Show that expected utility rankings survive a positive affine change.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Let v = a u + b with a &gt; 0.</li><li>E[v] = a E[u] + b because expectation is linear.</li><li>So E[u(L₁)] ≥ E[u(L₂)] if and only if E[v(L₁)] ≥ E[v(L₂)].</li><li>A non affine change such as u² can flip the ranking, which is why vNM utility is cardinal (chapter 2.2).</li></ol></div>
+<h3>Question 16. Show that a strictly dominant strategy equilibrium is unique.</h3>
+<div class="walk"><div class="walk-h"><span>Model answer</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Suppose s and t are both strictly dominant for player i and s ≠ t.</li><li>Since s strictly dominates every other strategy, u<sub>i</sub>(s, x) &gt; u<sub>i</sub>(t, x) for every x.</li><li>Since t is strictly dominant, u<sub>i</sub>(t, x) &gt; u<sub>i</sub>(s, x). Both cannot hold.</li><li>So each player has at most one, and the equilibrium is unique. Weak dominance does not give this.</li></ol></div>
+<h3>Critique questions</h3>
+<p>A critique question gives a model and asks what is wrong with it. For example, "a firm uses expected value to price insurance". The answer names the missing piece: the buyer is risk averse, so the willingness to pay exceeds the expected loss by the risk premium. Another favourite: "the players will reach (Quiet, Quiet) because it is Pareto better". The answer: Pareto optimality says nothing about what rational players choose. Each player still gains by deviating.</p>
+<div class="note note-exam"><b>In the exam</b><div>In proofs, name each assumption when you use it: completeness, transitivity, the vNM axioms, common knowledge of rationality. Examiners often ask what breaks when one fails.</div></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>At school you read preferences, compute expected values and spot a choice that is always better.</p></div><div class="ld-p" data-ld="college" hidden><p>At university you solve trees, lotteries and games by hand, step by step, and explain what the number means.</p></div><div class="ld-p" data-ld="masters" hidden><p>In competitive papers you must recognise the right formula fast, use quick checks to drop options and round only at the end.</p></div><div class="ld-p" data-ld="research" hidden><p>At research universities you prove existence of utility, Jensen based risk results, affine invariance and the uniqueness and order independence results for dominance.</p></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sheet" data-l="sheet" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Formula sheet and last minute checks</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Topic</th><th>Formula</th></tr></thead><tbody><tr><td>Rational preference</td><td>complete and transitive</td></tr><tr><td>Utility representation</td><td>x ⪰ y if and only if u(x) ≥ u(y)</td></tr><tr><td>CDF</td><td>F(x) = P(X ≤ x), non decreasing, from 0 to 1</td></tr><tr><td>First order stochastic dominance</td><td>F<sub>A</sub>(x) ≤ F<sub>B</sub>(x) for all x</td></tr><tr><td>Expected utility</td><td>E[u] = Σ p<sub>i</sub> u(x<sub>i</sub>)</td></tr><tr><td>Certainty equivalent, risk premium</td><td>u(CE) = E[u], &nbsp; RP = E[X] − CE</td></tr><tr><td>Present value</td><td>PV = Σ δ<sup>t</sup> x<sub>t</sub>, &nbsp; perpetuity δ ÷ (1 − δ) per unit from next period</td></tr><tr><td>ln consumption, two periods</td><td>x₁ = K ÷ (1 + δ), x₂ = δ K ÷ (1 + δ)</td></tr><tr><td>Value of information</td><td>VOI = E[max with information] − max E[without]</td></tr><tr><td>Linear Cournot duopoly</td><td>q* = (a − c) ÷ 3b, &nbsp; monopoly Q = (a − c) ÷ 2b</td></tr><tr><td>Bertrand with equal cost</td><td>p* = c</td></tr><tr><td>Pareto optimal</td><td>no other profile makes someone better and nobody worse</td></tr></tbody></table></div>
+<h3>Ten mistakes that cost marks</h3>
+<ol>
+<li>Calling a preference rational without checking transitivity.</li>
+<li>Treating ordinal utility as cardinal, for example adding utilities of different people.</li>
+<li>Computing expected value when the question asks for expected utility.</li>
+<li>Reporting expected utility as the certainty equivalent without applying u inverse.</li>
+<li>Forgetting chance nodes when folding back a tree.</li>
+<li>Listing a strategy that skips nodes off the path.</li>
+<li>Discounting the first payment when it is received today.</li>
+<li>Reporting a negative value of information.</li>
+<li>Confusing a Pareto optimal profile with an equilibrium.</li>
+<li>Deleting weakly dominated strategies when the question asks for strict IESDS.</li>
+</ol>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./quiz1-solved.html" data-topic="quiz1-solved"><small>Previous topic</small><b>Quiz 1 solved</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "exam-revision", "topic": "exam-revision", "subject": "ai", "title": "Exam revision: from school to research universities", "codes": {"drill": {"src": "# Exam drill: a lottery and a utility function give EU, certainty equivalent and risk premium\nimport math\nprizes = [float(x) for x in input(\"prizes: \").split()]\nprobs = [float(x) for x in input(\"probabilities: \").split()]\nev = sum(p * x for p, x in zip(probs, prizes))\neu = sum(p * math.sqrt(x) for p, x in zip(probs, prizes))     # u(w) = sqrt(w)\nce = eu ** 2                                                    # u inverse\nprint(\"expected value      =\", round(ev, 4))\nprint(\"expected utility    =\", round(eu, 4), \" with u = sqrt(w)\")\nprint(\"certainty equivalent =\", round(ce, 4))\nprint(\"risk premium        =\", round(ev - ce, 4), \" positive means risk averse\")", "stdin": "100 0\n0.5 0.5\n", "out": "prizes: probabilities: expected value      = 50.0\nexpected utility    = 5.0  with u = sqrt(w)\ncertainty equivalent = 25.0\nrisk premium        = 25.0  positive means risk averse"}, "cournot": {"src": "# Exam drill: linear Cournot duopoly p = a - b(q1 + q2), cost c per unit\na, b, c = 100, 1, 10\nq = (a - c) / (3 * b)                 # each firm, from q_i = (a - c - b q_j) / 2b\np = a - b * 2 * q\nprint(\"each firm q* =\", q, \" price =\", p, \" profit each =\", (p - c) * q)\nQ = (a - c) / (2 * b)                 # joint monopoly\npm = a - b * Q\nprint(\"monopoly Q =\", Q, \" price =\", pm, \" total profit =\", (pm - c) * Q)", "stdin": "", "out": "each firm q* = 30.0  price = 40.0  profit each = 900.0\nmonopoly Q = 45.0  price = 55.0  total profit = 2025.0"}}, "quiz": [{"lv": "e", "q": "Which pair of properties makes a preference rational in this course?", "o": ["Reflexive and symmetric", "Complete and transitive", "Continuous and convex", "Monotone and concave"], "a": 1, "hint": "Two properties from chapter 1.1.", "why": "Rational means complete and transitive."}, {"lv": "e", "q": "A ticket wins 50 with probability 0.2 and 0 otherwise. Its expected value is", "o": ["5", "10", "20", "50"], "a": 1, "hint": "p × prize.", "why": "0.2 × 50 = 10."}, {"lv": "e", "q": "How many strict orderings of 3 outcomes are there?", "o": ["3", "6", "9", "13"], "a": 1, "hint": "n!.", "why": "3! = 6. With ties allowed there are 13 weak orders."}, {"lv": "m", "q": "A person with u(w) = √w is", "o": ["Risk loving", "Risk neutral", "Risk averse", "Undefined"], "a": 2, "hint": "Concave or convex.", "why": "√w is concave, so the person is risk averse."}, {"lv": "m", "q": "Which change of utility always keeps expected utility rankings?", "o": ["u²", "ln u", "3u + 7", "−u"], "a": 2, "hint": "Positive affine.", "why": "Only a u + b with a &gt; 0 is safe."}, {"lv": "m", "q": "In the linear Cournot duopoly with a = 100, b = 1 and c = 10, each firm produces", "o": ["45", "30", "22.5", "90"], "a": 1, "hint": "(a − c) ÷ 3b.", "why": "90 ÷ 3 = 30."}, {"lv": "m", "q": "The value of perfect information can be", "o": ["Negative", "Zero or positive", "Only positive", "Any real number"], "a": 1, "hint": "Information can be ignored.", "why": "You can always ignore it, so VOI ≥ 0. It is 0 when no signal changes your choice."}, {"lv": "h", "q": "In the Prisoner's Dilemma, (Quiet, Quiet) is", "o": ["The equilibrium and Pareto optimal", "Pareto optimal but not an equilibrium", "Neither", "An equilibrium but not Pareto optimal"], "a": 1, "hint": "Check deviations.", "why": "Both are better off than at (Confess, Confess), but each gains by deviating."}, {"lv": "h", "q": "IESDS with strict dominance gives", "o": ["A result that depends on the order", "The same result in any order", "Always a single profile", "Always the Pareto optimum"], "a": 1, "hint": "Theorem from chapter 5.2.", "why": "Strict IESDS is order independent. Weak IESDS is not."}, {"lv": "h", "q": "With δ = 0.9 and ln utility over two periods, the share of K eaten in period 1 is", "o": ["0.5", "0.474", "0.526", "0.9"], "a": 2, "hint": "1 ÷ (1 + δ).", "why": "1 ÷ 1.9 = 0.526."}, {"lv": "x", "q": "The standard proof that concave utility gives risk aversion uses", "o": ["Bayes rule", "Jensen's inequality", "Backward induction", "The intermediate value theorem only"], "a": 1, "hint": "Concave and expectation.", "why": "Jensen gives E[u(X)] ≤ u(E[X])."}, {"lv": "x", "q": "Lexicographic preferences on the plane are", "o": ["Not transitive", "Complete and transitive but have no real utility function", "Represented by u = x + y", "Incomplete"], "a": 1, "hint": "Chapter 1.2.", "why": "They are rational but no real valued u represents them."}], "calc": [{"lv": "e", "q": "Expected value of a ticket paying 100 with probability 0.3 and 0 otherwise?", "ans": "30", "hint": "p × prize.", "steps": ["0.3 × 100 = 30.", "0.7 × 0 = 0.", "<span class=\"eq\">E = 30<\/span>"]}, {"lv": "e", "q": "Number of strict orderings of 4 outcomes?", "ans": "24", "hint": "4!.", "steps": ["4 × 3 = 12.", "12 × 2 = 24.", "<span class=\"eq\">24 × 1 = 24<\/span>"]}, {"lv": "e", "q": "Present value of 100 paid in 2 years with δ = 0.9?", "ans": "81", "hint": "δ² × 100.", "steps": ["δ² = 0.81.", "0.81 × 100.", "<span class=\"eq\">PV = 81<\/span>"], "tol": 0.001}, {"lv": "m", "q": "Certainty equivalent of 100 or 0 with equal chance, u(w) = √w?", "ans": "25", "hint": "Square the expected utility.", "steps": ["EU = 0.5 × 10 + 0.5 × 0 = 5.", "u(CE) = 5.", "<span class=\"eq\">CE = 5² = 25<\/span>"]}, {"lv": "m", "q": "Risk premium of that lottery?", "ans": "25", "hint": "EV − CE.", "steps": ["EV = 50.", "CE = 25.", "<span class=\"eq\">RP = 25<\/span>"]}, {"lv": "m", "q": "Cournot with p = 100 − Q and c = 10: quantity of each firm?", "ans": "30", "hint": "(a − c) ÷ 3b.", "steps": ["a − c = 90.", "3b = 3.", "<span class=\"eq\">q* = 30<\/span>"]}, {"lv": "m", "q": "Price in that Cournot equilibrium?", "ans": "40", "hint": "p = 100 − 2q*.", "steps": ["Q = 60.", "p = 100 − 60.", "<span class=\"eq\">p = 40<\/span>"]}, {"lv": "m", "q": "Value of perfect information in question 7 (A pays 10 or 0, B pays 4, P(good) = 0.6)?", "ans": "1.6", "hint": "With minus without.", "steps": ["Without: max(6, 4) = 6.", "With: 0.6 × 10 + 0.4 × 4 = 7.6.", "<span class=\"eq\">VOI = 1.6<\/span>"], "tol": 0.0001}, {"lv": "h", "q": "Optimal x₁ for ln x₁ + 0.9 ln x₂ with x₁ + x₂ = 100? Two decimals.", "ans": "52.63", "hint": "K ÷ (1 + δ).", "steps": ["x₂ = δ x₁.", "x₁ (1 + 0.9) = 100.", "<span class=\"eq\">x₁ = 52.63<\/span>"], "tol": 0.005}, {"lv": "h", "q": "Arrow Pratt coefficient −u″ ÷ u′ for u(w) = ln w at w = 50?", "ans": "0.02", "hint": "u′ = 1/w, u″ = −1/w².", "steps": ["u′(50) = 0.02.", "u″(50) = −0.0004.", "<span class=\"eq\">−u″ ÷ u′ = 0.02<\/span>"], "tol": 1e-05}, {"lv": "x", "q": "Present value of 10 every period forever, starting today, with δ = 0.95?", "ans": "200", "hint": "10 ÷ (1 − δ).", "steps": ["Sum 10 (1 + δ + δ² + …).", "Geometric sum 1 ÷ (1 − 0.95) = 20.", "<span class=\"eq\">PV = 200<\/span>"], "tol": 0.001}, {"lv": "x", "q": "Expected value of a lottery paying 2<sup>k<\/sup> with probability 2<sup>−k<\/sup> for k = 1 to 10?", "ans": "10", "hint": "Each term is 1.", "steps": ["2<sup>−k<\/sup> × 2<sup>k<\/sup> = 1.", "There are 10 terms.", "<span class=\"eq\">E = 10<\/span>"], "tol": 0.0001}, {"lv": "x", "q": "Pure strategies of a player with 3 decision nodes and 2 actions at each?", "ans": "8", "hint": "Multiply the choices.", "steps": ["A strategy names an action at every node.", "2 × 2 × 2.", "<span class=\"eq\">8<\/span>"]}], "assign": [], "must": [], "summary": ""}</script>
+<script type="application/json" id="cvtrace">{"drill": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line", "o": "prizes: "}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.prizes": "[100.0, 0.0]"}}, {"l": 4, "ev": "line", "o": "probabilities: "}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.probs": "[0.5, 0.5]"}}, {"l": 5, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<zip object at 0x7fdd2d27ea40>"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L.p": "0.5", "L.x": "100.0"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return", "d": {"L.x": "0.0"}}, {"l": 5, "ev": "call"}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 6, "ev": "line", "s": ["module"], "d": {"G.ev": "50.0", "L..0": null, "L.p": null, "L.x": null}}, {"l": 6, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<zip object at 0x7fdd2d27e2c0>"}}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return", "d": {"L.p": "0.5", "L.x": "100.0"}}, {"l": 6, "ev": "call"}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return", "d": {"L.x": "0.0"}}, {"l": 6, "ev": "call"}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 7, "ev": "line", "s": ["module"], "d": {"G.eu": "5.0", "L..0": null, "L.p": null, "L.x": null}}, {"l": 8, "ev": "line", "d": {"G.ce": "25.0"}}, {"l": 9, "ev": "line", "o": "expected value      = 50.0\n"}, {"l": 10, "ev": "line", "o": "expected utility    = 5.0  with u = sqrt(w)\n"}, {"l": 11, "ev": "line", "o": "certainty equivalent = 25.0\n"}, {"l": 11, "ev": "return", "o": "risk premium        = 25.0  positive means risk averse\n"}], "tail": "", "err": null, "cut": false}, "cournot": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.a": "100", "G.b": "1", "G.c": "10"}}, {"l": 4, "ev": "line", "d": {"G.q": "30.0"}}, {"l": 5, "ev": "line", "d": {"G.p": "40.0"}}, {"l": 6, "ev": "line", "o": "each firm q* = 30.0  price = 40.0  profit each = 900.0\n"}, {"l": 7, "ev": "line", "d": {"G.Q": "45.0"}}, {"l": 8, "ev": "line", "d": {"G.pm": "55.0"}}, {"l": 8, "ev": "return", "o": "monopoly Q = 45.0  price = 55.0  total profit = 2025.0\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/aiwidgets.js"></script>
+<script src="../../assets/aigames.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>
