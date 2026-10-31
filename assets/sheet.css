@@ -1,0 +1,101 @@
+/* ===== Subject cheatsheet pages (content/<subject>/cheatsheet.html), written by tools/cv-build/cheatsheet.py.
+   Uses the chapter look from cv.css. The print rules below are what the PDF is made from. ===== */
+.sh-wrap{max-width:1080px}
+.sh-actions{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:16px}
+.sh-btn{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--cv-line); background:var(--surface); color:var(--cv) !important; border-radius:999px; padding:8px 18px; font:inherit; font-size:15px; font-weight:800; cursor:pointer; text-decoration:none}
+.sh-btn.primary{background:var(--cv); border-color:var(--cv); color:#fff !important}
+:root[data-theme="dark"] .sh-btn.primary{color:#06101f !important}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sh-btn.primary{color:#06101f !important}}
+.sh-btn:focus-visible,.sh-k:focus-visible{outline:3px solid var(--cv-line); outline-offset:2px}
+.sh-meta{font-size:13.5px; color:var(--ink2); font-weight:700}
+
+/* search and filter bar, stays in view while scrolling */
+.sh-bar{position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:18px 0 10px; padding:10px 0; background:var(--bg); border-bottom:1px solid var(--line)}
+.sh-bar input[type=search]{flex:1 1 240px; min-width:0; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); font:inherit; font-size:15px; padding:7px 12px}
+.sh-kinds{display:flex; flex-wrap:wrap; gap:6px}
+.sh-k{border:1px solid var(--line); background:var(--surface); color:var(--ink2); border-radius:999px; padding:3px 11px; font:inherit; font-size:13px; font-weight:800; cursor:pointer}
+.sh-k[aria-pressed="true"]{background:var(--cv-soft); border-color:var(--cv-line); color:var(--cv)}
+.sh-fav{display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:700; color:var(--ink2)}
+.sh-fav input{accent-color:var(--cv); width:16px; height:16px}
+.sh-count{font-size:13px; font-weight:700; color:var(--ink2); margin-left:auto}
+
+.sh-toc{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px}
+.sh-toc a{display:inline-flex; align-items:center; gap:6px; text-decoration:none; font-size:13.5px; font-weight:700; color:var(--ink); border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:3px 12px 3px 4px}
+.sh-toc a b{display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--cv); color:#fff; font-size:12px}
+
+/* steps and chapters */
+.sh-step{margin-top:26px; scroll-margin-top:calc(var(--shbar, 70px) + 8px)}
+.sh-step>h2{display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 10px; font-size:24px; margin:0 0 10px; padding-bottom:6px; border-bottom:2px solid var(--cv-line)}
+.sh-step>h2 span{font-size:13px; font-weight:800; color:var(--cv); text-transform:uppercase; letter-spacing:.05em}
+.sh-ch{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px 18px 16px; margin:12px 0; scroll-margin-top:calc(var(--shbar, 70px) + 8px)}
+.sh-chh{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+.sh-chh h3{margin:0; font-size:19px; flex:1 1 260px; min-width:0}
+.sh-no{font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--cv); background:var(--cv-soft); border-radius:8px; padding:1px 8px}
+.sh-open{font-size:13px; font-weight:800; text-decoration:none}
+.sh-sum{margin:6px 0 4px; color:var(--ink2); font-size:14.5px}
+.sh-blk{margin-top:12px}
+.sh-blk>h4{margin:0 0 6px; font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink2)}
+.sh-must{margin:0; padding-left:20px}
+.sh-must li{margin:5px 0; font-size:15px}
+.sh-must b{color:var(--ink)}
+.sh-fx{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:10px}
+.sh-fxc{display:flex; flex-direction:column; min-width:0}
+.sh-fxc .fx{margin:0; flex:1; padding:10px 14px}
+.sh-fxc .fx-b{font-size:18px; line-height:1.75}
+.sh-fxc .fx-n{font-size:13.5px}
+.sh-from{display:block; font-size:12px; font-weight:700; text-decoration:none; color:var(--ink2) !important; margin-top:4px}
+.sh-from:hover{color:var(--cv) !important}
+.sh-tab{border:1px solid var(--line); border-radius:12px; padding:6px 12px; margin:8px 0; background:var(--surface)}
+.sh-tab>summary{cursor:pointer; font-weight:800; font-size:14px; color:var(--cv)}
+.sh-tab .tw{margin:8px 0 4px}
+.sh-tab .cvt{font-size:13.5px}
+.sh-notes{list-style:none; margin:0; padding:0}
+.sh-notes .note{margin:8px 0}
+.sh-none{text-align:center; color:var(--ink2); font-weight:700; padding:30px 0}
+.sh-it[hidden],.sh-blk[hidden],.sh-ch[hidden],.sh-step[hidden]{display:none !important}
+
+@media (max-width:640px){
+  .sh-ch{padding:12px 14px 14px; border-radius:14px}
+  .sh-fx{grid-template-columns:minmax(0,1fr)}
+  .sh-step>h2{font-size:20px}
+  .sh-bar{position:static; margin-left:-16px; margin-right:-16px; padding:8px 16px}
+  .sh-step,.sh-ch{scroll-margin-top:8px}
+  .sh-count{margin-left:0}
+  .sh-kinds{flex-wrap:nowrap; overflow-x:auto; max-width:100%; padding-bottom:2px}
+  .sh-k{flex:none}
+  .sh-btn{padding:7px 14px; font-size:14px}
+}
+
+/* ===== print and PDF: everything open, no controls, compact, light colours ===== */
+@media print{
+  :root{color-scheme:light}
+  body.cvp{background:#fff; font-size:10.5pt; line-height:1.45}
+  .cv-top,.cv-crumb,.sh-bar,.sh-actions,.sh-toc,.sh-none,.sh-open{display:none !important}
+  .cv-wrap.sh-wrap{max-width:none; padding:0}
+  .cv-hero{padding:0 0 4px}
+  .cv-hero h1{font-size:22pt; margin:4px 0}
+  .cv-hero .lead{font-size:10.5pt}
+  .sh-step{margin-top:12px}
+  .sh-step>h2{font-size:15pt; break-after:avoid}
+  .sh-ch{border:1px solid #cfd8e3; border-radius:8px; padding:8px 10px; margin:8px 0; background:#fff; box-shadow:none}
+  .sh-chh h3{font-size:12.5pt}
+  .sh-chh,.sh-blk>h4{break-after:avoid}
+  .sh-sum{font-size:9.5pt}
+  .sh-must li{font-size:10pt; margin:2px 0; break-inside:avoid}
+  .sh-fx{grid-template-columns:1fr 1fr; gap:6px}
+  .sh-fxc,.sh-notes .note,.sh-tab{break-inside:avoid}
+  .sh-fxc .fx{padding:6px 9px; border-radius:6px}
+  .sh-fxc .fx-h{font-size:9.5pt}
+  .sh-fxc .fx-b{font-size:11.5pt; line-height:1.6; padding:4px 0 2px; overflow:visible}
+  .sh-fxc .fx-n{font-size:8.5pt}
+  .sh-from{font-size:7.5pt}
+  .sh-tab{padding:4px 8px; border-radius:6px}
+  .sh-tab>summary{font-size:9.5pt; list-style:none}
+  .sh-tab>summary::-webkit-details-marker{display:none}
+  .sh-tab .cvt{font-size:8.5pt}
+  .sh-tab .cvt th,.sh-tab .cvt td{padding:3px 5px}
+  .sh-tab .tw{overflow:visible}
+  .sh-notes .note{font-size:9.5pt; padding:5px 9px; margin:4px 0; border-radius:6px}
+  .note>b{min-width:84px; font-size:8pt}
+  a{color:inherit !important; text-decoration:none}
+}

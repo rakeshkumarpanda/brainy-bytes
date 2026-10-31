@@ -295,7 +295,7 @@
   window.addEventListener('hashchange', route);
   LEARN.wire();
   FUN.initScroll();
-  if (FUN.inFrame) $$('.cv-pager a[data-topic]').forEach(a => { a.href = '../../subject.html?s=' + D.subject + '&t=' + a.dataset.topic; a.target = '_top'; });
+  if (FUN.inFrame) $$('.cv-pager a[data-topic], a.cv-sheet[data-topic]').forEach(a => { a.href = '../../subject.html?s=' + D.subject + '&t=' + a.dataset.topic + (a.dataset.h ? '#' + a.dataset.h : ''); a.target = '_top'; });
   else { const hl2 = $('.home-link'); if (hl2) hl2.removeAttribute('target'); }
   route();
 })();
