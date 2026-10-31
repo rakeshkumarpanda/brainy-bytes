@@ -27,7 +27,7 @@
   const items = $$('.sh-it'), blocks = $$('.sh-blk'), chs = $$('.sh-ch'), steps = $$('.sh-step');
   const kindBtns = $$('.sh-k'), find = $('#shFind'), fav = $('#shFav'), count = $('#shCount'), none = $('#shNone');
   const off = new Set(store.get('off', []));
-  fav.checked = !!store.get('fav', false);
+  if (fav) fav.checked = !!store.get('fav', false);
 
   function apply() {
     const words = find.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -36,7 +36,7 @@
     items.forEach(it => {
       const k = it.dataset.kind;
       let ok = !off.has(k) && words.every(w => it.dataset.find.includes(w));
-      if (ok && fav.checked && k === 'fx') ok = it.dataset.key === '1';
+      if (ok && fav && fav.checked && k === 'fx') ok = it.dataset.key === '1';
       it.hidden = !ok;
       if (ok) shown++;
     });
@@ -55,7 +55,7 @@
   }));
   let t = 0;
   find.addEventListener('input', () => { clearTimeout(t); t = setTimeout(apply, 120); });
-  fav.addEventListener('change', () => { store.set('fav', fav.checked); apply(); });
+  if (fav) fav.addEventListener('change', () => { store.set('fav', fav.checked); apply(); });
   apply();
 
   /* print what is shown: light colours and every table open, then put things back */
