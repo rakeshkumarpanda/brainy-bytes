@@ -42,7 +42,8 @@ CFG = {
     'func': 'cvModules', 'marker': 'cv-build', 'builder': 'tools/cv-build/build.py', 'badge': 'CV',
     'widgets': ['cvviz.js', 'cvwidgets.js'], 'css': ['cv.css'], 'body': 'cvp',
 }
-# Other subjects may also set 'min_calc' (worked problems needed per chapter, 10 when not set).
+# Other subjects may also set 'min_calc' (worked problems needed per chapter, 10 when not set) and 'langsheet'
+# (True writes one cheatsheet per programming language with tools/sheet-build/langsheet.py instead of cheatsheet.py).
 TRACER = os.path.join(ROOT, 'tools', 'py-build', 'pytrace.py')
 LVN = {'e': 'Easy', 'm': 'Medium', 'h': 'Hard', 'x': 'Expert'}
 EMOJI = re.compile('[\U0001F000-\U0001FAFF☀-➿⭐⬆↔-↪️]')
@@ -395,6 +396,10 @@ def main():
         if not want or T['slug'] in want:
             page(T, chs, None)
     catalog(chs)
+    if CFG.get('langsheet'):
+        # one cheatsheet per programming language (Selenium), see tools/sheet-build/langsheet.py
+        subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'sheet-build', 'langsheet.py'), CFG['subject']], check=True)
+        return
     import cheatsheet
     cheatsheet.write(chs, CFG, ROOT)
 

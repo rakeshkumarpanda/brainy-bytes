@@ -663,6 +663,9 @@ def main():
         if not want or T['slug'] in want:
             build(T, chapters)
     catalog(chapters)
+    if not want:
+        # the Java, Python, JavaScript and TypeScript cheatsheets, see tools/sheet-build/langsheet.py
+        subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'sheet-build', 'langsheet.py'), 'playwright'], check=True)
 
 
 if __name__ == '__main__':

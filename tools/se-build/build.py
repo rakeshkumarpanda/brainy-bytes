@@ -25,7 +25,7 @@ B.CFG.update({
     'subject': 'selenium', 'name': 'Selenium', 'topics': os.path.join(HERE, 'topics'),
     'func': 'seModules', 'marker': 'se-build', 'builder': 'tools/se-build/build.py', 'badge': 'SE',
     'widgets': ['cvviz.js', 'setri.js', 'seplay.js', 'sewidgets.js'], 'css': ['cv.css', 'se.css'], 'body': 'cvp sep',
-    'min_calc': 6,
+    'min_calc': 6, 'langsheet': True,
 })
 
 
