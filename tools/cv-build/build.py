@@ -17,7 +17,9 @@ What the build checks before it writes a page:
   - every assignment's model solution passes its own tests, and the starter code does not
   - every animation named in a lesson exists in assets/cvviz.js
 
-It also writes the cvModules() block in data/catalog.js between markers.
+It also writes the cvModules() block in data/catalog.js between markers, and the subject cheatsheet
+(content/<subject>/cheatsheet.html and its PDF, see cheatsheet.py) from the formulas, tables, notes and must know
+points of every chapter.
 
 Usage:  python3 tools/cv-build/build.py [slug ...]      (no slug builds every chapter)
 The Interview Questions page is built by:  python3 tools/interview-build/build.py --run computer-vision
@@ -58,12 +60,16 @@ def js(v):
 def chapters():
     if HERE not in sys.path:
         sys.path.insert(0, HERE)
+    import cheatsheet
+    cheatsheet.record()
     out = []
     for f in sorted(f for f in os.listdir(CFG['topics']) if re.match(r'\d\d-.*\.py$', f)):
         spec = importlib.util.spec_from_file_location(f[:-3], os.path.join(CFG['topics'], f))
         m = importlib.util.module_from_spec(spec)
+        cheatsheet.begin()
         spec.loader.exec_module(m)
         T = m.T
+        T['sheet'] = cheatsheet.take()
         T['file'] = f[:-3]
         out.append(T)
     return out
@@ -254,6 +260,8 @@ def page(T, chs, steps_by_id):
     chips = [f'About {T["minutes"]} min', cnt(len(lessons), 'lesson'), cnt(n_viz, 'animation'), cnt(n_fx, 'formula'),
              cnt(len(T["calc"]), 'worked problem'), cnt(len(T["quiz"]), 'quiz question'), cnt(len(T["assign"]), 'assignment')]
     chip_html = ''.join(f'<span class="cv-chip">{c}</span>' for c in chips if not c.startswith('0 '))
+    chip_html += (f'<a class="cv-chip cv-sheet" href="./cheatsheet.html#{T["slug"]}" data-topic="cheatsheet" data-h="{T["slug"]}">'
+                  'This chapter on the cheatsheet</a>')
     stepper = ''.join(f'<li><a href="#{p["id"]}" data-l="{p["id"]}"><span class="n">{n}</span><span class="t">{html.escape(p["title"])}</span></a></li>'
                       for n, p in enumerate(lessons, 1))
     arts = []
@@ -387,6 +395,8 @@ def main():
         if not want or T['slug'] in want:
             page(T, chs, None)
     catalog(chs)
+    import cheatsheet
+    cheatsheet.write(chs, CFG, ROOT)
 
 
 if __name__ == '__main__':

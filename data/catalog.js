@@ -369,7 +369,7 @@ window.CATALOG = {
       blurb: 'A step by step path from pixels and filters to object detection, segmentation and vision language models.',
       intro: 'Follow the path one step at a time. You start with how a picture becomes numbers, then learn filters, motion, classification, object detection and segmentation, and finish with CLIP and SAM, a hands on YOLO project and an exam revision step. Each topic explains the idea at school, college, masters and research depth, shows the maths with worked problems, and has animations whose every setting you can change.',
       tags: ['Image processing', 'Detection', 'Segmentation', 'YOLO', 'CLIP and SAM'],
-      modules: cvModules().concat(iqModule('computer-vision'))
+      modules: cvModules().concat(sheetModule('computer-vision'), iqModule('computer-vision'))
     },
     {
       id: 'nlp',
@@ -380,7 +380,7 @@ window.CATALOG = {
       blurb: 'A step by step path from what language is to tokens, information theory, n-gram language models, smoothing, tagging and parsing.',
       intro: 'Follow the path one step at a time. You start with what language is and why it is ambiguous, turn text into tokens and counts with NLTK, measure information with entropy, build and smooth n-gram language models the way SRILM does, then tag and parse sentences with HMMs, Viterbi and grammars. A lab rebuilds the SRILM assignment and an exam step revises everything. Each topic explains the idea at school, college, masters and research depth, shows the maths with worked problems, and has animations whose every setting you can change.',
       tags: ['Tokenisation', 'Entropy', 'N-gram models', 'Smoothing', 'POS tagging', 'Parsing'],
-      modules: nlpModules().concat(iqModule('nlp'))
+      modules: nlpModules().concat(sheetModule('nlp'), iqModule('nlp'))
     },
     {
       id: 'cuda',
@@ -1237,6 +1237,25 @@ function javaModules() {
       ]
     }
   ];
+}
+
+/* Cheatsheet: every formula, key idea, table and tip of a subject on one page, with a PDF to download.
+   The page and the PDF are built by the subject's builder (tools/cv-build/cheatsheet.py) from the chapters. */
+function sheetModule(sid) {
+  const info = {
+    'computer-vision': ['content/computer-vision/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Computer Vision chapters on one page, from pixels and filters to detection, segmentation and CLIP. Search it, filter it, print it or download the PDF.', ['image size formula', 'convolution output size', 'Sobel', 'Harris', 'optical flow', 'IoU', 'NMS', 'focal loss', 'mAP', 'Dice', 'mIoU']],
+    'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the NLP chapters on one page, from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'cross entropy', 'perplexity', 'MLE', 'Laplace', 'Good-Turing', 'Kneser-Ney', 'interpolation', 'HMM', 'Viterbi']]
+  }[sid];
+  return {
+    id: 'cheatsheet', title: 'Cheatsheet', emoji: '📄',
+    blurb: 'Revise the whole subject from one page. Each card links back to the lesson that teaches it, and the PDF works offline.',
+    topics: [{
+      id: 'cheatsheet', title: 'Cheatsheet', emoji: '📄', page: info[0],
+      summary: info[1],
+      keywords: ['cheatsheet', 'cheat sheet', 'formula sheet', 'revision', 'PDF', 'download', 'quick reference'].concat(info[2]),
+      added: '2026-10-31'
+    }]
+  };
 }
 
 /* Interview Questions: the last chapter of a subject. The page and its questions are built by

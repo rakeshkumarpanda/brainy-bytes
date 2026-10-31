@@ -23,6 +23,7 @@ html.embedded .cv-crumb{display:none}
 .cv-hero .lead{margin:0; color:var(--ink2); font-size:17px; max-width:760px}
 .cv-chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px}
 .cv-chip{font-size:12.5px; font-weight:700; padding:3px 10px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink2)}
+a.cv-chip.cv-sheet{text-decoration:none; color:var(--cv); border-color:var(--cv-line); background:var(--cv-soft); font-weight:800}
 
 /* tabs */
 .cv-tabs{position:sticky; top:0; z-index:40; display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; margin:14px -18px 0; padding:8px 18px; background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(6px); border-bottom:1px solid var(--line)}
