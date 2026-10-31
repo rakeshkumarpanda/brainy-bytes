@@ -1,0 +1,4 @@
+/* ===== Advanced AI chapter pages: the Computer Vision layout (cv.css) in the subject's violet ===== */
+:root{--cv:#6d28d9; --cv-soft:#f3ebff; --cv-line:#c4b5fd}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cv:#a78bfa; --cv-soft:#251843; --cv-line:#5b3fa0}}
+:root[data-theme="dark"]{--cv:#a78bfa; --cv-soft:#251843; --cv-line:#5b3fa0}

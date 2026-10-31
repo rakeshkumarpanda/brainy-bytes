@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dominance at work: Cournot, auctions and voting · Advanced AI</title>
+<meta name="description" content="IESDS in the Cournot duopoly with and without calculus, practice problems E1 and E5, second and first price auctions, below cost Bertrand prices, the Hotelling location game, discrete Bertrand with strict and weak elimination, the streetlamp with refunds and the guess two thirds puzzle.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/ai.css">
+</head>
+<body class="cvp aip">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=ai&amp;p=advanced">Advanced AI learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=ai&amp;p=advanced" target="_top">Advanced AI</a><span>›</span><span>Advanced AI</span><span>›</span><span>Step 5: Dominance and iterated elimination</span><span>›</span><span>Applications</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 3 of 3 · Masters</div>
+    <h1>Dominance at work: Cournot, auctions and voting</h1>
+    <p class="lead">Watch IESDS solve the Cournot duopoly by halving intervals, prove that truthful bidding is dominant in a second price auction, and see candidates move to the median voter.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">3 lessons</span><span class="cv-chip">5 animations</span><span class="cv-chip">5 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#dominance-applications" data-topic="cheatsheet" data-h="dominance-applications">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#cournot" data-l="cournot"><span class="n">1</span><span class="t">IESDS solves the Cournot duopoly</span></a></li><li><a href="#auctions" data-l="auctions"><span class="n">2</span><span class="t">Auctions: when truth telling is dominant</span></a></li><li><a href="#more" data-l="more"><span class="n">3</span><span class="t">Voting, prices and puzzles</span></a></li></ol>
+    <article class="cv-lesson" id="cournot" data-l="cournot" hidden><div class="cv-lno">Lesson 1 of 3</div><h2>IESDS solves the Cournot duopoly</h2>
+<p>Cournot firms have no dominant quantity. Yet some quantities are strictly dominated, and IESDS solves the whole game. This was the professor's homework at the end of lecture 6.</p>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Profit with the rival fixed</span></div><div class="fx-b">π<sub><i>i</i></sub> = (<i>a</i> − <i>c</i> − <i>bq</i><sub><i>j</i></sub>) <i>q</i><sub><i>i</i></sub> − <i>b q</i><sub><i>i</i></sub>²</div><div class="fx-n">An upside down parabola in qᵢ, with its peak at the best response.</div></div><div class="fx fx-key"><div class="fx-h"><span>Best response</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">BR<sub><i>i</i></sub>(<i>q</i><sub><i>j</i></sub>) = max{{ 0, <span class="fr"><span><i>a</i> − <i>c</i> − <i>bq</i><sub><i>j</i></sub></span><span>2<i>b</i></span></span> }}</div><div class="fx-n">With a = 100, b = 1, c = 10 this is max{0, (90 − qⱼ)/2}.</div></div><div class="fx"><div class="fx-h"><span>Without calculus</span></div><div class="fx-b"><i>Kq</i> − <i>bq</i>² = −<i>b</i>(<i>q</i> − <span class="fr"><span><i>K</i></span><span>2<i>b</i></span></span>)² + <span class="fr"><span><i>K</i>²</span><span>4<i>b</i></span></span></div><div class="fx-n">Completing the square shows the peak at q = K/2b, where K = a − c − bqⱼ.</div></div></div>
+<div class="walk"><div class="walk-h"><span>The rounds of elimination</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Round 1: the peak is largest when the rival makes 0, at the monopoly quantity 45. Any q above 45 is beaten by 45 whatever the rival does. Survivors [0, 45].</li><li>Round 2: the rival makes at most 45, so every peak is at least BR(45) = 22.5. Any q below 22.5 is beaten by 22.5. Survivors [22.5, 45].</li><li>Round 3: the rival makes at least 22.5, so every peak is at most BR(22.5) = 33.75. Survivors [22.5, 33.75].</li><li>Round 4: BR(33.75) = 28.125. Survivors [28.125, 33.75]. The width halves each round.</li><li><span class="eq">Limit q* = (a − c)/3b = 30, the only survivor</span></li></ol></div>
+<div class="cvz" data-viz="cournotiesds"></div>
+<div class="cv-code" data-k="halving"></div>
+<div class="walk"><div class="walk-h"><span>Practice E1: p = 130 − Q and c = 10</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>BR(q) = (120 − q)/2. Round 1: [0, 60].</li><li>Round 2: BR(60) = 30, so [30, 60]. Round 3: BR(30) = 45, so [30, 45].</li><li>Round 4: BR(45) = 37.5. Round 5: BR(37.5) = 41.25.</li><li><span class="eq">Limit 120/3 = 40, price 130 − 80 = 50, profit 40 × 40 = 1,600 each</span></li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="auctions" data-l="auctions" hidden><div class="cv-lno">Lesson 2 of 3</div><h2>Auctions: when truth telling is dominant</h2>
+<p>In a sealed bid auction each bidder privately values the object at v and submits a bid b. Let B be the highest rival bid.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Second price (Vickrey)</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">payoff = <i>v</i> − <i>B</i> if <i>b</i> &gt; <i>B</i>, otherwise 0</div><div class="fx-n">The winner pays the second highest bid. Bidding b = v weakly dominates every other bid.</div></div><div class="fx fx-key"><div class="fx-h"><span>First price</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">payoff = <i>v</i> − <i>b</i> if <i>b</i> &gt; <i>B</i>, otherwise 0</div><div class="fx-n">The winner pays her own bid. Overbidding is weakly dominated, but bidding v is not dominant.</div></div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Second price, value v</th><th>Rival bid B below v</th><th>B between v and the overbid</th><th>B above both</th></tr></thead><tbody><tr><td>Bid v</td><td>win, v − B</td><td>lose, 0</td><td>lose, 0</td></tr><tr><td>Overbid b &gt; v</td><td>win, v − B (same)</td><td>win, v − B &lt; 0 (worse)</td><td>lose, 0</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Why underbidding is never better in a second price auction</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>If B is below the low bid, both bids win and pay B: same payoff.</li><li>If B is between the low bid and v, the truthful bid wins v − B &gt; 0 while the low bid loses.</li><li>If B is above v, both lose.</li><li><span class="eq">Never worse, sometimes strictly better: b = v is weakly dominant</span></li></ol></div>
+<div class="cvz" data-viz="auction"></div>
+<div class="cv-code" data-k="vickrey"></div>
+<p>In a first price auction, winning with b = v gives v − v = 0. Shading the bid below v can win with a positive surplus, so truthful bidding is not dominant and bidders shade. No dominant strategy exists there, which is why first price auctions need the Nash equilibrium analysis later in the course.</p>
+<div class="scene"><div class="scene-h">Real world scenario: online ad auctions</div><p>Search engines sell ad slots in automated auctions millions of times a day. Early systems used a first price rule and bidders kept adjusting their bids against each other. The move to second price style rules was meant to make simple truthful bidding safe. Display advertising later moved back to first price with automated bid shading, which shows the trade offs are still debated.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="more" data-l="more" hidden><div class="cv-lno">Lesson 3 of 3</div><h2>Voting, prices and puzzles</h2>
+<h3>Practice D5: where should a candidate stand?</h3>
+<p>Two candidates choose a position 1 to 5 on a line. One voter sits at each position and votes for the nearer candidate, splitting ties. The payoff is the number of votes.</p>
+<div class="walk"><div class="walk-h"><span>IESDS in the location game</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Round 1: position 2 beats 1 against every rival position (4 &gt; 2.5, 2.5 &gt; 1, 2 &gt; 1.5, 2.5 &gt; 2, 3 &gt; 2.5). By symmetry 4 beats 5. Delete 1 and 5.</li><li>Round 2: against rivals in {{2, 3, 4}}, position 3 earns (3, 2.5, 3), beating both 2 and 4, which earn (2.5, 2, 2.5).</li><li><span class="eq">Both candidates stand at 3, the median voter</span></li></ol></div>
+<div class="cvz" data-viz="iesds" data-cfg="{&quot;pre&quot;: &quot;hotel&quot;, &quot;mode&quot;: &quot;all&quot;}"></div>
+<h3>Practice D6: Bertrand with whole number prices</h3>
+<div class="walk"><div class="walk-h"><span>Prices 1 to 5, unit cost 1, 10 buyers</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Against a rival price of 1 every price earns 0, so no price beats another strictly in every column. Strict IESDS deletes nothing.</li><li>Weak elimination: 2 weakly beats 1 and 4 weakly beats 5. Then 3 beats 4, then 2 beats 3.</li><li><span class="eq">Weak IESDS ends at (2, 2), one step above cost</span></li><li>But (1, 1), (2, 2) and (3, 3) are all self enforcing. Weak elimination threw two of them away.</li></ol></div>
+<div class="cvz" data-viz="iesds" data-cfg="{&quot;pre&quot;: &quot;dbert&quot;, &quot;mode&quot;: &quot;weak&quot;, &quot;order&quot;: &quot;first&quot;}"></div>
+<h3>Practice E4: below cost Bertrand prices</h3>
+<p>Pricing at cost c always earns 0. Pricing below cost earns a loss when you are cheapest or tied, and 0 when the rival is cheaper still. So pᵢ = c weakly but not strictly dominates pᵢ &lt; c, and strict IESDS cannot start. The Bertrand prediction needs Nash equilibrium.</p>
+<h3>Puzzles F1 and F2</h3>
+<div class="tw"><table class="cvt "><thead><tr><th>Puzzle</th><th>Answer</th></tr></thead><tbody><tr><td>F1. Streetlamp with refunds when the lamp is not built</td><td>Contributing ties with not contributing when nobody else pays, wins with one other payer, and loses with two. Still no dominance. Refunds remove the risk but not the free riding.</td></tr><tr><td>F2. Two players guess an integer in [0, 100]. Closer to two thirds of the average wins</td><td>The lower guess always wins, so 0 weakly dominates every other guess, but not strictly: if the rival guesses above you, both 0 and your guess win.</td></tr></tbody></table></div>
+<div class="cvz" data-viz="lamp" data-cfg="{&quot;refund&quot;: true}"></div>
+<details class="deep"><summary>Going deeper: Mechanism design in one line</summary><div class="deep-b"><p>The Vickrey auction and the subsidy in the Marketing War (chapter 5.2) share an idea: instead of predicting play in a given game, change the rules so that the outcome you want becomes dominant. That reverse question, choosing a game to get a desired equilibrium, is mechanism design, and the Gibbard Satterthwaite theorem marks where it runs out for voting.</p></div></details>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Even when no single choice is always best, some choices are always bad. Removing them again and again can lead to one clear answer, as with two shops on a street both moving to the middle.</p></div><div class="ld-p" data-ld="college" hidden><p>Cournot IESDS halves the surviving interval each round to (a − c)/3b. In a second price auction bidding your value is weakly dominant. The location game ends at the median. Weak elimination can delete self enforcing outcomes, as in discrete Bertrand.</p></div><div class="ld-p" data-ld="masters" hidden><p>For Cournot with more than two firms, IESDS no longer pins down a single quantity, while the Nash equilibrium is still unique. The revenue equivalence theorem shows first and second price auctions give the same expected revenue with independent private values.</p></div><div class="ld-p" data-ld="research" hidden><p>Generalized second price auctions for search ads are not truthful, which led to work on their equilibria (Edelman, Ostrovsky and Schwarz 2007, Varian 2007). Learning agents bidding repeatedly in first price auctions are now studied as online learning problems with regret guarantees.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./iesds.html" data-topic="iesds"><small>Previous topic</small><b>IESDS</b></a><a class="next" href="./quiz1-solved.html" data-topic="quiz1-solved"><small>Next topic</small><b>Quiz 1 solved</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "dominance-applications", "topic": "dominance-applications", "subject": "ai", "title": "Dominance at work: Cournot, auctions and voting", "codes": {"halving": {"src": "# IESDS in the Cournot duopoly: the surviving interval [lo, hi] shrinks towards (a - c) / 3b\na, b, c = 100, 1, 10\n\ndef br(q):\n    return max(0.0, (a - c - b * q) / (2 * b))\n\nlo, hi = 0.0, float(\"inf\")\nhi = br(0)                                  # round 1: nothing above the monopoly quantity\nprint(\"round 1:\", [lo, hi])\nfor k in range(2, 9):\n    if k % 2 == 0:\n        lo = br(hi)                         # too small is now dominated\n    else:\n        hi = br(lo)                         # too large is now dominated\n    print(f\"round {k}:\", [round(lo, 4), round(hi, 4)])\nprint(\"limit (a - c) / 3b =\", (a - c) / (3 * b))", "stdin": "", "out": "round 1: [0.0, 45.0]\nround 2: [22.5, 45.0]\nround 3: [22.5, 33.75]\nround 4: [28.125, 33.75]\nround 5: [28.125, 30.9375]\nround 6: [29.5312, 30.9375]\nround 7: [29.5312, 30.2344]\nround 8: [29.8828, 30.2344]\nlimit (a - c) / 3b = 30.0"}, "vickrey": {"src": "# Second price auction: bidding your value v never does worse than any other bid\nv = 60\nbids = [40, 60, 80]\nrivals = [30, 50, 70, 90]\nfor B in rivals:                            # highest rival bid\n    row = []\n    for b in bids:\n        pay = v - B if b > B else 0         # win and pay the second price, or lose\n        row.append(pay)\n    print(f\"rival bid {B}: payoff when bidding 40, 60, 80 -> {row}\")", "stdin": "", "out": "rival bid 30: payoff when bidding 40, 60, 80 -> [30, 30, 30]\nrival bid 50: payoff when bidding 40, 60, 80 -> [0, 10, 10]\nrival bid 70: payoff when bidding 40, 60, 80 -> [0, 0, -10]\nrival bid 90: payoff when bidding 40, 60, 80 -> [0, 0, 0]"}}, "quiz": [{"lv": "e", "q": "In the Cournot duopoly with a = 100, b = 1, c = 10, what survives round 1 of IESDS?", "o": ["[0, 30]", "[0, 45]", "[22.5, 45]", "{30}"], "a": 1, "hint": "Monopoly quantity.", "why": "Anything above BR(0) = 45 is dominated by 45."}, {"lv": "e", "q": "In a second price auction the winner pays", "o": ["Her own bid", "The second highest bid", "Her value", "Nothing"], "a": 1, "hint": "Vickrey.", "why": "The winner pays the highest losing bid."}, {"lv": "e", "q": "In the location game with voters at 1 to 5, IESDS sends both candidates to", "o": ["1", "2", "3", "5"], "a": 2, "hint": "The median.", "why": "Positions 1 and 5 go first, then 2 and 4."}, {"lv": "e", "q": "In a first price auction, bidding exactly your value", "o": ["Is dominant", "Always gives payoff 0 when you win", "Is dominated by overbidding", "Guarantees a win"], "a": 1, "hint": "v − v.", "why": "Winning at your value leaves no surplus, so shading can do better."}, {"lv": "m", "q": "Each round of Cournot IESDS", "o": ["Doubles the interval", "Halves the width of the surviving interval", "Removes one point", "Does nothing"], "a": 1, "hint": "BR has slope −½.", "why": "The best response shrinks distances by a factor of 2."}, {"lv": "m", "q": "Why is bidding v weakly but not strictly dominant in a second price auction?", "o": ["It is strictly dominant", "Against some rival bids, other bids give the same payoff", "It is dominated", "Because of ties only"], "a": 1, "hint": "Look at B below both bids.", "why": "When the rival bid is low, both bids win and pay B, a tie."}, {"lv": "m", "q": "Practice E1 (p = 130 − Q, c = 10) gives each firm", "o": ["30", "40", "45", "60"], "a": 1, "hint": "(a − c)/3b.", "why": "120 ÷ 3 = 40."}, {"lv": "m", "q": "In discrete Bertrand, strict IESDS", "o": ["Ends at (1, 1)", "Ends at (2, 2)", "Deletes nothing", "Ends at (5, 5)"], "a": 2, "hint": "Against a rival price of 1 everything ties.", "why": "Every price earns 0 against a price of 1, so no strict domination."}, {"lv": "h", "q": "Weak IESDS in discrete Bertrand ends at (2, 2). Which self enforcing profiles did it delete?", "o": ["None", "(1, 1) and (3, 3)", "(4, 4)", "(5, 5)"], "a": 1, "hint": "Weak elimination can remove equilibria.", "why": "At (1, 1) and (3, 3) no firm gains by deviating alone."}, {"lv": "h", "q": "Below cost prices in Bertrand are", "o": ["Strictly dominated by c", "Weakly but not strictly dominated by c", "Dominant", "Not dominated"], "a": 1, "hint": "When the rival is cheaper.", "why": "If the rival is cheaper, both pᵢ < c and c earn 0, a tie."}, {"lv": "x", "q": "With refunds in the streetlamp game, contributing is", "o": ["Strictly dominant", "Weakly dominant", "Not dominant either way", "Strictly dominated"], "a": 2, "hint": "Two other payers.", "why": "With two others paying, not paying gives 3 against 2, so free riding remains."}], "calc": [{"lv": "e", "q": "Cournot a = 100, b = 1, c = 10: what is BR(45)?", "ans": "22.5", "hint": "(90 − q)/2.", "steps": ["90 − 45 = 45.", "Divide by 2.", "<span class=\"eq\">BR(45) = 22.5<\/span>"]}, {"lv": "e", "q": "Same game: what is BR(22.5)?", "ans": "33.75", "hint": "(90 − 22.5)/2.", "steps": ["90 − 22.5 = 67.5.", "Divide by 2.", "<span class=\"eq\">BR(22.5) = 33.75<\/span>"]}, {"lv": "e", "q": "Second price auction, v = 60, rival bid 50. What is your payoff if you bid 60?", "ans": "10", "hint": "You win and pay 50.", "steps": ["60 &gt; 50, so you win.", "You pay the second price, 50.", "<span class=\"eq\">payoff = 60 − 50 = 10<\/span>"]}, {"lv": "m", "q": "Second price auction, v = 60, rival bid 70. What is your payoff if you overbid 80?", "ans": "-10", "hint": "You win and pay 70.", "steps": ["80 &gt; 70, so you win.", "You pay 70 for an object worth 60.", "<span class=\"eq\">payoff = 60 − 70 = −10, while bidding 60 gives 0<\/span>"]}, {"lv": "m", "q": "First price auction, v = 60, rival bid 40. What is your payoff if you bid 50?", "ans": "10", "hint": "You pay your own bid.", "steps": ["50 &gt; 40, so you win.", "You pay 50.", "<span class=\"eq\">payoff = 60 − 50 = 10, better than 0 from bidding 60<\/span>"]}, {"lv": "m", "q": "Practice E1: what is the market price at the limit?", "ans": "50", "hint": "Each firm makes 40.", "steps": ["Q = 80.", "P = 130 − 80.", "<span class=\"eq\">P = 50<\/span>"]}, {"lv": "m", "q": "Cournot a = 100, c = 10: after round 4 the interval is [28.125, 33.75]. What is its width?", "ans": "5.625", "hint": "Subtract.", "steps": ["33.75 − 28.125.", "Round 1 width was 45.", "<span class=\"eq\">width = 5.625 = 45 ÷ 8<\/span>"]}, {"lv": "h", "q": "Practice E5: p = 100 − Q, c₁ = 10, c₂ = 20. What is the market price at the IESDS limit? Two decimals.", "ans": "43.33", "hint": "q₁ = 100/3, q₂ = 70/3.", "steps": ["q₁ = (90 − q₂)/2 and q₂ = (80 − q₁)/2 meet at q₁ = 33.33, q₂ = 23.33.", "Q = 170/3 = 56.67.", "<span class=\"eq\">P = 100 − 56.67 = 43.33<\/span>"], "tol": 0.005}, {"lv": "h", "q": "Location game: what does position 3 earn against a rival at 2?", "ans": "3", "hint": "Voters at 3, 4, 5 are nearer to 3.", "steps": ["Voter 1 and voter 2 are nearer to 2.", "Voters 3, 4 and 5 are nearer to 3.", "<span class=\"eq\">3 votes<\/span>"]}, {"lv": "h", "q": "Discrete Bertrand (prices 1 to 5, cost 1, 10 buyers): what does a firm earn at (3, 3)?", "ans": "10", "hint": "Tie, half the market.", "steps": ["Tie, so 5 buyers each.", "Margin 3 − 1 = 2.", "<span class=\"eq\">5 × 2 = 10<\/span>"]}, {"lv": "x", "q": "Cournot IESDS with a = 100, b = 1, c = 10: how many rounds until the interval width is below 1?", "ans": "7", "hint": "Width 45 / 2^(k−1).", "steps": ["After round k the width is 45 ÷ 2<sup>k−1<\/sup>.", "Round 6: 45 ÷ 32 = 1.41. Round 7: 45 ÷ 64 = 0.70.", "<span class=\"eq\">7 rounds<\/span>"]}], "assign": [{"id": "interval", "lv": "m", "title": "Cournot elimination intervals", "task": "<p>Write <code>cournot_rounds(a, b, c, k)<\/code> that returns the surviving interval [lo, hi] after k rounds, starting from [0, BR(0)] after round 1, then alternately raising lo to BR(hi) and lowering hi to BR(lo). Round each end to 4 decimals.<\/p>", "starter": "def cournot_rounds(a, b, c, k):\n    # your code here\n    pass\n", "tests": [{"call": "cournot_rounds(100, 1, 10, 1)", "want": [0.0, 45.0]}, {"call": "cournot_rounds(100, 1, 10, 3)", "want": [22.5, 33.75]}, {"call": "cournot_rounds(130, 1, 10, 5)", "want": [37.5, 41.25]}], "solution": "def cournot_rounds(a, b, c, k):\n    br = lambda q: max(0.0, (a - c - b * q) / (2 * b))\n    lo, hi = 0.0, br(0)\n    for r in range(2, k + 1):\n        if r % 2 == 0:\n            lo = br(hi)\n        else:\n            hi = br(lo)\n    return [round(lo, 4), round(hi, 4)]\n", "hint": "Even rounds move the lower end, odd rounds the upper end.", "why": "<p>The last test is practice E1 after five rounds.<\/p>"}, {"id": "auction", "lv": "e", "title": "Auction payoffs", "task": "<p>Write <code>auction_payoff(kind, v, b, B)<\/code>. kind is \"first\" or \"second\", v the value, b your bid and B the highest rival bid. You win only if b &gt; B. Return your payoff.<\/p>", "starter": "def auction_payoff(kind, v, b, B):\n    # your code here\n    pass\n", "tests": [{"call": "auction_payoff('second', 60, 60, 50)", "want": 10}, {"call": "auction_payoff('second', 60, 80, 70)", "want": -10}, {"call": "auction_payoff('first', 60, 50, 40)", "want": 10}, {"call": "auction_payoff('first', 60, 30, 40)", "want": 0}], "solution": "def auction_payoff(kind, v, b, B):\n    if b <= B:\n        return 0\n    return v - B if kind == \"second\" else v - b\n", "hint": "Losing pays 0. The winner pays B in a second price auction and b in a first price auction.", "why": "<p>The second test is the overbidding trap: winning at a price above your value.<\/p>"}], "must": [["Cournot IESDS", "BR = max{0, (a − c − bq)/2b}. Rounds: [0, 45], [22.5, 45], [22.5, 33.75], … halving to (a − c)/3b = 30. E1: 40, price 50, profit 1,600."], ["Second price auction", "Payoff v − B if b > B. Bidding v weakly dominates every bid (never worse, sometimes better). Strategy proof."], ["First price auction", "Payoff v − b if you win. Overbidding weakly dominated, but bidding v not dominant: bidders shade."], ["Location and prices", "Hotelling 1 to 5: delete 1, 5 then 2, 4, both at 3 (median). Discrete Bertrand: strict deletes nothing, weak ends at (2, 2) losing (1, 1), (3, 3)."], ["Weak only", "Below cost Bertrand prices and the guess game: weakly but not strictly dominated, so strict IESDS cannot start."]], "summary": "<p>Iterated elimination solves the Cournot duopoly by halving the surviving interval to 30. In a second price auction bidding your value is weakly dominant, and two candidates on a line both end at the median.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"halving": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line", "d": {"G.a": "100", "G.b": "1", "G.c": "10"}}, {"l": 7, "ev": "line", "d": {"G.br": "<function br>"}}, {"l": 8, "ev": "line", "d": {"G.lo": "0.0", "G.hi": "inf"}}, {"l": 4, "ev": "call", "s": ["module", "br()"], "d": {"L.q": "0"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"G.hi": "45.0", "L.q": null}}, {"l": 10, "ev": "line", "o": "round 1: [0.0, 45.0]\n"}, {"l": 11, "ev": "line", "d": {"G.k": "2"}}, {"l": 12, "ev": "line"}, {"l": 4, "ev": "call", "s": ["module", "br()"], "d": {"L.q": "45.0"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.lo": "22.5", "L.q": null}}, {"l": 10, "ev": "line", "o": "round 2: [22.5, 45.0]\n"}, {"l": 11, "ev": "line", "d": {"G.k": "3"}}, {"l": 14, "ev": "line"}, {"l": 4, "ev": "call", "s": ["module", "br()"], "d": {"L.q": "22.5"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.hi": "33.75", "L.q": null}}, {"l": 10, "ev": "line", "o": "round 3: [22.5, 33.75]\n"}, {"l": 11, "ev": "line", "d": {"G.k": "4"}}, {"l": 12, "ev": "line"}, {"l": 4, "ev": "call", "s": ["module", "br()"], "d": {"L.q": "33.75"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.lo": "28.125", "L.q": null}}, {"l": 10, "ev": "line", "o": "round 4: [28.125, 33.75]\n"}, {"l": 11, "ev": "line", "d": {"G.k": "5"}}, {"l": 14, "ev": "line"}, {"l": 4, "ev": "call", "s": ["module", "br()"], "d": {"L.q": "28.125"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.hi": "30.9375", "L.q": null}}, {"l": 10, "ev": "line", "o": "round 5: [28.125, 30.9375]\n"}, {"l": 11, "ev": "line", "d": {"G.k": "6"}}, {"l": 12, "ev": "line"}, {"l": 4, "ev": "call", "s": ["module", "br()"], "d": {"L.q": "30.9375"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.lo": "29.53125", "L.q": null}}, {"l": 10, "ev": "line", "o": "round 6: [29.5312, 30.9375]\n"}, {"l": 11, "ev": "line", "d": {"G.k": "7"}}, {"l": 14, "ev": "line"}, {"l": 4, "ev": "call", "s": ["module", "br()"], "d": {"L.q": "29.53125"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.hi": "30.234375", "L.q": null}}, {"l": 10, "ev": "line", "o": "round 7: [29.5312, 30.2344]\n"}, {"l": 11, "ev": "line", "d": {"G.k": "8"}}, {"l": 12, "ev": "line"}, {"l": 4, "ev": "call", "s": ["module", "br()"], "d": {"L.q": "30.234375"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.lo": "29.8828125", "L.q": null}}, {"l": 10, "ev": "line", "o": "round 8: [29.8828, 30.2344]\n"}, {"l": 16, "ev": "line"}, {"l": 16, "ev": "return", "o": "limit (a - c) / 3b = 30.0\n"}], "tail": "", "err": null, "cut": false}, "vickrey": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.v": "60"}}, {"l": 4, "ev": "line", "d": {"G.bids": "[40, 60, 80]"}}, {"l": 5, "ev": "line", "d": {"G.rivals": "[30, 50, 70, 90]"}}, {"l": 6, "ev": "line", "d": {"G.B": "30"}}, {"l": 7, "ev": "line", "d": {"G.row": "[]"}}, {"l": 8, "ev": "line", "d": {"G.b": "40"}}, {"l": 9, "ev": "line", "d": {"G.pay": "30"}}, {"l": 7, "ev": "line", "d": {"G.row": "[30]"}}, {"l": 8, "ev": "line", "d": {"G.b": "60"}}, {"l": 9, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.row": "[30, 30]"}}, {"l": 8, "ev": "line", "d": {"G.b": "80"}}, {"l": 9, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.row": "[30, 30, 30]"}}, {"l": 10, "ev": "line"}, {"l": 5, "ev": "line", "o": "rival bid 30: payoff when bidding 40, 60, 80 -> [30, 30, 30]\n"}, {"l": 6, "ev": "line", "d": {"G.B": "50"}}, {"l": 7, "ev": "line", "d": {"G.row": "[]"}}, {"l": 8, "ev": "line", "d": {"G.b": "40"}}, {"l": 9, "ev": "line", "d": {"G.pay": "0"}}, {"l": 7, "ev": "line", "d": {"G.row": "[0]"}}, {"l": 8, "ev": "line", "d": {"G.b": "60"}}, {"l": 9, "ev": "line", "d": {"G.pay": "10"}}, {"l": 7, "ev": "line", "d": {"G.row": "[0, 10]"}}, {"l": 8, "ev": "line", "d": {"G.b": "80"}}, {"l": 9, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.row": "[0, 10, 10]"}}, {"l": 10, "ev": "line"}, {"l": 5, "ev": "line", "o": "rival bid 50: payoff when bidding 40, 60, 80 -> [0, 10, 10]\n"}, {"l": 6, "ev": "line", "d": {"G.B": "70"}}, {"l": 7, "ev": "line", "d": {"G.row": "[]"}}, {"l": 8, "ev": "line", "d": {"G.b": "40"}}, {"l": 9, "ev": "line", "d": {"G.pay": "0"}}, {"l": 7, "ev": "line", "d": {"G.row": "[0]"}}, {"l": 8, "ev": "line", "d": {"G.b": "60"}}, {"l": 9, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.row": "[0, 0]"}}, {"l": 8, "ev": "line", "d": {"G.b": "80"}}, {"l": 9, "ev": "line", "d": {"G.pay": "-10"}}, {"l": 7, "ev": "line", "d": {"G.row": "[0, 0, -10]"}}, {"l": 10, "ev": "line"}, {"l": 5, "ev": "line", "o": "rival bid 70: payoff when bidding 40, 60, 80 -> [0, 0, -10]\n"}, {"l": 6, "ev": "line", "d": {"G.B": "90"}}, {"l": 7, "ev": "line", "d": {"G.row": "[]"}}, {"l": 8, "ev": "line", "d": {"G.b": "40"}}, {"l": 9, "ev": "line", "d": {"G.pay": "0"}}, {"l": 7, "ev": "line", "d": {"G.row": "[0]"}}, {"l": 8, "ev": "line", "d": {"G.b": "60"}}, {"l": 9, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.row": "[0, 0]"}}, {"l": 8, "ev": "line", "d": {"G.b": "80"}}, {"l": 9, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.row": "[0, 0, 0]"}}, {"l": 10, "ev": "line"}, {"l": 5, "ev": "line", "o": "rival bid 90: payoff when bidding 40, 60, 80 -> [0, 0, 0]\n"}, {"l": 5, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/aiwidgets.js"></script>
+<script src="../../assets/aigames.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

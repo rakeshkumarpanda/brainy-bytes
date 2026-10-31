@@ -42,6 +42,7 @@ CFG = {
     'func': 'cvModules', 'marker': 'cv-build', 'builder': 'tools/cv-build/build.py', 'badge': 'CV',
     'widgets': ['cvviz.js', 'cvwidgets.js'], 'css': ['cv.css'], 'body': 'cvp',
 }
+# A subject split into sections sets 'part' (the section id written on each module in the catalog) and 'part_name'.
 # Other subjects may also set 'min_calc' (worked problems needed per chapter, 10 when not set) and 'langsheet'
 # (True writes one cheatsheet per programming language with tools/sheet-build/langsheet.py instead of cheatsheet.py).
 TRACER = os.path.join(ROOT, 'tools', 'py-build', 'pytrace.py')
@@ -51,6 +52,12 @@ EMOJI = re.compile('[\U0001F000-\U0001FAFF☀-➿⭐⬆↔-↪️]')
 
 def out_dir():
     return os.path.join(ROOT, 'content', CFG['subject'])
+
+
+def home_q(cfg=None):
+    """The query of the learning path link, which opens the subject's own section when it has one."""
+    c = cfg or CFG
+    return 's=' + c['subject'] + (f'&amp;p={c["part"]}' if c.get('part') else '')
 
 
 def js(v):
@@ -302,9 +309,9 @@ def page(T, chs, steps_by_id):
 {css}
 </head>
 <body class="{CFG["body"]}">
-<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s={CFG["subject"]}">{CFG["name"]} learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?{home_q()}">{CFG["name"]} learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
 <div class="cv-wrap">
-  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s={CFG["subject"]}" target="_top">{CFG["name"]}</a><span>›</span><span>Step {stp[0]}: {html.escape(stp[1])}</span><span>›</span><span>{html.escape(T["short"])}</span></div>
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?{home_q()}" target="_top">{CFG["name"]}</a><span>›</span>{f'<span>{CFG["part_name"]}</span><span>›</span>' if CFG.get('part_name') else ''}<span>Step {stp[0]}: {html.escape(stp[1])}</span><span>›</span><span>{html.escape(T["short"])}</span></div>
   <header class="cv-hero">
     <div class="cv-kicker">Step {stp[0]} · Topic {pos} of {len(in_step)} · {html.escape(stp[4])}</div>
     <h1>{html.escape(T["title"])}</h1>
@@ -346,7 +353,8 @@ def catalog(chs):
     L = [f'function {CFG["func"]}() {{', '  return [']
     for mi, m in enumerate(mods):
         n, title, mid, blurb, level = m['step']
-        L.append(f'    {{ id: {js(mid)}, title: {js(title)}, emoji: {js(str(n))}, step: {n}, level: {js(level)}, blurb: {js(blurb)}, topics: [')
+        part = f'part: {js(CFG["part"])}, ' if CFG.get('part') else ''
+        L.append(f'    {{ id: {js(mid)}, title: {js(title)}, emoji: {js(str(n))}, step: {n}, {part}level: {js(level)}, blurb: {js(blurb)}, topics: [')
         for ti, T in enumerate(m['topics']):
             secs = [f'        {{ id: {js(p["id"])}, title: {js(p["title"])}, emoji: "", group: "Lesson", keywords: {js(p["kw"])} }}' for p in T['lessons']]
             if T.get('kind') != 'revision':
