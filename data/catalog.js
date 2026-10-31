@@ -1248,11 +1248,16 @@ function sheetModule(sid) {
   }[sid];
   return {
     id: 'cheatsheet', title: 'Cheatsheet', emoji: '📄',
-    blurb: 'Revise the whole subject from one page. Each card links back to the lesson that teaches it, and the PDF works offline.',
+    blurb: 'Revise the whole subject from one page, or from the compact version of at most six pages. Each item links back to the lesson that teaches it, and both PDFs work offline.',
     topics: [{
       id: 'cheatsheet', title: 'Cheatsheet', emoji: '📄', page: info[0],
       summary: info[1],
       keywords: ['cheatsheet', 'cheat sheet', 'formula sheet', 'revision', 'PDF', 'download', 'quick reference'].concat(info[2]),
+      added: '2026-10-31'
+    }, {
+      id: 'cheatsheet-compact', title: 'Compact cheatsheet', emoji: '📄', page: info[0].replace('cheatsheet.html', 'cheatsheet-compact.html'),
+      summary: 'The key ideas, exam favourite formulas and common traps of every chapter in at most six printed pages, for the last look before an exam. Download the PDF or print it.',
+      keywords: ['compact cheatsheet', 'short cheatsheet', 'one page revision', 'last minute revision', 'exam favourite formulas', 'PDF', 'download'],
       added: '2026-10-31'
     }]
   };

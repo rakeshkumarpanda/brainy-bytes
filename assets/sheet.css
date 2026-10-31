@@ -55,6 +55,7 @@
 .sh-it[hidden],.sh-blk[hidden],.sh-ch[hidden],.sh-step[hidden]{display:none !important}
 
 @media (max-width:640px){
+  .cs-step{grid-template-columns:minmax(0,1fr)}
   .sh-ch{padding:12px 14px 14px; border-radius:14px}
   .sh-fx{grid-template-columns:minmax(0,1fr)}
   .sh-step>h2{font-size:20px}
@@ -98,4 +99,49 @@
   .sh-notes .note{font-size:9.5pt; padding:5px 9px; margin:4px 0; border-radius:6px}
   .note>b{min-width:84px; font-size:8pt}
   a{color:inherit !important; text-decoration:none}
+}
+
+/* ===== compact cheatsheet (cheatsheet-compact.html): key ideas and exam favourite formulas in narrow columns ===== */
+.cs-cols{margin-top:12px}
+.cs-step{display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:10px; align-items:start; margin:0 0 14px; break-inside:auto}
+.cs-step>h2{grid-column:1/-1; font-size:15px; margin:10px 0 4px; padding-bottom:3px; border-bottom-width:1.5px; break-after:avoid}
+.cs-step>h2 span{font-size:11px}
+.cs-ch{border-radius:10px; padding:8px 11px; margin:0; break-inside:auto}
+.cs-ch h3{margin:0 0 4px; font-size:14.5px; line-height:1.3; break-after:avoid}
+.cs-ch h3 a{color:var(--ink) !important; text-decoration:none}
+.cs-ch h3 .sh-no{margin-right:6px; font-size:11.5px}
+.cs-ch .sh-blk{margin-top:4px}
+.cs-must,.cs-fx,.cs-trap{list-style:none; margin:0; padding:0}
+.cs-must li{font-size:13.5px; line-height:1.45; margin:3px 0; break-inside:avoid}
+.cs-must b{color:var(--cv)}
+.cs-fx li{display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; font-size:13px; padding:3px 7px; margin:3px 0; border-left:3px solid var(--orange); background:var(--cv-soft); border-radius:6px; break-inside:avoid}
+.cs-fx li>b{font-size:12px; color:var(--cv)}
+.cs-trap li{font-size:13px; line-height:1.45; margin:3px 0; padding:2px 7px; border-radius:6px; break-inside:avoid}
+.cs-trap li>b{font-size:11px; text-transform:uppercase; letter-spacing:.04em; margin-right:4px}
+.cs-warn{background:var(--hard-soft)} .cs-warn>b{color:var(--hard)}
+.cs-exam{background:var(--exp-soft)} .cs-exam>b{color:var(--exp)}
+.cs-f{font-family:var(--math); font-size:15px; line-height:1.5; min-width:0; overflow-x:auto}
+.cs-f i{font-style:italic}
+
+@media print{
+  body.compactp{font-size:8.6pt; line-height:1.32}
+  .compactp .cv-hero{padding:0}
+  .compactp .cv-hero h1{font-size:15pt; margin:0 0 1px}
+  .compactp .cv-hero .lead,.compactp .cv-kicker,.compactp .cv-chips{display:none}
+  .compactp .cs-step{display:block; margin:0 0 6px}
+  .compactp .cs-cols{column-count:3; column-gap:12px; margin-top:3px}
+  .compactp .cs-step>h2{font-size:10pt; margin:4px 0 2px; padding-bottom:1px}
+  .compactp .cs-step>h2 span{font-size:7.5pt}
+  .compactp .cs-ch{border:0; border-top:.6pt solid #cfd8e3; border-radius:0; padding:2px 0 1px; margin:0 0 2px}
+  .compactp .cs-ch h3{font-size:9.2pt; margin:0 0 1px}
+  .compactp .cs-ch h3 .sh-no{font-size:7.5pt; padding:0 3px; margin-right:3px}
+  .compactp .cs-ch .sh-blk{margin-top:1px}
+  .compactp .cs-must li{font-size:8.4pt; line-height:1.32; margin:1px 0}
+  .compactp .cs-fx li{font-size:8.2pt; padding:1px 4px; margin:1.5px 0; gap:0 5px; border-left-width:2px; border-radius:3px}
+  .compactp .cs-fx li>b{font-size:7.9pt}
+  .compactp .cs-f{font-size:9.4pt; line-height:1.3; overflow:visible}
+  .compactp .cs-trap li{font-size:8pt; line-height:1.3; padding:1px 4px; margin:1.5px 0; border-radius:3px}
+  .compactp .cs-trap li>b{font-size:6.8pt}
+  .compactp .cs-f .fr{margin:0 1px; line-height:1.1}
+  .compactp .cs-f .mx{padding:0 3px}
 }
