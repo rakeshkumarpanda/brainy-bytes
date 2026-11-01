@@ -49,7 +49,8 @@
       D.circle(g, m.sx(p[0]), m.sy(p[1]), o.r || 5, { fill: c });
       if (!labels) return;
       /* move a label down or up until it does not cover an earlier one */
-      const w = tw(g, labels[i], { s: 12, b: true }), x = m.sx(p[0]) + 7;
+      /* labels go right of the dot, or left of it when they would run past the plot */
+      const w = tw(g, labels[i], { s: 12, b: true }), x = m.sx(p[0]) + 7 + w > box[0] + box[2] - 2 ? m.sx(p[0]) - 7 - w : m.sx(p[0]) + 7;
       let y = m.sy(p[1]) - 6;
       const hit = yy => placed.some(r => x < r[0] + r[2] && x + w > r[0] && yy - 11 < r[1] && yy + 2 > r[1] - 13);
       for (let k = 1; k < 8 && hit(y); k++) y = m.sy(p[1]) - 6 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 13;
@@ -93,7 +94,7 @@
       const { g, p } = z;
       const pts = rows(p.data).map(l => nums(l)).filter(r => r.length >= 2);
       if (!pts.length) return 'Write pairs like "1 2" on separate lines.';
-      const box = [60, 16, 300, 236];
+      const box = [60, 16, 270, 236];
       const xmax = Math.max(...pts.map(q => q[0])) + 1, ymax = Math.max(...pts.map(q => q[1]), p.w * xmax + p.b) + 1;
       const ymin = Math.min(0, ...pts.map(q => q[1]), p.b);
       const m = D.axes(g, z, box, [0, xmax], [ymin, ymax], { nx: 4, ny: 4, xl: 'pats', yl: 'wags' });
@@ -108,12 +109,12 @@
       g.restore();
       pts.forEach(([x, y]) => D.circle(g, m.sx(x), m.sy(y), 6, { fill: z.col.orange }));
       let y = 34;
-      D.text(g, 'pats  wags  model   error²', 390, y, { s: 12, b: true, mono: true, c: z.col.ink2 });
+      D.text(g, 'pats  wags  model   error²', 350, y, { s: 11.5, b: true, mono: true, c: z.col.ink2 });
       pts.slice(0, 8).forEach(([x, yy]) => {
         y += 20; const yh = p.w * x + p.b;
-        D.text(g, `${String(x).padEnd(5)} ${String(yy).padEnd(5)} ${f2(yh, 2).padEnd(7)} ${f2((yh - yy) ** 2, 3)}`, 390, y, { s: 12, mono: true, c: z.col.ink });
+        D.text(g, `${String(x).padEnd(5)} ${String(yy).padEnd(5)} ${f2(yh, 2).padEnd(7)} ${f2((yh - yy) ** 2, 3)}`, 350, y, { s: 11.5, mono: true, c: z.col.ink });
       });
-      D.text(g, `cost = ${f2(cost, 4)}`, 390, y + 32, { s: 16, b: true, c: z.col.cv });
+      D.text(g, `cost = ${f2(cost, 4)}`, 350, y + 32, { s: 16, b: true, c: z.col.cv });
       return `Cost C(w, b) = ∑ (w·x + b − y)² = <b>${f2(cost, 4)}</b>. Move a slider and the cost changes. Learning means finding the w and b that make this number as small as possible.`;
     }
   });
@@ -146,7 +147,7 @@
       const lo = Math.min(T - 6, ...shown.filter(isFinite)), hi = Math.max(T + 6, ...shown.filter(isFinite));
       const span = Math.min(60, Math.max(Math.abs(lo - T), Math.abs(hi - T)));
       const xr = [T - span, T + span], C = b => (b - T) ** 2;
-      const box = [60, 14, 330, 230];
+      const box = [60, 14, 290, 230];
       const m = D.axes(g, z, box, xr, [0, span * span], { nx: 4, ny: 4, xl: 'b', yl: 'cost', fx: v => fmt(v, 1), fy: v => fmt(v, 0) });
       g.save(); g.beginPath(); g.rect(box[0], box[1], box[2], box[3]); g.clip();
       g.strokeStyle = z.col.cv; g.lineWidth = 2.5; g.beginPath();
@@ -156,15 +157,15 @@
       shown.forEach((b, i) => D.circle(g, m.sx(b), m.sy(C(b)), i === shown.length - 1 ? 6 : 3.5, { fill: i === shown.length - 1 ? z.col.red : z.col.orange }));
       g.restore();
       const b = shown[shown.length - 1], slope = 2 * (b - T);
-      D.text(g, `step ${z.step}`, 410, 34, { s: 13, b: true, c: z.col.ink2 });
-      D.text(g, `b = ${f2(b, 4)}`, 410, 60, { s: 14, b: true, mono: true, c: z.col.ink });
-      D.text(g, `slope = 2(b − ${T}) = ${f2(slope, 3)}`, 410, 84, { s: 12, mono: true, c: z.col.ink });
-      D.text(g, `cost = ${f2(C(b), 4)}`, 410, 108, { s: 12, mono: true, c: z.col.ink });
-      D.text(g, `next b = b − η × slope`, 410, 140, { s: 12, mono: true, c: z.col.cv });
-      D.text(g, `= ${f2(b - p.lr * slope, 4)}`, 410, 160, { s: 12, mono: true, b: true, c: z.col.cv });
+      D.text(g, `step ${z.step}`, 370, 34, { s: 13, b: true, c: z.col.ink2 });
+      D.text(g, `b = ${f2(b, 4)}`, 370, 60, { s: 14, b: true, mono: true, c: z.col.ink });
+      D.text(g, `slope = 2(b − ${T}) = ${f2(slope, 3)}`, 370, 84, { s: 11.5, mono: true, c: z.col.ink });
+      D.text(g, `cost = ${f2(C(b), 4)}`, 370, 108, { s: 11.5, mono: true, c: z.col.ink });
+      D.text(g, `next b = b − η × slope`, 370, 140, { s: 11.5, mono: true, c: z.col.cv });
+      D.text(g, `= ${f2(b - p.lr * slope, 4)}`, 370, 160, { s: 11.5, mono: true, b: true, c: z.col.cv });
       const r = 1 - 2 * p.lr;
-      D.text(g, `factor 1 − 2η = ${f2(r, 3)}`, 410, 196, { s: 12, mono: true, c: Math.abs(r) < 1 ? z.col.green : z.col.red });
-      D.text(g, Math.abs(r) < 1 ? (r < 0 ? 'oscillates, then settles' : 'settles smoothly') : 'diverges', 410, 216, { s: 12, b: true, c: Math.abs(r) < 1 ? z.col.green : z.col.red });
+      D.text(g, `factor 1 − 2η = ${f2(r, 3)}`, 370, 196, { s: 11.5, mono: true, c: Math.abs(r) < 1 ? z.col.green : z.col.red });
+      D.text(g, Math.abs(r) < 1 ? (r < 0 ? 'oscillates, then settles' : 'settles smoothly') : 'diverges', 370, 216, { s: 12, b: true, c: Math.abs(r) < 1 ? z.col.green : z.col.red });
       return `Every step multiplies the distance to the target by 1 − 2η = ${f2(r, 3)}. When that factor lies between −1 and 1 gradient descent converges, so for this cost any η below 1 works and η = 0.5 is the one step answer.`;
     }
   });
@@ -392,12 +393,14 @@
       [ia, ib].forEach((k, r) => {
         y += 30;
         D.text(g, V[k][0], 16, y + 14, { s: 12.5, b: true, c: r ? z.col.purple : z.col.cv });
-        for (let j = 0; j < n; j++) { rr(g, 96 + j * 26, y, 22, 22, 4, { fill: j === k ? (r ? z.col.purple : z.col.cv) : z.col.bg, stroke: z.col.line, w: 1 }); D.text(g, j === k ? '1' : '0', 107 + j * 26, y + 15, { a: 'center', s: 11, b: true, c: j === k ? '#fff' : z.col.ink2 }); }
+        const cw = Math.min(26, 230 / n);
+        for (let j = 0; j < n; j++) { rr(g, 96 + j * cw, y, cw - 4, 22, 4, { fill: j === k ? (r ? z.col.purple : z.col.cv) : z.col.bg, stroke: z.col.line, w: 1 }); D.text(g, j === k ? '1' : '0', 96 + j * cw + (cw - 4) / 2, y + 15, { a: 'center', s: Math.min(11, cw * 0.5), b: true, c: j === k ? '#fff' : z.col.ink2 }); }
       });
       const ohdot = ia === ib ? 1 : 0;
-      D.text(g, `dot product = ${ohdot}   (${ia === ib ? 'same word' : 'orthogonal: no notion of similarity'})`, 16, y + 48, { s: 12, mono: true, c: z.col.ink });
+      D.text(g, `dot product = ${ohdot}`, 16, y + 46, { s: 12, mono: true, c: z.col.ink });
+      D.text(g, ia === ib ? 'the same word' : 'orthogonal: no notion of similarity', 16, y + 64, { s: 11.5, c: z.col.ink2 });
       const va = V[ia][1], vb = V[ib][1];
-      y += 90;
+      y += 96;
       D.text(g, 'Dense vectors (learned from context)', 16, y, { s: 13, b: true, c: z.col.ink });
       D.text(g, `${V[ia][0]} = ${vstr(va, 2)}`, 16, y + 24, { s: 12, mono: true, c: z.col.cv });
       D.text(g, `${V[ib][0]} = ${vstr(vb, 2)}`, 16, y + 44, { s: 12, mono: true, c: z.col.purple });
@@ -1199,7 +1202,7 @@
         bars(g, z, [330, 20, 210, 200], [p.cprev, (1 - p.zg) * p.cprev, p.zg * p.cand, h], ['old', 'kept', 'added', 'h_t'], { max: 1.2, colors: [z.col.ink2, z.col.cv, z.col.orange, z.col.green] });
       }
       lines.forEach(([t, k], i) => D.text(g, t, 16, 40 + i * 30, { s: 12.5, mono: true, b: !!k, c: k ? z.col.cv : z.col.ink }));
-      D.text(g, 'bar heights show sizes, signs are in the numbers', 330, 268, { s: 11, c: z.col.ink2 });
+      D.text(g, 'bar heights show sizes, signs are in the numbers', 548, 268, { a: 'right', s: fit(g, 'bar heights show sizes, signs are in the numbers', 228, 11), c: z.col.ink2 });
       return p.cell === 'lstm' ? 'Gates: f = σ(W<sub>f</sub>[h<sub>t−1</sub>, x<sub>t</sub>] + b<sub>f</sub>), and the same form for i and o. The candidate is c̃<sub>t</sub> = tanh(W<sub>c</sub>[h<sub>t−1</sub>, x<sub>t</sub>] + b<sub>c</sub>).' : 'GRU: z = σ(W<sub>z</sub>x<sub>t</sub> + U<sub>z</sub>h<sub>t−1</sub>), r = σ(W<sub>r</sub>x<sub>t</sub> + U<sub>r</sub>h<sub>t−1</sub>), h̃<sub>t</sub> = tanh(W<sub>h</sub>x<sub>t</sub> + U<sub>h</sub>(r ⊙ h<sub>t−1</sub>)). The reset gate r decides how much of the past the candidate may use.';
     }
   });
@@ -1229,22 +1232,28 @@
       const sw = Math.min(46, 250 / ns), tw2 = Math.min(46, 250 / nt);
       const ex = i => 16 + i * sw + sw / 2, dx = j => 290 + j * tw2 + tw2 / 2;
       const encOn = i => z.step > i, decOn = j => z.step > ns + j;
+      /* one label per box. Level text when every word fits its box, else the words turn upright so neighbours never touch */
+      const labels = (words, xs, slot, y, dir, col, on = () => true) => {
+        const need = Math.max(...words.map(w => tw(g, w, { s: 11.5, b: true })));
+        const fs = Math.min(11.5, 11.5 * (slot - 4) / need);
+        if (fs >= 9.5) { words.forEach((w, i) => on(i) && D.text(g, w, xs(i), dir > 0 ? y + 11 : y, { a: 'center', s: fs, b: true, c: col(i) })); return; }
+        const up = Math.min(11.5, slot - 2);
+        words.forEach((w, i) => { if (!on(i)) return; g.save(); g.translate(xs(i), y); g.rotate(dir * Math.PI / 2); D.text(g, w, 0, 0, { s: fit(g, w, dir > 0 ? 92 : 84, up, { b: true }), b: true, bl: 'middle', c: col(i) }); g.restore(); });
+      };
       S.forEach((w, i) => {
         rr(g, ex(i) - sw / 2 + 3, 130, sw - 6, 34, 6, { fill: encOn(i) ? z.col.cv : z.col.bg, stroke: z.col.line });
         if (i) D.line(g, ex(i - 1) + sw / 2 - 3, 147, ex(i) - sw / 2 + 3, 147, z.col.line, 1.5);
-        g.save(); g.translate(ex(i), 190); g.rotate(Math.PI / 4); D.text(g, w, 0, 0, { s: fit(g, w, 70, 11.5), b: true, c: z.col.ink }); g.restore();
       });
+      labels(S, ex, sw, 172, 1, () => z.col.ink);
       D.text(g, 'encoder', 16, 120, { s: 12, b: true, c: z.col.cv });
       const last = ex(ns - 1) + sw / 2 - 3;
       if (z.step >= ns) { D.circle(g, 272, 147, 10, { fill: z.col.orange }); D.line(g, last, 147, 262, 147, z.col.orange, 2.5); }
-      D.text(g, 'one vector', 272, 176, { a: 'center', s: 10.5, b: true, c: z.col.orange });
-      ['<START>'].concat(T).forEach((w, j) => {
-        rr(g, dx(j) - tw2 / 2 + 3, 130, tw2 - 6, 34, 6, { fill: decOn(j) ? z.col.purple : z.col.bg, stroke: z.col.line });
-        g.save(); g.translate(dx(j), 190); g.rotate(Math.PI / 4); D.text(g, w, 0, 0, { s: fit(g, w, 70, 11.5), b: true, c: z.col.ink }); g.restore();
-        const out = j < T.length ? T[j] : '<END>';
-        if (decOn(j)) { g.save(); g.translate(dx(j), 118); g.rotate(-Math.PI / 4); D.text(g, out, 0, 0, { s: fit(g, out, 70, 11.5), b: true, c: z.col.purple }); g.restore(); }
-      });
-      D.text(g, 'decoder', 290, 280, { s: 12, b: true, c: z.col.purple });
+      D.text(g, 'one vector', 272, 102, { a: 'center', s: 10.5, b: true, c: z.col.orange });
+      const ins = ['<START>'].concat(T);
+      ins.forEach((w, j) => rr(g, dx(j) - tw2 / 2 + 3, 130, tw2 - 6, 34, 6, { fill: decOn(j) ? z.col.purple : z.col.bg, stroke: z.col.line }));
+      labels(ins, dx, tw2, 172, 1, () => z.col.ink);
+      labels(ins.map((_, j) => j < T.length ? T[j] : '<END>'), dx, tw2, 122, -1, () => z.col.purple, decOn);
+      D.text(g, 'decoder', 290, 284, { s: 12, b: true, c: z.col.purple });
       const cur = z.step - ns - 1;
       if (p.attn && cur >= 0 && cur < nt) {
         const r = rng(cur + 3), wts = softmax(S.map(() => r() * 3)), mxw = Math.max(...wts);

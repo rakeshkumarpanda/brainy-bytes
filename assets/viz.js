@@ -64,11 +64,24 @@ const VIZ = (() => {
   const cell = (v, cls = '', sub = '') => `<div class="vz-cell ${cls}">${v === null || v === undefined ? '' : esc(v)}${sub !== '' ? `<small>${esc(sub)}</small>` : ''}</div>`;
 
   function mountAll(root) {
-    root.querySelectorAll('.viz[data-viz]:not(.vz-done)').forEach(el => {
-      const f = W[el.dataset.viz];
-      el.classList.add('vz-done');
-      if (f) f(el); else el.textContent = 'Unknown animation: ' + el.dataset.viz;
-    });
+    root.querySelectorAll('.viz[data-viz]:not(.vz-done)').forEach(mountOne);
+  }
+  /* every animation gets a Reset button. It builds the animation again from the page, so every value is back as it started */
+  const RESET_CSS = '.vz-reset{display:inline-flex; align-items:center; gap:4px; margin-left:8px; vertical-align:middle; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:3px 12px; font:inherit; font-size:13px; font-weight:800; cursor:pointer}' +
+    '.vz-reset:hover{border-color:var(--accent)} .vz-rrow{display:flex; justify-content:flex-end; margin-bottom:6px}';
+  function mountOne(el) {
+    const f = W[el.dataset.viz];
+    const fresh = el.cloneNode(true);
+    el.classList.add('vz-done');
+    if (!f) { el.textContent = 'Unknown animation: ' + el.dataset.viz; return; }
+    f(el);
+    if (!document.getElementById('vz-reset-css')) { const st = document.createElement('style'); st.id = 'vz-reset-css'; st.textContent = RESET_CSS; document.head.appendChild(st); }
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'vz-reset'; b.textContent = '↺ Reset'; b.title = 'Put this animation back to how it started';
+    b.addEventListener('click', () => { const n = fresh.cloneNode(true); el.replaceWith(n); mountOne(n); });
+    const badge = el.querySelector('.vz-head .vz-badge');
+    if (badge) badge.after(b);
+    else { const row = document.createElement('div'); row.className = 'vz-rrow'; row.appendChild(b); el.insertBefore(row, el.firstChild); }
   }
   return { mountAll, refresh() { /* drawn with CSS classes, nothing to redraw */ }, widgets: W, kit: { esc, clamp, $, fmt, shell, seg, wireSeg, slider, wireSlider, Player, Seq, cell } };
 })();

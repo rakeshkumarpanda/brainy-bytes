@@ -46,7 +46,13 @@
       showLesson(lid);
       setHash(lid);
     } else setHash(id);
-    if (scroll) $('.cv-tabs').scrollIntoView({ block: 'start', behavior: FUN.reduce ? 'auto' : 'smooth' });
+    if (scroll) toTop();
+  }
+  /* back to the top of the chapter part, just under the sticky tabs. scrollIntoView on the sticky tab bar does nothing once it is stuck */
+  function toTop() {
+    const bar = $('.cv-tabs'), pane = panes.find(p => !p.hidden);
+    const y = pane ? pane.getBoundingClientRect().top + window.scrollY - (bar ? bar.offsetHeight : 0) - 6 : 0;
+    window.scrollTo({ top: Math.max(0, y), behavior: FUN.reduce ? 'auto' : 'smooth' });
   }
   function showLesson(id) {
     lessons.forEach(l => { l.hidden = l.dataset.l !== id; });
@@ -84,7 +90,7 @@
   });
 
   tabs.forEach(t => t.addEventListener('click', () => openTab(t.dataset.tab, null, false)));
-  stepLinks.forEach(a => a.addEventListener('click', e => { e.preventDefault(); showLesson(a.dataset.l); setHash(a.dataset.l); }));
+  stepLinks.forEach(a => a.addEventListener('click', e => { e.preventDefault(); showLesson(a.dataset.l); setHash(a.dataset.l); toTop(); }));
 
   lessons.forEach((art, i) => {
     const nav = $('.cv-lnav', art);
@@ -95,7 +101,7 @@
   });
   document.addEventListener('click', e => {
     const g = e.target.closest('[data-go]');
-    if (g) { showLesson(g.dataset.go); setHash(g.dataset.go); $('.cv-tabs').scrollIntoView({ block: 'start', behavior: FUN.reduce ? 'auto' : 'smooth' }); return; }
+    if (g) { if (!panes.find(p => p.dataset.pane === 'learn' && !p.hidden)) { openTab('learn', g.dataset.go, true); return; } showLesson(g.dataset.go); setHash(g.dataset.go); toTop(); return; }
     const tg = e.target.closest('[data-tab-go]');
     if (tg) { openTab(tg.dataset.tabGo, null, true); return; }
     const lt = e.target.closest('.ld-t');
