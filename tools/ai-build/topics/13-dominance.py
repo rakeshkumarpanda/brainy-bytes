@@ -104,6 +104,16 @@ K.lesson('dse', 'The dominant strategy equilibrium', f'''
     '<p>Strategy proof mechanisms, where truth telling is dominant, include the Vickrey auction and its generalization VCG. The Gibbard Satterthwaite theorem limits them for voting, and work on large markets and approximate strategy proofness studies how close practical systems such as school choice can get.</p>')}
 ''', kw=['dominant strategy equilibrium', 'uniqueness proof', 'rationality theorem', 'beliefs', 'existence', 'invariance', 'strategy proof'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>A dominated strategy is never the right choice. This lesson adds a case the pure check misses and shows where dominance drives real systems.</p>
+{scene('the free umbrella', '<p>If carrying an umbrella costs nothing and keeps you dry when it rains, carrying it is at least as good as leaving it in every kind of weather, and strictly better when it rains. Leaving it is weakly dominated.</p>')}
+{steps('Work it out: domination by a mixture', ['Row payoffs against two columns: A (3, 0), B (0, 3), C (1, 1).', 'No pure strategy beats C in both columns: A loses to C in column 2, B loses in column 1.', 'Mix A and B with probability 0.5 each: (1.5, 1.5).', eq('1.5 > 1 in both columns, so C is strictly dominated by the mixture')])}
+{deep('the analysis', '<p>A strategy can survive every pure dominance check and still be dominated by a mixed strategy. A rational player never uses a strictly dominated strategy, and in two player games a strategy is never a best response to any belief exactly when it is strictly dominated, possibly by a mixture. This equivalence is the link between dominance and rationalisability.</p>')}
+{deep('the research view', '<p>Mechanism design builds rules where telling the truth is a dominant strategy, called dominant strategy incentive compatibility. The Vickrey-Clarke-Groves mechanism achieves it for efficient allocation, and variants run in online advertising and spectrum auctions.</p>')}
+{note('Strict and weak dominance behave differently. Removing weakly dominated strategies can remove equilibria and depends on the order of removal.', 'warn')}
+''', kw=['strict dominance', 'mixed strategy dominance', 'rationalisability', 'mechanism design', 'VCG'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'sᵢ strictly dominates s′ᵢ when', ['vᵢ(sᵢ, s₋ᵢ) > vᵢ(s′ᵢ, s₋ᵢ) for some s₋ᵢ', 'vᵢ(sᵢ, s₋ᵢ) > vᵢ(s′ᵢ, s₋ᵢ) for every s₋ᵢ', 'The other player prefers sᵢ', 'sᵢ has the largest single payoff'], 1,
        'Every situation.', 'Strict domination needs a strict win against every choice of the others.')

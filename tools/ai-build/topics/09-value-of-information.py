@@ -94,6 +94,16 @@ K.lesson('imperfect', 'Imperfect information and Bayes', f'''
     '<p>In active learning and Bayesian optimization, the next query is chosen to maximize expected information or knowledge gradient, a direct use of value of information. Exploration bonuses in reinforcement learning, such as information directed sampling, trade the value of information against the immediate regret.</p>')}
 ''', kw=['imperfect information', 'Bayes rule', 'posterior', 'forecast accuracy', 'Blackwell', 'value of sample information', 'active learning'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Information is worth paying for only if it can change what you do. This lesson computes that worth and shows why it is never negative.</p>
+{scene('a weather forecast before a picnic', '<p>An outdoor picnic is worth 100 if sunny and 0 if it rains. An indoor party is worth 60 whatever the weather. Rain has probability 0.3. How much should you pay for a perfect forecast?</p>')}
+{steps('Work it out: the value of perfect information', ['Without a forecast: outdoors gives 0.7 × 100 = 70, indoors 60. Choose outdoors, 70.', 'With a forecast: sunny (0.7) choose outdoors 100, rain (0.3) choose indoors 60.', 'Expected value with the forecast: 0.7 × 100 + 0.3 × 60 = 88.', eq('Value of perfect information = 88 − 70 = 18')])}
+{deep('the analysis', '<p>Information is never worth less than zero: with information you could always make the same choice as without it, so E[max<sub>a</sub> V(a | signal)] ≥ max<sub>a</sub> E[V(a | signal)]. The gap is zero exactly when the best action is the same for every signal. Imperfect information is valued the same way, with posterior probabilities from Bayes’ rule.</p>')}
+{deep('the research view', '<p>Active learning and Bayesian optimisation pick the next experiment or label by its expected value of information or information gain. AI assistants that ask a clarifying question before acting use the same calculation: ask only if the answer could change the action enough to repay the cost of asking.</p>')}
+{note('If every forecast would lead to the same choice, the forecast is worth 0 to you, however accurate it is.', 'warn')}
+''', kw=['value of information', 'perfect information', 'Bayes', 'active learning', 'clarifying questions'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'In the MBA example without information, which action is best?', ['Get the MBA, 9', 'Skip the MBA, 8', 'Indifferent', 'Ask the oracle'], 0,
        'Compare 9 and 8.', 'E[MBA] = 9 > E[no MBA] = 8.')

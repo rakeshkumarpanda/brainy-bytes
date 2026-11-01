@@ -99,6 +99,16 @@ K.lesson('pdf', 'Densities and continuous outcomes', f'''
     '<p>Distributional reinforcement learning (Bellemare, Dabney and Munos 2017) learns the whole return distribution, often through its quantile function, the inverse of the CDF, rather than only its mean. Risk sensitive policies then optimize a quantile or a tail measure such as CVaR.</p>')}
 ''', kw=['PDF', 'density', 'uniform', 'exponential', 'normal', 'stochastic dominance', 'continuous outcome'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>A lottery lists what can happen and how likely each outcome is. The cumulative distribution function packs the same information into one rising curve.</p>
+{scene('a cricket forecast', '<p>Before a match a forecaster says: win 0.6, draw 0.1, lose 0.3. That is a lottery over three outcomes. The probabilities add to 1, and a team choosing whether to declare early is really choosing between two such lotteries.</p>')}
+{steps('Work it out: the CDF of a fair die', ['X takes 1 to 6, each with probability 1/6.', 'F(x) = P(X ≤ x). F(3) = 3/6 = 0.5.', 'F(3.5) is still 0.5, because no outcome lies between 3 and 3.5.', eq('P(2 < X ≤ 5) = F(5) − F(2) = 5/6 − 2/6 = 0.5')])}
+{deep('the analysis', '<p>Every CDF is non-decreasing, right continuous, tends to 0 on the left and to 1 on the right, and P(a < X ≤ b) = F(b) − F(a). For a discrete lottery F is a staircase whose jumps are the probabilities. For a continuous one F is smooth and its slope is the density f = F′.</p>')}
+{deep('the research view', '<p>First order stochastic dominance compares whole distributions: if F<sub>A</sub>(x) ≤ F<sub>B</sub>(x) for every x, then every person who prefers more to less prefers A. Machine learning papers now use this test to compare the score distributions of models over many random seeds instead of comparing single averages (Dror et al. 2019, "Deep Dominance").</p>')}
+{note('A density can be larger than 1. The uniform density on [0, 0.5] equals 2. Only the area under it must be 1.', 'warn')}
+''', kw=['lottery', 'CDF', 'step function', 'stochastic dominance', 'model comparison'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'In a decision tree, what does nature stand for?', ['A second rational player', 'Randomness outside your control', 'The best action', 'The utility function'], 1,
        'Weather, markets, luck.', 'Nature picks an outcome at random with known probabilities.')

@@ -97,6 +97,16 @@ K.lesson('br', 'Best responses and unilateral deviation', f'''
     '<p>Multi agent reinforcement learning builds empirical normal form games from trained policies (PSRO, Lanctot et al. 2017) and computes best responses with RL. Epistemic game theory studies which solution concepts follow from which assumptions about knowledge and rationality.</p>')}
 ''', kw=['best response', 'unilateral deviation', 'self enforcing', 'extensive form', 'information set', 'dominance preview'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>A game in normal form is a table of payoffs for every combination of choices. The idea runs from two friends picking a restaurant to training generative networks.</p>
+{scene('two friends choosing a restaurant', '<p>Asha prefers the dosa place, Ben prefers the pizza place, but both would rather eat together than alone. Neither knows what the other picks. The outcome for each depends on both choices, which is what makes it a game rather than a single person decision.</p>')}
+{steps('Work it out: best responses in the restaurant game', ['Payoffs (Asha, Ben): both dosa (2, 1), both pizza (1, 2), apart (0, 0).', 'If Ben picks dosa, Asha’s best response is dosa (2 > 0). If Ben picks pizza, it is pizza (1 > 0).', 'Ben’s best responses mirror this.', eq('Two stable outcomes: both dosa and both pizza')])}
+{deep('the analysis', '<p>A normal form game is G = (N, (S<sub>i</sub>), (u<sub>i</sub>)): players, strategy sets and payoff functions. The table has ∏|S<sub>i</sub>| cells: three players with 2, 3 and 4 strategies give 24 strategy profiles, each with three payoffs. A profile is stable when no player gains by a unilateral deviation.</p>')}
+{deep('the research view', '<p>Generative adversarial networks are a two player game between a generator and a discriminator, and multi agent reinforcement learning trains many agents whose payoffs depend on each other. Nash (1950) proved that every finite game has an equilibrium in mixed strategies, but finding one is computationally hard in general (the PPAD class).</p>')}
+{note('Payoff pairs are written (row player, column player). Swapping them is the most common slip in exam tables.', 'warn')}
+''', kw=['normal form', 'best response', 'coordination game', 'GAN', 'multi-agent RL'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'A game is static when', ['All players act at the same clock time', 'No player sees another\'s actual choice before choosing', 'Payoffs do not change', 'There are two players'], 1,
        'Observation, not time.', 'Static is about what is observed, not about when actions happen.')

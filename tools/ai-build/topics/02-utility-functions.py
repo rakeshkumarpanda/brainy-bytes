@@ -102,6 +102,16 @@ K.lesson('existence', 'When does a utility function exist?', f'''
     '<p>In learning from human feedback, a reward model is a learned utility over outputs fitted to pairwise comparisons, for example with the Bradley Terry model. Intransitive human judgments then show up as label noise that no single scalar reward can fit.</p>')}
 ''', kw=['existence theorem', 'proof by construction', 'top ranked', 'indifference class', 'n factorial', 'lexicographic', 'Debreu'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>A utility function is a score that reproduces a ranking. Here the same idea is followed from star ratings to the reward models used to train chat assistants.</p>
+{scene('star ratings for restaurants', '<p>A food app gives restaurant A 3 stars, C 2 stars and B 1 star. If the app doubled every rating and added 5 (11, 9 and 7), your choice would not change, because only the order matters for picking the best. That is the meaning of ordinal utility: any strictly increasing change of the numbers describes the same preferences.</p>')}
+{steps('Work it out: which changes keep the same ranking?', ['u(A) = 3, u(C) = 2, u(B) = 1.', 'v = 2u + 5 gives 11, 9, 7: same order. w = u² gives 9, 4, 1: same order, since all values are positive.', 'z = −u gives −3, −2, −1: the order is reversed.', eq('Any strictly increasing function keeps the ranking, a decreasing one reverses it')])}
+{deep('the analysis', '<p>A utility function always exists on a finite or countable set of options with complete and transitive preferences. On an uncountable set it can fail. The lexicographic order on pairs (x, y), compare x first and use y only to break ties, has no utility function: each x would need its own interval of utility values with no overlap, and the real line cannot hold uncountably many disjoint intervals that each contain a rational number. Debreu (1954) showed that adding continuity of preferences restores existence.</p>')}
+{deep('the research view', '<p>The Bradley and Terry model turns utilities into choice probabilities: P(a chosen over b) = e<sup>u(a)</sup> ÷ (e<sup>u(a)</sup> + e<sup>u(b)</sup>). With u(a) = 2 and u(b) = 1 this gives 0.731. Reinforcement learning from human feedback trains a reward model exactly this way from pairwise human preferences, then optimises a language model against that learned utility.</p>')}
+{note('With ordinal utility, differences mean nothing. u(A) − u(B) = 2 does not say A is liked twice as much as some other pair with difference 1.', 'warn')}
+''', kw=['ordinal utility', 'increasing transformation', 'lexicographic', 'Bradley-Terry', 'reward model'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'u represents ⪰ when', ['x ⪰ y ⟺ u(x) = u(y)', 'x ⪰ y ⟺ u(x) ≥ u(y)', 'u is measured in money', 'u is always positive'], 1,
        'Bigger means at least as good.', 'Weak preference corresponds to ≥. Equality is only for indifference.')
