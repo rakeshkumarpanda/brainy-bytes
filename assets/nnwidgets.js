@@ -43,10 +43,18 @@
     if (o.zero) { x0 = Math.min(x0, 0); x1 = Math.max(x1, 0); y0 = Math.min(y0, 0); y1 = Math.max(y1, 0); }
     const px = (x1 - x0) * 0.15 || 1, py = (y1 - y0) * 0.15 || 1;
     const m = D.axes(g, z, box, [x0 - px, x1 + px], [y0 - py, y1 + py], { nx: 2, ny: 2, fx: v => fmt(v, 1), fy: v => fmt(v, 1) });
+    const placed = [];
     pts.forEach((p, i) => {
       const c = (o.colors && o.colors[i]) || z.col.cv;
       D.circle(g, m.sx(p[0]), m.sy(p[1]), o.r || 5, { fill: c });
-      if (labels) D.text(g, labels[i], m.sx(p[0]) + 7, m.sy(p[1]) - 6, { s: 12, b: true, c: z.col.ink });
+      if (!labels) return;
+      /* move a label down or up until it does not cover an earlier one */
+      const w = tw(g, labels[i], { s: 12, b: true }), x = m.sx(p[0]) + 7;
+      let y = m.sy(p[1]) - 6;
+      const hit = yy => placed.some(r => x < r[0] + r[2] && x + w > r[0] && yy - 11 < r[1] && yy + 2 > r[1] - 13);
+      for (let k = 1; k < 8 && hit(y); k++) y = m.sy(p[1]) - 6 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 13;
+      placed.push([x, y, w]);
+      D.text(g, labels[i], x, y, { s: 12, b: true, c: z.col.ink });
     });
     return m;
   }
@@ -735,7 +743,7 @@
       { t: 'The paper values x_max = 100 and α = 0.75. A pair seen 20 times gets weight 0.30, a pair seen 500 times is capped at 1.', set: { xmax: 100, alpha: 0.75, x: 20 } },
       { t: 'The notebook used x_max = 10. Most counts in a tiny corpus are below 10, so most pairs get less than full weight.', set: { xmax: 10, x: 2 } },
       { t: 'α = 1 makes f a straight ramp, α below 1 lifts small counts. Compare the curve at x = 5.', set: { alpha: 1, x: 5 } },
-      { t: 'Read the ratio bars: solid is about 8.9 (an ice word), gas about 0.085 (a steam word), water and fashion near 1 (no help telling them apart).', set: { xmax: 100 } }
+      { t: 'Read the ratio bars: solid is about 8.6 with these rounded numbers (8.9 in the paper), gas about 0.085 (a steam word), water and fashion near 1 (no help telling them apart).', set: { xmax: 100 } }
     ],
     draw(z) {
       const { g, p } = z;
@@ -837,6 +845,85 @@
       const shared = G.filter(t => O.has(t)).length;
       D.text(g, `shared with "${o}": ${shared}`, 16, Math.min(y + 18, 280), { s: 12.5, b: true, c: z.col.cv });
       return `v(${esc(w)}) = v<sub>word</sub> + ∑ z<sub>g</sub> over its ${G.length} n-grams. Shared pieces (filled) give related words related vectors, and an out of vocabulary word still gets a vector.`;
+    }
+  });
+
+  def('debias', {
+    title: 'Neutralise a bias direction',
+    sub: 'The bias direction g is the unit vector from one word of a pair to the other. Neutralising removes the part of a word that lies along g.',
+    W: 560, H: 320,
+    params: [
+      { k: 'vocab', label: 'Toy 2D vectors, "word x y" per line', type: 'area', v: 'he 0 -1\nshe 0 1\nprogrammer 3 -0.8\nhomemaker 3 0.9\nnurse 2 1.2\ndoctor 2.5 -0.6' },
+      { k: 'a', label: 'Pair word 1', type: 'text', v: 'he' },
+      { k: 'b', label: 'Pair word 2', type: 'text', v: 'she' },
+      { k: 'words', label: 'Words that should be neutral (comma separated)', type: 'text', v: 'programmer, homemaker, nurse, doctor' },
+      { k: 'amt', label: 'How much of the bias part to remove', v: 0, min: 0, max: 1, step: 0.05 }
+    ],
+    tips: [
+      { t: 'Slide the amount from 0 to 1. Each neutral word moves straight across until it sits on the line through the origin at right angles to g.', set: { amt: 1 } },
+      { t: 'At amount 0 the projection of programmer on g is −0.8 and of homemaker +0.9: the stereotype from the slide.', set: { amt: 0 } },
+      { t: 'Half way: the bias part is halved. Bolukbasi and others remove all of it (amount 1) and then equalise pairs such as he and she.', set: { amt: 0.5 } },
+      { t: 'Use a pair that is not exactly vertical. g is still the unit difference, so the arrows follow its direction.', set: { vocab: 'man 0.2 -1\nwoman -0.3 1\nengineer 3 -0.5\nreceptionist 2.6 1.1', a: 'man', b: 'woman', words: 'engineer, receptionist', amt: 1 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const V = rows(p.vocab).map(l => { const t = l.split(/\s+/); return [t[0], [+t[1], +t[2]]]; }).filter(v => isFinite(v[1][0]) && isFinite(v[1][1]));
+      const get = w => V.find(v => v[0] === String(w).trim());
+      const A = get(p.a), B = get(p.b);
+      if (!A || !B) return 'Type two pair words that are in the list.';
+      const d = [B[1][0] - A[1][0], B[1][1] - A[1][1]], n = norm(d) || 1, gd = [d[0] / n, d[1] / n];
+      const neutral = String(p.words).split(',').map(s => s.trim()).filter(Boolean);
+      const moved = V.map(([w, v]) => {
+        if (!neutral.includes(w)) return [w, v, v, 0];
+        const pr = dot(v, gd);
+        return [w, v, [v[0] - p.amt * pr * gd[0], v[1] - p.amt * pr * gd[1]], pr];
+      });
+      const m = scatter(g, z, [52, 14, 290, 280], moved.map(r => r[2]), moved.map(r => r[0]), { zero: true, colors: moved.map(r => neutral.includes(r[0]) ? z.col.cv : z.col.purple) });
+      const L = 50;
+      g.save(); g.beginPath(); g.rect(52, 14, 290, 280); g.clip();
+      D.line(g, m.sx(-gd[1] * -L), m.sy(-gd[0] * L), m.sx(-gd[1] * L), m.sy(gd[0] * L), z.col.ink2, 1.2, [5, 4]);
+      g.restore();
+      D.arrow(g, m.sx(0), m.sy(0), m.sx(gd[0]), m.sy(gd[1]), z.col.orange, 2.5);
+      moved.forEach(r => { if (neutral.includes(r[0]) && p.amt > 0) D.line(g, m.sx(r[1][0]), m.sy(r[1][1]), m.sx(r[2][0]), m.sy(r[2][1]), z.col.ink2, 1, [3, 3]); });
+      const lx = 410;
+      D.text(g, 'g = ' + vstr(gd, 2), lx, 30, { s: 12.5, mono: true, b: true, c: z.col.orange });
+      D.text(g, 'along g: before, after', lx, 58, { s: 11.5, b: true, c: z.col.ink2 });
+      moved.filter(r => neutral.includes(r[0])).slice(0, 8).forEach((r, i) => { const t = `${r[0]} ${f2(r[3], 2)}, ${f2(r[3] * (1 - p.amt), 2)}`; D.text(g, t, lx, 80 + i * 20, { s: fit(g, t, 144, 11.5), mono: true, c: z.col.ink }); });
+      return `Neutralise: v′ = v − (v·g)g. With the full amount every listed word has 0 along g, so "${esc(p.a)}" and "${esc(p.b)}" are equally far from it.`;
+    }
+  });
+
+  def('crossling', {
+    title: 'Align two languages with one rotation',
+    sub: 'English points (orange) and Spanish points (purple) have the same shape but a different orientation. Turn the English space until the pairs meet.',
+    W: 560, H: 320,
+    params: [
+      { k: 'theta', label: 'Rotation of the English space (degrees)', v: 0, min: -180, max: 180 },
+      { k: 'noise', label: 'How different the two shapes are', v: 0.1, min: 0, max: 1, step: 0.05 },
+      { k: 'pairs', label: 'Pairs, "english spanish x y" (English coordinates)', type: 'area', v: 'dog perro 1 0\ncat gato 0.8 0.6\nhouse casa -0.5 1\nwater agua -1 -0.4\nsun sol 0.2 -1' },
+      { k: 'true', label: 'Real rotation between the spaces (degrees)', v: 90, min: -180, max: 180 }
+    ],
+    tips: [
+      { t: 'Turn the slider to 90 degrees. All five pairs meet and the mean distance drops to almost 0.', set: { theta: 90, noise: 0.1 } },
+      { t: 'Raise the difference to 0.6. Even at the best angle the pairs do not meet exactly, as with real languages whose spaces are only roughly the same shape.', set: { theta: 90, noise: 0.6 } },
+      { t: 'Start far off at −90 degrees. The distance is largest when the spaces point opposite ways.', set: { theta: -90, noise: 0.1 } }
+    ],
+    draw(z) {
+      const { g, p } = z;
+      const P = rows(p.pairs).map(l => l.split(/\s+/)).filter(t => t.length >= 4 && isFinite(+t[2]) && isFinite(+t[3])).map(t => [t[0], t[1], [+t[2], +t[3]]]);
+      if (!P.length) return 'Add some pairs.';
+      const rot = (v, a) => { const r = a * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return [c * v[0] - s * v[1], s * v[0] + c * v[1]]; };
+      const R = rng(7);
+      const es = P.map(q => rot(q[2], p.theta));
+      const sp = P.map(q => { const v = rot(q[2], p.true); return [v[0] + p.noise * 0.4 * gauss(R), v[1] + p.noise * 0.4 * gauss(R)]; });
+      const m = scatter(g, z, [52, 14, 300, 280], es.concat(sp), P.map(q => q[0]).concat(P.map(q => q[1])), { zero: true, colors: es.map(() => z.col.cv).concat(sp.map(() => z.col.purple)) });
+      es.forEach((v, i) => D.line(g, m.sx(v[0]), m.sy(v[1]), m.sx(sp[i][0]), m.sy(sp[i][1]), z.col.ink2, 1, [3, 3]));
+      const dist = es.reduce((s, v, i) => s + norm([v[0] - sp[i][0], v[1] - sp[i][1]]), 0) / P.length;
+      const lx = 400;
+      D.text(g, `rotation ${p.theta}°`, lx, 34, { s: 13, b: true, c: z.col.ink });
+      D.text(g, `mean pair distance`, lx, 62, { s: 12, b: true, c: z.col.ink2 });
+      D.text(g, f2(dist, 3), lx, 84, { s: 18, mono: true, b: true, c: dist < 0.2 ? z.col.cv : z.col.orange });
+      return `The mapping W is a rotation, W<sup>T</sup>W = I. With a dictionary it has a closed form (orthogonal Procrustes: W = UV<sup>T</sup> from the SVD of YX<sup>T</sup>). Without one, identical strings or adversarial training find it.`;
     }
   });
 

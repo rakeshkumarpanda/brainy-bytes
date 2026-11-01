@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skip-gram with negative sampling · Natural Language Processing</title>
+<meta name="description" content="Why the softmax denominator is too costly, binary logistic regressions on true and noise pairs, the J_neg objective and its gradients, the unigram distribution to the power 3/4, the 44 sigmoid question, the negative sampling notebook and the shifted PMI view.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/nlp.css">
+</head>
+<body class="cvp nlpp">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=nlp&amp;p=nlp">Natural Language Processing learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=nlp&amp;p=nlp" target="_top">Natural Language Processing</a><span>›</span><span>NLP</span><span>›</span><span>Step 2: Word vectors</span><span>›</span><span>Negative sampling</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 3 of 3 · College</div>
+    <h1>Skip-gram with negative sampling</h1>
+    <p class="lead">Skip the expensive softmax: score the true pair against a few random noise words with sigmoids, pick the noise with U(w) to the 3/4, and rerun the class notebook.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">3 animations</span><span class="cv-chip">5 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">3 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#negative-sampling" data-topic="cheatsheet" data-h="negative-sampling">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#why" data-l="why"><span class="n">1</span><span class="t">The expensive denominator</span></a></li><li><a href="#objective" data-l="objective"><span class="n">2</span><span class="t">The negative sampling objective</span></a></li><li><a href="#sampling" data-l="sampling"><span class="n">3</span><span class="t">Which words to use as noise: U(w) to the 3/4</span></a></li><li><a href="#notebook" data-l="notebook"><span class="n">4</span><span class="t">The negative sampling notebook</span></a></li></ol>
+    <article class="cv-lesson" id="why" data-l="why" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>The expensive denominator</h2>
+<p>The softmax of chapter 2.2 divides by a sum over every word of the vocabulary, maybe 100,000 words. Every single update pays for 100,000 dot products and exponentials. That is far too slow. Standard word2vec therefore trains skip-gram with negative sampling instead.</p>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>The costly part</span></div><div class="fx-b">P(o | c) = <span class="fr"><span>exp(u<sub>o</sub>·v<sub>c</sub>)</span><span>∑<sub>w ∈ V</sub> exp(u<sub>w</sub>·v<sub>c</sub>)</span></span></div><div class="fx-n">The denominator sums over all words in the vocabulary.</div></div></div>
+<p>The main idea is to train binary logistic regressions. One classifier step asks "is this a real pair seen in the text?" for the true pair (centre, context), and several noise pairs (the centre word with random words) are asked the same question with the answer no.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Pair</th><th>Label</th><th>Training pushes</th></tr></thead><tbody><tr><td>(cat, sat)</td><td>real, 1</td><td>cat and sat closer</td></tr><tr><td>(cat, the)</td><td>real, 1</td><td>closer</td></tr><tr><td>(cat, apple)</td><td>noise, 0</td><td>cat and apple apart</td></tr><tr><td>(cat, car)</td><td>noise, 0</td><td>apart</td></tr><tr><td>(cat, quickly)</td><td>noise, 0</td><td>apart</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: learning to spot a friend in a crowd</div><p>To learn your best friend’s face you do not need to compare it with every person on Earth. A few random strangers at a time are enough: "this is my friend, those are not". Negative sampling teaches the model the same way, with a handful of random words instead of the whole vocabulary.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="objective" data-l="objective" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>The negative sampling objective</h2>
+<p>Mikolov and others (2013) replace the softmax with sigmoids. For a true pair we want σ(u<sub>o</sub>·v<sub>c</sub>) close to 1. For each of K noise words drawn from a distribution P<sub>n</sub> we want σ(u<sub>k</sub>·v<sub>c</sub>) close to 0, which is the same as σ(−u<sub>k</sub>·v<sub>c</sub>) close to 1.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Loss for one pair</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">J<sub>neg</sub>(o, v<sub>c</sub>, U) = −log σ(u<sub>o</sub>·v<sub>c</sub>) − ∑<sub>k=1</sub><sup>K</sup> log σ(−u<sub>k</sub>·v<sub>c</sub>)</div><div class="fx-n">First term: make the real pair likely. Second: make each noise pair unlikely.</div></div><div class="fx"><div class="fx-h"><span>Symmetry of the sigmoid</span></div><div class="fx-b">σ(−x) = 1 − σ(x)</div><div class="fx-n">So log σ(−u<sub>k</sub>·v<sub>c</sub>) = log(1 − σ(u<sub>k</sub>·v<sub>c</sub>)).</div></div><div class="fx fx-key"><div class="fx-h"><span>Gradients</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><span class="fr"><span>∂J</span><span>∂v<sub>c</sub></span></span> = (σ(u<sub>o</sub>·v<sub>c</sub>) − 1)u<sub>o</sub> + ∑<sub>k</sub> σ(u<sub>k</sub>·v<sub>c</sub>)u<sub>k</sub>, &nbsp; <span class="fr"><span>∂J</span><span>∂u<sub>k</sub></span></span> = σ(u<sub>k</sub>·v<sub>c</sub>)v<sub>c</sub></div><div class="fx-n">Each term is (prediction − label) × the other vector. Only 1 + K output vectors change.</div></div></div>
+<div class="cvz" data-viz="sgns"></div>
+<div class="cv-code" data-k="loss"></div>
+<div class="walk"><div class="walk-h"><span>Lecture 5 question: how many sigmoids per centre word?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Window 2 on each side, the full window used: 4 context words.</li><li>For each context word: 1 positive pair and K = 10 negative pairs, so 11 sigmoids.</li><li>A student answered 11 at first. That counts one context word only.</li><li><span class="eq">11 × 4 = 44 sigmoid computations for one centre word occurrence</span></li></ol></div>
+<div class="note note-exam"><b>In the exam</b><div>Count positives and negatives per context word, then multiply by the number of context words. Read whether the question gives K per pair or per centre word.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sampling" data-l="sampling" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Which words to use as noise: U(w) to the 3/4</h2>
+<p>U(w) is the unigram distribution, how often each word appears in the corpus. Sampling negatives straight from U(w) would mostly pick "the" and "of". Those words appear in almost every context, so they teach the model little. Raising U(w) to the power 3/4 reshapes the distribution: common words drop a little and rare words rise.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Noise distribution</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">P<sub>n</sub>(w) = <span class="fr"><span>U(w)<sup>3/4</sup></span><span>∑<sub>w′</sub> U(w′)<sup>3/4</sup></span></span></div><div class="fx-n">α = 3/4 was found to work best. α = 1 is the raw unigram, α = 0 is uniform.</div></div></div>
+<div class="cvz" data-viz="negsample"></div>
+<div class="cv-code" data-k="dist"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Word</th><th>Count</th><th>U(w)</th><th>P<sub>n</sub>(w)</th></tr></thead><tbody><tr><td>the</td><td>1000</td><td>0.6002</td><td>0.5409</td></tr><tr><td>of</td><td>600</td><td>0.3601</td><td>0.3687</td></tr><tr><td>bank</td><td>40</td><td>0.0240</td><td>0.0484</td></tr><tr><td>river</td><td>20</td><td>0.0120</td><td>0.0288</td></tr><tr><td>skillet</td><td>5</td><td>0.0030</td><td>0.0102</td></tr><tr><td>aardvark</td><td>1</td><td>0.0006</td><td>0.0030</td></tr></tbody></table></div>
+<details class="deep"><summary>Going deeper: what negative sampling really optimises</summary><div class="deep-b"><p>Negative sampling is a simplified form of noise contrastive estimation. NCE would recover the true softmax probabilities, while negative sampling drops the correction term and only learns good vectors. Levy and Goldberg (2014) showed that at its optimum u<sub>o</sub>·v<sub>c</sub> = PMI(o, c) − log K, so the dot product estimates how much more often the two words co-occur than chance, shifted by log K. The 3/4 power smooths the PMI, which reduces its well known bias toward rare words.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="notebook" data-l="notebook" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>The negative sampling notebook</h2>
+<p>The second notebook keeps the five sentences, window 1, d = 3, η = 0.05 and 500 epochs, and adds K = 3 negatives per positive pair drawn from counts<sup>0.75</sup>. It never uses the true context word as noise. With this objective cats and dogs become the closest pair, cosine 0.98, because they share like, chase and milk contexts.</p>
+<div class="cv-code"><div class="cc-bar"><span class="lbl">Negative_samples.ipynb, the sampling and training cells (plotting trimmed)</span></div><pre class="cc-src"><span class="ln">counts = np.zeros(V)</span><span class="ln">for sentence in sentences:</span><span class="ln">    for word in sentence:</span><span class="ln">        counts[word_to_id[word]] += 1</span><span class="ln">neg_probs = counts ** 0.75                     # standard word2vec sampling distribution</span><span class="ln">neg_probs = neg_probs / neg_probs.sum()</span><span class="ln"></span><span class="ln">def sample_negatives(context, K):</span><span class="ln">    negatives = []</span><span class="ln">    while len(negatives) &lt; K:</span><span class="ln">        w = np.random.choice(V, p=neg_probs)</span><span class="ln">        if w != context:                       # never use the true context word as noise</span><span class="ln">            negatives.append(w)</span><span class="ln">    return negatives</span><span class="ln"></span><span class="ln">for epoch in range(epochs):</span><span class="ln">    for center, context in pairs:</span><span class="ln">        h = E[center]</span><span class="ln">        targets = [context] + sample_negatives(context, K)</span><span class="ln">        labels = [1] + [0] * K</span><span class="ln">        for t, label in zip(targets, labels):</span><span class="ln">            score = sigmoid(h @ W[t])</span><span class="ln">            g = score - label                  # sigmoid output minus label</span><span class="ln">            grad_h += g * W[t]</span><span class="ln">            W[t] -= learning_rate * g * h</span><span class="ln">        E[center] -= learning_rate * grad_h</span></pre><div class="cc-cap">Output recorded in the class notebook</div><pre class="cc-out">Number of positive pairs: 20
+Learned word embeddings:
+balls [ 4.543 -1.73   0.464]
+cats [ 0.719 -1.73   0.492]
+chase [1.838 1.247 1.484]
+dogs [ 1.724 -2.477  0.866]
+drink [-0.401  0.347  2.883]
+like [-0.332  0.468  2.046]
+milk [-0.123 -3.174  1.823]
+Words similar to cats: [(&#x27;dogs&#x27;, 0.979), (&#x27;milk&#x27;, 0.888), (&#x27;balls&#x27;, 0.686)]
+Words similar to dogs: [(&#x27;cats&#x27;, 0.979), (&#x27;balls&#x27;, 0.817), (&#x27;milk&#x27;, 0.803)]</pre></div>
+<div class="cvz" data-viz="w2vtrain" data-cfg="{&quot;mode&quot;: &quot;neg&quot;}"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Notebook run</th><th>Nearest to cats</th><th>Nearest to dogs</th></tr></thead><tbody><tr><td>Full softmax</td><td>milk 0.577, dogs 0.483</td><td>balls 0.634, cats 0.483</td></tr><tr><td>Negative sampling, K = 3</td><td>dogs 0.979, milk 0.888</td><td>cats 0.979, balls 0.817</td></tr></tbody></table></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Instead of comparing a word with every other word, we compare it with its real neighbour and a few random words. That is much faster and still teaches which words belong together.</p></div><div class="ld-p" data-ld="college" hidden><p>Each positive pair becomes 1 + K logistic regression examples. The cost per pair drops from V dot products to K + 1, so training scales to billions of words.</p></div><div class="ld-p" data-ld="masters" hidden><p>The class question "should the clusters be the same with and without negative sampling?" has the answer no in general. The two objectives have different optima: softmax models P(o | c), negative sampling models shifted PMI, and a tiny corpus with random initialisation amplifies the difference.</p></div><div class="ld-p" data-ld="research" hidden><p>Contrastive learning with sampled negatives is now everywhere: sentence embeddings, CLIP for images and text, retrieval models. The choice of negatives (random, in batch, hard negatives) is a research topic of its own.</p></div></div>
+<div class="note note-tip"><b>Remember</b><div>Stop words such as "the" are still used as positive pairs when they appear in the window. They are only down weighted as negatives. This was asked in class.</div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./word2vec-skipgram.html" data-topic="nn-word2vec"><small>Previous topic</small><b>Word2vec skip-gram</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "negative-sampling", "topic": "nn-negative-sampling", "subject": "nlp", "title": "Skip-gram with negative sampling", "codes": {"dist": {"src": "# The negative sampling distribution of the notebook: counts ** 0.75, normalised\ncounts = {\"balls\": 2, \"cats\": 3, \"chase\": 2, \"dogs\": 2, \"drink\": 1, \"like\": 2, \"milk\": 3}\ntotal = sum(counts.values())\npowered = {w: c ** 0.75 for w, c in counts.items()}\nZ = sum(powered.values())\nfor w in counts:\n    print(w.ljust(6), \"U =\", round(counts[w] / total, 4), \" Pn =\", round(powered[w] / Z, 4))", "stdin": "", "out": "balls  U = 0.1333  Pn = 0.1369\ncats   U = 0.2  Pn = 0.1855\nchase  U = 0.1333  Pn = 0.1369\ndogs   U = 0.1333  Pn = 0.1369\ndrink  U = 0.0667  Pn = 0.0814\nlike   U = 0.1333  Pn = 0.1369\nmilk   U = 0.2  Pn = 0.1855"}, "loss": {"src": "# Negative sampling loss for one true pair and three noise words\nimport math\nsig = lambda x: 1 / (1 + math.exp(-x))\npos = 1.0                      # u_o . v_c for the true context word\nnegs = [0.5, -1.0, 2.0]        # u_k . v_c for K = 3 noise words\n\nJ = -math.log(sig(pos))\nfor s in negs:\n    J += -math.log(sig(-s))\nprint(\"terms:\", round(-math.log(sig(pos)), 4), [round(-math.log(sig(-s)), 4) for s in negs])\nprint(\"J_neg =\", round(J, 4))", "stdin": "", "out": "terms: 0.3133 [0.9741, 0.3133, 2.1269]\nJ_neg = 3.7275"}}, "quiz": [{"lv": "e", "q": "Negative sampling replaces the softmax with", "o": ["ReLU", "sigmoids", "tanh", "a decision tree"], "a": 1, "hint": "Binary decisions.", "why": "Each pair is a yes or no question answered by a sigmoid."}, {"lv": "e", "q": "A negative sample is", "o": ["a word with a negative vector", "the centre word paired with a random word", "a misspelled word", "a stop word removed from the text"], "a": 1, "hint": "Noise pair.", "why": "A random word that is not the true context."}, {"lv": "e", "q": "For a true pair the model wants σ(u<sub>o<\/sub>·v<sub>c<\/sub>) to be close to", "o": ["0", "0.5", "1", "−1"], "a": 2, "hint": "Label 1.", "why": "Real pairs should look real."}, {"lv": "e", "q": "The power used on the unigram distribution in word2vec is", "o": ["1/2", "3/4", "1", "2"], "a": 1, "hint": "Notebook: counts ** 0.75.", "why": "α = 0.75."}, {"lv": "m", "q": "Why not sample negatives from the raw unigram distribution?", "o": ["It is not normalised", "It mostly picks very frequent words like \"the\", which are not informative", "It never picks frequent words", "It is too slow to compute"], "a": 1, "hint": "Slide 29.", "why": "Frequent words appear everywhere and teach little."}, {"lv": "m", "q": "σ(−x) equals", "o": ["−σ(x)", "1 − σ(x)", "σ(x)²", "1 ÷ σ(x)"], "a": 1, "hint": "Symmetry.", "why": "That is why the noise term uses σ(−u<sub>k<\/sub>·v<sub>c<\/sub>)."}, {"lv": "m", "q": "With K negatives, how many output vectors change per pair?", "o": ["1", "K", "K + 1", "V"], "a": 2, "hint": "The true one plus the noise.", "why": "Only the vectors that appear in the loss get gradients."}, {"lv": "m", "q": "Raising α from 0.75 to 1 makes rare words", "o": ["more likely as negatives", "less likely as negatives", "impossible", "unchanged"], "a": 1, "hint": "α = 1 is the raw distribution.", "why": "The 0.75 power lifted them, α = 1 removes the lift."}, {"lv": "h", "q": "Lecture 5: window 2, K = 10, full window. Sigmoids per centre word occurrence?", "o": ["11", "14", "40", "44"], "a": 3, "hint": "Per context word: 1 + K.", "why": "(1 + 10) × 4 = 44."}, {"lv": "h", "q": "In the notebook, cats and dogs became nearest neighbours only with negative sampling. The best explanation is", "o": ["a bug in the softmax run", "the two objectives have different optima and the corpus is tiny", "negative sampling always clusters animals", "the seed was different"], "a": 1, "hint": "Same data, different loss.", "why": "Softmax models probabilities, negative sampling models shifted PMI."}, {"lv": "h", "q": "The gradient of J<sub>neg<\/sub> for a noise vector u<sub>k<\/sub> is", "o": ["−v<sub>c<\/sub>", "σ(u<sub>k<\/sub>·v<sub>c<\/sub>) v<sub>c<\/sub>", "(σ − 1) u<sub>k<\/sub>", "0"], "a": 1, "hint": "Prediction minus label 0.", "why": "d/du<sub>k<\/sub> of −log σ(−u<sub>k<\/sub>·v<sub>c<\/sub>) = σ(u<sub>k<\/sub>·v<sub>c<\/sub>)v<sub>c<\/sub>."}, {"lv": "x", "q": "At its optimum, skip-gram with negative sampling makes u<sub>o<\/sub>·v<sub>c<\/sub> equal", "o": ["log P(o)", "PMI(o, c) − log K", "the co-occurrence count", "0"], "a": 1, "hint": "Levy and Goldberg 2014.", "why": "The dot product estimates shifted pointwise mutual information."}], "calc": [{"lv": "e", "q": "Window 2 (4 context words) and K = 10. How many sigmoid computations per centre word?", "ans": "44", "hint": "(1 + K) per context word.", "steps": ["Per context word: 1 positive + 10 negative = 11.", "4 context words.", "<span class=\"eq\">11 × 4 = 44<\/span>"], "tol": 1e-09}, {"lv": "e", "q": "σ(1) to four decimals.", "ans": "0.7311", "hint": "1 ÷ (1 + e<sup>−1<\/sup>).", "steps": ["e<sup>−1<\/sup> = 0.36788.", "1 ÷ 1.36788.", "<span class=\"eq\">0.7311<\/span>"], "tol": 5e-05}, {"lv": "e", "q": "The notebook corpus has 15 tokens and \"drink\" appears once. What is U(drink)? Four decimals.", "ans": "0.0667", "hint": "count ÷ total.", "steps": ["count = 1.", "total = 15.", "<span class=\"eq\">1 ÷ 15 = 0.0667<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "With counts^0.75 on the notebook counts (2, 3, 2, 2, 1, 2, 3), what is P<sub>n<\/sub>(drink)? Four decimals.", "ans": "0.0814", "hint": "1 ÷ ∑ c^0.75.", "steps": ["2<sup>0.75<\/sup> = 1.6818 (four words), 3<sup>0.75<\/sup> = 2.2795 (two words), 1<sup>0.75<\/sup> = 1.", "Sum = 4 × 1.6818 + 2 × 2.2795 + 1 = 12.286.", "<span class=\"eq\">1 ÷ 12.286 = 0.0814<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "True score 1.0 and noise scores 0.5, −1, 2. What is J<sub>neg<\/sub>? Four decimals.", "ans": "3.7275", "hint": "Sum −log σ(pos) and −log σ(−neg).", "steps": ["−log σ(1) = 0.3133.", "Noise terms: −log σ(−0.5) = 0.9741, −log σ(1) = 0.3133, −log σ(−2) = 2.1269.", "<span class=\"eq\">J = 0.3133 + 0.9741 + 0.3133 + 2.1269 = 3.7275<\/span>"], "tol": 0.0005}, {"lv": "m", "q": "A well trained pair: true score 4, three noise scores −3. J<sub>neg<\/sub>? Four decimals.", "ans": "0.1639", "hint": "−log σ(4) − 3 log σ(3).", "steps": ["σ(4) = 0.98201, −ln = 0.01815.", "σ(3) = 0.95257, −ln = 0.04859, three times 0.14577.", "<span class=\"eq\">J = 0.1639<\/span>"], "tol": 0.0005}, {"lv": "m", "q": "Notebook: 20 positive pairs and K = 3. How many noise pairs per epoch?", "ans": "60", "hint": "K per positive pair.", "steps": ["Each positive pair draws 3 negatives.", "20 pairs.", "<span class=\"eq\">60 noise pairs, 80 sigmoid terms in total<\/span>"], "tol": 1e-09}, {"lv": "h", "q": "v<sub>c<\/sub> = (1, 0), u<sub>o<\/sub> = (1, 1), noise u₁ = (0, 1), u₂ = (−1, 0). First component of ∂J/∂v<sub>c<\/sub>. Four decimals.", "ans": "-0.5379", "hint": "(σ(u<sub>o<\/sub>·v<sub>c<\/sub>) − 1)u<sub>o<\/sub> + ∑ σ(u<sub>k<\/sub>·v<sub>c<\/sub>)u<sub>k<\/sub>.", "steps": ["Scores: u<sub>o<\/sub>·v<sub>c<\/sub> = 1, u₁·v<sub>c<\/sub> = 0, u₂·v<sub>c<\/sub> = −1.", "σ values 0.7311, 0.5, 0.2689.", "<span class=\"eq\">(0.7311 − 1) × 1 + 0.5 × 0 + 0.2689 × (−1) = −0.5379<\/span>"], "tol": 5e-05}, {"lv": "h", "q": "Same setup, second component of ∂J/∂v<sub>c<\/sub>. Four decimals.", "ans": "0.2311", "hint": "Use the second coordinates.", "steps": ["(0.7311 − 1) × 1 = −0.2689.", "0.5 × 1 = 0.5, 0.2689 × 0 = 0.", "<span class=\"eq\">−0.2689 + 0.5 = 0.2311<\/span>"], "tol": 5e-05}, {"lv": "h", "q": "V = 100,000 and K = 5. How many times fewer output scores per pair than the full softmax? Whole number.", "ans": "16667", "hint": "V ÷ (K + 1).", "steps": ["Full softmax: 100,000 scores.", "Negative sampling: 1 + 5 = 6 scores.", "<span class=\"eq\">100,000 ÷ 6 ≈ 16,667<\/span>"], "tol": 0.5}, {"lv": "x", "q": "Counts the = 1000, aardvark = 1 (plus others). How much bigger is the ratio P<sub>n<\/sub>(aardvark) ÷ P<sub>n<\/sub>(the) than U(aardvark) ÷ U(the)? One decimal.", "ans": "5.6", "hint": "Compare 1000<sup>−0.75<\/sup> with 1000<sup>−1<\/sup>.", "steps": ["Raw ratio 1 ÷ 1000.", "Powered ratio 1 ÷ 1000<sup>0.75<\/sup> = 1 ÷ 177.8.", "<span class=\"eq\">1000 ÷ 177.8 = 1000<sup>0.25<\/sup> = 5.6 times more chance for the rare word<\/span>"], "tol": 0.06}], "assign": [{"id": "pn", "lv": "e", "title": "The noise distribution", "task": "<p>Write <code>noise_dist(counts, alpha)<\/code> where counts is a dict from word to count. Return a dict from word to P<sub>n<\/sub>(w) = c<sup>α<\/sup> ÷ ∑ c<sup>α<\/sup>, rounded to 4 decimals.<\/p>", "starter": "def noise_dist(counts, alpha):\n    pass\n", "tests": [{"call": "noise_dist({\"a\": 1, \"b\": 1}, 0.75)", "want": {"a": 0.5, "b": 0.5}}, {"call": "noise_dist({\"the\": 3, \"cat\": 1}, 1)", "want": {"the": 0.75, "cat": 0.25}}, {"call": "noise_dist({\"balls\": 2, \"cats\": 3, \"chase\": 2, \"dogs\": 2, \"drink\": 1, \"like\": 2, \"milk\": 3}, 0.75)[\"drink\"]", "want": 0.0814}], "solution": "def noise_dist(counts, alpha):\n    p = {w: c ** alpha for w, c in counts.items()}\n    s = sum(p.values())\n    return {w: round(v / s, 4) for w, v in p.items()}\n", "hint": "Raise, sum, divide.", "why": "<p>The third test is the notebook vocabulary.<\/p>"}, {"id": "jneg", "lv": "m", "title": "The negative sampling loss", "task": "<p>Write <code>j_neg(vc, uo, negs)<\/code> where vc and uo are vectors and negs a list of noise vectors. Return −log σ(u<sub>o<\/sub>·v<sub>c<\/sub>) − ∑ log σ(−u<sub>k<\/sub>·v<sub>c<\/sub>), rounded to 4 decimals. Also write <code>n_sigmoids(window, K)<\/code> for the number of sigmoids per centre word with the full window.<\/p>", "starter": "import math\n\ndef j_neg(vc, uo, negs):\n    pass\n\ndef n_sigmoids(window, K):\n    pass\n", "tests": [{"call": "j_neg([1, 0], [1, 1], [[0, 1], [-1, 0]])", "want": 1.3197}, {"call": "n_sigmoids(2, 10)", "want": 44}, {"call": "j_neg([0, 0], [1, 1], [])", "want": 0.6931}], "solution": "import math\n\ndef j_neg(vc, uo, negs):\n    sig = lambda x: 1 / (1 + math.exp(-x))\n    d = lambda a, b: sum(x * y for x, y in zip(a, b))\n    J = -math.log(sig(d(uo, vc)))\n    for u in negs:\n        J -= math.log(sig(-d(u, vc)))\n    return round(J, 4)\n\ndef n_sigmoids(window, K):\n    return 2 * window * (1 + K)\n", "hint": "With v<sub>c<\/sub> = 0 every sigmoid is 0.5, so each term is ln 2 = 0.6931.", "why": "<p>The first test: −ln σ(1) − ln σ(0) − ln σ(1) = 0.3133 + 0.6931 + 0.3133 = 1.3197.<\/p>"}, {"id": "sgnsstep", "lv": "h", "title": "One negative sampling update", "task": "<p>Write <code>ns_step(vc, uo, negs, lr)<\/code> that computes the gradients of J<sub>neg<\/sub> at the old values and returns (new_vc, new_uo, new_negs), every number rounded to 4 decimals.<\/p>", "starter": "import math\n\ndef ns_step(vc, uo, negs, lr):\n    pass\n", "tests": [{"call": "ns_step([1, 0], [1, 1], [[0, 1], [-1, 0]], 1.0)[0]", "want": [1.5379, -0.2311]}, {"call": "ns_step([1, 0], [1, 1], [[0, 1], [-1, 0]], 1.0)[1]", "want": [1.2689, 1.0]}], "solution": "import math\n\ndef ns_step(vc, uo, negs, lr):\n    sig = lambda x: 1 / (1 + math.exp(-x))\n    d = lambda a, b: sum(x * y for x, y in zip(a, b))\n    go = sig(d(uo, vc)) - 1\n    gvc = [go * u for u in uo]\n    newnegs = []\n    for u in negs:\n        gk = sig(d(u, vc))\n        gvc = [g + gk * x for g, x in zip(gvc, u)]\n        newnegs.append([round(x - lr * gk * c, 4) for x, c in zip(u, vc)])\n    newuo = [round(x - lr * go * c, 4) for x, c in zip(uo, vc)]\n    newvc = [round(c - lr * g, 4) for c, g in zip(vc, gvc)]\n    return (newvc, newuo, newnegs)\n", "hint": "Every gradient is (prediction − label) times the other vector.", "why": "<p>The centre vector moves toward u<sub>o<\/sub> and away from the noise vectors.<\/p>"}], "must": [["Why", "The softmax denominator sums over the whole vocabulary. Negative sampling replaces it with 1 + K binary logistic regressions."], ["Objective", "J<sub>neg<\/sub> = −log σ(u<sub>o<\/sub>·v<sub>c<\/sub>) − ∑<sub>k<\/sub> log σ(−u<sub>k<\/sub>·v<sub>c<\/sub>), σ(−x) = 1 − σ(x)."], ["Noise distribution", "P<sub>n<\/sub>(w) ∝ U(w)<sup>3/4<\/sup>: frequent words like \"the\" drop, rare words rise. The true context is never used as noise."], ["Counting question", "Sigmoids per centre word = (1 + K) × number of context words: window 2, K = 10 gives 44."], ["Notebook", "K = 3, counts<sup>0.75<\/sup>, 500 epochs: cats and dogs become nearest neighbours (cosine 0.98). Optimum: u·v = PMI − log K."]], "summary": "<p>Negative sampling turns one expensive softmax into a few cheap yes or no questions: is this pair real, or is it noise drawn from U(w) to the 3/4? Only 1 + K output vectors change per pair, so word2vec scales to billions of words.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"dist": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.counts": "{'balls': 2, 'cats': 3, 'chase': 2, 'dogs': 2, 'drink': 1, 'like': 2, 'milk': 3}"}}, {"l": 4, "ev": "line", "d": {"G.total": "15"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.powered": "{'balls': 1.681792830507429, 'cats': 2.2795070569547775, 'chase': 1.681792830507429, 'd..."}}, {"l": 6, "ev": "line", "d": {"G.Z": "12.28618543593927"}}, {"l": 7, "ev": "line", "d": {"G.w": "'balls'"}}, {"l": 6, "ev": "line", "o": "balls  U = 0.1333  Pn = 0.1369\n"}, {"l": 7, "ev": "line", "d": {"G.w": "'cats'"}}, {"l": 6, "ev": "line", "o": "cats   U = 0.2  Pn = 0.1855\n"}, {"l": 7, "ev": "line", "d": {"G.w": "'chase'"}}, {"l": 6, "ev": "line", "o": "chase  U = 0.1333  Pn = 0.1369\n"}, {"l": 7, "ev": "line", "d": {"G.w": "'dogs'"}}, {"l": 6, "ev": "line", "o": "dogs   U = 0.1333  Pn = 0.1369\n"}, {"l": 7, "ev": "line", "d": {"G.w": "'drink'"}}, {"l": 6, "ev": "line", "o": "drink  U = 0.0667  Pn = 0.0814\n"}, {"l": 7, "ev": "line", "d": {"G.w": "'like'"}}, {"l": 6, "ev": "line", "o": "like   U = 0.1333  Pn = 0.1369\n"}, {"l": 7, "ev": "line", "d": {"G.w": "'milk'"}}, {"l": 6, "ev": "line", "o": "milk   U = 0.2  Pn = 0.1855\n"}, {"l": 6, "ev": "return"}], "tail": "", "err": null, "cut": false}, "loss": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.sig": "<function <lambda>>"}}, {"l": 5, "ev": "line", "d": {"G.pos": "1.0"}}, {"l": 7, "ev": "line", "d": {"G.negs": "[0.5, -1.0, 2.0]"}}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "1.0"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"G.J": "0.3132616875182228", "L.x": null}}, {"l": 9, "ev": "line", "d": {"G.s": "0.5"}}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "-0.5"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"G.J": "1.2873386716983295", "L.x": null}}, {"l": 9, "ev": "line", "d": {"G.s": "-1.0"}}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "1.0"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"G.J": "1.6006003592165523", "L.x": null}}, {"l": 9, "ev": "line", "d": {"G.s": "2.0"}}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "-2.0"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"G.J": "3.7275283702595248", "L.x": null}}, {"l": 10, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "1.0"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 3, "ev": "call", "d": {"L.x": "-0.5"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 10, "ev": "line", "s": ["module"], "d": {"L.x": null}}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "1.0"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 10, "ev": "line", "s": ["module"], "d": {"L.x": null}}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "-2.0"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 10, "ev": "line", "s": ["module"], "d": {"L.x": null}}, {"l": 11, "ev": "line", "o": "terms: 0.3133 [0.9741, 0.3133, 2.1269]\n"}, {"l": 11, "ev": "return", "o": "J_neg = 3.7275\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/nlpwidgets.js"></script>
+<script src="../../assets/nnwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

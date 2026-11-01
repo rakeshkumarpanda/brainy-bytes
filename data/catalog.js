@@ -5022,6 +5022,68 @@ function nlpNeuralModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-word2vec", title: "Word2vec: skip-gram with the full softmax", emoji: "2.2", page: "content/nlp/word2vec-skipgram.html",
+        summary: "Skip-gram objective, softmax prediction, gradients, SGD, the notebook, CBOW and parameter counts.",
+        keywords: ["word2vec", "skip-gram", "CBOW", "softmax", "objective function", "SGD", "notebook"],
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "idea", title: "The word2vec idea: predict the neighbours", emoji: "", group: "Lesson", keywords: ["word2vec", "skip-gram", "centre word", "context word", "likelihood", "objective function"] },
+        { id: "predict", title: "The prediction function: dot, exponentiate, normalise", emoji: "", group: "Lesson", keywords: ["softmax", "prediction function", "two vectors per word", "one-hot input", "embedding matrix", "dot product"] },
+        { id: "train", title: "Training: the gradient and the notebook loop", emoji: "", group: "Lesson", keywords: ["gradient", "SGD", "mini batch", "training loop", "notebook", "outer product", "pseudo-code"] },
+        { id: "variants", title: "Skip-gram, CBOW and why two vectors", emoji: "", group: "Lesson", keywords: ["CBOW", "skip-gram", "hierarchical softmax", "parameters", "two vectors"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-negative-sampling", title: "Skip-gram with negative sampling", emoji: "2.3", page: "content/nlp/negative-sampling.html",
+        summary: "Negative sampling objective, gradients, the 3/4 noise distribution, sigmoid counting and the notebook.",
+        keywords: ["negative sampling", "SGNS", "sigmoid", "noise distribution", "unigram 3/4", "PMI", "notebook"],
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "why", title: "The expensive denominator", emoji: "", group: "Lesson", keywords: ["negative sampling", "softmax cost", "binary classification", "noise pairs", "logistic regression"] },
+        { id: "objective", title: "The negative sampling objective", emoji: "", group: "Lesson", keywords: ["objective", "sigmoid", "J_neg", "gradient", "K negatives", "44 sigmoids"] },
+        { id: "sampling", title: "Which words to use as noise: U(w) to the 3/4", emoji: "", group: "Lesson", keywords: ["unigram distribution", "noise distribution", "power 3/4", "sampling", "PMI"] },
+        { id: "notebook", title: "The negative sampling notebook", emoji: "", group: "Lesson", keywords: ["notebook", "K = 3", "cosine", "cats and dogs", "contrastive learning"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-cooccurrence-glove", title: "Co-occurrence counts, SVD and GloVe", emoji: "2.4", page: "content/nlp/cooccurrence-glove.html",
+        summary: "Co-occurrence matrices, SVD, GloVe ratios, the GloVe loss and weighting function, and the notebook.",
+        keywords: ["co-occurrence", "SVD", "LSA", "GloVe", "weighting function", "x_max", "log counts", "notebook"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "counts", title: "Count the neighbours directly", emoji: "", group: "Lesson", keywords: ["co-occurrence matrix", "window", "word-document matrix", "LSA", "sparse vectors"] },
+        { id: "svd", title: "Shrink the matrix with SVD", emoji: "", group: "Lesson", keywords: ["SVD", "singular values", "truncated SVD", "COALS", "log counts", "Eckart-Young"] },
+        { id: "ratios", title: "GloVe: meaning lives in probability ratios", emoji: "", group: "Lesson", keywords: ["GloVe", "probability ratio", "ice and steam", "log-bilinear", "biases"] },
+        { id: "loss", title: "The GloVe loss and its weighting function", emoji: "", group: "Lesson", keywords: ["GloVe loss", "weighting function", "x_max", "alpha 3/4", "least squares", "w + w tilde"] },
+        { id: "notebook", title: "The GloVe notebook and what it teaches", emoji: "", group: "Lesson", keywords: ["notebook", "1 / distance", "Adagrad", "overfitting", "count vs predict"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-evaluate-embeddings", title: "Evaluating and improving embeddings", emoji: "2.5", page: "content/nlp/evaluate-improve-embeddings.html",
+        summary: "Intrinsic and extrinsic tests, fastText n-grams, cross-lingual mapping, sparse embeddings and debiasing.",
+        keywords: ["intrinsic evaluation", "extrinsic evaluation", "Spearman", "analogy", "fastText", "cross-lingual", "debiasing", "sparse embeddings"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "intrinsic", title: "Intrinsic evaluation: test the vectors on their own", emoji: "", group: "Lesson", keywords: ["intrinsic evaluation", "relatedness", "Spearman", "analogy", "purity", "selectional preference"] },
+        { id: "extrinsic", title: "Extrinsic evaluation: use the vectors in a real system", emoji: "", group: "Lesson", keywords: ["extrinsic evaluation", "downstream task", "pre-trained embeddings", "fine-tuning", "concatenation"] },
+        { id: "subwords", title: "Subword embeddings and fastText", emoji: "", group: "Lesson", keywords: ["subword", "character n-grams", "fastText", "OOV", "morphemes", "dog and dogs"] },
+        { id: "align", title: "Knowledge, languages and alignment", emoji: "", group: "Lesson", keywords: ["cross-lingual", "alignment", "Procrustes", "identical words", "adversarial", "whale and fish"] },
+        { id: "sparse-bias", title: "Interpretable and fairer embeddings", emoji: "", group: "Lesson", keywords: ["sparse embeddings", "L1", "interpretability", "bias", "debiasing", "neutralise"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
