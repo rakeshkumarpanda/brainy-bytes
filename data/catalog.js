@@ -5085,6 +5085,56 @@ function nlpNeuralModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "nn-rnn", title: "Language models and RNNs", emoji: "3", step: 3, part: "nlp", level: "College and masters", blurb: "Predict the next word: n-gram models and their limits, fixed window and recurrent neural language models, sequence labelling with BIO tags, and why LSTM and GRU fix vanishing gradients.", topics: [
+      { id: "nn-language-models-rnn", title: "Language models and recurrent networks", emoji: "3.1", page: "content/nlp/language-models-rnn.html",
+        summary: "n-gram LMs, the fixed window model, RNN equations and parameters, cross-entropy training and perplexity.",
+        keywords: ["language model", "n-gram", "RNN", "cross-entropy", "teacher forcing", "perplexity", "BPTT"],
+        minutes: 50, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "ngram", title: "Language models and n-grams", emoji: "", group: "Lesson", keywords: ["language model", "n-gram", "Markov assumption", "sparsity", "smoothing", "backoff"] },
+        { id: "window", title: "A fixed window neural language model", emoji: "", group: "Lesson", keywords: ["fixed window", "Bengio", "neural language model", "composition function", "parameter sharing"] },
+        { id: "rnn", title: "Recurrent neural networks", emoji: "", group: "Lesson", keywords: ["RNN", "hidden state", "parameter sharing", "unrolling", "96 parameters"] },
+        { id: "training", title: "Training: cross-entropy and teacher forcing", emoji: "", group: "Lesson", keywords: ["cross-entropy", "teacher forcing", "BPTT", "SGD", "0.51 and 2.99"] },
+        { id: "perplexity", title: "Perplexity and generating text", emoji: "", group: "Lesson", keywords: ["perplexity", "exp of cross-entropy", "autoregressive generation", "1.44 and 4.07"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-sequence-labelling", title: "Sequence labelling, NER and bidirectional RNNs", emoji: "3.2", page: "content/nlp/sequence-labelling-ner.html",
+        summary: "RNN taggers, NER, BIO tags, span F1, the parameter questions and bidirectional RNNs.",
+        keywords: ["sequence labelling", "POS tagging", "NER", "BIO", "span F1", "bidirectional RNN", "sentence classification"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "labelling", title: "Sequence labelling with an RNN", emoji: "", group: "Lesson", keywords: ["sequence labelling", "POS tagging", "RNN tagger", "softmax per token"] },
+        { id: "ner", title: "Named entity recognition", emoji: "", group: "Lesson", keywords: ["NER", "named entities", "PER LOC ORG GPE", "segmentation", "type ambiguity"] },
+        { id: "bio", title: "BIO tagging: spans become one tag per word", emoji: "", group: "Lesson", keywords: ["BIO", "2n + 1", "BIOES", "span F1", "entity boundaries"] },
+        { id: "params", title: "The two parameter questions", emoji: "", group: "Lesson", keywords: ["parameter count", "20,000", "18,050", "POS tagger", "NER tagger"] },
+        { id: "birnn", title: "Sentence classification and bidirectional RNNs", emoji: "", group: "Lesson", keywords: ["sentence classification", "bidirectional RNN", "BiRNN", "pooling", "sentiment"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-lstm-gru", title: "Vanishing gradients, LSTM and GRU", emoji: "3.3", page: "content/nlp/lstm-gru.html",
+        summary: "Vanishing gradients, LSTM and GRU equations, why gating works, parameter counts and xLSTM.",
+        keywords: ["vanishing gradient", "exploding gradient", "LSTM", "GRU", "forget gate", "BiLSTM", "gradient clipping", "xLSTM"],
+        minutes: 50, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "vanishing", title: "Vanishing and exploding gradients", emoji: "", group: "Lesson", keywords: ["vanishing gradient", "exploding gradient", "Jacobian", "gradient clipping", "long range dependency"] },
+        { id: "lstm", title: "Long Short-Term Memory", emoji: "", group: "Lesson", keywords: ["LSTM", "memory cell", "forget gate", "input gate", "output gate", "cell state"] },
+        { id: "why-lstm", title: "How the LSTM keeps gradients alive", emoji: "", group: "Lesson", keywords: ["additive update", "forget gate path", "long memory", "residual connections"] },
+        { id: "gru", title: "Gated Recurrent Units", emoji: "", group: "Lesson", keywords: ["GRU", "update gate", "reset gate", "candidate state", "LSTM vs GRU"] },
+        { id: "bilstm", title: "BiLSTM, the parameter question and xLSTM", emoji: "", group: "Lesson", keywords: ["BiLSTM", "23,808", "code-switching", "parallelism", "xLSTM"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

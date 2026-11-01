@@ -1265,7 +1265,7 @@
       { k: 'temp', label: 'Extra temperature (1 = plain softmax)', v: 1, min: 0.1, max: 5, step: 0.1 }
     ],
     tips: [
-      { t: 'The lecture problem: scores 2, −5, 3, −2. Weights ≈ 0.265, 0.0002, 0.721, 0.013. Context ≈ [1.25, −0.71].', set: { enc: '2 0\n-1 2\n1 -1\n0 1', dec: '1 -2', scale: false, temp: 1 } },
+      { t: 'The lecture problem: scores 2, −5, 3, −2. Weights ≈ 0.268, 0.0002, 0.727, 0.005. Context ≈ [1.262, −0.722].', set: { enc: '2 0\n-1 2\n1 -1\n0 1', dec: '1 -2', scale: false, temp: 1 } },
       { t: 'Tick the √d scaling used by transformers. Scores shrink by √2, so the weights spread out a little.', set: { scale: true } },
       { t: 'Raise the temperature to 5. Attention becomes almost uniform, an average of all states.', set: { temp: 5, scale: false } },
       { t: 'Lower it to 0.2. Attention becomes almost hard, it copies the single best state h_3.', set: { temp: 0.2 } },
