@@ -148,11 +148,21 @@ def chapter_html(T, seen):
             f'<p class="sh-sum">{html.escape(T["summary"])}</p>{"".join(blocks)}</article>')
 
 
+def step_key(T):
+    """Steps are numbered inside each section of a subject, so a step is known by its section and number."""
+    return f'{T["part"]}-{T["step"][0]}' if T.get('part') else str(T['step'][0])
+
+
+def step_label(stp, T):
+    """The heading of a step: the section name first when the subject has sections."""
+    return (f'{T["part_name"]} · ' if T.get('part_name') else '') + stp[1]
+
+
 def page(chs, cfg, meta):
     seen = set()
     steps, order = {}, []
     for T in chs:
-        n = T['step'][0]
+        n = step_key(T)
         if n not in steps:
             steps[n] = (T['step'], [])
             order.append(n)
@@ -160,14 +170,14 @@ def page(chs, cfg, meta):
     body = []
     for n in order:
         stp, ts = steps[n]
-        body.append(f'<section class="sh-step" id="step-{n}"><h2><span>Step {n}</span>{html.escape(stp[1])}</h2>'
+        body.append(f'<section class="sh-step" id="step-{n}"><h2><span>Step {stp[0]}</span>{html.escape(step_label(stp, ts[0]))}</h2>'
                     + ''.join(chapter_html(T, seen) for T in ts) + '</section>')
     body = ''.join(body)
     n_fx = body.count('data-kind="fx"')
     n_tab = body.count('data-kind="table"')
     n_note = sum(body.count(f'data-kind="{k}"') for k in ('tip', 'warn', 'exam'))
     n_must = body.count('data-kind="must"')
-    toc = ''.join(f'<a href="#step-{n}"><b>{n}</b>{html.escape(steps[n][0][1])}</a>' for n in order)
+    toc = ''.join(f'<a href="#step-{n}"><b>{steps[n][0][0]}</b>{html.escape(step_label(steps[n][0], steps[n][1][0]))}</a>' for n in order)
     kinds = ''.join(f'<button type="button" class="sh-k" data-k="{k}" aria-pressed="true">{v}</button>' for k, v in KINDS)
     pdf = file_name(cfg)
     size = pdf_label(meta['full'])
@@ -222,7 +232,7 @@ def page(chs, cfg, meta):
 def compact_page(chs, cfg, meta):
     seen, steps, order = set(), {}, []
     for T in chs:
-        n = T['step'][0]
+        n = step_key(T)
         if n not in steps:
             steps[n] = (T['step'], [])
             order.append(n)
@@ -265,7 +275,7 @@ def compact_page(chs, cfg, meta):
             arts.append(f'<article class="sh-ch cs-ch" id="{T["slug"]}"><h3><a href="./{T["slug"]}.html" data-topic="{T["topic"]}" data-h="">'
                         f'<span class="sh-no">{html.escape(T.get("badge", ""))}</span>{html.escape(T["title"])}</a></h3>{blk}</article>')
         if arts:
-            body.append(f'<section class="sh-step cs-step" id="step-{n}"><h2><span>Step {n}</span>{html.escape(stp[1])}</h2>{"".join(arts)}</section>')
+            body.append(f'<section class="sh-step cs-step" id="step-{n}"><h2><span>Step {stp[0]}</span>{html.escape(step_label(stp, ts[0]))}</h2>{"".join(arts)}</section>')
     pdf = file_name(cfg, True)
     sub = cfg['subject']
     home = 's=' + sub + (f'&amp;p={cfg["part"]}' if cfg.get('part') else '')

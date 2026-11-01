@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One neuron, the sigmoid and backpropagation · Natural Language Processing</title>
+<meta name="description" content="The two input neuron, the sigmoid and why it is needed, decision boundaries and the 0.5 threshold, the logit, backpropagation by the chain rule, the flowers notebook line by line, and squared error against cross entropy.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/nlp.css">
+</head>
+<body class="cvp nlpp">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=nlp&amp;p=nlp">Natural Language Processing learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=nlp&amp;p=nlp" target="_top">Natural Language Processing</a><span>›</span><span>NLP</span><span>›</span><span>Step 1: Neurons and learning</span><span>›</span><span>Neuron and backprop</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 2 of 2 · School and college</div>
+    <h1>One neuron, the sigmoid and backpropagation</h1>
+    <p class="lead">Teach a single neuron to tell red flowers from blue ones, exactly as the class notebook does, and see backpropagation as nothing more than the chain rule.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">3 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#neuron-backprop" data-topic="cheatsheet" data-h="neuron-backprop">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#neuron" data-l="neuron"><span class="n">1</span><span class="t">A neuron: weigh, add, squash</span></a></li><li><a href="#why" data-l="why"><span class="n">2</span><span class="t">Why the sigmoid, and where to draw the line</span></a></li><li><a href="#backprop" data-l="backprop"><span class="n">3</span><span class="t">Backpropagation is the chain rule</span></a></li><li><a href="#notebook" data-l="notebook"><span class="n">4</span><span class="t">The flowers notebook, line by line</span></a></li></ol>
+    <article class="cv-lesson" id="neuron" data-l="neuron" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>A neuron: weigh, add, squash</h2>
+<p>The lecture moves from one input to two. Each flower has a length and a width, and is red (type 1) or blue (type 0). A mystery flower of length 4.5 and width 1 has an unknown colour. A neuron answers with a number between 0 and 1.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>One neuron with two inputs</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">NN(m₁, m₂) = σ(<i>w</i>₁m₁ + <i>w</i>₂m₂ + <i>b</i>)</div><div class="fx-n">Multiply each input by its weight, add the bias, then squash with the sigmoid σ.</div></div><div class="fx fx-key"><div class="fx-h"><span>Sigmoid</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">σ(z) = <span class="fr"><span>1</span><span>1 + e<sup>−z</sup></span></span></div><div class="fx-n">Maps any real number into (0, 1). σ(0) = 0.5.</div></div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>length</th><th>3</th><th>2</th><th>4</th><th>3</th><th>3.5</th><th>2</th><th>5.5</th><th>1</th><th>4.5</th></tr></thead><tbody><tr><td>width</td><td>1.5</td><td>1</td><td>1.5</td><td>1</td><td>0.5</td><td>0.5</td><td>1</td><td>1</td><td>1</td></tr><tr><td>type</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>?</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Slide example: NN(2, 1) with w₁ = 0.5, w₂ = 0.2, b = 0.3</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Weighted sum z = 0.5 × 2 + 0.2 × 1 + 0.3 = 1.5.</li><li>σ(1.5) = 1 ÷ (1 + e<sup>−1.5</sup>) = 1 ÷ 1.2231.</li><li><span class="eq">NN(2, 1) = 0.8176, about 0.82</span></li><li>But the flower (2, 1) is blue, type 0. These starting weights are wrong, which is why we must train.</li></ol></div>
+<div class="cv-code" data-k="forward"></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A neuron is a tiny voting machine. Each input gets a vote strength (the weight). It adds the votes and then says "how sure am I" as a number from 0 to 1.</p></div><div class="ld-p" data-ld="college" hidden><p>One sigmoid neuron is logistic regression: a linear score z = <b>w</b>·<b>x</b> + b followed by σ. Its output is read as P(class 1 | x), and the decision boundary σ(z) = 0.5 is the straight line z = 0.</p></div><div class="ld-p" data-ld="masters" hidden><p>With cross entropy loss, logistic regression is a convex problem whose gradient is (σ(z) − y)<b>x</b>. The notebook uses squared error instead, which works here but is not convex and gives weaker gradients when the neuron is confidently wrong.</p></div><div class="ld-p" data-ld="research" hidden><p>Every output layer of a word2vec, RNN or transformer model is this same unit, generalised from σ to softmax over a vocabulary. Calibration of these probabilities and their behaviour far from the training data are active research topics.</p></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="why" data-l="why" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Why the sigmoid, and where to draw the line</h2>
+<p>A plain linear score can be any number from −∞ to +∞. A value like 12 or −7 has no probabilistic meaning and no natural cutoff. The sigmoid fixes that: it squeezes the score into (0, 1), so we can read it as a probability and use 0.5 as the cutoff.</p>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Decision rule</span></div><div class="fx-b">class 1 if σ(z) ≥ 0.5, which is the same as z ≥ 0</div><div class="fx-n">The boundary is the line <i>w</i>₁·length + <i>w</i>₂·width + <i>b</i> = 0.</div></div><div class="fx"><div class="fx-h"><span>Inverse of the sigmoid (logit)</span></div><div class="fx-b">z = ln <span class="fr"><span>p</span><span>1 − p</span></span></div><div class="fx-n">p = 0.8 needs z = ln 4 = 1.386.</div></div><div class="fx"><div class="fx-h"><span>Symmetry</span></div><div class="fx-b">σ(−z) = 1 − σ(z)</div><div class="fx-n">Used again in negative sampling.</div></div></div>
+<div class="cvz" data-viz="flowers"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Output</th><th>Reading</th></tr></thead><tbody><tr><td>0.92</td><td>very likely red</td></tr><tr><td>0.5</td><td>cannot tell, on the boundary</td></tr><tr><td>0.08</td><td>very likely blue</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: spam filter</div><p>An email filter adds up weighted clues: the word "free", a strange sender, many links. The sigmoid turns the total into "92 percent spam". The filter only moves the mail when the number passes a threshold, and that threshold can be moved to make it stricter or more relaxed.</p></div>
+<div class="note note-tip"><b>Remember</b><div>The 0.5 threshold is a choice, not a law. A cancer screening test may use 0.2 to miss fewer cases. Changing the threshold moves the decision line without retraining.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="backprop" data-l="backprop" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Backpropagation is the chain rule</h2>
+<p>To train, the notebook picks a random flower, predicts, measures the squared cost and nudges w₁, w₂ and b downhill. The slope of the cost with respect to each weight comes from the chain rule, one link at a time. The notebook names every link, and so do we.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>The three links</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><span class="fr"><span>∂cost</span><span>∂w₁</span></span> = <span class="fr"><span>∂cost</span><span>∂pred</span></span> · <span class="fr"><span>∂pred</span><span>∂z</span></span> · <span class="fr"><span>∂z</span><span>∂w₁</span></span> = 2(pred − target) · σ′(z) · length</div><div class="fx-n">For w₂ the last link is width, for b it is 1.</div></div><div class="fx fx-key"><div class="fx-h"><span>Slope of the sigmoid</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">σ′(z) = σ(z)(1 − σ(z))</div><div class="fx-n">Largest at z = 0, where it is 0.25. Called sigmoid_p in the notebook.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Worked step on the blue flower (2, 1) with η = 0.1</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Forward: z = 1.5, pred = 0.8176, cost = (0.8176 − 0)² = 0.6684.</li><li>dcost/dpred = 2 × 0.8176 = 1.6351. dpred/dz = 0.8176 × 0.1824 = 0.1491.</li><li>dcost/dz = 1.6351 × 0.1491 = 0.2439. dcost/dw₁ = 0.2439 × 2 = 0.4878.</li><li><span class="eq">w₁ ← 0.5 − 0.1 × 0.4878 = 0.4512. w₂ and b also drop, and the next prediction is lower</span></li></ol></div>
+<div class="cv-code" data-k="backprop"></div>
+<div class="note note-warn"><b>Common mistake</b><div>Do not forget the σ′(z) link. Without it you are differentiating a straight line, not a neuron.</div></div>
+<div class="note note-exam"><b>In the exam</b><div>A typical question gives ŷ = σ(wx + b) or tanh(wx + b), one data point and the cost, and asks for ∂L/∂w, the predicted value, and the direction w moves.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="notebook" data-l="notebook" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>The flowers notebook, line by line</h2>
+<p>The class notebook trains the neuron for 10,000 steps, each on one random flower, with learning rate 0.1. Every 100 steps it adds the cost over all eight flowers to a list so that you can plot it going down. After training the mystery flower scores 0.9917: red.</p>
+<div class="cv-code"><div class="cc-bar"><span class="lbl">flowers 1.ipynb, the training cells (numpy and matplotlib parts trimmed)</span></div><pre class="cc-src"><span class="ln">data = [[3, 1.5, 1], [2, 1, 0], [4, 1.5, 1], [3, 1, 0],</span><span class="ln">        [3.5, .5, 1], [2, .5, 0], [5.5, 1, 1], [1, 1, 0]]</span><span class="ln">mystery_flower = [4.5, 1]</span><span class="ln"></span><span class="ln">def sigmoid(x):</span><span class="ln">    return 1/(1+np.exp(-x))</span><span class="ln"></span><span class="ln">def sigmoid_p(x):</span><span class="ln">    return sigmoid(x) * (1-sigmoid(x))</span><span class="ln"></span><span class="ln">def train():</span><span class="ln">    w1, w2, b = np.random.randn(), np.random.randn(), np.random.randn()</span><span class="ln">    iterations, learning_rate = 10000, 0.1</span><span class="ln">    for i in range(iterations):</span><span class="ln">        point = data[np.random.randint(len(data))]</span><span class="ln">        z = point[0] * w1 + point[1] * w2 + b</span><span class="ln">        pred = sigmoid(z)</span><span class="ln">        target = point[2]</span><span class="ln">        dcost_dpred = 2 * (pred - target)</span><span class="ln">        dpred_dz = sigmoid_p(z)</span><span class="ln">        dcost_dz = dcost_dpred * dpred_dz</span><span class="ln">        w1 = w1 - learning_rate * dcost_dz * point[0]</span><span class="ln">        w2 = w2 - learning_rate * dcost_dz * point[1]</span><span class="ln">        b = b - learning_rate * dcost_dz * 1</span><span class="ln">    return w1, w2, b</span><span class="ln"></span><span class="ln">w1, w2, b = train()</span><span class="ln">z = w1 * mystery_flower[0] + w2 * mystery_flower[1] + b</span><span class="ln">print(sigmoid(z))</span><span class="ln">print(&quot;close to 0 -&gt; blue, close to 1 -&gt; red&quot;)</span></pre><div class="cc-cap">Output recorded in the class notebook</div><pre class="cc-out">0.9917291708851436
+close to 0 -&gt; blue, close to 1 -&gt; red</pre></div>
+<div class="walk"><div class="walk-h"><span>What each part does</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>np.random.randn() gives each weight a random start, so every run begins somewhere different.</li><li>One random flower per step is stochastic gradient descent: cheap, noisy steps that still head downhill on average.</li><li>The cost list is only for watching. It plays no part in the updates.</li><li>The final picture colours a 20 × 20 grid by the prediction. The colours split along the straight line where z = 0.</li></ol></div>
+<details class="deep"><summary>Going deeper: squared error against cross entropy for a sigmoid</summary><div class="deep-b"><p>With squared error the gradient is 2(σ − y)σ(1 − σ)x. If the neuron is confidently wrong, for example σ = 0.001 when y = 1, the factor σ(1 − σ) is about 0.001 and learning almost stops. With binary cross entropy L = −[y ln σ + (1 − y) ln(1 − σ)] the σ′ term cancels and the gradient is simply (σ − y)x, strong exactly when the mistake is big. That is why classification layers use cross entropy, and why the RNN chapters do too.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./regression-gradient-descent.html" data-topic="nn-gradient-descent"><small>Previous topic</small><b>Gradient descent</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "neuron-backprop", "topic": "nn-neuron", "subject": "nlp", "title": "One neuron, the sigmoid and backpropagation", "codes": {"forward": {"src": "# The neuron from the slide: NN(m1, m2) = sigmoid(w1*m1 + w2*m2 + b)\nimport math\n\ndef sigmoid(x):\n    return 1 / (1 + math.exp(-x))\n\nw1, w2, b = 0.5, 0.2, 0.3\nfor length, width in [(2, 1), (3, 1.5), (4.5, 1)]:\n    z = w1 * length + w2 * width + b\n    pred = sigmoid(z)\n    print(length, width, \"z =\", round(z, 2), \"pred =\", round(pred, 4), \"red\" if pred >= 0.5 else \"blue\")", "stdin": "", "out": "2 1 z = 1.5 pred = 0.8176 red\n3 1.5 z = 2.1 pred = 0.8909 red\n4.5 1 z = 2.75 pred = 0.9399 red"}, "backprop": {"src": "# One training step on one flower, with the chain rule written out as in the notebook\nimport math\nsigmoid = lambda x: 1 / (1 + math.exp(-x))\nsigmoid_p = lambda x: sigmoid(x) * (1 - sigmoid(x))\n\nw1, w2, b, lr = 0.5, 0.2, 0.3, 0.1\nlength, width, target = 2, 1, 0           # a blue flower\nz = length * w1 + width * w2 + b\npred = sigmoid(z)\ncost = (pred - target) ** 2\n\ndcost_dpred = 2 * (pred - target)\ndpred_dz = sigmoid_p(z)\ndcost_dz = dcost_dpred * dpred_dz\nw1 = w1 - lr * dcost_dz * length\nw2 = w2 - lr * dcost_dz * width\nb = b - lr * dcost_dz * 1\nprint(\"cost before\", round(cost, 4))\nprint(\"new w1, w2, b:\", round(w1, 4), round(w2, 4), round(b, 4))\nprint(\"new pred\", round(sigmoid(length * w1 + width * w2 + b), 4))", "stdin": "", "out": "cost before 0.6684\nnew w1, w2, b: 0.4512 0.1756 0.2756\nnew pred 0.7947"}}, "quiz": [{"lv": "e", "q": "What does σ(0) equal?", "o": ["0", "0.25", "0.5", "1"], "a": 2, "hint": "1 ÷ (1 + e⁰).", "why": "e⁰ = 1, so σ(0) = 1 ÷ 2."}, {"lv": "e", "q": "The sigmoid output always lies", "o": ["between −1 and 1", "between 0 and 1", "above 1", "below 0"], "a": 1, "hint": "It is used as a probability.", "why": "σ maps every real number into (0, 1)."}, {"lv": "e", "q": "With threshold 0.5, an output of 0.92 for the flowers means", "o": ["blue", "red", "no answer", "the flower is wrong"], "a": 1, "hint": "Type 1 is red.", "why": "Above 0.5 means class 1, red."}, {"lv": "e", "q": "How many trainable numbers does the two input neuron have?", "o": ["2", "3", "4", "8"], "a": 1, "hint": "Count the weights and the bias.", "why": "w₁, w₂ and b."}, {"lv": "m", "q": "σ(z) = 0.5 exactly when", "o": ["z = 0", "z = 0.5", "z = 1", "z is very large"], "a": 0, "hint": "Where e<sup>−z<\/sup> = 1.", "why": "So the decision boundary is the line z = 0."}, {"lv": "m", "q": "Which expression is σ′(z)?", "o": ["σ(z)(1 − σ(z))", "1 − σ(z)²", "e<sup>−z<\/sup>", "σ(z) + 1"], "a": 0, "hint": "1 − σ² belongs to tanh.", "why": "The derivative of the logistic function is σ(1 − σ)."}, {"lv": "m", "q": "The notebook picks one random flower per update. This is called", "o": ["batch gradient descent", "stochastic gradient descent", "Newton’s method", "grid search"], "a": 1, "hint": "One sample at a time.", "why": "Each step uses one example, so the steps are cheap and noisy."}, {"lv": "m", "q": "The decision boundary of one sigmoid neuron on two inputs is", "o": ["a circle", "a straight line", "two lines", "any curve"], "a": 1, "hint": "z = w₁x + w₂y + b = 0.", "why": "A linear equation in two variables is a line."}, {"lv": "h", "q": "A neuron outputs 0.001 for a red flower (target 1), with squared error loss. Learning is slow because", "o": ["the learning rate is zero", "σ′(z) is tiny, about 0.001", "the flower is too long", "the bias is positive"], "a": 1, "hint": "Look at the middle link.", "why": "σ(1 − σ) ≈ 0.001 multiplies the whole gradient."}, {"lv": "h", "q": "Why can one sigmoid neuron not learn XOR of two binary inputs?", "o": ["It has no bias", "XOR is not separable by one straight line", "Sigmoid is too slow", "XOR needs negative weights"], "a": 1, "hint": "Draw the four points.", "why": "(0,1) and (1,0) are class 1, (0,0) and (1,1) class 0. No single line splits them."}, {"lv": "h", "q": "σ(−z) equals", "o": ["−σ(z)", "1 − σ(z)", "1 ÷ σ(z)", "σ(z)"], "a": 1, "hint": "Add the two fractions.", "why": "1 ÷ (1 + e<sup>z<\/sup>) = e<sup>−z<\/sup> ÷ (1 + e<sup>−z<\/sup>) = 1 − σ(z)."}, {"lv": "x", "q": "With binary cross entropy loss, the gradient of the loss with respect to z for a sigmoid neuron is", "o": ["(σ − y)σ(1 − σ)", "σ − y", "2(σ − y)", "(σ − y)²"], "a": 1, "hint": "The σ′ cancels.", "why": "dL/dz = (σ − y), which is why cross entropy learns fast when the neuron is confidently wrong."}], "calc": [{"lv": "e", "q": "Compute NN(2, 1) = σ(0.5 × 2 + 0.2 × 1 + 0.3). Four decimals.", "ans": "0.8176", "hint": "First z, then σ.", "steps": ["z = 1 + 0.2 + 0.3 = 1.5.", "e<sup>−1.5<\/sup> = 0.22313.", "<span class=\"eq\">σ = 1 ÷ 1.22313 = 0.8176<\/span>"], "tol": 5e-05}, {"lv": "e", "q": "What is σ′(0)?", "ans": "0.25", "hint": "σ(0)(1 − σ(0)).", "steps": ["σ(0) = 0.5.", "1 − σ(0) = 0.5.", "<span class=\"eq\">σ′(0) = 0.25<\/span>"], "tol": 1e-09}, {"lv": "e", "q": "With w₁ = 0.5, w₂ = 0.2, b = 0.3, what is z for the flower (3, 1.5)? One decimal.", "ans": "2.1", "hint": "w₁·length + w₂·width + b.", "steps": ["0.5 × 3 = 1.5.", "0.2 × 1.5 = 0.3.", "<span class=\"eq\">z = 1.5 + 0.3 + 0.3 = 2.1<\/span>"], "tol": 1e-09}, {"lv": "m", "q": "Squared cost of the blue flower (2, 1) under the same weights. Four decimals.", "ans": "0.6684", "hint": "(pred − 0)².", "steps": ["pred = 0.81757.", "Target 0.", "<span class=\"eq\">cost = 0.81757² = 0.6684<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "For that flower, find dcost/dw₁ = 2(pred − target)σ′(z) × length. Four decimals.", "ans": "0.4878", "hint": "σ′(1.5) = 0.8176 × 0.1824.", "steps": ["2(pred − 0) = 1.63515.", "σ′(1.5) = 0.14915.", "<span class=\"eq\">1.63515 × 0.14915 × 2 = 0.4878<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "Update w₁ = 0.5 with η = 0.1 using that gradient. Four decimals.", "ans": "0.4512", "hint": "w₁ − η × gradient.", "steps": ["η × gradient = 0.04878.", "0.5 − 0.04878.", "<span class=\"eq\">w₁ = 0.4512<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "Which z gives σ(z) = 0.8? Four decimals.", "ans": "1.3863", "hint": "z = ln(p ÷ (1 − p)).", "steps": ["p ÷ (1 − p) = 0.8 ÷ 0.2 = 4.", "z = ln 4.", "<span class=\"eq\">z = 1.3863<\/span>"], "tol": 5e-05}, {"lv": "h", "q": "Weights w₁ = 2, w₂ = 1, b = −7. Along width = 1, at what length is the neuron exactly 0.5?", "ans": "3", "hint": "Solve 2·length + 1 − 7 = 0.", "steps": ["Boundary: z = 0.", "2 × length + 1 × 1 − 7 = 0.", "<span class=\"eq\">length = 3<\/span>"], "tol": 1e-09}, {"lv": "h", "q": "Binary cross entropy for prediction 0.9 and target 1, natural log. Four decimals.", "ans": "0.1054", "hint": "L = −ln 0.9.", "steps": ["Only the y ln σ term survives when y = 1.", "ln 0.9 = −0.10536.", "<span class=\"eq\">L = 0.1054<\/span>"], "tol": 5e-05}, {"lv": "h", "q": "How small is σ′(5)? Give it to five decimals.", "ans": "0.00665", "hint": "σ(5) = 0.99331.", "steps": ["σ(5) = 1 ÷ (1 + e<sup>−5<\/sup>) = 0.993307.", "1 − σ(5) = 0.006693.", "<span class=\"eq\">σ′(5) = 0.993307 × 0.006693 = 0.00665<\/span>"], "tol": 5e-06}, {"lv": "x", "q": "Ten sigmoid layers in a row. What is the largest possible product of their ten slopes? Scientific notation, three digits.", "ans": "9.54e-7", "hint": "Each slope is at most 0.25.", "steps": ["Maximum of σ′ is 0.25 at z = 0.", "0.25<sup>10<\/sup> = 1 ÷ 4<sup>10<\/sup> = 1 ÷ 1,048,576.", "<span class=\"eq\">9.54 × 10⁻⁷: the vanishing gradient that RNN chapters return to<\/span>"], "tol": 5e-09}], "assign": [{"id": "predict", "lv": "e", "title": "Predict a flower", "task": "<p>Write <code>predict(w1, w2, b, length, width)<\/code> returning the sigmoid output rounded to 4 decimals, and <code>colour(...)<\/code> with the same arguments returning \"red\" when the output is at least 0.5, else \"blue\".<\/p>", "starter": "import math\n\ndef predict(w1, w2, b, length, width):\n    # your code here\n    pass\n\ndef colour(w1, w2, b, length, width):\n    # your code here\n    pass\n", "tests": [{"call": "predict(0.5, 0.2, 0.3, 2, 1)", "want": 0.8176}, {"call": "colour(0.5, 0.2, 0.3, 2, 1)", "want": "red"}, {"call": "colour(2, 1, -7, 2, 1)", "want": "blue"}, {"call": "predict(0, 0, 0, 4, 4)", "want": 0.5}], "solution": "import math\n\ndef predict(w1, w2, b, length, width):\n    z = w1 * length + w2 * width + b\n    return round(1 / (1 + math.exp(-z)), 4)\n\ndef colour(w1, w2, b, length, width):\n    return \"red\" if predict(w1, w2, b, length, width) >= 0.5 else \"blue\"\n", "hint": "z first, then 1 ÷ (1 + e<sup>−z<\/sup>).", "why": "<p>The first test is the slide example.<\/p>"}, {"id": "sgdstep", "lv": "m", "title": "One backpropagation step", "task": "<p>Write <code>step(w1, w2, b, point, lr)<\/code> where point is [length, width, target]. Use squared error and the chain rule from the notebook. Return the new (w1, w2, b), each rounded to 4 decimals.<\/p>", "starter": "import math\n\ndef step(w1, w2, b, point, lr):\n    # your code here\n    pass\n", "tests": [{"call": "step(0.5, 0.2, 0.3, [2, 1, 0], 0.1)", "want": [0.4512, 0.1756, 0.2756]}, {"call": "step(0.5, 0.2, 0.3, [3, 1.5, 1], 0.1)", "want": [0.5064, 0.2032, 0.3021]}], "solution": "import math\n\ndef step(w1, w2, b, point, lr):\n    s = lambda x: 1 / (1 + math.exp(-x))\n    z = point[0] * w1 + point[1] * w2 + b\n    pred = s(z)\n    dz = 2 * (pred - point[2]) * pred * (1 - pred)\n    return (round(w1 - lr * dz * point[0], 4), round(w2 - lr * dz * point[1], 4), round(b - lr * dz, 4))\n", "hint": "dcost_dz = 2(pred − target) × σ(z)(1 − σ(z)). Then multiply by length, width and 1.", "why": "<p>A blue flower pushes every weight down and a red flower pushes them up.<\/p>"}, {"id": "train", "lv": "h", "title": "Train the neuron with a fixed order", "task": "<p>Write <code>train(data, lr, epochs)<\/code>. Start from w1 = w2 = b = 0. In each epoch visit the flowers in the given order and do one step per flower (squared error, as in the notebook). Return (w1, w2, b) rounded to 3 decimals. Also write <code>accuracy(data, w1, w2, b)<\/code> returning the fraction classified correctly with threshold 0.5.<\/p>", "starter": "import math\n\ndef train(data, lr, epochs):\n    # your code here\n    pass\n\ndef accuracy(data, w1, w2, b):\n    # your code here\n    pass\n", "tests": [{"call": "accuracy([[3,1.5,1],[2,1,0],[4,1.5,1],[3,1,0],[3.5,.5,1],[2,.5,0],[5.5,1,1],[1,1,0]], *train([[3,1.5,1],[2,1,0],[4,1.5,1],[3,1,0],[3.5,.5,1],[2,.5,0],[5.5,1,1],[1,1,0]], 0.5, 2000))", "want": 1.0}, {"call": "train([[1, 1, 1]], 0.1, 0)", "want": [0.0, 0.0, 0.0]}], "solution": "import math\n\ndef train(data, lr, epochs):\n    s = lambda x: 1 / (1 + math.exp(-x))\n    w1 = w2 = b = 0.0\n    for _ in range(epochs):\n        for x1, x2, t in data:\n            p = s(w1 * x1 + w2 * x2 + b)\n            dz = 2 * (p - t) * p * (1 - p)\n            w1, w2, b = w1 - lr * dz * x1, w2 - lr * dz * x2, b - lr * dz\n    return (round(w1, 3), round(w2, 3), round(b, 3))\n\ndef accuracy(data, w1, w2, b):\n    s = lambda x: 1 / (1 + math.exp(-x))\n    ok = sum((s(w1 * x1 + w2 * x2 + b) >= 0.5) == (t == 1) for x1, x2, t in data)\n    return ok / len(data)\n", "hint": "Reuse your step function inside two loops.", "why": "<p>With a fixed order, η = 0.5 and 2,000 epochs the line separates all eight notebook flowers. After only 400 epochs one blue flower (3, 1) is still on the red side, because it sits very close to the red flower (3, 1.5).<\/p>"}], "must": [["Neuron", "NN(x) = σ(w·x + b) with σ(z) = 1 ÷ (1 + e<sup>−z<\/sup>). NN(2, 1) with w = (0.5, 0.2), b = 0.3 is 0.82. Output above 0.5 means class 1."], ["Boundary", "σ(z) = 0.5 exactly at z = 0, so one neuron draws a straight line. It cannot separate XOR."], ["Chain rule", "∂cost/∂w₁ = 2(pred − target) · σ(z)(1 − σ(z)) · x₁. For b the last factor is 1. Update w ← w − η · gradient."], ["Notebook", "10,000 random single flower steps with η = 0.1 from random weights. The mystery flower (4.5, 1) comes out 0.99, red."], ["Loss choice", "Squared error with a sigmoid learns slowly when confidently wrong. Cross entropy gives the clean gradient (σ − y)x."]], "summary": "<p>A neuron weighs its inputs, adds a bias and squashes the result with a sigmoid into a probability. Training follows the chain rule backwards from the cost to every weight, one small step per example.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"forward": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.sigmoid": "<function sigmoid>"}}, {"l": 8, "ev": "line", "d": {"G.w1": "0.5", "G.w2": "0.2", "G.b": "0.3"}}, {"l": 9, "ev": "line", "d": {"G.length": "2", "G.width": "1"}}, {"l": 10, "ev": "line", "d": {"G.z": "1.5"}}, {"l": 4, "ev": "call", "s": ["module", "sigmoid()"], "d": {"L.x": "1.5"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 11, "ev": "line", "s": ["module"], "d": {"G.pred": "0.8175744761936437", "L.x": null}}, {"l": 8, "ev": "line", "o": "2 1 z = 1.5 pred = 0.8176 red\n"}, {"l": 9, "ev": "line", "d": {"G.length": "3", "G.width": "1.5"}}, {"l": 10, "ev": "line", "d": {"G.z": "2.1"}}, {"l": 4, "ev": "call", "s": ["module", "sigmoid()"], "d": {"L.x": "2.1"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 11, "ev": "line", "s": ["module"], "d": {"G.pred": "0.8909031788043871", "L.x": null}}, {"l": 8, "ev": "line", "o": "3 1.5 z = 2.1 pred = 0.8909 red\n"}, {"l": 9, "ev": "line", "d": {"G.length": "4.5", "G.width": "1"}}, {"l": 10, "ev": "line", "d": {"G.z": "2.75"}}, {"l": 4, "ev": "call", "s": ["module", "sigmoid()"], "d": {"L.x": "2.75"}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 11, "ev": "line", "s": ["module"], "d": {"G.pred": "0.9399133498259924", "L.x": null}}, {"l": 8, "ev": "line", "o": "4.5 1 z = 2.75 pred = 0.9399 red\n"}, {"l": 8, "ev": "return"}], "tail": "", "err": null, "cut": false}, "backprop": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.sigmoid": "<function <lambda>>"}}, {"l": 6, "ev": "line", "d": {"G.sigmoid_p": "<function <lambda>>"}}, {"l": 7, "ev": "line", "d": {"G.w1": "0.5", "G.w2": "0.2", "G.b": "0.3", "G.lr": "0.1"}}, {"l": 8, "ev": "line", "d": {"G.length": "2", "G.width": "1", "G.target": "0"}}, {"l": 9, "ev": "line", "d": {"G.z": "1.5"}}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "1.5"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 10, "ev": "line", "s": ["module"], "d": {"G.pred": "0.8175744761936437", "L.x": null}}, {"l": 12, "ev": "line", "d": {"G.cost": "0.6684280241233108"}}, {"l": 13, "ev": "line", "d": {"G.dcost_dpred": "1.6351489523872873"}}, {"l": 4, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "1.5"}}, {"l": 4, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()", "<lambda>()"]}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 4, "ev": "return", "s": ["module", "<lambda>()"]}, {"l": 14, "ev": "line", "s": ["module"], "d": {"G.dpred_dz": "0.14914645207033286", "L.x": null}}, {"l": 15, "ev": "line", "d": {"G.dcost_dz": "0.24387666485508555"}}, {"l": 16, "ev": "line", "d": {"G.w1": "0.4512246670289829"}}, {"l": 17, "ev": "line", "d": {"G.w2": "0.17561233351449146"}}, {"l": 18, "ev": "line", "d": {"G.b": "0.27561233351449144"}}, {"l": 19, "ev": "line", "o": "cost before 0.6684\n"}, {"l": 20, "ev": "line", "o": "new w1, w2, b: 0.4512 0.1756 0.2756\n"}, {"l": 3, "ev": "call", "s": ["module", "<lambda>()"], "d": {"L.x": "1.3536740010869486"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 20, "ev": "return", "s": ["module"], "d": {"L.x": null}, "o": "new pred 0.7947\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/nlpwidgets.js"></script>
+<script src="../../assets/nnwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>
