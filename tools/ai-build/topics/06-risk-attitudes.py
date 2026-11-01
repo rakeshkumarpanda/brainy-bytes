@@ -91,6 +91,16 @@ K.lesson('stpete', 'The St Petersburg paradox', f'''
     '<p>Rabin\'s calibration theorem (2000) shows that turning down small fair gambles at all wealth levels implies absurd aversion to large ones under expected utility, which supports reference dependent models. In reinforcement learning, exponential utility gives risk sensitive control and entropic risk measures.</p>')}
 ''', kw=['St Petersburg paradox', 'Bernoulli', 'log utility', 'infinite expectation', 'bounded utility', 'Menger', 'Arrow Pratt'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Risk attitude is the shape of the utility curve. Concave means careful, convex means adventurous, straight means indifferent to risk.</p>
+{scene('a farmer choosing a crop', '<p>A safe crop always earns 25. A risky crop earns 100 in a good year and 0 in a bad one, each with probability 0.5. Expected money favours the risky crop (50), but a farmer whose family must eat every year may prefer the safe one. How much safety is worth is the risk premium.</p>')}
+{steps('Work it out: certainty equivalent with u(x) = √x', ['Expected utility of the risky crop: 0.5 × 10 + 0.5 × 0 = 5.', 'Certainty equivalent: the sure amount with √CE = 5, so CE = 25.', 'Risk premium = expected money − CE = 50 − 25 = 25.', eq('This farmer is just indifferent between the safe crop (25) and the risky one')])}
+{deep('the analysis', '<p>Jensen’s inequality says that for a concave u, E[u(X)] ≤ u(E[X]), so a risk averse person always values a gamble below its expected money. The Arrow and Pratt measure r(x) = −u″(x) ÷ u′(x) gives the strength of risk aversion at wealth x. For u = √x, r(x) = 1 ÷ (2x): risk aversion falls as wealth grows, matching everyday experience.</p>')}
+{deep('the research view', '<p>Risk sensitive reinforcement learning replaces expected return with measures such as conditional value at risk, the average of the worst α percent of outcomes, to build safer agents for finance, robotics and medicine. The Kelly criterion, which bets to maximise expected log wealth, is the log utility case.</p>')}
+{note('A risk averse person may still gamble. They need the gamble to pay enough more than the sure amount, the risk premium.', 'warn')}
+''', kw=['certainty equivalent', 'risk premium', 'Jensen inequality', 'Arrow-Pratt', 'CVaR'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'A concave utility function means the agent is', ['Risk loving', 'Risk neutral', 'Risk averse', 'Irrational'], 2,
        'u″ < 0.', 'The chord lies below the curve, so E[u] ≤ u(E[X]).')

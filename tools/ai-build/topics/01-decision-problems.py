@@ -107,6 +107,16 @@ K.lesson('rational', 'Completeness and transitivity', f'''
     '<p>Experiments by Tversky (1969) found intransitive choices in people when options differ slightly on several attributes. Research on regret theory, context dependent preferences and incomplete preference models (Aumann 1962, Bewley 1986) asks how much of rational choice survives once these axioms are weakened.</p>')}
 ''', kw=['completeness', 'transitivity', 'rational preference', 'money pump', 'cycle', 'incomplete preference', 'homework', 'total preorder'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Preferences are the raw material of every later chapter. This lesson takes the same idea from an everyday picture to an open research question, so you can stop at the depth you need.</p>
+{scene('the money pump at a juice stall', '<p>Suppose Riya prefers tea to juice, juice to coffee and coffee to tea. A stall owner hands her tea, then offers juice for a small fee of 1 rupee, then coffee for another rupee, then tea again for a third. Each swap looks good to her, yet after three swaps she holds the same tea and is 3 rupees poorer. Cyclic preferences can be exploited without end, which is why transitivity is treated as a rule of rational choice.</p>')}
+{steps('Work it out: is this preference transitive?', ['Riya: tea ≻ juice, juice ≻ coffee, coffee ≻ tea.', 'Transitivity would need tea ≻ coffee from the first two.', 'But she states coffee ≻ tea, so the relation has a cycle.', eq('Not transitive. Each round of the pump costs her 3 rupees.')])}
+{deep('the analysis', '<p>A complete and transitive weak preference is called a weak order. With n options there are n! strict rankings with no ties, but more weak orders, because ties are allowed. For 3 options there are 6 strict rankings and 13 weak orders, for 4 options 24 and 75. These are the ordered Bell (Fubini) numbers. Every weak order can be drawn as a ladder of indifference classes, best class on top.</p>')}
+{deep('the research view', '<p>Arrow’s impossibility theorem (1951) shows that even when every person is transitive, a group may not be. Three voters with rankings A B C, B C A and C A B make the majority prefer A to B, B to C and C to A: the Condorcet paradox. In AI this matters for preference learning from many annotators, where pooled human comparisons can cycle and a single reward model cannot fit them all.</p>')}
+{note('Completeness does not mean you like every option. It means you can compare any two, possibly by saying you are indifferent.', 'warn')}
+''', kw=['money pump', 'weak order', 'Condorcet paradox', 'Arrow theorem', 'preference learning'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'In a decision problem (A, X, c, ⪰), what does c do?', ['Ranks the outcomes', 'Maps each action to its outcome', 'Lists the actions', 'Measures cost in money'], 1,
        'c stands for consequence.', 'c : A → X tells you which outcome each action produces.')

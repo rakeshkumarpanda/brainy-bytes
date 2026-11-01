@@ -107,6 +107,16 @@ K.lesson('zerosum', 'Zero sum games, altruism and the practice problems', f'''
     '<p>Measuring the price of anarchy (Koutsoupias and Papadimitriou 1999) quantifies how far equilibria can fall below the social optimum, for example in routing networks and congestion games. Multi agent learning research studies how to steer self interested learners towards Pareto efficient outcomes, through reward shaping, communication or opponent shaping.</p>')}
 ''', kw=['zero sum', 'Rock Paper Scissors', 'altruism', 'practice problem A', 'practice problem C', 'tragedy of the commons', 'price of anarchy'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Pareto optimality asks whether an outcome wastes anything. Equilibria often do, and the size of that waste has a name in research: the price of anarchy.</p>
+{scene('splitting a pizza', '<p>Two friends split a pizza 5 slices to 3. Moving one slice from one to the other helps one and hurts the other, so the split is Pareto optimal. Throwing a slice away hurts someone and helps no one, so any split that wastes slices is not. Pareto optimal does not mean fair: 8 slices to 0 is Pareto optimal too.</p>')}
+{steps('Work it out: the prisoner’s dilemma', ['Payoffs: both cooperate (−1, −1), one defects (0, −3) or (−3, 0), both defect (−2, −2).', 'Defect is better for each player whatever the other does, so the equilibrium is (defect, defect).', 'Both cooperating gives (−1, −1), better for both.', eq('The equilibrium is Pareto dominated: total cost 4 against the optimum 2')])}
+{deep('the analysis', '<p>A good solution concept should exist for a wide class of games, give a small set of predictions, and not change under irrelevant details. Pareto optimality is a separate test of efficiency. The two can conflict, as the prisoner’s dilemma shows, which is the formal reason why contracts, repeated play and regulation exist.</p>')}
+{deep('the research view', '<p>The price of anarchy (Koutsoupias and Papadimitriou 1999) is the ratio between the cost of the worst equilibrium and the optimal cost. In the dilemma above it is 4 ÷ 2 = 2. For selfish routing with linear delays it is at most 4/3 (Roughgarden and Tardos 2002), and Braess’s paradox shows adding a road can make every driver slower.</p>')}
+{note('Pareto optimal and fair are different ideas. Pareto says nothing about how the total is shared.', 'warn')}
+''', kw=['Pareto optimality', 'prisoner dilemma', 'price of anarchy', 'Braess paradox', 'efficiency'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'Pareto optimality is', ['A solution concept that predicts play', 'A way to judge whether an outcome wastes payoff', 'The same as fairness', 'The same as Nash equilibrium'], 1,
        'It evaluates, it does not predict.', 'It asks whether someone could be made better off without hurting anyone.')

@@ -109,6 +109,16 @@ K.lesson('more', 'Voting, prices and puzzles', f'''
     '<p>Generalized second price auctions for search ads are not truthful, which led to work on their equilibria (Edelman, Ostrovsky and Schwarz 2007, Varian 2007). Learning agents bidding repeatedly in first price auctions are now studied as online learning problems with regret guarantees.</p>')}
 ''', kw=['Hotelling', 'median voter', 'location game', 'discrete Bertrand', 'below cost prices', 'streetlamp refunds', 'guess two thirds', 'mechanism design'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Dominance shows up wherever rules can be designed. The second price auction is the cleanest case, and it is worth checking by hand.</p>
+{scene('a sealed bid auction for a used bicycle', '<p>Each bidder writes a bid in an envelope. The highest bidder wins but pays the second highest bid. Your value for the bicycle is 70. Should you write 70, or try to be clever?</p>')}
+{steps('Work it out: why bidding your value is safe', ['Others’ highest bid 60: bid 70, win and pay 60, gain 10. Bidding 50 loses, gain 0.', 'Others’ highest bid 80: bid 70, lose, gain 0. Bidding 90 wins but pays 80, gain −10.', 'Your bid only decides whether you win, never the price you pay.', eq('Bidding your true value is weakly dominant')])}
+{deep('the analysis', '<p>Proof sketch: let b be the highest other bid. If b < v, any bid above b wins and pays b, and bidding v does so. If b > v, winning means paying more than v, and bidding v avoids it. If b = v you get 0 either way. In no case does another bid do strictly better, and in some cases it does strictly worse.</p>')}
+{deep('the research view', '<p>Search engines first ran generalised second price auctions for ad slots, which are not truthful, and much research compares them with the truthful VCG auction. Revenue equivalence says that under standard assumptions first price, second price and many other auctions earn the same expected revenue.</p>')}
+{note('In a second price auction you do not pay your own bid. Students who forget this conclude that shading the bid is wise.', 'warn')}
+''', kw=['second price auction', 'truthful bidding', 'Vickrey', 'ad auctions', 'revenue equivalence'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'In the Cournot duopoly with a = 100, b = 1, c = 10, what survives round 1 of IESDS?', ['[0, 30]', '[0, 45]', '[22.5, 45]', '{30}'], 1,
        'Monopoly quantity.', 'Anything above BR(0) = 45 is dominated by 45.')

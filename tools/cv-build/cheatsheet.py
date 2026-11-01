@@ -16,7 +16,7 @@ headless Chromium (tools/cv-build/sheet-pdf.js), so the PDF is a static file tha
 It also writes the compact cheatsheet, content/<subject>/cheatsheet-compact.html and <name>-cheatsheet-compact.pdf:
 only the key ideas, the formulas the chapters mark as exam favourites, and the Common mistake and In the exam
 notes, in three narrow columns. The build stops
-if its PDF grows past COMPACT_MAX pages.
+if its PDF grows past COMPACT_MAX pages, or past cfg['compact_max'] for a subject with several sections.
 """
 import html
 import os
@@ -148,11 +148,21 @@ def chapter_html(T, seen):
             f'<p class="sh-sum">{html.escape(T["summary"])}</p>{"".join(blocks)}</article>')
 
 
+def step_key(T):
+    """Steps are numbered inside each section of a subject, so a step is known by its section and number."""
+    return f'{T["part"]}-{T["step"][0]}' if T.get('part') else str(T['step'][0])
+
+
+def step_label(stp, T):
+    """The heading of a step: the section name first when the subject has sections."""
+    return (f'{T["part_name"]} · ' if T.get('part_name') else '') + stp[1]
+
+
 def page(chs, cfg, meta):
     seen = set()
     steps, order = {}, []
     for T in chs:
-        n = T['step'][0]
+        n = step_key(T)
         if n not in steps:
             steps[n] = (T['step'], [])
             order.append(n)
@@ -160,14 +170,14 @@ def page(chs, cfg, meta):
     body = []
     for n in order:
         stp, ts = steps[n]
-        body.append(f'<section class="sh-step" id="step-{n}"><h2><span>Step {n}</span>{html.escape(stp[1])}</h2>'
+        body.append(f'<section class="sh-step" id="step-{n}"><h2><span>Step {stp[0]}</span>{html.escape(step_label(stp, ts[0]))}</h2>'
                     + ''.join(chapter_html(T, seen) for T in ts) + '</section>')
     body = ''.join(body)
     n_fx = body.count('data-kind="fx"')
     n_tab = body.count('data-kind="table"')
     n_note = sum(body.count(f'data-kind="{k}"') for k in ('tip', 'warn', 'exam'))
     n_must = body.count('data-kind="must"')
-    toc = ''.join(f'<a href="#step-{n}"><b>{n}</b>{html.escape(steps[n][0][1])}</a>' for n in order)
+    toc = ''.join(f'<a href="#step-{n}"><b>{steps[n][0][0]}</b>{html.escape(step_label(steps[n][0], steps[n][1][0]))}</a>' for n in order)
     kinds = ''.join(f'<button type="button" class="sh-k" data-k="{k}" aria-pressed="true">{v}</button>' for k, v in KINDS)
     pdf = file_name(cfg)
     size = pdf_label(meta['full'])
@@ -222,7 +232,7 @@ def page(chs, cfg, meta):
 def compact_page(chs, cfg, meta):
     seen, steps, order = set(), {}, []
     for T in chs:
-        n = T['step'][0]
+        n = step_key(T)
         if n not in steps:
             steps[n] = (T['step'], [])
             order.append(n)
@@ -265,7 +275,7 @@ def compact_page(chs, cfg, meta):
             arts.append(f'<article class="sh-ch cs-ch" id="{T["slug"]}"><h3><a href="./{T["slug"]}.html" data-topic="{T["topic"]}" data-h="">'
                         f'<span class="sh-no">{html.escape(T.get("badge", ""))}</span>{html.escape(T["title"])}</a></h3>{blk}</article>')
         if arts:
-            body.append(f'<section class="sh-step cs-step" id="step-{n}"><h2><span>Step {n}</span>{html.escape(stp[1])}</h2>{"".join(arts)}</section>')
+            body.append(f'<section class="sh-step cs-step" id="step-{n}"><h2><span>Step {stp[0]}</span>{html.escape(step_label(stp, ts[0]))}</h2>{"".join(arts)}</section>')
     pdf = file_name(cfg, True)
     sub = cfg['subject']
     home = 's=' + sub + (f'&amp;p={cfg["part"]}' if cfg.get('part') else '')
@@ -276,7 +286,7 @@ def compact_page(chs, cfg, meta):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Compact cheatsheet · {cfg["name"]}</title>
-<meta name="description" content="{cfg["name"]} compact cheatsheet: the key ideas, exam favourite formulas and common traps of every chapter in at most {COMPACT_MAX} printed pages, with a PDF to download.">
+<meta name="description" content="{cfg["name"]} compact cheatsheet: the key ideas, exam favourite formulas and common traps of every chapter in at most {cfg.get("compact_max", COMPACT_MAX)} printed pages, with a PDF to download.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/theme.css">
 {css}
@@ -286,7 +296,7 @@ def compact_page(chs, cfg, meta):
 <div class="cv-wrap sh-wrap">
   <div class="cv-crumb"><a class="home-link" href="../../subject.html?{home}" target="_top">{cfg["name"]}</a><span>›</span><span>Compact cheatsheet</span></div>
   <header class="cv-hero">
-    <div class="cv-kicker">Compact cheatsheet · at most {COMPACT_MAX} printed pages</div>
+    <div class="cv-kicker">Compact cheatsheet · at most {cfg.get("compact_max", COMPACT_MAX)} printed pages</div>
     <h1>{cfg["name"]} compact cheatsheet</h1>
     <p class="lead">The key ideas, the exam favourite formulas and the common traps of every chapter, packed tight for the last look before an exam. It keeps only what the chapters mark as most important. The full cheatsheet has every formula, table and tip.</p>
     <div class="cv-chips"><span class="cv-chip">{n_must} key ideas</span><span class="cv-chip">{n_fx} exam favourite formulas</span><span class="cv-chip">{n_trap} traps and exam tips</span></div>
@@ -338,5 +348,6 @@ def write(chs, cfg, root):
     open(comp, 'w', encoding='utf-8').write(compact_page(chs, cfg, meta))
     for f, p, m in ((full, pdf, a), (comp, cpdf, b)):
         print(f'cheatsheet: {os.path.relpath(f, root)} and {os.path.relpath(p, root)} ({m["pages"]} pages, {m["kb"]} KB)')
-    if b['pages'] > COMPACT_MAX:
-        raise SystemExit(f'the compact cheatsheet PDF has {b["pages"]} pages, the limit is {COMPACT_MAX}. Tighten the print rules in assets/sheet.css.')
+    limit = cfg.get('compact_max', COMPACT_MAX)
+    if b['pages'] > limit:
+        raise SystemExit(f'the compact cheatsheet PDF has {b["pages"]} pages, the limit is {limit}. Tighten the print rules in assets/sheet.css.')

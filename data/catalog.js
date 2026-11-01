@@ -377,10 +377,16 @@ window.CATALOG = {
       emoji: '💬',
       color: '#ea580c',
       layout: 'path',
-      blurb: 'A step by step path from what language is to tokens, information theory, n-gram language models, smoothing, tagging and parsing.',
-      intro: 'Follow the path one step at a time. You start with what language is and why it is ambiguous, turn text into tokens and counts with NLTK, measure information with entropy, build and smooth n-gram language models the way SRILM does, then tag and parse sentences with HMMs, Viterbi and grammars. A lab rebuilds the SRILM assignment and an exam step revises everything. Each topic explains the idea at school, college, masters and research depth, shows the maths with worked problems, and has animations whose every setting you can change.',
-      tags: ['Tokenisation', 'Entropy', 'N-gram models', 'Smoothing', 'POS tagging', 'Parsing'],
-      modules: nlpModules().concat(sheetModule('nlp'), iqModule('nlp'))
+      blurb: 'Two sections in one path. NLU covers language, text as data, entropy, n-gram models, smoothing, tagging and parsing. NLP covers neurons, word vectors, RNNs, LSTMs, sequence to sequence models, attention and decoding.',
+      intro: 'Pick a section, then follow its steps in order. Each topic explains the idea at school, college, masters and research depth, shows the maths with highlighted formulas and worked problems, and has animations whose every setting you can change, with suggestions of what to change and what to watch for. The cheatsheet and the interview questions cover both sections.',
+      tags: ['Tokenisation', 'Entropy', 'N-gram models', 'Smoothing', 'POS tagging', 'Word2vec', 'GloVe', 'RNN', 'LSTM', 'Attention', 'Beam search'],
+      parts: [
+        { id: 'nlu', title: 'NLU', blurb: 'The classical foundations: what language is, tokens and counts, Zipf and entropy, n-gram language models, smoothing, HMM tagging, Viterbi and parsing.',
+          intro: 'NLU follows the first half of the course. You start with what language is and why it is ambiguous, turn text into tokens and counts with NLTK, measure information with entropy, build and smooth n-gram language models the way SRILM does, then tag and parse sentences with HMMs, Viterbi and grammars. A lab rebuilds the SRILM assignment and an exam step revises everything.' },
+        { id: 'nlp', title: 'NLP', blurb: 'The neural methods: neurons and gradient descent, word2vec, negative sampling and GloVe, neural language models and RNNs, NER with BIO tags, LSTM and GRU, seq2seq, attention and beam search.',
+          intro: 'NLP follows the FoVL lectures 1 to 3, the class notebooks and the lecture recordings. You start with one neuron learning by gradient descent, learn word vectors with word2vec, negative sampling and GloVe, build neural language models with RNNs, tag names with BIO labels, fix vanishing gradients with LSTM and GRU, translate with sequence to sequence models and attention, and finish with decoding and an exam revision step.' }
+      ],
+      modules: nlpModules().concat(nlpNeuralModules(), sheetModule('nlp'), iqModule('nlp'))
     },
     {
       id: 'ai',
@@ -1262,7 +1268,7 @@ function sheetModule(sid) {
   const info = {
     'computer-vision': ['content/computer-vision/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Computer Vision chapters on one page, from pixels and filters to detection, segmentation and CLIP. Search it, filter it, print it or download the PDF.', ['image size formula', 'convolution output size', 'Sobel', 'Harris', 'optical flow', 'IoU', 'NMS', 'focal loss', 'mAP', 'Dice', 'mIoU']],
     'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Advanced AI chapters on one page, from preferences and utility to expected utility, risk, discounting, Nash style games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['utility', 'expected utility', 'certainty equivalent', 'discount factor', 'value of information', 'Cournot', 'Pareto', 'dominance', 'IESDS']],
-    'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the NLP chapters on one page, from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'cross entropy', 'perplexity', 'MLE', 'Laplace', 'Good-Turing', 'Kneser-Ney', 'interpolation', 'HMM', 'Viterbi']]
+    'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
   }[sid];
   return {
     id: 'cheatsheet', title: 'Cheatsheet', emoji: '📄',
@@ -4066,7 +4072,7 @@ function cvModules() {
 /* ===== nlp-build: Natural Language Processing chapters. Generated by tools/nlp-build/build.py, edit the topic files instead. ===== */
 function nlpModules() {
   return [
-    { id: "nlp-language", title: "Language and meaning", emoji: "1", step: 1, level: "School and college", blurb: "What language is, why it is ambiguous, and what it would mean for a machine to understand it.", topics: [
+    { id: "nlp-language", title: "Language and meaning", emoji: "1", step: 1, part: "nlu", level: "School and college", blurb: "What language is, why it is ambiguous, and what it would mean for a machine to understand it.", topics: [
       { id: "what-is-language", title: "What language is", emoji: "1.1", page: "content/nlp/what-is-language.html",
         summary: "The working definition, six levels from phonetics to pragmatics, symbols and the semiotic triangle, the speaker and hearer chain, Zipf and Grice, and recursion.",
         keywords: ["language", "linguistics", "six levels", "phonetics", "phonology", "morphology", "syntax", "semantics", "pragmatics", "semiotic triangle", "Grice", "recursion", "Piraha"],
@@ -4114,7 +4120,7 @@ function nlpModules() {
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
-    { id: "nlp-text", title: "Text as data", emoji: "2", step: 2, level: "School and college", blurb: "Turn raw text into sentences, tokens, stems, lemmas and counts, exactly as the NLTK notebook does.", topics: [
+    { id: "nlp-text", title: "Text as data", emoji: "2", step: 2, part: "nlu", level: "School and college", blurb: "Turn raw text into sentences, tokens, stems, lemmas and counts, exactly as the NLTK notebook does.", topics: [
       { id: "tokenisation", title: "Sentences, tokens and vocabularies", emoji: "2.1", page: "content/nlp/tokenisation.html",
         summary: "The preprocessing pipeline, tokens and types, Punkt sentence splitting, Treebank word tokens, vocabularies and BPE subwords.",
         keywords: ["tokenisation", "tokenization", "sentence segmentation", "Punkt", "word_tokenize", "tokens", "types", "vocabulary", "BPE", "subword", "NLTK"],
@@ -4163,7 +4169,7 @@ function nlpModules() {
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
-    { id: "nlp-info", title: "Information and surprise", emoji: "3", step: 3, level: "College and masters", blurb: "Measure how predictable language is with Zipf's law, entropy, mutual information and the noisy channel.", topics: [
+    { id: "nlp-info", title: "Information and surprise", emoji: "3", step: 3, part: "nlu", level: "College and masters", blurb: "Measure how predictable language is with Zipf's law, entropy, mutual information and the noisy channel.", topics: [
       { id: "zipf", title: "Zipf's law and the shape of vocabulary", emoji: "3.1", page: "content/nlp/zipfs-law.html",
         summary: "Zipf's law f = k/r, the Brown check, coverage by harmonic numbers, least effort, Mandelbrot and Heaps, and why random typing is also Zipfian.",
         keywords: ["Zipf's law", "rank frequency", "power law", "harmonic number", "least effort", "monkey typing", "Heaps' law", "Mandelbrot"],
@@ -4210,7 +4216,7 @@ function nlpModules() {
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
-    { id: "nlp-lm", title: "Language models", emoji: "4", step: 4, level: "College and masters", blurb: "Predict the next word with n-gram models, measure them with perplexity, smooth away the zeros and run the SRILM assignment.", topics: [
+    { id: "nlp-lm", title: "Language models", emoji: "4", step: 4, part: "nlu", level: "College and masters", blurb: "Predict the next word with n-gram models, measure them with perplexity, smooth away the zeros and run the SRILM assignment.", topics: [
       { id: "ngrams", title: "N-gram models and the Markov assumption", emoji: "4.1", page: "content/nlp/ngram-models.html",
         summary: "The chain rule, the Markov assumption, MLE counting, the start and end tags, and the bigram and unigram activity.",
         keywords: ["n-gram", "bigram", "unigram", "trigram", "Markov assumption", "Markov chain", "MLE", "start and end tags", "language model"],
@@ -4271,7 +4277,7 @@ function nlpModules() {
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
-    { id: "nlp-syntax", title: "Tagging and syntax", emoji: "5", step: 5, level: "College and masters", blurb: "Tag every word with its part of speech using HMMs and Viterbi, mark chunks and names with IOB, and draw constituency and dependency trees.", topics: [
+    { id: "nlp-syntax", title: "Tagging and syntax", emoji: "5", step: 5, part: "nlu", level: "College and masters", blurb: "Tag every word with its part of speech using HMMs and Viterbi, mark chunks and names with IOB, and draw constituency and dependency trees.", topics: [
       { id: "postag", title: "Part of speech tagging", emoji: "5.1", page: "content/nlp/pos-tagging.html",
         summary: "The tagging task, tagsets, ambiguity, look up and backoff taggers, and generative against discriminative models.",
         keywords: ["POS tagging", "tagset", "Penn Treebank", "universal tags", "backoff tagger", "perceptron", "generative", "discriminative"],
@@ -4348,7 +4354,7 @@ function nlpModules() {
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
-    { id: "nlp-revision", title: "Exam revision", emoji: "6", step: 6, level: "All levels", blurb: "Revise the whole subject by exam style, from school questions to IIT numericals, NPTEL and GATE style papers, and MIT and Cambridge style derivations.", topics: [
+    { id: "nlp-revision", title: "Exam revision", emoji: "6", step: 6, part: "nlu", level: "All levels", blurb: "Revise the whole subject by exam style, from school questions to IIT numericals, NPTEL and GATE style papers, and MIT and Cambridge style derivations.", topics: [
       { id: "exam-revision", title: "Exam revision: from school to research universities", emoji: "6.1", page: "content/nlp/exam-revision.html",
         summary: "Exam style questions from school level to research universities, with worked answers, a formula sheet and a mock quiz.",
         keywords: ["exam", "revision", "formula sheet", "mock quiz", "numericals", "derivations", "IIT", "NPTEL", "GATE", "MIT", "Cambridge", "Stanford"],
@@ -4702,12 +4708,13 @@ function advAiModules() {
       { id: "decision-problems", title: "Decision problems and preferences", emoji: "1.1", page: "content/ai/decision-problems.html",
         summary: "Decision problems, the three preference relations, completeness, transitivity, cycles and what carries over from weak to strict preference.",
         keywords: ["decision problem", "preference relation", "weak preference", "strict preference", "indifference", "completeness", "transitivity", "rationality"],
-        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 12, "assign": 2},
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "problem", title: "What a decision problem is", emoji: "", group: "Lesson", keywords: ["decision problem", "actions", "outcomes", "consequence function", "action value", "rational agent"] },
         { id: "relations", title: "Weak preference, strict preference and indifference", emoji: "", group: "Lesson", keywords: ["weak preference", "strict preference", "indifference", "relation", "ordered pairs", "reflexive"] },
         { id: "rational", title: "Completeness and transitivity", emoji: "", group: "Lesson", keywords: ["completeness", "transitivity", "rational preference", "money pump", "cycle", "incomplete preference", "homework", "total preorder"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["money pump", "weak order", "Condorcet paradox", "Arrow theorem", "preference learning"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4716,12 +4723,13 @@ function advAiModules() {
       { id: "utility-functions", title: "Utility functions", emoji: "1.2", page: "content/ai/utility-functions.html",
         summary: "Utility representation, ordinal invariance, the existence theorem with its construction proof, and counting rankings.",
         keywords: ["utility function", "ordinal utility", "cardinal utility", "existence theorem", "representation", "increasing transformation", "n factorial"],
-        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "represent", title: "A number for every outcome", emoji: "", group: "Lesson", keywords: ["utility function", "payoff", "representation", "real numbers", "utility is not money"] },
         { id: "ordinal", title: "Ordinal and cardinal utility", emoji: "", group: "Lesson", keywords: ["ordinal utility", "cardinal utility", "increasing transformation", "invariance", "utility differences"] },
         { id: "existence", title: "When does a utility function exist?", emoji: "", group: "Lesson", keywords: ["existence theorem", "proof by construction", "top ranked", "indifference class", "n factorial", "lexicographic", "Debreu"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ordinal utility", "increasing transformation", "lexicographic", "Bradley-Terry", "reward model"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4730,13 +4738,14 @@ function advAiModules() {
       { id: "choosing-best-action", title: "Choosing the best action", emoji: "1.3", page: "content/ai/choosing-best-action.html",
         summary: "Rational choice as arg max, decision trees, the movie, fruit tree and city park problems, and constrained optimization on an interval.",
         keywords: ["rational choice", "arg max", "decision tree", "problem 1.6", "problem 1.7", "corner solution", "satisficing", "optimization"],
-        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 2},
+        minutes: 50, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "rational", title: "From preferences to the best action", emoji: "", group: "Lesson", keywords: ["rational choice", "arg max", "action value", "satisficing", "maximizing", "loss function", "regression", "Herbert Simon"] },
         { id: "trees", title: "Decision trees: the movie problem", emoji: "", group: "Lesson", keywords: ["decision tree", "decision node", "leaf", "movie problem", "INOX", "PVR", "walking cost"] },
         { id: "fruit", title: "Problem 1.6: the fruit trees", emoji: "", group: "Lesson", keywords: ["problem 1.6", "fruit trees", "apple", "orange", "pear", "variety", "diminishing returns", "expenditure"] },
         { id: "parks", title: "Problem 1.7: how much to spend on parks", emoji: "", group: "Lesson", keywords: ["problem 1.7", "city parks", "square root", "first order condition", "concave", "corner solution", "budget constraint", "marginal benefit"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["argmax", "Weierstrass", "concavity", "optimiser curse", "double Q-learning"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4747,12 +4756,13 @@ function advAiModules() {
       { id: "lotteries-cdf", title: "Lotteries and distributions", emoji: "2.1", page: "content/ai/lotteries-cdf.html",
         summary: "Lotteries, the CDF and its properties, intervals, densities and continuous outcomes.",
         keywords: ["lottery", "CDF", "PDF", "nature", "interval probability", "uniform distribution", "stochastic dominance"],
-        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "nature", title: "When an action has more than one outcome", emoji: "", group: "Lesson", keywords: ["lottery", "nature", "uncertainty", "chance node", "simple lottery", "conditional distribution"] },
         { id: "cdf", title: "The cumulative distribution function", emoji: "", group: "Lesson", keywords: ["CDF", "cumulative distribution function", "right continuous", "non decreasing", "interval probability", "crop yield"] },
         { id: "pdf", title: "Densities and continuous outcomes", emoji: "", group: "Lesson", keywords: ["PDF", "density", "uniform", "exponential", "normal", "stochastic dominance", "continuous outcome"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["lottery", "CDF", "step function", "stochastic dominance", "model comparison"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4761,12 +4771,13 @@ function advAiModules() {
       { id: "expected-utility", title: "Expected utility and compound lotteries", emoji: "2.2", page: "content/ai/expected-utility.html",
         summary: "Expected utility, reducing compound lotteries, the R&D example, the reversal under non affine changes and why utility under risk is cardinal.",
         keywords: ["expected utility", "compound lottery", "R&D", "affine transformation", "cardinal utility", "von Neumann Morgenstern", "present value"],
-        minutes: 45, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "eu", title: "Expected utility", emoji: "", group: "Lesson", keywords: ["expected utility", "expected payoff", "expected outcome", "rational choice under risk", "arg max", "practice problems"] },
         { id: "compound", title: "Compound lotteries: the R&D example", emoji: "", group: "Lesson", keywords: ["compound lottery", "reduction", "R&D", "optimistic", "pessimistic", "decision tree with chance nodes"] },
         { id: "affine", title: "Why ranking is not enough under risk", emoji: "", group: "Lesson", keywords: ["affine transformation", "cardinal utility", "reversal", "von Neumann Morgenstern", "independence axiom", "Allais paradox", "present value"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["expected utility", "vN-M axioms", "independence axiom", "Allais paradox", "prospect theory"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4775,12 +4786,13 @@ function advAiModules() {
       { id: "risk-attitudes", title: "Risk attitudes and the St Petersburg paradox", emoji: "2.3", page: "content/ai/risk-attitudes.html",
         summary: "Risk attitudes from concavity, certainty equivalent and risk premium, and the St Petersburg paradox with its log utility resolution.",
         keywords: ["risk aversion", "certainty equivalent", "risk premium", "St Petersburg paradox", "log utility", "concave utility", "Jensen inequality"],
-        minutes: 45, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "attitudes", title: "Three attitudes to risk", emoji: "", group: "Lesson", keywords: ["risk averse", "risk neutral", "risk loving", "concave", "convex", "Jensen", "fair gamble"] },
         { id: "ce", title: "The certainty equivalent", emoji: "", group: "Lesson", keywords: ["certainty equivalent", "risk premium", "insurance", "inverse utility", "practice problem 4"] },
         { id: "stpete", title: "The St Petersburg paradox", emoji: "", group: "Lesson", keywords: ["St Petersburg paradox", "Bernoulli", "log utility", "infinite expectation", "bounded utility", "Menger", "Arrow Pratt"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["certainty equivalent", "risk premium", "Jensen inequality", "Arrow-Pratt", "CVaR"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4791,12 +4803,13 @@ function advAiModules() {
       { id: "backward-induction", title: "Backward induction", emoji: "3.1", page: "content/ai/backward-induction.html",
         summary: "Backward induction on the R&D and marketing tree, full strategies, the film studio problem and Bellman's principle.",
         keywords: ["backward induction", "decision tree", "strategy", "dynamic programming", "principle of optimality", "R&D", "expected value"],
-        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "idea", title: "Decisions that unfold over time", emoji: "", group: "Lesson", keywords: ["decision over time", "sequential decision", "R&D", "marketing", "decision tree", "backward induction"] },
         { id: "solve", title: "Solving the R&D and marketing tree", emoji: "", group: "Lesson", keywords: ["backward induction", "expected value", "strategy", "full plan", "cross check", "enumeration", "8.375"] },
         { id: "practice", title: "Practice problem A: the film studio", emoji: "", group: "Lesson", keywords: ["practice problem A", "film studio", "principle of optimality", "Bellman", "dynamic programming", "MDP"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["backward induction", "Bellman equation", "dynamic programming", "Zermelo", "AlphaZero"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4805,12 +4818,13 @@ function advAiModules() {
       { id: "discounting-consumption", title: "Discounting and consumption over time", emoji: "3.2", page: "content/ai/discounting-consumption.html",
         summary: "Discount factors and present value, optimal consumption with ln and √x, corner solutions, and the time consistency of exponential discounting.",
         keywords: ["discount factor", "present value", "consumption smoothing", "time consistency", "hyperbolic discounting", "corner solution", "first order conditions"],
-        minutes: 50, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "discount", title: "Why money later is worth less", emoji: "", group: "Lesson", keywords: ["discount factor", "present value", "interest rate", "patience", "delta", "time value of money", "practice problem B"] },
         { id: "consume", title: "Spreading consumption over time", emoji: "", group: "Lesson", keywords: ["consumption smoothing", "two period", "three period", "first order conditions", "diminishing marginal utility", "practice problem D", "Euler equation"] },
         { id: "corners", title: "Corners, homework and time consistency", emoji: "", group: "Lesson", keywords: ["corner solution", "linear utility", "convex utility", "time consistency", "exponential discounting", "hyperbolic discounting", "homework"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["present value", "discount factor", "Euler equation", "hyperbolic discounting", "RL horizon"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4819,12 +4833,13 @@ function advAiModules() {
       { id: "value-of-information", title: "The value of information", emoji: "3.3", page: "content/ai/value-of-information.html",
         summary: "The value of perfect and imperfect information, the MBA and venue examples, and why information is never worth less than zero.",
         keywords: ["value of information", "perfect information", "oracle", "Bayes rule", "MBA", "forecast", "decision analysis"],
-        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "mba", title: "What is it worth to know first?", emoji: "", group: "Lesson", keywords: ["value of information", "MBA", "oracle", "perfect information", "decide first", "job market"] },
         { id: "never", title: "Information is never worth less than zero", emoji: "", group: "Lesson", keywords: ["VOI non negative", "proof", "practice problem C", "venue", "weather forecast", "drilling", "lease"] },
         { id: "imperfect", title: "Imperfect information and Bayes", emoji: "", group: "Lesson", keywords: ["imperfect information", "Bayes rule", "posterior", "forecast accuracy", "Blackwell", "value of sample information", "active learning"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["value of information", "perfect information", "Bayes", "active learning", "clarifying questions"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4835,12 +4850,13 @@ function advAiModules() {
       { id: "normal-form-games", title: "Static games and the normal form", emoji: "4.1", page: "content/ai/normal-form-games.html",
         summary: "Static games of complete information, common knowledge, the normal form, the Prisoner's Dilemma and best responses.",
         keywords: ["game theory", "normal form", "static game", "common knowledge", "Prisoner's Dilemma", "best response", "bimatrix"],
-        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "static", title: "Many agents: static games of complete information", emoji: "", group: "Lesson", keywords: ["static game", "dynamic game", "complete information", "common knowledge", "mutual knowledge", "practice problem D"] },
         { id: "normal", title: "The normal form of a game", emoji: "", group: "Lesson", keywords: ["normal form", "strategic form", "strategy profile", "payoff function", "bimatrix", "Prisoner's Dilemma", "s minus i"] },
         { id: "br", title: "Best responses and unilateral deviation", emoji: "", group: "Lesson", keywords: ["best response", "unilateral deviation", "self enforcing", "extensive form", "information set", "dominance preview"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["normal form", "best response", "coordination game", "GAN", "multi-agent RL"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4849,13 +4865,14 @@ function advAiModules() {
       { id: "modelling-games", title: "Modelling games: Cournot, Bertrand and the streetlamp", emoji: "4.2", page: "content/ai/modelling-games.html",
         summary: "The modelling recipe, Cournot and Bertrand duopoly, and the streetlamp public good with free riding.",
         keywords: ["Cournot", "Bertrand", "public good", "streetlamp", "best response function", "duopoly", "free rider"],
-        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 50, counts: {"lessons": 5, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "recipe", title: "How to write any game down", emoji: "", group: "Lesson", keywords: ["modelling", "recipe", "players", "strategies", "payoffs by cases"] },
         { id: "cournot", title: "Cournot: competing in quantities", emoji: "", group: "Lesson", keywords: ["Cournot", "quantity competition", "inverse demand", "best response function", "reaction curve", "practice problem F", "duopoly"] },
         { id: "bertrand", title: "Bertrand: competing in prices", emoji: "", group: "Lesson", keywords: ["Bertrand", "price competition", "strategy set", "discontinuous payoff", "undercutting", "Bertrand paradox", "MRP"] },
         { id: "lamp", title: "The streetlamp: a public good", emoji: "", group: "Lesson", keywords: ["streetlamp", "public good", "free rider", "indicator function", "threshold", "pivotal", "crowdfunding"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["Cournot", "Bertrand paradox", "public good", "algorithmic collusion", "best response"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4864,12 +4881,13 @@ function advAiModules() {
       { id: "solution-concepts-pareto", title: "Solution concepts and Pareto optimality", emoji: "4.3", page: "content/ai/solution-concepts-pareto.html",
         summary: "What solution concepts are, the assumptions behind them, and Pareto optimality with worked games and the zero sum proof.",
         keywords: ["solution concept", "Pareto optimality", "equilibrium", "zero sum", "altruism", "self enforcement", "tragedy of the commons"],
-        minutes: 45, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "concepts", title: "What a solution concept is for", emoji: "", group: "Lesson", keywords: ["solution concept", "equilibrium", "rational", "intelligent", "common knowledge", "self enforcement", "existence", "uniqueness", "invariance"] },
         { id: "pareto", title: "Pareto optimality", emoji: "", group: "Lesson", keywords: ["Pareto optimal", "Pareto dominance", "Pareto efficient", "direct test", "improvement test", "Marketing Campaign War", "fairness"] },
         { id: "zerosum", title: "Zero sum games, altruism and the practice problems", emoji: "", group: "Lesson", keywords: ["zero sum", "Rock Paper Scissors", "altruism", "practice problem A", "practice problem C", "tragedy of the commons", "price of anarchy"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["Pareto optimality", "prisoner dilemma", "price of anarchy", "Braess paradox", "efficiency"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4880,12 +4898,13 @@ function advAiModules() {
       { id: "dominance", title: "Dominance and the dominant strategy equilibrium", emoji: "5.1", page: "content/ai/dominance.html",
         summary: "Strict and weak dominance, the four dominance words, the dominant strategy equilibrium with its uniqueness proof, and its limits.",
         keywords: ["dominance", "strictly dominated", "dominant strategy", "dominant strategy equilibrium", "partial order", "altruism", "rationality"],
-        minutes: 50, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "strict", title: "Strict domination", emoji: "", group: "Lesson", keywords: ["strict domination", "weak domination", "dominance check", "row player", "column player", "altruism reversal"] },
         { id: "vocab", title: "Dominating, dominated, dominant, submissive", emoji: "", group: "Lesson", keywords: ["dominant", "dominated", "dominating", "submissive", "partial order", "mixed strategy domination", "voting", "Gibbard Satterthwaite"] },
         { id: "dse", title: "The dominant strategy equilibrium", emoji: "", group: "Lesson", keywords: ["dominant strategy equilibrium", "uniqueness proof", "rationality theorem", "beliefs", "existence", "invariance", "strategy proof"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["strict dominance", "mixed strategy dominance", "rationalisability", "mechanism design", "VCG"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4894,12 +4913,13 @@ function advAiModules() {
       { id: "iesds", title: "Iterated elimination of dominated strategies", emoji: "5.2", page: "content/ai/iesds.html",
         summary: "The IESDS algorithm, the slide 11 and Marketing War examples, theorems about IESDS and Nash equilibrium, and why weak elimination depends on order.",
         keywords: ["IESDS", "iterated elimination", "dominated strategies", "common knowledge", "Nash equilibrium", "order independence", "rationalizability"],
-        minutes: 50, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "why", title: "Why we may eliminate again and again", emoji: "", group: "Lesson", keywords: ["IESDS", "common knowledge of rationality", "layers of reasoning", "algorithm", "blue eyed islanders", "guess two thirds"] },
         { id: "slide11", title: "Worked examples: the Marketing War and slide 11", emoji: "", group: "Lesson", keywords: ["Marketing War", "slide 11", "worked example", "self enforcing", "practice problem E", "Pareto dominated equilibrium"] },
         { id: "theorems", title: "Theorems about IESDS", emoji: "", group: "Lesson", keywords: ["theorems", "Nash equilibrium preview", "order independence", "weak elimination", "rationalizability", "report card", "level k"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["IESDS", "guessing game", "order independence", "level-k", "cognitive hierarchy"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4908,12 +4928,13 @@ function advAiModules() {
       { id: "dominance-applications", title: "Dominance at work: Cournot, auctions and voting", emoji: "5.3", page: "content/ai/dominance-applications.html",
         summary: "Cournot solved by iterated elimination, truthful bidding in second price auctions, the median voter, and where weak dominance misleads.",
         keywords: ["Cournot", "IESDS", "Vickrey auction", "first price auction", "Hotelling", "median voter", "mechanism design"],
-        minutes: 45, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 11, "assign": 2},
         added: "2026-10-27",
         sections: [
         { id: "cournot", title: "IESDS solves the Cournot duopoly", emoji: "", group: "Lesson", keywords: ["Cournot IESDS", "halving interval", "monopoly quantity", "best response", "completing the square", "practice E1"] },
         { id: "auctions", title: "Auctions: when truth telling is dominant", emoji: "", group: "Lesson", keywords: ["auction", "second price", "Vickrey", "first price", "truthful bidding", "weakly dominant", "bid shading"] },
         { id: "more", title: "Voting, prices and puzzles", emoji: "", group: "Lesson", keywords: ["Hotelling", "median voter", "location game", "discrete Bertrand", "below cost prices", "streetlamp refunds", "guess two thirds", "mechanism design"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["second price auction", "truthful bidding", "Vickrey", "ad auctions", "revenue equivalence"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
@@ -4951,3 +4972,251 @@ function advAiModules() {
   ];
 }
 /* ===== end of ai-build ===== */
+
+/* ===== nlp-neural-build: Natural Language Processing chapters. Generated by tools/nlp-build/build.py, edit the topic files instead. ===== */
+function nlpNeuralModules() {
+  return [
+    { id: "nn-learn", title: "Neurons and learning", emoji: "1", step: 1, part: "nlp", level: "School and college", blurb: "See how a model learns: costs, gradient descent, one neuron with a sigmoid, backpropagation by the chain rule and the activation functions that make deep networks work.", topics: [
+      { id: "nn-gradient-descent", title: "From regression to learning by gradient descent", emoji: "1.1", page: "content/nlp/regression-gradient-descent.html",
+        summary: "Weights, bias, squared error, gradient descent, learning rate, partial derivatives and the chain rule.",
+        keywords: ["linear regression", "cost function", "gradient descent", "learning rate", "partial derivative", "chain rule"],
+        minutes: 40, counts: {"lessons": 5, "problems": 12, "quiz": 12, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "fit", title: "A model is a guess with knobs", emoji: "", group: "Lesson", keywords: ["linear regression", "weight", "bias", "model", "prediction", "pats and wags"] },
+        { id: "cost", title: "A cost function scores a guess", emoji: "", group: "Lesson", keywords: ["cost function", "squared error", "MSE", "loss", "error"] },
+        { id: "descent", title: "Rolling downhill: gradient descent", emoji: "", group: "Lesson", keywords: ["gradient descent", "learning rate", "slope", "derivative", "overshoot", "divergence"] },
+        { id: "bowl", title: "Two knobs: partial derivatives and the cost bowl", emoji: "", group: "Lesson", keywords: ["partial derivative", "gradient", "cost surface", "bowl", "Hessian", "condition number"] },
+        { id: "tanh", title: "The exam question: a tanh model by the chain rule", emoji: "", group: "Lesson", keywords: ["chain rule", "tanh", "backpropagation", "exam question", "derivative"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-neuron", title: "One neuron, the sigmoid and backpropagation", emoji: "1.2", page: "content/nlp/neuron-backprop.html",
+        summary: "A neuron, the sigmoid, the decision line, backpropagation and the flowers notebook.",
+        keywords: ["neuron", "sigmoid", "logistic regression", "backpropagation", "chain rule", "flowers notebook", "SGD"],
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "neuron", title: "A neuron: weigh, add, squash", emoji: "", group: "Lesson", keywords: ["neuron", "sigmoid", "logistic regression", "weights", "flowers"] },
+        { id: "why", title: "Why the sigmoid, and where to draw the line", emoji: "", group: "Lesson", keywords: ["decision boundary", "threshold", "logit", "probability", "classification"] },
+        { id: "backprop", title: "Backpropagation is the chain rule", emoji: "", group: "Lesson", keywords: ["backpropagation", "chain rule", "sigmoid derivative", "sigmoid_p", "update rule"] },
+        { id: "notebook", title: "The flowers notebook, line by line", emoji: "", group: "Lesson", keywords: ["notebook", "stochastic gradient descent", "training loop", "mystery flower", "cross entropy"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-activations", title: "Activation functions: why networks need a bend", emoji: "1.3", page: "content/nlp/activation-functions.html",
+        summary: "Why networks need non-linear activations, and how the classic and modern ones compare.",
+        keywords: ["activation function", "sigmoid", "tanh", "ReLU", "leaky ReLU", "GELU", "swish", "non-linearity"],
+        minutes: 30, counts: {"lessons": 3, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "why", title: "Why a network needs a bend", emoji: "", group: "Lesson", keywords: ["non-linearity", "activation", "linear collapse", "universal approximation", "depth"] },
+        { id: "classic", title: "Threshold, sigmoid, tanh and hard tanh", emoji: "", group: "Lesson", keywords: ["threshold unit", "sigmoid", "tanh", "hard tanh", "saturation", "zero centred"] },
+        { id: "modern", title: "ReLU and its smooth successors", emoji: "", group: "Lesson", keywords: ["ReLU", "dead neuron", "leaky ReLU", "swish", "GELU", "transformers"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "nn-vectors", title: "Word vectors", emoji: "2", step: 2, part: "nlp", level: "College", blurb: "Turn words into vectors that capture meaning: one-hot vectors and their limits, word2vec with softmax and negative sampling, co-occurrence counts, GloVe, and how to test and improve embeddings.", topics: [
+      { id: "nn-word-meaning", title: "From symbols to word vectors", emoji: "2.1", page: "content/nlp/word-meaning.html",
+        summary: "One-hot vectors, distributional semantics, context windows, dense embeddings and cosine similarity.",
+        keywords: ["one-hot", "distributional semantics", "word vector", "embedding", "cosine similarity", "Firth"],
+        minutes: 30, counts: {"lessons": 3, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "symbols", title: "Words as symbols: the one-hot problem", emoji: "", group: "Lesson", keywords: ["one-hot", "localist representation", "orthogonal", "WordNet", "sparse vector"] },
+        { id: "context", title: "You shall know a word by the company it keeps", emoji: "", group: "Lesson", keywords: ["distributional semantics", "Firth", "context window", "context words", "co-occurrence"] },
+        { id: "vectors", title: "Dense word vectors and cosine similarity", emoji: "", group: "Lesson", keywords: ["word vector", "embedding", "dense vector", "cosine similarity", "dot product", "distributed representation"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-word2vec", title: "Word2vec: skip-gram with the full softmax", emoji: "2.2", page: "content/nlp/word2vec-skipgram.html",
+        summary: "Skip-gram objective, softmax prediction, gradients, SGD, the notebook, CBOW and parameter counts.",
+        keywords: ["word2vec", "skip-gram", "CBOW", "softmax", "objective function", "SGD", "notebook"],
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "idea", title: "The word2vec idea: predict the neighbours", emoji: "", group: "Lesson", keywords: ["word2vec", "skip-gram", "centre word", "context word", "likelihood", "objective function"] },
+        { id: "predict", title: "The prediction function: dot, exponentiate, normalise", emoji: "", group: "Lesson", keywords: ["softmax", "prediction function", "two vectors per word", "one-hot input", "embedding matrix", "dot product"] },
+        { id: "train", title: "Training: the gradient and the notebook loop", emoji: "", group: "Lesson", keywords: ["gradient", "SGD", "mini batch", "training loop", "notebook", "outer product", "pseudo-code"] },
+        { id: "variants", title: "Skip-gram, CBOW and why two vectors", emoji: "", group: "Lesson", keywords: ["CBOW", "skip-gram", "hierarchical softmax", "parameters", "two vectors"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-negative-sampling", title: "Skip-gram with negative sampling", emoji: "2.3", page: "content/nlp/negative-sampling.html",
+        summary: "Negative sampling objective, gradients, the 3/4 noise distribution, sigmoid counting and the notebook.",
+        keywords: ["negative sampling", "SGNS", "sigmoid", "noise distribution", "unigram 3/4", "PMI", "notebook"],
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "why", title: "The expensive denominator", emoji: "", group: "Lesson", keywords: ["negative sampling", "softmax cost", "binary classification", "noise pairs", "logistic regression"] },
+        { id: "objective", title: "The negative sampling objective", emoji: "", group: "Lesson", keywords: ["objective", "sigmoid", "J_neg", "gradient", "K negatives", "44 sigmoids"] },
+        { id: "sampling", title: "Which words to use as noise: U(w) to the 3/4", emoji: "", group: "Lesson", keywords: ["unigram distribution", "noise distribution", "power 3/4", "sampling", "PMI"] },
+        { id: "notebook", title: "The negative sampling notebook", emoji: "", group: "Lesson", keywords: ["notebook", "K = 3", "cosine", "cats and dogs", "contrastive learning"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-cooccurrence-glove", title: "Co-occurrence counts, SVD and GloVe", emoji: "2.4", page: "content/nlp/cooccurrence-glove.html",
+        summary: "Co-occurrence matrices, SVD, GloVe ratios, the GloVe loss and weighting function, and the notebook.",
+        keywords: ["co-occurrence", "SVD", "LSA", "GloVe", "weighting function", "x_max", "log counts", "notebook"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "counts", title: "Count the neighbours directly", emoji: "", group: "Lesson", keywords: ["co-occurrence matrix", "window", "word-document matrix", "LSA", "sparse vectors"] },
+        { id: "svd", title: "Shrink the matrix with SVD", emoji: "", group: "Lesson", keywords: ["SVD", "singular values", "truncated SVD", "COALS", "log counts", "Eckart-Young"] },
+        { id: "ratios", title: "GloVe: meaning lives in probability ratios", emoji: "", group: "Lesson", keywords: ["GloVe", "probability ratio", "ice and steam", "log-bilinear", "biases"] },
+        { id: "loss", title: "The GloVe loss and its weighting function", emoji: "", group: "Lesson", keywords: ["GloVe loss", "weighting function", "x_max", "alpha 3/4", "least squares", "w + w tilde"] },
+        { id: "notebook", title: "The GloVe notebook and what it teaches", emoji: "", group: "Lesson", keywords: ["notebook", "1 / distance", "Adagrad", "overfitting", "count vs predict"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-evaluate-embeddings", title: "Evaluating and improving embeddings", emoji: "2.5", page: "content/nlp/evaluate-improve-embeddings.html",
+        summary: "Intrinsic and extrinsic tests, fastText n-grams, cross-lingual mapping, sparse embeddings and debiasing.",
+        keywords: ["intrinsic evaluation", "extrinsic evaluation", "Spearman", "analogy", "fastText", "cross-lingual", "debiasing", "sparse embeddings"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "intrinsic", title: "Intrinsic evaluation: test the vectors on their own", emoji: "", group: "Lesson", keywords: ["intrinsic evaluation", "relatedness", "Spearman", "analogy", "purity", "selectional preference"] },
+        { id: "extrinsic", title: "Extrinsic evaluation: use the vectors in a real system", emoji: "", group: "Lesson", keywords: ["extrinsic evaluation", "downstream task", "pre-trained embeddings", "fine-tuning", "concatenation"] },
+        { id: "subwords", title: "Subword embeddings and fastText", emoji: "", group: "Lesson", keywords: ["subword", "character n-grams", "fastText", "OOV", "morphemes", "dog and dogs"] },
+        { id: "align", title: "Knowledge, languages and alignment", emoji: "", group: "Lesson", keywords: ["cross-lingual", "alignment", "Procrustes", "identical words", "adversarial", "whale and fish"] },
+        { id: "sparse-bias", title: "Interpretable and fairer embeddings", emoji: "", group: "Lesson", keywords: ["sparse embeddings", "L1", "interpretability", "bias", "debiasing", "neutralise"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "nn-rnn", title: "Language models and RNNs", emoji: "3", step: 3, part: "nlp", level: "College and masters", blurb: "Predict the next word: n-gram models and their limits, fixed window and recurrent neural language models, sequence labelling with BIO tags, and why LSTM and GRU fix vanishing gradients.", topics: [
+      { id: "nn-language-models-rnn", title: "Language models and recurrent networks", emoji: "3.1", page: "content/nlp/language-models-rnn.html",
+        summary: "n-gram LMs, the fixed window model, RNN equations and parameters, cross-entropy training and perplexity.",
+        keywords: ["language model", "n-gram", "RNN", "cross-entropy", "teacher forcing", "perplexity", "BPTT"],
+        minutes: 50, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "ngram", title: "Language models and n-grams", emoji: "", group: "Lesson", keywords: ["language model", "n-gram", "Markov assumption", "sparsity", "smoothing", "backoff"] },
+        { id: "window", title: "A fixed window neural language model", emoji: "", group: "Lesson", keywords: ["fixed window", "Bengio", "neural language model", "composition function", "parameter sharing"] },
+        { id: "rnn", title: "Recurrent neural networks", emoji: "", group: "Lesson", keywords: ["RNN", "hidden state", "parameter sharing", "unrolling", "96 parameters"] },
+        { id: "training", title: "Training: cross-entropy and teacher forcing", emoji: "", group: "Lesson", keywords: ["cross-entropy", "teacher forcing", "BPTT", "SGD", "0.51 and 2.99"] },
+        { id: "perplexity", title: "Perplexity and generating text", emoji: "", group: "Lesson", keywords: ["perplexity", "exp of cross-entropy", "autoregressive generation", "1.44 and 4.07"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-sequence-labelling", title: "Sequence labelling, NER and bidirectional RNNs", emoji: "3.2", page: "content/nlp/sequence-labelling-ner.html",
+        summary: "RNN taggers, NER, BIO tags, span F1, the parameter questions and bidirectional RNNs.",
+        keywords: ["sequence labelling", "POS tagging", "NER", "BIO", "span F1", "bidirectional RNN", "sentence classification"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "labelling", title: "Sequence labelling with an RNN", emoji: "", group: "Lesson", keywords: ["sequence labelling", "POS tagging", "RNN tagger", "softmax per token"] },
+        { id: "ner", title: "Named entity recognition", emoji: "", group: "Lesson", keywords: ["NER", "named entities", "PER LOC ORG GPE", "segmentation", "type ambiguity"] },
+        { id: "bio", title: "BIO tagging: spans become one tag per word", emoji: "", group: "Lesson", keywords: ["BIO", "2n + 1", "BIOES", "span F1", "entity boundaries"] },
+        { id: "params", title: "The two parameter questions", emoji: "", group: "Lesson", keywords: ["parameter count", "20,000", "18,050", "POS tagger", "NER tagger"] },
+        { id: "birnn", title: "Sentence classification and bidirectional RNNs", emoji: "", group: "Lesson", keywords: ["sentence classification", "bidirectional RNN", "BiRNN", "pooling", "sentiment"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-lstm-gru", title: "Vanishing gradients, LSTM and GRU", emoji: "3.3", page: "content/nlp/lstm-gru.html",
+        summary: "Vanishing gradients, LSTM and GRU equations, why gating works, parameter counts and xLSTM.",
+        keywords: ["vanishing gradient", "exploding gradient", "LSTM", "GRU", "forget gate", "BiLSTM", "gradient clipping", "xLSTM"],
+        minutes: 50, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "vanishing", title: "Vanishing and exploding gradients", emoji: "", group: "Lesson", keywords: ["vanishing gradient", "exploding gradient", "Jacobian", "gradient clipping", "long range dependency"] },
+        { id: "lstm", title: "Long Short-Term Memory", emoji: "", group: "Lesson", keywords: ["LSTM", "memory cell", "forget gate", "input gate", "output gate", "cell state"] },
+        { id: "why-lstm", title: "How the LSTM keeps gradients alive", emoji: "", group: "Lesson", keywords: ["additive update", "forget gate path", "long memory", "residual connections"] },
+        { id: "gru", title: "Gated Recurrent Units", emoji: "", group: "Lesson", keywords: ["GRU", "update gate", "reset gate", "candidate state", "LSTM vs GRU"] },
+        { id: "bilstm", title: "BiLSTM, the parameter question and xLSTM", emoji: "", group: "Lesson", keywords: ["BiLSTM", "23,808", "code-switching", "parallelism", "xLSTM"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "nn-seq2seq", title: "Translation, attention and decoding", emoji: "4", step: 4, part: "nlp", level: "Masters", blurb: "Translate and generate text: the encoder-decoder model as a conditional language model, the bottleneck, attention with its worked problem, and greedy, beam and sampling decoders.", topics: [
+      { id: "nn-seq2seq", title: "Sequence-to-sequence models and machine translation", emoji: "4.1", page: "content/nlp/seq2seq-nmt.html",
+        summary: "Encoder and decoder, conditional LM, training, uses, the bottleneck, low-resource NMT and parameter counting.",
+        keywords: ["seq2seq", "NMT", "encoder-decoder", "conditional language model", "bottleneck", "back translation", "parameter count"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "mt", title: "Neural machine translation", emoji: "", group: "Lesson", keywords: ["machine translation", "NMT", "seq2seq", "encoder", "decoder"] },
+        { id: "conditional", title: "A conditional language model", emoji: "", group: "Lesson", keywords: ["conditional language model", "P(y | x)", "parallel corpus", "teacher forcing", "stacked RNNs"] },
+        { id: "uses", title: "Seq2seq is versatile", emoji: "", group: "Lesson", keywords: ["encoder-decoder", "summarisation", "dialogue", "parsing", "code generation"] },
+        { id: "bottleneck", title: "The bottleneck problem", emoji: "", group: "Lesson", keywords: ["bottleneck", "information loss", "long sentences", "reversing the source"] },
+        { id: "params", title: "Low-resource NMT and the parameter question", emoji: "", group: "Lesson", keywords: ["low-resource NMT", "back translation", "pivot", "parameter count", "38,005,760"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-attention", title: "Attention in encoder-decoder models", emoji: "4.2", page: "content/nlp/attention.html",
+        summary: "Attention steps, the lecture problem, scoring variants and the benefits of attention.",
+        keywords: ["attention", "context vector", "dot product", "multiplicative", "additive", "scaled dot product", "alignment"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "idea", title: "The idea of attention", emoji: "", group: "Lesson", keywords: ["attention", "dynamic context", "alignment", "Bahdanau"] },
+        { id: "equations", title: "Attention in equations", emoji: "", group: "Lesson", keywords: ["scores", "softmax weights", "context vector", "concatenation", "query key value"] },
+        { id: "problem", title: "The lecture problem, fully worked", emoji: "", group: "Lesson", keywords: ["dot-product attention", "worked problem", "context vector", "[1.262, -0.722]"] },
+        { id: "variants", title: "Ways to compute the scores", emoji: "", group: "Lesson", keywords: ["dot product", "multiplicative", "bilinear", "additive", "scaled dot product"] },
+        { id: "benefits", title: "Why attention is so helpful", emoji: "", group: "Lesson", keywords: ["benefits", "alignment", "interpretability", "summarisation", "self-attention"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-decoding", title: "Decoding: greedy, beam search and sampling", emoji: "4.3", page: "content/nlp/decoding.html",
+        summary: "Greedy and beam search, stopping and length normalisation, and temperature, top-k and top-p sampling.",
+        keywords: ["decoding", "greedy", "beam search", "length normalisation", "temperature", "top-k", "top-p"],
+        minutes: 40, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "greedy", title: "Greedy decoding and its problem", emoji: "", group: "Lesson", keywords: ["greedy decoding", "argmax", "no undo", "globally optimal"] },
+        { id: "beam", title: "Beam search", emoji: "", group: "Lesson", keywords: ["beam search", "beam size", "hypotheses", "log probability", "exhaustive search"] },
+        { id: "finish", title: "Stopping, length and cost", emoji: "", group: "Lesson", keywords: ["stopping criterion", "END token", "length normalisation", "search cost"] },
+        { id: "sampling", title: "Sampling: temperature, top-k and top-p", emoji: "", group: "Lesson", keywords: ["sampling", "temperature", "top-k", "top-p", "nucleus sampling", "quality vs diversity"] },
+        { id: "choose", title: "Choosing a decoder", emoji: "", group: "Lesson", keywords: ["choosing a decoder", "temperature", "MAP decoding", "speculative decoding"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "nn-revision", title: "Exam revision", emoji: "5", step: 5, part: "nlp", level: "All levels", blurb: "Revise the neural NLP section by exam style, from school questions to IIT numericals, MCQ and MSQ papers with negative marking, and MIT and Cambridge style derivations.", topics: [
+      { id: "nn-exam-revision", title: "Exam revision for neural NLP", emoji: "5.1", page: "content/nlp/nn-exam-revision.html",
+        summary: "Exam style questions for neural NLP from school level to research universities, with worked answers, a formula sheet and a mock paper.",
+        keywords: ["exam", "revision", "formula sheet", "mock paper", "MCQ", "MSQ", "negative marking", "IIT", "GATE", "MIT", "Cambridge"],
+        minutes: 60, counts: {"lessons": 6, "problems": 12, "quiz": 13, "assign": 0},
+        added: "2026-11-01",
+        sections: [
+        { id: "map", title: "How the neural NLP part is examined", emoji: "", group: "Lesson", keywords: ["exam pattern", "revision", "MCQ", "MSQ", "negative marking", "IIT", "NPTEL", "GATE", "MIT", "Stanford", "Cambridge"] },
+        { id: "school", title: "Tier 1: school and first year", emoji: "", group: "Lesson", keywords: ["sigmoid", "cosine similarity", "gradient descent", "one-hot", "BIO", "short answer"] },
+        { id: "semester", title: "Tier 2: university semester and IIT course exams", emoji: "", group: "Lesson", keywords: ["numericals", "parameter counts", "skip-gram pairs", "co-occurrence", "GloVe weighting", "attention"] },
+        { id: "mcq", title: "Tier 3: MCQ, MSQ and numerical answer papers", emoji: "", group: "Lesson", keywords: ["MCQ", "MSQ", "negative marking", "expected value", "numerical answer", "traps"] },
+        { id: "derive", title: "Tier 4: derivations, design and critique", emoji: "", group: "Lesson", keywords: ["derivation", "softmax gradient", "vanishing gradient proof", "GloVe derivation", "design", "critique"] },
+        { id: "sheet", title: "Formula sheet and last minute checks", emoji: "", group: "Lesson", keywords: ["formula sheet", "numbers to remember", "last minute checks"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of nlp-neural-build ===== */

@@ -388,8 +388,11 @@ def catalog(chs):
     print(f'catalog: {len(chs)} chapters in {len(mods)} steps -> data/catalog.js')
 
 
-def main():
+def build(want):
+    """Check every chapter, write the pages named in want (all when empty) and the catalog block. Returns the chapters."""
     chs = chapters()
+    for T in chs:
+        T['part'], T['part_name'] = CFG.get('part'), CFG.get('part_name')
     known = viz_names()
     errs = []
     for T in chs:
@@ -399,11 +402,15 @@ def main():
     if errs:
         raise SystemExit('\n'.join(errs))
     os.makedirs(out_dir(), exist_ok=True)
-    want = sys.argv[1:]
     for T in chs:
         if not want or T['slug'] in want:
             page(T, chs, None)
     catalog(chs)
+    return chs
+
+
+def main():
+    chs = build(sys.argv[1:])
     if CFG.get('langsheet'):
         # one cheatsheet per programming language (Selenium), see tools/sheet-build/langsheet.py
         subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'sheet-build', 'langsheet.py'), CFG['subject']], check=True)

@@ -39,6 +39,21 @@ a.cv-chip.cv-sheet{text-decoration:none; color:var(--cv); border-color:var(--cv-
 /* lesson stepper */
 .cv-stepper{list-style:none; margin:0 0 16px; padding:0; display:flex; gap:6px; overflow-x:auto; scrollbar-width:thin; padding-bottom:4px}
 .cv-stepper li{flex:none}
+.cv-stepwrap{position:relative; margin:0 0 16px}
+.cv-stepwrap .cv-stepper{margin:0}
+.cv-stepwrap::before,.cv-stepwrap::after{content:""; position:absolute; top:0; bottom:4px; width:56px; pointer-events:none; opacity:0; transition:opacity .2s; z-index:1}
+.cv-stepwrap::before{left:0; background:linear-gradient(90deg,var(--bg),transparent)}
+.cv-stepwrap::after{right:0; background:linear-gradient(270deg,var(--bg),transparent)}
+.cv-stepwrap.fade-l::before,.cv-stepwrap.fade-r::after{opacity:1}
+.cv-sarrow{position:absolute; top:calc(50% - 2px); transform:translateY(-50%); z-index:2; width:34px; height:34px; border-radius:50%; display:grid; place-items:center; cursor:pointer; color:#fff; background:var(--cv); border:2px solid var(--surface); box-shadow:0 4px 12px rgba(15,23,42,.22); transition:transform .15s, box-shadow .15s}
+.cv-sarrow.left{left:2px}
+.cv-sarrow.right{right:2px}
+.cv-sarrow[hidden]{display:none}
+.cv-sarrow:hover{transform:translateY(-50%) scale(1.08); box-shadow:0 6px 16px rgba(15,23,42,.3)}
+.cv-sarrow:focus-visible{outline:3px solid var(--cv-soft); outline-offset:2px}
+.cv-sarrow.right svg{animation:cvNudge 1.6s ease-in-out 3}
+@keyframes cvNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+@media (prefers-reduced-motion:reduce){.cv-sarrow.right svg{animation:none}}
 .cv-stepper a{display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink2); border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:6px 12px 6px 6px; font-size:13.5px; font-weight:700; max-width:260px}
 .cv-stepper .n{flex:none; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; background:var(--surface2); font-size:12px; font-weight:800}
 .cv-stepper .t{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}

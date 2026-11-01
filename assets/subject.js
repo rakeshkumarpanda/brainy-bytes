@@ -148,7 +148,7 @@
   }
   function pathOverview(focusModule) {
     const part = parts ? pickPart(focusModule) : null;
-    const inPart = m => !parts || m.part === part;
+    const inPart = m => !parts || !m.part || m.part === part;  /* a module with no part (cheatsheet, interview) belongs to every section */
     const steps = subj.modules.filter(m => m.step && inPart(m)), extra = subj.modules.filter(m => !m.step && inPart(m));
     const partInfo = parts ? parts.find(x => x.id === part) : null;
     const partTabs = parts ? `<nav class="lp-parts" aria-label="Sections of this subject">${parts.map((x, i) => {

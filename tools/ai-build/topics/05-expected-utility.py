@@ -104,6 +104,16 @@ K.lesson('affine', 'Why ranking is not enough under risk', f'''
     '<p>The Allais paradox breaks independence, and Kahneman and Tversky\'s prospect theory replaces probabilities with decision weights and utility with a value function around a reference point. Rank dependent utility and Choquet expected utility are formal models that relax independence.</p>')}
 ''', kw=['affine transformation', 'cardinal utility', 'reversal', 'von Neumann Morgenstern', 'independence axiom', 'Allais paradox', 'present value'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Expected utility weights the value of each outcome by its probability. Here it is followed from a phone insurance decision to the axioms behind it and the paradoxes that test it.</p>
+{scene('insuring a phone', '<p>A phone worth 100 has a 50 percent chance of breaking this year. Expected money without insurance is 50. Many people still pay more than 50 to be covered for sure, because losing everything hurts more than its money value suggests. Expected utility, not expected money, explains this.</p>')}
+{steps('Work it out: sure 40 or a coin toss for 100 or 0, with u(x) = √x', ['Expected money of the toss: 0.5 × 100 = 50, more than 40.', 'Expected utility of the toss: 0.5 × √100 + 0.5 × 0 = 5.', 'Utility of the sure amount: √40 = 6.32.', eq('6.32 > 5, so this person takes the sure 40')])}
+{deep('the analysis', '<p>The von Neumann and Morgenstern theorem: if preferences over lotteries are complete, transitive, continuous and satisfy independence (mixing two lotteries with a third in the same proportion keeps their order), then there is a utility u such that lottery L is preferred to M exactly when E<sub>L</sub>[u] ≥ E<sub>M</sub>[u]. The utility is unique up to a positive affine change a·u + b with a > 0, which is why cardinal differences now matter.</p>')}
+{deep('the research view', '<p>The Allais paradox shows real people break the independence axiom, and prospect theory (Kahneman and Tversky 1979) models this with reference points and distorted probability weights. In AI, an agent that maximises expected reward is an expected utility maximiser, so choosing the reward function is choosing its vN-M utility.</p>')}
+{note('Expected value and expected utility differ whenever u is not a straight line. Write which one a question asks for.', 'warn')}
+''', kw=['expected utility', 'vN-M axioms', 'independence axiom', 'Allais paradox', 'prospect theory'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'EU(a) for a discrete lottery is', ['Σ pᵢ xᵢ', 'Σ pᵢ u(xᵢ)', 'max u(xᵢ)', 'u(Σ pᵢ xᵢ)'], 1,
        'Utility, weighted by probability.', 'Expected utility weights each outcome\'s utility by its probability.')

@@ -109,6 +109,16 @@ K.lesson('corners', 'Corners, homework and time consistency', f'''
     '<p>In reinforcement learning the discount γ in Σ γ<sup>t</sup> r<sub>t</sub> plays the role of δ, keeping returns finite and trading off near against far rewards. Work on hyperbolic discounting in RL (Fedus et al. 2019) learns values for many γ at once and combines them into a hyperbolic weighting.</p>')}
 ''', kw=['corner solution', 'linear utility', 'convex utility', 'time consistency', 'exponential discounting', 'hyperbolic discounting', 'homework'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Discounting compares money and happiness at different times. The same factor δ appears in savings decisions and in every reinforcement learning agent.</p>
+{scene('1000 rupees now or 1100 next year', '<p>If a bank pays 8 percent interest, 1000 rupees today grows to 1080 in a year. An offer of 1100 next year is therefore better than 1000 today. The present value of 1100 is what you would need to deposit today to reach it.</p>')}
+{steps('Work it out: present value at r = 0.08', ['Discount factor δ = 1 ÷ (1 + r) = 1 ÷ 1.08 = 0.9259.', 'Present value of 1100 = 1100 × 0.9259.', eq('= 1018.52 > 1000, so waiting is better'), 'At r = 0.12 the present value is 1100 ÷ 1.12 = 982.14, and taking the money now is better.'])}
+{deep('the analysis', '<p>For lifetime utility ∑ δ<sup>t</sup> u(c<sub>t</sub>) with interest rate r, the first order condition is the Euler equation u′(c<sub>t</sub>) = δ(1 + r) u′(c<sub>t+1</sub>). With δ(1 + r) = 1 marginal utilities are equal across periods, so a concave u gives equal consumption: people smooth spending. Exponential discounting is time consistent, a plan made today is still optimal tomorrow.</p>')}
+{deep('the research view', '<p>Reinforcement learning maximises ∑ γ<sup>t</sup> r<sub>t</sub>, and 1 ÷ (1 − γ) is the effective planning horizon: γ = 0.99 looks about 100 steps ahead. People often discount hyperbolically, 1 ÷ (1 + kt), which makes plans time inconsistent (Laibson 1997): the gym plan made on Sunday is dropped on Monday.</p>')}
+{note('The discount rate r and the discount factor δ = 1 ÷ (1 + r) are different numbers. A higher rate means a lower factor.', 'warn')}
+''', kw=['present value', 'discount factor', 'Euler equation', 'hyperbolic discounting', 'RL horizon'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'With interest rate r, the discount factor is', ['1 + r', '1/(1 + r)', 'r', '1 − r'], 1,
        'X(1 + r) = 100.', 'δ = 1/(1 + r), which lies between 0 and 1.')

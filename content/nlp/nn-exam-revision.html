@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam revision for neural NLP · Natural Language Processing</title>
+<meta name="description" content="The course quiz pattern, exam tiers from school to research universities, worked questions on sigmoid, cosine, gradient descent, BIO, skip-gram pairs, co-occurrence, GloVe weights and attention, MCQ and MSQ strategy with negative marking, derivations of the softmax gradient, vanishing gradients and GloVe, a formula sheet and a mock paper.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/nlp.css">
+</head>
+<body class="cvp nlpp">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=nlp&amp;p=nlp">Natural Language Processing learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=nlp&amp;p=nlp" target="_top">Natural Language Processing</a><span>›</span><span>NLP</span><span>›</span><span>Step 5: Exam revision</span><span>›</span><span>Exam revision</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 1 of 1 · All levels</div>
+    <h1>Exam revision for neural NLP</h1>
+    <p class="lead">Practise the question shapes of every level with worked answers: one-step sums, parameter counts and attention by hand, MCQ and MSQ tactics under negative marking, and derivations with their assumptions.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">14 formulas</span><span class="cv-chip">12 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#nn-exam-revision" data-topic="cheatsheet" data-h="nn-exam-revision">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Revise</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#map" data-l="map"><span class="n">1</span><span class="t">How the neural NLP part is examined</span></a></li><li><a href="#school" data-l="school"><span class="n">2</span><span class="t">Tier 1: school and first year</span></a></li><li><a href="#semester" data-l="semester"><span class="n">3</span><span class="t">Tier 2: university semester and IIT course exams</span></a></li><li><a href="#mcq" data-l="mcq"><span class="n">4</span><span class="t">Tier 3: MCQ, MSQ and numerical answer papers</span></a></li><li><a href="#derive" data-l="derive"><span class="n">5</span><span class="t">Tier 4: derivations, design and critique</span></a></li><li><a href="#sheet" data-l="sheet"><span class="n">6</span><span class="t">Formula sheet and last minute checks</span></a></li></ol>
+    <article class="cv-lesson" id="map" data-l="map" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>How the neural NLP part is examined</h2>
+<p>This chapter is for the week before an exam. It does not teach new material. It shows the shapes questions take at each level, with worked answers, and points back to the chapter where each idea is taught. The questions are original practice questions in the style of each tier, not copies of past papers.</p>
+<p>The course quiz format, as announced in class: about 10 questions in 20 minutes, MCQ (one correct option) and MSQ (several correct options) plus numerical questions. A calculator is allowed, the formulas are given, and there is negative marking. The instructor said questions come from the steps of neural networks, word embeddings, the co-occurrence matrix and GloVe, so know each algorithm step by step.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Tier</th><th>Typical format</th><th>What earns the marks</th><th>Where to practise</th></tr></thead><tbody><tr><td>School and first year</td><td>Short answers, small sums, one formula</td><td>Clear definitions with an example</td><td>Lesson 2</td></tr><tr><td>University semester and IIT course exams</td><td>Numericals by hand, parameter counts, compare and contrast</td><td>Formula first, every step shown, the answer with its meaning</td><td>Lesson 3</td></tr><tr><td>NPTEL and GATE style papers</td><td>MCQ, MSQ and numerical answer type, negative marking</td><td>Speed, spotting the trap option, exact rounding</td><td>Lesson 4</td></tr><tr><td>MIT, Stanford and Cambridge style</td><td>Derivations, design and critique</td><td>Assumptions named, a complete argument, when it fails</td><td>Lesson 5</td></tr></tbody></table></div>
+<h3>The twelve ideas examined most often</h3>
+<ol>
+<li>Gradient descent updates and the learning rate limit (chapter 1.1).</li>
+<li>A neuron with sigmoid, the chain rule and one backpropagation step (chapters 1.2 and 1.3).</li>
+<li>One-hot vectors, cosine similarity and the distributional hypothesis (chapter 2.1).</li>
+<li>Skip-gram pairs, softmax probability and parameter counts (chapter 2.2).</li>
+<li>Negative sampling loss, the 3/4 power and the 44 sigmoid question (chapter 2.3).</li>
+<li>Co-occurrence matrix by hand, GloVe ratio, loss and f(x) (chapter 2.4).</li>
+<li>Intrinsic against extrinsic evaluation, fastText n-grams, debiasing (chapter 2.5).</li>
+<li>n-gram probability, RNN equations, cross-entropy and perplexity (chapter 3.1).</li>
+<li>BIO tags 2n + 1 and the 20,000 and 18,050 parameter answers (chapter 3.2).</li>
+<li>LSTM and GRU equations and the 23,808 BiLSTM answer (chapter 3.3).</li>
+<li>The conditional language model and the bottleneck (chapter 4.1).</li>
+<li>Dot-product attention by hand and greedy against beam search (chapters 4.2 and 4.3).</li>
+</ol>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="school" data-l="school" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Tier 1: school and first year</h2>
+<p>Questions at this level check that you can apply one formula and explain an idea with an everyday example.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Sigmoid</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">σ(z) = <span class="fr"><span>1</span><span>1 + e<sup>−z</sup></span></span></div><div class="fx-n">Squashes any number into 0 to 1.</div></div><div class="fx fx-key"><div class="fx-h"><span>Cosine similarity</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">cos(a, b) = <span class="fr"><span>a · b</span><span>‖a‖ ‖b‖</span></span></div><div class="fx-n">1 same direction, 0 unrelated, −1 opposite.</div></div><div class="fx fx-key"><div class="fx-h"><span>Gradient descent</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">w ← w − η <span class="fr"><span>∂J</span><span>∂w</span></span></div><div class="fx-n">Step downhill by the learning rate times the slope.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Question 1. Why can one-hot vectors not show that "hotel" and "motel" are similar?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Each word has a 1 in its own position and 0 elsewhere.</li><li>The dot product of two different one-hot vectors is always 0.</li><li>So every pair of different words is equally unrelated. Dense word vectors fix this.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 2. Cosine similarity of (1, 2) and (2, 4).</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Dot product 1 × 2 + 2 × 4 = 10.</li><li>Lengths √5 and √20, product √100 = 10.</li><li><span class="eq">cos = 10 ÷ 10 = 1, the same direction</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 3. J(w) = (w − 3)², w = 0, η = 0.1. Find w after one step.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Slope dJ/dw = 2(w − 3) = −6.</li><li>w ← 0 − 0.1 × (−6).</li><li><span class="eq">w = 0.6, a step towards the minimum at 3</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 4. Turn "Sachin Tendulkar played for India" into BIO tags with PER and GPE.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Sachin begins a person: B-PER. Tendulkar continues it: I-PER.</li><li>played and for are outside: O, O.</li><li><span class="eq">India: B-GPE</span></li></ol></div>
+<p>Short answer favourites: what a language model does (chapter 3.1), why "the cat" beats "a cat" in the beam example (chapter 4.3), what the forget gate does (chapter 3.3), and what "you shall know a word by the company it keeps" means (chapter 2.1).</p>
+<div class="note note-warn"><b>Common mistake</b><div>Do not confuse similarity with relatedness. "cup" and "coffee" are related (they appear together) but not similar (one is a container, one is a drink).</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="semester" data-l="semester" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Tier 2: university semester and IIT course exams</h2>
+<p>Here the examiner gives sizes, vectors or counts and asks you to compute by hand. Write the formula, substitute, and state the meaning of the answer.</p>
+<div class="cv-code" data-k="counts"></div>
+<div class="cvz" data-viz="paramcount"></div>
+<div class="walk"><div class="walk-h"><span>Question 5. Skip-gram with V = 6,000, d = 200, window 2. (a) one-hot size (b) hidden size (c) training pairs from an 8 word sentence.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>(a) The one-hot input has V = 6,000 entries.</li><li>(b) The hidden layer is the embedding, 200 numbers.</li><li>(c) Middle words have 4 neighbours, edge words fewer: 2 + 3 + 4 × 4 + 3 + 2.</li><li><span class="eq">= 26 training pairs</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 6. Co-occurrence with window 1 on "I like NLP . I like deep learning .". Find X(I, like) and X(like, NLP).</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Treat each sentence separately. "I like" appears in both sentences.</li><li>X(I, like) = 2 with a symmetric window.</li><li>X(like, NLP) = 1 from the first sentence.</li><li><span class="eq">X(I, like) = 2, X(like, NLP) = 1</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 7. GloVe with x<sub>max</sub> = 100, α = 0.75. Compute f(10) and f(150).</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>f(10) = (10 ÷ 100)<sup>0.75</sup> = 0.1<sup>0.75</sup>.</li><li><span class="eq">f(10) = 0.1778</span></li><li><span class="eq">f(150) = 1 because 150 ≥ x<sub>max</sub></span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 8. Dot-product attention: encoder states [1, 0] and [0, 1], decoder state [2, 0]. Context vector.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Scores 2 and 0.</li><li>Weights e² ÷ (e² + 1) = 0.8808 and 0.1192.</li><li><span class="eq">context = 0.8808 [1, 0] + 0.1192 [0, 1] = [0.8808, 0.1192]</span></li></ol></div>
+<div class="note note-exam"><b>In the exam</b><div>Units and assumptions earn marks. Write "excluding biases", "natural log", "window counted on both sides" next to the answer.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="mcq" data-l="mcq" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Tier 3: MCQ, MSQ and numerical answer papers</h2>
+<p>These papers reward speed and precision. With negative marking, a blind guess is not free. With no partial credit in MSQ, every ticked option must be right.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Expected mark of a guess</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">E = p · (+1) + (1 − p) · (−m)</div><div class="fx-n">p chance of being right, m the penalty per wrong answer.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Question 9. Four options, +1 for right, −1/3 for wrong. Is a blind guess worth it? And after ruling out one option?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Blind: p = 1/4, E = 1/4 − 3/4 × 1/3 = 0. No gain on average.</li><li>One option ruled out: p = 1/3, E = 1/3 − 2/3 × 1/3 = 1/9.</li><li><span class="eq">Guess only when you can eliminate at least one option</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 10 (MSQ). Which are true of negative sampling? (A) it replaces the softmax with sigmoids (B) noise words come from U(w)<sup>3/4</sup> (C) the true context can be a negative (D) only 1 + K output vectors change per pair.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>(A) True, binary logistic regressions.</li><li>(B) True, the 3/4 power.</li><li>(C) False, the notebook skips the true context word.</li><li><span class="eq">Answer: A, B and D</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Question 11 (numerical). Window 2, K = 5, full window. Sigmoid computations per centre word?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>4 context words.</li><li>Each: 1 positive + 5 negatives = 6.</li><li><span class="eq">4 × 6 = 24</span></li></ol></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Trap</th><th>How to avoid it</th></tr></thead><tbody><tr><td>log base</td><td>perplexity = exp(J) with natural logs, 2<sup>H</sup> with bits</td></tr><tr><td>counting T in RNN parameters</td><td>weights are shared, length does not matter</td></tr><tr><td>BIO count</td><td>2n + 1, not 2n</td></tr><tr><td>top-p</td><td>keep words until the sum reaches p, include the one that crosses it</td></tr><tr><td>beam size 1</td><td>is greedy decoding</td></tr><tr><td>rounding</td><td>keep 4 or more decimals until the final line</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="derive" data-l="derive" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Tier 4: derivations, design and critique</h2>
+<p>Research university exams ask why, not only what. Expect to derive a gradient, justify a design, and say when a method fails.</p>
+<div class="walk"><div class="walk-h"><span>Derivation 1. Softmax with cross-entropy gives the gradient ŷ − y.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>J = −log ŷ<sub>c</sub> with ŷ<sub>k</sub> = e<sup>z<sub>k</sub></sup> ÷ ∑<sub>j</sub> e<sup>z<sub>j</sub></sup>, so J = −z<sub>c</sub> + log ∑<sub>j</sub> e<sup>z<sub>j</sub></sup>.</li><li>∂J/∂z<sub>k</sub> = −[k = c] + e<sup>z<sub>k</sub></sup> ÷ ∑<sub>j</sub> e<sup>z<sub>j</sub></sup> = ŷ<sub>k</sub> − y<sub>k</sub>.</li><li>Example: ŷ = [0.1, 0.6, 0.2, 0.1], gold 2. Gradient = [0.1, −0.4, 0.2, 0.1].</li><li><span class="eq">∂J/∂z = ŷ − y: push the gold score up, the others down in proportion</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Derivation 2. Why does a plain RNN forget, and why does the LSTM cell help?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>∂h<sup>(t)</sup>/∂h<sup>(j)</sup> = ∏ diag(tanh′) W<sub>h</sub>, so its size is at most (‖W<sub>h</sub>‖)<sup>t−j</sup> for tanh.</li><li>If ‖W<sub>h</sub>‖ < 1 this shrinks exponentially: the gradient vanishes.</li><li>For the LSTM, c<sup>(t)</sup> = f ⊙ c<sup>(t−1)</sup> + i ⊙ c̃ gives ∂c<sup>(t)</sup>/∂c<sup>(t−1)</sup> ≈ diag(f).</li><li><span class="eq">The factor is a learned gate, near 1 when memory should be kept</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Derivation 3. From probability ratios to the GloVe model.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Want F((w<sub>i</sub> − w<sub>j</sub>)·w̃<sub>k</sub>) = P(k | i) ÷ P(k | j).</li><li>Choose F = exp, then w<sub>i</sub>·w̃<sub>k</sub> = log P(k | i) = log X<sub>ik</sub> − log X<sub>i</sub>.</li><li>Absorb log X<sub>i</sub> into b<sub>i</sub> and add b̃<sub>k</sub> for symmetry.</li><li><span class="eq">w<sub>i</sub>·w̃<sub>k</sub> + b<sub>i</sub> + b̃<sub>k</sub> = log X<sub>ik</sub>, fitted by weighted least squares</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Design question. You must translate between two low-resource languages with 20,000 parallel sentences. Propose a system and critique it.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Start from a multilingual pre-trained model (transfer learning) rather than training from scratch.</li><li>Add back translated data from monolingual text in the target language.</li><li>Decode with beam search (k about 5) and length normalisation.</li><li>Risks: synthetic data copies the errors of the back translation model, and BLEU on a tiny test set is noisy. Report confidence intervals.</li></ol></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>At school level, explain ideas with examples and do one-step sums: a sigmoid, a cosine, a single gradient step.</p></div><div class="ld-p" data-ld="college" hidden><p>At university level, compute by hand: parameter counts, co-occurrence entries, GloVe weights, attention weights, perplexity. Show every step.</p></div><div class="ld-p" data-ld="masters" hidden><p>In competitive papers, recognise the formula fast, avoid traps around log bases, BIO counts and shared weights, and guess only when an option is ruled out.</p></div><div class="ld-p" data-ld="research" hidden><p>At research level, derive gradients, explain why gating and attention fix gradient flow, and critique designs with their failure modes and evaluation risks.</p></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sheet" data-l="sheet" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Formula sheet and last minute checks</h2>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Softmax</span></div><div class="fx-b">ŷ<sub>k</sub> = e<sup>z<sub>k</sub></sup> ÷ ∑<sub>j</sub> e<sup>z<sub>j</sub></sup></div><div class="fx-n">Subtract the maximum score first for stability.</div></div><div class="fx"><div class="fx-h"><span>Skip-gram</span></div><div class="fx-b">P(o | c) = exp(u<sub>o</sub>·v<sub>c</sub>) ÷ ∑<sub>w</sub> exp(u<sub>w</sub>·v<sub>c</sub>)</div><div class="fx-n">Parameters 2Vd.</div></div><div class="fx"><div class="fx-h"><span>Negative sampling</span></div><div class="fx-b">J = −log σ(u<sub>o</sub>·v<sub>c</sub>) − ∑<sub>k</sub> log σ(−u<sub>k</sub>·v<sub>c</sub>)</div><div class="fx-n">Noise from U(w)<sup>3/4</sup>.</div></div><div class="fx"><div class="fx-h"><span>GloVe</span></div><div class="fx-b">J = ∑ f(X<sub>ij</sub>)(w<sub>i</sub>·w̃<sub>j</sub> + b<sub>i</sub> + b̃<sub>j</sub> − log X<sub>ij</sub>)²</div><div class="fx-n">f(x) = (x ÷ x<sub>max</sub>)<sup>α</sup> below x<sub>max</sub>, else 1.</div></div><div class="fx"><div class="fx-h"><span>RNN</span></div><div class="fx-b">h<sup>(t)</sup> = tanh(W<sub>h</sub>h<sup>(t−1)</sup> + W<sub>e</sub>e<sup>(t)</sup> + b)</div><div class="fx-n">Parameters E·H + H·H + H·K.</div></div><div class="fx"><div class="fx-h"><span>Perplexity</span></div><div class="fx-b">PP = exp(J)</div><div class="fx-n">J is the average cross-entropy in natural logs.</div></div><div class="fx"><div class="fx-h"><span>LSTM</span></div><div class="fx-b">c = f ⊙ c<sub>old</sub> + i ⊙ c̃, h = o ⊙ tanh(c)</div><div class="fx-n">Parameters 4H(E + H).</div></div><div class="fx"><div class="fx-h"><span>GRU</span></div><div class="fx-b">h = (1 − z) ⊙ h<sub>old</sub> + z ⊙ h̃</div><div class="fx-n">Parameters 3H(E + H).</div></div><div class="fx"><div class="fx-h"><span>Attention</span></div><div class="fx-b">α = softmax(s<sup>T</sup>h<sub>i</sub>), a = ∑ α<sub>i</sub>h<sub>i</sub></div><div class="fx-n">Scaled version divides by √d.</div></div><div class="fx"><div class="fx-h"><span>Beam score</span></div><div class="fx-b">(1 ÷ t) ∑ log P(y<sub>i</sub> | y<sub>&lt;i</sub>, x)</div><div class="fx-n">Length normalised.</div></div></div>
+<div class="cv-code" data-k="drill"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Number to remember</th><th>Where it comes from</th></tr></thead><tbody><tr><td>96</td><td>RNN LM, one-hot 5, hidden 6</td></tr><tr><td>44</td><td>sigmoids per centre word, window 2, K = 10</td></tr><tr><td>20,000 and 18,050</td><td>RNN POS and NER taggers</td></tr><tr><td>23,808</td><td>BiLSTM language identification</td></tr><tr><td>0.4</td><td>4-gram example 400 ÷ 1000</td></tr><tr><td>0.51 and 2.99</td><td>cross-entropy for 0.6 and 0.05</td></tr><tr><td>[1.262, −0.722]</td><td>the attention problem</td></tr><tr><td>0.36 against 0.20</td><td>beam against greedy on the slide tree</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Last minute checks: weights in an RNN are shared over time, the softmax denominator covers the whole vocabulary, BIO needs 2n + 1 tags, attention weights change every decoder step, and beam search is not guaranteed optimal.</div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./decoding.html" data-topic="nn-decoding"><small>Previous topic</small><b>Decoding</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "nn-exam-revision", "topic": "nn-exam-revision", "subject": "nlp", "title": "Exam revision for neural NLP", "codes": {"drill": {"src": "# Exam drill: softmax, cross-entropy, perplexity and the gradient y_hat - y in one go\nimport math\nscores = [float(x) for x in input(\"scores (logits), space separated: \").split()]\ngold = int(input(\"position of the gold word, starting at 1: \")) - 1\nm = max(scores)\ne = [math.exp(s - m) for s in scores]\np = [v / sum(e) for v in e]\nprint(\"softmax      =\", [round(v, 4) for v in p])\nprint(\"cross-entropy =\", round(-math.log(p[gold]), 4), \" perplexity of this one step =\", round(1 / p[gold], 4))\nprint(\"gradient dJ/dz = y_hat - y =\", [round(v - (1 if i == gold else 0), 4) for i, v in enumerate(p)])", "stdin": "2 1 0.1\n1\n", "out": "scores (logits), space separated: position of the gold word, starting at 1: softmax      = [0.659, 0.2424, 0.0986]\ncross-entropy = 0.417  perplexity of this one step = 1.5174\ngradient dJ/dz = y_hat - y = [-0.341, 0.2424, 0.0986]"}, "counts": {"src": "# Every parameter count of the course in one table (no biases)\nrows = [\n    (\"RNN LM, one-hot 5, hidden 6\", 5 * 6 + 6 * 6 + 6 * 5),\n    (\"RNN POS tagger, E 300, H 50, 50 tags\", 300 * 50 + 50 * 50 + 50 * 50),\n    (\"RNN NER tagger, 5 types in BIO (11 labels)\", 300 * 50 + 50 * 50 + 50 * 11),\n    (\"BiLSTM, E 60, H 32 each way, 4 tags\", 2 * 4 * 32 * (60 + 32) + 64 * 4),\n    (\"skip-gram, V 10,000, d 300\", 2 * 10000 * 300),\n    (\"GloVe notebook, V 21, d 20, two biases\", 2 * 21 * 20 + 2 * 21),\n    (\"seq2seq Spanish to French (stated assumptions)\", 35000 * 256 + 45000 * 256 + 256 * 128 + 128 * 128 + 128 * 256 + 2 * 256 * 256 + 256 * 128 + 384 * 45000),\n]\nfor name, n in rows:\n    print(name.ljust(48), format(n, \",\"))", "stdin": "", "out": "RNN LM, one-hot 5, hidden 6                      96\nRNN POS tagger, E 300, H 50, 50 tags             20,000\nRNN NER tagger, 5 types in BIO (11 labels)       18,050\nBiLSTM, E 60, H 32 each way, 4 tags              23,808\nskip-gram, V 10,000, d 300                       6,000,000\nGloVe notebook, V 21, d 20, two biases           882\nseq2seq Spanish to French (stated assumptions)   38,005,760"}}, "quiz": [{"lv": "e", "q": "Cosine similarity of (1, 0) and (0, 1) is", "o": ["−1", "0", "0.5", "1"], "a": 1, "hint": "Dot product 0.", "why": "At right angles, unrelated."}, {"lv": "e", "q": "Which is a language model task?", "o": ["predict the next word", "count vowels", "sort a list", "compress an image"], "a": 0, "hint": "Chapter 3.1.", "why": "Next word prediction."}, {"lv": "e", "q": "GRU gates are", "o": ["forget and output", "update and reset", "input and output", "only one gate"], "a": 1, "hint": "Chapter 3.3.", "why": "z and r."}, {"lv": "m", "q": "BIO tags for 3 entity types", "o": ["3", "6", "7", "9"], "a": 2, "hint": "2n + 1.", "why": "7."}, {"lv": "m", "q": "A blind guess with 4 options, +1 right and −1/3 wrong, has expected mark", "o": ["−1/3", "0", "1/4", "1/9"], "a": 1, "hint": "1/4 − 3/4 × 1/3.", "why": "Exactly zero."}, {"lv": "m", "q": "Skip-gram parameters with V = 10,000 and d = 300 (no biases)", "o": ["3,000,000", "6,000,000", "600,000", "10,300"], "a": 1, "hint": "Two V × d matrices.", "why": "6 million."}, {"lv": "m", "q": "In GloVe, f(0) is", "o": ["1", "0", "undefined", "x_max"], "a": 1, "hint": "Never-seen pairs.", "why": "They are dropped."}, {"lv": "m", "q": "Gradient of softmax cross-entropy with respect to the scores", "o": ["y − ŷ", "ŷ − y", "ŷ(1 − ŷ)", "log ŷ"], "a": 1, "hint": "Derivation 1.", "why": "Prediction minus one-hot target."}, {"lv": "h", "q": "Window 2, K = 5, full window. Sigmoids per centre word?", "o": ["6", "20", "24", "30"], "a": 2, "hint": "(1 + K) × 4.", "why": "24."}, {"lv": "h", "q": "Which statements are true? Pick the option listing exactly the true ones. (P) beam size 1 is greedy (Q) beam search is optimal (R) top-p adapts its size", "o": ["P only", "P and R", "Q and R", "P, Q and R"], "a": 1, "hint": "MSQ style.", "why": "Beam search is not guaranteed optimal."}, {"lv": "h", "q": "Encoder states [1, 0] and [0, 1], decoder [2, 0]. Weight on the first state", "o": ["0.50", "0.73", "0.88", "1.00"], "a": 2, "hint": "e² ÷ (e² + 1).", "why": "0.8808."}, {"lv": "x", "q": "Why does the LSTM ease vanishing gradients?", "o": ["more layers", "an additive cell path with gradient ≈ f", "ReLU inside", "smaller vocabulary"], "a": 1, "hint": "Derivation 2.", "why": "A learned gate near 1 keeps the signal."}, {"lv": "x", "q": "The GloVe biases come from", "o": ["regularisation", "the log X<sub>i<\/sub> term that does not depend on k", "the learning rate", "negative sampling"], "a": 1, "hint": "Derivation 3.", "why": "It is absorbed into b<sub>i<\/sub>."}], "calc": [{"lv": "e", "q": "σ(0)?", "ans": "0.5", "hint": "1 ÷ (1 + 1).", "steps": ["e<sup>0<\/sup> = 1.", "1 ÷ 2.", "<span class=\"eq\">0.5<\/span>"], "tol": 1e-09}, {"lv": "e", "q": "J(w) = (w − 3)², w = 0, η = 0.1. w after one gradient step.", "ans": "0.6", "hint": "w − η · 2(w − 3).", "steps": ["Slope −6.", "0 + 0.6.", "<span class=\"eq\">0.6<\/span>"], "tol": 1e-09}, {"lv": "e", "q": "Cosine of (1, 2) and (2, 4).", "ans": "1", "hint": "Same direction.", "steps": ["Dot 10.", "Lengths multiply to 10.", "<span class=\"eq\">1<\/span>"], "tol": 1e-09}, {"lv": "m", "q": "Skip-gram pairs, window 2, sentence of 8 words.", "ans": "26", "hint": "Edge words have fewer neighbours.", "steps": ["Words 1 and 8: 2 each. Words 2 and 7: 3 each.", "Words 3 to 6: 4 each, 16.", "<span class=\"eq\">2 + 3 + 16 + 3 + 2 = 26<\/span>"], "tol": 1e-09}, {"lv": "m", "q": "GloVe f(10) with x<sub>max<\/sub> = 100 and α = 0.75, four decimals.", "ans": "0.1778", "hint": "0.1<sup>0.75<\/sup>.", "steps": ["10 ÷ 100 = 0.1.", "ln 0.1 × 0.75 = −1.727.", "<span class=\"eq\">e<sup>−1.727<\/sup> = 0.1778<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "Attention weight on [1, 0] for decoder [2, 0] against states [1, 0] and [0, 1], four decimals.", "ans": "0.8808", "hint": "softmax(2, 0).", "steps": ["e² = 7.389.", "Sum 8.389.", "<span class=\"eq\">0.8808<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "Expected mark of a guess after ruling out one of four options (+1, −1/3). Three decimals.", "ans": "0.111", "hint": "p = 1/3.", "steps": ["1/3 × 1 = 0.333.", "2/3 × 1/3 = 0.222.", "<span class=\"eq\">0.111<\/span>"], "tol": 0.0005}, {"lv": "m", "q": "Sigmoids per centre word with window 2 (4 context words) and K = 5.", "ans": "24", "hint": "(1 + K) × 4.", "steps": ["Per context word 6.", "4 context words.", "<span class=\"eq\">24<\/span>"], "tol": 1e-09}, {"lv": "h", "q": "Gradient of softmax cross-entropy for ŷ = [0.1, 0.6, 0.2, 0.1] with gold position 2. Give the second component.", "ans": "-0.4", "hint": "ŷ − y.", "steps": ["y = [0, 1, 0, 0].", "0.6 − 1.", "<span class=\"eq\">−0.4<\/span>"], "tol": 1e-09}, {"lv": "h", "q": "LSTM layer with E = 50, H = 100, no biases. Parameters.", "ans": "60000", "hint": "4H(E + H).", "steps": ["E + H = 150.", "4 × 100 = 400.", "<span class=\"eq\">60,000<\/span>"], "tol": 1e-09}, {"lv": "h", "q": "Perplexity of a model whose average cross-entropy is 1.5 (natural log), three decimals.", "ans": "4.482", "hint": "exp(J).", "steps": ["e<sup>1.5<\/sup>.", "= 4.4817.", "<span class=\"eq\">4.482<\/span>"], "tol": 0.0005}, {"lv": "x", "q": "Softmax of scores (2, 1, 0.1): probability of the first, four decimals.", "ans": "0.659", "hint": "e² ÷ (e² + e + e<sup>0.1<\/sup>).", "steps": ["e² = 7.389, e¹ = 2.718, e<sup>0.1<\/sup> = 1.105.", "Sum 11.212.", "<span class=\"eq\">0.659<\/span>"], "tol": 0.0005}], "assign": [], "must": [], "summary": ""}</script>
+<script type="application/json" id="cvtrace">{"drill": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line", "o": "scores (logits), space separated: "}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.scores": "[2.0, 1.0, 0.1]"}}, {"l": 5, "ev": "line", "d": {"G.gold": "0"}, "o": "position of the gold word, starting at 1: "}, {"l": 6, "ev": "line", "d": {"G.m": "2.0"}}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.e": "[1.0, 0.36787944117144233, 0.14956861922263506]"}}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"G.p": "[0.6590011388859679, 0.24243297070471392, 0.09856589040931818]"}}, {"l": 8, "ev": "line"}, {"l": 8, "ev": "line"}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "o": "softmax      = [0.659, 0.2424, 0.0986]\n"}, {"l": 10, "ev": "line", "o": "cross-entropy = 0.417  perplexity of this one step = 1.5174\n"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "return", "o": "gradient dJ/dz = y_hat - y = [-0.341, 0.2424, 0.0986]\n"}], "tail": "", "err": null, "cut": false}, "counts": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 11, "ev": "line", "d": {"G.rows": "[('RNN LM, one-hot 5, hidden 6', 96), ('RNN POS tagger, E 300, H 50, 50 tags', 20000), ..."}}, {"l": 12, "ev": "line", "d": {"G.name": "'RNN LM, one-hot 5, hidden 6'", "G.n": "96"}}, {"l": 11, "ev": "line", "o": "RNN LM, one-hot 5, hidden 6                      96\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'RNN POS tagger, E 300, H 50, 50 tags'", "G.n": "20000"}}, {"l": 11, "ev": "line", "o": "RNN POS tagger, E 300, H 50, 50 tags             20,000\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'RNN NER tagger, 5 types in BIO (11 labels)'", "G.n": "18050"}}, {"l": 11, "ev": "line", "o": "RNN NER tagger, 5 types in BIO (11 labels)       18,050\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'BiLSTM, E 60, H 32 each way, 4 tags'", "G.n": "23808"}}, {"l": 11, "ev": "line", "o": "BiLSTM, E 60, H 32 each way, 4 tags              23,808\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'skip-gram, V 10,000, d 300'", "G.n": "6000000"}}, {"l": 11, "ev": "line", "o": "skip-gram, V 10,000, d 300                       6,000,000\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'GloVe notebook, V 21, d 20, two biases'", "G.n": "882"}}, {"l": 11, "ev": "line", "o": "GloVe notebook, V 21, d 20, two biases           882\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'seq2seq Spanish to French (stated assumptions)'", "G.n": "38005760"}}, {"l": 11, "ev": "line", "o": "seq2seq Spanish to French (stated assumptions)   38,005,760\n"}, {"l": 11, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/nlpwidgets.js"></script>
+<script src="../../assets/nnwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

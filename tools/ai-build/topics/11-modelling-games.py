@@ -122,6 +122,16 @@ K.lesson('lamp', 'The streetlamp: a public good', f'''
     '<p>Learning agents in repeated pricing games can learn to keep prices above the Bertrand level without communicating (Calvano et al. 2020, algorithmic collusion), which is now a question for competition law. Mechanism design asks how to set rules so that public goods are funded despite free riding.</p>')}
 ''', kw=['streetlamp', 'public good', 'free rider', 'indicator function', 'threshold', 'pivotal', 'crowdfunding'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Writing a real situation as a game is a skill. Here it is practised on two tea stalls, with the numbers worked out and a modern twist with pricing algorithms.</p>
+{scene('two tea stalls choosing how many cups to make', '<p>Two stalls sell tea on the same street. The more cups both make, the lower the price customers will pay. Each owner decides how many cups to prepare, knowing the other is doing the same. This is a Cournot game.</p>')}
+{steps('Work it out: Cournot with P = 100 − q₁ − q₂ and cost 10 per cup', ['Profit of stall 1: (100 − q₁ − q₂ − 10) q₁. Best response q₁ = (90 − q₂) ÷ 2.', 'Symmetric equilibrium: q = (90 − q) ÷ 2, so q = 30 each, price 40.', 'Profit each: (40 − 10) × 30 = 900.', eq('A single owner would make 45 cups at price 55 for 2025, or 1012.5 each if shared, more than 900')])}
+{deep('the analysis', '<p>Cournot competition gives more output and lower prices than a monopoly but less than perfect competition. Bertrand competition in prices with identical goods drives the price down to cost with just two firms, the Bertrand paradox, because undercutting by a tiny amount captures the whole market. The streetlamp shows the public good problem: each person’s contribution helps everyone, so each contributes too little.</p>')}
+{deep('the research view', '<p>Calvano et al. (2020) showed that simple Q-learning pricing algorithms, playing a repeated Bertrand game, learn to keep prices above the competitive level without any communication. This has become a question for competition law as more prices are set by AI.</p>')}
+{note('The Cournot equilibrium is not the joint best outcome for the firms. Each firm ignores that its extra output lowers the other’s price.', 'warn')}
+''', kw=['Cournot', 'Bertrand paradox', 'public good', 'algorithmic collusion', 'best response'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'In Cournot competition firms choose', ['Prices', 'Quantities', 'Advertising', 'Locations'], 1,
        'The market sets the price.', 'Each firm picks how much to supply and P = a − bq gives the price.')

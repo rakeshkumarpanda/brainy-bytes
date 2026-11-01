@@ -99,6 +99,16 @@ K.lesson('practice', 'Practice problem A: the film studio', f'''
     '<p>Markov decision processes generalize the tree to cycles and infinite horizons, solved by value iteration V(s) = max<sub>a</sub> Σ P(s′ | s, a)[r + γ V(s′)]. Monte Carlo tree search, as in AlphaGo, estimates the same backups by sampling when the tree is too large to fold exactly.</p>')}
 ''', kw=['practice problem A', 'film studio', 'principle of optimality', 'Bellman', 'dynamic programming', 'MDP'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Backward induction solves plans that unfold over time by starting at the end. It is the idea behind dynamic programming and much of reinforcement learning.</p>
+{scene('planning revision for an exam', '<p>With the exam on Friday, decide first what Thursday must cover, then what Wednesday must cover to make Thursday possible, and so on back to today. A chess player solving an endgame works the same way: from the checkmate position back to the current move.</p>')}
+{steps('Work it out: invest 10 now, then launch or sell', ['After a good market (0.6): launch earns 50, selling earns 20. Choose launch, 50.', 'After a bad market (0.4): launch earns −10, selling earns 5. Choose sell, 5.', 'Value of investing: 0.6 × 50 + 0.4 × 5 − 10 = 30 + 2 − 10 = 22.', eq('22 > 0, so invest, then launch if good and sell if bad')])}
+{deep('the analysis', '<p>Bellman’s principle of optimality: whatever the first decision, the remaining decisions must be optimal for the situation it creates. In equations V<sub>t</sub>(s) = max<sub>a</sub>(r(s, a) + E[V<sub>t+1</sub>(s′)]). Decision nodes take a maximum, chance nodes take an expectation, and the work grows with the number of states rather than with the number of complete plans.</p>')}
+{deep('the research view', '<p>Zermelo (1913) used backward induction to show that chess is determined: either White can force a win, Black can, or both can force a draw. Nobody knows which, because the tree is too large. AlphaZero approximates the backed-up values with a neural network and tree search, which is backward induction at scale.</p>')}
+{note('At chance nodes average with the probabilities. Taking the maximum there assumes luck always goes your way.', 'warn')}
+''', kw=['backward induction', 'Bellman equation', 'dynamic programming', 'Zermelo', 'AlphaZero'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'Backward induction starts at', ['The root', 'The last decision', 'The most likely leaf', 'The largest payoff'], 1,
        'Backward.', 'Begin where the player last acts, then move toward the first decision.')

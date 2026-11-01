@@ -98,6 +98,16 @@ K.lesson('theorems', 'Theorems about IESDS', f'''
     '<p>Level k and cognitive hierarchy models (Stahl and Wilson, Camerer, Ho and Chong 2004) replace common knowledge with a small number of reasoning steps and fit laboratory data better. In AI, iterated best response and double oracle methods for large games are computational relatives of iterated elimination.</p>')}
 ''', kw=['theorems', 'Nash equilibrium preview', 'order independence', 'weak elimination', 'rationalizability', 'report card', 'level k'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Iterated elimination keeps removing choices that no sensible player would make. The guessing game below shows the logic and how real people stop early.</p>
+{scene('guess two thirds of the average', '<p>Everyone in a class writes a number from 0 to 100. The winner is closest to two thirds of the class average. No one should write more than 66.7, since two thirds of any average is at most that. If everyone knows this, no one should write more than 44.4, and so on.</p>')}
+{steps('Work it out: the bound after k rounds of elimination', ['Round 1: guesses above 100 × 2/3 = 66.67 are dominated.', 'Round 2: above 100 × (2/3)² = 44.44.', 'After k rounds the bound is 100 × (2/3)<sup>k</sup>.', eq('After 5 rounds: 100 × 32 ÷ 243 = 13.17, and in the limit 0')])}
+{deep('the analysis', '<p>For strict dominance the order of elimination does not matter: every order reaches the same surviving set. Any Nash equilibrium survives the process, so if exactly one profile survives it is the unique equilibrium. For weak dominance neither statement holds in general, which is why exam questions specify strict elimination.</p>')}
+{deep('the research view', '<p>In real experiments (Nagel 1995) average guesses cluster near 33 and 22, one or two rounds of reasoning, not 0. Level-k and cognitive hierarchy models capture this limited depth, and researchers now use the same game to test how many reasoning steps large language model agents perform.</p>')}
+{note('IESDS does not always leave one outcome. In many games, such as the restaurant game, nothing is dominated and every strategy survives.', 'warn')}
+''', kw=['IESDS', 'guessing game', 'order independence', 'level-k', 'cognitive hierarchy'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'IESDS stands for', ['Iterated elimination of strictly dominated strategies', 'Independent equilibrium of strategic decision systems', 'Iterated expected strategy decision search', 'None of these'], 0,
        'Elimination.', 'Delete strictly dominated strategies, then repeat in the smaller game.')

@@ -136,6 +136,16 @@ K.lesson('parks', 'Problem 1.7: how much to spend on parks', f'''
     '<p>Bounded rationality asks what to do when computing arg max is itself costly. Satisficing, anytime algorithms and the value of computation in metareasoning (Russell and Wefald) treat thinking time as one more action with a cost.</p>')}
 ''', kw=['problem 1.7', 'city parks', 'square root', 'first order condition', 'concave', 'corner solution', 'budget constraint', 'marginal benefit'])
 
+
+K.lesson('levels', 'From intuition to research', f'''
+<p>Picking the best action means finding the largest value of a function. This lesson goes from listing options by hand to the hidden bias of choosing the maximum of noisy estimates.</p>
+{scene('choosing how many hours to study', '<p>Each extra hour of study raises your score, but tiredness grows too. If the benefit of x hours is 10x − x², the first hours help a lot and later hours help less, until extra hours start to hurt. The best plan sits where one more hour adds nothing.</p>')}
+{steps('Work it out: maximise u(x) = 10x − x² for 0 ≤ x ≤ 8', ['Derivative u′(x) = 10 − 2x, zero at x = 5.', 'Second derivative −2 < 0, so x = 5 is a maximum: u(5) = 25.', 'Check the ends: u(0) = 0 and u(8) = 80 − 64 = 16.', eq('Best action x = 5 with value 25')])}
+{deep('the analysis', '<p>The Weierstrass theorem guarantees a best action when the value function is continuous and the action set is closed and bounded, as with 0 ≤ x ≤ 8. On an open set such as 0 < x < 1 with u(x) = x there is no best action, only better and better ones. If u is concave, any point where the derivative is zero is a global maximum, which is why economists like concave payoffs.</p>')}
+{deep('the research view', '<p>The optimiser’s curse (Smith and Winkler 2006): when you pick the action with the highest estimated value and the estimates are noisy, the chosen estimate is biased upwards. In reinforcement learning the same effect makes Q-learning overestimate values, and double Q-learning (van Hasselt 2010) fixes it by choosing the action with one estimate and scoring it with another.</p>')}
+{note('Setting the derivative to zero is not enough. Check the second derivative and the end points of the allowed range.', 'warn')}
+''', kw=['argmax', 'Weierstrass', 'concavity', 'optimiser curse', 'double Q-learning'])
+
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'In the movie problem with walking costs, which plan is best?', ['PVR, Doctor Strange', 'INOX, Aliens', 'INOX, Casablanca', 'Stay home'], 1,
        'Utility minus miles.', 'Aliens at INOX gives 6 − 1 = 5, the largest net payoff.')
