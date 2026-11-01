@@ -5135,6 +5135,56 @@ function nlpNeuralModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "nn-seq2seq", title: "Translation, attention and decoding", emoji: "4", step: 4, part: "nlp", level: "Masters", blurb: "Translate and generate text: the encoder-decoder model as a conditional language model, the bottleneck, attention with its worked problem, and greedy, beam and sampling decoders.", topics: [
+      { id: "nn-seq2seq", title: "Sequence-to-sequence models and machine translation", emoji: "4.1", page: "content/nlp/seq2seq-nmt.html",
+        summary: "Encoder and decoder, conditional LM, training, uses, the bottleneck, low-resource NMT and parameter counting.",
+        keywords: ["seq2seq", "NMT", "encoder-decoder", "conditional language model", "bottleneck", "back translation", "parameter count"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "mt", title: "Neural machine translation", emoji: "", group: "Lesson", keywords: ["machine translation", "NMT", "seq2seq", "encoder", "decoder"] },
+        { id: "conditional", title: "A conditional language model", emoji: "", group: "Lesson", keywords: ["conditional language model", "P(y | x)", "parallel corpus", "teacher forcing", "stacked RNNs"] },
+        { id: "uses", title: "Seq2seq is versatile", emoji: "", group: "Lesson", keywords: ["encoder-decoder", "summarisation", "dialogue", "parsing", "code generation"] },
+        { id: "bottleneck", title: "The bottleneck problem", emoji: "", group: "Lesson", keywords: ["bottleneck", "information loss", "long sentences", "reversing the source"] },
+        { id: "params", title: "Low-resource NMT and the parameter question", emoji: "", group: "Lesson", keywords: ["low-resource NMT", "back translation", "pivot", "parameter count", "38,005,760"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-attention", title: "Attention in encoder-decoder models", emoji: "4.2", page: "content/nlp/attention.html",
+        summary: "Attention steps, the lecture problem, scoring variants and the benefits of attention.",
+        keywords: ["attention", "context vector", "dot product", "multiplicative", "additive", "scaled dot product", "alignment"],
+        minutes: 45, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "idea", title: "The idea of attention", emoji: "", group: "Lesson", keywords: ["attention", "dynamic context", "alignment", "Bahdanau"] },
+        { id: "equations", title: "Attention in equations", emoji: "", group: "Lesson", keywords: ["scores", "softmax weights", "context vector", "concatenation", "query key value"] },
+        { id: "problem", title: "The lecture problem, fully worked", emoji: "", group: "Lesson", keywords: ["dot-product attention", "worked problem", "context vector", "[1.262, -0.722]"] },
+        { id: "variants", title: "Ways to compute the scores", emoji: "", group: "Lesson", keywords: ["dot product", "multiplicative", "bilinear", "additive", "scaled dot product"] },
+        { id: "benefits", title: "Why attention is so helpful", emoji: "", group: "Lesson", keywords: ["benefits", "alignment", "interpretability", "summarisation", "self-attention"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-decoding", title: "Decoding: greedy, beam search and sampling", emoji: "4.3", page: "content/nlp/decoding.html",
+        summary: "Greedy and beam search, stopping and length normalisation, and temperature, top-k and top-p sampling.",
+        keywords: ["decoding", "greedy", "beam search", "length normalisation", "temperature", "top-k", "top-p"],
+        minutes: 40, counts: {"lessons": 5, "problems": 12, "quiz": 13, "assign": 3},
+        added: "2026-11-01",
+        sections: [
+        { id: "greedy", title: "Greedy decoding and its problem", emoji: "", group: "Lesson", keywords: ["greedy decoding", "argmax", "no undo", "globally optimal"] },
+        { id: "beam", title: "Beam search", emoji: "", group: "Lesson", keywords: ["beam search", "beam size", "hypotheses", "log probability", "exhaustive search"] },
+        { id: "finish", title: "Stopping, length and cost", emoji: "", group: "Lesson", keywords: ["stopping criterion", "END token", "length normalisation", "search cost"] },
+        { id: "sampling", title: "Sampling: temperature, top-k and top-p", emoji: "", group: "Lesson", keywords: ["sampling", "temperature", "top-k", "top-p", "nucleus sampling", "quality vs diversity"] },
+        { id: "choose", title: "Choosing a decoder", emoji: "", group: "Lesson", keywords: ["choosing a decoder", "temperature", "MAP decoding", "speculative decoding"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

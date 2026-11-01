@@ -16,7 +16,7 @@ headless Chromium (tools/cv-build/sheet-pdf.js), so the PDF is a static file tha
 It also writes the compact cheatsheet, content/<subject>/cheatsheet-compact.html and <name>-cheatsheet-compact.pdf:
 only the key ideas, the formulas the chapters mark as exam favourites, and the Common mistake and In the exam
 notes, in three narrow columns. The build stops
-if its PDF grows past COMPACT_MAX pages.
+if its PDF grows past COMPACT_MAX pages, or past cfg['compact_max'] for a subject with several sections.
 """
 import html
 import os
@@ -286,7 +286,7 @@ def compact_page(chs, cfg, meta):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Compact cheatsheet · {cfg["name"]}</title>
-<meta name="description" content="{cfg["name"]} compact cheatsheet: the key ideas, exam favourite formulas and common traps of every chapter in at most {COMPACT_MAX} printed pages, with a PDF to download.">
+<meta name="description" content="{cfg["name"]} compact cheatsheet: the key ideas, exam favourite formulas and common traps of every chapter in at most {cfg.get("compact_max", COMPACT_MAX)} printed pages, with a PDF to download.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/theme.css">
 {css}
@@ -296,7 +296,7 @@ def compact_page(chs, cfg, meta):
 <div class="cv-wrap sh-wrap">
   <div class="cv-crumb"><a class="home-link" href="../../subject.html?{home}" target="_top">{cfg["name"]}</a><span>›</span><span>Compact cheatsheet</span></div>
   <header class="cv-hero">
-    <div class="cv-kicker">Compact cheatsheet · at most {COMPACT_MAX} printed pages</div>
+    <div class="cv-kicker">Compact cheatsheet · at most {cfg.get("compact_max", COMPACT_MAX)} printed pages</div>
     <h1>{cfg["name"]} compact cheatsheet</h1>
     <p class="lead">The key ideas, the exam favourite formulas and the common traps of every chapter, packed tight for the last look before an exam. It keeps only what the chapters mark as most important. The full cheatsheet has every formula, table and tip.</p>
     <div class="cv-chips"><span class="cv-chip">{n_must} key ideas</span><span class="cv-chip">{n_fx} exam favourite formulas</span><span class="cv-chip">{n_trap} traps and exam tips</span></div>
@@ -348,5 +348,6 @@ def write(chs, cfg, root):
     open(comp, 'w', encoding='utf-8').write(compact_page(chs, cfg, meta))
     for f, p, m in ((full, pdf, a), (comp, cpdf, b)):
         print(f'cheatsheet: {os.path.relpath(f, root)} and {os.path.relpath(p, root)} ({m["pages"]} pages, {m["kb"]} KB)')
-    if b['pages'] > COMPACT_MAX:
-        raise SystemExit(f'the compact cheatsheet PDF has {b["pages"]} pages, the limit is {COMPACT_MAX}. Tighten the print rules in assets/sheet.css.')
+    limit = cfg.get('compact_max', COMPACT_MAX)
+    if b['pages'] > limit:
+        raise SystemExit(f'the compact cheatsheet PDF has {b["pages"]} pages, the limit is {limit}. Tighten the print rules in assets/sheet.css.')

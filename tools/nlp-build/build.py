@@ -27,6 +27,8 @@ sys.path.append(HERE)  # after the import above, so that 'build' still means the
 BASE = {
     'subject': 'nlp', 'name': 'Natural Language Processing', 'builder': 'tools/nlp-build/build.py', 'badge': 'NLP',
     'widgets': ['cvviz.js', 'nlpstem.js', 'nlpwidgets.js'], 'css': ['cv.css', 'nlp.css'], 'body': 'cvp nlpp',
+    # one compact sheet covers both sections (NLU and NLP), so it may use 6 pages per section
+    'compact_max': 12,
 }
 PARTS = [
     {'part': 'nlu', 'part_name': 'NLU', 'topics': os.path.join(HERE, 'topics'), 'func': 'nlpModules', 'marker': 'nlp-build'},
