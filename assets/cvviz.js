@@ -6,10 +6,12 @@
    spec = {
      title, sub,                       heading and one line on what to look at
      W, H,                             the drawing size in canvas units (the canvas scales to the page width)
-     params: [ { k, label, type: 'range' | 'select' | 'check' | 'text' | 'area', v, min, max, step, opts: [[value, label]], help, show(p) } ],
+     params: [ { k, label, type: 'range' | 'select' | 'check' | 'text' | 'area', v, min, max, step, opts: [[value, label]], help, show(p), reveal } ],
                                        show(p) is optional: the control is hidden while it returns false
+                                       reveal: true marks a "show the answer" tick box. It is cleared when the reader changes any other value
      tips: [ { t: 'what to try and what you will see', set: { k: v }, play: true } ],
-     steps(p) -> n                     optional: the animation has n steps, with Play, Step and Reset buttons
+     steps(p) -> n                     optional: the animation has n steps, with Play, Step and Back buttons
+                                       Every animation has a Reset button that puts it back exactly as the page first showed it
      draw(z) -> html                   draws on z.g and returns the readout html shown under the picture
      click(z, x, y)                    optional: the reader clicked the picture at canvas units x, y
    }
@@ -55,7 +57,7 @@ const CVZ = (() => {
     const z = { p, step: 0, n: 0, W: spec.W || 560, H: spec.H || 320, spec, el, state: {} };
     const stepped = !!spec.steps;
     el.innerHTML = `<div class="z-head"><b>${spec.title}</b><span>${spec.sub || ''}</span></div>
-      <div class="z-body"><div class="z-stage"><div class="z-cwrap"><canvas></canvas></div>${stepped ? `<div class="z-ctl"><button type="button" class="play">Play</button><button type="button" class="stp">Step</button><button type="button" class="bk">Back</button><button type="button" class="rs">Reset</button><span class="z-pos"></span></div>` : ''}</div>
+      <div class="z-body"><div class="z-stage"><div class="z-cwrap"><canvas></canvas></div><div class="z-ctl">${stepped ? '<button type="button" class="play">Play</button><button type="button" class="stp">Step</button><button type="button" class="bk">Back</button>' : ''}<button type="button" class="rs" title="Put every value back to how this animation started">Reset</button>${stepped ? '<span class="z-pos"></span>' : ''}</div></div>
       <div class="z-panel">${(spec.params || []).map(q => control(q, p[q.k])).join('')}</div></div>
       <div class="z-read"></div>
       ${spec.tips && spec.tips.length ? `<div class="z-tips"><h4>Try this</h4><ol>${spec.tips.map((t, i) => `<li>${t.t}${t.set || t.play ? `<button type="button" data-tip="${i}">Set it</button>` : ''}</li>`).join('')}</ol></div>` : ''}`;
@@ -102,6 +104,12 @@ const CVZ = (() => {
       const q = spec.params.find(x => x.k === c.dataset.k);
       p[q.k] = readVal(q, c);
       const o = c.closest('.z-p').querySelector('output'); if (o) o.textContent = fmtv(q, p[q.k]);
+      /* a shown answer belongs to the old values, so hide it again */
+      spec.params.forEach(r => {
+        if (!r.reveal || r.k === q.k || !p[r.k]) return;
+        p[r.k] = false;
+        const rc = el.querySelector(`.z-panel [data-k="${r.k}"]`); if (rc) rc.checked = false;
+      });
       stopPlay();
       if (stepped) { z.n = spec.steps(z); z.step = spec.startAtZero ? 0 : z.n; }
       if (spec.change) spec.change(z, q.k);
@@ -121,8 +129,14 @@ const CVZ = (() => {
       el.querySelector('.z-ctl .play').onclick = play;
       el.querySelector('.z-ctl .stp').onclick = () => { stopPlay(); if (z.step < z.n) z.step++; redraw(); };
       el.querySelector('.z-ctl .bk').onclick = () => { stopPlay(); if (z.step > 0) z.step--; redraw(); };
-      el.querySelector('.z-ctl .rs').onclick = () => { stopPlay(); z.step = 0; redraw(); };
     }
+    /* Reset builds the animation again from its starting values, so every value, step and click is undone */
+    el.querySelector('.z-ctl .rs').onclick = () => {
+      stopPlay();
+      const k = live.indexOf(z); if (k >= 0) live.splice(k, 1);
+      delete el.dataset.on;
+      mount(el);
+    };
     el.querySelectorAll('[data-tip]').forEach(b => b.onclick = () => {
       const t = spec.tips[+b.dataset.tip];
       stopPlay();
