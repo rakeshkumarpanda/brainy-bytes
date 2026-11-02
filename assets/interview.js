@@ -220,6 +220,7 @@ const IQ = (() => {
       if (!c) return;
       if (el.classList.contains('iq-search')) { filter(c.root); return; }
       c.s.t = el.value;
+      c.s.a = false;  /* the shown answer goes away while the reader edits their own answer */
       paintItem(c.box, c.s);
       save(c.root.dataset.key);
     });

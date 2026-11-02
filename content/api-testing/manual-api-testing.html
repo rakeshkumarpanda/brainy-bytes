@@ -2327,6 +2327,18 @@ const LEARN = (() => {
     wired = true;
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('lc-in')) check(e.target.closest('.lc-item')); });
+    /* a shown working belongs to the old answer, so typing a new answer hides it again */
+    document.addEventListener('input', e => {
+      const inp = e.target;
+      if (!inp.classList || !inp.classList.contains('lc-in')) return;
+      const it = inp.closest('.lc-item');
+      if (!it) return;
+      const w = it.querySelector('.lc-work'), sh = it.querySelector('.lc-show'), fb = it.querySelector('.lc-fb');
+      if (w) w.hidden = true;
+      if (sh) sh.classList.remove('on');
+      if (fb) fb.innerHTML = '';
+      it.classList.remove('wrong');
+    });
   }
   return { quizHtml, calcHtml, wire, hl, matches, LV };
 })();
@@ -2832,6 +2844,7 @@ const IQ = (() => {
       if (!c) return;
       if (el.classList.contains('iq-search')) { filter(c.root); return; }
       c.s.t = el.value;
+      c.s.a = false;  /* the shown answer goes away while the reader edits their own answer */
       paintItem(c.box, c.s);
       save(c.root.dataset.key);
     });

@@ -43,7 +43,14 @@ const NLZ = (() => {
   /* write text that wraps at maxW. Returns the y of the next line */
   function wrap(g, s, x, y, maxW, o = {}) {
     const lh = o.lh || (o.s || 13) + 5;
-    const words = String(s).split(/\s+/).filter(Boolean);
+    /* a word longer than the line (a run of random letters, say) is cut into pieces that fit */
+    const words = String(s).split(/\s+/).filter(Boolean).flatMap(w => {
+      if (tw(g, w, o) <= maxW) return [w];
+      const out = []; let cur = '';
+      for (const ch of w) { if (cur && tw(g, cur + ch, o) > maxW) { out.push(cur); cur = ch; } else cur += ch; }
+      if (cur) out.push(cur);
+      return out;
+    });
     let line = '';
     words.forEach(w => {
       const t = line ? line + ' ' + w : w;
@@ -102,7 +109,7 @@ const NLZ = (() => {
     params: [
       { k: 'ex', label: 'Observation', type: 'select', v: 'pb', opts: LEVEL_EX.map(e => [e[0], e[1].length > 60 ? e[1].slice(0, 58) + '…' : e[1]]) },
       { k: 'guess', label: 'Your guess', type: 'select', v: 'none', opts: [['none', 'No guess yet']].concat(LEVELS.map(l => [l[0], l[0]])) },
-      { k: 'show', label: 'Reveal the answer', type: 'check', v: false }
+      { k: 'show', label: 'Reveal the answer', type: 'check', v: false, reveal: true }
     ],
     tips: [
       { t: 'Pick the "colourless green ideas" sentence. It is a classic trap: the grammar is fine, so the problem is not syntax.', set: { ex: 'green', guess: 'none', show: false } },
@@ -1649,7 +1656,9 @@ const NLZ = (() => {
         D.text(g, fmt(r[1], 4), x + bw / 2, box[1] + box[3] + 30, { a: 'center', s: fit(g, fmt(r[1], 4), bw - 2, 10.5), c: z.col.ink2 });
       });
       D.line(g, box[0], m.sy(Hh), box[0] + box[2], m.sy(Hh), z.col.orange, 2, [6, 4]);
-      D.text(g, `Ĥ = ${fmt(Hh, 3)}`, box[0] + box[2] - 4, m.sy(Hh) - 6, { a: 'right', s: 11.5, b: true, c: z.col.orange });
+      /* the label sits above the plot, so it never lands on the bar values that share the Ĥ line */
+      D.line(g, box[0] + box[2] - 92, box[1] - 10, box[0] + box[2] - 72, box[1] - 10, z.col.orange, 2, [6, 4]);
+      D.text(g, `Ĥ = ${fmt(Hh, 3)}`, box[0] + box[2], box[1] - 6, { a: 'right', s: 11.5, b: true, c: z.col.orange });
       g.save(); g.translate(18, box[1] + box[3] / 2); g.rotate(-Math.PI / 2); D.text(g, `surprise in ${unit}`, 0, 0, { a: 'center', s: 11.5, b: true, c: z.col.ink2 }); g.restore();
       /* right: PP as a row of equally likely choices */
       const lx = 392;
@@ -2432,17 +2441,23 @@ const NLZ = (() => {
       const tot = wsz.reduce((a, c) => a + c, 0), gap = Math.max(6, (z.W - 24 - tot) / Math.max(1, n - 1));
       let x = 12; const cx = [];
       R.forEach((r, i) => { cx.push(x + wsz[i] / 2); x += wsz[i] + gap; });
-      const base = z.H - 34;
+      const base = z.H - 50;
       R.forEach((r, i) => { rr(g, cx[i] - wsz[i] / 2, base, wsz[i], 26, 6, { fill: r.h === 0 ? z.col.cv : z.col.surf, stroke: z.col.cv }); D.text(g, r.w, cx[i], base + 18, { a: 'center', s: fs, b: true, c: r.h === 0 ? '#fff' : z.col.ink }); D.text(g, String(i + 1), cx[i], base + 40, { a: 'center', s: 10, c: z.col.ink2 }); });
       /* arcs: height grows with distance */
       const arcs = R.map((r, i) => ({ d: i, h: r.h - 1, rel: r.rel })).filter(a => a.h >= 0 && a.h < n && a.h !== a.d);
       const crosses = (a, b) => { const [a1, a2] = [Math.min(a.d, a.h), Math.max(a.d, a.h)], [b1, b2] = [Math.min(b.d, b.h), Math.max(b.d, b.h)]; return (a1 < b1 && b1 < a2 && a2 < b2) || (b1 < a1 && a1 < b2 && b2 < a2); };
       let cross = 0; arcs.forEach((a, i) => arcs.forEach((b, j) => { if (i < j && crosses(a, b)) cross++; }));
+      const tags = [];
       arcs.forEach(a => {
         const x1 = cx[a.h], x2 = cx[a.d], ht = Math.min(base - 30, 26 + 30 * Math.abs(a.d - a.h));
         g.save(); g.strokeStyle = z.col.purple; g.lineWidth = 1.8; g.beginPath(); g.moveTo(x1, base - 2); g.bezierCurveTo(x1, base - ht, x2, base - ht, x2, base - 4); g.stroke(); g.restore();
         D.arrow(g, x2, base - 12, x2, base - 2, z.col.purple, 1.8);
-        const lx = (x1 + x2) / 2, ly = base - ht * 0.75 - 4, lwid = tw(g, a.rel, { s: 11, b: true }) + 8;
+        const lx = (x1 + x2) / 2, lwid = tw(g, a.rel, { s: 11, b: true }) + 8;
+        /* move a relation label along its arc until it does not cover an earlier label */
+        let ly = base - ht * 0.75 - 4;
+        const hit = yy => tags.some(r => lx - lwid / 2 < r[0] + r[2] && lx + lwid / 2 > r[0] && yy - 9 < r[1] + 16 && yy + 7 > r[1]);
+        for (let k = 1; k < 7 && hit(ly); k++) ly = base - ht * 0.75 - 4 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 17;
+        tags.push([lx - lwid / 2, ly - 9, lwid]);
         rr(g, lx - lwid / 2, ly - 9, lwid, 16, 4, { fill: z.col.surf });
         D.text(g, a.rel, lx, ly + 3, { a: 'center', s: 11, b: true, c: z.col.purple });
       });

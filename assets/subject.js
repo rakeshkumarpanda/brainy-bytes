@@ -306,6 +306,7 @@
       const nt = subj.topics.find(x => x.id === a.dataset.t);
       history.pushState(null, '', LH.topicUrl(nt));
       show(nt, '');
+      window.scrollTo({ top: 0 }); main.scrollTop = 0;
     }));
     if (/^https?:/.test(location.protocol)) {
       fetch(t.page, { method: 'HEAD', cache: 'no-store' }).then(r => {
