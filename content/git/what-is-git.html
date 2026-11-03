@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What Git is and how to set it up · Git and CI/CD</title>
+<meta name="description" content="Version control explained simply, local, centralised and distributed systems, the story of Git, snapshots instead of differences, installing Git, git config levels and your first repository.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 1: Getting started with Git</span><span>›</span><span>What Git is</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 1 of 1 · Beginner</div>
+    <h1>What Git is and how to set it up</h1>
+    <p class="lead">Understand why version control exists, how Git differs from older tools, and set Git up on your computer with your name, email and default branch.</p>
+    <div class="cv-chips"><span class="cv-chip">About 35 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">3 command cards</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#what-is-git" data-topic="cheatsheet" data-h="what-is-git">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#why" data-l="why"><span class="n">1</span><span class="t">Why version control exists</span></a></li><li><a href="#history" data-l="history"><span class="n">2</span><span class="t">Where Git came from and how it is different</span></a></li><li><a href="#setup" data-l="setup"><span class="n">3</span><span class="t">Install Git and tell it who you are</span></a></li><li><a href="#first" data-l="first"><span class="n">4</span><span class="t">Your first repository in two minutes</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="why" data-l="why" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Why version control exists</h2>
+<p>Think of writing a school project on a computer. You save it as <b>project.docx</b>, then you are scared to break it, so you save <b>project_v2.docx</b>, then <b>project_final.docx</b>, then <b>project_final_REAL.docx</b>. After a week you have a folder full of copies and no idea which one has the good introduction.</p>
+<p><b>Version control</b> is a tool that remembers every saved version of your files for you, together with who saved it, when, and a short note on why. You keep one folder. The tool keeps the history. You can look at any old version, compare two versions, or undo a mistake, at any time.</p>
+<div class="cv-code" data-k="versions"></div>
+<p>Now add a team. Five people edit the same website. Without a tool, they email files around and overwrite each other's work. Version control lets everyone work at the same time and then <b>merges</b> their changes, and it warns when two people changed the same line.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Problem without version control</th><th>What version control gives you</th></tr></thead><tbody><tr><td>Many copies with confusing names</td><td>One folder, a clean history of saved snapshots</td></tr><tr><td>No idea what changed</td><td>An exact list of changed lines between any two versions</td></tr><tr><td>A mistake ruins the only copy</td><td>Go back to any earlier version</td></tr><tr><td>Two people overwrite each other</td><td>Separate branches that are merged with checks</td></tr><tr><td>Nobody knows why a line exists</td><td>Every change carries an author, a date and a message</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: Google Docs version history</div><p>If you have opened File, Version history in Google Docs, you have used a simple version control system. Git does the same for whole folders of code, with much more control: you decide when a version is saved, you write the note, and you can keep several lines of work going at once.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="history" data-l="history" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Where Git came from and how it is different</h2>
+<p>Version control systems came in three waves.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Kind</th><th>Examples</th><th>Where the history lives</th><th>Weak spot</th></tr></thead><tbody><tr><td>Local</td><td>RCS</td><td>One computer</td><td>No teamwork, one disk failure loses everything</td></tr><tr><td>Centralised</td><td>CVS, Subversion (SVN), Perforce</td><td>One central server</td><td>Server down means nobody can commit or read history</td></tr><tr><td>Distributed</td><td>Git, Mercurial</td><td>Every clone has the full history</td><td>More ideas to learn at the start</td></tr></tbody></table></div>
+<div class="cvz" data-viz="vcs"></div>
+<p>Git was written by Linus Torvalds in <b>2005</b> for the Linux kernel. The kernel team had used a closed tool called BitKeeper for free, and when that free licence ended they needed a replacement. The goals were speed, a simple design, strong support for thousands of parallel branches, being fully distributed, and handling a project as big as Linux. Today Git is the most widely used version control system, and GitHub, GitLab and Bitbucket are all built around it.</p>
+<h3>Snapshots, not lists of differences</h3>
+<p>Older tools store a file plus a list of changes to it. Git thinks differently. Every time you <b>commit</b>, Git takes a <b>snapshot</b> of what all your files look like at that moment and stores a reference to it. If a file did not change, Git does not store it again. It just points to the copy it already has.</p>
+<details class="deep"><summary>Going deeper: Three promises Git keeps</summary><div class="deep-b"><p><b>Almost everything is local.</b> Your clone has the whole history, so log, diff and commit read your own disk and are fast, even on a plane.</p><p><b>Git has integrity.</b> Everything is identified by a checksum (a SHA-1 hash today) of its content. You cannot change a file, a folder or an old commit without Git noticing, because the name would change.</p><p><b>Git generally only adds data.</b> Almost every action adds to the database. Once something is committed it is very hard to lose, especially if you push it somewhere else too.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="setup" data-l="setup" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Install Git and tell it who you are</h2>
+<p>Git runs on Windows, macOS and Linux. Install it, then check the version.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>System</th><th>How to install</th></tr></thead><tbody><tr><td>Windows</td><td>Download Git for Windows from git-scm.com. It includes Git Bash, a terminal where every command on these pages works.</td></tr><tr><td>macOS</td><td>Run <code>git --version</code>. If Git is missing, macOS offers to install the Xcode command line tools. Homebrew users can run <code>brew install git</code>.</td></tr><tr><td>Linux (Debian, Ubuntu)</td><td><code>sudo apt install git</code></td></tr><tr><td>Linux (Fedora)</td><td><code>sudo dnf install git</code></td></tr></tbody></table></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Check that Git works</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git --version</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">git version 2.43.0</pre></div>
+<p>Every commit records an author name and email, so set them once. <code>--global</code> means for every repository of your user account.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">First time setup</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git config --global user.name "Asha Rao"</span><span class="ln">git config --global user.email "asha@example.com"</span><span class="ln">git config --global init.defaultBranch main</span><span class="ln">git config --global core.editor "code --wait"</span><span class="ln gc"># check what Git will use, and from which file</span><span class="ln">git config --list --show-origin</span></pre></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Set a value for your user</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git config --global &lt;key&gt; "&lt;value&gt;"</code></div><div class="fx-n">Stored in ~/.gitconfig. Use --local (the default inside a repository) to set it for one repository only.</div></div><div class="fx fx-key"><div class="fx-h"><span>Which value wins</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">system &lt; global &lt; local</div><div class="fx-n">Git reads /etc/gitconfig, then ~/.gitconfig, then .git/config. A later file overrides an earlier one, so the most specific setting wins.</div></div><div class="fx"><div class="fx-h"><span>Get help</span></div><div class="fx-b"><code>git help &lt;command&gt;</code> or <code>git &lt;command&gt; -h</code></div><div class="fx-n">The first opens the full manual page, the second prints a short list of options in the terminal.</div></div></div>
+<div class="cvz" data-viz="configlv"></div>
+<div class="cv-code" data-k="config"></div>
+<div class="note note-tip"><b>Remember</b><div>init.defaultBranch decides the name of the first branch in new repositories. Git 2.28 added this setting. If it is not set, current Git still uses master and prints a hint, and the Git project has said that new repositories will use main by default in Git 3.0.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Using a work laptop for personal projects? Set your personal email globally and your work email with git config user.email inside each work repository. The local value wins there.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="first" data-l="first" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Your first repository in two minutes</h2>
+<p>A <b>repository</b> (repo) is a project folder that Git watches. The history lives in a hidden folder called <code>.git</code> inside it. Delete that folder and the files stay, but the history is gone.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Make a repository and the first commit</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">mkdir shop &amp;&amp; cd shop</span><span class="ln">git init</span><span class="ln">echo "# Shop" &gt; README.md</span><span class="ln">git status</span><span class="ln">git add README.md</span><span class="ln">git commit -m "Add README"</span><span class="ln">git log --oneline</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Initialized empty Git repository in /home/asha/shop/.git/
+On branch main
+No commits yet
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+        README.md
+[main (root-commit) 1a2b3c4] Add README
+ 1 file changed, 1 insertion(+)
+ create mode 100644 README.md
+1a2b3c4 (HEAD -&gt; main) Add README</pre></div>
+<ol class="gk-flow"><li><b>git init</b><span>creates the .git folder, an empty history</span></li><li><b>edit files</b><span>your normal work in any editor</span></li><li><b>git add</b><span>choose which changes go in the next snapshot</span></li><li><b>git commit</b><span>save the snapshot with a message</span></li><li><b>git log</b><span>read the history</span></li></ol>
+<p>The short id <code>1a2b3c4</code> will be different on your computer, because it is a hash of the content, the author and the time. That is normal.</p>
+<div class="note note-warn"><b>Common mistake</b><div>Running git init in the wrong folder, for example your whole home folder, makes Git track everything. If that happens, delete the new .git folder in that place. Your files are not touched.</div></div>
+<div class="walk"><div class="walk-h"><span>What you can do with these five commands</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Save versions of any text project: code, notes, a book, configuration files.</li><li>See exactly what changed with git diff before you commit.</li><li>Go back to an older version when you break something.</li><li><span class="eq">Together with git push, keep a backup of the whole history on GitHub or GitLab</span></li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Git is a time machine for a folder. Every time you press save in Git, called a commit, it takes a photo of all your files and writes a note on the back. You can flip back through the photos whenever you like, and friends can work on their own copies and later put the work together.</p></div><div class="ld-p" data-ld="college" hidden><p>Git is a distributed version control system. A repository holds a directed acyclic graph of commits, each one a full snapshot of the project tree identified by a cryptographic hash. Clones are complete, so most work is offline, and collaboration means exchanging commits between repositories.</p></div><div class="ld-p" data-ld="masters" hidden><p>Git is a content addressable object store (blobs, trees, commits, annotated tags) plus a set of references. Storage is deduplicated by hash and packed with delta compression. Merges are three way, based on the merge base of the commit graph. Integrity follows from hashing: a commit id fixes its whole history, a Merkle tree structure.</p></div><div class="ld-p" data-ld="research" hidden><p>Open questions and current work include the move from SHA-1 to SHA-256 object names with interoperability between the two, the reftable format for references in very large repositories, partial clone and sparse checkout for monorepos, and merge algorithms. Research on mining software repositories uses Git histories to study how developers work and where bugs come from.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the Linux kernel</div><p>The kernel has well over a million commits from thousands of people. No central server decides anything. Maintainers pull from each other's repositories, and Linus pulls from his lieutenants. That is the distributed model working at the largest scale.</p></div>
+<div class="note note-exam"><b>In the exam</b><div>Git and GitHub are not the same thing. Git is the tool on your computer. GitHub, GitLab and Bitbucket are websites that host Git repositories and add pull requests, issues and CI/CD pipelines.</div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><span></span><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "what-is-git", "topic": "what-is-git", "subject": "git", "title": "What Git is and how to set it up", "codes": {"versions": {"src": "# Saving a project without version control: copies pile up\ncopies = [\"report.docx\", \"report_v2.docx\", \"report_final.docx\",\n          \"report_final_REAL.docx\", \"report_final_REAL_fixed.docx\"]\nfor name in copies:\n    print(\"saved a full copy:\", name)\nprint(len(copies), \"copies and still no answer to: what changed, who changed it, and why?\")\n\n# With version control: one file, a list of saved snapshots with a message each\nhistory = []\ndef commit(msg, who):\n    history.append({\"id\": len(history) + 1, \"msg\": msg, \"who\": who})\ncommit(\"first draft\", \"Asha\")\ncommit(\"add sales chart\", \"Ravi\")\ncommit(\"fix typo in title\", \"Asha\")\nfor c in history:\n    print(\"commit\", c[\"id\"], \"by\", c[\"who\"] + \":\", c[\"msg\"])", "stdin": "", "out": "saved a full copy: report.docx\nsaved a full copy: report_v2.docx\nsaved a full copy: report_final.docx\nsaved a full copy: report_final_REAL.docx\nsaved a full copy: report_final_REAL_fixed.docx\n5 copies and still no answer to: what changed, who changed it, and why?\ncommit 1 by Asha: first draft\ncommit 2 by Ravi: add sales chart\ncommit 3 by Asha: fix typo in title"}, "config": {"src": "# How git config picks a value: system, then global, then local. The last one found wins.\nlevels = [\n    (\"system\", \"/etc/gitconfig\", {\"core.editor\": \"vi\"}),\n    (\"global\", \"~/.gitconfig\", {\"user.name\": \"Asha\", \"user.email\": \"asha@home.example\", \"core.editor\": \"code --wait\"}),\n    (\"local\", \".git/config\", {\"user.email\": \"asha@work.example\"}),\n]\neffective, origin = {}, {}\nfor level, path, values in levels:\n    for key, value in values.items():\n        effective[key] = value          # a later level overwrites an earlier one\n        origin[key] = path\nfor key in sorted(effective):\n    print(f\"{key:12} = {effective[key]:22} from {origin[key]}\")", "stdin": "", "out": "core.editor  = code --wait            from ~/.gitconfig\nuser.email   = asha@work.example      from .git/config\nuser.name    = Asha                   from ~/.gitconfig"}}, "quiz": [{"lv": "e", "q": "What does a version control system mainly do?", "o": ["Compiles code", "Remembers every saved version of your files with who, when and why", "Hosts websites", "Finds bugs automatically"], "a": 1, "hint": "Think of a time machine for a folder.", "why": "It records history and lets you compare and restore versions."}, {"lv": "e", "q": "Who wrote the first version of Git, and when?", "o": ["Bill Gates, 1995", "Linus Torvalds, 2005", "GitHub, 2008", "Junio Hamano, 1999"], "a": 1, "hint": "The Linux kernel needed it.", "why": "Linus Torvalds wrote Git in 2005 after the kernel lost its free BitKeeper licence. Junio Hamano has maintained it since."}, {"lv": "e", "q": "Git and GitHub are", "o": ["The same thing", "A tool on your computer, and a website that hosts Git repositories", "Two names for one website", "A language and a library"], "a": 1, "hint": "One runs locally.", "why": "Git works without any website. GitHub hosts repositories and adds pull requests and Actions."}, {"lv": "e", "q": "Where does Git keep the history of a repository?", "o": ["In the cloud only", "In the hidden .git folder inside the project", "In the Windows registry", "In every file"], "a": 1, "hint": "Hidden folder.", "why": "Deleting .git deletes the history but leaves your files."}, {"lv": "m", "q": "In a centralised system the server goes down. What can a developer still do?", "o": ["Commit and see history", "Only edit files, no commits or history", "Everything as usual", "Push to a backup"], "a": 1, "hint": "History lives on the server.", "why": "With a central server, commits and log need the server. In Git they work offline."}, {"lv": "m", "q": "How does Git store a new version when only one of ten files changed?", "o": ["It stores all ten files again", "It stores the changed file and points to the nine it already has", "It stores only a diff of every file", "It stores nothing until push"], "a": 1, "hint": "Snapshots with reuse.", "why": "Each commit is a snapshot, but unchanged files are references to existing objects."}, {"lv": "m", "q": "Which config level wins when the same key is set in all three?", "o": ["system", "global", "local", "The first one read"], "a": 2, "hint": "Most specific wins.", "why": "Git reads system, global, local in order and the last value read wins."}, {"lv": "m", "q": "Which command shows every setting and the file it came from?", "o": ["git config --list --show-origin", "git status --all", "git show config", "git log --config"], "a": 0, "hint": "Show origin.", "why": "It prints file:path followed by key=value for each setting."}, {"lv": "h", "q": "Why can you not quietly change an old commit's content in Git?", "o": ["Old commits are read only files", "Everything is named by a hash of its content, so any change gives a new id", "GitHub blocks it", "Commits are encrypted"], "a": 1, "hint": "Integrity.", "why": "Changing content changes the hash, and every later commit refers to the old hash."}, {"lv": "h", "q": "What does init.defaultBranch control?", "o": ["The branch you push to", "The name of the first branch in newly created repositories", "The branch CI builds", "The branch git pull uses"], "a": 1, "hint": "Only for git init.", "why": "It sets the initial branch name. Existing repositories are not changed."}, {"lv": "x", "q": "Which change does the Git project list for Git 3.0 about new repositories?", "o": ["Branches are removed", "SHA-256 object names and main as the default branch name", "No more merges", "History is stored in the cloud"], "a": 1, "hint": "Read BreakingChanges.", "why": "The breaking changes document plans SHA-256 as the default hash and main as the default branch name for new repositories."}], "calc": [{"lv": "e", "q": "A team saves a full copy of a 2 MB folder for each of 15 versions instead of using Git. How many MB do the copies use?", "ans": "30", "hint": "Copies times size.", "steps": ["Each copy is the full folder: 2 MB.", "There are 15 copies.", "<span class=\"eq\">15 × 2 = 30 MB<\/span>"]}, {"lv": "e", "q": "Git checks system, global and local config. A key is set only in system and global. Which level wins? Answer 1 for system, 2 for global, 3 for local.", "ans": "2", "hint": "Last one read wins.", "steps": ["Order: system (1), global (2), local (3).", "Local is not set, so it is skipped.", "<span class=\"eq\">global wins, answer 2<\/span>"]}, {"lv": "m", "q": "A project has 10 files. Each commit changes exactly one file. After 5 commits (including the first, which adds all 10), how many file versions (blobs) does Git store, if every change creates new content?", "ans": "14", "hint": "First commit stores 10, each later commit adds one.", "steps": ["Commit 1 stores all 10 files: 10 blobs.", "Commits 2 to 5 each add one changed file: 4 blobs.", "<span class=\"eq\">10 + 4 = 14 blobs, not 50<\/span>"]}, {"lv": "m", "q": "A SHA-1 id is 40 hex digits. How many bits is that?", "ans": "160", "hint": "Each hex digit is 4 bits.", "steps": ["One hex digit holds 4 bits.", "40 digits.", "<span class=\"eq\">40 × 4 = 160 bits<\/span>"]}, {"lv": "m", "q": "A SHA-256 id has 256 bits. How many hex digits does it take to write it?", "ans": "64", "hint": "Divide by 4.", "steps": ["Each hex digit is 4 bits.", "256 bits in total.", "<span class=\"eq\">256 ÷ 4 = 64 digits<\/span>"]}, {"lv": "h", "q": "Git shows a 7 digit short id by default. How many different values can 7 hex digits take? Give the exact number.", "ans": "268435456", "hint": "16 to the power 7.", "steps": ["Each hex digit has 16 values.", "Seven digits.", "<span class=\"eq\">16⁷ = 2²⁸ = 268,435,456<\/span>"]}, {"lv": "h", "q": "With a centralised system, a team of 6 cannot commit while the server is down for 3 hours. How many developer hours of committing are blocked? (With Git the answer would be 0.)", "ans": "18", "hint": "People times hours.", "steps": ["6 developers.", "3 hours each.", "<span class=\"eq\">6 × 3 = 18 developer hours<\/span>"]}], "assign": [{"id": "cfg", "lv": "e", "title": "Work out the effective git config", "task": "<p>Write <code>effective(levels)<\/code>. <code>levels<\/code> is a list of dictionaries in the order Git reads them (system, global, local). Return one dictionary where a later level overrides an earlier one.<\/p>", "starter": "def effective(levels):\n    # your code here\n    pass\n", "tests": [{"call": "effective([{'core.editor': 'vi'}, {'user.email': 'a@home'}, {'user.email': 'a@work'}])", "want": {"core.editor": "vi", "user.email": "a@work"}}, {"call": "effective([{}, {'user.name': 'Asha'}, {}])", "want": {"user.name": "Asha"}}, {"call": "effective([{'x': '1'}, {'x': '2'}, {'x': '3'}])", "want": {"x": "3"}}], "solution": "def effective(levels):\n    out = {}\n    for level in levels:\n        out.update(level)\n    return out\n", "hint": "Start with an empty dictionary and update it with each level in order.", "why": "<p>This is exactly what git config does when it reads /etc/gitconfig, ~/.gitconfig and .git/config.<\/p>"}, {"id": "snap", "lv": "m", "title": "Count stored file versions", "task": "<p>Each commit is a dictionary from file name to content. Write <code>stored(commits)<\/code> that returns how many different (file name, content) pairs Git would need to store as blobs. Unchanged files are not stored again.<\/p>", "starter": "def stored(commits):\n    # your code here\n    pass\n", "tests": [{"call": "stored([{'a': '1', 'b': '1'}, {'a': '2', 'b': '1'}])", "want": 3}, {"call": "stored([{'a': 'x'}, {'a': 'x'}, {'a': 'x'}])", "want": 1}, {"call": "stored([{'a': '1', 'b': '2'}, {'a': '2', 'b': '1'}])", "want": 4}], "solution": "def stored(commits):\n    seen = set()\n    for snap in commits:\n        for name, content in snap.items():\n            seen.add((name, content))\n    return len(seen)\n", "hint": "Use a set of (name, content) pairs.", "why": "<p>Real Git stores blobs by content alone, so two files with identical content share one blob. Here the name is kept in the pair to keep the idea simple.<\/p>"}], "must": [["Version control", "Records every version of your files with author, time and message, so you can compare, restore and work in parallel."], ["Distributed", "Every Git clone has the full history. Commit, log and diff work offline. Centralised tools need the server."], ["Snapshots", "A commit is a snapshot of the whole project. Unchanged files are reused, not stored again."], ["Config levels", "system, global (~/.gitconfig), local (.git/config). Later wins. Set user.name, user.email and init.defaultBranch first."], ["Git is not GitHub", "Git is the tool. GitHub, GitLab and Bitbucket host repositories and add pull requests, reviews and CI/CD."]], "summary": "<p>Git keeps the full history of a folder as snapshots on your own computer. Set your name, email and default branch once with git config, then git init, add and commit.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"versions": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line", "d": {"G.copies": "['report.docx', 'report_v2.docx', 'report_final.docx', 'report_final_REAL.docx', 'repor..."}}, {"l": 5, "ev": "line", "d": {"G.name": "'report.docx'"}}, {"l": 4, "ev": "line", "o": "saved a full copy: report.docx\n"}, {"l": 5, "ev": "line", "d": {"G.name": "'report_v2.docx'"}}, {"l": 4, "ev": "line", "o": "saved a full copy: report_v2.docx\n"}, {"l": 5, "ev": "line", "d": {"G.name": "'report_final.docx'"}}, {"l": 4, "ev": "line", "o": "saved a full copy: report_final.docx\n"}, {"l": 5, "ev": "line", "d": {"G.name": "'report_final_REAL.docx'"}}, {"l": 4, "ev": "line", "o": "saved a full copy: report_final_REAL.docx\n"}, {"l": 5, "ev": "line", "d": {"G.name": "'report_final_REAL_fixed.docx'"}}, {"l": 4, "ev": "line", "o": "saved a full copy: report_final_REAL_fixed.docx\n"}, {"l": 6, "ev": "line"}, {"l": 9, "ev": "line", "o": "5 copies and still no answer to: what changed, who changed it, and why?\n"}, {"l": 10, "ev": "line", "d": {"G.history": "[]"}}, {"l": 12, "ev": "line", "d": {"G.commit": "<function commit>"}}, {"l": 10, "ev": "call", "s": ["module", "commit()"], "d": {"L.msg": "'first draft'", "L.who": "'Asha'"}}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return", "d": {"G.history": "[{'id': 1, 'msg': 'first draft', 'who': 'Asha'}]"}}, {"l": 13, "ev": "line", "s": ["module"], "d": {"L.msg": null, "L.who": null}}, {"l": 10, "ev": "call", "s": ["module", "commit()"], "d": {"L.msg": "'add sales chart'", "L.who": "'Ravi'"}}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return", "d": {"G.history": "[{'id': 1, 'msg': 'first draft', 'who': 'Asha'}, {'id': 2, 'msg': 'add sales chart', 'w..."}}, {"l": 14, "ev": "line", "s": ["module"], "d": {"L.msg": null, "L.who": null}}, {"l": 10, "ev": "call", "s": ["module", "commit()"], "d": {"L.msg": "'fix typo in title'", "L.who": "'Asha'"}}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"L.msg": null, "L.who": null}}, {"l": 16, "ev": "line", "d": {"G.c": "{'id': 1, 'msg': 'first draft', 'who': 'Asha'}"}}, {"l": 15, "ev": "line", "o": "commit 1 by Asha: first draft\n"}, {"l": 16, "ev": "line", "d": {"G.c": "{'id': 2, 'msg': 'add sales chart', 'who': 'Ravi'}"}}, {"l": 15, "ev": "line", "o": "commit 2 by Ravi: add sales chart\n"}, {"l": 16, "ev": "line", "d": {"G.c": "{'id': 3, 'msg': 'fix typo in title', 'who': 'Asha'}"}}, {"l": 15, "ev": "line", "o": "commit 3 by Asha: fix typo in title\n"}, {"l": 15, "ev": "return"}], "tail": "", "err": null, "cut": false}, "config": {"steps": [{"l": 3, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line"}, {"l": 2, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.levels": "[('system', '/etc/gitconfig', {'core.editor': 'vi'}), ('global', '~/.gitconfig', {'user..."}}, {"l": 8, "ev": "line", "d": {"G.effective": "{}", "G.origin": "{}"}}, {"l": 9, "ev": "line", "d": {"G.level": "'system'", "G.path": "'/etc/gitconfig'", "G.values": "{'core.editor': 'vi'}"}}, {"l": 10, "ev": "line", "d": {"G.key": "'core.editor'", "G.value": "'vi'"}}, {"l": 11, "ev": "line", "d": {"G.effective": "{'core.editor': 'vi'}"}}, {"l": 9, "ev": "line", "d": {"G.origin": "{'core.editor': '/etc/gitconfig'}"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.level": "'global'", "G.path": "'~/.gitconfig'", "G.values": "{'user.name': 'Asha', 'user.email': 'asha@home.example', 'core.editor': 'code --wait'}"}}, {"l": 10, "ev": "line", "d": {"G.key": "'user.name'", "G.value": "'Asha'"}}, {"l": 11, "ev": "line", "d": {"G.effective": "{'core.editor': 'vi', 'user.name': 'Asha'}"}}, {"l": 9, "ev": "line", "d": {"G.origin": "{'core.editor': '/etc/gitconfig', 'user.name': '~/.gitconfig'}"}}, {"l": 10, "ev": "line", "d": {"G.key": "'user.email'", "G.value": "'asha@home.example'"}}, {"l": 11, "ev": "line", "d": {"G.effective": "{'core.editor': 'vi', 'user.name': 'Asha', 'user.email': 'asha@home.example'}"}}, {"l": 9, "ev": "line", "d": {"G.origin": "{'core.editor': '/etc/gitconfig', 'user.name': '~/.gitconfig', 'user.email': '~/.gitcon..."}}, {"l": 10, "ev": "line", "d": {"G.key": "'core.editor'", "G.value": "'code --wait'"}}, {"l": 11, "ev": "line", "d": {"G.effective": "{'core.editor': 'code --wait', 'user.name': 'Asha', 'user.email': 'asha@home.example'}"}}, {"l": 9, "ev": "line", "d": {"G.origin": "{'core.editor': '~/.gitconfig', 'user.name': '~/.gitconfig', 'user.email': '~/.gitconfig'}"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.level": "'local'", "G.path": "'.git/config'", "G.values": "{'user.email': 'asha@work.example'}"}}, {"l": 10, "ev": "line", "d": {"G.key": "'user.email'", "G.value": "'asha@work.example'"}}, {"l": 11, "ev": "line", "d": {"G.effective": "{'core.editor': 'code --wait', 'user.name': 'Asha', 'user.email': 'asha@work.example'}"}}, {"l": 9, "ev": "line", "d": {"G.origin": "{'core.editor': '~/.gitconfig', 'user.name': '~/.gitconfig', 'user.email': '.git/config'}"}}, {"l": 8, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 13, "ev": "line", "d": {"G.key": "'core.editor'"}}, {"l": 12, "ev": "line", "o": "core.editor  = code --wait            from ~/.gitconfig\n"}, {"l": 13, "ev": "line", "d": {"G.key": "'user.email'"}}, {"l": 12, "ev": "line", "o": "user.email   = asha@work.example      from .git/config\n"}, {"l": 13, "ev": "line", "d": {"G.key": "'user.name'"}}, {"l": 12, "ev": "line", "o": "user.name    = Asha                   from ~/.gitconfig\n"}, {"l": 12, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

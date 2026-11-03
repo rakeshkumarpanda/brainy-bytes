@@ -276,6 +276,17 @@ window.CATALOG = {
       modules: seModules().concat(langSheetModule('selenium'), iqModule('selenium'))
     },
     {
+      id: 'git',
+      title: 'Git and CI/CD',
+      emoji: '🌿',
+      color: '#f05032',
+      layout: 'path',
+      blurb: 'A step by step path from your first commit to branches, merges, rebase, remotes and Git internals, then GitHub Actions and GitLab CI/CD built from scratch for developers and QA.',
+      intro: 'Follow the path one step at a time. You start with what Git is and the three areas of a repository, learn branching, merging, rebase, undo, stash, tags and ignore rules, work with remotes and team workflows, and open the .git folder to see objects, refs and packs. Then you learn CI/CD: what a pipeline is, GitHub Actions and GitLab CI/CD in depth, each built from an empty repository to a green pipeline in baby steps, with separate developer and QA views of what to change and why, and how to publish and download build artifacts. Every topic has animations you can type commands into, worked problems, quizzes and Python assignments, and the subject ends with exam revision, a cheatsheet and interview questions.',
+      tags: ['Git', 'Branching', 'Rebase', 'Internals', 'GitHub Actions', 'GitLab CI', 'Artifacts'],
+      modules: gitModules().concat(sheetModule('git'), iqModule('git'))
+    },
+    {
       id: 'playwright',
       title: 'Playwright',
       emoji: '🎭',
@@ -1268,6 +1279,7 @@ function sheetModule(sid) {
   const info = {
     'computer-vision': ['content/computer-vision/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Computer Vision chapters on one page, from pixels and filters to detection, segmentation and CLIP. Search it, filter it, print it or download the PDF.', ['image size formula', 'convolution output size', 'Sobel', 'Harris', 'optical flow', 'IoU', 'NMS', 'focal loss', 'mAP', 'Dice', 'mIoU']],
     'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Advanced AI chapters on one page, from preferences and utility to expected utility, risk, discounting, Nash style games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['utility', 'expected utility', 'certainty equivalent', 'discount factor', 'value of information', 'Cournot', 'Pareto', 'dominance', 'IESDS']],
+    'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
   }[sid];
   return {
@@ -1333,6 +1345,7 @@ function iqModule(sid) {
     'playwright': ['content/playwright/interview-questions.html', 'Playwright questions from automation interviews in TypeScript, JavaScript, Python and Java: how Playwright works, locators and strict mode, auto waiting, network mocking, fixtures, framework design, traces and reports, CI, sharding, flaky tests and the AI test agents, with real scenario questions.', ['playwright vs selenium', 'browser context', 'getByRole', 'strict mode', 'auto waiting', 'web first assertions', 'page.route', 'storageState', 'test.extend', 'pytest fixtures', 'trace viewer', 'sharding', 'flaky tests', 'test agents', 'playwright mcp']],
     'ai': ['content/ai/interview-questions.html', 'Advanced AI interview and viva questions on rational preferences, utility representation, expected utility and risk attitudes, backward induction, discounting, value of information, normal form games, Pareto optimality, dominance and IESDS, with numerical questions solved step by step.', ['rational preference', 'utility function', 'ordinal vs cardinal', 'expected utility', 'certainty equivalent', 'St Petersburg', 'backward induction', 'discount factor', 'value of information', 'prisoners dilemma', 'Cournot', 'Bertrand', 'Pareto optimal', 'dominant strategy', 'IESDS']],
     'nlp': ['content/nlp/interview-questions.html', 'NLP interview questions on tokenisation, stemming and lemmatisation, Zipf, entropy, cross entropy and KL, perplexity, n-gram models, add-k, Good-Turing, Kneser-Ney, backoff and interpolation, HMM tagging, Viterbi, parsing and evaluation, with scenario questions.', ['tokenisation', 'stemming vs lemmatisation', 'Zipf law', 'entropy', 'cross entropy', 'perplexity', 'n-gram', 'Laplace smoothing', 'Kneser-Ney', 'interpolation', 'OOV', 'HMM', 'Viterbi', 'POS tagging', 'CKY', 'BLEU']],
+    'git': ['content/git/interview-questions.html', 'Git and CI/CD interview questions for developers and QA engineers: the three areas, reset, revert and restore, merge versus rebase, conflicts, reflog recovery, remotes and force pushes, internals, GitHub Actions and GitLab CI/CD pipelines, caches, artifacts, secrets, flaky tests and pipeline design scenarios.', ['git reset vs revert', 'merge vs rebase', 'fast forward', 'cherry-pick', 'reflog', 'detached HEAD', 'force-with-lease', 'git bisect', 'git objects', 'GitHub Actions', 'needs', 'matrix', 'artifacts', 'GitLab rules', 'cache vs artifacts', 'secrets']],
     'computer-vision': ['content/computer-vision/interview-questions.html', 'Computer vision interview questions on images and filters, edges, Harris, SIFT and HOG, optical flow, CNN arithmetic, anchors, IoU, NMS, focal loss, precision, recall and mAP, segmentation metrics, U-Net, ViT, CLIP and SAM, with debugging scenarios and system design.', ['convolution output size', 'parameter count', 'receptive field', 'Harris', 'optical flow', 'IoU', 'NMS', 'anchor boxes', 'focal loss', 'mAP50-95', 'mIoU', 'Dice', 'U-Net', 'transposed convolution', 'ViT', 'CLIP', 'SAM', 'domain shift']],
     'selenium': ['content/selenium/interview-questions.html', 'Selenium questions from automation and SDET interviews on how WebDriver works, sessions and options, locators, waits, windows, frames, alerts, Actions, JavaScript and cookies, frameworks and page objects, flaky tests and debugging, and Selenium Grid 4 with BiDi and CDP, with code in Java, Python and JavaScript.', ['selenium architecture', 'W3C WebDriver', 'Selenium Manager', 'close vs quit', 'CSS vs XPath', 'relative locators', 'shadow root', 'implicit vs explicit wait', 'FluentWait', 'window handles', 'iframe', 'Actions API', 'stale element', 'click intercepted', 'page object model', 'Selenium Grid', 'BiDi', 'CDP']],
     'master-claude': ['content/claude/interview-questions.html', 'Claude interview questions on prompting, context engineering, CLAUDE.md and rules, skills, permissions and hooks, subagents, MCP, claude -p and GitHub Actions, the Claude API, agents, cost and safety, with real scenario questions.', ['prompt engineering', 'context rot', 'CLAUDE.md', 'rules.md', 'SKILL.md', 'hooks exit code 2', 'subagents', 'MCP', '.mcp.json', 'claude -p', 'tool use loop', 'prompt caching', 'agent safety']]
@@ -5220,3 +5233,201 @@ function nlpNeuralModules() {
   ];
 }
 /* ===== end of nlp-neural-build ===== */
+
+/* ===== git-build: Git and CI/CD chapters. Generated by tools/git-build/build.py, edit the topic files instead. ===== */
+function gitModules() {
+  return [
+    { id: "git-start", title: "Getting started with Git", emoji: "1", step: 1, level: "Beginner", blurb: "What version control is, how Git thinks, the three areas of a repository, and how to read history and differences.", topics: [
+      { id: "what-is-git", title: "What Git is and how to set it up", emoji: "1.1", page: "content/git/what-is-git.html",
+        summary: "Why version control exists, centralised versus distributed, snapshots, installing Git, git config levels and a first repository.",
+        keywords: ["what is git", "version control", "distributed", "centralised", "snapshots", "git config", "install git", "git init"],
+        minutes: 35, counts: {"lessons": 5, "problems": 7, "quiz": 11, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "why", title: "Why version control exists", emoji: "", group: "Lesson", keywords: ["version control", "VCS", "history", "why git", "final_v2"] },
+        { id: "history", title: "Where Git came from and how it is different", emoji: "", group: "Lesson", keywords: ["history of git", "Linus Torvalds", "BitKeeper", "centralised", "distributed", "Subversion", "snapshots", "integrity", "SHA-1"] },
+        { id: "setup", title: "Install Git and tell it who you are", emoji: "", group: "Lesson", keywords: ["install git", "git --version", "git config", "user.name", "user.email", "init.defaultBranch", "core.editor", "--show-origin", "system global local"] },
+        { id: "first", title: "Your first repository in two minutes", emoji: "", group: "Lesson", keywords: ["git init", "repository", ".git folder", "first commit", "git add", "git commit", "git log"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["git vs github", "DAG", "content addressable", "Merkle tree", "SHA-256", "reftable"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "three-areas", title: "The three areas: working tree, staging area and repository", emoji: "1.2", page: "content/git/three-areas.html",
+        summary: "Working tree, staging area and repository, file states and status codes, add, add -p, commit and good commit messages.",
+        keywords: ["staging area", "index", "working tree", "git status", "git add", "git commit", "commit message", "untracked"],
+        minutes: 40, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "areas", title: "The three areas of a Git project", emoji: "", group: "Lesson", keywords: ["working tree", "staging area", "index", "repository", "HEAD", "three areas", "git add", "git commit"] },
+        { id: "states", title: "File states and git status", emoji: "", group: "Lesson", keywords: ["git status", "status -s", "untracked", "modified", "staged", "XY codes", "porcelain"] },
+        { id: "commit", title: "Adding and committing well", emoji: "", group: "Lesson", keywords: ["git add -p", "git commit -m", "commit -am", "git rm", "git mv", "commit message", "conventional commits", "atomic commit"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["index file", "stages 1 2 3", "tangled commits", "git add -p"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "history-diffs", title: "Reading history: log, diff, blame and naming commits", emoji: "1.3", page: "content/git/history-diffs.html",
+        summary: "git log filters and the pickaxe, the three diffs and hunk headers, ~, ^, reflog names, .. and ... ranges, and git blame.",
+        keywords: ["git log", "git diff", "git show", "git blame", "HEAD~1", "HEAD^2", "double dot", "triple dot", "hunk"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "log", title: "Reading history with git log", emoji: "", group: "Lesson", keywords: ["git log", "--oneline", "--graph", "--all", "git show", "pickaxe", "log -S", "--author", "--since", "--stat"] },
+        { id: "diff", title: "git diff: three comparisons and how to read a hunk", emoji: "", group: "Lesson", keywords: ["git diff", "diff --staged", "diff HEAD", "hunk", "@@", "word-diff", "Myers", "patience", "histogram"] },
+        { id: "names", title: "Naming commits: HEAD, ~, ^ and ranges", emoji: "", group: "Lesson", keywords: ["HEAD", "HEAD~1", "HEAD^2", "tilde", "caret", "double dot", "triple dot", "revision", "gitrevisions", "HEAD@{1}"] },
+        { id: "blame", title: "Who wrote this line and why", emoji: "", group: "Lesson", keywords: ["git blame", "blame -L", "ignore-revs", "first-parent", "SZZ"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "git-branch", title: "Branching and merging", emoji: "2", step: 2, level: "Intermediate", blurb: "Branches as pointers, fast-forward and three way merges, conflicts, rebase, interactive rebase and cherry-pick.", topics: [
+      { id: "branches", title: "Branches and HEAD", emoji: "2.1", page: "content/git/branches.html",
+        summary: "Branches as pointers, HEAD, switch and checkout, detached HEAD and rescue, renaming and deleting branches.",
+        keywords: ["branch", "HEAD", "git switch", "git checkout", "detached HEAD", "git branch -d", "branch naming"],
+        minutes: 40, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "what", title: "A branch is just a movable label", emoji: "", group: "Lesson", keywords: ["branch", "pointer", "refs/heads", "HEAD", "git branch", "git switch", "switch -c", "checkout -b", "branch -vv"] },
+        { id: "switch", title: "switch, checkout and what happens to your files", emoji: "", group: "Lesson", keywords: ["git switch", "git checkout", "git restore", "switch -", "Git 2.23", "would be overwritten"] },
+        { id: "detached", title: "Detached HEAD, without fear", emoji: "", group: "Lesson", keywords: ["detached HEAD", "checkout commit", "switch --detach", "rescue commit", "reflog"] },
+        { id: "manage", title: "Naming, renaming and deleting branches", emoji: "", group: "Lesson", keywords: ["branch -d", "branch -D", "branch -m", "merged", "no-merged", "branch naming", "symbolic ref", "packed-refs", "reftable"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "merging", title: "Merging and resolving conflicts", emoji: "2.2", page: "content/git/merging.html",
+        summary: "Fast-forward versus three way merge, merge base, squash, conflicts and markers, abort, diff3, rerere and the ort strategy.",
+        keywords: ["git merge", "fast-forward", "merge conflict", "merge base", "no-ff", "squash merge", "ort", "rerere"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "ff", title: "Fast-forward or a real merge", emoji: "", group: "Lesson", keywords: ["git merge", "fast-forward", "three way merge", "merge commit", "--no-ff", "--ff-only", "--squash", "merge base", "merge-base"] },
+        { id: "three", title: "How a three way merge decides", emoji: "", group: "Lesson", keywords: ["three way merge", "base ours theirs", "ort", "recursive", "octopus", "strategy ours", "-X ours", "criss cross"] },
+        { id: "conflicts", title: "Resolving a conflict step by step", emoji: "", group: "Lesson", keywords: ["merge conflict", "conflict markers", "git merge --abort", "checkout --ours", "checkout --theirs", "conflictStyle", "diff3", "zdiff3", "rerere", "unmerged paths"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["semantic conflict", "structured merge", "merge result testing"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "rebase", title: "Rebase, interactive rebase and cherry-pick", emoji: "2.3", page: "content/git/rebase-cherry-pick.html",
+        summary: "Rebase, the golden rule, merge versus rebase, interactive rebase (pick, squash, fixup, drop) and cherry-pick.",
+        keywords: ["git rebase", "interactive rebase", "squash", "fixup", "cherry-pick", "golden rule", "merge vs rebase", "rebase --onto"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "rebase", title: "Rebase: move your work onto a new base", emoji: "", group: "Lesson", keywords: ["git rebase", "rebase main", "replay commits", "linear history", "rebase --continue", "rebase --abort", "rebase --onto", "update-refs"] },
+        { id: "golden", title: "The golden rule, and merge versus rebase", emoji: "", group: "Lesson", keywords: ["golden rule of rebasing", "merge vs rebase", "force-with-lease", "shared branch", "rewrite history"] },
+        { id: "interactive", title: "Interactive rebase: tidy your commits before review", emoji: "", group: "Lesson", keywords: ["interactive rebase", "rebase -i", "pick", "reword", "edit", "squash", "fixup", "drop", "autosquash", "commit --fixup"] },
+        { id: "cherry", title: "Cherry-pick: copy one commit", emoji: "", group: "Lesson", keywords: ["cherry-pick", "cherry-pick -x", "backport", "release branch", "patch id", "rebase-merges", "range-diff"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "git-undo", title: "Undo, stash, tags and ignore rules", emoji: "3", step: 3, level: "Intermediate", blurb: "Undo safely at every level, rescue lost commits, park work in the stash, mark releases with tags and keep junk out with .gitignore.", topics: [
+      { id: "undo", title: "Undoing things: restore, reset, revert and the reflog", emoji: "3.1", page: "content/git/undo.html",
+        summary: "restore, amend, the three reset modes, revert, reflog rescue and when each undo is safe.",
+        keywords: ["git reset", "git revert", "git restore", "reflog", "amend", "undo commit", "reset hard", "recover"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "levels3", title: "Undo at each of the three levels", emoji: "", group: "Lesson", keywords: ["undo", "git restore", "restore --staged", "unstage", "discard changes"] },
+        { id: "reset", title: "git reset: soft, mixed and hard", emoji: "", group: "Lesson", keywords: ["git reset", "reset --soft", "reset --mixed", "reset --hard", "HEAD~1", "commit --amend", "undo last commit"] },
+        { id: "revert", title: "git revert: undo in public", emoji: "", group: "Lesson", keywords: ["git revert", "revert merge", "revert -m 1", "rollback", "shared history"] },
+        { id: "reflog", title: "The reflog: your safety net", emoji: "", group: "Lesson", keywords: ["reflog", "HEAD@{1}", "recover lost commit", "gc.reflogExpire", "fsck lost-found", "three trees"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "stash-tags-ignore", title: "Stash, tags, .gitignore and .gitattributes", emoji: "3.2", page: "content/git/stash-tags-ignore.html",
+        summary: "Stash, clean, tags and semantic versions, .gitignore patterns and traps, line endings and Git LFS.",
+        keywords: ["git stash", "git tag", "semver", "gitignore", "check-ignore", "gitattributes", "line endings", "git lfs"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "stash", title: "git stash: put work aside for a moment", emoji: "", group: "Lesson", keywords: ["git stash", "stash pop", "stash apply", "stash list", "stash -u", "stash branch", "git clean", "clean -n"] },
+        { id: "tags", title: "Tags and version numbers", emoji: "", group: "Lesson", keywords: ["git tag", "annotated tag", "lightweight tag", "push tags", "follow-tags", "git describe", "semantic versioning", "semver"] },
+        { id: "ignore", title: ".gitignore: keep junk out", emoji: "", group: "Lesson", keywords: [".gitignore", "ignore pattern", "negation", "check-ignore", "rm --cached", "info/exclude", "excludesFile", "secrets"] },
+        { id: "attrs", title: ".gitattributes, line endings and big files", emoji: "", group: "Lesson", keywords: [".gitattributes", "line endings", "CRLF", "LF", "text=auto", "binary", "Git LFS", "signed tags"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "git-team", title: "Remotes and teamwork", emoji: "4", step: 4, level: "Intermediate", blurb: "Share work through GitHub and GitLab: clone, fetch, pull and push, pick a branching workflow, review through pull requests, and use the power tools teams rely on.", topics: [
+      { id: "remotes", title: "Remotes: clone, fetch, pull and push", emoji: "4.1", page: "content/git/remotes.html",
+        summary: "Remotes and origin/main, fetch, pull and push, ahead and behind, upstreams, safe force pushes, prune and refspecs.",
+        keywords: ["git clone", "origin", "git fetch", "git pull", "git push", "ahead behind", "force-with-lease", "refspec"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "clone", title: "Remotes and git clone", emoji: "", group: "Lesson", keywords: ["remote", "git clone", "origin", "remote-tracking branch", "origin/main", "git remote", "upstream", "shallow clone", "partial clone", "ssh key", "personal access token"] },
+        { id: "sync", title: "fetch, pull and push, ahead and behind", emoji: "", group: "Lesson", keywords: ["git fetch", "git pull", "git push", "fast forward", "rejected", "fetch first", "diverged", "ahead", "behind", "branch -vv", "pull.rebase", "ff-only"] },
+        { id: "tracking", title: "Upstream branches, force pushes and pruning", emoji: "", group: "Lesson", keywords: ["upstream", "set-upstream", "push -u", "force-with-lease", "force-if-includes", "stale info", "push --delete", "fetch --prune", "fetch.prune", "refspec", "refs/remotes"] },
+        { id: "teamday", title: "A day with a remote, step by step", emoji: "", group: "Lesson", keywords: ["daily workflow", "pull request", "rebase origin/main", "branch -d", "protocol v2", "packfile"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "workflows", title: "Team workflows, pull requests and branch protection", emoji: "4.2", page: "content/git/workflows.html",
+        summary: "Branching workflows, PRs and MRs, merge methods, branch protection, CODEOWNERS and Conventional Commits.",
+        keywords: ["github flow", "gitflow", "trunk based", "pull request", "merge request", "branch protection", "codeowners", "conventional commits"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "models", title: "Four branching workflows", emoji: "", group: "Lesson", keywords: ["workflow", "GitHub flow", "Gitflow", "trunk based development", "feature flags", "forking workflow", "upstream", "develop branch", "release branch", "hotfix"] },
+        { id: "pr", title: "Pull requests and merge requests", emoji: "", group: "Lesson", keywords: ["pull request", "merge request", "code review", "status check", "squash and merge", "rebase and merge", "merge commit", "fast-forward merge", "semi-linear history"] },
+        { id: "protect", title: "Protect main: branch rules and code owners", emoji: "", group: "Lesson", keywords: ["branch protection", "protected branch", "required status checks", "pipelines must succeed", "required approvals", "CODEOWNERS", "code owners", "linear history", "force push", "rulesets"] },
+        { id: "commits", title: "Good commit messages and Conventional Commits", emoji: "", group: "Lesson", keywords: ["commit message", "imperative", "Conventional Commits", "feat", "fix", "BREAKING CHANGE", "changelog", "merge queue", "merge train"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "power-tools", title: "Power tools: bisect, worktree, submodules, hooks and signing", emoji: "4.3", page: "content/git/power-tools.html",
+        summary: "bisect, worktree, submodules, hooks, grep, sparse checkout, signed commits and archive.",
+        keywords: ["git bisect", "bisect run", "git worktree", "submodule", "git hooks", "pre-commit", "signed commits", "sparse checkout"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "bisect", title: "git bisect: find the commit that broke it", emoji: "", group: "Lesson", keywords: ["git bisect", "bisect run", "binary search", "first bad commit", "bisect skip", "exit code 125", "regression"] },
+        { id: "worktree", title: "worktree and submodules", emoji: "", group: "Lesson", keywords: ["git worktree", "worktree add", "worktree list", "submodule", ".gitmodules", "recurse-submodules", "submodule update", "GIT_SUBMODULE_STRATEGY", "subtree"] },
+        { id: "hooks", title: "Hooks: scripts Git runs for you", emoji: "", group: "Lesson", keywords: ["git hooks", "pre-commit", "commit-msg", "pre-push", "pre-receive", "post-receive", "no-verify", "core.hooksPath", "pre-commit framework"] },
+        { id: "more", title: "grep, sparse checkout, signing and archive", emoji: "", group: "Lesson", keywords: ["git grep", "sparse-checkout", "monorepo", "signed commits", "commit -S", "gpg.format ssh", "Verified", "git archive", "xz backdoor", "supply chain"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "git-internals", title: "Git internals", emoji: "5", step: 5, level: "Advanced", blurb: "Open the .git folder: the four object types, how ids are computed, refs, the index, packfiles and garbage collection, and the plumbing commands that porcelain is built on.", topics: [
+      { id: "objects", title: "Inside .git: blobs, trees, commits and tags", emoji: "5.1", page: "content/git/objects.html",
+        summary: "The four object types, how ids are computed and stored, tree modes, Merkle integrity and the move to SHA-256.",
+        keywords: ["blob", "tree", "commit object", "hash-object", "cat-file", "object id", "merkle", "sha-256"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "kinds", title: "Four kinds of objects", emoji: "", group: "Lesson", keywords: ["git objects", "blob", "tree", "commit object", "tag object", "cat-file", "file mode", "100644", "100755", "160000", "gitlink"] },
+        { id: "hash", title: "How an object gets its name", emoji: "", group: "Lesson", keywords: ["hash-object", "object id", "SHA-1", "header", "zlib", ".git/objects", "content addressable", "short id", "rev-parse", "deduplication"] },
+        { id: "merkle", title: "Why history cannot be changed quietly", emoji: "", group: "Lesson", keywords: ["Merkle tree", "integrity", "tamper evident", "SHAttered", "collision", "SHA-1DC", "SHA-256", "object-format", "Git 3.0"] },
+        { id: "tagobj", title: "Annotated tags as objects, and the full picture", emoji: "", group: "Lesson", keywords: ["annotated tag object", "lightweight tag", "tagger", "immutable objects", "Merkle DAG"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of git-build ===== */

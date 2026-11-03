@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The three areas: working tree, staging area and repository · Git and CI/CD</title>
+<meta name="description" content="The working tree, the index and the repository, file states, git status long and short format, git add and add -p, git commit and commit -a, git rm and mv, and good commit messages.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 1: Getting started with Git</span><span>›</span><span>Three areas</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 2 of 3 · Beginner</div>
+    <h1>The three areas: working tree, staging area and repository</h1>
+    <p class="lead">See how a change travels from your folder to the staging area to a commit, read every git status code, and write commits a teammate can understand.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#three-areas" data-topic="cheatsheet" data-h="three-areas">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#areas" data-l="areas"><span class="n">1</span><span class="t">The three areas of a Git project</span></a></li><li><a href="#states" data-l="states"><span class="n">2</span><span class="t">File states and git status</span></a></li><li><a href="#commit" data-l="commit"><span class="n">3</span><span class="t">Adding and committing well</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="areas" data-l="areas" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>The three areas of a Git project</h2>
+<p>Picture a photo studio. The <b>stage</b> is where you place the people who should be in the next photo. The <b>camera</b> takes the photo and puts it in the <b>album</b>. People can walk around the studio without being in the photo.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Area</th><th>Also called</th><th>What it holds</th><th>Studio picture</th></tr></thead><tbody><tr><td>Working tree</td><td>working directory</td><td>The files you see and edit in your folder</td><td>the studio floor</td></tr><tr><td>Staging area</td><td>the index</td><td>The exact snapshot your next commit will save</td><td>the stage</td></tr><tr><td>Repository</td><td>.git directory, HEAD</td><td>Every commit ever made</td><td>the album</td></tr></tbody></table></div>
+<ol class="gk-flow"><li><b>edit</b><span>change files in the working tree</span></li><li><b>git add</b><span>copy the change to the staging area</span></li><li><b>git commit</b><span>save the staging area as a new commit</span></li><li><b>git push</b><span>send commits to a remote, covered in step 4</span></li></ol>
+<div class="cvz" data-viz="areas"></div>
+<p>Why have a staging area at all? Because you often change several things at once. Staging lets you commit the bug fix now and the half done feature later, as two clean commits instead of one messy one.</p>
+<div class="note note-warn"><b>Common mistake</b><div>git commit saves what is staged, not what is in your file. If you edit a file after git add, the newer edit is not in the commit until you add it again.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="states" data-l="states" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>File states and git status</h2>
+<p>Every file in your folder is either <b>tracked</b> (Git knows it from the last snapshot or the index) or <b>untracked</b> (new, Git has never seen it). Tracked files are unmodified, modified or staged.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>State</th><th>Meaning</th><th>How it gets there</th><th>Short code</th></tr></thead><tbody><tr><td>Untracked</td><td>New file Git is not watching</td><td>You create it</td><td><code>??</code></td></tr><tr><td>Unmodified</td><td>Same as the last commit</td><td>After a commit or checkout</td><td>(not listed)</td></tr><tr><td>Modified</td><td>Changed, not staged</td><td>You edit a tracked file</td><td><code> M</code></td></tr><tr><td>Staged</td><td>Change is in the index</td><td>git add</td><td><code>M </code> or <code>A </code></td></tr><tr><td>Staged and modified again</td><td>Index has one version, the folder a newer one</td><td>edit after git add</td><td><code>MM</code></td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Short status</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git status -s</code>  →  <code>XY path</code></div><div class="fx-n">X compares the index with HEAD (what is staged). Y compares the working tree with the index (what is not staged yet). ?? means untracked.</div></div><div class="fx"><div class="fx-h"><span>Long status</span></div><div class="fx-b"><code>git status</code></div><div class="fx-n">Lists staged changes, unstaged changes and untracked files, with the command to undo each.</div></div></div>
+<div class="cv-code" data-k="status"></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Read the short status</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git status -s</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out"> M README.md
+MM app.py
+ D old.txt
+A  new.py
+?? notes.txt</pre></div>
+<div class="walk"><div class="walk-h"><span>Read each line</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>README.md has a space then M: changed in the folder, nothing staged.</li><li>app.py has MM: one change staged, and another change made after that.</li><li>old.txt has D in the second column: deleted from the folder but not staged.</li><li>new.py has A: a new file added to the index.</li><li><span class="eq">notes.txt has ??: untracked, git add notes.txt to start tracking it</span></li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="commit" data-l="commit" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Adding and committing well</h2>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Stage</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git add &lt;file&gt;</code>, <code>git add .</code>, <code>git add -p</code></div><div class="fx-n">git add . stages everything under the current folder. -p asks about each changed piece (hunk) so you can stage part of a file.</div></div><div class="fx fx-key"><div class="fx-h"><span>Commit</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git commit -m "message"</code></div><div class="fx-n">Saves the staging area. Without -m Git opens your editor for a longer message.</div></div><div class="fx"><div class="fx-h"><span>Stage tracked files and commit</span></div><div class="fx-b"><code>git commit -am "message"</code></div><div class="fx-n">-a stages every change to tracked files first. New untracked files are not included.</div></div><div class="fx"><div class="fx-h"><span>Remove and rename</span></div><div class="fx-b"><code>git rm &lt;file&gt;</code>, <code>git mv &lt;old&gt; &lt;new&gt;</code></div><div class="fx-n">Changes the folder and stages the change in one step. git rm --cached keeps the file on disk but stops tracking it.</div></div></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Two clean commits from one messy afternoon</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git status -s</span><span class="ln">git add src/login.py</span><span class="ln">git commit -m "Fix crash when the password is empty"</span><span class="ln">git add -p src/search.py</span><span class="ln">git commit -m "Add search by price"</span><span class="ln">git status -s</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out"> M src/login.py
+ M src/search.py
+[main 4e1d2aa] Fix crash when the password is empty
+ 1 file changed, 2 insertions(+)
+[main 9b07c31] Add search by price
+ 1 file changed, 14 insertions(+)
+ M src/search.py</pre></div>
+<h3>A good commit message</h3>
+<div class="tw"><table class="cvt "><thead><tr><th>Rule</th><th>Good</th><th>Bad</th></tr></thead><tbody><tr><td>Short summary line, about 50 characters</td><td>Fix crash when the password is empty</td><td>fixed stuff</td></tr><tr><td>Imperative mood, as if giving an order</td><td>Add search by price</td><td>Added search, adding search</td></tr><tr><td>Blank line, then the why in the body</td><td>Users saw a 500 error on empty input...</td><td>(nothing)</td></tr><tr><td>One logical change per commit</td><td>One bug fix</td><td>Bug fix plus renaming plus new feature</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Conventional Commits is a popular format: feat: add search by price, fix: handle empty password, docs: update README. Tools read it to make changelogs and choose the next version number.</div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the 2 a.m. bug hunt</div><p>A shop site breaks at night. The on call developer runs git log and sees "Fix rounding of discount prices" from yesterday. One command, git show, displays the exact lines. Twenty minutes later the cause is found. With a message like "update" and a commit that touched forty files, the same search takes hours.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Your folder is your desk. The staging area is a tray where you put the pages you want to send. A commit is putting the tray in an envelope with a note and filing it forever.</p></div><div class="ld-p" data-ld="college" hidden><p>The index is a binary file, .git/index, that lists every tracked path with its blob id, mode and file metadata. git add writes blobs and updates the index. git commit turns the index into tree objects and makes a commit that points to the top tree and to its parent.</p></div><div class="ld-p" data-ld="masters" hidden><p>Because the index caches file size and modification time, git status can skip hashing unchanged files, which keeps it fast on large repositories. During a merge the index can hold up to three versions of a path (stages 1, 2 and 3 for base, ours and theirs), which is how Git tracks a conflict.</p></div><div class="ld-p" data-ld="research" hidden><p>Studies of commit history show that tangled commits, which mix unrelated changes, hurt tools that find the commit that caused a bug and tools that predict defects. Research tools try to untangle such commits automatically, which is one reason the habit of small commits matters beyond style.</p></div></div>
+<details class="deep"><summary>Going deeper: git add -p in practice</summary><div class="deep-b"><p>Git shows one hunk at a time and asks Stage this hunk [y,n,q,a,d,s,e,?]. y stages it, n skips it, s splits it into smaller hunks, e lets you edit the hunk by hand, q quits. Afterwards git diff --staged shows what is staged and git diff what is left.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./what-is-git.html" data-topic="what-is-git"><small>Previous topic</small><b>What Git is</b></a><a class="next" href="./history-diffs.html" data-topic="history-diffs"><small>Next topic</small><b>History and diffs</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "three-areas", "topic": "three-areas", "subject": "git", "title": "The three areas: working tree, staging area and repository", "codes": {"status": {"src": "# git status --short: X is the staged change (index vs HEAD), Y the unstaged change (working tree vs index)\nHEAD  = {\"README.md\": \"v1\", \"app.py\": \"v1\", \"old.txt\": \"v1\"}\nINDEX = {\"README.md\": \"v1\", \"app.py\": \"v2\", \"new.py\": \"v1\"}\nWORK  = {\"README.md\": \"v2\", \"app.py\": \"v3\", \"new.py\": \"v1\", \"notes.txt\": \"v1\"}\n\ndef code_for(f):\n    h, i, w = HEAD.get(f), INDEX.get(f), WORK.get(f)\n    if h is None and i is None:\n        return \"??\"                      # untracked\n    x = \"A\" if h is None else \"D\" if i is None else \"M\" if h != i else \" \"\n    y = \" \" if i is None else \"D\" if w is None else \"M\" if w != i else \" \"\n    return x + y\n\nfor f in sorted(set(HEAD) | set(INDEX) | set(WORK)):\n    print(code_for(f), f)", "stdin": "", "out": " M README.md\nMM app.py\nA  new.py\n?? notes.txt\nD  old.txt"}}, "quiz": [{"lv": "e", "q": "Which area holds the snapshot your next commit will save?", "o": ["Working tree", "Staging area (index)", "Remote", "The reflog"], "a": 1, "hint": "The stage.", "why": "git commit turns the staging area into a commit."}, {"lv": "e", "q": "git status -s shows ?? before a file. What does that mean?", "o": ["Conflict", "Untracked", "Deleted", "Staged"], "a": 1, "hint": "Never added.", "why": "?? means Git has never tracked this file."}, {"lv": "e", "q": "Which command stages every change under the current folder?", "o": ["git commit .", "git add .", "git stage --all-files", "git push ."], "a": 1, "hint": "Dot means here.", "why": "git add . stages new, changed and deleted files under the current folder."}, {"lv": "m", "q": "You add app.py, then edit it again and commit without adding. What is in the commit?", "o": ["The newest edit", "The version you added", "Nothing", "Both versions"], "a": 1, "hint": "Commit saves the index.", "why": "The second edit stays in the working tree, shown as MM before the commit."}, {"lv": "m", "q": "What does MM mean in git status -s?", "o": ["Merged twice", "Staged change plus a newer unstaged change", "Moved file", "Merge conflict"], "a": 1, "hint": "Two columns.", "why": "X = M (index differs from HEAD) and Y = M (folder differs from index)."}, {"lv": "m", "q": "git commit -am \"msg\" includes", "o": ["All files including new ones", "Changes to already tracked files only", "Only staged files", "Nothing"], "a": 1, "hint": "-a and new files.", "why": "New untracked files still need git add."}, {"lv": "m", "q": "Which commit message follows the usual advice best?", "o": ["changes", "Fixed the bug.", "Fix crash when the password is empty", "FIX!!!"], "a": 2, "hint": "Imperative, specific.", "why": "Short, imperative, says what changed."}, {"lv": "h", "q": "You want to commit only half of the changes in one file. Use", "o": ["git add -p", "git commit --half", "git split", "git add -u"], "a": 0, "hint": "Patch mode.", "why": "git add -p asks hunk by hunk."}, {"lv": "h", "q": "git rm --cached secrets.env does what?", "o": ["Deletes the file from disk", "Stops tracking it but keeps it on disk", "Encrypts it", "Removes it from all old commits"], "a": 1, "hint": "Cached means the index.", "why": "It removes the path from the index only. Old commits still contain it."}, {"lv": "x", "q": "During a merge conflict, how many versions of one path can the index hold?", "o": ["1", "2", "3", "4"], "a": 2, "hint": "Base, ours, theirs.", "why": "Stages 1, 2 and 3 hold base, ours and theirs until you resolve and git add."}], "calc": [{"lv": "e", "q": "git status -s prints 3 lines starting with ??, 2 with space M and 1 with M space. How many files have unstaged changes to tracked files?", "ans": "2", "hint": "Second column M.", "steps": ["?? lines are untracked, not tracked changes.", "\" M\" means modified, not staged: 2 files.", "<span class=\"eq\">Answer 2<\/span>"]}, {"lv": "e", "q": "You change 4 files and run git add on 3 of them, then commit. How many files are in that commit as changed?", "ans": "3", "hint": "Only staged files.", "steps": ["The commit saves the index.", "3 files were staged.", "<span class=\"eq\">3 files changed in the commit<\/span>"]}, {"lv": "m", "q": "HEAD has a.py v1, the index has a.py v2, the folder has a.py v2. What are the two status letters? Type them with no space for a blank, answer as the count of letters that are M.", "ans": "1", "hint": "X compares index with HEAD, Y folder with index.", "steps": ["X: index v2 vs HEAD v1, different: M.", "Y: folder v2 vs index v2, same: blank.", "<span class=\"eq\">Code \"M \" has 1 M<\/span>"]}, {"lv": "m", "q": "A summary line should stay near 50 characters. \"Fix rounding of discount prices on the checkout page\" has how many characters?", "ans": "52", "hint": "Count letters and spaces.", "steps": ["Count each word plus the spaces between words.", "Fix(3) rounding(8) of(2) discount(8) prices(6) on(2) the(3) checkout(8) page(4) = 44 letters.", "<span class=\"eq\">44 letters + 8 spaces = 52 characters<\/span>"]}, {"lv": "h", "q": "You stage 2 hunks out of 5 in a file with git add -p and commit. How many hunks still show in git diff?", "ans": "3", "hint": "The rest stay unstaged.", "steps": ["5 hunks changed.", "2 went into the commit.", "<span class=\"eq\">5 − 2 = 3 hunks left in git diff<\/span>"]}, {"lv": "h", "q": "A day of work: 1 bug fix, 1 refactor, 1 feature, each touching different files. With one commit per logical change, how many commits?", "ans": "3", "hint": "One per logical change.", "steps": ["Bug fix: 1.", "Refactor: 1.", "<span class=\"eq\">Feature: 1, total 3<\/span>"]}], "assign": [{"id": "short", "lv": "m", "title": "Write git status --short", "task": "<p>Write <code>short(head, index, work)<\/code>. Each argument maps file name to a version string. Return a sorted list of strings <code>\"XY name\"<\/code> using the rules of this lesson: ?? for untracked, A, M, D in X for staged changes, M, D in Y for unstaged ones. Leave out clean files.<\/p>", "starter": "def short(head, index, work):\n    # your code here\n    pass\n", "tests": [{"call": "short({'a': 1}, {'a': 2}, {'a': 3})", "want": ["MM a"]}, {"call": "short({}, {}, {'n': 1})", "want": ["?? n"]}, {"call": "short({'a': 1, 'b': 1}, {'a': 1, 'b': 1, 'c': 1}, {'a': 1, 'c': 1})", "want": [" D b", "A  c"]}], "solution": "def short(head, index, work):\n    out = []\n    for f in sorted(set(head) | set(index) | set(work)):\n        h, i, w = head.get(f), index.get(f), work.get(f)\n        if h is None and i is None:\n            if w is not None:\n                out.append('?? ' + f)\n            continue\n        x = 'A' if h is None else 'D' if i is None else 'M' if h != i else ' '\n        y = ' ' if i is None else 'D' if w is None else 'M' if w != i else ' '\n        if x != ' ' or y != ' ':\n            out.append(x + y + ' ' + f)\n    return out\n", "hint": "Work out X from head and index, then Y from index and work.", "why": "<p>This is the same rule git status uses for the short format.<\/p>"}, {"id": "msg", "lv": "e", "title": "Check a commit summary line", "task": "<p>Write <code>good_summary(line)<\/code> that returns True when the line is 1 to 50 characters long, starts with a capital letter and does not end with a full stop.<\/p>", "starter": "def good_summary(line):\n    # your code here\n    pass\n", "tests": [{"call": "good_summary('Fix crash on empty password')", "want": true}, {"call": "good_summary('fixed stuff')", "want": false}, {"call": "good_summary('Add search.')", "want": false}, {"call": "good_summary('A' * 51)", "want": false}], "solution": "def good_summary(line):\n    return 1 <= len(line) <= 50 and line[0].isupper() and not line.endswith('.')\n", "hint": "Check length, first character and last character.", "why": "<p>Teams often run a check like this in a commit-msg hook or in CI.<\/p>"}], "must": [["Three areas", "Working tree (your files), staging area or index (next snapshot), repository (all commits). add moves changes to the index, commit saves the index."], ["Status codes", "git status -s prints XY: X staged (index vs HEAD), Y unstaged (folder vs index). ?? untracked, MM staged and changed again."], ["Commit saves the index", "Edits made after git add are not in the commit until you add again. commit -a stages tracked files only."], ["Partial staging", "git add -p stages hunk by hunk so one file can feed two clean commits."], ["Good messages", "Short imperative summary near 50 characters, blank line, then why. One logical change per commit."]], "summary": "<p>A change goes from your folder to the index with git add and into history with git commit. git status -s tells you exactly where every file stands.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"status": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.HEAD": "{'README.md': 'v1', 'app.py': 'v1', 'old.txt': 'v1'}"}}, {"l": 4, "ev": "line", "d": {"G.INDEX": "{'README.md': 'v1', 'app.py': 'v2', 'new.py': 'v1'}"}}, {"l": 6, "ev": "line", "d": {"G.WORK": "{'README.md': 'v2', 'app.py': 'v3', 'new.py': 'v1', 'notes.txt': 'v1'}"}}, {"l": 14, "ev": "line", "d": {"G.code_for": "<function code_for>"}}, {"l": 15, "ev": "line", "d": {"G.f": "'README.md'"}}, {"l": 6, "ev": "call", "s": ["module", "code_for()"], "d": {"L.f": "'README.md'"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.h": "'v1'", "L.i": "'v1'", "L.w": "'v2'"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"L.x": "' '"}}, {"l": 12, "ev": "line", "d": {"L.y": "'M'"}}, {"l": 12, "ev": "return"}, {"l": 14, "ev": "line", "s": ["module"], "d": {"L.f": null, "L.h": null, "L.i": null, "L.w": null, "L.x": null, "L.y": null}, "o": " M README.md\n"}, {"l": 15, "ev": "line", "d": {"G.f": "'app.py'"}}, {"l": 6, "ev": "call", "s": ["module", "code_for()"], "d": {"L.f": "'app.py'"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.h": "'v1'", "L.i": "'v2'", "L.w": "'v3'"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"L.x": "'M'"}}, {"l": 12, "ev": "line", "d": {"L.y": "'M'"}}, {"l": 12, "ev": "return"}, {"l": 14, "ev": "line", "s": ["module"], "d": {"L.f": null, "L.h": null, "L.i": null, "L.w": null, "L.x": null, "L.y": null}, "o": "MM app.py\n"}, {"l": 15, "ev": "line", "d": {"G.f": "'new.py'"}}, {"l": 6, "ev": "call", "s": ["module", "code_for()"], "d": {"L.f": "'new.py'"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.h": "None", "L.i": "'v1'", "L.w": "'v1'"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"L.x": "'A'"}}, {"l": 12, "ev": "line", "d": {"L.y": "' '"}}, {"l": 12, "ev": "return"}, {"l": 14, "ev": "line", "s": ["module"], "d": {"L.f": null, "L.h": null, "L.i": null, "L.w": null, "L.x": null, "L.y": null}, "o": "A  new.py\n"}, {"l": 15, "ev": "line", "d": {"G.f": "'notes.txt'"}}, {"l": 6, "ev": "call", "s": ["module", "code_for()"], "d": {"L.f": "'notes.txt'"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.h": "None", "L.i": "None", "L.w": "'v1'"}}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "return"}, {"l": 14, "ev": "line", "s": ["module"], "d": {"L.f": null, "L.h": null, "L.i": null, "L.w": null}, "o": "?? notes.txt\n"}, {"l": 15, "ev": "line", "d": {"G.f": "'old.txt'"}}, {"l": 6, "ev": "call", "s": ["module", "code_for()"], "d": {"L.f": "'old.txt'"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.h": "'v1'", "L.i": "None", "L.w": "None"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"L.x": "'D'"}}, {"l": 12, "ev": "line", "d": {"L.y": "' '"}}, {"l": 12, "ev": "return"}, {"l": 14, "ev": "line", "s": ["module"], "d": {"L.f": null, "L.h": null, "L.i": null, "L.w": null, "L.x": null, "L.y": null}, "o": "D  old.txt\n"}, {"l": 14, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

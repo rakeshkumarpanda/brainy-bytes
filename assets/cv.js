@@ -132,7 +132,10 @@
         return `<h3>Lesson ${i + 1}: ${esc($('h2', l).textContent)}</h3><div class="fx-grid">${cards.map(c => c.outerHTML).join('')}</div>
           <p class="fx-from"><a href="#${l.dataset.l}" data-go="${l.dataset.l}">Open this lesson</a></p>`;
       }).join('');
-      pane.innerHTML = `<h2>Formula sheet</h2><p class="sub">Every formula from this chapter in one place. Cards marked Exam favourite come up most often in tests.</p><div class="cv-formulas">${groups || '<p>This chapter has no formulas.</p>'}</div>`;
+      const fxh = document.body.dataset.fxh;
+      pane.innerHTML = fxh
+        ? `<h2>${esc(fxh)}</h2><p class="sub">Every command card from this chapter in one place. Cards marked Exam favourite come up most often in tests and interviews.</p><div class="cv-formulas">${groups || '<p>This chapter has no command cards.</p>'}</div>`
+        : `<h2>Formula sheet</h2><p class="sub">Every formula from this chapter in one place. Cards marked Exam favourite come up most often in tests.</p><div class="cv-formulas">${groups || '<p>This chapter has no formulas.</p>'}</div>`;
       $$('[data-go]', pane).forEach(a => a.addEventListener('click', e => { e.preventDefault(); openTab('learn', a.dataset.go, true); }));
     } else if (id === 'problems') {
       pane.innerHTML = `<h2>Worked problems</h2><p class="sub">Solve each one on paper with the formula sheet, type your answer and press Check. The full working opens after a correct answer, or when you ask for it.</p>` +

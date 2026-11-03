@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remotes: clone, fetch, pull and push · Git and CI/CD</title>
+<meta name="description" content="git clone, origin, remote-tracking branches, git remote, fetch versus pull, push and fast forwards, ahead and behind, divergent branches, pull.rebase and --ff-only, upstream tracking with push -u, force-with-lease and force-if-includes, prune, refspecs, shallow and partial clones, HTTPS tokens and SSH keys.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 4: Remotes and teamwork</span><span>›</span><span>Remotes</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 1 of 1 · Intermediate</div>
+    <h1>Remotes: clone, fetch, pull and push</h1>
+    <p class="lead">Share commits with a team: what origin and origin/main really are, why a push gets rejected, how to pull without surprises and how to force push without destroying a teammate's work.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#remotes" data-topic="cheatsheet" data-h="remotes">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#clone" data-l="clone"><span class="n">1</span><span class="t">Remotes and git clone</span></a></li><li><a href="#sync" data-l="sync"><span class="n">2</span><span class="t">fetch, pull and push, ahead and behind</span></a></li><li><a href="#tracking" data-l="tracking"><span class="n">3</span><span class="t">Upstream branches, force pushes and pruning</span></a></li><li><a href="#teamday" data-l="teamday"><span class="n">4</span><span class="t">A day with a remote, step by step</span></a></li></ol>
+    <article class="cv-lesson" id="clone" data-l="clone" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Remotes and git clone</h2>
+<p>Until now every commit lived only on your laptop. A <b>remote</b> is another copy of the same repository, usually on a server such as GitHub or GitLab, that the team shares. Because Git is distributed, your clone holds the full history, and the remote is simply the copy everyone agrees to meet at.</p>
+<ol class="gk-flow"><li><b>git clone URL</b><span>downloads every commit, creates a remote called origin and checks out the default branch</span></li><li><b>git fetch</b><span>asks origin what is new and downloads it, without touching your files</span></li><li><b>git pull</b><span>fetch, then merge or rebase the new commits into your branch</span></li><li><b>git push</b><span>uploads your new commits and moves the branch on the server</span></li></ol>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Clone, then look at what you got</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git clone https://github.com/OWNER/calc-app.git</span><span class="ln">cd calc-app</span><span class="ln">git remote -v</span><span class="ln">git branch -a</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">origin  https://github.com/OWNER/calc-app.git (fetch)
+origin  https://github.com/OWNER/calc-app.git (push)
+* main
+  remotes/origin/HEAD -&gt; origin/main
+  remotes/origin/main</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Name</th><th>What it is</th><th>Who moves it</th></tr></thead><tbody><tr><td><code>main</code></td><td>your local branch</td><td>you, when you commit, merge or reset</td></tr><tr><td><code>origin/main</code></td><td>a <b>remote-tracking branch</b>: your last known position of main on origin</td><td>only git fetch, pull and push</td></tr><tr><td><code>origin</code></td><td>a short name for the server URL, stored in .git/config</td><td>git remote add, rename, set-url, remove</td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Clone</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git clone &lt;url&gt; [folder]</code></div><div class="fx-n">Creates origin, copies all branches as origin/*, checks out the default branch and sets it to track origin.</div></div><div class="fx"><div class="fx-h"><span>Manage remotes</span></div><div class="fx-b"><code>git remote -v</code>, <code>git remote add upstream &lt;url&gt;</code>, <code>git remote set-url origin &lt;url&gt;</code></div><div class="fx-n">A repository can have many remotes. upstream is the usual name for the original project when you work on a fork.</div></div><div class="fx"><div class="fx-h"><span>Fast clones for CI</span></div><div class="fx-b"><code>git clone --depth 1</code>, <code>git clone --filter=blob:none</code></div><div class="fx-n">--depth 1 is a shallow clone with only the newest commit. --filter=blob:none is a partial clone that fetches file contents only when needed.</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>origin/main does not update by itself. It is a snapshot from your last fetch. If git status says "up to date", it means up to date with that snapshot, not with the server right now.</div></div>
+<details class="deep"><summary>Going deeper: HTTPS or SSH</summary><div class="deep-b"><p>Both work. With HTTPS, GitHub stopped accepting account passwords for Git operations on 13 August 2021, so you use a personal access token or a credential manager that signs you in through the browser. With SSH you create a key pair with ssh-keygen -t ed25519, add the public key to your account, and use a URL like git@github.com:OWNER/calc-app.git. GitLab works the same way with personal access tokens or SSH keys.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sync" data-l="sync" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>fetch, pull and push, ahead and behind</h2>
+<p>Two people clone the same repository. Asha makes a commit, Ben makes a different commit and pushes first. Now the histories have <b>diverged</b>. Play with the animation: pick how many commits each side has and what you run.</p>
+<div class="cvz" data-viz="remotes"></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Asha tries to push after Ben</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git push</span></pre><div class="cc-cap">Real output (Git 2.43)</div><pre class="cc-out">To github.com:OWNER/calc-app.git
+ ! [rejected]        main -&gt; main (fetch first)
+error: failed to push some refs to 'github.com:OWNER/calc-app.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.</pre></div>
+<p>A push is only accepted when it is a <b>fast forward</b>: the server branch must be an ancestor of what you push, so no one's commit is thrown away. Asha first fetches and looks.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Fetch, then compare</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git fetch</span><span class="ln">git status</span><span class="ln">git branch -vv</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">On branch main
+Your branch and 'origin/main' have diverged,
+and have 1 and 1 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+* main 0d66c75 [origin/main: ahead 1, behind 1] asha work</pre></div>
+<div class="cv-code" data-k="aheadbehind"></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">git pull with diverged branches and no setting</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git pull</span></pre><div class="cc-cap">Real output, shortened</div><pre class="cc-out">hint: You have divergent branches and need to specify how to reconcile them.
+hint:   git config pull.rebase false  # merge
+hint:   git config pull.rebase true   # rebase
+hint:   git config pull.ff only       # fast-forward only
+fatal: Need to specify how to reconcile divergent branches.</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Command</th><th>What happens to your branch</th><th>Good when</th></tr></thead><tbody><tr><td><code>git pull --no-rebase</code></td><td>fetch, then a merge commit joins the two lines</td><td>you want history to show exactly what happened</td></tr><tr><td><code>git pull --rebase</code></td><td>fetch, then your local commits are replayed on top of origin/main</td><td>you want a straight line and your commits are not pushed yet</td></tr><tr><td><code>git pull --ff-only</code></td><td>fetch, then move only if no one diverged, otherwise stop</td><td>a branch you never commit to directly, such as main on a deploy server</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Pick one default once: git config --global pull.rebase true is a popular choice for feature work. Then git pull followed by git push is the everyday rhythm.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="tracking" data-l="tracking" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Upstream branches, force pushes and pruning</h2>
+<p>Each local branch can have an <b>upstream</b>: the remote-tracking branch it compares with and pulls from. Clone sets it for the default branch. For a new branch you set it on the first push.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Publish a new branch</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git switch -c feature/login</span><span class="ln">git commit -am "Add login form"</span><span class="ln">git push -u origin feature/login</span></pre><div class="cc-cap">The last line of the output</div><pre class="cc-out">branch 'feature/login' set up to track 'origin/feature/login'.</pre></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Set upstream</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git push -u origin &lt;branch&gt;</code></div><div class="fx-n">After this, plain git push and git pull know where to go. -u is short for --set-upstream.</div></div><div class="fx fx-key"><div class="fx-h"><span>Safer force push</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git push --force-with-lease</code></div><div class="fx-n">Overwrites the server branch only if it still points where your origin/branch says. Otherwise it is rejected with stale info.</div></div><div class="fx"><div class="fx-h"><span>Delete a remote branch</span></div><div class="fx-b"><code>git push origin --delete feature/login</code></div><div class="fx-n">Removes the branch on the server, for example after the pull request merged.</div></div><div class="fx"><div class="fx-h"><span>Clean up old remote-tracking branches</span></div><div class="fx-b"><code>git fetch --prune</code></div><div class="fx-n">Removes origin/* names whose branch was deleted on the server. git config --global fetch.prune true does it on every fetch.</div></div></div>
+<p>After a rebase or amend of a branch you already pushed, a normal push is rejected because it is not a fast forward. <code>--force</code> would overwrite whatever is on the server, including a teammate's new commit. <code>--force-with-lease</code> checks first.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Ben pushed while Asha was rebasing</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git push --force-with-lease</span></pre><div class="cc-cap">Real output: the lease protected Ben's commit</div><pre class="cc-out">To github.com:OWNER/calc-app.git
+ ! [rejected]        main -&gt; main (stale info)
+error: failed to push some refs to 'github.com:OWNER/calc-app.git'</pre></div>
+<div class="note note-warn"><b>Common mistake</b><div>The lease compares with origin/branch. If an editor or a script runs git fetch in the background, origin/branch is already updated and the lease passes without you ever seeing Ben's work. Git 2.30 added --force-if-includes, used together with --force-with-lease, to also check that you had integrated what you fetched.</div></div>
+<div class="scene"><div class="scene-h">Real world scenario: one force push, many repositories</div><p>In November 2013 a contributor to the Jenkins project ran git push --force while push.default was set to matching, so Git force pushed every local branch, many of them weeks old, to more than a hundred of the project's GitHub repositories at once. Git 2.0 later changed the default of push.default to simple, which pushes only the current branch. The project recovered the lost commits from the reflogs of developers who had fresh clones and from GitHub support. This is why most teams now forbid force pushes to main with branch protection, and allow them only on personal feature branches with --force-with-lease.</p></div>
+<details class="deep"><summary>Going deeper: Refspecs: the rule behind fetch and push</summary><div class="deep-b"><p>.git/config holds the line <code>fetch = +refs/heads/*:refs/remotes/origin/*</code>. Read it as source:destination. Every branch on the server (refs/heads/anything) is copied to refs/remotes/origin/anything on your side. The leading + allows the copy to move even when it is not a fast forward. git push origin feature/login is short for the refspec refs/heads/feature/login:refs/heads/feature/login. You can push one branch to another name, as in git push origin HEAD:refs/heads/test-run, which CI scripts sometimes use.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="teamday" data-l="teamday" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>A day with a remote, step by step</h2>
+<div class="walk"><div class="walk-h"><span>Asha and Ben share calc-app</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Morning: <code>git switch main</code> then <code>git pull</code>. Asha starts from the newest main.</li><li><code>git switch -c feature/percent</code>, edit, <code>git commit -am "Add percent()"</code>.</li><li><code>git push -u origin feature/percent</code>. The branch now exists on the server, and CI starts testing it.</li><li>She opens a pull request. Ben reviews it and asks for a change. She commits again and runs plain <code>git push</code>.</li><li>Meanwhile main moved. She runs <code>git fetch</code> then <code>git rebase origin/main</code>, fixes one conflict, and pushes with <code>git push --force-with-lease</code>.</li><li>The pull request is merged on the server. She runs <code>git switch main</code>, <code>git pull</code>, <code>git branch -d feature/percent</code> and <code>git fetch --prune</code>.</li></ol></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>The remote is the shared copy. fetch looks, pull brings the changes in, push sends yours out. The server only accepts a push that does not throw away anyone's commits.</p></div><div class="ld-p" data-ld="college" hidden><p>origin/main is a remote-tracking ref updated only by network commands. Ahead and behind are counts of commits reachable from one tip and not the other. pull is fetch plus merge or rebase, chosen by pull.rebase or pull.ff.</p></div><div class="ld-p" data-ld="masters" hidden><p>The fetch protocol negotiates which objects each side already has and sends one packfile with the rest. Refspecs map server refs to local refs. --force-with-lease is a compare and swap on the remote ref, the same idea used in lock free programming.</p></div><div class="ld-p" data-ld="research" hidden><p>Large monorepos use partial clone (--filter=blob:none), sparse checkout and protocol version 2, which lets the client ask only for the refs it needs. Git 3.0 plans to make SHA-256 and reftable defaults, which affects how servers and clients interoperate.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./stash-tags-ignore.html" data-topic="stash-tags-ignore"><small>Previous topic</small><b>Stash, tags, ignore</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "remotes", "topic": "remotes", "subject": "git", "title": "Remotes: clone, fetch, pull and push", "codes": {"aheadbehind": {"src": "# How git status counts \"ahead\" and \"behind\": commits on one side that the other side cannot reach\nparents = {\n    \"A\": [], \"B\": [\"A\"], \"C\": [\"B\"],          # shared history\n    \"D\": [\"C\"], \"E\": [\"D\"],                   # your two local commits\n    \"F\": [\"C\"],                               # a teammate pushed one commit\n}\n\ndef reach(tip):\n    seen, todo = set(), [tip]\n    while todo:\n        c = todo.pop()\n        if c not in seen:\n            seen.add(c)\n            todo.extend(parents[c])\n    return seen\n\nmine, theirs = reach(\"E\"), reach(\"F\")\nprint(\"ahead :\", sorted(mine - theirs))\nprint(\"behind:\", sorted(theirs - mine))\nprint(f\"[origin/main: ahead {len(mine - theirs)}, behind {len(theirs - mine)}]\")", "stdin": "", "out": "ahead : ['D', 'E']\nbehind: ['F']\n[origin/main: ahead 2, behind 1]"}}, "quiz": [{"lv": "e", "q": "What name does git clone give the server it cloned from?", "o": ["main", "origin", "upstream", "remote"], "a": 1, "hint": "Default name.", "why": "You can rename it, but origin is the default."}, {"lv": "e", "q": "Which command downloads new commits but never changes your working files?", "o": ["git pull", "git fetch", "git merge", "git checkout"], "a": 1, "hint": "Look, do not touch.", "why": "fetch only updates remote-tracking branches such as origin/main."}, {"lv": "e", "q": "git pull is", "o": ["git push in reverse", "git fetch followed by a merge or rebase", "git clone again", "git reset"], "a": 1, "hint": "Two steps.", "why": "pull = fetch + integrate."}, {"lv": "m", "q": "git push says \"rejected (fetch first)\". What does it mean?", "o": ["Your password is wrong", "The server has commits you do not have, so your push is not a fast forward", "The branch is protected", "The network failed"], "a": 1, "hint": "Someone was faster.", "why": "Fetch, integrate, then push again."}, {"lv": "m", "q": "What does git push -u origin feature/x add compared with a plain push?", "o": ["It uploads tags", "It sets origin/feature/x as the upstream of your branch", "It forces the push", "It deletes the remote branch"], "a": 1, "hint": "u for upstream.", "why": "Later git push and git pull need no arguments."}, {"lv": "m", "q": "git branch -vv shows [origin/main: ahead 2, behind 3]. What is true?", "o": ["You have 2 commits the server lacks and the server has 3 you lack", "You are 2 commits behind", "You must clone again", "Nothing to do"], "a": 0, "hint": "Read it literally.", "why": "The branches have diverged."}, {"lv": "m", "q": "Which pull mode refuses to create a merge commit and stops if branches diverged?", "o": ["--rebase", "--no-rebase", "--ff-only", "--squash"], "a": 2, "hint": "Fast forward or nothing.", "why": "Good for branches you never commit to directly."}, {"lv": "h", "q": "Why is --force-with-lease safer than --force?", "o": ["It is faster", "It only overwrites the server branch if it still points where your origin/branch says", "It makes a backup", "It asks the team"], "a": 1, "hint": "Compare first.", "why": "Otherwise it is rejected with stale info."}, {"lv": "h", "q": "A teammate deleted feature/old on the server, but you still see origin/feature/old. Fix?", "o": ["git branch -D origin/feature/old", "git fetch --prune", "git pull --rebase", "git push --delete"], "a": 1, "hint": "Prune.", "why": "fetch --prune removes stale remote-tracking branches."}, {"lv": "x", "q": "In fetch = +refs/heads/*:refs/remotes/origin/*, what does the leading + allow?", "o": ["Pushing tags", "Updating the destination even when it is not a fast forward", "Fetching only new branches", "Using SSH"], "a": 1, "hint": "Plus means force.", "why": "Needed because branches on the server can be rewritten."}], "calc": [{"lv": "e", "q": "Your branch has commits D and E that origin/main lacks. origin/main has F that you lack. How many commits ahead are you?", "ans": "2", "hint": "Count your side only.", "steps": ["Commits reachable from main and not from origin/main: D, E.", "Commits reachable from origin/main and not from main: F.", "<span class=\"eq\">ahead = 2, behind = 1<\/span>"]}, {"lv": "e", "q": "You are ahead 0, behind 4. You run git pull --ff-only. How many commits move into your branch?", "ans": "4", "hint": "No divergence.", "steps": ["Ahead 0 means you have nothing the server lacks.", "So a fast forward is possible.", "<span class=\"eq\">main moves forward by 4 commits<\/span>"]}, {"lv": "m", "q": "Ahead 3, behind 2. You run git pull --rebase. How many of your commits are replayed with new ids?", "ans": "3", "hint": "Only your commits move.", "steps": ["The 2 server commits come in unchanged.", "Your 3 local commits are copied on top of them.", "<span class=\"eq\">3 new commit ids<\/span>"]}, {"lv": "m", "q": "Ahead 3, behind 2. You run git pull --no-rebase. How many commits does main gain, including the merge commit?", "ans": "3", "hint": "Server commits plus one.", "steps": ["The 2 server commits become part of your history.", "A merge commit joins the two lines.", "<span class=\"eq\">2 + 1 = 3 new commits on main<\/span>"]}, {"lv": "h", "q": "A shallow clone with --depth 1 of a repository with 5000 commits. How many commits does git log show?", "ans": "1", "hint": "Only the tip.", "steps": ["--depth 1 fetches only the newest commit of each fetched branch.", "Its parents are recorded as missing (grafted).", "<span class=\"eq\">git log shows 1 commit<\/span>"]}, {"lv": "h", "q": "origin/main is at 7c1. Your lease expects 7c1. The server is at 9ab because Ben pushed. Is the push accepted? Answer 1 for yes, 0 for no.", "ans": "0", "hint": "Compare and swap.", "steps": ["--force-with-lease compares the server value with the expected value.", "9ab is not 7c1.", "<span class=\"eq\">rejected (stale info), answer 0<\/span>"]}], "assign": [{"id": "ab", "lv": "m", "title": "Ahead and behind", "task": "<p>Write <code>ahead_behind(parents, mine, theirs)<\/code>. parents maps a commit to the list of its parents. Return <code>[ahead, behind]<\/code>: the number of commits reachable from mine and not from theirs, and the other way round.<\/p>", "starter": "def ahead_behind(parents, mine, theirs):\n    # your code here\n    pass\n", "tests": [{"call": "ahead_behind({'A': [], 'B': ['A'], 'C': ['B'], 'D': ['B']}, 'C', 'D')", "want": [1, 1]}, {"call": "ahead_behind({'A': [], 'B': ['A'], 'C': ['B']}, 'C', 'A')", "want": [2, 0]}, {"call": "ahead_behind({'A': [], 'B': ['A'], 'C': ['A'], 'M': ['B', 'C']}, 'M', 'C')", "want": [2, 0]}, {"call": "ahead_behind({'A': []}, 'A', 'A')", "want": [0, 0]}], "solution": "def reach(parents, tip):\n    seen, todo = set(), [tip]\n    while todo:\n        c = todo.pop()\n        if c not in seen:\n            seen.add(c)\n            todo.extend(parents[c])\n    return seen\n\ndef ahead_behind(parents, mine, theirs):\n    a, b = reach(parents, mine), reach(parents, theirs)\n    return [len(a - b), len(b - a)]\n", "hint": "Collect every commit reachable from each tip, then subtract the sets.", "why": "<p>This is what git rev-list --left-right --count main...origin/main prints.<\/p>"}, {"id": "refspec", "lv": "h", "title": "Apply a fetch refspec", "task": "<p>Write <code>map_ref(refspec, ref)<\/code> for refspecs like <code>+refs/heads/*:refs/remotes/origin/*<\/code>. Ignore a leading +. If the source pattern (with one *) matches ref, return the destination with the * replaced. Otherwise return None.<\/p>", "starter": "def map_ref(refspec, ref):\n    # your code here\n    pass\n", "tests": [{"call": "map_ref('+refs/heads/*:refs/remotes/origin/*', 'refs/heads/main')", "want": "refs/remotes/origin/main"}, {"call": "map_ref('+refs/heads/*:refs/remotes/origin/*', 'refs/heads/feature/x')", "want": "refs/remotes/origin/feature/x"}, {"call": "map_ref('refs/heads/*:refs/remotes/up/*', 'refs/tags/v1')", "want": null}, {"call": "map_ref('refs/heads/main:refs/remotes/origin/main', 'refs/heads/main')", "want": "refs/remotes/origin/main"}], "solution": "def map_ref(refspec, ref):\n    src, dst = refspec.lstrip('+').split(':')\n    if '*' not in src:\n        return dst if ref == src else None\n    pre, post = src.split('*')\n    if ref.startswith(pre) and ref.endswith(post) and len(ref) >= len(pre) + len(post):\n        mid = ref[len(pre):len(ref) - len(post)]\n        return dst.replace('*', mid)\n    return None\n", "hint": "Split at the colon, then at the star. The part the star matched goes into the destination.", "why": "<p>A refspec without a star maps one exact ref.<\/p>"}], "must": [["Remote basics", "clone creates origin and origin/* remote-tracking branches. origin/main is your last known copy of the server branch, updated only by fetch, pull and push."], ["Fetch, pull, push", "fetch downloads and changes nothing else. pull = fetch + merge or rebase (pull.rebase, --ff-only). push is accepted only as a fast forward."], ["Ahead and behind", "ahead = commits only you have, behind = commits only the server has. Both above 0 means diverged."], ["Upstream", "git push -u origin <branch> sets tracking. git branch -vv shows it with ahead and behind counts."], ["Force safely", "Never force push shared branches. On your own branch use --force-with-lease (and --force-if-includes). fetch --prune removes stale origin/* names."]], "summary": "<p>origin/main is your last known copy of the server. fetch looks, pull integrates, push sends a fast forward, and --force-with-lease is the only force push for shared work.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"aheadbehind": {"steps": [{"l": 3, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line"}, {"l": 2, "ev": "line"}, {"l": 8, "ev": "line", "d": {"G.parents": "{'A': [], 'B': ['A'], 'C': ['B'], 'D': ['C'], 'E': ['D'], 'F': ['C']}"}}, {"l": 17, "ev": "line", "d": {"G.reach": "<function reach>"}}, {"l": 8, "ev": "call", "s": ["module", "reach()"], "d": {"L.tip": "'E'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "set()", "L.todo": "['E']"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.todo": "[]", "L.c": "'E'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"L.seen": "{'E'}"}}, {"l": 10, "ev": "line", "d": {"L.todo": "['D']"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.todo": "[]", "L.c": "'D'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"L.seen": "{'D', 'E'}"}}, {"l": 10, "ev": "line", "d": {"L.todo": "['C']"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.todo": "[]", "L.c": "'C'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"L.seen": "{'D', 'C', 'E'}"}}, {"l": 10, "ev": "line", "d": {"L.todo": "['B']"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.todo": "[]", "L.c": "'B'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"L.seen": "{'D', 'B', 'C', 'E'}"}}, {"l": 10, "ev": "line", "d": {"L.todo": "['A']"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.todo": "[]", "L.c": "'A'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"L.seen": "{'B', 'C', 'E', 'A', 'D'}"}}, {"l": 10, "ev": "line"}, {"l": 15, "ev": "line"}, {"l": 15, "ev": "return"}, {"l": 8, "ev": "call", "d": {"L.tip": "'F'", "L.seen": null, "L.todo": null, "L.c": null}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "set()", "L.todo": "['F']"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.todo": "[]", "L.c": "'F'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"L.seen": "{'F'}"}}, {"l": 10, "ev": "line", "d": {"L.todo": "['C']"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.todo": "[]", "L.c": "'C'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"L.seen": "{'C', 'F'}"}}, {"l": 10, "ev": "line", "d": {"L.todo": "['B']"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.todo": "[]", "L.c": "'B'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"L.seen": "{'B', 'C', 'F'}"}}, {"l": 10, "ev": "line", "d": {"L.todo": "['A']"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.todo": "[]", "L.c": "'A'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"L.seen": "{'B', 'C', 'F', 'A'}"}}, {"l": 10, "ev": "line"}, {"l": 15, "ev": "line"}, {"l": 15, "ev": "return"}, {"l": 18, "ev": "line", "s": ["module"], "d": {"G.mine": "{'B', 'C', 'E', 'A', 'D'}", "G.theirs": "{'B', 'C', 'F', 'A'}", "L.tip": null, "L.seen": null, "L.todo": null, "L.c": null}}, {"l": 19, "ev": "line", "o": "ahead : ['D', 'E']\n"}, {"l": 20, "ev": "line", "o": "behind: ['F']\n"}, {"l": 20, "ev": "return", "o": "[origin/main: ahead 2, behind 1]\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

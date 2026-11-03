@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading history: log, diff, blame and naming commits · Git and CI/CD</title>
+<meta name="description" content="git log and its filters, git show, the pickaxe, git diff against the index, HEAD and other commits, hunk headers, the diff algorithm, ~ and ^, HEAD@{n}, two dot and three dot ranges, and git blame.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 1: Getting started with Git</span><span>›</span><span>History and diffs</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 3 of 3 · Beginner</div>
+    <h1>Reading history: log, diff, blame and naming commits</h1>
+    <p class="lead">Search history like a detective, read every part of a diff, and name any commit with ~, ^, .. and ...</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">13 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#history-diffs" data-topic="cheatsheet" data-h="history-diffs">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#log" data-l="log"><span class="n">1</span><span class="t">Reading history with git log</span></a></li><li><a href="#diff" data-l="diff"><span class="n">2</span><span class="t">git diff: three comparisons and how to read a hunk</span></a></li><li><a href="#names" data-l="names"><span class="n">3</span><span class="t">Naming commits: HEAD, ~, ^ and ranges</span></a></li><li><a href="#blame" data-l="blame"><span class="n">4</span><span class="t">Who wrote this line and why</span></a></li></ol>
+    <article class="cv-lesson" id="log" data-l="log" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Reading history with git log</h2>
+<p><code>git log</code> lists commits newest first. Each entry has the commit id, the author, the date and the message. Its options turn it into a search tool.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Compact history</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git log --oneline --graph --decorate --all</code></div><div class="fx-n">One line per commit, a text drawing of branches and merges, branch and tag names, every branch not just the current one.</div></div><div class="fx"><div class="fx-h"><span>Filter</span></div><div class="fx-b"><code>git log -n 5</code>, <code>--author=Asha</code>, <code>--since="2 weeks ago"</code>, <code>--grep=login</code></div><div class="fx-n">Last 5 commits, by one person, in a time window, or with a word in the message.</div></div><div class="fx"><div class="fx-h"><span>What a change touched</span></div><div class="fx-b"><code>git log -p</code>, <code>git log --stat</code>, <code>git log -- path/file</code></div><div class="fx-n">-p adds the full diff, --stat lists changed files with counts, and -- path limits history to one file.</div></div><div class="fx fx-key"><div class="fx-h"><span>Find code</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git log -S "price_limit"</code></div><div class="fx-n">The pickaxe: commits that added or removed that text. Great for "when did this function appear?".</div></div><div class="fx"><div class="fx-h"><span>One commit in full</span></div><div class="fx-b"><code>git show &lt;commit&gt;</code></div><div class="fx-n">Message plus diff. git show HEAD:app.py prints the file as it was in that commit.</div></div></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Typical log output</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git log --oneline --graph -6</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">*   a41f0c2 (HEAD -&gt; main) Merge branch 'feature/search'
+|\
+| * 7c9e1d0 (feature/search) Add search by price
+| * 33b2a91 Add search box
+* | 51de0f4 Fix typo on checkout page
+|/
+* 0b8e3a7 Add product list</pre></div>
+<div class="scene"><div class="scene-h">Real world scenario: who broke the price filter?</div><p>A tester finds that the price filter ignores decimals. Instead of reading every file, the developer runs git log -S "round(" -- src/filter.py and gets two commits. git show on the newer one shows a round() call added last Tuesday. Bug found in five minutes.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="diff" data-l="diff" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>git diff: three comparisons and how to read a hunk</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Command</th><th>Compares</th><th>Answers</th></tr></thead><tbody><tr><td><code>git diff</code></td><td>working tree with the index</td><td>What have I changed but not staged?</td></tr><tr><td><code>git diff --staged</code></td><td>index with HEAD</td><td>What will my next commit contain?</td></tr><tr><td><code>git diff HEAD</code></td><td>working tree with HEAD</td><td>Everything since the last commit</td></tr><tr><td><code>git diff main feature</code></td><td>two commits</td><td>How do these branches differ?</td></tr><tr><td><code>git diff main...feature</code></td><td>merge base of the two with feature</td><td>What did feature add since it split off?</td></tr></tbody></table></div>
+<div class="cvz" data-viz="diffviz"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Hunk header</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>@@ -a,b +c,d @@</code></div><div class="fx-n">The old file from line a for b lines became the new file from line c for d lines. Lines start with space (context), - (removed) or + (added).</div></div><div class="fx"><div class="fx-h"><span>Word level and stats</span></div><div class="fx-b"><code>git diff --word-diff</code>, <code>git diff --stat</code></div><div class="fx-n">Shows changed words inside a line, or only counts per file.</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>git diff with no arguments shows nothing after git add. The changes did not vanish: they moved to the index. Use git diff --staged.</div></div>
+<details class="deep"><summary>Going deeper: How Git finds the differences</summary><div class="deep-b"><p>Git compares lines. It finds a longest common subsequence of lines (the default Myers algorithm finds a shortest edit script), keeps those lines as context and marks the rest as removed or added. Options --patience and --histogram give diffs that are easier to read when code blocks move. A changed line is always one deletion plus one addition.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="names" data-l="names" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Naming commits: HEAD, ~, ^ and ranges</h2>
+<p>You can name a commit by its id (full or a unique prefix like <code>a41f0c2</code>), by a branch or tag name, or by <b>HEAD</b>, which means "the commit I am on now". From any of those you can walk backwards.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Ancestors</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>X~n</code> = n first parents back. <code>X^n</code> = the n-th parent of X</div><div class="fx-n">HEAD~1 is the parent, HEAD~2 the grandparent. For a merge commit, X^1 is the branch you were on and X^2 is the branch you merged in.</div></div><div class="fx fx-key"><div class="fx-h"><span>Two dots</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>A..B</code> = reachable from B but not from A</div><div class="fx-n">git log main..feature lists what feature has that main does not.</div></div><div class="fx"><div class="fx-h"><span>Three dots</span></div><div class="fx-b"><code>A...B</code> = reachable from either but not both</div><div class="fx-n">With git log --left-right each commit is marked &lt; or &gt; for its side.</div></div><div class="fx"><div class="fx-h"><span>Where HEAD was</span></div><div class="fx-b"><code>HEAD@{n}</code></div><div class="fx-n">The n-th previous position of HEAD, from the reflog. HEAD@{1} is where you were before the last move.</div></div></div>
+<div class="cvz" data-viz="revsel"></div>
+<div class="cv-code" data-k="ranges"></div>
+<div class="walk"><div class="walk-h"><span>Work it out: G is a merge with parents E (first) and D (second)</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>G~1 follows the first parent: E.</li><li>G^2 is the second parent: D.</li><li>G~3 is G, E, C, B going back three first parents: B.</li><li><span class="eq">D..G = commits reachable from G minus those from D = E, G</span></li></ol></div>
+<div class="note note-exam"><b>In the exam</b><div>HEAD~2 and HEAD^^ name the same commit. HEAD^2 is different: it is the second parent of HEAD and only exists if HEAD is a merge commit.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="blame" data-l="blame" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>Who wrote this line and why</h2>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Line by line authors</span></div><div class="fx-b"><code>git blame -L 10,20 app.py</code></div><div class="fx-n">For each line: the commit, author and date that last changed it. -w ignores whitespace changes, -C finds lines moved from other files.</div></div><div class="fx"><div class="fx-h"><span>Ignore big reformat commits</span></div><div class="fx-b"><code>git blame --ignore-revs-file .git-blame-ignore-revs</code></div><div class="fx-n">Skip commits listed in the file, such as a project wide formatting run, so blame shows the real author. GitHub reads this file too.</div></div></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Blame a few lines</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git blame -L 3,5 src/cart.py</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">5d2c11e3 (Asha 2026-10-02 10:14:21 +0530 3) def total(items):
+9f0aa71c (Ravi 2026-10-20 16:40:02 +0530 4)     s = sum(i.price for i in items)
+9f0aa71c (Ravi 2026-10-20 16:40:02 +0530 5)     return round(s, 2)</pre></div>
+<p>Blame is not about blaming people. It finds the commit, and the commit message tells you why the line exists. Read it before you delete something that looks useless.</p>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>git log is the diary of the project, git diff shows what changed between two pages of the diary, and git blame tells you who wrote each sentence.</p></div><div class="ld-p" data-ld="college" hidden><p>Revisions name commits, ranges name sets of commits. A..B is the set difference of the ancestor sets, A...B the symmetric difference. Most history commands accept both.</p></div><div class="ld-p" data-ld="masters" hidden><p>Range arithmetic is defined on the commit graph: ^A B, A..B and B --not A are the same set. Merge commits make first parent history special: git log --first-parent shows only the commits made on the branch itself, a clean view of a main branch that receives merges.</p></div><div class="ld-p" data-ld="research" hidden><p>Line tracking across renames and moves (blame -C -C) is a hard problem studied as code provenance. Tools like SZZ use blame to find the commits that introduced a bug from the commits that fixed it, a core method in empirical software engineering research.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./three-areas.html" data-topic="three-areas"><small>Previous topic</small><b>Three areas</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "history-diffs", "topic": "history-diffs", "subject": "git", "title": "Reading history: log, diff, blame and naming commits", "codes": {"ranges": {"src": "# A small history. Each commit lists its parents. G is a merge of E (main) and D (feature).\nparents = {\"A\": [], \"B\": [\"A\"], \"C\": [\"B\"], \"D\": [\"C\"], \"E\": [\"C\"], \"G\": [\"E\", \"D\"]}\n\ndef reach(c):                       # everything reachable from c, including c\n    seen, todo = set(), [c]\n    while todo:\n        x = todo.pop()\n        if x not in seen:\n            seen.add(x)\n            todo.extend(parents[x])\n    return seen\n\ndef tilde(c, n):                    # c~n follows first parents n times\n    for _ in range(n):\n        c = parents[c][0]\n    return c\n\nprint(\"G~1 =\", tilde(\"G\", 1), \"  G^2 =\", parents[\"G\"][1], \"  G~3 =\", tilde(\"G\", 3))\nprint(\"D..G  =\", sorted(reach(\"G\") - reach(\"D\")))\nprint(\"D...E =\", sorted(reach(\"D\") ^ reach(\"E\")))", "stdin": "", "out": "G~1 = E   G^2 = D   G~3 = B\nD..G  = ['E', 'G']\nD...E = ['D', 'E']"}}, "quiz": [{"lv": "e", "q": "Which command shows one line per commit with branch names and a drawing of merges?", "o": ["git log --oneline --graph --decorate", "git status -s", "git show --all", "git diff --graph"], "a": 0, "hint": "Graph.", "why": "These options make the compact graph view."}, {"lv": "e", "q": "You staged all changes. git diff shows nothing. Why?", "o": ["Changes are lost", "git diff compares the folder with the index, and they are equal now", "Git is broken", "You need to push"], "a": 1, "hint": "Where did they go?", "why": "Use git diff --staged to see staged changes."}, {"lv": "e", "q": "HEAD means", "o": ["The first commit", "The commit you are on now", "The remote", "The newest tag"], "a": 1, "hint": "Where you are.", "why": "HEAD usually points to the current branch, which points to a commit."}, {"lv": "m", "q": "HEAD~2 is", "o": ["The second parent of HEAD", "The grandparent of HEAD along first parents", "Two commits ahead", "The commit two days ago"], "a": 1, "hint": "Tilde walks back.", "why": "~ follows first parents."}, {"lv": "m", "q": "For a merge commit M, M^2 is", "o": ["The grandparent", "The tip of the branch that was merged in", "The merge base", "M itself"], "a": 1, "hint": "Second parent.", "why": "The first parent is the branch you were on, the second the one merged in."}, {"lv": "m", "q": "git log main..feature lists", "o": ["Commits on main not on feature", "Commits on feature not on main", "All commits", "Commits on both"], "a": 1, "hint": "Reachable from the right, not the left.", "why": "A..B = in B, not in A."}, {"lv": "m", "q": "In a hunk header @@ -12,4 +12,5 @@, how many lines does the new side have?", "o": ["4", "5", "12", "9"], "a": 1, "hint": "Plus side.", "why": "+12,5: starting at line 12, 5 lines."}, {"lv": "h", "q": "Which command finds commits that added or removed the text \"apply_discount\"?", "o": ["git grep apply_discount", "git log -S apply_discount", "git blame apply_discount", "git diff apply_discount"], "a": 1, "hint": "Pickaxe.", "why": "git grep searches the files now, log -S searches changes over history."}, {"lv": "h", "q": "git diff main...feature compares feature with", "o": ["main", "the merge base of main and feature", "HEAD", "origin"], "a": 1, "hint": "Three dots in diff.", "why": "For diff, A...B means merge base of A and B against B."}, {"lv": "x", "q": "How do you stop blame from pointing every line at a big formatting commit?", "o": ["git blame --quiet", "List that commit in .git-blame-ignore-revs and use --ignore-revs-file", "Delete the commit", "git blame -w only"], "a": 1, "hint": "Ignore revisions.", "why": "blame skips listed commits and looks past them."}], "calc": [{"lv": "e", "q": "A hunk header reads @@ -20,6 +20,8 @@ and has 5 context lines. How many lines were added if 1 line was removed?", "ans": "3", "hint": "New side = context + added.", "steps": ["Old side 6 = context 5 + removed 1.", "New side 8 = context 5 + added.", "<span class=\"eq\">added = 8 − 5 = 3<\/span>"]}, {"lv": "e", "q": "A straight history A, B, C, D, E with HEAD at E. Which letter is HEAD~3? Give its position counting A as 1.", "ans": "2", "hint": "Walk back three.", "steps": ["HEAD~1 = D.", "HEAD~2 = C.", "<span class=\"eq\">HEAD~3 = B, position 2<\/span>"]}, {"lv": "m", "q": "History A, B, C on main. feature branches from B and adds X, Y. How many commits does git log main..feature show?", "ans": "2", "hint": "In feature, not in main.", "steps": ["feature reaches A, B, X, Y.", "main reaches A, B, C.", "<span class=\"eq\">{A, B, X, Y} − {A, B, C} = {X, Y}: 2 commits<\/span>"]}, {"lv": "m", "q": "Same history. How many commits does git log main...feature show?", "ans": "3", "hint": "Symmetric difference.", "steps": ["Only in main: C.", "Only in feature: X, Y.", "<span class=\"eq\">1 + 2 = 3 commits<\/span>"]}, {"lv": "h", "q": "G is a merge with parents E and D. E has parent C, D has parent C, C has parent B, B has parent A. How many commits are reachable from G, including G?", "ans": "6", "hint": "Count A to G without F.", "steps": ["Start at G, add E and D.", "Both lead to C, then B, then A.", "<span class=\"eq\">G, E, D, C, B, A = 6<\/span>"]}, {"lv": "h", "q": "git diff --stat says \"3 files changed, 27 insertions(+), 9 deletions(-)\". What is the net change in line count?", "ans": "18", "hint": "Insertions minus deletions.", "steps": ["27 lines added.", "9 lines removed.", "<span class=\"eq\">27 − 9 = 18 more lines<\/span>"]}], "assign": [{"id": "rng", "lv": "m", "title": "Two dots and three dots", "task": "<p><code>parents<\/code> maps each commit to its list of parents. Write <code>two_dot(parents, a, b)<\/code> and <code>three_dot(parents, a, b)<\/code> that return sorted lists of the commits git log a..b and git log a...b would show.<\/p>", "starter": "def two_dot(parents, a, b):\n    # your code here\n    pass\n\ndef three_dot(parents, a, b):\n    # your code here\n    pass\n", "tests": [{"call": "two_dot({'A': [], 'B': ['A'], 'C': ['B'], 'X': ['B'], 'Y': ['X']}, 'C', 'Y')", "want": ["X", "Y"]}, {"call": "three_dot({'A': [], 'B': ['A'], 'C': ['B'], 'X': ['B'], 'Y': ['X']}, 'C', 'Y')", "want": ["C", "X", "Y"]}, {"call": "two_dot({'A': [], 'B': ['A']}, 'B', 'A')", "want": []}], "solution": "def reach(parents, c):\n    seen, todo = set(), [c]\n    while todo:\n        x = todo.pop()\n        if x not in seen:\n            seen.add(x)\n            todo.extend(parents[x])\n    return seen\n\ndef two_dot(parents, a, b):\n    return sorted(reach(parents, b) - reach(parents, a))\n\ndef three_dot(parents, a, b):\n    return sorted(reach(parents, a) ^ reach(parents, b))\n", "hint": "Write a helper that collects every ancestor, then use set difference and symmetric difference.", "why": "<p>These are the exact definitions in gitrevisions.<\/p>"}, {"id": "tilde", "lv": "h", "title": "Resolve ~ and ^", "task": "<p>Write <code>resolve(parents, start, ops)<\/code>. <code>ops<\/code> is a string like <code>\"~2^2\"<\/code>. ~n follows the first parent n times, ^n takes the n-th parent (no number means 1). Return the commit reached.<\/p>", "starter": "def resolve(parents, start, ops):\n    # your code here\n    pass\n", "tests": [{"call": "resolve({'A': [], 'B': ['A'], 'C': ['B'], 'D': ['B'], 'M': ['C', 'D']}, 'M', '^2')", "want": "D"}, {"call": "resolve({'A': [], 'B': ['A'], 'C': ['B'], 'D': ['B'], 'M': ['C', 'D']}, 'M', '~2')", "want": "B"}, {"call": "resolve({'A': [], 'B': ['A'], 'C': ['B'], 'D': ['B'], 'M': ['C', 'D']}, 'M', '^2~1')", "want": "B"}, {"call": "resolve({'A': [], 'B': ['A'], 'C': ['B']}, 'C', '^^')", "want": "A"}], "solution": "import re\n\ndef resolve(parents, start, ops):\n    c = start\n    for sym, num in re.findall(r'([~^])(\\d*)', ops):\n        n = int(num) if num else 1\n        if sym == '~':\n            for _ in range(n):\n                c = parents[c][0]\n        else:\n            c = parents[c][n - 1]\n    return c\n", "hint": "Split the string into pieces like ~2 and ^ with a regular expression, then walk.", "why": "<p>Real Git also accepts HEAD^0 (the commit itself) and @{n} reflog suffixes.<\/p>"}], "must": [["git log", "--oneline --graph --all for the picture. -S text to find when code appeared. -p and --stat for what changed. -- path for one file."], ["Three diffs", "git diff: folder vs index. git diff --staged: index vs HEAD. git diff HEAD: folder vs HEAD."], ["Hunks", "@@ -a,b +c,d @@: old lines a to a+b-1 became new lines c to c+d-1. A changed line is one - and one +."], ["Naming commits", "X~n: n first parents back. X^n: n-th parent of a merge. HEAD@{n}: where HEAD was n moves ago."], ["Ranges", "A..B: in B not in A. A...B: in one but not both (log), or merge base to B (diff)."]], "summary": "<p>git log tells the story, git diff shows exact line changes, and ~, ^, .. and ... let you point at any commit or set of commits.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"ranges": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line", "d": {"G.parents": "{'A': [], 'B': ['A'], 'C': ['B'], 'D': ['C'], 'E': ['C'], 'G': ['E', 'D']}"}}, {"l": 13, "ev": "line", "d": {"G.reach": "<function reach>"}}, {"l": 18, "ev": "line", "d": {"G.tilde": "<function tilde>"}}, {"l": 13, "ev": "call", "s": ["module", "tilde()"], "d": {"L.c": "'G'", "L.n": "1"}}, {"l": 14, "ev": "line"}, {"l": 15, "ev": "line", "d": {"L._": "0"}}, {"l": 14, "ev": "line", "d": {"L.c": "'E'"}}, {"l": 16, "ev": "line"}, {"l": 16, "ev": "return"}, {"l": 13, "ev": "call", "d": {"L.c": "'G'", "L.n": "3", "L._": null}}, {"l": 14, "ev": "line"}, {"l": 15, "ev": "line", "d": {"L._": "0"}}, {"l": 14, "ev": "line", "d": {"L.c": "'E'"}}, {"l": 15, "ev": "line", "d": {"L._": "1"}}, {"l": 14, "ev": "line", "d": {"L.c": "'C'"}}, {"l": 15, "ev": "line", "d": {"L._": "2"}}, {"l": 14, "ev": "line", "d": {"L.c": "'B'"}}, {"l": 16, "ev": "line"}, {"l": 16, "ev": "return"}, {"l": 19, "ev": "line", "s": ["module"], "d": {"L.c": null, "L.n": null, "L._": null}, "o": "G~1 = E   G^2 = D   G~3 = B\n"}, {"l": 4, "ev": "call", "s": ["module", "reach()"], "d": {"L.c": "'G'"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"L.seen": "set()", "L.todo": "['G']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'G'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'G'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['E', 'D']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "['E']", "L.x": "'D'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'G', 'D'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['E', 'C']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "['E']", "L.x": "'C'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'G', 'D', 'C'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['E', 'B']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "['E']", "L.x": "'B'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'G', 'D', 'C', 'B'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['E', 'A']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "['E']", "L.x": "'A'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'G', 'D', 'A', 'B', 'C'}"}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'E'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'G', 'D', 'A', 'B', 'E', 'C'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C'"}}, {"l": 6, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 4, "ev": "call", "d": {"L.c": "'D'", "L.seen": null, "L.todo": null, "L.x": null}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"L.seen": "set()", "L.todo": "['D']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'D'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'D'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'D', 'C'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['B']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'B'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'D', 'C', 'B'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['A']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'A'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'D', 'C', 'B', 'A'}"}}, {"l": 6, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 20, "ev": "line", "s": ["module"], "d": {"L.c": null, "L.seen": null, "L.todo": null, "L.x": null}, "o": "D..G  = ['E', 'G']\n"}, {"l": 4, "ev": "call", "s": ["module", "reach()"], "d": {"L.c": "'D'"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"L.seen": "set()", "L.todo": "['D']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'D'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'D'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'D', 'C'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['B']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'B'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'D', 'C', 'B'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['A']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'A'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'D', 'C', 'B', 'A'}"}}, {"l": 6, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 4, "ev": "call", "d": {"L.c": "'E'", "L.seen": null, "L.todo": null, "L.x": null}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"L.seen": "set()", "L.todo": "['E']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'E'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'E'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'C', 'E'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['B']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'B'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'C', 'B', 'E'}"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['A']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'A'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.seen": "{'A', 'C', 'B', 'E'}"}}, {"l": 6, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 20, "ev": "return", "s": ["module"], "d": {"L.c": null, "L.seen": null, "L.todo": null, "L.x": null}, "o": "D...E = ['D', 'E']\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

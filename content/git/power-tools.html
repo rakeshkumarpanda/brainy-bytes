@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Power tools: bisect, worktree, submodules, hooks and signing · Git and CI/CD</title>
+<meta name="description" content="git bisect by hand and with bisect run and its exit codes, git worktree, submodules and .gitmodules, submodules in GitHub Actions and GitLab CI, client and server hooks, core.hooksPath and the pre-commit framework, git grep, sparse checkout, signing commits and tags with SSH keys, git archive, and the xz utils backdoor.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 4: Remotes and teamwork</span><span>›</span><span>Power tools</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 3 of 3 · Intermediate</div>
+    <h1>Power tools: bisect, worktree, submodules, hooks and signing</h1>
+    <p class="lead">Find the commit that broke the build in minutes, work on two branches at once, include other repositories, run checks automatically at commit time and prove who wrote a commit.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">7 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#power-tools" data-topic="cheatsheet" data-h="power-tools">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#bisect" data-l="bisect"><span class="n">1</span><span class="t">git bisect: find the commit that broke it</span></a></li><li><a href="#worktree" data-l="worktree"><span class="n">2</span><span class="t">worktree and submodules</span></a></li><li><a href="#hooks" data-l="hooks"><span class="n">3</span><span class="t">Hooks: scripts Git runs for you</span></a></li><li><a href="#more" data-l="more"><span class="n">4</span><span class="t">grep, sparse checkout, signing and archive</span></a></li></ol>
+    <article class="cv-lesson" id="bisect" data-l="bisect" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>git bisect: find the commit that broke it</h2>
+<p>The tests passed at release v1.0 and fail today, 15 commits later. Reading every diff is slow. <b>git bisect</b> checks out the commit in the middle and asks you whether it is good or bad. Each answer throws away half of the suspects, so even 1000 commits need only about 10 tests.</p>
+<div class="cvz" data-viz="bisect"></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Bisect by hand</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git bisect start</span><span class="ln">git bisect bad              # the current commit is broken</span><span class="ln">git bisect good v1.0        # this tag was fine</span><span class="ln gc"># Git checks out a commit in the middle. Test it, then say:</span><span class="ln">git bisect good             # or: git bisect bad, or: git bisect skip</span><span class="ln gc"># repeat until Git prints the first bad commit</span><span class="ln">git bisect reset            # go back to where you started</span></pre></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Let a script do the testing</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git bisect start HEAD v1.0</span><span class="ln">git bisect run sh test.sh</span></pre><div class="cc-cap">Real output, shortened: 4 tests for 15 commits</div><pre class="cc-out">Bisecting: 7 revisions left to test after this (roughly 3 steps)
+[9826dda] change 8
+running 'sh' 'test.sh'
+Bisecting: 3 revisions left to test after this (roughly 2 steps)
+...
+f026a7d2dc1f0bcf5a9028611556ac4bb588dea5 is the first bad commit
+    change 11
+bisect found first bad commit</pre></div>
+<div class="cv-code" data-k="bisect"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Exit code of the script</th><th>Meaning for bisect run</th></tr></thead><tbody><tr><td>0</td><td>good</td></tr><tr><td>1 to 127, except 125</td><td>bad</td></tr><tr><td>125</td><td>cannot test this commit, skip it</td></tr><tr><td>above 127</td><td>stop bisecting</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Bisect works best when every commit builds and passes tests on its own. Huge commits that mix many changes also make the answer less useful. This is one more reason for small, atomic commits.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="worktree" data-l="worktree" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>worktree and submodules</h2>
+<p><b>git worktree</b> gives one repository several working folders, each on its own branch. You can fix a bug on a hotfix branch in one folder while a long build or test run continues in another, without stashing or cloning again.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">A second folder for a hotfix</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git worktree add ../hotfix -b hotfix v1.0</span><span class="ln">git worktree list</span><span class="ln gc"># when done</span><span class="ln">git worktree remove ../hotfix</span></pre><div class="cc-cap">Real output, paths shortened</div><pre class="cc-out">Preparing worktree (new branch 'hotfix')
+HEAD is now at 45a81bb change 1
+/work/calc-app  cac7ede [main]
+/work/hotfix    45a81bb [hotfix]</pre></div>
+<div class="note note-tip"><b>Remember</b><div>A branch can be checked out in only one worktree at a time. All worktrees share the same .git objects, so a commit made in one is visible in the others at once.</div></div>
+<p>A <b>submodule</b> puts another repository inside yours at a fixed commit, for example a shared library. The parent repository does not store the library files. It stores the library URL in <code>.gitmodules</code> and one commit id for the folder.</p>
+<div class="cv-code gk-file" data-lang="text"><div class="cc-bar"><span class="gk-path">.gitmodules</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="text"><span class="ln" data-n="1">[submodule "libs/shared"]</span><span class="ln gk-has" data-n="2">	path = libs/shared</span><span class="ln gk-has" data-n="3">	url = https://github.com/OWNER/shared.git</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="2"><b>Line 2</b><code>path = libs/shared</code><span>Where the other repository appears in your working tree.</span></li><li data-n="3"><b>Line 3</b><code>url = https://github.com/OWNER/shared.git</code><span>Where to clone it from. The exact commit is stored in the parent commit, not here.</span></li></ol></details></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Add and clone</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git submodule add &lt;url&gt; &lt;path&gt;</code>, <code>git clone --recurse-submodules &lt;url&gt;</code></div><div class="fx-n">A plain clone leaves submodule folders empty.</div></div><div class="fx fx-key"><div class="fx-h"><span>After a pull</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git submodule update --init --recursive</code></div><div class="fx-n">Checks out the commit each submodule is pinned to.</div></div><div class="fx"><div class="fx-h"><span>In CI</span></div><div class="fx-b"><code>actions/checkout</code> with <code>submodules: recursive</code>, GitLab variable <code>GIT_SUBMODULE_STRATEGY: recursive</code></div><div class="fx-n">Both platforms skip submodules unless asked.</div></div></div>
+<details class="deep"><summary>Going deeper: Submodule or something else</summary><div class="deep-b"><p>Submodules pin an exact version, which is safe, but every update needs a commit in the parent and every clone needs the extra flag. git subtree copies the other project into a folder as normal files with history, so clones need nothing special. For libraries that have releases, a package manager (pip, npm, Maven) is usually the simplest choice.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="hooks" data-l="hooks" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Hooks: scripts Git runs for you</h2>
+<p>A <b>hook</b> is a script that Git runs at a fixed moment, such as before a commit is made or before a push is sent. If a pre hook exits with a code other than 0, Git stops the action. Pick a hook in the animation and make it fail.</p>
+<div class="cvz" data-viz="hooks"></div>
+<div class="cv-code gk-file" data-lang="text"><div class="cc-bar"><span class="gk-path">.git/hooks/pre-commit</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="text"><span class="ln gk-has" data-n="1">#!/bin/sh</span><span class="ln" data-n="2"># Block commits that still contain debug prints</span><span class="ln gk-has" data-n="3">if git diff --cached | grep -q 'print("DEBUG'; then</span><span class="ln" data-n="4">  echo "Remove DEBUG prints before committing"</span><span class="ln gk-has" data-n="5">  exit 1</span><span class="ln" data-n="6">fi</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="1"><b>Line 1</b><code>#!/bin/sh</code><span>A hook is any executable file with the exact hook name. chmod +x is required on macOS and Linux.</span></li><li data-n="3"><b>Line 3</b><code>if git diff --cached | grep -q 'print("DEBUG'; then</code><span>git diff --cached shows what is about to be committed.</span></li><li data-n="5"><b>Line 5</b><code>exit 1</code><span>A non zero exit code stops the commit.</span></li></ol></details></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">The hook in action</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git commit -am "try"</span><span class="ln">echo $?</span><span class="ln">git commit -am "try" --no-verify</span></pre><div class="cc-cap">Real output: --no-verify skips the hook</div><pre class="cc-out">Remove DEBUG prints before committing
+1</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Hook</th><th>Runs</th><th>Typical use</th></tr></thead><tbody><tr><td>pre-commit</td><td>before the commit message is asked for</td><td>format code, lint, find secrets</td></tr><tr><td>commit-msg</td><td>after the message is written</td><td>check Conventional Commits format</td></tr><tr><td>pre-push</td><td>before objects are sent</td><td>run fast unit tests</td></tr><tr><td>pre-receive and update</td><td>on the server, when a push arrives</td><td>reject pushes that break rules (GitLab server hooks, GitHub uses rulesets instead)</td></tr><tr><td>post-receive</td><td>on the server, after the push</td><td>notify, start deployments</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>Files in .git/hooks are not committed and not cloned, and anyone can skip them with --no-verify. Use hooks for fast feedback on your laptop, and run the same checks again in CI, which no one can skip.</div></div>
+<details class="deep"><summary>Going deeper: Sharing hooks with the team</summary><div class="deep-b"><p>Commit the scripts to a folder such as .githooks and ask everyone to run git config core.hooksPath .githooks once. Many teams use the pre-commit framework instead: a .pre-commit-config.yaml file lists checks by repository and version, pre-commit install writes the hook, and the same command runs in CI with pre-commit run --all-files.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="more" data-l="more" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>grep, sparse checkout, signing and archive</h2>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Search tracked files</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git grep -n "def add"</code></div><div class="fx-n">Faster than grep on big repositories and ignores untracked junk. Add a commit or tag to search an old version: git grep -n TODO v1.0.</div></div><div class="fx"><div class="fx-h"><span>Work on part of a monorepo</span></div><div class="fx-b"><code>git sparse-checkout set app tests</code></div><div class="fx-n">Only these folders appear in the working tree. git sparse-checkout disable brings everything back.</div></div><div class="fx fx-key"><div class="fx-h"><span>Sign a commit or tag</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git commit -S</code>, <code>git tag -s v1.0.0</code></div><div class="fx-n">Proves who made it. Set commit.gpgsign true to sign every commit.</div></div><div class="fx"><div class="fx-h"><span>Export a release</span></div><div class="fx-b"><code>git archive --format=zip -o calc-app.zip v1.0.0</code></div><div class="fx-n">Writes the files of a tag or commit to a zip or tar, without the .git folder.</div></div></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Sign with your SSH key (Git 2.34 or newer)</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git config --global gpg.format ssh</span><span class="ln">git config --global user.signingkey ~/.ssh/id_ed25519.pub</span><span class="ln">git config --global commit.gpgsign true</span><span class="ln">git commit -m "Signed change"</span><span class="ln">git log --show-signature -1</span></pre></div>
+<p>Add the same public key to GitHub or GitLab as a signing key, and the platform shows the commit as Verified. Anyone can type any name in user.name, so a signature is the only proof that a commit came from the key holder.</p>
+<div class="scene"><div class="scene-h">Real world scenario: the xz utils backdoor, 2024</div><p>In March 2024 Andres Freund noticed that SSH logins on a test system used more CPU than expected, and traced it to a backdoor in xz utils versions 5.6.0 and 5.6.1 (CVE-2024-3094). A maintainer account that had earned trust over about two years had added obfuscated binary test files to the repository, and the release tarballs contained a modified build script that was not in the Git repository at all. Lessons that teams took: build releases from the tagged Git commit inside CI, compare tarballs with the repository, review changes to build and test files carefully and sign tags.</p></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>bisect finds the bad commit by halving, worktree gives you extra folders, submodules pin another project, and hooks run checks at the right moment.</p></div><div class="ld-p" data-ld="college" hidden><p>bisect run uses exit codes (0 good, 125 skip, other 1 to 127 bad). Submodules are stored as a gitlink entry with mode 160000. Client hooks live in .git/hooks or core.hooksPath and can be skipped, server hooks cannot.</p></div><div class="ld-p" data-ld="masters" hidden><p>Bisect needs about log2(n) tests. Sparse checkout in cone mode matches whole folders, which keeps it fast. Commit signatures are stored inside the commit object in a gpgsig header and cover the tree, parents, author and message.</p></div><div class="ld-p" data-ld="research" hidden><p>Software supply chain work (SLSA, Sigstore gitsign, reproducible builds) builds on these tools: signed commits and tags say who wrote the code, CI provenance says how the artifact was built from that exact commit.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./workflows.html" data-topic="workflows"><small>Previous topic</small><b>Team workflows</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "power-tools", "topic": "power-tools", "subject": "git", "title": "Power tools: bisect, worktree, submodules, hooks and signing", "codes": {"bisect": {"src": "# git bisect is a binary search over commits: each test halves the suspects\ncommits = list(range(1, 17))          # commit 1 is good, commit 16 is bad\nfirst_bad = 11                         # Git does not know this. The test below finds it.\n\ndef test(c):\n    return \"bad\" if c >= first_bad else \"good\"\n\ngood, bad, tests = 1, 16, 0\nwhile bad - good > 1:\n    mid = (good + bad) // 2\n    result = test(mid)\n    tests += 1\n    print(f\"test commit {mid:2}: {result}\")\n    if result == \"bad\":\n        bad = mid\n    else:\n        good = mid\nprint(f\"first bad commit: {bad}, found with {tests} tests\")", "stdin": "", "out": "test commit  8: good\ntest commit 12: bad\ntest commit 10: good\ntest commit 11: bad\nfirst bad commit: 11, found with 4 tests"}}, "quiz": [{"lv": "e", "q": "What does git bisect help you find?", "o": ["A lost branch", "The first commit that introduced a bug", "The biggest file", "Merge conflicts"], "a": 1, "hint": "Binary search.", "why": "Mark good and bad, Git halves the range each time."}, {"lv": "e", "q": "Which hook runs before Git creates a commit?", "o": ["post-commit", "pre-commit", "pre-push", "post-receive"], "a": 1, "hint": "Before.", "why": "It can stop the commit by exiting non zero."}, {"lv": "e", "q": "Which flag skips the pre-commit and commit-msg hooks?", "o": ["--force", "--no-verify", "--quiet", "--skip"], "a": 1, "hint": "Verify.", "why": "That is why CI must repeat the checks."}, {"lv": "m", "q": "About how many tests does bisect need for 1000 commits?", "o": ["1000", "100", "about 10", "2"], "a": 2, "hint": "Halving.", "why": "2 to the power 10 is 1024."}, {"lv": "m", "q": "In git bisect run, which exit code means skip this commit?", "o": ["0", "1", "125", "128"], "a": 2, "hint": "Special value.", "why": "125 marks a commit that cannot be tested."}, {"lv": "m", "q": "You cloned a repository with submodules and their folders are empty. Fix?", "o": ["git pull", "git submodule update --init --recursive", "git fetch --all", "git reset --hard"], "a": 1, "hint": "Init them.", "why": "Or clone with --recurse-submodules next time."}, {"lv": "m", "q": "Why are client hooks not enough to enforce rules?", "o": ["They are slow", "They are not cloned and can be skipped with --no-verify", "They only run on Windows", "They need admin rights"], "a": 1, "hint": "Local only.", "why": "Enforce in CI and branch protection."}, {"lv": "h", "q": "Can the same branch be checked out in two worktrees at once?", "o": ["Yes", "No, Git refuses", "Only with --force on add", "Only for main"], "a": 1, "hint": "One place each.", "why": "Git refuses by default because the two folders would fight over the branch."}, {"lv": "h", "q": "What does the parent repository store for a submodule folder?", "o": ["All its files", "A commit id (a gitlink), plus the URL in .gitmodules", "A zip file", "Nothing"], "a": 1, "hint": "Pointer.", "why": "The entry has mode 160000 in the tree."}, {"lv": "x", "q": "Why is a signed commit stronger evidence than the author name?", "o": ["Names are encrypted", "Anyone can set user.name, but only the key holder can make a valid signature", "GitHub checks names", "Signatures hide the code"], "a": 1, "hint": "Proof.", "why": "Platforms show Verified when the key is registered to the account."}], "calc": [{"lv": "e", "q": "Bisect over 16 commits (1 good, 16 bad). How many tests does the halving need?", "ans": "4", "hint": "log2 of 16.", "steps": ["Each test halves the range of suspects.", "16, 8, 4, 2, 1.", "<span class=\"eq\">log2(16) = 4 tests<\/span>"]}, {"lv": "e", "q": "With 1024 suspect commits, how many tests in the worst case?", "ans": "10", "hint": "2 to the 10.", "steps": ["2¹⁰ = 1024.", "Each test halves the suspects.", "<span class=\"eq\">10 tests<\/span>"]}, {"lv": "m", "q": "Good is commit 1, bad is commit 16. The first test picks (1 + 16) // 2. Which commit is that?", "ans": "8", "hint": "Integer halving.", "steps": ["1 + 16 = 17.", "17 // 2 = 8.", "<span class=\"eq\">test commit 8<\/span>"]}, {"lv": "m", "q": "Doubling the number of suspect commits adds how many bisect tests?", "ans": "1", "hint": "One more halving.", "steps": ["log2(2n) = log2(n) + 1.", "So one extra test.", "<span class=\"eq\">+1 test<\/span>"]}, {"lv": "h", "q": "bisect run: the script exits 0, 0, 1, 125, 1. How many commits were marked bad?", "ans": "2", "hint": "Code 125 is skip.", "steps": ["0 means good: 2 commits.", "125 means skip: 1 commit.", "<span class=\"eq\">1 means bad: 2 commits<\/span>"]}, {"lv": "h", "q": "A repository has 3 submodules and one of them has 2 submodules of its own. With --recurse-submodules, how many repositories are cloned in total, counting the parent?", "ans": "6", "hint": "Count every level.", "steps": ["Parent: 1.", "First level submodules: 3.", "<span class=\"eq\">Nested: 2, total 1 + 3 + 2 = 6<\/span>"]}], "assign": [{"id": "bis", "lv": "m", "title": "Write your own bisect", "task": "<p>Write <code>first_bad(results)<\/code>. results is a list of \"good\" and \"bad\" for commits in order, where the first is good, the last is bad, and once a commit is bad all later ones are bad. Return <code>[index, tests]<\/code>: the index of the first bad commit and how many entries you looked at, using binary search between the two known ends.<\/p>", "starter": "def first_bad(results):\n    # your code here\n    pass\n", "tests": [{"call": "first_bad(['good'] * 10 + ['bad'] * 6)", "want": [10, 4]}, {"call": "first_bad(['good', 'bad'])", "want": [1, 0]}, {"call": "first_bad(['good', 'good', 'good', 'bad'])", "want": [3, 2]}, {"call": "first_bad(['good'] + ['bad'] * 15)", "want": [1, 3]}], "solution": "def first_bad(results):\n    good, bad, tests = 0, len(results) - 1, 0\n    while bad - good > 1:\n        mid = (good + bad) // 2\n        tests += 1\n        if results[mid] == 'bad':\n            bad = mid\n        else:\n            good = mid\n    return [bad, tests]\n", "hint": "Keep a known good index and a known bad index and test the middle until they are neighbours.", "why": "<p>The two ends are already known, so they are not counted as tests.<\/p>"}, {"id": "hook", "lv": "e", "title": "A commit-msg check", "task": "<p>Write <code>check_msg(msg)<\/code> for a commit-msg hook. Return True when the first line looks like <code>type: text<\/code> or <code>type(scope): text<\/code>, where type is one of feat, fix, docs, test, ci, refactor or chore (an optional ! before the colon is allowed), and the first line is at most 72 characters.<\/p>", "starter": "def check_msg(msg):\n    # your code here\n    pass\n", "tests": [{"call": "check_msg('feat(calc): add percent()')", "want": true}, {"call": "check_msg('Added stuff')", "want": false}, {"call": "check_msg('fix!: change divide')", "want": true}, {"call": "check_msg('feat: ' + 'x' * 80)", "want": false}, {"call": "check_msg('docs: README\\n\\nlong body here')", "want": true}], "solution": "TYPES = ['feat', 'fix', 'docs', 'test', 'ci', 'refactor', 'chore']\n\ndef check_msg(msg):\n    first = msg.split('\\n')[0]\n    if len(first) > 72 or ': ' not in first:\n        return False\n    head = first.split(': ')[0].rstrip('!')\n    if '(' in head and head.endswith(')'):\n        head = head.split('(')[0]\n    return head in TYPES\n", "hint": "Take the first line, split at the first colon and space, then strip the ! and the scope.", "why": "<p>A real commit-msg hook reads the message from the file path Git passes as its first argument and exits 1 when this returns False.<\/p>"}], "must": [["git bisect", "start, bad, good <tag>, then good or bad or skip until the first bad commit, then reset. bisect run script: 0 good, 125 skip, 1 to 127 bad. About log2(n) tests."], ["worktree", "git worktree add <path> <branch> gives another folder on another branch, sharing one .git. One branch per worktree."], ["Submodules", "Pinned commit of another repository. .gitmodules holds the URL. Clone with --recurse-submodules or run submodule update --init --recursive. CI needs submodules: recursive or GIT_SUBMODULE_STRATEGY."], ["Hooks", "pre-commit, commit-msg, pre-push on the client (skippable with --no-verify, not cloned), pre-receive and post-receive on the server. Share with core.hooksPath or the pre-commit framework, and repeat checks in CI."], ["More tools", "git grep searches tracked files, sparse-checkout limits folders, commit -S and tag -s sign (SSH or GPG), git archive exports a tag without .git."]], "summary": "<p>bisect halves the suspects, worktree adds folders, submodules pin other repositories, hooks give early feedback that CI must repeat, and signatures prove authorship.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"bisect": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.commits": "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]"}}, {"l": 5, "ev": "line", "d": {"G.first_bad": "11"}}, {"l": 8, "ev": "line", "d": {"G.test": "<function test>"}}, {"l": 9, "ev": "line", "d": {"G.good": "1", "G.bad": "16", "G.tests": "0"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"G.mid": "8"}}, {"l": 5, "ev": "call", "s": ["module", "test()"], "d": {"L.c": "8"}}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 12, "ev": "line", "s": ["module"], "d": {"G.result": "'good'", "L.c": null}}, {"l": 13, "ev": "line", "d": {"G.tests": "1"}}, {"l": 14, "ev": "line", "o": "test commit  8: good\n"}, {"l": 17, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.good": "8"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"G.mid": "12"}}, {"l": 5, "ev": "call", "s": ["module", "test()"], "d": {"L.c": "12"}}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 12, "ev": "line", "s": ["module"], "d": {"G.result": "'bad'", "L.c": null}}, {"l": 13, "ev": "line", "d": {"G.tests": "2"}}, {"l": 14, "ev": "line", "o": "test commit 12: bad\n"}, {"l": 15, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.bad": "12"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"G.mid": "10"}}, {"l": 5, "ev": "call", "s": ["module", "test()"], "d": {"L.c": "10"}}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 12, "ev": "line", "s": ["module"], "d": {"G.result": "'good'", "L.c": null}}, {"l": 13, "ev": "line", "d": {"G.tests": "3"}}, {"l": 14, "ev": "line", "o": "test commit 10: good\n"}, {"l": 17, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.good": "10"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"G.mid": "11"}}, {"l": 5, "ev": "call", "s": ["module", "test()"], "d": {"L.c": "11"}}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 12, "ev": "line", "s": ["module"], "d": {"G.result": "'bad'", "L.c": null}}, {"l": 13, "ev": "line", "d": {"G.tests": "4"}}, {"l": 14, "ev": "line", "o": "test commit 11: bad\n"}, {"l": 15, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.bad": "11"}}, {"l": 18, "ev": "line"}, {"l": 18, "ev": "return", "o": "first bad commit: 11, found with 4 tests\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

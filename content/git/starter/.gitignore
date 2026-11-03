@@ -1,0 +1,9 @@
+# Python leftovers
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# made by the pipeline, never committed
+dist/
+reports/
