@@ -18,6 +18,8 @@ const GITZ = (() => {
   /* a label in a rounded box centred on x, y. Returns its width */
   function tag(g, s, x, y, o = {}) {
     const fs = o.s || 12, w = tw(g, s, { s: fs, b: o.b !== false, mono: o.mono }) + 12, h = fs + 8;
+    const cw = g.canvas.width / (g.getTransform().a || 1);
+    x = Math.max(w / 2 + 2, Math.min(cw - w / 2 - 2, x));   /* keep the whole label on the canvas */
     rr(g, x - w / 2, y - h / 2, w, h, 6, { fill: o.fill, stroke: o.stroke, w: o.lw || 1.2 });
     D.text(g, s, x, y + 1, { a: 'center', bl: 'middle', s: fs, b: o.b !== false, mono: o.mono, c: o.c });
     return w;
@@ -335,14 +337,22 @@ const GITZ = (() => {
       g.stroke(); g.restore();
       D.arrow(g, x2 + 22, y2, x2 + 14, y2, c, 2, 6);
     }));
+    /* labels of neighbouring commits can collide: move a label up (branches) or down (tags) until it is free */
+    const placed = [], cw = z.W;
+    const free = (s, x, y, step) => {
+      const w = tw(g, s, { s: 11, b: true }) + 12, cx = Math.max(w / 2 + 2, Math.min(cw - w / 2 - 2, x));
+      for (let i = 0; i < 6 && placed.some(b => Math.abs(b.x - cx) < (b.w + w) / 2 + 2 && Math.abs(b.y - y) < 19); i++) y += step;
+      placed.push({ x: cx, y, w });
+      return y;
+    };
     show.forEach(id => {
       const [x, y] = P[id], live = reach.has(id), isHead = id === hid;
       D.circle(g, x, y, 13, { fill: live ? (R.commits[id].parents.length > 1 ? z.col.purple : z.col.cv) : z.col.surf, stroke: isHead ? z.col.yellow : live ? z.col.surf : z.col.ink2, w: isHead ? 3 : 1.5 });
       D.text(g, id, x, y + 1, { a: 'center', bl: 'middle', s: id.length > 3 ? 9 : 11, b: true, c: live ? '#fff' : z.col.ink2 });
       const brs = Object.keys(R.br).filter(b => R.br[b] === id).map(b => b === R.head.ref ? `HEAD → ${b}` : b);
       if (!R.head.ref && isHead) brs.unshift('HEAD (detached)');
-      brs.forEach((b, k) => tag(g, b, x, y - 26 - k * 19, { s: 11, fill: b.startsWith('HEAD') ? z.col.yellow : z.col.surf, stroke: z.col.cv, c: b.startsWith('HEAD') ? '#3b2a00' : z.col.ink }));
-      Object.keys(R.tags).filter(t => R.tags[t] === id).forEach((t, k) => tag(g, '◆ ' + t, x, y + 27 + k * 19, { s: 11, fill: z.col.surf, stroke: z.col.orange, c: z.col.ink }));
+      brs.forEach((b, k) => tag(g, b, x, free(b, x, y - 26 - k * 19, -19), { s: 11, fill: b.startsWith('HEAD') ? z.col.yellow : z.col.surf, stroke: z.col.cv, c: b.startsWith('HEAD') ? '#3b2a00' : z.col.ink }));
+      Object.keys(R.tags).filter(t => R.tags[t] === id).forEach((t, k) => tag(g, '◆ ' + t, x, free('◆ ' + t, x, y + 27 + k * 19, 19), { s: 11, fill: z.col.surf, stroke: z.col.orange, c: z.col.ink }));
     });
     if (ids.length > show.length) D.text(g, `… ${ids.length - show.length} older commits`, 8, 16, { s: 11, c: z.col.ink2 });
     return P;
@@ -839,7 +849,15 @@ const GITZ = (() => {
         const c = i === 0 ? z.col.green : i === n ? z.col.red : i <= lo ? 'rgba(34,197,94,.55)' : i >= hi ? 'rgba(239,68,68,.55)' : z.col.bg;
         rr(g, x + 1, 70, Math.max(2, W - 2), 40, 3, { fill: c, stroke: out ? null : z.col.line, w: 1 });
       }
-      tested.forEach(([m, bad], k) => { const x = 20 + m * W + W / 2; D.arrow(g, x, 46 - (k % 2) * 14, x, 68, bad ? z.col.red : z.col.green, 2, 6); D.text(g, `test ${k + 1}`, x, 40 - (k % 2) * 14, { a: 'center', s: 10, b: true, c: bad ? z.col.red : z.col.green }); });
+      const rows = [[], [], []];   /* up to three label rows, each label goes in the first row where it does not touch another */
+      tested.forEach(([m, bad], k) => {
+        const x = 20 + m * W + W / 2, lw = tw(g, `test ${k + 1}`, { s: 10, b: true }) + 6;
+        let r = rows.findIndex(row => row.every(px => Math.abs(px - x) > lw));
+        if (r < 0) r = k % 3;
+        rows[r].push(x);
+        D.arrow(g, x, 46 - r * 14, x, 68, bad ? z.col.red : z.col.green, 2, 6);
+        D.text(g, `test ${k + 1}`, x, 40 - r * 14, { a: 'center', s: 10, b: true, c: bad ? z.col.red : z.col.green });
+      });
       D.text(g, 'good (v1.0)', 20, 130, { s: 11, c: z.col.green, b: true });
       D.text(g, 'bad (HEAD)', z.W - 20, 130, { a: 'right', s: 11, c: z.col.red, b: true });
       D.text(g, `Suspects left: ${hi - lo}  (commits ${lo + 1} to ${hi})`, 20, 160, { s: 13, b: true, c: z.col.ink });
@@ -1174,7 +1192,9 @@ const GITZ = (() => {
         const w = Math.max(j.st === 'skipped' ? 6 : 4, (t1 - j.t0) * unit);
         rr(g, left + j.t0 * unit, y + 4, w, rowH - 8, 5, { fill: C[j.st] });
         const lbl = j.st === 'skipped' ? 'skipped' : j.st === 'failed' ? 'failed' : j.st === 'running' ? 'running' : (j.makes ? '↑ ' + j.makes : 'passed');
-        D.text(g, lbl, left + j.t0 * unit + w + 6, y + rowH / 2, { bl: 'middle', s: 10, b: true, c: j.st === 'failed' ? z.col.red : z.col.ink2 });
+        const lx = left + j.t0 * unit + w + 6;
+        if (lx + tw(g, lbl, { s: 10, b: true }) > z.W - 4) D.text(g, lbl, lx - 12, y + rowH / 2, { a: 'right', bl: 'middle', s: 10, b: true, c: '#fff' });
+        else D.text(g, lbl, lx, y + rowH / 2, { bl: 'middle', s: 10, b: true, c: j.st === 'failed' ? z.col.red : z.col.ink2 });
       });
       const done = z.step >= frames.length - 1;
       const sk = fr.J.filter(j => j.st === 'skipped').map(j => j.n), alw = P.jobs.filter(j => j.always);

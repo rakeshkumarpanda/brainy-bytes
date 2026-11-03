@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam revision: commands, scenarios and pipeline bug hunts · Git and CI/CD</title>
+<meta name="description" content="How Git and CI/CD are examined, the twelve most asked ideas, a command recall table, an undo chooser, six scenario questions with worked answers, three buggy pipeline files explained, a mock quiz and quick numericals.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 9: Exam revision</span><span>›</span><span>Exam revision</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 9 · Topic 1 of 1 · All levels</div>
+    <h1>Exam revision: commands, scenarios and pipeline bug hunts</h1>
+    <p class="lead">Practise every question shape you will meet in exams, interviews and certifications: exact commands, what to run in a scenario, how to read a pipeline file for bugs, and quick multiple choice.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">12 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#exam-revision" data-topic="cheatsheet" data-h="exam-revision">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Revise</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#map" data-l="map"><span class="n">1</span><span class="t">How Git and CI/CD are examined</span></a></li><li><a href="#recall" data-l="recall"><span class="n">2</span><span class="t">Command recall in one table</span></a></li><li><a href="#scenarios" data-l="scenarios"><span class="n">3</span><span class="t">Scenario questions with worked answers</span></a></li><li><a href="#yaml" data-l="yaml"><span class="n">4</span><span class="t">Spot the bug: pipeline files</span></a></li></ol>
+    <article class="cv-lesson" id="map" data-l="map" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>How Git and CI/CD are examined</h2>
+<p>This chapter is for the week before an exam, an interview or a certification. It teaches nothing new. It shows the shapes questions take, with worked answers, and points back to the chapter where each idea is taught. The questions are original practice questions.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Setting</th><th>Typical format</th><th>What earns the marks</th><th>Practise in</th></tr></thead><tbody><tr><td>College lab and semester exams</td><td>write the command, draw the commit graph, explain a term</td><td>the exact command and a correct graph</td><td>Lessons 2 and 3</td></tr><tr><td>Job interviews (Dev, QA, DevOps)</td><td>scenarios: what do you run, how do you design the pipeline</td><td>safe choices for shared history, clear reasons</td><td>Lessons 3 and 4</td></tr><tr><td>GitHub Actions and GitLab CI/CD certifications</td><td>multiple choice on syntax, triggers, artifacts, security</td><td>knowing defaults and limits exactly</td><td>Lesson 4 and the quiz</td></tr><tr><td>Code review at work</td><td>spot the bug in a workflow file</td><td>reading YAML carefully</td><td>Lesson 4</td></tr></tbody></table></div>
+<h3>The twelve ideas asked most often</h3>
+<ol>
+<li>Working tree, staging area, repository, and git status codes (chapter 1.2).</li>
+<li>Commits as snapshots, ids as hashes, HEAD~ and HEAD^ (chapters 1.3 and 5.1).</li>
+<li>Branches as pointers, fast forward versus three way merge (chapters 2.1 and 2.2).</li>
+<li>Resolving conflicts and reading conflict markers (chapter 2.2).</li>
+<li>Rebase versus merge and the golden rule (chapter 2.3).</li>
+<li>restore, reset (soft, mixed, hard), revert and reflog (chapter 3.1).</li>
+<li>fetch versus pull, rejected pushes and force-with-lease (chapter 4.1).</li>
+<li>Workflows, pull requests, branch protection (chapter 4.2).</li>
+<li>CI versus CD, jobs, stages, needs, runners, artifacts versus cache (chapter 6.1).</li>
+<li>GitHub Actions triggers, matrix, permissions, artifacts (chapters 7.1 to 7.3).</li>
+<li>GitLab rules, workflow rules, needs, artifacts, job token (chapters 8.1 to 8.3).</li>
+<li>Dev versus QA responsibilities, build once and promote (chapters 6.1, 7.2, 8.2).</li>
+</ol>
+<div class="note note-exam"><b>In the exam</b><div>When asked "how do you undo", first say where the mistake is (working tree, staging area, local commit, pushed commit) and whether others have it. The right command follows from those two facts.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="recall" data-l="recall" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Command recall in one table</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Task</th><th>Command</th></tr></thead><tbody><tr><td>Start a repository with main</td><td><code>git init -b main</code></td></tr><tr><td>Stage parts of a file</td><td><code>git add -p</code></td></tr><tr><td>See staged changes</td><td><code>git diff --staged</code></td></tr><tr><td>History as a graph</td><td><code>git log --oneline --graph --all</code></td></tr><tr><td>Who changed this line</td><td><code>git blame -L 10,20 file</code></td></tr><tr><td>Create and switch branch</td><td><code>git switch -c name</code></td></tr><tr><td>Merge keeping a merge commit</td><td><code>git merge --no-ff name</code></td></tr><tr><td>Abort a conflicted merge</td><td><code>git merge --abort</code></td></tr><tr><td>Replay branch on main</td><td><code>git rebase main</code></td></tr><tr><td>Clean up last 3 commits</td><td><code>git rebase -i HEAD~3</code></td></tr><tr><td>Copy one commit here</td><td><code>git cherry-pick -x id</code></td></tr><tr><td>Unstage</td><td><code>git restore --staged file</code></td></tr><tr><td>Undo last local commit, keep changes</td><td><code>git reset --soft HEAD~1</code></td></tr><tr><td>Undo a pushed commit</td><td><code>git revert id</code></td></tr><tr><td>Find lost commits</td><td><code>git reflog</code></td></tr><tr><td>Park work</td><td><code>git stash push -u -m note</code></td></tr><tr><td>Release tag</td><td><code>git tag -a v1.0.0 -m msg</code> and <code>git push origin v1.0.0</code></td></tr><tr><td>Publish a branch</td><td><code>git push -u origin name</code></td></tr><tr><td>Safe force push</td><td><code>git push --force-with-lease</code></td></tr><tr><td>Find the bad commit</td><td><code>git bisect start, bad, good v1.0</code> or <code>bisect run</code></td></tr><tr><td>Why is a file ignored</td><td><code>git check-ignore -v path</code></td></tr><tr><td>Object type and content</td><td><code>git cat-file -t id</code>, <code>-p id</code></td></tr><tr><td>Pull an Actions artifact</td><td><code>gh run download RUN_ID -n name</code></td></tr><tr><td>Pull a GitLab artifact</td><td><code>glab job artifact main build</code> or the jobs/artifacts API</td></tr></tbody></table></div>
+<div class="cv-code" data-k="undo"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="scenarios" data-l="scenarios" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Scenario questions with worked answers</h2>
+<div class="walk"><div class="walk-h"><span>1. You committed to main instead of a feature branch, and have not pushed</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The commit exists only locally, so rewriting is safe.</li><li><code>git branch feature/x</code> keeps a pointer to the commit.</li><li><code>git reset --hard HEAD~1</code> moves main back (no uncommitted work to lose, check git status first).</li><li><code>git switch feature/x</code> and continue. Main is clean, the commit lives on the branch.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>2. A bad commit was pushed to main and teammates have pulled it</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Shared history must not be rewritten.</li><li><code>git revert &lt;id&gt;</code> creates a new commit that undoes it.</li><li>Push it through a pull request so CI checks the revert too.</li><li>For a merge commit, revert with <code>-m 1</code> to keep the main line.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>3. git push is rejected with fetch first</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Someone pushed commits you do not have, so your push is not a fast forward.</li><li><code>git pull --rebase</code> (or fetch then rebase) puts your commits on top.</li><li>Fix conflicts if any, run the tests, then <code>git push</code>.</li><li>Never use --force here, it would delete their commits.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>4. The pipeline is green on the branch but red after merge</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Two changes that each passed can break together (a semantic conflict).</li><li>Run CI on the merge result: pull_request runs test the merge commit on GitHub, merged results pipelines do it on GitLab.</li><li>Merge queues (GitHub) or merge trains (GitLab) test each change on top of the ones queued before it.</li><li>Meanwhile revert the merge on main to get green again.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>5. QA reports the build they tested differs from production</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Each environment rebuilt from source, so the bytes differ.</li><li>Build once, upload the artifact, and promote that file through every environment.</li><li>Name artifacts with the commit id and record the digest.</li><li>Keep release builds in a release or package registry, not only in expiring artifacts.</li></ol></div>
+<div class="walk"><div class="walk-h"><span>6. A secret was committed and pushed an hour ago</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Rotate the secret immediately: assume it is leaked.</li><li>Remove it from the code and add the file to .gitignore.</li><li>If required, rewrite history with a tool such as git filter-repo and coordinate a force push, knowing clones may keep it.</li><li>Add secret scanning in a pre-commit hook and in CI.</li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="yaml" data-l="yaml" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>Spot the bug: pipeline files</h2>
+<div class="cv-code gk-file" data-lang="yaml"><div class="cc-bar"><span class="gk-path">bug-1.yml</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="yaml"><span class="ln" data-n="1">on:</span><span class="ln" data-n="2">  push:</span><span class="ln" data-n="3">    branches: [main]</span><span class="ln" data-n="4">jobs:</span><span class="ln" data-n="5">  test:</span><span class="ln" data-n="6">    runs-on: ubuntu-latest</span><span class="ln" data-n="7">    steps:</span><span class="ln gk-has" data-n="8">      - uses: actions/setup-python@v7</span><span class="ln" data-n="9">        with:</span><span class="ln gk-has" data-n="10">          python-version: 3.10</span><span class="ln gk-has" data-n="11">      - run: python -m pytest</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="8"><b>Line 8</b><code>- uses: actions/setup-python@v7</code><span>Bug: no actions/checkout before this, so the runner has no code to test.</span></li><li data-n="10"><b>Line 10</b><code>python-version: 3.10</code><span>Bug: unquoted 3.10 is read as the number 3.1. Write '3.10'.</span></li><li data-n="11"><b>Line 11</b><code>- run: python -m pytest</code><span>Bug: nothing installed pytest. A fresh Python has no pytest, so add pip install -r requirements.txt first.</span></li></ol></details></div>
+<div class="cv-code gk-file" data-lang="yaml"><div class="cc-bar"><span class="gk-path">bug-2.yml</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="yaml"><span class="ln" data-n="1">jobs:</span><span class="ln" data-n="2">  test:</span><span class="ln" data-n="3">    strategy:</span><span class="ln" data-n="4">      matrix:</span><span class="ln" data-n="5">        os: [ubuntu-latest, windows-latest]</span><span class="ln" data-n="6">    runs-on: ${{ matrix.os }}</span><span class="ln" data-n="7">    steps:</span><span class="ln" data-n="8">      - uses: actions/checkout@v7</span><span class="ln" data-n="9">      - run: pytest --junitxml=report.xml</span><span class="ln gk-has" data-n="10">      - uses: actions/upload-artifact@v7</span><span class="ln" data-n="11">        with:</span><span class="ln gk-has" data-n="12">          name: report</span><span class="ln" data-n="13">          path: report.xml</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="10"><b>Line 10</b><code>- uses: actions/upload-artifact@v7</code><span>Bug: no if: always(), so the report is lost exactly when tests fail.</span></li><li data-n="12"><b>Line 12</b><code>name: report</code><span>Bug: both matrix jobs upload the name report. The second upload fails. Use report-${{ matrix.os }}.</span></li></ol></details></div>
+<div class="cv-code gk-file" data-lang="yaml"><div class="cc-bar"><span class="gk-path">bug-3.gitlab-ci.yml</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="yaml"><span class="ln" data-n="1">stages: [build, test]</span><span class="ln" data-n="2">build:</span><span class="ln" data-n="3">  stage: build</span><span class="ln" data-n="4">  script:</span><span class="ln gk-has" data-n="5">    - make dist</span><span class="ln" data-n="6">test:</span><span class="ln" data-n="7">  stage: test</span><span class="ln gk-has" data-n="8">  rules:</span><span class="ln" data-n="9">    - if: $CI_PIPELINE_SOURCE == "merge_request_event"</span><span class="ln" data-n="10">    - if: $CI_COMMIT_BRANCH</span><span class="ln" data-n="11">  script:</span><span class="ln" data-n="12">    - ./run-tests dist/app</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="5"><b>Line 5</b><code>- make dist</code><span>Bug: no artifacts: paths, so dist/ is lost when the build job ends and the test job cannot find it.</span></li><li data-n="8"><b>Line 8</b><code>rules:</code><span>Bug: rules for merge requests and branches with no workflow:rules, so a push to a branch with an open MR creates two pipelines.</span></li></ol></details></div>
+<div class="note note-tip"><b>Remember</b><div>In exams and reviews, read a pipeline file in this order: triggers, checkout or clone, versions, what each job needs from another job, what is kept, and what runs with which permissions.</div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./gitlab-artifacts.html" data-topic="gitlab-artifacts"><small>Previous topic</small><b>GitLab artifacts</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "exam-revision", "topic": "exam-revision", "subject": "git", "title": "Exam revision: commands, scenarios and pipeline bug hunts", "codes": {"undo": {"src": "# Exam drill: pick the right undo command for the situation\nsituation = input(\"Where is the mistake? (working, staged, last-local, pushed, lost): \").strip()\nanswers = {\n    \"working\":    \"git restore <file>              discard edits in the working tree\",\n    \"staged\":     \"git restore --staged <file>     unstage, keep the edits\",\n    \"last-local\": \"git reset --soft HEAD~1         undo the commit, keep the changes staged\",\n    \"pushed\":     \"git revert <commit>             new commit that undoes it, safe for shared history\",\n    \"lost\":       \"git reflog, then git branch rescue <id>\",\n}\nprint(answers.get(situation, \"Unknown. Choose one of the five words.\"))", "stdin": "pushed\n", "out": "Where is the mistake? (working, staged, last-local, pushed, lost): git revert <commit>             new commit that undoes it, safe for shared history"}}, "quiz": [{"lv": "e", "q": "Which command shows staged changes?", "o": ["git diff", "git diff --staged", "git log -p", "git status -s"], "a": 1, "hint": "Staged.", "why": "Plain git diff shows unstaged changes."}, {"lv": "e", "q": "A branch in Git is", "o": ["a copy of all files", "a movable pointer to a commit", "a folder", "a server"], "a": 1, "hint": "Pointer.", "why": "Creating one is instant."}, {"lv": "e", "q": "Which file defines a GitLab pipeline?", "o": [".gitlab-ci.yml", "pipeline.json", ".github/workflows/ci.yml", "Jenkinsfile"], "a": 0, "hint": "Dot file.", "why": "At the repository root."}, {"lv": "m", "q": "You want to undo a pushed commit without rewriting history. Command?", "o": ["git reset --hard", "git revert", "git commit --amend", "git rebase -i"], "a": 1, "hint": "New commit.", "why": "revert adds an inverse commit."}, {"lv": "m", "q": "git merge feature when main has no new commits since the branch started produces", "o": ["a merge commit", "a fast forward", "a conflict", "a rebase"], "a": 1, "hint": "Straight line.", "why": "Unless --no-ff is used."}, {"lv": "m", "q": "Which is NOT a valid reason to use a cache instead of an artifact?", "o": ["Speeding up pip installs", "Passing the build to the test job", "Reusing downloaded packages", "Saving dependency download time"], "a": 1, "hint": "Results need artifacts.", "why": "Caches may be missing."}, {"lv": "m", "q": "In GitHub Actions, how do jobs run by default?", "o": ["One after another", "In parallel unless needs says otherwise", "Only manually", "In alphabetical order"], "a": 1, "hint": "Parallel.", "why": "needs creates order."}, {"lv": "m", "q": "In GitLab, which variable tells you the pipeline came from a schedule?", "o": ["CI_COMMIT_BRANCH", "CI_PIPELINE_SOURCE", "CI_JOB_TOKEN", "CI_DEFAULT_BRANCH"], "a": 1, "hint": "Source.", "why": "Its value is schedule."}, {"lv": "h", "q": "Which pair is correct?", "o": ["reset --soft keeps changes staged, reset --hard discards them", "reset --soft discards, --hard keeps", "both keep changes", "both discard"], "a": 0, "hint": "Soft is gentle.", "why": "--mixed keeps them unstaged."}, {"lv": "h", "q": "A workflow uses third party actions by tag. What is the documented hardening?", "o": ["Use @main", "Pin each to a full commit SHA", "Use @latest", "Fork every action"], "a": 1, "hint": "Immutable reference.", "why": "Tags can be moved."}, {"lv": "h", "q": "QA wants yesterday's CI build in a nightly GitHub workflow. Which combination works?", "o": ["actions/cache with the same key", "permissions actions: read and gh run download with the run id", "git pull the artifact", "upload-artifact with overwrite"], "a": 1, "hint": "Other run.", "why": "Or download-artifact with github-token and run-id."}, {"lv": "x", "q": "Why is git pull --rebase preferred over git pull for a local feature branch that is not shared?", "o": ["It is faster", "It keeps your local commits on top of the remote ones with no merge commit noise", "It cannot conflict", "It pushes too"], "a": 1, "hint": "Linear history.", "why": "Safe because those commits are not shared yet."}], "calc": [{"lv": "e", "q": "Ahead 2, behind 0. After git push, how many commits does origin/main gain?", "ans": "2", "hint": "Fast forward.", "steps": ["Ahead 2 means two commits only you have.", "Behind 0 means the push is a fast forward.", "<span class=\"eq\">origin/main gains 2 commits<\/span>"]}, {"lv": "e", "q": "How many hex digits in a full SHA-1 object id?", "ans": "40", "hint": "160 bits.", "steps": ["SHA-1 gives 160 bits.", "4 bits per hex digit.", "<span class=\"eq\">160 / 4 = 40<\/span>"]}, {"lv": "m", "q": "git bisect over 64 commits. Worst case number of tests?", "ans": "6", "hint": "Powers of two.", "steps": ["2⁶ = 64.", "Each test halves the range.", "<span class=\"eq\">6 tests<\/span>"]}, {"lv": "m", "q": "Matrix 4 operating systems × 3 versions with 2 excludes. Jobs?", "ans": "10", "hint": "Product minus excludes.", "steps": ["4 × 3 = 12.", "Minus 2 excluded.", "<span class=\"eq\">10 jobs<\/span>"]}, {"lv": "m", "q": "GitLab stage mode: build stage jobs 3 and 8 minutes, test stage one job of 4 minutes. Total?", "ans": "12", "hint": "Slowest per stage.", "steps": ["build stage: 8.", "test stage: 4.", "<span class=\"eq\">8 + 4 = 12 minutes<\/span>"]}, {"lv": "h", "q": "Same, but the test job needs only the 3 minute job. Total?", "ans": "8", "hint": "Longest path.", "steps": ["test runs from 3 to 7.", "The 8 minute job ends at 8.", "<span class=\"eq\">max(7, 8) = 8 minutes<\/span>"]}, {"lv": "h", "q": "Artifact uploaded on day 0 with retention 14 on GitHub. Last whole day it is available?", "ans": "13", "hint": "Strictly less than 14.", "steps": ["Available while day < 0 + 14.", "Day 14 is excluded.", "<span class=\"eq\">day 13<\/span>"]}], "assign": [], "must": [], "summary": ""}</script>
+<script type="application/json" id="cvtrace">{"undo": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line", "d": {"G.situation": "'pushed'"}, "o": "Where is the mistake? (working, staged, last-local, pushed, lost): "}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 10, "ev": "line", "d": {"G.answers": "{'working': 'git restore <file>              discard edits in the working tree', 'stage..."}}, {"l": 10, "ev": "return", "o": "git revert <commit>             new commit that undoes it, safe for shared history\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

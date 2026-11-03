@@ -5553,6 +5553,20 @@ function gitModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "git-revision", title: "Exam revision", emoji: "9", step: 9, level: "All levels", blurb: "Revise Git and CI/CD by question type: command recall, scenarios, YAML bug hunts and certification style multiple choice.", topics: [
+      { id: "exam-revision", title: "Exam revision: commands, scenarios and pipeline bug hunts", emoji: "9.1", page: "content/git/exam-revision.html",
+        summary: "Exam and interview style questions on Git and CI/CD with worked answers, a command table and pipeline bug hunts.",
+        keywords: ["exam", "revision", "interview", "certification", "scenarios", "command table", "spot the bug", "mock quiz"],
+        minutes: 50, counts: {"lessons": 4, "problems": 7, "quiz": 12, "assign": 0},
+        added: "2026-11-02",
+        sections: [
+        { id: "map", title: "How Git and CI/CD are examined", emoji: "", group: "Lesson", keywords: ["exam", "revision", "interview", "certification", "most asked"] },
+        { id: "recall", title: "Command recall in one table", emoji: "", group: "Lesson", keywords: ["command recall", "cheat table", "undo chooser"] },
+        { id: "scenarios", title: "Scenario questions with worked answers", emoji: "", group: "Lesson", keywords: ["scenario", "wrong branch", "pushed bad commit", "rejected push", "semantic conflict", "merge queue", "build once", "leaked secret"] },
+        { id: "yaml", title: "Spot the bug: pipeline files", emoji: "", group: "Lesson", keywords: ["spot the bug", "yaml debugging", "missing checkout", "unquoted version", "artifact name clash", "missing artifacts", "duplicate pipelines"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
