@@ -5490,6 +5490,68 @@ function gitModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "gha-artifacts", title: "GitHub Actions artifacts and caching: publish, pull and speed up", emoji: "7.3", page: "content/git/gha-artifacts.html",
+        summary: "Publishing and pulling artifacts five ways, retention and immutability, caching with keys and restore-keys, and the limits.",
+        keywords: ["upload-artifact", "download-artifact", "gh run download", "artifact api", "actions/cache", "restore-keys", "retention", "cache scope"],
+        minutes: 55, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "upload", title: "Publishing artifacts: upload-artifact", emoji: "", group: "Lesson", keywords: ["upload-artifact", "artifact name", "retention-days", "if-no-files-found", "immutable", "overwrite", "archive false", "include-hidden-files", "artifact-id", "artifact-url", "artifact-digest", "500 artifacts"] },
+        { id: "pull", title: "Pulling artifacts: five ways", emoji: "", group: "Lesson", keywords: ["download-artifact", "pull artifact", "pattern", "merge-multiple", "run-id", "github-token", "gh run download", "REST API", "artifacts zip", "GitHub Releases", "GitHub Packages"] },
+        { id: "cache", title: "Caching dependencies: actions/cache", emoji: "", group: "Lesson", keywords: ["actions/cache", "cache key", "hashFiles", "restore-keys", "cache-hit", "cache scope", "default branch cache", "10 GB", "7 days", "setup-python cache", "cache poisoning"] },
+        { id: "choose", title: "Artifact, cache, release or package", emoji: "", group: "Lesson", keywords: ["artifact vs cache", "release", "package registry", "retention", "digest", "attestation", "provenance"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "gitlab-ci", title: "GitLab CI/CD", emoji: "8", step: 8, level: "Intermediate", blurb: "Write GitLab pipelines from the first line: stages, rules, needs and runners, then the same Dev and QA pipeline built from scratch on GitLab, then artifacts, reports and how to pull a build with the API and glab.", topics: [
+      { id: "gitlab-concepts", title: "GitLab CI/CD: stages, rules, needs and runners", emoji: "8.1", page: "content/git/gitlab-concepts.html",
+        summary: "GitLab pipeline structure, rules and workflow, pipeline types, needs, parallel, extends, include, runners and variables.",
+        keywords: ["gitlab ci", ".gitlab-ci.yml", "stages", "rules", "workflow rules", "needs", "runner", "executor"],
+        minutes: 55, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "basics", title: "One file, stages and jobs", emoji: "", group: "Lesson", keywords: [".gitlab-ci.yml", "stages", "job", "script", "default", "image", "services", "variables", ".pre", ".post", "before_script", "after_script"] },
+        { id: "rules", title: "rules, workflow and pipeline types", emoji: "", group: "Lesson", keywords: ["rules", "if", "when", "never", "on_success", "manual", "workflow rules", "duplicate pipelines", "merge request pipeline", "CI_PIPELINE_SOURCE", "CI_COMMIT_BRANCH", "CI_OPEN_MERGE_REQUESTS", "CI_COMMIT_TAG"] },
+        { id: "needs", title: "needs, parallel, extends and include", emoji: "", group: "Lesson", keywords: ["needs", "DAG", "needs empty", "parallel", "parallel matrix", "CI_NODE_INDEX", "extends", "hidden job", "include", "component", "template"] },
+        { id: "runners", title: "Runners, executors and variables", emoji: "", group: "Lesson", keywords: ["runner", "instance runner", "group runner", "project runner", "executor", "docker executor", "shell executor", "kubernetes", "tags", "masked", "protected variable", "CI_JOB_TOKEN"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "gitlab-scratch", title: "GitLab CI/CD from scratch: a green pipeline on every commit", emoji: "8.2", page: "content/git/gitlab-scratch.html",
+        summary: "A complete GitLab CI/CD setup from an empty project, line by line, with Dev and QA changes and a GitHub comparison.",
+        keywords: ["gitlab ci setup", ".gitlab-ci.yml", "pipeline editor", "merge request pipeline", "pipelines must succeed", "pipeline schedule", "junit report", "github vs gitlab"],
+        minutes: 65, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "setup", title: "Baby steps: an empty project to a green pipeline", emoji: "", group: "Lesson", keywords: ["gitlab setup", "create blank project", "first pipeline", "Build Pipelines", "Pipeline editor", "Validate", "Tests tab", "merge request pipeline", "Pipelines must succeed", "pipeline schedule"] },
+        { id: "file", title: "The .gitlab-ci.yml, line by line", emoji: "", group: "Lesson", keywords: [".gitlab-ci.yml line by line", "workflow rules", "stages", "default image", "PIP_CACHE_DIR", "cache key files", "junit report", "artifacts name", "expire_in", "needs artifacts", "dependencies"] },
+        { id: "devqa", title: "What Dev and QA change on GitLab, and why", emoji: "", group: "Lesson", keywords: ["Dev changes", "QA changes", "interruptible", "allow_failure", "image digest", "expire_in", "parallel", "web pipeline", "stuck job", "no runners", "troubleshooting"] },
+        { id: "compare", title: "The same pipeline on GitHub and GitLab", emoji: "", group: "Lesson", keywords: ["GitHub vs GitLab", "comparison", "checkout automatic", "stages vs needs", "junit in merge request"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "gitlab-artifacts", title: "GitLab artifacts and caching: keep, pass on and pull builds", emoji: "8.3", page: "content/git/gitlab-artifacts.html",
+        summary: "GitLab artifacts and reports, passing them between jobs, pulling with UI, API, glab and job token, and caching.",
+        keywords: ["gitlab artifacts", "expire_in", "reports junit", "dependencies", "job artifacts api", "glab", "ci_job_token", "gitlab cache"],
+        minutes: 55, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "keep", title: "Keeping files: the artifacts keyword", emoji: "", group: "Lesson", keywords: ["artifacts", "artifacts paths", "exclude", "artifacts name", "expire_in", "when always", "access", "reports junit", "keep artifacts", "latest artifacts kept", "1 GB"] },
+        { id: "between", title: "Passing artifacts between jobs", emoji: "", group: "Lesson", keywords: ["dependencies", "dependencies empty", "needs artifacts", "needs project", "cross project artifacts", "earlier stages"] },
+        { id: "pull", title: "Pulling artifacts: UI, API, glab and job token", emoji: "", group: "Lesson", keywords: ["download artifacts", "browse artifacts", "job artifacts API", "jobs/artifacts/main/download", "file_type junit", "glab job artifact", "CI_JOB_TOKEN", "JOB-TOKEN header", "allowlist", "CI_API_V4_URL", "merge request ref", "package registry"] },
+        { id: "cache", title: "Caching on GitLab", emoji: "", group: "Lesson", keywords: ["cache", "cache key files", "prefix", "cache policy", "pull-push", "pull", "PIP_CACHE_DIR", "artifacts vs cache"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
