@@ -186,7 +186,7 @@
       return `<li class="lp-step${done ? ' done' : ''}${isCur ? ' current' : ''}${open ? ' open' : ''}" id="m-${esc(m.id)}" data-m="${esc(m.id)}">
         <div class="lp-rail"><span class="lp-num">${done ? '✓' : m.step}</span></div>
         <div class="lp-card"><button type="button" class="lp-head" aria-expanded="${open}">
-          <span class="lp-hb"><span class="lp-meta">Step ${m.step}${m.level ? ' · ' + esc(m.level) : ''} · ${ts.length} topic${ts.length === 1 ? '' : 's'} · ${hrs(mins(ts))}</span><span class="lp-title">${esc(m.title)}</span><span class="lp-blurb">${esc(m.blurb || '')}</span></span>
+          <span class="lp-hb"><span class="lp-meta">Step ${m.step}${m.level ? ' · ' + esc(m.level) : ''}${ts.length ? ` · ${ts.length} topic${ts.length === 1 ? '' : 's'} · ${hrs(mins(ts))}` : ''}</span><span class="lp-title">${esc(m.title)}</span><span class="lp-blurb">${esc(m.blurb || '')}</span></span>
           <span class="lp-sp">${d.done}/${d.total}<small>done</small></span><span class="chev">▾</span></button>
           <ol class="lp-topics">${m.topics.map(topicRow).join('')}</ol></div></li>`;
     };

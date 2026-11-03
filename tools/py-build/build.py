@@ -9,9 +9,11 @@ Every example on a page is run for real with CPython 3.14 when the page is built
 
 Practice exercises are checked too: every model solution must pass its tests and every starter must fail one.
 
-The page frame (styles, quiz, number crunch, narrator, comic, diagrams and lanes) is the same one the JavaScript
-chapters use. assets/pyplay.js adds the Python runner, the line by line viewer and the exercises, and
-assets/pyviz.js adds the Python animations. The Python block in data/catalog.js (between the py-build markers)
+The page layout (top bar, hero, tabs, one lesson at a time) is the one the Computer Vision and NLP chapters use,
+styled by assets/cv.css and assets/pypath.css and switched by assets/pypath.js. The quiz, worked problems, narrator,
+comic and lanes come from the shared lesson frame. assets/pyplay.js adds the Python runner, the line by line viewer
+and the exercises, assets/pyviz.js adds the CPython animation and assets/pyphase.js adds the journey and the
+compiler and interpreter animations. The Python block in data/catalog.js (between the py-build markers)
 is rewritten from the same topic files.
 
 Usage:  python3 tools/py-build/build.py [slug ...]        (no slug builds every chapter)
@@ -404,16 +406,18 @@ def build(T, chapters):
     n_run = sum(1 for s in T['codes'].values() if s['t'] == 'run')
     n_term = sum(1 for s in T['codes'].values() if s['t'] == 'test')
     n_qa = sum(1 for p in parts if p.get('qa'))
-    chips = [f'⏱️ About {T["minutes"]} min read', f'📚 {len(parts)} parts', f'🎬 {n_viz} animations', f'▶ {n_run} runnable examples',
-             f'👣 {len(traces)} line by line'] + ([f'🧪 {n_term} terminal run' + ('s' if n_term > 1 else '')] if n_term else []) + [
-             f'🏋️ {len(T["ex"])} hands-on exercises', f'🎯 {len(T["quiz"])} quiz questions', f'🧮 {len(T["calc"])} calculations']
+    # The page uses the same layout as the Computer Vision and NLP chapters: a top bar, a hero, sticky tabs
+    # (Learn, Worked problems, Quiz, Assignments, Summary) and one lesson at a time with a numbered stepper.
+    # assets/pypath.js switches the tabs and lessons, assets/pyplay.js still fills the quiz, problems and exercises.
+    chips = [f'About {T["minutes"]} min', f'{len(parts)} lessons', f'{n_viz} animations', f'{n_run} runnable examples',
+             f'{len(traces)} line by line'] + ([f'{n_term} terminal run' + ('s' if n_term > 1 else '')] if n_term else []) + [
+             f'{len(T["calc"])} worked problems', f'{len(T["quiz"])} quiz questions', f'{len(T["ex"])} assignments']
     if n_qa:
-        chips.append(f'🧪 {n_qa} QA essential parts')
-    chip_html = ''.join(f'<span class="chip">{c}</span>' for c in chips)
-    toc = ''.join(f'<a href="#{p["id"]}"{" class=\"qa\"" if p.get("qa") else ""}><span>{p["emoji"]}</span>{esc(p["title"])}</a>' for p in parts)
-    toc += ('<a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a>'
-            '<a class="spec" href="#practice">🏋️ Hands-on</a><a class="spec" href="#quiz">🎯 Quiz</a>'
-            '<a class="spec" href="#numbers">🧮 Number crunch</a>')
+        chips.append(f'{n_qa} QA essential lessons')
+    chip_html = ''.join(f'<span class="cv-chip">{c}</span>' for c in chips)
+    lvn = {'b': 'Beginner', 'i': 'Intermediate', 'a': 'Advanced', 'x': 'Expert'}
+    stepper = ''.join(f'<li{" class=\"qa\"" if p.get("qa") else ""}><a href="#{p["id"]}" data-l="{p["id"]}"><span class="n">{i}</span><span class="t">{esc(p["title"])}</span></a></li>'
+                      for i, p in enumerate(parts, 1))
     secs = []
     for i, p in enumerate(parts, 1):
         body = re.sub(r'\[\[([\w-]+)\]\]', lambda m: blocks[m.group(1)], p['html'].strip())
@@ -421,28 +425,31 @@ def build(T, chapters):
         tag = ''
         if qa:
             tools = qa if isinstance(qa, list) else []
-            tag = ('<div class="qa-tag"><span class="qa-badge">🧪 QA essential</span>'
+            tag = ('<div class="qa-tag"><span class="qa-badge">QA essential</span>'
                    + ''.join(f'<span class="qa-tool">{esc(t)}</span>' for t in tools)
                    + (f'<span class="qa-why">{p["qa_why"]}</span>' if p.get('qa_why') else '') + '</div>')
-        lvl = f'<span class="lvl-tag lvl-{p["lvl"]}">{ {"b": "🌱 Beginner", "i": "🌿 Intermediate", "a": "🔥 Advanced", "x": "🧠 Expert"}[p["lvl"]] }</span>' if p.get('lvl') else ''
-        secs.append(f'<section class="card reveal jsec{" qa-part" if qa else ""}" id="{p["id"]}" data-say="{p["id"]}"><div class="sec-num">Part {i}{lvl}</div>'
-                    f'<h2><span class="sec-em">{p["emoji"]}</span><span>{esc(p["title"])}</span></h2>\n{tag}\n{body}\n</section>\n')
+        lvl = f'<span class="py-lvl lvl-{p["lvl"]}">{lvn[p["lvl"]]}</span>' if p.get('lvl') else ''
+        secs.append(f'<article class="cv-lesson jsec{" qa-part" if qa else ""}" id="{p["id"]}" data-l="{p["id"]}" data-say="{p["id"]}" hidden>'
+                    f'<div class="cv-lno">Lesson {i} of {len(parts)}{lvl}</div><h2>{esc(p["title"])}</h2>\n{tag}\n{body}\n<nav class="cv-lnav"></nav></article>\n')
 
     idx = [c['slug'] for c in chapters].index(T['slug'])
     pv = chapters[idx - 1] if idx else None
     nx = chapters[idx + 1] if idx + 1 < len(chapters) else None
-    a = (f'<a class="prev" href="./{pv["slug"]}.html" data-topic="{pv["slug"]}"><small>← Previous chapter</small><b>{pv["emoji"]} {esc(pv["short"])}</b></a>' if pv else '<span></span>')
-    b = (f'<a class="next" href="./{nx["slug"]}.html" data-topic="{nx["slug"]}"><small>Next chapter →</small><b>{nx["emoji"]} {esc(nx["short"])}</b></a>' if nx else '<span></span>')
-    pager = f'<nav class="pager">{a}{b}</nav>'
+    a = (f'<a class="prev" href="./{pv["slug"]}.html" data-topic="{pv["slug"]}"><small>Previous topic</small><b>{esc(pv["short"])}</b></a>' if pv else '<span></span>')
+    b = (f'<a class="next" href="./{nx["slug"]}.html" data-topic="{nx["slug"]}"><small>Next topic</small><b>{esc(nx["short"])}</b></a>' if nx else '<span></span>')
+    pager = f'<nav class="cv-pager pager">{a}{b}</nav>'
 
     page = {k: T[k] for k in ['info', 'real', 'quiz', 'calc', 'say', 'ex']}
     page['quiz'] = [{**q, 'q': inline(q['q']), 'o': [inline(o) for o in q['o']], 'hint': inline(q['hint']), 'why': inline(q['why'])} for q in T['quiz']]
     page['calc'] = [{**c, 'q': inline(c['q']), 'hint': inline(c['hint']), 'steps': [inline(x) for x in c['steps']]} for c in T['calc']]
     page['dg'] = T.get('dg', {})
-    page['lanes'] = {k: {**v, 'lang': v.get('lang', 'py')} for k, v in T.get('lanes', {}).items()}
+    # reveal: a lane box stays hidden until the step that first puts something in it
+    page['lanes'] = {k: {**v, 'lang': v.get('lang', 'py'), 'reveal': True} for k, v in T.get('lanes', {}).items()}
     page['tr'] = traces
     mod = T['module']
-    qa_box = f'<div class="qa-intro"><b>🧪 For QA engineers</b><p>{T["qa_intro"]}</p></div>' if T.get('qa_intro') else ''
+    qa_box = f'<div class="qa-intro"><b>For QA engineers</b><p>{T["qa_intro"]}</p></div>' if T.get('qa_intro') else ''
+    tabs = [('learn', 'Learn'), ('problems', 'Worked problems'), ('quiz', 'Quiz'), ('assign', 'Assignments'), ('summary', 'Summary')]
+    tab_html = ''.join(f'<button type="button" class="cv-tab" role="tab" data-tab="{k}">{t}</button>' for k, t in tabs)
     out = f'''<!doctype html>
 <html lang="en">
 <head>
@@ -450,7 +457,7 @@ def build(T, chapters):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(T["title"])} · Python</title>
 <meta name="description" content="{esc(T["desc"])}">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/theme.css">
 <link rel="stylesheet" href="../../assets/extras.css">
 <link rel="stylesheet" href="../../assets/learn.css">
@@ -458,23 +465,28 @@ def build(T, chapters):
 <link rel="stylesheet" href="../../assets/viz.css">
 <link rel="stylesheet" href="../../assets/jsplay.css">
 <link rel="stylesheet" href="../../assets/pyplay.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/pypath.css">
 </head>
-<body>
-<div class="wrap">
-  <div class="crumb"><a class="home-link" href="../../subject.html?s={SUBJECT}" target="_top">🐍 Python</a><span>›</span><span>{mod[0]} {esc(mod[1])}</span><span>›</span><span>Chapter {idx + 1} of {len(chapters)}</span></div>
-  <header class="hero" id="top" data-say="top">
-    <div class="hero-row"><span class="em">{T["emoji"]}</span><div><h1>{esc(T["title"])}</h1><p class="lead">{T["lead"]}</p></div></div>
-    <div class="chips">{chip_html}<span class="chip">🐍 Run with CPython {py_version()}</span><button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+<body class="cvp pyp">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s={SUBJECT}">Python learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s={SUBJECT}" target="_top">Python</a><span>›</span><span>Step {T.get("step", 1)}: {esc(mod[1])}</span><span>›</span><span>{esc(T["short"])}</span></div>
+  <header class="cv-hero" id="top" data-say="top">
+    <div class="cv-kicker">Step {T.get("step", 1)} · Topic {idx + 1} of {len(chapters)} · Beginner to expert</div>
+    <h1>{esc(T["title"])}</h1>
+    <p class="lead">{T["lead"]}</p>
+    <div class="cv-chips">{chip_html}<span class="cv-chip">Run with CPython {py_version()}</span><button type="button" class="cv-chip py-listen" id="listenAll">Listen in 6 languages</button></div>
     {qa_box}
   </header>
-  <nav class="toc" aria-label="Parts of this chapter">{toc}{'<button type="button" class="qa-toggle" id="qaOnly" aria-pressed="false">🧪 Show the QA path only</button>' if n_qa else ''}</nav>
-  <section class="card reveal" id="comic"></section>
-
-{"".join(secs)}
-  <section class="card reveal" id="real-life"></section>
-  <section class="card reveal" id="practice" data-say="practice"></section>
-  <section class="card reveal" id="quiz"></section>
-  <section class="card reveal" id="numbers"></section>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter">{tab_html}</nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons">{stepper}</ol>
+{"".join(secs)}  </section>
+  <section class="cv-pane" data-pane="problems" role="tabpanel" hidden><h2>Worked problems</h2><p class="sub">Work out each answer on paper, type it and press Check. The hint and the full working open when you ask for them.</p><div id="numbers"></div></section>
+  <section class="cv-pane" data-pane="quiz" role="tabpanel" hidden><h2>Quiz</h2><p class="sub">Pick an answer to see why it is right or wrong.</p><div id="quiz"></div></section>
+  <section class="cv-pane" data-pane="assign" role="tabpanel" hidden data-say="practice"><h2>Assignments</h2><p class="sub">Write real Python in the box and run the tests. They run in your browser with Pyodide, the same CPython as on a computer. Every model answer passed the same tests when this page was built.</p><div id="practice"></div></section>
+  <section class="cv-pane" data-pane="summary" role="tabpanel" hidden><h2>Summary</h2><p class="sub">The whole chapter as a short comic, then the places you meet these ideas in real life.</p><div id="comic"></div><div id="real-life"></div></section>
   {pager}
 </div>
 <script src="../../assets/fun.js"></script>
@@ -484,11 +496,13 @@ def build(T, chapters):
 <script src="../../assets/viz.js"></script>
 <script src="../../assets/jsviz.js"></script>
 <script src="../../assets/pyviz.js"></script>
+<script src="../../assets/pyphase.js"></script>
 <script src="../../assets/pyplay.js"></script>
 <script>
 const PAGE = {js(page)};
 PYPLAY.page({{ title: {js(T["title"])}, subject: {js(SUBJECT)}, tracer: {js(open(TRACER, encoding="utf-8").read())} }});
 </script>
+<script src="../../assets/pypath.js"></script>
 </body>
 </html>
 '''
@@ -517,7 +531,8 @@ def catalog(chapters):
     L = ['function pyModules() {', '  return [']
     for mi, m in enumerate(mods):
         em, title, mid, blurb = m['key']
-        L.append(f'    {{ id: {js(mid)}, title: {js(title)}, emoji: {js(em)}, blurb: {js(blurb)}, topics: [')
+        # step numbers drive the learning path on the subject page (layout: 'path', the same as Computer Vision)
+        L.append(f'    {{ id: {js(mid)}, title: {js(title)}, emoji: {js(str(mi + 1))}, step: {mi + 1}, level: {js(m["topics"][0].get("level", "Start here"))}, blurb: {js(blurb)}, topics: [')
         for ti, T in enumerate(m['topics']):
             secs = []
             for p in T['parts']:
@@ -527,9 +542,10 @@ def catalog(chapters):
                 secs.append(f'        {{ id: {js(e["id"])}, title: {js(e["title"])}, emoji: "🏋️", group: {js(lvn[e["lv"]] + " practice")} }}')
             secs.append("        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' }")
             secs.append("        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }")
-            L.append(f'      {{ id: {js(T["slug"])}, title: {js(T["title"])}, emoji: {js(T["emoji"])}, page: {js("content/python/" + T["slug"] + ".html")},')
+            L.append(f'      {{ id: {js(T["slug"])}, title: {js(T["title"])}, emoji: {js(f"{mi + 1}.{ti + 1}")}, page: {js("content/python/" + T["slug"] + ".html")},')
             L.append(f'        summary: {js(T["summary"])},')
             L.append(f'        keywords: {js(T["keywords"])},')
+            L.append(f'        minutes: {T["minutes"]}, counts: {js({"lessons": len(T["parts"]), "problems": len(T["calc"]), "quiz": len(T["quiz"]), "assign": len(T["ex"])})},')
             L.append(f'        added: {js(T.get("added", "2026-10-24"))},')
             L.append('        sections: [')
             L.append(',\n'.join(secs))

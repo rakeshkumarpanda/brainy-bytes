@@ -1,5 +1,5 @@
 /* ===== Animations written for the JavaScript chapters, added to the shared VIZ widgets =====
-   <div class="viz" data-viz="lanes" data-k="key"></div>   PAGE.lanes[key] = { t, s, code, lanes: [names], steps: [{ l: line or [lines], v: [[items of lane 0], ...], m: message }] }
+   <div class="viz" data-viz="lanes" data-k="key"></div>   PAGE.lanes[key] = { t, s, code, lanes: [names], reveal: hide a lane until it is used, steps: [{ l: line or [lines], v: [[items of lane 0], ...], m: message }] }
                                                            A step by step story told with code on the left and boxes on the right
                                                            (event loop, scopes, prototype chains, test hooks, auto-waiting).
    <div class="viz" data-viz="coerce"></div>               type two values and see ==, === and Object.is side by side
@@ -25,7 +25,10 @@
       const prev = f > 1 ? spec.steps[f - 2].v || [] : [];
       spec.lanes.forEach((_, i) => {
         const items = (st.v && st.v[i]) || [], before = prev[i] || [];
-        b.querySelector(`[data-lane="${i}"]`).innerHTML = items.map(x => `<span class="jv-chip t${(spec.tone && spec.tone[i]) ?? i % 6}${before.includes(x) ? '' : ' new'}">${esc(x)}</span>`).join('');
+        const box = b.querySelector(`[data-lane="${i}"]`);
+        box.innerHTML = items.map(x => `<span class="jv-chip t${(spec.tone && spec.tone[i]) ?? i % 6}${before.includes(x) ? '' : ' new'}">${esc(x)}</span>`).join('');
+        /* reveal: a lane stays invisible until the first step that puts something in it */
+        if (spec.reveal) box.parentElement.style.visibility = items.length || spec.steps.slice(0, f).some(s => s.v && s.v[i] && s.v[i].length) ? '' : 'hidden';
       });
       msg.innerHTML = f ? `<b>Step ${f} of ${spec.steps.length}.</b> ${st.m}` : st.m;
     };

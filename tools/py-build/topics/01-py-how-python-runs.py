@@ -46,6 +46,12 @@ total = 100
 if total > 50
     print("big order")
 ''', 'A syntax error stops the program before line 1 runs', expect='throw', trace=False),
+    'late-error': run('''
+print("Line 1 runs")
+print("Line 2 runs")
+print(total)            # total was never created
+print("Line 4 never runs")
+''', 'A name error is found only when its line runs', expect='throw', trace=False),
     'codeobj': run('''
 def add_tax(price, rate=0.18):
     tax = price * rate
@@ -405,37 +411,7 @@ print("rolled a number from 1 to 6:", 1 <= roll <= 6)
         'A file named random.py breaks import random', shown_cmd='python main.py\n$ mv random.py dice_settings.py\n$ python main.py'),
 }
 
-DG = {
-    'pyrun': {
-        't': 'From main.py to output, inside CPython', 'w': 900, 'h': 360, 'mw': 760,
-        'g': [[8, 8, 560, 120, 'Compile time: before your first line runs', 0], [8, 210, 884, 140, 'Run time: the Python Virtual Machine', 2]],
-        'n': [
-            ['src', 20, 44, 120, 64, 'main.py', {'c': 5, 'sh': 'doc', 'sub': 'source text'}],
-            ['tok', 160, 44, 110, 64, 'Tokenizer', {'c': 0, 'sub': 'tokens'}],
-            ['par', 290, 44, 110, 64, 'Parser', {'c': 0, 'sub': 'syntax tree'}],
-            ['cmp', 420, 44, 130, 64, 'Compiler', {'c': 0, 'sub': 'bytecode'}],
-            ['code', 740, 44, 140, 64, 'Code object', {'c': 3, 'sub': 'bytecode + consts'}],
-            ['pyc', 600, 140, 130, 56, '.pyc file', {'c': 3, 'sh': 'db', 'sub': '__pycache__'}],
-            ['loop', 660, 254, 200, 64, 'Evaluation loop', {'c': 2, 'sub': 'one instruction at a time'}],
-            ['mem', 400, 254, 200, 64, 'Objects and memory', {'c': 1, 'sub': 'ref counts + GC'}],
-            ['bi', 170, 254, 170, 64, 'Built-ins and C code', {'c': 1, 'sub': 'print, len, dict...'}],
-            ['out', 20, 250, 110, 72, 'Output', {'c': 4, 'sh': 'screen', 'sub': 'Your bill is 120'}],
-        ],
-        'e': [['src', 'tok', {}], ['tok', 'par', {}], ['par', 'cmp', {}], ['cmp', 'code', {}],
-              ['cmp', 'pyc', {'t': 'imported modules', 'd': 1, 'via': [[485, 168]], 'ts': 'l', 'tx': 532, 'ty': 186}], ['pyc', 'code', {'d': 1}], ['code', 'loop', {}],
-              ['loop', 'mem', {'bi': 1}], ['mem', 'bi', {'bi': 1}], ['bi', 'out', {}]],
-        'st': [
-            [['src', 'g0'], 'You type python main.py. CPython reads the whole file as text before anything runs.'],
-            [['tok', 'src>tok'], 'The tokenizer groups characters into tokens: names, numbers, strings, operators and indentation.'],
-            [['par', 'tok>par'], 'The parser checks the grammar and builds an abstract syntax tree. A syntax error stops everything here.'],
-            [['cmp', 'par>cmp'], 'The compiler turns the tree into bytecode: small, simple instructions for a virtual machine.'],
-            [['pyc', 'cmp>pyc', 'pyc>code'], 'For imported modules, the bytecode is saved in __pycache__ so the next run can skip the first three stages.'],
-            [['code', 'cmp>code'], 'The result is a code object: the bytecode plus its constants, names and line numbers.'],
-            [['loop', 'g1', 'code>loop'], 'The evaluation loop runs the bytecode one instruction at a time on a value stack.'],
-            [['mem', 'bi', 'loop>mem', 'mem>bi'], 'Instructions create objects, count references to them and call built in functions written in C.'],
-            [['out', 'bi>out'], 'print is one of those built ins. It writes the text and the result appears on the screen.'],
-        ]},
-}
+DG = {}
 
 LANES = {
     'loop': {'t': 'The evaluation loop runs total = price * qty', 's': 'Each step is one bytecode instruction. Watch the value stack grow and shrink.',
@@ -499,7 +475,8 @@ PARTS = [
     part('big-picture', '🗺️', 'From source code to output', '''
 <p>When you run <code>python main.py</code>, the computer does not understand Python directly. A program called the <b>interpreter</b> reads your file and does the work for you. The interpreter almost everyone uses is <b>CPython</b>, written in the C language and published by the Python Software Foundation. It is the one you download from python.org, and it is what this chapter describes.</p>
 <p>CPython works in two stages, just like Java. First it <b>compiles</b> your text into <b>bytecode</b>, a list of small instructions. Then the <b>Python Virtual Machine</b> runs that bytecode one instruction at a time. The big difference from Java is that you never call the compiler yourself. Python does both stages every time you press Run, in a fraction of a second.</p>
-<div class="viz" data-viz="flow" data-k="pyrun"></div>
+<p>Press Play in the animation below. Each phase appears on the map only when the journey reaches it, and the panel beside the map shows what that phase does to your own code. Change the program and every phase changes with it.</p>
+<div class="viz" data-viz="pyjourney" data-k="journey"></div>
 [[hello]]
 <p>Here is the same journey for this small bill, in plain words:</p>
 <ol class="steps">
@@ -520,6 +497,34 @@ PARTS = [
 <div class="rule">The same <code>.py</code> file runs on Windows, macOS and Linux because each has its own CPython. The bytecode is tied to the Python version, not to the operating system.</div>
 ''', lvl='b', kw=['interpreter', 'CPython', 'compile', 'bytecode', 'Python Virtual Machine', 'PVM', 'source code', 'Java vs Python', 'javac', 'JVM']),
 
+    part('compile-interp', '🔄', 'Compiler or interpreter: two ways to translate', '''
+<p>A computer's processor only understands <b>machine code</b>, long lists of very simple instructions stored as numbers. Nobody writes that by hand any more. We write in a language people can read, such as Python, C or Java, and a program translates it for the processor. There are two classic ways to do this translation.</p>
+<h3>Think of two kinds of human translators</h3>
+<p>When a famous novel is published in another language, a translator first translates the <b>whole book</b>. Only when every chapter is done is the new book printed, and after that anyone can read it again and again without the translator. That is how a <b>compiler</b> works.</p>
+<p>At an international cricket press conference, a live interpreter stands next to the captain. The captain says one sentence, the interpreter says it in Hindi at once, then waits for the next sentence. Nothing is written down, so if the same answer is given tomorrow, it is interpreted all over again. That is how an <b>interpreter</b> works.</p>
+<div class="viz" data-viz="pycvi" data-k="cvi"></div>
+<p>Things to try in the animation:</p>
+<ul>
+<li>With <b>No mistake</b>, look at the step where the first output appears in each lane. The interpreter prints at step 1. The compiler has to read and translate everything first.</li>
+<li>Pick <b>Syntax mistake on line 3</b>. The compiler prints nothing at all. The interpreter happily runs lines 1 and 2 and only then stops.</li>
+<li>Pick <b>Unknown name on line 3</b>. A compiled language that declares its names, such as C or Java, catches this before running. An interpreter finds it only when it reaches that line.</li>
+<li>Tick <b>Show CPython as a third lane</b>. It behaves like the compiler for the syntax mistake and like the interpreter for the unknown name.</li>
+</ul>
+<div class="tw"><table class="jt"><tr><th>Question</th><th>Compiler</th><th>Interpreter</th></tr>
+<tr><td>How much does it translate at once</td><td>The whole program</td><td>One line or statement at a time</td></tr>
+<tr><td>What it leaves behind</td><td>A program file, for example <code>app.exe</code></td><td>Nothing, the translation is used and forgotten</td></tr>
+<tr><td>When the first output appears</td><td>Only after the whole program is translated</td><td>Almost at once</td></tr>
+<tr><td>When mistakes are reported</td><td>All together, before anything runs</td><td>One at a time, when the line is reached</td></tr>
+<tr><td>Speed of running</td><td>Fast, the translation is already done</td><td>Slower, every line is translated each time it runs</td></tr>
+<tr><td>Running on another computer</td><td>Needs a new translation for that processor and operating system</td><td>Runs anywhere the interpreter is installed</td></tr>
+<tr><td>Examples</td><td>C, C++, Go, Rust</td><td>Shell scripts, early BASIC</td></tr></table></div>
+<h3>So which one is CPython</h3>
+<p>Both, one after the other. CPython first <b>compiles</b> the whole file, so a syntax error anywhere stops the program before line 1 runs, just like a compiler. But it compiles to bytecode, not to machine code, and it saves no program file for your main script. Then the evaluation loop <b>interprets</b> that bytecode one instruction at a time, so a missing name is found only when its line runs, just like an interpreter:</p>
+[[late-error]]
+<p>Lines 1 and 2 printed before the error. If line 3 had a syntax error instead, nothing at all would print. Java works in the same two step way: <code>javac</code> compiles to bytecode and the JVM runs it. The Python prompt you get by typing <code>python</code> with no file is the closest to a pure interpreter: each statement is compiled and run the moment you press Enter.</p>
+<div class="rule">A compiler translates the whole program first and runs it later. An interpreter translates and runs one line at a time. CPython compiles the whole file to bytecode, then interprets the bytecode.</div>
+''', lvl='b', kw=['compiler', 'interpreter', 'compiled vs interpreted', 'machine code', 'translation', 'line by line', 'compile time error', 'run time error', 'REPL', 'C', 'Java', 'bytecode']),
+
     part('implementations', '🧩', 'Compiled or interpreted: the honest answer', '''
 <p>People often say "Python is interpreted" and "Java is compiled". Both statements are half true. CPython <b>compiles</b> your code to bytecode and then <b>interprets</b> the bytecode. Python the <b>language</b> is a set of rules. An <b>implementation</b> is a program that follows those rules. There are several:</p>
 <div class="tw"><table class="jt"><tr><th>Implementation</th><th>Written in</th><th>How it runs your code</th><th>Where you meet it</th></tr>
@@ -534,7 +539,7 @@ PARTS = [
 ''', lvl='b', kw=['compiled', 'interpreted', 'implementation', 'CPython', 'PyPy', 'MicroPython', 'GraalPy', 'Pyodide', 'WebAssembly', 'cache tag', 'platform.python_implementation']),
 
     part('try-it', '🎬', 'Try it: follow your own code through CPython', '''
-<p>This animation is a small working model of CPython 3.14. Type a few lines of your own, or pick an example, and open each tab. It shows the tokens, the syntax tree, the bytecode, and then runs the bytecode on a value stack, one instruction per step. It was checked against the real CPython 3.14 on more than ten thousand generated programs, so what you see here is what CPython really does.</p>
+<p>This animation is a small working model of CPython 3.14. Type a few lines of your own, or pick an example, then open a tab and press Play or step forward. Nothing is shown before its step: the tokens appear one by one, then the nodes of the syntax tree, then each bytecode instruction, and finally the bytecode runs on a value stack, one instruction per step. It was checked against the real CPython 3.14 on more than ten thousand generated programs, so what you see here is what CPython really does.</p>
 <div class="viz" data-viz="pvm" data-k="mainpvm"></div>
 <p>Things to try:</p>
 <ul>
@@ -796,6 +801,12 @@ SAY = [
         'CPython ଦୁଇଟି ପର୍ଯ୍ୟାୟରେ କାମ କରେ। ପ୍ରଥମେ bytecode କୁ compile, ତାପରେ Python Virtual Machine ଗୋଟିଏ ଗୋଟିଏ instruction ଚଲାଏ। Java ଠାରୁ ଭିନ୍ନ, ଦୁଇଟି ପର୍ଯ୍ୟାୟ ପ୍ରତି ଥର ହୁଏ।',
         'يعمل CPython على مرحلتين: يترجم الملف إلى شيفرة بايت، ثم تنفذها آلة Python الافتراضية تعليمة تعليمة. وعلى عكس Java تحدث المرحلتان في كل تشغيل.',
         'CPython arbeitet in zwei Stufen. Es übersetzt die Datei in Bytecode, dann führt die Python Virtual Machine ihn Befehl für Befehl aus. Anders als bei Java passieren beide Stufen bei jedem Start.'),
+    say('compile-interp', 'Compiler or interpreter', 'A compiler translates the whole program first and runs it later. An interpreter translates and runs one line at a time. CPython does both: it compiles the whole file to bytecode, then interprets the bytecode.',
+        'Compiler पूरा program पहले translate करता है और बाद में चलाता है। Interpreter एक एक line translate करके तुरंत चलाता है। CPython दोनों करता है: पूरी फ़ाइल को bytecode में compile करता है, फिर bytecode को interpret करता है।',
+        'Compiler ಮೊದಲು ಇಡೀ program ಅನ್ನು translate ಮಾಡಿ ನಂತರ ಓಡಿಸುತ್ತದೆ. Interpreter ಒಂದೊಂದೇ line translate ಮಾಡಿ ತಕ್ಷಣ ಓಡಿಸುತ್ತದೆ. CPython ಎರಡನ್ನೂ ಮಾಡುತ್ತದೆ: ಇಡೀ ಫೈಲ್ ಅನ್ನು bytecode ಗೆ compile ಮಾಡಿ, ನಂತರ ಅದನ್ನು interpret ಮಾಡುತ್ತದೆ.',
+        'Compiler ପ୍ରଥମେ ପୂରା program translate କରେ ଓ ପରେ ଚଲାଏ। Interpreter ଗୋଟିଏ ଗୋଟିଏ line translate କରି ତୁରନ୍ତ ଚଲାଏ। CPython ଦୁଇଟି କରେ: ପୂରା ଫାଇଲକୁ bytecode କୁ compile କରେ, ତାପରେ bytecode କୁ interpret କରେ।',
+        'المترجم الكامل يترجم البرنامج كله أولًا ثم يشغله لاحقًا. والمفسر يترجم سطرًا واحدًا وينفذه فورًا. ويفعل CPython الأمرين: يترجم الملف كله إلى شيفرة بايت ثم يفسرها.',
+        'Ein Compiler übersetzt zuerst das ganze Programm und führt es später aus. Ein Interpreter übersetzt und führt eine Zeile nach der anderen aus. CPython macht beides: Es übersetzt die ganze Datei in Bytecode und interpretiert dann den Bytecode.'),
     say('implementations', 'Implementations', 'Python is a language. CPython, PyPy, MicroPython, GraalPy and Pyodide are programs that run it. CPython compiles to bytecode and then interprets it, so it is both compiled and interpreted.',
         'Python एक भाषा है। CPython, PyPy, MicroPython, GraalPy और Pyodide उसे चलाने वाले programs हैं। CPython पहले bytecode बनाता है फिर उसे interpret करता है।',
         'Python ಒಂದು ಭಾಷೆ. CPython, PyPy, MicroPython, GraalPy ಮತ್ತು Pyodide ಅದನ್ನು ಓಡಿಸುವ programs. CPython bytecode ಮಾಡಿ ನಂತರ interpret ಮಾಡುತ್ತದೆ.',
@@ -919,6 +930,8 @@ SAY = [
 ]
 
 QUIZ = [
+    quiz('e', 'Which one translates the whole program before any of it runs?', ['A compiler', 'An interpreter', 'The tokenizer only', 'The operating system'], 0, 'Think of translating a whole book before printing it.', 'A compiler translates everything first and saves the result as a program file that runs later.'),
+    quiz('m', 'A file prints on line 1 and uses a name that does not exist on line 3. What does CPython show?', ['The line 1 output, then NameError', 'Only NameError, nothing is printed', 'SyntaxError before line 1', 'Nothing at all'], 0, 'Names are looked up while the program runs.', 'CPython compiles the whole file first, but a missing name is only found by the evaluation loop when line 3 runs, so line 1 has already printed.'),
     quiz('e', 'What does CPython do with your .py file before running it?', ['Compiles it to bytecode', 'Compiles it to a .exe file', 'Sends it to a server', 'Nothing, it runs the text directly'], 0, 'Two stages.', 'CPython compiles to bytecode, then the evaluation loop runs that bytecode.'),
     quiz('e', 'Where does Python save the bytecode of imported modules?', ['In a __pycache__ folder as .pyc files', 'Inside the .py file', 'In the Windows registry', 'Nowhere, it is never saved'], 0, 'Look next to the source file.', 'The file name includes the cache tag, for example shop.cpython-314.pyc.'),
     quiz('e', 'A file has a syntax error on line 10. What happens to the print on line 1?', ['It never runs', 'It runs, then the error appears', 'It runs twice', 'Python skips line 10 and runs the rest'], 0, 'The parser reads the whole file first.', 'Compiling happens before running, and a syntax error stops compiling.'),
@@ -975,10 +988,10 @@ EX = [
 ]
 
 T = {
-    'slug': 'py-how-python-runs', 'title': 'How Python Runs: From Source Code to Output', 'short': 'How Python runs', 'emoji': '⚙️', 'module': MODULE, 'minutes': 45,
-    'lead': 'Follow one Python file through CPython: the tokenizer, the parser and its syntax tree, the compiler and bytecode, <code>__pycache__</code>, the evaluation loop and its value stack, frames and tracebacks, names and scopes, objects, reference counting and the garbage collector, the GIL and free threading, the specializing interpreter and the JIT, imports and start up, with every change up to Python 3.14.',
+    'slug': 'py-how-python-runs', 'title': 'How Python Runs: From Source Code to Output', 'short': 'How Python runs', 'emoji': '⚙️', 'module': MODULE, 'minutes': 50,
+    'lead': 'See how a compiler and an interpreter differ, then follow one Python file through CPython: the tokenizer, the parser and its syntax tree, the compiler and bytecode, <code>__pycache__</code>, the evaluation loop and its value stack, frames and tracebacks, names and scopes, objects, reference counting and the garbage collector, the GIL and free threading, the specializing interpreter and the JIT, imports and start up, with every change up to Python 3.14.',
     'desc': 'How Python executes a program internally: CPython, tokenizer, PEG parser, AST, compiler, code objects, bytecode and dis, pyc files and __pycache__, the evaluation loop, frames, LEGB, objects, reference counting, garbage collection, GIL, free threading, specializing interpreter, JIT and Python 3.14.',
-    'summary': 'What CPython does with your file, step by step: tokens and indentation, the PEG parser and the syntax tree, the compiler, code objects and bytecode read with dis, __pycache__ and the .pyc header, the evaluation loop on a value stack, frames and tracebacks, the LEGB rule and UnboundLocalError, objects and names, reference counting and the cycle collector, the GIL, free threading and subinterpreters, the specializing interpreter and the JIT, imports and start up, inspection tools, what changed up to 3.14, pytest assertion rewriting and a module shadowing bug.',
+    'summary': 'Compilers and interpreters side by side, then what CPython does with your file, step by step: tokens and indentation, the PEG parser and the syntax tree, the compiler, code objects and bytecode read with dis, __pycache__ and the .pyc header, the evaluation loop on a value stack, frames and tracebacks, the LEGB rule and UnboundLocalError, objects and names, reference counting and the cycle collector, the GIL, free threading and subinterpreters, the specializing interpreter and the JIT, imports and start up, inspection tools, what changed up to 3.14, pytest assertion rewriting and a module shadowing bug.',
     'keywords': ['how Python works', 'Python execution', 'CPython internals', 'interpreter', 'compiler', 'bytecode', 'dis', 'pyc', '__pycache__', 'PVM', 'evaluation loop', 'AST', 'tokenizer', 'frames', 'GIL', 'garbage collection', 'reference counting', 'JIT', 'free threading', 'Python 3.14', 'interview'],
     'qa_intro': 'Testers who know how Python runs read tracebacks faster, understand why pytest shows the values in a failed assert, and spot module shadowing and stale cache problems that only happen on some machines.',
     'added': '2026-10-24',
