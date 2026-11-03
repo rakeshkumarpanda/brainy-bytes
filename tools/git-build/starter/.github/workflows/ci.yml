@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Check that every file compiles
+        run: python -m compileall -q app
+
+  unit-tests:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run the unit tests
+        run: python -m pytest -q tests/unit --junitxml=reports/unit.xml
+      - name: Keep the unit test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-report
+          path: reports/unit.xml
+          retention-days: 14
+
+  build:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Package the app as a zip
+        run: |
+          mkdir -p dist
+          python -m zipfile -c dist/calc-app.zip app
+      - name: Publish the build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: calc-app
+          path: dist/calc-app.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  smoke-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Pull the build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: calc-app
+          path: dist
+      - name: Smoke test the packaged build
+        run: PYTHONPATH=dist/calc-app.zip pytest -q tests/smoke --junitxml=reports/smoke.xml
+      - name: Keep the smoke test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-report
+          path: reports/smoke.xml
+          retention-days: 14

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stash, tags, .gitignore and .gitattributes · Git and CI/CD</title>
+<meta name="description" content="git stash push, pop, apply and branch, git clean, lightweight and annotated tags, pushing tags, git describe, semantic versioning, .gitignore patterns and precedence, check-ignore, rm --cached, .gitattributes, line endings and Git LFS.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 3: Undo, stash, tags and ignore rules</span><span>›</span><span>Stash, tags, ignore</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 2 of 2 · Intermediate</div>
+    <h1>Stash, tags, .gitignore and .gitattributes</h1>
+    <p class="lead">Park unfinished work, mark releases with version tags, keep build output and secrets out of the repository, and stop line ending noise.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">9 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#stash-tags-ignore" data-topic="cheatsheet" data-h="stash-tags-ignore">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#stash" data-l="stash"><span class="n">1</span><span class="t">git stash: put work aside for a moment</span></a></li><li><a href="#tags" data-l="tags"><span class="n">2</span><span class="t">Tags and version numbers</span></a></li><li><a href="#ignore" data-l="ignore"><span class="n">3</span><span class="t">.gitignore: keep junk out</span></a></li><li><a href="#attrs" data-l="attrs"><span class="n">4</span><span class="t">.gitattributes, line endings and big files</span></a></li></ol>
+    <article class="cv-lesson" id="stash" data-l="stash" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>git stash: put work aside for a moment</h2>
+<p>You are halfway through a feature when an urgent bug comes in. Your work is not ready to commit, and Git will not let you switch branches if your edits clash. <b>git stash</b> saves your uncommitted changes on a stack and gives you a clean working tree. Later you take them back.</p>
+<div class="cvz" data-viz="areas" data-cfg="{&quot;cmds&quot;: &quot;edit app.py\ngit stash\nedit README.md\ngit commit -am \&quot;urgent fix\&quot;\ngit stash pop&quot;}"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Save and clean</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git stash</code> or <code>git stash push -m "note"</code></div><div class="fx-n">Saves staged and unstaged changes to tracked files. -u also saves untracked files.</div></div><div class="fx fx-key"><div class="fx-h"><span>Bring back</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git stash pop</code>, <code>git stash apply</code></div><div class="fx-n">pop applies the newest stash and drops it. apply keeps it on the stack.</div></div><div class="fx"><div class="fx-h"><span>Look and tidy</span></div><div class="fx-b"><code>git stash list</code>, <code>git stash show -p stash@{1}</code>, <code>git stash drop</code></div><div class="fx-n">stash@{0} is the newest.</div></div><div class="fx"><div class="fx-h"><span>Turn a stash into a branch</span></div><div class="fx-b"><code>git stash branch &lt;name&gt;</code></div><div class="fx-n">Creates a branch at the commit where you stashed and applies the stash there, avoiding conflicts.</div></div></div>
+<div class="note note-tip"><b>Remember</b><div>A stash is easy to forget. If it holds real work, a work in progress commit on a branch is often safer and shows up in git log.</div></div>
+<details class="deep"><summary>Going deeper: git clean</summary><div class="deep-b"><p>git clean removes untracked files. Always run git clean -n first, a dry run that lists what would go. -d also removes untracked folders, -x also removes ignored files such as build output. -f is required to actually delete. Files removed by clean were never in Git, so nothing can restore them.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="tags" data-l="tags" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Tags and version numbers</h2>
+<p>A <b>tag</b> is a name for one commit that never moves, unlike a branch. Teams tag the commit they release: <code>v1.0.0</code>, <code>v1.1.0</code>. CI pipelines often start a release job when a tag is pushed.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Kind</th><th>Command</th><th>Stores</th><th>Use for</th></tr></thead><tbody><tr><td>Lightweight</td><td><code>git tag v1.0.0</code></td><td>Only a ref pointing at the commit</td><td>private or temporary marks</td></tr><tr><td>Annotated</td><td><code>git tag -a v1.0.0 -m "Release 1.0.0"</code></td><td>A tag object with tagger, date, message (and optional signature)</td><td>releases</td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Push tags</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git push origin v1.0.0</code>, <code>git push --tags</code></div><div class="fx-n">git push alone does not send tags. --follow-tags sends annotated tags that point at pushed commits.</div></div><div class="fx"><div class="fx-h"><span>List and inspect</span></div><div class="fx-b"><code>git tag -l "v1.*"</code>, <code>git show v1.0.0</code>, <code>git describe</code></div><div class="fx-n">git describe names HEAD by the nearest tag, for example v1.0.0-3-g7c9e1d0 (3 commits after the tag).</div></div><div class="fx fx-key"><div class="fx-h"><span>Semantic versioning</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">MAJOR.MINOR.PATCH</div><div class="fx-n">MAJOR for breaking changes, MINOR for new backwards compatible features, PATCH for backwards compatible bug fixes.</div></div></div>
+<div class="cv-code" data-k="semver"></div>
+<div class="note note-warn"><b>Common mistake</b><div>Moving a tag that others have fetched is like changing a published book's edition number. Do not do it. Make a new tag instead.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="ignore" data-l="ignore" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>.gitignore: keep junk out</h2>
+<p>Some files must never be committed: build output, dependency folders, logs, editor files and above all secrets such as <code>.env</code> files with passwords. A <code>.gitignore</code> file lists patterns, and git status stops showing matching untracked files.</p>
+<div class="cv-code gk-file" data-lang="text"><div class="cc-bar"><span class="gk-path">.gitignore</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="text"><span class="ln" data-n="1"># Python</span><span class="ln gk-has" data-n="2">__pycache__/</span><span class="ln gk-has" data-n="3">*.pyc</span><span class="ln" data-n="4">.venv/</span><span class="ln" data-n="5"># build output and test reports</span><span class="ln" data-n="6">dist/</span><span class="ln" data-n="7">reports/</span><span class="ln" data-n="8"># logs, but keep one example</span><span class="ln" data-n="9">*.log</span><span class="ln gk-has" data-n="10">!example.log</span><span class="ln" data-n="11"># secrets: only the file in the top folder</span><span class="ln gk-has" data-n="12">/.env</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="2"><b>Line 2</b><code>__pycache__/</code><span>A trailing slash matches folders only, at any depth.</span></li><li data-n="3"><b>Line 3</b><code>*.pyc</code><span>A star matches any characters except a slash.</span></li><li data-n="10"><b>Line 10</b><code>!example.log</code><span>A leading ! re-includes a file an earlier rule ignored. The last matching rule wins.</span></li><li data-n="12"><b>Line 12</b><code>/.env</code><span>A leading slash anchors the rule to the folder that holds this .gitignore.</span></li></ol></details></div>
+<div class="cvz" data-viz="ignore"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Pattern</th><th>Matches</th></tr></thead><tbody><tr><td><code>*.log</code></td><td>any .log file in any folder</td></tr><tr><td><code>/todo.txt</code></td><td>only todo.txt next to the .gitignore</td></tr><tr><td><code>build/</code></td><td>any folder called build, and everything inside</td></tr><tr><td><code>docs/**/*.pdf</code></td><td>PDFs anywhere under docs</td></tr><tr><td><code>!keep.log</code></td><td>brings keep.log back, unless its parent folder is ignored</td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Why is this file ignored?</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git check-ignore -v &lt;path&gt;</code></div><div class="fx-n">Prints the .gitignore file, line number and pattern that matched.</div></div><div class="fx fx-key"><div class="fx-h"><span>Already committed by mistake</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git rm --cached &lt;file&gt;</code> then commit</div><div class="fx-n">.gitignore only affects untracked files. A tracked file stays tracked until you remove it from the index.</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>If a secret was ever committed and pushed, removing it in a new commit is not enough: it is still in history. Treat it as leaked and rotate the password or key at once.</div></div>
+<details class="deep"><summary>Going deeper: Other ignore files</summary><div class="deep-b"><p>.git/info/exclude works like .gitignore but is never shared. core.excludesFile (often ~/.config/git/ignore) holds personal patterns for every repository, a good place for .DS_Store or editor folders. Order of precedence: patterns on the command line, .gitignore files from the folder of the path up to the top, .git/info/exclude, then core.excludesFile.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="attrs" data-l="attrs" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>.gitattributes, line endings and big files</h2>
+<p>Windows ends lines with CRLF, macOS and Linux with LF. Without rules, a whole file can look changed because only the line endings differ. <code>.gitattributes</code> fixes this per path and is committed, so the whole team follows it.</p>
+<div class="cv-code gk-file" data-lang="text"><div class="cc-bar"><span class="gk-path">.gitattributes</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="text"><span class="ln gk-has" data-n="1">* text=auto</span><span class="ln gk-has" data-n="2">*.sh text eol=lf</span><span class="ln" data-n="3">*.bat text eol=crlf</span><span class="ln gk-has" data-n="4">*.png binary</span><span class="ln gk-has" data-n="5">*.psd filter=lfs diff=lfs merge=lfs -text</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="1"><b>Line 1</b><code>* text=auto</code><span>Let Git detect text files and store them with LF inside the repository.</span></li><li data-n="2"><b>Line 2</b><code>*.sh text eol=lf</code><span>Shell scripts must keep LF even on Windows, or bash fails.</span></li><li data-n="4"><b>Line 4</b><code>*.png binary</code><span>binary means no line ending changes and no text diff.</span></li><li data-n="5"><b>Line 5</b><code>*.psd filter=lfs diff=lfs merge=lfs -text</code><span>Written by git lfs track "*.psd": the content goes to Git LFS storage, the repository keeps a small pointer.</span></li></ol></details></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>stash is a drawer for unfinished work, tags are name labels on finished versions, and .gitignore is a list of things that should never go in the box.</p></div><div class="ld-p" data-ld="college" hidden><p>A stash is stored as commits under refs/stash. Annotated tags are tag objects, lightweight tags are plain refs. .gitignore patterns follow the rules in gitignore(5), last match wins, and a file cannot be re-included if a parent folder is excluded.</p></div><div class="ld-p" data-ld="masters" hidden><p>Line ending normalisation happens in the clean and smudge steps between the working tree and the index. Git LFS uses the same filter mechanism: clean replaces large content with a pointer file, smudge downloads it on checkout.</p></div><div class="ld-p" data-ld="research" hidden><p>Signed tags (git tag -s) and signed commits, now also with SSH keys, are part of software supply chain security. Projects such as Sigstore and reproducible builds aim to prove that a released artifact really came from a given tagged commit.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./undo.html" data-topic="undo"><small>Previous topic</small><b>Undo</b></a><a class="next" href="./remotes.html" data-topic="remotes"><small>Next topic</small><b>Remotes</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "stash-tags-ignore", "topic": "stash-tags-ignore", "subject": "git", "title": "Stash, tags, .gitignore and .gitattributes", "codes": {"semver": {"src": "# Semantic versioning: MAJOR.MINOR.PATCH and which part to bump\ndef bump(version, change):\n    major, minor, patch = (int(x) for x in version.split(\".\"))\n    if change == \"breaking\":\n        return f\"{major + 1}.0.0\"\n    if change == \"feature\":\n        return f\"{major}.{minor + 1}.0\"\n    return f\"{major}.{minor}.{patch + 1}\"\n\nv = \"1.4.2\"\nfor change in [\"fix\", \"feature\", \"fix\", \"breaking\", \"feature\"]:\n    v = bump(v, change)\n    print(f\"{change:8} -> v{v}\")", "stdin": "", "out": "fix      -> v1.4.3\nfeature  -> v1.5.0\nfix      -> v1.5.1\nbreaking -> v2.0.0\nfeature  -> v2.1.0"}}, "quiz": [{"lv": "e", "q": "Which command saves your uncommitted changes and cleans the working tree?", "o": ["git save", "git stash", "git clean", "git reset"], "a": 1, "hint": "Drawer.", "why": "git stash puts changes on a stack."}, {"lv": "e", "q": "What is the difference between git stash pop and git stash apply?", "o": ["None", "pop also removes the stash from the list", "apply removes it", "pop only shows it"], "a": 1, "hint": "Pop takes it off.", "why": "apply keeps it for later use too."}, {"lv": "e", "q": "A tag is", "o": ["A branch that moves", "A fixed name for one commit", "A remote", "A commit message"], "a": 1, "hint": "Never moves.", "why": "Tags mark releases."}, {"lv": "m", "q": "Does git push send your tags?", "o": ["Yes, always", "No, use git push origin <tag> or --tags", "Only annotated", "Only on main"], "a": 1, "hint": "Separate.", "why": "Tags are pushed explicitly or with --follow-tags."}, {"lv": "m", "q": "You add secrets.env to .gitignore but git status still shows it modified. Why?", "o": ["Bad pattern", "It is already tracked, ignore rules only affect untracked files", "Cache problem", "Wrong folder"], "a": 1, "hint": "Tracked already.", "why": "git rm --cached secrets.env, then commit."}, {"lv": "m", "q": "Which pattern ignores a file named .env only in the top folder?", "o": [".env", "/.env", "**/.env", ".env/"], "a": 1, "hint": "Anchor.", "why": "A leading slash anchors the rule."}, {"lv": "m", "q": "Version 2.3.1 gets a backwards compatible new feature. The next version is", "o": ["2.3.2", "2.4.0", "3.0.0", "2.4.1"], "a": 1, "hint": "MINOR.", "why": "MINOR goes up and PATCH resets to 0."}, {"lv": "h", "q": "logs/ is ignored and a later line says !logs/keep.log. Is logs/keep.log tracked?", "o": ["Yes", "No, a file cannot be re-included when its parent folder is excluded", "Only on Windows", "Only with -f"], "a": 1, "hint": "Parent trap.", "why": "Use logs/* then !logs/keep.log instead."}, {"lv": "h", "q": "Which command tells you which rule ignores a path?", "o": ["git status --ignored", "git check-ignore -v path", "git ls-files", "git log --ignored"], "a": 1, "hint": "-v for verbose.", "why": "It prints the source file, line and pattern."}, {"lv": "x", "q": "A password was committed and pushed last week. What must happen first?", "o": ["Delete the file in a new commit", "Rotate (change) the password, because it is in history and may be copied", "Add it to .gitignore", "Force push"], "a": 1, "hint": "Assume leaked.", "why": "Rewriting history helps later, but clones and caches may already have it."}], "calc": [{"lv": "e", "q": "Starting at 1.4.2: a fix, then a feature, then a fix. What is the patch number?", "ans": "1", "hint": "Feature resets patch.", "steps": ["fix: 1.4.3.", "feature: 1.5.0.", "<span class=\"eq\">fix: 1.5.1, patch = 1<\/span>"]}, {"lv": "e", "q": "You run git stash three times without popping. Which number n is the oldest, in stash@{n}?", "ans": "2", "hint": "Newest is 0.", "steps": ["stash@{0} is the latest.", "Three stashes: 0, 1, 2.", "<span class=\"eq\">Oldest is stash@{2}<\/span>"]}, {"lv": "m", "q": "From 2.7.3 a breaking change ships. Write the new version as a number by removing the dots (for example 1.2.3 is 123).", "ans": "300", "hint": "MAJOR up, others zero.", "steps": ["Breaking change: MAJOR goes from 2 to 3.", "MINOR and PATCH reset to 0.", "<span class=\"eq\">3.0.0, written 300<\/span>"]}, {"lv": "m", "q": "git describe prints v2.1.0-5-g3f2a9c1. How many commits is HEAD past the tag?", "ans": "5", "hint": "The middle number.", "steps": ["Format: tag, count, g plus short id.", "Count = 5.", "<span class=\"eq\">5 commits after v2.1.0<\/span>"]}, {"lv": "h", "q": "Rules: *.log, !keep.log. Paths: a.log, keep.log, x/keep.log, b.txt. How many are ignored?", "ans": "1", "hint": "keep.log is re-included at any depth.", "steps": ["a.log matches *.log: ignored.", "keep.log and x/keep.log match !keep.log last: tracked.", "<span class=\"eq\">b.txt matches nothing: so 1 ignored<\/span>"]}, {"lv": "h", "q": "Rules: build/ then !build/keep.txt. Paths: build/a.o, build/keep.txt. How many are ignored?", "ans": "2", "hint": "Parent folder trap.", "steps": ["build/ ignores the folder.", "A file inside an ignored folder cannot be re-included.", "<span class=\"eq\">Both ignored: 2<\/span>"]}], "assign": [{"id": "bump", "lv": "e", "title": "Bump a semantic version", "task": "<p>Write <code>bump(version, change)<\/code> where change is \"fix\", \"feature\" or \"breaking\". Return the next version string.<\/p>", "starter": "def bump(version, change):\n    # your code here\n    pass\n", "tests": [{"call": "bump('1.4.2', 'fix')", "want": "1.4.3"}, {"call": "bump('1.4.2', 'feature')", "want": "1.5.0"}, {"call": "bump('1.4.2', 'breaking')", "want": "2.0.0"}, {"call": "bump('0.9.9', 'feature')", "want": "0.10.0"}], "solution": "def bump(version, change):\n    major, minor, patch = (int(x) for x in version.split('.'))\n    if change == 'breaking':\n        return f'{major + 1}.0.0'\n    if change == 'feature':\n        return f'{major}.{minor + 1}.0'\n    return f'{major}.{minor}.{patch + 1}'\n", "hint": "Split on dots, turn into numbers, reset the lower parts.", "why": "<p>Note 0.9.9 becomes 0.10.0, not 1.0.0. Numbers are not decimals.<\/p>"}, {"id": "ign", "lv": "h", "title": "A tiny .gitignore matcher", "task": "<p>Write <code>ignored(rules, path)<\/code> for rules made only of simple patterns: <code>*.ext<\/code> (any depth), <code>name/<\/code> (a folder at any depth), <code>/name<\/code> (top level only) and <code>!<\/code> in front to re-include. Last matching rule wins, but a file inside an ignored folder stays ignored.<\/p>", "starter": "def ignored(rules, path):\n    # your code here\n    pass\n", "tests": [{"call": "ignored(['*.log', '!keep.log'], 'x/keep.log')", "want": false}, {"call": "ignored(['*.log'], 'a/b/c.log')", "want": true}, {"call": "ignored(['build/', '!build/keep.txt'], 'build/keep.txt')", "want": true}, {"call": "ignored(['/.env'], 'config/.env')", "want": false}, {"call": "ignored(['/.env'], '.env')", "want": true}], "solution": "def match(rule, path):\n    parts = path.split('/')\n    if rule.endswith('/'):\n        return rule[:-1] in parts[:-1]\n    if rule.startswith('/'):\n        return path == rule[1:]\n    if rule.startswith('*.'):\n        return parts[-1].endswith(rule[1:])\n    return parts[-1] == rule\n\ndef ignored(rules, path):\n    for r in rules:\n        if r.endswith('/') and not r.startswith('!') and match(r, path):\n            return True\n    result = False\n    for r in rules:\n        neg = r.startswith('!')\n        if match(r[1:] if neg else r, path):\n            result = not neg\n    return result\n", "hint": "Check ignored folders first, then walk the rules and remember the last match.", "why": "<p>Real Git supports more (**, ?, [a-z], patterns with a slash in the middle), as the animation shows.<\/p>"}], "must": [["Stash", "git stash (-u for untracked), stash list, pop (apply and drop), apply (keep), stash branch. A WIP commit is often safer."], ["Tags", "Lightweight = plain ref, annotated (-a -m) = tag object for releases. Push with git push origin <tag> or --tags. Never move a shared tag."], ["Semver", "MAJOR.MINOR.PATCH: breaking, feature, fix. Lower parts reset to 0."], [".gitignore", "Last match wins, ! re-includes, leading / anchors, trailing / means folder, no re-include inside an ignored folder. check-ignore -v explains."], ["Tracked stays tracked", "Ignore rules do not untrack files: git rm --cached. A committed secret is leaked: rotate it."]], "summary": "<p>Stash parks work, tags mark releases, .gitignore keeps untracked junk out, and .gitattributes keeps line endings and big files sane.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"semver": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 10, "ev": "line", "d": {"G.bump": "<function bump>"}}, {"l": 11, "ev": "line", "d": {"G.v": "'1.4.2'"}}, {"l": 12, "ev": "line", "d": {"G.change": "'fix'"}}, {"l": 2, "ev": "call", "s": ["module", "bump()"], "d": {"L.version": "'1.4.2'", "L.change": "'fix'"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "bump()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f365fd8ccd0>", "L.version": null, "L.change": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'1'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'4'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'2'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 4, "ev": "line", "s": ["module", "bump()"], "d": {"L.version": "'1.4.2'", "L.change": "'fix'", "L.major": "1", "L.minor": "4", "L.patch": "2", "L..0": null, "L.x": null}}, {"l": 6, "ev": "line"}, {"l": 8, "ev": "line"}, {"l": 8, "ev": "return"}, {"l": 13, "ev": "line", "s": ["module"], "d": {"G.v": "'1.4.3'", "L.version": null, "L.change": null, "L.major": null, "L.minor": null, "L.patch": null}}, {"l": 11, "ev": "line", "o": "fix      -> v1.4.3\n"}, {"l": 12, "ev": "line", "d": {"G.change": "'feature'"}}, {"l": 2, "ev": "call", "s": ["module", "bump()"], "d": {"L.version": "'1.4.3'", "L.change": "'feature'"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "bump()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f365fd8d3c0>", "L.version": null, "L.change": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'1'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'4'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'3'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 4, "ev": "line", "s": ["module", "bump()"], "d": {"L.version": "'1.4.3'", "L.change": "'feature'", "L.major": "1", "L.minor": "4", "L.patch": "3", "L..0": null, "L.x": null}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "return"}, {"l": 13, "ev": "line", "s": ["module"], "d": {"G.v": "'1.5.0'", "L.version": null, "L.change": null, "L.major": null, "L.minor": null, "L.patch": null}}, {"l": 11, "ev": "line", "o": "feature  -> v1.5.0\n"}, {"l": 12, "ev": "line", "d": {"G.change": "'fix'"}}, {"l": 2, "ev": "call", "s": ["module", "bump()"], "d": {"L.version": "'1.5.0'", "L.change": "'fix'"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "bump()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f365fd8d9f0>", "L.version": null, "L.change": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'1'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'5'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'0'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 4, "ev": "line", "s": ["module", "bump()"], "d": {"L.version": "'1.5.0'", "L.change": "'fix'", "L.major": "1", "L.minor": "5", "L.patch": "0", "L..0": null, "L.x": null}}, {"l": 6, "ev": "line"}, {"l": 8, "ev": "line"}, {"l": 8, "ev": "return"}, {"l": 13, "ev": "line", "s": ["module"], "d": {"G.v": "'1.5.1'", "L.version": null, "L.change": null, "L.major": null, "L.minor": null, "L.patch": null}}, {"l": 11, "ev": "line", "o": "fix      -> v1.5.1\n"}, {"l": 12, "ev": "line", "d": {"G.change": "'breaking'"}}, {"l": 2, "ev": "call", "s": ["module", "bump()"], "d": {"L.version": "'1.5.1'", "L.change": "'breaking'"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "bump()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f365fd8dff0>", "L.version": null, "L.change": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'1'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'5'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'1'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 4, "ev": "line", "s": ["module", "bump()"], "d": {"L.version": "'1.5.1'", "L.change": "'breaking'", "L.major": "1", "L.minor": "5", "L.patch": "1", "L..0": null, "L.x": null}}, {"l": 5, "ev": "line"}, {"l": 5, "ev": "return"}, {"l": 13, "ev": "line", "s": ["module"], "d": {"G.v": "'2.0.0'", "L.version": null, "L.change": null, "L.major": null, "L.minor": null, "L.patch": null}}, {"l": 11, "ev": "line", "o": "breaking -> v2.0.0\n"}, {"l": 12, "ev": "line", "d": {"G.change": "'feature'"}}, {"l": 2, "ev": "call", "s": ["module", "bump()"], "d": {"L.version": "'2.0.0'", "L.change": "'feature'"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "bump()", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f365fd8df90>", "L.version": null, "L.change": null}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'2'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return", "d": {"L.x": "'0'"}}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 3, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 4, "ev": "line", "s": ["module", "bump()"], "d": {"L.version": "'2.0.0'", "L.change": "'feature'", "L.major": "2", "L.minor": "0", "L.patch": "0", "L..0": null, "L.x": null}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "return"}, {"l": 13, "ev": "line", "s": ["module"], "d": {"G.v": "'2.1.0'", "L.version": null, "L.change": null, "L.major": null, "L.minor": null, "L.patch": null}}, {"l": 11, "ev": "line", "o": "feature  -> v2.1.0\n"}, {"l": 11, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

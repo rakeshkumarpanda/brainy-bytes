@@ -45,9 +45,15 @@ CFG = {
 # A subject split into sections sets 'part' (the section id written on each module in the catalog) and 'part_name'.
 # Other subjects may also set 'min_calc' (worked problems needed per chapter, 10 when not set) and 'langsheet'
 # (True writes one cheatsheet per programming language with tools/sheet-build/langsheet.py instead of cheatsheet.py).
+# 'fx_word' renames the formula cards for subjects whose cards hold commands, for example ('Command', 'Commands', 'command card').
 TRACER = os.path.join(ROOT, 'tools', 'py-build', 'pytrace.py')
 LVN = {'e': 'Easy', 'm': 'Medium', 'h': 'Hard', 'x': 'Expert'}
 EMOJI = re.compile('[\U0001F000-\U0001FAFF☀-➿⭐⬆↔-↪️]')
+
+
+def FXW():
+    """(singular, plural, chip word) for the formula cards of this subject."""
+    return CFG.get('fx_word', ('Formula', 'Formulas', 'formula'))
 
 
 def out_dir():
@@ -265,7 +271,7 @@ def page(T, chs, steps_by_id):
     n_fx = sum(len(re.findall(r'class="fx[ "]', p['html'])) for p in lessons)
     def cnt(n, word, many=None):
         return f'{n} {word if n == 1 else (many or word + "s")}'
-    chips = [f'About {T["minutes"]} min', cnt(len(lessons), 'lesson'), cnt(n_viz, 'animation'), cnt(n_fx, 'formula'),
+    chips = [f'About {T["minutes"]} min', cnt(len(lessons), 'lesson'), cnt(n_viz, 'animation'), cnt(n_fx, FXW()[2]),
              cnt(len(T["calc"]), 'worked problem'), cnt(len(T["quiz"]), 'quiz question'), cnt(len(T["assign"]), 'assignment')]
     chip_html = ''.join(f'<span class="cv-chip">{c}</span>' for c in chips if not c.startswith('0 '))
     chip_html += (f'<a class="cv-chip cv-sheet" href="./cheatsheet.html#{T["slug"]}" data-topic="cheatsheet" data-h="{T["slug"]}">'
@@ -277,7 +283,7 @@ def page(T, chs, steps_by_id):
         arts.append(f'<article class="cv-lesson" id="{p["id"]}" data-l="{p["id"]}" hidden>'
                     f'<div class="cv-lno">Lesson {n} of {len(lessons)}</div><h2>{html.escape(p["title"])}</h2>\n{p["html"].strip()}\n'
                     f'<nav class="cv-lnav"></nav></article>')
-    tabs = [('learn', 'Learn'), ('formulas', 'Formulas'), ('problems', 'Worked problems'), ('quiz', 'Quiz'),
+    tabs = [('learn', 'Learn'), ('formulas', FXW()[1]), ('problems', 'Worked problems'), ('quiz', 'Quiz'),
             ('assign', 'Assignments'), ('summary', 'Summary')]
     if T.get('kind') == 'revision':
         tabs = [('learn', 'Revise')] + [t for t in tabs[1:] if t[0] in ('formulas', 'problems', 'quiz')]
@@ -308,7 +314,7 @@ def page(T, chs, steps_by_id):
 <link rel="stylesheet" href="../../assets/learn.css">
 {css}
 </head>
-<body class="{CFG["body"]}">
+<body class="{CFG["body"]}"{f' data-fxh="{FXW()[0]} sheet"' if CFG.get('fx_word') else ''}>
 <header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?{home_q()}">{CFG["name"]} learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
 <div class="cv-wrap">
   <div class="cv-crumb"><a class="home-link" href="../../subject.html?{home_q()}" target="_top">{CFG["name"]}</a><span>›</span>{f'<span>{CFG["part_name"]}</span><span>›</span>' if CFG.get('part_name') else ''}<span>Step {stp[0]}: {html.escape(stp[1])}</span><span>›</span><span>{html.escape(T["short"])}</span></div>
@@ -358,7 +364,7 @@ def catalog(chs):
         for ti, T in enumerate(m['topics']):
             secs = [f'        {{ id: {js(p["id"])}, title: {js(p["title"])}, emoji: "", group: "Lesson", keywords: {js(p["kw"])} }}' for p in T['lessons']]
             if T.get('kind') != 'revision':
-                secs += ["        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' }",
+                secs += [f"        {{ id: 'formulas', title: '{FXW()[1]}', emoji: '', group: 'Check yourself' }}",
                          "        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' }",
                          "        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }",
                          "        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }"]

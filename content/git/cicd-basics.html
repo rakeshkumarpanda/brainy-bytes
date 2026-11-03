@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CI/CD foundations: pipelines, runners, artifacts and roles · Git and CI/CD</title>
+<meta name="description" content="continuous integration, delivery and deployment, workflow runs and pipelines, jobs, steps, stages, needs and runners, YAML syntax and type traps, artifacts versus cache, variables and secrets, permissions and SHA pinning, environments, build once and promote, Dev and QA views, and the Knight Capital, Codecov and tj-actions incidents.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 6: CI/CD foundations</span><span>›</span><span>CI/CD basics</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 6 · Topic 1 of 1 · Intermediate</div>
+    <h1>CI/CD foundations: pipelines, runners, artifacts and roles</h1>
+    <p class="lead">Before writing a single workflow file, understand what a pipeline is, why jobs need artifacts to share files, how YAML trips people up, how secrets leak, and what developers and testers each want from CI.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">4 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#cicd-basics" data-topic="cheatsheet" data-h="cicd-basics">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#why" data-l="why"><span class="n">1</span><span class="t">What CI and CD mean, and why teams need them</span></a></li><li><a href="#anatomy" data-l="anatomy"><span class="n">2</span><span class="t">Inside a pipeline: jobs, stages, runners and YAML</span></a></li><li><a href="#data" data-l="data"><span class="n">3</span><span class="t">Artifacts, cache, variables and secrets</span></a></li><li><a href="#roles" data-l="roles"><span class="n">4</span><span class="t">Dev and QA in a pipeline, and build once, promote many</span></a></li></ol>
+    <article class="cv-lesson" id="why" data-l="why" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>What CI and CD mean, and why teams need them</h2>
+<p><b>Continuous integration (CI)</b> means every developer merges small changes into the shared branch often, and a server automatically builds and tests every push. Problems show up within minutes, while the change is still fresh in the author's head.</p>
+<p><b>Continuous delivery (CD)</b> means every change that passes the pipeline is packaged and ready to release, and a person presses the button. <b>Continuous deployment</b> goes one step further: a green pipeline releases to production with no human step.</p>
+<ol class="gk-flow"><li><b>Commit and push</b><span>a developer pushes a branch or opens a pull request</span></li><li><b>Pipeline starts</b><span>the CI server reads the YAML file in the repository</span></li><li><b>Build and test</b><span>lint, unit tests, build a package (the artifact)</span></li><li><b>Deploy to test</b><span>QA and automated tests check the same artifact</span></li><li><b>Release</b><span>a person approves (delivery) or it goes out by itself (deployment)</span></li></ol>
+<div class="scene"><div class="scene-h">Real world scenario: Knight Capital, 1 August 2012</div><p>Knight Capital deployed new trading code by hand to eight servers. According to the US Securities and Exchange Commission, a technician did not copy the new code to one of the eight. That server still had old, unused code, and a reused flag in the new orders switched the old code on. In about 45 minutes it sent millions of unintended orders, and the firm lost about 460 million US dollars. The SEC order points to the lack of written deployment procedures and of a second person checking. An automated pipeline that deploys the same package to every server, and verifies the result, is the standard defence.</p></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Term</th><th>GitHub Actions</th><th>GitLab CI/CD</th></tr></thead><tbody><tr><td>the config file</td><td><code>.github/workflows/*.yml</code> (many files allowed)</td><td><code>.gitlab-ci.yml</code> at the root (one file, can include others)</td></tr><tr><td>one run</td><td>workflow run</td><td>pipeline</td></tr><tr><td>a unit of work on one machine</td><td>job</td><td>job</td></tr><tr><td>the commands inside a job</td><td>steps (run or uses)</td><td>script lines</td></tr><tr><td>the machine</td><td>runner (GitHub hosted or self hosted)</td><td>runner (instance runners on GitLab.com or your own)</td></tr><tr><td>grouping</td><td>needs between jobs</td><td>stages, plus needs to skip waiting</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="anatomy" data-l="anatomy" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Inside a pipeline: jobs, stages, runners and YAML</h2>
+<p>A pipeline is a set of <b>jobs</b>. Each job runs on a fresh machine called a <b>runner</b>, so jobs share nothing unless you pass files on as artifacts. Jobs either wait for a whole <b>stage</b> to finish (the GitLab default) or only for the jobs they <b>need</b>. Try both modes and make one job fail.</p>
+<div class="cvz" data-viz="pipeline"></div>
+<div class="cv-code" data-k="order"></div>
+<p>Both platforms describe pipelines in <b>YAML</b>: indentation with spaces shows what belongs to what, <code>key: value</code> makes a map and <code>- item</code> makes a list. Break the file in the animation and read the error.</p>
+<div class="cvz" data-viz="yamlview"></div>
+<div class="note note-warn"><b>Common mistake</b><div>YAML guesses types. python-version: 3.10 is read as the number 3.1, and the job installs the wrong Python. Always quote versions: python-version: "3.10". Old YAML 1.1 parsers also read a bare no or off as false.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>YAML</th><th>Means</th></tr></thead><tbody><tr><td><code>image: python:3.13-slim</code></td><td>a key with a string value</td></tr><tr><td><code>branches: [main, dev]</code></td><td>a list written on one line</td></tr><tr><td><code>steps:</code> then lines starting with <code>- </code></td><td>a list written as lines</td></tr><tr><td><code>run: |</code></td><td>a block of text: every following indented line is kept, newlines included</td></tr><tr><td><code># note</code></td><td>a comment</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="data" data-l="data" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Artifacts, cache, variables and secrets</h2>
+<p>Jobs start on clean machines, so you decide what moves between them and how.</p>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>Artifact</th><th>Cache</th></tr></thead><tbody><tr><td>What for</td><td>results you need later: a build package, test reports, coverage</td><td>things you can rebuild but would rather not: downloaded dependencies</td></tr><tr><td>Who uses it</td><td>later jobs in the same run, people, other pipelines</td><td>later runs of the same or another job</td></tr><tr><td>If it is missing</td><td>the pipeline is wrong</td><td>the job is only slower</td></tr><tr><td>GitHub Actions</td><td>actions/upload-artifact and download-artifact, kept 90 days by default</td><td>actions/cache or the cache option of setup actions, 10 GB per repository</td></tr><tr><td>GitLab CI/CD</td><td>artifacts: paths and expire_in (30 days on GitLab.com by default)</td><td>cache: key and paths</td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Variables</span></div><div class="fx-b">GitHub: <code>env:</code> and <code>vars.NAME</code>. GitLab: <code>variables:</code> and project CI/CD variables</div><div class="fx-n">Plain settings such as a test URL. Visible in logs if printed.</div></div><div class="fx fx-key"><div class="fx-h"><span>Secrets</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">GitHub: <code>${{ secrets.NAME }}</code>. GitLab: masked and protected CI/CD variables</div><div class="fx-n">Stored encrypted and hidden in logs. Never write a secret into the YAML file.</div></div><div class="fx fx-key"><div class="fx-h"><span>Least privilege</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">GitHub: <code>permissions: contents: read</code>. GitLab: protected variables only on protected branches</div><div class="fx-n">Give each job only the access it needs.</div></div><div class="fx fx-key"><div class="fx-h"><span>Pin third party actions</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>uses: owner/action@&lt;full commit SHA&gt;</code></div><div class="fx-n">A tag such as @v4 can be moved to new code. A full commit id cannot.</div></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: Codecov, 2021</div><p>Codecov offered a Bash script that thousands of CI pipelines downloaded and ran on every build to upload coverage. In January 2021 an attacker changed that script on Codecov's server so that it also sent the environment variables of each CI job, which often held tokens and keys, to the attacker. It went unnoticed until April 2021, when a customer compared the script with its published checksum. Lessons: check downloaded scripts against a checksum, give CI jobs as few secrets as possible, and rotate credentials after such a leak.</p></div>
+<div class="scene"><div class="scene-h">Real world scenario: tj-actions/changed-files, March 2025</div><p>An attacker gained access to the popular GitHub Action tj-actions/changed-files and moved its version tags to a malicious commit that printed the CI runner's secrets into the job log (CVE-2025-30066). Public repositories with public logs exposed their secrets. Workflows that pinned the action to a full commit SHA kept running the old, safe code. GitHub's own security guidance recommends pinning third party actions to a full length commit SHA.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="roles" data-l="roles" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>Dev and QA in a pipeline, and build once, promote many</h2>
+<p>The same pipeline serves two groups with different questions. Developers ask "did my change break anything, and how fast can I know?". QA asks "is this exact build good enough to release, and can I prove it?".</p>
+<div class="gk-dq"><div class="gk-dq-h">The same thing, seen by Dev and by QA</div><div class="gk-dq-g"><div class="gk-dev"><b>Developer view</b><ul><li>Fast feedback on every push: lint and unit tests in a few minutes.</li><li>Builds the artifact once and tags it with the commit id.</li><li>Uses cache to keep the pipeline fast.</li><li>Fixes a red pipeline before starting new work.</li><li>Deploys automatically to a dev environment.</li></ul></div><div class="gk-qa"><b>QA view</b><ul><li>Tests the artifact the pipeline built, never a fresh build from a laptop.</li><li>Runs slower suites: API, end to end, regression, often on a schedule or before release.</li><li>Keeps test reports as artifacts so failures can be shown later.</li><li>Owns the quality gate: which checks must pass before production.</li><li>Tracks flaky tests instead of pressing retry until green.</li></ul></div></div></div>
+<ol class="gk-flow"><li><b>Build once</b><span>one job builds calc-app.zip from commit 7c9e1d0</span></li><li><b>Dev environment</b><span>deployed automatically, developers check it</span></li><li><b>QA environment</b><span>the same zip, QA runs regression and end to end tests</span></li><li><b>Staging</b><span>the same zip with production like settings</span></li><li><b>Production</b><span>the same zip after approval</span></li></ol>
+<div class="note note-exam"><b>In the exam</b><div>If each environment rebuilds from source, QA tested a different file from the one users get. Build once, store it as an artifact or in a package registry, and promote that same file.</div></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>CI is a robot that builds and tests every change you push. CD makes sure every good change is ready to ship. Dev uses the pipeline for quick answers, QA uses it to prove a build is ready.</p></div><div class="ld-p" data-ld="college" hidden><p>A pipeline is a graph of jobs on fresh runners, written in YAML. Artifacts pass results on, caches speed up dependency downloads, secrets live outside the YAML. Build once and promote the same artifact.</p></div><div class="ld-p" data-ld="masters" hidden><p>Pipeline time is the longest path through the job graph, so needs and parallel jobs shorten it. Every third party step runs with your secrets, so pin by SHA, restrict permissions and treat CI as production.</p></div><div class="ld-p" data-ld="research" hidden><p>DORA research measures delivery with lead time, deployment frequency, change failure rate and time to restore. SLSA defines levels of build integrity, from documented builds to hosted, isolated builds with signed provenance.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./refs-packs.html" data-topic="refs-packs"><small>Previous topic</small><b>Refs and packs</b></a><a class="next" href="./gha-concepts.html" data-topic="gha-concepts"><small>Next topic</small><b>Actions concepts</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "cicd-basics", "topic": "cicd-basics", "subject": "git", "title": "CI/CD foundations: pipelines, runners, artifacts and roles", "codes": {"order": {"src": "# How a CI server decides when each job may start: a job waits only for the jobs in its needs list\njobs = {\n    \"lint\":        {\"needs\": [],             \"minutes\": 1},\n    \"unit-tests\":  {\"needs\": [\"lint\"],       \"minutes\": 2},\n    \"build\":       {\"needs\": [\"unit-tests\"], \"minutes\": 1},\n    \"smoke-tests\": {\"needs\": [\"build\"],      \"minutes\": 2},\n}\n\nfinish = {}\nwhile len(finish) < len(jobs):\n    for name, job in jobs.items():\n        if name not in finish and all(n in finish for n in job[\"needs\"]):\n            start = max([finish[n] for n in job[\"needs\"]] + [0])\n            finish[name] = start + job[\"minutes\"]\n            print(f\"{name:12} starts at minute {start}, ends at minute {finish[name]}\")\nprint(\"pipeline time:\", max(finish.values()), \"minutes\")", "stdin": "", "out": "lint         starts at minute 0, ends at minute 1\nunit-tests   starts at minute 1, ends at minute 3\nbuild        starts at minute 3, ends at minute 4\nsmoke-tests  starts at minute 4, ends at minute 6\npipeline time: 6 minutes"}}, "quiz": [{"lv": "e", "q": "What does continuous integration mean?", "o": ["Deploying every hour", "Merging small changes often, with every push built and tested automatically", "Writing integration tests only", "Using one branch"], "a": 1, "hint": "Merge often, test always.", "why": "Problems show up within minutes."}, {"lv": "e", "q": "Where does GitHub Actions look for workflow files?", "o": [".gitlab-ci.yml", ".github/workflows/", "ci/", ".git/hooks"], "a": 1, "hint": "A folder.", "why": "Any .yml or .yaml file in that folder."}, {"lv": "e", "q": "What is a runner?", "o": ["A test framework", "The machine that runs the jobs", "A Git command", "A YAML key"], "a": 1, "hint": "Does the work.", "why": "Hosted by the platform or by you."}, {"lv": "m", "q": "Continuous delivery versus continuous deployment: the difference is", "o": ["None", "Deployment releases to production automatically, delivery waits for a person", "Delivery has no tests", "Deployment is only for mobile apps"], "a": 1, "hint": "Human button.", "why": "Both keep every change releasable."}, {"lv": "m", "q": "You want downloaded pip packages reused between runs. Artifact or cache?", "o": ["Artifact", "Cache", "Secret", "Variable"], "a": 1, "hint": "Rebuildable.", "why": "A missing cache only costs time."}, {"lv": "m", "q": "You want QA to test the exact zip that the build job made. Artifact or cache?", "o": ["Artifact", "Cache", "Both", "Neither"], "a": 0, "hint": "Results.", "why": "Artifacts are the outputs of a run."}, {"lv": "m", "q": "python-version: 3.10 in YAML installs Python 3.1. Why?", "o": ["A bug in Python", "YAML reads 3.10 as the number 3.1, so quote it", "Version 3.10 does not exist", "The runner is old"], "a": 1, "hint": "Numbers.", "why": "Write \"3.10\"."}, {"lv": "h", "q": "Why pin a third party action to a full commit SHA?", "o": ["It is faster", "Tags can be moved to malicious code, a commit id cannot", "GitHub requires it", "It saves cache space"], "a": 1, "hint": "tj-actions.", "why": "March 2025 showed moved tags leaking secrets."}, {"lv": "h", "q": "What caused the Knight Capital loss in 2012, according to the SEC?", "o": ["A hacker", "New code was not deployed to one of eight servers by a manual process, and old code was triggered", "A database crash", "A slow network"], "a": 1, "hint": "Manual deploy.", "why": "Automated, verified deployment is the fix."}, {"lv": "x", "q": "Why build once and promote the same artifact?", "o": ["To save disk", "So that the file tested by QA is exactly the file released", "Because rebuilds are forbidden", "To skip tests"], "a": 1, "hint": "Same bytes.", "why": "Rebuilds can pick up different dependencies or code."}], "calc": [{"lv": "e", "q": "Jobs in a chain: lint 1 min, tests 2 min, build 1 min, smoke 2 min. Total pipeline time?", "ans": "6", "hint": "A chain adds up.", "steps": ["Each job waits for the one before.", "1 + 2 + 1 + 2.", "<span class=\"eq\">6 minutes<\/span>"]}, {"lv": "e", "q": "Two independent jobs of 3 and 5 minutes run in parallel. How long does the pipeline take?", "ans": "5", "hint": "The longest one.", "steps": ["They start together.", "The pipeline ends when the slower one ends.", "<span class=\"eq\">max(3, 5) = 5 minutes<\/span>"]}, {"lv": "m", "q": "Stage mode: stage 1 has jobs of 1 and 6 minutes, stage 2 has a 2 minute job that only needs the 1 minute job. Total?", "ans": "8", "hint": "Stages wait for everything.", "steps": ["Stage 1 ends when its slowest job ends: 6.", "Stage 2 starts at 6.", "<span class=\"eq\">6 + 2 = 8 minutes<\/span>"]}, {"lv": "m", "q": "Same jobs but with needs: the 2 minute job needs only the 1 minute job. Total?", "ans": "6", "hint": "Longest path.", "steps": ["The 2 minute job starts at minute 1 and ends at 3.", "The 6 minute job ends at 6.", "<span class=\"eq\">max(3, 6) = 6 minutes<\/span>"]}, {"lv": "h", "q": "A team pushes 40 times a day. Each pipeline takes 12 minutes on 1 runner, and pipelines queue. How many runner hours a day?", "ans": "8", "hint": "Minutes to hours.", "steps": ["40 × 12 = 480 minutes.", "480 / 60.", "<span class=\"eq\">8 runner hours<\/span>"]}, {"lv": "h", "q": "Caching cuts dependency install from 3 minutes to 0.5 in a 12 minute pipeline. With 40 runs a day, how many minutes are saved per day?", "ans": "100", "hint": "Saving per run times runs.", "steps": ["Saving per run: 3 - 0.5 = 2.5 minutes.", "40 runs a day.", "<span class=\"eq\">2.5 × 40 = 100 minutes<\/span>"]}], "assign": [{"id": "ptime", "lv": "m", "title": "Pipeline time with needs", "task": "<p>Write <code>pipeline_time(jobs)<\/code>. jobs maps a job name to <code>[minutes, needs]<\/code>, where needs is a list of job names. A job starts when all its needs have finished. Return the total minutes until the last job ends.<\/p>", "starter": "def pipeline_time(jobs):\n    # your code here\n    pass\n", "tests": [{"call": "pipeline_time({'lint': [1, []], 'test': [2, ['lint']], 'build': [1, ['test']]})", "want": 4}, {"call": "pipeline_time({'a': [3, []], 'b': [5, []]})", "want": 5}, {"call": "pipeline_time({'web': [1, []], 'docs': [6, []], 'test-web': [2, ['web']], 'deploy': [1, ['test-web']]})", "want": 6}, {"call": "pipeline_time({'a': [1, []], 'b': [2, ['a']], 'c': [4, ['a']], 'd': [1, ['b', 'c']]})", "want": 6}], "solution": "def pipeline_time(jobs):\n    end = {}\n    def finish(name):\n        if name not in end:\n            minutes, needs = jobs[name]\n            end[name] = max([finish(n) for n in needs] + [0]) + minutes\n        return end[name]\n    return max(finish(n) for n in jobs)\n", "hint": "A job ends at the latest end time of its needs plus its own minutes. Compute it recursively and remember results.", "why": "<p>This is the longest path through a directed acyclic graph, also called the critical path.<\/p>"}, {"id": "stagetime", "lv": "h", "title": "Pipeline time with stages", "task": "<p>Write <code>stage_time(stages)<\/code>. stages is a list of stages in order, each a list of job minutes. Every job in a stage starts when the whole previous stage has finished. Return the total minutes. An empty stage takes 0 minutes.<\/p>", "starter": "def stage_time(stages):\n    # your code here\n    pass\n", "tests": [{"call": "stage_time([[1], [2], [1], [2]])", "want": 6}, {"call": "stage_time([[1, 6], [2], [1]])", "want": 9}, {"call": "stage_time([[3, 3, 3]])", "want": 3}, {"call": "stage_time([[], [4]])", "want": 4}], "solution": "def stage_time(stages):\n    return sum(max(s) if s else 0 for s in stages)\n", "hint": "Each stage costs as long as its slowest job.", "why": "<p>Compare with the needs version: stages are simpler to read, needs are faster when jobs of very different lengths share a stage.<\/p>"}], "must": [["CI and CD", "CI: merge small changes often, every push built and tested. Continuous delivery: always releasable, a person releases. Continuous deployment: a green pipeline releases by itself."], ["Pipeline parts", "Pipeline or workflow run, jobs on fresh runners, steps or script lines. Stages wait for the whole previous stage, needs wait only for named jobs. Time = longest path."], ["YAML", "Spaces not tabs, key: value, - list items, run: | for blocks. Quote versions (\"3.10\")."], ["Artifacts versus cache", "Artifacts are results to keep and pass on (build packages, reports). Cache is a speed up for dependencies, safe to lose."], ["Secure and promote", "Secrets outside YAML, least permissions, pin third party actions by SHA (tj-actions 2025, Codecov 2021). Build once, promote the same artifact through dev, QA, staging and production (Knight Capital 2012)."]], "summary": "<p>A pipeline is a graph of jobs on fresh runners described in YAML. Artifacts carry results, caches carry speed, secrets stay out of the file, and the same build moves from Dev to QA to production.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"order": {"steps": [{"l": 3, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line"}, {"l": 2, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.jobs": "{'lint': {'needs': [], 'minutes': 1}, 'unit-tests': {'needs': ['lint'], 'minutes': 2}, ..."}}, {"l": 10, "ev": "line", "d": {"G.finish": "{}"}}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"G.name": "'lint'", "G.job": "{'needs': [], 'minutes': 1}"}}, {"l": 12, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f08a39c8d60>"}}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "return"}, {"l": 13, "ev": "line", "s": ["module"], "d": {"L..0": null}}, {"l": 14, "ev": "line", "d": {"G.start": "0"}}, {"l": 15, "ev": "line", "d": {"G.finish": "{'lint': 1}"}}, {"l": 11, "ev": "line", "o": "lint         starts at minute 0, ends at minute 1\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'unit-tests'", "G.job": "{'needs': ['lint'], 'minutes': 2}"}}, {"l": 12, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f08a39c9090>"}}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "return", "d": {"L.n": "'lint'"}}, {"l": 12, "ev": "call"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "return"}, {"l": 13, "ev": "line", "s": ["module"], "d": {"L..0": null, "L.n": null}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"G.start": "1"}}, {"l": 15, "ev": "line", "d": {"G.finish": "{'lint': 1, 'unit-tests': 3}"}}, {"l": 11, "ev": "line", "o": "unit-tests   starts at minute 1, ends at minute 3\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'build'", "G.job": "{'needs': ['unit-tests'], 'minutes': 1}"}}, {"l": 12, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f08a39c8eb0>"}}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "return", "d": {"L.n": "'unit-tests'"}}, {"l": 12, "ev": "call"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "return"}, {"l": 13, "ev": "line", "s": ["module"], "d": {"L..0": null, "L.n": null}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"G.start": "3"}}, {"l": 15, "ev": "line", "d": {"G.finish": "{'lint': 1, 'unit-tests': 3, 'build': 4}"}}, {"l": 11, "ev": "line", "o": "build        starts at minute 3, ends at minute 4\n"}, {"l": 12, "ev": "line", "d": {"G.name": "'smoke-tests'", "G.job": "{'needs': ['build'], 'minutes': 2}"}}, {"l": 12, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<list_iterator object at 0x7f08a39c8c70>"}}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "return", "d": {"L.n": "'build'"}}, {"l": 12, "ev": "call"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "return"}, {"l": 13, "ev": "line", "s": ["module"], "d": {"L..0": null, "L.n": null}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line", "d": {"G.start": "4"}}, {"l": 15, "ev": "line", "d": {"G.finish": "{'lint': 1, 'unit-tests': 3, 'build': 4, 'smoke-tests': 6}"}}, {"l": 11, "ev": "line", "o": "smoke-tests  starts at minute 4, ends at minute 6\n"}, {"l": 10, "ev": "line"}, {"l": 16, "ev": "line"}, {"l": 16, "ev": "return", "o": "pipeline time: 6 minutes\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

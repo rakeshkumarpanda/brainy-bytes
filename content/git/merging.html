@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merging and resolving conflicts · Git and CI/CD</title>
+<meta name="description" content="Fast-forward, three way merge, the merge base, --no-ff, --ff-only and --squash, conflict markers, resolving and aborting, conflict styles, rerere, the ort strategy, ours and theirs, and semantic conflicts.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 2: Branching and merging</span><span>›</span><span>Merging</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 2 of 3 · Intermediate</div>
+    <h1>Merging and resolving conflicts</h1>
+    <p class="lead">Know when Git fast-forwards and when it makes a merge commit, see how a three way merge decides, and resolve conflicts calmly.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">9 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#merging" data-topic="cheatsheet" data-h="merging">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#ff" data-l="ff"><span class="n">1</span><span class="t">Fast-forward or a real merge</span></a></li><li><a href="#three" data-l="three"><span class="n">2</span><span class="t">How a three way merge decides</span></a></li><li><a href="#conflicts" data-l="conflicts"><span class="n">3</span><span class="t">Resolving a conflict step by step</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="ff" data-l="ff" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Fast-forward or a real merge</h2>
+<p>To bring a feature into main you run <code>git merge feature</code> while on main. What Git does depends on the shape of the history.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Situation</th><th>What Git does</th><th>New commit?</th></tr></thead><tbody><tr><td>main has not moved since feature started</td><td><b>Fast-forward</b>: main just slides up to the tip of feature</td><td>No</td></tr><tr><td>Both branches have new commits</td><td><b>Three way merge</b>: compares both tips with their merge base and makes a merge commit with two parents</td><td>Yes</td></tr><tr><td>feature is already contained in main</td><td>Already up to date</td><td>No</td></tr></tbody></table></div>
+<div class="cvz" data-viz="gitsim" data-cfg="{&quot;cmds&quot;: &quot;git switch -c feature\ngit commit -m \&quot;step 1\&quot;\ngit commit -m \&quot;step 2\&quot;\ngit switch main\ngit merge feature&quot;}"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Merge a branch into the current one</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git merge &lt;branch&gt;</code></div><div class="fx-n">Fast-forwards when it can, otherwise makes a merge commit.</div></div><div class="fx"><div class="fx-h"><span>Always make a merge commit</span></div><div class="fx-b"><code>git merge --no-ff &lt;branch&gt;</code></div><div class="fx-n">Keeps the feature visible as its own bubble in history, even when a fast-forward was possible.</div></div><div class="fx"><div class="fx-h"><span>Refuse anything but a fast-forward</span></div><div class="fx-b"><code>git merge --ff-only &lt;branch&gt;</code></div><div class="fx-n">Fails instead of making a merge commit. Safe default for updating a branch you do not work on.</div></div><div class="fx"><div class="fx-h"><span>Squash</span></div><div class="fx-b"><code>git merge --squash &lt;branch&gt;</code> then <code>git commit</code></div><div class="fx-n">Stages all changes of the branch as one new ordinary commit. The branch itself is not recorded as merged.</div></div><div class="fx fx-key"><div class="fx-h"><span>Merge base</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git merge-base main feature</code></div><div class="fx-n">Prints the best common ancestor that a three way merge uses as its base.</div></div></div>
+<div class="cv-code" data-k="mergebase"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="three" data-l="three" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>How a three way merge decides</h2>
+<p>Git looks at three versions of every file: the <b>base</b> (the merge base), <b>ours</b> (the branch you are on) and <b>theirs</b> (the branch you merge in). For each part of the file:</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Base</th><th>Ours</th><th>Theirs</th><th>Result</th></tr></thead><tbody><tr><td>x</td><td>x</td><td>x</td><td>x (nobody changed it)</td></tr><tr><td>x</td><td>y</td><td>x</td><td>y (only we changed it)</td></tr><tr><td>x</td><td>x</td><td>z</td><td>z (only they changed it)</td></tr><tr><td>x</td><td>y</td><td>y</td><td>y (we both made the same change)</td></tr><tr><td>x</td><td>y</td><td>z</td><td><b>CONFLICT</b>, you decide</td></tr></tbody></table></div>
+<div class="cvz" data-viz="merge3"></div>
+<p>That is why Git can merge most work by itself. It only stops when the same lines were changed in two different ways, or when one side deleted a file the other side edited.</p>
+<details class="deep"><summary>Going deeper: The ort strategy</summary><div class="deep-b"><p>Since Git 2.34 the default merge strategy is <b>ort</b> (Ostensibly Recursive's Twin), a rewrite of the older recursive strategy that is much faster and handles renames better. When there is more than one best common ancestor (a criss cross history), ort first merges those ancestors into a virtual base. Other strategies: <b>octopus</b> merges more than two branches at once if there are no conflicts, <b>ours</b> records a merge but keeps our tree completely. Do not confuse the ours strategy (-s ours) with the option -X ours, which only picks our side for conflicting hunks.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="conflicts" data-l="conflicts" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Resolving a conflict step by step</h2>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">A conflict and its fix</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git merge feature</span><span class="ln">git status</span><span class="ln gc"># open shop.yml, edit the marked part, delete the markers</span><span class="ln">git add shop.yml</span><span class="ln">git commit</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Auto-merging shop.yml
+CONFLICT (content): Merge conflict in shop.yml
+Automatic merge failed; fix conflicts and then commit the result.
+On branch main
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+Unmerged paths:
+  (use "git add &lt;file&gt;..." to mark resolution)
+        both modified:   shop.yml</pre></div>
+<p>Inside the file Git writes conflict markers:</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">What the file looks like</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span><span class="ln">colour: green</span><span class="ln">=======</span><span class="ln">colour: red</span><span class="ln">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature</span></pre></div>
+<div class="walk"><div class="walk-h"><span>Resolve it</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Read both sides. Above ======= is ours (HEAD), below is theirs (feature).</li><li>Edit the text to what it should be. It may be one side, the other, or a mix.</li><li>Delete every marker line. A left over &lt;&lt;&lt;&lt;&lt;&lt;&lt; will break your code.</li><li>git add the file to mark it resolved, then git commit to finish the merge.</li><li><span class="eq">Changed your mind? git merge --abort returns to the state before the merge</span></li></ol></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Abort</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git merge --abort</code></div><div class="fx-n">Puts everything back as it was before git merge started.</div></div><div class="fx"><div class="fx-h"><span>Take one whole side for a file</span></div><div class="fx-b"><code>git checkout --ours file</code> or <code>--theirs file</code></div><div class="fx-n">Then git add file. Useful for generated files such as lock files.</div></div><div class="fx"><div class="fx-h"><span>See the base too</span></div><div class="fx-b"><code>git config merge.conflictStyle diff3</code></div><div class="fx-n">Markers then also show the base version between ||||||| and =======. zdiff3 is a tidier variant.</div></div><div class="fx"><div class="fx-h"><span>Remember resolutions</span></div><div class="fx-b"><code>git config rerere.enabled true</code></div><div class="fx-n">Reuse recorded resolution: when the same conflict comes back, Git applies your earlier fix.</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>A file with conflict markers still compiles in some languages, for example inside a YAML string or a Markdown file. Search for &lt;&lt;&lt;&lt;&lt;&lt;&lt; before committing, or let a pre-commit check do it.</div></div>
+<div class="scene"><div class="scene-h">Real world scenario: two testers, one config file</div><p>Asha raises a timeout to 30 seconds for slow test machines. Ravi lowers it to 10 to make failures show faster. Both edit the same line, so the merge stops. Git cannot know which is right. The team talks, picks 20, writes it, and commits the merge. Conflicts are a conversation, not an error.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Two friends edit copies of the same story. Git compares both copies with the original. If they changed different sentences, Git combines them. If they changed the same sentence differently, Git asks you which to keep.</p></div><div class="ld-p" data-ld="college" hidden><p>A merge commit has two parents. A fast-forward only moves the pointer. A three way merge combines base, ours and theirs, and conflicts happen when both sides change overlapping lines differently.</p></div><div class="ld-p" data-ld="masters" hidden><p>The merge base is a lowest common ancestor in the commit DAG. With several best common ancestors, ort merges them recursively into a virtual base. Rename detection pairs deleted and added files by similarity so changes follow moved files.</p></div><div class="ld-p" data-ld="research" hidden><p>Line based three way merge knows nothing about code structure. Research on structured and semistructured merge parses the code into syntax trees to merge more safely, and studies show many textual merges that succeed still introduce semantic conflicts that only tests catch, which is a strong argument for running CI on the merge result.</p></div></div>
+<div class="note note-exam"><b>In the exam</b><div>A clean merge is not a correct merge. Two changes can merge without any conflict and still break the program together. That is why CI on pull requests tests the merged code, not only the branch.</div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./branches.html" data-topic="branches"><small>Previous topic</small><b>Branches</b></a><a class="next" href="./rebase-cherry-pick.html" data-topic="rebase"><small>Next topic</small><b>Rebase and cherry-pick</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "merging", "topic": "merging", "subject": "git", "title": "Merging and resolving conflicts", "codes": {"mergebase": {"src": "# Find the merge base: the newest commit both branches share\nparents = {\"C0\": [], \"C1\": [\"C0\"], \"C2\": [\"C1\"], \"C3\": [\"C2\"], \"C4\": [\"C1\"], \"C5\": [\"C4\"]}\n\ndef ancestors(c):\n    out, todo = [], [c]\n    while todo:\n        x = todo.pop(0)\n        if x not in out:\n            out.append(x)\n            todo.extend(parents[x])\n    return out\n\nmain, feature = \"C3\", \"C5\"\na = ancestors(main)\nb = ancestors(feature)\ncommon = [c for c in a if c in b]\nprint(\"ancestors of main:   \", a)\nprint(\"ancestors of feature:\", b)\nprint(\"merge base:\", common[0])\nprint(\"fast-forward possible?\", main in b)", "stdin": "", "out": "ancestors of main:    ['C3', 'C2', 'C1', 'C0']\nancestors of feature: ['C5', 'C4', 'C1', 'C0']\nmerge base: C1\nfast-forward possible? False"}}, "quiz": [{"lv": "e", "q": "When can Git fast-forward?", "o": ["When both branches have new commits", "When the current branch has not moved since the other branch started", "Always", "Never on main"], "a": 1, "hint": "Nothing to combine.", "why": "main just slides forward to the tip."}, {"lv": "e", "q": "A merge commit has how many parents?", "o": ["0", "1", "2 or more", "Exactly 3"], "a": 2, "hint": "Two lines join.", "why": "Usually 2. An octopus merge has more."}, {"lv": "e", "q": "Which command cancels a merge with conflicts and restores the earlier state?", "o": ["git merge --stop", "git merge --abort", "git reset --soft", "git revert"], "a": 1, "hint": "Abort.", "why": "It returns to the state before git merge."}, {"lv": "m", "q": "In conflict markers, the part above ======= comes from", "o": ["theirs", "ours (HEAD)", "the base", "the remote"], "a": 1, "hint": "HEAD is first.", "why": "<<<<<<< HEAD starts ours."}, {"lv": "m", "q": "Base x, ours x, theirs z. The merge result is", "o": ["x", "z", "conflict", "both"], "a": 1, "hint": "Only one side changed.", "why": "Git takes the side that changed."}, {"lv": "m", "q": "How do you tell Git a conflict is resolved?", "o": ["git resolve", "git add the file", "git push", "git merge --done"], "a": 1, "hint": "Stage it.", "why": "git add marks it resolved, then git commit."}, {"lv": "m", "q": "What does --no-ff do?", "o": ["Refuses to merge", "Makes a merge commit even when a fast-forward was possible", "Squashes", "Skips conflicts"], "a": 1, "hint": "No fast-forward.", "why": "It keeps a visible merge commit."}, {"lv": "h", "q": "What is the default merge strategy in current Git?", "o": ["recursive", "ort", "octopus", "resolve"], "a": 1, "hint": "Since 2.34.", "why": "ort replaced recursive as the default in Git 2.34."}, {"lv": "h", "q": "git merge -s ours other versus git merge -X ours other", "o": ["Same thing", "-s ours ignores all of their changes, -X ours only picks ours for conflicting parts", "-X ours ignores everything", "Neither exists"], "a": 1, "hint": "Strategy versus option.", "why": "The strategy keeps our whole tree, the option only settles conflicts."}, {"lv": "x", "q": "A merge finished with no conflicts but the tests now fail. What is the likely cause?", "o": ["Git bug", "A semantic conflict: two compatible text changes that break together", "Line endings", "The merge base was wrong"], "a": 1, "hint": "Clean text, broken logic.", "why": "Text merge does not understand code, so CI must test the merge result."}], "calc": [{"lv": "e", "q": "main has 3 new commits and feature has 4 since they split. How many parents does the merge commit have?", "ans": "2", "hint": "Two branches.", "steps": ["git merge feature on main joins two tips.", "Commit counts do not matter.", "<span class=\"eq\">2 parents<\/span>"]}, {"lv": "e", "q": "main has 0 new commits and feature has 5. git merge feature (default options) creates how many new commits?", "ans": "0", "hint": "Fast-forward.", "steps": ["main has not moved, so a fast-forward is possible.", "The pointer moves to feature's tip.", "<span class=\"eq\">0 new commits<\/span>"]}, {"lv": "m", "q": "Same as before but with --no-ff. How many new commits?", "ans": "1", "hint": "A merge commit is forced.", "steps": ["--no-ff refuses to fast-forward.", "One merge commit is made.", "<span class=\"eq\">1<\/span>"]}, {"lv": "m", "q": "A file has 6 parts. Ours changed parts 2 and 5, theirs changed parts 5 and 6, both changed part 5 differently. How many conflicts?", "ans": "1", "hint": "Only part 5 overlaps.", "steps": ["Part 2: ours only, taken.", "Part 6: theirs only, taken.", "<span class=\"eq\">Part 5: changed differently on both, 1 conflict<\/span>"]}, {"lv": "h", "q": "With --squash, feature had 7 commits. After git merge --squash feature and git commit, how many new commits are on main?", "ans": "1", "hint": "One ordinary commit.", "steps": ["Squash stages all changes as one change.", "git commit records it once.", "<span class=\"eq\">1 commit, with one parent<\/span>"]}, {"lv": "h", "q": "C0 to C1 to C2 to C3 is main. feature starts at C1 with C4, C5. What is the merge base? Give the number after C.", "ans": "1", "hint": "Newest shared commit.", "steps": ["Ancestors of C3: C3, C2, C1, C0.", "Ancestors of C5: C5, C4, C1, C0.", "<span class=\"eq\">Newest shared: C1<\/span>"]}], "assign": [{"id": "mb", "lv": "m", "title": "Find the merge base", "task": "<p>Write <code>merge_base(parents, a, b)<\/code>. Return the common ancestor of a and b that is not an ancestor of any other common ancestor. You may assume there is exactly one.<\/p>", "starter": "def merge_base(parents, a, b):\n    # your code here\n    pass\n", "tests": [{"call": "merge_base({'C0': [], 'C1': ['C0'], 'C2': ['C1'], 'C3': ['C2'], 'C4': ['C1'], 'C5': ['C4']}, 'C3', 'C5')", "want": "C1"}, {"call": "merge_base({'A': [], 'B': ['A'], 'C': ['B']}, 'C', 'B')", "want": "B"}], "solution": "def anc(parents, c):\n    seen, todo = set(), [c]\n    while todo:\n        x = todo.pop()\n        if x not in seen:\n            seen.add(x)\n            todo.extend(parents[x])\n    return seen\n\ndef merge_base(parents, a, b):\n    common = anc(parents, a) & anc(parents, b)\n    for c in common:\n        if not any(c != o and c in anc(parents, o) for o in common):\n            return c\n", "hint": "Find all common ancestors, then keep the one that is not below another one.", "why": "<p>When b is an ancestor of a, the merge base is b itself, and a merge is already up to date.<\/p>"}, {"id": "m3", "lv": "h", "title": "Three way merge of one line", "task": "<p>Write <code>merge_line(base, ours, theirs)<\/code>. Return the merged line, or the string <code>\"CONFLICT\"<\/code> when both sides changed it differently.<\/p>", "starter": "def merge_line(base, ours, theirs):\n    # your code here\n    pass\n", "tests": [{"call": "merge_line('x', 'x', 'z')", "want": "z"}, {"call": "merge_line('x', 'y', 'x')", "want": "y"}, {"call": "merge_line('x', 'y', 'y')", "want": "y"}, {"call": "merge_line('x', 'y', 'z')", "want": "CONFLICT"}], "solution": "def merge_line(base, ours, theirs):\n    if ours == theirs:\n        return ours\n    if ours == base:\n        return theirs\n    if theirs == base:\n        return ours\n    return 'CONFLICT'\n", "hint": "Same on both sides, or changed on one side only, can be decided.", "why": "<p>Git applies this rule to whole hunks, not single lines, which is why neighbouring edits also conflict.<\/p>"}], "must": [["Fast-forward", "If the current branch has not moved, merge just moves the pointer. --no-ff forces a merge commit, --ff-only forbids one."], ["Three way merge", "Base, ours, theirs. One side changed: take it. Same change: take it. Different changes: conflict."], ["Resolve", "Edit, delete <<<<<<< ======= >>>>>>> markers, git add, git commit. git merge --abort to give up."], ["Strategies", "ort is the default since Git 2.34. -s ours keeps our tree, -X ours only settles conflicts our way."], ["Clean is not correct", "A merge without conflicts can still break the program. Test the merged result in CI."]], "summary": "<p>Git fast-forwards when it can, otherwise it merges base, ours and theirs. It only asks you where both sides changed the same lines differently.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"mergebase": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line", "d": {"G.parents": "{'C0': [], 'C1': ['C0'], 'C2': ['C1'], 'C3': ['C2'], 'C4': ['C1'], 'C5': ['C4']}"}}, {"l": 13, "ev": "line", "d": {"G.ancestors": "<function ancestors>"}}, {"l": 14, "ev": "line", "d": {"G.main": "'C3'", "G.feature": "'C5'"}}, {"l": 4, "ev": "call", "s": ["module", "ancestors()"], "d": {"L.c": "'C3'"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"L.out": "[]", "L.todo": "['C3']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C3'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.out": "['C3']"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C2']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C2'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.out": "['C3', 'C2']"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C1']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C1'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.out": "['C3', 'C2', 'C1']"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C0']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C0'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.out": "['C3', 'C2', 'C1', 'C0']"}}, {"l": 6, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.a": "['C3', 'C2', 'C1', 'C0']", "L.c": null, "L.out": null, "L.todo": null, "L.x": null}}, {"l": 4, "ev": "call", "s": ["module", "ancestors()"], "d": {"L.c": "'C5'"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"L.out": "[]", "L.todo": "['C5']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C5'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.out": "['C5']"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C4']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C4'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.out": "['C5', 'C4']"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C1']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C1'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.out": "['C5', 'C4', 'C1']"}}, {"l": 6, "ev": "line", "d": {"L.todo": "['C0']"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"L.todo": "[]", "L.x": "'C0'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.out": "['C5', 'C4', 'C1', 'C0']"}}, {"l": 6, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 16, "ev": "line", "s": ["module"], "d": {"G.b": "['C5', 'C4', 'C1', 'C0']", "L.c": null, "L.out": null, "L.todo": null, "L.x": null}}, {"l": 16, "ev": "line"}, {"l": 16, "ev": "line"}, {"l": 16, "ev": "line"}, {"l": 16, "ev": "line"}, {"l": 17, "ev": "line", "d": {"G.common": "['C1', 'C0']"}}, {"l": 18, "ev": "line", "o": "ancestors of main:    ['C3', 'C2', 'C1', 'C0']\n"}, {"l": 19, "ev": "line", "o": "ancestors of feature: ['C5', 'C4', 'C1', 'C0']\n"}, {"l": 20, "ev": "line", "o": "merge base: C1\n"}, {"l": 20, "ev": "return", "o": "fast-forward possible? False\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

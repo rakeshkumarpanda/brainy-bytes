@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team workflows, pull requests and branch protection · Git and CI/CD</title>
+<meta name="description" content="GitHub flow, Gitflow, trunk based development and feature flags, forking workflow and upstream sync, pull requests and merge requests, code review from the Dev and QA sides, GitHub and GitLab merge methods, branch protection and Pipelines must succeed, CODEOWNERS, commit message style and Conventional Commits.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 4: Remotes and teamwork</span><span>›</span><span>Team workflows</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 2 of 3 · Intermediate</div>
+    <h1>Team workflows, pull requests and branch protection</h1>
+    <p class="lead">How real teams use branches: GitHub flow, Gitflow, trunk based and forking, how pull requests and merge requests work, which merge button to press, and how to make the server enforce the rules.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#workflows" data-topic="cheatsheet" data-h="workflows">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#models" data-l="models"><span class="n">1</span><span class="t">Four branching workflows</span></a></li><li><a href="#pr" data-l="pr"><span class="n">2</span><span class="t">Pull requests and merge requests</span></a></li><li><a href="#protect" data-l="protect"><span class="n">3</span><span class="t">Protect main: branch rules and code owners</span></a></li><li><a href="#commits" data-l="commits"><span class="n">4</span><span class="t">Good commit messages and Conventional Commits</span></a></li></ol>
+    <article class="cv-lesson" id="models" data-l="models" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Four branching workflows</h2>
+<p>Git lets you branch any way you like, so teams agree on a <b>workflow</b>: which branches live long, where new work starts and how it gets back. Pick one in the animation and watch the commits move.</p>
+<div class="cvz" data-viz="flows"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Workflow</th><th>Long lived branches</th><th>Best for</th><th>Main risk</th></tr></thead><tbody><tr><td>GitHub flow</td><td>main only</td><td>web apps that deploy often</td><td>needs good CI, because main must always work</td></tr><tr><td>Gitflow</td><td>main and develop</td><td>products with numbered, scheduled releases and several supported versions</td><td>many branches and slow, painful merges</td></tr><tr><td>Trunk based</td><td>main (the trunk)</td><td>teams with strong automated tests who merge at least daily</td><td>unfinished work must hide behind feature flags</td></tr><tr><td>Forking</td><td>your fork plus the original (upstream)</td><td>open source, where outsiders cannot push</td><td>keeping the fork in sync</td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>Gitflow was published by Vincent Driessen in 2010. In 2020 he added a note to the article saying that for software delivered continuously, such as web apps, a simpler workflow like GitHub flow is usually a better fit. Gitflow still suits software with explicit versions.</div></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Forking workflow: keep your fork in sync</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git remote add upstream https://github.com/ORIGINAL/calc-app.git</span><span class="ln">git fetch upstream</span><span class="ln">git switch main</span><span class="ln">git merge --ff-only upstream/main</span><span class="ln">git push origin main</span></pre></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="pr" data-l="pr" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Pull requests and merge requests</h2>
+<p>A <b>pull request</b> (GitHub) or <b>merge request</b> (GitLab) is a page that asks to merge one branch into another. It is not a Git feature: it lives on the server. It shows the diff, runs CI on every push, and collects review comments and approvals.</p>
+<ol class="gk-flow"><li><b>Push the branch</b><span>git push -u origin feature/percent</span></li><li><b>Open the PR or MR</b><span>title, description, linked issue, reviewers</span></li><li><b>CI runs</b><span>the pipeline result appears as a status check on the page</span></li><li><b>Review</b><span>comments on lines, change requests, approvals</span></li><li><b>Fix and push again</b><span>the PR updates itself and CI runs again</span></li><li><b>Merge</b><span>with the method the project allows, then delete the branch</span></li></ol>
+<div class="tw"><table class="cvt "><thead><tr><th>GitHub merge button</th><th>GitLab merge method</th><th>Resulting history</th></tr></thead><tbody><tr><td>Create a merge commit</td><td>Merge commit</td><td>all branch commits plus a merge commit, the same as git merge --no-ff</td></tr><tr><td>Squash and merge</td><td>Squash commits option (with the merge commit methods a merge commit is added too)</td><td>one new commit holding the whole change</td></tr><tr><td>Rebase and merge</td><td>Fast-forward merge</td><td>the branch commits replayed on top, straight line, no merge commit</td></tr><tr><td>(no equivalent)</td><td>Merge commit with semi-linear history</td><td>merge commit, but only allowed when the branch is already rebased on the target</td></tr></tbody></table></div>
+<div class="gk-dq"><div class="gk-dq-h">A pull request, seen by Dev and by QA</div><div class="gk-dq-g"><div class="gk-dev"><b>Developer view</b><p>Keep the PR small and focused, write what changed and why, link the issue, and make CI green before asking for review. Answer every comment, by changing code or explaining.</p></div><div class="gk-qa"><b>QA view</b><p>Read the description for what to test, pull the branch or download the build artifact from its pipeline, test on a test environment, and add test cases for the edge cases you found. A green pipeline is necessary, not sufficient.</p></div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Squash and merge makes main easy to read, but the branch commits do not appear on main. If someone keeps working on the old branch afterwards, Git does not know those commits were merged and conflicts follow. Start a fresh branch after a squash merge.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="protect" data-l="protect" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Protect main: branch rules and code owners</h2>
+<p>A workflow is only a promise until the server enforces it. Both platforms let you protect a branch so that changes arrive only through reviewed, tested pull requests.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Rule</th><th>GitHub (Settings, Branches or Rules)</th><th>GitLab (Settings, Repository, Protected branches)</th></tr></thead><tbody><tr><td>No direct pushes</td><td>Require a pull request before merging</td><td>Allowed to push and merge: No one</td></tr><tr><td>Reviews</td><td>Required approvals, require review from Code Owners</td><td>Approval rules, Require approval from code owners (Premium)</td></tr><tr><td>Tests must pass</td><td>Require status checks to pass, pick the CI jobs</td><td>Settings, Merge requests, Merge checks: Pipelines must succeed</td></tr><tr><td>No history rewrites</td><td>Force pushes are blocked by default in a rule</td><td>Allowed to force push: off</td></tr><tr><td>No deleting the branch</td><td>Deletions are blocked by default in a rule</td><td>A protected branch cannot be deleted with git push, only by a Maintainer in the UI or API</td></tr><tr><td>Straight history</td><td>Require linear history</td><td>Merge method: Fast-forward merge</td></tr></tbody></table></div>
+<div class="cv-code gk-file" data-lang="text"><div class="cc-bar"><span class="gk-path">.github/CODEOWNERS</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="text"><span class="ln" data-n="1"># Default owners for everything</span><span class="ln gk-has" data-n="2">*                 @OWNER/maintainers</span><span class="ln" data-n="3"># Python code</span><span class="ln gk-has" data-n="4">*.py              @OWNER/backend</span><span class="ln" data-n="5"># The pipelines need a CI owner to approve</span><span class="ln gk-has" data-n="6">/.github/workflows/ @OWNER/ci-team</span><span class="ln" data-n="7">/.gitlab-ci.yml     @OWNER/ci-team</span><span class="ln" data-n="8"># Protect this file itself</span><span class="ln gk-has" data-n="9">/.github/CODEOWNERS @OWNER</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="2"><b>Line 2</b><code>*                 @OWNER/maintainers</code><span>The first rule matches every file.</span></li><li data-n="4"><b>Line 4</b><code>*.py              @OWNER/backend</code><span>The last matching pattern wins, so a .py file goes to backend, not maintainers.</span></li><li data-n="6"><b>Line 6</b><code>/.github/workflows/ @OWNER/ci-team</code><span>Changes to pipelines can leak secrets or skip tests, so they get their own reviewers.</span></li><li data-n="9"><b>Line 9</b><code>/.github/CODEOWNERS @OWNER</code><span>GitHub recommends owning the CODEOWNERS file itself, otherwise anyone could remove themselves from review.</span></li></ol></details></div>
+<p>GitHub looks for CODEOWNERS in <code>.github/</code>, the repository root, then <code>docs/</code>, and uses the first one it finds. Owners are requested for review automatically when a pull request touches their files. GitLab reads the same file name, and Code Owners there is a Premium and Ultimate feature.</p>
+<div class="note note-warn"><b>Common mistake</b><div>If your branch rule requires a status check called unit-tests, the job name in the workflow must stay unit-tests. Renaming the job makes the required check wait forever. GitHub also advises keeping job names unique across workflows for this reason.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="commits" data-l="commits" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>Good commit messages and Conventional Commits</h2>
+<p>A commit message is a letter to the person who reads it in two years. The common convention: a short summary line of about 50 characters in the imperative ("Add percent function", not "added"), a blank line, then a body that explains why.</p>
+<p><b>Conventional Commits</b> (version 1.0.0 of the specification) adds a type in front so that tools can read the history: <code>type(scope): description</code>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Message</th><th>Meaning</th><th>Semver effect</th></tr></thead><tbody><tr><td><code>fix(calc): handle divide by zero</code></td><td>a bug fix</td><td>PATCH</td></tr><tr><td><code>feat(calc): add percent()</code></td><td>a new feature</td><td>MINOR</td></tr><tr><td><code>feat!: drop Python 3.9</code> or a footer <code>BREAKING CHANGE: ...</code></td><td>a breaking change</td><td>MAJOR</td></tr><tr><td><code>docs:</code>, <code>test:</code>, <code>ci:</code>, <code>refactor:</code>, <code>chore:</code></td><td>allowed extra types</td><td>none by default</td></tr></tbody></table></div>
+<div class="cv-code" data-k="conv"></div>
+<div class="scene"><div class="scene-h">Real world scenario: release notes from history</div><p>Projects such as Angular adopted structured commit messages so that changelogs could be generated from Git history, and that convention grew into the Conventional Commits specification. Release tools read the messages since the last tag, pick the next version and write the release notes, which is why a CI job often checks message format on every pull request.</p></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A workflow is the team agreement on how branches are used. Pull requests are where code is checked by people and by CI before it reaches main.</p></div><div class="ld-p" data-ld="college" hidden><p>GitHub flow keeps one long lived branch, Gitflow two, trunk based development merges small changes daily. Branch protection turns the rules into server checks: reviews, required status checks, no force pushes.</p></div><div class="ld-p" data-ld="masters" hidden><p>Merge methods change the shape of main: merge commits keep context, squash gives one commit per PR, rebase or fast forward gives a straight line. Merge queues (GitHub) and merge trains (GitLab) test each change against the result of the ones queued before it.</p></div><div class="ld-p" data-ld="research" hidden><p>The DORA research programme links short lived branches, trunk based development and fast feedback from CI to better delivery performance. Supply chain frameworks such as SLSA go further: they ask that releases are built by a hosted CI platform, not on a laptop, and that the build produces signed provenance saying which commit it came from.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./remotes.html" data-topic="remotes"><small>Previous topic</small><b>Remotes</b></a><a class="next" href="./power-tools.html" data-topic="power-tools"><small>Next topic</small><b>Power tools</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "workflows", "topic": "workflows", "subject": "git", "title": "Team workflows, pull requests and branch protection", "codes": {"conv": {"src": "# Conventional Commits decide the next semantic version from the commit messages since the last tag\nmessages = [\n    \"fix(calc): divide by zero raises ValueError\",\n    \"docs: explain the pipeline in README\",\n    \"feat(calc): add percent()\",\n    \"fix: round results to 10 places\",\n]\n\ndef kind(msg):\n    head = msg.split(\":\")[0]\n    if head.endswith(\"!\") or \"BREAKING CHANGE\" in msg:\n        return \"major\"\n    if head.startswith(\"feat\"):\n        return \"minor\"\n    if head.startswith(\"fix\"):\n        return \"patch\"\n    return \"none\"\n\norder = [\"none\", \"patch\", \"minor\", \"major\"]\nbest = \"none\"\nfor m in messages:\n    k = kind(m)\n    print(f\"{k:6} <- {m}\")\n    if order.index(k) > order.index(best):\n        best = k\nprint(\"next release bumps:\", best)", "stdin": "", "out": "patch  <- fix(calc): divide by zero raises ValueError\nnone   <- docs: explain the pipeline in README\nminor  <- feat(calc): add percent()\npatch  <- fix: round results to 10 places\nnext release bumps: minor"}}, "quiz": [{"lv": "e", "q": "In GitHub flow, how many long lived branches are there?", "o": ["One, main", "Two, main and develop", "One per developer", "None"], "a": 0, "hint": "Simple.", "why": "Short feature branches merge into main through pull requests."}, {"lv": "e", "q": "What does GitLab call a pull request?", "o": ["Push request", "Merge request", "Change list", "Patch set"], "a": 1, "hint": "Same idea.", "why": "MR on GitLab, PR on GitHub."}, {"lv": "e", "q": "Is a pull request a feature of Git itself?", "o": ["Yes, git pull-request", "No, it is a feature of the hosting server", "Only in Git 3", "Only for forks"], "a": 1, "hint": "Server side.", "why": "git request-pull exists but only prints a summary for email."}, {"lv": "m", "q": "Which workflow keeps a develop branch next to main?", "o": ["GitHub flow", "Gitflow", "Trunk based", "Forking"], "a": 1, "hint": "Two long lived.", "why": "develop collects the next release."}, {"lv": "m", "q": "Trunk based teams merge unfinished features into main. How do users not see them?", "o": ["They do not merge them", "Feature flags switch the code off", "They use tags", "They revert every night"], "a": 1, "hint": "Switches.", "why": "The code ships dark and is turned on later."}, {"lv": "m", "q": "Which GitHub merge button turns the whole branch into one commit on main?", "o": ["Create a merge commit", "Squash and merge", "Rebase and merge", "Fast forward"], "a": 1, "hint": "Squash.", "why": "One commit per pull request."}, {"lv": "m", "q": "In a CODEOWNERS file, two patterns match a file. Which owners are used?", "o": ["The first match", "The last match", "Both", "None"], "a": 1, "hint": "Like .gitignore.", "why": "Later patterns take precedence."}, {"lv": "h", "q": "Where do you require a green pipeline before merging on GitLab?", "o": [".gitlab-ci.yml", "Settings, Merge requests, Merge checks, Pipelines must succeed", "Protected tags", "Runners page"], "a": 1, "hint": "Merge checks.", "why": "Combined with protected branches, nothing untested reaches main."}, {"lv": "h", "q": "Which commit message produces a MAJOR bump under Conventional Commits?", "o": ["fix: typo", "feat: add export", "feat!: remove the v1 API", "docs: update"], "a": 2, "hint": "The bang.", "why": "! after the type, or a BREAKING CHANGE footer."}, {"lv": "x", "q": "A required status check named unit-tests never reports after you renamed the job to tests. Why?", "o": ["GitHub is down", "The rule waits for a check called unit-tests, which no job reports any more", "Branch protection was deleted", "The cache expired"], "a": 1, "hint": "Names must match.", "why": "Update the rule or keep the old job name."}], "calc": [{"lv": "e", "q": "Commits since v1.4.0: fix, docs, fix. What is the next version, written without dots (1.4.1 is 141)?", "ans": "141", "hint": "Only fixes.", "steps": ["fix gives PATCH, docs gives nothing.", "The highest bump is PATCH.", "<span class=\"eq\">1.4.0 to 1.4.1, written 141<\/span>"]}, {"lv": "e", "q": "Commits since v1.4.0: fix, feat, docs. Next version without dots?", "ans": "150", "hint": "feat beats fix.", "steps": ["The highest bump is MINOR from feat.", "MINOR up, PATCH to 0.", "<span class=\"eq\">1.5.0, written 150<\/span>"]}, {"lv": "m", "q": "Commits since v2.3.1: feat, fix, feat!. Next version without dots?", "ans": "300", "hint": "The bang wins.", "steps": ["feat! is a breaking change.", "MAJOR up, the rest to 0.", "<span class=\"eq\">3.0.0, written 300<\/span>"]}, {"lv": "m", "q": "A PR has 7 commits. How many new commits land on main with Squash and merge?", "ans": "1", "hint": "Squash.", "steps": ["Squash combines all changes.", "It creates one new commit on main.", "<span class=\"eq\">1 commit<\/span>"]}, {"lv": "m", "q": "A PR has 7 commits and main has moved. How many new commits land on main with Create a merge commit?", "ans": "8", "hint": "Branch plus merge.", "steps": ["All 7 branch commits become reachable from main.", "One merge commit joins the lines.", "<span class=\"eq\">7 + 1 = 8<\/span>"]}, {"lv": "h", "q": "CODEOWNERS: \"* @a\", \"*.py @b\", \"/tests/ @c\". Who owns tests/test_calc.py? Answer 1 for a, 2 for b, 3 for c.", "ans": "3", "hint": "Last match wins.", "steps": ["* matches: owner a.", "*.py matches: owner b.", "<span class=\"eq\">/tests/ matches last: owner c, answer 3<\/span>"]}], "assign": [{"id": "owners", "lv": "m", "title": "Who owns this file", "task": "<p>Write <code>owners(rules, path)<\/code>. rules is a list of <code>[pattern, owner]<\/code> pairs. Patterns are <code>*<\/code> (everything), <code>*.ext<\/code> (files ending in .ext) or <code>/dir/<\/code> (everything under that top level folder). The last matching rule wins. Return the owner, or None.<\/p>", "starter": "def owners(rules, path):\n    # your code here\n    pass\n", "tests": [{"call": "owners([['*', '@a'], ['*.py', '@b']], 'app/calc.py')", "want": "@b"}, {"call": "owners([['*', '@a'], ['*.py', '@b'], ['/tests/', '@c']], 'tests/test_calc.py')", "want": "@c"}, {"call": "owners([['*.py', '@b']], 'README.md')", "want": null}, {"call": "owners([['/tests/', '@c'], ['*', '@a']], 'tests/x.py')", "want": "@a"}], "solution": "def match(pattern, path):\n    if pattern == '*':\n        return True\n    if pattern.startswith('*.'):\n        return path.endswith(pattern[1:])\n    if pattern.startswith('/') and pattern.endswith('/'):\n        return path.startswith(pattern[1:])\n    return path == pattern\n\ndef owners(rules, path):\n    found = None\n    for pattern, who in rules:\n        if match(pattern, path):\n            found = who\n    return found\n", "hint": "Loop over every rule and keep the owner of the latest match.", "why": "<p>Order matters: put the general rule first and specific rules after it.<\/p>"}, {"id": "nextver", "lv": "h", "title": "Next version from commit messages", "task": "<p>Write <code>next_version(tag, messages)<\/code>. tag looks like <code>v1.4.0<\/code>. Use Conventional Commits: <code>type!:<\/code> or a message containing <code>BREAKING CHANGE<\/code> is major, <code>feat<\/code> is minor, <code>fix<\/code> is patch, anything else changes nothing. Return the new tag, or the same tag if nothing changes.<\/p>", "starter": "def next_version(tag, messages):\n    # your code here\n    pass\n", "tests": [{"call": "next_version('v1.4.0', ['fix: a', 'docs: b'])", "want": "v1.4.1"}, {"call": "next_version('v1.4.0', ['fix: a', 'feat: b'])", "want": "v1.5.0"}, {"call": "next_version('v1.4.0', ['feat!: c'])", "want": "v2.0.0"}, {"call": "next_version('v1.4.0', ['chore: x'])", "want": "v1.4.0"}, {"call": "next_version('v0.9.3', ['fix: a', 'refactor: b\\n\\nBREAKING CHANGE: new API'])", "want": "v1.0.0"}], "solution": "def level(msg):\n    head = msg.split(':')[0]\n    if head.endswith('!') or 'BREAKING CHANGE' in msg:\n        return 3\n    if head.startswith('feat'):\n        return 2\n    if head.startswith('fix'):\n        return 1\n    return 0\n\ndef next_version(tag, messages):\n    major, minor, patch = (int(x) for x in tag[1:].split('.'))\n    top = max([level(m) for m in messages] + [0])\n    if top == 3:\n        return f'v{major + 1}.0.0'\n    if top == 2:\n        return f'v{major}.{minor + 1}.0'\n    if top == 1:\n        return f'v{major}.{minor}.{patch + 1}'\n    return tag\n", "hint": "Find the strongest change among all messages, then bump once.", "why": "<p>Real release tools do exactly this before they create the tag and release notes.<\/p>"}], "must": [["Workflows", "GitHub flow: main plus short branches. Gitflow: main plus develop, release and hotfix branches. Trunk based: merge small changes daily behind feature flags. Forking: push to your fork, PR upstream."], ["PR and MR", "Server pages that show the diff, run CI and collect reviews before a merge. Keep them small."], ["Merge methods", "Merge commit keeps the branch, squash gives one commit, rebase or fast forward gives a straight line."], ["Protect main", "Require PRs, approvals and passing status checks (GitHub) or Pipelines must succeed (GitLab). Block force pushes and deletes."], ["CODEOWNERS and messages", "CODEOWNERS: last match wins, owners auto requested. Conventional Commits: fix PATCH, feat MINOR, ! or BREAKING CHANGE MAJOR."]], "summary": "<p>Agree a workflow, send every change through a reviewed pull request, let the server enforce reviews and green pipelines, and write messages that tools can read.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"conv": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 9, "ev": "line", "d": {"G.messages": "['fix(calc): divide by zero raises ValueError', 'docs: explain the pipeline in README',..."}}, {"l": 19, "ev": "line", "d": {"G.kind": "<function kind>"}}, {"l": 20, "ev": "line", "d": {"G.order": "['none', 'patch', 'minor', 'major']"}}, {"l": 21, "ev": "line", "d": {"G.best": "'none'"}}, {"l": 22, "ev": "line", "d": {"G.m": "'fix(calc): divide by zero raises ValueError'"}}, {"l": 9, "ev": "call", "s": ["module", "kind()"], "d": {"L.msg": "'fix(calc): divide by zero raises ValueError'"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"L.head": "'fix(calc)'"}}, {"l": 13, "ev": "line"}, {"l": 15, "ev": "line"}, {"l": 16, "ev": "line"}, {"l": 16, "ev": "return"}, {"l": 23, "ev": "line", "s": ["module"], "d": {"G.k": "'patch'", "L.msg": null, "L.head": null}}, {"l": 24, "ev": "line", "o": "patch  <- fix(calc): divide by zero raises ValueError\n"}, {"l": 25, "ev": "line"}, {"l": 21, "ev": "line", "d": {"G.best": "'patch'"}}, {"l": 22, "ev": "line", "d": {"G.m": "'docs: explain the pipeline in README'"}}, {"l": 9, "ev": "call", "s": ["module", "kind()"], "d": {"L.msg": "'docs: explain the pipeline in README'"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"L.head": "'docs'"}}, {"l": 13, "ev": "line"}, {"l": 15, "ev": "line"}, {"l": 17, "ev": "line"}, {"l": 17, "ev": "return"}, {"l": 23, "ev": "line", "s": ["module"], "d": {"G.k": "'none'", "L.msg": null, "L.head": null}}, {"l": 24, "ev": "line", "o": "none   <- docs: explain the pipeline in README\n"}, {"l": 21, "ev": "line"}, {"l": 22, "ev": "line", "d": {"G.m": "'feat(calc): add percent()'"}}, {"l": 9, "ev": "call", "s": ["module", "kind()"], "d": {"L.msg": "'feat(calc): add percent()'"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"L.head": "'feat(calc)'"}}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line"}, {"l": 14, "ev": "return"}, {"l": 23, "ev": "line", "s": ["module"], "d": {"G.k": "'minor'", "L.msg": null, "L.head": null}}, {"l": 24, "ev": "line", "o": "minor  <- feat(calc): add percent()\n"}, {"l": 25, "ev": "line"}, {"l": 21, "ev": "line", "d": {"G.best": "'minor'"}}, {"l": 22, "ev": "line", "d": {"G.m": "'fix: round results to 10 places'"}}, {"l": 9, "ev": "call", "s": ["module", "kind()"], "d": {"L.msg": "'fix: round results to 10 places'"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"L.head": "'fix'"}}, {"l": 13, "ev": "line"}, {"l": 15, "ev": "line"}, {"l": 16, "ev": "line"}, {"l": 16, "ev": "return"}, {"l": 23, "ev": "line", "s": ["module"], "d": {"G.k": "'patch'", "L.msg": null, "L.head": null}}, {"l": 24, "ev": "line", "o": "patch  <- fix: round results to 10 places\n"}, {"l": 21, "ev": "line"}, {"l": 26, "ev": "line"}, {"l": 26, "ev": "return", "o": "next release bumps: minor\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

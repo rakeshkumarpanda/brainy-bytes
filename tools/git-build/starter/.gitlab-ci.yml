@@ -1,0 +1,91 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+stages:
+  - lint
+  - test
+  - build
+  - qa
+
+default:
+  image: python:3.13-slim
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+lint:
+  stage: lint
+  script:
+    - python -m compileall -q app
+
+unit-tests:
+  stage: test
+  cache:
+    key:
+      files:
+        - requirements.txt
+    paths:
+      - .cache/pip
+  script:
+    - pip install -r requirements.txt
+    - python -m pytest -q tests/unit --junitxml=reports/unit.xml
+  artifacts:
+    when: always
+    paths:
+      - reports/unit.xml
+    reports:
+      junit: reports/unit.xml
+    expire_in: 14 days
+
+build:
+  stage: build
+  script:
+    - mkdir -p dist
+    - python -m zipfile -c dist/calc-app.zip app
+  artifacts:
+    name: "calc-app-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - dist/calc-app.zip
+    expire_in: 30 days
+
+smoke-tests:
+  stage: qa
+  needs:
+    - job: build
+      artifacts: true
+  cache:
+    key:
+      files:
+        - requirements.txt
+    paths:
+      - .cache/pip
+  script:
+    - pip install -r requirements.txt
+    - PYTHONPATH=dist/calc-app.zip pytest -q tests/smoke --junitxml=reports/smoke.xml
+  artifacts:
+    when: always
+    paths:
+      - reports/smoke.xml
+    reports:
+      junit: reports/smoke.xml
+    expire_in: 14 days
+
+nightly-regression:
+  stage: qa
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - pip install -r requirements.txt
+    - PYTHONPATH=dist/calc-app.zip pytest -q tests --junitxml=reports/regression.xml
+  artifacts:
+    when: always
+    reports:
+      junit: reports/regression.xml
+    expire_in: 30 days

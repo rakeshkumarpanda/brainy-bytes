@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rebase, interactive rebase and cherry-pick · Git and CI/CD</title>
+<meta name="description" content="git rebase and how replay creates new commits, conflicts during rebase, --onto and --update-refs, the golden rule, merge versus rebase, interactive rebase commands, fixup and autosquash, cherry-pick and patch ids.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 2: Branching and merging</span><span>›</span><span>Rebase and cherry-pick</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 3 of 3 · Intermediate</div>
+    <h1>Rebase, interactive rebase and cherry-pick</h1>
+    <p class="lead">Move your work onto the latest main, tidy commits before review, copy one fix to a release branch, and know when rewriting history is safe.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">7 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#rebase-cherry-pick" data-topic="cheatsheet" data-h="rebase-cherry-pick">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#rebase" data-l="rebase"><span class="n">1</span><span class="t">Rebase: move your work onto a new base</span></a></li><li><a href="#golden" data-l="golden"><span class="n">2</span><span class="t">The golden rule, and merge versus rebase</span></a></li><li><a href="#interactive" data-l="interactive"><span class="n">3</span><span class="t">Interactive rebase: tidy your commits before review</span></a></li><li><a href="#cherry" data-l="cherry"><span class="n">4</span><span class="t">Cherry-pick: copy one commit</span></a></li></ol>
+    <article class="cv-lesson" id="rebase" data-l="rebase" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Rebase: move your work onto a new base</h2>
+<p>You started a feature from main on Monday. By Wednesday main has new commits. Merging would add a merge commit. <b>Rebasing</b> instead takes your commits, sets them aside, moves your branch to the new tip of main, and replays your commits there one by one. History becomes one straight line, as if you had started today.</p>
+<div class="cvz" data-viz="gitsim" data-cfg="{&quot;cmds&quot;: &quot;git switch -c feature\ngit commit -m \&quot;add button\&quot;\ngit commit -m \&quot;style button\&quot;\ngit switch main\ngit commit -m \&quot;fix typo\&quot;\ngit switch feature\ngit rebase main\ngit switch main\ngit merge feature&quot;}"></div>
+<div class="cv-code" data-k="replay"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Rebase the current branch</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git rebase &lt;upstream&gt;</code></div><div class="fx-n">Replays the commits of HEAD that are not in upstream on top of upstream.</div></div><div class="fx fx-key"><div class="fx-h"><span>Continue, skip or stop</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git rebase --continue</code>, <code>--skip</code>, <code>--abort</code></div><div class="fx-n">After fixing a conflict: git add, then --continue. --abort returns to before the rebase.</div></div><div class="fx"><div class="fx-h"><span>Move a range somewhere else</span></div><div class="fx-b"><code>git rebase --onto &lt;newbase&gt; &lt;oldbase&gt; [&lt;branch&gt;]</code></div><div class="fx-n">Takes the commits after oldbase and replays them on newbase.</div></div><div class="fx"><div class="fx-h"><span>Update stacked branches too</span></div><div class="fx-b"><code>git rebase --update-refs</code></div><div class="fx-n">Also moves other branches that point at commits being rewritten (Git 2.38 and later).</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Rebased commits are copies with new ids, because their parent changed. Anyone who had the old ones now has commits that no longer exist on the branch.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="golden" data-l="golden" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>The golden rule, and merge versus rebase</h2>
+<p><b>Do not rebase commits that exist outside your repository and that people may have based work on.</b> Rebasing your own local branch before you share it is fine. Rebasing main after the team pulled it forces everyone to untangle duplicate commits.</p>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>Merge</th><th>Rebase</th></tr></thead><tbody><tr><td>History</td><td>True record, with merge commits</td><td>Clean straight line, rewritten</td></tr><tr><td>Commit ids</td><td>Unchanged</td><td>New ids for replayed commits</td></tr><tr><td>Safe on shared branches</td><td>Yes</td><td>No, only on your own branch</td></tr><tr><td>Conflicts</td><td>Solved once, in the merge commit</td><td>May be solved once per replayed commit</td></tr><tr><td>Good for</td><td>Bringing a finished feature into main</td><td>Updating your feature branch with main before review</td></tr></tbody></table></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">A common, safe habit</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git switch feature/search</span><span class="ln">git fetch origin</span><span class="ln">git rebase origin/main</span><span class="ln gc"># fix conflicts if any, run the tests</span><span class="ln">git push --force-with-lease</span></pre></div>
+<div class="note note-warn"><b>Common mistake</b><div>After rebasing a branch you already pushed, a normal push is rejected. Use --force-with-lease, never plain --force, and only on a branch that is yours. Chapter 4.1 explains why.</div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the pull request that went stale</div><p>A reviewer asks Ravi to update his pull request because main moved. He rebases onto origin/main, reruns the tests locally, and force pushes with lease. The pull request shows his three commits neatly on top of the latest main, and the CI checks run again on code that matches what will be merged.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="interactive" data-l="interactive" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Interactive rebase: tidy your commits before review</h2>
+<p><code>git rebase -i HEAD~4</code> opens a list of your last four commits, oldest at the top. You change the word in front of each line and save.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">The todo list Git opens</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">pick a1b2c3d Add search box</span><span class="ln">pick b2c3d4e WIP</span><span class="ln">pick c3d4e5f fix typo in search</span><span class="ln">pick d4e5f6a Add search by price</span></pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Command</th><th>Effect</th></tr></thead><tbody><tr><td>pick</td><td>keep the commit as it is</td></tr><tr><td>reword</td><td>keep the change, edit the message</td></tr><tr><td>edit</td><td>stop after this commit so you can amend it or split it</td></tr><tr><td>squash</td><td>meld into the previous commit and combine the messages</td></tr><tr><td>fixup</td><td>meld into the previous commit and throw this message away</td></tr><tr><td>drop</td><td>remove the commit</td></tr><tr><td>(change the order of lines)</td><td>reorder the commits</td></tr></tbody></table></div>
+<div class="cv-code" data-k="todo"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Prepare a fixup now, squash later</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git commit --fixup=&lt;commit&gt;</code> then <code>git rebase -i --autosquash &lt;base&gt;</code></div><div class="fx-n">The fixup! commit is moved next to its target and marked fixup automatically.</div></div></div>
+<div class="note note-tip"><b>Remember</b><div>Interactive rebase rewrites history. Use it on commits that only you have, usually right before opening or updating a pull request.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="cherry" data-l="cherry" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>Cherry-pick: copy one commit</h2>
+<p><code>git cherry-pick &lt;commit&gt;</code> applies the change of one commit on top of your current branch as a new commit. It is how a bug fix made on main reaches an older release branch without bringing everything else along.</p>
+<div class="cvz" data-viz="gitsim" data-cfg="{&quot;cmds&quot;: &quot;git switch -c release/1.0\ngit switch main\ngit commit -m \&quot;new feature\&quot;\ngit commit -m \&quot;fix crash\&quot;\ngit switch release/1.0\ngit cherry-pick main\ngit tag v1.0.1&quot;}"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Copy commits</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git cherry-pick &lt;commit&gt;...</code>, <code>git cherry-pick A..B</code></div><div class="fx-n">Each picked commit becomes a new commit with a new id. -x adds "(cherry picked from commit ...)" to the message.</div></div><div class="fx"><div class="fx-h"><span>Undo a commit by adding its opposite</span></div><div class="fx-b"><code>git revert &lt;commit&gt;</code></div><div class="fx-n">Covered in chapter 3.1. Safe on shared branches because nothing is rewritten.</div></div></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Rebase is like copying your homework neatly onto a fresh page after the teacher changed the first page. Cherry-pick is copying one good paragraph into another notebook.</p></div><div class="ld-p" data-ld="college" hidden><p>Rebase and cherry-pick both apply the diff of a commit to a new parent, creating a new commit. Rebase does it for a range and then moves the branch. Rebase skips commits whose change is already upstream.</p></div><div class="ld-p" data-ld="masters" hidden><p>Git detects already applied changes by patch id, a hash of the diff ignoring line numbers and whitespace. rebase --onto takes three points: new base, old base (exclusive) and branch. Rebase by default drops merge commits, and --rebase-merges recreates them.</p></div><div class="ld-p" data-ld="research" hidden><p>Rewriting public history breaks the assumption that a commit id names a stable history. Tools like git range-diff compare two versions of a patch series, which is how mailing list based projects such as Git itself review rebased series.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./merging.html" data-topic="merging"><small>Previous topic</small><b>Merging</b></a><a class="next" href="./undo.html" data-topic="undo"><small>Next topic</small><b>Undo</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "rebase-cherry-pick", "topic": "rebase", "subject": "git", "title": "Rebase, interactive rebase and cherry-pick", "codes": {"replay": {"src": "# Rebase = replay your commits, one by one, on top of a new base. Copies get new ids.\nmain = [\"C0\", \"C1\", \"C4\"]            # main moved on with C4\nfeature = [\"C0\", \"C1\", \"C2\", \"C3\"]   # feature started at C1\nbase = \"C1\"\nmine = feature[feature.index(base) + 1:]\nprint(\"commits to replay:\", mine)\nnew_feature = list(main)\nfor c in mine:\n    copy = c + \"'\"                   # same change, new parent, so a new id\n    new_feature.append(copy)\n    print(\"replayed\", c, \"as\", copy, \"on top of\", new_feature[-2])\nprint(\"feature is now:\", new_feature)\nprint(\"old\", mine, \"are left behind (only the reflog knows them)\")", "stdin": "", "out": "commits to replay: ['C2', 'C3']\nreplayed C2 as C2' on top of C4\nreplayed C3 as C3' on top of C2'\nfeature is now: ['C0', 'C1', 'C4', \"C2'\", \"C3'\"]\nold ['C2', 'C3'] are left behind (only the reflog knows them)"}, "todo": {"src": "# What an interactive rebase todo list does to a list of commits\ncommits = [(\"a1\", \"Add search box\"), (\"b2\", \"WIP\"), (\"c3\", \"fix typo in search\"), (\"d4\", \"Add search by price\")]\ntodo = [(\"pick\", \"a1\"), (\"fixup\", \"c3\"), (\"drop\", \"b2\"), (\"reword\", \"d4\")]\nmsgs = dict(commits)\nresult = []\nfor action, cid in todo:\n    if action == \"pick\":\n        result.append(msgs[cid])\n    elif action in (\"fixup\", \"squash\"):\n        result[-1] = result[-1] + (\" + \" + msgs[cid] if action == \"squash\" else \"\")\n    elif action == \"reword\":\n        result.append(msgs[cid] + \" (message edited)\")\n    elif action == \"drop\":\n        pass\nfor i, m in enumerate(result, 1):\n    print(i, m)", "stdin": "", "out": "1 Add search box\n2 Add search by price (message edited)"}}, "quiz": [{"lv": "e", "q": "What does git rebase main do on a feature branch?", "o": ["Deletes main", "Replays feature's own commits on top of main", "Merges feature into main", "Pushes"], "a": 1, "hint": "Replay.", "why": "It moves the base of your work to the tip of main."}, {"lv": "e", "q": "After a rebase, the replayed commits have", "o": ["The same ids", "New ids", "No ids", "The ids of main"], "a": 1, "hint": "Parent changed.", "why": "A different parent means a different commit object."}, {"lv": "e", "q": "Which command stops a rebase with conflicts and goes back?", "o": ["git rebase --abort", "git rebase --stop", "git reset", "git merge --abort"], "a": 0, "hint": "Abort.", "why": "git rebase --abort restores the branch as it was."}, {"lv": "m", "q": "The golden rule of rebasing says", "o": ["Always rebase main", "Do not rebase commits others may have based work on", "Never rebase", "Rebase only on Fridays"], "a": 1, "hint": "Shared history.", "why": "Rebase your own unshared commits only."}, {"lv": "m", "q": "In git rebase -i, fixup does what?", "o": ["Edits a message", "Melds the commit into the previous one and drops its message", "Deletes the commit", "Splits it"], "a": 1, "hint": "Like squash, quieter.", "why": "squash keeps both messages for editing, fixup discards this one."}, {"lv": "m", "q": "You fixed a bug on main and need it on release/1.0 without other new features. Use", "o": ["git merge main", "git cherry-pick <fix commit>", "git rebase main", "git push"], "a": 1, "hint": "One commit.", "why": "Cherry-pick copies only that change."}, {"lv": "m", "q": "You rebased a branch you had already pushed. Plain git push says rejected. Best next step?", "o": ["git push --force", "git push --force-with-lease", "Delete the remote", "git pull and push"], "a": 1, "hint": "Safer force.", "why": "The lease fails if someone else pushed in the meantime."}, {"lv": "h", "q": "Your feature commits B and C sit on top of an old topic branch you no longer want. Which command moves only B and C onto main?", "o": ["git rebase main", "git rebase --onto main topic feature", "git cherry-pick main", "git merge --onto"], "a": 1, "hint": "Three points.", "why": "Replay commits after topic, up to feature, onto main."}, {"lv": "h", "q": "How does rebase notice that one of your commits is already in upstream?", "o": ["By message", "By patch id, a hash of the change", "By author", "It does not"], "a": 1, "hint": "Same change.", "why": "Commits whose patch id already exists upstream are skipped."}, {"lv": "x", "q": "Which option makes a rebase also move other branch refs that point into the rewritten range?", "o": ["--keep-base", "--update-refs", "--autostash", "--root"], "a": 1, "hint": "Stacked branches.", "why": "--update-refs (Git 2.38) updates them."}], "calc": [{"lv": "e", "q": "A feature branch has 4 commits. You rebase it onto main with no skipped commits. How many new commit objects are created?", "ans": "4", "hint": "One copy per commit.", "steps": ["Each commit is replayed once.", "Each replay makes a new object.", "<span class=\"eq\">4 new commits<\/span>"]}, {"lv": "e", "q": "git rebase -i HEAD~5 opens how many lines (commits)?", "ans": "5", "hint": "HEAD~5 is the base.", "steps": ["The base is not included.", "The 5 commits above it are listed.", "<span class=\"eq\">5<\/span>"]}, {"lv": "m", "q": "Todo list: pick, fixup, pick, squash, drop, pick. How many commits remain?", "ans": "3", "hint": "Count picks.", "steps": ["pick 1 stays, fixup melds into it.", "pick 2 stays, squash melds into it.", "drop removes one.", "<span class=\"eq\">pick 3 stays: 3 commits<\/span>"]}, {"lv": "m", "q": "You rebase 6 commits and every replay hits one conflict. How many times do you run git rebase --continue?", "ans": "6", "hint": "Once per stop.", "steps": ["Rebase stops at each conflicting commit.", "After fixing and git add, you continue.", "<span class=\"eq\">6 times<\/span>"]}, {"lv": "h", "q": "Feature has commits X, Y, Z. Y is already in main as a cherry-pick (same patch). After git rebase main, how many commits are replayed?", "ans": "2", "hint": "Same patch is skipped.", "steps": ["X is new, replayed.", "Y has the same patch id as a main commit, skipped.", "<span class=\"eq\">Z replayed. Total 2<\/span>"]}, {"lv": "h", "q": "You cherry-pick a range A..B where B is 4 commits after A. How many commits are copied?", "ans": "4", "hint": "A..B excludes A.", "steps": ["A..B means after A up to B.", "That is 4 commits.", "<span class=\"eq\">4<\/span>"]}], "assign": [{"id": "todo", "lv": "m", "title": "Apply an interactive rebase todo list", "task": "<p><code>commits<\/code> maps ids to messages and <code>todo<\/code> is a list of (action, id) pairs with actions pick, reword, squash, fixup or drop. Write <code>apply_todo(commits, todo)<\/code> that returns the list of resulting messages. squash joins with \" + \", fixup keeps only the earlier message, reword appends \" (edited)\".<\/p>", "starter": "def apply_todo(commits, todo):\n    # your code here\n    pass\n", "tests": [{"call": "apply_todo({'a': 'A', 'b': 'B', 'c': 'C'}, [('pick', 'a'), ('squash', 'b'), ('pick', 'c')])", "want": ["A + B", "C"]}, {"call": "apply_todo({'a': 'A', 'b': 'B', 'c': 'C'}, [('pick', 'a'), ('fixup', 'b'), ('drop', 'c')])", "want": ["A"]}, {"call": "apply_todo({'a': 'A', 'b': 'B'}, [('pick', 'b'), ('reword', 'a')])", "want": ["B", "A (edited)"]}], "solution": "def apply_todo(commits, todo):\n    out = []\n    for action, cid in todo:\n        if action == 'pick':\n            out.append(commits[cid])\n        elif action == 'reword':\n            out.append(commits[cid] + ' (edited)')\n        elif action == 'squash':\n            out[-1] = out[-1] + ' + ' + commits[cid]\n        elif action == 'fixup':\n            pass\n    return out\n", "hint": "Walk the list in order. squash and fixup change the last result.", "why": "<p>Note that reordering lines reorders commits, as the third test shows.<\/p>"}, {"id": "replay", "lv": "h", "title": "Which commits does rebase replay?", "task": "<p>Write <code>to_replay(parents, order, head, upstream, patch)<\/code>. Return, oldest first (use <code>order<\/code>, the creation order), the non merge commits reachable from head but not from upstream, leaving out any whose <code>patch[c]<\/code> equals the patch of a commit reachable from upstream.<\/p>", "starter": "def to_replay(parents, order, head, upstream, patch):\n    # your code here\n    pass\n", "tests": [{"call": "to_replay({'A': [], 'B': ['A'], 'X': ['A'], 'Y': ['X']}, ['A', 'B', 'X', 'Y'], 'Y', 'B', {'A': 'a', 'B': 'b', 'X': 'x', 'Y': 'y'})", "want": ["X", "Y"]}, {"call": "to_replay({'A': [], 'B': ['A'], 'X': ['A'], 'Y': ['X']}, ['A', 'B', 'X', 'Y'], 'Y', 'B', {'A': 'a', 'B': 'x', 'X': 'x', 'Y': 'y'})", "want": ["Y"]}], "solution": "def anc(parents, c):\n    seen, todo = set(), [c]\n    while todo:\n        x = todo.pop()\n        if x not in seen:\n            seen.add(x)\n            todo.extend(parents[x])\n    return seen\n\ndef to_replay(parents, order, head, upstream, patch):\n    up = anc(parents, upstream)\n    up_patches = {patch[c] for c in up}\n    mine = anc(parents, head) - up\n    return [c for c in order if c in mine and len(parents[c]) < 2 and patch[c] not in up_patches]\n", "hint": "Take the set difference of ancestors, then filter out merges and already applied patches.", "why": "<p>This is close to what git rebase computes before it starts replaying.<\/p>"}], "must": [["Rebase", "Replays your commits on a new base. Copies get new ids. --continue after fixing, --abort to give up."], ["Golden rule", "Never rebase commits others may have built on. Rebase your own branch, then push --force-with-lease."], ["Merge or rebase", "Merge keeps true history and is safe on shared branches. Rebase gives a straight line for your own work."], ["Interactive rebase", "rebase -i: pick, reword, edit, squash, fixup, drop, reorder. commit --fixup plus --autosquash automates it."], ["Cherry-pick", "Copies one commit as a new commit, for example a fix to a release branch. -x records the source."]], "summary": "<p>Rebase replays commits on a new base, giving new ids. Use it on your own branch, never on shared history. Cherry-pick copies single commits.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"replay": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.main": "['C0', 'C1', 'C4']"}}, {"l": 4, "ev": "line", "d": {"G.feature": "['C0', 'C1', 'C2', 'C3']"}}, {"l": 5, "ev": "line", "d": {"G.base": "'C1'"}}, {"l": 6, "ev": "line", "d": {"G.mine": "['C2', 'C3']"}}, {"l": 7, "ev": "line", "o": "commits to replay: ['C2', 'C3']\n"}, {"l": 8, "ev": "line", "d": {"G.new_feature": "['C0', 'C1', 'C4']"}}, {"l": 9, "ev": "line", "d": {"G.c": "'C2'"}}, {"l": 10, "ev": "line", "d": {"G.copy": "\"C2'\""}}, {"l": 11, "ev": "line", "d": {"G.new_feature": "['C0', 'C1', 'C4', \"C2'\"]"}}, {"l": 8, "ev": "line", "o": "replayed C2 as C2' on top of C4\n"}, {"l": 9, "ev": "line", "d": {"G.c": "'C3'"}}, {"l": 10, "ev": "line", "d": {"G.copy": "\"C3'\""}}, {"l": 11, "ev": "line", "d": {"G.new_feature": "['C0', 'C1', 'C4', \"C2'\", \"C3'\"]"}}, {"l": 8, "ev": "line", "o": "replayed C3 as C3' on top of C2'\n"}, {"l": 12, "ev": "line"}, {"l": 13, "ev": "line", "o": "feature is now: ['C0', 'C1', 'C4', \"C2'\", \"C3'\"]\n"}, {"l": 13, "ev": "return", "o": "old ['C2', 'C3'] are left behind (only the reflog knows them)\n"}], "tail": "", "err": null, "cut": false}, "todo": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.commits": "[('a1', 'Add search box'), ('b2', 'WIP'), ('c3', 'fix typo in search'), ('d4', 'Add sea..."}}, {"l": 4, "ev": "line", "d": {"G.todo": "[('pick', 'a1'), ('fixup', 'c3'), ('drop', 'b2'), ('reword', 'd4')]"}}, {"l": 5, "ev": "line", "d": {"G.msgs": "{'a1': 'Add search box', 'b2': 'WIP', 'c3': 'fix typo in search', 'd4': 'Add search by ..."}}, {"l": 6, "ev": "line", "d": {"G.result": "[]"}}, {"l": 7, "ev": "line", "d": {"G.action": "'pick'", "G.cid": "'a1'"}}, {"l": 8, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.result": "['Add search box']"}}, {"l": 7, "ev": "line", "d": {"G.action": "'fixup'", "G.cid": "'c3'"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line"}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.action": "'drop'", "G.cid": "'b2'"}}, {"l": 9, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 13, "ev": "line"}, {"l": 14, "ev": "line"}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.action": "'reword'", "G.cid": "'d4'"}}, {"l": 9, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.result": "['Add search box', 'Add search by price (message edited)']"}}, {"l": 15, "ev": "line"}, {"l": 16, "ev": "line", "d": {"G.i": "1", "G.m": "'Add search box'"}}, {"l": 15, "ev": "line", "o": "1 Add search box\n"}, {"l": 16, "ev": "line", "d": {"G.i": "2", "G.m": "'Add search by price (message edited)'"}}, {"l": 15, "ev": "line", "o": "2 Add search by price (message edited)\n"}, {"l": 15, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Undoing things: restore, reset, revert and the reflog · Git and CI/CD</title>
+<meta name="description" content="git restore and restore --staged, commit --amend, reset soft, mixed and hard, revert including merge commits, the reflog and its expiry, and the three trees model.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 3: Undo, stash, tags and ignore rules</span><span>›</span><span>Undo</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 1 of 2 · Intermediate</div>
+    <h1>Undoing things: restore, reset, revert and the reflog</h1>
+    <p class="lead">Pick the right undo for every situation, understand the three kinds of reset, revert in public, and rescue commits with the reflog.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">4 animations</span><span class="cv-chip">6 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#undo" data-topic="cheatsheet" data-h="undo">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#levels3" data-l="levels3"><span class="n">1</span><span class="t">Undo at each of the three levels</span></a></li><li><a href="#reset" data-l="reset"><span class="n">2</span><span class="t">git reset: soft, mixed and hard</span></a></li><li><a href="#revert" data-l="revert"><span class="n">3</span><span class="t">git revert: undo in public</span></a></li><li><a href="#reflog" data-l="reflog"><span class="n">4</span><span class="t">The reflog: your safety net</span></a></li></ol>
+    <article class="cv-lesson" id="levels3" data-l="levels3" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Undo at each of the three levels</h2>
+<p>Every undo answers one question: <b>where is the thing I want to undo?</b> In your files, in the staging area, or already in a commit? And has that commit been shared?</p>
+<div class="tw"><table class="cvt "><thead><tr><th>What you want to undo</th><th>Command</th><th>Safe?</th></tr></thead><tbody><tr><td>Edits in a file you have not staged</td><td><code>git restore app.py</code></td><td>The edits are gone for good</td></tr><tr><td>A file you staged by mistake</td><td><code>git restore --staged app.py</code></td><td>Yes, the edits stay in the file</td></tr><tr><td>The message or content of your last commit (not pushed)</td><td><code>git commit --amend</code></td><td>Yes, rewrites one local commit</td></tr><tr><td>Your last commits (not pushed)</td><td><code>git reset &lt;commit&gt;</code></td><td>Yes with --soft or --mixed, careful with --hard</td></tr><tr><td>A commit already pushed and shared</td><td><code>git revert &lt;commit&gt;</code></td><td>Yes, adds a new commit, rewrites nothing</td></tr><tr><td>Something you reset or deleted by mistake</td><td><code>git reflog</code> then reset or branch</td><td>Usually rescues it</td></tr></tbody></table></div>
+<div class="cvz" data-viz="areas" data-cfg="{&quot;cmds&quot;: &quot;edit README.md\ngit add README.md\ngit restore --staged README.md\ngit restore README.md&quot;}"></div>
+<div class="note note-warn"><b>Common mistake</b><div>git restore app.py without --staged overwrites your file from the index. Uncommitted edits it removes are not in any commit, so the reflog cannot bring them back.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="reset" data-l="reset" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>git reset: soft, mixed and hard</h2>
+<p><code>git reset &lt;commit&gt;</code> moves the current branch (and HEAD with it) to another commit. The mode says how much else follows:</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Mode</th><th>Moves the branch</th><th>Resets the index</th><th>Resets your files</th><th>Use it to</th></tr></thead><tbody><tr><td>--soft</td><td>yes</td><td>no</td><td>no</td><td>redo the last commits as one: changes stay staged</td></tr><tr><td>--mixed (default)</td><td>yes</td><td>yes</td><td>no</td><td>unstage and recommit differently: changes stay in your files</td></tr><tr><td>--hard</td><td>yes</td><td>yes</td><td>yes</td><td>throw everything away and match the commit exactly</td></tr></tbody></table></div>
+<div class="cvz" data-viz="areas" data-cfg="{&quot;cmds&quot;: &quot;edit app.py\ngit commit -am \&quot;one\&quot;\nedit app.py\ngit commit -am \&quot;two\&quot;\ngit reset --soft HEAD~1&quot;}"></div>
+<div class="cv-code" data-k="reset"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Undo the last commit, keep the work staged</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git reset --soft HEAD~1</code></div><div class="fx-n">Then git commit again, for example to combine two commits.</div></div><div class="fx"><div class="fx-h"><span>Undo the last commit, keep the work unstaged</span></div><div class="fx-b"><code>git reset HEAD~1</code></div><div class="fx-n">Same as --mixed.</div></div><div class="fx fx-key"><div class="fx-h"><span>Discard all local work</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git reset --hard HEAD</code></div><div class="fx-n">Tracked files go back to the last commit. Untracked files stay. Uncommitted edits are lost.</div></div><div class="fx"><div class="fx-h"><span>Fix the last commit</span></div><div class="fx-b"><code>git commit --amend</code></div><div class="fx-n">Replaces the last commit with a new one: new message and anything newly staged.</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>git reset --hard with uncommitted changes is the most common way people lose work in Git. Run git status and git stash first if in doubt.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="revert" data-l="revert" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>git revert: undo in public</h2>
+<p>On a shared branch you cannot remove a commit without rewriting history. <code>git revert</code> instead makes a <b>new</b> commit that does the opposite of the old one. History stays true: it shows the mistake and its undo.</p>
+<div class="cvz" data-viz="gitsim" data-cfg="{&quot;cmds&quot;: &quot;git commit -m \&quot;good\&quot;\ngit commit -m \&quot;bad\&quot;\ngit commit -m \&quot;more work\&quot;\ngit revert HEAD~1&quot;, &quot;show&quot;: &quot;log&quot;}"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Undo a pushed commit</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git revert &lt;commit&gt;</code></div><div class="fx-n">Creates "Revert ..." as a new commit. --no-edit keeps the default message.</div></div><div class="fx"><div class="fx-h"><span>Undo a merge commit</span></div><div class="fx-b"><code>git revert -m 1 &lt;merge&gt;</code></div><div class="fx-n">-m 1 says parent 1 (the main line) is the side to keep.</div></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: Friday deploy rollback</div><p>A release goes out and checkout payments fail. The team does not reset main, because twenty people have pulled it and CI deployed from it. They run git revert on the bad merge commit, push, and the pipeline deploys the reverted code. On Monday they fix the bug properly and, because the revert is a normal commit, they can even revert the revert to bring the feature back.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="reflog" data-l="reflog" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>The reflog: your safety net</h2>
+<p>Every time HEAD moves (commit, reset, switch, rebase, merge, pull) Git writes a line in the <b>reflog</b>. It is local to your clone and is not pushed. It lets you find commits that no branch points to any more.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Rescue after a bad hard reset</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git reset --hard HEAD~2</span><span class="ln gc"># oh no, those two commits were needed</span><span class="ln">git reflog</span><span class="ln">git reset --hard HEAD@{1}</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">HEAD is now at 51de0f4 Fix typo
+51de0f4 HEAD@{0}: reset: moving to HEAD~2
+a41f0c2 HEAD@{1}: commit: Add search by price
+7c9e1d0 HEAD@{2}: commit: Add search box
+51de0f4 HEAD@{3}: commit: Fix typo
+HEAD is now at a41f0c2 Add search by price</pre></div>
+<div class="cvz" data-viz="gitsim" data-cfg="{&quot;cmds&quot;: &quot;git commit -m \&quot;good\&quot;\ngit commit -m \&quot;needed\&quot;\ngit reset --hard HEAD~1\ngit reset --hard HEAD@{1}&quot;, &quot;show&quot;: &quot;both&quot;}"></div>
+<details class="deep"><summary>Going deeper: How long does the reflog keep things?</summary><div class="deep-b"><p>By default reflog entries for commits that are no longer reachable from any branch expire after 30 days (gc.reflogExpireUnreachable) and other entries after 90 days (gc.reflogExpire). git gc then may delete the unreachable commits. Uncommitted work was never in any commit, so it was never in the reflog either. git fsck --lost-found can sometimes find blobs you once staged with git add.</p></div></details>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>restore is an eraser for your page, reset is moving your bookmark back, revert is writing a new page that says "ignore what page 7 said", and the reflog is a diary of every place your bookmark has been.</p></div><div class="ld-p" data-ld="college" hidden><p>reset moves the branch ref and optionally the index and working tree. revert creates an inverse commit. restore copies a file from the index or a commit. The reflog records old values of HEAD and of each branch.</p></div><div class="ld-p" data-ld="masters" hidden><p>reset with a path (git reset -- file) does not move HEAD: it copies that file's entry from a commit into the index, the opposite of git add. Pro Git calls the three trees HEAD, index and working directory, and every undo command is a copy between them.</p></div><div class="ld-p" data-ld="research" hidden><p>Version control research treats history as an append mostly log. Systems that forbid rewriting (for example some audit or regulated environments) rely on revert only, while Git allows rewriting locally and leaves policy to the server, where protected branches block force pushes.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./rebase-cherry-pick.html" data-topic="rebase"><small>Previous topic</small><b>Rebase and cherry-pick</b></a><a class="next" href="./stash-tags-ignore.html" data-topic="stash-tags-ignore"><small>Next topic</small><b>Stash, tags, ignore</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "undo", "topic": "undo", "subject": "git", "title": "Undoing things: restore, reset, revert and the reflog", "codes": {"reset": {"src": "# The three trees and what each kind of reset changes\nHEAD, INDEX, WORK = \"C3\", \"C3 + staged edit\", \"C3 + staged edit + more edits\"\nhistory = [\"C1\", \"C2\", \"C3\"]\n\ndef reset(mode, target):\n    head, index, work = target, INDEX, WORK\n    if mode in (\"mixed\", \"hard\"):\n        index = target              # the index is made to match the target\n    if mode == \"hard\":\n        work = target               # your files are made to match too\n    return head, index, work\n\nfor mode in (\"soft\", \"mixed\", \"hard\"):\n    h, i, w = reset(mode, \"C2\")\n    print(f\"reset --{mode:5}: HEAD={h:3} index={i:18} files={w}\")", "stdin": "", "out": "reset --soft : HEAD=C2  index=C3 + staged edit   files=C3 + staged edit + more edits\nreset --mixed: HEAD=C2  index=C2                 files=C3 + staged edit + more edits\nreset --hard : HEAD=C2  index=C2                 files=C2"}}, "quiz": [{"lv": "e", "q": "You staged a file by mistake. Which command unstages it but keeps your edits?", "o": ["git restore --staged file", "git restore file", "git reset --hard", "git rm file"], "a": 0, "hint": "Staged.", "why": "--staged copies HEAD back into the index only."}, {"lv": "e", "q": "Which undo is safe on a branch others have pulled?", "o": ["git reset --hard", "git revert", "git rebase -i", "git commit --amend"], "a": 1, "hint": "Adds a commit.", "why": "revert does not rewrite history."}, {"lv": "e", "q": "What does git commit --amend do?", "o": ["Adds a new commit", "Replaces the last commit with a corrected one", "Deletes the last commit", "Pushes"], "a": 1, "hint": "Fix the last one.", "why": "It makes a new commit that replaces the previous tip."}, {"lv": "m", "q": "git reset --soft HEAD~1 leaves the changes of the undone commit", "o": ["Deleted", "Staged", "Unstaged", "Stashed"], "a": 1, "hint": "Soft touches only HEAD.", "why": "The index still has them."}, {"lv": "m", "q": "git reset HEAD~1 (no mode) is the same as", "o": ["--soft", "--mixed", "--hard", "--keep"], "a": 1, "hint": "Default.", "why": "Mixed resets the index but not your files."}, {"lv": "m", "q": "After git reset --hard HEAD~2 you want the commits back. Use", "o": ["git revert", "git reflog then git reset --hard HEAD@{1}", "git pull", "They are gone"], "a": 1, "hint": "Diary of HEAD.", "why": "The reflog remembers where HEAD was."}, {"lv": "m", "q": "Which of these can the reflog NOT recover?", "o": ["A commit removed by reset --hard", "Uncommitted edits removed by reset --hard", "A deleted branch", "Commits replaced by rebase"], "a": 1, "hint": "Never committed.", "why": "The reflog only knows commits."}, {"lv": "h", "q": "You need to revert a merge commit and keep main's side. Which flag?", "o": ["-m 1", "-m 2", "--hard", "--no-ff"], "a": 0, "hint": "Mainline parent.", "why": "-m 1 names the first parent as the line to keep."}, {"lv": "h", "q": "Is the reflog shared when you push?", "o": ["Yes", "No, it is local to each clone", "Only for main", "Only with --mirror"], "a": 1, "hint": "Local diary.", "why": "Each repository keeps its own reflog."}, {"lv": "x", "q": "git reset -- app.py (a path, no commit) does what?", "o": ["Moves HEAD back", "Copies app.py from HEAD into the index, the opposite of git add", "Deletes app.py", "Reverts app.py"], "a": 1, "hint": "Path form.", "why": "With a path, reset only updates the index entry."}], "calc": [{"lv": "e", "q": "Your branch is at C5. You run git reset --hard HEAD~2. Which commit number is HEAD at?", "ans": "3", "hint": "Two back.", "steps": ["HEAD~1 = C4.", "HEAD~2 = C3.", "<span class=\"eq\">HEAD at C3<\/span>"]}, {"lv": "e", "q": "You revert 3 bad commits one by one. How many new commits appear?", "ans": "3", "hint": "One per revert.", "steps": ["Each git revert makes one inverse commit.", "3 reverts.", "<span class=\"eq\">3 new commits<\/span>"]}, {"lv": "m", "q": "Reflog (newest first): HEAD@{0} reset, HEAD@{1} commit C7, HEAD@{2} commit C6. To get back C7, which n do you use in HEAD@{n}?", "ans": "1", "hint": "Where HEAD was before the reset.", "steps": ["HEAD@{0} is now.", "HEAD@{1} is one move ago, C7.", "<span class=\"eq\">n = 1<\/span>"]}, {"lv": "m", "q": "Default expiry: unreachable reflog entries after 30 days, others after 90. You reset away a commit 45 days ago. Is it still in the reflog? Answer 1 for yes, 0 for no.", "ans": "0", "hint": "Unreachable since the reset.", "steps": ["After the reset no branch reaches the commit.", "Unreachable entries expire after 30 days.", "<span class=\"eq\">45 > 30, so 0 (likely gone after git gc)<\/span>"]}, {"lv": "h", "q": "You amend the last commit 3 times. How many commit objects exist for that one change, counting the original?", "ans": "4", "hint": "Each amend makes a new one.", "steps": ["Original: 1.", "Each amend creates a new commit: 3.", "<span class=\"eq\">1 + 3 = 4 objects, 3 of them unreachable<\/span>"]}, {"lv": "h", "q": "Out of soft, mixed and hard, how many reset modes change your working tree files?", "ans": "1", "hint": "Only one touches files.", "steps": ["soft: only HEAD.", "mixed: HEAD and index.", "<span class=\"eq\">hard: also files, so 1<\/span>"]}], "assign": [{"id": "rst", "lv": "m", "title": "Simulate git reset", "task": "<p>Write <code>reset(mode, target, index, work)<\/code> that returns a tuple (head, index, work) after <code>git reset --mode target<\/code>. soft keeps index and work, mixed sets index to target, hard sets both to target.<\/p>", "starter": "def reset(mode, target, index, work):\n    # your code here\n    pass\n", "tests": [{"call": "reset('soft', 'C2', 'I', 'W')", "want": ["C2", "I", "W"]}, {"call": "reset('mixed', 'C2', 'I', 'W')", "want": ["C2", "C2", "W"]}, {"call": "reset('hard', 'C2', 'I', 'W')", "want": ["C2", "C2", "C2"]}], "solution": "def reset(mode, target, index, work):\n    if mode in ('mixed', 'hard'):\n        index = target\n    if mode == 'hard':\n        work = target\n    return [target, index, work]\n", "hint": "Start from the given index and work, then overwrite according to the mode. Return a list.", "why": "<p>The tests compare with lists because tuples arrive as lists in the browser.<\/p>"}, {"id": "pick", "lv": "e", "title": "Choose the right undo", "task": "<p>Write <code>which_undo(where, shared)<\/code>. <code>where<\/code> is \"file\", \"staged\" or \"commit\". Return \"git restore\", \"git restore --staged\", \"git revert\" (a shared commit) or \"git reset\" (a local commit).<\/p>", "starter": "def which_undo(where, shared):\n    # your code here\n    pass\n", "tests": [{"call": "which_undo('file', False)", "want": "git restore"}, {"call": "which_undo('staged', False)", "want": "git restore --staged"}, {"call": "which_undo('commit', True)", "want": "git revert"}, {"call": "which_undo('commit', False)", "want": "git reset"}], "solution": "def which_undo(where, shared):\n    if where == 'file':\n        return 'git restore'\n    if where == 'staged':\n        return 'git restore --staged'\n    return 'git revert' if shared else 'git reset'\n", "hint": "Follow the table in the first lesson.", "why": "<p>Sharing is the key question for commits.<\/p>"}], "must": [["Where is it", "Unstaged edit: git restore file. Staged: git restore --staged file. Local commit: reset or amend. Shared commit: revert."], ["Reset modes", "--soft moves the branch only. --mixed (default) also resets the index. --hard also resets your files."], ["Revert", "Makes a new inverse commit. Safe on shared branches. Merge commits need -m 1."], ["Reflog", "Local diary of HEAD. git reflog, then git reset --hard HEAD@{n} or git branch rescue <id>. Unreachable entries expire after 30 days by default."], ["Danger", "reset --hard and restore throw away uncommitted edits, which no command can bring back."]], "summary": "<p>Ask where the change is and whether it is shared. restore for files, reset for local commits, revert for shared ones, and the reflog when something seems lost.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"reset": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.HEAD": "'C3'", "G.INDEX": "'C3 + staged edit'", "G.WORK": "'C3 + staged edit + more edits'"}}, {"l": 5, "ev": "line", "d": {"G.history": "['C1', 'C2', 'C3']"}}, {"l": 13, "ev": "line", "d": {"G.reset": "<function reset>"}}, {"l": 14, "ev": "line", "d": {"G.mode": "'soft'"}}, {"l": 5, "ev": "call", "s": ["module", "reset()"], "d": {"L.mode": "'soft'", "L.target": "'C2'"}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"L.head": "'C2'", "L.index": "'C3 + staged edit'", "L.work": "'C3 + staged edit + more edits'"}}, {"l": 9, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.h": "'C2'", "G.i": "'C3 + staged edit'", "G.w": "'C3 + staged edit + more edits'", "L.mode": null, "L.target": null, "L.head": null, "L.index": null, "L.work": null}}, {"l": 13, "ev": "line", "o": "reset --soft : HEAD=C2  index=C3 + staged edit   files=C3 + staged edit + more edits\n"}, {"l": 14, "ev": "line", "d": {"G.mode": "'mixed'"}}, {"l": 5, "ev": "call", "s": ["module", "reset()"], "d": {"L.mode": "'mixed'", "L.target": "'C2'"}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"L.head": "'C2'", "L.index": "'C3 + staged edit'", "L.work": "'C3 + staged edit + more edits'"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"L.index": "'C2'"}}, {"l": 11, "ev": "line"}, {"l": 11, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.i": "'C2'", "L.mode": null, "L.target": null, "L.head": null, "L.index": null, "L.work": null}}, {"l": 13, "ev": "line", "o": "reset --mixed: HEAD=C2  index=C2                 files=C3 + staged edit + more edits\n"}, {"l": 14, "ev": "line", "d": {"G.mode": "'hard'"}}, {"l": 5, "ev": "call", "s": ["module", "reset()"], "d": {"L.mode": "'hard'", "L.target": "'C2'"}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"L.head": "'C2'", "L.index": "'C3 + staged edit'", "L.work": "'C3 + staged edit + more edits'"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"L.index": "'C2'"}}, {"l": 10, "ev": "line"}, {"l": 11, "ev": "line", "d": {"L.work": "'C2'"}}, {"l": 11, "ev": "return"}, {"l": 15, "ev": "line", "s": ["module"], "d": {"G.w": "'C2'", "L.mode": null, "L.target": null, "L.head": null, "L.index": null, "L.work": null}}, {"l": 13, "ev": "line", "o": "reset --hard : HEAD=C2  index=C2                 files=C2\n"}, {"l": 13, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

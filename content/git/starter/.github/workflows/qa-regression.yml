@@ -1,0 +1,48 @@
+name: QA regression
+
+on:
+  schedule:
+    - cron: '30 2 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: 'ID of the CI run whose build you want to test (empty means the latest green run on main)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Find the CI run to test
+        id: pick
+        env:
+          RUN_ID: ${{ inputs.ci_run_id }}
+        run: |
+          if [ -z "$RUN_ID" ]; then
+            RUN_ID=$(gh run list --workflow ci.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          fi
+          echo "Testing the build from run $RUN_ID"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+      - name: Pull the build artifact from that run
+        run: gh run download "${{ steps.pick.outputs.run_id }}" --name calc-app --dir dist
+      - name: Run the regression suite on that build
+        run: PYTHONPATH=dist/calc-app.zip pytest -q tests --junitxml=reports/regression.xml
+      - name: Keep the regression report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: regression-report
+          path: reports/regression.xml

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitLab artifacts and caching: keep, pass on and pull builds · Git and CI/CD</title>
+<meta name="description" content="artifacts paths, exclude, name, when, expire_in, access and reports, kept latest artifacts and the Keep button, default artifact passing, dependencies and needs, needs:project, downloading from the UI, the job artifacts API by ref and by job id, report file types, merge request refs, glab job artifact, CI_JOB_TOKEN and the allowlist, cache keys, prefixes and policies, and the package registry.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 8: GitLab CI/CD</span><span>›</span><span>GitLab artifacts</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 8 · Topic 3 of 3 · Intermediate</div>
+    <h1>GitLab artifacts and caching: keep, pass on and pull builds</h1>
+    <p class="lead">Keep build outputs and test reports, pass them between jobs, and pull them back from the UI, the REST API, the glab CLI or another project's pipeline with the job token, then speed things up with caches.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#gitlab-artifacts" data-topic="cheatsheet" data-h="gitlab-artifacts">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#keep" data-l="keep"><span class="n">1</span><span class="t">Keeping files: the artifacts keyword</span></a></li><li><a href="#between" data-l="between"><span class="n">2</span><span class="t">Passing artifacts between jobs</span></a></li><li><a href="#pull" data-l="pull"><span class="n">3</span><span class="t">Pulling artifacts: UI, API, glab and job token</span></a></li><li><a href="#cache" data-l="cache"><span class="n">4</span><span class="t">Caching on GitLab</span></a></li></ol>
+    <article class="cv-lesson" id="keep" data-l="keep" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Keeping files: the artifacts keyword</h2>
+<div class="cv-code gk-file" data-lang="yaml"><div class="cc-bar"><span class="gk-path">artifacts-examples.yml</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="yaml"><span class="ln" data-n="1">build:</span><span class="ln" data-n="2">  stage: build</span><span class="ln" data-n="3">  script:</span><span class="ln" data-n="4">    - mkdir -p dist</span><span class="ln" data-n="5">    - python -m zipfile -c dist/calc-app.zip app</span><span class="ln" data-n="6">  artifacts:</span><span class="ln gk-has" data-n="7">    name: "calc-app-$CI_COMMIT_SHORT_SHA"</span><span class="ln gk-has" data-n="8">    paths:</span><span class="ln" data-n="9">      - dist/</span><span class="ln gk-has" data-n="10">    exclude:</span><span class="ln" data-n="11">      - dist/**/*.tmp</span><span class="ln gk-has" data-n="12">    expire_in: 30 days</span><span class="ln gk-has" data-n="13">    when: on_success</span><span class="ln gk-has" data-n="14">    access: developer</span><span class="ln" data-n="15"> </span><span class="ln" data-n="16">unit-tests:</span><span class="ln" data-n="17">  stage: test</span><span class="ln" data-n="18">  script:</span><span class="ln" data-n="19">    - python -m pytest -q tests/unit --junitxml=reports/unit.xml</span><span class="ln" data-n="20">  artifacts:</span><span class="ln gk-has" data-n="21">    when: always</span><span class="ln" data-n="22">    reports:</span><span class="ln gk-has" data-n="23">      junit: reports/unit.xml</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="7"><b>Line 7</b><code>name: "calc-app-$CI_COMMIT_SHORT_SHA"</code><span>Name of the downloaded archive. Variables are allowed.</span></li><li data-n="8"><b>Line 8</b><code>paths:</code><span>Files and folders to keep, relative to the project folder. Paths outside it are not allowed.</span></li><li data-n="10"><b>Line 10</b><code>exclude:</code><span>Leave out matching files.</span></li><li data-n="12"><b>Line 12</b><code>expire_in: 30 days</code><span>How long to keep. Without it the instance default applies, 30 days on GitLab.com. Examples: 1 week, 3 mos, never.</span></li><li data-n="13"><b>Line 13</b><code>when: on_success</code><span>on_success (default), on_failure or always.</span></li><li data-n="14"><b>Line 14</b><code>access: developer</code><span>Who may download: all, developer, maintainer or none.</span></li><li data-n="21"><b>Line 21</b><code>when: always</code><span>always keeps the report when tests fail, which is when you need it.</span></li><li data-n="23"><b>Line 23</b><code>junit: reports/unit.xml</code><span>GitLab parses the file and shows results in the merge request and the Tests tab. Reports are stored separately from the archive.</span></li></ol></details></div>
+<div class="cvz" data-viz="artlife" data-cfg="{&quot;plat&quot;: &quot;gitlab&quot;}"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Rule</th><th>Detail</th></tr></thead><tbody><tr><td>Latest kept</td><td>Artifacts from the most recently completed pipeline and the most recent successful pipeline on each branch or tag are kept regardless of expire_in, until a newer pipeline replaces them (a project setting can turn this off).</td></tr><tr><td>Keep button</td><td>On a job page, Keep stops one job's artifacts from expiring.</td></tr><tr><td>Size</td><td>GitLab.com limits a job's artifacts to 1 GB.</td></tr><tr><td>untracked: true</td><td>adds every file Git does not track, handy for build folders, risky for secrets.</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>reports such as junit are not inside the downloadable archive. To keep the XML as a file too, also list it under paths, as the sample project does.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="between" data-l="between" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Passing artifacts between jobs</h2>
+<p>By default a job downloads the artifacts of every job in <b>earlier stages</b>. Two keywords narrow that down.</p>
+<div class="cv-code" data-k="fetch"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Setting on the job</th><th>Downloads</th></tr></thead><tbody><tr><td>nothing</td><td>artifacts of all jobs in earlier stages</td></tr><tr><td><code>dependencies: [build]</code></td><td>only build's artifacts (build must be in an earlier stage)</td></tr><tr><td><code>dependencies: []</code></td><td>nothing, the job starts faster</td></tr><tr><td><code>needs: [build]</code></td><td>only build's artifacts, and the job starts as soon as build is done</td></tr><tr><td><code>needs: [{job: build, artifacts: false}]</code></td><td>waits for build but downloads nothing</td></tr><tr><td><code>needs: project: OWNER/other, job: build, ref: main, artifacts: true</code></td><td>artifacts of the latest successful build job on main of another project, up to five such jobs (Premium and Ultimate)</td></tr></tbody></table></div>
+<div class="gk-dq"><div class="gk-dq-h">Artifacts inside the pipeline</div><div class="gk-dq-g"><div class="gk-dev"><b>Developer view</b><p>The build job uploads one archive, and later jobs in the same pipeline pick it up automatically or through needs. Developers rarely think about it until a job cannot find a file.</p></div><div class="gk-qa"><b>QA view</b><p>QA jobs use needs: [build] so the tests always run against the build of the same pipeline. A separate QA project can pull the latest green build of the app project with needs:project or with the API and the job token.</p></div></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="pull" data-l="pull" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Pulling artifacts: UI, API, glab and job token</h2>
+<p>GitLab gives you several ways to get a build back, from a click to a script in another pipeline.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>From</th><th>Where to click</th></tr></thead><tbody><tr><td>A pipelines list</td><td>Download artifacts, then pick the job</td></tr><tr><td>A jobs list</td><td>Download artifacts next to the job</td></tr><tr><td>A job page</td><td>Download or Browse in the Job artifacts panel</td></tr><tr><td>A merge request</td><td>Artifacts on the Overview page, for the latest pipeline</td></tr><tr><td>Build, Artifacts</td><td>every artifact in the project, with Download and Browse</td></tr></tbody></table></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">REST API: latest successful build on main, by job name</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">curl --location --header "PRIVATE-TOKEN: $TOKEN" \</span><span class="ln">  --output calc-app.zip \</span><span class="ln">  "https://gitlab.com/api/v4/projects/PROJECT_ID/jobs/artifacts/main/download?job=build"</span><span class="ln gc"># one file out of the archive</span><span class="ln">curl --location --header "PRIVATE-TOKEN: $TOKEN" --output calc-app-only.zip \</span><span class="ln">  "https://gitlab.com/api/v4/projects/PROJECT_ID/jobs/artifacts/main/raw/dist/calc-app.zip?job=build"</span></pre></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">REST API: a report file from a specific job</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">curl --location --header "PRIVATE-TOKEN: $TOKEN" --output unit.xml.gz \</span><span class="ln">  "https://gitlab.com/api/v4/projects/PROJECT_ID/jobs/JOB_ID/artifacts?file_type=junit"</span></pre></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">The GitLab CLI</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">glab auth login</span><span class="ln">glab job artifact main build</span><span class="ln">glab job artifact main build --path downloaded/</span></pre></div>
+<div class="cv-code gk-file" data-lang="yaml"><div class="cc-bar"><span class="gk-path">qa-project/.gitlab-ci.yml</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="yaml"><span class="ln" data-n="1">pull-latest-build:</span><span class="ln" data-n="2">  stage: test</span><span class="ln" data-n="3">  script:</span><span class="ln gk-has" data-n="4">    - apt-get update &amp;&amp; apt-get install -y curl unzip</span><span class="ln" data-n="5">    - &gt;</span><span class="ln gk-has" data-n="6">      curl --location --fail --header "JOB-TOKEN: $CI_JOB_TOKEN"</span><span class="ln" data-n="7">      --output build.zip</span><span class="ln gk-has" data-n="8">      "$CI_API_V4_URL/projects/$APP_PROJECT_ID/jobs/artifacts/main/download?job=build"</span><span class="ln" data-n="9">    - unzip build.zip</span><span class="ln" data-n="10">    - ls dist/</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="4"><b>Line 4</b><code>- apt-get update &amp;&amp; apt-get install -y curl unzip</code><span>The slim Python image has no curl or unzip, so install them.</span></li><li data-n="6"><b>Line 6</b><code>curl --location --fail --header "JOB-TOKEN: $CI_JOB_TOKEN"</code><span>CI_JOB_TOKEN is created for each job and expires when the job ends. It can call the artifact download endpoints.</span></li><li data-n="8"><b>Line 8</b><code>"$CI_API_V4_URL/projects/$APP_PROJECT_ID/jobs/artifacts/main/download?job=build"</code><span>CI_API_V4_URL is the API root of this GitLab instance. APP_PROJECT_ID is a variable you set to the app project's id.</span></li></ol></details></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Rule</th><th>Detail</th></tr></thead><tbody><tr><td>ref_name</td><td>a branch or tag name. For merge request pipelines use refs/merge-requests/IID/head, the variable CI_MERGE_REQUEST_REF_PATH holds it.</td></tr><tr><td>Reports</td><td>not in the archive. Use the job id endpoint with file_type=junit, or list the file under paths.</td></tr><tr><td>Job token</td><td>the other project must add the calling project to its CI/CD job token allowlist (Settings, CI/CD, Job token permissions).</td></tr><tr><td>--location</td><td>GitLab.com may redirect through a CDN, so curl must follow redirects.</td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>The finished release belongs in the package registry or a release asset, not in a job artifact that may expire. For example, publish a Python wheel to the project's PyPI registry in a tag pipeline with the CI_JOB_TOKEN.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="cache" data-l="cache" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>Caching on GitLab</h2>
+<div class="cv-code gk-file" data-lang="yaml"><div class="cc-bar"><span class="gk-path">cache-examples.yml</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="yaml"><span class="ln" data-n="1">variables:</span><span class="ln gk-has" data-n="2">  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"</span><span class="ln" data-n="3"> </span><span class="ln" data-n="4">unit-tests:</span><span class="ln" data-n="5">  cache:</span><span class="ln" data-n="6">    key:</span><span class="ln gk-has" data-n="7">      files:</span><span class="ln" data-n="8">        - requirements.txt</span><span class="ln gk-has" data-n="9">      prefix: $CI_JOB_NAME</span><span class="ln" data-n="10">    paths:</span><span class="ln gk-has" data-n="11">      - .cache/pip</span><span class="ln gk-has" data-n="12">    policy: pull-push</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="2"><b>Line 2</b><code>PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"</code><span>Make pip write its downloads inside the project folder, because only paths there can be cached.</span></li><li data-n="7"><b>Line 7</b><code>files:</code><span>The key is computed from the content of these files, by default up to two files.</span></li><li data-n="9"><b>Line 9</b><code>prefix: $CI_JOB_NAME</code><span>An optional prefix keeps separate caches per job.</span></li><li data-n="11"><b>Line 11</b><code>- .cache/pip</code><span>What to save and restore.</span></li><li data-n="12"><b>Line 12</b><code>policy: pull-push</code><span>pull-push (default) restores and saves. pull only restores, push only saves. Many jobs use pull to save upload time.</span></li></ol></details></div>
+<div class="cvz" data-viz="cachekey"></div>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>Artifacts</th><th>Cache</th></tr></thead><tbody><tr><td>Meant for</td><td>results to pass on and keep</td><td>dependencies to reuse</td></tr><tr><td>Shared between</td><td>jobs of the pipeline, people, API, other projects</td><td>runs of jobs on the same runner or shared cache storage</td></tr><tr><td>Guaranteed</td><td>yes, until expiry</td><td>no, it is a best effort speed up</td></tr><tr><td>Keyword</td><td><code>artifacts:</code></td><td><code>cache:</code></td></tr></tbody></table></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Artifacts keep the results of a job so others can use them, caches make the next run faster. You can download artifacts from many places in GitLab or with a script.</p></div><div class="ld-p" data-ld="college" hidden><p>artifacts: paths, name, when, expire_in, reports. Later stages fetch earlier artifacts, needs and dependencies narrow it. Pull with the UI, the API by ref and job name, glab job artifact, or CI_JOB_TOKEN from another project on the allowlist.</p></div><div class="ld-p" data-ld="masters" hidden><p>The latest successful artifacts per ref are kept beyond expire_in. Reports live outside the archive and need file_type. Cache keys from files and per job prefixes keep caches correct, policies limit uploads.</p></div><div class="ld-p" data-ld="research" hidden><p>Fine grained job token permissions and signed build provenance make cross project artifact flows auditable, which matters when a QA or release project consumes builds from many application projects.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./gitlab-scratch.html" data-topic="gitlab-scratch"><small>Previous topic</small><b>GitLab from scratch</b></a><a class="next" href="./exam-revision.html" data-topic="exam-revision"><small>Next topic</small><b>Exam revision</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "gitlab-artifacts", "topic": "gitlab-artifacts", "subject": "git", "title": "GitLab artifacts and caching: keep, pass on and pull builds", "codes": {"fetch": {"src": "# Which artifacts does a GitLab job download? Earlier stages by default, or only what needs or dependencies name\njobs = [  # name, stage index, makes artifacts\n    (\"lint\", 0, False), (\"unit-tests\", 1, True), (\"build\", 2, True),\n]\n\ndef downloads(stage, needs=None, dependencies=None):\n    if needs is not None:\n        names = needs\n    elif dependencies is not None:\n        names = dependencies\n    else:\n        names = [n for n, s, a in jobs if s < stage]\n    return [n for n, s, a in jobs if n in names and a]\n\nprint(\"smoke-tests, stage 3, nothing set  :\", downloads(3))\nprint(\"smoke-tests, needs: [build]        :\", downloads(3, needs=[\"build\"]))\nprint(\"report job, dependencies: []       :\", downloads(3, dependencies=[]))", "stdin": "", "out": "smoke-tests, stage 3, nothing set  : ['unit-tests', 'build']\nsmoke-tests, needs: [build]        : ['build']\nreport job, dependencies: []       : []"}}, "quiz": [{"lv": "e", "q": "Which keyword keeps files from a GitLab job?", "o": ["cache", "artifacts", "keep", "store"], "a": 1, "hint": "Results.", "why": "artifacts: paths lists them."}, {"lv": "e", "q": "How long are artifacts kept on GitLab.com when expire_in is not set?", "o": ["1 day", "30 days", "90 days", "Forever"], "a": 1, "hint": "Instance default.", "why": "Self managed instances can choose another default."}, {"lv": "e", "q": "Where in the project UI do you see every artifact?", "o": ["Settings, General", "Build, Artifacts", "Plan, Wiki", "Code, Tags"], "a": 1, "hint": "Build menu.", "why": "Download and Browse are there."}, {"lv": "m", "q": "Without needs or dependencies, which artifacts does a job download?", "o": ["None", "All artifacts from jobs in earlier stages", "Only from the same stage", "Only from main"], "a": 1, "hint": "Default.", "why": "Use dependencies: [] to download nothing."}, {"lv": "m", "q": "Which API call downloads the latest successful build job artifacts on main?", "o": ["GET /projects/:id/pipelines", "GET /projects/:id/jobs/artifacts/main/download?job=build", "GET /projects/:id/repository/archive", "POST /projects/:id/artifacts"], "a": 1, "hint": "jobs/artifacts.", "why": "Add --location to curl on GitLab.com."}, {"lv": "m", "q": "Why does downloading the junit report with the ref and job name endpoint give 404?", "o": ["Wrong token", "Reports are not in the archive, use the job id endpoint with file_type=junit", "Reports expire at once", "JUnit is not supported"], "a": 1, "hint": "Separate storage.", "why": "Or add the file to paths."}, {"lv": "m", "q": "Which glab command downloads the artifacts of job build on main?", "o": ["glab ci get build", "glab job artifact main build", "glab pull build", "glab artifact main"], "a": 1, "hint": "job artifact.", "why": "--path chooses the folder."}, {"lv": "h", "q": "A QA project uses CI_JOB_TOKEN to download from the app project and gets 403 or 404. What is missing?", "o": ["A runner", "The QA project must be on the app project's job token allowlist", "expire_in", "A tag"], "a": 1, "hint": "Allowlist.", "why": "Settings, CI/CD, Job token permissions on the app project."}, {"lv": "h", "q": "What does cache policy: pull do?", "o": ["Saves only", "Restores the cache but does not upload it at the end", "Disables cache", "Pulls artifacts"], "a": 1, "hint": "Read only.", "why": "Saves time in jobs that do not change dependencies."}, {"lv": "x", "q": "Your build artifact has expire_in: 1 week, but the build from the last green pipeline on main from a month ago can still be downloaded. Why?", "o": ["A bug", "GitLab keeps artifacts of the latest successful pipeline on each ref regardless of expire_in", "Someone pressed Keep", "Caching"], "a": 1, "hint": "Latest kept.", "why": "They go once a newer pipeline succeeds on that ref."}], "calc": [{"lv": "e", "q": "expire_in: 2 weeks. How many days is that?", "ans": "14", "hint": "Weeks to days.", "steps": ["1 week = 7 days.", "2 × 7.", "<span class=\"eq\">14 days<\/span>"]}, {"lv": "e", "q": "A job sets dependencies: []. How many artifact archives does it download?", "ans": "0", "hint": "Empty list.", "steps": ["dependencies lists the jobs to fetch from.", "The list is empty.", "<span class=\"eq\">0 archives<\/span>"]}, {"lv": "m", "q": "Stages: build (2 jobs with artifacts), test (3 jobs with artifacts), report. The report job sets nothing. How many archives does it download?", "ans": "5", "hint": "All earlier stages.", "steps": ["Earlier stages: build and test.", "2 + 3 jobs with artifacts.", "<span class=\"eq\">5 archives<\/span>"]}, {"lv": "m", "q": "Same pipeline, the report job sets needs to the 3 test jobs. How many archives?", "ans": "3", "hint": "Only what needs names.", "steps": ["needs limits downloads to the listed jobs.", "3 test jobs.", "<span class=\"eq\">3 archives<\/span>"]}, {"lv": "h", "q": "Each pipeline keeps a 200 MB build for 30 days, 10 pipelines a day. Steady state storage in GB (1 GB = 1000 MB)?", "ans": "60", "hint": "Size × count × days.", "steps": ["Per day: 10 × 200 = 2000 MB.", "Kept 30 days: 2000 × 30 = 60000 MB.", "<span class=\"eq\">60 GB<\/span>"]}, {"lv": "h", "q": "Same, but you shorten expire_in to 7 days. How many GB are saved?", "ans": "46", "hint": "Difference in days.", "steps": ["New storage: 2000 MB × 7 = 14000 MB = 14 GB.", "Old storage: 60 GB.", "<span class=\"eq\">60 - 14 = 46 GB saved<\/span>"]}], "assign": [{"id": "apiurl", "lv": "e", "title": "Build the artifact download URL", "task": "<p>Write <code>artifact_url(api, project_id, ref, job)<\/code> that returns the URL of the job artifacts API for the latest successful job on a ref, for example <code>https://gitlab.com/api/v4/projects/42/jobs/artifacts/main/download?job=build<\/code>.<\/p>", "starter": "def artifact_url(api, project_id, ref, job):\n    # your code here\n    pass\n", "tests": [{"call": "artifact_url('https://gitlab.com/api/v4', 42, 'main', 'build')", "want": "https://gitlab.com/api/v4/projects/42/jobs/artifacts/main/download?job=build"}, {"call": "artifact_url('https://git.example.com/api/v4', 7, 'v1.0', 'package')", "want": "https://git.example.com/api/v4/projects/7/jobs/artifacts/v1.0/download?job=package"}], "solution": "def artifact_url(api, project_id, ref, job):\n    return f'{api}/projects/{project_id}/jobs/artifacts/{ref}/download?job={job}'\n", "hint": "An f-string with the four parts in the right places.", "why": "<p>In a job, api is $CI_API_V4_URL. Real code should URL encode ref and job names that contain special characters.<\/p>"}, {"id": "fetchwhat", "lv": "h", "title": "Which artifacts does a job fetch", "task": "<p>Write <code>fetched(jobs, stage, needs, deps)<\/code>. jobs is a list of <code>[name, stage, has_artifacts]<\/code>. needs and deps are lists or None. If needs is not None, fetch from those jobs. Else if deps is not None, fetch from those. Else fetch from all jobs in earlier stages. Return the sorted names of jobs fetched from that have artifacts.<\/p>", "starter": "def fetched(jobs, stage, needs, deps):\n    # your code here\n    pass\n", "tests": [{"call": "fetched([['lint', 0, False], ['test', 1, True], ['build', 2, True]], 3, None, None)", "want": ["build", "test"]}, {"call": "fetched([['lint', 0, False], ['test', 1, True], ['build', 2, True]], 3, ['build'], None)", "want": ["build"]}, {"call": "fetched([['lint', 0, False], ['test', 1, True], ['build', 2, True]], 3, None, [])", "want": []}, {"call": "fetched([['a', 0, True], ['b', 1, True]], 1, None, None)", "want": ["a"]}], "solution": "def fetched(jobs, stage, needs, deps):\n    if needs is not None:\n        names = set(needs)\n    elif deps is not None:\n        names = set(deps)\n    else:\n        names = {n for n, s, a in jobs if s < stage}\n    return sorted(n for n, s, a in jobs if n in names and a)\n", "hint": "Pick the source list first, then keep only jobs that made artifacts.", "why": "<p>needs wins over dependencies in this model, which matches the common setup where only one of them is used.<\/p>"}], "must": [["artifacts keyword", "paths, exclude, name, when (on_success, on_failure, always), expire_in (GitLab.com default 30 days), access, reports: junit. Latest successful artifacts per ref are kept beyond expire_in. Keep button. 1 GB on GitLab.com."], ["Between jobs", "Earlier stages by default, dependencies: [list] or [] to narrow, needs: [job] to start early and fetch, needs:project for other projects (Premium)."], ["Pull artifacts", "UI: pipelines, jobs, job page, MR, Build Artifacts. API: /projects/:id/jobs/artifacts/:ref/download?job=name, /jobs/:job_id/artifacts?file_type=junit. CLI: glab job artifact <ref> <job>. CI_JOB_TOKEN with JOB-TOKEN header plus allowlist."], ["Cache", "cache key files (up to two), prefix, paths inside the project, policy pull-push, pull or push. Best effort only."], ["Releases", "Artifacts expire. Releases go to the package registry or release assets."]], "summary": "<p>Keep results with artifacts, narrow what jobs fetch with needs and dependencies, pull builds with the UI, API, glab or the job token, and cache only what is safe to lose.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"fetch": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 6, "ev": "line", "d": {"G.jobs": "[('lint', 0, False), ('unit-tests', 1, True), ('build', 2, True)]"}}, {"l": 15, "ev": "line", "d": {"G.downloads": "<function downloads>"}}, {"l": 6, "ev": "call", "s": ["module", "downloads()"], "d": {"L.stage": "3", "L.needs": "None", "L.dependencies": "None"}}, {"l": 7, "ev": "line"}, {"l": 9, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line", "d": {"L.n": "'lint'", "L.s": "0", "L.a": "False"}}, {"l": 12, "ev": "line", "d": {"L.n": "'unit-tests'", "L.s": "1", "L.a": "True"}}, {"l": 12, "ev": "line", "d": {"L.n": "'build'", "L.s": "2"}}, {"l": 13, "ev": "line", "d": {"L.names": "['lint', 'unit-tests', 'build']", "L.n": null, "L.s": null, "L.a": null}}, {"l": 13, "ev": "line", "d": {"L.n": "'lint'", "L.s": "0", "L.a": "False"}}, {"l": 13, "ev": "line", "d": {"L.n": "'unit-tests'", "L.s": "1", "L.a": "True"}}, {"l": 13, "ev": "line", "d": {"L.n": "'build'", "L.s": "2"}}, {"l": 13, "ev": "return", "d": {"L.n": null, "L.s": null, "L.a": null}}, {"l": 16, "ev": "line", "s": ["module"], "d": {"L.stage": null, "L.needs": null, "L.dependencies": null, "L.names": null}, "o": "smoke-tests, stage 3, nothing set  : ['unit-tests', 'build']\n"}, {"l": 6, "ev": "call", "s": ["module", "downloads()"], "d": {"L.stage": "3", "L.needs": "['build']", "L.dependencies": "None"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line"}, {"l": 13, "ev": "line", "d": {"L.names": "['build']"}}, {"l": 13, "ev": "line", "d": {"L.n": "'lint'", "L.s": "0", "L.a": "False"}}, {"l": 13, "ev": "line", "d": {"L.n": "'unit-tests'", "L.s": "1", "L.a": "True"}}, {"l": 13, "ev": "line", "d": {"L.n": "'build'", "L.s": "2"}}, {"l": 13, "ev": "return", "d": {"L.n": null, "L.s": null, "L.a": null}}, {"l": 17, "ev": "line", "s": ["module"], "d": {"L.stage": null, "L.needs": null, "L.dependencies": null, "L.names": null}, "o": "smoke-tests, needs: [build]        : ['build']\n"}, {"l": 6, "ev": "call", "s": ["module", "downloads()"], "d": {"L.stage": "3", "L.needs": "None", "L.dependencies": "[]"}}, {"l": 7, "ev": "line"}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line"}, {"l": 13, "ev": "line", "d": {"L.names": "[]"}}, {"l": 13, "ev": "line", "d": {"L.n": "'lint'", "L.s": "0", "L.a": "False"}}, {"l": 13, "ev": "line", "d": {"L.n": "'unit-tests'", "L.s": "1", "L.a": "True"}}, {"l": 13, "ev": "line", "d": {"L.n": "'build'", "L.s": "2"}}, {"l": 13, "ev": "return", "d": {"L.n": null, "L.s": null, "L.a": null}}, {"l": 17, "ev": "return", "s": ["module"], "d": {"L.stage": null, "L.needs": null, "L.dependencies": null, "L.names": null}, "o": "report job, dependencies: []       : []\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>
