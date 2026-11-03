@@ -5426,6 +5426,70 @@ function gitModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "refs-packs", title: "Refs, the index, plumbing and packfiles", emoji: "5.2", page: "content/git/refs-packs.html",
+        summary: "Refs and HEAD, plumbing behind add and commit, index stages, packfiles, deltas, gc and fsck.",
+        keywords: ["refs", "symbolic ref", "packed-refs", "plumbing", "write-tree", "commit-tree", "packfile", "git gc"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "refs", title: "Refs and HEAD are small text files", emoji: "", group: "Lesson", keywords: ["refs", "refs/heads", "refs/tags", "refs/remotes", "HEAD", "symbolic ref", "packed-refs", "update-ref", "reflog files", "reftable"] },
+        { id: "plumbing", title: "add and commit done by hand", emoji: "", group: "Lesson", keywords: ["porcelain", "plumbing", "update-index", "write-tree", "commit-tree", "update-ref", "ls-files --stage", "index file", "stage number", "read-tree"] },
+        { id: "packs", title: "Packfiles, deltas and garbage collection", emoji: "", group: "Lesson", keywords: ["loose object", "packfile", "delta", "git gc", "gc.pruneExpire", "git fsck", "dangling", "count-objects", "git maintenance", "idx", "repack"] },
+        { id: "layout", title: "The whole .git folder", emoji: "", group: "Lesson", keywords: [".git folder", "config", "MERGE_HEAD", "ORIG_HEAD", "FETCH_HEAD", "fetch-depth", "GIT_DEPTH", "commit-graph", "bitmap"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cicd-basics", title: "CI/CD foundations", emoji: "6", step: 6, level: "Intermediate", blurb: "What continuous integration and delivery mean, how pipelines, jobs, runners and YAML fit together, artifacts versus cache, secrets, and how Dev and QA use the same pipeline differently.", topics: [
+      { id: "cicd-basics", title: "CI/CD foundations: pipelines, runners, artifacts and roles", emoji: "6.1", page: "content/git/cicd-basics.html",
+        summary: "CI, CD and pipelines, jobs, stages, needs and runners, YAML, artifacts versus cache, secrets, Dev and QA roles.",
+        keywords: ["continuous integration", "continuous delivery", "pipeline", "runner", "yaml", "artifact", "cache", "secrets"],
+        minutes: 55, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "why", title: "What CI and CD mean, and why teams need them", emoji: "", group: "Lesson", keywords: ["continuous integration", "continuous delivery", "continuous deployment", "CI/CD", "pipeline", "Knight Capital", "automation", "workflow run"] },
+        { id: "anatomy", title: "Inside a pipeline: jobs, stages, runners and YAML", emoji: "", group: "Lesson", keywords: ["job", "stage", "runner", "needs", "DAG", "YAML", "indentation", "list", "map", "quote versions", "block scalar"] },
+        { id: "data", title: "Artifacts, cache, variables and secrets", emoji: "", group: "Lesson", keywords: ["artifact", "cache", "variables", "secrets", "masked variable", "protected variable", "permissions", "least privilege", "pin SHA", "Codecov", "tj-actions", "supply chain"] },
+        { id: "roles", title: "Dev and QA in a pipeline, and build once, promote many", emoji: "", group: "Lesson", keywords: ["Dev view", "QA view", "quality gate", "flaky tests", "environments", "staging", "build once", "promote", "regression", "DORA", "SLSA"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "gh-actions", title: "GitHub Actions", emoji: "7", step: 7, level: "Intermediate", blurb: "Write GitHub Actions workflows from the first line: events, jobs, matrix and contexts, then a complete Dev and QA pipeline built from scratch, then artifacts and caches including how to pull a build from any run.", topics: [
+      { id: "gha-concepts", title: "GitHub Actions: events, jobs, matrix and contexts", emoji: "7.1", page: "content/git/gha-concepts.html",
+        summary: "Workflow anatomy, events and filters, jobs, needs, matrix, contexts, outputs, permissions and safety.",
+        keywords: ["github actions", "workflow", "on push", "pull_request", "workflow_dispatch", "matrix", "contexts", "permissions"],
+        minutes: 55, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "anatomy", title: "A workflow file, line by line", emoji: "", group: "Lesson", keywords: ["workflow file", ".github/workflows", "on", "jobs", "runs-on", "steps", "uses", "run", "with", "actions/checkout", "setup-python", "timeout-minutes"] },
+        { id: "events", title: "Events and filters: when does it run", emoji: "", group: "Lesson", keywords: ["push", "pull_request", "workflow_dispatch", "schedule", "cron", "UTC", "workflow_run", "branches filter", "tags filter", "paths", "paths-ignore", "glob"] },
+        { id: "jobs", title: "Jobs, needs, if, matrix and outputs", emoji: "", group: "Lesson", keywords: ["needs", "if", "matrix", "strategy", "fail-fast", "include", "exclude", "contexts", "expressions", "GITHUB_OUTPUT", "outputs", "github.ref", "max-parallel"] },
+        { id: "safety", title: "Permissions, concurrency and safe workflows", emoji: "", group: "Lesson", keywords: ["permissions", "GITHUB_TOKEN", "concurrency", "cancel-in-progress", "environment", "required reviewers", "script injection", "pull_request_target", "forks", "debug logging", "OIDC", "reusable workflow"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "gha-scratch", title: "GitHub Actions from scratch: a green build on every commit", emoji: "7.2", page: "content/git/gha-scratch.html",
+        summary: "A complete GitHub Actions setup from an empty repository, explained line by line, with Dev and QA changes and a QA regression workflow.",
+        keywords: ["github actions setup", "ci.yml", "green build", "upload-artifact", "download-artifact", "qa regression", "gh run download", "branch protection"],
+        minutes: 70, counts: {"lessons": 4, "problems": 6, "quiz": 10, "assign": 2},
+        added: "2026-11-02",
+        sections: [
+        { id: "setup", title: "Baby steps: from nothing to a green build", emoji: "", group: "Lesson", keywords: ["setup from scratch", "first workflow", "baby steps", "Actions tab", "green build", "push trigger", "artifacts section", "gh run download", "required status checks"] },
+        { id: "ci", title: "The CI workflow, line by line", emoji: "", group: "Lesson", keywords: ["ci.yml", "line by line", "checkout", "setup-python cache", "junitxml", "if always", "upload-artifact", "download-artifact", "retention-days", "if-no-files-found", "PYTHONPATH"] },
+        { id: "devqa", title: "What Dev and QA change, and why", emoji: "", group: "Lesson", keywords: ["Dev changes", "QA changes", "retention", "matrix", "fail-fast false", "schedule", "workflow_dispatch inputs", "least privilege", "pin SHA"] },
+        { id: "qa", title: "The QA regression workflow and common errors", emoji: "", group: "Lesson", keywords: ["qa-regression.yml", "schedule", "workflow_dispatch", "actions read", "GH_TOKEN", "gh run list", "GITHUB_OUTPUT", "junit report", "troubleshooting", "ModuleNotFoundError"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

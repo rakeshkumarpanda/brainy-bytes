@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Refs, the index, plumbing and packfiles · Git and CI/CD</title>
+<meta name="description" content="refs/heads, refs/tags, refs/remotes, HEAD as a symbolic ref, packed-refs and reftable, porcelain and plumbing, hash-object, update-index, write-tree, commit-tree and update-ref, index stages, loose objects, packfiles and deltas, git gc and prune expiry, fsck and dangling objects, the .git folder layout and shallow clones in CI.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 5: Git internals</span><span>›</span><span>Refs and packs</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 2 of 2 · Advanced</div>
+    <h1>Refs, the index, plumbing and packfiles</h1>
+    <p class="lead">Branches and HEAD are tiny text files, the index is a list for the next commit, and packfiles keep the database small. Make a commit with plumbing commands only and watch git gc clean up.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">4 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">10 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#refs-packs" data-topic="cheatsheet" data-h="refs-packs">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#refs" data-l="refs"><span class="n">1</span><span class="t">Refs and HEAD are small text files</span></a></li><li><a href="#plumbing" data-l="plumbing"><span class="n">2</span><span class="t">add and commit done by hand</span></a></li><li><a href="#packs" data-l="packs"><span class="n">3</span><span class="t">Packfiles, deltas and garbage collection</span></a></li><li><a href="#layout" data-l="layout"><span class="n">4</span><span class="t">The whole .git folder</span></a></li></ol>
+    <article class="cv-lesson" id="refs" data-l="refs" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Refs and HEAD are small text files</h2>
+<p>Objects have ugly ids, so Git keeps <b>refs</b>: names that hold an id. A branch is a ref under <code>refs/heads/</code>, a tag under <code>refs/tags/</code>, and what you last fetched under <code>refs/remotes/</code>. HEAD usually does not hold an id. It holds the name of a branch, which makes it a <b>symbolic ref</b>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>File in .git</th><th>Holds</th><th>Changed by</th></tr></thead><tbody><tr><td><code>HEAD</code></td><td><code>ref: refs/heads/main</code> (or an id when detached)</td><td>git switch, git checkout</td></tr><tr><td><code>refs/heads/main</code></td><td>the id of the newest commit on main</td><td>commit, merge, reset, pull</td></tr><tr><td><code>refs/tags/v1.0</code></td><td>a commit id or a tag object id</td><td>git tag</td></tr><tr><td><code>refs/remotes/origin/main</code></td><td>the last fetched id of main on origin</td><td>fetch, pull, push</td></tr><tr><td><code>packed-refs</code></td><td>many refs in one file, after git pack-refs or git gc</td><td>gc, pack-refs</td></tr><tr><td><code>logs/HEAD</code>, <code>logs/refs/...</code></td><td>the reflog: every old value of each ref</td><td>every ref update</td></tr></tbody></table></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Look at the files</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">cat .git/HEAD</span><span class="ln">git symbolic-ref HEAD</span><span class="ln">cat .git/packed-refs</span></pre><div class="cc-cap">Real output after git gc. The ^ line is the commit the annotated tag points to.</div><pre class="cc-out">ref: refs/heads/main
+refs/heads/main
+# pack-refs with: peeled fully-peeled sorted
+6132f575896694519968125e6f41dce6232775ac refs/heads/main
+3a2a89b76035cd6b23b6d47ca2ded45631cc8ff3 refs/tags/v1.0
+^aa1cc961b5f90c399a85465ec3ca67ad215a0b47</pre></div>
+<div class="note note-warn"><b>Common mistake</b><div>Never edit ref files with a text editor. Use git update-ref, which writes safely, checks the old value if you ask and records the change in the reflog.</div></div>
+<details class="deep"><summary>Going deeper: reftable</summary><div class="deep-b"><p>Thousands of loose ref files are slow on some file systems and cannot be updated atomically as a group. The reftable format, added in Git 2.45 with git init --ref-format=reftable, stores all refs in a few sorted binary files. The plans for Git 3.0 make it the default. Commands do not change, which is one more reason to use git update-ref rather than touching files.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="plumbing" data-l="plumbing" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>add and commit done by hand</h2>
+<p>Commands like add and commit are <b>porcelain</b>: friendly commands for people. Each is built from <b>plumbing</b> commands that do one small step. Running the steps yourself shows exactly what a commit is.</p>
+<div class="cvz" data-viz="plumbing"></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Make a commit with plumbing only</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">echo hello &gt; hello.txt</span><span class="ln">git hash-object -w hello.txt</span><span class="ln">git update-index --add hello.txt</span><span class="ln">git ls-files --stage</span><span class="ln">git write-tree</span><span class="ln">echo "First commit" | git commit-tree aaa96ce</span><span class="ln">git update-ref refs/heads/main 0f2f6da</span><span class="ln">git log --oneline</span></pre><div class="cc-cap">Real output, with the same author and date as chapter 5.1, so the ids match</div><pre class="cc-out">ce013625030ba8dba906f756967f9e9ca394464a
+100644 ce013625030ba8dba906f756967f9e9ca394464a 0	hello.txt
+aaa96ced2d9a1c8e72c56b253a0e2fe78393feb7
+0f2f6da1b1026e7464d4051044863d17b1aaf7e6
+0f2f6da First commit</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Porcelain</th><th>Plumbing steps</th></tr></thead><tbody><tr><td><code>git add f</code></td><td>hash-object -w f, then update-index --add f</td></tr><tr><td><code>git commit -m m</code></td><td>write-tree, commit-tree &lt;tree&gt; -p HEAD -m m, update-ref refs/heads/&lt;branch&gt; &lt;new id&gt;</td></tr><tr><td><code>git branch b</code></td><td>update-ref refs/heads/b HEAD</td></tr><tr><td><code>git switch b</code></td><td>read-tree and checkout-index for the files, symbolic-ref HEAD refs/heads/b</td></tr></tbody></table></div>
+<p>The <b>index</b> (.git/index) is a binary file that lists every tracked path with its mode, blob id and a <b>stage number</b>. Stage 0 is normal. During a merge conflict one path has stages 1 (base), 2 (ours) and 3 (theirs), which is how git status knows what is unmerged.</p>
+<div class="note note-exam"><b>In the exam</b><div>Plumbing output is stable and meant for scripts. Porcelain output such as git status can change between versions, so scripts should use plumbing or the --porcelain options.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="packs" data-l="packs" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Packfiles, deltas and garbage collection</h2>
+<p>A new object is first written as a <b>loose object</b>: one zlib file per object. That is fast to write but wasteful when there are thousands. <code>git gc</code>, which Git also runs automatically now and then, bundles them into a <b>packfile</b>. Inside a pack, an object that is similar to another can be stored as a <b>delta</b>: instructions to copy parts of a base object plus the few new bytes.</p>
+<div class="cv-code" data-k="delta"></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Before and after git gc</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git count-objects -v</span><span class="ln">git gc</span><span class="ln">git count-objects -v</span><span class="ln">ls .git/objects/pack</span></pre><div class="cc-cap">Real output, shortened: 16 loose objects became one pack</div><pre class="cc-out">count: 16
+size: 64
+count: 0
+size: 0
+in-pack: 16
+packs: 1
+pack-e477b897487a7cae224bc4db7d3d282d6086dc65.idx
+pack-e477b897487a7cae224bc4db7d3d282d6086dc65.pack
+pack-e477b897487a7cae224bc4db7d3d282d6086dc65.rev</pre></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Pack and clean</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git gc</code></div><div class="fx-n">Packs loose objects and refs, and removes unreachable objects older than the grace period (two weeks by default, gc.pruneExpire).</div></div><div class="fx fx-key"><div class="fx-h"><span>Check the database</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git fsck</code></div><div class="fx-n">Verifies every object and reports dangling objects that nothing points to.</div></div><div class="fx"><div class="fx-h"><span>Count</span></div><div class="fx-b"><code>git count-objects -vH</code></div><div class="fx-n">Loose and packed objects and their sizes.</div></div><div class="fx"><div class="fx-h"><span>Background upkeep</span></div><div class="fx-b"><code>git maintenance start</code></div><div class="fx-n">Schedules prefetch, commit-graph and repacking in the background for big repositories.</div></div></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">A dangling object and its fate</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">echo bye &gt; b.txt</span><span class="ln">git hash-object -w b.txt</span><span class="ln">git fsck</span><span class="ln">git gc --prune=now</span><span class="ln">git fsck</span></pre><div class="cc-cap">Real output: after gc --prune=now the blob is gone and fsck is silent</div><pre class="cc-out">b023018cabc396e7692c70bbf5784a93d3f738ab
+dangling blob b023018cabc396e7692c70bbf5784a93d3f738ab</pre></div>
+<div class="note note-warn"><b>Common mistake</b><div>Commits you can still see in the reflog are reachable from it, so gc keeps them until the reflog entry expires (90 days by default, 30 for entries that are not reachable from the branch). That is the safety net from chapter 3.1. --prune=now on a repository you care about removes that net for loose objects nothing points to.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="layout" data-l="layout" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>The whole .git folder</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Path</th><th>What it is</th></tr></thead><tbody><tr><td><code>HEAD</code></td><td>the current branch</td></tr><tr><td><code>config</code></td><td>local settings, remotes, branch upstreams</td></tr><tr><td><code>index</code></td><td>the staging area</td></tr><tr><td><code>objects/</code></td><td>loose objects in xx/ folders, packs in pack/</td></tr><tr><td><code>refs/</code>, <code>packed-refs</code></td><td>branches, tags, remote-tracking branches, stash</td></tr><tr><td><code>logs/</code></td><td>reflogs</td></tr><tr><td><code>hooks/</code></td><td>sample and real hook scripts</td></tr><tr><td><code>info/exclude</code></td><td>personal ignore rules</td></tr><tr><td><code>MERGE_HEAD</code>, <code>ORIG_HEAD</code>, <code>FETCH_HEAD</code></td><td>temporary refs during a merge, after a reset or rebase, and after a fetch</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: CI clones and the .git folder</div><p>CI runners clone the repository for every job. With actions/checkout the default is fetch-depth: 1, a shallow clone of one commit, which is fast but has no history. A job that runs git describe, counts commits for a version number, or diffs against main then fails with a confusing error. The fix is fetch-depth: 0 for the full history, or fetching just the refs you need. GitLab sets the clone depth with the GIT_DEPTH variable for the same reason.</p></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Branches and HEAD are tiny files with ids or names in them. The index is the list for the next commit. Git packs many objects into one file to save space and throws away what nothing points to.</p></div><div class="ld-p" data-ld="college" hidden><p>Refs live in refs/ or packed-refs, HEAD is a symbolic ref. Porcelain is built on plumbing: hash-object, update-index, write-tree, commit-tree, update-ref. gc packs, fsck checks, unreachable objects are pruned after the grace period.</p></div><div class="ld-p" data-ld="masters" hidden><p>Packs hold objects as zlib data or deltas against a base, with an .idx for lookup and a .rev for reverse lookup. Delta choice uses heuristics on type, name and size, not history order, so a delta can point backward in time.</p></div><div class="ld-p" data-ld="research" hidden><p>Large hosts add commit-graph files, multi-pack indexes, bitmaps and reftable to answer reachability questions quickly. Research on Git storage studies delta selection and how partial clone and protocol version 2 reduce what a client downloads.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./objects.html" data-topic="objects"><small>Previous topic</small><b>Git objects</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "refs-packs", "topic": "refs-packs", "subject": "git", "title": "Refs, the index, plumbing and packfiles", "codes": {"delta": {"src": "# A packfile stores a similar object as a delta: copy ranges from a base object, plus new bytes\nbase = \"def add(a, b):\\n    return a + b\\n\"\nnew = \"def add(a, b):\\n    return a + b\\n\\ndef sub(a, b):\\n    return a - b\\n\"\n\nsame = 0\nwhile same < min(len(base), len(new)) and base[same] == new[same]:\n    same += 1\ndelta = [(\"copy\", 0, same), (\"insert\", new[same:])]\nprint(\"instructions:\", delta)\nprint(\"full object :\", len(new), \"bytes\")\nprint(\"delta       : about\", 2 + len(new) - same, \"bytes (a copy instruction plus the new text)\")\n\nrebuilt = base[delta[0][1]:delta[0][2]] + delta[1][1]\nprint(\"rebuilt ok  :\", rebuilt == new)", "stdin": "", "out": "instructions: [('copy', 0, 32), ('insert', '\\ndef sub(a, b):\\n    return a - b\\n')]\nfull object : 65 bytes\ndelta       : about 35 bytes (a copy instruction plus the new text)\nrebuilt ok  : True"}}, "quiz": [{"lv": "e", "q": "What does the file .git/HEAD usually contain?", "o": ["A commit id", "ref: refs/heads/main", "The whole history", "The remote URL"], "a": 1, "hint": "A pointer to a branch.", "why": "It holds an id only when HEAD is detached."}, {"lv": "e", "q": "Where do branches live as refs?", "o": ["refs/tags", "refs/heads", "objects/", "hooks/"], "a": 1, "hint": "Heads.", "why": "Tags in refs/tags, fetched branches in refs/remotes."}, {"lv": "e", "q": "What does git gc mainly do?", "o": ["Deletes branches", "Packs loose objects and removes unreachable old ones", "Pushes to the server", "Fixes conflicts"], "a": 1, "hint": "Garbage collect.", "why": "It also packs refs."}, {"lv": "m", "q": "Which plumbing command turns the index into a tree object?", "o": ["git commit-tree", "git write-tree", "git update-index", "git read-tree"], "a": 1, "hint": "Write the tree.", "why": "commit-tree then wraps the tree in a commit."}, {"lv": "m", "q": "In git ls-files --stage, what does stage 2 mean during a conflict?", "o": ["The base version", "Our version", "Their version", "Resolved"], "a": 1, "hint": "1 base, 2 ours, 3 theirs.", "why": "Stage 0 is a normal entry."}, {"lv": "m", "q": "What is a dangling object?", "o": ["A corrupt object", "An object that no ref, reflog or other object points to", "A big file", "A submodule"], "a": 1, "hint": "Unreachable.", "why": "git fsck lists them, gc removes them after the grace period."}, {"lv": "m", "q": "Why should scripts use plumbing instead of parsing git status?", "o": ["Plumbing is faster", "Plumbing output is stable, porcelain output may change", "Porcelain needs admin rights", "No reason"], "a": 1, "hint": "Contracts.", "why": "Or use --porcelain options made for scripts."}, {"lv": "h", "q": "A CI job runs git describe and fails with no names found. The checkout used fetch-depth 1. Why?", "o": ["Tags are broken", "The shallow clone has no tags and no history to describe from", "gc removed them", "The runner is offline"], "a": 1, "hint": "Shallow.", "why": "Use fetch-depth: 0 or fetch tags."}, {"lv": "h", "q": "In a packfile, what is a delta?", "o": ["A compressed tar", "Instructions to rebuild an object from a base object plus new bytes", "A signature", "A ref"], "a": 1, "hint": "Copy and insert.", "why": "Similar objects store only differences."}, {"lv": "x", "q": "What does the plans for Git 3.0 say about refs?", "o": ["Refs are removed", "reftable becomes the default ref storage", "HEAD is renamed", "Tags become branches"], "a": 1, "hint": "New format.", "why": "Added in Git 2.45 as an option."}], "calc": [{"lv": "e", "q": "git count-objects shows count: 16 before gc and in-pack: 16 after. How many loose objects remain after gc?", "ans": "0", "hint": "All packed.", "steps": ["gc moved every reachable object into the pack.", "Loose count drops to zero.", "<span class=\"eq\">count: 0<\/span>"]}, {"lv": "e", "q": "Plumbing for one commit: hash-object, update-index, write-tree, commit-tree, update-ref. How many commands?", "ans": "5", "hint": "Count them.", "steps": ["hash-object and update-index do the add.", "write-tree and commit-tree make the objects.", "<span class=\"eq\">update-ref moves the branch: 5 commands<\/span>"]}, {"lv": "m", "q": "A merge conflict on one file. How many index entries does that path have?", "ans": "3", "hint": "Stages 1 to 3.", "steps": ["Stage 1: base.", "Stage 2: ours.", "<span class=\"eq\">Stage 3: theirs, so 3 entries<\/span>"]}, {"lv": "m", "q": "A file of 30 bytes gets 40 bytes appended. Roughly how many bytes does the delta store, counting 2 bytes for the copy instruction?", "ans": "42", "hint": "Copy plus new text.", "steps": ["Copy the first 30 bytes from the base: 2 bytes of instruction.", "Insert the 40 new bytes.", "<span class=\"eq\">2 + 40 = 42 bytes, instead of 70<\/span>"]}, {"lv": "h", "q": "A file of 70 bytes stored as a 42 byte delta. What percent of the full size is saved? Round to a whole number.", "ans": "40", "hint": "(70 minus 42) over 70.", "steps": ["Saved bytes: 70 - 42 = 28.", "28 / 70 = 0.4.", "<span class=\"eq\">40 percent<\/span>"]}, {"lv": "h", "q": "An unreachable commit was made today. gc.pruneExpire is the default two weeks and the reflog still lists it. With no option, on which day from now does gc first delete it? Use reflog expiry of 30 days for unreachable entries.", "ans": "30", "hint": "Both nets must expire.", "steps": ["The reflog keeps unreachable entries 30 days.", "After that the object is unreachable and must also be older than 2 weeks, which it is.", "<span class=\"eq\">first removable on day 30<\/span>"]}], "assign": [{"id": "idx", "lv": "m", "title": "Read conflict stages", "task": "<p>Write <code>unmerged(entries)<\/code>. entries is a list of <code>[mode, id, stage, path]<\/code> lines as printed by git ls-files --stage. Return the sorted list of paths that have any entry with a stage above 0.<\/p>", "starter": "def unmerged(entries):\n    # your code here\n    pass\n", "tests": [{"call": "unmerged([['100644', 'a1', 0, 'README.md'], ['100644', 'b1', 1, 'app.py'], ['100644', 'b2', 2, 'app.py'], ['100644', 'b3', 3, 'app.py']])", "want": ["app.py"]}, {"call": "unmerged([['100644', 'a1', 0, 'x']])", "want": []}, {"call": "unmerged([['100644', 'c', 2, 'z.py'], ['100644', 'd', 3, 'a.py']])", "want": ["a.py", "z.py"]}], "solution": "def unmerged(entries):\n    return sorted({path for mode, oid, stage, path in entries if stage > 0})\n", "hint": "Collect paths with stage 1, 2 or 3 in a set, then sort.", "why": "<p>git status uses the same rule to print both modified and the other unmerged states.<\/p>"}, {"id": "delta", "lv": "h", "title": "Apply a delta", "task": "<p>Write <code>apply_delta(base, ops)<\/code>. ops is a list of instructions: <code>[\"copy\", start, length]<\/code> copies that slice of base, <code>[\"insert\", text]<\/code> adds new text. Return the rebuilt string.<\/p>", "starter": "def apply_delta(base, ops):\n    # your code here\n    pass\n", "tests": [{"call": "apply_delta('hello world', [['copy', 0, 6], ['insert', 'there']])", "want": "hello there"}, {"call": "apply_delta('abcdef', [['copy', 3, 3], ['copy', 0, 3]])", "want": "defabc"}, {"call": "apply_delta('', [['insert', 'new file']])", "want": "new file"}], "solution": "def apply_delta(base, ops):\n    out = []\n    for op in ops:\n        if op[0] == 'copy':\n            out.append(base[op[1]:op[1] + op[2]])\n        else:\n            out.append(op[1])\n    return ''.join(out)\n", "hint": "Walk the instructions in order and build a list of pieces.", "why": "<p>Real pack deltas encode the same two instructions in binary, with offsets and sizes packed into a few bytes.<\/p>"}], "must": [["Refs", "Names for ids: refs/heads (branches), refs/tags, refs/remotes, packed-refs. HEAD is a symbolic ref to a branch. Change refs with update-ref, never by hand. reftable comes in Git 2.45 and is planned as default in 3.0."], ["Plumbing behind add and commit", "hash-object -w, update-index --add, write-tree, commit-tree, update-ref. Porcelain is for people, plumbing is stable for scripts."], ["Index stages", "0 normal, 1 base, 2 ours, 3 theirs during a conflict. git ls-files --stage shows them."], ["Packs and gc", "Loose objects are packed by gc, similar objects stored as deltas. gc prunes unreachable objects after two weeks, reflog entries keep commits alive for 30 or 90 days. fsck checks and lists dangling objects."], ["CI clones", "actions/checkout fetches one commit by default (fetch-depth: 1). Use fetch-depth: 0 when a job needs tags or history. GitLab uses GIT_DEPTH."]], "summary": "<p>Refs name commits, the index lists the next tree, plumbing builds every commit, and gc packs and prunes the object database.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"delta": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.base": "'def add(a, b):\\n    return a + b\\n'"}}, {"l": 5, "ev": "line", "d": {"G.new": "'def add(a, b):\\n    return a + b\\n\\ndef sub(a, b):\\n    return a - b\\n'"}}, {"l": 6, "ev": "line", "d": {"G.same": "0"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "1"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "2"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "3"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "4"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "5"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "6"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "7"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "8"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "9"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "10"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "11"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "12"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "13"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "14"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "15"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "16"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "17"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "18"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "19"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "20"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "21"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "22"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "23"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "24"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "25"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "26"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "27"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "28"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "29"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "30"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "31"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.same": "32"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.delta": "[('copy', 0, 32), ('insert', '\\ndef sub(a, b):\\n    return a - b\\n')]"}}, {"l": 10, "ev": "line", "o": "instructions: [('copy', 0, 32), ('insert', '\\ndef sub(a, b):\\n    return a - b\\n')]\n"}, {"l": 11, "ev": "line", "o": "full object : 65 bytes\n"}, {"l": 13, "ev": "line", "o": "delta       : about 35 bytes (a copy instruction plus the new text)\n"}, {"l": 14, "ev": "line", "d": {"G.rebuilt": "'def add(a, b):\\n    return a + b\\n\\ndef sub(a, b):\\n    return a - b\\n'"}}, {"l": 14, "ev": "return", "o": "rebuilt ok  : True\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>
