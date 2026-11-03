@@ -633,29 +633,50 @@ if (typeof VIZ !== 'undefined') (() => {
       case 'Compare': sub = n.op; kids.push(n.left, n.right); break;
       case 'Call': sub = 'call'; kids.push(n.func, ...n.args); break;
     }
-    return `<li><span class="pv-node k-${n.k}"><b>${esc(label)}</b>${sub ? `<code>${esc(sub)}</code>` : ''}</span>${kids.length ? `<ul>${kids.map(treeHtml).join('')}</ul>` : ''}</li>`;
+    return `<li><span class="pv-node pv-step k-${n.k}" data-tell="${esc(`The parser adds a ${label} node${sub ? ' for ' + sub : ''}.`)}"><b>${esc(label)}</b>${sub ? `<code>${esc(sub)}</code>` : ''}</span>${kids.length ? `<ul>${kids.map(treeHtml).join('')}</ul>` : ''}</li>`;
   }
   W.pvm = el => {
     const b = K.shell(el, 'Watch CPython run your code', 'Type a few lines (names, numbers, strings, + - * / // % **, comparisons, print and a few built ins). Then follow them through the four stages.');
     b.innerHTML = `<div class="pv-top"><label class="pv-lbl" for="pv-src-${el.dataset.k || 'x'}">Your program</label><div class="pv-ex">${EXAMPLES.map((e, i) => `<button type="button" data-ex="${i}">${esc(e[0])}</button>`).join('')}</div></div>
       <textarea class="pv-src" id="pv-src-${el.dataset.k || 'x'}" spellcheck="false" autocapitalize="off" rows="5" aria-label="Python code for the animation"></textarea>
-      <div class="pv-tabs" role="tablist">${['1 Tokens', '2 Syntax tree', '3 Bytecode', '4 Run it'].map((t, i) => `<button type="button" role="tab" data-tab="${i}"${i === 3 ? ' class="on" aria-selected="true"' : ' aria-selected="false"'}>${t}</button>`).join('')}</div>
-      <div class="pv-pane" data-pane="0" hidden></div><div class="pv-pane" data-pane="1" hidden></div><div class="pv-pane" data-pane="2" hidden></div>
-      <div class="pv-pane" data-pane="3"><div class="pv-run"><div class="pv-col"><b>Bytecode</b><ol class="pv-code"></ol></div><div class="pv-col"><b>Value stack</b><div class="pv-stack"></div></div><div class="pv-col"><b>Names (globals)</b><div class="pv-names"></div><b class="pv-outh">Output</b><pre class="pv-out"></pre></div></div><div class="vz-msg" aria-live="polite"></div><div class="vz-p"></div></div>
+      <div class="pv-tabs" role="tablist">${['1 Tokens', '2 Syntax tree', '3 Bytecode', '4 Run it'].map((t, i) => `<button type="button" role="tab" data-tab="${i}"${i === 0 ? ' class="on" aria-selected="true"' : ' aria-selected="false"'}>${t}</button>`).join('')}</div>
+      <div class="pv-pane" data-pane="0"></div><div class="pv-pane" data-pane="1" hidden></div><div class="pv-pane" data-pane="2" hidden></div>
+      <div class="pv-pane" data-pane="3" hidden><div class="pv-run"><div class="pv-col pv-c0"><b>Bytecode</b><ol class="pv-code"></ol></div><div class="pv-col pv-c1"><b>Value stack</b><div class="pv-stack"></div></div><div class="pv-col pv-c2"><b>Names (globals)</b><div class="pv-names"></div><b class="pv-outh">Output</b><pre class="pv-out"></pre></div></div></div>
+      <div class="vz-msg" aria-live="polite"></div><div class="vz-p"></div>
       <div class="pv-err" hidden></div>`;
     const ta = $('.pv-src', b), err = $('.pv-err', b), msg = $('.vz-msg', b);
     const panes = [...b.querySelectorAll('.pv-pane')];
-    let res = null;
-    const P = K.Player($('.vz-p', b), i => show(i), 1500);
+    let res = null, cur = 0;
+    /* every tab is a step story of its own: tokens, tree nodes and instructions appear one per step, nothing before its step */
+    const P = K.Player($('.vz-p', b), i => (cur === 3 ? show(i) : reveal(i)), 1500);
+    const items = t => [...panes[t].querySelectorAll('.pv-step')];
+    const TAB_MSG = ['Press ▶ Play or step forward. Each step reads one more token.', 'Press ▶ Play or step forward. Each step adds one node to the tree, in the order the parser builds it.',
+      'Press ▶ Play or step forward. Each step writes one more bytecode instruction.', 'Press ▶ Play or step forward. Each step runs one instruction.'];
+    function count(t) { if (!res || !res.exec) return 1; return t === 3 ? res.exec.frames.length : items(t).length + 1; }
     function tab(i) {
+      cur = i;
       b.querySelectorAll('.pv-tabs button').forEach(x => { const on = +x.dataset.tab === i; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); });
       panes.forEach((p, j) => { p.hidden = j !== i; });
+      if (res && res.exec) P.load(count(i));
+    }
+    function reveal(i) {
+      if (!res || !res.exec) return;
+      const its = items(cur);
+      its.forEach((x, j) => { x.classList.toggle('pv-hid', j >= i); x.classList.toggle('pv-now', j === i - 1); });
+      const last = its[i - 1];
+      if (!i) { msg.textContent = TAB_MSG[cur]; return; }
+      msg.innerHTML = `<b>Step ${i} of ${its.length}.</b> ` + (last ? last.dataset.tell : '');
+      if (cur === 1) panes[1].querySelectorAll('.pv-tree li').forEach(li => { li.classList.toggle('pv-hid', li.firstElementChild.classList.contains('pv-hid')); });
     }
     b.querySelector('.pv-tabs').addEventListener('click', e => { const t = e.target.closest('button'); if (t) tab(+t.dataset.tab); });
     function show(i) {
       if (!res || !res.exec) return;
       const f = res.exec.frames[i];
-      b.querySelectorAll('.pv-code li').forEach((li, j) => { li.classList.toggle('on', j === f.pc); li.classList.toggle('done', j < f.pc); });
+      b.querySelectorAll('.pv-code li').forEach((li, j) => { li.classList.toggle('on', j === f.pc); li.classList.toggle('done', j < f.pc); li.classList.toggle('pv-gone', j > f.pc); });
+      const fs = res.exec.frames.slice(0, i + 1);
+      $('.pv-c0', b).classList.toggle('pv-hid', f.pc < 0);
+      $('.pv-c1', b).classList.toggle('pv-hid', !fs.some(x => x.stack.length));
+      $('.pv-c2', b).classList.toggle('pv-hid', !fs.some(x => Object.keys(x.names).length || x.out.length) && !(i === res.exec.frames.length - 1 && res.exec.error));
       const prev = i > 0 ? res.exec.frames[i - 1] : null;
       $('.pv-stack', b).innerHTML = f.stack.length ? f.stack.slice().reverse().map((s, j) => `<span class="pv-cell t-${esc(s.t)}${prev && j === 0 && f.stack.length >= (prev.stack.length) ? ' new' : ''}"><code>${esc(s.r)}</code><small>${esc(s.t)}</small></span>`).join('') : '<span class="pv-empty">empty</span>';
       const ns = Object.entries(f.names);
@@ -675,14 +696,16 @@ if (typeof VIZ !== 'undefined') (() => {
         panes.forEach(p => { if (+p.dataset.pane < 3) p.innerHTML = ''; });
         b.querySelector('.pv-code').innerHTML = ''; $('.pv-stack', b).innerHTML = ''; $('.pv-names', b).innerHTML = ''; $('.pv-out', b).textContent = '';
         msg.textContent = 'Fix the code above and the stages will appear again.';
+        res = null;
         P.load(1);
         return;
       }
-      panes[0].innerHTML = `<p class="pv-cap">The tokenizer reads characters and groups them into tokens, the same way <code>python -m tokenize main.py</code> does. Hover a token to see its type.</p><div class="pv-toks">${res.tokens.map(t => `<span class="pv-tok tt-${t.type}" title="${esc(t.type + ': ' + TYPE_TIPS[t.type])}"><small>${t.type}</small><code>${t.text ? esc(t.text) : '⏎'}</code></span>`).join('')}</div>`;
+      panes[0].innerHTML = `<p class="pv-cap">The tokenizer reads characters and groups them into tokens, the same way <code>python -m tokenize main.py</code> does. Hover a token to see its type.</p><div class="pv-toks">${res.tokens.map(t => `<span class="pv-tok pv-step tt-${t.type}" data-tell="${esc(`The tokenizer reads ${t.text ? JSON.stringify(t.text) : 'the end of the line'} on line ${t.line} and makes a ${t.type} token, ${TYPE_TIPS[t.type]}.`)}" title="${esc(t.type + ': ' + TYPE_TIPS[t.type])}"><small>${t.type}</small><code>${t.text ? esc(t.text) : '⏎'}</code></span>`).join('')}</div>`;
       panes[1].innerHTML = `<p class="pv-cap">The parser checks the grammar and builds an abstract syntax tree. Brackets and spaces are gone. Only the meaning is left.</p><div class="pv-tree vz-scroll"><ul>${'<li><span class="pv-node k-Module"><b>Module</b></span><ul>' + res.tree.map(treeHtml).join('') + '</ul></li>'}</ul></div><details class="pv-dump"><summary>The same tree as <code>ast.dump(ast.parse(code))</code> prints it</summary><pre>${esc(res.dump)}</pre></details>`;
-      panes[2].innerHTML = `<p class="pv-cap">The compiler walks the tree and writes bytecode. Look for constant folding: arithmetic on plain numbers is done once, here, instead of every time the line runs.</p><pre class="pv-dis">${esc(PYVM.disText(res.code))}</pre><p class="pv-cap small">Same layout as <code>dis.dis</code>. LOAD_CONST shows its value. The real listing also shows its position in <code>co_consts</code>.</p>`;
+      const disLines = res.code.map((c, j) => (c.starts && j > 0 ? '\n' : '') + PYVM.disText([{ ...c }]).replace(/^\n/, ''));
+      panes[2].innerHTML = `<p class="pv-cap">The compiler walks the tree and writes bytecode. Look for constant folding: arithmetic on plain numbers is done once, here, instead of every time the line runs.</p><pre class="pv-dis">${disLines.map((l, j) => `<span class="pv-step" data-tell="${esc(`The compiler writes ${res.code[j].op}${res.code[j].rep ? ' (' + res.code[j].rep + ')' : ''}${res.code[j].line ? ' for line ' + res.code[j].line : ' to start the code object'}.`)}">${esc(l)}</span>`).join('\n')}</pre><p class="pv-cap small">Same layout as <code>dis.dis</code>. LOAD_CONST shows its value. The real listing also shows its position in <code>co_consts</code>.</p>`;
       b.querySelector('.pv-code').innerHTML = res.code.map(c => `<li><span class="ln">${c.starts && c.line ? 'L' + c.line : ''}</span><b>${esc(c.op)}</b>${c.arg !== null && c.arg !== undefined && c.op !== 'RESUME' ? ` <i>${esc(String(c.arg))}</i>` : ''}${c.rep ? ` <code>(${esc(c.rep)})</code>` : ''}</li>`).join('');
-      P.load(res.exec.frames.length);
+      tab(cur);
     }
     b.querySelector('.pv-ex').addEventListener('click', e => { const t = e.target.closest('button'); if (!t) return; ta.value = EXAMPLES[+t.dataset.ex][1]; build(); });
     let timer = null;

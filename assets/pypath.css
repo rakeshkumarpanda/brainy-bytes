@@ -1,0 +1,140 @@
+/* ===== Python chapter pages in the Computer Vision and NLP layout, plus the journey and compiler animations ===== */
+.pyp .py-lvl{display:inline-block; margin-left:10px; padding:1px 9px; border-radius:999px; font-size:11px; letter-spacing:.04em; background:var(--surface2); color:var(--ink2); border:1px solid var(--line)}
+.pyp .py-lvl.lvl-b{background:color-mix(in srgb, var(--green) 14%, var(--surface)); color:var(--green)}
+.pyp .py-lvl.lvl-i{background:color-mix(in srgb, var(--blue) 14%, var(--surface)); color:var(--blue)}
+.pyp .py-lvl.lvl-a{background:color-mix(in srgb, var(--orange) 16%, var(--surface)); color:var(--orange)}
+.pyp .py-lvl.lvl-x{background:color-mix(in srgb, var(--purple) 16%, var(--surface)); color:var(--purple)}
+.pyp .py-listen{cursor:pointer; font:inherit; font-size:inherit; font-weight:800; color:var(--accent-deep)}
+.pyp .cv-stepper li.qa a .n{outline:2px solid color-mix(in srgb, var(--teal) 55%, transparent)}
+.pyp .cv-lesson .qa-tag{margin:6px 0 12px}
+.pyp .cv-pane > h2{margin-top:6px}
+.pyp #comic, .pyp #real-life{margin-top:14px}
+.pyp .cv-pager{margin-top:22px}
+
+/* ---------- step reveal: an item marked pj-i fades in after its animation-delay ---------- */
+@keyframes pjIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+.pj-i{animation:pjIn .38s ease both}
+@media (prefers-reduced-motion: reduce){.pj-i{animation:none}}
+
+/* ---------- the journey: map on the left, phase panel on the right, controls below both ---------- */
+.pj-grid{display:grid; grid-template-columns:minmax(200px, 250px) minmax(0, 1fr); gap:14px; align-items:start; margin:8px 0 10px}
+.pj-map{display:flex; flex-direction:column; gap:10px}
+.pj-grp{border:1.5px dashed transparent; border-radius:14px; padding:8px; display:flex; flex-direction:column; gap:7px; transition:border-color .3s, background .3s}
+.pj-grp .pj-gt{font-size:11.5px; font-weight:800; letter-spacing:.03em; visibility:hidden; opacity:0; transition:opacity .3s}
+.pj-grp.seen{background:color-mix(in srgb, var(--orange) 7%, var(--surface)); border-color:color-mix(in srgb, var(--orange) 55%, var(--line))}
+.pj-grp.g1.seen{background:color-mix(in srgb, var(--blue) 7%, var(--surface)); border-color:color-mix(in srgb, var(--blue) 55%, var(--line))}
+.pj-grp.seen .pj-gt{visibility:visible; opacity:1; color:var(--orange)}
+.pj-grp.g1.seen .pj-gt{color:var(--blue)}
+.pj-s{position:relative; border:1.5px solid var(--box-line); border-radius:11px; background:var(--g0); padding:6px 10px; visibility:hidden; opacity:0; transform:translateY(8px); transition:opacity .35s, transform .35s, box-shadow .3s}
+.pj-grp.g1 .pj-s{background:var(--g2)}
+.pj-s[data-s="code"],.pj-s[data-s="pyc"]{background:var(--g3)}
+.pj-s[data-s="mem"],.pj-s[data-s="bi"]{background:var(--g1)}
+.pj-s[data-s="out"]{background:var(--g4)}
+.pj-s.side{border-style:dashed; margin-left:18px}
+.pj-s b{display:block; font-size:13.5px}
+.pj-s small{display:block; font-size:11.5px; color:var(--ink2)}
+.pj-s.seen{visibility:visible; opacity:1; transform:none}
+.pj-s.seen + .pj-s.seen::before{content:""; position:absolute; left:22px; top:-9px; height:8px; border-left:2px solid var(--ink2)}
+.pj-s.cur{box-shadow:0 0 0 3px var(--accent); }
+.pj-panel{border:1.5px solid var(--line); border-radius:14px; background:var(--surface); padding:12px 14px; min-height:330px; min-width:0}
+.pj-ph h4{margin:2px 0 4px; font-size:17px}
+.pj-ph p{margin:0 0 10px; color:var(--ink2); font-size:14px}
+.pj-kick{font-size:11.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--accent-deep)}
+.pj-note{margin:10px 0 0; font-size:13.5px; color:var(--ink2)}
+.pj-err{padding:9px 12px; border-radius:11px; background:var(--bad); border:1.5px solid var(--bad-line); font-size:14px}
+.pj-again{margin-top:10px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:3px 12px; font:inherit; font-size:12.5px; font-weight:800; cursor:pointer}
+.pj-again:hover{border-color:var(--accent)}
+.pj-fh{font-size:11.5px; font-weight:800; letter-spacing:.04em; color:var(--ink2); margin-bottom:6px; font-family:var(--font-mono)}
+.pj-file,.pj-term{background:var(--code-bg); color:var(--code-ink); border-radius:12px; padding:9px 12px; overflow-x:auto}
+.pj-file .pj-fh,.pj-term .pj-fh{color:#9fb3cf}
+.pj-lines{list-style:none; margin:0; padding:0; font-family:var(--font-mono); font-size:13px}
+.pj-lines li{display:flex; gap:10px; white-space:pre} .pj-lines li span{color:#7f93b0; width:16px; text-align:right; flex:none}
+.pj-term pre{margin:0; font-family:var(--font-mono); font-size:13px; white-space:pre-wrap; overflow-wrap:anywhere}
+.pj-term pre span{display:inline} .pj-term pre .bad{color:#ff8b98}
+.pj-toks{display:flex; flex-wrap:wrap; gap:6px}
+.pj-more{align-self:center; font-size:12.5px; color:var(--ink2)}
+.pj-tree{overflow:auto; max-height:380px}
+.pj-tree ul{list-style:none; margin:0; padding-left:22px; position:relative}
+.pj-tree>ul{padding-left:0}
+.pj-tree li{position:relative; padding:4px 0 0}
+.pj-tree ul ul li::before{content:""; position:absolute; left:-14px; top:0; bottom:0; border-left:2px solid var(--line)}
+.pj-tree ul ul li::after{content:""; position:absolute; left:-14px; top:17px; width:12px; border-top:2px solid var(--line)}
+.pj-tree ul ul li:last-child::before{bottom:auto; height:17px}
+.pj-code{list-style:none; margin:0; padding:0; font-family:var(--font-mono); font-size:12.5px; max-height:300px; overflow:auto}
+.pj-code li{display:flex; gap:6px; align-items:baseline; padding:2px 6px; white-space:nowrap}
+.pj-code li .ln{width:44px; flex:none; color:var(--ink2); font-size:11px}
+.pj-code li i{font-style:normal; color:var(--ink2)} .pj-code li code{color:var(--accent-deep)}
+.pj-pyc,.pj-obj{border:1.5px solid var(--line); border-radius:12px; padding:9px 10px; background:var(--surface2)}
+.pj-byte{display:grid; grid-template-columns:120px 70px minmax(0, 1fr); gap:8px; align-items:baseline; padding:6px 9px; border-radius:9px; margin-top:5px; background:var(--g5); font-size:13px}
+.pj-byte.b0{background:var(--g4)} .pj-byte.b1{background:var(--g0)} .pj-byte.b2,.pj-byte.b3{background:var(--g2)} .pj-byte.b4{background:var(--g1)}
+.pj-byte small{font-family:var(--font-mono); color:var(--ink2)} .pj-byte span{color:var(--ink2); font-size:12.5px}
+.pj-row{display:grid; grid-template-columns:110px minmax(0, 1fr); gap:8px; padding:5px 8px; border-radius:8px; margin-top:4px; background:var(--surface); font-size:13px}
+.pj-row b{font-family:var(--font-mono); font-size:12.5px} .pj-row code{font-family:var(--font-mono); overflow-wrap:anywhere}
+.pj-run{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:10px}
+.pj-now,.pj-stk{border:1.5px solid var(--line); border-radius:12px; padding:8px 10px; background:var(--surface2); min-height:120px; min-width:0}
+.pj-now>span,.pj-stk>span,.pj-mh span{display:block; font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--ink2); margin-bottom:6px}
+.pj-op{display:block; font-family:var(--font-mono); font-size:15px; color:var(--accent-deep); overflow-wrap:anywhere}
+.pj-n{color:var(--ink2)}
+.pj-cells{display:flex; flex-direction:column-reverse; gap:5px}
+.pj-cells em{color:var(--ink2); font-size:13px}
+.pj-mem{display:flex; flex-direction:column; gap:6px}
+.pj-mh{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1.4fr)}
+.pj-ref{display:grid; grid-template-columns:minmax(0, 1fr) 36px minmax(0, 1.4fr); align-items:center}
+.pj-ref b{font-family:var(--font-mono); padding:5px 9px; border-radius:9px; background:var(--g2); border:1.5px solid var(--box-line); justify-self:start; max-width:100%; overflow-wrap:anywhere}
+.pj-ref i{height:2px; background:var(--ink2); position:relative}
+.pj-ref i::after{content:""; position:absolute; right:-1px; top:-4px; border:5px solid transparent; border-left:7px solid var(--ink2); border-right:0}
+.pj-objv{display:flex; gap:8px; align-items:baseline; padding:5px 9px; border-radius:9px; background:var(--g1); border:1.5px solid var(--box-line); min-width:0}
+.pj-objv small{font-size:11px; font-weight:800; color:var(--ink2)} .pj-objv code{font-family:var(--font-mono); font-weight:700; overflow-wrap:anywhere; min-width:0}
+.pj-objv.t-str{background:var(--g5)} .pj-objv.t-float{background:var(--g0)} .pj-objv.t-bool{background:var(--g3)}
+.pj-chain{display:flex; flex-direction:column; gap:8px}
+.pj-link{position:relative; display:grid; grid-template-columns:150px minmax(0, 1fr); gap:10px; align-items:baseline; padding:7px 10px; border-radius:10px; background:var(--surface2); border:1.5px solid var(--line); font-size:13.5px}
+.pj-link b{font-family:var(--font-mono); font-size:13px; color:var(--accent-deep); overflow-wrap:anywhere}
+.pj-link + .pj-link::before{content:"↓"; position:absolute; left:18px; top:-15px; font-size:13px; color:var(--ink2)}
+
+/* ---------- compiler, interpreter and CPython lanes ---------- */
+.ci-opt{display:inline-flex; align-items:center; gap:6px; font-size:14px; font-weight:700; margin:0 0 8px; cursor:pointer}
+.ci-grid{display:grid; gap:12px; margin:4px 0 10px; align-items:start}
+.ci-grid.n2{grid-template-columns:repeat(2, minmax(0, 1fr))}
+.ci-grid.n3{grid-template-columns:repeat(3, minmax(0, 1fr))}
+.ci-lane{border:1.5px solid var(--line); border-radius:14px; padding:10px 12px; background:var(--surface); min-height:220px; min-width:0}
+.ci-lane.comp{border-top:4px solid var(--purple)} .ci-lane.intr{border-top:4px solid var(--orange)} .ci-lane.cpy{border-top:4px solid var(--blue)}
+.ci-h b{display:block; font-size:16px} .ci-h small{display:block; font-size:12.5px; color:var(--ink2); margin-bottom:8px}
+.ci-wait{color:var(--ink2); font-size:13px; padding:20px 0; text-align:center; border:1.5px dashed var(--line); border-radius:10px}
+.ci-lines{list-style:none; margin:0; padding:6px 8px; border-radius:10px; background:var(--code-bg); color:#8193ad; font-family:var(--font-mono); font-size:12.5px; animation:pjIn .35s ease both; overflow-x:auto}
+.ci-lines li{display:flex; gap:8px; padding:1px 6px; border-radius:6px; white-space:pre; border-left:3px solid transparent}
+.ci-lines li span{width:14px; flex:none; text-align:right}
+.ci-lines li.read{color:var(--code-ink); background:rgba(132,103,240,.22)}
+.ci-lines li.done{color:var(--code-ink)}
+.ci-lines li.cur{color:var(--code-ink); background:rgba(255,201,40,.22); border-left-color:var(--yellow)}
+.ci-lines li.bad{color:#fff; background:rgba(233,72,90,.45); border-left-color:var(--red)}
+.ci-box{margin-top:8px; padding:7px 10px; border-radius:10px; background:var(--surface2); font-size:13.5px; animation:pjIn .35s ease both}
+.ci-made{margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; animation:pjIn .35s ease both}
+.ci-made span{flex-basis:100%; font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--ink2)}
+.ci-made i{font-style:normal; font-family:var(--font-mono); font-size:11.5px; padding:2px 7px; border-radius:7px; background:var(--g3); border:1px solid var(--box-line)}
+.ci-lane.intr .ci-made i{background:var(--g0)} .ci-lane.cpy .ci-made i{background:var(--g2)}
+.ci-out{margin-top:8px; animation:pjIn .35s ease both}
+.ci-out span{display:block; font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--ink2); margin-bottom:4px}
+.ci-out pre{margin:0; padding:7px 10px; border-radius:10px; background:var(--code-bg); color:var(--code-ink); font-family:var(--font-mono); font-size:12.5px; white-space:pre-wrap; overflow-wrap:anywhere}
+.ci-out pre b{color:#ff8b98; font-weight:700}
+.ci-end{margin-top:8px; font-size:12.5px; font-weight:800; color:var(--green)}
+.ci-m{display:block; margin-top:2px}
+
+@media (max-width: 760px){
+  .pj-grid{grid-template-columns:minmax(0, 1fr)}
+  .pj-map{flex-direction:row; flex-wrap:wrap}
+  .pj-grp{flex:1 1 100%}
+  .pj-grp:not(.seen){display:none}
+  .pj-s:not(.seen){display:none}
+  .pj-s.seen + .pj-s.seen::before{display:none}
+  .pj-s.side{margin-left:0}
+  .pj-panel{min-height:0}
+  .pj-run{grid-template-columns:minmax(0, 1fr)}
+  .pj-byte{grid-template-columns:minmax(0, 1fr) auto}
+  .pj-byte span{grid-column:1 / -1}
+  .pj-link{grid-template-columns:minmax(0, 1fr)}
+  .ci-grid.n2,.ci-grid.n3{grid-template-columns:minmax(0, 1fr)}
+}
+.pj-trail{list-style:none; margin:8px 0 0; padding:0; font-family:var(--font-mono); font-size:11.5px; color:var(--ink2); display:flex; flex-direction:column-reverse}
+.pj-trail li{opacity:.75} .pj-trail li::before{content:"done  "; font-size:10px}
+.ci-lines code,.pj-lines code,.pj-row code,.pj-objv code,.pj-ref code,.pj-code code,.pj-link b{background:none; border:0; padding:0; box-shadow:none}
+.ci-lines code,.pj-lines code{color:inherit; font-size:inherit}
