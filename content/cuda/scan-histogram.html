@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scan, compaction and histograms · GPU Programming</title>
+<meta name="description" content="Inclusive and exclusive scans, Hillis and Steele and Blelloch, a double buffered block scan, multi block scans, stream compaction, CSR offsets, histograms, atomic contention and privatisation. A concept added beyond the lectures.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 5: Parallel patterns</span><span>›</span><span>Scan and histogram</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 5 of 5 · College</div>
+    <h1>Scan, compaction and histograms</h1>
+    <p class="lead">Build running totals in log₂ n parallel steps, use them to filter lists without clashes, and count values into bins with atomics that do not queue up.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">4 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#scan-histogram" data-topic="cheatsheet" data-h="scan-histogram">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#scan" data-l="scan"><span class="n">1</span><span class="t">Prefix sums: inclusive and exclusive</span></a></li><li><a href="#code" data-l="code"><span class="n">2</span><span class="t">A block scan in CUDA</span></a></li><li><a href="#uses" data-l="uses"><span class="n">3</span><span class="t">What scans are for: compaction</span></a></li><li><a href="#hist" data-l="hist"><span class="n">4</span><span class="t">Histograms and atomic contention</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="scan" data-l="scan" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Prefix sums: inclusive and exclusive</h2>
+<p>A <b>scan</b> (prefix sum) turns a list into running totals. It looks serial, because each total needs the one before it, but it can be done in log₂ n parallel steps.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Inclusive scan</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">y<sub>i</sub> = x<sub>0</sub> + x<sub>1</sub> + … + x<sub>i</sub></div><div class="fx-n">[3, 1, 7, 0] → [3, 4, 11, 11].</div></div><div class="fx fx-key"><div class="fx-h"><span>Exclusive scan</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">y<sub>i</sub> = x<sub>0</sub> + … + x<sub>i−1</sub>, y<sub>0</sub> = 0</div><div class="fx-n">[3, 1, 7, 0] → [0, 3, 4, 11]. The inclusive scan shifted right by one.</div></div></div>
+<div class="cvz" data-viz="scan"></div>
+<div class="cv-code" data-k="scan"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Algorithm</th><th>Steps</th><th>Additions</th><th>Note</th></tr></thead><tbody><tr><td>Serial loop</td><td>n − 1</td><td>n − 1</td><td>one thread</td></tr><tr><td>Hillis and Steele</td><td>log₂ n</td><td>n log₂ n − (n − 1)</td><td>simple, extra work</td></tr><tr><td>Blelloch</td><td>2 log₂ n</td><td>about 2(n − 1)</td><td>work efficient, exclusive</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="code" data-l="code" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>A block scan in CUDA</h2>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">scan_block.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">// Inclusive Hillis and Steele scan of one block (n = blockDim.x &lt;= 1024), double buffered</span><span class="ln" data-n="2">__global__ void scanBlock(const int *in, int *out, int n) {</span><span class="ln ck-has" data-n="3">    extern __shared__ int buf[];               // 2 * n ints: two halves we swap between</span><span class="ln" data-n="4">    int t = threadIdx.x, src = 0, dst = n;</span><span class="ln" data-n="5">    buf[t] = (t &lt; n) ? in[t] : 0;</span><span class="ln" data-n="6">    __syncthreads();</span><span class="ln ck-has" data-n="7">    for (int off = 1; off &lt; n; off &lt;&lt;= 1) {</span><span class="ln" data-n="8">        int v = buf[src + t];</span><span class="ln ck-has" data-n="9">        if (t &gt;= off) v += buf[src + t - off];  // add the value off places to the left</span><span class="ln" data-n="10">        buf[dst + t] = v;</span><span class="ln ck-has" data-n="11">        __syncthreads();</span><span class="ln ck-has" data-n="12">        int tmp = src; src = dst; dst = tmp;    // swap halves, never read and write one array</span><span class="ln" data-n="13">    }</span><span class="ln" data-n="14">    if (t &lt; n) out[t] = buf[src + t];</span><span class="ln" data-n="15">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="3"><b>Line 3</b><code>extern __shared__ int buf[];               // 2 * n ints: two halves we swap between</code><span>Two halves of shared memory. A step reads one half and writes the other.</span></li><li data-n="7"><b>Line 7</b><code>for (int off = 1; off &lt; n; off &lt;&lt;= 1) {</code><span>off = 1, 2, 4, …: log₂ n steps.</span></li><li data-n="9"><b>Line 9</b><code>if (t &gt;= off) v += buf[src + t - off];  // add the value off places to the left</code><span>Threads with t < off have nothing to the left at this distance and keep their value.</span></li><li data-n="11"><b>Line 11</b><code>__syncthreads();</code><span>Every thread must write before anyone reads the next step.</span></li><li data-n="12"><b>Line 12</b><code>int tmp = src; src = dst; dst = tmp;    // swap halves, never read and write one array</code><span>Swapping halves avoids the race where a thread reads a value its neighbour already overwrote in this step.</span></li></ol></details></div>
+<div class="note note-warn"><b>Common mistake</b><div>Updating one array in place with buf[t] += buf[t − off] is a race: thread t may read buf[t − off] after thread t − off has already added to it. Double buffering or a barrier between the read and the write fixes it.</div></div>
+<details class="deep"><summary>Going deeper: scans larger than one block</summary><div class="deep-b"><p>Scan each block, write each block's total to an array, scan that array, then add each block's scanned total to all its elements. CUB's DeviceScan does it in a single pass with decoupled look back.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="uses" data-l="uses" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>What scans are for: compaction</h2>
+<p>Filtering a list on the GPU is hard because each thread does not know where to write its kept value. An exclusive scan of 0/1 flags gives every kept value its output position, so all threads can write at the same time without clashing.</p>
+<div class="cv-code" data-k="compact"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Use</th><th>How the scan helps</th></tr></thead><tbody><tr><td>Stream compaction</td><td>positions of kept items</td></tr><tr><td>Radix sort</td><td>positions of keys with bit 0 and bit 1</td></tr><tr><td>Sparse matrices (CSR)</td><td>row start offsets from row lengths</td></tr><tr><td>Allocating variable output</td><td>each thread's write offset</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="hist" data-l="hist" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Histograms and atomic contention</h2>
+<p>A histogram counts how many values fall in each bin. Many threads may hit the same bin at once, so the increment must be an atomic operation. When many threads hit one address, the atomics are done one after another (<b>contention</b>).</p>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Global atomics without privatisation</span></div><div class="fx-b">one atomic per element</div><div class="fx-n">n = 10⁶ bytes → 10⁶ global atomics, all on 256 addresses.</div></div><div class="fx fx-key"><div class="fx-h"><span>Privatised (shared memory) histogram</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">global atomics = blocks × bins at most</div><div class="fx-n">Each block counts in fast shared memory, then merges once.</div></div></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">histogram.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#define BINS 256</span><span class="ln" data-n="2"> </span><span class="ln" data-n="3">// Histogram of bytes: private copy per block in shared memory, then merge</span><span class="ln" data-n="4">__global__ void histogram(const unsigned char *data, int n, unsigned int *hist) {</span><span class="ln ck-has" data-n="5">    __shared__ unsigned int local[BINS];</span><span class="ln ck-has" data-n="6">    for (int b = threadIdx.x; b &lt; BINS; b += blockDim.x) local[b] = 0;</span><span class="ln" data-n="7">    __syncthreads();</span><span class="ln ck-has" data-n="8">    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i &lt; n; i += blockDim.x * gridDim.x)</span><span class="ln ck-has" data-n="9">        atomicAdd(&amp;local[data[i]], 1u);         // fast shared memory atomic</span><span class="ln" data-n="10">    __syncthreads();</span><span class="ln" data-n="11">    for (int b = threadIdx.x; b &lt; BINS; b += blockDim.x)</span><span class="ln ck-has" data-n="12">        if (local[b]) atomicAdd(&amp;hist[b], local[b]);   // one global atomic per bin per block</span><span class="ln" data-n="13">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="5"><b>Line 5</b><code>__shared__ unsigned int local[BINS];</code><span>A private histogram for this block in shared memory.</span></li><li data-n="6"><b>Line 6</b><code>for (int b = threadIdx.x; b &lt; BINS; b += blockDim.x) local[b] = 0;</code><span>Clear it with a block stride loop: 256 bins and any number of threads.</span></li><li data-n="8"><b>Line 8</b><code>for (int i = blockIdx.x * blockDim.x + threadIdx.x; i &lt; n; i += blockDim.x * gridDim.x)</code><span>Grid stride loop over the data (chapter 2.2).</span></li><li data-n="9"><b>Line 9</b><code>atomicAdd(&amp;local[data[i]], 1u);         // fast shared memory atomic</code><span>Shared memory atomics are much cheaper than global ones, and only threads of this block compete.</span></li><li data-n="12"><b>Line 12</b><code>if (local[b]) atomicAdd(&amp;hist[b], local[b]);   // one global atomic per bin per block</code><span>Merge: at most 256 global atomics per block instead of one per element.</span></li></ol></details></div>
+<div class="scene"><div class="scene-h">Real world scenario: a class vote</div><p>Asking 1000 pupils to walk to one ballot box makes a long queue. Letting each class count its own votes, then sending one sheet per class to the head teacher, removes the queue.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Running totals and tallies. With many helpers the totals can be built in a few rounds, and each class can count its own votes first.</p></div><div class="ld-p" data-ld="college" hidden><p>Inclusive and exclusive scan, Hillis and Steele (log n steps, n log n work), Blelloch (2 log n steps, 2n work). Histogram: private shared memory copy, then one global atomic per bin per block.</p></div><div class="ld-p" data-ld="masters" hidden><p>Bank conflicts in Blelloch are removed with padding. Warp scans use __shfl_up_sync. Histograms with very skewed data (one hot bin) suffer most contention, aggregating in registers first helps.</p></div><div class="ld-p" data-ld="research" hidden><p>Single pass scans with decoupled look back (Merrill and Garland 2016) run at memory bandwidth. Onesweep radix sort builds on them and is used in CUB.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./convolution.html" data-topic="convolution"><small>Previous topic</small><b>Convolution</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "scan-histogram", "topic": "scan-histogram", "subject": "cuda", "title": "Scan, compaction and histograms", "codes": {"scan": {"src": "# Inclusive and exclusive scan, serial and Hillis-Steele\na = [3, 1, 7, 0, 4, 1, 6, 3]\ninc, s = [], 0\nfor v in a:\n    s += v\n    inc.append(s)\nexc = [0] + inc[:-1]\nprint(\"inclusive\", inc)\nprint(\"exclusive\", exc)\nx, off, adds = a[:], 1, 0\nwhile off < len(x):\n    x = [x[i] + (x[i - off] if i >= off else 0) for i in range(len(x))]\n    adds += len(x) - off\n    off *= 2\nprint(\"Hillis-Steele\", x, \"adds\", adds)", "stdin": "", "out": "inclusive [3, 4, 11, 11, 15, 16, 22, 25]\nexclusive [0, 3, 4, 11, 11, 15, 16, 22]\nHillis-Steele [3, 4, 11, 11, 15, 16, 22, 25] adds 17"}, "compact": {"src": "# Stream compaction: keep the even numbers, in order, using an exclusive scan of flags\ndata = [5, 8, 2, 7, 6, 1, 4, 9]\nflags = [1 if v % 2 == 0 else 0 for v in data]\npos, s = [], 0\nfor f in flags:\n    pos.append(s)        # exclusive scan: where each kept value goes\n    s += f\nout = [None] * s\nfor i, v in enumerate(data):\n    if flags[i]:\n        out[pos[i]] = v  # every thread can write at the same time, no clashes\nprint(\"flags\", flags, \"positions\", pos)\nprint(\"compacted\", out)", "stdin": "", "out": "flags [0, 1, 1, 0, 1, 0, 1, 0] positions [0, 0, 1, 2, 2, 3, 3, 4]\ncompacted [8, 2, 6, 4]"}}, "quiz": [{"lv": "e", "q": "Inclusive scan of [1, 2, 3, 4]", "o": ["[1, 3, 6, 10]", "[0, 1, 3, 6]", "[10, 9, 7, 4]", "[1, 2, 3, 4]"], "a": 0, "hint": "Running totals.", "why": "1, 3, 6, 10."}, {"lv": "e", "q": "Exclusive scan of [1, 2, 3, 4]", "o": ["[1, 3, 6, 10]", "[0, 1, 3, 6]", "[0, 1, 2, 3]", "[1, 3, 6, 0]"], "a": 1, "hint": "Shift right, start at 0.", "why": "0, 1, 3, 6."}, {"lv": "e", "q": "Why must histogram increments be atomic?", "o": ["For speed", "Many threads may add to the same bin at once", "Bins are in constant memory", "They are not"], "a": 1, "hint": "Read, add, write.", "why": "Otherwise updates are lost (chapter 7.1)."}, {"lv": "m", "q": "Hillis and Steele steps for 16 values", "o": ["4", "8", "15", "16"], "a": 0, "hint": "log₂ 16.", "why": "4."}, {"lv": "m", "q": "Additions of Hillis and Steele for 8 values", "o": ["7", "14", "17", "24"], "a": 2, "hint": "7 + 6 + 4.", "why": "17."}, {"lv": "m", "q": "Stream compaction uses", "o": ["A reduction", "An exclusive scan of keep flags", "A sort", "Atomics only"], "a": 1, "hint": "Positions.", "why": "The scan gives each kept value its slot."}, {"lv": "m", "q": "A privatised histogram keeps", "o": ["One copy in constant memory", "One copy per block in shared memory, merged at the end", "One copy per thread in global memory", "No copy"], "a": 1, "hint": "Private per block.", "why": "Merge once."}, {"lv": "h", "q": "Why is buf[t] += buf[t − off] in place a bug?", "o": ["It is slow", "Thread t may read a value that thread t − off already updated this step", "Out of bounds", "Bank conflict"], "a": 1, "hint": "Read after write in one step.", "why": "Use two buffers or separate read and write with a barrier."}, {"lv": "h", "q": "Blelloch scan is called work efficient because", "o": ["It uses fewer threads", "It does about 2n additions, the same order as the serial loop", "It has no barriers", "It is inclusive"], "a": 1, "hint": "O(n) work.", "why": "Hillis and Steele does O(n log n)."}, {"lv": "h", "q": "1,000,000 bytes, 256 bins, 1000 blocks. Most global atomics with privatisation", "o": ["1,000,000", "256,000", "256", "1000"], "a": 1, "hint": "Blocks × bins.", "why": "1000 × 256."}, {"lv": "x", "q": "Contention is worst when", "o": ["Values are spread evenly", "Most values fall in one bin", "There are many bins", "Blocks are small"], "a": 1, "hint": "One hot address.", "why": "All atomics queue on one bin."}, {"lv": "x", "q": "CSR row offsets come from", "o": ["A reduction of row lengths", "An exclusive scan of row lengths", "A transpose", "A histogram of columns"], "a": 1, "hint": "Start of each row.", "why": "Row r starts after all earlier rows."}], "calc": [{"lv": "e", "q": "Inclusive scan of [3, 1, 7, 0, 4]: last value?", "ans": "15", "hint": "Total.", "steps": ["3 + 1 + 7 + 0 + 4.", "= 15.", "<span class=\"eq\">15<\/span>"]}, {"lv": "e", "q": "Exclusive scan of [3, 1, 7, 0, 4]: value at index 3?", "ans": "11", "hint": "3 + 1 + 7.", "steps": ["Sum of the values before index 3.", "3 + 1 + 7.", "<span class=\"eq\">11<\/span>"]}, {"lv": "e", "q": "Hillis and Steele steps for 1024 values?", "ans": "10", "hint": "log₂.", "steps": ["2¹⁰ = 1024.", "One step per doubling.", "<span class=\"eq\">10<\/span>"]}, {"lv": "m", "q": "Hillis and Steele additions for 16 values?", "ans": "49", "hint": "15 + 14 + 12 + 8.", "steps": ["off 1: 15, off 2: 14, off 4: 12, off 8: 8.", "Add.", "<span class=\"eq\">49 (serial needs 15)<\/span>"]}, {"lv": "m", "q": "Blelloch additions for 16 values (up sweep + down sweep)?", "ans": "30", "hint": "2(n − 1).", "steps": ["Up sweep 15.", "Down sweep 15.", "<span class=\"eq\">30<\/span>"]}, {"lv": "m", "q": "Keep flags [1, 0, 1, 1, 0, 1]. Output position of the last kept value?", "ans": "3", "hint": "Exclusive scan.", "steps": ["Exclusive scan: [0, 1, 1, 2, 3, 3].", "Index 5 holds 3.", "<span class=\"eq\">Position 3<\/span>"]}, {"lv": "m", "q": "Shared memory for a 256 bin unsigned int histogram, bytes?", "ans": "1024", "hint": "256 × 4.", "steps": ["256 bins.", "4 bytes each.", "<span class=\"eq\">1024 bytes<\/span>"]}, {"lv": "h", "q": "10⁶ elements, 256 bins, 240 blocks. Global atomics with privatisation (at most)?", "ans": "61440", "hint": "Blocks × bins.", "steps": ["240 × 256.", "= 61,440.", "<span class=\"eq\">61,440 instead of 1,000,000<\/span>"]}, {"lv": "h", "q": "Hillis and Steele work ratio to serial for n = 1024 (one decimal)?", "ans": "9.0", "hint": "n log n − (n − 1) over n − 1.", "steps": ["1024 × 10 − 1023 = 9217.", "÷ 1023.", "<span class=\"eq\">≈ 9.0 times more additions<\/span>"], "tol": 0.05}, {"lv": "x", "q": "Row lengths [2, 0, 3, 1]. CSR row offsets: last row starts at?", "ans": "5", "hint": "Exclusive scan.", "steps": ["Exclusive scan [0, 2, 2, 5].", "Row 3 starts at 5.", "<span class=\"eq\">5 (total 6 entries)<\/span>"]}, {"lv": "x", "q": "Each block scans 1024 values. Values 2²⁰: block totals to scan in the second pass?", "ans": "1024", "hint": "2²⁰ ÷ 2¹⁰.", "steps": ["1,048,576 ÷ 1024.", "= 1024 block totals.", "<span class=\"eq\">One block can scan them<\/span>"]}], "assign": [{"id": "excl", "lv": "e", "title": "Exclusive scan", "task": "<p>Write <code>exclusive_scan(a)<\/code>.<\/p>", "starter": "def exclusive_scan(a):\n    # your code here\n    pass\n", "tests": [{"call": "exclusive_scan([3, 1, 7, 0, 4, 1, 6, 3])", "want": [0, 3, 4, 11, 11, 15, 16, 22]}, {"call": "exclusive_scan([5])", "want": [0]}, {"call": "exclusive_scan([])", "want": []}], "solution": "def exclusive_scan(a):\n    out, s = [], 0\n    for v in a:\n        out.append(s)\n        s += v\n    return out\n", "hint": "Write the running total before adding.", "why": "<p>The first test matches the Blelloch animation.<\/p>"}, {"id": "compactf", "lv": "m", "title": "Stream compaction with a scan", "task": "<p>Write <code>compact(data, keep)<\/code> where <code>keep(v)<\/code> is a rule given as a string: <code>\"even\"<\/code>, <code>\"odd\"<\/code> or <code>\"positive\"<\/code>. Use an exclusive scan of flags to place values. Return the compacted list.<\/p>", "starter": "def compact(data, keep):\n    # your code here\n    pass\n", "tests": [{"call": "compact([5, 8, 2, 7, 6, 1, 4, 9], 'even')", "want": [8, 2, 6, 4]}, {"call": "compact([-1, 3, 0, 2], 'positive')", "want": [3, 2]}, {"call": "compact([2, 4], 'odd')", "want": []}], "solution": "def compact(data, keep):\n    rule = {'even': lambda v: v % 2 == 0, 'odd': lambda v: v % 2 == 1, 'positive': lambda v: v > 0}[keep]\n    flags = [1 if rule(v) else 0 for v in data]\n    pos, s = [], 0\n    for f in flags:\n        pos.append(s)\n        s += f\n    out = [None] * s\n    for i, v in enumerate(data):\n        if flags[i]:\n            out[pos[i]] = v\n    return out\n", "hint": "Flags, exclusive scan, scatter.", "why": "<p>Each value is written exactly once, so in CUDA all threads can scatter at the same time.<\/p>"}], "must": [["Scan", "Inclusive y_i = x_0 + … + x_i. Exclusive starts at 0 and stops before x_i."], ["Algorithms", "Hillis and Steele: log₂ n steps, n log₂ n − (n − 1) adds. Blelloch: 2 log₂ n steps, 2(n − 1) adds."], ["Race", "Never scan in place in one step. Double buffer or barrier between read and write."], ["Compaction", "Exclusive scan of keep flags gives each kept value its output slot."], ["Histogram", "Atomics per bin. Privatise in shared memory, merge with at most blocks × bins global atomics."]], "summary": "<p>A scan gives running totals in log n steps and turns filtering into a clash free scatter. Histograms need atomics, best done in shared memory first.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"scan": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.a": "[3, 1, 7, 0, 4, 1, 6, 3]"}}, {"l": 4, "ev": "line", "d": {"G.inc": "[]", "G.s": "0"}}, {"l": 5, "ev": "line", "d": {"G.v": "3"}}, {"l": 6, "ev": "line", "d": {"G.s": "3"}}, {"l": 4, "ev": "line", "d": {"G.inc": "[3]"}}, {"l": 5, "ev": "line", "d": {"G.v": "1"}}, {"l": 6, "ev": "line", "d": {"G.s": "4"}}, {"l": 4, "ev": "line", "d": {"G.inc": "[3, 4]"}}, {"l": 5, "ev": "line", "d": {"G.v": "7"}}, {"l": 6, "ev": "line", "d": {"G.s": "11"}}, {"l": 4, "ev": "line", "d": {"G.inc": "[3, 4, 11]"}}, {"l": 5, "ev": "line", "d": {"G.v": "0"}}, {"l": 6, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.inc": "[3, 4, 11, 11]"}}, {"l": 5, "ev": "line", "d": {"G.v": "4"}}, {"l": 6, "ev": "line", "d": {"G.s": "15"}}, {"l": 4, "ev": "line", "d": {"G.inc": "[3, 4, 11, 11, 15]"}}, {"l": 5, "ev": "line", "d": {"G.v": "1"}}, {"l": 6, "ev": "line", "d": {"G.s": "16"}}, {"l": 4, "ev": "line", "d": {"G.inc": "[3, 4, 11, 11, 15, 16]"}}, {"l": 5, "ev": "line", "d": {"G.v": "6"}}, {"l": 6, "ev": "line", "d": {"G.s": "22"}}, {"l": 4, "ev": "line", "d": {"G.inc": "[3, 4, 11, 11, 15, 16, 22]"}}, {"l": 5, "ev": "line", "d": {"G.v": "3"}}, {"l": 6, "ev": "line", "d": {"G.s": "25"}}, {"l": 4, "ev": "line", "d": {"G.inc": "[3, 4, 11, 11, 15, 16, 22, 25]"}}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"G.exc": "[0, 3, 4, 11, 11, 15, 16, 22]"}}, {"l": 9, "ev": "line", "o": "inclusive [3, 4, 11, 11, 15, 16, 22, 25]\n"}, {"l": 10, "ev": "line", "o": "exclusive [0, 3, 4, 11, 11, 15, 16, 22]\n"}, {"l": 11, "ev": "line", "d": {"G.x": "[3, 1, 7, 0, 4, 1, 6, 3]", "G.off": "1", "G.adds": "0"}}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 13, "ev": "line", "d": {"G.x": "[3, 4, 8, 7, 4, 5, 7, 9]"}}, {"l": 14, "ev": "line", "d": {"G.adds": "7"}}, {"l": 11, "ev": "line", "d": {"G.off": "2"}}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 13, "ev": "line", "d": {"G.x": "[3, 4, 11, 11, 12, 12, 11, 14]"}}, {"l": 14, "ev": "line", "d": {"G.adds": "13"}}, {"l": 11, "ev": "line", "d": {"G.off": "4"}}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 13, "ev": "line", "d": {"G.x": "[3, 4, 11, 11, 15, 16, 22, 25]"}}, {"l": 14, "ev": "line", "d": {"G.adds": "17"}}, {"l": 11, "ev": "line", "d": {"G.off": "8"}}, {"l": 15, "ev": "line"}, {"l": 15, "ev": "return", "o": "Hillis-Steele [3, 4, 11, 11, 15, 16, 22, 25] adds 17\n"}], "tail": "", "err": null, "cut": false}, "compact": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.data": "[5, 8, 2, 7, 6, 1, 4, 9]"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.flags": "[0, 1, 1, 0, 1, 0, 1, 0]"}}, {"l": 5, "ev": "line", "d": {"G.pos": "[]", "G.s": "0"}}, {"l": 6, "ev": "line", "d": {"G.f": "0"}}, {"l": 7, "ev": "line", "d": {"G.pos": "[0]"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.f": "1"}}, {"l": 7, "ev": "line", "d": {"G.pos": "[0, 0]"}}, {"l": 5, "ev": "line", "d": {"G.s": "1"}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.pos": "[0, 0, 1]"}}, {"l": 5, "ev": "line", "d": {"G.s": "2"}}, {"l": 6, "ev": "line", "d": {"G.f": "0"}}, {"l": 7, "ev": "line", "d": {"G.pos": "[0, 0, 1, 2]"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.f": "1"}}, {"l": 7, "ev": "line", "d": {"G.pos": "[0, 0, 1, 2, 2]"}}, {"l": 5, "ev": "line", "d": {"G.s": "3"}}, {"l": 6, "ev": "line", "d": {"G.f": "0"}}, {"l": 7, "ev": "line", "d": {"G.pos": "[0, 0, 1, 2, 2, 3]"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.f": "1"}}, {"l": 7, "ev": "line", "d": {"G.pos": "[0, 0, 1, 2, 2, 3, 3]"}}, {"l": 5, "ev": "line", "d": {"G.s": "4"}}, {"l": 6, "ev": "line", "d": {"G.f": "0"}}, {"l": 7, "ev": "line", "d": {"G.pos": "[0, 0, 1, 2, 2, 3, 3, 4]"}}, {"l": 5, "ev": "line"}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.out": "[None, None, None, None]"}}, {"l": 10, "ev": "line", "d": {"G.i": "0", "G.v": "5"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"G.i": "1", "G.v": "8"}}, {"l": 11, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.out": "[8, None, None, None]"}}, {"l": 10, "ev": "line", "d": {"G.i": "2", "G.v": "2"}}, {"l": 11, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.out": "[8, 2, None, None]"}}, {"l": 10, "ev": "line", "d": {"G.i": "3", "G.v": "7"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"G.i": "4", "G.v": "6"}}, {"l": 11, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.out": "[8, 2, 6, None]"}}, {"l": 10, "ev": "line", "d": {"G.i": "5", "G.v": "1"}}, {"l": 9, "ev": "line"}, {"l": 10, "ev": "line", "d": {"G.i": "6", "G.v": "4"}}, {"l": 11, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.out": "[8, 2, 6, 4]"}}, {"l": 10, "ev": "line", "d": {"G.i": "7", "G.v": "9"}}, {"l": 9, "ev": "line"}, {"l": 12, "ev": "line"}, {"l": 13, "ev": "line", "o": "flags [0, 1, 1, 0, 1, 0, 1, 0] positions [0, 0, 1, 2, 2, 3, 3, 4]\n"}, {"l": 13, "ev": "return", "o": "compacted [8, 2, 6, 4]\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

@@ -116,7 +116,7 @@ K.lesson('stride', 'The stride benchmark (lecture 11)', f'''
 <p>The lecture measured a copy kernel on a T4 while making threads read further and further apart. At stride 1 it reached 206 GB/s, about 64 percent of the T4\'s 320 GB/s data sheet value.</p>
 {fxs(fx('Sector model', 'useful bandwidth ≈ (stride 1 bandwidth) ÷ min(s, 8)', 'Once threads are 8 floats apart each lane needs its own sector, and the model stops falling. Real GPUs fall further at big strides because of DRAM page and TLB effects.', key=True))}
 {table(['Stride', 'Model (GB/s)', 'Sectors per warp read'], [['1', '206', '4'], ['2', '103', '8'], ['4', '51.5', '16'], ['8', '25.75', '32'], ['16', '25.75', '32'], ['32', '25.75', '32']])}
-{cu('stride_copy.cu', STRIDE, {5: 'Thread t copies element t × s, so neighbouring lanes are s floats apart.', 18: 'For bigger strides we launch fewer threads, so each run copies n ÷ s elements.', 22: 'Useful bytes are one read and one write of 4 bytes per thread. Wasted sector bytes are not counted.'}, out='(on a T4 the lecture measured 206 GB/s at stride 1, falling as the stride grows)')}
+{cu('stride_copy.cu', STRIDE, {4: 'Thread t copies element t × s, so neighbouring lanes are s floats apart.', 16: 'For bigger strides we launch fewer threads, so each run copies n ÷ s elements.', 21: 'Useful bytes are one read and one write of 4 bytes per thread. Wasted sector bytes are not counted.'}, out='(on a T4 the lecture measured 206 GB/s at stride 1, falling as the stride grows)')}
 ''', kw=['stride benchmark', 'T4', '206 GB/s', 'sector model', 'useful bandwidth'])
 
 K.lesson('layout', 'Data layout: AoS against SoA, and wider loads', f'''

@@ -124,7 +124,7 @@ K.lesson('smem', 'Limit 4: shared memory', f'''
     'Shared memory: 102,400 ÷ (32,768 + 1024) = 3.03, so 3 blocks.',
     'The smallest limit is 3 blocks = 24 warps.',
     eq('24 ÷ 48 = 50 percent')])}
-{cu('occupancy_api.cu', OCCAPI, {15: 'cudaOccupancyMaxActiveBlocksPerMultiprocessor does the same four limit sum for a real kernel on the real GPU.', 16: 'The last argument is the dynamic shared memory per block in bytes.', 17: 'Blocks × threads ÷ 32 gives active warps.', 21: 'cudaOccupancyMaxPotentialBlockSize suggests the block size that gives the highest occupancy, and the smallest grid that fills the GPU.'}, out='(on an A100) 8 blocks of 256 per SM, occupancy 100.0%\nsuggested block size 1024, at least 216 blocks')}
+{cu('occupancy_api.cu', OCCAPI, {14: 'cudaOccupancyMaxActiveBlocksPerMultiprocessor does the same four limit sum for a real kernel on the real GPU.', 13: 'The result lands in blocks. In the call below, the last argument is the dynamic shared memory per block in bytes.', 15: 'Blocks × threads ÷ 32 gives active warps.', 20: 'cudaOccupancyMaxPotentialBlockSize suggests the block size that gives the highest occupancy, and the smallest grid that fills the GPU.'}, out='(on an A100) 8 blocks of 256 per SM, occupancy 100.0%\nsuggested block size 1024, at least 216 blocks')}
 {note('The printed numbers above are what this code gives on an A100 by the four limit rule. They were worked out, not measured on a real GPU.', 'tip')}
 ''', kw=['shared memory limit', 'reserved shared memory', 'occupancy API', 'cudaOccupancyMaxActiveBlocksPerMultiprocessor', 'cudaOccupancyMaxPotentialBlockSize'])
 

@@ -781,3 +781,221 @@
     }
   });
 })();
+
+/* ---------- 5.x parallel patterns: reduction, tiled matmul, stencil halo, convolution, scan ---------- */
+(() => {
+  const { def, D } = CVZ, { cdiv, fmt, W } = CUDAZ;
+  const nums = (s, n) => { const a = String(s).split(/[\s,]+/).filter(x => x !== '').map(Number).filter(x => isFinite(x)); return a.slice(0, n); };
+  const pow2 = n => { let p = 1; while (p < n) p *= 2; return p; };
+
+  def('reduce', {
+    title: 'Tree reduction: adding a block of numbers in log₂ n steps', sub: 'Each level, half of the remaining threads add a partner\'s value. Watch which threads work and how the warps split.',
+    W: 620, H: 280,
+    params: [
+      { k: 'vals', label: 'Numbers (up to 32, padded with 0 to a power of two)', type: 'text', v: '3, 1, 4, 1, 5, 9, 2, 6' },
+      { k: 'mode', label: 'Pairing', type: 'select', v: 'seq', opts: [['seq', 'sequential: thread t < s adds t + s (s halves)'], ['int', 'interleaved: t % 2s == 0 adds t + s (s doubles)']] },
+      { k: 'ws', label: 'Warp size to draw (real GPUs use 32)', type: 'select', v: '4', opts: [['4', '4 lanes (small, to see splits)'], ['8', '8 lanes'], ['32', '32 lanes']] }
+    ],
+    tips: [
+      { t: 'Workbook 10.2: [3, 1, 4, 1, 5, 9, 2, 6] gives 31 after 3 levels (step 4, then 2, then 1).', set: { vals: '3, 1, 4, 1, 5, 9, 2, 6', mode: 'seq' }, play: true },
+      { t: 'Interleaved pairing: the working threads are spread out, so every warp stays split (divergent) at every level.', set: { vals: '3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3', mode: 'int', ws: '4' }, play: true },
+      { t: 'Sequential pairing on 16 numbers: working threads are packed at the front, so whole warps go idle early and only the last levels split.', set: { vals: '3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3', mode: 'seq', ws: '4' }, play: true }
+    ],
+    steps: z => Math.log2(pow2(Math.max(2, nums(z.p.vals, 32).length))),
+    draw(z) {
+      const g = z.g, src = nums(z.p.vals, 32), n = pow2(Math.max(2, src.length)), ws = +z.p.ws, L = Math.log2(n);
+      let a = src.concat(new Array(n - src.length).fill(0));
+      const cw = Math.min(36, 588 / n), rh = Math.min(40, 230 / (L + 1));
+      const rows = [a.slice()], act = [];
+      for (let l = 0; l < L; l++) {
+        const s = z.p.mode === 'seq' ? n >> (l + 1) : 1 << l, b = a.slice(), on = [];
+        for (let t = 0; t < n; t++) {
+          const work = z.p.mode === 'seq' ? t < s : t % (2 * s) === 0;
+          if (work) { b[t] = a[t] + a[t + s]; on.push([t, t + s]); }
+        }
+        a = b; rows.push(a.slice()); act.push(on);
+      }
+      const show = Math.min(z.step, L);
+      for (let r = 0; r <= show; r++) {
+        const y = 14 + r * rh, on = r > 0 ? act[r - 1] : [], target = new Set(on.map(p => p[0]));
+        if (r > 0) on.forEach(([t, u]) => { D.line(g, 16 + u * cw + cw / 2, y - rh + 22, 16 + t * cw + cw / 2, y, z.col.orange, 1); D.line(g, 16 + t * cw + cw / 2, y - rh + 22, 16 + t * cw + cw / 2, y, z.col.orange, 1); });
+        for (let t = 0; t < n; t++) {
+          D.rect(g, 16 + t * cw, y, cw - 2, 20, { fill: target.has(t) ? z.col.green : z.col.bg, stroke: z.col.line, w: 0.5 });
+          if (cw >= 16) W(z, String(rows[r][t]), 16 + t * cw + (cw - 2) / 2, y + 14, { s: cw >= 24 ? 11 : 8, a: 'center', mono: true, c: target.has(t) ? '#fff' : z.col.ink });
+        }
+      }
+      for (let w = 0; w < n / ws; w++) D.line(g, 16 + w * ws * cw - 1, 8, 16 + w * ws * cw - 1, 14 + (show + 1) * rh - rh + 22, z.col.cv, 1, [2, 3]);
+      let msg = `n = ${n}: ${L} levels, ${n - 1} additions in total (one adder alone would need ${n - 1} steps).`;
+      if (show > 0) {
+        const on = act[show - 1].map(p => p[0]), warps = new Set(on.map(t => Math.floor(t / ws))), split = [...warps].filter(w => on.filter(t => Math.floor(t / ws) === w).length < ws).length;
+        msg += `<br>Level ${show}: <b>${on.length} threads add</b>, they sit in ${warps.size} warp${warps.size === 1 ? '' : 's'} of ${ws} lanes, <b>${split} split</b> (some lanes idle).` + (show === L ? ` Result: <b>${rows[L][0]}</b>.` : '');
+      }
+      return msg + ' Dotted lines mark warp borders. There is a __syncthreads() between levels.';
+    }
+  });
+
+  def('tilemm', {
+    title: 'Tiled matrix multiply: one block, phase by phase', sub: 'Click a tile of C to choose the block. Each phase loads one T × T tile of A and one of B into shared memory.',
+    W: 620, H: 300,
+    params: [
+      { k: 'n', label: 'Matrix size n', v: 8, min: 2, max: 16, step: 1 },
+      { k: 'T', label: 'Tile size T', v: 4, min: 1, max: 8, step: 1 }
+    ],
+    tips: [
+      { t: 'n = 8, T = 4: 2 phases. Each thread loads 2 × 2 = 4 values instead of 2 × 8 = 16.', set: { n: 8, T: 4 }, play: true },
+      { t: 'Workbook 7.1: n = 5 with 4 × 4 tiles. 2 phases, 4 blocks, 64 threads, 39 idle, 100 reads instead of 250.', set: { n: 5, T: 4 }, play: true },
+      { t: 'Slide 21: n = 4, T = 2. 4 blocks, 2 phases, 64 loads in total (= 2n³ ÷ T).', set: { n: 4, T: 2 }, play: true }
+    ],
+    init(z) { z.state.bi = 0; z.state.bj = 0; },
+    click(z, x, y, kind) {
+      if (kind !== 'down') return;
+      const { n, T } = z.p, c = Math.min(26, 128 / n), x0 = 40 + n * c, y0 = 40 + n * c, nb = cdiv(n, T);
+      const j = Math.floor((x - x0) / (c * T)), i = Math.floor((y - y0) / (c * T));
+      if (i >= 0 && j >= 0 && i < nb && j < nb) { z.state.bi = i; z.state.bj = j; z.step = 0; }
+    },
+    steps: z => cdiv(z.p.n, z.p.T),
+    draw(z) {
+      const g = z.g, { n, T } = z.p, c = Math.min(26, 128 / n), nb = cdiv(n, T), ph = nb;
+      const bi = Math.min(z.state.bi || 0, nb - 1), bj = Math.min(z.state.bj || 0, nb - 1), p = z.step - 1;
+      const xA = 20, yA = 40 + n * c, xB = 40 + n * c, yB = 20, xC = xB, yC = yA;
+      const grid = (x, y, lab, hl) => {
+        for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) D.rect(g, x + j * c, y + i * c, c - 1, c - 1, { fill: hl(i, j) || z.col.bg });
+        W(z, lab, x, y - 5, { s: 11, b: true });
+      };
+      grid(xA, yA, 'A', (i, j) => p >= 0 && Math.floor(i / T) === bi && Math.floor(j / T) === p ? z.col.orange : (Math.floor(i / T) === bi ? z.col.surf : null));
+      grid(xB, yB, 'B', (i, j) => p >= 0 && Math.floor(i / T) === p && Math.floor(j / T) === bj ? z.col.purple : (Math.floor(j / T) === bj ? z.col.surf : null));
+      grid(xC, yC, 'C', (i, j) => Math.floor(i / T) === bi && Math.floor(j / T) === bj ? (z.step >= ph ? z.col.green : z.col.yellow) : null);
+      D.rect(g, xC + bj * T * c - 1, yC + bi * T * c - 1, Math.min(T, n - bj * T) * c + 1, Math.min(T, n - bi * T) * c + 1, { stroke: z.col.red, w: 2 });
+      const tx = 60 + 2 * n * c, threads = nb * nb * T * T;
+      const lines = [`phases = ⌈${n} ÷ ${T}⌉ = ${ph}`, `blocks = ${nb} × ${nb} = ${nb * nb}`, `threads = ${threads}, idle ${threads - n * n}`,
+        `loads per thread: ${2 * ph} (plain ${2 * n})`, `total reads: ${2 * n * n * ph} (plain ${2 * n ** 3})`];
+      lines.forEach((l, i) => W(z, l, tx, 40 + i * 22, { s: 12, mono: true }));
+      if (p >= 0) W(z, `phase ${p + 1}: A tile (${bi}, ${p}) and B tile (${p}, ${bj})`, tx, 170, { s: 12, b: true, c: z.col.cv });
+      return `Block (${bi}, ${bj}) computes the red tile of C. In phase k its threads copy A tile (${bi}, k) (orange) and B tile (k, ${bj}) (purple) into shared memory, call __syncthreads(), add T = ${T} products each, and call __syncthreads() again before the next phase overwrites the tiles. Every value loaded is used T times, so global reads drop by a factor of T.`;
+    }
+  });
+
+  def('stencil', {
+    title: '1-D stencil with a halo in shared memory', sub: 'Each output adds the 2R + 1 inputs around it. A block loads its B inputs plus R extra on each side (the halo) once, then every thread reads from shared memory.',
+    W: 620, H: 250,
+    params: [
+      { k: 'R', label: 'Radius R', v: 3, min: 1, max: 4, step: 1 },
+      { k: 'B', label: 'Threads per block B', v: 8, min: 4, max: 16, step: 1 },
+      { k: 't', label: 'Show the inputs of thread', v: 0, min: 0, max: 15, step: 1 }
+    ],
+    tips: [
+      { t: 'R = 3, B = 8: the tile holds 8 + 6 = 14 values. Without sharing, 8 outputs would read 8 × 7 = 56 values.', set: { R: 3, B: 8, t: 0 }, play: true },
+      { t: 'Thread 0 needs the 3 halo values on the left, loaded by the extra step.', set: { R: 3, B: 8, t: 0 }, play: true },
+      { t: 'Workbook 6.4: R = 3, B = 256 gives 262 values, 1.023 reads per output instead of 7.', set: { R: 3, B: 16, t: 5 }, play: true }
+    ],
+    steps: () => 4,
+    draw(z) {
+      const g = z.g, { R, B } = z.p, t = Math.min(z.p.t, B - 1), s = z.step, cw = Math.min(30, 560 / (B + 2 * R));
+      const x0 = 16;
+      W(z, 'global input', x0, 24, { s: 11, c: z.col.ink2 });
+      for (let i = -R; i < B + R; i++) {
+        const halo = i < 0 || i >= B;
+        D.rect(g, x0 + (i + R) * cw, 30, cw - 2, 22, { fill: halo ? z.col.surf : z.col.bg, stroke: z.col.line, w: 0.5 });
+        W(z, String(i), x0 + (i + R) * cw + (cw - 2) / 2, 45, { s: 9, a: 'center', mono: true, c: z.col.ink2 });
+      }
+      W(z, 'shared tile (B + 2R values)', x0, 92, { s: 11, c: z.col.ink2 });
+      for (let i = -R; i < B + R; i++) {
+        const halo = i < 0 || i >= B, loaded = (!halo && s >= 1) || (halo && s >= 2);
+        D.rect(g, x0 + (i + R) * cw, 98, cw - 2, 22, { fill: loaded ? (halo ? z.col.orange : z.col.cv) : z.col.bg, stroke: z.col.line, w: 0.5 });
+        if (loaded && s >= 1) D.line(g, x0 + (i + R) * cw + cw / 2 - 1, 52, x0 + (i + R) * cw + cw / 2 - 1, 98, halo ? z.col.orange : z.col.cv, 1);
+      }
+      if (s >= 3) { D.line(g, x0, 132, x0 + (B + 2 * R) * cw, 132, z.col.red, 2, [6, 4]); W(z, '__syncthreads()', x0, 148, { s: 11, c: z.col.red, mono: true }); }
+      if (s >= 4) {
+        for (let k = -R; k <= R; k++) D.arrow(g, x0 + (t + k + R) * cw + cw / 2 - 1, 122, x0 + (t + R) * cw + cw / 2 - 1, 190, z.col.green, 1.2, 5);
+        D.rect(g, x0 + (t + R) * cw, 192, cw - 2, 22, { fill: z.col.green });
+        W(z, `out[${t}]`, x0 + (t + R) * cw + (cw - 2) / 2, 232, { s: 10, a: 'center', mono: true });
+      }
+      const step = ['Press Step.', 'Step 1: thread i copies in[i] into tile[i + R].', `Step 2: the first R = ${R} threads also copy the ${R} values on each side (the halo, orange).`, 'Step 3: wait until the whole tile is loaded.', `Step 4: thread ${t} adds tile[${t}] to tile[${t + 2 * R}], all from shared memory.`][s];
+      return `${step}<br>Values loaded per block = B + 2R = ${B + 2 * R}. Reads per output: ${fmt((B + 2 * R) / B)} with the tile against 2R + 1 = ${2 * R + 1} without it.`;
+    }
+  });
+
+  const IMGS = { ramp: Array.from({ length: 5 }, (_, i) => Array.from({ length: 5 }, (_, j) => 5 * i + j + 1)), edge: Array.from({ length: 5 }, () => [0, 0, 255, 255, 255]), sharp: Array.from({ length: 5 }, (_, i) => Array.from({ length: 5 }, (_, j) => 5 * i + 10 * j + 10)) };
+  const FILT = { diag: [[1, 0], [0, -1]], box2: [[1, 1], [1, 1]], sobelx: [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], sobely: [[-1, -2, -1], [0, 0, 0], [1, 2, 1]], sharpen: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] };
+  def('conv2d', {
+    title: '2-D convolution by hand: slide, multiply, add', sub: 'One GPU thread computes one output. Step to move the filter one place and see its multiply-adds.',
+    W: 620, H: 280,
+    params: [
+      { k: 'img', label: 'Picture (5 × 5)', type: 'select', v: 'ramp', opts: [['ramp', 'numbers 1 to 25 row by row'], ['edge', 'dark left, bright right (an edge)'], ['sharp', 'a smooth slope (workbook R channel)']] },
+      { k: 'f', label: 'Filter', type: 'select', v: 'diag', opts: [['diag', 'with rows (1, 0) and (0, −1)'], ['box2', 'box with rows (1, 1) and (1, 1)'], ['sobelx', 'Sobel Gx'], ['sobely', 'Sobel Gy'], ['sharpen', 'sharpen']] },
+      { k: 'pad', label: 'Zero padding (keeps the size)', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'Workbook 8.2: every output of the filter with rows (1, 0) and (0, −1) on 1 to 25 is −6, because the picture is a smooth slope.', set: { img: 'ramp', f: 'diag', pad: false }, play: true },
+      { t: 'Box filter on 1 to 25: the first output is 1 + 2 + 6 + 7 = 16.', set: { img: 'ramp', f: 'box2', pad: false }, play: true },
+      { t: 'Sobel Gx on an edge: large values where dark meets bright, 0 on flat parts.', set: { img: 'edge', f: 'sobelx', pad: false }, play: true },
+      { t: 'Workbook 8.2: sharpen with zero padding. The middle 40 stays 40, the corner 10 becomes 15 and the corner 70 becomes 225, because the padding counts as 0.', set: { img: 'sharp', f: 'sharpen', pad: true }, play: true }
+    ],
+    steps: z => { const k = FILT[z.p.f].length, o = z.p.pad ? 5 : 6 - k; return o * o; },
+    draw(z) {
+      const g = z.g, F = FILT[z.p.f], k = F.length, r = Math.floor((k - 1) / 2), pad = z.p.pad ? r : 0, I = IMGS[z.p.img];
+      const o = z.p.pad ? 5 : 6 - k, c = 36, x0 = 16, y0 = 24;
+      const px = (i, j) => (i < 0 || j < 0 || i >= 5 || j >= 5) ? 0 : I[i][j];
+      const out = []; for (let i = 0; i < o; i++) for (let j = 0; j < o; j++) { let s = 0; for (let a = 0; a < k; a++) for (let b = 0; b < k; b++) s += F[a][b] * px(i - pad + a, j - pad + b); out.push(s); }
+      const cur = z.step - 1, ci = Math.floor(cur / o), cj = cur % o;
+      W(z, 'input', x0, 16, { s: 11, c: z.col.ink2 });
+      for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) {
+        const inWin = cur >= 0 && i >= ci - pad && i < ci - pad + k && j >= cj - pad && j < cj - pad + k;
+        D.rect(g, x0 + j * c, y0 + i * c, c - 2, c - 2, { fill: inWin ? z.col.orange : z.col.bg, stroke: z.col.line, w: 0.5 });
+        W(z, String(I[i][j]), x0 + j * c + c / 2 - 1, y0 + i * c + c / 2 + 4, { s: 11, a: 'center', mono: true, c: inWin ? '#fff' : z.col.ink });
+      }
+      if (cur >= 0 && pad) D.rect(g, x0 + (cj - pad) * c - 1, y0 + (ci - pad) * c - 1, k * c, k * c, { stroke: z.col.red, w: 2 });
+      const fx = 220;
+      W(z, 'filter', fx, 16, { s: 11, c: z.col.ink2 });
+      for (let a = 0; a < k; a++) for (let b = 0; b < k; b++) { D.rect(g, fx + b * 28, y0 + a * 28, 26, 26, { fill: z.col.surf }); W(z, String(F[a][b]), fx + b * 28 + 13, y0 + a * 28 + 17, { s: 11, a: 'center', mono: true }); }
+      const ox = 330, oc = Math.min(48, 190 / o);
+      W(z, `output ${o} × ${o}`, ox, 16, { s: 11, c: z.col.ink2 });
+      for (let q = 0; q < o * o; q++) {
+        const i = Math.floor(q / o), j = q % o, done = q <= cur;
+        D.rect(g, ox + j * oc, y0 + i * oc, oc - 2, oc - 2, { fill: q === cur ? z.col.green : z.col.bg, stroke: z.col.line, w: 0.5 });
+        if (done) W(z, String(out[q]), ox + j * oc + oc / 2 - 1, y0 + i * oc + oc / 2 + 4, { s: oc >= 40 ? 11 : 9, a: 'center', mono: true, c: q === cur ? '#fff' : z.col.ink });
+      }
+      let terms = '';
+      if (cur >= 0) { const t = []; for (let a = 0; a < k; a++) for (let b = 0; b < k; b++) if (F[a][b]) t.push(`${F[a][b]} × ${px(ci - pad + a, cj - pad + b)}`); terms = `Output (${ci}, ${cj}) = ${t.join(' + ')} = <b>${out[cur]}</b>.`; }
+      return `Output size = ${z.p.pad ? `5 + 2 × ${r} − ${k} + 1 = 5 (same)` : `5 − ${k} + 1 = ${o}`}. ${k * k} multiply-adds per output, ${k * k * o * o} for the whole picture. ${terms || 'Press Step.'}`;
+    }
+  });
+
+  def('scan', {
+    title: 'Parallel prefix sum (scan)', sub: 'Every output is the sum of all inputs before it. Step through a parallel scan level by level.',
+    W: 620, H: 290,
+    params: [
+      { k: 'vals', label: 'Numbers (up to 16, padded with 0 to a power of two)', type: 'text', v: '3, 1, 7, 0, 4, 1, 6, 3' },
+      { k: 'mode', label: 'Algorithm', type: 'select', v: 'hs', opts: [['hs', 'Hillis and Steele (inclusive, n log n adds)'], ['bl', 'Blelloch (exclusive, up sweep then down sweep, 2n adds)']] }
+    ],
+    tips: [
+      { t: 'Hillis and Steele: at level d every element adds the one 2ᵈ to its left. 3 levels for 8 numbers.', set: { vals: '3, 1, 7, 0, 4, 1, 6, 3', mode: 'hs' }, play: true },
+      { t: 'Blelloch: build partial sums up a tree, clear the last one, then sweep down swapping and adding. Result is exclusive: 0, 3, 4, 11, 11, 15, 16, 22.', set: { vals: '3, 1, 7, 0, 4, 1, 6, 3', mode: 'bl' }, play: true }
+    ],
+    steps: z => { const n = pow2(Math.max(2, nums(z.p.vals, 16).length)), L = Math.log2(n); return z.p.mode === 'hs' ? L : 2 * L + 1; },
+    draw(z) {
+      const g = z.g, src = nums(z.p.vals, 16), n = pow2(Math.max(2, src.length)), L = Math.log2(n);
+      let a = src.concat(new Array(n - src.length).fill(0));
+      const rows = [[a.slice(), [], 'input']];
+      if (z.p.mode === 'hs') {
+        for (let d = 0; d < L; d++) { const s = 1 << d, b = a.slice(), ed = []; for (let i = s; i < n; i++) { b[i] = a[i] + a[i - s]; ed.push([i - s, i]); } a = b; rows.push([a.slice(), ed, `add the value ${s} to the left`]); }
+      } else {
+        for (let d = 0; d < L; d++) { const s = 1 << d, ed = []; for (let k = 0; k < n; k += 2 * s) { a[k + 2 * s - 1] += a[k + s - 1]; ed.push([k + s - 1, k + 2 * s - 1]); } rows.push([a.slice(), ed, `up sweep, stride ${s}`]); }
+        a[n - 1] = 0; rows.push([a.slice(), [], 'clear the last value']);
+        for (let d = L - 1; d >= 0; d--) { const s = 1 << d, ed = []; for (let k = 0; k < n; k += 2 * s) { const t = a[k + s - 1]; a[k + s - 1] = a[k + 2 * s - 1]; a[k + 2 * s - 1] += t; ed.push([k + s - 1, k + 2 * s - 1]); } rows.push([a.slice(), ed, `down sweep, stride ${s}`]); }
+      }
+      const cw = Math.min(30, 400 / n), rh = Math.min(36, 260 / rows.length), show = Math.min(z.step, rows.length - 1);
+      for (let r = 0; r <= show; r++) {
+        const [v, ed, lab] = rows[r], y = 10 + r * rh, hit = new Set(ed.map(e => e[1]));
+        ed.forEach(([u, t]) => D.line(g, 16 + u * cw + cw / 2, y - rh + 20, 16 + t * cw + cw / 2, y, z.col.orange, 1));
+        for (let i = 0; i < n; i++) {
+          D.rect(g, 16 + i * cw, y, cw - 2, 20, { fill: hit.has(i) ? z.col.green : z.col.bg, stroke: z.col.line, w: 0.5 });
+          W(z, String(v[i]), 16 + i * cw + (cw - 2) / 2, y + 14, { s: cw >= 26 ? 11 : 9, a: 'center', mono: true, c: hit.has(i) ? '#fff' : z.col.ink });
+        }
+        W(z, lab, 30 + n * cw, y + 14, { s: 10.5, c: r === show ? z.col.cv : z.col.ink2, b: r === show });
+      }
+      const adds = z.p.mode === 'hs' ? rows.slice(1).reduce((s, r) => s + r[1].length, 0) : 2 * (n - 1);
+      return `${n} numbers. ${z.p.mode === 'hs' ? `Hillis and Steele does ${adds} additions in ${L} levels (more work than the ${n - 1} of a serial loop, but only ${L} steps).` : `Blelloch does about 2(n − 1) = ${adds} additions in ${2 * L} levels: work efficient.`} Scans are used for stream compaction, radix sort and allocating output space in parallel.`;
+    }
+  });
+})();

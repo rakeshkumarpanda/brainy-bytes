@@ -81,7 +81,7 @@ print("broadcast: 1 way, every lane reads the same word")
 K.lesson('shared', 'Shared memory: a cache you control', f'''
 <p>Each SM has a small, very fast memory that the threads of a block share. You declare it with <code>__shared__</code>, fill it from global memory, call <code>__syncthreads()</code> so everyone sees the full tile, and then read it many times. Unlike a normal cache, nothing is loaded or kept unless you write the code for it.</p>
 {cu('reverse.cu', REVERSE, {5: '256 ints = 1 KB of shared memory per block.', 8: 'Each thread copies one element from slow global memory into the tile.', 9: 'The barrier: no thread continues until every thread of the block has reached this line.', 10: 'Thread t reads the element thread 255 − t wrote. Without the barrier it could read a value not loaded yet.'}, out='255 0 511')}
-{cu('dynamic_shared.cu', DYN, {3: 'extern __shared__ with empty brackets means the size is decided at launch.', 11: 'The third value inside <<< >>> is the number of dynamic shared memory bytes per block.'})}
+{cu('dynamic_shared.cu', DYN, {3: 'extern __shared__ with empty brackets means the size is decided at launch.', 12: 'The third value inside <<< >>> is the number of dynamic shared memory bytes per block.'})}
 {note('__syncthreads() must be reached by every thread of the block. Putting it inside an if that only some threads enter can hang the block or give wrong results.', 'warn')}
 ''', kw=['__shared__', '__syncthreads', 'barrier', 'extern __shared__', 'dynamic shared memory', 'programmer managed cache'])
 

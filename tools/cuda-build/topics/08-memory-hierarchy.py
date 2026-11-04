@@ -122,7 +122,7 @@ K.lesson('q8', 'Quiz 1 question 8: visible to all SMs, for the whole application
 
 K.lesson('constant', 'Constant memory and caches', f'''
 <p>Constant memory holds small read only values such as filter weights. The host writes it before the launch. When all 32 threads of a warp read the <b>same</b> address, one fetch is broadcast to the whole warp. If they read different addresses, the reads are done one after another.</p>
-{cu('blur_constant.cu', CONST, {4: '__constant__ puts the array in the 64 KB constant bank. Kernels may read it but never write it.', 13: 'Every thread of the warp reads the same weight at the same loop step, so the broadcast works perfectly.', 20: 'The weights are made on the CPU first.', 21: 'cudaMemcpyToSymbol copies host data into a __constant__ variable by its name.'}, out='weights copied to constant memory')}
+{cu('blur_constant.cu', CONST, {3: '__constant__ puts the array in the 64 KB constant bank. Kernels may read it but never write it.', 12: 'Every thread of the warp reads the same weight at the same loop step, so the broadcast works perfectly.', 18: 'The weights are made on the CPU first.', 19: 'cudaMemcpyToSymbol copies host data into a __constant__ variable by its name.'}, out='weights copied to constant memory')}
 {table(['Cache', 'Where', 'What it holds'], [
     ['L1 / texture', 'per SM, shares space with shared memory', 'recent global and local loads'],
     ['Constant cache', 'per SM', 'recent constant memory reads'],
@@ -135,7 +135,7 @@ K.lesson('host', 'Host memory: pageable, pinned and unified', f'''
 {fxs(
     fx('Copy time', 't = bytes ÷ bandwidth', 'The PCIe link is far slower than the GPU\'s own DRAM, so copy once and reuse.', key=True),
     fx('Worth sending to the GPU', 't<sub>copy in</sub> + t<sub>kernel</sub> + t<sub>copy out</sub> &lt; t<sub>CPU</sub>', 'From chapter 1.2: count the copies too.'))}
-{cu('pinned_vs_pageable.cu', PINNED, {9: 'cudaMallocHost returns page locked memory. Use it for buffers you copy often, and do not lock too much of the RAM.', 15: 'CUDA events time work on the GPU timeline. Elapsed time comes back in milliseconds.', 20: 'bytes ÷ ms ÷ 10⁶ gives GB/s.', 28: 'Every cudaMallocHost needs a cudaFreeHost.'}, out='(typical result: pinned is faster than pageable, how much depends on the machine)')}
+{cu('pinned_vs_pageable.cu', PINNED, {8: 'cudaMallocHost returns page locked memory. Use it for buffers you copy often, and do not lock too much of the RAM.', 12: 'CUDA events time work on the GPU timeline. Elapsed time comes back in milliseconds.', 20: 'bytes ÷ ms ÷ 10⁶ gives GB/s.', 28: 'Every cudaMallocHost needs a cudaFreeHost.'}, out='(typical result: pinned is faster than pageable, how much depends on the machine)')}
 {cu('unified.cu', UNIFIED, {11: 'cudaMallocManaged gives one pointer that works on both CPU and GPU. Pages move on demand.', 13: 'Prefetching moves the pages before the kernel starts, so the kernel does not stop on page faults.', 15: 'The CPU must wait before reading results, otherwise it reads old values.'}, out='a[10] = 11.0')}
 {code('copy')}
 ''', kw=['pageable', 'pinned memory', 'cudaMallocHost', 'unified memory', 'cudaMallocManaged', 'prefetch', 'PCIe', 'copy time'])

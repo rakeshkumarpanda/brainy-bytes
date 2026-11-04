@@ -5775,6 +5775,87 @@ function cudaModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "gpu-patterns", title: "Parallel patterns", emoji: "5", step: 5, level: "College", blurb: "Learn the patterns behind most GPU code: reductions, tiled matrix multiply, stencils, convolution and scans.", topics: [
+      { id: "reduction", title: "Parallel reduction", emoji: "5.1", page: "content/cuda/reduction.html",
+        summary: "Tree reduction, pairing and divergence, barrier rule, grid level reductions, atomics and warp shuffles.",
+        keywords: ["reduction", "tree", "atomicAdd", "warp shuffle", "__syncthreads", "divergence"],
+        minutes: 50, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "tree", title: "From a serial loop to a tree", emoji: "", group: "Lesson", keywords: ["reduction", "tree", "log2 n", "serial sum", "levels", "barriers"] },
+        { id: "warps", title: "Which threads work: divergence and the barrier bug", emoji: "", group: "Lesson", keywords: ["interleaved", "sequential addressing", "split warp", "divergence", "barrier inside if", "lane efficiency"] },
+        { id: "grid", title: "Beyond one block: launches and atomics", emoji: "", group: "Lesson", keywords: ["partial sums", "second launch", "atomicAdd", "thread coarsening", "grid reduction"] },
+        { id: "shfl", title: "Warp shuffles: the modern way", emoji: "", group: "Lesson", keywords: ["warp shuffle", "__shfl_down_sync", "mask", "CUB", "Thrust"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "unroll last warp", "bandwidth bound", "decoupled look back"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "tiled-matmul", title: "Tiled matrix multiplication", emoji: "5.2", page: "content/cuda/tiled-matmul.html",
+        summary: "Plain against tiled loads, Quiz 1 Q2 to Q4, two barriers, ragged edges and tile limits.",
+        keywords: ["tiled matmul", "shared memory", "phases", "Quiz 1", "__syncthreads", "ragged edges"],
+        minutes: 55, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "naive", title: "The plain kernel and its traffic", emoji: "", group: "Lesson", keywords: ["naive matmul", "loads per thread", "Quiz 1 question 2", "2N³", "slide 8 correction"] },
+        { id: "tiles", title: "Tiles in shared memory", emoji: "", group: "Lesson", keywords: ["tiling", "phases", "shared memory tile", "Quiz 1 question 3", "reuse", "AI T/4"] },
+        { id: "sync", title: "Two barriers per phase: Quiz 1 question 4", emoji: "", group: "Lesson", keywords: ["__syncthreads", "two barriers", "Quiz 1 question 4", "race", "read after write", "write after read"] },
+        { id: "ragged", title: "Ragged edges and tile size limits", emoji: "", group: "Lesson", keywords: ["ragged edges", "idle threads", "zero padding", "tile size limit", "shared memory per tile"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "register tiling", "double buffering", "CUTLASS", "cuBLAS"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "stencils", title: "Stencils, halos and heat simulation", emoji: "5.3", page: "content/cuda/stencils.html",
+        summary: "Stencil patterns, halos, reads per output, 3-D tile intensity, heat step stability.",
+        keywords: ["stencil", "halo", "heat equation", "stability", "3-D", "shared memory"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "what", title: "What a stencil is", emoji: "", group: "Lesson", keywords: ["stencil", "neighbours", "2-D index", "3-D index", "5 point", "7 point", "box stencil"] },
+        { id: "halo", title: "Halos in shared memory", emoji: "", group: "Lesson", keywords: ["halo", "ghost cells", "shared tile", "reads per output", "1-D stencil"] },
+        { id: "3d", title: "3-D tiles: why big tiles still stay memory bound", emoji: "", group: "Lesson", keywords: ["3-D tile", "arithmetic intensity", "halo share", "2.5-D blocking"] },
+        { id: "heat", title: "The heat equation and stability", emoji: "", group: "Lesson", keywords: ["heat equation", "stability", "CFL", "lambda", "ping-pong buffers", "explicit step"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "2.5-D blocking", "temporal blocking", "implicit methods"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "convolution", title: "Convolution and Sobel edge detection", emoji: "5.4", page: "content/cuda/convolution.html",
+        summary: "Convolution sizes and work, Sobel, constant memory filters, halo tiles and savings.",
+        keywords: ["convolution", "Sobel", "filter", "halo tile", "constant memory", "padding"],
+        minutes: 50, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "conv", title: "Convolution: slide, multiply, add", emoji: "", group: "Lesson", keywords: ["convolution", "filter", "output size", "padding", "stride", "multiply-adds", "AlexNet"] },
+        { id: "sobel", title: "Sobel edge detection (lecture 4)", emoji: "", group: "Lesson", keywords: ["Sobel", "Gx", "Gy", "M1", "M2", "edge detection", "constant memory", "Lena"] },
+        { id: "tiles", title: "Halo tiles for convolution", emoji: "", group: "Lesson", keywords: ["halo tile", "shared memory", "loads per output", "saving", "zero padding", "tiled convolution"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "im2col", "Winograd", "cuDNN", "implicit GEMM"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "scan-histogram", title: "Scan, compaction and histograms", emoji: "5.5", page: "content/cuda/scan-histogram.html",
+        summary: "Scans, work efficiency, compaction, histograms with privatised atomics.",
+        keywords: ["scan", "prefix sum", "Blelloch", "stream compaction", "histogram", "atomics"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "scan", title: "Prefix sums: inclusive and exclusive", emoji: "", group: "Lesson", keywords: ["scan", "prefix sum", "inclusive", "exclusive", "Hillis Steele", "Blelloch", "work efficient"] },
+        { id: "code", title: "A block scan in CUDA", emoji: "", group: "Lesson", keywords: ["block scan", "double buffering", "race", "multi block scan", "CUB DeviceScan"] },
+        { id: "uses", title: "What scans are for: compaction", emoji: "", group: "Lesson", keywords: ["stream compaction", "filter", "radix sort", "CSR", "offsets"] },
+        { id: "hist", title: "Histograms and atomic contention", emoji: "", group: "Lesson", keywords: ["histogram", "atomicAdd", "contention", "privatisation", "shared memory atomics"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "__shfl_up_sync", "decoupled look back", "Onesweep"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

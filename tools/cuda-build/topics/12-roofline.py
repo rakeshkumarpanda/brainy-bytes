@@ -77,7 +77,7 @@ K.lesson('ai', 'Bandwidth and arithmetic intensity', f'''
     fx('Arithmetic intensity', 'AI = FLOPs ÷ bytes moved to or from DRAM', 'Unit FLOP per byte.', key=True),
     fx('SAXPY', 'AI = 2 ÷ 12 ≈ 0.167', 'Read x, read y, write y (3 × 4 bytes) for one multiply and one add. DAXPY is half that.'),
     fx('Matrix multiply', 'no reuse: 2 FLOPs per 2 loads → 0.25 (float), perfect reuse: AI = n ÷ 8 (float) or n ÷ 16 (double)', 'Reuse is what raises AI.'))}
-{cu('saxpy_bw.cu', BW, {5: 'Each thread does 2 FLOPs and moves 12 bytes, so AI = 1/6 whatever the GPU.', 22: 'Events time the kernel alone on the GPU timeline.', 27: 'bytes ÷ ms ÷ 10⁶ gives GB/s. Compare it with the data sheet bandwidth to see how close you are.'}, out='(the printed bandwidth depends on the GPU, AI is always 0.167)')}
+{cu('saxpy_bw.cu', BW, {5: 'Each thread does 2 FLOPs and moves 12 bytes, so AI = 1/6 whatever the GPU.', 17: 'Events time the kernel alone on the GPU timeline.', 24: 'bytes ÷ ms ÷ 10⁶ gives GB/s. Compare it with the data sheet bandwidth to see how close you are.'}, out='(the printed bandwidth depends on the GPU, AI is always 0.167)')}
 {table(['Kernel', 'FLOPs per element', 'Bytes per element (float)', 'AI'], [
     ['y = a·x', '1', '8', '0.125'], ['SAXPY y = a·x + y', '2', '12', '0.167'], ['dot product (double)', '2', '16', '0.125'], ['y = x³ + x', '3', '8', '0.375']])}
 ''', kw=['bandwidth', 'arithmetic intensity', 'SAXPY', 'DAXPY', 'reuse', 'bytes moved'])
