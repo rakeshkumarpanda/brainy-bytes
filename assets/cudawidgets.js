@@ -999,3 +999,158 @@
     }
   });
 })();
+
+/* ---------- 6.x execution: warp divergence, warp schedulers, streams ---------- */
+(() => {
+  const { def, D } = CVZ, { cdiv, fmt, W } = CUDAZ;
+  const CONDS = {
+    even: ['if (tid % 2 == 0) A else B', t => t % 2 === 0 ? 0 : 1, 2],
+    q9: ['if (tid % 4 == 1) A else B (Quiz 1 Q9)', t => t % 4 === 1 ? 0 : 1, 2],
+    lt: ['if (tid < K) A else B', null, 2],
+    warp: ['if ((tid / 32) % 2 == 0) A else B', t => Math.floor(t / 32) % 2 === 0 ? 0 : 1, 2],
+    sw4: ['switch (tid % 4): 4 cases', t => t % 4, 4]
+  };
+  def('diverge', {
+    title: 'Warp divergence: when lanes of one warp take different paths', sub: 'A warp issues one instruction for all its lanes. If lanes disagree at a branch, the warp runs each path in turn and masks the lanes that did not take it.',
+    W: 620, H: 280,
+    params: [
+      { k: 'c', label: 'Branch', type: 'select', v: 'q9', opts: Object.entries(CONDS).map(([k, x]) => [k, x[0]]) },
+      { k: 'B', label: 'Threads in the block', v: 32, min: 32, max: 128, step: 32 },
+      { k: 'K', label: 'K (for tid < K)', v: 40, min: 0, max: 128, step: 1 },
+      { k: 'ta', label: 'Ticks for path A (case 0)', v: 10, min: 1, max: 40, step: 1 },
+      { k: 'tb', label: 'Ticks for every other path', v: 10, min: 1, max: 40, step: 1 }
+    ],
+    tips: [
+      { t: 'Quiz 1 Q9: lanes 1, 5, 9, …, 29 take branch A. Their ids add up to 120. The warp runs both branches.', set: { c: 'q9', B: 32, ta: 10, tb: 10 }, play: true },
+      { t: 'Workbook 7.3: tid % 2 with 10 ticks each: 20 ticks instead of 10, efficiency 50 percent.', set: { c: 'even', B: 32, ta: 10, tb: 10 }, play: true },
+      { t: 'Branch on the warp number: whole warps go the same way, no warp diverges.', set: { c: 'warp', B: 128, ta: 10, tb: 10 }, play: true },
+      { t: 'if (tid < 40) in a 64 thread block: only warp 1 splits.', set: { c: 'lt', B: 64, K: 40, ta: 10, tb: 10 }, play: true },
+      { t: 'A 4-way switch: 40 ticks, 25 percent.', set: { c: 'sw4', B: 32, ta: 10, tb: 10 }, play: true }
+    ],
+    steps: z => CONDS[z.p.c][2] + 2,
+    draw(z) {
+      const g = z.g, { c, B, K, ta, tb } = z.p, [lab, f0, np] = CONDS[c], f = f0 || (t => t < K ? 0 : 1);
+      const cols = [z.col.green, z.col.orange, z.col.purple, z.col.cv], nw = B / 32, s = z.step;
+      const len = p => p === 0 ? ta : tb;
+      let tot = 0, maxT = 0;
+      const warpT = [];
+      for (let w = 0; w < nw; w++) {
+        const used = new Set(); let lane = 0;
+        for (let l = 0; l < 32; l++) { const p = f(w * 32 + l); used.add(p); lane += len(p); }
+        const T = [...used].reduce((a, p) => a + len(p), 0);
+        warpT.push([T, lane, [...used].sort()]); tot += T; maxT = Math.max(maxT, T);
+      }
+      for (let w = 0; w < nw; w++) {
+        const y = 20 + w * 62;
+        W(z, `warp ${w}`, 16, y + 12, { s: 11, mono: true });
+        for (let l = 0; l < 32; l++) {
+          const tid = w * 32 + l, p = f(tid), on = s >= 2 && s - 2 === p, shown = s >= 1;
+          D.rect(g, 70 + l * 16, y, 14, 16, { fill: !shown ? z.col.bg : (s >= 2 && !on && s - 2 < np ? z.col.surf : cols[p]) });
+        }
+        const [T, lane, used] = warpT[w];
+        let x = 70;
+        used.forEach(p => { const wd = 400 * len(p) / Math.max(maxT, 1); if (s >= 2 + p) D.rect(g, x, y + 22, wd - 2, 12, { fill: cols[p] }); x += wd; });
+        if (s > np + 1) W(z, `${T} ticks, ${fmt(100 * lane / (32 * T))} percent`, 480, y + 33, { s: 10.5, b: true });
+      }
+      const Q9 = c === 'q9' ? ` Sum of thread ids taking A: ${Array.from({ length: B }, (_, t) => t).filter(t => f(t) === 0).reduce((a, b) => a + b, 0)}.` : '';
+      return `<code>${lab}</code>. ` + (s === 0 ? 'Press Step to colour each lane by its path.' : s <= np + 1 ? `Colours show the path of each lane. ${s >= 2 ? `Now running path ${np === 2 ? 'AB'[s - 2] : 'case ' + (s - 2)}: lanes on other paths are masked (pale).` : ''}` :
+        `A warp takes the sum of the lengths of every path any of its lanes needs. Efficiency = useful lane ticks ÷ (32 × warp ticks).`) + Q9;
+    }
+  });
+
+  const PROGS = { cccl: 'CCCL', cl: 'CL', ccccccl: 'CCCCCCCL' };
+  def('sched', {
+    title: 'Warp schedulers: round robin against greedy then oldest', sub: 'Each tick the scheduler issues one instruction from a ready warp. C takes 1 tick, a load L makes the warp wait. Step through the ticks.',
+    W: 620, H: 260,
+    params: [
+      { k: 'pol', label: 'Policy', type: 'select', v: 'rr', opts: [['rr', 'round robin (RR)'], ['gto', 'greedy then oldest (GTO)'], ['two', 'two level (groups of 2, RR inside)']] },
+      { k: 'nw', label: 'Warps', v: 4, min: 1, max: 6, step: 1 },
+      { k: 'L', label: 'Load wait L (ticks)', v: 12, min: 2, max: 20, step: 1 },
+      { k: 'prog', label: 'Each warp runs (3 times)', type: 'select', v: 'cccl', opts: [['cccl', 'C C C L'], ['cl', 'C L'], ['ccccccl', 'C C C C C C C L']] }
+    ],
+    tips: [
+      { t: 'Workbook 7.4, RR: all four warps reach their load together and wait together: 75 ticks, 16 idle.', set: { pol: 'rr', nw: 4, L: 12, prog: 'cccl' }, play: true },
+      { t: 'GTO: warp 0 runs ahead to its load, then warp 1 and so on. Loads are spread out: 59 ticks, 0 idle, the best possible.', set: { pol: 'gto', nw: 4, L: 12, prog: 'cccl' }, play: true },
+      { t: 'Two level: 63 ticks, 4 idle, in between.', set: { pol: 'two', nw: 4, L: 12, prog: 'cccl' }, play: true },
+      { t: 'GTO with only 3 warps: 6 idle ticks remain (workbook P7.4.5).', set: { pol: 'gto', nw: 3, L: 12, prog: 'cccl' }, play: true }
+    ],
+    init(z) { z.state.sim = null; },
+    sim(z) {
+      const { pol, nw, L } = z.p, prog = PROGS[z.p.prog].repeat(3), pc = new Array(nw).fill(0), ready = new Array(nw).fill(0), tl = [];
+      let t = 0, last = -1, idle = 0, lastLoad = 0, grp = 0;
+      while (pc.some(p => p < prog.length) && t < 400) {
+        const cand = []; for (let w = 0; w < nw; w++) if (pc[w] < prog.length && ready[w] <= t) cand.push(w);
+        let pick = -1;
+        const rr = set => { for (let k = 1; k <= nw; k++) { const w = (last + k + nw) % nw; if (set.includes(w)) return w; } return -1; };
+        if (cand.length) {
+          if (pol === 'rr') pick = rr(cand);
+          else if (pol === 'gto') pick = cand.includes(last) ? last : Math.min(...cand);
+          else { const ng = cdiv(nw, 2); for (let q = 0; q < ng; q++) { const gI = (grp + q) % ng, c2 = cand.filter(w => Math.floor(w / 2) === gI); if (c2.length) { grp = gI; pick = rr(c2); break; } } }
+        }
+        if (pick < 0) { idle++; tl.push([-1, '']); }
+        else { const ins = prog[pc[pick]++]; ready[pick] = ins === 'L' ? t + L : t + 1; if (ins === 'L') lastLoad = t; last = pick; tl.push([pick, ins]); }
+        t++;
+      }
+      return { tl, idle, finish: lastLoad + L, total: nw * prog.length };
+    },
+    steps: z => { const r = z.spec.sim(z); return r.tl.length; },
+    draw(z) {
+      const g = z.g, r = z.spec.sim(z), n = r.tl.length, cw = Math.min(14, 560 / n), s = z.step, { nw, L } = z.p;
+      W(z, 'tick →', 16, 16, { s: 10, c: z.col.ink2 });
+      for (let w = 0; w < nw; w++) W(z, `W${w}`, 16, 40 + w * 22, { s: 11, mono: true });
+      W(z, 'idle', 16, 40 + nw * 22, { s: 11, mono: true, c: z.col.red });
+      for (let t = 0; t < Math.min(s, n); t++) {
+        const [w, ins] = r.tl[t], x = 50 + t * cw;
+        if (w < 0) D.rect(g, x, 28 + nw * 22, cw - 1, 16, { fill: z.col.red });
+        else D.rect(g, x, 28 + w * 22, cw - 1, 16, { fill: ins === 'L' ? z.col.orange : z.col.green });
+      }
+      for (let t = 0; t <= n; t += 10) W(z, String(t), 50 + t * cw, 60 + nw * 22, { s: 9, a: 'center', c: z.col.ink2 });
+      const done = s >= n;
+      return `Green = a 1 tick instruction, orange = a load (the warp then waits L = ${L} ticks), red = no warp is ready. ` +
+        (done ? `Finish = last load + L = <b>${r.finish}</b> ticks, <b>${r.idle} idle</b>. Best possible = (${r.total} instructions − 1) + ${L} = ${r.total - 1 + L}.` : `Tick ${s} of ${n}.`);
+    }
+  });
+
+  def('streams', {
+    title: 'CUDA streams: overlapping copies and kernels', sub: 'Split the data into chunks. While chunk 2 is copied in, chunk 1 can compute and chunk 0 can be copied out.',
+    W: 620, H: 250,
+    params: [
+      { k: 'n', label: 'Chunks (streams in turn)', v: 4, min: 1, max: 16, step: 1 },
+      { k: 'a', label: 'Copy in per chunk (ms)', v: 1, min: 0.5, max: 10, step: 0.5 },
+      { k: 'k', label: 'Kernel per chunk (ms)', v: 1, min: 0.5, max: 10, step: 0.5 },
+      { k: 'b', label: 'Copy out per chunk (ms)', v: 1, min: 0.5, max: 10, step: 0.5 },
+      { k: 'eng', label: 'Copy engines', type: 'select', v: '2', opts: [['2', 'two (one each way)'], ['1', 'one shared']] }
+    ],
+    tips: [
+      { t: 'Workbook 6.3: three equal stages and 4 chunks: 12 t serial, 6 t overlapped, 2 times faster.', set: { n: 4, a: 1, k: 1, b: 1, eng: '2' }, play: true },
+      { t: '16 chunks: 48 t against 18 t, 2.67 times. The limit is 3 times, the number of stages.', set: { n: 16, a: 1, k: 1, b: 1, eng: '2' }, play: true },
+      { t: 'Stages 2, 5 and 2 ms with 10 chunks: 90 ms against 54 ms. The kernel is the bottleneck.', set: { n: 10, a: 2, k: 5, b: 2, eng: '2' }, play: true },
+      { t: 'With one copy engine the copies in and out cannot overlap each other.', set: { n: 4, a: 1, k: 1, b: 1, eng: '1' }, play: true }
+    ],
+    steps: z => z.p.n,
+    draw(z) {
+      const g = z.g, { n, a, k, b } = z.p, one = z.p.eng === '1', s = z.step;
+      let h2d = 0, comp = 0, d2h = 0;
+      const jobs = [];
+      for (let i = 0; i < n; i++) {
+        const s1 = one ? Math.max(h2d, d2h) : h2d, e1 = s1 + a; h2d = e1; if (one) d2h = Math.max(d2h, e1);
+        const s2 = Math.max(e1, comp), e2 = s2 + k; comp = e2;
+        const s3 = Math.max(e2, one ? h2d : d2h), e3 = s3 + b; d2h = e3; if (one) h2d = Math.max(h2d, e3);
+        jobs.push([[s1, e1], [s2, e2], [s3, e3]]);
+      }
+      const total = Math.max(...jobs.map(j => j[2][1])), serial = n * (a + k + b), sc = 500 / Math.max(total, serial);
+      const lanes = ['copy in', 'kernel', 'copy out'], cols = [z.col.orange, z.col.green, z.col.purple];
+      W(z, 'serial (one stream)', 16, 20, { s: 11, b: true });
+      D.rect(g, 100, 28, serial * sc, 14, { fill: z.col.surf, stroke: z.col.line });
+      W(z, `${fmt(serial)} ms`, 106 + serial * sc, 40, { s: 10 });
+      W(z, 'overlapped', 16, 70, { s: 11, b: true });
+      lanes.forEach((l, r) => W(z, l, 16, 96 + r * 28, { s: 10.5, c: z.col.ink2 }));
+      jobs.slice(0, s).forEach((j, i) => j.forEach(([x0, x1], r) => {
+        D.rect(g, 100 + x0 * sc, 84 + r * 28, Math.max(1, (x1 - x0) * sc - 1), 18, { fill: cols[r] });
+        if ((x1 - x0) * sc > 12) W(z, String(i), 100 + (x0 + x1) / 2 * sc, 97 + r * 28, { s: 9, a: 'center', c: '#fff', mono: true });
+      }));
+      if (s >= n) { D.line(g, 100 + total * sc, 78, 100 + total * sc, 170, z.col.red, 1.5, [4, 3]); W(z, `${fmt(total)} ms`, 100 + total * sc + 4, 186, { s: 11, b: true, c: z.col.red }); }
+      return `Serial = N × (in + kernel + out) = ${n} × ${fmt(a + k + b)} = ${fmt(serial)} ms.` + (s >= n ? ` Overlapped = <b>${fmt(total)} ms</b>, speedup <b>${fmt(serial / total)}</b>. With equal stages t this is (N + 2) t, so the speedup approaches the number of stages.` : ' Press Step to issue each chunk into its stream.');
+    }
+  });
+})();

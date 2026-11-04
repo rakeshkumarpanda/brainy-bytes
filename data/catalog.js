@@ -5856,6 +5856,39 @@ function cudaModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "gpu-exec", title: "Execution and overlap", emoji: "6", step: 6, level: "College", blurb: "See how branches and warp schedulers decide the speed of a warp, and overlap copies with kernels using streams.", topics: [
+      { id: "divergence-scheduling", title: "Warp divergence and warp scheduling", emoji: "6.1", page: "content/cuda/divergence-scheduling.html",
+        summary: "Divergence cost, Quiz 1 Q9, branch free tricks, warp schedulers, hiding waits.",
+        keywords: ["warp divergence", "SIMT", "Quiz 1", "round robin", "GTO", "latency hiding"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "div", title: "Warp divergence", emoji: "", group: "Lesson", keywords: ["warp divergence", "SIMT mask", "branch", "efficiency", "paths", "serialisation"] },
+        { id: "q9", title: "Quiz 1 question 9", emoji: "", group: "Lesson", keywords: ["Quiz 1 question 9", "arithmetic series", "branch free", "select", "predication"] },
+        { id: "sched", title: "Warp schedulers", emoji: "", group: "Lesson", keywords: ["warp scheduler", "round robin", "greedy then oldest", "GTO", "two level", "idle ticks"] },
+        { id: "hide", title: "How many warps hide the wait?", emoji: "", group: "Lesson", keywords: ["latency hiding", "warps needed", "ILP", "unrolling"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "independent thread scheduling", "__syncwarp", "CCWS", "dynamic warp formation"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "streams", title: "Streams, asynchrony and overlap", emoji: "6.2", page: "content/cuda/streams.html",
+        summary: "Async calls, streams, overlap speedup, pinned memory, events and graphs.",
+        keywords: ["streams", "cudaMemcpyAsync", "pinned memory", "overlap", "events", "pipeline"],
+        minutes: 40, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "async", title: "Who waits for whom", emoji: "", group: "Lesson", keywords: ["asynchronous", "kernel launch", "cudaMemcpy", "cudaMemcpyAsync", "synchronise", "default stream"] },
+        { id: "overlap", title: "Overlapping copies and compute", emoji: "", group: "Lesson", keywords: ["streams", "overlap", "pipeline", "chunks", "copy engines", "speedup 3N/(N+2)"] },
+        { id: "events", title: "Events: timing and dependencies", emoji: "", group: "Lesson", keywords: ["events", "cudaEventRecord", "cudaStreamWaitEvent", "timing", "CUDA graphs"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "Nsight Systems", "implicit sync", "NCCL", "overlap communication"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
