@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floating point numbers on the GPU · GPU Programming</title>
+<meta name="description" content="IEEE-754 sign, exponent and mantissa, binary fractions, encoding 6.75, 34.625 and 5.6, the add and subtract homework, non associativity, FMA, special values, FP16, BF16 and TF32.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 4: Numbers and performance limits</span><span>›</span><span>Floating point</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 1 of 1 · College</div>
+    <h1>Floating point numbers on the GPU</h1>
+    <p class="lead">See how a decimal number becomes 32 bits, why 5.6 cannot be stored exactly, how floats are added, and why a GPU sum can differ from a CPU sum.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">4 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#floating-point" data-topic="cheatsheet" data-h="floating-point">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#format" data-l="format"><span class="n">1</span><span class="t">Sign, exponent and mantissa</span></a></li><li><a href="#encode" data-l="encode"><span class="n">2</span><span class="t">Encoding by hand</span></a></li><li><a href="#arith" data-l="arith"><span class="n">3</span><span class="t">Adding floats, and why order matters</span></a></li><li><a href="#special" data-l="special"><span class="n">4</span><span class="t">Special values and precision on GPUs</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="format" data-l="format" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Sign, exponent and mantissa</h2>
+<p>A float is stored like scientific notation in base 2: a sign, a power of two, and the digits after the point. The leading 1 is not stored, which buys one extra bit for free.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>IEEE-754 value</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">value = (−1)<sup>S</sup> × 1.<i>f</i> × 2<sup><i>E</i> − bias</sup></div><div class="fx-n">bias = 127 for float (8 exponent bits), 1023 for double (11 bits).</div></div><div class="fx"><div class="fx-h"><span>Binary fraction</span></div><div class="fx-b">0.b₁b₂b₃… = b₁ × ½ + b₂ × ¼ + b₃ × ⅛ + …</div><div class="fx-n">1.00101₂ = 1 + ⅛ + 1/32 = 1.15625.</div></div><div class="fx"><div class="fx-h"><span>Exact or not</span></div><div class="fx-b">a decimal fraction is exact in binary only if its denominator is a power of 2</div><div class="fx-n">0.625 = 5/8 is exact. 0.6 = 3/5 repeats for ever.</div></div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Format</th><th>Sign</th><th>Exponent</th><th>Mantissa</th><th>About this many decimal digits</th></tr></thead><tbody><tr><td>FP64 double</td><td>1</td><td>11</td><td>52</td><td>16</td></tr><tr><td>FP32 float</td><td>1</td><td>8</td><td>23</td><td>7</td></tr><tr><td>TF32 (tensor cores)</td><td>1</td><td>8</td><td>10</td><td>3</td></tr><tr><td>BF16</td><td>1</td><td>8</td><td>7</td><td>2 to 3</td></tr><tr><td>FP16 half</td><td>1</td><td>5</td><td>10</td><td>3</td></tr></tbody></table></div>
+<div class="cvz" data-viz="ieee"></div>
+<div class="note note-warn"><b>Common mistake</b><div>The lecture 5 notes give 1.00101₂ = 1.5625. Adding the bits gives 1 + 0.125 + 0.03125 = 1.15625 = 37/32, which is the value the workbook uses.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="encode" data-l="encode" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Encoding by hand</h2>
+<div class="walk"><div class="walk-h"><span>Lecture 5 example: 34.625 as a float</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Integer part: 34 = 100010₂ (32 + 2).</li><li>Fraction by doubling: 0.625 → 1.25 (1), 0.25 → 0.5 (0), 0.5 → 1.0 (1), so .101.</li><li>34.625 = 100010.101₂ = 1.00010101 × 2⁵.</li><li>Exponent field 5 + 127 = 132 = 10000100₂. Mantissa 00010101 followed by zeros.</li><li><span class="eq">0 10000100 00010101000000000000000 = 0x420A8000</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Why 5.6 is not exact</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>0.6 by doubling: 1.2 (1), 0.4 (0), 0.8 (0), 1.6 (1), then 0.6 again, so 0.1001 1001 1001…</li><li>5.6 = 1.011001100110… × 2², exponent field 129.</li><li>Round to 23 bits: word 0x40B33333.</li><li><span class="eq">The float holds 5.599999904632568</span></li></ol></div>
+<div class="cv-code" data-k="enc"></div>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Machine epsilon</span></div><div class="fx-b">ε = 2<sup>−mantissa bits</sup></div><div class="fx-n">FP32: 2⁻²³ ≈ 1.19 × 10⁻⁷. The gap between 1 and the next float. Relative rounding error is at most ε ÷ 2.</div></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="arith" data-l="arith" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Adding floats, and why order matters</h2>
+<p>To add two floats the hardware lines up the exponents, adds the mantissas, normalises and rounds. Lining up shifts the smaller number right, and bits that fall off the end are lost.</p>
+<div class="walk"><div class="walk-h"><span>Homework: 5.75 + 0.375</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>5.75 = 101.11₂ = 1.0111 × 2². 0.375 = 0.011₂ = 1.1 × 2⁻².</li><li>Align: shift 1.1 right by 2 − (−2) = 4 places, 0.00011 × 2².</li><li>Add: 1.01110 + 0.00011 = 1.10001 × 2².</li><li><span class="eq">110.001₂ = 6.125</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Homework: 6.5 − 4.25</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>6.5 = 1.101 × 2², 4.25 = 1.0001 × 2², already aligned.</li><li>1.1010 − 1.0001 = 0.1001 × 2².</li><li><span class="eq">Normalise: 1.001 × 2¹ = 10.01₂ = 2.25</span></li></ol></div>
+<div class="cv-code" data-k="order"></div>
+<div class="note note-exam"><b>In the exam</b><div>A GPU reduction adds numbers in a different order from a CPU loop, so float sums can differ in the last digits. That is expected. Compare float results with a tolerance, never with ==.</div></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">fma.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#include &lt;cstdio&gt;</span><span class="ln" data-n="2">#include &lt;cmath&gt;</span><span class="ln" data-n="3"> </span><span class="ln" data-n="4">__global__ void fmaDemo(float *out, float a, float b, float c) {</span><span class="ln ck-has" data-n="5">    out[0] = __fmul_rn(a, b) + c;      // multiply, round, then add and round again</span><span class="ln ck-has" data-n="6">    out[1] = fmaf(a, b, c);            // fused: a * b + c with a single rounding</span><span class="ln" data-n="7">}</span><span class="ln" data-n="8"> </span><span class="ln" data-n="9">int main() {</span><span class="ln" data-n="10">    float *d, h[2];</span><span class="ln" data-n="11">    cudaMalloc(&amp;d, 2 * sizeof(float));</span><span class="ln ck-has" data-n="12">    float a = 1.0f + 1.0f / 4096, c = -(1.0f + 1.0f / 2048);</span><span class="ln" data-n="13">    fmaDemo&lt;&lt;&lt;1, 1&gt;&gt;&gt;(d, a, a, c);</span><span class="ln" data-n="14">    cudaMemcpy(h, d, sizeof(h), cudaMemcpyDeviceToHost);</span><span class="ln" data-n="15">    printf("separate: %.10g\nfused:    %.10g\n", h[0], h[1]);</span><span class="ln" data-n="16">    cudaFree(d);</span><span class="ln" data-n="17">    return 0;</span><span class="ln" data-n="18">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="5"><b>Line 5</b><code>out[0] = __fmul_rn(a, b) + c;      // multiply, round, then add and round again</code><span>__fmul_rn forces a separate multiply that is rounded before the add.</span></li><li data-n="6"><b>Line 6</b><code>out[1] = fmaf(a, b, c);            // fused: a * b + c with a single rounding</code><span>fmaf computes a × b + c exactly and rounds once. GPUs do this in one instruction, counted as 2 FLOPs.</span></li><li data-n="12"><b>Line 12</b><code>float a = 1.0f + 1.0f / 4096, c = -(1.0f + 1.0f / 2048);</code><span>With a = 1 + 2⁻¹², a² = 1 + 2⁻¹¹ + 2⁻²⁴. The 2⁻²⁴ term is lost by the separate multiply but kept by the FMA.</span></li></ol></details><div class="cc-cap">What it prints</div><pre class="cc-out">separate: 0
+fused:    5.960464478e-08</pre></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="special" data-l="special" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Special values and precision on GPUs</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Exponent field</th><th>Mantissa</th><th>Meaning</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>±0</td></tr><tr><td>0</td><td>not 0</td><td>subnormal (tiny numbers, no hidden 1)</td></tr><tr><td>1 to 254</td><td>anything</td><td>normal number</td></tr><tr><td>255</td><td>0</td><td>±infinity (overflow, 1 ÷ 0)</td></tr><tr><td>255</td><td>not 0</td><td>NaN (0 ÷ 0, √−1)</td></tr></tbody></table></div>
+<p>Double precision costs more on most GPUs. Fermi did 1 TFLOP/s single and 0.5 TFLOP/s double. Gaming GPUs run FP64 at 1/32 or 1/64 of FP32. Use double where accuracy needs it, for example long sums in scientific codes.</p>
+<details class="deep"><summary>Going deeper: Kahan summation</summary><div class="deep-b"><p>Keep a small correction c of the bits lost at each step: y = x − c, t = s + y, c = (t − s) − y, s = t. The error stops growing with the number of terms. It costs 4 operations per element instead of 1.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A float is a number in scientific notation with a fixed number of digits. Some numbers, like 0.1, cannot be written exactly, so tiny errors appear.</p></div><div class="ld-p" data-ld="college" hidden><p>value = (−1)^S × 1.f × 2^(E − bias). Float 1/8/23, bias 127. Align, add, normalise, round. Order changes sums.</p></div><div class="ld-p" data-ld="masters" hidden><p>Mixed precision: store in FP16 or BF16, multiply on tensor cores, accumulate in FP32 (chapter 8.1). Watch overflow in FP16 (largest 65,504) and use loss scaling in training.</p></div><div class="ld-p" data-ld="research" hidden><p>FP8 (E4M3 and E5M2) on Hopper and FP4 on Blackwell use per block scale factors to keep the range. Deterministic reductions fix the summation order so results repeat bit for bit.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./shared-memory.html" data-topic="shared-memory"><small>Previous topic</small><b>Shared memory</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "floating-point", "topic": "floating-point", "subject": "cuda", "title": "Floating point numbers on the GPU", "codes": {"enc": {"src": "# Encode a float by hand and compare with the real bits\nimport struct\ndef fields(x):\n    w = struct.unpack('>I', struct.pack('>f', x))[0]\n    return w >> 31, (w >> 23) & 0xFF, w & 0x7FFFFF, hex(w)\nfor x in [6.75, -0.375, 34.625, 5.6]:\n    s, e, m, h = fields(x)\n    stored = struct.unpack('>f', struct.pack('>f', x))[0]\n    print(x, \"sign\", s, \"exp\", e, \"(2^%d)\" % (e - 127), h, \"stored\", repr(stored))", "stdin": "", "out": "6.75 sign 0 exp 129 (2^2) 0x40d80000 stored 6.75\n-0.375 sign 1 exp 125 (2^-2) 0xbec00000 stored -0.375\n34.625 sign 0 exp 132 (2^5) 0x420a8000 stored 34.625\n5.6 sign 0 exp 129 (2^2) 0x40b33333 stored 5.599999904632568"}, "order": {"src": "# Floating point addition is not associative\nbig = 1e20\nprint((big + -big) + 3.14)     # 3.14\nprint(big + (-big + 3.14))     # 0.0: 3.14 vanished when added to -1e20\n# adding 0.1 ten times\ns = 0.0\nfor _ in range(10):\n    s += 0.1\nprint(s, s == 1.0)", "stdin": "", "out": "3.14\n0.0\n0.9999999999999999 False"}}, "quiz": [{"lv": "e", "q": "How many exponent bits does a float have?", "o": ["5", "8", "11", "23"], "a": 1, "hint": "1/8/23.", "why": "8 bits, bias 127."}, {"lv": "e", "q": "The bias for float is", "o": ["0", "127", "128", "1023"], "a": 1, "hint": "Stored 127 means 2⁰.", "why": "127."}, {"lv": "e", "q": "1.1₂ in decimal", "o": ["1.1", "1.5", "1.25", "3"], "a": 1, "hint": "1 + ½.", "why": "1.5."}, {"lv": "m", "q": "1.00101₂ in decimal", "o": ["1.5625", "1.15625", "1.3125", "1.0625"], "a": 1, "hint": "1 + ⅛ + 1/32.", "why": "1.15625 = 37/32."}, {"lv": "m", "q": "Stored exponent of 6.75", "o": ["2", "127", "129", "130"], "a": 2, "hint": "1.1011 × 2².", "why": "2 + 127 = 129."}, {"lv": "m", "q": "Why is 5.6 not exact?", "o": ["Too big", "0.6 = 3/5 has no finite binary form", "Floats only store integers", "It is exact"], "a": 1, "hint": "Denominator not a power of 2.", "why": "Its binary fraction repeats for ever."}, {"lv": "m", "q": "An FMA counts as", "o": ["1 FLOP", "2 FLOPs", "3 FLOPs", "0"], "a": 1, "hint": "Multiply and add.", "why": "Two operations, one instruction."}, {"lv": "h", "q": "(10²⁰ + (−10²⁰)) + 3.14 against 10²⁰ + (−10²⁰ + 3.14) in double", "o": ["Both 3.14", "3.14 and 0", "Both 0", "0 and 3.14"], "a": 1, "hint": "Alignment loses 3.14.", "why": "Floating point addition is not associative."}, {"lv": "h", "q": "Exponent field all ones and mantissa not zero means", "o": ["Infinity", "Zero", "NaN", "Subnormal"], "a": 2, "hint": "Special value.", "why": "NaN."}, {"lv": "h", "q": "BF16 against FP16", "o": ["BF16 has more mantissa bits", "BF16 keeps FP32's 8 exponent bits, so its range matches FP32", "They are the same", "FP16 has 8 exponent bits"], "a": 1, "hint": "Range against precision.", "why": "BF16 trades precision for FP32 range."}, {"lv": "x", "q": "Machine epsilon of FP16 (10 mantissa bits)", "o": ["2⁻⁷", "2⁻¹⁰", "2⁻²³", "2⁻⁵"], "a": 1, "hint": "2^−mantissa bits.", "why": "≈ 0.000977."}, {"lv": "x", "q": "Why can a GPU sum of a float array differ from the CPU sum?", "o": ["GPU bug", "Different addition order with rounding at each step", "GPUs use integers", "Cache misses"], "a": 1, "hint": "Order.", "why": "Tree order rounds differently from a serial loop."}], "calc": [{"lv": "e", "q": "1.00101₂ in decimal?", "ans": "1.15625", "hint": "Add the place values.", "steps": ["Bits at ⅛ and 1/32.", "1 + 0.125 + 0.03125.", "<span class=\"eq\">1.15625<\/span>"]}, {"lv": "e", "q": "Stored exponent field for 6.75?", "ans": "129", "hint": "1.1011 × 2².", "steps": ["6.75 = 110.11₂.", "= 1.1011 × 2².", "<span class=\"eq\">2 + 127 = 129<\/span>"]}, {"lv": "e", "q": "Value of the float 0 10000001 01000…0?", "ans": "5", "hint": "Exponent 129 − 127.", "steps": ["Exponent 2.", "Mantissa 1.01₂ = 1.25.", "<span class=\"eq\">1.25 × 4 = 5<\/span>"]}, {"lv": "m", "q": "5.75 + 0.375 by the hardware steps?", "ans": "6.125", "hint": "Align by 4 places.", "steps": ["1.0111 × 2² + 0.00011 × 2².", "= 1.10001 × 2².", "<span class=\"eq\">6.125<\/span>"]}, {"lv": "m", "q": "6.5 − 4.25 in binary?", "ans": "2.25", "hint": "Already aligned.", "steps": ["1.1010 − 1.0001 = 0.1001 (× 2²).", "Normalise to 1.001 × 2¹.", "<span class=\"eq\">2.25<\/span>"]}, {"lv": "m", "q": "Stored exponent field for −0.375?", "ans": "125", "hint": "1.1 × 2⁻².", "steps": ["0.375 = 0.011₂ = 1.1 × 2⁻².", "−2 + 127.", "<span class=\"eq\">125 (word 0xBEC00000)<\/span>"]}, {"lv": "m", "q": "Exponent field for 34.625?", "ans": "132", "hint": "1.00010101 × 2⁵.", "steps": ["34.625 = 100010.101₂.", "5 + 127.", "<span class=\"eq\">132<\/span>"]}, {"lv": "h", "q": "Machine epsilon of FP32 (scientific, 3 significant figures, as a decimal)?", "ans": "1.19e-7", "hint": "2⁻²³.", "steps": ["2⁻²³ = 1 ÷ 8,388,608.", "≈ 0.000000119.", "<span class=\"eq\">1.19 × 10⁻⁷<\/span>"], "tol": 1e-09}, {"lv": "h", "q": "Largest finite FP16 value?", "ans": "65504", "hint": "(2 − 2⁻¹⁰) × 2¹⁵.", "steps": ["Largest exponent field 30, so 2³⁰⁻¹⁵ = 2¹⁵.", "Mantissa all ones: 2 − 2⁻¹⁰.", "<span class=\"eq\">1.9990234 × 32,768 = 65,504<\/span>"]}, {"lv": "x", "q": "Fermi: 1000 GFLOP/s single, 500 double. A 2 × 10¹² FLOP job in double takes how many seconds at peak?", "ans": "4", "hint": "Double rate.", "steps": ["500 GFLOP/s = 5 × 10¹¹.", "2 × 10¹² ÷ 5 × 10¹¹.", "<span class=\"eq\">4 s (2 s in single)<\/span>"]}, {"lv": "x", "q": "FP16 smallest positive normal number as a power of two (give the exponent)?", "ans": "-14", "hint": "Exponent field 1.", "steps": ["Bias 15.", "Field 1 means 2¹⁻¹⁵.", "<span class=\"eq\">2⁻¹⁴ ≈ 6.1 × 10⁻⁵<\/span>"]}], "assign": [{"id": "decode", "lv": "m", "title": "Decode a float word", "task": "<p>Write <code>decode(bits)<\/code> for a 32 character string of 0s and 1s holding a normal float. Return its value.<\/p>", "starter": "def decode(bits):\n    # your code here\n    pass\n", "tests": [{"call": "decode('01000000101000000000000000000000')", "want": 5.0}, {"call": "decode('10111110110000000000000000000000')", "want": -0.375}, {"call": "decode('01000010000010101000000000000000')", "want": 34.625}], "solution": "def decode(bits):\n    s = int(bits[0])\n    e = int(bits[1:9], 2) - 127\n    m = 1 + int(bits[9:], 2) / 2 ** 23\n    return (-1) ** s * m * 2 ** e\n", "hint": "Split 1/8/23, remove the bias, add the hidden 1.", "why": "<p>The three tests are the lecture and workbook examples 5.0, −0.375 and 34.625.<\/p>"}, {"id": "fracbin", "lv": "e", "title": "Fraction to binary by doubling", "task": "<p>Write <code>frac_bits(x, n)<\/code> for 0 ≤ x &lt; 1: return the first <code>n<\/code> binary digits after the point as a string, using repeated doubling.<\/p>", "starter": "def frac_bits(x, n):\n    # your code here\n    pass\n", "tests": [{"call": "frac_bits(0.625, 3)", "want": "101"}, {"call": "frac_bits(0.6, 8)", "want": "10011001"}, {"call": "frac_bits(0.375, 4)", "want": "0110"}], "solution": "def frac_bits(x, n):\n    out = ''\n    for _ in range(n):\n        x *= 2\n        if x >= 1:\n            out += '1'\n            x -= 1\n        else:\n            out += '0'\n    return out\n", "hint": "Double, write the integer part, keep the rest.", "why": "<p>0.6 shows the repeating 1001 pattern.<\/p>"}], "must": [["Format", "value = (−1)^S × 1.f × 2^(E − bias). Float 1/8/23 bias 127, double 1/11/52 bias 1023."], ["Exact", "Exact in binary only when the denominator is a power of 2. 5.6 is stored as 5.599999904632568."], ["Add", "Align exponents, add mantissas, normalise, round. Not associative: compare with a tolerance."], ["FMA", "a × b + c with one rounding, one instruction, counted as 2 FLOPs."], ["Formats", "FP16 1/5/10 (max 65,504), BF16 1/8/7, TF32 1/8/10. Epsilon = 2^−mantissa bits."]], "summary": "<p>A float is sign, biased exponent and mantissa. Most decimals are rounded, addition order matters, and FMA rounds once.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"enc": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.fields": "<function fields>"}}, {"l": 7, "ev": "line", "d": {"G.x": "6.75"}}, {"l": 3, "ev": "call", "s": ["module", "fields()"], "d": {"L.x": "6.75"}}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"L.w": "1087897600"}}, {"l": 5, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"G.s": "0", "G.e": "129", "G.m": "5767168", "G.h": "'0x40d80000'", "L.x": null, "L.w": null}}, {"l": 9, "ev": "line", "d": {"G.stored": "6.75"}}, {"l": 6, "ev": "line", "o": "6.75 sign 0 exp 129 (2^2) 0x40d80000 stored 6.75\n"}, {"l": 7, "ev": "line", "d": {"G.x": "-0.375"}}, {"l": 3, "ev": "call", "s": ["module", "fields()"], "d": {"L.x": "-0.375"}}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"L.w": "3200253952"}}, {"l": 5, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"G.s": "1", "G.e": "125", "G.m": "4194304", "G.h": "'0xbec00000'", "L.x": null, "L.w": null}}, {"l": 9, "ev": "line", "d": {"G.stored": "-0.375"}}, {"l": 6, "ev": "line", "o": "-0.375 sign 1 exp 125 (2^-2) 0xbec00000 stored -0.375\n"}, {"l": 7, "ev": "line", "d": {"G.x": "34.625"}}, {"l": 3, "ev": "call", "s": ["module", "fields()"], "d": {"L.x": "34.625"}}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"L.w": "1107984384"}}, {"l": 5, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"G.s": "0", "G.e": "132", "G.m": "688128", "G.h": "'0x420a8000'", "L.x": null, "L.w": null}}, {"l": 9, "ev": "line", "d": {"G.stored": "34.625"}}, {"l": 6, "ev": "line", "o": "34.625 sign 0 exp 132 (2^5) 0x420a8000 stored 34.625\n"}, {"l": 7, "ev": "line", "d": {"G.x": "5.6"}}, {"l": 3, "ev": "call", "s": ["module", "fields()"], "d": {"L.x": "5.6"}}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"L.w": "1085485875"}}, {"l": 5, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"G.e": "129", "G.m": "3355443", "G.h": "'0x40b33333'", "L.x": null, "L.w": null}}, {"l": 9, "ev": "line", "d": {"G.stored": "5.599999904632568"}}, {"l": 6, "ev": "line", "o": "5.6 sign 0 exp 129 (2^2) 0x40b33333 stored 5.599999904632568\n"}, {"l": 6, "ev": "return"}], "tail": "", "err": null, "cut": false}, "order": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.big": "1e+20"}}, {"l": 4, "ev": "line", "o": "3.14\n"}, {"l": 6, "ev": "line", "o": "0.0\n"}, {"l": 7, "ev": "line", "d": {"G.s": "0.0"}}, {"l": 8, "ev": "line", "d": {"G._": "0"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.1"}}, {"l": 8, "ev": "line", "d": {"G._": "1"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.2"}}, {"l": 8, "ev": "line", "d": {"G._": "2"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.30000000000000004"}}, {"l": 8, "ev": "line", "d": {"G._": "3"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.4"}}, {"l": 8, "ev": "line", "d": {"G._": "4"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.5"}}, {"l": 8, "ev": "line", "d": {"G._": "5"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.6"}}, {"l": 8, "ev": "line", "d": {"G._": "6"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.7"}}, {"l": 8, "ev": "line", "d": {"G._": "7"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.7999999999999999"}}, {"l": 8, "ev": "line", "d": {"G._": "8"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.8999999999999999"}}, {"l": 8, "ev": "line", "d": {"G._": "9"}}, {"l": 7, "ev": "line", "d": {"G.s": "0.9999999999999999"}}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "return", "o": "0.9999999999999999 False\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

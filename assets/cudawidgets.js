@@ -534,3 +534,250 @@
     }
   });
 })();
+
+/* ---------- 3.x memory: where variables live, coalescing into 32 byte sectors, shared memory banks ---------- */
+(() => {
+  const { def, D } = CVZ, { cdiv, fmt, W } = CUDAZ;
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  const MEMS = {
+    reg: ['int i = threadIdx.x;', 'register', 'one thread', 'the thread', 'about 1 tick', 'Registers sit inside the SM next to the cores. Each thread has its own.'],
+    local: ['float big[100]; (indexed by a variable)', 'local memory (DRAM, cached in L1 and L2)', 'one thread', 'the thread', 'hundreds of ticks on a miss', 'Big per thread arrays and spilled registers go to local memory. Local means private, not near.'],
+    shared: ['__shared__ float tile[256];', 'shared memory (on the SM)', 'all threads of one block', 'the block', 'about 20 to 30 ticks', 'Each block gets its own copy. Threads of other blocks cannot see it.'],
+    global: ['cudaMalloc(&d_a, bytes);', 'global memory (device DRAM)', 'every thread of every kernel, and the host through cudaMemcpy', 'until cudaFree or program exit', 'about 400 to 800 ticks', 'The only memory every SM can read and write for the whole application (Quiz 1 question 8).'],
+    constant: ['__constant__ float w[9];', 'constant memory (DRAM, with a constant cache per SM)', 'every thread, read only', 'the whole application', 'fast when the whole warp reads the same address', 'The host fills it with cudaMemcpyToSymbol. One fetch is broadcast to all 32 lanes.']
+  };
+  def('memhier', {
+    title: 'Where does a variable live?', sub: 'Pick a declaration and step: where it is stored, who can see it, how long it lives, and how fast it is.',
+    W: 620, H: 280,
+    params: [{ k: 'm', label: 'Declaration', type: 'select', v: 'shared', opts: Object.entries(MEMS).map(([k, v]) => [k, v[0]]) }],
+    tips: [
+      { t: 'A plain local variable lives in a register: private, gone when the thread ends, the fastest.', set: { m: 'reg' }, play: true },
+      { t: 'A __shared__ array: one copy per block, seen by all its threads, on the SM.', set: { m: 'shared' }, play: true },
+      { t: 'Memory from cudaMalloc is global: every SM sees it and it survives across kernel launches.', set: { m: 'global' }, play: true },
+      { t: 'A big private array can end up in local memory, which really lives in slow DRAM.', set: { m: 'local' }, play: true }
+    ],
+    steps: () => 4,
+    draw(z) {
+      const g = z.g, m = z.p.m, M = MEMS[m], s = z.step;
+      const hi = (key) => s >= 1 && (key === m || (m === 'constant' && key === 'const') || (m === 'local' && key === 'localD'));
+      for (let k = 0; k < 2; k++) {
+        const x = 16 + k * 210;
+        D.rect(g, x, 20, 196, 120, { stroke: z.col.line });
+        W(z, `SM ${k}`, x + 8, 36, { b: true, s: 12 });
+        for (let b = 0; b < 2; b++) {
+          const bx = x + 8 + b * 94;
+          const seen = s >= 2 && (m === 'global' || m === 'constant' || (m === 'shared' && k === 0 && b === 0) || ((m === 'reg' || m === 'local') && k === 0 && b === 0));
+          D.rect(g, bx, 44, 86, 50, { stroke: seen ? z.col.green : z.col.line, w: seen ? 2.5 : 1 });
+          W(z, `block ${k * 2 + b}`, bx + 6, 58, { s: 10, c: z.col.ink2 });
+          for (let t = 0; t < 4; t++) {
+            const one = (m === 'reg' || m === 'local') && k === 0 && b === 0 && t === 0;
+            D.rect(g, bx + 6 + t * 19, 64, 15, 12, { fill: hi('reg') && one ? z.col.red : (s >= 2 && seen && !(m === 'reg' || m === 'local') ? z.col.green : (s >= 2 && one ? z.col.green : z.col.bg)) });
+          }
+          W(z, 'registers', bx + 6, 88, { s: 9, c: z.col.ink2 });
+        }
+        D.rect(g, x + 8, 102, 180, 30, { fill: hi('shared') && k === 0 ? z.col.red : z.col.surf, stroke: z.col.line });
+        W(z, 'shared memory / L1', x + 16, 122, { s: 11, c: hi('shared') && k === 0 ? '#fff' : z.col.ink });
+      }
+      D.rect(g, 16, 150, 406, 26, { fill: z.col.surf, stroke: z.col.line });
+      W(z, 'L2 cache (shared by all SMs)', 26, 168, { s: 11 });
+      const dram = [['global', 'global'], ['localD', 'local'], ['const', 'constant']];
+      dram.forEach(([key, lab], i) => {
+        const x = 16 + i * 137;
+        D.rect(g, x, 186, 132, 32, { fill: hi(key) ? z.col.red : z.col.bg, stroke: z.col.line });
+        W(z, lab, x + 10, 207, { s: 11, c: hi(key) ? '#fff' : z.col.ink });
+      });
+      W(z, 'device DRAM (GBs)', 16, 234, { s: 10, c: z.col.ink2 });
+      D.rect(g, 440, 186, 164, 32, { fill: z.col.bg, stroke: z.col.line });
+      W(z, 'host RAM (over PCIe)', 450, 207, { s: 11 });
+      const lines = [`Stored in: ${M[1]}`, `Seen by: ${M[2]}`, `Lives for: ${M[3]}`, `Speed: ${M[4]}`];
+      ['1 where', '2 who', '3 how long', '4 how fast'].forEach((l, i) => W(z, l, 440, 40 + i * 30, { s: 12, b: i === s - 1, c: i < s ? z.col.cv : z.col.ink2 }));
+      return `<code>${M[0]}</code><br>` + (s === 0 ? 'Press Step.' : lines.slice(0, s).join('<br>') + '<br>' + M[5] + (s >= 2 ? ' Green boxes show who can see it.' : ''));
+    }
+  });
+
+  def('coalesce', {
+    title: 'Coalescing: how many 32 byte sectors does one warp read touch?', sub: 'Thread t reads element offset + t × stride. Step to add one thread at a time and watch the sectors fill.',
+    W: 620, H: 300,
+    params: [
+      { k: 's', label: 'Stride (elements)', v: 1, min: 1, max: 32, step: 1 },
+      { k: 'e', label: 'Element size', type: 'select', v: '4', opts: [['4', 'float (4 bytes)'], ['8', 'double (8 bytes)']] },
+      { k: 'o', label: 'Start offset (bytes)', v: 0, min: 0, max: 64, step: 4 }
+    ],
+    tips: [
+      { t: 'Stride 1 floats: 32 × 4 = 128 bytes in exactly 4 sectors, 100 percent useful (workbook 7.2).', set: { s: 1, e: '4', o: 0 }, play: true },
+      { t: 'Stride 2: every other float, 8 sectors, half of every sector is wasted.', set: { s: 2, e: '4', o: 0 }, play: true },
+      { t: 'Stride 32 (walking down a column): 32 sectors for 128 useful bytes, 12.5 percent.', set: { s: 32, e: '4', o: 0 }, play: true },
+      { t: 'Stride 1 but starting 16 bytes into a sector: 5 sectors, 80 percent (misalignment).', set: { s: 1, e: '4', o: 16 }, play: true }
+    ],
+    steps: () => 32,
+    draw(z) {
+      const g = z.g, s = z.p.s, e = +z.p.e, o = z.p.o, n = z.step;
+      const addr = t => o + t * s * e;
+      const last = addr(31) + e, nsec = cdiv(last, 32), per = nsec <= 16 ? 16 : 32, cw = 544 / per, ch = nsec <= 16 ? 26 : Math.min(14, 150 / cdiv(nsec, per));
+      const hit = new Map();
+      for (let t = 0; t < n; t++) { const a = addr(t); for (let b = a; b < a + e; b += 4) { const sct = Math.floor(b / 32); hit.set(sct, (hit.get(sct) || 0) + 4); } }
+      W(z, 'memory, one box = one 32 byte sector (8 floats)', 16, 16, { s: 10, c: z.col.ink2 });
+      for (let k = 0; k < nsec; k++) {
+        const r = Math.floor(k / per), c = k % per, h = hit.get(k) || 0;
+        D.rect(g, 16 + c * cw, 24 + r * ch, cw - 2, ch - 2, { fill: h ? (h === 32 ? z.col.green : z.col.orange) : z.col.bg, stroke: z.col.line, w: 0.5 });
+      }
+      const ty = 24 + cdiv(nsec, per) * ch + 22;
+      W(z, 'warp lanes', 16, ty - 6, { s: 10, c: z.col.ink2 });
+      for (let t = 0; t < 32; t++) {
+        D.rect(g, 16 + t * 17, ty, 15, 14, { fill: t < n ? z.col.cv : z.col.bg, stroke: z.col.line, w: 0.5 });
+        if (t === n - 1) {
+          const sct = Math.floor(addr(t) / 32), r = Math.floor(sct / per), c = sct % per;
+          D.arrow(g, 16 + t * 17 + 7, ty, 16 + c * cw + cw / 2 - 1, 24 + r * ch + ch - 2, z.col.red, 1.5, 6);
+        }
+      }
+      const used = n * e, sec = hit.size, eff = sec ? used / (sec * 32) : 0;
+      W(z, `${n} threads read ${used} useful bytes from ${sec} sectors (${sec * 32} bytes moved)`, 16, ty + 40, { s: 12, b: true });
+      W(z, `efficiency = useful ÷ moved = ${fmt(100 * eff)} percent`, 16, ty + 60, { s: 12, c: eff >= 0.99 ? z.col.green : z.col.red });
+      const bw = e === 4 && o === 0 ? ` Sector model on a T4: about 206 ÷ min(${s}, 8) = ${fmt(206 / Math.min(s, 8))} GB/s of useful bandwidth (workbook 11.1).` : '';
+      return `Green = every byte of the sector is used, orange = part used, so the rest of the 32 bytes is wasted traffic. A warp's loads are combined (coalesced) into as few sectors as possible.${bw}`;
+    }
+  });
+
+  def('banks', {
+    title: 'Shared memory banks: who has to wait?', sub: 'Shared memory is split into 32 banks, each 4 bytes wide. Word w lives in bank w mod 32. Two different words in one bank must take turns.',
+    W: 620, H: 300,
+    params: [
+      { k: 'mode', label: 'Access pattern', type: 'select', v: 'stride', opts: [['stride', 'thread t reads word s × t'], ['col', 'thread t reads tile[t][0] (a column)'], ['same', 'all threads read word 5']] },
+      { k: 's', label: 'Stride s (words)', v: 1, min: 1, max: 64, step: 1 },
+      { k: 'w', label: 'Row width of the tile (words)', v: 32, min: 16, max: 64, step: 1 }
+    ],
+    tips: [
+      { t: 'Stride 1: thread t hits bank t, no conflict, one pass.', set: { mode: 'stride', s: 1 }, play: true },
+      { t: 'Stride 2: threads 0 and 16 both land on bank 0, a 2-way conflict = gcd(2, 32).', set: { mode: 'stride', s: 2 }, play: true },
+      { t: 'Reading a column of a 32 wide tile: every thread hits bank 0, a 32-way conflict (workbook 11.2).', set: { mode: 'col', w: 32 }, play: true },
+      { t: 'Pad the row to 33 words: the column now spreads over all 32 banks, conflict free.', set: { mode: 'col', w: 33 }, play: true },
+      { t: 'All threads read the same word: the value is broadcast, no conflict.', set: { mode: 'same' }, play: true }
+    ],
+    steps: () => 32,
+    draw(z) {
+      const g = z.g, { mode, s, w } = z.p, n = z.step;
+      const word = t => mode === 'stride' ? s * t : mode === 'col' ? t * w : 5;
+      const stack = Array.from({ length: 32 }, () => []);
+      for (let t = 0; t < n; t++) { const wd = word(t), b = wd % 32; stack[b].push([t, wd]); }
+      const cw = 18;
+      W(z, 'bank', 16, 22, { s: 10, c: z.col.ink2 });
+      for (let b = 0; b < 32; b++) {
+        if (b % 4 === 0) W(z, String(b), 50 + b * cw, 22, { s: 9, mono: true, c: z.col.ink2 });
+        D.rect(g, 50 + b * cw, 28, cw - 2, 4, { fill: z.col.cv });
+        const distinct = [];
+        stack[b].forEach(([t, wd], i) => {
+          let k = distinct.indexOf(wd); if (k < 0) { distinct.push(wd); k = distinct.length - 1; }
+          if (k < 14) D.rect(g, 50 + b * cw, 36 + k * 13, cw - 2, 11, { fill: k === 0 ? z.col.green : z.col.red });
+        });
+      }
+      let worst = 0; stack.forEach(st => { worst = Math.max(worst, new Set(st.map(q => q[1])).size); });
+      W(z, 'rows down = passes (each red box waits one more pass)', 50, 232, { s: 10, c: z.col.ink2 });
+      W(z, `${n} threads placed, worst bank holds ${worst} different word${worst === 1 ? '' : 's'}`, 50, 256, { s: 12, b: true });
+      W(z, worst <= 1 ? 'conflict free: 1 pass' : `${worst}-way conflict: ${worst} passes`, 50, 278, { s: 12, b: true, c: worst <= 1 ? z.col.green : z.col.red });
+      const why = mode === 'stride' ? `For stride s the conflict is gcd(s, 32) = gcd(${s}, 32) = ${gcd(s, 32)}.` : mode === 'col' ? `Element [t][0] is word t × ${w}, bank (t × ${w}) mod 32. ${w % 32 === 0 ? 'Width a multiple of 32 puts every row start in the same bank.' : gcd(w, 32) === 1 ? 'An odd width spreads the column over every bank.' : `gcd(${w}, 32) = ${gcd(w, 32)}, so ${gcd(w, 32)} threads share each bank.`}` : 'Every thread reads one word, the hardware broadcasts it.';
+      return `Thread t (step ${n}) reads word ${n ? word(n - 1) : '-'}, bank ${n ? word(n - 1) % 32 : '-'}. ${why}`;
+    }
+  });
+})();
+
+/* ---------- 4.x numbers and limits: IEEE-754 encoding and the roofline ---------- */
+(() => {
+  const { def, D } = CVZ, { fmt, W } = CUDAZ;
+  const FORMATS = { fp32: ['float (FP32)', 8, 23], fp16: ['half (FP16)', 5, 10], bf16: ['bfloat16 (BF16)', 8, 7] };
+  const rne = x => { const f = Math.floor(x), d = x - f; return d > 0.5 || (d === 0.5 && f % 2) ? f + 1 : f; };
+  const encode = (v, E, M) => {
+    const bias = 2 ** (E - 1) - 1, sign = v < 0 || Object.is(v, -0) ? 1 : 0, a = Math.abs(v);
+    if (a === 0) return { sign, e: 0, be: 0, mi: 0, stored: 0, bias, zero: true };
+    let e = Math.floor(Math.log2(a));
+    if (2 ** e > a) e--; if (2 ** (e + 1) <= a) e++;
+    let mi = rne((a / 2 ** e - 1) * 2 ** M);
+    if (mi === 2 ** M) { mi = 0; e++; }
+    const be = e + bias, over = be >= 2 ** E - 1, under = be <= 0;
+    const stored = (sign ? -1 : 1) * (1 + mi / 2 ** M) * 2 ** e;
+    return { sign, e, be, mi, stored, bias, over, under };
+  };
+  const bin = (a, fracBits) => {
+    let ip = Math.floor(a), fp = a - ip, s = ip.toString(2) + '.', k = 0;
+    while (k < fracBits && fp > 0) { fp *= 2; s += fp >= 1 ? '1' : '0'; if (fp >= 1) fp -= 1; k++; }
+    if (k === 0) s += '0';
+    return s + (fp > 0 ? '…' : '');
+  };
+  def('ieee', {
+    title: 'How a decimal number is stored in IEEE-754', sub: 'Type a number and step: sign, binary, slide the point, biased exponent, mantissa bits, and what is really stored.',
+    W: 620, H: 280,
+    params: [
+      { k: 'v', label: 'Number (type any decimal)', v: 6.75, type: 'text', num: true },
+      { k: 'f', label: 'Format', type: 'select', v: 'fp32', opts: Object.entries(FORMATS).map(([k, x]) => [k, x[0]]) }
+    ],
+    tips: [
+      { t: 'Workbook 5.1: 6.75 = 110.11 in binary = 1.1011 × 2², stored exponent 2 + 127 = 129.', set: { v: 6.75, f: 'fp32' }, play: true },
+      { t: '−0.375 = −1.1 × 2⁻². Sign 1, exponent 125, the word is 0xBEC00000.', set: { v: -0.375, f: 'fp32' }, play: true },
+      { t: '5.6 has an endless binary fraction, so a float stores 5.599999904632568 instead.', set: { v: 5.6, f: 'fp32' }, play: true },
+      { t: 'The same 5.6 in FP16 keeps only 10 mantissa bits: 5.6015625.', set: { v: 5.6, f: 'fp16' }, play: true },
+      { t: 'BF16 keeps FP32\'s 8 exponent bits but only 7 mantissa bits: 5.59375.', set: { v: 5.6, f: 'bf16' }, play: true }
+    ],
+    steps: () => 6,
+    draw(z) {
+      const g = z.g, [name, E, M] = FORMATS[z.p.f], v = +z.p.v || 0, r = encode(v, E, M), s = z.step;
+      const lines = [
+        ['1 sign', `${v < 0 ? 'negative' : 'positive'}, sign bit = ${r.sign}`],
+        ['2 binary', `|${fmt(Math.abs(v))}| = ${bin(Math.abs(v), 16)}`],
+        ['3 slide the point', r.zero ? 'zero has its own pattern (all bits 0)' : `1.${r.mi.toString(2).padStart(M, '0').replace(/0+$/, '') || '0'} × 2^${r.e}`],
+        ['4 biased exponent', r.zero ? 'exponent bits all 0' : `${r.e} + ${r.bias} = ${r.be}${r.over ? ' (too big: overflow to infinity)' : r.under ? ' (too small: subnormal or zero)' : ''}`],
+        ['5 mantissa', `keep ${M} bits after the point, round to nearest even`],
+        ['6 stored value', r.over ? 'infinity' : `${r.stored}` + (r.stored === v ? ' (exact)' : `  error ${(r.stored - v).toExponential(2)}`)]];
+      lines.slice(0, s).forEach(([a, b], i) => {
+        W(z, a, 16, 26 + i * 24, { s: 12, b: true, c: i === s - 1 ? z.col.cv : z.col.ink2 });
+        W(z, b, 150, 26 + i * 24, { s: 12, mono: true });
+      });
+      const bits = r.sign.toString() + (r.zero ? '0'.repeat(E) : Math.max(0, Math.min(2 ** E - 1, r.be)).toString(2).padStart(E, '0')) + (r.zero ? '0'.repeat(M) : r.mi.toString(2).padStart(M, '0'));
+      const n = 1 + E + M, bw = Math.min(17, 588 / n);
+      for (let i = 0; i < n; i++) {
+        const part = i === 0 ? 0 : i <= E ? 1 : 2, show = (part === 0 && s >= 1) || (part === 1 && s >= 4) || (part === 2 && s >= 5);
+        D.rect(g, 16 + i * bw, 186, bw - 1, 24, { fill: !show ? z.col.bg : part === 0 ? z.col.red : part === 1 ? z.col.orange : z.col.cv });
+        if (show) W(z, bits[i], 16 + i * bw + (bw - 1) / 2, 203, { s: 11, a: 'center', mono: true, c: '#fff' });
+      }
+      W(z, `sign 1 bit`, 16, 226, { s: 10, c: z.col.red }); W(z, `exponent ${E} bits`, 16 + bw, 240, { s: 10, c: z.col.orange }); W(z, `mantissa ${M} bits`, 16 + (E + 1) * bw, 226, { s: 10, c: z.col.cv });
+      let hex = '';
+      if (n % 4 === 0) for (let i = 0; i < n; i += 4) hex += parseInt(bits.slice(i, i + 4), 2).toString(16).toUpperCase();
+      if (s >= 6 && hex) W(z, `hex 0x${hex}`, 16, 268, { s: 12, mono: true, b: true });
+      return `${name}: value = (−1)<sup>sign</sup> × 1.mantissa × 2<sup>exponent − ${r.bias}</sup>. ${s >= 6 ? (r.stored === v ? 'This number fits exactly.' : 'This number does not fit exactly, so the nearest representable value is stored.') : 'Press Step.'}`;
+    }
+  });
+
+  const GPU = { fermi: ['Fermi (1000 GFLOP/s, 144 GB/s)', 1000, 144], t4: ['T4 FP32 (8100 GFLOP/s, 320 GB/s)', 8100, 320], a100: ['A100 FP32 (19,500 GFLOP/s, 1555 GB/s)', 19500, 1555], h100: ['H100 PCIe FP32 (51,000 GFLOP/s, 2000 GB/s)', 51000, 2000] };
+  def('roofline', {
+    title: 'The roofline: is a kernel limited by maths or by memory?', sub: 'Pick a GPU and a kernel\'s arithmetic intensity (FLOPs per byte moved). Step to draw the two roofs, the ridge and the kernel.',
+    W: 620, H: 300,
+    params: [
+      { k: 'gpu', label: 'GPU', type: 'select', v: 'a100', opts: Object.entries(GPU).map(([k, x]) => [k, x[0]]) },
+      { k: 'ai', label: 'Arithmetic intensity (FLOP per byte)', v: 0.25, min: 0.05, max: 128, step: 0.01 }
+    ],
+    tips: [
+      { t: 'Plain matrix multiply (AI 0.25) on an A100: 0.25 × 1555 = 389 GFLOP/s, 50 times below the peak (workbook 5.4).', set: { gpu: 'a100', ai: 0.25 }, play: true },
+      { t: 'SAXPY (AI 1/6) on Fermi: 24 GFLOP/s. Memory bound, more cores would not help.', set: { gpu: 'fermi', ai: 0.1667 }, play: true },
+      { t: 'Tiling with T = 16 gives AI = 4 on Fermi: still left of the ridge at 6.94.', set: { gpu: 'fermi', ai: 4 }, play: true },
+      { t: 'AI = 20 on the A100 passes the ridge at 12.5: now the maths units are the limit.', set: { gpu: 'a100', ai: 20 }, play: true }
+    ],
+    steps: () => 4,
+    draw(z) {
+      const g = z.g, [name, P, B] = GPU[z.p.gpu], ai = z.p.ai, s = z.step, ridge = P / B;
+      const x0 = 70, y0 = 250, w = 360, h = 220, lx0 = Math.log10(1 / 32), lx1 = Math.log10(256);
+      const ly1 = Math.log10(P * 2), ly0 = ly1 - 4;
+      const X = a => x0 + (Math.log10(a) - lx0) / (lx1 - lx0) * w, Y = p => y0 - (Math.log10(p) - ly0) / (ly1 - ly0) * h;
+      D.line(g, x0, y0, x0 + w, y0, z.col.ink2); D.line(g, x0, y0, x0, y0 - h, z.col.ink2);
+      [1 / 16, 1, 16, 256].forEach(a => W(z, a < 1 ? '1/16' : String(a), X(a), y0 + 14, { s: 10, a: 'center', c: z.col.ink2 }));
+      W(z, 'FLOP per byte (log)', x0 + w / 2, y0 + 28, { s: 10, a: 'center', c: z.col.ink2 });
+      for (let k = 0; k <= 4; k++) { const p = 10 ** (ly0 + k); W(z, p >= 1000 ? fmt(p / 1000) + ' T' : fmt(p) + ' G', x0 - 6, Y(p) + 4, { s: 9, a: 'right', c: z.col.ink2 }); }
+      if (s >= 1) { const aL = 10 ** lx0; D.line(g, X(aL), Y(aL * B), X(Math.min(ridge, 256)), Y(Math.min(ridge, 256) * B), z.col.orange, 2.5); }
+      if (s >= 2) D.line(g, X(Math.max(ridge, 10 ** lx0)), Y(P), x0 + w, Y(P), z.col.green, 2.5);
+      if (s >= 3) { D.line(g, X(ridge), Y(P), X(ridge), y0, z.col.ink2, 1, [4, 4]); D.circle(g, X(ridge), Y(P), 4, { fill: z.col.ink }); }
+      const att = Math.min(P, ai * B);
+      if (s >= 4) { D.line(g, X(ai), y0, X(ai), Y(att), z.col.red, 1, [3, 3]); D.circle(g, X(ai), Y(att), 6, { fill: z.col.red }); }
+      const info = [['memory roof', `AI × ${B} GB/s`, z.col.orange], ['compute roof', `${fmt(P)} GFLOP/s`, z.col.green], ['ridge', `${fmt(P)} ÷ ${B} = ${fmt(ridge)}`, z.col.ink], ['kernel', `${fmt(att)} GFLOP/s`, z.col.red]];
+      info.slice(0, s).forEach(([a, b, c], i) => { W(z, a, 450, 40 + i * 44, { s: 12, b: true, c }); W(z, b, 450, 58 + i * 44, { s: 11, mono: true }); });
+      return `${name}. Attainable = min(peak, AI × bandwidth) = min(${fmt(P)}, ${fmt(ai)} × ${B}) = <b>${fmt(att)} GFLOP/s</b>, ${fmt(100 * att / P)} percent of peak. ` +
+        (ai < ridge ? `AI ${fmt(ai)} is left of the ridge ${fmt(ridge)}: <b>memory bound</b>. Only more bandwidth or more reuse (higher AI) helps.` : `AI is right of the ridge: <b>compute bound</b>. Faster maths (more cores, tensor cores, lower precision) helps.`);
+    }
+  });
+})();

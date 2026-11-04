@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The GPU memory hierarchy · GPU Programming</title>
+<meta name="description" content="Registers, local, shared, global and constant memory with scope, lifetime and speed, Quiz 1 question 8, constant memory broadcast, L1 and L2 caches, pageable, pinned and unified memory and copy times.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 3: GPU memory</span><span>›</span><span>Memory hierarchy</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 1 of 1 · College</div>
+    <h1>The GPU memory hierarchy</h1>
+    <p class="lead">Learn the five places a value can live on a GPU, who can see each one and for how long, and how data gets from the CPU to the GPU.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">2 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#memory-hierarchy" data-topic="cheatsheet" data-h="memory-hierarchy">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#spaces" data-l="spaces"><span class="n">1</span><span class="t">Five places a value can live</span></a></li><li><a href="#q8" data-l="q8"><span class="n">2</span><span class="t">Quiz 1 question 8: visible to all SMs, for the whole application</span></a></li><li><a href="#constant" data-l="constant"><span class="n">3</span><span class="t">Constant memory and caches</span></a></li><li><a href="#host" data-l="host"><span class="n">4</span><span class="t">Host memory: pageable, pinned and unified</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="spaces" data-l="spaces" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Five places a value can live</h2>
+<p>A GPU has several memories because no memory can be big, fast and visible to everyone all at once. Fast memory sits on the chip and is small. Big memory is far away and slow. CUDA gives you a menu and lets you choose.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Memory</th><th>Who sees it</th><th>Lives for</th><th>Speed</th><th>How you get it</th></tr></thead><tbody><tr><td>Registers</td><td>one thread</td><td>the thread</td><td>about 1 tick</td><td>any normal local variable</td></tr><tr><td>Local</td><td>one thread</td><td>the thread</td><td>DRAM speed (cached)</td><td>big private arrays, spilled registers</td></tr><tr><td>Shared</td><td>all threads of one block</td><td>the block</td><td>about 20 to 30 ticks</td><td>__shared__</td></tr><tr><td>Global</td><td>all threads, all kernels, the host</td><td>until cudaFree</td><td>about 400 to 800 ticks</td><td>cudaMalloc</td></tr><tr><td>Constant</td><td>all threads, read only</td><td>the application</td><td>fast when the warp reads one address</td><td>__constant__ and cudaMemcpyToSymbol</td></tr></tbody></table></div>
+<div class="cvz" data-viz="memhier"></div>
+<div class="note note-warn"><b>Common mistake</b><div>Local memory is not near the thread. "Local" means private. It lives in device DRAM and is only cached on chip.</div></div>
+<div class="scene"><div class="scene-h">Real world scenario: a kitchen</div><p>The chopping board in front of a cook is a register: tiny, private, instant. The shared counter of one cooking team is shared memory. The big store room everyone walks to is global memory. The recipe card pinned on the wall that nobody may change is constant memory.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="q8" data-l="q8" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Quiz 1 question 8: visible to all SMs, for the whole application</h2>
+<p>The question asks which memory every SM can reach directly and which lasts for the whole program. Test each option for both properties.</p>
+<div class="walk"><div class="walk-h"><span>Rakesh's worked solution</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Shared memory belongs to one block on one SM, so it fails the "all SMs" test.</li><li>L1 cache is private to each SM, so it fails too.</li><li>L2 cache is shared by all SMs, but it is a cache, not a memory space. You cannot allocate in it and the hardware evicts what it likes.</li><li>Global memory is addressed by every thread on every SM, and an allocation lives until cudaFree or program exit.</li><li><span class="eq">Answer: option 1, global memory</span></li></ol></div>
+<div class="note note-exam"><b>In the exam</b><div>A memory space is something you name and address. A cache is a hardware copy of global data that fills and empties by itself. This difference decides questions like Q8.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="constant" data-l="constant" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Constant memory and caches</h2>
+<p>Constant memory holds small read only values such as filter weights. The host writes it before the launch. When all 32 threads of a warp read the <b>same</b> address, one fetch is broadcast to the whole warp. If they read different addresses, the reads are done one after another.</p>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">blur_constant.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#include &lt;cstdio&gt;</span><span class="ln" data-n="2"> </span><span class="ln" data-n="3">__constant__ float c_weights[9];          // 36 bytes in constant memory, read only for kernels</span><span class="ln ck-has" data-n="4"> </span><span class="ln" data-n="5">__global__ void blur3x3(const float *in, float *out, int w, int h) {</span><span class="ln" data-n="6">    int x = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="7">    int y = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln" data-n="8">    if (x &lt; 1 || y &lt; 1 || x &gt;= w - 1 || y &gt;= h - 1) return;</span><span class="ln" data-n="9">    float s = 0.0f;</span><span class="ln" data-n="10">    for (int dy = -1; dy &lt;= 1; ++dy)</span><span class="ln" data-n="11">        for (int dx = -1; dx &lt;= 1; ++dx)</span><span class="ln" data-n="12">            s += c_weights[(dy + 1) * 3 + (dx + 1)] * in[(y + dy) * w + (x + dx)];</span><span class="ln ck-has" data-n="13">    out[y * w + x] = s;</span><span class="ln" data-n="14">}</span><span class="ln" data-n="15"> </span><span class="ln" data-n="16">int main() {</span><span class="ln" data-n="17">    float h_w[9];</span><span class="ln" data-n="18">    for (int k = 0; k &lt; 9; ++k) h_w[k] = 1.0f / 9.0f;</span><span class="ln" data-n="19">    cudaMemcpyToSymbol(c_weights, h_w, sizeof(h_w));</span><span class="ln ck-has" data-n="20">    printf("weights copied to constant memory\n");</span><span class="ln ck-has" data-n="21">    return 0;</span><span class="ln" data-n="22">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="4"><b>Line 4</b><code></code><span>__constant__ puts the array in the 64 KB constant bank. Kernels may read it but never write it.</span></li><li data-n="13"><b>Line 13</b><code>out[y * w + x] = s;</code><span>Every thread of the warp reads the same weight at the same loop step, so the broadcast works perfectly.</span></li><li data-n="20"><b>Line 20</b><code>printf("weights copied to constant memory\n");</code><span>The weights are made on the CPU first.</span></li><li data-n="21"><b>Line 21</b><code>return 0;</code><span>cudaMemcpyToSymbol copies host data into a __constant__ variable by its name.</span></li></ol></details><div class="cc-cap">What it prints</div><pre class="cc-out">weights copied to constant memory</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Cache</th><th>Where</th><th>What it holds</th></tr></thead><tbody><tr><td>L1 / texture</td><td>per SM, shares space with shared memory</td><td>recent global and local loads</td></tr><tr><td>Constant cache</td><td>per SM</td><td>recent constant memory reads</td></tr><tr><td>L2</td><td>one for the whole GPU</td><td>all traffic to device DRAM (40 MB on an A100)</td></tr></tbody></table></div>
+<details class="deep"><summary>Going deeper: read only loads and __restrict__</summary><div class="deep-b"><p>Marking pointers <code>const float *__restrict__ in</code> tells the compiler that no other pointer writes the same data, so it may use the read only data path. The function <code>__ldg(&amp;in[i])</code> asks for it directly.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="host" data-l="host" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Host memory: pageable, pinned and unified</h2>
+<p>Data starts in the CPU's RAM. Normal <code>malloc</code> memory is <b>pageable</b>: the operating system may move it. The GPU's copy engine cannot read such memory directly, so the driver first copies it into a hidden locked buffer. <b>Pinned</b> (page locked) memory from <code>cudaMallocHost</code> skips that extra copy and is required for copies that overlap with kernels (chapter 6.2).</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Copy time</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">t = bytes ÷ bandwidth</div><div class="fx-n">The PCIe link is far slower than the GPU's own DRAM, so copy once and reuse.</div></div><div class="fx"><div class="fx-h"><span>Worth sending to the GPU</span></div><div class="fx-b">t<sub>copy in</sub> + t<sub>kernel</sub> + t<sub>copy out</sub> &lt; t<sub>CPU</sub></div><div class="fx-n">From chapter 1.2: count the copies too.</div></div></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">pinned_vs_pageable.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#include &lt;cstdio&gt;</span><span class="ln" data-n="2">#include &lt;cstdlib&gt;</span><span class="ln" data-n="3"> </span><span class="ln" data-n="4">int main() {</span><span class="ln" data-n="5">    const size_t bytes = 256u &lt;&lt; 20;               // 256 MB</span><span class="ln" data-n="6">    float *pageable = (float *)malloc(bytes);</span><span class="ln" data-n="7">    float *pinned = nullptr;</span><span class="ln" data-n="8">    cudaMallocHost(&amp;pinned, bytes);                // page locked host memory</span><span class="ln ck-has" data-n="9">    float *d = nullptr;</span><span class="ln" data-n="10">    cudaMalloc(&amp;d, bytes);</span><span class="ln" data-n="11"> </span><span class="ln" data-n="12">    cudaEvent_t t0, t1;</span><span class="ln" data-n="13">    cudaEventCreate(&amp;t0); cudaEventCreate(&amp;t1);</span><span class="ln" data-n="14">    float ms = 0.0f;</span><span class="ln ck-has" data-n="15"> </span><span class="ln" data-n="16">    cudaEventRecord(t0);</span><span class="ln" data-n="17">    cudaMemcpy(d, pageable, bytes, cudaMemcpyHostToDevice);</span><span class="ln" data-n="18">    cudaEventRecord(t1); cudaEventSynchronize(t1);</span><span class="ln" data-n="19">    cudaEventElapsedTime(&amp;ms, t0, t1);</span><span class="ln ck-has" data-n="20">    printf("pageable: %.2f GB/s\n", bytes / ms / 1e6);</span><span class="ln" data-n="21"> </span><span class="ln" data-n="22">    cudaEventRecord(t0);</span><span class="ln" data-n="23">    cudaMemcpy(d, pinned, bytes, cudaMemcpyHostToDevice);</span><span class="ln" data-n="24">    cudaEventRecord(t1); cudaEventSynchronize(t1);</span><span class="ln" data-n="25">    cudaEventElapsedTime(&amp;ms, t0, t1);</span><span class="ln" data-n="26">    printf("pinned:   %.2f GB/s\n", bytes / ms / 1e6);</span><span class="ln" data-n="27"> </span><span class="ln ck-has" data-n="28">    cudaFree(d); cudaFreeHost(pinned); free(pageable);</span><span class="ln" data-n="29">    return 0;</span><span class="ln" data-n="30">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="9"><b>Line 9</b><code>float *d = nullptr;</code><span>cudaMallocHost returns page locked memory. Use it for buffers you copy often, and do not lock too much of the RAM.</span></li><li data-n="15"><b>Line 15</b><code></code><span>CUDA events time work on the GPU timeline. Elapsed time comes back in milliseconds.</span></li><li data-n="20"><b>Line 20</b><code>printf("pageable: %.2f GB/s\n", bytes / ms / 1e6);</code><span>bytes ÷ ms ÷ 10⁶ gives GB/s.</span></li><li data-n="28"><b>Line 28</b><code>cudaFree(d); cudaFreeHost(pinned); free(pageable);</code><span>Every cudaMallocHost needs a cudaFreeHost.</span></li></ol></details><div class="cc-cap">What it prints</div><pre class="cc-out">(typical result: pinned is faster than pageable, how much depends on the machine)</pre></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">unified.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#include &lt;cstdio&gt;</span><span class="ln" data-n="2"> </span><span class="ln" data-n="3">__global__ void addOne(float *a, int n) {</span><span class="ln" data-n="4">    int i = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="5">    if (i &lt; n) a[i] += 1.0f;</span><span class="ln" data-n="6">}</span><span class="ln" data-n="7"> </span><span class="ln" data-n="8">int main() {</span><span class="ln" data-n="9">    int n = 1 &lt;&lt; 20, dev = 0;</span><span class="ln" data-n="10">    float *a = nullptr;</span><span class="ln ck-has" data-n="11">    cudaMallocManaged(&amp;a, n * sizeof(float));      // one pointer for CPU and GPU</span><span class="ln" data-n="12">    for (int i = 0; i &lt; n; ++i) a[i] = i;           // pages start on the CPU</span><span class="ln ck-has" data-n="13">    cudaMemPrefetchAsync(a, n * sizeof(float), dev); // move them before the kernel needs them</span><span class="ln" data-n="14">    addOne&lt;&lt;&lt;(n + 255) / 256, 256&gt;&gt;&gt;(a, n);</span><span class="ln ck-has" data-n="15">    cudaDeviceSynchronize();                        // wait before the CPU reads</span><span class="ln" data-n="16">    printf("a[10] = %.1f\n", a[10]);</span><span class="ln" data-n="17">    cudaFree(a);</span><span class="ln" data-n="18">    return 0;</span><span class="ln" data-n="19">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="11"><b>Line 11</b><code>cudaMallocManaged(&amp;a, n * sizeof(float));      // one pointer for CPU and GPU</code><span>cudaMallocManaged gives one pointer that works on both CPU and GPU. Pages move on demand.</span></li><li data-n="13"><b>Line 13</b><code>cudaMemPrefetchAsync(a, n * sizeof(float), dev); // move them before the kernel needs them</code><span>Prefetching moves the pages before the kernel starts, so the kernel does not stop on page faults.</span></li><li data-n="15"><b>Line 15</b><code>cudaDeviceSynchronize();                        // wait before the CPU reads</code><span>The CPU must wait before reading results, otherwise it reads old values.</span></li></ol></details><div class="cc-cap">What it prints</div><pre class="cc-out">a[10] = 11.0</pre></div>
+<div class="cv-code" data-k="copy"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Close memory is small and fast, far memory is big and slow. Keep the things you use again and again close by.</p></div><div class="ld-p" data-ld="college" hidden><p>Registers (thread), shared (block), global (all, host too), constant (all, read only, broadcast), local (private, but in DRAM). Copy time = bytes ÷ bandwidth. Pinned memory is needed for async copies.</p></div><div class="ld-p" data-ld="masters" hidden><p>A good kernel loads each byte from DRAM once and reuses it many times from registers and shared memory. That is the idea of tiling (chapters 5.2 to 5.4). The roofline (chapter 4.2) turns this into numbers.</p></div><div class="ld-p" data-ld="research" hidden><p>Hopper adds distributed shared memory between the blocks of a cluster and the Tensor Memory Accelerator, which copies whole tiles from global to shared memory without using threads.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./occupancy.html" data-topic="occupancy"><small>Previous topic</small><b>Occupancy</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "memory-hierarchy", "topic": "memory-hierarchy", "subject": "cuda", "title": "The GPU memory hierarchy", "codes": {"copy": {"src": "# How long does a copy take? time = bytes / bandwidth (+ a small fixed start up cost)\nlinks = {\"PCIe 4.0 x8 laptop\": 14e9, \"PCIe 4.0 x16\": 25e9, \"GPU DRAM (A100)\": 1555e9}\nsize = 256 * 2**20          # 256 MB\nfor name, bw in links.items():\n    print(f\"{name:20s}: {1000 * size / bw:7.2f} ms\")", "stdin": "", "out": "PCIe 4.0 x8 laptop  :   19.17 ms\nPCIe 4.0 x16        :   10.74 ms\nGPU DRAM (A100)     :    0.17 ms"}}, "quiz": [{"lv": "e", "q": "A normal local variable like int i lives in", "o": ["Global memory", "A register", "Shared memory", "Constant memory"], "a": 1, "hint": "Fastest and private.", "why": "The compiler puts it in a register when it can."}, {"lv": "e", "q": "Which memory do all threads of one block share?", "o": ["Registers", "Shared memory", "Local memory", "Host RAM"], "a": 1, "hint": "__shared__.", "why": "One copy per block."}, {"lv": "e", "q": "Quiz 1 question 8: visible to all SMs for the whole application", "o": ["Global memory", "L1 cache", "L2 cache", "Shared memory"], "a": 0, "hint": "Scope and lifetime.", "why": "Global memory is addressable everywhere and lives until cudaFree."}, {"lv": "m", "q": "Local memory physically lives in", "o": ["Registers", "Shared memory", "Device DRAM", "The CPU"], "a": 2, "hint": "\"Local\" means private.", "why": "It is in DRAM, cached in L1 and L2."}, {"lv": "m", "q": "Constant memory is fastest when", "o": ["Each thread reads a different address", "All threads of a warp read the same address", "Kernels write it", "It is larger than 64 KB"], "a": 1, "hint": "Broadcast.", "why": "One fetch serves all 32 lanes."}, {"lv": "m", "q": "Who writes constant memory?", "o": ["Any kernel", "The host, with cudaMemcpyToSymbol", "Only block 0", "The L2 cache"], "a": 1, "hint": "Read only for kernels.", "why": "The host fills it before the launch."}, {"lv": "m", "q": "Why can L2 not be the answer to Q8?", "o": ["It is too small", "It is a cache, not an addressable memory space", "It is per SM", "It is on the CPU"], "a": 1, "hint": "Space versus cache.", "why": "You cannot allocate in L2 or rely on data staying there."}, {"lv": "h", "q": "Why must memory be pinned for cudaMemcpyAsync to overlap with a kernel?", "o": ["Pinned is faster DRAM", "The copy engine needs pages the OS cannot move, otherwise the driver stages through a buffer", "It is in the GPU", "It is not required"], "a": 1, "hint": "DMA.", "why": "Pageable memory forces a synchronous staging copy."}, {"lv": "h", "q": "cudaMemPrefetchAsync on managed memory helps because", "o": ["It frees memory", "It moves pages to the GPU before the kernel, avoiding page faults during it", "It compresses data", "It pins memory"], "a": 1, "hint": "Page faults.", "why": "Faulting pages one by one inside a kernel is slow."}, {"lv": "h", "q": "A kernel declares float tmp[64] and indexes it with a loop variable the compiler cannot unroll. tmp most likely goes to", "o": ["Registers", "Local memory", "Shared memory", "Constant memory"], "a": 1, "hint": "Registers cannot be indexed at run time.", "why": "Dynamically indexed arrays usually go to local memory."}, {"lv": "x", "q": "Each block needs a 4 KB lookup table read with random indices by every thread. Best home?", "o": ["Constant memory", "Shared memory loaded once per block", "Local memory", "Host memory"], "a": 1, "hint": "Random indices break constant broadcast.", "why": "Shared memory serves different addresses in parallel across banks."}, {"lv": "x", "q": "Which pair is the same physical memory?", "o": ["Shared and L1", "Registers and shared", "Constant and L2", "Global and registers"], "a": 0, "hint": "Carve out.", "why": "On recent GPUs shared memory and L1 are carved from one on chip SRAM."}], "calc": [{"lv": "e", "q": "Copy 256 MB over a 16 GB/s link. Time in ms? (one decimal, MB = 2²⁰ bytes, GB = 10⁹)", "ans": "16.8", "hint": "t = bytes ÷ bandwidth.", "steps": ["256 × 2²⁰ = 268,435,456 bytes.", "268,435,456 ÷ 16 × 10⁹ = 0.01678 s.", "<span class=\"eq\">≈ 16.8 ms<\/span>"], "tol": 0.05}, {"lv": "e", "q": "A 3 × 3 float filter in constant memory takes how many bytes?", "ans": "36", "hint": "9 × 4.", "steps": ["9 weights.", "4 bytes each.", "<span class=\"eq\">36 bytes<\/span>"]}, {"lv": "e", "q": "How many floats fit in 64 KB of constant memory?", "ans": "16384", "hint": "65,536 ÷ 4.", "steps": ["64 KB = 65,536 bytes.", "÷ 4 bytes.", "<span class=\"eq\">16,384 floats<\/span>"]}, {"lv": "m", "q": "Kernel 2 ms, two copies of 8 ms each. Share of time spent copying in percent?", "ans": "88.9", "hint": "Copies ÷ total.", "steps": ["Total = 8 + 2 + 8 = 18 ms.", "Copies 16 ms.", "<span class=\"eq\">16 ÷ 18 = 88.9 percent<\/span>"], "tol": 0.05}, {"lv": "m", "q": "Same data read once from A100 DRAM (1555 GB/s) or once over PCIe at 25 GB/s. How many times faster is DRAM? (one decimal)", "ans": "62.2", "hint": "Ratio of bandwidths.", "steps": ["Time is bytes ÷ bandwidth.", "Ratio 1555 ÷ 25.", "<span class=\"eq\">62.2 times<\/span>"], "tol": 0.05}, {"lv": "m", "q": "A warp reads 32 different constant addresses. How many serial fetches?", "ans": "32", "hint": "No broadcast.", "steps": ["Constant memory serves one address at a time.", "32 different addresses.", "<span class=\"eq\">32 fetches (1 if all equal)<\/span>"]}, {"lv": "m", "q": "A block of 256 threads keeps float tile[256] in shared memory. Bytes per block?", "ans": "1024", "hint": "256 × 4.", "steps": ["256 floats.", "4 bytes each.", "<span class=\"eq\">1024 bytes<\/span>"]}, {"lv": "h", "q": "CPU 40 ms. GPU kernel 2 ms, copies 12 ms in and 6 ms out. Speedup including copies?", "ans": "2", "hint": "Divide by the full GPU time.", "steps": ["GPU total = 12 + 2 + 6 = 20 ms.", "40 ÷ 20.", "<span class=\"eq\">2 times (20 times for the kernel alone)<\/span>"]}, {"lv": "h", "q": "Same job, but the data stays on the GPU for 10 kernels (copy once in and once out). Speedup? (one decimal)", "ans": "10.5", "hint": "10 CPU runs against one GPU pipeline.", "steps": ["CPU 10 × 40 = 400 ms.", "GPU: copy in 12 ms once, 10 kernels × 2 ms = 20 ms, copy out 6 ms once, total 38 ms.", "<span class=\"eq\">400 ÷ 38 = 10.5 times<\/span>"], "tol": 0.05}, {"lv": "x", "q": "A100 L2 is 40 MB. How many 1024 × 1024 float matrices fit at once?", "ans": "10", "hint": "4 MB each.", "steps": ["1024 × 1024 × 4 = 4,194,304 bytes = 4 MiB.", "40 MB ÷ 4 MiB (taking MB = MiB here).", "<span class=\"eq\">10 matrices<\/span>"]}, {"lv": "x", "q": "Unified memory pages are 64 KB. A kernel touches 256 MB of managed data with no prefetch. Page migrations?", "ans": "4096", "hint": "256 MB ÷ 64 KB.", "steps": ["256 × 1024 KB = 262,144 KB.", "÷ 64 KB.", "<span class=\"eq\">4096 migrations (each one a page fault)<\/span>"]}], "assign": [{"id": "where", "lv": "e", "title": "Where does it live?", "task": "<p>Write <code>where(decl)<\/code> that returns one of <code>\"register\"<\/code>, <code>\"shared\"<\/code>, <code>\"global\"<\/code>, <code>\"constant\"<\/code> for these declaration styles: a string starting with <code>__shared__<\/code>, <code>__constant__<\/code>, containing <code>cudaMalloc<\/code>, or anything else (a plain local variable).<\/p>", "starter": "def where(decl):\n    # your code here\n    pass\n", "tests": [{"call": "where('__shared__ float t[256];')", "want": "shared"}, {"call": "where('__constant__ float w[9];')", "want": "constant"}, {"call": "where('cudaMalloc(&d, n);')", "want": "global"}, {"call": "where('int i = threadIdx.x;')", "want": "register"}], "solution": "def where(decl):\n    d = decl.strip()\n    if d.startswith('__shared__'):\n        return 'shared'\n    if d.startswith('__constant__'):\n        return 'constant'\n    if 'cudaMalloc' in d:\n        return 'global'\n    return 'register'\n", "hint": "Check the keywords in order.", "why": "<p>Real compilers can also push a local variable to local memory when it is large or indexed at run time.<\/p>"}, {"id": "worth", "lv": "m", "title": "Is the GPU worth it with copies?", "task": "<p>Write <code>speedup(cpu_ms, mb_in, mb_out, kernel_ms, gbps, runs)<\/code>. The data is copied in once and out once (MB = 10⁶ bytes, GB/s = 10⁹ bytes per second) and the kernel runs <code>runs<\/code> times, against the CPU running <code>runs<\/code> times. Return the speedup rounded to 2 decimals.<\/p>", "starter": "def speedup(cpu_ms, mb_in, mb_out, kernel_ms, gbps, runs):\n    # your code here\n    pass\n", "tests": [{"call": "speedup(40, 192, 96, 2, 16, 1)", "want": 2.0}, {"call": "speedup(40, 192, 96, 2, 16, 10)", "want": 10.53}, {"call": "speedup(5, 400, 400, 1, 25, 1)", "want": 0.15}], "solution": "def speedup(cpu_ms, mb_in, mb_out, kernel_ms, gbps, runs):\n    copy_ms = (mb_in + mb_out) * 1e6 / (gbps * 1e9) * 1000\n    gpu = copy_ms + kernel_ms * runs\n    return round(cpu_ms * runs / gpu, 2)\n", "hint": "Copy time is bytes ÷ bandwidth, counted once.", "why": "<p>Keeping data on the GPU across many kernels is what makes the copies pay off.<\/p>"}], "must": [["Spaces", "Register (thread), local (thread, in DRAM), shared (block), global (all, host, until cudaFree), constant (all, read only)."], ["Q8", "Visible to all SMs for the whole application: global memory. L2 is a cache, not a space."], ["Constant", "64 KB, host writes with cudaMemcpyToSymbol, broadcast when a warp reads one address."], ["Host memory", "Pageable malloc, pinned cudaMallocHost (needed for async overlap), managed cudaMallocManaged with prefetch."], ["Copies", "Copy time = bytes ÷ bandwidth. PCIe is far slower than device DRAM. Copy once, reuse many times."]], "summary": "<p>Fast memory is small and private, big memory is slow and shared. Global memory is the only space every SM sees for the whole program. Pinned memory makes copies faster and lets them overlap.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"copy": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.links": "{'PCIe 4.0 x8 laptop': 14000000000.0, 'PCIe 4.0 x16': 25000000000.0, 'GPU DRAM (A100)':..."}}, {"l": 4, "ev": "line", "d": {"G.size": "268435456"}}, {"l": 5, "ev": "line", "d": {"G.name": "'PCIe 4.0 x8 laptop'", "G.bw": "14000000000.0"}}, {"l": 4, "ev": "line", "o": "PCIe 4.0 x8 laptop  :   19.17 ms\n"}, {"l": 5, "ev": "line", "d": {"G.name": "'PCIe 4.0 x16'", "G.bw": "25000000000.0"}}, {"l": 4, "ev": "line", "o": "PCIe 4.0 x16        :   10.74 ms\n"}, {"l": 5, "ev": "line", "d": {"G.name": "'GPU DRAM (A100)'", "G.bw": "1555000000000.0"}}, {"l": 4, "ev": "line", "o": "GPU DRAM (A100)     :    0.17 ms\n"}, {"l": 4, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

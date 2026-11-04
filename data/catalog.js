@@ -5692,6 +5692,89 @@ function cudaModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "gpu-memory", title: "GPU memory", emoji: "3", step: 3, level: "College", blurb: "Learn where data lives, how a warp reads global memory in sectors, and how shared memory banks work.", topics: [
+      { id: "memory-hierarchy", title: "The GPU memory hierarchy", emoji: "3.1", page: "content/cuda/memory-hierarchy.html",
+        summary: "Memory spaces, scope and lifetime, constant memory, caches, pinned and unified memory, copy time.",
+        keywords: ["memory hierarchy", "registers", "shared memory", "global memory", "constant memory", "pinned memory", "unified memory"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "spaces", title: "Five places a value can live", emoji: "", group: "Lesson", keywords: ["registers", "local memory", "shared memory", "global memory", "constant memory", "scope", "lifetime"] },
+        { id: "q8", title: "Quiz 1 question 8: visible to all SMs, for the whole application", emoji: "", group: "Lesson", keywords: ["Quiz 1 question 8", "global memory", "L2 cache", "memory space against cache"] },
+        { id: "constant", title: "Constant memory and caches", emoji: "", group: "Lesson", keywords: ["constant memory", "cudaMemcpyToSymbol", "broadcast", "L1", "L2", "texture cache", "__restrict__", "__ldg"] },
+        { id: "host", title: "Host memory: pageable, pinned and unified", emoji: "", group: "Lesson", keywords: ["pageable", "pinned memory", "cudaMallocHost", "unified memory", "cudaMallocManaged", "prefetch", "PCIe", "copy time"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "reuse", "distributed shared memory", "TMA"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "coalescing", title: "Coalescing: reading global memory well", emoji: "3.2", page: "content/cuda/coalescing.html",
+        summary: "Sectors per warp read, stride and alignment, Quiz 1 Q5, sector model, AoS and SoA, transposes.",
+        keywords: ["coalescing", "sectors", "stride", "row major", "SoA", "transpose"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "sectors", title: "Memory hands out 32 byte boxes", emoji: "", group: "Lesson", keywords: ["coalescing", "sector", "32 bytes", "efficiency", "stride", "misaligned"] },
+        { id: "rowcol", title: "Rows, columns and Quiz 1 question 5", emoji: "", group: "Lesson", keywords: ["row major", "column walk", "Quiz 1 question 5", "segments", "transpose", "shared memory transpose"] },
+        { id: "stride", title: "The stride benchmark (lecture 11)", emoji: "", group: "Lesson", keywords: ["stride benchmark", "T4", "206 GB/s", "sector model", "useful bandwidth"] },
+        { id: "layout", title: "Data layout: AoS against SoA, and wider loads", emoji: "", group: "Lesson", keywords: ["AoS", "SoA", "float4", "vector loads", "alignment", "cache line", "128 bytes"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "sectors per request", "TMA"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "shared-memory", title: "Shared memory and bank conflicts", emoji: "3.3", page: "content/cuda/shared-memory.html",
+        summary: "Shared memory use, barriers, 32 banks, gcd conflict rule, broadcast, padding and layout.",
+        keywords: ["shared memory", "banks", "bank conflict", "padding", "__syncthreads"],
+        minutes: 45, counts: {"lessons": 4, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "shared", title: "Shared memory: a cache you control", emoji: "", group: "Lesson", keywords: ["__shared__", "__syncthreads", "barrier", "extern __shared__", "dynamic shared memory", "programmer managed cache"] },
+        { id: "banks", title: "Banks and conflicts", emoji: "", group: "Lesson", keywords: ["banks", "bank conflict", "gcd", "broadcast", "4 byte words", "n-way conflict"] },
+        { id: "padding", title: "Padding and layout fixes", emoji: "", group: "Lesson", keywords: ["padding", "[32][33]", "layout", "powers example", "doubles", "transpose tile"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "carve out", "swizzle", "CUTLASS"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "gpu-perf", title: "Numbers and performance limits", emoji: "4", step: 4, level: "College", blurb: "Understand how GPUs store numbers and how to predict a kernel's top speed from FLOPs, bytes and the roofline.", topics: [
+      { id: "floating-point", title: "Floating point numbers on the GPU", emoji: "4.1", page: "content/cuda/floating-point.html",
+        summary: "IEEE-754 encoding, binary fractions, float addition, non associativity, FMA and reduced precision formats.",
+        keywords: ["IEEE-754", "floating point", "mantissa", "exponent", "FMA", "FP16", "BF16"],
+        minutes: 40, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "format", title: "Sign, exponent and mantissa", emoji: "", group: "Lesson", keywords: ["IEEE-754", "sign", "exponent", "bias", "mantissa", "hidden bit", "FP32", "FP64", "BF16", "FP16", "TF32"] },
+        { id: "encode", title: "Encoding by hand", emoji: "", group: "Lesson", keywords: ["encode", "34.625", "5.6", "rounding", "machine epsilon", "hex word"] },
+        { id: "arith", title: "Adding floats, and why order matters", emoji: "", group: "Lesson", keywords: ["floating point addition", "alignment", "not associative", "tolerance", "FMA", "rounding once"] },
+        { id: "special", title: "Special values and precision on GPUs", emoji: "", group: "Lesson", keywords: ["NaN", "infinity", "subnormal", "double precision cost", "Kahan summation"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "mixed precision", "FP8", "loss scaling", "deterministic"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "roofline", title: "FLOPs, bandwidth and the roofline", emoji: "4.2", page: "content/cuda/roofline.html",
+        summary: "FLOPs and peak, bandwidth, arithmetic intensity, roofline and ridge point, reading benchmarks.",
+        keywords: ["FLOPs", "bandwidth", "arithmetic intensity", "roofline", "ridge point", "memory bound"],
+        minutes: 50, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "flops", title: "Counting the work: FLOPs", emoji: "", group: "Lesson", keywords: ["FLOP", "FLOP/s", "FLOPs of matmul", "peak", "efficiency", "FMA"] },
+        { id: "ai", title: "Bandwidth and arithmetic intensity", emoji: "", group: "Lesson", keywords: ["bandwidth", "arithmetic intensity", "SAXPY", "DAXPY", "reuse", "bytes moved"] },
+        { id: "roofline", title: "The roofline model", emoji: "", group: "Lesson", keywords: ["roofline", "ridge point", "memory bound", "compute bound", "attainable performance"] },
+        { id: "bench", title: "Reading benchmark numbers (lecture 4 Sobel)", emoji: "", group: "Lesson", keywords: ["benchmark", "Sobel", "Lena", "8K", "copy overhead", "hierarchical roofline"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "kernel fusion", "Williams", "LLM decoding"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
