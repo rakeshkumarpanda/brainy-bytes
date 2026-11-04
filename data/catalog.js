@@ -5923,6 +5923,58 @@ function cudaModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "gpu-tensor", title: "Tensor cores and fast matmul", emoji: "8", step: 8, level: "Pro", blurb: "Use narrow number formats, tensor cores and tiling tricks to get close to the peak speed of a modern GPU.", topics: [
+      { id: "number-formats", title: "Low precision numbers and quantisation", emoji: "8.1", page: "content/cuda/number-formats.html",
+        summary: "Float formats, range and detail, mixed precision, INT8 quantisation.",
+        keywords: ["FP16", "BF16", "TF32", "FP8", "INT8", "quantisation", "mixed precision"],
+        minutes: 40, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "why", title: "Why use fewer bits?", emoji: "", group: "Lesson", keywords: ["low precision", "math limited", "memory limited", "bytes per number", "accuracy", "FP64 science"] },
+        { id: "formats", title: "How a float is stored, and the formats side by side", emoji: "", group: "Lesson", keywords: ["IEEE 754", "sign", "exponent", "mantissa", "bias", "epsilon", "FP16", "BF16", "TF32", "FP8", "range", "precision"] },
+        { id: "which", title: "Which format when, and why the sum stays wide", emoji: "", group: "Lesson", keywords: ["TF32", "FP16", "BF16", "loss scaling", "mixed precision", "accumulator", "FP8", "INT8"] },
+        { id: "quant", title: "Quantisation step by step", emoji: "", group: "Lesson", keywords: ["quantisation", "scale", "zero point", "INT8", "INT4", "dequantise", "clipping", "per channel"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "GPTQ", "AWQ", "FP4", "stochastic rounding", "SmoothQuant"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "tensor-cores", title: "Tensor cores, GEMM and WMMA", emoji: "8.2", page: "content/cuda/tensor-cores.html",
+        summary: "FC layer intensity, GEMM, im2col, tensor core peaks, WMMA, waves.",
+        keywords: ["tensor cores", "WMMA", "GEMM", "im2col", "arithmetic intensity", "wave quantisation"],
+        minutes: 50, counts: {"lessons": 6, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "fclayer", title: "When is a layer limited by maths?", emoji: "", group: "Lesson", keywords: ["arithmetic intensity", "fully connected", "batch size", "ridge point", "ops per byte", "LLM inference", "memory bound"] },
+        { id: "gemm", title: "Everything is a matrix multiply", emoji: "", group: "Lesson", keywords: ["GEMM", "2MNK", "im2col", "implicit GEMM", "convolution as matmul", "attention"] },
+        { id: "tc", title: "Tensor cores and where their speed comes from", emoji: "", group: "Lesson", keywords: ["tensor core", "D = AB + C", "FMA", "peak TFLOP/s", "V100", "A100", "H100", "T4", "TF32", "structured sparsity", "cp.async"] },
+        { id: "wmma", title: "Programming tensor cores with WMMA", emoji: "", group: "Lesson", keywords: ["WMMA", "fragment", "mma_sync", "load_matrix_sync", "store_matrix_sync", "warp tile", "CUTLASS", "cuBLAS", "wgmma"] },
+        { id: "waves", title: "Staircases: warp granularity and wave quantisation", emoji: "", group: "Lesson", keywords: ["warp granularity", "wave quantisation", "waves", "tail effect", "stream-K", "persistent kernel"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "Nsight Compute", "FlashAttention", "wgmma", "Blackwell"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "fast-matmul", title: "How fast matmul kernels are built", emoji: "8.3", page: "content/cuda/fast-matmul.html",
+        summary: "H100 peak, naive kernel, tile intensity, swizzling, wgmma, pipelines, the ladder.",
+        keywords: ["matmul", "H100", "tiling", "swizzle", "TMA", "wgmma", "performance ladder"],
+        minutes: 50, counts: {"lessons": 6, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "machine", title: "The H100 and its speed of light", emoji: "", group: "Lesson", keywords: ["H100", "SM quadrants", "resident warps", "memory hierarchy", "SRAM", "DRAM", "speed of light", "power throttling"] },
+        { id: "naive", title: "The naive kernel and a 13 times lesson", emoji: "", group: "Lesson", keywords: ["naive matmul", "coalescing", "index order", "3171 GFLOP/s", "243 GFLOP/s", "tile quantisation", "SASS"] },
+        { id: "tiles", title: "Tiles: more work per byte", emoji: "", group: "Lesson", keywords: ["tiling", "tile intensity", "AM-GM", "square tile", "thread tiling", "warp tiling", "register blocking", "H100 roofline"] },
+        { id: "hopper", title: "Hopper tricks: TMA, swizzling, wgmma, pipelines", emoji: "", group: "Lesson", keywords: ["TMA", "swizzle", "XOR", "bank conflicts", "wgmma", "warp group", "producer consumer", "mbarrier", "persistent kernel", "Hilbert curve", "clusters"] },
+        { id: "ladder", title: "The performance ladder", emoji: "", group: "Lesson", keywords: ["performance ladder", "cuBLAS", "764 TFLOP/s", "optimisation steps", "summary of the course"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "CUTLASS", "CuTe", "ThunderKittens", "FlashAttention 3", "tcgen05"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

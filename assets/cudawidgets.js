@@ -1433,3 +1433,341 @@
     }
   });
 })();
+
+/* ---------- 8.x number formats, quantisation, im2col, waves, tile intensity, swizzle, matmul ladder ---------- */
+(() => {
+  const { def, D } = CVZ, { fmt, W } = CUDAZ;
+  const rnd = (x, E, M, maxv) => {
+    if (!isFinite(x) || x === 0) return x;
+    const bias = 2 ** (E - 1) - 1, a = Math.abs(x);
+    let e = Math.floor(Math.log2(a));
+    if (e < 1 - bias) e = 1 - bias;
+    const q = 2 ** (e - M), v = a / q;
+    let f = Math.floor(v);
+    const d = v - f;
+    if (d > 0.5 || (d === 0.5 && f % 2 === 1)) f += 1;
+    const r = f * q;
+    return Math.sign(x) * (r > maxv ? Infinity : r);
+  };
+  const ieeeMax = (E, M) => (2 - 2 ** -M) * 2 ** (2 ** E - 2 - (2 ** (E - 1) - 1));
+  const FMTS = [
+    ['FP32', 8, 23, x => Math.fround(x)],
+    ['TF32', 8, 10, x => rnd(x, 8, 10, ieeeMax(8, 10))],
+    ['BF16', 8, 7, x => rnd(x, 8, 7, ieeeMax(8, 7))],
+    ['FP16', 5, 10, x => rnd(x, 5, 10, 65504)],
+    ['FP8 E4M3', 4, 3, x => rnd(x, 4, 3, 448)],
+    ['FP8 E5M2', 5, 2, x => rnd(x, 5, 2, 57344)]
+  ];
+  const show = v => !isFinite(v) ? 'overflow' : v === 0 ? '0' : Math.abs(v) >= 1e6 || Math.abs(v) < 1e-4 ? v.toExponential(4) : String(+v.toPrecision(8));
+
+  def('formats', {
+    title: 'One number, six formats: what survives?', sub: 'Type a number. Each row stores it in a different format with round to nearest and shows what comes back.',
+    W: 620, H: 280,
+    params: [{ k: 'x', label: 'Number to store', v: 300.7, type: 'text', num: true }],
+    tips: [
+      { t: '300.7: FP16 keeps 300.75, BF16 only 300. BF16 fails on detail.', set: { x: 300.7 }, play: true },
+      { t: '70000: FP16 overflows (its largest number is 65,504). BF16 keeps the size: 70,144.', set: { x: 70000 }, play: true },
+      { t: '0.00000001: FP16 underflows to 0. BF16 and TF32 keep it, since they have FP32\'s 8 exponent bits.', set: { x: 1e-8 }, play: true },
+      { t: 'π: FP32 gives 7 correct digits, FP16 and BF16 give 3.140625, and FP8 gives only 3.25 or 3.', set: { x: 3.14159265 }, play: true }
+    ],
+    steps: () => FMTS.length,
+    draw(z) {
+      const g = z.g, x = Number(z.p.x), s = z.step;
+      W(z, 'format', 16, 20, { s: 11, b: true, c: z.col.ink2 });
+      W(z, 'bits: sign, exponent, mantissa', 110, 20, { s: 11, b: true, c: z.col.ink2 });
+      W(z, 'stored value', 316, 20, { s: 11, b: true, c: z.col.ink2 });
+      W(z, 'relative error', 486, 20, { s: 11, b: true, c: z.col.ink2 });
+      FMTS.forEach(([name, E, M, f], i) => {
+        const y = 44 + i * 36;
+        W(z, name, 16, y + 13, { s: 12, b: true });
+        const u = 4;
+        D.rect(g, 110, y, u, 18, { fill: z.col.orange });
+        D.rect(g, 110 + u, y, E * u, 18, { fill: z.col.purple });
+        D.rect(g, 110 + u + E * u, y, M * u, 18, { fill: z.col.cv });
+        W(z, `1 + ${E} + ${M}`, 110 + (1 + E + M) * u + 6, y + 13, { s: 10, c: z.col.ink2 });
+        if (i < s) {
+          const v = f(x), bad = !isFinite(v) || (v === 0 && x !== 0);
+          W(z, show(v), 316, y + 13, { s: 12, mono: true, b: true, c: bad ? z.col.red : z.col.ink });
+          const err = x === 0 ? 0 : Math.abs(v - x) / Math.abs(x);
+          W(z, !isFinite(v) ? 'too big' : v === 0 && x !== 0 ? 'too small, lost' : err === 0 ? 'exact' : err < 1e-4 ? err.toExponential(1) : (100 * err).toPrecision(2) + ' %', 486, y + 13, { s: 11, mono: true, c: bad ? z.col.red : z.col.ink2 });
+        }
+      });
+      return `Exponent bits (purple) set the range: how big and how small a number can be. Mantissa bits (green) set the detail: about ${''}0.3 decimal digits each. ` + (s >= FMTS.length ? 'FP16 fails on size, BF16 fails on detail. That is why BF16 is preferred for training.' : `Showing ${s} of ${FMTS.length} formats.`);
+    }
+  });
+
+  def('quant', {
+    title: 'INT8 quantisation: scale, round, store, bring back', sub: 'Pick weights and a range. Each weight becomes a small integer q, and s × q is what the GPU sees later.',
+    W: 620, H: 290,
+    params: [
+      { k: 'w', label: 'Weights', type: 'text', v: '0.3, -0.8, 1.0, -0.05, 0.62' },
+      { k: 'bits', label: 'Bits', type: 'select', v: '8', opts: [['8', 'INT8 (q from -127 to 127)'], ['4', 'INT4 (q from -7 to 7)']] },
+      { k: 'R', label: 'Range R (values from -R to R)', v: 1, min: 0.5, max: 4, step: 0.5 }
+    ],
+    tips: [
+      { t: 'Workbook: range -1 to 1, the weight 0.3 becomes q = 38 and comes back as 0.2992.', set: { w: '0.3, -0.8, 1.0, -0.05, 0.62', bits: '8', R: 1 }, play: true },
+      { t: 'Range -2 to 2: -0.8 becomes q = -51 and comes back as -0.8031. A wider range means coarser steps.', set: { w: '-0.8, 0.3, 1.5', bits: '8', R: 2 }, play: true },
+      { t: 'INT4 has only 15 levels: errors grow a lot.', set: { w: '0.3, -0.8, 1.0, -0.05, 0.62', bits: '4', R: 1 }, play: true },
+      { t: 'A range that is too small clips the large weights to ±R.', set: { w: '0.3, -0.8, 1.0, -0.05, 2.5', bits: '8', R: 1 }, play: true }
+    ],
+    steps: () => 4,
+    draw(z) {
+      const g = z.g, s = z.step, R = z.p.R, qm = z.p.bits === '4' ? 7 : 127, sc = R / qm;
+      const ws = String(z.p.w).split(/[^0-9.eE+-]+/).filter(t => t !== '' && !isNaN(+t)).slice(0, 6).map(Number);
+      const rows = ws.map(x => { const r = x / sc, q0 = Math.round(r), q = Math.max(-qm, Math.min(qm, q0)); return { x, r, q, clip: q !== q0, back: q * sc }; });
+      W(z, `s = R ÷ ${qm} = ${fmt(R)} ÷ ${qm} = ${sc.toPrecision(4)}`, 16, 20, { s: 13, b: true, mono: true });
+      const x0 = 40, x1 = 580, Rv = Math.max(R, ...ws.map(Math.abs)), X = v => x0 + (v + Rv) / (2 * Rv) * (x1 - x0);
+      D.line(g, x0, 66, x1, 66, z.col.ink2, 1);
+      const every = qm > 7 ? 16 : 1;
+      for (let q = -qm; q <= qm; q += 1) if (q % every === 0 || q === qm || q === -qm) D.line(g, X(q * sc), 60, X(q * sc), 72, z.col.ink2, 1);
+      W(z, fmt(-Rv), x0, 88, { s: 10, a: 'center', c: z.col.ink2 }); W(z, '0', X(0), 88, { s: 10, a: 'center', c: z.col.ink2 }); W(z, fmt(Rv), x1, 88, { s: 10, a: 'center', c: z.col.ink2 });
+      rows.forEach(r => {
+        D.circle(g, X(r.x), 54, 4, { fill: z.col.cv });
+        if (s >= 4) { D.rect(g, X(r.back) - 4, 74, 8, 8, { fill: r.clip ? z.col.red : z.col.orange }); }
+      });
+      const lab = ['weight x', 'x ÷ s', 'q (round, clip)', 'back: s × q', 'error'], cw = 82;
+      lab.forEach((l, i) => W(z, l, 16, 124 + i * 26, { s: 11, b: true }));
+      rows.forEach((r, j) => {
+        const cx = 140 + j * cw + cw / 2, cell = (i, txt, c) => W(z, txt, cx, 124 + i * 26, { s: 11, a: 'center', mono: true, c: c || z.col.ink });
+        cell(0, String(r.x));
+        if (s >= 2) cell(1, r.r.toFixed(2));
+        if (s >= 3) cell(2, String(r.q), r.clip ? z.col.red : z.col.ink);
+        if (s >= 4) { cell(3, r.back.toFixed(4)); cell(4, Math.abs(r.back - r.x).toFixed(4), r.clip ? z.col.red : z.col.ink2); }
+      });
+      const msgs = ['Step 1: the scale s is the size of one integer step.', 'Step 2: divide each weight by s.', 'Step 3: round to the nearest integer and clip to the allowed range. This q is stored in 1 byte (or half a byte for INT4).', 'Step 4: multiply back by s. Green dots are the true weights, orange squares what comes back. Red means clipped.'];
+      return msgs[Math.max(0, s - 1)] + ` Storage falls from 4 bytes to ${z.p.bits === '4' ? 'half a byte' : '1 byte'} per weight.`;
+    }
+  });
+
+  const IMGS = { ramp: Array.from({ length: 16 }, (_, i) => i), edge: [0, 0, 9, 9, 0, 0, 9, 9, 0, 0, 9, 9, 0, 0, 9, 9], dot: [0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] };
+  const FILT = { sobelx: [1, 0, -1, 2, 0, -2, 1, 0, -1], box: [1, 1, 1, 1, 1, 1, 1, 1, 1], center: [0, 0, 0, 0, 1, 0, 0, 0, 0] };
+  def('im2col', {
+    title: 'im2col: a convolution becomes one matrix multiply', sub: 'Every 3 × 3 window of the 4 × 4 picture is flattened into a row. Then each output is one row times the flattened filter.',
+    W: 620, H: 290,
+    params: [
+      { k: 'img', label: 'Picture', type: 'select', v: 'ramp', opts: [['ramp', 'values 0 to 15 (the worked example)'], ['edge', 'a vertical edge'], ['dot', 'one bright dot']] },
+      { k: 'f', label: 'Filter', type: 'select', v: 'sobelx', opts: [['sobelx', 'Sobel x (1 0 -1, 2 0 -2, 1 0 -1)'], ['box', 'box (all 1)'], ['center', 'identity (centre 1)']] }
+    ],
+    tips: [
+      { t: 'The worked example: every output is -8, because a ramp has the same slope everywhere.', set: { img: 'ramp', f: 'sobelx' }, play: true },
+      { t: 'A vertical edge gives strong responses where the window covers the jump.', set: { img: 'edge', f: 'sobelx' }, play: true },
+      { t: 'The box filter adds up each window. Notice how each pixel appears in several rows: im2col copies data.', set: { img: 'ramp', f: 'box' }, play: true }
+    ],
+    steps: () => 9,
+    draw(z) {
+      const g = z.g, s = z.step, X = IMGS[z.p.img], F = FILT[z.p.f];
+      const wins = [[0, 0], [0, 1], [1, 0], [1, 1]].map(([r, c]) => { const v = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) v.push(X[(r + i) * 4 + c + j]); return { r, c, v, out: v.reduce((a, x, k) => a + x * F[k], 0) }; });
+      const cur = s >= 1 && s <= 4 ? s - 1 : s >= 6 ? s - 6 : -1;
+      W(z, 'picture 4 × 4', 16, 20, { s: 11, b: true });
+      for (let i = 0; i < 16; i++) {
+        const r = Math.floor(i / 4), c = i % 4, w = cur >= 0 ? wins[cur] : null, inside = w && r >= w.r && r < w.r + 3 && c >= w.c && c < w.c + 3;
+        D.rect(g, 16 + c * 26, 30 + r * 26, 25, 25, { fill: inside ? z.col.surf : z.col.bg, stroke: inside ? z.col.cv : z.col.line, w: inside ? 2 : 0.5 });
+        W(z, String(X[i]), 16 + c * 26 + 12.5, 30 + r * 26 + 17, { s: 11, a: 'center', mono: true });
+      }
+      W(z, 'im2col matrix 4 × 9', 140, 20, { s: 11, b: true });
+      wins.forEach((w, k) => {
+        if (s < k + 1) return;
+        w.v.forEach((v, j) => {
+          D.rect(g, 140 + j * 24, 30 + k * 26, 23, 25, { fill: k === cur ? z.col.surf : z.col.bg, stroke: k === cur ? z.col.cv : z.col.line, w: k === cur ? 1.5 : 0.5 });
+          W(z, String(v), 140 + j * 24 + 11.5, 30 + k * 26 + 17, { s: 11, a: 'center', mono: true });
+        });
+      });
+      if (s >= 5) {
+        W(z, 'filter', 378, 20, { s: 11, b: true });
+        F.forEach((v, j) => { D.rect(g, 380, 30 + j * 24, 30, 23, { fill: z.col.bg, stroke: z.col.orange, w: 1 }); W(z, String(v), 395, 30 + j * 24 + 16, { s: 11, a: 'center', mono: true }); });
+        W(z, '=', 428, 70, { s: 16, b: true });
+      }
+      W(z, 'output', 450, 20, { s: 11, b: true });
+      wins.forEach((w, k) => {
+        if (s < k + 6) return;
+        D.rect(g, 450, 30 + k * 26, 40, 25, { fill: k === cur ? z.col.cv : z.col.surf, stroke: z.col.line, w: 0.5 });
+        W(z, String(w.out), 470, 30 + k * 26 + 17, { s: 11, a: 'center', mono: true, b: true, c: k === cur ? '#fff' : z.col.ink });
+        D.rect(g, 520 + w.c * 42, 30 + w.r * 30, 40, 28, { fill: z.col.surf, stroke: z.col.line, w: 0.5 });
+        W(z, String(w.out), 540 + w.c * 42, 30 + w.r * 30 + 19, { s: 11, a: 'center', mono: true, b: true });
+      });
+      if (s >= 6) W(z, '2 × 2 picture', 520, 20, { s: 11, b: true });
+      let msg = 'Press Step to cut out the first window.';
+      if (s >= 1 && s <= 4) msg = `Window ${s} (top left at row ${wins[s - 1].r}, column ${wins[s - 1].c}) is read row by row into row ${s} of the matrix.`;
+      if (s === 5) msg = 'The 3 × 3 filter is flattened into a column of 9 numbers.';
+      if (s >= 6) { const w = wins[s - 6]; msg = `row ${s - 5} · filter = ${w.v.map((v, j) => `${v}×${F[j]}`).join(' + ')} = ${w.out}`; }
+      W(z, msg.length > 95 ? msg.slice(0, 95) + '…' : msg, 16, 270, { s: 11, mono: s >= 6 });
+      return `(4 × 9) times (9 × 1) gives 4 outputs. With 64 filters the column becomes a 9 × 64 matrix: a real GEMM that tensor cores can run. The cost: each pixel is copied into up to 9 rows, so libraries build the matrix on the fly (implicit GEMM).`;
+    }
+  });
+
+  def('waves', {
+    title: 'Wave quantisation: blocks run in waves', sub: 'Each SM holds a few blocks at a time. One wave fills every SM. A last wave that is almost empty still costs a full wave of time.',
+    W: 620, H: 280,
+    params: [
+      { k: 'n', label: 'Blocks in the grid', type: 'text', num: true, v: 217 },
+      { k: 'sm', label: 'GPU', type: 'select', v: '108', opts: [['108', 'A100 (108 SMs)'], ['114', 'H100 PCIe (114 SMs)'], ['132', 'H100 SXM (132 SMs)'], ['40', 'T4 (40 SMs)']] },
+      { k: 'b', label: 'Blocks per SM at once', v: 1, min: 1, max: 4, step: 1 }
+    ],
+    tips: [
+      { t: '216 blocks on an A100, one per SM: exactly 2 full waves.', set: { n: 216, sm: '108', b: 1 }, play: true },
+      { t: '217 blocks: a third wave with one block while 107 SMs wait. 0.5 percent more work, 50 percent more time.', set: { n: 217, sm: '108', b: 1 }, play: true },
+      { t: 'Workbook: 115 blocks on 114 SMs need 2 waves, only 50.4 percent busy.', set: { n: 115, sm: '114', b: 1 }, play: true },
+      { t: 'The naive matmul: 16,384 blocks, 2 per SM on 114 SMs: 72 waves, so the partial last wave hardly matters.', set: { n: 16384, sm: '114', b: 2 }, play: true }
+    ],
+    steps: z => Math.max(1, Math.min(200, Math.ceil(Math.max(1, Math.floor(Number(z.p.n) || 1)) / (+z.p.sm * z.p.b)))),
+    draw(z) {
+      const g = z.g, n = Math.max(1, Math.floor(Number(z.p.n) || 1)), Wv = +z.p.sm * z.p.b, waves = Math.ceil(n / Wv), s = z.step;
+      const shown = Math.min(waves, 200), bw = Math.min(60, 540 / shown), H = 150, base = 190;
+      W(z, `one wave = ${z.p.sm} SMs × ${z.p.b} = ${Wv} blocks`, 16, 20, { s: 12, b: true });
+      D.line(g, 50, base, 50 + shown * bw, base, z.col.ink2, 1);
+      D.line(g, 50, base - H, 590, base - H, z.col.line, 1, [3, 3]);
+      W(z, '100%', 16, base - H + 4, { s: 10, c: z.col.ink2 });
+      for (let k = 0; k < Math.min(s, shown); k++) {
+        const used = Math.min(Wv, n - k * Wv), h = H * used / Wv;
+        D.rect(g, 50 + k * bw, base - H, Math.max(1, bw - 2), H, { fill: z.col.bg, stroke: z.col.line, w: 0.5 });
+        D.rect(g, 50 + k * bw, base - h, Math.max(1, bw - 2), h, { fill: used < Wv ? z.col.orange : z.col.cv });
+        if (bw >= 26) W(z, `${used}`, 50 + k * bw + (bw - 2) / 2, base - h - 4, { s: 10, a: 'center', mono: true });
+      }
+      W(z, 'waves (time) →', 50, base + 18, { s: 10, c: z.col.ink2 });
+      const eff = n / (Wv * waves);
+      if (s >= waves) W(z, `${waves} wave${waves === 1 ? '' : 's'}, SMs busy on average ${(100 * eff).toFixed(1)}%`, 16, base + 50, { s: 14, b: true, c: eff < 0.8 ? z.col.red : z.col.green });
+      return `waves = ⌈blocks ÷ (SMs × blocks per SM)⌉ = ⌈${n} ÷ ${Wv}⌉ = ${waves}. Efficiency = blocks ÷ (wave size × waves) = ${n} ÷ ${Wv * waves} = ${(100 * eff).toFixed(1)}%.` + (waves > 200 ? ' Only the first 200 waves are drawn.' : '');
+    }
+  });
+
+  const LADDER = [['warp tiling, no tensor cores', 32], ['TMA + tensor cores', 317], ['larger tile', 423], ['TMA and tensor core pipeline', 498], ['2 consumer warp groups', 610], ['persistent kernel', 660], ['faster barriers', 704], ['clusters + multicast', 734], ['micro optimisations', 747], ['async stores', 758], ['Hilbert schedule', 764]];
+  def('tileai', {
+    title: 'Bigger tiles, more work per byte', sub: 'A block computes a BM × BN tile of C. Each step along K it loads a strip of A and a strip of B. Pick the tile and see where it lands on the H100 roofline.',
+    W: 620, H: 290,
+    params: [
+      { k: 'bm', label: 'BM (rows of the tile)', type: 'select', v: '128', opts: [['16', '16'], ['32', '32'], ['64', '64'], ['128', '128'], ['256', '256']] },
+      { k: 'bn', label: 'BN (columns of the tile)', type: 'select', v: '128', opts: [['16', '16'], ['32', '32'], ['64', '64'], ['128', '128'], ['256', '256']] },
+      { k: 'dt', label: 'Number format', type: 'select', v: 'fp32', opts: [['fp32', 'FP32 (4 bytes, CUDA cores, roof 51 TFLOP/s)'], ['bf16', 'BF16 (2 bytes, tensor cores, roof 756 TFLOP/s)']] }
+    ],
+    tips: [
+      { t: 'FP32 32 × 32: AI 8, so at 2 TB/s it can reach only 16 TFLOP/s.', set: { bm: '32', bn: '32', dt: 'fp32' }, play: true },
+      { t: 'FP32 128 × 128: AI 32, enough to reach the 51 TFLOP/s FP32 roof.', set: { bm: '128', bn: '128', dt: 'fp32' }, play: true },
+      { t: 'A long thin tile 16 × 256 has the same area as 64 × 64 but less reuse. Square is best.', set: { bm: '16', bn: '256', dt: 'fp32' }, play: true },
+      { t: 'BF16 needs AI 378 to reach 756 TFLOP/s. Even 256 × 256 (AI 128) is far below: tiles must also be reused from L2 and SMEM.', set: { bm: '256', bn: '256', dt: 'bf16' }, play: true }
+    ],
+    steps: () => 3,
+    draw(z) {
+      const g = z.g, s = z.step, BM = +z.p.bm, BN = +z.p.bn, b = z.p.dt === 'fp32' ? 4 : 2, roof = z.p.dt === 'fp32' ? 51 : 756, bwTB = 2.0;
+      const ai = 2 * BM * BN / (b * (BM + BN)), reach = Math.min(roof, ai * bwTB);
+      const k = 0.6, BK = 16;
+      W(z, 'A strip', 16, 20, { s: 10, c: z.col.ink2 });
+      D.rect(g, 16, 30, BK * k * 2, BM * k, { fill: z.col.orange, stroke: z.col.line });
+      W(z, 'B strip', 60, 20, { s: 10, c: z.col.ink2 });
+      D.rect(g, 60, 30, BN * k, BK * k * 2, { fill: z.col.purple, stroke: z.col.line });
+      D.rect(g, 60, 30 + BK * k * 2 + 4, BN * k, BM * k, { fill: z.col.surf, stroke: z.col.cv, w: 1.5 });
+      W(z, `C ${BM} × ${BN}`, 60 + BN * k / 2, 34 + BK * k * 2 + BM * k / 2 + 4, { s: 10, a: 'center', b: true });
+      const lines = [`per K step: load (${BM} + ${BN}) × BK numbers, do 2 × ${BM} × ${BN} × BK FLOPs`, `AI = (2 ÷ ${b}) × ${BM}·${BN} ÷ (${BM} + ${BN}) = ${fmt(ai)} FLOP/byte`, `at ${bwTB} TB/s: ${fmt(ai)} × 2 = ${fmt(ai * bwTB)} TFLOP/s, roof ${roof}, so about ${fmt(reach)} TFLOP/s`];
+      lines.slice(0, s).forEach((t, i) => W(z, t, 16, 226 + i * 20, { s: 11, mono: true, b: i === s - 1 }));
+      const px = 400, py = 30, pw = 200, ph = 150, lx = v => px + (Math.log10(v) + 1) / 5 * pw, ly = v => py + ph - (Math.log10(v) + 1) / 4 * ph;
+      D.rect(g, px, py, pw, ph, { fill: z.col.bg, stroke: z.col.line, w: 0.5 });
+      const ridge = roof / bwTB;
+      D.line(g, lx(0.1), ly(0.2), lx(ridge), ly(roof), z.col.ink2, 1.5);
+      D.line(g, lx(ridge), ly(roof), lx(9999), ly(roof), z.col.ink2, 1.5);
+      W(z, 'AI (log) →', px + pw - 50, py + ph + 14, { s: 9, c: z.col.ink2 });
+      W(z, `roof ${roof}`, px + 4, ly(roof) - 4, { s: 9, c: z.col.ink2 });
+      if (s >= 3) { D.circle(g, lx(ai), ly(reach), 5, { fill: reach < roof ? z.col.red : z.col.green }); D.line(g, lx(ridge), py, lx(ridge), py + ph, z.col.line, 1, [3, 3]); W(z, `ridge ${fmt(ridge)}`, Math.min(lx(ridge) + 3, px + pw - 60), py + ph - 6, { s: 9, c: z.col.ink2 }); }
+      return 'BK cancels, so only the tile shape matters. For a fixed area, BM + BN is smallest when BM = BN, so square tiles give the most reuse and bigger tiles do better, until registers and shared memory run out.';
+    }
+  });
+
+  def('swizzle', {
+    title: 'Swizzling: XOR spreads a column over all banks', sub: 'A 128 byte row of a shared memory tile is 8 chunks of 16 bytes, and each chunk sits on 4 banks. Read one column (the same chunk of 8 rows) and count the clashes.',
+    W: 620, H: 270,
+    params: [
+      { k: 'col', label: 'Column (logical chunk) to read', v: 0, min: 0, max: 7, step: 1 },
+      { k: 'swz', label: 'Swizzle: slot = chunk XOR row', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'No swizzle: all 8 rows of chunk 0 land in slot 0, the same 4 banks. An 8 way conflict.', set: { col: 0, swz: false }, play: true },
+      { t: 'With the XOR swizzle the same column lands in 8 different slots. No conflict, and each row is still one contiguous 128 byte line.', set: { col: 0, swz: true }, play: true },
+      { t: 'Worked example: row 5, chunk 2 goes to slot 2 XOR 5 = 7.', set: { col: 2, swz: true }, play: true }
+    ],
+    steps: () => 8,
+    draw(z) {
+      const g = z.g, s = z.step, c0 = z.p.col, sw = z.p.swz, cw = 30, ch = 22;
+      const slot = (r, c) => sw ? (c ^ r) : c, hits = new Array(8).fill(0);
+      W(z, 'physical slots (each 16 bytes = 4 banks)', 60, 18, { s: 11, b: true });
+      for (let c = 0; c < 8; c++) W(z, `${4 * c}-${4 * c + 3}`, 60 + c * cw + cw / 2, 34, { s: 9, a: 'center', c: z.col.ink2 });
+      for (let r = 0; r < 8; r++) {
+        W(z, `row ${r}`, 16, 54 + r * ch, { s: 10, mono: true });
+        for (let c = 0; c < 8; c++) {
+          const lc = sw ? (c ^ r) : c, read = r < s && lc === c0;
+          if (read) hits[c]++;
+          D.rect(g, 60 + c * cw, 40 + r * ch, cw - 2, ch - 2, { fill: read ? z.col.cv : lc === c0 ? z.col.surf : z.col.bg, stroke: z.col.line, w: 0.5 });
+          W(z, `${r},${lc}`, 60 + c * cw + (cw - 2) / 2, 40 + r * ch + 14, { s: 9, a: 'center', mono: true, c: read ? '#fff' : z.col.ink });
+        }
+      }
+      W(z, 'reads per slot', 60, 236, { s: 10, c: z.col.ink2 });
+      hits.forEach((h, c) => W(z, String(h), 60 + c * cw + cw / 2, 254, { s: 12, a: 'center', mono: true, b: true, c: h > 1 ? z.col.red : z.col.ink }));
+      const worst = Math.max(...hits);
+      W(z, `row r, chunk ${c0}`, 340, 60, { s: 12, b: true });
+      W(z, sw ? `slot = ${c0} XOR r` : `slot = ${c0} for every row`, 340, 84, { s: 12, mono: true });
+      if (s >= 1) { const r = s - 1; W(z, `row ${r}: ${sw ? `${c0} XOR ${r} = ${(c0 ^ r).toString(2).padStart(3, '0')}₂ = ${slot(r, c0)}` : `slot ${c0}`}`, 340, 112, { s: 12, mono: true }); }
+      W(z, `worst slot: ${worst} read${worst === 1 ? '' : 's'}${worst > 1 ? ', a ' + worst + ' way conflict' : ', no conflict'}`, 340, 150, { s: 13, b: true, c: worst > 1 ? z.col.red : z.col.green });
+      return 'Labels show (row, logical chunk) stored in each physical slot. XOR with the row number is its own inverse, so applying it again gives back the original layout. TMA on Hopper can swizzle tiles as it copies them (the 128 byte mode XORs address bits 7 to 9 into bits 4 to 6).';
+    }
+  });
+
+  def('mmladder', {
+    title: 'Climbing to the H100 speed of light', sub: 'Each step of the matmul blog fixes one bottleneck. Step through and watch BF16 TFLOP/s rise toward the 989 peak.',
+    W: 620, H: 300,
+    params: [],
+    tips: [{ t: 'Watch the one big jump: switching to tensor cores with TMA loads gives 10 times. Every later step is about keeping the tensor cores busy.', set: {}, play: true }],
+    steps: () => LADDER.length,
+    draw(z) {
+      const g = z.g, s = z.step, x0 = 190, wmax = 380, sc = wmax / 989;
+      D.line(g, x0 + 989 * sc, 20, x0 + 989 * sc, 270, z.col.red, 1.5, [4, 3]);
+      W(z, 'peak 989', x0 + 989 * sc - 50, 14, { s: 10, c: z.col.red, b: true });
+      LADDER.forEach(([name, v], i) => {
+        const y = 26 + i * 22;
+        W(z, name, 16, y + 13, { s: 10.5, c: i < s ? z.col.ink : z.col.ink2 });
+        if (i < s) {
+          D.rect(g, x0, y, Math.max(2, v * sc), 16, { fill: i === s - 1 ? z.col.cv : z.col.surf, stroke: z.col.line, w: 0.5 });
+          W(z, String(v), x0 + Math.max(2, v * sc) + 5, y + 13, { s: 10.5, mono: true, b: i === s - 1 });
+        }
+      });
+      const cur = s ? LADDER[s - 1][1] : 0;
+      return s ? `${LADDER[s - 1][0]}: ${cur} TFLOP/s, ${(100 * cur / 989).toFixed(0)}% of peak.` + (s === LADDER.length ? ' The final kernel matches or slightly beats cuBLAS for the tested sizes. Numbers as reported in the blog post.' : '') : 'Press Step. Before this ladder, the naive kernel ran at 3.17 TFLOP/s in FP32, and 0.24 with uncoalesced loads.';
+    }
+  });
+})();
+
+/* ---------- 8.2 WMMA: one warp walks along K ---------- */
+(() => {
+  const { def, D } = CVZ, { W } = CUDAZ;
+  def('wmma', {
+    title: 'WMMA: one warp owns one 16 × 16 tile of C', sub: 'Pick the tile. Each step the warp loads a 16 × 16 tile of A and of B into fragments and calls mma_sync once: c += a × b.',
+    W: 620, H: 300,
+    params: [
+      { k: 'n', label: 'Matrix size M = N = K', type: 'select', v: '64', opts: [['64', '64 (4 × 4 tiles)'], ['128', '128 (8 × 8 tiles)']] },
+      { k: 'tr', label: 'Tile row (warpM)', v: 1, min: 0, max: 7, step: 1 },
+      { k: 'tc', label: 'Tile column (warpN)', v: 2, min: 0, max: 7, step: 1 }
+    ],
+    tips: [
+      { t: '64 × 64: the warp walks 4 steps along K, so 4 mma_sync calls for its tile.', set: { n: '64', tr: 1, tc: 2 }, play: true },
+      { t: '128 × 128: 8 steps. The whole matrix needs 8 × 8 × 8 = 512 calls of 8192 FLOPs each.', set: { n: '128', tr: 5, tc: 3 }, play: true }
+    ],
+    steps: z => +z.p.n / 16,
+    draw(z) {
+      const g = z.g, n = +z.p.n, T = n / 16, tr = Math.min(z.p.tr, T - 1), tc = Math.min(z.p.tc, T - 1), s = z.step, cs = Math.min(24, 136 / T);
+      const bx = 190, by = 30, ax = bx - 12 - T * cs, ay = by + T * cs + 16, cx = bx, cy = ay;
+      W(z, 'B (K × N)', bx, by - 8, { s: 10, b: true });
+      W(z, 'A (M × K)', ax, ay - 6, { s: 10, b: true });
+      W(z, 'C (M × N)', cx + T * cs + 6, cy + 12, { s: 10, b: true });
+      for (let i = 0; i < T; i++) for (let j = 0; j < T; j++) {
+        const bOn = j === tc && i === s - 1, aOn = i === tr && j === s - 1, cOn = i === tr && j === tc;
+        D.rect(g, bx + j * cs, by + i * cs, cs - 1, cs - 1, { fill: bOn ? z.col.purple : j === tc && i < s ? z.col.surf : z.col.bg, stroke: z.col.line, w: 0.5 });
+        D.rect(g, ax + j * cs, ay + i * cs, cs - 1, cs - 1, { fill: aOn ? z.col.orange : i === tr && j < s ? z.col.surf : z.col.bg, stroke: z.col.line, w: 0.5 });
+        D.rect(g, cx + i * 0 + j * cs, cy + i * cs, cs - 1, cs - 1, { fill: cOn ? (s ? z.col.cv : z.col.surf) : z.col.bg, stroke: cOn ? z.col.cv : z.col.line, w: cOn ? 2 : 0.5 });
+      }
+      const tx = 380;
+      W(z, `warp tile (${tr}, ${tc})`, tx, 40, { s: 13, b: true });
+      W(z, `k steps done: ${s} of ${T}`, tx, 66, { s: 12, mono: true });
+      W(z, `mma_sync calls: ${s}`, tx, 88, { s: 12, mono: true });
+      W(z, `FLOPs: ${s} × 8192 = ${s * 8192}`, tx, 110, { s: 11, mono: true });
+      W(z, `whole matrix: ${T}² tiles × ${T} steps`, tx, 150, { s: 11, mono: true });
+      W(z, `= ${T ** 3} calls = 2 × ${n}³ FLOPs`, tx, 172, { s: 11, mono: true, b: true });
+      return s ? `Step ${s}: load_matrix_sync reads A tile (${tr}, ${s - 1}) and B tile (${s - 1}, ${tc}), then mma_sync adds their product into the FP32 accumulator fragment. The 32 threads share the fragments, and nobody may assume which thread holds which numbers.` : 'Press Step. The accumulator fragment starts at 0 (fill_fragment).';
+    }
+  });
+})();

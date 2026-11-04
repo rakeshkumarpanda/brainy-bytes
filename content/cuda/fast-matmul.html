@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How fast matmul kernels are built · GPU Programming</title>
+<meta name="description" content="The H100 machine and memory pyramid, the BF16 speed of light and power throttling, the naive kernel and the 13 times index order effect, tile quantisation, tile arithmetic intensity and why square tiles win, thread and warp tiling, TMA, XOR swizzling, wgmma, producer and consumer pipelines, persistent kernels, Hilbert order, clusters and the performance ladder.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 8: Tensor cores and fast matmul</span><span>›</span><span>Fast matmul</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 8 · Topic 3 of 3 · Pro</div>
+    <h1>How fast matmul kernels are built</h1>
+    <p class="lead">Follow a matmul on the H100 from 0.24 to 764 TFLOP/s: coalescing, tiles, tensor cores, TMA, swizzling, wgmma and pipelines, with the maths behind each step.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">5 animations</span><span class="cv-chip">3 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#fast-matmul" data-topic="cheatsheet" data-h="fast-matmul">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#machine" data-l="machine"><span class="n">1</span><span class="t">The H100 and its speed of light</span></a></li><li><a href="#naive" data-l="naive"><span class="n">2</span><span class="t">The naive kernel and a 13 times lesson</span></a></li><li><a href="#tiles" data-l="tiles"><span class="n">3</span><span class="t">Tiles: more work per byte</span></a></li><li><a href="#hopper" data-l="hopper"><span class="n">4</span><span class="t">Hopper tricks: TMA, swizzling, wgmma, pipelines</span></a></li><li><a href="#ladder" data-l="ladder"><span class="n">5</span><span class="t">The performance ladder</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="machine" data-l="machine" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>The H100 and its speed of light</h2>
+<p>The blog that lecture 9 recommends builds a matmul for the H100 step by step. First, the machine.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Part</th><th>H100 SXM5</th></tr></thead><tbody><tr><td>SMs</td><td>132 (the full chip has 144, some are switched off)</td></tr><tr><td>Each SM</td><td>4 quadrants, each with a warp scheduler, FP32 units, a tensor core and load and store units</td></tr><tr><td>Warps issuing per clock</td><td>4 per SM (one per quadrant), out of up to 64 resident</td></tr><tr><td>Registers</td><td>64K 32 bit registers per SM</td></tr><tr><td>Shared memory and L1</td><td>up to 228 KB per SM, the same SRAM split by configuration</td></tr><tr><td>L2</td><td>50 MB, shared by all SMs</td></tr><tr><td>HBM3</td><td>80 GB at about 3.35 TB/s</td></tr></tbody></table></div>
+<p>Only 4 warps per SM issue in a given clock, but 64 can wait their turn. The extra warps hide memory latency, as in the scheduling chapter. A block should have at least 4 warps so all four schedulers have work.</p>
+<p>Why the memory pyramid exists: SRAM (registers, caches) needs 6 transistors per bit, so it is fast but small. DRAM needs one transistor and one capacitor per bit, so it is dense, cheap and slow. Opening a DRAM row is the expensive part, and reading neighbouring columns of an open row is cheap. That is the physical reason for coalescing.</p>
+<div class="cvz" data-viz="memhier"></div>
+<div class="walk"><div class="walk-h"><span>Workbook 9.4: H100 SXM5 BF16 peak</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Tensor cores: 132 × 4 = 528.</li><li>Each does 512 BF16 FMAs = 1024 FLOPs per clock.</li><li>528 × 1024 × 1.83 × 10⁹.</li><li><span class="eq">≈ 989 TFLOP/s</span></li></ol></div>
+<div class="note note-tip"><b>Remember</b><div>Under a heavy matmul the H100 reaches its 700 W power limit and lowers its clock. At 1.5 GHz the peak is 989 × 1.5 ÷ 1.83 ≈ 811 TFLOP/s, so a kernel at 750 TFLOP/s is at about 92.5 percent of what is reachable.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="naive" data-l="naive" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>The naive kernel and a 13 times lesson</h2>
+<p>One thread per output, blocks of 32 × 32 threads, N = 4096. The only difference between the two kernels below is which index the x thread number feeds.</p>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">naive.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">__global__ void matmul_fast_order(const float *A, const float *B, float *C, int N) {</span><span class="ln" data-n="2">    int row = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln ck-has" data-n="3">    int col = blockIdx.x * blockDim.x + threadIdx.x;     // neighbouring threads take neighbouring columns</span><span class="ln" data-n="4">    if (row &lt; N &amp;&amp; col &lt; N) {</span><span class="ln" data-n="5">        float acc = 0.0f;</span><span class="ln" data-n="6">        for (int k = 0; k &lt; N; ++k)</span><span class="ln ck-has" data-n="7">            acc += A[row * N + k] * B[k * N + col];       // B along a row: coalesced</span><span class="ln ck-has" data-n="8">        C[row * N + col] = acc;</span><span class="ln" data-n="9">    }</span><span class="ln" data-n="10">}</span><span class="ln" data-n="11"> </span><span class="ln" data-n="12">__global__ void matmul_slow_order(const float *A, const float *B, float *C, int N) {</span><span class="ln ck-has" data-n="13">    int row = blockIdx.x * blockDim.x + threadIdx.x;     // neighbouring threads take neighbouring rows</span><span class="ln" data-n="14">    int col = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln" data-n="15">    if (row &lt; N &amp;&amp; col &lt; N) {</span><span class="ln" data-n="16">        float acc = 0.0f;</span><span class="ln" data-n="17">        for (int k = 0; k &lt; N; ++k)</span><span class="ln ck-has" data-n="18">            acc += A[row * N + k] * B[k * N + col];       // A with a stride of N: not coalesced</span><span class="ln" data-n="19">        C[row * N + col] = acc;</span><span class="ln" data-n="20">    }</span><span class="ln" data-n="21">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="3"><b>Line 3</b><code>int col = blockIdx.x * blockDim.x + threadIdx.x;     // neighbouring threads take neighbouring columns</code><span>Threads next to each other in a warp take columns next to each other.</span></li><li data-n="7"><b>Line 7</b><code>acc += A[row * N + k] * B[k * N + col];       // B along a row: coalesced</code><span>B[k * N + col] is read at consecutive addresses across the warp, and A[row * N + k] is the same address for the whole warp: both are cheap.</span></li><li data-n="8"><b>Line 8</b><code>C[row * N + col] = acc;</code><span>The writes to C are consecutive too.</span></li><li data-n="13"><b>Line 13</b><code>int row = blockIdx.x * blockDim.x + threadIdx.x;     // neighbouring threads take neighbouring rows</code><span>Now neighbouring threads take neighbouring rows.</span></li><li data-n="18"><b>Line 18</b><code>acc += A[row * N + k] * B[k * N + col];       // A with a stride of N: not coalesced</code><span>A[row * N + k] jumps N floats between neighbouring threads, so every thread needs its own memory sector.</span></li></ol></details></div>
+<div class="cvz" data-viz="coalesce"></div>
+<div class="cv-code" data-k="naive"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Kernel</th><th>Measured on H100</th><th>Time for 2 × 4096³ FLOPs</th></tr></thead><tbody><tr><td>x feeds the column (coalesced)</td><td>3171 GFLOP/s</td><td>43 ms</td></tr><tr><td>x feeds the row (uncoalesced)</td><td>243 GFLOP/s</td><td>565 ms, 13 times slower</td></tr></tbody></table></div>
+<p>One line of index arithmetic costs 13 times. The rule from the coalescing chapter: what matters is what <b>neighbouring threads</b> read at the same moment, not what one thread reads over time.</p>
+<details class="deep"><summary>Going deeper: Tile quantisation and PTX against SASS</summary><div class="deep-b"><p>A 33 × 33 matrix with 32 × 32 tiles needs 2 × 2 tiles: 4096 threads for 1089 outputs, so 73 percent of threads do nothing. In the SASS of the naive kernel, ptxas unrolled the loop 16 times and moved all loads to the top so they overlap with the FMAs. Researchers have gained 15 percent by rewriting SASS by hand to avoid bank conflicts.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="tiles" data-l="tiles" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Tiles: more work per byte</h2>
+<p>The naive kernel has an arithmetic intensity of 0.25 (2 FLOPs per 8 bytes loaded). It reaches 3.17 TFLOP/s only because the caches serve repeated loads. To get further, each block keeps a tile of A and of B in shared memory and reuses them.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Intensity of a BM × BN tile</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">AI = (2 ÷ b) × B<sub>M</sub>B<sub>N</sub> ÷ (B<sub>M</sub> + B<sub>N</sub>)</div><div class="fx-n">b = bytes per number. BK cancels, so only the tile shape matters.</div></div><div class="fx"><div class="fx-h"><span>Square is best</span></div><div class="fx-b">B<sub>M</sub> + B<sub>N</sub> ≥ 2√(B<sub>M</sub>B<sub>N</sub>)</div><div class="fx-n">For a fixed area the sum is smallest when B<sub>M</sub> = B<sub>N</sub> (AM-GM).</div></div><div class="fx fx-key"><div class="fx-h"><span>Square FP32 tile T × T</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">AI = T ÷ 4</div><div class="fx-n">32 × 32: 8. 128 × 128: 32. BF16 doubles these: AI = T ÷ 2.</div></div></div>
+<div class="cvz" data-viz="tileai"></div>
+<div class="cv-code" data-k="tiles"></div>
+<p><b>Thread tiling.</b> The same idea one level down: each thread keeps a TM × TN block of results in registers. Per k step it loads TM + TN numbers from shared memory and does TM × TN FMAs.</p>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">thread_tile.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">// Inner loop of a thread tile: each thread keeps TM x TN results in registers</span><span class="ln ck-has" data-n="2">template &lt;int TM, int TN&gt;</span><span class="ln" data-n="3">__device__ void thread_tile(const float *As, const float *Bs, float acc[TM][TN],</span><span class="ln" data-n="4">                            int ty, int tx, int BK, int BM, int BN) {</span><span class="ln" data-n="5">    float a[TM], b[TN];</span><span class="ln" data-n="6">    for (int k = 0; k &lt; BK; ++k) {</span><span class="ln ck-has" data-n="7">        for (int i = 0; i &lt; TM; ++i) a[i] = As[k * BM + ty * TM + i];   // A is stored transposed in shared memory</span><span class="ln" data-n="8">        for (int j = 0; j &lt; TN; ++j) b[j] = Bs[k * BN + tx * TN + j];</span><span class="ln ck-has" data-n="9">        for (int i = 0; i &lt; TM; ++i)</span><span class="ln" data-n="10">            for (int j = 0; j &lt; TN; ++j)</span><span class="ln ck-has" data-n="11">                acc[i][j] += a[i] * b[j];                               // TM x TN FMAs from TM + TN loads</span><span class="ln" data-n="12">    }</span><span class="ln" data-n="13">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="2"><b>Line 2</b><code>template &lt;int TM, int TN&gt;</code><span>TM and TN are fixed at compile time so the arrays stay in registers.</span></li><li data-n="7"><b>Line 7</b><code>for (int i = 0; i &lt; TM; ++i) a[i] = As[k * BM + ty * TM + i];   // A is stored transposed in shared memory</code><span>A is stored transposed in shared memory so these reads are contiguous and can use 128 bit loads.</span></li><li data-n="9"><b>Line 9</b><code>for (int i = 0; i &lt; TM; ++i)</code><span>An outer product of a column of A and a row of B.</span></li><li data-n="11"><b>Line 11</b><code>acc[i][j] += a[i] * b[j];                               // TM x TN FMAs from TM + TN loads</code><span>TM × TN FMAs for TM + TN loads. 8 × 8 gives 64 FMAs for 16 loads.</span></li></ol></details></div>
+<p>The blog's best kernel before tensor cores uses 128 × 128 block tiles with BK = 16, thread tiles of results in registers, 128 bit loads, and two __syncthreads() per k step. This is warp tiling. It reaches about 32 TFLOP/s on the H100, the best the plain FP32 cores manage in the blog, and far below what tensor cores offer.</p>
+<div class="note note-exam"><b>In the exam</b><div>With the numbers used here (756 TFLOP/s BF16 on the PCIe card, 2.0 TB/s) the ridge is about 378 FLOP/byte. The blog quotes about 410 with slightly different specs. Either way a kernel needs hundreds of FLOPs per DRAM byte, so tiles must also be reused through L2 and shared memory.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="hopper" data-l="hopper" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Hopper tricks: TMA, swizzling, wgmma, pipelines</h2>
+<p><b>TMA</b> (tensor memory accelerator) is a copy engine inside each SM. One thread asks it to move a whole 64 × 64 tile from global to shared memory. A barrier in shared memory counts the bytes that arrive, so the waiting threads continue only when the whole tile has landed.</p>
+<p><b>Swizzling</b> solves bank conflicts. A 128 byte row is 8 chunks of 16 bytes, and each chunk covers 4 banks. Reading one column of 8 rows hits the same 4 banks 8 times. Store chunk c of row r in slot c XOR r instead, and the column spreads over all 8 slots.</p>
+<div class="cvz" data-viz="swizzle"></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">swizzle.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">// 128 byte swizzle: XOR the row within a group of 8 rows (bits 7 to 9) into the 16 byte chunk index (bits 4 to 6)</span><span class="ln" data-n="2">__device__ __forceinline__ unsigned swizzle128(unsigned byte_offset) {</span><span class="ln ck-has" data-n="3">    unsigned row8 = (byte_offset &gt;&gt; 7) &amp; 7;</span><span class="ln ck-has" data-n="4">    return byte_offset ^ (row8 &lt;&lt; 4);</span><span class="ln" data-n="5">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="3"><b>Line 3</b><code>unsigned row8 = (byte_offset &gt;&gt; 7) &amp; 7;</code><span>Bits 7 to 9 of the byte offset give the row inside a group of 8 rows of 128 bytes.</span></li><li data-n="4"><b>Line 4</b><code>return byte_offset ^ (row8 &lt;&lt; 4);</code><span>XOR the row into bits 4 to 6, the index of the 16 byte chunk. Applying it twice gives back the original offset.</span></li></ol></details></div>
+<div class="walk"><div class="walk-h"><span>Worked XOR example</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Row 5, chunk 2: 010 XOR 101 = 111 = 7, stored in slot 7.</li><li>Row 5, chunk 7: 111 XOR 101 = 010 = 2.</li><li>So chunks 2 and 7 of row 5 swap places.</li><li><span class="eq">XOR with a fixed value is its own inverse</span></li></ol></div>
+<p><b>wgmma.</b> On Hopper a warp group (4 warps, 128 threads) issues asynchronous tensor core instructions of shape m64nNk16. A 64 × 64 output needs four m64n64k16 calls for K = 64, and the accumulator is spread as 64 × 64 ÷ 128 = 32 FP32 registers per thread.</p>
+<p><b>Producer and consumer pipeline.</b> One warp group only issues TMA loads into a ring of shared memory buffers. One or two other warp groups only run tensor core maths. Two barriers per buffer (full and empty) keep them in step. This is the stream overlap idea from chapter 6.2, inside one SM.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Trick</th><th>What it fixes</th></tr></thead><tbody><tr><td>Persistent kernel</td><td>one long lived block per SM loops over tiles, so stores overlap the next loads and no wave is half empty</td></tr><tr><td>Hilbert curve order of tiles</td><td>neighbouring SMs use the same strips of A and B, so L2 hits go up</td></tr><tr><td>Thread block clusters and multicast</td><td>2 SMs share loaded tiles through distributed shared memory</td></tr><tr><td>Two consumer warp groups</td><td>a 128 × 256 tile without running out of registers</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="ladder" data-l="ladder" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>The performance ladder</h2>
+<p>Each step fixes one bottleneck. Step through the numbers reported in the blog for BF16 on an H100.</p>
+<div class="cvz" data-viz="mmladder"></div>
+<p>The biggest jump, from 32 to 317 TFLOP/s, is simply using tensor cores fed by TMA. Everything after that keeps the tensor cores busy: bigger tiles (higher AI), overlap (pipelines), no idle SMs (persistent kernels), better cache reuse (clusters, Hilbert order) and cheaper waiting (faster barriers). The final 764 TFLOP/s is about 77 percent of the 989 peak, on par with cuBLAS.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Course idea</th><th>Where it shows up in the ladder</th></tr></thead><tbody><tr><td>Coalescing (3.2)</td><td>the 13 times gap of the naive kernel</td></tr><tr><td>Shared memory and banks (3.3)</td><td>tiles and swizzling</td></tr><tr><td>Tiled matmul (5.2)</td><td>block tiles, warp tiles, thread tiles</td></tr><tr><td>Occupancy and waves (2.4, 8.2)</td><td>persistent kernels</td></tr><tr><td>Streams and overlap (6.2)</td><td>producer and consumer pipelines</td></tr><tr><td>Barriers (7.2)</td><td>mbarrier and faster barriers</td></tr><tr><td>Tensor cores (8.2)</td><td>the 10 times jump</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Build the fastest kitchen: first stop the waiter running back and forth (coalescing), then keep ingredients on the counter (tiles), then hire the stamping machine (tensor cores), then make sure it never waits (pipelines).</p></div><div class="ld-p" data-ld="college" hidden><p>Naive coalesced 43 ms, uncoalesced 565 ms. Tile AI = (2 ÷ b) B<sub>M</sub>B<sub>N</sub> ÷ (B<sub>M</sub> + B<sub>N</sub>). H100 BF16 peak 989, ridge about 378. Swizzle slot = chunk XOR row.</p></div><div class="ld-p" data-ld="masters" hidden><p>Profile each step in Nsight Compute: memory throughput, bank conflicts, tensor core utilisation, stall reasons. Change one thing at a time and keep the numbers.</p></div><div class="ld-p" data-ld="research" hidden><p>CUTLASS 3 and CuTe describe layouts and swizzles as algebra. ThunderKittens, Triton and FlashAttention 3 apply the same Hopper tricks. Blackwell moves accumulators into tensor memory with tcgen05.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./tensor-cores.html" data-topic="tensor-cores"><small>Previous topic</small><b>Tensor cores</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "fast-matmul", "topic": "fast-matmul", "subject": "cuda", "title": "How fast matmul kernels are built", "codes": {"tiles": {"src": "# Arithmetic intensity of a BM x BN output tile with b bytes per number\ndef tile_ai(bm, bn, b):\n    return 2 / b * bm * bn / (bm + bn)\nfor bm, bn, b in ((32, 32, 4), (64, 64, 4), (128, 128, 4), (128, 256, 4), (128, 128, 2)):\n    ai = tile_ai(bm, bn, b)\n    print(bm, \"x\", bn, \"bytes\", b, \" AI\", round(ai, 1), \" reach at 2 TB/s:\", round(ai * 2, 1), \"TFLOP/s\")\nprint(\"BF16 ridge:\", 756 / 2.0, \" square tile needed:\", 2 * 756 / 2.0)", "stdin": "", "out": "32 x 32 bytes 4  AI 8.0  reach at 2 TB/s: 16.0 TFLOP/s\n64 x 64 bytes 4  AI 16.0  reach at 2 TB/s: 32.0 TFLOP/s\n128 x 128 bytes 4  AI 32.0  reach at 2 TB/s: 64.0 TFLOP/s\n128 x 256 bytes 4  AI 42.7  reach at 2 TB/s: 85.3 TFLOP/s\n128 x 128 bytes 2  AI 64.0  reach at 2 TB/s: 128.0 TFLOP/s\nBF16 ridge: 378.0  square tile needed: 756.0"}, "naive": {"src": "# The naive kernel on an H100 PCIe (114 SMs), N = 4096, 32 x 32 threads per block\nN, sms = 4096, 114\nblocks = (N // 32) ** 2\nper_sm = min(65536 // (32 * 1024), 2048 // 1024)    # register limit and thread limit\nwaves = blocks / (sms * per_sm)\nflops = 2 * N ** 3\nprint(\"blocks:\", blocks, \" per SM:\", per_sm, \" waves:\", round(waves, 1))\nprint(\"time at 3171 GFLOP/s:\", round(flops / 3171e9 * 1000), \"ms\")\nprint(\"time at  243 GFLOP/s:\", round(flops / 243e9 * 1000), \"ms\")", "stdin": "", "out": "blocks: 16384  per SM: 2  waves: 71.9\ntime at 3171 GFLOP/s: 43 ms\ntime at  243 GFLOP/s: 566 ms"}}, "quiz": [{"lv": "e", "q": "How many warps per H100 SM can issue an instruction in one clock?", "o": ["1", "4", "32", "64"], "a": 1, "hint": "One per quadrant.", "why": "Up to 64 can be resident."}, {"lv": "e", "q": "The naive kernel becomes 13 times slower when", "o": ["The block size changes", "Neighbouring threads take neighbouring rows instead of columns", "N doubles", "FP16 is used"], "a": 1, "hint": "Coalescing.", "why": "Stride N between threads."}, {"lv": "e", "q": "A square FP32 tile T × T has AI", "o": ["T", "T ÷ 2", "T ÷ 4", "4T"], "a": 2, "hint": "2T² ÷ (4 × 2T).", "why": "T ÷ 4."}, {"lv": "m", "q": "For a fixed tile area, the best shape is", "o": ["Long and thin", "Square", "One row", "Any"], "a": 1, "hint": "AM-GM.", "why": "B_M + B_N is smallest when equal."}, {"lv": "m", "q": "What does TMA do?", "o": ["Runs tensor maths", "Copies whole tiles between global and shared memory asynchronously", "Schedules warps", "Compresses data"], "a": 1, "hint": "Copy engine.", "why": "Inside each SM."}, {"lv": "m", "q": "Swizzled slot for row 5, chunk 2", "o": ["2", "5", "7", "3"], "a": 2, "hint": "2 XOR 5.", "why": "010 XOR 101 = 111."}, {"lv": "m", "q": "Biggest single jump in the ladder", "o": ["Hilbert schedule", "Tensor cores with TMA", "Async stores", "Clusters"], "a": 1, "hint": "32 to 317.", "why": "About 10 times."}, {"lv": "h", "q": "A wgmma warp group is", "o": ["1 warp", "2 warps", "4 warps (128 threads)", "8 warps"], "a": 2, "hint": "Hopper.", "why": "128 threads."}, {"lv": "h", "q": "Why is DRAM slow and dense while SRAM is fast and small?", "o": ["Different voltages", "DRAM uses 1 transistor and 1 capacitor per bit, SRAM 6 transistors", "DRAM is further away only", "SRAM is magnetic"], "a": 1, "hint": "Cell design.", "why": "Dense cells are slower to read."}, {"lv": "h", "q": "Why does the naive kernel reach 3.17 TFLOP/s with a nominal AI of 0.25?", "o": ["Tensor cores", "L1 and L2 caches serve many repeated loads", "Measurement error", "FP16"], "a": 1, "hint": "Reuse.", "why": "Effective DRAM AI about 1.6."}, {"lv": "x", "q": "In the producer and consumer pipeline the producer warp group", "o": ["Does all the maths", "Only issues TMA loads into a ring of buffers", "Writes C", "Waits for the CPU"], "a": 1, "hint": "Specialised roles.", "why": "Consumers only do tensor core maths."}, {"lv": "x", "q": "A Hilbert curve tile order helps because", "o": ["It reduces FLOPs", "Neighbouring SMs reuse the same A and B strips from L2", "It removes barriers", "It avoids swizzling"], "a": 1, "hint": "Locality.", "why": "More L2 hits."}], "calc": [{"lv": "e", "q": "H100: 132 SMs × 4 TCs × 1024 FLOPs per clock × 1.83 GHz. TFLOP/s? (nearest whole)", "ans": "989", "hint": "Multiply.", "steps": ["528 tensor cores.", "528 × 1024 × 1.83 × 10⁹.", "<span class=\"eq\">≈ 989 TFLOP/s<\/span>"]}, {"lv": "e", "q": "64 × 64 FP32 tile. AI?", "ans": "16", "hint": "T ÷ 4.", "steps": ["2 × 64 × 64 ÷ (4 × 128).", "= 16.", "<span class=\"eq\">16 FLOP/byte, 32 TFLOP/s at 2 TB/s<\/span>"]}, {"lv": "e", "q": "Naive kernel, N = 4096, 32 × 32 blocks. Number of blocks?", "ans": "16384", "hint": "(4096 ÷ 32)².", "steps": ["128 × 128.", "= 16,384.", "<span class=\"eq\">16,384 blocks<\/span>"]}, {"lv": "m", "q": "128 × 256 FP32 tile. AI? (one decimal)", "ans": "42.7", "hint": "(2 ÷ 4) × 32,768 ÷ 384.", "steps": ["128 × 256 = 32,768.", "0.5 × 32,768 ÷ 384.", "<span class=\"eq\">≈ 42.7 FLOP/byte<\/span>"], "tol": 0.05}, {"lv": "m", "q": "764 of 989 TFLOP/s. Percent? (nearest whole)", "ans": "77", "hint": "Divide.", "steps": ["764 ÷ 989 = 0.7725.", "× 100.", "<span class=\"eq\">≈ 77 percent<\/span>"]}, {"lv": "m", "q": "2 × 4096³ FLOPs at 3171 GFLOP/s. Time in ms? (nearest whole)", "ans": "43", "hint": "Divide.", "steps": ["1.374 × 10¹¹ ÷ 3.171 × 10¹².", "= 0.0433 s.", "<span class=\"eq\">≈ 43 ms<\/span>"]}, {"lv": "m", "q": "BF16 roof 756 TFLOP/s at 2 TB/s. Ridge?", "ans": "378", "hint": "Divide.", "steps": ["756 ÷ 2.", "= 378.", "<span class=\"eq\">378 FLOP/byte<\/span>"]}, {"lv": "h", "q": "Square BF16 tile needed to reach AI 378 from memory alone?", "ans": "756", "hint": "T ÷ 2 ≥ 378.", "steps": ["BF16 square tile AI = T ÷ 2.", "T ≥ 756.", "<span class=\"eq\">756 × 756, far too big for on chip memory<\/span>"]}, {"lv": "h", "q": "Throttled to 1.5 GHz, the H100 reaches 750 TFLOP/s. Percent of the throttled peak? (one decimal)", "ans": "92.5", "hint": "989 × 1.5 ÷ 1.83.", "steps": ["Throttled peak 810.7 TFLOP/s.", "750 ÷ 810.7.", "<span class=\"eq\">≈ 92.5 percent<\/span>"], "tol": 0.05}, {"lv": "x", "q": "wgmma: 64 × 64 FP32 accumulator over 128 threads. Registers per thread?", "ans": "32", "hint": "Divide.", "steps": ["64 × 64 = 4096 values.", "÷ 128 threads.", "<span class=\"eq\">32 registers each<\/span>"]}, {"lv": "x", "q": "33 × 33 matrix with 32 × 32 tiles. Percent of threads idle? (nearest whole)", "ans": "73", "hint": "1 − 1089 ÷ 4096.", "steps": ["4 tiles × 1024 threads = 4096.", "Only 33² = 1089 outputs.", "<span class=\"eq\">≈ 73 percent idle<\/span>"]}], "assign": [{"id": "tileai", "lv": "e", "title": "Tile intensity", "task": "<p>Write <code>tile_ai(bm, bn, b)<\/code>: the arithmetic intensity (2 ÷ b) × bm × bn ÷ (bm + bn), rounded to two decimals.<\/p>", "starter": "def tile_ai(bm, bn, b):\n    # your code here\n    pass\n", "tests": [{"call": "tile_ai(32, 32, 4)", "want": 8.0}, {"call": "tile_ai(128, 128, 4)", "want": 32.0}, {"call": "tile_ai(128, 256, 4)", "want": 42.67}, {"call": "tile_ai(128, 128, 2)", "want": 64.0}], "solution": "def tile_ai(bm, bn, b):\n    return round(2 / b * bm * bn / (bm + bn), 2)\n", "hint": "BK cancels out.", "why": "<p>Square tiles and narrower numbers both raise the intensity.<\/p>"}, {"id": "swizzle", "lv": "m", "title": "Count bank conflicts with and without swizzling", "task": "<p>A shared memory tile has 8 rows of 8 chunks. Chunk c of row r is stored in slot c, or in slot c XOR r when swizzled. Write <code>max_conflict(col, swizzled)<\/code>: the largest number of the 8 rows whose chunk <code>col<\/code> lands in the same slot.<\/p>", "starter": "def max_conflict(col, swizzled):\n    # your code here\n    pass\n", "tests": [{"call": "max_conflict(0, False)", "want": 8}, {"call": "max_conflict(0, True)", "want": 1}, {"call": "max_conflict(5, True)", "want": 1}, {"call": "max_conflict(3, False)", "want": 8}], "solution": "def max_conflict(col, swizzled):\n    hits = [0] * 8\n    for r in range(8):\n        slot = (col ^ r) if swizzled else col\n        hits[slot] += 1\n    return max(hits)\n", "hint": "Count how many rows land in each slot.", "why": "<p>XOR with 0 to 7 gives 8 different slots, so every column is spread out.<\/p>"}], "must": [["Speed of light", "H100 SXM BF16: 132 × 4 tensor cores × 1024 FLOPs × 1.83 GHz ≈ 989 TFLOP/s. Power throttling lowers the real ceiling."], ["Naive kernel", "Coalesced order 3171 GFLOP/s (43 ms), swapped order 243 GFLOP/s (565 ms). 13 times from one index."], ["Tile intensity", "AI = (2 ÷ b) B_M B_N ÷ (B_M + B_N). Square is best. FP32 T × T: T ÷ 4. BF16: T ÷ 2."], ["Hopper", "TMA copies tiles, swizzle slot = chunk XOR row, wgmma on 4 warps, producer and consumer warp groups."], ["Ladder", "32 (no tensor cores) to 317 (tensor cores + TMA) to 764 TFLOP/s, about 77 percent of peak."]], "summary": "<p>Fast matmul is the whole course in one kernel: coalesce, tile, use tensor cores, avoid bank conflicts with swizzles, and overlap loads with maths until the tensor cores never wait.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"tiles": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line", "d": {"G.tile_ai": "<function tile_ai>"}}, {"l": 5, "ev": "line", "d": {"G.bm": "32", "G.bn": "32", "G.b": "4"}}, {"l": 2, "ev": "call", "s": ["module", "tile_ai()"], "d": {"L.bm": "32", "L.bn": "32", "L.b": "4"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 6, "ev": "line", "s": ["module"], "d": {"G.ai": "8.0", "L.bm": null, "L.bn": null, "L.b": null}}, {"l": 4, "ev": "line", "o": "32 x 32 bytes 4  AI 8.0  reach at 2 TB/s: 16.0 TFLOP/s\n"}, {"l": 5, "ev": "line", "d": {"G.bm": "64", "G.bn": "64"}}, {"l": 2, "ev": "call", "s": ["module", "tile_ai()"], "d": {"L.bm": "64", "L.bn": "64", "L.b": "4"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 6, "ev": "line", "s": ["module"], "d": {"G.ai": "16.0", "L.bm": null, "L.bn": null, "L.b": null}}, {"l": 4, "ev": "line", "o": "64 x 64 bytes 4  AI 16.0  reach at 2 TB/s: 32.0 TFLOP/s\n"}, {"l": 5, "ev": "line", "d": {"G.bm": "128", "G.bn": "128"}}, {"l": 2, "ev": "call", "s": ["module", "tile_ai()"], "d": {"L.bm": "128", "L.bn": "128", "L.b": "4"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 6, "ev": "line", "s": ["module"], "d": {"G.ai": "32.0", "L.bm": null, "L.bn": null, "L.b": null}}, {"l": 4, "ev": "line", "o": "128 x 128 bytes 4  AI 32.0  reach at 2 TB/s: 64.0 TFLOP/s\n"}, {"l": 5, "ev": "line", "d": {"G.bn": "256"}}, {"l": 2, "ev": "call", "s": ["module", "tile_ai()"], "d": {"L.bm": "128", "L.bn": "256", "L.b": "4"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 6, "ev": "line", "s": ["module"], "d": {"G.ai": "42.666666666666664", "L.bm": null, "L.bn": null, "L.b": null}}, {"l": 4, "ev": "line", "o": "128 x 256 bytes 4  AI 42.7  reach at 2 TB/s: 85.3 TFLOP/s\n"}, {"l": 5, "ev": "line", "d": {"G.bn": "128", "G.b": "2"}}, {"l": 2, "ev": "call", "s": ["module", "tile_ai()"], "d": {"L.bm": "128", "L.bn": "128", "L.b": "2"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 6, "ev": "line", "s": ["module"], "d": {"G.ai": "64.0", "L.bm": null, "L.bn": null, "L.b": null}}, {"l": 4, "ev": "line", "o": "128 x 128 bytes 2  AI 64.0  reach at 2 TB/s: 128.0 TFLOP/s\n"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "return", "o": "BF16 ridge: 378.0  square tile needed: 756.0\n"}], "tail": "", "err": null, "cut": false}, "naive": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.N": "4096", "G.sms": "114"}}, {"l": 4, "ev": "line", "d": {"G.blocks": "16384"}}, {"l": 5, "ev": "line", "d": {"G.per_sm": "2"}}, {"l": 6, "ev": "line", "d": {"G.waves": "71.85964912280701"}}, {"l": 7, "ev": "line", "d": {"G.flops": "137438953472"}}, {"l": 8, "ev": "line", "o": "blocks: 16384  per SM: 2  waves: 71.9\n"}, {"l": 9, "ev": "line", "o": "time at 3171 GFLOP/s: 43 ms\n"}, {"l": 9, "ev": "return", "o": "time at  243 GFLOP/s: 566 ms\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>
