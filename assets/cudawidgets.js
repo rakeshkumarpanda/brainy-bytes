@@ -1771,3 +1771,121 @@
     }
   });
 })();
+
+/* ---------- 9.1 debugging and profiling: out of bounds writes, reading a profiler report ---------- */
+(() => {
+  const { def, D } = CVZ, { W } = CUDAZ;
+  def('oob', {
+    title: 'Out of bounds writes: what memcheck sees', sub: 'Thread i writes data[i + offset] into an array of n ints. Step through the threads and watch which writes leave the array.',
+    W: 620, H: 280,
+    params: [
+      { k: 't', label: 'Threads', v: 32, min: 4, max: 48, step: 4 },
+      { k: 'off', label: 'Offset (thread i writes index i + offset)', v: 10, min: 0, max: 16, step: 1 },
+      { k: 'n', label: 'Array size n (ints)', v: 10, min: 4, max: 64, step: 2 }
+    ],
+    tips: [
+      { t: 'Lecture 12: 32 threads, offset 10, an array of 10. Every write is out of bounds, from index 10 to 41 (not only threads 0 to 21 as slide 6 says).', set: { t: 32, off: 10, n: 10 }, play: true },
+      { t: 'The fixed kernel: offset 0 and n at least the thread count. No bad writes.', set: { t: 32, off: 0, n: 32 }, play: true },
+      { t: 'Off by one, as in the cuda-gdb example: offset 1 with 32 threads and 32 ints. Only the last thread writes out of bounds.', set: { t: 32, off: 1, n: 32 }, play: true }
+    ],
+    steps: z => z.p.t,
+    draw(z) {
+      const g = z.g, T = z.p.t, off = z.p.off, n = z.p.n, s = z.step, last = Math.max(n, off + T), cols = 24, cw = 23;
+      let bad = 0;
+      for (let i = 0; i < s; i++) if (i + off >= n) bad++;
+      for (let idx = 0; idx < Math.min(last, 72); idx++) {
+        const r = Math.floor(idx / cols), c = idx % cols, x = 16 + c * cw, y = 30 + r * 46;
+        const writer = idx - off, written = writer >= 0 && writer < s, inside = idx < n;
+        D.rect(g, x, y, cw - 2, 22, { fill: written ? (inside ? z.col.green : z.col.red) : inside ? z.col.surf : z.col.bg, stroke: inside ? z.col.cv : z.col.line, w: inside ? 1.5 : 0.5 });
+        W(z, String(idx), x + (cw - 2) / 2, y + 15, { s: 9, a: 'center', mono: true, c: written ? '#fff' : z.col.ink2 });
+        if (written) W(z, `t${writer}`, x + (cw - 2) / 2, y + 34, { s: 8.5, a: 'center', mono: true, c: z.col.ink2 });
+      }
+      W(z, `array: indices 0 to ${n - 1}`, 16, 20, { s: 11, b: true, c: z.col.cv });
+      W(z, `${s} of ${T} threads have written. Bad writes so far: ${bad}`, 16, 200, { s: 13, b: true, c: bad ? z.col.red : z.col.green });
+      const totalBad = Array.from({ length: T }, (_, i) => i + off >= n).filter(Boolean).length;
+      W(z, `In total ${totalBad} of ${T} threads write outside the array (indices ${Math.max(n, off)} to ${off + T - 1}).`.replace(/indices (\d+) to (\d+)\)/, (m, a, b) => +a > +b ? 'none)' : m), 16, 226, { s: 12 });
+      return 'Green: a write inside the array. Red: a write outside it. Without compute-sanitizer such a program often runs silently, because small overruns land in memory the program happens to own. compute-sanitizer reports every bad write with the thread, the block and the source line.';
+    }
+  });
+
+  def('diagnose', {
+    title: 'Reading a profiler report: what limits this kernel?', sub: 'Enter three numbers from the Nsight Compute summary. Step through the reasoning the lecture uses.',
+    W: 620, H: 290,
+    params: [
+      { k: 'c', label: 'Compute (SM) throughput %', v: 37, min: 0, max: 100, step: 1 },
+      { k: 'm', label: 'Memory throughput %', v: 44, min: 0, max: 100, step: 1 },
+      { k: 'a', label: 'SM active cycles % (active ÷ elapsed)', v: 76, min: 0, max: 100, step: 1 }
+    ],
+    tips: [
+      { t: 'The slide 22 report: compute 37%, memory 44%, SMs active 76%. Neither unit is busy: latency bound.', set: { c: 37, m: 44, a: 76 }, play: true },
+      { t: 'A streaming kernel like saxpy: memory near its peak. Memory bound.', set: { c: 20, m: 88, a: 97 }, play: true },
+      { t: 'A well tiled matmul: compute near its peak. Compute bound.', set: { c: 85, m: 40, a: 98 }, play: true }
+    ],
+    steps: () => 3,
+    draw(z) {
+      const g = z.g, s = z.step, c = z.p.c, m = z.p.m, a = z.p.a, px = 60, py = 30, pw = 200, ph = 200;
+      D.rect(g, px, py, pw, ph, { fill: z.col.bg, stroke: z.col.line, w: 0.5 });
+      const X = v => px + v / 100 * pw, Y = v => py + ph - v / 100 * ph;
+      D.rect(g, X(60), py, pw * 0.4, ph * 0.4, { fill: z.col.surf });
+      D.line(g, X(60), py, X(60), py + ph, z.col.ink2, 1, [4, 3]);
+      D.line(g, px, Y(60), px + pw, Y(60), z.col.ink2, 1, [4, 3]);
+      W(z, 'compute % →', px + pw - 70, py + ph + 16, { s: 10, c: z.col.ink2 });
+      W(z, 'memory %', 16, py + 8, { s: 10, c: z.col.ink2 });
+      W(z, 'latency bound', X(4), Y(8), { s: 10, c: z.col.ink2 });
+      W(z, 'memory bound', X(4), Y(94), { s: 10, c: z.col.ink2 });
+      W(z, 'compute bound', X(64), Y(8), { s: 10, c: z.col.ink2 });
+      W(z, 'both busy', X(64), Y(94), { s: 10, c: z.col.ink2 });
+      if (s >= 2) D.circle(g, X(c), Y(m), 6, { fill: z.col.orange });
+      const tx = 290;
+      const lines = [];
+      if (s >= 1) lines.push([`1. SMs active ${a}% of the time.`, a < 85 ? 'The grid is too small or uneven: some SMs sit idle.' : 'Every SM had work almost all the time.']);
+      if (s >= 2) lines.push([`2. Compute ${c}%, memory ${m}%.`, c >= 60 && m >= 60 ? 'Both are high: well balanced.' : c >= 60 ? 'Compute is the busy unit.' : m >= 60 ? 'Memory is the busy unit.' : 'Both are under 60% of peak.']);
+      if (s >= 3) {
+        const v = c >= 60 && c >= m ? ['Compute bound.', 'Use tensor cores, fewer instructions, cheaper maths.'] : m >= 60 ? ['Memory bound.', 'Coalesce, reuse data in shared memory, use narrower types.'] : ['Latency bound: warps mostly wait.', 'More work per launch, more loads in flight (ILP), more warps, fewer syncs. Check the stall reasons.'];
+        lines.push([`3. ${v[0]}`, v[1]]);
+      }
+      let y = 40;
+      lines.forEach(([h, t]) => { W(z, h, tx, y, { s: 12, b: true }); y += 18; const words = t.split(' '); let line = ''; words.forEach(w => { if ((line + ' ' + w).length > 44) { W(z, line, tx, y, { s: 11, c: z.col.ink2 }); y += 16; line = w; } else line = line ? line + ' ' + w : w; }); if (line) { W(z, line, tx, y, { s: 11, c: z.col.ink2 }); y += 16; } y += 10; });
+      return 'Rule of thumb from the lecture: a unit under about 60% of its peak is not the limit. If neither compute nor memory is high, the warps spend their time waiting, so look at Warp State Statistics: long scoreboard means waiting on global memory, barrier means __syncthreads, MIO throttle means shared memory pressure.';
+    }
+  });
+})();
+
+/* ---------- 9.2 Triton: one program handles a whole block of indices ---------- */
+(() => {
+  const { def, D } = CVZ, { W } = CUDAZ;
+  def('triton', {
+    title: 'Triton: each program instance handles a block of elements', sub: 'In CUDA one thread handles one element. In Triton one program handles BLOCK elements at once, and a mask switches off the ones past the end.',
+    W: 620, H: 260,
+    params: [
+      { k: 'n', label: 'Array length n', v: 22, min: 1, max: 48, step: 1 },
+      { k: 'B', label: 'BLOCK', type: 'select', v: '8', opts: [['4', '4'], ['8', '8'], ['16', '16']] }
+    ],
+    tips: [
+      { t: 'n = 22 with BLOCK 8: three programs. The last one has only 6 real elements, so 2 lanes are masked off.', set: { n: 22, B: '8' }, play: true },
+      { t: 'n = 32 with BLOCK 16: two programs and nothing masked.', set: { n: 32, B: '16' }, play: true }
+    ],
+    steps: z => Math.ceil(z.p.n / +z.p.B),
+    draw(z) {
+      const g = z.g, n = z.p.n, B = +z.p.B, P = Math.ceil(n / B), s = z.step, cw = Math.min(26, 580 / (P * B));
+      const cols = [z.col.cv, z.col.orange, z.col.purple, z.col.green];
+      W(z, `grid = cdiv(${n}, ${B}) = ${P} program${P === 1 ? '' : 's'}`, 16, 20, { s: 12, b: true, mono: true });
+      for (let p = 0; p < P; p++) for (let j = 0; j < B; j++) {
+        const off = p * B + j, x = 16 + off * cw, live = off < n, on = p < s;
+        D.rect(g, x, 40, cw - 2, 30, { fill: on ? (live ? cols[p % 4] : z.col.red) : z.col.bg, stroke: z.col.line, w: 0.5 });
+        if (cw >= 16) W(z, String(off), x + (cw - 2) / 2, 60, { s: 9, a: 'center', mono: true, c: on ? '#fff' : z.col.ink2 });
+        if (j === 0) W(z, `pid ${p}`, x, 88, { s: 10, c: on ? z.col.ink : z.col.ink2 });
+      }
+      D.line(g, 16 + n * cw - 1, 34, 16 + n * cw - 1, 76, z.col.red, 2, [4, 3]);
+      W(z, `n = ${n}`, Math.min(16 + n * cw + 4, 560), 30, { s: 10, c: z.col.red, b: true });
+      if (s >= 1) {
+        const p = s - 1, lo = p * B, hi = lo + B - 1, live = Math.min(n, lo + B) - lo;
+        W(z, `pid = ${p}`, 16, 130, { s: 12, mono: true });
+        W(z, `offs = ${p} × ${B} + arange(0, ${B}) = ${lo} … ${hi}`, 16, 154, { s: 12, mono: true });
+        W(z, `mask = offs < ${n}: ${live} true, ${B - live} false`, 16, 178, { s: 12, mono: true, c: B - live ? z.col.red : z.col.ink });
+        W(z, `tl.load and tl.store touch only the ${live} lanes where the mask is true`, 16, 202, { s: 12 });
+      }
+      return 'Triton decides how the BLOCK lanes map to threads, vector loads and shared memory. You think in blocks, and the compiler handles coalescing and many tiling details. The mask plays the role of if (i < n) in CUDA.';
+    }
+  });
+})();

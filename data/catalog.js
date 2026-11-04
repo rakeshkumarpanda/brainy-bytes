@@ -5975,6 +5975,42 @@ function cudaModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "gpu-tools", title: "Tools and Python on the GPU", emoji: "9", step: 9, level: "College", blurb: "Find bugs and bottlenecks with the CUDA tools, then write GPU code from Python.", topics: [
+      { id: "debug-profile", title: "Debugging and profiling CUDA code", emoji: "9.1", page: "content/cuda/debug-profile.html",
+        summary: "Error checks, compute-sanitizer, cuda-gdb, Nsight, PTX and SASS.",
+        keywords: ["compute-sanitizer", "cuda-gdb", "Nsight Compute", "Nsight Systems", "PTX", "SASS"],
+        minutes: 45, counts: {"lessons": 6, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "workflow", title: "A workflow for wrong or slow code", emoji: "", group: "Lesson", keywords: ["debugging", "CUDA_CHECK", "cudaGetLastError", "cudaDeviceSynchronize", "printf", "CUDA_LAUNCH_BLOCKING", "workflow"] },
+        { id: "sanitizer", title: "compute-sanitizer", emoji: "", group: "Lesson", keywords: ["compute-sanitizer", "memcheck", "racecheck", "initcheck", "synccheck", "out of bounds", "lineinfo"] },
+        { id: "gdb", title: "Stepping through a kernel with cuda-gdb", emoji: "", group: "Lesson", keywords: ["cuda-gdb", "breakpoint", "step", "focus", "block thread", "-G", "debug build"] },
+        { id: "profile", title: "Profiling with Nsight Systems and Nsight Compute", emoji: "", group: "Lesson", keywords: ["Nsight Systems", "Nsight Compute", "nsys", "ncu", "latency bound", "stall reasons", "NVTX", "nvidia-smi", "launch overhead"] },
+        { id: "ptx", title: "Reading PTX and SASS", emoji: "", group: "Lesson", keywords: ["PTX", "SASS", "ptxas", "nvdisasm", "cuobjdump", "ld.global", "LDG", "predicate", "JIT"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "lineinfo", "NVTX", "CUPTI"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "gpu-python", title: "GPU programming from Python", emoji: "9.2", page: "content/cuda/gpu-python.html",
+        summary: "Numba, CuPy, Triton and PyTorch, mapped to CUDA C.",
+        keywords: ["Numba", "CuPy", "Triton", "PyTorch", "Python GPU", "JIT"],
+        minutes: 40, counts: {"lessons": 6, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "routes", title: "Five ways to reach the GPU from Python", emoji: "", group: "Lesson", keywords: ["Python", "CuPy", "Numba", "PyCUDA", "Triton", "PyTorch", "JIT"] },
+        { id: "numba", title: "Numba: CUDA kernels written in Python", emoji: "", group: "Lesson", keywords: ["Numba", "@cuda.jit", "cuda.grid", "to_device", "copy_to_host", "shared array", "syncthreads", "atomic", "simulator"] },
+        { id: "cupy", title: "CuPy: NumPy on the GPU", emoji: "", group: "Lesson", keywords: ["CuPy", "ElementwiseKernel", "RawKernel", "asnumpy", "kernel fusion", "memory bound"] },
+        { id: "triton", title: "Triton: think in blocks", emoji: "", group: "Lesson", keywords: ["Triton", "program_id", "tl.arange", "mask", "tl.load", "tl.store", "block level"] },
+        { id: "torch", title: "PyTorch: streams, pinned memory and tensor cores", emoji: "", group: "Lesson", keywords: ["PyTorch", "pin_memory", "non_blocking", "torch.cuda.Stream", "synchronize", "allow_tf32", "torch.compile"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "torch.compile", "JAX", "XLA", "fusion"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
