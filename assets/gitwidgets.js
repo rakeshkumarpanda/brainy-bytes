@@ -656,6 +656,141 @@ const GITZ = (() => {
     });
     return out;
   }
+  /* One merge conflict from start to finish: how it arises, then one of six ways out. Every terminal line shown was
+     produced by Git 2.43.0 with the default lines, author Asha and a fixed date, so the ids are reproducible. Ids that
+     depend on lines the reader changed are shown as xxxxxxx. The same run is shown in tools/git-build/topics/06a-conflicts.py. */
+  const CL_WAYS = [['manual', 'Edit the file by hand'], ['ours', 'Keep ours: git checkout --ours'], ['theirs', 'Keep theirs: git checkout --theirs'],
+    ['tool', 'Use a merge tool: git mergetool'], ['rebase', 'Rebase instead of merge'], ['abort', 'Give up for now: git merge --abort']];
+  def('conflictlab', {
+    title: 'A merge conflict from start to finish',
+    sub: 'Two branches change the same line of shop.yml. Step through how the conflict appears, what Git writes into the file and the index, and how each way of resolving it ends. Change the lines and the way out, then press Play.',
+    W: 660, H: 340, startAtZero: true,
+    params: [
+      { k: 'ours', label: 'Line written on main (ours)', type: 'text', v: 'colour: green' },
+      { k: 'theirs', label: 'Line written on feature (theirs)', type: 'text', v: 'colour: red' },
+      { k: 'way', label: 'How you resolve it', type: 'select', v: 'manual', opts: CL_WAYS },
+      { k: 'fix', label: 'Your hand edited line', type: 'text', v: 'colour: purple', show: p => p.way === 'manual' },
+      { k: 'diff3', label: 'Show the base too (merge.conflictStyle zdiff3)', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'The default story: both edit the colour line, the merge stops, you write a third value by hand and commit.', set: { way: 'manual', ours: 'colour: green', theirs: 'colour: red', diff3: false }, play: true },
+      { t: 'Generated files such as lock files: take one whole side with checkout --theirs, then add and commit.', set: { way: 'theirs' }, play: true },
+      { t: 'Rebase the feature branch instead. Watch the labels swap: during a rebase HEAD is main, and "theirs" is your own commit.', set: { way: 'rebase' }, play: true },
+      { t: 'Turn on zdiff3 to see the base line between ||||||| and =======. Now you know what both sides started from.', set: { diff3: true, way: 'manual' }, play: true },
+      { t: 'Make both lines the same. Identical changes on both sides are not a conflict, and the merge finishes by itself.', set: { theirs: 'colour: green', ours: 'colour: green', way: 'manual' }, play: true },
+      { t: 'Not sure yet? git merge --abort puts everything back exactly as before the merge.', set: { way: 'abort', theirs: 'colour: red' }, play: true }
+    ],
+    steps(z) { const p = z.p; return p.ours.trim() === p.theirs.trim() ? 3 : (p.way === 'abort' ? 4 : 6); },
+    draw(z) {
+      const g = z.g, p = z.p, s = z.step, W = z.W, c = z.col;
+      const base = 'colour: blue', ours = p.ours.trim() || '(empty line)', theirs = p.theirs.trim() || '(empty line)';
+      const same = ours === theirs, rb = p.way === 'rebase';
+      const dflt = ours === 'colour: green' && theirs === 'colour: red', hid = x => dflt ? x : 'xxxxxxx';
+      const fix = p.way === 'manual' ? (p.fix.trim() || '(empty line)') : p.way === 'theirs' ? theirs : ours;
+      const conflicted = !same && s >= 3 && s < 5 && !(p.way === 'abort' && s >= 4);
+      const resolvedFile = !same && s >= 4 && p.way !== 'abort';
+      /* ---- commit graph ---- */
+      const gy = 58, gx = 70;
+      D.text(g, 'Commit graph', 12, 16, { s: 11, b: true, c: c.ink2 });
+      const node = (x, y, lbl, col, ring) => { D.circle(g, x, y, 13, { fill: col, stroke: ring ? c.yellow : c.surf, w: ring ? 3 : 1.5 }); D.text(g, lbl, x, y + 1, { a: 'center', bl: 'middle', s: 11, b: true, c: '#fff' }); };
+      const link = (x1, y1, x2, y2, col) => { g.save(); g.strokeStyle = col || c.ink2; g.lineWidth = 2; g.beginPath(); g.moveTo(x1, y1); if (y1 === y2) g.lineTo(x2, y2); else g.bezierCurveTo((x1 + x2) / 2, y1, (x1 + x2) / 2, y2, x2, y2); g.stroke(); g.restore(); };
+      const pill = (t, x, y, hl) => tag(g, t, x, y, { s: 11, fill: hl ? c.yellow : c.surf, stroke: c.cv, c: hl ? '#3b2a00' : c.ink });
+      const B = [gx, gy], M = [gx + 110, gy], F = [gx + 110, gy + 46], X = [gx + 220, gy];
+      const onFeature = s === 1 || (rb && s >= 3);
+      node(...B, 'B', c.cv, s === 0);
+      if (s >= 1) { link(B[0] + 13, B[1], F[0] - 13, F[1]); node(...F, rb && s >= 6 ? 'F' : 'F', s >= 6 && rb ? c.line : c.purple, s === 1 && !rb); }
+      if (s >= 2) { link(B[0] + 13, B[1], M[0] - 13, M[1]); node(...M, 'M', c.cv, !onFeature && s >= 2 && !(s >= 6)); }
+      if (s >= 6 && !rb && !same) { link(M[0] + 13, M[1], X[0] - 13, X[1]); link(F[0] + 13, F[1], X[0] - 13, X[1], c.purple); node(...X, 'X', c.purple, true); }
+      if (s >= 6 && rb) { const F2 = [gx + 220, gy]; link(M[0] + 13, M[1], F2[0] - 13, F2[1]); node(...F2, "F'", c.purple, true); }
+      if (same && s >= 3) { link(M[0] + 13, M[1], X[0] - 13, X[1]); link(F[0] + 13, F[1], X[0] - 13, X[1], c.purple); node(...X, 'X', c.purple, true); }
+      /* branch labels */
+      const mainAt = (same && s >= 3) || (s >= 6 && !rb && !same) ? X : s >= 2 ? M : B;
+      const featAt = s >= 6 && rb ? [gx + 220, gy] : s >= 1 ? F : B;
+      const headOn = onFeature ? 'feature' : 'main';
+      if (s === 0) pill('HEAD → main', B[0], B[1] - 30, true);
+      else if (featAt === B) { pill(headOn === 'feature' ? 'HEAD → feature' : 'feature', B[0], B[1] + 34, headOn === 'feature'); pill(headOn === 'main' ? 'HEAD → main' : 'main', B[0], B[1] - 30, headOn === 'main'); }
+      else if (featAt === mainAt) { pill(headOn === 'feature' ? 'HEAD → feature' : 'feature', featAt[0], featAt[1] - 30, headOn === 'feature'); pill(headOn === 'main' ? 'HEAD → main' : 'main', featAt[0] + 100, featAt[1], headOn === 'main'); }
+      else {
+        pill(headOn === 'main' ? 'HEAD → main' : 'main', mainAt[0], mainAt[1] - 30, headOn === 'main');
+        if (s >= 1) pill(headOn === 'feature' ? 'HEAD → feature' : 'feature', featAt[0] + (featAt === F ? 84 : 0), featAt === F ? featAt[1] : featAt[1] - 30, headOn === 'feature');
+        else pill('HEAD → main', B[0], B[1] - 30, true);
+      }
+      /* state badge */
+      const state = same && s >= 3 ? ['Merged cleanly, no conflict', c.green] : conflicted ? [rb ? 'REBASING: conflict' : 'MERGING: conflict', c.red]
+        : s >= 6 ? [rb ? 'Rebase finished' : 'Merge committed', c.green] : p.way === 'abort' && s >= 4 ? ['Merge aborted, back to before', c.ink2]
+        : s === 5 ? ['Resolved and staged', c.green] : ['Normal', c.ink2];
+      tag(g, state[0], W - 12 - tw(g, state[0], { s: 11, b: true }) / 2 - 6, 16, { s: 11, fill: c.surf, stroke: state[1], c: state[1] });
+      /* ---- the file ---- */
+      const fy = 146;
+      D.text(g, 'shop.yml in your working tree' + (rb && s >= 3 ? ' (on feature, during the rebase)' : s === 1 ? ' (on feature)' : ''), 12, fy - 8, { s: 11, b: true, c: c.ink2 });
+      let L;
+      const colourLine = s === 0 ? base : s === 1 ? theirs : s === 2 ? ours : null;
+      if (s <= 2) L = [['title: Shop', 'n'], [colourLine, s === 0 ? 'n' : s === 1 ? 't' : 'o'], ['price: 10', 'n']];
+      else if (same) L = [['title: Shop', 'n'], [ours, 'o'], ['price: 10', 'n']];
+      else if (conflicted && !(s === 4 && p.way !== 'abort')) {
+        const theirLbl = rb ? '>>>>>>> ' + hid('ed28287') + ' (Make it red)' : '>>>>>>> feature';
+        L = [['title: Shop', 'n'], ['<<<<<<< HEAD', 'm'], [rb ? ours : ours, 'o']];
+        if (p.diff3) L.push([rb ? '||||||| parent of ' + hid('ed28287') + ' (Make it red)' : '||||||| 9df4fec', 'm'], [base, 'b']);
+        L.push(['=======', 'm'], [theirs, 't'], [theirLbl, 'm'], ['price: 10', 'n']);
+      } else if (p.way === 'abort' && s >= 4) L = [['title: Shop', 'n'], [ours, 'o'], ['price: 10', 'n']];
+      else if (p.way === 'tool' && s === 4) L = null;
+      else L = [['title: Shop', 'n'], [rb && p.way === 'rebase' ? theirs : fix, p.way === 'manual' ? 'f' : (rb || p.way === 'theirs') ? 't' : 'o'], ['price: 10', 'n']];
+      const BG = { n: c.bg, o: 'rgba(59,130,246,.22)', t: 'rgba(168,85,247,.22)', b: 'rgba(148,163,184,.3)', m: 'rgba(239,68,68,.2)', f: 'rgba(34,197,94,.25)' };
+      const WHO = { o: rb ? 'ours = main (HEAD during rebase)' : 'ours = main (HEAD)', t: rb ? 'theirs = your feature commit' : 'theirs = feature', b: 'base = merge base B', m: 'marker line, must be deleted', f: 'your own resolution' };
+      if (L) {
+        const rh = Math.min(22, (z.H - fy - 8) / L.length);
+        L.forEach(([t, k], i) => {
+          const y = fy + i * rh;
+          rr(g, 12, y, 330, rh - 3, 4, { fill: BG[k] });
+          D.text(g, fitText(g, t, 316, { s: 12, mono: true }), 20, y + rh / 2, { bl: 'middle', s: 12, mono: true, b: k === 'm', c: k === 'm' ? c.red : c.ink });
+          if (k !== 'n') D.text(g, fitText(g, WHO[k], W - 362, { s: 11 }), 352, y + rh / 2, { bl: 'middle', s: 11, c: c.ink2 });
+        });
+      } else {
+        const cols = [['LOCAL (ours)', ours, 'o'], ['BASE', base, 'b'], ['REMOTE (theirs)', theirs, 't']], cw = (W - 36) / 3;
+        cols.forEach(([h, t, k], i) => {
+          const x = 12 + i * (cw + 6);
+          rr(g, x, fy, cw, 74, 6, { fill: BG[k], stroke: c.line, w: 1 });
+          D.text(g, h, x + 8, fy + 18, { s: 11, b: true, c: c.ink2 });
+          D.text(g, fitText(g, t, cw - 16, { s: 12, mono: true }), x + 8, fy + 46, { s: 12, mono: true, c: c.ink });
+        });
+        rr(g, 12, fy + 84, W - 24, 64, 6, { fill: BG.f, stroke: c.green, w: 1.2 });
+        D.text(g, 'MERGED (the result you save)', 20, fy + 104, { s: 11, b: true, c: c.ink2 });
+        D.text(g, fitText(g, ours, W - 48, { s: 12, mono: true }), 20, fy + 130, { s: 12, mono: true, c: c.ink });
+      }
+      /* ---- readout: the terminal and what is going on ---- */
+      const T = (cmd, out, why) => `<p><b>You run</b></p><pre>${esc(cmd)}</pre>` + (out ? `<p><b>Git prints</b></p><pre>${esc(out)}</pre>` : '') + `<p>${why}</p>`;
+      const idx = `<p><b>git ls-files -u</b> (the index holds three versions while the conflict is open. Ids shortened, notes in brackets added)</p><pre>100644 43918cc 1\tshop.yml   (base)\n100644 ${hid('ca20d2f')} 2\tshop.yml   (ours)\n100644 ${hid('a948cd2')} 3\tshop.yml   (theirs)</pre>` + (dflt ? '' : '<p>You changed the lines, so ids that depend on them are shown as xxxxxxx. Run the same steps to see your real ids.</p>');
+      if (s === 0) return T('git init -b main\ngit add shop.yml\ngit commit -m "Start shop"', '', 'Commit B is the starting point. Both branches will begin here, so B becomes the <b>merge base</b>.');
+      if (s === 1) return T(`git switch -c feature\n# edit the colour line to: ${theirs}\ngit commit -am "Make it red"`, '', 'On the feature branch you change the colour line. Commit F exists only on feature.');
+      if (s === 2) return T(`git switch main\n# edit the same line to: ${ours}\ngit commit -am "Make it green"`, '', 'Meanwhile main changes the <b>same line</b> in a different way. The branches have diverged: both changed what B had.');
+      if (same) return T('git merge feature', 'Merge made by the \'ort\' strategy.', 'Both sides made the identical change, so a three way merge has nothing to decide. Git creates merge commit X by itself. Conflicts only happen when the same lines change in <b>different</b> ways.');
+      if (s === 3) return rb
+        ? T('git switch feature\ngit rebase main', 'Auto-merging shop.yml\nCONFLICT (content): Merge conflict in shop.yml\nerror: could not apply ' + hid('ed28287') + '... Make it red\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: "git add/rm <conflicted_files>", then run "git rebase --continue".\nhint: You can instead skip this commit: run "git rebase --skip".\nhint: To abort and get back to the state before "git rebase", run "git rebase --abort".', 'A rebase replays your feature commit on top of main, so the conflict appears while replaying it. <b>Watch the labels</b>: HEAD is now main\'s commit M, and the incoming side is your own commit. Ours and theirs are swapped compared with a merge.') + idx
+        : T('git merge feature\ngit status', 'Auto-merging shop.yml\nCONFLICT (content): Merge conflict in shop.yml\nAutomatic merge failed; fix conflicts and then commit the result.\nOn branch main\nYou have unmerged paths.\n  (fix conflicts and run "git commit")\n  (use "git merge --abort" to abort the merge)\n\nUnmerged paths:\n  (use "git add <file>..." to mark resolution)\n\tboth modified:   shop.yml', 'Git compared B, M and F. The title and price lines changed on neither side, so they merge silently. The colour line changed on both sides differently, so Git stops, writes <b>conflict markers</b> into the file and keeps all three versions in the index.') + idx;
+      const way = p.way;
+      const fixTxt = fix === 'colour: purple' ? 'p' : fix === ours ? 'o' : fix === theirs ? 't' : 'x';
+      const kept = way === 'rebase' || way === 'theirs' ? 't' : way === 'manual' ? fixTxt : 'o';
+      const known = { p: 'colour: purple', o: 'colour: green', t: 'colour: red' };
+      const real = k => dflt && k !== 'x' && (k === 'o' ? ours : k === 't' ? theirs : fix) === known[k];
+      const blob = real(kept) ? { p: '12a18d2', o: 'ca20d2f', t: 'a948cd2' }[kept] : 'xxxxxxx';
+      const mcid = real(kept) ? { p: 'c279a4c', o: 'da5f94a', t: '119b0b1' }[kept] : 'xxxxxxx';
+      if (way === 'abort') return T('git merge --abort\ngit status -s', '', 'The merge is cancelled. The file, the index and the branch are exactly as they were at step 2. Nothing was lost. Talk to the author of the other change, then merge again. During a rebase the same idea is git rebase --abort.');
+      if (s === 4) {
+        if (way === 'manual') return T(`# open shop.yml in your editor\n# write: ${fix}\n# delete the <<<<<<<, ======= and >>>>>>> lines\ngrep -n "^<<<<<<<\\|^=======\\|^>>>>>>>" shop.yml`, '', 'You decide the final content. It can be one side, the other, or something new. A left over marker line breaks the file, so search for markers before you continue.');
+        if (way === 'ours') return T('git checkout --ours shop.yml', 'Updated 1 path from the index', 'Git copies stage 2 (ours) over the whole file. Handy when you know the other side is wrong for this file. git checkout -m shop.yml brings the markers back if you change your mind.');
+        if (way === 'theirs') return T('git checkout --theirs shop.yml', 'Updated 1 path from the index', 'Git copies stage 3 (theirs) over the whole file, a common choice for generated files such as lock files, which you regenerate afterwards anyway.');
+        if (way === 'tool') return T('git mergetool --tool=vimdiff\n# or set once: git config --global merge.tool vscode', '', 'A merge tool opens the three versions side by side, LOCAL (ours), BASE and REMOTE (theirs), plus the MERGED result you edit and save. git mergetool --tool-help lists the tools installed on your machine.');
+        if (way === 'rebase') return T(`# write the line you want: ${theirs}\n# delete the marker lines`, '', 'Resolve exactly as in a merge. Here you keep your feature change on top of the new main.');
+      }
+      if (s === 5) {
+        if (way === 'tool') return T('# save and quit the tool', '', 'When the tool exits successfully, mergetool marks the file resolved for you (it runs git add). It may leave a shop.yml.orig backup. Set mergetool.keepBackup false to stop that, and never commit .orig files.');
+        return T('git add shop.yml\ngit ls-files -s shop.yml', '100644 ' + blob + ' 0\tshop.yml', '<b>git add marks the conflict as resolved</b>: stages 1, 2 and 3 are replaced by one normal stage 0 entry. git status no longer lists the file under Unmerged paths.' + (blob === 'xxxxxxx' ? ' The id is the hash of whatever you typed, so it is shown as xxxxxxx here.' : ''));
+      }
+      if (rb) return T('git rebase --continue', '[detached HEAD ' + hid('d696c84') + '] Make it red\n 1 file changed, 1 insertion(+), 1 deletion(-)\nSuccessfully rebased and updated refs/heads/feature.', 'The replayed commit F\' is created on top of M. History stays a straight line and there is no merge commit. The old F is no longer on any branch. If the branch was already pushed, publish it with git push --force-with-lease.');
+      return T('git commit --no-edit', '[main ' + mcid + '] Merge branch \'feature\'', 'Merge commit X has two parents, M and F, and records how you resolved the conflict. Commit ids include your name and the time, so yours will differ. Run the tests now: a merge without markers can still be wrong.');
+    }
+  });
+
   def('areas', {
     title: 'Working tree, staging area, repository and remote',
     sub: 'Type commands and watch each file version (v1, v2 ...) move between the four places. edit, new and delete stand for what you do in your editor.',

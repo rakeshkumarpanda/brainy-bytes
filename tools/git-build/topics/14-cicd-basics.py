@@ -4,29 +4,10 @@
 # Actions, store and share data, dependency caching, secure use reference), GitLab CI/CD docs (quick start, jobs,
 # job artifacts, caching, runners), the US SEC order on Knight Capital (2013), Codecov security update (April 2021),
 # GitHub advisory and CVE-2025-30066 for tj-actions/changed-files (March 2025), YAML 1.1 and 1.2 type rules.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file, devqa
 
 K = Kit()
-
-K.code('order', r'''
-# How a CI server decides when each job may start: a job waits only for the jobs in its needs list
-jobs = {
-    "lint":        {"needs": [],             "minutes": 1},
-    "unit-tests":  {"needs": ["lint"],       "minutes": 2},
-    "build":       {"needs": ["unit-tests"], "minutes": 1},
-    "smoke-tests": {"needs": ["build"],      "minutes": 2},
-}
-
-finish = {}
-while len(finish) < len(jobs):
-    for name, job in jobs.items():
-        if name not in finish and all(n in finish for n in job["needs"]):
-            start = max([finish[n] for n in job["needs"]] + [0])
-            finish[name] = start + job["minutes"]
-            print(f"{name:12} starts at minute {start}, ends at minute {finish[name]}")
-print("pipeline time:", max(finish.values()), "minutes")
-''')
 
 K.lesson('why', 'What CI and CD mean, and why teams need them', f'''
 <p><b>Continuous integration (CI)</b> means every developer merges small changes into the shared branch often, and a server automatically builds and tests every push. Problems show up within minutes, while the change is still fresh in the author's head.</p>
@@ -49,7 +30,6 @@ K.lesson('why', 'What CI and CD mean, and why teams need them', f'''
 K.lesson('anatomy', 'Inside a pipeline: jobs, stages, runners and YAML', f'''
 <p>A pipeline is a set of <b>jobs</b>. Each job runs on a fresh machine called a <b>runner</b>, so jobs share nothing unless you pass files on as artifacts. Jobs either wait for a whole <b>stage</b> to finish (the GitLab default) or only for the jobs they <b>need</b>. Try both modes and make one job fail.</p>
 {viz('pipeline')}
-{code('order')}
 <p>Both platforms describe pipelines in <b>YAML</b>: indentation with spaces shows what belongs to what, <code>key: value</code> makes a map and <code>- item</code> makes a list. Break the file in the animation and read the error.</p>
 {viz('yamlview')}
 {note('YAML guesses types. python-version: 3.10 is read as the number 3.1, and the job installs the wrong Python. Always quote versions: python-version: "3.10". Old YAML 1.1 parsers also read a bare no or off as false.', 'warn')}
@@ -118,38 +98,6 @@ K.calc('h', 'A team pushes 40 times a day. Each pipeline takes 12 minutes on 1 r
        ['40 × 12 = 480 minutes.', '480 / 60.', eq('8 runner hours')], check=8)
 K.calc('h', 'Caching cuts dependency install from 3 minutes to 0.5 in a 12 minute pipeline. With 40 runs a day, how many minutes are saved per day?', '100', 'Saving per run times runs.',
        ['Saving per run: 3 - 0.5 = 2.5 minutes.', '40 runs a day.', eq('2.5 × 40 = 100 minutes')], check=100)
-
-K.assign('ptime', 'm', 'Pipeline time with needs',
-         '<p>Write <code>pipeline_time(jobs)</code>. jobs maps a job name to <code>[minutes, needs]</code>, where needs is a list of job names. A job starts when all its needs have finished. Return the total minutes until the last job ends.</p>',
-         '''
-def pipeline_time(jobs):
-    # your code here
-    pass
-''', [("pipeline_time({'lint': [1, []], 'test': [2, ['lint']], 'build': [1, ['test']]})", 4),
-      ("pipeline_time({'a': [3, []], 'b': [5, []]})", 5),
-      ("pipeline_time({'web': [1, []], 'docs': [6, []], 'test-web': [2, ['web']], 'deploy': [1, ['test-web']]})", 6),
-      ("pipeline_time({'a': [1, []], 'b': [2, ['a']], 'c': [4, ['a']], 'd': [1, ['b', 'c']]})", 6)],
-         '''
-def pipeline_time(jobs):
-    end = {}
-    def finish(name):
-        if name not in end:
-            minutes, needs = jobs[name]
-            end[name] = max([finish(n) for n in needs] + [0]) + minutes
-        return end[name]
-    return max(finish(n) for n in jobs)
-''', 'A job ends at the latest end time of its needs plus its own minutes. Compute it recursively and remember results.', '<p>This is the longest path through a directed acyclic graph, also called the critical path.</p>')
-K.assign('stagetime', 'h', 'Pipeline time with stages',
-         '<p>Write <code>stage_time(stages)</code>. stages is a list of stages in order, each a list of job minutes. Every job in a stage starts when the whole previous stage has finished. Return the total minutes. An empty stage takes 0 minutes.</p>',
-         '''
-def stage_time(stages):
-    # your code here
-    pass
-''', [("stage_time([[1], [2], [1], [2]])", 6), ("stage_time([[1, 6], [2], [1]])", 9), ("stage_time([[3, 3, 3]])", 3), ("stage_time([[], [4]])", 4)],
-         '''
-def stage_time(stages):
-    return sum(max(s) if s else 0 for s in stages)
-''', 'Each stage costs as long as its slowest job.', '<p>Compare with the needs version: stages are simpler to read, needs are faster when jobs of very different lengths share a stage.</p>')
 
 K.must('CI and CD', 'CI: merge small changes often, every push built and tested. Continuous delivery: always releasable, a person releases. Continuous deployment: a green pipeline releases by itself.')
 K.must('Pipeline parts', 'Pipeline or workflow run, jobs on fresh runners, steps or script lines. Stages wait for the whole previous stage, needs wait only for named jobs. Time = longest path.')

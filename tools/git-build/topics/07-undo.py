@@ -2,28 +2,10 @@
 # the reflog and recovering lost commits, which undo to use when. Sources: Pro Git 2.4 and 7.7 (Reset Demystified),
 # git-restore, git-reset, git-revert and git-reflog manuals (reflog entries for unreachable commits expire after
 # 30 days and reachable ones after 90 days by default, gc.reflogExpireUnreachable and gc.reflogExpire).
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow
 
 K = Kit()
-
-K.code('reset', r'''
-# The three trees and what each kind of reset changes
-HEAD, INDEX, WORK = "C3", "C3 + staged edit", "C3 + staged edit + more edits"
-history = ["C1", "C2", "C3"]
-
-def reset(mode, target):
-    head, index, work = target, INDEX, WORK
-    if mode in ("mixed", "hard"):
-        index = target              # the index is made to match the target
-    if mode == "hard":
-        work = target               # your files are made to match too
-    return head, index, work
-
-for mode in ("soft", "mixed", "hard"):
-    h, i, w = reset(mode, "C2")
-    print(f"reset --{mode:5}: HEAD={h:3} index={i:18} files={w}")
-''')
 
 K.lesson('levels3', 'Undo at each of the three levels', f'''
 <p>Every undo answers one question: <b>where is the thing I want to undo?</b> In your files, in the staging area, or already in a commit? And has that commit been shared?</p>
@@ -45,7 +27,6 @@ K.lesson('reset', 'git reset: soft, mixed and hard', f'''
     ['--mixed (default)', 'yes', 'yes', 'no', 'unstage and recommit differently: changes stay in your files'],
     ['--hard', 'yes', 'yes', 'yes', 'throw everything away and match the commit exactly']])}
 {viz('areas', cmds='edit app.py\ngit commit -am "one"\nedit app.py\ngit commit -am "two"\ngit reset --soft HEAD~1')}
-{code('reset')}
 {fxs(
     fx('Undo the last commit, keep the work staged', '<code>git reset --soft HEAD~1</code>', 'Then git commit again, for example to combine two commits.', key=True),
     fx('Undo the last commit, keep the work unstaged', '<code>git reset HEAD~1</code>', 'Same as --mixed.'),
@@ -105,37 +86,6 @@ K.calc('h', 'You amend the last commit 3 times. How many commit objects exist fo
        ['Original: 1.', 'Each amend creates a new commit: 3.', eq('1 + 3 = 4 objects, 3 of them unreachable')], check=4)
 K.calc('h', 'Out of soft, mixed and hard, how many reset modes change your working tree files?', '1', 'Only one touches files.',
        ['soft: only HEAD.', 'mixed: HEAD and index.', eq('hard: also files, so 1')], check=1)
-
-K.assign('rst', 'm', 'Simulate git reset',
-         '<p>Write <code>reset(mode, target, index, work)</code> that returns a tuple (head, index, work) after <code>git reset --mode target</code>. soft keeps index and work, mixed sets index to target, hard sets both to target.</p>',
-         '''
-def reset(mode, target, index, work):
-    # your code here
-    pass
-''', [("reset('soft', 'C2', 'I', 'W')", ['C2', 'I', 'W']), ("reset('mixed', 'C2', 'I', 'W')", ['C2', 'C2', 'W']), ("reset('hard', 'C2', 'I', 'W')", ['C2', 'C2', 'C2'])],
-         '''
-def reset(mode, target, index, work):
-    if mode in ('mixed', 'hard'):
-        index = target
-    if mode == 'hard':
-        work = target
-    return [target, index, work]
-''', 'Start from the given index and work, then overwrite according to the mode. Return a list.', '<p>The tests compare with lists because tuples arrive as lists in the browser.</p>')
-K.assign('pick', 'e', 'Choose the right undo',
-         '<p>Write <code>which_undo(where, shared)</code>. <code>where</code> is "file", "staged" or "commit". Return "git restore", "git restore --staged", "git revert" (a shared commit) or "git reset" (a local commit).</p>',
-         '''
-def which_undo(where, shared):
-    # your code here
-    pass
-''', [("which_undo('file', False)", 'git restore'), ("which_undo('staged', False)", 'git restore --staged'), ("which_undo('commit', True)", 'git revert'), ("which_undo('commit', False)", 'git reset')],
-         '''
-def which_undo(where, shared):
-    if where == 'file':
-        return 'git restore'
-    if where == 'staged':
-        return 'git restore --staged'
-    return 'git revert' if shared else 'git reset'
-''', 'Follow the table in the first lesson.', '<p>Sharing is the key question for commits.</p>')
 
 K.must('Where is it', 'Unstaged edit: git restore file. Staged: git restore --staged file. Local commit: reset or amend. Shared commit: revert.')
 K.must('Reset modes', '--soft moves the branch only. --mixed (default) also resets the index. --hard also resets your files.')

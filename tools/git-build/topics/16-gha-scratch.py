@@ -4,31 +4,10 @@
 # protection with required checks, the QA regression workflow, and the errors beginners hit first.
 # Sources: GitHub docs quickstart for Actions, workflow syntax, downloading workflow artifacts, about protected
 # branches, actions/checkout, setup-python, upload-artifact and download-artifact READMEs, gh run download manual.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file, devqa, changes, babystep, starter
 
 K = Kit()
-
-K.code('junit', r'''
-# QA reads the JUnit XML report that pytest wrote (--junitxml) and the pipeline kept as an artifact
-import xml.etree.ElementTree as ET
-
-report = """<testsuites><testsuite name="pytest" tests="5" failures="1" errors="0" skipped="0">
-<testcase classname="tests.unit.test_calc" name="test_add"><failure message="assert -1 == 5"/></testcase>
-<testcase classname="tests.unit.test_calc" name="test_subtract"/>
-<testcase classname="tests.unit.test_calc" name="test_multiply"/>
-<testcase classname="tests.unit.test_calc" name="test_divide"/>
-<testcase classname="tests.unit.test_calc" name="test_divide_by_zero"/>
-</testsuite></testsuites>"""
-
-suite = ET.fromstring(report).find("testsuite")
-total, failed = int(suite.get("tests")), int(suite.get("failures"))
-print(f"{total - failed} passed, {failed} failed")
-for case in suite.iter("testcase"):
-    bad = case.find("failure")
-    if bad is not None:
-        print("FAILED", case.get("name"), "-", bad.get("message"))
-''')
 
 DL = '<a href="calc-app-starter.zip" download>calc-app-starter.zip</a>'
 
@@ -102,7 +81,6 @@ K.lesson('devqa', 'What Dev and QA change, and why', f'''
 K.lesson('qa', 'The QA regression workflow and common errors', f'''
 <p>QA runs the full suite every weekday night and whenever someone presses Run workflow, always against a build that CI already made. It finds the newest green CI run on main, or takes a run id you type in, and pulls the calc-app artifact from it.</p>
 {starter('.github/workflows/qa-regression.yml', {5: '02:30 UTC, Monday to Friday.', 6: 'The Run workflow button, with an optional input.', 15: 'actions: read lets gh read runs and artifacts of other workflow runs in this repository.', 21: 'The gh CLI is installed on GitHub hosted runners and reads its token from GH_TOKEN.', 32: 'The input arrives through an environment variable, never pasted into the script, so a strange value cannot become a command.', 35: 'The newest successful CI run on main, as a run id.', 38: 'Save the id as a step output for the next step.', 40: 'Download one named artifact from that other run into dist/.', 42: 'The whole suite, unit and smoke, against the packaged build.'})}
-{code('junit')}
 {table(['You see', 'Cause', 'Fix'], [
     ['No run starts after a push', 'the file is not in .github/workflows/, the YAML is invalid, or the branch filter does not match', 'check the path, open the file on GitHub (it shows YAML errors), check on: push: branches'],
     ['No such file or directory: requirements.txt', 'no actions/checkout step in that job', 'add uses: actions/checkout as the first step of every job'],
@@ -140,47 +118,6 @@ K.calc('h', 'Without cancel-in-progress, a developer pushes 5 times in 10 minute
        ['Without: 5 × 6 = 30 minutes.', 'With: 4 × 2 + 6 = 14 minutes.', eq('30 - 14 = 16 minutes saved')], check=16)
 K.calc('h', 'The regression workflow runs Monday to Friday. How many scheduled runs in 4 weeks?', '20', 'Five a week.',
        ['Cron day of week 1-5.', '5 runs per week.', eq('5 × 4 = 20 runs')], check=20)
-
-K.assign('junitsum', 'm', 'Summarise a test report',
-         '<p>Write <code>summary(xml_text)</code> that reads a JUnit XML report like the one in this chapter and returns <code>[passed, failed, failed_names]</code>, where failed_names is a sorted list of test names that have a failure or error element.</p>',
-         '''
-import xml.etree.ElementTree as ET
-
-def summary(xml_text):
-    # your code here
-    pass
-''', [("summary('<testsuite><testcase name=\"a\"/><testcase name=\"b\"><failure/></testcase></testsuite>')", [1, 1, ['b']]),
-      ("summary('<testsuites><testsuite><testcase name=\"z\"><error/></testcase><testcase name=\"y\"><failure/></testcase></testsuite></testsuites>')", [0, 2, ['y', 'z']]),
-      ("summary('<testsuite><testcase name=\"ok\"/></testsuite>')", [1, 0, []])],
-         '''
-import xml.etree.ElementTree as ET
-
-def summary(xml_text):
-    root = ET.fromstring(xml_text)
-    passed, bad = 0, []
-    for case in root.iter('testcase'):
-        if case.find('failure') is not None or case.find('error') is not None:
-            bad.append(case.get('name'))
-        else:
-            passed += 1
-    return [passed, len(bad), sorted(bad)]
-''', 'iter(\'testcase\') finds test cases at any depth, so it works with and without the testsuites wrapper.', '<p>Skipped tests have a skipped element. A fuller version would count them separately.</p>')
-K.assign('willrun', 'e', 'Will ci.yml run',
-         '<p>Write <code>ci_runs(event, branch)</code> for the triggers of the sample ci.yml: push to main, pull_request into main, and workflow_dispatch on any branch. For a pull_request, branch is the target branch. Return True or False.</p>',
-         '''
-def ci_runs(event, branch):
-    # your code here
-    pass
-''', [("ci_runs('push', 'main')", True), ("ci_runs('push', 'broken-add')", False), ("ci_runs('pull_request', 'main')", True),
-      ("ci_runs('pull_request', 'release')", False), ("ci_runs('workflow_dispatch', 'broken-add')", True), ("ci_runs('schedule', 'main')", False)],
-         '''
-def ci_runs(event, branch):
-    if event == 'workflow_dispatch':
-        return True
-    if event in ('push', 'pull_request'):
-        return branch == 'main'
-    return False
-''', 'Handle each event in the on section, and return False for events that are not listed.', '<p>This is why the broken-add branch only got a CI run once the pull request was opened.</p>')
 
 K.must('From scratch', 'Test locally, create an empty repo, commit the project with .github/workflows/ci.yml, push to main, watch the Actions tab, download the artifact, break it on a branch, fix it, then require the checks on main.')
 K.must('ci.yml', 'push and pull_request on main plus workflow_dispatch, permissions contents: read, concurrency per ref. lint, unit-tests, build, smoke-tests chained by needs. Checkout in every job.')

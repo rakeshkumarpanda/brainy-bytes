@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merge conflicts from start to finish · Git and CI/CD</title>
+<meta name="description" content="How conflicts arise, conflict markers and index stages, zdiff3, resolving by hand, checkout --ours and --theirs, -X ours and -X theirs, mergetool, abort, rebase conflicts with swapped labels, cherry-pick, stash pop and modify/delete conflicts, the GitHub and GitLab web resolvers, and rerere.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/git.css">
+</head>
+<body class="cvp gitp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=git">Git and CI/CD learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=git" target="_top">Git and CI/CD</a><span>›</span><span>Step 2: Branching and merging</span><span>›</span><span>Merge conflicts</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 4 of 4 · Intermediate</div>
+    <h1>Merge conflicts from start to finish</h1>
+    <p class="lead">Watch one conflict appear step by step, see exactly what Git writes, and resolve it six different ways, including during a rebase.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">7 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 command cards</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#merge-conflicts" data-topic="cheatsheet" data-h="merge-conflicts">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#arise" data-l="arise"><span class="n">1</span><span class="t">How a conflict arises</span></a></li><li><a href="#inside" data-l="inside"><span class="n">2</span><span class="t">What Git writes during a conflict</span></a></li><li><a href="#ways" data-l="ways"><span class="n">3</span><span class="t">Six ways to resolve the same conflict</span></a></li><li><a href="#rebase" data-l="rebase"><span class="n">4</span><span class="t">Conflicts during a rebase: the labels swap</span></a></li><li><a href="#other" data-l="other"><span class="n">5</span><span class="t">Other places conflicts appear</span></a></li><li><a href="#web" data-l="web"><span class="n">6</span><span class="t">Resolving in GitHub and GitLab</span></a></li><li><a href="#fewer" data-l="fewer"><span class="n">7</span><span class="t">Fewer and easier conflicts</span></a></li></ol>
+    <article class="cv-lesson" id="arise" data-l="arise" hidden><div class="cv-lno">Lesson 1 of 7</div><h2>How a conflict arises</h2>
+<p>A conflict needs three things: a common starting point, and two branches that each change the <b>same lines</b> of that starting point in <b>different</b> ways. Here is the exact setup used in every example on this page.</p>
+<ol class="gk-flow"><li><b>Base commit B</b><span>shop.yml has title: Shop, colour: blue, price: 10</span></li><li><b>feature branch</b><span>Commit F changes colour: blue to colour: red</span></li><li><b>main branch</b><span>Commit M changes colour: blue to colour: green</span></li><li><b>git merge feature</b><span>Both sides changed line 2 differently. Git stops and asks you.</span></li></ol>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Recreate it yourself in an empty folder</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git init -b main shop &amp;&amp; cd shop</span><span class="ln">printf 'title: Shop\ncolour: blue\nprice: 10\n' &gt; shop.yml</span><span class="ln">git add shop.yml &amp;&amp; git commit -m "Start shop"</span><span class="ln">git switch -c feature</span><span class="ln">sed -i 's/blue/red/' shop.yml &amp;&amp; git commit -am "Make it red"</span><span class="ln">git switch main</span><span class="ln">sed -i 's/blue/green/' shop.yml &amp;&amp; git commit -am "Make it green"</span><span class="ln">git merge feature</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Auto-merging shop.yml
+CONFLICT (content): Merge conflict in shop.yml
+Automatic merge failed; fix conflicts and then commit the result.</pre></div>
+<p>Press Play below and step through it. Then change the two lines, pick another way out, and play it again. Make both lines identical to see that the same change on both sides is not a conflict at all.</p>
+<div class="cvz" data-viz="conflictlab"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Change on main</th><th>Change on feature</th><th>Result</th></tr></thead><tbody><tr><td>line 2 to green</td><td>line 3 to L</td><td>No conflict, both changes kept (different lines, not touching)</td></tr><tr><td>line 2 to green</td><td>line 2 to green</td><td>No conflict, the same change</td></tr><tr><td>line 2 to green</td><td>line 2 to red</td><td><b>Content conflict</b></td></tr><tr><td>line 2 to green</td><td>line 3 to L, with line 2 changed by main right next to it</td><td>Usually one conflict hunk, because touching changed lines are treated as one block</td></tr><tr><td>delete the file</td><td>edit the file</td><td><b>modify/delete conflict</b></td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="inside" data-l="inside" hidden><div class="cv-lno">Lesson 2 of 7</div><h2>What Git writes during a conflict</h2>
+<p>While the merge is stopped, Git keeps the conflict in two places: markers in your working file, and three versions of the file in the index.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">The working file</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">cat shop.yml</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">title: Shop
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+colour: green
+=======
+colour: red
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature
+price: 10</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Marker</th><th>Meaning</th></tr></thead><tbody><tr><td><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code></td><td>Start of ours: the branch you are on (main)</td></tr><tr><td><code>=======</code></td><td>End of ours, start of theirs</td></tr><tr><td><code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature</code></td><td>End of theirs: the branch you are merging in</td></tr><tr><td><code>||||||| 9df4fec</code></td><td>Only with diff3 or zdiff3: the base version follows, up to =======</td></tr><tr><td>Lines outside the markers</td><td>Already merged by Git. title and price were not in dispute.</td></tr></tbody></table></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">The index holds three stages of the same path</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git ls-files -s</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">100644 43918cc4350c12c7f3c22c9b100a72aa87392b72 1	shop.yml
+100644 ca20d2f7390cdacead2744d74c0495ed4c2734d0 2	shop.yml
+100644 a948cd2871dc89abc707644334e43bde560ed543 3	shop.yml</pre></div>
+<p>Stage 1 is the base, stage 2 is ours, stage 3 is theirs. A normal file sits at stage 0. <b>git add</b> on the file replaces the three stages with one stage 0 entry, and that is exactly what "mark as resolved" means.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">See the base as well, in the markers</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git merge --abort</span><span class="ln">git config merge.conflictStyle zdiff3</span><span class="ln">git merge feature</span><span class="ln">cat shop.yml</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">title: Shop
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+colour: green
+||||||| 9df4fec
+colour: blue
+=======
+colour: red
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature
+price: 10</pre></div>
+<p>Now you can see that both sides started from blue. Knowing the starting point often tells you which change was intended, so many teams turn zdiff3 on globally.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Which files are in conflict</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git status</code> or <code>git diff --name-only --diff-filter=U</code></div><div class="fx-n">Conflicted files show as both modified, or UU in the short format.</div></div><div class="fx"><div class="fx-h"><span>Look at one stage</span></div><div class="fx-b"><code>git show :1:shop.yml</code>, <code>:2:</code>, <code>:3:</code></div><div class="fx-n">Prints the base, ours or theirs version straight from the index.</div></div><div class="fx"><div class="fx-h"><span>Combined diff</span></div><div class="fx-b"><code>git diff</code></div><div class="fx-n">During a conflict it shows a combined diff with two columns of + and minus signs, one per side.</div></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="ways" data-l="ways" hidden><div class="cv-lno">Lesson 3 of 7</div><h2>Six ways to resolve the same conflict</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Way</th><th>Commands</th><th>Result in shop.yml</th><th>Use it when</th></tr></thead><tbody><tr><td>1. Edit by hand</td><td>edit, delete markers, <code>git add</code>, <code>git commit</code></td><td>Whatever you write, for example colour: purple</td><td>Both changes matter, or a mix is right. The usual case.</td></tr><tr><td>2. Keep ours for a file</td><td><code>git checkout --ours shop.yml</code>, add, commit</td><td>colour: green</td><td>Their version of this file is simply wrong or stale</td></tr><tr><td>3. Keep theirs for a file</td><td><code>git checkout --theirs shop.yml</code>, add, commit</td><td>colour: red</td><td>Generated files such as package-lock.json, which you then regenerate</td></tr><tr><td>4. Pick a side for every hunk up front</td><td><code>git merge -X ours feature</code> or <code>-X theirs</code></td><td>green or red, no stop at all</td><td>You already know one side wins every clash. Non clashing changes are still merged.</td></tr><tr><td>5. A merge tool</td><td><code>git mergetool</code></td><td>What you save in the MERGED pane</td><td>Many hunks, or you prefer a side by side view</td></tr><tr><td>6. Back out</td><td><code>git merge --abort</code></td><td>Back to colour: green, as before the merge</td><td>You need to ask someone first, or you merged the wrong branch</td></tr></tbody></table></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Way 1, by hand</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln gc"># open shop.yml, write colour: purple, delete the three marker lines</span><span class="ln">git add shop.yml</span><span class="ln">git commit --no-edit</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">[main c279a4c] Merge branch 'feature'</pre></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Way 2 and 3, one whole side</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git checkout --theirs shop.yml</span><span class="ln">git add shop.yml</span><span class="ln">git commit --no-edit</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Updated 1 path from the index
+[main 119b0b1] Merge branch 'feature'</pre></div>
+<p>Commit ids include the author and the time, so the ids on your machine will differ from the ones shown here. File ids such as 43918cc depend only on the content, so they will match.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Way 4, decide before merging</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git merge -X ours feature</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Auto-merging shop.yml
+Merge made by the 'ort' strategy.</pre></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Way 5, a merge tool</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git mergetool --tool-help</span><span class="ln">git mergetool --tool=vimdiff</span></pre><div class="cc-cap">What you will see (shortened)</div><pre class="cc-out">'git mergetool --tool=&lt;tool&gt;' may be set to one of the following:
+		vimdiff          Use Vim with a custom layout (see `git help mergetool`'s `BACKEND SPECIFIC HINTS` section)
+		vimdiff1         Use Vim with a 2 panes layout (LOCAL and REMOTE)
+		vimdiff2         Use Vim with a 3 panes layout (LOCAL, MERGED and REMOTE)</pre></div>
+<p>A merge tool opens four views: <b>LOCAL</b> (ours), <b>BASE</b>, <b>REMOTE</b> (theirs) and <b>MERGED</b>, which is the real file you edit. Save and quit, and git mergetool runs git add for you. VS Code, IntelliJ and Meld do the same job with buttons such as Accept Current, Accept Incoming and Accept Both. Accept Current means ours and Accept Incoming means theirs.</p>
+<div class="note note-warn"><b>Common mistake</b><div>git checkout --ours and git merge -X ours are different. The first acts on a whole file after the stop. The second acts on each clashing hunk during the merge, and still keeps their changes in every other place. git merge -s ours (a strategy, with a small s) is different again: it throws away all of their changes.</div></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Changed your mind about a file you resolved</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git checkout -m shop.yml</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Recreated 1 merge conflict</pre></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="rebase" data-l="rebase" hidden><div class="cv-lno">Lesson 4 of 7</div><h2>Conflicts during a rebase: the labels swap</h2>
+<p>If you rebase feature onto main instead of merging, the same clash appears, but your own commit is now replayed on top of main. That changes who is ours.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Rebase the feature branch</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git switch feature</span><span class="ln">git rebase main</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Auto-merging shop.yml
+CONFLICT (content): Merge conflict in shop.yml
+error: could not apply ed28287... Make it red
+hint: Resolve all conflicts manually, mark them as resolved with
+hint: "git add/rm &lt;conflicted_files&gt;", then run "git rebase --continue".
+hint: You can instead skip this commit: run "git rebase --skip".
+hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+Could not apply ed28287... Make it red</pre></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">The file during the rebase</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">cat shop.yml</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">title: Shop
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+colour: green
+=======
+colour: red
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; ed28287 (Make it red)
+price: 10</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>During git merge feature (on main)</th><th>During git rebase main (on feature)</th></tr></thead><tbody><tr><td>HEAD and ours</td><td>main, colour: green</td><td>main, colour: green (the commit you are replaying onto)</td></tr><tr><td>theirs</td><td>feature, colour: red</td><td>your own commit ed28287, colour: red</td></tr><tr><td>To keep your feature change</td><td>git checkout --theirs</td><td><b>also</b> git checkout --theirs</td></tr><tr><td>Finish with</td><td>git add, git commit</td><td>git add, git rebase --continue</td></tr><tr><td>Back out with</td><td>git merge --abort</td><td>git rebase --abort</td></tr><tr><td>Drop just this commit</td><td>not available</td><td>git rebase --skip</td></tr></tbody></table></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">Finish the rebase</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git checkout --theirs shop.yml</span><span class="ln">git add shop.yml</span><span class="ln">git rebase --continue</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Updated 1 path from the index
+[detached HEAD d696c84] Make it red
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Successfully rebased and updated refs/heads/feature.</pre></div>
+<div class="note note-tip"><b>Remember</b><div>A rebase replays commits one by one, so a branch with five commits can stop up to five times, once for each commit that clashes. A merge stops at most once. That is a fair reason to merge long lived branches, or to squash before rebasing.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="other" data-l="other" hidden><div class="cv-lno">Lesson 5 of 7</div><h2>Other places conflicts appear</h2>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">cherry-pick</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git cherry-pick feature</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Auto-merging shop.yml
+CONFLICT (content): Merge conflict in shop.yml
+error: could not apply ed28287... Make it red
+hint: After resolving the conflicts, mark them with
+hint: "git add/rm &lt;pathspec&gt;", then run
+hint: "git cherry-pick --continue".
+hint: You can instead skip this commit with "git cherry-pick --skip".
+hint: To abort and get back to the state before "git cherry-pick",
+hint: run "git cherry-pick --abort".</pre></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">stash pop</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git stash pop</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Auto-merging shop.yml
+CONFLICT (content): Merge conflict in shop.yml
+On branch main
+Unmerged paths:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+  (use "git add &lt;file&gt;..." to mark resolution)
+	both modified:   shop.yml
+
+no changes added to commit (use "git add" and/or "git commit -a")
+The stash entry is kept in case you need it again.</pre></div>
+<p>After a conflicting stash pop, resolve the file, then <b>git stash drop</b> yourself, because Git kept the entry. There is nothing to commit or continue.</p>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">modify/delete</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git merge feature</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">CONFLICT (modify/delete): old.txt deleted in HEAD and modified in feature.  Version feature of old.txt left in tree.
+Automatic merge failed; fix conflicts and then commit the result.</pre></div>
+<p>No markers here, because there is no line to compare against a deleted file. Decide: <b>git add old.txt</b> keeps the edited file, <b>git rm old.txt</b> confirms the delete. Then commit.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Situation</th><th>Finish</th><th>Back out</th></tr></thead><tbody><tr><td>git merge</td><td>git add, git commit</td><td>git merge --abort</td></tr><tr><td>git rebase</td><td>git add, git rebase --continue</td><td>git rebase --abort</td></tr><tr><td>git cherry-pick</td><td>git add, git cherry-pick --continue</td><td>git cherry-pick --abort</td></tr><tr><td>git revert</td><td>git add, git revert --continue</td><td>git revert --abort</td></tr><tr><td>git stash pop</td><td>git add (or restore), then git stash drop</td><td>git checkout -- . then the stash is still there</td></tr><tr><td>git pull</td><td>same as merge, or as rebase with pull.rebase true</td><td>git merge --abort or git rebase --abort</td></tr></tbody></table></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="web" data-l="web" hidden><div class="cv-lno">Lesson 6 of 7</div><h2>Resolving in GitHub and GitLab</h2>
+<p>When a pull request or merge request cannot merge, both sites can resolve simple conflicts in the browser.</p>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>GitHub pull request</th><th>GitLab merge request</th></tr></thead><tbody><tr><td>Where</td><td>This branch has conflicts that must be resolved, then the Resolve conflicts button</td><td>Merge blocked: merge conflicts must be resolved, then Resolve conflicts</td></tr><tr><td>How</td><td>An editor shows the file with markers. Edit, then Mark as resolved, then Commit merge.</td><td>Interactive mode with Use ours or Use theirs per hunk, or an inline editor for the whole file</td></tr><tr><td>What it commits</td><td>A merge commit that merges the base branch into your head branch</td><td>A merge commit of the target branch into the source branch</td></tr><tr><td>When the button is missing</td><td>Conflicts it cannot show in the browser, for example a deleted or renamed file</td><td>Conflicts it cannot parse, for example binary files or files that are too large</td></tr><tr><td>Fallback</td><td>Resolve locally with the commands on this page, then push</td><td>Resolve locally, then push</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>The web resolver merges main into your branch. If your team requires a linear history or rebased branches, do not use it. Rebase locally instead and push with git push --force-with-lease.</div></div>
+<div class="scene"><div class="scene-h">Real world scenario: Dev and QA on the same config file</div><p>A developer raises the retry count in config.yml from 3 to 5 on a feature branch. A QA engineer lowers it to 2 on main so flaky tests fail faster. The pull request shows This branch has conflicts. The developer opens the file locally with zdiff3, sees the base was 3, talks to QA, and they agree on 3 for CI and 5 for production through an environment variable. One hand edited merge commit later, CI runs on the merged result and the pull request goes green.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="fewer" data-l="fewer" hidden><div class="cv-lno">Lesson 7 of 7</div><h2>Fewer and easier conflicts</h2>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Reuse recorded resolutions</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git config --global rerere.enabled true</code></div><div class="fx-n">Git records how you solved a conflict and applies the same fix if exactly that conflict returns.</div></div><div class="fx"><div class="fx-h"><span>Keep branches short</span></div><div class="fx-b"><code>git fetch</code> then <code>git rebase origin/main</code> often</div><div class="fx-n">Small and frequent integration means small conflicts.</div></div><div class="fx"><div class="fx-h"><span>Show the base</span></div><div class="fx-b"><code>git config --global merge.conflictStyle zdiff3</code></div><div class="fx-n">You see what both sides started from.</div></div><div class="fx fx-key"><div class="fx-h"><span>Find leftovers</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>git diff --check</code></div><div class="fx-n">Reports left over conflict markers before you commit.</div></div></div>
+<div class="cv-code gk-sh"><div class="cc-bar"><span class="lbl">rerere at work: the second time the same conflict happens</span><button type="button" class="gk-copy">Copy</button></div><pre class="cc-src"><span class="ln">git config rerere.enabled true</span><span class="ln">git merge feature</span><span class="ln gc"># resolve by hand to colour: purple, git add, git commit</span><span class="ln gc"># later the same merge is redone, for example after a reset</span><span class="ln">git merge feature</span></pre><div class="cc-cap">What you will see</div><pre class="cc-out">Auto-merging shop.yml
+CONFLICT (content): Merge conflict in shop.yml
+Recorded preimage for 'shop.yml'
+Automatic merge failed; fix conflicts and then commit the result.
+Recorded resolution for 'shop.yml'.
+Auto-merging shop.yml
+CONFLICT (content): Merge conflict in shop.yml
+Resolved 'shop.yml' using previous resolution.
+Automatic merge failed; fix conflicts and then commit the result.</pre></div>
+<p>Note that rerere fixes the file but still leaves it unstaged, so you look at it, then git add and commit as usual.</p>
+<div class="walk"><div class="walk-h"><span>A calm routine for any conflict</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Run git status. Read which operation is in progress and which files are unmerged.</li><li>For each file, read ours, theirs and, with zdiff3, the base. Ask who made each change and why.</li><li>Pick a way: edit by hand, take one side, or use a tool. Delete every marker line.</li><li>Run git diff --check, then build and run the tests locally.</li><li><span class="eq">git add the files, then git commit, or git rebase --continue, or git cherry-pick --continue</span></li></ol></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Two people changed the same sentence of a shared story in two different ways. Git will not guess which one is right, so it shows both and asks you to choose or write a new sentence.</p></div><div class="ld-p" data-ld="college" hidden><p>A conflict happens when both sides of a three way merge change overlapping lines differently. Git writes markers into the file and keeps base, ours and theirs as index stages 1, 2 and 3. git add collapses them to stage 0.</p></div><div class="ld-p" data-ld="masters" hidden><p>The merge is line based. Adjacent edits form one hunk, so changes that touch each other clash even if they are logically separate. During a rebase the replayed commit is theirs. rerere stores a preimage and postimage keyed by the conflict text and replays the fix later.</p></div><div class="ld-p" data-ld="research" hidden><p>Research on structured merge parses files into syntax trees to avoid false conflicts, for example two methods added at the same place, and empirical studies of open source projects find that a noticeable share of merges are textual conflicts, while some clean merges still contain semantic conflicts that only tests reveal.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./rebase-cherry-pick.html" data-topic="rebase"><small>Previous topic</small><b>Rebase and cherry-pick</b></a><a class="next" href="./undo.html" data-topic="undo"><small>Next topic</small><b>Undo</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "merge-conflicts", "topic": "conflicts", "subject": "git", "title": "Merge conflicts from start to finish", "codes": {}, "quiz": [{"lv": "e", "q": "What causes a content conflict?", "o": ["Two branches changing different files", "Two branches changing the same lines differently", "Any merge with two parents", "A push without pull"], "a": 1, "hint": "Same place, different text.", "why": "Only overlapping, different changes conflict."}, {"lv": "e", "q": "Both branches change line 2 to exactly colour: green. What happens on merge?", "o": ["Conflict", "No conflict, the line is colour: green", "Git keeps both lines", "The merge is refused"], "a": 1, "hint": "Same change.", "why": "Identical changes on both sides merge cleanly."}, {"lv": "e", "q": "During git merge feature on main, what is between <<<<<<< HEAD and =======?", "o": ["theirs", "ours, the main version", "the base", "the stash"], "a": 1, "hint": "HEAD is the current branch.", "why": "HEAD is main, so it is ours."}, {"lv": "e", "q": "Which command tells Git a conflicted file is resolved?", "o": ["git resolve", "git add", "git fix", "git merge --done"], "a": 1, "hint": "Stage it.", "why": "git add replaces the three stages with stage 0."}, {"lv": "m", "q": "In git ls-files -s during a conflict, stage 3 holds", "o": ["the base", "ours", "theirs", "the resolved file"], "a": 2, "hint": "1, 2, 3.", "why": "1 base, 2 ours, 3 theirs."}, {"lv": "m", "q": "You are rebasing feature onto main and want to keep your feature change for a file. Which command?", "o": ["git checkout --ours", "git checkout --theirs", "git merge -X ours", "git rebase --skip"], "a": 1, "hint": "Labels swap in a rebase.", "why": "During a rebase your replayed commit is theirs."}, {"lv": "m", "q": "What does git merge -X theirs feature do?", "o": ["Takes the whole feature tree", "Resolves each clashing hunk with feature's side and still merges everything else", "Aborts on conflict", "Rebases"], "a": 1, "hint": "An option, not a strategy.", "why": "Only clashing hunks follow theirs."}, {"lv": "m", "q": "After a conflicting git stash pop and resolving the file, what else should you do?", "o": ["git stash pop again", "git stash drop, because the entry was kept", "git commit --continue", "Nothing"], "a": 1, "hint": "Git kept the entry.", "why": "The stash entry is kept in case you need it again."}, {"lv": "m", "q": "Which command finishes a rebase after resolving?", "o": ["git commit", "git rebase --continue", "git rebase --done", "git merge --continue"], "a": 1, "hint": "Continue.", "why": "add, then git rebase --continue."}, {"lv": "h", "q": "A modify/delete conflict on old.txt. You want to keep the edited file. What do you run before committing?", "o": ["git rm old.txt", "git add old.txt", "git checkout --ours old.txt", "Nothing"], "a": 1, "hint": "Keep means add.", "why": "git add keeps it, git rm confirms the delete."}, {"lv": "h", "q": "You resolved shop.yml wrongly but have not committed. How do you get the markers back?", "o": ["git reset --hard", "git checkout -m shop.yml", "git stash", "git rebase --skip"], "a": 1, "hint": "Recreate.", "why": "It prints Recreated 1 merge conflict."}, {"lv": "h", "q": "What does merge.conflictStyle zdiff3 add to the markers?", "o": ["Line numbers", "The base version between ||||||| and =======", "Author names", "Nothing"], "a": 1, "hint": "Base.", "why": "You see what both sides started from."}, {"lv": "x", "q": "A feature branch with 6 commits is rebased onto main and 3 of them touch the clashing line. Up to how many times can the rebase stop?", "o": ["1", "3", "6", "0"], "a": 1, "hint": "One replay per commit.", "why": "Each commit that clashes stops the rebase once."}], "calc": [{"lv": "e", "q": "A file has 10 lines. main changes lines 2 and 8. feature changes lines 5 and 8, and its line 8 differs from main. How many conflict hunks?", "ans": "1", "hint": "Only line 8 is changed by both.", "steps": ["Line 2: only main changed it, taken.", "Line 5: only feature changed it, taken.", "<span class=\"eq\">Line 8: changed differently on both sides, so 1 hunk<\/span>"]}, {"lv": "e", "q": "How many marker lines does Git write for one conflict hunk with the default merge style?", "ans": "3", "hint": "Start, middle, end.", "steps": ["<<<<<<< HEAD starts ours.", "======= separates the sides.", "<span class=\"eq\">>>>>>>> feature ends it, so 3 marker lines<\/span>"]}, {"lv": "m", "q": "With zdiff3, how many marker lines does one conflict hunk have?", "ans": "4", "hint": "One more for the base.", "steps": ["The three default markers stay.", "||||||| starts the base section.", "<span class=\"eq\">3 + 1 = 4<\/span>"]}, {"lv": "m", "q": "During a conflict on one file, git ls-files -s shows 3 entries for it. How many entries does it show after git add?", "ans": "1", "hint": "Stages 1, 2, 3 become 0.", "steps": ["Base, ours, theirs: 3 entries at stages 1, 2 and 3.", "git add writes the resolved file at stage 0 and removes the others.", "<span class=\"eq\">1 entry<\/span>"]}, {"lv": "m", "q": "A merge stops with 4 conflicted files. You run git checkout --theirs on 2 of them and edit the other 2 by hand. How many files must you git add before git commit works?", "ans": "4", "hint": "Every unmerged path.", "steps": ["checkout --theirs writes the file but does not stage it.", "Hand edits also need staging.", "<span class=\"eq\">2 + 2 = 4<\/span>"]}, {"lv": "h", "q": "A branch with 8 commits is rebased. Commits 2, 5 and 7 clash with main. You resolve commit 2, skip commit 5, and resolve commit 7. How many commits does the rebased branch have?", "ans": "7", "hint": "skip drops one.", "steps": ["8 commits are replayed.", "git rebase --skip drops commit 5.", "<span class=\"eq\">8 minus 1 = 7<\/span>"]}, {"lv": "h", "q": "With rerere on, the same conflict appears 5 times over a week of rebases. How many times do you resolve it by hand?", "ans": "1", "hint": "Recorded once.", "steps": ["The first time Git records preimage and resolution.", "The next 4 times it reports Resolved using previous resolution.", "<span class=\"eq\">1 by hand, 4 reused<\/span>"]}], "assign": [], "must": [["Why it happens", "Both sides of a three way merge changed the same or touching lines differently. The same change on both sides is not a conflict."], ["What Git writes", "Markers <<<<<<< ours ======= theirs >>>>>>> in the file, and stages 1 base, 2 ours, 3 theirs in the index. git add collapses them to stage 0."], ["Six ways out", "Edit by hand, checkout --ours or --theirs, merge -X ours or -X theirs, git mergetool, or abort. Then git add and finish."], ["Rebase swaps labels", "During a rebase HEAD is the branch you rebase onto, and theirs is your own commit. Finish with git rebase --continue."], ["Finish or back out", "merge, rebase, cherry-pick and revert each have --continue and --abort. After stash pop, drop the entry yourself."], ["Check before committing", "git diff --check finds leftover markers. Run the tests, because a clean text merge can still be wrong."]], "summary": "<p>A conflict is Git asking you to decide where both sides changed the same lines. Read ours, theirs and the base, pick a way out, delete the markers, git add, and finish the operation.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/gitwidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

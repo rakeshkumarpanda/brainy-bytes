@@ -2,33 +2,10 @@
 # force-with-lease and force-if-includes, prune, refspecs, shallow and partial clones, HTTPS and SSH authentication.
 # Sources: Pro Git 2.5, 3.5, 10.5, git-clone, git-fetch, git-pull, git-push, git-remote manuals, GitHub docs on
 # token authentication. Terminal output was captured from real runs with Git 2.43.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file
 
 K = Kit()
-
-K.code('aheadbehind', r'''
-# How git status counts "ahead" and "behind": commits on one side that the other side cannot reach
-parents = {
-    "A": [], "B": ["A"], "C": ["B"],          # shared history
-    "D": ["C"], "E": ["D"],                   # your two local commits
-    "F": ["C"],                               # a teammate pushed one commit
-}
-
-def reach(tip):
-    seen, todo = set(), [tip]
-    while todo:
-        c = todo.pop()
-        if c not in seen:
-            seen.add(c)
-            todo.extend(parents[c])
-    return seen
-
-mine, theirs = reach("E"), reach("F")
-print("ahead :", sorted(mine - theirs))
-print("behind:", sorted(theirs - mine))
-print(f"[origin/main: ahead {len(mine - theirs)}, behind {len(theirs - mine)}]")
-''')
 
 K.lesson('clone', 'Remotes and git clone', f'''
 <p>Until now every commit lived only on your laptop. A <b>remote</b> is another copy of the same repository, usually on a server such as GitHub or GitLab, that the team shares. Because Git is distributed, your clone holds the full history, and the remote is simply the copy everyone agrees to meet at.</p>
@@ -75,7 +52,6 @@ and have 1 and 1 different commits each, respectively.
   (use "git pull" if you want to integrate the remote branch with yours)
 
 * main 0d66c75 [origin/main: ahead 1, behind 1] asha work""")}
-{code('aheadbehind')}
 {sh('git pull with diverged branches and no setting', 'git pull', """hint: You have divergent branches and need to specify how to reconcile them.
 hint:   git config pull.rebase false  # merge
 hint:   git config pull.rebase true   # rebase
@@ -145,52 +121,6 @@ K.calc('h', 'A shallow clone with --depth 1 of a repository with 5000 commits. H
        ['--depth 1 fetches only the newest commit of each fetched branch.', 'Its parents are recorded as missing (grafted).', eq('git log shows 1 commit')], check=1)
 K.calc('h', 'origin/main is at 7c1. Your lease expects 7c1. The server is at 9ab because Ben pushed. Is the push accepted? Answer 1 for yes, 0 for no.', '0', 'Compare and swap.',
        ['--force-with-lease compares the server value with the expected value.', '9ab is not 7c1.', eq('rejected (stale info), answer 0')], check=0)
-
-K.assign('ab', 'm', 'Ahead and behind',
-         '<p>Write <code>ahead_behind(parents, mine, theirs)</code>. parents maps a commit to the list of its parents. Return <code>[ahead, behind]</code>: the number of commits reachable from mine and not from theirs, and the other way round.</p>',
-         '''
-def ahead_behind(parents, mine, theirs):
-    # your code here
-    pass
-''', [("ahead_behind({'A': [], 'B': ['A'], 'C': ['B'], 'D': ['B']}, 'C', 'D')", [1, 1]),
-      ("ahead_behind({'A': [], 'B': ['A'], 'C': ['B']}, 'C', 'A')", [2, 0]),
-      ("ahead_behind({'A': [], 'B': ['A'], 'C': ['A'], 'M': ['B', 'C']}, 'M', 'C')", [2, 0]),
-      ("ahead_behind({'A': []}, 'A', 'A')", [0, 0])],
-         '''
-def reach(parents, tip):
-    seen, todo = set(), [tip]
-    while todo:
-        c = todo.pop()
-        if c not in seen:
-            seen.add(c)
-            todo.extend(parents[c])
-    return seen
-
-def ahead_behind(parents, mine, theirs):
-    a, b = reach(parents, mine), reach(parents, theirs)
-    return [len(a - b), len(b - a)]
-''', 'Collect every commit reachable from each tip, then subtract the sets.', '<p>This is what git rev-list --left-right --count main...origin/main prints.</p>')
-K.assign('refspec', 'h', 'Apply a fetch refspec',
-         '<p>Write <code>map_ref(refspec, ref)</code> for refspecs like <code>+refs/heads/*:refs/remotes/origin/*</code>. Ignore a leading +. If the source pattern (with one *) matches ref, return the destination with the * replaced. Otherwise return None.</p>',
-         '''
-def map_ref(refspec, ref):
-    # your code here
-    pass
-''', [("map_ref('+refs/heads/*:refs/remotes/origin/*', 'refs/heads/main')", 'refs/remotes/origin/main'),
-      ("map_ref('+refs/heads/*:refs/remotes/origin/*', 'refs/heads/feature/x')", 'refs/remotes/origin/feature/x'),
-      ("map_ref('refs/heads/*:refs/remotes/up/*', 'refs/tags/v1')", None),
-      ("map_ref('refs/heads/main:refs/remotes/origin/main', 'refs/heads/main')", 'refs/remotes/origin/main')],
-         '''
-def map_ref(refspec, ref):
-    src, dst = refspec.lstrip('+').split(':')
-    if '*' not in src:
-        return dst if ref == src else None
-    pre, post = src.split('*')
-    if ref.startswith(pre) and ref.endswith(post) and len(ref) >= len(pre) + len(post):
-        mid = ref[len(pre):len(ref) - len(post)]
-        return dst.replace('*', mid)
-    return None
-''', 'Split at the colon, then at the star. The part the star matched goes into the destination.', '<p>A refspec without a star maps one exact ref.</p>')
 
 K.must('Remote basics', 'clone creates origin and origin/* remote-tracking branches. origin/main is your last known copy of the server branch, updated only by fetch, pull and push.')
 K.must('Fetch, pull, push', 'fetch downloads and changes nothing else. pull = fetch + merge or rebase (pull.rebase, --ff-only). push is accepted only as a fast forward.')

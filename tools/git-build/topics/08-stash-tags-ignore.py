@@ -1,26 +1,10 @@
 # Chapter 3.2: stash, clean, tags (lightweight and annotated, semantic versioning), .gitignore rules, git check-ignore,
 # .gitattributes for line endings, binary files and Git LFS. Sources: Pro Git 2.6, 7.3, 8.2, gitignore(5),
 # gitattributes(5), git-stash, git-clean, git-tag manuals, semver.org 2.0.0.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file
 
 K = Kit()
-
-K.code('semver', r'''
-# Semantic versioning: MAJOR.MINOR.PATCH and which part to bump
-def bump(version, change):
-    major, minor, patch = (int(x) for x in version.split("."))
-    if change == "breaking":
-        return f"{major + 1}.0.0"
-    if change == "feature":
-        return f"{major}.{minor + 1}.0"
-    return f"{major}.{minor}.{patch + 1}"
-
-v = "1.4.2"
-for change in ["fix", "feature", "fix", "breaking", "feature"]:
-    v = bump(v, change)
-    print(f"{change:8} -> v{v}")
-''')
 
 K.lesson('stash', 'git stash: put work aside for a moment', f'''
 <p>You are halfway through a feature when an urgent bug comes in. Your work is not ready to commit, and Git will not let you switch branches if your edits clash. <b>git stash</b> saves your uncommitted changes on a stack and gives you a clean working tree. Later you take them back.</p>
@@ -43,7 +27,6 @@ K.lesson('tags', 'Tags and version numbers', f'''
     fx('Push tags', '<code>git push origin v1.0.0</code>, <code>git push --tags</code>', 'git push alone does not send tags. --follow-tags sends annotated tags that point at pushed commits.', key=True),
     fx('List and inspect', '<code>git tag -l "v1.*"</code>, <code>git show v1.0.0</code>, <code>git describe</code>', 'git describe names HEAD by the nearest tag, for example v1.0.0-3-g7c9e1d0 (3 commits after the tag).'),
     fx('Semantic versioning', 'MAJOR.MINOR.PATCH', 'MAJOR for breaking changes, MINOR for new backwards compatible features, PATCH for backwards compatible bug fixes.', key=True))}
-{code('semver')}
 {note('Moving a tag that others have fetched is like changing a published book\'s edition number. Do not do it. Make a new tag instead.', 'warn')}
 ''', kw=['git tag', 'annotated tag', 'lightweight tag', 'push tags', 'follow-tags', 'git describe', 'semantic versioning', 'semver'])
 
@@ -111,53 +94,6 @@ K.calc('h', 'Rules: *.log, !keep.log. Paths: a.log, keep.log, x/keep.log, b.txt.
        ['a.log matches *.log: ignored.', 'keep.log and x/keep.log match !keep.log last: tracked.', eq('b.txt matches nothing: so 1 ignored')], check=1)
 K.calc('h', 'Rules: build/ then !build/keep.txt. Paths: build/a.o, build/keep.txt. How many are ignored?', '2', 'Parent folder trap.',
        ['build/ ignores the folder.', 'A file inside an ignored folder cannot be re-included.', eq('Both ignored: 2')], check=2)
-
-K.assign('bump', 'e', 'Bump a semantic version',
-         '<p>Write <code>bump(version, change)</code> where change is "fix", "feature" or "breaking". Return the next version string.</p>',
-         '''
-def bump(version, change):
-    # your code here
-    pass
-''', [("bump('1.4.2', 'fix')", '1.4.3'), ("bump('1.4.2', 'feature')", '1.5.0'), ("bump('1.4.2', 'breaking')", '2.0.0'), ("bump('0.9.9', 'feature')", '0.10.0')],
-         '''
-def bump(version, change):
-    major, minor, patch = (int(x) for x in version.split('.'))
-    if change == 'breaking':
-        return f'{major + 1}.0.0'
-    if change == 'feature':
-        return f'{major}.{minor + 1}.0'
-    return f'{major}.{minor}.{patch + 1}'
-''', 'Split on dots, turn into numbers, reset the lower parts.', '<p>Note 0.9.9 becomes 0.10.0, not 1.0.0. Numbers are not decimals.</p>')
-K.assign('ign', 'h', 'A tiny .gitignore matcher',
-         '<p>Write <code>ignored(rules, path)</code> for rules made only of simple patterns: <code>*.ext</code> (any depth), <code>name/</code> (a folder at any depth), <code>/name</code> (top level only) and <code>!</code> in front to re-include. Last matching rule wins, but a file inside an ignored folder stays ignored.</p>',
-         '''
-def ignored(rules, path):
-    # your code here
-    pass
-''', [("ignored(['*.log', '!keep.log'], 'x/keep.log')", False), ("ignored(['*.log'], 'a/b/c.log')", True), ("ignored(['build/', '!build/keep.txt'], 'build/keep.txt')", True),
-      ("ignored(['/.env'], 'config/.env')", False), ("ignored(['/.env'], '.env')", True)],
-         '''
-def match(rule, path):
-    parts = path.split('/')
-    if rule.endswith('/'):
-        return rule[:-1] in parts[:-1]
-    if rule.startswith('/'):
-        return path == rule[1:]
-    if rule.startswith('*.'):
-        return parts[-1].endswith(rule[1:])
-    return parts[-1] == rule
-
-def ignored(rules, path):
-    for r in rules:
-        if r.endswith('/') and not r.startswith('!') and match(r, path):
-            return True
-    result = False
-    for r in rules:
-        neg = r.startswith('!')
-        if match(r[1:] if neg else r, path):
-            result = not neg
-    return result
-''', 'Check ignored folders first, then walk the rules and remember the last match.', '<p>Real Git supports more (**, ?, [a-z], patterns with a slash in the middle), as the animation shows.</p>')
 
 K.must('Stash', 'git stash (-u for untracked), stash list, pop (apply and drop), apply (keep), stash branch. A WIP commit is often safer.')
 K.must('Tags', 'Lightweight = plain ref, annotated (-a -m) = tag object for releases. Push with git push origin <tag> or --tags. Never move a shared tag.')

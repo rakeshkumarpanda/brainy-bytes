@@ -2,23 +2,10 @@
 # command recall, scenario questions (what do you run), history puzzles, YAML debugging, pipeline design for Dev and QA,
 # and the certification style multiple choice of the GitHub Actions and GitLab CI/CD certifications. Every question is
 # an original practice question, not a copy of an exam. Every command and every number was checked in earlier chapters.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file
 
 K = Kit()
-
-K.code('undo', r'''
-# Exam drill: pick the right undo command for the situation
-situation = input("Where is the mistake? (working, staged, last-local, pushed, lost): ").strip()
-answers = {
-    "working":    "git restore <file>              discard edits in the working tree",
-    "staged":     "git restore --staged <file>     unstage, keep the edits",
-    "last-local": "git reset --soft HEAD~1         undo the commit, keep the changes staged",
-    "pushed":     "git revert <commit>             new commit that undoes it, safe for shared history",
-    "lost":       "git reflog, then git branch rescue <id>",
-}
-print(answers.get(situation, "Unknown. Choose one of the five words."))
-''', stdin='pushed\n')
 
 K.lesson('map', 'How Git and CI/CD are examined', f'''
 <p>This chapter is for the week before an exam, an interview or a certification. It teaches nothing new. It shows the shapes questions take, with worked answers, and points back to the chapter where each idea is taught. The questions are original practice questions.</p>
@@ -71,7 +58,6 @@ K.lesson('recall', 'Command recall in one table', f'''
     ['Object type and content', '<code>git cat-file -t id</code>, <code>-p id</code>'],
     ['Pull an Actions artifact', '<code>gh run download RUN_ID -n name</code>'],
     ['Pull a GitLab artifact', '<code>glab job artifact main build</code> or the jobs/artifacts API']])}
-{code('undo')}
 ''', kw=['command recall', 'cheat table', 'undo chooser'])
 
 K.lesson('scenarios', 'Scenario questions with worked answers', f'''

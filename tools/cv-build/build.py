@@ -77,7 +77,7 @@ def chapters():
     import cheatsheet
     cheatsheet.record()
     out = []
-    for f in sorted(f for f in os.listdir(CFG['topics']) if re.match(r'\d\d-.*\.py$', f)):
+    for f in sorted(f for f in os.listdir(CFG['topics']) if re.match(r'\d\d[a-z]?-.*\.py$', f)):
         spec = importlib.util.spec_from_file_location(f[:-3], os.path.join(CFG['topics'], f))
         m = importlib.util.module_from_spec(spec)
         cheatsheet.begin()
@@ -139,8 +139,8 @@ def content_errors(T, known_viz):
             bad.append(f'only {len(T["quiz"])} quiz questions, at least 10 are needed')
         if len(T['calc']) < CFG.get('min_calc', 10):
             bad.append(f'only {len(T["calc"])} worked problems, at least {CFG.get("min_calc", 10)} are needed')
-        if len(T['assign']) < 2:
-            bad.append('at least 2 assignments are needed')
+        if len(T['assign']) < CFG.get('min_assign', 2):
+            bad.append(f'at least {CFG.get("min_assign", 2)} assignments are needed')
         if len(T['must']) < 5:
             bad.append('the summary needs at least 5 must know points')
         if 'class="ladder"' not in ''.join(p['html'] for p in T['lessons']):
@@ -285,6 +285,8 @@ def page(T, chs, steps_by_id):
                     f'<nav class="cv-lnav"></nav></article>')
     tabs = [('learn', 'Learn'), ('formulas', FXW()[1]), ('problems', 'Worked problems'), ('quiz', 'Quiz'),
             ('assign', 'Assignments'), ('summary', 'Summary')]
+    if not T['assign']:
+        tabs = [t for t in tabs if t[0] != 'assign']   # a subject without coding assignments (CFG min_assign 0)
     if T.get('kind') == 'revision':
         tabs = [('learn', 'Revise')] + [t for t in tabs[1:] if t[0] in ('formulas', 'problems', 'quiz')]
     tab_html = ''.join(f'<button type="button" class="cv-tab" role="tab" data-tab="{k}">{v}</button>' for k, v in tabs)
@@ -366,8 +368,9 @@ def catalog(chs):
             if T.get('kind') != 'revision':
                 secs += [f"        {{ id: 'formulas', title: '{FXW()[1]}', emoji: '', group: 'Check yourself' }}",
                          "        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' }",
-                         "        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }",
-                         "        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }"]
+                         "        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }"]
+                if T['assign']:
+                    secs.append("        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }")
             else:
                 secs += ["        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }"]
             cnt = {'lessons': len(T['lessons']), 'problems': len(T['calc']), 'quiz': len(T['quiz']), 'assign': len(T['assign'])}

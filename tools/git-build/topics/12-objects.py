@@ -3,24 +3,10 @@
 # SHAttered collision, SHA-1DC, and the SHA-256 object format. Sources: Pro Git 10.2, git-hash-object, git-cat-file,
 # gitformat-signature, hash-function-transition docs, shattered.io, Git 3.0 breaking changes (Documentation/
 # BreakingChanges.adoc). Every id and every output below was produced by real runs with Git 2.43.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file
 
 K = Kit()
-
-K.code('blobid', r'''
-# Git names a file by hashing "blob <size>\0" followed by the content
-import hashlib, zlib
-
-content = b"hello\n"
-store = b"blob " + str(len(content)).encode() + b"\0" + content
-oid = hashlib.sha1(store).hexdigest()
-print("stored bytes:", store)
-print("object id   :", oid)
-print("file path   : .git/objects/" + oid[:2] + "/" + oid[2:])
-print("zlib size   :", len(zlib.compress(store)), "bytes on disk")
-print("SHA-256 id  :", hashlib.sha256(store).hexdigest())
-''')
 
 K.lesson('kinds', 'Four kinds of objects', f'''
 <p>Under every command you have learned sits a simple database. Git stores everything as <b>objects</b>, and each object is named by the hash of its content. There are only four kinds.</p>
@@ -52,7 +38,6 @@ printf 'blob 6\\0hello\\n' | sha1sum
 git add hello.txt && find .git/objects -type f""", """ce013625030ba8dba906f756967f9e9ca394464a
 ce013625030ba8dba906f756967f9e9ca394464a  -
 .git/objects/ce/013625030ba8dba906f756967f9e9ca394464a""", 'Real output: every computer in the world gets this id for hello')}
-{code('blobid')}
 {fxs(
     fx('Hash without storing', '<code>git hash-object &lt;file&gt;</code>', 'Add -w to also write the object into .git/objects.', key=True),
     fx('Read any object', '<code>git cat-file -t &lt;id&gt;</code>, <code>-s</code>, <code>-p</code>', '-t prints the type, -s the size, -p the content in readable form.', key=True),
@@ -117,43 +102,6 @@ K.calc('h', 'A repository has 3 commits. Each commit has 1 tree with 2 files. Co
        ['Commit 1: 2 new blobs.', 'Commit 2: 1 changed file gives 1 new blob.', eq('Commit 3: 0 new, total 3 blobs')], check=3)
 K.calc('h', 'Same repository: how many distinct tree objects exist?', '2', 'Same content, same tree.',
        ['Commit 1 has tree T1.', 'Commit 2 changed a file, so tree T2.', eq('Commit 3 reuses T2: 2 trees')], check=2)
-
-K.assign('blob', 'e', 'Compute a blob id',
-         '<p>Write <code>blob_id(text)</code> that returns the SHA-1 object id Git gives a file with this text (UTF-8). Remember the header <code>blob &lt;size in bytes&gt;</code> and a zero byte.</p>',
-         '''
-import hashlib
-
-def blob_id(text):
-    # your code here
-    pass
-''', [("blob_id('hello\\n')", 'ce013625030ba8dba906f756967f9e9ca394464a'), ("blob_id('')", 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391'),
-      ("len(blob_id('anything'))", 40)],
-         '''
-import hashlib
-
-def blob_id(text):
-    data = text.encode('utf-8')
-    return hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\\0' + data).hexdigest()
-''', 'Hash the header and the bytes together, not the text alone. The size counts bytes, not characters.', '<p>e69de29b is the id of the empty file in every Git repository in the world.</p>')
-K.assign('commitid', 'h', 'Build a commit object by hand',
-         '<p>Write <code>commit_id(tree, parents, who, when, msg)</code>. The commit body is the line <code>tree &lt;id&gt;</code>, one <code>parent &lt;id&gt;</code> line per parent, <code>author &lt;who&gt; &lt;when&gt;</code>, <code>committer &lt;who&gt; &lt;when&gt;</code>, an empty line, then the message and a newline. Hash it with the header <code>commit &lt;size&gt;</code> and a zero byte.</p>',
-         '''
-import hashlib
-
-def commit_id(tree, parents, who, when, msg):
-    # your code here
-    pass
-''', [("commit_id('aaa96ced2d9a1c8e72c56b253a0e2fe78393feb7', [], 'Asha Rao <asha@example.com>', '1793593800 +0530', 'First commit')", '0f2f6da1b1026e7464d4051044863d17b1aaf7e6'),
-      ("commit_id('d8eb32556d83f17872e22d74297ea10c82735246', ['0f2f6da1b1026e7464d4051044863d17b1aaf7e6'], 'Asha Rao <asha@example.com>', '1793593800 +0530', 'Second')", 'aa1cc961b5f90c399a85465ec3ca67ad215a0b47')],
-         '''
-import hashlib
-
-def commit_id(tree, parents, who, when, msg):
-    lines = ['tree ' + tree] + ['parent ' + p for p in parents]
-    lines += ['author ' + who + ' ' + when, 'committer ' + who + ' ' + when, '', msg]
-    body = ('\\n'.join(lines) + '\\n').encode('utf-8')
-    return hashlib.sha1(b'commit ' + str(len(body)).encode() + b'\\0' + body).hexdigest()
-''', 'Join the lines with newlines, end with one newline, then hash with the commit header.', '<p>These are the real ids from the chapter: your function reproduces what git commit wrote.</p>')
 
 K.must('Four objects', 'blob (content), tree (names, modes, ids), commit (tree, parents, author, committer, message), annotated tag (object, type, name, tagger, message).')
 K.must('Object id', 'SHA-1 of the type, a space, the size, a zero byte and the content. 40 hex digits (SHA-256: 64). Stored zlib compressed at .git/objects/xx/rest.')

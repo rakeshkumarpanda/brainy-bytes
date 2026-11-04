@@ -4,31 +4,10 @@
 # why, protected branches with Pipelines must succeed, and a scheduled nightly regression.
 # Sources: GitLab docs: CI/CD quick start, pipeline editor, CI/CD YAML reference, job artifacts, unit test reports,
 # pipeline schedules, protected branches, auto merge and Pipelines must succeed, workflow keyword.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file, devqa, changes, babystep, starter
 
 K = Kit()
-
-K.code('schedule', r'''
-# Which jobs of the sample .gitlab-ci.yml appear in each pipeline (rules first match, no rules means always)
-jobs = {
-    "lint": None, "unit-tests": None, "build": None, "smoke-tests": None,
-    "nightly-regression": [("schedule", True)],
-}
-
-def in_pipeline(job, source):
-    rules = jobs[job]
-    if rules is None:
-        return True
-    for src, add in rules:
-        if source == src:
-            return add
-    return False
-
-for source in ["push", "merge_request_event", "schedule"]:
-    names = [j for j in jobs if in_pipeline(j, source)]
-    print(f"{source:20} {len(names)} jobs: {', '.join(names)}")
-''')
 
 DL = '<a href="calc-app-starter.zip" download>calc-app-starter.zip</a>'
 
@@ -56,7 +35,6 @@ git push -u origin broken-add""") + '<p>The push output prints a link to create 
 K.lesson('file', 'The .gitlab-ci.yml, line by line', f'''
 {starter('.gitlab-ci.yml', {1: 'workflow:rules decide which pipelines exist at all.', 3: 'Merge request pipelines for every merge request.', 4: 'No branch pipeline when the branch has an open merge request, which prevents duplicate pipelines.', 6: 'Branch pipelines otherwise, including main. Tag pushes create no pipeline.', 8: 'The four stages, in order.', 15: 'Every job runs in this Docker image on the instance runner.', 18: 'pip keeps downloads here, inside the project folder, because GitLab can only cache paths inside the project directory.', 23: 'The cheapest check first.', 27: 'Cache pip downloads. The key changes when requirements.txt changes.', 35: 'python -m pytest so the project folder is on the import path. The JUnit file feeds the Tests tab.', 37: 'Keep the report even when tests fail.', 41: 'reports:junit makes GitLab parse the file and show results in the merge request and the Tests tab.', 42: 'Reports are short lived. Without expire_in the instance default applies.', 48: 'Build the package once.', 50: 'The downloaded archive gets this name, with the short commit id, so files from different pipelines do not get mixed up.', 53: 'Keep the build for 30 days.', 57: 'needs with artifacts: true: start right after build and download its artifacts, here dist/calc-app.zip.', 68: 'PYTHONPATH points at the zip so the smoke tests import the packaged build.', 79: 'This job is added only in scheduled pipelines.', 86: 'The full suite against the build of the same pipeline.'})}
 {viz('pipeline', preset='starter', plat='gitlab', mode='stages')}
-{code('schedule')}
 {note('GitLab uploads artifacts of all jobs and passes them on to jobs in later stages automatically. needs and dependencies control which ones a job downloads. dependencies: [] downloads none, which saves time in jobs that do not need files.', 'exam')}
 ''', kw=['.gitlab-ci.yml line by line', 'workflow rules', 'stages', 'default image', 'PIP_CACHE_DIR', 'cache key files', 'junit report', 'artifacts name', 'expire_in', 'needs artifacts', 'dependencies'])
 
@@ -122,35 +100,6 @@ K.calc('h', 'An e2e suite takes 24 minutes. With parallel: 4 and an even split, 
        ['4 jobs run at the same time.', '24 / 4.', eq('6 minutes')], check=6)
 K.calc('h', 'Cron 30 2 * * 1-5 in time zone UTC. How many scheduled pipelines in a 31 day month that starts on a Monday?', '23', 'Count weekdays.',
        ['4 full weeks: 20 weekdays.', 'Days 29, 30, 31 are Monday, Tuesday, Wednesday.', eq('20 + 3 = 23')], check=23)
-
-K.assign('whichjobs', 'm', 'Which jobs run',
-         '<p>Write <code>jobs_for(source)</code> for the sample .gitlab-ci.yml. Return the list of job names in file order that appear in a pipeline with this CI_PIPELINE_SOURCE: lint, unit-tests, build and smoke-tests always, nightly-regression only for "schedule".</p>',
-         '''
-def jobs_for(source):
-    # your code here
-    pass
-''', [("jobs_for('push')", ['lint', 'unit-tests', 'build', 'smoke-tests']),
-      ("jobs_for('schedule')", ['lint', 'unit-tests', 'build', 'smoke-tests', 'nightly-regression']),
-      ("jobs_for('merge_request_event')", ['lint', 'unit-tests', 'build', 'smoke-tests'])],
-         '''
-def jobs_for(source):
-    names = ['lint', 'unit-tests', 'build', 'smoke-tests']
-    if source == 'schedule':
-        names.append('nightly-regression')
-    return names
-''', 'Start with the always jobs and add the scheduled one.', '<p>The workflow rules decide whether there is a pipeline at all, this decides what is in it.</p>')
-K.assign('split', 'h', 'Split tests for parallel jobs',
-         '<p>Write <code>my_tests(tests, index, total)</code> the way a parallel job uses CI_NODE_INDEX (1 based) and CI_NODE_TOTAL: sort the test names, then take every total-th test starting at position index - 1. Return the list.</p>',
-         '''
-def my_tests(tests, index, total):
-    # your code here
-    pass
-''', [("my_tests(['d', 'a', 'c', 'b'], 1, 2)", ['a', 'c']), ("my_tests(['d', 'a', 'c', 'b'], 2, 2)", ['b', 'd']),
-      ("my_tests(['x', 'y', 'z'], 3, 3)", ['z']), ("my_tests(['x'], 2, 2)", [])],
-         '''
-def my_tests(tests, index, total):
-    return sorted(tests)[index - 1::total]
-''', 'Sorting makes every job see the same order, then a slice with a step picks this job\'s share.', '<p>Every test runs exactly once across all jobs. Smarter splitters balance by past run time.</p>')
 
 K.must('From scratch', 'Blank project without README, push the repo with .gitlab-ci.yml, watch Build, Pipelines, check the Tests tab and job artifacts, break and fix in a merge request, then Pipelines must succeed and protected main.')
 K.must('The sample file', 'workflow rules (MR, skip branch with open MR, branches), stages lint, test, build, qa, image python:3.13-slim, cache key files on requirements.txt, junit reports, build artifact with name and expire_in, smoke-tests with needs artifacts, nightly job on schedule.')
