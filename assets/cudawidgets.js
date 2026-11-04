@@ -1889,3 +1889,50 @@
     }
   });
 })();
+
+/* ---------- 10.1 Quiz 1 Q7: trace one thread of a matrix vector kernel ---------- */
+(() => {
+  const { def, D } = CVZ, { W } = CUDAZ;
+  def('matvec', {
+    title: 'Trace one thread of matVecMul', sub: 'Thread i owns row i of A. Step through its loop: read A[i·N + j] and x[j], multiply, add to sum.',
+    W: 620, H: 270,
+    params: [
+      { k: 'A', label: 'A (4 rows, separated by /)', type: 'text', v: '1 2 1 0 / 0 1 3 1 / 2 0 1 2 / 1 1 0 1' },
+      { k: 'x', label: 'x', type: 'text', v: '1 2 3 4' },
+      { k: 'i', label: 'Thread i', v: 2, min: 0, max: 3, step: 1 }
+    ],
+    tips: [
+      { t: 'Quiz 1 Q7: thread 2 takes row 2 = [2, 0, 1, 2]: 2·1 + 0·2 + 1·3 + 2·4 = 13.', set: { A: '1 2 1 0 / 0 1 3 1 / 2 0 1 2 / 1 1 0 1', x: '1 2 3 4', i: 2 }, play: true },
+      { t: 'Thread 1 with the same data: 0·1 + 1·2 + 3·3 + 1·4 = 15.', set: { i: 1 }, play: true }
+    ],
+    steps: () => 4,
+    draw(z) {
+      const g = z.g, s = z.step, i = z.p.i;
+      const nums = t => String(t).split(/[^0-9.-]+/).filter(v => v !== '' && !isNaN(+v)).map(Number);
+      const rows = String(z.p.A).split('/').map(nums).slice(0, 4);
+      while (rows.length < 4) rows.push([0, 0, 0, 0]);
+      rows.forEach(r => { while (r.length < 4) r.push(0); r.length = 4; });
+      const x = nums(z.p.x).slice(0, 4); while (x.length < 4) x.push(0);
+      W(z, 'A (row major)', 16, 20, { s: 11, b: true });
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+        const on = r === i && c === s - 1, row = r === i;
+        D.rect(g, 16 + c * 34, 30 + r * 30, 32, 28, { fill: on ? z.col.orange : row ? z.col.surf : z.col.bg, stroke: row ? z.col.cv : z.col.line, w: row ? 1.5 : 0.5 });
+        W(z, String(rows[r][c]), 32 + c * 34, 49 + r * 30, { s: 12, a: 'center', mono: true, c: on ? '#fff' : z.col.ink });
+      }
+      W(z, 'x', 170, 20, { s: 11, b: true });
+      x.forEach((v, j) => { const on = j === s - 1; D.rect(g, 170, 30 + j * 30, 32, 28, { fill: on ? z.col.purple : z.col.bg, stroke: z.col.line, w: 0.5 }); W(z, String(v), 186, 49 + j * 30, { s: 12, a: 'center', mono: true, c: on ? '#fff' : z.col.ink }); });
+      W(z, 'j', 230, 20, { s: 11, b: true }); W(z, 'index i·N + j', 260, 20, { s: 11, b: true }); W(z, 'product', 380, 20, { s: 11, b: true }); W(z, 'sum', 470, 20, { s: 11, b: true });
+      let sum = 0;
+      for (let j = 0; j < s; j++) {
+        const p = rows[i][j] * x[j]; sum += p;
+        W(z, String(j), 230, 49 + j * 30, { s: 12, mono: true });
+        W(z, String(i * 4 + j), 260, 49 + j * 30, { s: 12, mono: true });
+        W(z, `${rows[i][j]} × ${x[j]} = ${p}`, 380, 49 + j * 30, { s: 12, mono: true });
+        W(z, String(sum), 470, 49 + j * 30, { s: 12, mono: true, b: j === s - 1 });
+      }
+      W(z, `i = blockIdx.x · blockDim.x + threadIdx.x = 0 · 4 + ${i} = ${i}`, 16, 178, { s: 12, mono: true });
+      if (s >= 4) W(z, `y[${i}] = ${sum}`, 16, 214, { s: 16, b: true, c: z.col.green });
+      return 'Row i starts at flat index i × N. Each loop step reads one element of A and one of x, so a thread does 8 loads and 1 store here.';
+    }
+  });
+})();

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Challenge problems · GPU Programming</title>
+<meta name="description" content="Batch thresholds on the H100 and A100, an occupancy puzzle with the register limit, bank conflicts by gcd and padding, work and steps of two scans, choosing a tile under a shared memory budget, divergence efficiency, pipeline overlap, and Amdahl against Gustafson.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 10: Exam practice</span><span>›</span><span>Challenge problems</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 10 · Topic 2 of 2 · Pro</div>
+    <h1>Challenge problems</h1>
+    <p class="lead">Hard multi step problems in the style of graduate GPU and parallel computing courses, each with a full worked solution, a widget to check your picture, and code that recomputes every number.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">8 lessons</span><span class="cv-chip">8 animations</span><span class="cv-chip">3 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#challenge-problems" data-topic="cheatsheet" data-h="challenge-problems">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#intro" data-l="intro"><span class="n">1</span><span class="t">How to use these problems</span></a></li><li><a href="#p1" data-l="p1"><span class="n">2</span><span class="t">Problem 1: when does batching pay off?</span></a></li><li><a href="#p2" data-l="p2"><span class="n">3</span><span class="t">Problem 2: the occupancy puzzle</span></a></li><li><a href="#p3" data-l="p3"><span class="n">4</span><span class="t">Problem 3: banks, strides and padding</span></a></li><li><a href="#p4" data-l="p4"><span class="n">5</span><span class="t">Problem 4: work against steps in scan</span></a></li><li><a href="#p5" data-l="p5"><span class="n">6</span><span class="t">Problem 5: choose the tile under a budget</span></a></li><li><a href="#p6" data-l="p6"><span class="n">7</span><span class="t">Problem 6: divergence, overlap and scaling</span></a></li><li><a href="#levels" data-l="levels"><span class="n">8</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="intro" data-l="intro" hidden><div class="cv-lno">Lesson 1 of 8</div><h2>How to use these problems</h2>
+<p>These problems are harder than the chapter exercises. Each one joins two or three ideas, the way graduate exams do. They are original problems written in the style of courses such as UIUC ECE 408, Stanford CS149 and CMU 15-418, not copies of their papers.</p>
+<p>Try each problem on paper first. Then open the steps. Use the widget to check your picture. The code below recomputes every answer on this page.</p>
+<div class="cv-code" data-k="check"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="p1" data-l="p1" hidden><div class="cv-lno">Lesson 2 of 8</div><h2>Problem 1: when does batching pay off?</h2>
+<p><b>Problem.</b> (a) An H100 SXM does 989 TFLOP/s in BF16 and moves 3.35 TB/s. From which batch is a 4096 × 4096 fully connected layer math limited? (b) Repeat for a 1024 × 1024 layer on an A100 (312 TFLOP/s, 1.555 TB/s). (c) Explain why the smaller layer needs a bigger batch.</p>
+<div class="walk"><div class="walk-h"><span>Solution (a)</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Ridge = 989 ÷ 3.35 = 295.2 FLOP/byte.</li><li>Need 4096 B ÷ (4096 + 2B) > 295.2.</li><li>(4096 − 590.4) B > 295.2 × 4096, so B > 344.9.</li><li><span class="eq">B ≥ 345</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Solution (b) and (c)</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>For an n × n layer, AI = n B ÷ (n + 2B). With n = 1024 and ridge 200.6: 1024 B > 200.6 (1024 + 2B).</li><li>622.7 B > 205,455, so B > 329.9.</li><li>Fewer weights means less reuse to spread the activation traffic over.</li><li><span class="eq">B ≥ 330 for the 1024 layer, against 223 for the 4096 layer</span></li></ol></div>
+<div class="cvz" data-viz="roofline"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="p2" data-l="p2" hidden><div class="cv-lno">Lesson 3 of 8</div><h2>Problem 2: the occupancy puzzle</h2>
+<p><b>Problem.</b> A kernel on an A100 uses 256 threads per block, 40 registers per thread and 20 KB of shared memory per block. Which limit binds, and what is the occupancy? What is the cheapest change that reaches 100 percent?</p>
+<div class="walk"><div class="walk-h"><span>Solution</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Registers: 40 × 256 = 10,240 per block. 65,536 ÷ 10,240 = 6.4, so 6 blocks.</li><li>Threads: 2048 ÷ 256 = 8 blocks. Block limit: 32.</li><li>Shared memory: 20 KB + 1 KB reserved = 21 KB. 164 ÷ 21 = 7.8, so 7 blocks.</li><li>The smallest is 6 (registers): 6 × 8 = 48 warps of 64.</li><li><span class="eq">75 percent, limited by registers</span></li></ol></div>
+<p>To reach 8 blocks the kernel needs at most 65,536 ÷ (8 × 256) = 32 registers per thread (for example with __launch_bounds__(256, 8)), and at most 164 ÷ 8 − 1 = 19.5 KB of shared memory per block. Forcing registers down can cause spills to local memory, so measure before and after.</p>
+<div class="cvz" data-viz="occupancy"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="p3" data-l="p3" hidden><div class="cv-lno">Lesson 4 of 8</div><h2>Problem 3: banks, strides and padding</h2>
+<p><b>Problem.</b> Thread t of a warp reads <code>s[t × k]</code> from a float array in shared memory (32 banks of 4 bytes). (a) Give the conflict degree for k = 1, 2, 6, 8, 32. (b) Prove the rule. (c) A 32 × 32 tile is read by column. Show why padding each row to 33 floats removes the conflict.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Conflict degree for stride k</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">degree = gcd(k, 32)</div><div class="fx-n">Thread t goes to bank (t k) mod 32.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Solution</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Threads t and u share a bank when (t − u) k is a multiple of 32, which means (t − u) is a multiple of 32 ÷ gcd(k, 32).</li><li>So each bank is hit by gcd(k, 32) threads: k = 1 gives 1, k = 2 gives 2, k = 6 gives 2, k = 8 gives 8, k = 32 gives 32.</li><li>Column read of a 32 × 32 tile: element (t, c) sits at 32 t + c, stride 32, a 32 way conflict.</li><li>With rows of 33: address 33 t + c, stride 33, and gcd(33, 32) = 1.</li><li><span class="eq">Padding to 33 makes every column read conflict free</span></li></ol></div>
+<div class="cvz" data-viz="banks"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="p4" data-l="p4" hidden><div class="cv-lno">Lesson 5 of 8</div><h2>Problem 4: work against steps in scan</h2>
+<p><b>Problem.</b> An inclusive scan of n = 1024 values. (a) How many additions do Hillis and Steele and Blelloch each do? (b) How many parallel steps? (c) With 1024 threads, which one finishes first and which one is better on a GPU with far fewer lanes than n?</p>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Hillis and Steele</span></div><div class="fx-b">adds = n log₂ n − (n − 1), steps = log₂ n</div><div class="fx-n">Step d updates n − 2<sup>d</sup> elements.</div></div><div class="fx fx-key"><div class="fx-h"><span>Blelloch</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">adds = 2 (n − 1), steps = 2 log₂ n</div><div class="fx-n">Up sweep then down sweep.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Solution</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Hillis and Steele: 1024 × 10 − 1023 = 9217 additions in 10 steps.</li><li>Blelloch: 2 × 1023 = 2046 additions in 20 steps.</li><li>With enough lanes, Hillis and Steele wins on steps.</li><li>With few lanes the total work decides, and Blelloch does 4.5 times less.</li><li><span class="eq">Short arrays in one block: Hillis and Steele. Large arrays: Blelloch, which is work efficient</span></li></ol></div>
+<div class="cvz" data-viz="scan"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="p5" data-l="p5" hidden><div class="cv-lno">Lesson 6 of 8</div><h2>Problem 5: choose the tile under a budget</h2>
+<p><b>Problem.</b> A FP32 matmul block keeps a BM × 32 strip of A and a 32 × BN strip of B in shared memory, double buffered, within 48 KB. (a) What is the largest BM + BN? (b) Which square tile maximises AI, and what AI does it reach? (c) At 2 TB/s, what speed can it reach from DRAM traffic alone?</p>
+<div class="walk"><div class="walk-h"><span>Solution</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Shared memory = 2 buffers × (BM + BN) × 32 × 4 bytes ≤ 49,152.</li><li>So BM + BN ≤ 192.</li><li>For a fixed sum, BM × BN is largest when BM = BN = 96.</li><li>AI = (2 ÷ 4) × 96 × 96 ÷ 192 = 24 FLOP/byte.</li><li><span class="eq">24 × 2 TB/s = 48 TFLOP/s ceiling from DRAM traffic</span></li></ol></div>
+<p>In practice tiles are powers of two (64 or 128) for simple indexing, so 64 × 128 (AI 21.3) or a smaller BK are chosen. That is the kind of trade off the matmul ladder makes at every step.</p>
+<div class="cvz" data-viz="tileai"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="p6" data-l="p6" hidden><div class="cv-lno">Lesson 7 of 8</div><h2>Problem 6: divergence, overlap and scaling</h2>
+<p><b>Problem A.</b> In one warp, threads with tid &lt; 8 run path A of 20 instructions, the others path B of 10. What is the warp time and the lane efficiency? How would you rearrange the data to remove the loss?</p>
+<div class="walk"><div class="walk-h"><span>Solution A</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Both paths run one after the other: 20 + 10 = 30 instruction slots.</li><li>Useful lane slots: 8 × 20 + 24 × 10 = 400.</li><li>Available: 32 × 30 = 960.</li><li><span class="eq">41.7 percent. Sort or group the work so each warp takes one path</span></li></ol></div>
+<p><b>Problem B.</b> 8 chunks pass through copy in (4 ms), kernel (6 ms) and copy out (2 ms), one engine each. Serial and overlapped time?</p>
+<div class="walk"><div class="walk-h"><span>Solution B</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Serial: 8 × 12 = 96 ms.</li><li>The kernel is the slowest stage: 4 ms to fill, 8 × 6 ms of kernels, 2 ms to drain.</li><li>4 + 48 + 2 = 54 ms.</li><li><span class="eq">Speedup 96 ÷ 54 ≈ 1.78</span></li></ol></div>
+<p><b>Problem C.</b> A program is 95 percent parallel. What speedup do Amdahl and Gustafson predict on 1024 cores, and why do they differ?</p>
+<div class="walk"><div class="walk-h"><span>Solution C</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Amdahl (fixed problem): 1 ÷ (0.05 + 0.95 ÷ 1024) = 19.6.</li><li>Gustafson (problem grows with the machine): 0.05 + 0.95 × 1024 = 972.9.</li><li>Amdahl keeps the work fixed, so the serial 5 percent dominates.</li><li><span class="eq">Gustafson grows the parallel part, which is how GPUs are really used</span></li></ol></div>
+<div class="cvz" data-viz="diverge"></div>
+<div class="cvz" data-viz="streams"></div>
+<div class="cvz" data-viz="amdahl"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 8 of 8</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Hard problems are several easy ones joined together. Find the pieces first.</p></div><div class="ld-p" data-ld="college" hidden><p>Write down the limit formulas you need: ridge, occupancy, gcd for banks, scan work, tile AI, pipeline time, Amdahl.</p></div><div class="ld-p" data-ld="masters" hidden><p>Always check with a second method: a small Python loop, a widget, or a limiting case such as n = 1.</p></div><div class="ld-p" data-ld="research" hidden><p>Research papers on GPU kernels are built from exactly these models, then confirmed with Nsight measurements.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./quiz1-solved.html" data-topic="quiz1-solved"><small>Previous topic</small><b>Quiz 1 solved</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "challenge-problems", "topic": "challenge-problems", "subject": "cuda", "title": "Challenge problems", "codes": {"check": {"src": "# Recompute the answers of this chapter\nr = 989 / 3.35\nimport math\n# AI = n B / (n + 2B) > r  gives  B > r n / (n - 2r)\nprint(\"P1 H100 batch:\", math.floor(r * 4096 / (4096 - 2 * r)) + 1)\nr2 = 312 / 1.555\nprint(\"P1 1024 layer on A100:\", math.floor(r2 * 1024 / (1024 - 2 * r2)) + 1)\nblocks = min(65536 // (40 * 256), 2048 // 256, 32, 164 // (20 + 1))\nprint(\"P2 blocks:\", blocks, \" occupancy:\", blocks * 8 / 64)\nprint(\"P4 Hillis-Steele adds:\", 1024 * 10 - 1023, \" Blelloch adds:\", 2 * 1023)\nprint(\"P5 BM + BN limit:\", 48 * 1024 // (2 * 32 * 4))\nprint(\"P6 divergence efficiency:\", round((8 * 20 + 24 * 10) / (32 * 30), 3))\nprint(\"P7 Amdahl:\", round(1 / (0.05 + 0.95 / 1024), 2), \" Gustafson:\", round(0.05 + 0.95 * 1024, 2))", "stdin": "", "out": "P1 H100 batch: 345\nP1 1024 layer on A100: 330\nP2 blocks: 6  occupancy: 0.75\nP4 Hillis-Steele adds: 9217  Blelloch adds: 2046\nP5 BM + BN limit: 192\nP6 divergence efficiency: 0.417\nP7 Amdahl: 19.64  Gustafson: 972.85"}}, "quiz": [{"lv": "e", "q": "Stride 2 reads in shared memory give a conflict of degree", "o": ["1", "2", "16", "32"], "a": 1, "hint": "gcd(2, 32).", "why": "2 way."}, {"lv": "e", "q": "Blelloch scan of n values does how many additions?", "o": ["n log n", "2(n − 1)", "n", "n²"], "a": 1, "hint": "Up and down sweep.", "why": "Work efficient."}, {"lv": "e", "q": "Amdahl assumes", "o": ["The problem grows", "The problem size is fixed", "No serial part", "Infinite memory"], "a": 1, "hint": "Fixed size.", "why": "Gustafson lets it grow."}, {"lv": "m", "q": "Stride 6 in shared memory", "o": ["Conflict free", "2 way", "6 way", "32 way"], "a": 1, "hint": "gcd(6, 32) = 2.", "why": "2 way."}, {"lv": "m", "q": "40 registers × 256 threads on an A100. Blocks allowed by registers", "o": ["4", "6", "8", "10"], "a": 1, "hint": "65,536 ÷ 10,240.", "why": "6."}, {"lv": "m", "q": "Why pad a 32 × 32 tile to 33 columns?", "o": ["Alignment", "Column reads become stride 33, gcd 1, no conflict", "More threads", "Coalescing"], "a": 1, "hint": "Bank spread.", "why": "Conflict free columns."}, {"lv": "m", "q": "Pipeline with stages 4, 6, 2 ms and 8 chunks takes", "o": ["96 ms", "54 ms", "48 ms", "60 ms"], "a": 1, "hint": "Fill + N × slowest + drain.", "why": "54."}, {"lv": "h", "q": "H100 4096 layer becomes math limited from batch", "o": ["223", "295", "345", "512"], "a": 2, "hint": "Ridge 295.2.", "why": "345."}, {"lv": "h", "q": "Which scan is better on a GPU with far fewer lanes than n?", "o": ["Hillis and Steele", "Blelloch", "Both equal", "Neither"], "a": 1, "hint": "Total work matters.", "why": "Blelloch."}, {"lv": "h", "q": "Forcing registers from 40 to 32 per thread can", "o": ["Never hurt", "Cause spills to local memory", "Reduce occupancy", "Remove shared memory"], "a": 1, "hint": "Fewer registers than needed.", "why": "Measure both."}, {"lv": "x", "q": "48 KB double buffered, BK = 32, FP32. Best square tile", "o": ["64", "96", "128", "192"], "a": 1, "hint": "BM + BN ≤ 192.", "why": "96 × 96."}, {"lv": "x", "q": "Warp with 8 lanes on 20 instructions and 24 on 10. Efficiency", "o": ["41.7 %", "50 %", "62.5 %", "75 %"], "a": 0, "hint": "400 ÷ 960.", "why": "41.7 percent."}], "calc": [{"lv": "e", "q": "Conflict degree for stride 8?", "ans": "8", "hint": "gcd(8, 32).", "steps": ["8 divides 32.", "gcd = 8.", "<span class=\"eq\">8 way<\/span>"]}, {"lv": "e", "q": "Blelloch additions for n = 1024?", "ans": "2046", "hint": "2(n − 1).", "steps": ["2 × 1023.", "= 2046.", "<span class=\"eq\">2046<\/span>"]}, {"lv": "e", "q": "Serial time: 8 chunks of 4 + 6 + 2 ms?", "ans": "96", "hint": "8 × 12.", "steps": ["Per chunk 12 ms.", "× 8.", "<span class=\"eq\">96 ms<\/span>"]}, {"lv": "m", "q": "Hillis and Steele additions for n = 1024?", "ans": "9217", "hint": "n log n − (n − 1).", "steps": ["10,240 − 1023.", "= 9217.", "<span class=\"eq\">9217<\/span>"]}, {"lv": "m", "q": "Occupancy in percent: 40 registers, 256 threads, 20 KB shared, A100?", "ans": "75", "hint": "Registers bind.", "steps": ["6 blocks × 8 warps = 48.", "48 ÷ 64.", "<span class=\"eq\">75 percent<\/span>"]}, {"lv": "m", "q": "Max registers per thread for 8 blocks of 256 on an A100?", "ans": "32", "hint": "65,536 ÷ 2048.", "steps": ["8 × 256 = 2048 threads.", "65,536 ÷ 2048.", "<span class=\"eq\">32 registers<\/span>"]}, {"lv": "m", "q": "Overlapped time: 8 chunks of 4, 6, 2 ms?", "ans": "54", "hint": "4 + 48 + 2.", "steps": ["Kernel stage binds.", "Fill 4, drain 2.", "<span class=\"eq\">54 ms<\/span>"]}, {"lv": "h", "q": "H100 BF16 989 TFLOP/s, 3.35 TB/s. Smallest math limited batch for the 4096 layer?", "ans": "345", "hint": "AI > 295.2.", "steps": ["3505.6 B > 1,209,139.", "B > 344.9.", "<span class=\"eq\">345<\/span>"]}, {"lv": "h", "q": "Amdahl speedup, 95 percent parallel, 1024 cores? (two decimals)", "ans": "19.64", "hint": "1 ÷ (0.05 + 0.95 ÷ 1024).", "steps": ["0.95 ÷ 1024 = 0.000928.", "1 ÷ 0.050928.", "<span class=\"eq\">≈ 19.64<\/span>"], "tol": 0.005}, {"lv": "x", "q": "Gustafson speedup for the same case? (one decimal)", "ans": "972.9", "hint": "0.05 + 0.95 × 1024.", "steps": ["0.95 × 1024 = 972.8.", "+ 0.05.", "<span class=\"eq\">≈ 972.9<\/span>"], "tol": 0.05}, {"lv": "x", "q": "AI of the best square tile in the 48 KB budget (FP32)?", "ans": "24", "hint": "T ÷ 4 with T = 96.", "steps": ["BM = BN = 96.", "96 ÷ 4.", "<span class=\"eq\">24 FLOP/byte<\/span>"]}], "assign": [{"id": "occ", "lv": "h", "title": "An occupancy calculator", "task": "<p>Write <code>occupancy(threads, regs, smem_kb)<\/code> for an A100: 65,536 registers, 2048 threads, 32 blocks and 164 KB of shared memory per SM, with 1 KB reserved per block when the block uses shared memory. Return the occupancy as a percentage rounded to one decimal (active warps ÷ 64).<\/p>", "starter": "def occupancy(threads, regs, smem_kb):\n    # your code here\n    pass\n", "tests": [{"call": "occupancy(256, 40, 20)", "want": 75.0}, {"call": "occupancy(256, 32, 16)", "want": 100.0}, {"call": "occupancy(1024, 64, 0)", "want": 50.0}, {"call": "occupancy(128, 32, 48)", "want": 18.8}], "solution": "def occupancy(threads, regs, smem_kb):\n    warps = (threads + 31) // 32\n    b_regs = 65536 // (regs * threads)\n    b_thr = 2048 // threads\n    b_smem = 32 if smem_kb == 0 else int(164 // (smem_kb + 1))\n    blocks = min(b_regs, b_thr, 32, b_smem)\n    return round(100 * blocks * warps / 64, 1)\n", "hint": "Compute each limit, take the smallest.", "why": "<p>Real calculators also round register use up per warp. With these inputs the answers do not change.<\/p>"}, {"id": "scanwork", "lv": "m", "title": "Work of two scans", "task": "<p>Write <code>scan_work(n)<\/code> for n a power of two. Return [Hillis and Steele additions, Blelloch additions, Hillis and Steele steps, Blelloch steps].<\/p>", "starter": "def scan_work(n):\n    # your code here\n    pass\n", "tests": [{"call": "scan_work(1024)", "want": [9217, 2046, 10, 20]}, {"call": "scan_work(8)", "want": [17, 14, 3, 6]}, {"call": "scan_work(2)", "want": [1, 2, 1, 2]}, {"call": "scan_work(16)", "want": [49, 30, 4, 8]}], "solution": "def scan_work(n):\n    k = n.bit_length() - 1\n    hs = sum(n - 2 ** d for d in range(k))\n    return [hs, 2 * (n - 1), k, 2 * k]\n", "hint": "Step d of Hillis and Steele updates n − 2^d values.", "why": "<p>Hillis and Steele does more work but fewer steps.<\/p>"}], "must": [["Batch threshold", "n × n layer: AI = nB ÷ (n + 2B). A100 4096: 223. H100 4096: 345. A100 1024: 330."], ["Occupancy", "Blocks = min(registers, threads, block limit, shared memory). Registers bind at 40 × 256 on an A100: 75 percent."], ["Banks", "Stride k gives a gcd(k, 32) way conflict. Pad rows to 33 for column reads."], ["Scan work", "Hillis and Steele n log n − (n − 1) in log n steps. Blelloch 2(n − 1) in 2 log n steps."], ["Tile budget", "Double buffered FP32 with BK = 32 in 48 KB: BM + BN ≤ 192, best 96 × 96, AI 24."]], "summary": "<p>Hard problems join easy ideas. Find the limit formula for each piece, combine them, and check with a second method.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"check": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.r": "295.2238805970149"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "o": "P1 H100 batch: 345\n"}, {"l": 7, "ev": "line", "d": {"G.r2": "200.64308681672026"}}, {"l": 8, "ev": "line", "o": "P1 1024 layer on A100: 330\n"}, {"l": 9, "ev": "line", "d": {"G.blocks": "6"}}, {"l": 10, "ev": "line", "o": "P2 blocks: 6  occupancy: 0.75\n"}, {"l": 11, "ev": "line", "o": "P4 Hillis-Steele adds: 9217  Blelloch adds: 2046\n"}, {"l": 12, "ev": "line", "o": "P5 BM + BN limit: 192\n"}, {"l": 13, "ev": "line", "o": "P6 divergence efficiency: 0.417\n"}, {"l": 13, "ev": "return", "o": "P7 Amdahl: 19.64  Gustafson: 972.85\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

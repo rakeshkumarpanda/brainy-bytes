@@ -6011,6 +6011,44 @@ function cudaModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "gpu-exam", title: "Exam practice", emoji: "10", step: 10, level: "Pro", blurb: "Quiz 1 solved, hard problems in the style of top university courses, and a final revision.", topics: [
+      { id: "quiz1-solved", title: "Quiz 1 solved step by step", emoji: "10.1", page: "content/cuda/quiz1-solved.html",
+        summary: "Quiz 1: all ten answers with steps, traps and variants.",
+        keywords: ["Quiz 1", "solutions", "matmul loads", "segments", "divergence", "warps"],
+        minutes: 40, counts: {"lessons": 6, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "paper", title: "The paper and the answers", emoji: "", group: "Lesson", keywords: ["Quiz 1", "answers", "exam"] },
+        { id: "q1", title: "Q1, Q6 and Q8: peak, kernels and memory", emoji: "", group: "Lesson", keywords: ["Q1", "peak throughput", "FMA", "Q6", "__global__ void", "Q8", "global memory"] },
+        { id: "q2", title: "Q2 to Q4: loads and races in matrix multiply", emoji: "", group: "Lesson", keywords: ["Q2", "Q3", "naive matmul loads", "tiled matmul loads", "Q4", "__syncthreads", "race"] },
+        { id: "q5", title: "Q5: segments for a transposed store", emoji: "", group: "Lesson", keywords: ["Q5", "coalescing", "segments", "transpose", "column major"] },
+        { id: "q7", title: "Q7, Q9 and Q10: tracing, divergence and warps", emoji: "", group: "Lesson", keywords: ["Q7", "matrix vector", "Q9", "divergence", "arithmetic series", "Q10", "warps launched"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "exam strategy"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "challenge-problems", title: "Challenge problems", emoji: "10.2", page: "content/cuda/challenge-problems.html",
+        summary: "Hard multi step problems with full solutions.",
+        keywords: ["challenge", "hard problems", "occupancy", "bank conflicts", "scan", "tile size"],
+        minutes: 60, counts: {"lessons": 8, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "intro", title: "How to use these problems", emoji: "", group: "Lesson", keywords: ["challenge", "exam style", "graduate level"] },
+        { id: "p1", title: "Problem 1: when does batching pay off?", emoji: "", group: "Lesson", keywords: ["batch threshold", "H100", "arithmetic intensity", "FC layer"] },
+        { id: "p2", title: "Problem 2: the occupancy puzzle", emoji: "", group: "Lesson", keywords: ["occupancy", "registers", "shared memory", "launch_bounds", "A100"] },
+        { id: "p3", title: "Problem 3: banks, strides and padding", emoji: "", group: "Lesson", keywords: ["bank conflicts", "gcd", "stride", "padding", "shared memory"] },
+        { id: "p4", title: "Problem 4: work against steps in scan", emoji: "", group: "Lesson", keywords: ["scan", "Hillis Steele", "Blelloch", "work efficiency", "span"] },
+        { id: "p5", title: "Problem 5: choose the tile under a budget", emoji: "", group: "Lesson", keywords: ["tile size", "shared memory budget", "double buffering", "arithmetic intensity"] },
+        { id: "p6", title: "Problem 6: divergence, overlap and scaling", emoji: "", group: "Lesson", keywords: ["divergence", "lane efficiency", "pipeline", "Amdahl", "Gustafson"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "problem solving"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
