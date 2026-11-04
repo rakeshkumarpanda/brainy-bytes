@@ -422,16 +422,11 @@ window.CATALOG = {
       title: 'GPU Programming with CUDA',
       emoji: '⚡',
       color: '#76b900',
-      blurb: 'Write code that runs on thousands of GPU cores with CUDA C++.',
-      intro: 'Learn how a GPU runs work in parallel, then write CUDA kernels, manage memory and speed up real programs.',
-      tags: ['CUDA C++', 'Kernels', 'Threads', 'Memory', 'Performance'],
-      modules: [soonModule([
-        ['How a GPU works', '🖥️', 'Cores, warps and why GPUs are fast.'],
-        ['Your first CUDA kernel', '🚀', 'Threads, blocks and grids.'],
-        ['GPU memory', '💾', 'Global, shared and constant memory.'],
-        ['Parallel patterns', '🧵', 'Reduction, scan and matrix multiplication.'],
-        ['Profiling and tuning', '⏱️', 'Find and fix slow kernels.']
-      ])]
+      layout: 'path',
+      blurb: 'A step by step path from why GPUs exist to CUDA kernels, the memory hierarchy, tiling, reductions, synchronisation, tensor cores and profiling.',
+      intro: 'Follow the path one step at a time. You start with why a chip with thousands of slow cores wins, write your first CUDA kernel, learn threads, warps, occupancy and the memory hierarchy, measure kernels with the roofline, build the classic parallel patterns (reduction, tiled matrix multiply, stencils, convolution, scan and histogram), handle divergence, streams and races, use tensor cores, and finish with debugging, profiling, GPU Python and an exam step with Quiz 1 solved. Every chapter has step by step animations, CUDA code with each line explained, worked maths problems and quizzes from easy to expert, and many have a notebook to download.',
+      tags: ['CUDA C++', 'Threads and warps', 'Memory hierarchy', 'Roofline', 'Tiling', 'Reduction', 'Tensor cores', 'Profiling'],
+      modules: cudaModules().concat(sheetModule('cuda'), iqModule('cuda'))
     },
     {
       id: 'cyber-security',
@@ -1280,6 +1275,7 @@ function sheetModule(sid) {
   const info = {
     'computer-vision': ['content/computer-vision/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Computer Vision chapters on one page, from pixels and filters to detection, segmentation and CLIP. Search it, filter it, print it or download the PDF.', ['image size formula', 'convolution output size', 'Sobel', 'Harris', 'optical flow', 'IoU', 'NMS', 'focal loss', 'mAP', 'Dice', 'mIoU']],
     'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Advanced AI chapters on one page, from preferences and utility to expected utility, risk, discounting, Nash style games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['utility', 'expected utility', 'certainty equivalent', 'discount factor', 'value of information', 'Cournot', 'Pareto', 'dominance', 'IESDS']],
+    'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
   }[sid];
@@ -1346,6 +1342,7 @@ function iqModule(sid) {
     'playwright': ['content/playwright/interview-questions.html', 'Playwright questions from automation interviews in TypeScript, JavaScript, Python and Java: how Playwright works, locators and strict mode, auto waiting, network mocking, fixtures, framework design, traces and reports, CI, sharding, flaky tests and the AI test agents, with real scenario questions.', ['playwright vs selenium', 'browser context', 'getByRole', 'strict mode', 'auto waiting', 'web first assertions', 'page.route', 'storageState', 'test.extend', 'pytest fixtures', 'trace viewer', 'sharding', 'flaky tests', 'test agents', 'playwright mcp']],
     'ai': ['content/ai/interview-questions.html', 'Advanced AI interview and viva questions on rational preferences, utility representation, expected utility and risk attitudes, backward induction, discounting, value of information, normal form games, Pareto optimality, dominance and IESDS, with numerical questions solved step by step.', ['rational preference', 'utility function', 'ordinal vs cardinal', 'expected utility', 'certainty equivalent', 'St Petersburg', 'backward induction', 'discount factor', 'value of information', 'prisoners dilemma', 'Cournot', 'Bertrand', 'Pareto optimal', 'dominant strategy', 'IESDS']],
     'nlp': ['content/nlp/interview-questions.html', 'NLP interview questions on tokenisation, stemming and lemmatisation, Zipf, entropy, cross entropy and KL, perplexity, n-gram models, add-k, Good-Turing, Kneser-Ney, backoff and interpolation, HMM tagging, Viterbi, parsing and evaluation, with scenario questions.', ['tokenisation', 'stemming vs lemmatisation', 'Zipf law', 'entropy', 'cross entropy', 'perplexity', 'n-gram', 'Laplace smoothing', 'Kneser-Ney', 'interpolation', 'OOV', 'HMM', 'Viterbi', 'POS tagging', 'CKY', 'BLEU']],
+    'cuda': ['content/cuda/interview-questions.html', 'GPU and CUDA interview questions for ML engineers, HPC developers and systems roles: the execution model, thread indexing, warps and divergence, occupancy, the memory hierarchy, coalescing, bank conflicts, the roofline, tiling, reductions, atomics, streams, tensor cores, profiling and debugging scenarios.', ['CUDA thread hierarchy', 'warp', 'SIMT', 'occupancy', 'coalescing', 'shared memory', 'bank conflict', '__syncthreads', 'atomicAdd', 'roofline', 'streams', 'pinned memory', 'tensor cores', 'Nsight']],
     'git': ['content/git/interview-questions.html', 'Git and CI/CD interview questions for developers and QA engineers: the three areas, reset, revert and restore, merge versus rebase, conflicts, reflog recovery, remotes and force pushes, internals, GitHub Actions and GitLab CI/CD pipelines, caches, artifacts, secrets, flaky tests and pipeline design scenarios.', ['git reset vs revert', 'merge vs rebase', 'fast forward', 'cherry-pick', 'reflog', 'detached HEAD', 'force-with-lease', 'git bisect', 'git objects', 'GitHub Actions', 'needs', 'matrix', 'artifacts', 'GitLab rules', 'cache vs artifacts', 'secrets']],
     'computer-vision': ['content/computer-vision/interview-questions.html', 'Computer vision interview questions on images and filters, edges, Harris, SIFT and HOG, optical flow, CNN arithmetic, anchors, IoU, NMS, focal loss, precision, recall and mAP, segmentation metrics, U-Net, ViT, CLIP and SAM, with debugging scenarios and system design.', ['convolution output size', 'parameter count', 'receptive field', 'Harris', 'optical flow', 'IoU', 'NMS', 'anchor boxes', 'focal loss', 'mAP50-95', 'mIoU', 'Dice', 'U-Net', 'transposed convolution', 'ViT', 'CLIP', 'SAM', 'domain shift']],
     'selenium': ['content/selenium/interview-questions.html', 'Selenium questions from automation and SDET interviews on how WebDriver works, sessions and options, locators, waits, windows, frames, alerts, Actions, JavaScript and cookies, frameworks and page objects, flaky tests and debugging, and Selenium Grid 4 with BiDi and CDP, with code in Java, Python and JavaScript.', ['selenium architecture', 'W3C WebDriver', 'Selenium Manager', 'close vs quit', 'CSS vs XPath', 'relative locators', 'shadow root', 'implicit vs explicit wait', 'FluentWait', 'window handles', 'iframe', 'Actions API', 'stale element', 'click intercepted', 'page object model', 'Selenium Grid', 'BiDi', 'CDP']],
@@ -5580,3 +5577,122 @@ function gitModules() {
   ];
 }
 /* ===== end of git-build ===== */
+
+/* ===== cuda-build: GPU Programming chapters. Generated by tools/cuda-build/build.py, edit the topic files instead. ===== */
+function cudaModules() {
+  return [
+    { id: "gpu-why", title: "Why GPUs", emoji: "1", step: 1, level: "School", blurb: "Why a chip with thousands of slow cores beats a few fast ones, how to measure speed, and how much a GPU can ever help.", topics: [
+      { id: "why-gpus", title: "Why GPUs: latency, throughput and power", emoji: "1.1", page: "content/cuda/why-gpus.html",
+        summary: "CPU against GPU design, latency and throughput, FPS and batch time, clock and power, peak FLOPs, and the hardware spectrum.",
+        keywords: ["GPU", "CPU", "latency", "throughput", "FPS", "peak FLOPs", "power", "TPU", "NPU", "FPGA", "ASIC"],
+        minutes: 40, counts: {"lessons": 5, "problems": 12, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "designs", title: "Two ways to build a processor", emoji: "", group: "Lesson", keywords: ["CPU vs GPU", "design philosophy", "control", "cache", "ALU", "gardener analogy", "SIMD", "SIMT"] },
+        { id: "latency", title: "Latency, throughput and frames per second", emoji: "", group: "Lesson", keywords: ["latency", "throughput", "FPS", "batch time", "ceiling", "pipeline", "inference FPS"] },
+        { id: "clock", title: "Clock speed, power and peak work", emoji: "", group: "Lesson", keywords: ["clock", "cycle time", "dynamic power", "voltage", "peak FLOPs", "FMA", "power wall", "Dennard scaling"] },
+        { id: "platforms", title: "CPU, GPU, TPU, NPU, FPGA and ASIC", emoji: "", group: "Lesson", keywords: ["TPU", "NPU", "FPGA", "ASIC", "hardware spectrum", "host", "device", "CUDA"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "T4 peak", "deep learning", "AlexNet", "systolic array"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "speedup-amdahl", title: "Speedup, the PCIe trip and Amdahl's law", emoji: "1.2", page: "content/cuda/speedup-amdahl.html",
+        summary: "Speedup with copies counted, Amdahl's law and its ceiling, working backwards, Gustafson's law, and break even sizes.",
+        keywords: ["speedup", "Amdahl's law", "Gustafson's law", "PCIe", "efficiency", "strong scaling", "weak scaling"],
+        minutes: 45, counts: {"lessons": 4, "problems": 12, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "speedup", title: "Speedup and the trip over PCIe", emoji: "", group: "Lesson", keywords: ["speedup", "PCIe", "copy time", "end to end time", "battery simulation", "bandwidth"] },
+        { id: "amdahl", title: "Amdahl's law", emoji: "", group: "Lesson", keywords: ["Amdahl's law", "parallel fraction", "ceiling", "efficiency", "serial part", "derivation"] },
+        { id: "gustafson", title: "Gustafson's law and scaling (beyond the lecture)", emoji: "", group: "Lesson", keywords: ["Gustafson's law", "strong scaling", "weak scaling", "scaled speedup"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "profile first", "break even", "Hill and Marty"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "first-workloads", title: "First GPU workloads: heat simulation and convolution", emoji: "1.3", page: "content/cuda/first-workloads.html",
+        summary: "The heat simulation update rule and its stability, why it suits a GPU, and normal against depthwise separable convolution cost.",
+        keywords: ["heat simulation", "finite difference", "stencil", "stability", "convolution", "depthwise separable", "MobileNet"],
+        minutes: 40, counts: {"lessons": 3, "problems": 11, "quiz": 11, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "heat", title: "Workload 1: a battery heat simulation", emoji: "", group: "Lesson", keywords: ["heat equation", "finite difference", "update rule", "Laplacian", "stencil", "two buffers", "stability"] },
+        { id: "vision", title: "Workload 2: image recognition and convolution cost", emoji: "", group: "Lesson", keywords: ["image recognition", "convolution cost", "depthwise separable", "pointwise", "MobileNet", "saving ratio"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "stencil", "halo", "im2col", "Winograd"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "gpu-model", title: "The CUDA programming model", emoji: "2", step: 2, level: "College", blurb: "Write and launch kernels, index threads in 1, 2 and 3 dimensions, and see how warps and SMs run them and how many fit.", topics: [
+      { id: "first-cuda-program", title: "Your first CUDA program", emoji: "2.1", page: "content/cuda/first-cuda-program.html",
+        summary: "Host and device, the CUDA recipe, __global__ void kernels, vector add line by line, nvcc, asynchronous launches, error checks and unified memory.",
+        keywords: ["CUDA", "kernel", "__global__", "cudaMalloc", "cudaMemcpy", "vector add", "nvcc", "unified memory"],
+        minutes: 50, counts: {"lessons": 4, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "recipe", title: "Host, device and the recipe every program follows", emoji: "", group: "Lesson", keywords: ["host", "device", "kernel", "__global__", "__device__", "__host__", "cudaMalloc", "cudaMemcpy", "recipe"] },
+        { id: "vadd", title: "The complete vector addition program", emoji: "", group: "Lesson", keywords: ["vector add", "cudaMalloc", "cudaMemcpy", "execution configuration", "error checking", "nvcc", "arch", "PTX", "SASS"] },
+        { id: "hello", title: "Hello world, asynchronous launches and unified memory", emoji: "", group: "Lesson", keywords: ["hello world", "printf", "cudaDeviceSynchronize", "asynchronous launch", "unified memory", "cudaMallocManaged", "block order"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "asynchronous", "CUDA graphs", "Numba", "CuPy", "Triton"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "thread-indexing", title: "Threads, blocks and grids: indexing in 1-D, 2-D and 3-D", emoji: "2.2", page: "content/cuda/thread-indexing.html",
+        summary: "The global index, blocks and idle threads, dim3 and 2-D image indexing, going backwards, grid stride loops and matrix vector per row.",
+        keywords: ["threadIdx", "blockIdx", "blockDim", "gridDim", "dim3", "global index", "grid stride loop", "row major"],
+        minutes: 50, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "one-d", title: "The global index in one dimension", emoji: "", group: "Lesson", keywords: ["threadIdx", "blockIdx", "blockDim", "gridDim", "global index", "round up", "idle threads"] },
+        { id: "two-d", title: "dim3, images and two dimensional grids", emoji: "", group: "Lesson", keywords: ["dim3", "2-D grid", "image indexing", "row major", "col row", "linear index", "block shape"] },
+        { id: "three-d", title: "Three dimensions, going backwards, and the slide correction", emoji: "", group: "Lesson", keywords: ["3-D indexing", "going backwards", "slide correction", "mod and divide", "linearisation"] },
+        { id: "patterns", title: "Grid stride loops and one thread per row", emoji: "", group: "Lesson", keywords: ["grid stride loop", "SAXPY", "matrix vector", "one thread per row", "Quiz 1 question 7"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "persistent kernels", "thread block clusters"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "warps-sms", title: "SMs, warps and hiding latency", emoji: "2.3", page: "content/cuda/warps-sms.html",
+        summary: "SM anatomy, warps and lanes, wasted lanes, Little's law and latency hiding, and registers per thread.",
+        keywords: ["SM", "warp", "lane", "SIMT", "Little's law", "latency hiding", "registers", "Fermi"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "sm", title: "Streaming multiprocessors: what really runs your threads", emoji: "", group: "Lesson", keywords: ["SM", "streaming multiprocessor", "Fermi", "warp scheduler", "register file", "SFU", "load store unit"] },
+        { id: "warps", title: "Warps, lanes and SIMT", emoji: "", group: "Lesson", keywords: ["warp", "lane", "SIMT", "warpSize", "wasted lanes", "efficiency", "2-D warps", "independent thread scheduling"] },
+        { id: "little", title: "Hiding latency: Little's law", emoji: "", group: "Lesson", keywords: ["Little's law", "latency hiding", "warps in flight", "Fermi", "Kepler", "bytes in flight", "ILP"] },
+        { id: "registers", title: "Registers: the hidden limit", emoji: "", group: "Lesson", keywords: ["registers per thread", "register file", "spilling", "local memory", "bits per register"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "sub partitions", "Volkov", "ILP vs occupancy"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "occupancy", title: "Occupancy: how many warps fit on an SM", emoji: "2.4", page: "content/cuda/occupancy.html",
+        summary: "Occupancy from four limits, register rounding, shared memory reserve, launch bounds and the occupancy API.",
+        keywords: ["occupancy", "registers", "shared memory", "launch bounds", "occupancy calculator"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "what", title: "What occupancy means", emoji: "", group: "Lesson", keywords: ["occupancy", "active warps", "max warps", "compute capability", "SM limits"] },
+        { id: "threads", title: "Limit 1 and 2: threads and blocks", emoji: "", group: "Lesson", keywords: ["block limit", "warp limit", "small blocks", "smallest block size"] },
+        { id: "regs", title: "Limit 3: registers, with rounding", emoji: "", group: "Lesson", keywords: ["registers per warp", "rounding to 256", "__launch_bounds__", "maxrregcount", "register limited occupancy"] },
+        { id: "smem", title: "Limit 4: shared memory", emoji: "", group: "Lesson", keywords: ["shared memory limit", "reserved shared memory", "occupancy API", "cudaOccupancyMaxActiveBlocksPerMultiprocessor", "cudaOccupancyMaxPotentialBlockSize"] },
+        { id: "levels", title: "Is higher occupancy always faster?", emoji: "", group: "Lesson", keywords: ["achieved occupancy", "theoretical occupancy", "ILP", "low occupancy kernels"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of cuda-build ===== */

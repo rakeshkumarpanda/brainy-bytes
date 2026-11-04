@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speedup, the PCIe trip and Amdahl&#x27;s law · GPU Programming</title>
+<meta name="description" content="Speedup, copy in, kernel and copy out, the battery simulation table, Amdahl&#x27;s law with its derivation, ceiling, efficiency and working backwards, the lecture 5 quiz, speeding up one part, break even sizes, and Gustafson&#x27;s law with strong and weak scaling.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 1: Why GPUs</span><span>›</span><span>Speedup and Amdahl</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 2 of 3 · School</div>
+    <h1>Speedup, the PCIe trip and Amdahl&#x27;s law</h1>
+    <p class="lead">Measure speedup honestly with the copies included, then use Amdahl's law to see how much a GPU can ever help, and Gustafson's law for problems that grow.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">9 formulas</span><span class="cv-chip">12 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#speedup-amdahl" data-topic="cheatsheet" data-h="speedup-amdahl">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#speedup" data-l="speedup"><span class="n">1</span><span class="t">Speedup and the trip over PCIe</span></a></li><li><a href="#amdahl" data-l="amdahl"><span class="n">2</span><span class="t">Amdahl&#x27;s law</span></a></li><li><a href="#gustafson" data-l="gustafson"><span class="n">3</span><span class="t">Gustafson&#x27;s law and scaling (beyond the lecture)</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="speedup" data-l="speedup" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Speedup and the trip over PCIe</h2>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Speedup</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>S</i> = old time ÷ new time</div><div class="fx-n">S = 10 means the new version is ten times faster. With FPS, use new FPS ÷ old FPS.</div></div><div class="fx fx-key"><div class="fx-h"><span>Total GPU time</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>T</i><sub>GPU</sub> = <i>T</i><sub>copy in</sub> + <i>T</i><sub>kernel</sub> + <i>T</i><sub>copy out</sub></div><div class="fx-n">The GPU is worth it only if T<sub>GPU</sub> &lt; T<sub>CPU</sub>.</div></div><div class="fx"><div class="fx-h"><span>Copy time</span></div><div class="fx-b"><i>T</i><sub>copy</sub> = bytes ÷ bandwidth</div><div class="fx-n">PCIe 3.0 x16 gives about 12 to 16 GB/s in practice. 12 GB/s = 12 × 10⁹ bytes per second.</div></div></div>
+<p>The GPU has its own memory. Data lives in the CPU's memory first, so it must travel over the PCIe bus to the GPU, and results must travel back. That trip can cost more than the computing.</p>
+<div class="scene"><div class="scene-h">Real world scenario: a calculator friend across town</div><p>Your friend adds numbers 100 times faster than you, but lives a 30 minute bus ride away. For one sum you do it yourself. For ten thousand sums you take the bus. The bus ride is the PCIe copy.</p></div>
+<div class="cvz" data-viz="pcie"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Grid</th><th>CPU (ms)</th><th>GPU (ms)</th><th>Shared GPU (ms)</th><th>GPU speedup</th></tr></thead><tbody><tr><td>256 × 256</td><td>51.55</td><td>0.48</td><td>0.53</td><td>107.76</td></tr><tr><td>512 × 512</td><td>236.54</td><td>1.48</td><td>1.87</td><td>160.28</td></tr><tr><td>1024 × 1024</td><td>906.35</td><td>5.34</td><td>6.13</td><td>169.79</td></tr><tr><td>2048 × 2048</td><td>3593.75</td><td>17.75</td><td>16.32</td><td>202.44</td></tr></tbody></table></div>
+<p>This is the battery heat simulation from lecture 1. The speedup grows with the grid, because a bigger grid gives the GPU more independent cells to hide its fixed costs. Recomputing from the printed times gives slightly different numbers, for example 906.35 ÷ 5.34 ≈ 169.7, because the slide used more decimals.</p>
+<div class="cv-code" data-k="endtoend"></div>
+<div class="note note-warn"><b>Common mistake</b><div>Keep data on the GPU across many kernel launches. Copy in once, run all time steps, copy out once. Copying every step can turn a 158 times speedup into 12 times (workbook P1.3.5).</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="amdahl" data-l="amdahl" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Amdahl&#x27;s law</h2>
+<p>Split a program into a part that can run in parallel (fraction P of the time on one processor) and a part that cannot (1 − P). With N processors the parallel part shrinks to P ÷ N, the serial part stays.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Amdahl's law</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>S</i>(<i>N</i>) = 1 ÷ [ (1 − <i>P</i>) + <i>P</i> ÷ <i>N</i> ]</div><div class="fx-n">P is the parallel fraction measured on one processor, N the number of processors.</div></div><div class="fx fx-key"><div class="fx-h"><span>The ceiling</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>S</i><sub>max</sub> = 1 ÷ (1 − <i>P</i>)</div><div class="fx-n">Let N grow without limit. 95 percent parallel can never beat 20 times.</div></div><div class="fx"><div class="fx-h"><span>Working backwards</span></div><div class="fx-b"><i>P</i> = (1 − 1/<i>S</i>) ÷ (1 − 1/<i>N</i>)</div><div class="fx-n">From a measured speedup S on N processors.</div></div><div class="fx"><div class="fx-h"><span>Efficiency</span></div><div class="fx-b"><i>E</i> = <i>S</i> ÷ <i>N</i></div><div class="fx-n">How much of each processor is really used.</div></div><div class="fx"><div class="fx-h"><span>Speeding up one part s times</span></div><div class="fx-b"><i>S</i> = 1 ÷ [ (1 − <i>p</i>) + <i>p</i> ÷ <i>s</i> ]</div><div class="fx-n">The same law for any part p that gets s times faster, for example a kernel.</div></div></div>
+<div class="cvz" data-viz="amdahl"></div>
+<div class="walk"><div class="walk-h"><span>Derivation in four lines</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Time on one processor: T₁ = (1 − P)T₁ + PT₁.</li><li>On N processors only the parallel part is divided: T<sub>N</sub> = (1 − P)T₁ + PT₁ ÷ N.</li><li>Speedup S = T₁ ÷ T<sub>N</sub>. The T₁ cancels.</li><li><span class="eq">S(N) = 1 ÷ [(1 − P) + P ÷ N], and as N → ∞, S → 1 ÷ (1 − P)</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Lecture 5 quiz: 1 percent serial, 61 cores</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>1 − P = 0.01 and P ÷ N = 0.99 ÷ 61 ≈ 0.016230.</li><li>Denominator 0.01 + 0.016230 = 0.026230.</li><li>S = 1 ÷ 0.026230 ≈ 38.125.</li><li><span class="eq">Efficiency 38.125 ÷ 61 = 62.5 percent. Ceiling 1 ÷ 0.01 = 100</span></li></ol></div>
+<div class="cv-code" data-k="amdahl"></div>
+<div class="scene"><div class="scene-h">Real world scenario: cooking for a wedding</div><p>Fifty cooks can chop vegetables together, but the biryani must still simmer for 40 minutes in one pot. Adding cooks shortens the chopping, never the simmering. That 40 minutes is the serial part.</p></div>
+<div class="note note-warn"><b>Common mistake</b><div>P is a fraction of the time on one processor, not a fraction of the lines of code. A tiny loop that runs for 90 percent of the time gives P = 0.9.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="gustafson" data-l="gustafson" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Gustafson&#x27;s law and scaling (beyond the lecture)</h2>
+<p>Amdahl keeps the problem size fixed. In practice people buy a bigger GPU to solve a bigger problem in the same time: a finer heat grid, a larger batch, a longer video. Then the parallel work grows with N while the serial part stays about the same.</p>
+<div class="fx fx-key"><div class="fx-h"><span>Gustafson's law (scaled speedup)</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>S</i><sub>scaled</sub> = <i>N</i> − (1 − <i>P</i>)(<i>N</i> − 1)</div><div class="fx-n">Here P is the parallel share of the time measured on the N processor run. The speedup grows almost in a straight line with N.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>Strong scaling (Amdahl)</th><th>Weak scaling (Gustafson)</th></tr></thead><tbody><tr><td>What is fixed</td><td>Total problem size</td><td>Work per processor</td></tr><tr><td>Question asked</td><td>How much faster does the same job finish?</td><td>How much bigger a job fits in the same time?</td></tr><tr><td>Limit</td><td>1 ÷ (1 − P)</td><td>Grows with N</td></tr><tr><td>GPU example</td><td>One 1024 × 1024 grid on more SMs</td><td>Grid grows from 1024² to 4096² with a bigger GPU</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Example: P = 0.9 on 64 processors</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Amdahl: S = 1 ÷ (0.1 + 0.9 ÷ 64) = 1 ÷ 0.1140625 ≈ 8.77.</li><li>Gustafson: S = 64 − 0.1 × 63 = 64 − 6.3.</li><li><span class="eq">= 57.7. Both are right. They answer different questions</span></li></ol></div>
+<div class="note note-exam"><b>In the exam</b><div>In an exam, Amdahl is the default unless the question says the problem grows with the number of processors.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Extra helpers only speed up the part of a job that can be shared. The part that must be done by one person sets the limit.</p></div><div class="ld-p" data-ld="college" hidden><p>S = 1 ÷ ((1 − P) + P ÷ N), ceiling 1 ÷ (1 − P). Count copy in plus kernel plus copy out. Use P = (1 − 1/S) ÷ (1 − 1/N) to measure how parallel a program is.</p></div><div class="ld-p" data-ld="masters" hidden><p>Amdahl applies to every part of a pipeline: a 10 times faster kernel inside an 8.66 ms frame where the kernel is 1.65 ms gives only about 1.21 times overall (workbook P1.4.7). Profile first, then speed up the biggest part.</p></div><div class="ld-p" data-ld="research" hidden><p>Hill and Marty extended Amdahl to multicore chip design (few big cores against many small ones), and asymmetric chips like CPU plus GPU systems follow from it. Overlapping copies with compute (chapter 6.2) and unified memory with prefetching attack the serial copy term directly.</p></div></div>
+<div class="walk"><div class="walk-h"><span>Work it out: the frame that will not speed up (workbook P1.4.7)</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Frame 8.66 ms, kernel 1.65 ms, so p = 1.65 ÷ 8.66 ≈ 0.1905.</li><li>Kernel gets s = 10 times faster: S = 1 ÷ (0.8095 + 0.01905).</li><li><span class="eq">S ≈ 1.21. The copies are the real bottleneck</span></li></ol></div>
+<details class="deep"><summary>Going deeper: break even size for a GPU</summary><div class="deep-b"><p>If the CPU takes 2 ns per element and the GPU takes a fixed 50 µs plus 0.2 ns per element, the GPU wins when 2n &gt; 50,000 + 0.2n, so n &gt; 27,778 elements. At 10 million elements the speedup is 20 ms ÷ 2.05 ms ≈ 9.76 (workbook P1.3.6). Every GPU decision has a break even size like this.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./why-gpus.html" data-topic="why-gpus"><small>Previous topic</small><b>Why GPUs</b></a><a class="next" href="./first-workloads.html" data-topic="first-workloads"><small>Next topic</small><b>First workloads</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "speedup-amdahl", "topic": "speedup-amdahl", "subject": "cuda", "title": "Speedup, the PCIe trip and Amdahl's law", "codes": {"amdahl": {"src": "# Amdahl's law: S(N) = 1 / ((1 - P) + P / N)\ndef speedup(P, N):\n    return 1 / ((1 - P) + P / N)\n\ndef parallel_fraction(S, N):        # working backwards from a measured speedup\n    return (1 - 1 / S) / (1 - 1 / N)\n\nfor P in [0.5, 0.9, 0.99]:\n    row = [round(speedup(P, N), 2) for N in [4, 16, 256, 4096]]\n    print(f\"P = {P}: {row}   ceiling {round(1 / (1 - P), 1)}\")\nprint(\"6x on 16 processors means P =\", round(parallel_fraction(6, 16), 3))\nprint(\"1% serial on 61 cores:\", speedup(0.99, 61))", "stdin": "", "out": "P = 0.5: [1.6, 1.88, 1.99, 2.0]   ceiling 2.0\nP = 0.9: [3.08, 6.4, 9.66, 9.98]   ceiling 10.0\nP = 0.99: [3.88, 13.91, 72.11, 97.64]   ceiling 100.0\n6x on 16 processors means P = 0.889\n1% serial on 61 cores: 38.124999999999986"}, "endtoend": {"src": "# Is the GPU worth it once copies over PCIe are counted?\ndef copy_ms(bytes_, gb_per_s):\n    return bytes_ / (gb_per_s * 1e9) * 1000\n\ngrid = 1024 * 1024 * 4          # one float grid in bytes\nsteps, gpu_step, cpu_step, pcie = 100, 0.05, 9.0, 12\nonce = copy_ms(grid, pcie) + steps * gpu_step + copy_ms(grid, pcie)\nevery = steps * (copy_ms(grid, pcie) + gpu_step + copy_ms(grid, pcie))\ncpu = steps * cpu_step\nprint(f\"copy once : {once:7.2f} ms, speedup {cpu / once:6.1f}x\")\nprint(f\"copy every: {every:7.2f} ms, speedup {cpu / every:6.1f}x\")", "stdin": "", "out": "copy once :    5.70 ms, speedup  157.9x\ncopy every:   74.91 ms, speedup   12.0x"}}, "quiz": [{"lv": "e", "q": "Speedup is", "o": ["new time ÷ old time", "old time ÷ new time", "old time − new time", "cores × clock"], "a": 1, "hint": "Bigger is better.", "why": "S = old ÷ new. A drop from 10 s to 2 s is a speedup of 5."}, {"lv": "e", "q": "A program is 95 percent parallel. The most speedup possible is", "o": ["95", "20", "19", "unlimited"], "a": 1, "hint": "1 ÷ (1 − P).", "why": "1 ÷ 0.05 = 20."}, {"lv": "e", "q": "Total GPU time must include", "o": ["Only the kernel", "Copy in, kernel and copy out", "Only the copies", "The CPU time"], "a": 1, "hint": "The data travels both ways.", "why": "Data crosses PCIe to the GPU and the result comes back."}, {"lv": "m", "q": "P = 0.8 on 4 processors gives a speedup of", "o": ["4", "3.2", "2.5", "2"], "a": 2, "hint": "1 ÷ (0.2 + 0.2).", "why": "1 ÷ 0.4 = 2.5, not 4."}, {"lv": "m", "q": "Why did the battery simulation speedup grow with grid size?", "o": ["Bigger grids use less memory", "More independent cells hide the fixed overheads", "The CPU got slower", "Copies vanish"], "a": 1, "hint": "More parallel work.", "why": "Fixed launch and copy costs are spread over more cells."}, {"lv": "m", "q": "Efficiency E = S ÷ N for the 61 core quiz (S = 38.125) is about", "o": ["38 percent", "62.5 percent", "100 percent", "1.6 percent"], "a": 1, "hint": "38.125 ÷ 61.", "why": "Each core is used 62.5 percent of the time on average."}, {"lv": "m", "q": "Gustafson's law assumes", "o": ["The problem size is fixed", "The work per processor is fixed, so the problem grows with N", "No serial part", "Infinite bandwidth"], "a": 1, "hint": "Weak scaling.", "why": "It measures how a bigger problem fits in the same time."}, {"lv": "h", "q": "A kernel inside a frame becomes 10 times faster but the frame only gets 1.21 times faster. Why?", "o": ["A measuring error", "The kernel was only 19 percent of the frame, the copies dominate", "GPUs cannot speed up", "Warps diverged"], "a": 1, "hint": "Amdahl on the kernel's share.", "why": "With p ≈ 0.19 the rest of the frame caps the gain."}, {"lv": "h", "q": "Copying a grid in and out every time step instead of once", "o": ["Has no effect", "Multiplies the copy cost by the number of steps and can wipe out the speedup", "Makes the kernel faster", "Is required by CUDA"], "a": 1, "hint": "P1.3.5.", "why": "158 times becomes about 12 times."}, {"lv": "x", "q": "A measured speedup of 6 on 16 processors means the parallel fraction is about", "o": ["0.375", "0.889", "0.6", "0.95"], "a": 1, "hint": "P = (1 − 1/S) ÷ (1 − 1/N).", "why": "(1 − 1/6) ÷ (1 − 1/16) = 0.8333 ÷ 0.9375 ≈ 0.889."}, {"lv": "x", "q": "With P = 0.99, how many processors give 90 percent of the ceiling of 100?", "o": ["90", "100", "891", "9900"], "a": 2, "hint": "Solve 1 ÷ (0.01 + 0.99/N) = 90.", "why": "0.01 + 0.99/N = 1/90, so 0.99/N = 0.001111, N = 891."}], "calc": [{"lv": "e", "q": "512 × 512 grid: CPU 236.54 ms, GPU 1.48 ms. Speedup? (one decimal)", "ans": "159.8", "hint": "Old ÷ new.", "steps": ["Old time 236.54 ms.", "New time 1.48 ms.", "<span class=\"eq\">236.54 ÷ 1.48 ≈ 159.8 (slide: 160.28)<\/span>"], "tol": 0.05}, {"lv": "e", "q": "P = 0.6 and N = 8. Speedup? (two decimals)", "ans": "2.11", "hint": "1 ÷ (0.4 + 0.075).", "steps": ["Serial 1 − P = 0.4.", "Parallel P ÷ N = 0.6 ÷ 8 = 0.075.", "<span class=\"eq\">S = 1 ÷ 0.475 ≈ 2.11<\/span>"], "tol": 0.005}, {"lv": "e", "q": "Copy 36 MB over PCIe at 12 GB/s. Time in ms?", "ans": "3", "hint": "bytes ÷ bandwidth.", "steps": ["36 MB = 36 × 10⁶ bytes.", "12 GB/s = 12 × 10⁹ bytes per second.", "<span class=\"eq\">36 × 10⁶ ÷ 12 × 10⁹ = 0.003 s = 3 ms<\/span>"], "unit": "ms"}, {"lv": "m", "q": "CPU 2 ms. GPU: copy in 3 ms, kernel 0.5 ms, copy out 3 ms. End to end speedup? (two decimals)", "ans": "0.31", "hint": "Add the three GPU parts.", "steps": ["T<sub>GPU<\/sub> = 3 + 0.5 + 3 = 6.5 ms.", "S = 2 ÷ 6.5.", "<span class=\"eq\">≈ 0.31, a slowdown, even though the kernel alone is 4 times faster<\/span>"], "tol": 0.005}, {"lv": "m", "q": "A team measures 6 times on 16 processors. Parallel fraction P? (three decimals)", "ans": "0.889", "hint": "Work backwards.", "steps": ["1 − 1/S = 1 − 1/6 = 0.8333.", "1 − 1/N = 1 − 1/16 = 0.9375.", "<span class=\"eq\">P = 0.8333 ÷ 0.9375 ≈ 0.889<\/span>"], "tol": 0.0005}, {"lv": "m", "q": "P = 0.9 and N = 100. Speedup? (two decimals)", "ans": "9.17", "hint": "Close to but below 10.", "steps": ["Serial 0.1.", "Parallel 0.9 ÷ 100 = 0.009.", "<span class=\"eq\">S = 1 ÷ 0.109 ≈ 9.17<\/span>"], "tol": 0.005}, {"lv": "m", "q": "1 percent serial on 61 cores. Speedup? (three decimals)", "ans": "38.125", "hint": "Lecture 5 quiz.", "steps": ["Denominator 0.01 + 0.99 ÷ 61.", "= 0.01 + 0.016230 = 0.026230.", "<span class=\"eq\">S = 38.125<\/span>"], "tol": 0.0005}, {"lv": "h", "q": "P = 0.99. Smallest N that reaches 90 percent of the ceiling (90 times)?", "ans": "891", "hint": "Set S = 90 and solve.", "steps": ["1 ÷ (0.01 + 0.99/N) = 90 gives 0.01 + 0.99/N = 0.011111.", "0.99/N = 0.001111.", "<span class=\"eq\">N = 891<\/span>"]}, {"lv": "h", "q": "90 percent of a job moves to a GPU that runs it 1000 times faster. Overall speedup? (two decimals)", "ans": "9.91", "hint": "Amdahl with s = 1000.", "steps": ["Serial 0.1 stays.", "Accelerated part 0.9 ÷ 1000 = 0.0009.", "<span class=\"eq\">S = 1 ÷ 0.1009 ≈ 9.91, never more than 10<\/span>"], "tol": 0.005}, {"lv": "h", "q": "CPU 2 ns per element. GPU 50 µs fixed plus 0.2 ns per element. Break even size? (whole elements, round up)", "ans": "27778", "hint": "Solve 2n = 50,000 + 0.2n.", "steps": ["1.8n = 50,000 ns.", "n = 27,777.8.", "<span class=\"eq\">From about 27,778 elements the GPU is faster<\/span>"]}, {"lv": "x", "q": "Gustafson: P = 0.9 measured on 64 processors. Scaled speedup? (one decimal)", "ans": "57.7", "hint": "N − (1 − P)(N − 1).", "steps": ["(1 − P)(N − 1) = 0.1 × 63 = 6.3.", "64 − 6.3.", "<span class=\"eq\">57.7<\/span>"], "tol": 0.05}, {"lv": "x", "q": "100 steps of a 1024 × 1024 float grid: GPU 0.05 ms per step, PCIe 12 GB/s, copy in and out once. GPU total in ms? (two decimals)", "ans": "5.70", "hint": "Two copies of 4,194,304 bytes plus 100 kernels.", "steps": ["One copy = 4,194,304 ÷ 12 × 10⁹ s ≈ 0.3495 ms.", "Two copies ≈ 0.699 ms. Kernels 100 × 0.05 = 5 ms.", "<span class=\"eq\">Total ≈ 5.70 ms against 900 ms on the CPU (about 158 times)<\/span>"], "tol": 0.005}], "assign": [{"id": "amd", "lv": "e", "title": "Amdahl's law", "task": "<p>Write <code>amdahl(P, N)<\/code> returning the speedup rounded to 3 decimals.<\/p>", "starter": "def amdahl(P, N):\n    # your code here\n    pass\n", "tests": [{"call": "amdahl(0.8, 4)", "want": 2.5}, {"call": "amdahl(0.99, 61)", "want": 38.125}, {"call": "amdahl(0.9, 100)", "want": 9.174}], "solution": "def amdahl(P, N):\n    return round(1 / ((1 - P) + P / N), 3)\n", "hint": "One over serial plus parallel divided by N.", "why": "<p>These are the workbook and lecture 5 numbers.<\/p>"}, {"id": "worth", "lv": "m", "title": "Is the GPU worth it?", "task": "<p>Write <code>gpu_wins(cpu_ms, bytes_in, bytes_out, gbps, kernel_ms)<\/code> that returns True when copy in + kernel + copy out (in ms) is less than the CPU time.<\/p>", "starter": "def gpu_wins(cpu_ms, bytes_in, bytes_out, gbps, kernel_ms):\n    # your code here\n    pass\n", "tests": [{"call": "gpu_wins(2, 36e6, 36e6, 12, 0.5)", "want": false}, {"call": "gpu_wins(900, 4194304, 4194304, 12, 5)", "want": true}, {"call": "gpu_wins(1.0, 8e6, 4e6, 12, 0.003)", "want": false}], "solution": "def gpu_wins(cpu_ms, bytes_in, bytes_out, gbps, kernel_ms):\n    copy = (bytes_in + bytes_out) / (gbps * 1e9) * 1000\n    return copy + kernel_ms < cpu_ms\n", "hint": "Convert bytes ÷ (GB/s × 10⁹) seconds to ms.", "why": "<p>The last test is vector add of a million floats: the copies alone take about 1 ms, so the GPU loses.<\/p>"}], "must": [["Speedup", "S = old ÷ new. Count copy in + kernel + copy out. Copy time = bytes ÷ bandwidth (PCIe about 12 to 16 GB/s)."], ["Amdahl", "S(N) = 1 ÷ ((1 − P) + P/N). Ceiling 1 ÷ (1 − P). Efficiency S ÷ N. Back: P = (1 − 1/S) ÷ (1 − 1/N)."], ["Part speedup", "Speeding a part p by s gives 1 ÷ ((1 − p) + p/s). Speed up the biggest part first."], ["Gustafson", "Scaled speedup N − (1 − P)(N − 1) when the problem grows with N (weak scaling)."], ["Keep data on the GPU", "Copy once, run many kernels, copy back once. Small jobs have a break even size below which the CPU wins."]], "summary": "<p>The serial part of a program and the copies over PCIe limit any GPU speedup. Measure end to end and speed up the biggest part first.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"amdahl": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 5, "ev": "line", "d": {"G.speedup": "<function speedup>"}}, {"l": 8, "ev": "line", "d": {"G.parallel_fraction": "<function parallel_fraction>"}}, {"l": 9, "ev": "line", "d": {"G.P": "0.5"}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.5", "L.N": "4"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.5", "L.N": "16"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.5", "L.N": "256"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.5", "L.N": "4096"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 10, "ev": "line", "d": {"G.row": "[1.6, 1.88, 1.99, 2.0]"}}, {"l": 8, "ev": "line", "o": "P = 0.5: [1.6, 1.88, 1.99, 2.0]   ceiling 2.0\n"}, {"l": 9, "ev": "line", "d": {"G.P": "0.9"}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.9", "L.N": "4"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.9", "L.N": "16"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.9", "L.N": "256"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.9", "L.N": "4096"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 10, "ev": "line", "d": {"G.row": "[3.08, 6.4, 9.66, 9.98]"}}, {"l": 8, "ev": "line", "o": "P = 0.9: [3.08, 6.4, 9.66, 9.98]   ceiling 10.0\n"}, {"l": 9, "ev": "line", "d": {"G.P": "0.99"}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.99", "L.N": "4"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.99", "L.N": "16"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.99", "L.N": "256"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.99", "L.N": "4096"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.P": null, "L.N": null}}, {"l": 10, "ev": "line", "d": {"G.row": "[3.88, 13.91, 72.11, 97.64]"}}, {"l": 8, "ev": "line", "o": "P = 0.99: [3.88, 13.91, 72.11, 97.64]   ceiling 100.0\n"}, {"l": 11, "ev": "line"}, {"l": 5, "ev": "call", "s": ["module", "parallel_fraction()"], "d": {"L.S": "6", "L.N": "16"}}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 12, "ev": "line", "s": ["module"], "d": {"L.S": null, "L.N": null}, "o": "6x on 16 processors means P = 0.889\n"}, {"l": 2, "ev": "call", "s": ["module", "speedup()"], "d": {"L.P": "0.99", "L.N": "61"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 12, "ev": "return", "s": ["module"], "d": {"L.P": null, "L.N": null}, "o": "1% serial on 61 cores: 38.124999999999986\n"}], "tail": "", "err": null, "cut": false}, "endtoend": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 5, "ev": "line", "d": {"G.copy_ms": "<function copy_ms>"}}, {"l": 6, "ev": "line", "d": {"G.grid": "4194304"}}, {"l": 7, "ev": "line", "d": {"G.steps": "100", "G.gpu_step": "0.05", "G.cpu_step": "9.0", "G.pcie": "12"}}, {"l": 2, "ev": "call", "s": ["module", "copy_ms()"], "d": {"L.bytes_": "4194304", "L.gb_per_s": "12"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 2, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"G.once": "5.6990506666666665", "L.bytes_": null, "L.gb_per_s": null}}, {"l": 2, "ev": "call", "s": ["module", "copy_ms()"], "d": {"L.bytes_": "4194304", "L.gb_per_s": "12"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 2, "ev": "call"}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"G.every": "74.90506666666666", "L.bytes_": null, "L.gb_per_s": null}}, {"l": 10, "ev": "line", "d": {"G.cpu": "900.0"}}, {"l": 11, "ev": "line", "o": "copy once :    5.70 ms, speedup  157.9x\n"}, {"l": 11, "ev": "return", "o": "copy every:   74.91 ms, speedup   12.0x\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

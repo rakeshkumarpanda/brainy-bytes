@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First GPU workloads: heat simulation and convolution · GPU Programming</title>
+<meta name="description" content="The battery heat simulation: PDE, finite difference update in 1-D and 2-D, why it is parallel, two buffers, stability limits, a first CUDA kernel, and the image recognition pipeline with normal and depthwise separable convolution counts and MobileNet.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 1: Why GPUs</span><span>›</span><span>First workloads</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 3 of 3 · School</div>
+    <h1>First GPU workloads: heat simulation and convolution</h1>
+    <p class="lead">Turn the heat equation into an update rule that thousands of threads can run at once, and count the work of normal and depthwise separable convolutions.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">3 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">7 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#first-workloads" data-topic="cheatsheet" data-h="first-workloads">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#heat" data-l="heat"><span class="n">1</span><span class="t">Workload 1: a battery heat simulation</span></a></li><li><a href="#vision" data-l="vision"><span class="n">2</span><span class="t">Workload 2: image recognition and convolution cost</span></a></li><li><a href="#levels" data-l="levels"><span class="n">3</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="heat" data-l="heat" hidden><div class="cv-lno">Lesson 1 of 3</div><h2>Workload 1: a battery heat simulation</h2>
+<p>Engineers who design cooling for electric scooter and car batteries need to know how heat spreads through a battery pack. Lecture 1 showed a student project that simulated this on a CPU and a GPU.</p>
+<div class="fx"><div class="fx-h"><span>The heat equation</span></div><div class="fx-b">∂<i>T</i>/∂<i>t</i> = α (∂²<i>T</i>/∂<i>x</i>² + ∂²<i>T</i>/∂<i>y</i>²) + <i>Q</i></div><div class="fx-n">T is temperature, α the thermal diffusivity (how fast heat spreads), Q the heat the battery makes itself.</div></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>2-D update rule (5 points)</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><i>T</i><sup>new</sup> = <i>T</i> + α (up + down + left + right − 4<i>T</i>) + β<i>Q</i></div><div class="fx-n">New temperature = old temperature + heat from the four neighbours + heat made inside.</div></div><div class="fx"><div class="fx-h"><span>1-D version</span></div><div class="fx-b"><i>T</i><sup>new</sup> = <i>T</i> + α (left + right − 2<i>T</i>) + β<i>Q</i></div><div class="fx-n">The same idea along a rod.</div></div><div class="fx"><div class="fx-h"><span>How much work</span></div><div class="fx-b">cells = height × width<br>updates = cells × time steps</div><div class="fx-n">A 1024 × 1024 grid has 1,048,576 cells per step.</div></div></div>
+<p>The bracket is the finite difference version of the second derivative (the Laplacian). It says how much hotter or colder the four neighbours are than the cell itself. If all neighbours equal the cell, nothing changes.</p>
+<div class="cvz" data-viz="heat"></div>
+<div class="walk"><div class="walk-h"><span>Worked example from the workbook</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>A cell at 25 degrees has neighbours up 20, down 30, left 25, right 35. α = 0.1 and βQ = 0.5.</li><li>Neighbour sum = 20 + 30 + 25 + 35 = 110. Four times the cell = 100.</li><li>Difference 110 − 100 = 10, times α = 1.</li><li><span class="eq">T<sup>new</sup> = 25 + 1 + 0.5 = 26.5 degrees</span></li></ol></div>
+<p><b>Why this is perfect GPU work.</b> Each cell needs only its own old value and four neighbours. No cell depends on another cell's new value in the same step. So one thread per cell can update the whole grid at once.</p>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">heat_step.cu</span><span class="ck-ft">preview of chapter 2</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">// One time step of the 2-D heat simulation. One thread updates one cell.</span><span class="ln" data-n="2">__global__ void heatStep(const float* Told, float* Tnew, int n,</span><span class="ln ck-has" data-n="3">                         float alpha, float betaQ) {</span><span class="ln" data-n="4">    int col = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln ck-has" data-n="5">    int row = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln" data-n="6">    if (row &lt; 1 || col &lt; 1 || row &gt;= n - 1 || col &gt;= n - 1) return;</span><span class="ln ck-has" data-n="7">    int i = row * n + col;</span><span class="ln ck-has" data-n="8">    float lap = Told[i - n] + Told[i + n] + Told[i - 1] + Told[i + 1]</span><span class="ln ck-has" data-n="9">              - 4.0f * Told[i];</span><span class="ln" data-n="10">    Tnew[i] = Told[i] + alpha * lap + betaQ;</span><span class="ln ck-has" data-n="11">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="3"><b>Line 3</b><code>float alpha, float betaQ) {</code><span>Two separate grids: every thread reads old values and writes new ones, so no thread reads a value that another thread has already changed in this step.</span></li><li data-n="5"><b>Line 5</b><code>int row = blockIdx.y * blockDim.y + threadIdx.y;</code><span>Each thread works out which column it owns. Chapter 2.2 explains this formula.</span></li><li data-n="7"><b>Line 7</b><code>int i = row * n + col;</code><span>Border cells are held fixed. Threads outside the grid or on the border do nothing.</span></li><li data-n="8"><b>Line 8</b><code>float lap = Told[i - n] + Told[i + n] + Told[i - 1] + Told[i + 1]</code><span>The 2-D grid is stored row by row in 1-D memory, so the cell above is n places back and the one below n places ahead.</span></li><li data-n="9"><b>Line 9</b><code>- 4.0f * Told[i];</code><span>The four neighbours minus four times the cell: the discrete Laplacian.</span></li><li data-n="11"><b>Line 11</b><code>}</code><span>The update rule from the lecture.</span></li></ol></details></div>
+<div class="cv-code" data-k="rod"></div>
+<div class="note note-warn"><b>Common mistake</b><div>A GPU heat code must keep two buffers. If threads wrote into the same grid they read from, some would read a neighbour's new value and some its old value, and the answer would depend on timing.</div></div>
+<details class="deep"><summary>Going deeper: stability: why α must be small</summary><div class="deep-b"><p>Rewrite the 2-D rule as T<sup>new</sup> = (1 − 4α)T + α(sum of neighbours). Every weight must be zero or positive or the scheme amplifies errors. So 1 − 4α ≥ 0, α ≤ 0.25 in 2-D (and α ≤ 0.5 in 1-D, α ≤ 1/6 in 3-D). With α = 0.3 the centre weight is −0.2 and the simulation blows up. This is the explicit scheme stability limit, and in physical units α Δt ÷ h² must stay below the same bound.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="vision" data-l="vision" hidden><div class="cv-lno">Lesson 2 of 3</div><h2>Workload 2: image recognition and convolution cost</h2>
+<p>Lecture 1's second example was an image recognition pipeline: a camera frame goes through convolution layers, pooling and dense layers to a label. Almost all of the time is spent in convolutions, which are millions of multiply adds that do not depend on each other. That again is GPU work.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Normal convolution</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">mults = <i>H</i> × <i>W</i> × <i>C</i><sub>in</sub> × <i>C</i><sub>out</sub> × <i>K</i> × <i>K</i></div><div class="fx-n">Every output pixel of every output channel looks at a K × K patch of every input channel.</div></div><div class="fx"><div class="fx-h"><span>Depthwise separable</span></div><div class="fx-b">depthwise = <i>H W C</i><sub>in</sub> <i>K</i>²<br>pointwise = <i>H W C</i><sub>in</sub> <i>C</i><sub>out</sub></div><div class="fx-n">First one K × K filter per input channel, then a 1 × 1 convolution that mixes channels. MobileNet uses this.</div></div><div class="fx fx-key"><div class="fx-h"><span>Saving ratio</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">separable ÷ normal = (<i>K</i>² + <i>C</i><sub>out</sub>) ÷ (<i>K</i>² × <i>C</i><sub>out</sub>)</div><div class="fx-n">For many output channels this tends to 1 ÷ K², so at most 9 times fewer for 3 × 3 filters.</div></div></div>
+<div class="cvz" data-viz="sepconv"></div>
+<div class="walk"><div class="walk-h"><span>Worked example: K = 3, 64 to 128 channels, 32 × 32 output</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Normal: 32 × 32 × 64 × 128 × 9 = 75,497,472.</li><li>Depthwise: 32 × 32 × 64 × 9 = 589,824.</li><li>Pointwise: 32 × 32 × 64 × 128 = 8,388,608.</li><li>Separable total = 8,978,432.</li><li><span class="eq">Ratio = (9 + 128) ÷ (9 × 128) = 137 ÷ 1152 ≈ 0.119, about 8.4 times fewer</span></li></ol></div>
+<div class="cv-code" data-k="convcount"></div>
+<div class="scene"><div class="scene-h">Real world scenario: why MobileNet runs on your phone</div><p>Your phone camera can recognise faces and food in real time because networks like MobileNet use depthwise separable convolutions. In the lecture study, MobileNetV2 had more layers than a plain CNN but ran faster, because each layer needs far fewer multiplications.</p></div>
+<div class="note note-tip"><b>Remember</b><div>Fewer multiplications does not always mean proportionally faster on a GPU. Depthwise layers do little work per byte loaded, so they are often limited by memory, not maths (chapter 4.2).</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 3 of 3</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>To find tomorrow's temperature of a spot, look at its neighbours today. Every spot can do this at the same moment, so thousands of helpers can work together.</p></div><div class="ld-p" data-ld="college" hidden><p>Explicit finite difference: T<sup>new</sup> = T + α(neighbours − 4T) + βQ, stable for α ≤ 0.25 in 2-D. Convolution cost H W C<sub>in</sub> C<sub>out</sub> K², separable saving (K² + C<sub>out</sub>) ÷ (K² C<sub>out</sub>).</p></div><div class="ld-p" data-ld="masters" hidden><p>Both workloads are stencils: each output reads a small fixed neighbourhood. Neighbouring threads read overlapping inputs, so loading a tile with a halo into shared memory cuts global reads (chapters 5.3 and 5.4). That is why the "Shared GPU" column of the battery table exists.</p></div><div class="ld-p" data-ld="research" hidden><p>Production codes use implicit or multigrid solvers for stiff heat problems, temporal blocking to reuse data across time steps, and for CNNs the convolution is turned into a matrix multiply (im2col) or computed with Winograd or FFT methods on tensor cores.</p></div></div>
+<div class="walk"><div class="walk-h"><span>Work it out: a rod with fixed ends (workbook P1.5.4)</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Start [0, 0, 100, 0, 0], α = 0.25.</li><li>Step 1: middle 100 + 0.25(0 + 0 − 200) = 50. Its neighbours 0 + 0.25(0 + 100 − 0) = 25. Rod [0, 25, 50, 25, 0].</li><li>Step 2: middle 50 + 0.25(25 + 25 − 100) = 37.5. Neighbours 25 + 0.25(0 + 50 − 50) = 25.</li><li><span class="eq">[0, 25, 37.5, 25, 0]</span></li></ol></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./speedup-amdahl.html" data-topic="speedup-amdahl"><small>Previous topic</small><b>Speedup and Amdahl</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "first-workloads", "topic": "first-workloads", "subject": "cuda", "title": "First GPU workloads: heat simulation and convolution", "codes": {"rod": {"src": "# 1-D heat rod with fixed ends: T_new[i] = T[i] + a*(T[i-1] + T[i+1] - 2*T[i])\nT = [0, 0, 100, 0, 0]\na = 0.25\nfor step in range(2):\n    new = T[:]                       # a second buffer: read old, write new\n    for i in range(1, len(T) - 1):   # the ends stay fixed\n        new[i] = T[i] + a * (T[i - 1] + T[i + 1] - 2 * T[i])\n    T = new\n    print(\"after step\", step + 1, T)", "stdin": "", "out": "after step 1 [0, 25.0, 50.0, 25.0, 0]\nafter step 2 [0, 25.0, 37.5, 25.0, 0]"}, "convcount": {"src": "# Multiplications of a normal and a depthwise separable convolution\ndef normal(H, W, cin, cout, k):\n    return H * W * cin * cout * k * k\ndef separable(H, W, cin, cout, k):\n    depthwise = H * W * cin * k * k     # one k x k filter per input channel\n    pointwise = H * W * cin * cout      # 1 x 1 convolution mixes the channels\n    return depthwise + pointwise\n\nn, s = normal(32, 32, 64, 128, 3), separable(32, 32, 64, 128, 3)\nprint(\"normal   \", n)\nprint(\"separable\", s)\nprint(\"ratio    \", round(s / n, 4), \"=\", round((9 + 128) / (9 * 128), 4))", "stdin": "", "out": "normal    75497472\nseparable 8978432\nratio     0.1189 = 0.1189"}}, "quiz": [{"lv": "e", "q": "In the heat rule, what does the bracket (up + down + left + right − 4T) measure?", "o": ["The heat source", "How different the neighbours are from the cell", "The time step", "The grid size"], "a": 1, "hint": "The Laplacian.", "why": "If every neighbour equals the cell, the bracket is 0 and nothing changes."}, {"lv": "e", "q": "How many cells does a 2048 × 2048 grid have?", "o": ["4,096", "4,194,304", "2,048,000", "1,048,576"], "a": 1, "hint": "2048 squared.", "why": "2048 × 2048 = 4,194,304."}, {"lv": "e", "q": "Why is the heat update good GPU work?", "o": ["It uses doubles", "Each cell needs only old values of itself and its neighbours, so all cells update at once", "It has no loops", "It is serial"], "a": 1, "hint": "Independence.", "why": "No cell waits for another cell's new value within a step."}, {"lv": "m", "q": "Why keep two copies of the grid?", "o": ["To save memory", "So no thread reads a value another thread already updated in this step", "For the CPU", "CUDA requires it"], "a": 1, "hint": "Read old, write new.", "why": "Mixing old and new values makes the result depend on thread timing."}, {"lv": "m", "q": "A grid where every cell is 50 with no heat source after one update is", "o": ["0", "50", "100", "25"], "a": 1, "hint": "Neighbours equal the cell.", "why": "The bracket is 0, so the cell stays 50, a handy check."}, {"lv": "m", "q": "Depthwise separable convolution first", "o": ["Mixes all channels with 1 × 1 filters", "Filters each input channel separately with K × K, then mixes with 1 × 1", "Uses no multiplications", "Pools the image"], "a": 1, "hint": "Depthwise then pointwise.", "why": "Spatial filtering per channel, then channel mixing."}, {"lv": "m", "q": "The saving ratio of a separable 3 × 3 convolution with 256 output channels is about", "o": ["0.5", "0.115", "0.9", "0.01"], "a": 1, "hint": "(9 + 256) ÷ (9 × 256).", "why": "265 ÷ 2304 ≈ 0.115."}, {"lv": "h", "q": "The largest safe α for the explicit 2-D heat rule is", "o": ["0.5", "0.25", "1", "1/6"], "a": 1, "hint": "Centre weight 1 − 4α.", "why": "All weights must be non negative, so α ≤ 0.25."}, {"lv": "h", "q": "As C<sub>out<\/sub> grows very large, a separable 7 × 7 convolution approaches", "o": ["7 times fewer", "49 times fewer", "14 times fewer", "no saving"], "a": 1, "hint": "Ratio tends to 1 ÷ K².", "why": "1 ÷ 49 of the work."}, {"lv": "x", "q": "In the CUDA heat kernel, the cell below (row + 1) in a row major n × n grid is at index", "o": ["i + 1", "i + n", "i − n", "i × n"], "a": 1, "hint": "One full row ahead.", "why": "Moving down one row skips n elements."}, {"lv": "x", "q": "Why can depthwise layers run slower than their FLOP count suggests on a GPU?", "o": ["They need doubles", "They do little work per byte loaded, so memory bandwidth limits them", "They cannot be parallel", "They need atomics"], "a": 1, "hint": "Arithmetic intensity.", "why": "Each input is used only K² times per channel, so the layer is memory bound."}], "calc": [{"lv": "e", "q": "Cells updated per step on a 2048 × 2048 grid?", "ans": "4194304", "hint": "Rows × columns.", "steps": ["2048 rows.", "2048 columns.", "<span class=\"eq\">2048 × 2048 = 4,194,304<\/span>"]}, {"lv": "e", "q": "Rod [10, 20, 40], update only the middle with α = 0.2, no heat source.", "ans": "22", "hint": "left + right − 2T.", "steps": ["left + right − 2T = 10 + 40 − 40 = 10.", "α × 10 = 2.", "<span class=\"eq\">20 + 2 = 22<\/span>"]}, {"lv": "e", "q": "Cell 25 with neighbours 20, 30, 25, 35, α = 0.1, βQ = 0.5. New temperature?", "ans": "26.5", "hint": "Add the bracket times α and the source.", "steps": ["Bracket 110 − 100 = 10.", "α × 10 = 1.", "<span class=\"eq\">25 + 1 + 0.5 = 26.5<\/span>"]}, {"lv": "m", "q": "512 × 512 grid, 1000 steps, 8 FLOPs per update. Total FLOPs?", "ans": "2097152000", "hint": "cells × steps × 8.", "steps": ["Cells 262,144.", "Updates 262,144 × 1000 = 262,144,000.", "<span class=\"eq\">× 8 = 2,097,152,000 FLOPs<\/span>"]}, {"lv": "m", "q": "Two float grids of 1024 × 1024. Bytes of memory?", "ans": "8388608", "hint": "2 × cells × 4 bytes.", "steps": ["Cells 1,048,576.", "One grid 4,194,304 bytes.", "<span class=\"eq\">Two grids 8,388,608 bytes = 8 MiB<\/span>"]}, {"lv": "m", "q": "Normal 3 × 3 convolution, 56 × 56 output, 64 to 64 channels. Multiplications?", "ans": "115605504", "hint": "H W Cin Cout K².", "steps": ["56 × 56 = 3136.", "3136 × 64 × 64 = 12,845,056.", "<span class=\"eq\">× 9 = 115,605,504<\/span>"]}, {"lv": "m", "q": "Same layer, depthwise separable. Multiplications?", "ans": "14651392", "hint": "Depthwise plus pointwise.", "steps": ["Depthwise 3136 × 64 × 9 = 1,806,336.", "Pointwise 3136 × 64 × 64 = 12,845,056.", "<span class=\"eq\">Total 14,651,392 (about 0.127 of normal)<\/span>"]}, {"lv": "h", "q": "Saving ratio for a 5 × 5 filter with 32 output channels? (three decimals)", "ans": "0.071", "hint": "(K² + Cout) ÷ (K² Cout).", "steps": ["K² = 25.", "(25 + 32) ÷ (25 × 32) = 57 ÷ 800.", "<span class=\"eq\">≈ 0.071, about 14 times fewer<\/span>"], "tol": 0.0005}, {"lv": "h", "q": "The normal layer above (115,605,504 multiply adds) on an 8 TFLOP/s GPU. Time in µs? (one decimal)", "ans": "28.9", "hint": "FLOPs = 2 × multiply adds.", "steps": ["FLOPs = 231,211,008.", "Time = 231,211,008 ÷ 8 × 10¹² s.", "<span class=\"eq\">≈ 28.9 µs at peak<\/span>"], "tol": 0.05, "unit": "µs"}, {"lv": "x", "q": "Rod [0, 0, 100, 0, 0], fixed ends, α = 0.25. Middle value after two steps?", "ans": "37.5", "hint": "Do step 1 fully first.", "steps": ["Step 1: [0, 25, 50, 25, 0].", "Step 2 middle: 50 + 0.25(25 + 25 − 100) = 50 − 12.5.", "<span class=\"eq\">37.5<\/span>"]}, {"lv": "x", "q": "Largest safe α for the explicit 3-D heat rule (six neighbours)? (four decimals)", "ans": "0.1667", "hint": "Centre weight 1 − 6α ≥ 0.", "steps": ["3-D rule: T<sup>new<\/sup> = (1 − 6α)T + α × (six neighbours).", "Need 1 − 6α ≥ 0.", "<span class=\"eq\">α ≤ 1/6 ≈ 0.1667<\/span>"], "tol": 5e-05}], "assign": [{"id": "heat1d", "lv": "m", "title": "One step of the heat rod", "task": "<p>Write <code>heat_step(T, a)<\/code> that returns a NEW list after one 1-D update with fixed ends and no heat source. Do not change <code>T<\/code> while you read it.<\/p>", "starter": "def heat_step(T, a):\n    # your code here\n    pass\n", "tests": [{"call": "heat_step([0, 0, 100, 0, 0], 0.25)", "want": [0, 25.0, 50.0, 25.0, 0]}, {"call": "heat_step([50, 50, 50], 0.2)", "want": [50, 50.0, 50]}, {"call": "heat_step([10, 20, 40], 0.2)", "want": [10, 22.0, 40]}], "solution": "def heat_step(T, a):\n    new = T[:]\n    for i in range(1, len(T) - 1):\n        new[i] = T[i] + a * (T[i - 1] + T[i + 1] - 2 * T[i])\n    return new\n", "hint": "Copy the list first, read from the old one, write into the copy.", "why": "<p>Reading and writing the same list would use a neighbour's new value, the bug the GPU code avoids with two buffers.<\/p>"}, {"id": "sep", "lv": "e", "title": "Convolution saving", "task": "<p>Write <code>saving(k, cout)<\/code> returning separable ÷ normal rounded to 4 decimals.<\/p>", "starter": "def saving(k, cout):\n    # your code here\n    pass\n", "tests": [{"call": "saving(3, 128)", "want": 0.1189}, {"call": "saving(3, 256)", "want": 0.115}, {"call": "saving(5, 32)", "want": 0.0712}], "solution": "def saving(k, cout):\n    return round((k * k + cout) / (k * k * cout), 4)\n", "hint": "The H, W and C<sub>in<\/sub> cancel out.", "why": "<p>The ratio depends only on K and C<sub>out<\/sub>.<\/p>"}], "must": [["Heat rule", "T_new = T + α(up + down + left + right − 4T) + βQ. 1-D uses −2T. Updates = cells × steps."], ["Why parallel", "Each cell needs only old neighbour values, so one thread per cell. Keep two buffers (old and new)."], ["Stability", "Explicit scheme: α ≤ 1/2 in 1-D, 1/4 in 2-D, 1/6 in 3-D, or values blow up."], ["Convolution cost", "Normal H W Cin Cout K². Separable H W Cin K² + H W Cin Cout. Ratio (K² + Cout) ÷ (K² Cout) → 1/K²."], ["Same pattern", "Heat updates and convolutions are stencils: each output reads a small neighbourhood. Tiling with halos speeds them up later."]], "summary": "<p>Both workloads compute each output from a small neighbourhood of old values, which is exactly what thousands of GPU threads do well.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"rod": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.T": "[0, 0, 100, 0, 0]"}}, {"l": 4, "ev": "line", "d": {"G.a": "0.25"}}, {"l": 5, "ev": "line", "d": {"G.step": "0"}}, {"l": 6, "ev": "line", "d": {"G.new": "[0, 0, 100, 0, 0]"}}, {"l": 7, "ev": "line", "d": {"G.i": "1"}}, {"l": 6, "ev": "line", "d": {"G.new": "[0, 25.0, 100, 0, 0]"}}, {"l": 7, "ev": "line", "d": {"G.i": "2"}}, {"l": 6, "ev": "line", "d": {"G.new": "[0, 25.0, 50.0, 0, 0]"}}, {"l": 7, "ev": "line", "d": {"G.i": "3"}}, {"l": 6, "ev": "line", "d": {"G.new": "[0, 25.0, 50.0, 25.0, 0]"}}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.T": "[0, 25.0, 50.0, 25.0, 0]"}}, {"l": 4, "ev": "line", "o": "after step 1 [0, 25.0, 50.0, 25.0, 0]\n"}, {"l": 5, "ev": "line", "d": {"G.step": "1"}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.i": "1"}}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"G.i": "2"}}, {"l": 6, "ev": "line", "d": {"G.new": "[0, 25.0, 37.5, 25.0, 0]"}}, {"l": 7, "ev": "line", "d": {"G.i": "3"}}, {"l": 6, "ev": "line"}, {"l": 8, "ev": "line"}, {"l": 9, "ev": "line", "d": {"G.T": "[0, 25.0, 37.5, 25.0, 0]"}}, {"l": 4, "ev": "line", "o": "after step 2 [0, 25.0, 37.5, 25.0, 0]\n"}, {"l": 4, "ev": "return"}], "tail": "", "err": null, "cut": false}, "convcount": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 4, "ev": "line", "d": {"G.normal": "<function normal>"}}, {"l": 9, "ev": "line", "d": {"G.separable": "<function separable>"}}, {"l": 2, "ev": "call", "s": ["module", "normal()"], "d": {"L.H": "32", "L.W": "32", "L.cin": "64", "L.cout": "128", "L.k": "3"}}, {"l": 3, "ev": "line"}, {"l": 3, "ev": "return"}, {"l": 4, "ev": "call", "s": ["module", "separable()"]}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"L.depthwise": "589824"}}, {"l": 7, "ev": "line", "d": {"L.pointwise": "8388608"}}, {"l": 7, "ev": "return"}, {"l": 10, "ev": "line", "s": ["module"], "d": {"G.n": "75497472", "G.s": "8978432", "L.H": null, "L.W": null, "L.cin": null, "L.cout": null, "L.k": null, "L.depthwise": null, "L.pointwise": null}}, {"l": 11, "ev": "line", "o": "normal    75497472\n"}, {"l": 12, "ev": "line", "o": "separable 8978432\n"}, {"l": 12, "ev": "return", "o": "ratio     0.1189 = 0.1189\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

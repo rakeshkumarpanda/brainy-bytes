@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMs, warps and hiding latency · GPU Programming</title>
+<meta name="description" content="The software to hardware mapping and its correction, the Fermi SM, warps, lanes and SIMT, wasted lanes, 2-D blocks into warps, Little&#x27;s law for Fermi and Kepler, bytes in flight, registers per thread, spilling and naming registers.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 2: The CUDA programming model</span><span>›</span><span>Warps and SMs</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 3 of 3 · College</div>
+    <h1>SMs, warps and hiding latency</h1>
+    <p class="lead">Look inside an SM, see how blocks are cut into warps of 32, and use Little's law to work out how many warps a GPU needs to hide its latency.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">9 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#warps-sms" data-topic="cheatsheet" data-h="warps-sms">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#sm" data-l="sm"><span class="n">1</span><span class="t">Streaming multiprocessors: what really runs your threads</span></a></li><li><a href="#warps" data-l="warps"><span class="n">2</span><span class="t">Warps, lanes and SIMT</span></a></li><li><a href="#little" data-l="little"><span class="n">3</span><span class="t">Hiding latency: Little&#x27;s law</span></a></li><li><a href="#registers" data-l="registers"><span class="n">4</span><span class="t">Registers: the hidden limit</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="sm" data-l="sm" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Streaming multiprocessors: what really runs your threads</h2>
+<p>A GPU is a set of identical <b>streaming multiprocessors</b> (SMs). Each SM has its own cores, registers, schedulers and on chip memory. A kernel's blocks are handed out to SMs, and an SM may hold several blocks at once.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Software (what you write)</th><th>Hardware (what runs it)</th><th>Rule</th></tr></thead><tbody><tr><td>Thread</td><td>A CUDA core (one lane)</td><td>Has its own registers and program counter</td></tr><tr><td>Warp of 32 threads</td><td>A warp scheduler</td><td>Issues one instruction for all 32 lanes</td></tr><tr><td>Block (up to 1024 threads)</td><td>One SM</td><td>Stays on that SM until it finishes, shares its shared memory</td></tr><tr><td>Grid (all blocks of a launch)</td><td>The whole GPU</td><td>Blocks spread over all SMs in any order</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>In class it was said that grids sit inside cores. It is the other way round: a thread runs on a core, a block on one SM, and a grid across all SMs.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Fermi SM part (lecture 1)</th><th>Count</th><th>Job</th></tr></thead><tbody><tr><td>CUDA cores</td><td>32</td><td>Integer and floating point units, one lane each</td></tr><tr><td>Warp schedulers and dispatch units</td><td>2</td><td>Two warps can issue at the same time</td></tr><tr><td>Register file</td><td>32,768 × 32 bit</td><td>Private variables of every resident thread</td></tr><tr><td>Load/store units</td><td>16</td><td>Addresses for 16 threads per clock</td></tr><tr><td>Special function units</td><td>4</td><td>sin, cos, reciprocal, square root</td></tr><tr><td>Shared memory / L1</td><td>64 KB</td><td>Split 48/16 or 16/48 between shared memory and L1</td></tr></tbody></table></div>
+<p>Fermi had 16 SMs × 32 cores = 512 cores. An A100 has 108 SMs with 64 FP32 cores each, an H100 has 132.</p>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="warps" data-l="warps" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Warps, lanes and SIMT</h2>
+<p>The SM does not schedule single threads. It schedules <b>warps</b>: 32 threads with consecutive linear thread numbers. All lanes of a warp execute the same instruction at the same time on their own data. NVIDIA calls this SIMT, single instruction, multiple threads.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Warps per block</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">warps = ⌈<i>B</i> ÷ 32⌉</div><div class="fx-n">A part full warp still takes 32 lanes.</div></div><div class="fx fx-key"><div class="fx-h"><span>Warp and lane of thread t</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">warp = ⌊<i>t</i> ÷ 32⌋, lane = <i>t</i> − 32 × warp</div><div class="fx-n">For 2-D blocks first compute t = x + y × B<sub>x</sub>.</div></div><div class="fx"><div class="fx-h"><span>Wasted lanes</span></div><div class="fx-b">wasted = 32 × warps − <i>B</i><br>efficiency = <i>B</i> ÷ (32 × warps)</div><div class="fx-n">Use block sizes that are multiples of 32.</div></div></div>
+<div class="cvz" data-viz="warps"></div>
+<div class="scene"><div class="scene-h">Real world scenario: a school trip in 32 seat buses</div><p>The school hires buses with exactly 32 seats. 100 children need 4 buses, and the last bus leaves with only 4 children and 28 empty seats. The fuel cost is the same for a full bus. Choosing 96 or 128 children per trip wastes nothing.</p></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">who_am_i.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#include &lt;cstdio&gt;</span><span class="ln" data-n="2"> </span><span class="ln" data-n="3">__global__ void whoAmI() {</span><span class="ln ck-has" data-n="4">    int t = threadIdx.x + threadIdx.y * blockDim.x;</span><span class="ln ck-has" data-n="5">    int warp = t / warpSize;</span><span class="ln" data-n="6">    int lane = t % warpSize;</span><span class="ln ck-has" data-n="7">    if (lane == 0)</span><span class="ln" data-n="8">        printf("block %d: warp %d starts at thread (%d, %d)\n",</span><span class="ln" data-n="9">               blockIdx.x, warp, threadIdx.x, threadIdx.y);</span><span class="ln" data-n="10">}</span><span class="ln" data-n="11"> </span><span class="ln" data-n="12">int main() {</span><span class="ln ck-has" data-n="13">    dim3 block(16, 16);</span><span class="ln" data-n="14">    whoAmI&lt;&lt;&lt;1, block&gt;&gt;&gt;();</span><span class="ln" data-n="15">    cudaDeviceSynchronize();</span><span class="ln" data-n="16">    return 0;</span><span class="ln" data-n="17">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="4"><b>Line 4</b><code>int t = threadIdx.x + threadIdx.y * blockDim.x;</code><span>Linear thread number inside the block, x fastest. This is the order the hardware uses to cut warps.</span></li><li data-n="5"><b>Line 5</b><code>int warp = t / warpSize;</code><span>warpSize is a built in constant, 32 on every NVIDIA GPU so far.</span></li><li data-n="7"><b>Line 7</b><code>if (lane == 0)</code><span>Only lane 0 of each warp prints, so we see one line per warp.</span></li><li data-n="13"><b>Line 13</b><code>dim3 block(16, 16);</code><span>A 16 × 16 block has 256 threads, so 8 warps of two rows each.</span></li></ol></details><div class="cc-cap">What it prints</div><pre class="cc-out">block 0: warp 0 starts at thread (0, 0)
+block 0: warp 1 starts at thread (0, 2)
+... (8 lines, warp w starts at row 2w)</pre></div>
+<div class="cv-code" data-k="warps"></div>
+<details class="deep"><summary>Going deeper: independent thread scheduling (Volta and later)</summary><div class="deep-b"><p>Since Volta each thread has its own program counter, so threads of a diverged warp can interleave and even wait for each other. The warp still issues one instruction at a time for its active lanes, so divergence still costs time (chapter 6.1), and code that relies on all 32 lanes being in step must say so with __syncwarp().</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="little" data-l="little" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Hiding latency: Little&#x27;s law</h2>
+<p>A GPU core waits about 20 ticks for an arithmetic result and several hundred ticks for global memory. It does not stall. Each tick the warp scheduler picks another warp that is ready and issues its instruction. The cost of switching is zero, because every warp keeps its registers on the SM all the time.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Little's law</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">jobs in flight = latency (ticks) × throughput (jobs per tick)</div><div class="fx-n">To keep a pipe full you need as many jobs inside it as its length times its width.</div></div><div class="fx"><div class="fx-h"><span>In warps</span></div><div class="fx-b">warps in flight = (latency × operations per tick) ÷ 32</div><div class="fx-n">One warp instruction is 32 operations.</div></div><div class="fx"><div class="fx-h"><span>Memory version</span></div><div class="fx-b">bytes in flight = bandwidth × latency</div><div class="fx-n">To use all the bandwidth, this many bytes must be on the way at every moment.</div></div></div>
+<div class="cvz" data-viz="littles"></div>
+<div class="walk"><div class="walk-h"><span>Workbook worked example: Fermi against Kepler</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Fermi: latency 20 ticks, 32 operations per tick. In flight 20 × 32 = 640 operations = 20 warps.</li><li>Kepler: latency 20 ticks, 192 operations per tick. In flight 20 × 192 = 3840 operations = 120 warps.</li><li><span class="eq">Kepler needs 6 times more parallel work to stay busy</span></li></ol></div>
+<div class="cv-code" data-k="little"></div>
+<div class="scene"><div class="scene-h">Real world scenario: a pizza oven</div><p>A pizza bakes for 8 minutes and the chef can slide in one pizza per minute. To keep the oven always working, there must be 8 pizzas inside at any moment. With only 4 orders the chef stands idle half the time. Warps are the pizzas.</p></div>
+<div class="note note-tip"><b>Remember</b><div>Latency hiding needs either many warps (thread level parallelism) or several independent instructions inside each warp (instruction level parallelism). Two independent loads per warp halve the warps needed.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="registers" data-l="registers" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Registers: the hidden limit</h2>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Registers per thread</span></div><div class="fx-b">registers per thread = registers on the SM ÷ threads on the SM</div><div class="fx-n">Lecture example: 32K registers for 1024 threads gives 32 each.</div></div><div class="fx"><div class="fx-h"><span>Binary K</span></div><div class="fx-b">32K = 32 × 1024 = 32,768<br>64K = 65,536</div><div class="fx-n">For registers K means 1024.</div></div><div class="fx"><div class="fx-h"><span>Bits to name a register</span></div><div class="fx-b">smallest <i>b</i> with 2<sup><i>b</i></sup> ≥ number of registers</div><div class="fx-n">An instruction names its operands, so 32 registers need 5 bits, 255 need 8.</div></div></div>
+<p>Every resident thread keeps all its variables in the SM's register file, which is fixed when the chip is made (65,536 on recent GPUs). A kernel that needs more registers per thread leaves room for fewer threads, so there are fewer warps to hide latency. If a kernel needs more registers than allowed, the compiler <b>spills</b> them to local memory, which lives in slow DRAM.</p>
+<div class="walk"><div class="walk-h"><span>How many threads fit by registers? (workbook P2.5.4)</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The kernel needs 40 registers per thread and the SM has 65,536.</li><li>65,536 ÷ 40 = 1638.4 threads.</li><li>Threads come in whole warps: 1638 ÷ 32 = 51.2, so 51 warps.</li><li><span class="eq">51 warps = 1632 threads (the exact allocation rules are in chapter 2.4)</span></li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>The GPU moves threads around in groups of 32, like buses. While one bus waits at a red light, the driver of another bus goes. With enough buses the road is always busy.</p></div><div class="ld-p" data-ld="college" hidden><p>warps = ⌈B/32⌉, warp = ⌊t/32⌋, lane = t mod 32. Little: in flight = latency × throughput, divide by 32 for warps. Registers per thread = register file ÷ threads.</p></div><div class="ld-p" data-ld="masters" hidden><p>Each SM has 4 sub partitions on recent GPUs, each with its own scheduler issuing one warp instruction per tick. Occupancy (chapter 2.4) measures how many warps are resident, and the profiler's "stall reasons" say why ready warps are missing.</p></div><div class="ld-p" data-ld="research" hidden><p>Volkov showed that high ILP can beat high occupancy: fewer warps with more independent work per thread reach peak bandwidth. Modern GEMM kernels run at low occupancy with large register tiles and asynchronous copies.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./thread-indexing.html" data-topic="thread-indexing"><small>Previous topic</small><b>Thread indexing</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "warps-sms", "topic": "warps-sms", "subject": "cuda", "title": "SMs, warps and hiding latency", "codes": {"warps": {"src": "# Warps, lanes and wasted lanes for a few block sizes\nimport math\nfor B in [100, 128, 48, 256, 1000]:\n    warps = math.ceil(B / 32)\n    wasted = 32 * warps - B\n    print(f\"B={B:5d}: {warps:3d} warps, {wasted:2d} empty lanes, efficiency {100 * B / (32 * warps):5.1f}%\")\nt = 70\nprint(\"thread\", t, \"is warp\", t // 32, \"lane\", t % 32)", "stdin": "", "out": "B=  100:   4 warps, 28 empty lanes, efficiency  78.1%\nB=  128:   4 warps,  0 empty lanes, efficiency 100.0%\nB=   48:   2 warps, 16 empty lanes, efficiency  75.0%\nB=  256:   8 warps,  0 empty lanes, efficiency 100.0%\nB= 1000:  32 warps, 24 empty lanes, efficiency  97.7%\nthread 70 is warp 2 lane 6"}, "little": {"src": "# Little's law: work in flight = latency x throughput\nchips = {\"Fermi\": (20, 32), \"Kepler\": (20, 192), \"new GPU\": (15, 384)}\nfor name, (latency, ops_per_tick) in chips.items():\n    ops = latency * ops_per_tick\n    print(f\"{name:8s}: {ops:5d} operations in flight = {ops // 32:4d} warps\")\n# memory version: bytes in flight = bandwidth x latency\nbw, lat_ns = 900e9, 400 / 1.4          # 900 GB/s, 400 ticks at 1.4 GHz\nprint(\"bytes in flight:\", round(bw * lat_ns * 1e-9))", "stdin": "", "out": "Fermi   :   640 operations in flight =   20 warps\nKepler  :  3840 operations in flight =  120 warps\nnew GPU :  5760 operations in flight =  180 warps\nbytes in flight: 257143"}}, "quiz": [{"lv": "e", "q": "A warp is", "o": ["One thread", "32 threads scheduled together", "One block", "An SM"], "a": 1, "hint": "Lockstep group.", "why": "The scheduler issues one instruction for 32 lanes at a time."}, {"lv": "e", "q": "A 256 thread block has how many warps?", "o": ["4", "8", "16", "256"], "a": 1, "hint": "256 ÷ 32.", "why": "8 warps."}, {"lv": "e", "q": "A block runs on", "o": ["Many SMs", "One SM for its whole life", "The CPU", "One core"], "a": 1, "hint": "Blocks never move.", "why": "All threads of a block share one SM and its shared memory."}, {"lv": "m", "q": "Thread 95 is in", "o": ["Warp 2, lane 31", "Warp 3, lane 0", "Warp 2, lane 30", "Warp 1, lane 31"], "a": 0, "hint": "95 ÷ 32.", "why": "2 × 32 = 64, 95 − 64 = 31."}, {"lv": "m", "q": "A block of 48 threads uses lanes with efficiency", "o": ["100 percent", "75 percent", "50 percent", "48 percent"], "a": 1, "hint": "2 warps.", "why": "48 ÷ 64 = 75 percent."}, {"lv": "m", "q": "Why can a GPU switch warps every tick at no cost?", "o": ["It saves registers to memory quickly", "Every resident warp keeps its registers on the SM all the time", "Warps share registers", "It does not switch"], "a": 1, "hint": "No context save.", "why": "The large register file holds every resident thread's state."}, {"lv": "m", "q": "Little's law: latency 22 ticks, 128 operations per tick needs", "o": ["2816 operations, 88 warps", "150 operations", "22 warps", "128 warps"], "a": 0, "hint": "22 × 128.", "why": "2816 ÷ 32 = 88 warps."}, {"lv": "h", "q": "In a 16 × 16 block, thread (x 5, y 3) is", "o": ["Warp 0, lane 53", "Warp 1, lane 21", "Warp 3, lane 5", "Warp 1, lane 5"], "a": 1, "hint": "t = 5 + 3 × 16.", "why": "t = 53, warp 1, lane 21."}, {"lv": "h", "q": "When a kernel needs more registers than allowed, the compiler", "o": ["Fails", "Spills variables to local memory in DRAM", "Uses shared memory", "Reduces threads per block"], "a": 1, "hint": "Spilling.", "why": "Local memory is private but slow, so spills cost speed."}, {"lv": "h", "q": "An SM holds 48 warps. Latency 20, 128 operations per tick needs 80 warps. A fix is", "o": ["Use smaller blocks", "Give each warp 2 independent instructions, so 40 warps suffice", "Lower the clock", "Add atomics"], "a": 1, "hint": "ILP.", "why": "Independent instructions in flight per warp divide the warps needed."}, {"lv": "x", "q": "Quiz 1 question 10: N = 2²⁰, 256 threads per block. Warps launched?", "o": ["4096", "8192", "32,768", "1,048,576"], "a": 2, "hint": "Blocks × 8.", "why": "4096 blocks × 8 warps = 32,768."}, {"lv": "x", "q": "Bits needed to name one of 255 registers in an instruction", "o": ["7", "8", "9", "255"], "a": 1, "hint": "2⁸ = 256.", "why": "8 bits are the smallest with 2ᵇ ≥ 255."}], "calc": [{"lv": "e", "q": "A block has 100 threads. Empty lanes?", "ans": "28", "hint": "Warps first.", "steps": ["Warps = ⌈100 ÷ 32⌉ = 4.", "Lanes 4 × 32 = 128.", "<span class=\"eq\">128 − 100 = 28 empty<\/span>"]}, {"lv": "e", "q": "Which lane is thread 70?", "ans": "6", "hint": "70 − 32 × ⌊70 ÷ 32⌋.", "steps": ["Warp ⌊70 ÷ 32⌋ = 2.", "2 × 32 = 64.", "<span class=\"eq\">Lane 70 − 64 = 6<\/span>"]}, {"lv": "e", "q": "Fermi: latency 20 ticks, 32 operations per tick. Warps in flight?", "ans": "20", "hint": "Little then ÷ 32.", "steps": ["Operations = 20 × 32 = 640.", "Warps = 640 ÷ 32.", "<span class=\"eq\">20 warps<\/span>"]}, {"lv": "m", "q": "Kepler: 20 ticks, 192 operations per tick. Warps in flight?", "ans": "120", "hint": "Little.", "steps": ["20 × 192 = 3840 operations.", "3840 ÷ 32.", "<span class=\"eq\">120 warps<\/span>"]}, {"lv": "m", "q": "100,000 elements in 100 thread blocks. Overall lane efficiency in percent? (one decimal)", "ans": "78.1", "hint": "Each block uses 4 warps.", "steps": ["1000 blocks × 4 warps × 32 lanes = 128,000 lanes.", "Useful 100,000.", "<span class=\"eq\">100,000 ÷ 128,000 = 78.1 percent<\/span>"], "tol": 0.05}, {"lv": "m", "q": "96K registers and 1536 threads. Registers per thread?", "ans": "64", "hint": "98,304 ÷ 1536.", "steps": ["96K = 96 × 1024 = 98,304.", "98,304 ÷ 1536.", "<span class=\"eq\">64<\/span>"]}, {"lv": "m", "q": "A 256 thread block at 32 registers per thread. Registers per block?", "ans": "8192", "hint": "Multiply.", "steps": ["256 × 32.", "One eighth of 65,536.", "<span class=\"eq\">8192<\/span>"]}, {"lv": "h", "q": "Memory latency 400 ticks at 1.4 GHz, bandwidth 900 GB/s. Bytes in flight? (nearest whole)", "ans": "257143", "hint": "Convert latency to seconds.", "steps": ["400 ÷ 1.4 GHz ≈ 285.71 ns.", "900 × 10⁹ × 285.71 × 10⁻⁹.", "<span class=\"eq\">≈ 257,143 bytes (about 64,286 floats)<\/span>"], "tol": 1}, {"lv": "h", "q": "A kernel needs 40 registers per thread, SM has 65,536. Whole warps that fit?", "ans": "51", "hint": "÷ 40, then ÷ 32 rounded down.", "steps": ["65,536 ÷ 40 = 1638.4 threads.", "1638 ÷ 32 = 51.2.", "<span class=\"eq\">51 warps = 1632 threads<\/span>"]}, {"lv": "x", "q": "New GPU: 384 operations per tick, 15 tick latency. Warps in flight?", "ans": "180", "hint": "Little.", "steps": ["15 × 384 = 5760 operations.", "÷ 32.", "<span class=\"eq\">180 warps, 50 percent more than Kepler<\/span>"]}, {"lv": "x", "q": "64K registers, up to 2048 threads. Largest registers per thread that still allows 2048 threads?", "ans": "32", "hint": "65,536 ÷ 2048.", "steps": ["Every thread must fit.", "65,536 ÷ 2048.", "<span class=\"eq\">32 registers<\/span>"]}], "assign": [{"id": "warplane", "lv": "e", "title": "Warp and lane of a 2-D thread", "task": "<p>Write <code>warp_lane(x, y, bx)<\/code> for a 2-D block of width <code>bx<\/code>. Return <code>[warp, lane]<\/code>.<\/p>", "starter": "def warp_lane(x, y, bx):\n    # your code here\n    pass\n", "tests": [{"call": "warp_lane(5, 3, 16)", "want": [1, 21]}, {"call": "warp_lane(70, 0, 100)", "want": [2, 6]}, {"call": "warp_lane(0, 6, 16)", "want": [3, 0]}], "solution": "def warp_lane(x, y, bx):\n    t = x + y * bx\n    return [t // 32, t % 32]\n", "hint": "Linear number first.", "why": "<p>Warp 3 of a 16 × 16 block starts at row 6.<\/p>"}, {"id": "inflight", "lv": "m", "title": "Little's law calculator", "task": "<p>Write <code>warps_needed(latency, ops_per_tick, ilp=1)<\/code>: operations in flight ÷ 32, divided by the independent instructions per warp, rounded up.<\/p>", "starter": "def warps_needed(latency, ops_per_tick, ilp=1):\n    # your code here\n    pass\n", "tests": [{"call": "warps_needed(20, 32)", "want": 20}, {"call": "warps_needed(20, 192)", "want": 120}, {"call": "warps_needed(20, 128, 2)", "want": 40}, {"call": "warps_needed(4, 128)", "want": 16}], "solution": "def warps_needed(latency, ops_per_tick, ilp=1):\n    ops = latency * ops_per_tick\n    warps = (ops + 31) // 32\n    return (warps + ilp - 1) // ilp\n", "hint": "Round up both divisions.", "why": "<p>With 2 independent instructions per warp, the 80 warp case drops to 40.<\/p>"}], "must": [["Mapping", "Thread → core lane, warp → scheduler, block → one SM for life, grid → whole GPU."], ["Warps", "warps = ⌈B/32⌉, warp = ⌊t/32⌋, lane = t mod 32, t = x + y·Bx. Efficiency B ÷ (32 × warps)."], ["Little's law", "In flight = latency × throughput. Warps = that ÷ 32. Bytes in flight = bandwidth × latency."], ["Latency hiding", "Zero cost warp switching because registers stay on chip. Need many warps or independent instructions."], ["Registers", "Registers per thread = file ÷ threads. 65,536 on modern SMs. Too many spill to slow local memory."]], "summary": "<p>Warps of 32 are the real unit of execution. The GPU hides latency by always having another warp ready, which needs latency × throughput operations in flight.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"warps": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.B": "100"}}, {"l": 5, "ev": "line", "d": {"G.warps": "4"}}, {"l": 6, "ev": "line", "d": {"G.wasted": "28"}}, {"l": 3, "ev": "line", "o": "B=  100:   4 warps, 28 empty lanes, efficiency  78.1%\n"}, {"l": 4, "ev": "line", "d": {"G.B": "128"}}, {"l": 5, "ev": "line"}, {"l": 6, "ev": "line", "d": {"G.wasted": "0"}}, {"l": 3, "ev": "line", "o": "B=  128:   4 warps,  0 empty lanes, efficiency 100.0%\n"}, {"l": 4, "ev": "line", "d": {"G.B": "48"}}, {"l": 5, "ev": "line", "d": {"G.warps": "2"}}, {"l": 6, "ev": "line", "d": {"G.wasted": "16"}}, {"l": 3, "ev": "line", "o": "B=   48:   2 warps, 16 empty lanes, efficiency  75.0%\n"}, {"l": 4, "ev": "line", "d": {"G.B": "256"}}, {"l": 5, "ev": "line", "d": {"G.warps": "8"}}, {"l": 6, "ev": "line", "d": {"G.wasted": "0"}}, {"l": 3, "ev": "line", "o": "B=  256:   8 warps,  0 empty lanes, efficiency 100.0%\n"}, {"l": 4, "ev": "line", "d": {"G.B": "1000"}}, {"l": 5, "ev": "line", "d": {"G.warps": "32"}}, {"l": 6, "ev": "line", "d": {"G.wasted": "24"}}, {"l": 3, "ev": "line", "o": "B= 1000:  32 warps, 24 empty lanes, efficiency  97.7%\n"}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"G.t": "70"}}, {"l": 8, "ev": "return", "o": "thread 70 is warp 2 lane 6\n"}], "tail": "", "err": null, "cut": false}, "little": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.chips": "{'Fermi': (20, 32), 'Kepler': (20, 192), 'new GPU': (15, 384)}"}}, {"l": 4, "ev": "line", "d": {"G.name": "'Fermi'", "G.latency": "20", "G.ops_per_tick": "32"}}, {"l": 5, "ev": "line", "d": {"G.ops": "640"}}, {"l": 3, "ev": "line", "o": "Fermi   :   640 operations in flight =   20 warps\n"}, {"l": 4, "ev": "line", "d": {"G.name": "'Kepler'", "G.ops_per_tick": "192"}}, {"l": 5, "ev": "line", "d": {"G.ops": "3840"}}, {"l": 3, "ev": "line", "o": "Kepler  :  3840 operations in flight =  120 warps\n"}, {"l": 4, "ev": "line", "d": {"G.name": "'new GPU'", "G.latency": "15", "G.ops_per_tick": "384"}}, {"l": 5, "ev": "line", "d": {"G.ops": "5760"}}, {"l": 3, "ev": "line", "o": "new GPU :  5760 operations in flight =  180 warps\n"}, {"l": 7, "ev": "line"}, {"l": 8, "ev": "line", "d": {"G.bw": "900000000000.0", "G.lat_ns": "285.7142857142857"}}, {"l": 8, "ev": "return", "o": "bytes in flight: 257143\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>
