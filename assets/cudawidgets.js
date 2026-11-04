@@ -1138,7 +1138,7 @@
         const s3 = Math.max(e2, one ? h2d : d2h), e3 = s3 + b; d2h = e3; if (one) h2d = Math.max(h2d, e3);
         jobs.push([[s1, e1], [s2, e2], [s3, e3]]);
       }
-      const total = Math.max(...jobs.map(j => j[2][1])), serial = n * (a + k + b), sc = 500 / Math.max(total, serial);
+      const total = Math.max(...jobs.map(j => j[2][1])), serial = n * (a + k + b), sc = 440 / Math.max(total, serial);
       const lanes = ['copy in', 'kernel', 'copy out'], cols = [z.col.orange, z.col.green, z.col.purple];
       W(z, 'serial (one stream)', 16, 20, { s: 11, b: true });
       D.rect(g, 100, 28, serial * sc, 14, { fill: z.col.surf, stroke: z.col.line });
@@ -1151,6 +1151,285 @@
       }));
       if (s >= n) { D.line(g, 100 + total * sc, 78, 100 + total * sc, 170, z.col.red, 1.5, [4, 3]); W(z, `${fmt(total)} ms`, 100 + total * sc + 4, 186, { s: 11, b: true, c: z.col.red }); }
       return `Serial = N × (in + kernel + out) = ${n} × ${fmt(a + k + b)} = ${fmt(serial)} ms.` + (s >= n ? ` Overlapped = <b>${fmt(total)} ms</b>, speedup <b>${fmt(serial / total)}</b>. With equal stages t this is (N + 2) t, so the speedup approaches the number of stages.` : ' Press Step to issue each chunk into its stream.');
+    }
+  });
+})();
+
+/* ---------- 7.x synchronisation: lost updates, lock algorithms step by step ---------- */
+(() => {
+  const { def, D } = CVZ, { fmt, W } = CUDAZ;
+  const rng = seed => () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  def('counter', {
+    title: 'counter = counter + 1 is three steps: load, add, store', sub: 'Several threads add 1 to one counter. Step through one micro step at a time and watch updates get lost.',
+    W: 620, H: 280,
+    params: [
+      { k: 'n', label: 'Threads', v: 2, min: 2, max: 8, step: 1 },
+      { k: 'mode', label: 'How they run', type: 'select', v: 'bad', opts: [['bad', 'the bad order from the lecture'], ['lock', 'lock step, like one warp (all load, all add, all store)'], ['rand', 'a random order (pick a seed)'], ['serial', 'one after another'], ['atomic', 'atomicAdd (load, add, store as one step)']] },
+      { k: 'seed', label: 'Seed for the random order', v: 7, min: 1, max: 50, step: 1 }
+    ],
+    tips: [
+      { t: 'Lecture 10 table: both threads load 0, both store 1. The counter ends at 1 instead of 2.', set: { n: 2, mode: 'bad' }, play: true },
+      { t: 'Workbook 10.1: 10 threads of one warp in lock step all load 0, so the result is 1 and 9 updates are lost (8 threads shown here).', set: { n: 8, mode: 'lock' }, play: true },
+      { t: 'Try different seeds: with 3 threads the result can be 1, 2 or 3, only about 0.4 percent of orders give 3.', set: { n: 3, mode: 'rand', seed: 11 }, play: true },
+      { t: 'atomicAdd makes the three steps indivisible: always correct.', set: { n: 8, mode: 'atomic' }, play: true }
+    ],
+    order(z) {
+      const { n, mode } = z.p, ops = [];
+      if (mode === 'atomic') { for (let t = 0; t < n; t++) ops.push([t, 'A']); return ops; }
+      if (mode === 'serial') { for (let t = 0; t < n; t++) ['L', '+', 'S'].forEach(o => ops.push([t, o])); return ops; }
+      if (mode === 'lock') { ['L', '+', 'S'].forEach(o => { for (let t = 0; t < n; t++) ops.push([t, o]); }); return ops; }
+      if (mode === 'bad') { ops.push([0, 'L'], [1, 'L'], [0, '+'], [1, '+'], [0, 'S'], [1, 'S']); for (let t = 2; t < n; t++) ['L', '+', 'S'].forEach(o => ops.push([t, o])); return ops; }
+      const r = rng(z.p.seed * 97 + n), left = new Array(n).fill(0);
+      for (let k = 0; k < 3 * n; k++) { const can = []; for (let t = 0; t < n; t++) if (left[t] < 3) can.push(t); const t = can[Math.floor(r() * can.length)]; ops.push([t, 'L+S'[left[t]]]); left[t]++; }
+      return ops;
+    },
+    steps: z => z.spec.order(z).length,
+    draw(z) {
+      const g = z.g, n = z.p.n, ops = z.spec.order(z), s = z.step, reg = new Array(n).fill(null);
+      let mem = 0;
+      const hist = [];
+      for (let k = 0; k < s; k++) {
+        const [t, o] = ops[k];
+        if (o === 'L') reg[t] = mem; else if (o === '+') reg[t] += 1; else if (o === 'S') mem = reg[t]; else { mem += 1; reg[t] = mem; }
+        hist.push([t, o, mem]);
+      }
+      const cw = Math.min(30, 440 / ops.length);
+      W(z, 'step →', 70, 16, { s: 10, c: z.col.ink2 });
+      for (let t = 0; t < n; t++) {
+        W(z, `T${t}`, 16, 38 + t * 22, { s: 11, mono: true });
+        W(z, reg[t] === null ? 'r = -' : `r = ${reg[t]}`, 520, 38 + t * 22, { s: 11, mono: true, c: z.col.ink2 });
+      }
+      hist.forEach(([t, o], k) => {
+        const col = o === 'L' ? z.col.cv : o === '+' ? z.col.orange : o === 'S' ? z.col.purple : z.col.green;
+        D.rect(g, 70 + k * cw, 26 + t * 22, cw - 2, 18, { fill: col });
+        if (cw >= 14) W(z, o === 'A' ? 'a' : o, 70 + k * cw + (cw - 2) / 2, 39 + t * 22, { s: 10, a: 'center', c: '#fff', mono: true, b: true });
+      });
+      const y = 40 + n * 22;
+      W(z, 'memory', 16, y + 12, { s: 11, b: true });
+      hist.forEach(([, , m], k) => { if (cw >= 14) W(z, String(m), 70 + k * cw + (cw - 2) / 2, y + 12, { s: 10, a: 'center', mono: true }); });
+      W(z, `counter = ${mem}`, 16, y + 44, { s: 15, b: true, c: s >= ops.length ? (mem === n ? z.col.green : z.col.red) : z.col.ink });
+      return `L = load into a register, + = add 1 in the register, S = store back, a = atomicAdd. ` + (s >= ops.length ? (mem === n ? `<span class="ok">Correct: ${n}.</span>` : `<span class="bad">Expected ${n}, got ${mem}: ${n - mem} update${n - mem === 1 ? '' : 's'} lost.</span> A thread stored a value computed from an old load.`) : `Step ${s} of ${ops.length}.`);
+    }
+  });
+
+  const ALGOS = {
+    v1: { name: 'Dekker attempt 1: take turns', vars: { turn: 0 }, code: i => [['wait while turn == ' + (1 - i), (st, me) => st.turn === 1 - me], ['critical section', null], ['turn = ' + (1 - i), (st, me) => { st.turn = 1 - me; }]] },
+    v2: { name: 'Dekker attempt 2: check, then set', vars: { f0: 0, f1: 0 }, code: i => [[`wait while flag${1 - i}`, (st, me) => !!st['f' + (1 - me)]], [`flag${i} = true`, (st, me) => { st['f' + me] = 1; }], ['critical section', null], [`flag${i} = false`, (st, me) => { st['f' + me] = 0; }]] },
+    v3: { name: 'Dekker attempt 3: set, then check', vars: { f0: 0, f1: 0 }, code: i => [[`flag${i} = true`, (st, me) => { st['f' + me] = 1; }], [`wait while flag${1 - i}`, (st, me) => !!st['f' + (1 - me)]], ['critical section', null], [`flag${i} = false`, (st, me) => { st['f' + me] = 0; }]] },
+    pet: { name: 'Peterson', vars: { f0: 0, f1: 0, turn: 0 }, code: i => [[`flag${i} = true`, (st, me) => { st['f' + me] = 1; }], [`turn = ${1 - i}`, (st, me) => { st.turn = 1 - me; }], [`wait while flag${1 - i} and turn == ${1 - i}`, (st, me) => !!st['f' + (1 - me)] && st.turn === 1 - me], ['critical section', null], [`flag${i} = false`, (st, me) => { st['f' + me] = 0; }]] }
+  };
+  def('locks', {
+    title: 'Two threads, one critical section: step through lock attempts', sub: 'Pick an algorithm and a schedule (which thread takes the next step). Watch for both threads inside at once, or both waiting for ever.',
+    W: 620, H: 300,
+    params: [
+      { k: 'alg', label: 'Algorithm', type: 'select', v: 'v2', opts: Object.entries(ALGOS).map(([k, a]) => [k, a.name]) },
+      { k: 'sch', label: 'Schedule (0 and 1 = which thread steps next)', type: 'text', v: '0101010101010101' },
+      { k: 'want', label: 'Thread 1 wants the critical section', type: 'check', v: true },
+      { k: 'rounds', label: 'Times each thread enters', v: 1, min: 1, max: 3, step: 1 }
+    ],
+    tips: [
+      { t: 'Attempt 2 with 0101…: both check the other flag before either sets its own, so both enter. Mutual exclusion is broken (not a deadlock as slide 8 says).', set: { alg: 'v2', sch: '0101010101010101', want: true, rounds: 1 }, play: true },
+      { t: 'Attempt 3 with 0101…: both raise their flags, then each waits for the other for ever. Deadlock.', set: { alg: 'v3', sch: '0101010101010101', want: true, rounds: 1 }, play: true },
+      { t: 'Attempt 1 when thread 1 does not want in: thread 0 enters once, hands the turn over, then waits for ever. No progress.', set: { alg: 'v1', sch: '0000000000', want: false, rounds: 2 }, play: true },
+      { t: 'Peterson with the same tricky schedule: one thread waits, the other enters, then they swap. All three rules hold.', set: { alg: 'pet', sch: '010101010101010101010101', want: true, rounds: 2 }, play: true }
+    ],
+    steps: z => String(z.p.sch).replace(/[^01]/g, '').length,
+    draw(z) {
+      const g = z.g, A = ALGOS[z.p.alg], sch = String(z.p.sch).replace(/[^01]/g, ''), st = Object.assign({}, A.vars), code = [A.code(0), A.code(1)];
+      const pc = [0, 0], done = [0, 0], spins = [0, 0], need = [z.p.rounds, z.p.want ? z.p.rounds : 0];
+      let both = false, last = '';
+      for (let k = 0; k < Math.min(z.step, sch.length); k++) {
+        const me = +sch[k];
+        if (done[me] >= need[me]) { last = `T${me} has nothing to do`; continue; }
+        const [txt, fn] = code[me][pc[me]];
+        if (txt.startsWith('wait')) { if (fn(st, me)) { spins[me]++; last = `T${me} spins: ${txt}`; continue; } spins[me] = 0; pc[me]++; last = `T${me} passes the gate`; }
+        else if (fn) { fn(st, me); pc[me]++; last = `T${me}: ${txt}`; }
+        else { pc[me]++; last = `T${me} works in the critical section`; }
+        if (pc[me] >= code[me].length) { pc[me] = 0; done[me]++; }
+        const csIdx = code[0].findIndex(c => c[1] === null);
+        if (pc[0] === csIdx && pc[1] === csIdx && done[0] < need[0] && done[1] < need[1]) both = true;
+      }
+      const csIdx = code[0].findIndex(c => c[1] === null);
+      [0, 1].forEach(me => {
+        const x = 16 + me * 300;
+        W(z, `Thread ${me}${me === 1 && !z.p.want ? ' (not interested)' : ''}`, x, 20, { s: 12, b: true });
+        code[me].forEach(([txt], i) => {
+          const at = pc[me] === i && done[me] < need[me], cs = i === csIdx;
+          D.rect(g, x, 30 + i * 30, 280, 24, { fill: at ? (cs ? z.col.red : z.col.cv) : (cs ? z.col.surf : z.col.bg), stroke: z.col.line, w: 0.5 });
+          W(z, txt, x + 8, 47 + i * 30, { s: 11, mono: true, c: at ? '#fff' : z.col.ink });
+        });
+        W(z, done[me] >= need[me] ? 'finished' : `entered ${done[me]} of ${need[me]}`, x, 30 + code[me].length * 30 + 16, { s: 11, c: z.col.ink2 });
+      });
+      W(z, 'shared: ' + Object.entries(st).map(([k, v]) => `${k.replace(/^f/, 'flag')} = ${v}`).join('   '), 16, 230, { s: 12, mono: true, b: true });
+      const waiting = [0, 1].every(me => done[me] < need[me] && code[me][pc[me]][0].startsWith('wait') && code[me][pc[me]][1](st, me));
+      const stuck0 = done[0] < need[0] && code[0][pc[0]][0].startsWith('wait') && code[0][pc[0]][1](st, 0) && done[1] >= need[1];
+      W(z, both ? 'BOTH threads are in the critical section' : waiting ? 'DEADLOCK: each waits for the other for ever' : stuck0 ? 'NO PROGRESS: thread 0 waits for a thread that never comes' : (done[0] >= need[0] && done[1] >= need[1] ? 'Both finished safely' : last), 16, 262, { s: 13, b: true, c: both || waiting || stuck0 ? z.col.red : z.col.green });
+      return `${A.name}. The filled line is the next step of that thread. It turns red when that step is the critical section. Edit the schedule to try other orders. Rules: mutual exclusion (never both inside), progress (no deadlock, nobody blocked by a thread that is not trying), bounded waiting.`;
+    }
+  });
+})();
+
+/* ---------- 7.2 barriers and atomics: barrier against lock timelines, privatised atomics, priority counter ---------- */
+(() => {
+  const { def, D } = CVZ, { fmt, W } = CUDAZ;
+  const rng = seed => () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+
+  def('syncbar', {
+    title: 'Barrier or lock: who waits, and for how long', sub: 'Each thread first does some work of its own length. Then it either meets the others at a barrier, or takes a lock for its critical section.',
+    W: 620, H: 300,
+    params: [
+      { k: 'n', label: 'Threads', v: 4, min: 2, max: 8, step: 1 },
+      { k: 'mode', label: 'What happens after the work', type: 'select', v: 'barrier', opts: [['barrier', '__syncthreads(): everyone waits for the slowest'], ['cas', 'atomicCAS spin lock: a random waiter wins'], ['ticket', 'ticket lock: first come, first served']] },
+      { k: 'cs', label: 'Length of the critical section', v: 2, min: 1, max: 3, step: 1 },
+      { k: 'seed', label: 'Seed for the work lengths', v: 3, min: 1, max: 30, step: 1 }
+    ],
+    tips: [
+      { t: 'Barrier: the fast threads wait (grey) for the slowest one. Then all go on together.', set: { n: 4, mode: 'barrier', seed: 3 }, play: true },
+      { t: 'Spin lock: only one thread at a time is in the critical section (orange). The others spin.', set: { n: 4, mode: 'cas', cs: 2, seed: 3 }, play: true },
+      { t: 'Spin lock with 8 threads: the order of entry is luck, so a thread that arrived early can be passed many times.', set: { n: 8, mode: 'cas', cs: 2, seed: 9 }, play: true },
+      { t: 'Ticket lock with the same threads: they enter in the order they arrived. This is the Bakery idea built from atomicAdd.', set: { n: 8, mode: 'ticket', cs: 2, seed: 9 }, play: true }
+    ],
+    sim(z) {
+      const n = z.p.n, r = rng(z.p.seed * 31 + n), a = [];
+      for (let t = 0; t < n; t++) a.push(1 + Math.floor(r() * 5));
+      const rows = a.map(() => []), entry = [];
+      if (z.p.mode === 'barrier') {
+        const M = Math.max(...a);
+        a.forEach((x, t) => { for (let k = 0; k < M; k++) rows[t].push(k < x ? 'W' : '.'); rows[t].push('B', 'B'); });
+        return { a, rows, entry, T: M + 2, M };
+      }
+      const ph = a.map(() => 'work'), rem = a.slice(), arr = a.map(() => 0);
+      let owner = -1, tick = 0;
+      while (ph.some(p => p !== 'done') && tick < 60) {
+        if (owner < 0) {
+          const w = []; ph.forEach((p, t) => { if (p === 'want') w.push(t); });
+          if (w.length) {
+            owner = z.p.mode === 'ticket' ? w.sort((x, y) => arr[x] - arr[y] || x - y)[0] : w[Math.floor(r() * w.length)];
+            ph[owner] = 'cs'; rem[owner] = z.p.cs; entry.push(owner);
+          }
+        }
+        ph.forEach((p, t) => {
+          if (p === 'work') { rows[t].push('W'); if (--rem[t] === 0) { ph[t] = 'want'; arr[t] = tick + 1; } }
+          else if (p === 'want') rows[t].push('.');
+          else if (p === 'cs') { rows[t].push('C'); if (--rem[t] === 0) { ph[t] = 'done'; owner = -1; } }
+          else rows[t].push(' ');
+        });
+        tick++;
+      }
+      return { a, rows, entry, T: tick, arr };
+    },
+    steps: z => z.spec.sim(z).T,
+    draw(z) {
+      const g = z.g, R = z.spec.sim(z), s = z.step, n = z.p.n, cw = Math.min(32, 500 / R.T);
+      const col = { W: z.col.cv, '.': z.col.line, C: z.col.orange, B: z.col.purple };
+      for (let k = 0; k <= R.T; k += 5) W(z, String(k), 60 + k * cw, 18, { s: 9, a: 'center', c: z.col.ink2 });
+      R.rows.forEach((row, t) => {
+        W(z, `T${t}`, 16, 40 + t * 24, { s: 11, mono: true });
+        row.slice(0, s).forEach((c, k) => { if (c !== ' ') D.rect(g, 60 + k * cw, 27 + t * 24, cw - 1, 18, { fill: col[c], stroke: c === '.' ? z.col.line : null, w: 0.5 }); });
+      });
+      if (z.p.mode === 'barrier' && s >= R.M) D.line(g, 60 + R.M * cw, 22, 60 + R.M * cw, 30 + n * 24, z.col.red, 2, [4, 3]);
+      const ly = 46 + n * 24;
+      [['work', 'W'], ['waiting or spinning', '.'], [z.p.mode === 'barrier' ? 'after the barrier' : 'critical section', z.p.mode === 'barrier' ? 'B' : 'C']].forEach(([l, c], i) => {
+        D.rect(g, 16 + i * 180, ly, 14, 14, { fill: col[c], stroke: z.col.line, w: 0.5 });
+        W(z, l, 36 + i * 180, ly + 11, { s: 11 });
+      });
+      const wait = R.rows.reduce((acc, row) => acc + row.slice(0, s).filter(c => c === '.').length, 0);
+      W(z, `time ${Math.min(s, R.T)} of ${R.T}   waiting ticks so far ${wait}`, 16, ly + 40, { s: 12, b: true });
+      if (z.p.mode === 'barrier') return `Work lengths ${R.a.join(', ')}. Everyone waits until the slowest thread (length ${R.M}) reaches the barrier, then all continue together. A barrier makes the whole block wait, and only works inside one block.`;
+      const order = R.entry.map(t => 'T' + t).join(', ');
+      return `Work lengths ${R.a.join(', ')}. Order of entry: ${order}. ` + (z.p.mode === 'cas' ? 'With atomicCAS nobody keeps a queue: every spinner retries, and the hardware picks a winner. There is no fairness.' : 'Each thread takes a ticket with atomicAdd and waits until the "now serving" counter shows it. Earliest arrival enters first, ties by id.');
+    }
+  });
+
+  def('privat', {
+    title: 'Counting with atomics: one global counter or one per block', sub: 'Every thread adds 1. Atomics on the same address run one after another, so the number of global atomics decides the waiting.',
+    W: 620, H: 290,
+    params: [
+      { k: 'b', label: 'Blocks', v: 10, min: 1, max: 10, step: 1 },
+      { k: 'tpb', label: 'Threads per block', type: 'select', v: '256', opts: [['32', '32'], ['64', '64'], ['128', '128'], ['256', '256']] },
+      { k: 'mode', label: 'Method', type: 'select', v: 'global', opts: [['global', 'atomicAdd on the global counter from every thread'], ['shared', 'atomicAdd in shared memory, then one global atomicAdd per block']] }
+    ],
+    tips: [
+      { t: 'Workbook 10.1: 10 blocks of 256 threads, one global atomic per thread: 2560 global atomics on one address.', set: { b: 10, tpb: '256', mode: 'global' }, play: true },
+      { t: 'Same work with a shared counter per block: 2560 fast shared atomics, but only 10 global ones.', set: { b: 10, tpb: '256', mode: 'shared' }, play: true }
+    ],
+    steps: z => z.p.b,
+    draw(z) {
+      const g = z.g, B = z.p.b, T = +z.p.tpb, s = z.step, sh = z.p.mode === 'shared';
+      const bw = Math.min(54, 560 / B);
+      for (let b = 0; b < B; b++) {
+        const x = 16 + b * bw, done = b < s;
+        D.rect(g, x, 30, bw - 6, 58, { fill: done ? z.col.surf : z.col.bg, stroke: done ? z.col.cv : z.col.line, w: done ? 2 : 1 });
+        W(z, `block ${b}`, x + (bw - 6) / 2, 46, { s: 10, a: 'center' });
+        if (sh) W(z, done ? String(T) : '0', x + (bw - 6) / 2, 74, { s: 12, a: 'center', mono: true, b: true, c: done ? z.col.cv : z.col.ink2 });
+        if (done) D.arrow(g, x + (bw - 6) / 2, 92, 310, 140, sh ? z.col.green : z.col.red, sh ? 2 : 1, 5);
+      }
+      if (sh) W(z, 'shared counters', 16, 22, { s: 10, c: z.col.ink2 });
+      D.rect(g, 240, 144, 140, 36, { fill: z.col.surf, stroke: z.col.ink, w: 1.5 });
+      W(z, `global = ${s * T}`, 310, 167, { s: 13, a: 'center', mono: true, b: true });
+      const ga = sh ? s : s * T, maxg = B * T;
+      W(z, 'global atomics', 16, 214, { s: 11, b: true });
+      D.rect(g, 130, 202, 440, 16, { fill: z.col.bg, stroke: z.col.line, w: 0.5 });
+      D.rect(g, 130, 202, Math.max(1, 440 * ga / maxg), 16, { fill: sh ? z.col.green : z.col.red });
+      W(z, String(ga), 130 + Math.max(1, 440 * ga / maxg) + 6, 215, { s: 11, mono: true, b: true });
+      W(z, 'shared atomics', 16, 246, { s: 11, b: true });
+      W(z, String(sh ? s * T : 0), 130, 246, { s: 11, mono: true });
+      return `${B} blocks × ${T} threads = ${B * T} additions. ` + (sh ? `Each block counts in its own shared memory, then thread 0 adds the block total with one global atomicAdd: <b>${B}</b> global atomics in all. This is called privatisation.` : `Every thread does atomicAdd on the same global address: <b>${B * T}</b> global atomics, and they run one after another.`) + ` Done ${s} of ${B} blocks.`;
+    }
+  });
+
+  def('prio', {
+    title: 'A priority lock from one "now serving" counter', sub: 'Threads wait until the counter equals their priority. Watch what goes wrong when every thread adds 1 on the way out.',
+    W: 620, H: 290,
+    params: [
+      { k: 'pr', label: 'Priorities of the threads (0 goes first)', type: 'text', v: '0, 1, 2, 2, 2, 3, 4' },
+      { k: 'fix', label: 'Advance one level only when the whole level is done', type: 'check', v: false }
+    ],
+    tips: [
+      { t: 'The lecture code: three threads have priority 2. Each adds 1, so the counter jumps from 2 to 5. Priorities 3 and 4 wait for ever.', set: { pr: '0, 1, 2, 2, 2, 3, 4', fix: false }, play: true },
+      { t: 'The fix: count the threads that finish a level and move the counter on once per level.', set: { pr: '0, 1, 2, 2, 2, 3, 4', fix: true }, play: true },
+      { t: 'No thread has priority 0 here, so nobody ever moves the counter. Everyone waits.', set: { pr: '1, 1, 2', fix: false }, play: true }
+    ],
+    parse(z) { return String(z.p.pr).split(/[^0-9]+/).filter(x => x !== '').slice(0, 10).map(Number).map(v => Math.min(v, 9)); },
+    sim(z) {
+      const P = z.spec.parse(z), done = P.map(() => false), rounds = [];
+      let cur = 0;
+      for (let guard = 0; guard < 20; guard++) {
+        const grp = []; P.forEach((p, t) => { if (!done[t] && p === cur) grp.push(t); });
+        if (!grp.length) break;
+        grp.forEach(t => { done[t] = true; });
+        const before = cur;
+        if (z.p.fix) { cur += 1; while (cur <= 9 && !P.some((p, t) => !done[t] && p === cur) && P.some((p, t) => !done[t] && p > cur)) cur++; }
+        else cur += grp.length;
+        rounds.push({ grp, before, after: cur, done: done.slice() });
+      }
+      return { P, rounds };
+    },
+    steps: z => Math.max(1, z.spec.sim(z).rounds.length),
+    draw(z) {
+      const g = z.g, { P, rounds } = z.spec.sim(z), s = Math.min(z.step, rounds.length);
+      const cur = s ? rounds[s - 1].after : 0, done = s ? rounds[s - 1].done : P.map(() => false), grp = s ? rounds[s - 1].grp : [];
+      const L = 11, cw = 52;
+      for (let v = 0; v < L; v++) {
+        const x = 16 + v * cw;
+        D.rect(g, x, 30, cw - 4, 22, { fill: v === cur ? z.col.orange : z.col.bg, stroke: z.col.line, w: 0.5 });
+        W(z, String(v), x + (cw - 4) / 2, 46, { s: 11, a: 'center', mono: true, b: v === cur, c: v === cur ? '#fff' : z.col.ink });
+      }
+      W(z, 'now serving', 16, 20, { s: 10, c: z.col.ink2 });
+      const per = {};
+      P.forEach((p, t) => {
+        const k = per[p] = (per[p] || 0) + 1, x = 16 + p * cw, y = 60 + (k - 1) * 30;
+        if (k > 5) return;
+        const inNow = grp.includes(t), fin = done[t];
+        D.rect(g, x, y, cw - 4, 24, { fill: inNow ? z.col.cv : fin ? z.col.surf : z.col.bg, stroke: !fin && s >= rounds.length && z.step >= 1 ? z.col.red : z.col.line, w: !fin && s >= rounds.length ? 1.5 : 0.5 });
+        W(z, `T${t}`, x + (cw - 4) / 2, y + 16, { s: 11, a: 'center', mono: true, c: inNow ? '#fff' : z.col.ink });
+      });
+      Object.entries(per).forEach(([p, c]) => { if (c > 5) W(z, `+${c - 5} more`, 16 + p * cw + (cw - 4) / 2, 222, { s: 10, a: 'center', c: z.col.ink2 }); });
+      const stuck = P.filter((p, t) => !done[t]).length, end = s >= rounds.length && z.step >= 1;
+      const msg = !rounds.length ? 'Nobody has priority 0, so the counter never moves: everyone waits for ever.' : grp.length > 1 ? `${grp.length} threads with priority ${P[grp[0]]} are inside together: this is not mutual exclusion.` : grp.length ? `T${grp[0]} works, then the counter moves to ${cur}.` : 'Press Step.';
+      W(z, msg, 16, 248, { s: 12, b: true, c: grp.length > 1 || !rounds.length ? z.col.red : z.col.ink });
+      if (end && rounds.length) W(z, stuck ? `${stuck} thread${stuck === 1 ? '' : 's'} wait for ever: the counter skipped past their level.` : 'Every thread finished.', 16, 274, { s: 12, b: true, c: stuck ? z.col.red : z.col.green });
+      return `Lock: spin while atomicCAS(&now, my, my) != my. Unlock: atomicAdd(&now, 1). ` + (z.p.fix ? 'Fixed version: the last thread of a level moves the counter once, and empty levels are skipped.' : 'Lecture version: every thread adds 1 on the way out.') + ' Another problem the picture cannot show: if the priority 0 blocks are not resident on the GPU, nobody ever moves the counter.';
     }
   });
 })();

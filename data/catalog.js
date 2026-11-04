@@ -5889,6 +5889,40 @@ function cudaModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "gpu-sync", title: "Synchronisation", emoji: "7", step: 7, level: "College", blurb: "Learn why shared updates go wrong, how classic locks fix it, and how GPUs use barriers and atomic instructions.", topics: [
+      { id: "races-locks", title: "Race conditions and locks", emoji: "7.1", page: "content/cuda/races-locks.html",
+        summary: "Races, the three lock rules, Dekker, Peterson, Bakery and Filter.",
+        keywords: ["race condition", "critical section", "Dekker", "Peterson", "Bakery", "Filter lock"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "race", title: "Why counter = counter + 1 goes wrong", emoji: "", group: "Lesson", keywords: ["race condition", "counter++", "load add store", "interleaving", "1680 orders", "lost update", "atomicAdd"] },
+        { id: "rules", title: "The critical section and Dekker's three attempts", emoji: "", group: "Lesson", keywords: ["critical section", "mutual exclusion", "progress", "bounded waiting", "deadlock", "starvation", "Dekker", "busy waiting"] },
+        { id: "peterson", title: "Peterson's algorithm and why it is correct", emoji: "", group: "Lesson", keywords: ["Peterson", "turn", "flag", "proof", "volatile", "__threadfence", "memory reordering", "store buffer"] },
+        { id: "nlocks", title: "Locks for N threads: Bakery and Filter", emoji: "", group: "Lesson", keywords: ["Bakery", "Lamport", "ticket", "Filter lock", "victim", "starvation free", "r-bounded", "N threads"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "model checking", "memory model", "MCS lock", "ticket lock"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "barriers-atomics", title: "Barriers, atomics and GPU locks", emoji: "7.2", page: "content/cuda/barriers-atomics.html",
+        summary: "Barriers, atomics, CAS and ticket locks, privatisation, priority locks, grid sync.",
+        keywords: ["__syncthreads", "atomicCAS", "atomicAdd", "privatisation", "cooperative groups", "grid.sync"],
+        minutes: 45, counts: {"lessons": 5, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "barrier", title: "Barrier or lock", emoji: "", group: "Lesson", keywords: ["barrier", "__syncthreads", "lock", "critical section", "scope", "who shares"] },
+        { id: "atomics", title: "Atomic instructions and the atomicCAS lock", emoji: "", group: "Lesson", keywords: ["atomic", "atomicAdd", "atomicCAS", "atomicExch", "spin lock", "intra-warp deadlock", "Volta", "__threadfence", "ticket lock"] },
+        { id: "privat", title: "Fewer atomics: privatisation", emoji: "", group: "Lesson", keywords: ["privatisation", "contention", "shared atomic", "global atomic", "unsafe_inc", "racecheck", "histogram"] },
+        { id: "priority", title: "Priority locks and grid wide barriers", emoji: "", group: "Lesson", keywords: ["priority lock", "now serving", "level skipping", "residency deadlock", "cooperative groups", "grid.sync", "cudaLaunchCooperativeKernel", "ageing"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ladder", "contention", "warp shuffle", "memory model", "cuda::atomic_ref", "cuda::barrier"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
