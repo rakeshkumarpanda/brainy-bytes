@@ -3,7 +3,7 @@
 # and 12.1.
 # Beyond the lecture: warp shuffle reductions with __shfl_down_sync, thread coarsening, and the order of float sums.
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -146,6 +146,7 @@ K.lesson('shfl', 'Warp shuffles: the modern way', f'''
 {cu('warp_sum.cu', SHFL, {3: 'Offsets 16, 8, 4, 2, 1: five steps for 32 lanes.', 4: 'Lane i adds the value held by lane i + off. The mask 0xffffffff says all 32 lanes take part.', 14: 'After warpSum, lane 0 of each warp holds that warp\'s total.', 17: 'Warp 0 then reduces the (at most 32) warp totals the same way.'})}
 {note('Floating point addition is not associative (chapter 4.1), so the tree order gives a slightly different float sum from a CPU loop. Compare with a tolerance.', 'tip')}
 {deep('CUB and Thrust', '<p>For production code, cub::DeviceReduce::Sum and thrust::reduce choose the block size, coarsening and shuffles for you and are tuned for each GPU. Writing your own is how you learn what they do.</p>')}
+{nb('04-parallel-reduction.ipynb', 'Notebook: parallel reduction', 'Atomic sum, interleaved tree and sequential tree, all checked against NumPy.')}
 ''', kw=['warp shuffle', '__shfl_down_sync', 'mask', 'CUB', 'Thrust'])
 
 K.lesson('levels', 'From intuition to research', f'''

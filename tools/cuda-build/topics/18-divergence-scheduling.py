@@ -4,7 +4,7 @@
 # Beyond the lecture: predication for short branches, branch free code, and __syncwarp under independent thread
 # scheduling.
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -118,6 +118,7 @@ K.lesson('hide', 'How many warps hide the wait?', f'''
 {fxs(fx('Warps to hide a wait', 'warps = ⌈(W + c) ÷ c⌉', 'Work 1 tick, wait 3: 4 warps. One warp leaves 75 percent idle, two leave 50 percent.', key=True))}
 {code('latency')}
 {note('More independent instructions per warp (unrolling, ILP) cut the warps needed: c from 10 to 20 at W = 400 saves 20 warps.', 'tip')}
+{nb('08-warps-races-atomics.ipynb', 'Notebook: warps, divergence, races and atomics', 'Measure a divergent branch and sum a warp with shuffles.')}
 ''', kw=['latency hiding', 'warps needed', 'ILP', 'unrolling'])
 
 K.lesson('levels', 'From intuition to research', f'''

@@ -4,7 +4,7 @@
 # Correction: lecture 7 slide 8 says the plain kernel reads Width² values. Each of the Width² threads reads 2 × Width,
 # so the total is 2 × Width³ (2048 times more for Width = 1024, workbook P7.1.4).
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -135,6 +135,7 @@ K.lesson('ragged', 'Ragged edges and tile size limits', f'''
     fx('Shared memory for two tiles', 'bytes = 2 × <i>T</i>² × 4', 'T = 32: 8 KB. 48 KB allows T up to 78.'),
     fx('Thread limit', '<i>T</i>² ≤ 1024', 'So T ≤ 32 when each thread computes one output.'))}
 <p>With T = 32 on an A100 (19.5 TFLOP/s, 1555 GB/s) a 4096 matrix still needs about 11 ms for memory and 7 ms for maths: memory bound. Faster kernels give each thread several outputs (chapter 8.3).</p>
+{nb('05-tiled-matmul.ipynb', 'Notebook: naive and tiled matrix multiply', 'Both kernels in Numba with a count of global reads and a GFLOP/s timing.')}
 ''', kw=['ragged edges', 'idle threads', 'zero padding', 'tile size limit', 'shared memory per tile'])
 
 K.lesson('levels', 'From intuition to research', f'''

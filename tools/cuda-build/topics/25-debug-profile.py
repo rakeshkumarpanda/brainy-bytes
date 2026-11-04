@@ -4,7 +4,7 @@
 # out of bounds, but all 32 do (indices 10 to 41). Beyond the lecture: a CUDA_CHECK macro, CUDA_LAUNCH_BLOCKING, the
 # PTX on this page is real compiler output for the kernel shown.
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu, sh, flow
+from cudakit import cu, sh, flow, nb
 
 K = Kit()
 
@@ -190,6 +190,7 @@ ncu --kernel-name matrixMul python matrix_mul.py
 {viz('diagnose')}
 {code('report')}
 <p>Stall reasons in Warp State Statistics tell you what the warps wait for: <b>long scoreboard</b> (global memory), <b>barrier</b> (__syncthreads), <b>MIO throttle</b> (shared memory pressure), <b>not selected</b> (another warp was chosen, which is fine). Other tools: CUDA events for timing a region, NVTX to name code ranges in the timeline, nvidia-smi for overall use, power and temperature, and CUPTI, the API all of these are built on.</p>
+{nb('10-cuda-c-matmul-profiling.ipynb', 'Notebook: CUDA C matmul and the profilers', 'One .cu file with naive and tiled kernels, events, compute-sanitizer, nsys and ncu.')}
 ''', kw=['Nsight Systems', 'Nsight Compute', 'nsys', 'ncu', 'latency bound', 'stall reasons', 'NVTX', 'nvidia-smi', 'launch overhead'])
 
 K.lesson('ptx', 'Reading PTX and SASS', f'''

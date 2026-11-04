@@ -4,7 +4,7 @@
 # so a constant field of 100 drops to 85 each step. The centre should be 0.4 (workbook P6.5.4).
 # Beyond the lecture: the stability limit for explicit heat steps and ping-pong buffers.
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -109,6 +109,7 @@ K.lesson('heat', 'The heat equation and stability', f'''
 {note('Lecture 6 slide 14 uses 0.25 for the centre and 0.1 for each of the 6 neighbours. They add to 0.85, so a field of 100 drops to 85 every step. With neighbour weight 0.1 the centre must be 1 − 6 × 0.1 = 0.4.', 'warn')}
 {code('heat')}
 {cu('heat3d.cu', HEAT3D, {7: 'x is the fastest index, so a warp reads neighbouring x values: coalesced.', 8: 'The six neighbours: x ± 1, y ± 1 (± N) and z ± 1 (± N²).', 9: 'Weights 1 − 6L and L add to 1.', 16: 'Ping-pong: swap the pointers so the new grid becomes the old one. No copy is needed.'})}
+{nb('02-thread-indexing-2d.ipynb', 'Notebook: a 3 × 3 stencil on an image', 'The blur kernel in this notebook is a stencil. Count its global reads and compare with a tiled version.')}
 ''', kw=['heat equation', 'stability', 'CFL', 'lambda', 'ping-pong buffers', 'explicit step'])
 
 K.lesson('levels', 'From intuition to research', f'''

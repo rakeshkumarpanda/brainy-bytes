@@ -39,10 +39,10 @@ if __name__ == '__main__':
     chs = B.build([a for a in sys.argv[1:] if a != '--fast'])
     import check_cuda
     import cudakit
-    check_cuda.run(cudakit.LISTINGS)
+    import notebooks
+    check_cuda.run(cudakit.LISTINGS + notebooks.cu_files())
     if fast:
         sys.exit(0)
-    import notebooks
     notebooks.write_all(B.out_dir())
     import cheatsheet
     cheatsheet.write(chs, B.CFG, B.ROOT)

@@ -4,7 +4,7 @@
 # attempts fail the same way (they fail three different ways), and the class said Peterson does not solve the problem
 # (it does, under in order memory). Beyond the lecture: the real Dekker algorithm and why volatile needs a fence.
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -212,6 +212,7 @@ K.lesson('nlocks', 'Locks for N threads: Bakery and Filter', f'''
     ['Bakery', 'N', 'first come, first served', 'O(N), tickets grow without limit'],
     ['Filter', 'N', 'starvation free, but no fixed bound', 'O(N²) checks in the worst case']])}
 {note('Slide 3 says the Filter lock has bounded waiting. It is starvation free (every waiting thread gets in in the end), but a thread can be overtaken any number of times at a gate, so there is no fixed bound r. The Bakery lock is the one with first come, first served order.', 'exam')}
+{nb('08-warps-races-atomics.ipynb', 'Notebook: a race you can see', 'A plain counter loses updates on a GPU, an atomic counter does not.')}
 ''', kw=['Bakery', 'Lamport', 'ticket', 'Filter lock', 'victim', 'starvation free', 'r-bounded', 'N threads'])
 
 K.lesson('levels', 'From intuition to research', f'''

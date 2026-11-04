@@ -4,7 +4,7 @@
 # Beyond the lecture: events for timing and for dependencies between streams, the legacy default stream, and CUDA
 # graphs for many small launches.
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -93,6 +93,7 @@ K.lesson('overlap', 'Overlapping copies and compute', f'''
     fx('Unequal stages', 't ≈ fill + N × slowest stage', 'The slowest stage sets the pace. 2, 5, 2 ms with 10 chunks: 2 + 50 + 2 = 54 ms.'))}
 {code('pipe')}
 {cu('streams.cu', STREAMS, {13: 'Pinned memory: cudaMemcpyAsync from pageable memory would not overlap.', 18: 'Four independent queues.', 22: 'Each chunk is copied in, scaled and copied out in its own stream, so chunks can overlap.', 23: 'The fourth launch value names the stream.', 26: 'Wait for every stream before the CPU reads h.'}, out='h[0] = 2.0, h[N-1] = 2.0')}
+{nb('07-streams-overlap.ipynb', 'Notebook: streams and overlap', 'Chunked copies and kernels on 4 streams, compared with the pipeline formula.')}
 ''', kw=['streams', 'overlap', 'pipeline', 'chunks', 'copy engines', 'speedup 3N/(N+2)'])
 
 K.lesson('events', 'Events: timing and dependencies', f'''

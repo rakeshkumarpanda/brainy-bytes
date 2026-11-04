@@ -3,7 +3,7 @@
 # matrix vector multiplication), lecture 4 (one thread per pixel), workbook 2.1, 3.1 and 3.2, Quiz 1 question 7.
 # Beyond the lecture: grid stride loops and the limits on grid and block sizes, from the CUDA guide.
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -130,6 +130,7 @@ K.lesson('patterns', 'Grid stride loops and one thread per row', f'''
 {cu('matvec.cu', MATVEC, {2: 'With one block of 4 threads, thread 2 has i = 0 × 4 + 2 = 2.', 6: 'Row i starts at i × N in the flat row major array.', 8: 'One store per thread.'})}
 {code('matvec')}
 {note('In matVecMul neighbouring threads read A[i × N + j] for the same j, which are N floats apart. That is a strided, uncoalesced read (chapter 3.2). A transposed layout or one warp per row is faster for large N.', 'warn')}
+{nb('02-thread-indexing-2d.ipynb', 'Notebook: 2D grids, one thread per pixel', 'Grey scale and a 3 × 3 blur on an image with a 2D grid of 2D blocks.')}
 ''', kw=['grid stride loop', 'SAXPY', 'matrix vector', 'one thread per row', 'Quiz 1 question 7'])
 
 K.lesson('levels', 'From intuition to research', f'''

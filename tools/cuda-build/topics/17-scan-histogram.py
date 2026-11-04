@@ -3,7 +3,7 @@
 # and atomics (chapter 7.2). Algorithms: Hillis and Steele (1986), Blelloch (1990), privatised histograms with shared
 # memory atomics as in the CUDA samples and "Programming Massively Parallel Processors".
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -109,6 +109,7 @@ K.lesson('hist', 'Histograms and atomic contention', f'''
     fx('Privatised (shared memory) histogram', 'global atomics = blocks × bins at most', 'Each block counts in fast shared memory, then merges once.', key=True))}
 {cu('histogram.cu', HIST, {5: 'A private histogram for this block in shared memory.', 6: 'Clear it with a block stride loop: 256 bins and any number of threads.', 8: 'Grid stride loop over the data (chapter 2.2).', 9: 'Shared memory atomics are much cheaper than global ones, and only threads of this block compete.', 12: 'Merge: at most 256 global atomics per block instead of one per element.'})}
 {scene('a class vote', '<p>Asking 1000 pupils to walk to one ballot box makes a long queue. Letting each class count its own votes, then sending one sheet per class to the head teacher, removes the queue.</p>')}
+{nb('06-histogram-and-scan.ipynb', 'Notebook: histograms and the Blelloch scan', 'Global against private histograms, and a full up sweep and down sweep scan.')}
 ''', kw=['histogram', 'atomicAdd', 'contention', 'privatisation', 'shared memory atomics'])
 
 K.lesson('levels', 'From intuition to research', f'''

@@ -3,7 +3,7 @@
 # (benchmark numbers), workbook 3.4, 4.3, 4.4, 5.2, 5.3 and 5.4.
 # Beyond the lecture: measuring achieved bandwidth with events, and the hierarchical roofline (L1, L2, DRAM roofs).
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -95,6 +95,7 @@ K.lesson('roofline', 'The roofline model', f'''
     eq('Speed 10⁹ ÷ 0.4 ms = 2.5 TFLOP/s, memory bound (AI 5 is below the ridge 20)')])}
 {code('roof')}
 {note('For a memory bound kernel, doubling the maths units changes nothing. Only more bandwidth or more reuse helps. Doubling Fermi\'s cores gives plain matrix multiply no gain.', 'exam')}
+{nb('09-measure-your-roofline.ipynb', 'Notebook: measure your own roofline', 'Measure bandwidth and FP32 rate, then draw the roofline with three kernels on it.')}
 ''', kw=['roofline', 'ridge point', 'memory bound', 'compute bound', 'attainable performance'])
 
 K.lesson('bench', 'Reading benchmark numbers (lecture 4 Sobel)', f'''

@@ -4,7 +4,7 @@
 # Beyond the lecture: unified memory with prefetch, the L1 and L2 caches as hardware copies, __restrict__ and
 # read only loads, and the cost of host to device copies.
 from cvkit import Kit, fx, fxs, frac, ladder, scene, note, deep, table, steps, code, viz, eq
-from cudakit import cu
+from cudakit import cu, nb
 
 K = Kit()
 
@@ -138,6 +138,7 @@ K.lesson('host', 'Host memory: pageable, pinned and unified', f'''
 {cu('pinned_vs_pageable.cu', PINNED, {8: 'cudaMallocHost returns page locked memory. Use it for buffers you copy often, and do not lock too much of the RAM.', 12: 'CUDA events time work on the GPU timeline. Elapsed time comes back in milliseconds.', 20: 'bytes ÷ ms ÷ 10⁶ gives GB/s.', 28: 'Every cudaMallocHost needs a cudaFreeHost.'}, out='(typical result: pinned is faster than pageable, how much depends on the machine)')}
 {cu('unified.cu', UNIFIED, {11: 'cudaMallocManaged gives one pointer that works on both CPU and GPU. Pages move on demand.', 13: 'Prefetching moves the pages before the kernel starts, so the kernel does not stop on page faults.', 15: 'The CPU must wait before reading results, otherwise it reads old values.'}, out='a[10] = 11.0')}
 {code('copy')}
+{nb('03-memory-and-timing.ipynb', 'Notebook: copies, pinned memory and honest timing', 'CUDA events, pageable against pinned copies, and Amdahl with the copy time.')}
 ''', kw=['pageable', 'pinned memory', 'cudaMallocHost', 'unified memory', 'cudaMallocManaged', 'prefetch', 'PCIe', 'copy time'])
 
 K.lesson('levels', 'From intuition to research', f'''
