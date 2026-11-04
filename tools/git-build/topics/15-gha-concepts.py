@@ -3,26 +3,10 @@
 # expressions, GITHUB_OUTPUT and GITHUB_ENV, permissions and GITHUB_TOKEN, concurrency, timeouts, environments,
 # forks and script injection. Sources: GitHub docs: workflow syntax, events that trigger workflows, contexts,
 # variables, secure use reference, limits. Facts checked on 2026-11-02 against github/docs main.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file, devqa
 
 K = Kit()
-
-K.code('matrix', r'''
-# A matrix turns one job definition into one job per combination
-oses = ["ubuntu-latest", "windows-latest", "macos-latest"]
-pythons = ["3.12", "3.13"]
-exclude = [("macos-latest", "3.12")]
-include = [("ubuntu-latest", "3.14")]
-
-jobs = [(o, p) for o in oses for p in pythons if (o, p) not in exclude]
-for extra in include:
-    if extra not in jobs:
-        jobs.append(extra)
-for o, p in jobs:
-    print(f"test ({o}, {p})")
-print(len(jobs), "jobs from one definition")
-''')
 
 K.lesson('anatomy', 'A workflow file, line by line', f'''
 <p>A <b>workflow</b> is a YAML file in <code>.github/workflows/</code>. It says <b>when</b> to run (on), <b>where</b> (runs-on) and <b>what</b> (steps). This is the smallest useful one.</p>
@@ -76,7 +60,6 @@ K.lesson('events', 'Events and filters: when does it run', f'''
 K.lesson('jobs', 'Jobs, needs, if, matrix and outputs', f'''
 <p>Jobs run in parallel unless one <b>needs</b> another. A <b>matrix</b> runs the same job for every combination of values, for example every operating system with every Python version.</p>
 {viz('matrix')}
-{code('matrix')}
 {file('jobs-example.yml', """jobs:
   test:
     strategy:
@@ -153,53 +136,6 @@ K.calc('h', 'You want 08:00 IST (UTC+5:30) every day. What is the hour field in 
        ['08:00 minus 5 hours 30 minutes.', 'That is 02:30 UTC.', eq('cron "30 2 * * *", hour = 2')], check=2)
 K.calc('h', 'A job has no timeout-minutes. After how many hours is it cancelled?', '6', 'Default 360 minutes.',
        ['The default timeout-minutes is 360.', '360 / 60.', eq('6 hours')], check=6)
-
-K.assign('branchmatch', 'm', 'Does this branch filter match',
-         '<p>Write <code>matches(pattern, ref)</code> for GitHub branch filters. <code>*</code> matches any characters except <code>/</code>, <code>**</code> matches any characters including <code>/</code>, everything else must match exactly. Return True or False.</p>',
-         '''
-def matches(pattern, ref):
-    # your code here
-    pass
-''', [("matches('main', 'main')", True), ("matches('release/*', 'release/1.2')", True), ("matches('release/*', 'release/1.2/hotfix')", False),
-      ("matches('release/**', 'release/1.2/hotfix')", True), ("matches('feature-*', 'main')", False)],
-         '''
-import re
-
-def matches(pattern, ref):
-    rx = ''
-    i = 0
-    while i < len(pattern):
-        if pattern.startswith('**', i):
-            rx += '.*'
-            i += 2
-        elif pattern[i] == '*':
-            rx += '[^/]*'
-            i += 1
-        else:
-            rx += re.escape(pattern[i])
-            i += 1
-    return re.fullmatch(rx, ref) is not None
-''', 'Turn the pattern into a regular expression: ** becomes .* and * becomes [^/]*.', '<p>GitHub also supports ?, + and [ ] in filters, and ! to exclude a pattern.</p>')
-K.assign('expand', 'h', 'Expand a matrix',
-         '<p>Write <code>expand(axes, exclude, include)</code>. axes is a list of <code>[name, values]</code> pairs in order. exclude and include are lists of dicts. Return the list of combination dicts in order: the product of all axes without the excluded ones, then each include dict that is not already present.</p>',
-         '''
-def expand(axes, exclude, include):
-    # your code here
-    pass
-''', [("expand([['os', ['u', 'w']], ['py', ['3.12', '3.13']]], [], [])", [{'os': 'u', 'py': '3.12'}, {'os': 'u', 'py': '3.13'}, {'os': 'w', 'py': '3.12'}, {'os': 'w', 'py': '3.13'}]),
-      ("len(expand([['os', ['u', 'w', 'm']], ['py', ['3.12', '3.13']]], [{'os': 'm', 'py': '3.12'}], [{'os': 'u', 'py': '3.14'}]))", 6),
-      ("expand([['os', ['u']]], [{'os': 'u'}], [{'os': 'u'}])", [{'os': 'u'}])],
-         '''
-def expand(axes, exclude, include):
-    combos = [{}]
-    for name, values in axes:
-        combos = [dict(c, **{name: v}) for c in combos for v in values]
-    combos = [c for c in combos if c not in exclude]
-    for extra in include:
-        if extra not in combos:
-            combos.append(extra)
-    return combos
-''', 'Build the product one axis at a time, filter, then append.', '<p>Real GitHub include rules can also add keys to existing combinations. This version covers the common case of adding new ones.</p>')
 
 K.must('Workflow file', '.github/workflows/*.yml with on, jobs, runs-on, steps (uses or run). checkout first. Quote versions.')
 K.must('Events', 'push and pull_request with branches, tags, paths filters, workflow_dispatch with inputs, schedule cron in UTC on the default branch. * stops at /, ** does not.')

@@ -1,33 +1,10 @@
 # Chapter 2.1: branches and HEAD. A branch is a movable pointer (a file holding a commit id), HEAD is a pointer to the
 # current branch, git branch, switch and checkout, detached HEAD, naming, listing and deleting. Sources: Pro Git 3.1 and
 # 3.2, git-branch, git-switch and git-checkout manuals (switch and restore were added in Git 2.23).
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow
 
 K = Kit()
-
-K.code('pointers', r'''
-# Branches are just names that point at commits. HEAD names the current branch.
-refs = {"main": "C1"}
-head = "main"
-parents = {"C0": [], "C1": ["C0"]}
-count = 2
-
-def commit():
-    global count
-    new = "C" + str(count)
-    count += 1
-    parents[new] = [refs[head]]     # the new commit's parent is the old tip
-    refs[head] = new                # only the current branch moves
-    return new
-
-refs["feature"] = refs["main"]      # git branch feature: a new pointer, no copy of files
-head = "feature"                    # git switch feature
-print("commit on feature:", commit(), refs)
-head = "main"
-print("commit on main:   ", commit(), refs)
-print("feature parent chain:", refs["feature"], "->", parents[refs["feature"]][0])
-''')
 
 K.lesson('what', 'A branch is just a movable label', f'''
 <p>In many old tools a branch meant copying the whole project into a new folder. In Git a branch is tiny: a file inside <code>.git/refs/heads/</code> that holds one commit id, 41 bytes. Creating a branch is instant because nothing is copied.</p>
@@ -38,7 +15,6 @@ K.lesson('what', 'A branch is just a movable label', f'''
     fx('Create and switch', '<code>git switch -c &lt;name&gt;</code>', 'The same as the older git checkout -b &lt;name&gt;.', key=True),
     fx('See branches', '<code>git branch -vv</code>, <code>git branch -a</code>', '-vv shows the tip commit and the upstream of each branch, -a adds remote tracking branches.'))}
 {viz('gitsim')}
-{code('pointers')}
 {note('Only the branch HEAD points to moves when you commit. Other branches stay exactly where they are. That is the whole trick behind parallel work.', 'tip')}
 ''', kw=['branch', 'pointer', 'refs/heads', 'HEAD', 'git branch', 'git switch', 'switch -c', 'checkout -b', 'branch -vv'])
 
@@ -109,38 +85,6 @@ K.calc('h', 'In detached HEAD you make 3 commits, then switch to main. How many 
        ['The commits were made with HEAD pointing to a commit, not a branch.', 'Switching away left them with no ref.', eq('0, only the reflog knows them')], check=0)
 K.calc('h', 'git branch --merged lists 7 branches including main (the current one). How many can you delete with git branch -d without force?', '6', 'All except the current branch.',
        ['Every merged branch passes the -d check.', 'You cannot delete the branch you are on.', eq('7 − 1 = 6')], check=6)
-
-K.assign('br', 'e', 'Commit on the current branch',
-         '<p><code>refs</code> maps branch names to commit ids and <code>head</code> is the current branch. Write <code>commit(refs, head, new_id)</code> that returns a new dictionary where only the current branch moves to <code>new_id</code>.</p>',
-         '''
-def commit(refs, head, new_id):
-    # your code here
-    pass
-''', [("commit({'main': 'C1', 'feature': 'C1'}, 'feature', 'C2')", {'main': 'C1', 'feature': 'C2'}), ("commit({'main': 'C5'}, 'main', 'C6')", {'main': 'C6'})],
-         '''
-def commit(refs, head, new_id):
-    out = dict(refs)
-    out[head] = new_id
-    return out
-''', 'Copy the dictionary, then change one key.', '<p>This is all git commit does to refs: one pointer moves.</p>')
-K.assign('del', 'm', 'Is it safe to delete?',
-         '<p>Write <code>safe_delete(parents, refs, current, name)</code>. Return True when the tip of <code>name</code> is an ancestor of (or equal to) the tip of <code>current</code>, as git branch -d checks.</p>',
-         '''
-def safe_delete(parents, refs, current, name):
-    # your code here
-    pass
-''', [("safe_delete({'A': [], 'B': ['A'], 'C': ['B']}, {'main': 'C', 'old': 'B'}, 'main', 'old')", True),
-      ("safe_delete({'A': [], 'B': ['A'], 'X': ['A']}, {'main': 'B', 'old': 'X'}, 'main', 'old')", False)],
-         '''
-def safe_delete(parents, refs, current, name):
-    seen, todo = set(), [refs[current]]
-    while todo:
-        c = todo.pop()
-        if c not in seen:
-            seen.add(c)
-            todo.extend(parents[c])
-    return refs[name] in seen
-''', 'Collect every ancestor of the current tip and look for the other tip.', '<p>Git also accepts the branch if it is merged into its upstream branch.</p>')
 
 K.must('Branch', 'A branch is a ref, a 41 byte file with a commit id. Creating one copies nothing. Commits move only the branch HEAD points to.')
 K.must('switch', 'git switch name, git switch -c name, git switch - (previous). checkout does the same in older guides.')

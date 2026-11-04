@@ -4,30 +4,10 @@
 # merge request refs, glab job artifact, CI_JOB_TOKEN and the allowlist, needs:project, cache keys and policy,
 # the package registry for releases. Sources: GitLab docs: job artifacts, CI/CD YAML reference (artifacts, cache,
 # needs, dependencies), job artifacts API, CI/CD job token, caching, GitLab.com settings, glab job artifact help.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file, devqa, changes
 
 K = Kit()
-
-K.code('fetch', r'''
-# Which artifacts does a GitLab job download? Earlier stages by default, or only what needs or dependencies name
-jobs = [  # name, stage index, makes artifacts
-    ("lint", 0, False), ("unit-tests", 1, True), ("build", 2, True),
-]
-
-def downloads(stage, needs=None, dependencies=None):
-    if needs is not None:
-        names = needs
-    elif dependencies is not None:
-        names = dependencies
-    else:
-        names = [n for n, s, a in jobs if s < stage]
-    return [n for n, s, a in jobs if n in names and a]
-
-print("smoke-tests, stage 3, nothing set  :", downloads(3))
-print("smoke-tests, needs: [build]        :", downloads(3, needs=["build"]))
-print("report job, dependencies: []       :", downloads(3, dependencies=[]))
-''')
 
 K.lesson('keep', 'Keeping files: the artifacts keyword', f'''
 {file('artifacts-examples.yml', """build:
@@ -65,7 +45,6 @@ unit-tests:
 
 K.lesson('between', 'Passing artifacts between jobs', f'''
 <p>By default a job downloads the artifacts of every job in <b>earlier stages</b>. Two keywords narrow that down.</p>
-{code('fetch')}
 {table(['Setting on the job', 'Downloads'], [
     ['nothing', 'artifacts of all jobs in earlier stages'],
     ['<code>dependencies: [build]</code>', 'only build\'s artifacts (build must be in an earlier stage)'],
@@ -168,39 +147,6 @@ K.calc('h', 'Each pipeline keeps a 200 MB build for 30 days, 10 pipelines a day.
        ['Per day: 10 × 200 = 2000 MB.', 'Kept 30 days: 2000 × 30 = 60000 MB.', eq('60 GB')], check=60)
 K.calc('h', 'Same, but you shorten expire_in to 7 days. How many GB are saved?', '46', 'Difference in days.',
        ['New storage: 2000 MB × 7 = 14000 MB = 14 GB.', 'Old storage: 60 GB.', eq('60 - 14 = 46 GB saved')], check=46)
-
-K.assign('apiurl', 'e', 'Build the artifact download URL',
-         '<p>Write <code>artifact_url(api, project_id, ref, job)</code> that returns the URL of the job artifacts API for the latest successful job on a ref, for example <code>https://gitlab.com/api/v4/projects/42/jobs/artifacts/main/download?job=build</code>.</p>',
-         '''
-def artifact_url(api, project_id, ref, job):
-    # your code here
-    pass
-''', [("artifact_url('https://gitlab.com/api/v4', 42, 'main', 'build')", 'https://gitlab.com/api/v4/projects/42/jobs/artifacts/main/download?job=build'),
-      ("artifact_url('https://git.example.com/api/v4', 7, 'v1.0', 'package')", 'https://git.example.com/api/v4/projects/7/jobs/artifacts/v1.0/download?job=package')],
-         '''
-def artifact_url(api, project_id, ref, job):
-    return f'{api}/projects/{project_id}/jobs/artifacts/{ref}/download?job={job}'
-''', 'An f-string with the four parts in the right places.', '<p>In a job, api is $CI_API_V4_URL. Real code should URL encode ref and job names that contain special characters.</p>')
-K.assign('fetchwhat', 'h', 'Which artifacts does a job fetch',
-         '<p>Write <code>fetched(jobs, stage, needs, deps)</code>. jobs is a list of <code>[name, stage, has_artifacts]</code>. needs and deps are lists or None. If needs is not None, fetch from those jobs. Else if deps is not None, fetch from those. Else fetch from all jobs in earlier stages. Return the sorted names of jobs fetched from that have artifacts.</p>',
-         '''
-def fetched(jobs, stage, needs, deps):
-    # your code here
-    pass
-''', [("fetched([['lint', 0, False], ['test', 1, True], ['build', 2, True]], 3, None, None)", ['build', 'test']),
-      ("fetched([['lint', 0, False], ['test', 1, True], ['build', 2, True]], 3, ['build'], None)", ['build']),
-      ("fetched([['lint', 0, False], ['test', 1, True], ['build', 2, True]], 3, None, [])", []),
-      ("fetched([['a', 0, True], ['b', 1, True]], 1, None, None)", ['a'])],
-         '''
-def fetched(jobs, stage, needs, deps):
-    if needs is not None:
-        names = set(needs)
-    elif deps is not None:
-        names = set(deps)
-    else:
-        names = {n for n, s, a in jobs if s < stage}
-    return sorted(n for n, s, a in jobs if n in names and a)
-''', 'Pick the source list first, then keep only jobs that made artifacts.', '<p>needs wins over dependencies in this model, which matches the common setup where only one of them is used.</p>')
 
 K.must('artifacts keyword', 'paths, exclude, name, when (on_success, on_failure, always), expire_in (GitLab.com default 30 days), access, reports: junit. Latest successful artifacts per ref are kept beyond expire_in. Keep button. 1 GB on GitLab.com.')
 K.must('Between jobs', 'Earlier stages by default, dependencies: [list] or [] to narrow, needs: [job] to start early and fetch, needs:project for other projects (Premium).')

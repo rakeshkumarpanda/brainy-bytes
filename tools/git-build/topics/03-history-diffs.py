@@ -1,33 +1,10 @@
 # Chapter 1.3: reading history and differences. git log options, git show, git diff and its three comparisons, unified
 # diff hunks, git blame, naming commits (~, ^, @{n}) and ranges (.., ...). Sources: Pro Git 2.3 and 7.1, gitrevisions(7),
 # git-log, git-diff and git-blame manuals.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow
 
 K = Kit()
-
-K.code('ranges', r'''
-# A small history. Each commit lists its parents. G is a merge of E (main) and D (feature).
-parents = {"A": [], "B": ["A"], "C": ["B"], "D": ["C"], "E": ["C"], "G": ["E", "D"]}
-
-def reach(c):                       # everything reachable from c, including c
-    seen, todo = set(), [c]
-    while todo:
-        x = todo.pop()
-        if x not in seen:
-            seen.add(x)
-            todo.extend(parents[x])
-    return seen
-
-def tilde(c, n):                    # c~n follows first parents n times
-    for _ in range(n):
-        c = parents[c][0]
-    return c
-
-print("G~1 =", tilde("G", 1), "  G^2 =", parents["G"][1], "  G~3 =", tilde("G", 3))
-print("D..G  =", sorted(reach("G") - reach("D")))
-print("D...E =", sorted(reach("D") ^ reach("E")))
-''')
 
 K.lesson('log', 'Reading history with git log', f'''
 <p><code>git log</code> lists commits newest first. Each entry has the commit id, the author, the date and the message. Its options turn it into a search tool.</p>
@@ -69,7 +46,6 @@ K.lesson('names', 'Naming commits: HEAD, ~, ^ and ranges', f'''
     fx('Three dots', '<code>A...B</code> = reachable from either but not both', 'With git log --left-right each commit is marked &lt; or &gt; for its side.'),
     fx('Where HEAD was', '<code>HEAD@{n}</code>', 'The n-th previous position of HEAD, from the reflog. HEAD@{1} is where you were before the last move.'))}
 {viz('revsel')}
-{code('ranges')}
 {steps('Work it out: G is a merge with parents E (first) and D (second)', ['G~1 follows the first parent: E.', 'G^2 is the second parent: D.', 'G~3 is G, E, C, B going back three first parents: B.', eq('D..G = commits reachable from G minus those from D = E, G')])}
 {note('HEAD~2 and HEAD^^ name the same commit. HEAD^2 is different: it is the second parent of HEAD and only exists if HEAD is a merge commit.', 'exam')}
 ''', kw=['HEAD', 'HEAD~1', 'HEAD^2', 'tilde', 'caret', 'double dot', 'triple dot', 'revision', 'gitrevisions', 'HEAD@{1}'])
@@ -111,60 +87,6 @@ K.calc('h', 'G is a merge with parents E and D. E has parent C, D has parent C, 
        ['Start at G, add E and D.', 'Both lead to C, then B, then A.', eq('G, E, D, C, B, A = 6')], check=6)
 K.calc('h', 'git diff --stat says "3 files changed, 27 insertions(+), 9 deletions(-)". What is the net change in line count?', '18', 'Insertions minus deletions.',
        ['27 lines added.', '9 lines removed.', eq('27 − 9 = 18 more lines')], check=18)
-
-K.assign('rng', 'm', 'Two dots and three dots',
-         '<p><code>parents</code> maps each commit to its list of parents. Write <code>two_dot(parents, a, b)</code> and <code>three_dot(parents, a, b)</code> that return sorted lists of the commits git log a..b and git log a...b would show.</p>',
-         '''
-def two_dot(parents, a, b):
-    # your code here
-    pass
-
-def three_dot(parents, a, b):
-    # your code here
-    pass
-''', [("two_dot({'A': [], 'B': ['A'], 'C': ['B'], 'X': ['B'], 'Y': ['X']}, 'C', 'Y')", ['X', 'Y']),
-      ("three_dot({'A': [], 'B': ['A'], 'C': ['B'], 'X': ['B'], 'Y': ['X']}, 'C', 'Y')", ['C', 'X', 'Y']),
-      ("two_dot({'A': [], 'B': ['A']}, 'B', 'A')", [])],
-         '''
-def reach(parents, c):
-    seen, todo = set(), [c]
-    while todo:
-        x = todo.pop()
-        if x not in seen:
-            seen.add(x)
-            todo.extend(parents[x])
-    return seen
-
-def two_dot(parents, a, b):
-    return sorted(reach(parents, b) - reach(parents, a))
-
-def three_dot(parents, a, b):
-    return sorted(reach(parents, a) ^ reach(parents, b))
-''', 'Write a helper that collects every ancestor, then use set difference and symmetric difference.', '<p>These are the exact definitions in gitrevisions.</p>')
-K.assign('tilde', 'h', 'Resolve ~ and ^',
-         '<p>Write <code>resolve(parents, start, ops)</code>. <code>ops</code> is a string like <code>"~2^2"</code>. ~n follows the first parent n times, ^n takes the n-th parent (no number means 1). Return the commit reached.</p>',
-         '''
-def resolve(parents, start, ops):
-    # your code here
-    pass
-''', [("resolve({'A': [], 'B': ['A'], 'C': ['B'], 'D': ['B'], 'M': ['C', 'D']}, 'M', '^2')", 'D'),
-      ("resolve({'A': [], 'B': ['A'], 'C': ['B'], 'D': ['B'], 'M': ['C', 'D']}, 'M', '~2')", 'B'),
-      ("resolve({'A': [], 'B': ['A'], 'C': ['B'], 'D': ['B'], 'M': ['C', 'D']}, 'M', '^2~1')", 'B'),
-      ("resolve({'A': [], 'B': ['A'], 'C': ['B']}, 'C', '^^')", 'A')],
-         '''
-import re
-
-def resolve(parents, start, ops):
-    c = start
-    for sym, num in re.findall(r'([~^])(\\d*)', ops):
-        n = int(num) if num else 1
-        if sym == '~':
-            for _ in range(n):
-                c = parents[c][0]
-        else:
-            c = parents[c][n - 1]
-    return c
-''', 'Split the string into pieces like ~2 and ^ with a regular expression, then walk.', '<p>Real Git also accepts HEAD^0 (the commit itself) and @{n} reflog suffixes.</p>')
 
 K.must('git log', '--oneline --graph --all for the picture. -S text to find when code appeared. -p and --stat for what changed. -- path for one file.')
 K.must('Three diffs', 'git diff: folder vs index. git diff --staged: index vs HEAD. git diff HEAD: folder vs HEAD.')

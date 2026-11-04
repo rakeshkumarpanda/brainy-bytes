@@ -197,7 +197,7 @@
         <p class="lede">${esc(subj.intro || subj.blurb || '')}</p>
         ${partTabs}
         ${partInfo && partInfo.intro ? `<p class="lede lp-pintro">${esc(partInfo.intro)}</p>` : ''}
-        <div class="lp-stats"><span><b>${steps.length}</b> steps</span><span><b>${all.length}</b> topics</span><span><b>${count('problems')}</b> worked problems</span><span><b>${count('quiz')}</b> quiz questions</span><span><b>${count('assign')}</b> assignments</span><span><b>${hrs(mins(all))}</b></span></div>
+        <div class="lp-stats"><span><b>${steps.length}</b> steps</span><span><b>${all.length}</b> topics</span><span><b>${count('problems')}</b> worked problems</span><span><b>${count('quiz')}</b> quiz questions</span>${count('assign') ? `<span><b>${count('assign')}</b> assignments</span>` : ''}<span><b>${hrs(mins(all))}</b></span></div>
         <div class="lp-prog"><div class="meter"><i style="width:${pct}%"></i></div><span>${p.done ? `${p.done} of ${p.total} topics complete` : 'Not started yet. Follow the steps in order, each one builds on the last.'}</span></div>
         ${target ? `<a class="ibtn primary lp-go" href="${LH.topicUrl(target)}${resume && resume.hash ? '#' + esc(resume.hash) : ''}" data-t="${esc(target.id)}" data-h="${esc(resume ? resume.hash : '')}">${resume ? 'Continue: ' + esc(target.title) : 'Start step 1: ' + esc(target.title)}</a>` : (parts ? '<p class="lp-soonmsg">The topics of this section are being written. Switch to the other section to start learning now.</p>' : '')}
       </header>

@@ -3,31 +3,10 @@
 # GPG, git archive. Sources: Pro Git 7.5, 7.10, 7.11, 8.3, git-bisect, git-worktree, git-submodule, githooks,
 # git-sparse-checkout, git-commit -S manuals, actions/checkout README (submodules input). Terminal output was captured
 # from real runs with Git 2.43. The xz utils facts come from the public reports on CVE-2024-3094.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file
 
 K = Kit()
-
-K.code('bisect', r'''
-# git bisect is a binary search over commits: each test halves the suspects
-commits = list(range(1, 17))          # commit 1 is good, commit 16 is bad
-first_bad = 11                         # Git does not know this. The test below finds it.
-
-def test(c):
-    return "bad" if c >= first_bad else "good"
-
-good, bad, tests = 1, 16, 0
-while bad - good > 1:
-    mid = (good + bad) // 2
-    result = test(mid)
-    tests += 1
-    print(f"test commit {mid:2}: {result}")
-    if result == "bad":
-        bad = mid
-    else:
-        good = mid
-print(f"first bad commit: {bad}, found with {tests} tests")
-''')
 
 K.lesson('bisect', 'git bisect: find the commit that broke it', f'''
 <p>The tests passed at release v1.0 and fail today, 15 commits later. Reading every diff is slow. <b>git bisect</b> checks out the commit in the middle and asks you whether it is good or bad. Each answer throws away half of the suspects, so even 1000 commits need only about 10 tests.</p>
@@ -48,7 +27,6 @@ Bisecting: 3 revisions left to test after this (roughly 2 steps)
 f026a7d2dc1f0bcf5a9028611556ac4bb588dea5 is the first bad commit
     change 11
 bisect found first bad commit""", 'Real output, shortened: 4 tests for 15 commits')}
-{code('bisect')}
 {table(['Exit code of the script', 'Meaning for bisect run'], [
     ['0', 'good'], ['1 to 127, except 125', 'bad'], ['125', 'cannot test this commit, skip it'], ['above 127', 'stop bisecting']])}
 {note('Bisect works best when every commit builds and passes tests on its own. Huge commits that mix many changes also make the answer less useful. This is one more reason for small, atomic commits.', 'tip')}
@@ -141,47 +119,6 @@ K.calc('h', 'bisect run: the script exits 0, 0, 1, 125, 1. How many commits were
        ['0 means good: 2 commits.', '125 means skip: 1 commit.', eq('1 means bad: 2 commits')], check=2)
 K.calc('h', 'A repository has 3 submodules and one of them has 2 submodules of its own. With --recurse-submodules, how many repositories are cloned in total, counting the parent?', '6', 'Count every level.',
        ['Parent: 1.', 'First level submodules: 3.', eq('Nested: 2, total 1 + 3 + 2 = 6')], check=6)
-
-K.assign('bis', 'm', 'Write your own bisect',
-         '<p>Write <code>first_bad(results)</code>. results is a list of "good" and "bad" for commits in order, where the first is good, the last is bad, and once a commit is bad all later ones are bad. Return <code>[index, tests]</code>: the index of the first bad commit and how many entries you looked at, using binary search between the two known ends.</p>',
-         '''
-def first_bad(results):
-    # your code here
-    pass
-''', [("first_bad(['good'] * 10 + ['bad'] * 6)", [10, 4]), ("first_bad(['good', 'bad'])", [1, 0]),
-      ("first_bad(['good', 'good', 'good', 'bad'])", [3, 2]), ("first_bad(['good'] + ['bad'] * 15)", [1, 3])],
-         '''
-def first_bad(results):
-    good, bad, tests = 0, len(results) - 1, 0
-    while bad - good > 1:
-        mid = (good + bad) // 2
-        tests += 1
-        if results[mid] == 'bad':
-            bad = mid
-        else:
-            good = mid
-    return [bad, tests]
-''', 'Keep a known good index and a known bad index and test the middle until they are neighbours.', '<p>The two ends are already known, so they are not counted as tests.</p>')
-K.assign('hook', 'e', 'A commit-msg check',
-         '<p>Write <code>check_msg(msg)</code> for a commit-msg hook. Return True when the first line looks like <code>type: text</code> or <code>type(scope): text</code>, where type is one of feat, fix, docs, test, ci, refactor or chore (an optional ! before the colon is allowed), and the first line is at most 72 characters.</p>',
-         '''
-def check_msg(msg):
-    # your code here
-    pass
-''', [("check_msg('feat(calc): add percent()')", True), ("check_msg('Added stuff')", False), ("check_msg('fix!: change divide')", True),
-      ("check_msg('feat: ' + 'x' * 80)", False), ("check_msg('docs: README\\n\\nlong body here')", True)],
-         '''
-TYPES = ['feat', 'fix', 'docs', 'test', 'ci', 'refactor', 'chore']
-
-def check_msg(msg):
-    first = msg.split('\\n')[0]
-    if len(first) > 72 or ': ' not in first:
-        return False
-    head = first.split(': ')[0].rstrip('!')
-    if '(' in head and head.endswith(')'):
-        head = head.split('(')[0]
-    return head in TYPES
-''', 'Take the first line, split at the first colon and space, then strip the ! and the scope.', '<p>A real commit-msg hook reads the message from the file path Git passes as its first argument and exits 1 when this returns False.</p>')
 
 K.must('git bisect', 'start, bad, good <tag>, then good or bad or skip until the first bad commit, then reset. bisect run script: 0 good, 125 skip, 1 to 127 bad. About log2(n) tests.')
 K.must('worktree', 'git worktree add <path> <branch> gives another folder on another branch, sharing one .git. One branch per worktree.')

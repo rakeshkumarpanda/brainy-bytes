@@ -1,27 +1,9 @@
 # Chapter 1.2: the working tree, the staging area (index) and the repository, file states, add, commit, status,
 # good commit messages. Sources: Pro Git 1.3 and 2.2, git-status (short format XY codes), git-add, git-commit manuals.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow
 
 K = Kit()
-
-K.code('status', r'''
-# git status --short: X is the staged change (index vs HEAD), Y the unstaged change (working tree vs index)
-HEAD  = {"README.md": "v1", "app.py": "v1", "old.txt": "v1"}
-INDEX = {"README.md": "v1", "app.py": "v2", "new.py": "v1"}
-WORK  = {"README.md": "v2", "app.py": "v3", "new.py": "v1", "notes.txt": "v1"}
-
-def code_for(f):
-    h, i, w = HEAD.get(f), INDEX.get(f), WORK.get(f)
-    if h is None and i is None:
-        return "??"                      # untracked
-    x = "A" if h is None else "D" if i is None else "M" if h != i else " "
-    y = " " if i is None else "D" if w is None else "M" if w != i else " "
-    return x + y
-
-for f in sorted(set(HEAD) | set(INDEX) | set(WORK)):
-    print(code_for(f), f)
-''')
 
 K.lesson('areas', 'The three areas of a Git project', f'''
 <p>Picture a photo studio. The <b>stage</b> is where you place the people who should be in the next photo. The <b>camera</b> takes the photo and puts it in the <b>album</b>. People can walk around the studio without being in the photo.</p>
@@ -46,7 +28,6 @@ K.lesson('states', 'File states and git status', f'''
 {fxs(
     fx('Short status', '<code>git status -s</code>  →  <code>XY path</code>', 'X compares the index with HEAD (what is staged). Y compares the working tree with the index (what is not staged yet). ?? means untracked.', key=True),
     fx('Long status', '<code>git status</code>', 'Lists staged changes, unstaged changes and untracked files, with the command to undo each.'))}
-{code('status')}
 {sh('Read the short status', """git status -s""", """ M README.md
 MM app.py
  D old.txt
@@ -115,41 +96,6 @@ K.calc('h', 'You stage 2 hunks out of 5 in a file with git add -p and commit. Ho
        ['5 hunks changed.', '2 went into the commit.', eq('5 − 2 = 3 hunks left in git diff')], check=3)
 K.calc('h', 'A day of work: 1 bug fix, 1 refactor, 1 feature, each touching different files. With one commit per logical change, how many commits?', '3', 'One per logical change.',
        ['Bug fix: 1.', 'Refactor: 1.', eq('Feature: 1, total 3')], check=3)
-
-K.assign('short', 'm', 'Write git status --short',
-         '<p>Write <code>short(head, index, work)</code>. Each argument maps file name to a version string. Return a sorted list of strings <code>"XY name"</code> using the rules of this lesson: ?? for untracked, A, M, D in X for staged changes, M, D in Y for unstaged ones. Leave out clean files.</p>',
-         '''
-def short(head, index, work):
-    # your code here
-    pass
-''', [("short({'a': 1}, {'a': 2}, {'a': 3})", ['MM a']), ("short({}, {}, {'n': 1})", ['?? n']),
-      ("short({'a': 1, 'b': 1}, {'a': 1, 'b': 1, 'c': 1}, {'a': 1, 'c': 1})", [' D b', 'A  c'])],
-         '''
-def short(head, index, work):
-    out = []
-    for f in sorted(set(head) | set(index) | set(work)):
-        h, i, w = head.get(f), index.get(f), work.get(f)
-        if h is None and i is None:
-            if w is not None:
-                out.append('?? ' + f)
-            continue
-        x = 'A' if h is None else 'D' if i is None else 'M' if h != i else ' '
-        y = ' ' if i is None else 'D' if w is None else 'M' if w != i else ' '
-        if x != ' ' or y != ' ':
-            out.append(x + y + ' ' + f)
-    return out
-''', 'Work out X from head and index, then Y from index and work.', '<p>This is the same rule git status uses for the short format.</p>')
-K.assign('msg', 'e', 'Check a commit summary line',
-         '<p>Write <code>good_summary(line)</code> that returns True when the line is 1 to 50 characters long, starts with a capital letter and does not end with a full stop.</p>',
-         '''
-def good_summary(line):
-    # your code here
-    pass
-''', [("good_summary('Fix crash on empty password')", True), ("good_summary('fixed stuff')", False), ("good_summary('Add search.')", False), ("good_summary('A' * 51)", False)],
-         '''
-def good_summary(line):
-    return 1 <= len(line) <= 50 and line[0].isupper() and not line.endswith('.')
-''', 'Check length, first character and last character.', '<p>Teams often run a check like this in a commit-msg hook or in CI.</p>')
 
 K.must('Three areas', 'Working tree (your files), staging area or index (next snapshot), repository (all commits). add moves changes to the index, commit saves the index.')
 K.must('Status codes', 'git status -s prints XY: X staged (index vs HEAD), Y unstaged (folder vs index). ?? untracked, MM staged and changed again.')

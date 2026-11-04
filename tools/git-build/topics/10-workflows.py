@@ -3,39 +3,10 @@
 # Sources: GitHub docs (about protected branches, about merge methods, about code owners), GitLab docs (protected
 # branches, merge methods, auto merge and Pipelines must succeed, Code Owners), nvie.com "A successful Git branching
 # model" (2010, with the 2020 note), trunkbaseddevelopment.com, conventionalcommits.org 1.0.0.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file, devqa
 
 K = Kit()
-
-K.code('conv', r'''
-# Conventional Commits decide the next semantic version from the commit messages since the last tag
-messages = [
-    "fix(calc): divide by zero raises ValueError",
-    "docs: explain the pipeline in README",
-    "feat(calc): add percent()",
-    "fix: round results to 10 places",
-]
-
-def kind(msg):
-    head = msg.split(":")[0]
-    if head.endswith("!") or "BREAKING CHANGE" in msg:
-        return "major"
-    if head.startswith("feat"):
-        return "minor"
-    if head.startswith("fix"):
-        return "patch"
-    return "none"
-
-order = ["none", "patch", "minor", "major"]
-best = "none"
-for m in messages:
-    k = kind(m)
-    print(f"{k:6} <- {m}")
-    if order.index(k) > order.index(best):
-        best = k
-print("next release bumps:", best)
-''')
 
 K.lesson('models', 'Four branching workflows', f'''
 <p>Git lets you branch any way you like, so teams agree on a <b>workflow</b>: which branches live long, where new work starts and how it gets back. Pick one in the animation and watch the commits move.</p>
@@ -102,7 +73,6 @@ K.lesson('commits', 'Good commit messages and Conventional Commits', f'''
     ['<code>feat(calc): add percent()</code>', 'a new feature', 'MINOR'],
     ['<code>feat!: drop Python 3.9</code> or a footer <code>BREAKING CHANGE: ...</code>', 'a breaking change', 'MAJOR'],
     ['<code>docs:</code>, <code>test:</code>, <code>ci:</code>, <code>refactor:</code>, <code>chore:</code>', 'allowed extra types', 'none by default']])}
-{code('conv')}
 {scene('release notes from history', '<p>Projects such as Angular adopted structured commit messages so that changelogs could be generated from Git history, and that convention grew into the Conventional Commits specification. Release tools read the messages since the last tag, pick the next version and write the release notes, which is why a CI job often checks message format on every pull request.</p>')}
 {ladder(
     '<p>A workflow is the team agreement on how branches are used. Pull requests are where code is checked by people and by CI before it reaches main.</p>',
@@ -134,65 +104,6 @@ K.calc('m', 'A PR has 7 commits and main has moved. How many new commits land on
        ['All 7 branch commits become reachable from main.', 'One merge commit joins the lines.', eq('7 + 1 = 8')], check=8)
 K.calc('h', 'CODEOWNERS: "* @a", "*.py @b", "/tests/ @c". Who owns tests/test_calc.py? Answer 1 for a, 2 for b, 3 for c.', '3', 'Last match wins.',
        ['* matches: owner a.', '*.py matches: owner b.', eq('/tests/ matches last: owner c, answer 3')], check=3)
-
-K.assign('owners', 'm', 'Who owns this file',
-         '<p>Write <code>owners(rules, path)</code>. rules is a list of <code>[pattern, owner]</code> pairs. Patterns are <code>*</code> (everything), <code>*.ext</code> (files ending in .ext) or <code>/dir/</code> (everything under that top level folder). The last matching rule wins. Return the owner, or None.</p>',
-         '''
-def owners(rules, path):
-    # your code here
-    pass
-''', [("owners([['*', '@a'], ['*.py', '@b']], 'app/calc.py')", '@b'),
-      ("owners([['*', '@a'], ['*.py', '@b'], ['/tests/', '@c']], 'tests/test_calc.py')", '@c'),
-      ("owners([['*.py', '@b']], 'README.md')", None),
-      ("owners([['/tests/', '@c'], ['*', '@a']], 'tests/x.py')", '@a')],
-         '''
-def match(pattern, path):
-    if pattern == '*':
-        return True
-    if pattern.startswith('*.'):
-        return path.endswith(pattern[1:])
-    if pattern.startswith('/') and pattern.endswith('/'):
-        return path.startswith(pattern[1:])
-    return path == pattern
-
-def owners(rules, path):
-    found = None
-    for pattern, who in rules:
-        if match(pattern, path):
-            found = who
-    return found
-''', 'Loop over every rule and keep the owner of the latest match.', '<p>Order matters: put the general rule first and specific rules after it.</p>')
-K.assign('nextver', 'h', 'Next version from commit messages',
-         '<p>Write <code>next_version(tag, messages)</code>. tag looks like <code>v1.4.0</code>. Use Conventional Commits: <code>type!:</code> or a message containing <code>BREAKING CHANGE</code> is major, <code>feat</code> is minor, <code>fix</code> is patch, anything else changes nothing. Return the new tag, or the same tag if nothing changes.</p>',
-         '''
-def next_version(tag, messages):
-    # your code here
-    pass
-''', [("next_version('v1.4.0', ['fix: a', 'docs: b'])", 'v1.4.1'), ("next_version('v1.4.0', ['fix: a', 'feat: b'])", 'v1.5.0'),
-      ("next_version('v1.4.0', ['feat!: c'])", 'v2.0.0'), ("next_version('v1.4.0', ['chore: x'])", 'v1.4.0'),
-      ("next_version('v0.9.3', ['fix: a', 'refactor: b\\n\\nBREAKING CHANGE: new API'])", 'v1.0.0')],
-         '''
-def level(msg):
-    head = msg.split(':')[0]
-    if head.endswith('!') or 'BREAKING CHANGE' in msg:
-        return 3
-    if head.startswith('feat'):
-        return 2
-    if head.startswith('fix'):
-        return 1
-    return 0
-
-def next_version(tag, messages):
-    major, minor, patch = (int(x) for x in tag[1:].split('.'))
-    top = max([level(m) for m in messages] + [0])
-    if top == 3:
-        return f'v{major + 1}.0.0'
-    if top == 2:
-        return f'v{major}.{minor + 1}.0'
-    if top == 1:
-        return f'v{major}.{minor}.{patch + 1}'
-    return tag
-''', 'Find the strongest change among all messages, then bump once.', '<p>Real release tools do exactly this before they create the tag and release notes.</p>')
 
 K.must('Workflows', 'GitHub flow: main plus short branches. Gitflow: main plus develop, release and hotfix branches. Trunk based: merge small changes daily behind feature flags. Forking: push to your fork, PR upstream.')
 K.must('PR and MR', 'Server pages that show the diff, run CI and collect reviews before a merge. Keep them small.')

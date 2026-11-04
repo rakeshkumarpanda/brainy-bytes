@@ -1,50 +1,14 @@
 # Chapter 1.1: what version control is, why Git exists, how Git thinks (snapshots, distributed), installing and
 # configuring it. Sources: Pro Git chapter 1 (git-scm.com/book), git-config and git-init manual pages, the Git 3.0
 # breaking changes document (Documentation/BreakingChanges.adoc in git/git).
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow
 
 K = Kit()
 
-K.code('versions', r'''
-# Saving a project without version control: copies pile up
-copies = ["report.docx", "report_v2.docx", "report_final.docx",
-          "report_final_REAL.docx", "report_final_REAL_fixed.docx"]
-for name in copies:
-    print("saved a full copy:", name)
-print(len(copies), "copies and still no answer to: what changed, who changed it, and why?")
-
-# With version control: one file, a list of saved snapshots with a message each
-history = []
-def commit(msg, who):
-    history.append({"id": len(history) + 1, "msg": msg, "who": who})
-commit("first draft", "Asha")
-commit("add sales chart", "Ravi")
-commit("fix typo in title", "Asha")
-for c in history:
-    print("commit", c["id"], "by", c["who"] + ":", c["msg"])
-''')
-
-K.code('config', r'''
-# How git config picks a value: system, then global, then local. The last one found wins.
-levels = [
-    ("system", "/etc/gitconfig", {"core.editor": "vi"}),
-    ("global", "~/.gitconfig", {"user.name": "Asha", "user.email": "asha@home.example", "core.editor": "code --wait"}),
-    ("local", ".git/config", {"user.email": "asha@work.example"}),
-]
-effective, origin = {}, {}
-for level, path, values in levels:
-    for key, value in values.items():
-        effective[key] = value          # a later level overwrites an earlier one
-        origin[key] = path
-for key in sorted(effective):
-    print(f"{key:12} = {effective[key]:22} from {origin[key]}")
-''')
-
 K.lesson('why', 'Why version control exists', f'''
 <p>Think of writing a school project on a computer. You save it as <b>project.docx</b>, then you are scared to break it, so you save <b>project_v2.docx</b>, then <b>project_final.docx</b>, then <b>project_final_REAL.docx</b>. After a week you have a folder full of copies and no idea which one has the good introduction.</p>
 <p><b>Version control</b> is a tool that remembers every saved version of your files for you, together with who saved it, when, and a short note on why. You keep one folder. The tool keeps the history. You can look at any old version, compare two versions, or undo a mistake, at any time.</p>
-{code('versions')}
 <p>Now add a team. Five people edit the same website. Without a tool, they email files around and overwrite each other\'s work. Version control lets everyone work at the same time and then <b>merges</b> their changes, and it warns when two people changed the same line.</p>
 {table(['Problem without version control', 'What version control gives you'], [
     ['Many copies with confusing names', 'One folder, a clean history of saved snapshots'],
@@ -88,7 +52,6 @@ git config --list --show-origin""")}
     fx('Which value wins', 'system &lt; global &lt; local', 'Git reads /etc/gitconfig, then ~/.gitconfig, then .git/config. A later file overrides an earlier one, so the most specific setting wins.', key=True),
     fx('Get help', '<code>git help &lt;command&gt;</code> or <code>git &lt;command&gt; -h</code>', 'The first opens the full manual page, the second prints a short list of options in the terminal.'))}
 {viz('configlv')}
-{code('config')}
 {note('init.defaultBranch decides the name of the first branch in new repositories. Git 2.28 added this setting. If it is not set, current Git still uses master and prints a hint, and the Git project has said that new repositories will use main by default in Git 3.0.', 'tip')}
 {note('Using a work laptop for personal projects? Set your personal email globally and your work email with git config user.email inside each work repository. The local value wins there.', 'tip')}
 ''', kw=['install git', 'git --version', 'git config', 'user.name', 'user.email', 'init.defaultBranch', 'core.editor', '--show-origin', 'system global local'])
@@ -161,38 +124,6 @@ K.calc('h', 'With a centralised system, a team of 6 cannot commit while the serv
        ['6 developers.', '3 hours each.', eq('6 × 3 = 18 developer hours')], check=18)
 
 # ---------------------------------------------------------------- assignments
-K.assign('cfg', 'e', 'Work out the effective git config',
-         '<p>Write <code>effective(levels)</code>. <code>levels</code> is a list of dictionaries in the order Git reads them (system, global, local). Return one dictionary where a later level overrides an earlier one.</p>',
-         '''
-def effective(levels):
-    # your code here
-    pass
-''', [("effective([{'core.editor': 'vi'}, {'user.email': 'a@home'}, {'user.email': 'a@work'}])", {'core.editor': 'vi', 'user.email': 'a@work'}),
-      ("effective([{}, {'user.name': 'Asha'}, {}])", {'user.name': 'Asha'}),
-      ("effective([{'x': '1'}, {'x': '2'}, {'x': '3'}])", {'x': '3'})],
-         '''
-def effective(levels):
-    out = {}
-    for level in levels:
-        out.update(level)
-    return out
-''', 'Start with an empty dictionary and update it with each level in order.', '<p>This is exactly what git config does when it reads /etc/gitconfig, ~/.gitconfig and .git/config.</p>')
-K.assign('snap', 'm', 'Count stored file versions',
-         '<p>Each commit is a dictionary from file name to content. Write <code>stored(commits)</code> that returns how many different (file name, content) pairs Git would need to store as blobs. Unchanged files are not stored again.</p>',
-         '''
-def stored(commits):
-    # your code here
-    pass
-''', [("stored([{'a': '1', 'b': '1'}, {'a': '2', 'b': '1'}])", 3), ("stored([{'a': 'x'}, {'a': 'x'}, {'a': 'x'}])", 1),
-      ("stored([{'a': '1', 'b': '2'}, {'a': '2', 'b': '1'}])", 4)],
-         '''
-def stored(commits):
-    seen = set()
-    for snap in commits:
-        for name, content in snap.items():
-            seen.add((name, content))
-    return len(seen)
-''', 'Use a set of (name, content) pairs.', '<p>Real Git stores blobs by content alone, so two files with identical content share one blob. Here the name is kept in the pair to keep the idea simple.</p>')
 
 K.must('Version control', 'Records every version of your files with author, time and message, so you can compare, restore and work in parallel.')
 K.must('Distributed', 'Every Git clone has the full history. Commit, log and diff work offline. Centralised tools need the server.')

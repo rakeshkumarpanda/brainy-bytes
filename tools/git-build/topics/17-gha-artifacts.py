@@ -4,35 +4,10 @@
 # keys, restore-keys, scope and limits, setup-python cache, cache poisoning. Sources: actions/upload-artifact,
 # actions/download-artifact and actions/cache READMEs, GitHub docs: store and share data, downloading workflow
 # artifacts, dependency caching, REST API for artifacts, limits. Checked on 2026-11-02.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file, devqa, changes
 
 K = Kit()
-
-K.code('cache', r'''
-# How actions/cache picks an entry: exact key first, then restore-keys as prefixes, newest entry wins
-saved = [  # (key, branch, created minute)
-    ("Linux-pip-aaa111", "main", 10),
-    ("Linux-pip-bbb222", "main", 50),
-    ("Linux-pip-ccc333", "feature/x", 70),
-]
-
-def restore(key, restore_keys, branch):
-    usable = [s for s in saved if s[1] in (branch, "main")]   # own branch, then the default branch
-    for s in usable:
-        if s[0] == key:
-            return s[0], "exact hit"
-    for prefix in restore_keys:
-        found = [s for s in usable if s[0].startswith(prefix)]
-        if found:
-            return max(found, key=lambda s: s[2])[0], "partial hit via " + prefix
-    return None, "miss"
-
-print(restore("Linux-pip-bbb222", ["Linux-pip-"], "main"))
-print(restore("Linux-pip-ddd444", ["Linux-pip-"], "main"))
-print(restore("Linux-pip-ddd444", ["Linux-pip-"], "feature/x"))
-print(restore("Windows-pip-eee", ["Windows-pip-"], "main"))
-''')
 
 K.lesson('upload', 'Publishing artifacts: upload-artifact', f'''
 <p>An <b>artifact</b> is a file or folder that a job saves at the end so that later jobs, people and other workflows can use it. On GitHub you publish it with <code>actions/upload-artifact</code>.</p>
@@ -118,7 +93,6 @@ K.lesson('cache', 'Caching dependencies: actions/cache', f'''
 - run: pip install -r requirements.txt
 """, {4: 'The easy way: setup-python builds the key from your requirements file for you.', 9: 'The folder to save and restore.', 10: 'The key changes whenever requirements.txt changes, so a new set of packages gets a new cache.', 11: 'If there is no exact match, take the newest cache whose key starts with this prefix, then pip installs only what is new.', 13: 'Still run the install. With a cache it is fast, without one it is correct.'})}
 {viz('cachekey')}
-{code('cache')}
 {table(['Rule', 'Detail'], [
     ['Scope', 'A run can restore caches from its own branch and from the default branch. A pull request can also use its base branch. Branches do not see each other\'s caches.'],
     ['Save', 'A cache is saved at the end of the job only when the key had no exact hit. An existing key is never overwritten.'],
@@ -166,40 +140,6 @@ K.calc('h', 'pip install takes 90 s without cache and 15 s with an exact hit. 60
        ['Hits: 0.8 × 60 = 48 runs.', 'Saving per hit: 90 - 15 = 75 s.', eq('48 × 75 = 3600 s, one hour')], check=3600)
 K.calc('h', 'Artifacts: build 20 MB kept 30 days, reports 1 MB each from 3 jobs kept 14 days. Daily runs. Roughly how many MB are stored once both have reached steady state?', '642', 'Size times days kept.',
        ['Builds: 20 MB × 30 days = 600 MB.', 'Reports: 3 MB a day × 14 days = 42 MB.', eq('600 + 42 = 642 MB')], check=642)
-
-K.assign('restore', 'm', 'Which cache is restored',
-         '<p>Write <code>restore(key, restore_keys, entries)</code>. entries is a list of <code>[key, created]</code>. Return the key of an exact match if there is one. Otherwise, for each prefix in restore_keys in order, return the newest entry (largest created) whose key starts with it. Return None if nothing matches.</p>',
-         '''
-def restore(key, restore_keys, entries):
-    # your code here
-    pass
-''', [("restore('L-pip-b', ['L-pip-'], [['L-pip-a', 1], ['L-pip-b', 2]])", 'L-pip-b'),
-      ("restore('L-pip-z', ['L-pip-'], [['L-pip-a', 1], ['L-pip-b', 2]])", 'L-pip-b'),
-      ("restore('L-pip-z', ['W-pip-', 'L-'], [['L-pip-a', 5], ['L-x', 3]])", 'L-pip-a'),
-      ("restore('W-1', ['W-'], [['L-pip-a', 1]])", None)],
-         '''
-def restore(key, restore_keys, entries):
-    for k, created in entries:
-        if k == key:
-            return k
-    for prefix in restore_keys:
-        found = [e for e in entries if e[0].startswith(prefix)]
-        if found:
-            return max(found, key=lambda e: e[1])[0]
-    return None
-''', 'Check the exact key first, then try each prefix in order and pick the newest match.', '<p>The real action also applies branch scope before this search.</p>')
-K.assign('alive', 'e', 'Can I still download it',
-         '<p>Write <code>available(uploaded_day, retention_days, today)</code>. retention_days of 0 means not set, which uses the default of 90. The artifact can be downloaded while <code>today</code> is less than uploaded_day plus the retention. Return True or False.</p>',
-         '''
-def available(uploaded_day, retention_days, today):
-    # your code here
-    pass
-''', [('available(0, 30, 29)', True), ('available(0, 30, 30)', False), ('available(10, 0, 99)', True), ('available(10, 0, 100)', False)],
-         '''
-def available(uploaded_day, retention_days, today):
-    days = retention_days or 90
-    return today < uploaded_day + days
-''', 'Replace 0 by 90, then compare.', '<p>GitHub removes expired artifacts some time after expiry, so do not rely on the last hours.</p>')
 
 K.must('upload-artifact', 'name (unique per run), path with ! excludes, if-no-files-found, retention-days (default 90), outputs artifact-id, artifact-url, artifact-digest. Immutable since v4, overwrite: true replaces. Hidden files skipped, permissions reset.')
 K.must('Pull artifacts', 'Same run: download-artifact name or pattern plus needs. Other run: github-token, repository, run-id. People: run page. Terminal: gh run download <id> -n name -D dir. API: /repos/{owner}/{repo}/actions/artifacts/{id}/zip.')

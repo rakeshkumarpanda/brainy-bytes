@@ -29,7 +29,7 @@ B.CFG.update({
     'subject': 'git', 'name': 'Git and CI/CD', 'topics': os.path.join(HERE, 'topics'),
     'func': 'gitModules', 'marker': 'git-build', 'builder': 'tools/git-build/build.py', 'badge': 'GIT',
     'widgets': ['cvviz.js', 'gitwidgets.js'], 'css': ['cv.css', 'git.css'], 'body': 'cvp gitp',
-    'min_calc': 6, 'fx_word': ('Command', 'Commands', 'command card'),
+    'min_calc': 6, 'min_assign': 0, 'fx_word': ('Command', 'Commands', 'command card'),
 })
 
 WORDS = [('Every formula,', 'Every command,'), ('every formula,', 'every command,'), ('>Formulas<', '>Commands<'),

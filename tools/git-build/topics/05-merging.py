@@ -1,33 +1,10 @@
 # Chapter 2.2: merging. Fast-forward, three way merge and the merge base, --no-ff, --squash, --ff-only, conflicts and
 # markers, resolving, abort, conflict styles, the ort strategy (default since Git 2.34), ours and theirs options,
 # rerere. Sources: Pro Git 3.2 and 7.8, git-merge, git-merge-base and git-rerere manuals.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow
 
 K = Kit()
-
-K.code('mergebase', r'''
-# Find the merge base: the newest commit both branches share
-parents = {"C0": [], "C1": ["C0"], "C2": ["C1"], "C3": ["C2"], "C4": ["C1"], "C5": ["C4"]}
-
-def ancestors(c):
-    out, todo = [], [c]
-    while todo:
-        x = todo.pop(0)
-        if x not in out:
-            out.append(x)
-            todo.extend(parents[x])
-    return out
-
-main, feature = "C3", "C5"
-a = ancestors(main)
-b = ancestors(feature)
-common = [c for c in a if c in b]
-print("ancestors of main:   ", a)
-print("ancestors of feature:", b)
-print("merge base:", common[0])
-print("fast-forward possible?", main in b)
-''')
 
 K.lesson('ff', 'Fast-forward or a real merge', f'''
 <p>To bring a feature into main you run <code>git merge feature</code> while on main. What Git does depends on the shape of the history.</p>
@@ -42,7 +19,6 @@ K.lesson('ff', 'Fast-forward or a real merge', f'''
     fx('Refuse anything but a fast-forward', '<code>git merge --ff-only &lt;branch&gt;</code>', 'Fails instead of making a merge commit. Safe default for updating a branch you do not work on.'),
     fx('Squash', '<code>git merge --squash &lt;branch&gt;</code> then <code>git commit</code>', 'Stages all changes of the branch as one new ordinary commit. The branch itself is not recorded as merged.'),
     fx('Merge base', '<code>git merge-base main feature</code>', 'Prints the best common ancestor that a three way merge uses as its base.', key=True))}
-{code('mergebase')}
 ''', kw=['git merge', 'fast-forward', 'three way merge', 'merge commit', '--no-ff', '--ff-only', '--squash', 'merge base', 'merge-base'])
 
 K.lesson('three', 'How a three way merge decides', f'''
@@ -121,48 +97,6 @@ K.calc('h', 'With --squash, feature had 7 commits. After git merge --squash feat
        ['Squash stages all changes as one change.', 'git commit records it once.', eq('1 commit, with one parent')], check=1)
 K.calc('h', 'C0 to C1 to C2 to C3 is main. feature starts at C1 with C4, C5. What is the merge base? Give the number after C.', '1', 'Newest shared commit.',
        ['Ancestors of C3: C3, C2, C1, C0.', 'Ancestors of C5: C5, C4, C1, C0.', eq('Newest shared: C1')], check=1)
-
-K.assign('mb', 'm', 'Find the merge base',
-         '<p>Write <code>merge_base(parents, a, b)</code>. Return the common ancestor of a and b that is not an ancestor of any other common ancestor. You may assume there is exactly one.</p>',
-         '''
-def merge_base(parents, a, b):
-    # your code here
-    pass
-''', [("merge_base({'C0': [], 'C1': ['C0'], 'C2': ['C1'], 'C3': ['C2'], 'C4': ['C1'], 'C5': ['C4']}, 'C3', 'C5')", 'C1'),
-      ("merge_base({'A': [], 'B': ['A'], 'C': ['B']}, 'C', 'B')", 'B')],
-         '''
-def anc(parents, c):
-    seen, todo = set(), [c]
-    while todo:
-        x = todo.pop()
-        if x not in seen:
-            seen.add(x)
-            todo.extend(parents[x])
-    return seen
-
-def merge_base(parents, a, b):
-    common = anc(parents, a) & anc(parents, b)
-    for c in common:
-        if not any(c != o and c in anc(parents, o) for o in common):
-            return c
-''', 'Find all common ancestors, then keep the one that is not below another one.', '<p>When b is an ancestor of a, the merge base is b itself, and a merge is already up to date.</p>')
-K.assign('m3', 'h', 'Three way merge of one line',
-         '<p>Write <code>merge_line(base, ours, theirs)</code>. Return the merged line, or the string <code>"CONFLICT"</code> when both sides changed it differently.</p>',
-         '''
-def merge_line(base, ours, theirs):
-    # your code here
-    pass
-''', [("merge_line('x', 'x', 'z')", 'z'), ("merge_line('x', 'y', 'x')", 'y'), ("merge_line('x', 'y', 'y')", 'y'), ("merge_line('x', 'y', 'z')", 'CONFLICT')],
-         '''
-def merge_line(base, ours, theirs):
-    if ours == theirs:
-        return ours
-    if ours == base:
-        return theirs
-    if theirs == base:
-        return ours
-    return 'CONFLICT'
-''', 'Same on both sides, or changed on one side only, can be decided.', '<p>Git applies this rule to whole hunks, not single lines, which is why neighbouring edits also conflict.</p>')
 
 K.must('Fast-forward', 'If the current branch has not moved, merge just moves the pointer. --no-ff forces a merge commit, --ff-only forbids one.')
 K.must('Three way merge', 'Base, ours, theirs. One side changed: take it. Same change: take it. Different changes: conflict.')

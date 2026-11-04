@@ -2,27 +2,10 @@
 # reftable format. Sources: Pro Git 10.1, 10.3, 10.4, 10.7, gitrepository-layout, git-update-index, git-write-tree,
 # git-commit-tree, git-update-ref, git-pack-refs, git-gc, git-fsck, git-maintenance manuals, Git 3.0 breaking changes.
 # Every output below comes from real runs with Git 2.43.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file
 
 K = Kit()
-
-K.code('delta', r'''
-# A packfile stores a similar object as a delta: copy ranges from a base object, plus new bytes
-base = "def add(a, b):\n    return a + b\n"
-new = "def add(a, b):\n    return a + b\n\ndef sub(a, b):\n    return a - b\n"
-
-same = 0
-while same < min(len(base), len(new)) and base[same] == new[same]:
-    same += 1
-delta = [("copy", 0, same), ("insert", new[same:])]
-print("instructions:", delta)
-print("full object :", len(new), "bytes")
-print("delta       : about", 2 + len(new) - same, "bytes (a copy instruction plus the new text)")
-
-rebuilt = base[delta[0][1]:delta[0][2]] + delta[1][1]
-print("rebuilt ok  :", rebuilt == new)
-''')
 
 K.lesson('refs', 'Refs and HEAD are small text files', f'''
 <p>Objects have ugly ids, so Git keeps <b>refs</b>: names that hold an id. A branch is a ref under <code>refs/heads/</code>, a tag under <code>refs/tags/</code>, and what you last fetched under <code>refs/remotes/</code>. HEAD usually does not hold an id. It holds the name of a branch, which makes it a <b>symbolic ref</b>.</p>
@@ -71,7 +54,6 @@ aaa96ced2d9a1c8e72c56b253a0e2fe78393feb7
 
 K.lesson('packs', 'Packfiles, deltas and garbage collection', f'''
 <p>A new object is first written as a <b>loose object</b>: one zlib file per object. That is fast to write but wasteful when there are thousands. <code>git gc</code>, which Git also runs automatically now and then, bundles them into a <b>packfile</b>. Inside a pack, an object that is similar to another can be stored as a <b>delta</b>: instructions to copy parts of a base object plus the few new bytes.</p>
-{code('delta')}
 {sh('Before and after git gc', """git count-objects -v
 git gc
 git count-objects -v
@@ -136,39 +118,6 @@ K.calc('h', 'A file of 70 bytes stored as a 42 byte delta. What percent of the f
        ['Saved bytes: 70 - 42 = 28.', '28 / 70 = 0.4.', eq('40 percent')], check=40)
 K.calc('h', 'An unreachable commit was made today. gc.pruneExpire is the default two weeks and the reflog still lists it. With no option, on which day from now does gc first delete it? Use reflog expiry of 30 days for unreachable entries.', '30', 'Both nets must expire.',
        ['The reflog keeps unreachable entries 30 days.', 'After that the object is unreachable and must also be older than 2 weeks, which it is.', eq('first removable on day 30')], check=30)
-
-K.assign('idx', 'm', 'Read conflict stages',
-         '<p>Write <code>unmerged(entries)</code>. entries is a list of <code>[mode, id, stage, path]</code> lines as printed by git ls-files --stage. Return the sorted list of paths that have any entry with a stage above 0.</p>',
-         '''
-def unmerged(entries):
-    # your code here
-    pass
-''', [("unmerged([['100644', 'a1', 0, 'README.md'], ['100644', 'b1', 1, 'app.py'], ['100644', 'b2', 2, 'app.py'], ['100644', 'b3', 3, 'app.py']])", ['app.py']),
-      ("unmerged([['100644', 'a1', 0, 'x']])", []),
-      ("unmerged([['100644', 'c', 2, 'z.py'], ['100644', 'd', 3, 'a.py']])", ['a.py', 'z.py'])],
-         '''
-def unmerged(entries):
-    return sorted({path for mode, oid, stage, path in entries if stage > 0})
-''', 'Collect paths with stage 1, 2 or 3 in a set, then sort.', '<p>git status uses the same rule to print both modified and the other unmerged states.</p>')
-K.assign('delta', 'h', 'Apply a delta',
-         '<p>Write <code>apply_delta(base, ops)</code>. ops is a list of instructions: <code>["copy", start, length]</code> copies that slice of base, <code>["insert", text]</code> adds new text. Return the rebuilt string.</p>',
-         '''
-def apply_delta(base, ops):
-    # your code here
-    pass
-''', [("apply_delta('hello world', [['copy', 0, 6], ['insert', 'there']])", 'hello there'),
-      ("apply_delta('abcdef', [['copy', 3, 3], ['copy', 0, 3]])", 'defabc'),
-      ("apply_delta('', [['insert', 'new file']])", 'new file')],
-         '''
-def apply_delta(base, ops):
-    out = []
-    for op in ops:
-        if op[0] == 'copy':
-            out.append(base[op[1]:op[1] + op[2]])
-        else:
-            out.append(op[1])
-    return ''.join(out)
-''', 'Walk the instructions in order and build a list of pieces.', '<p>Real pack deltas encode the same two instructions in binary, with offsets and sizes packed into a few bytes.</p>')
 
 K.must('Refs', 'Names for ids: refs/heads (branches), refs/tags, refs/remotes, packed-refs. HEAD is a symbolic ref to a branch. Change refs with update-ref, never by hand. reftable comes in Git 2.45 and is planned as default in 3.0.')
 K.must('Plumbing behind add and commit', 'hash-object -w, update-index --add, write-tree, commit-tree, update-ref. Porcelain is for people, plumbing is stable for scripts.')

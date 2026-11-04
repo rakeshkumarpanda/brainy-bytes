@@ -1,49 +1,13 @@
 # Chapter 2.3: rebase, interactive rebase, --onto, autosquash, the golden rule, cherry-pick, merge versus rebase.
 # Sources: Pro Git 3.6 and 7.6, git-rebase and git-cherry-pick manuals (--update-refs since Git 2.38).
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow
 
 K = Kit()
 
-K.code('replay', r'''
-# Rebase = replay your commits, one by one, on top of a new base. Copies get new ids.
-main = ["C0", "C1", "C4"]            # main moved on with C4
-feature = ["C0", "C1", "C2", "C3"]   # feature started at C1
-base = "C1"
-mine = feature[feature.index(base) + 1:]
-print("commits to replay:", mine)
-new_feature = list(main)
-for c in mine:
-    copy = c + "'"                   # same change, new parent, so a new id
-    new_feature.append(copy)
-    print("replayed", c, "as", copy, "on top of", new_feature[-2])
-print("feature is now:", new_feature)
-print("old", mine, "are left behind (only the reflog knows them)")
-''')
-
-K.code('todo', r'''
-# What an interactive rebase todo list does to a list of commits
-commits = [("a1", "Add search box"), ("b2", "WIP"), ("c3", "fix typo in search"), ("d4", "Add search by price")]
-todo = [("pick", "a1"), ("fixup", "c3"), ("drop", "b2"), ("reword", "d4")]
-msgs = dict(commits)
-result = []
-for action, cid in todo:
-    if action == "pick":
-        result.append(msgs[cid])
-    elif action in ("fixup", "squash"):
-        result[-1] = result[-1] + (" + " + msgs[cid] if action == "squash" else "")
-    elif action == "reword":
-        result.append(msgs[cid] + " (message edited)")
-    elif action == "drop":
-        pass
-for i, m in enumerate(result, 1):
-    print(i, m)
-''')
-
 K.lesson('rebase', 'Rebase: move your work onto a new base', f'''
 <p>You started a feature from main on Monday. By Wednesday main has new commits. Merging would add a merge commit. <b>Rebasing</b> instead takes your commits, sets them aside, moves your branch to the new tip of main, and replays your commits there one by one. History becomes one straight line, as if you had started today.</p>
 {viz('gitsim', cmds='git switch -c feature\ngit commit -m "add button"\ngit commit -m "style button"\ngit switch main\ngit commit -m "fix typo"\ngit switch feature\ngit rebase main\ngit switch main\ngit merge feature')}
-{code('replay')}
 {fxs(
     fx('Rebase the current branch', '<code>git rebase &lt;upstream&gt;</code>', 'Replays the commits of HEAD that are not in upstream on top of upstream.', key=True),
     fx('Continue, skip or stop', '<code>git rebase --continue</code>, <code>--skip</code>, <code>--abort</code>', 'After fixing a conflict: git add, then --continue. --abort returns to before the rebase.', key=True),
@@ -83,7 +47,6 @@ pick d4e5f6a Add search by price""")}
     ['fixup', 'meld into the previous commit and throw this message away'],
     ['drop', 'remove the commit'],
     ['(change the order of lines)', 'reorder the commits']])}
-{code('todo')}
 {fxs(fx('Prepare a fixup now, squash later', '<code>git commit --fixup=&lt;commit&gt;</code> then <code>git rebase -i --autosquash &lt;base&gt;</code>', 'The fixup! commit is moved next to its target and marked fixup automatically.', key=True))}
 {note('Interactive rebase rewrites history. Use it on commits that only you have, usually right before opening or updating a pull request.', 'tip')}
 ''', kw=['interactive rebase', 'rebase -i', 'pick', 'reword', 'edit', 'squash', 'fixup', 'drop', 'autosquash', 'commit --fixup'])
@@ -123,54 +86,6 @@ K.calc('h', 'Feature has commits X, Y, Z. Y is already in main as a cherry-pick 
        ['X is new, replayed.', 'Y has the same patch id as a main commit, skipped.', eq('Z replayed. Total 2')], check=2)
 K.calc('h', 'You cherry-pick a range A..B where B is 4 commits after A. How many commits are copied?', '4', 'A..B excludes A.',
        ['A..B means after A up to B.', 'That is 4 commits.', eq('4')], check=4)
-
-K.assign('todo', 'm', 'Apply an interactive rebase todo list',
-         '<p><code>commits</code> maps ids to messages and <code>todo</code> is a list of (action, id) pairs with actions pick, reword, squash, fixup or drop. Write <code>apply_todo(commits, todo)</code> that returns the list of resulting messages. squash joins with " + ", fixup keeps only the earlier message, reword appends " (edited)".</p>',
-         '''
-def apply_todo(commits, todo):
-    # your code here
-    pass
-''', [("apply_todo({'a': 'A', 'b': 'B', 'c': 'C'}, [('pick', 'a'), ('squash', 'b'), ('pick', 'c')])", ['A + B', 'C']),
-      ("apply_todo({'a': 'A', 'b': 'B', 'c': 'C'}, [('pick', 'a'), ('fixup', 'b'), ('drop', 'c')])", ['A']),
-      ("apply_todo({'a': 'A', 'b': 'B'}, [('pick', 'b'), ('reword', 'a')])", ['B', 'A (edited)'])],
-         '''
-def apply_todo(commits, todo):
-    out = []
-    for action, cid in todo:
-        if action == 'pick':
-            out.append(commits[cid])
-        elif action == 'reword':
-            out.append(commits[cid] + ' (edited)')
-        elif action == 'squash':
-            out[-1] = out[-1] + ' + ' + commits[cid]
-        elif action == 'fixup':
-            pass
-    return out
-''', 'Walk the list in order. squash and fixup change the last result.', '<p>Note that reordering lines reorders commits, as the third test shows.</p>')
-K.assign('replay', 'h', 'Which commits does rebase replay?',
-         '<p>Write <code>to_replay(parents, order, head, upstream, patch)</code>. Return, oldest first (use <code>order</code>, the creation order), the non merge commits reachable from head but not from upstream, leaving out any whose <code>patch[c]</code> equals the patch of a commit reachable from upstream.</p>',
-         '''
-def to_replay(parents, order, head, upstream, patch):
-    # your code here
-    pass
-''', [("to_replay({'A': [], 'B': ['A'], 'X': ['A'], 'Y': ['X']}, ['A', 'B', 'X', 'Y'], 'Y', 'B', {'A': 'a', 'B': 'b', 'X': 'x', 'Y': 'y'})", ['X', 'Y']),
-      ("to_replay({'A': [], 'B': ['A'], 'X': ['A'], 'Y': ['X']}, ['A', 'B', 'X', 'Y'], 'Y', 'B', {'A': 'a', 'B': 'x', 'X': 'x', 'Y': 'y'})", ['Y'])],
-         '''
-def anc(parents, c):
-    seen, todo = set(), [c]
-    while todo:
-        x = todo.pop()
-        if x not in seen:
-            seen.add(x)
-            todo.extend(parents[x])
-    return seen
-
-def to_replay(parents, order, head, upstream, patch):
-    up = anc(parents, upstream)
-    up_patches = {patch[c] for c in up}
-    mine = anc(parents, head) - up
-    return [c for c in order if c in mine and len(parents[c]) < 2 and patch[c] not in up_patches]
-''', 'Take the set difference of ancestors, then filter out merges and already applied patches.', '<p>This is close to what git rebase computes before it starts replaying.</p>')
 
 K.must('Rebase', 'Replays your commits on a new base. Copies get new ids. --continue after fixing, --abort to give up.')
 K.must('Golden rule', 'Never rebase commits others may have built on. Rebase your own branch, then push --force-with-lease.')

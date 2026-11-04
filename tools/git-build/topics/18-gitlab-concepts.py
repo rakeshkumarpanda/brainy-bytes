@@ -4,31 +4,10 @@
 # extends, include, runners (instance, group, project) and executors, pipeline sources. Sources: GitLab docs: CI/CD
 # YAML syntax reference, job rules, workflow keyword, merge request pipelines, predefined variables, runners,
 # quick start, pipeline architectures. Checked on 2026-11-02 against gitlab-org/gitlab master.
-from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, code, viz, eq
+from cvkit import Kit, fx, fxs, ladder, scene, note, deep, table, steps, viz, eq
 from gitkit import sh, flow, file, devqa
 
 K = Kit()
-
-K.code('rules', r'''
-# GitLab checks a job's rules from top to bottom and the first rule that matches decides
-rules = [
-    ({"source": "merge_request_event"}, "on_success"),
-    ({"source": "schedule"}, "never"),
-    ({"branch": "main"}, "on_success"),
-]
-
-def decide(pipeline):
-    for cond, when in rules:
-        if all(pipeline.get(k) == v for k, v in cond.items()):
-            return "not added" if when == "never" else "added (" + when + ")"
-    return "not added (no rule matched)"
-
-for p in [{"source": "push", "branch": "main"},
-          {"source": "push", "branch": "feature/x"},
-          {"source": "merge_request_event"},
-          {"source": "schedule", "branch": "main"}]:
-    print(p, "->", decide(p))
-''')
 
 K.lesson('basics', 'One file, stages and jobs', f'''
 <p>GitLab reads one file, <code>.gitlab-ci.yml</code>, at the root of the repository. Every top level key that is not a reserved keyword is a <b>job</b>. A job needs a <code>script</code> and belongs to a <b>stage</b>. Jobs in the same stage run in parallel, and by default a stage starts only after every job of the previous stage succeeded.</p>
@@ -69,7 +48,6 @@ test-job:
 K.lesson('rules', 'rules, workflow and pipeline types', f'''
 <p><code>rules</code> decide if a job is added to a pipeline. GitLab reads them top to bottom and the <b>first rule that matches</b> decides. If none matches, the job is left out. Change the pipeline source and branch in the animation and see which rule wins.</p>
 {viz('glrules')}
-{code('rules')}
 {table(['Pipeline type', 'Started by', 'Useful variables'], [
     ['Branch pipeline', 'a push to a branch', 'CI_COMMIT_BRANCH (not set in merge request or tag pipelines)'],
     ['Tag pipeline', 'pushing a tag', 'CI_COMMIT_TAG'],
@@ -159,37 +137,6 @@ K.calc('m', 'Same jobs, but the test job has needs on the 2 minute job. Total?',
        ['test job runs 2 to 5.', 'The 9 minute job ends at 9.', eq('max(5, 9) = 9 minutes')], check=9)
 K.calc('h', 'Rules: 1) if MR then on_success, 2) if schedule then never, 3) if branch main then manual. A scheduled pipeline on main. Which rule number decides?', '2', 'First match.',
        ['Rule 1: not an MR.', 'Rule 2: schedule matches, when never.', eq('rule 2 decides, the job is not added')], check=2)
-
-K.assign('firstrule', 'm', 'Evaluate GitLab rules',
-         '<p>Write <code>job_added(rules, pipe)</code>. Each rule is <code>[conditions, when]</code>, where conditions is a dict of keys that must equal the values in pipe (an empty dict always matches). The first matching rule decides: when "never" means False, anything else True. If none matches, return False.</p>',
-         '''
-def job_added(rules, pipe):
-    # your code here
-    pass
-''', [("job_added([[{'source': 'schedule'}, 'never'], [{}, 'on_success']], {'source': 'push'})", True),
-      ("job_added([[{'source': 'schedule'}, 'never'], [{}, 'on_success']], {'source': 'schedule'})", False),
-      ("job_added([[{'branch': 'main'}, 'manual']], {'branch': 'dev'})", False),
-      ("job_added([[{'branch': 'main', 'source': 'push'}, 'on_success']], {'branch': 'main', 'source': 'push'})", True)],
-         '''
-def job_added(rules, pipe):
-    for cond, when in rules:
-        if all(pipe.get(k) == v for k, v in cond.items()):
-            return when != 'never'
-    return False
-''', 'Loop over the rules, return at the first match, and return False after the loop.', '<p>The real rules also support changes, exists and regular expressions with =~.</p>')
-K.assign('pipes', 'h', 'How many pipelines does a push create',
-         '<p>Write <code>pipelines(has_open_mr, use_workflow_fix)</code> for a push to a branch where some job has a merge request rule and some job has a branch rule. Without the workflow fix, a branch with an open MR gets two pipelines (branch and merge request), otherwise one. With the fix, every push creates exactly one. Return the number.</p>',
-         '''
-def pipelines(has_open_mr, use_workflow_fix):
-    # your code here
-    pass
-''', [('pipelines(True, False)', 2), ('pipelines(False, False)', 1), ('pipelines(True, True)', 1), ('pipelines(False, True)', 1)],
-         '''
-def pipelines(has_open_mr, use_workflow_fix):
-    if has_open_mr and not use_workflow_fix:
-        return 2
-    return 1
-''', 'Only the open MR without the fix doubles the pipelines.', '<p>Duplicate pipelines double runner usage and can confuse which result the MR shows.</p>')
 
 K.must('File and stages', '.gitlab-ci.yml at the root. Default stages .pre, build, test, deploy, .post. Same stage in parallel, next stage after the previous one succeeds. script is required.')
 K.must('Rules', 'Top down, first match decides, when never excludes, no match excludes. workflow:rules decide the whole pipeline and stop duplicate branch plus MR pipelines.')
