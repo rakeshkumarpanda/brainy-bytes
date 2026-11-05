@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiled matrix multiplication · GPU Programming</title>
+<meta name="description" content="Plain matmul traffic, Quiz 1 questions 2, 3 and 4, phases and loads per thread, 2N³ ÷ T, the two barriers, ragged edges, tile size limits, and why T = 32 is still memory bound.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 5: Parallel patterns</span><span>›</span><span>Tiled matmul</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 2 of 5 · College</div>
+    <h1>Tiled matrix multiplication</h1>
+    <p class="lead">Cut global memory traffic by a factor of T by loading tiles of A and B into shared memory, get the two barriers right, and handle matrices that are not a multiple of the tile size.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">9 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#tiled-matmul" data-topic="cheatsheet" data-h="tiled-matmul">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#naive" data-l="naive"><span class="n">1</span><span class="t">The plain kernel and its traffic</span></a></li><li><a href="#tiles" data-l="tiles"><span class="n">2</span><span class="t">Tiles in shared memory</span></a></li><li><a href="#sync" data-l="sync"><span class="n">3</span><span class="t">Two barriers per phase: Quiz 1 question 4</span></a></li><li><a href="#ragged" data-l="ragged"><span class="n">4</span><span class="t">Ragged edges and tile size limits</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="naive" data-l="naive" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>The plain kernel and its traffic</h2>
+<p>One thread computes one element of C = A × B. It walks along a row of A and down a column of B, so it loads 2N values from global memory to do N multiply-adds. Every value of A is loaded N times in total, once by each thread in its row of C.</p>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">matmul_naive.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">__global__ void matMulNaive(const float *A, const float *B, float *C, int N) {</span><span class="ln ck-has" data-n="2">    int row = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln" data-n="3">    int col = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="4">    if (row &lt; N &amp;&amp; col &lt; N) {</span><span class="ln" data-n="5">        float sum = 0.0f;</span><span class="ln" data-n="6">        for (int k = 0; k &lt; N; k++)</span><span class="ln ck-has" data-n="7">            sum += A[row * N + k] * B[k * N + col];   // 2 global loads per multiply-add</span><span class="ln ck-has" data-n="8">        C[row * N + col] = sum;</span><span class="ln" data-n="9">    }</span><span class="ln" data-n="10">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="2"><b>Line 2</b><code>int row = blockIdx.y * blockDim.y + threadIdx.y;</code><span>y picks the row of C, x picks the column, as in chapter 2.2.</span></li><li data-n="7"><b>Line 7</b><code>sum += A[row * N + k] * B[k * N + col];   // 2 global loads per multiply-add</code><span>A[row × N + k] walks along a row. B[k × N + col] walks down a column, but neighbouring threads have neighbouring col, so that read is coalesced across the warp.</span></li><li data-n="8"><b>Line 8</b><code>C[row * N + col] = sum;</code><span>One store per thread.</span></li></ol></details></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Loads per thread (plain)</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">2<i>N</i></div><div class="fx-n">N from A and N from B.</div></div><div class="fx fx-key"><div class="fx-h"><span>Loads per block (plain)</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">threads per block × 2<i>N</i></div><div class="fx-n">Quiz 1 Q2: 256 × 2048 = 524,288.</div></div><div class="fx"><div class="fx-h"><span>Total loads (plain)</span></div><div class="fx-b">2<i>N</i>³</div><div class="fx-n">Not N² as lecture 7 slide 8 says. For N = 1024 that is 2048 times more.</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Lecture 7 slide 8 states the plain kernel reads Width² values. Each of the Width² threads reads 2 × Width values, so the total is 2 × Width³.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="tiles" data-l="tiles" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Tiles in shared memory</h2>
+<p>A block of T × T threads computes a T × T tile of C. In each <b>phase</b> it loads one T × T tile of A and one of B into shared memory, each thread loading one value of each. Then every thread does T multiply-adds from shared memory. Each loaded value is used T times.</p>
+<div class="cvz" data-viz="tilemm"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Phases</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">phases = ⌈<i>N</i> ÷ <i>T</i>⌉</div><div class="fx-n">N = 1024, T = 16: 64 phases.</div></div><div class="fx fx-key"><div class="fx-h"><span>Loads per thread (tiled)</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">2 × ⌈<i>N</i> ÷ <i>T</i>⌉</div><div class="fx-n">One A value and one B value per phase.</div></div><div class="fx fx-key"><div class="fx-h"><span>Total loads (tiled)</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">2<i>N</i>²⌈<i>N</i> ÷ <i>T</i>⌉ = 2<i>N</i>³ ÷ <i>T</i> when T divides N</div><div class="fx-n">Global traffic drops by a factor of T.</div></div><div class="fx"><div class="fx-h"><span>Arithmetic intensity</span></div><div class="fx-b">AI ≈ <i>T</i> ÷ 4 (float)</div><div class="fx-n">Plain matmul has 0.25. T = 16 gives 4.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Quiz 1 Q3: N = 1024, 16 × 16 tiles, loads per block</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>256 threads per block, 64 phases.</li><li>Each thread loads 1 value of A and 1 of B per phase: 2 × 64 = 128.</li><li>256 × 128.</li><li><span class="eq">32,768 loads per block, 16 times fewer than 524,288</span></li></ol></div>
+<div class="cv-code" data-k="loads"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sync" data-l="sync" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Two barriers per phase: Quiz 1 question 4</h2>
+<p>The tiled loop needs two <code>__syncthreads()</code> per phase. The first makes sure the whole tile is in shared memory before anyone reads it. The second makes sure everyone has finished reading before the next phase overwrites it.</p>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">quiz1_q4.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">// Quiz 1 question 4: the tiled kernel WITHOUT barriers (wrong on purpose)</span><span class="ln" data-n="2">__global__ void matMul(const float *A, const float *B, float *C, int N) {</span><span class="ln" data-n="3">    __shared__ float tileA[16][16];</span><span class="ln" data-n="4">    __shared__ float tileB[16][16];</span><span class="ln" data-n="5">    int row = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln" data-n="6">    int col = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="7">    float sum = 0.0f;</span><span class="ln" data-n="8">    for (int k = 0; k &lt; N / 16; k++) {</span><span class="ln ck-has" data-n="9">        tileA[threadIdx.y][threadIdx.x] = A[row * N + (k * 16 + threadIdx.x)];</span><span class="ln" data-n="10">        tileB[threadIdx.y][threadIdx.x] = B[(k * 16 + threadIdx.y) * N + col];</span><span class="ln" data-n="11">        for (int t = 0; t &lt; 16; t++)</span><span class="ln ck-has" data-n="12">            sum += tileA[threadIdx.y][t] * tileB[t][threadIdx.x];</span><span class="ln ck-has" data-n="13">    }</span><span class="ln" data-n="14">    C[row * N + col] = sum;</span><span class="ln" data-n="15">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="9"><b>Line 9</b><code>tileA[threadIdx.y][threadIdx.x] = A[row * N + (k * 16 + threadIdx.x)];</code><span>Each thread writes one element of each tile.</span></li><li data-n="12"><b>Line 12</b><code>sum += tileA[threadIdx.y][t] * tileB[t][threadIdx.x];</code><span>Thread (5, 10) reads tileA[10][t] for t = 0 to 15, including tileA[10][3], which thread (3, 10) writes. Without a barrier it may read before that write.</span></li><li data-n="13"><b>Line 13</b><code>}</code><span>No barrier here either, so a fast thread can start the next phase and overwrite tileB while slower threads still read it.</span></li></ol></details></div>
+<div class="walk"><div class="walk-h"><span>Rakesh's worked solution</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Statement a: thread (5, 10) can start the inner loop before thread (5, 3) has written its value. With no barrier nothing stops it, so a can happen: true.</li><li>Statement b: thread (3, 12) can overwrite tileB[3][12] for the next k while another thread is still reading it. Also possible: true.</li><li><span class="eq">Both true: answer 3. The fix is the two barriers in matmul_tiled.cu</span></li></ol></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">matmul_tiled.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#define T 16</span><span class="ln" data-n="2"> </span><span class="ln" data-n="3">// Works for any N: tiles that hang over the edge are padded with zeros</span><span class="ln ck-has" data-n="4">__global__ void matMulTiled(const float *A, const float *B, float *C, int N) {</span><span class="ln" data-n="5">    __shared__ float As[T][T];</span><span class="ln" data-n="6">    __shared__ float Bs[T][T];</span><span class="ln" data-n="7">    int tx = threadIdx.x, ty = threadIdx.y;</span><span class="ln" data-n="8">    int row = blockIdx.y * T + ty;</span><span class="ln" data-n="9">    int col = blockIdx.x * T + tx;</span><span class="ln" data-n="10">    float sum = 0.0f;</span><span class="ln ck-has" data-n="11">    for (int p = 0; p &lt; (N + T - 1) / T; ++p) {</span><span class="ln" data-n="12">        int ka = p * T + tx, kb = p * T + ty;</span><span class="ln ck-has" data-n="13">        As[ty][tx] = (row &lt; N &amp;&amp; ka &lt; N) ? A[row * N + ka] : 0.0f;</span><span class="ln" data-n="14">        Bs[ty][tx] = (kb &lt; N &amp;&amp; col &lt; N) ? B[kb * N + col] : 0.0f;</span><span class="ln ck-has" data-n="15">        __syncthreads();                    // tile fully loaded before anyone reads it</span><span class="ln" data-n="16">        for (int k = 0; k &lt; T; ++k)</span><span class="ln" data-n="17">            sum += As[ty][k] * Bs[k][tx];</span><span class="ln ck-has" data-n="18">        __syncthreads();                    // everyone done before the next phase overwrites it</span><span class="ln" data-n="19">    }</span><span class="ln ck-has" data-n="20">    if (row &lt; N &amp;&amp; col &lt; N) C[row * N + col] = sum;</span><span class="ln" data-n="21">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="4"><b>Line 4</b><code>__global__ void matMulTiled(const float *A, const float *B, float *C, int N) {</code><span>This version also handles N that is not a multiple of T.</span></li><li data-n="11"><b>Line 11</b><code>for (int p = 0; p &lt; (N + T - 1) / T; ++p) {</code><span>⌈N ÷ T⌉ phases.</span></li><li data-n="13"><b>Line 13</b><code>As[ty][tx] = (row &lt; N &amp;&amp; ka &lt; N) ? A[row * N + ka] : 0.0f;</code><span>Out of range elements are loaded as 0, so they add nothing to the sum.</span></li><li data-n="15"><b>Line 15</b><code>__syncthreads();                    // tile fully loaded before anyone reads it</code><span>Barrier 1: the tile must be complete before it is read (statement a).</span></li><li data-n="18"><b>Line 18</b><code>__syncthreads();                    // everyone done before the next phase overwrites it</code><span>Barrier 2: nobody may overwrite the tile while others still read it (statement b).</span></li><li data-n="20"><b>Line 20</b><code>if (row &lt; N &amp;&amp; col &lt; N) C[row * N + col] = sum;</code><span>Only threads inside C write their result.</span></li></ol></details></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="ragged" data-l="ragged" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Ragged edges and tile size limits</h2>
+<div class="walk"><div class="walk-h"><span>Workbook 7.1: n = 5 with 4 × 4 tiles</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Phases and blocks per side: ⌈5 ÷ 4⌉ = 2, so 2 × 2 = 4 blocks.</li><li>Threads 4 × 16 = 64, of which 64 − 25 = 39 do no output.</li><li>Reads tiled 2 × 25 × 2 = 100, plain 2 × 125 = 250.</li><li><span class="eq">2.5 times fewer reads</span></li></ol></div>
+<div class="cv-code" data-k="ragged"></div>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Shared memory for two tiles</span></div><div class="fx-b">bytes = 2 × <i>T</i>² × 4</div><div class="fx-n">T = 32: 8 KB. 48 KB allows T up to 78.</div></div><div class="fx"><div class="fx-h"><span>Thread limit</span></div><div class="fx-b"><i>T</i>² ≤ 1024</div><div class="fx-n">So T ≤ 32 when each thread computes one output.</div></div></div>
+<p>With T = 32 on an A100 (19.5 TFLOP/s, 1555 GB/s) a 4096 matrix still needs about 11 ms for memory and 7 ms for maths: memory bound. Faster kernels give each thread several outputs (chapter 8.3).</p>
+<div class="ck-nb"><div class="ck-nb-i">ipynb</div><div class="ck-nb-t"><b>Notebook: naive and tiled matrix multiply</b><span>Both kernels in Numba with a count of global reads and a GFLOP/s timing.</span><small>Open it in Google Colab (Runtime, Change runtime type, T4 GPU) or in Jupyter on a machine with an NVIDIA GPU. Every code line is explained in the cell under it.</small></div><a class="ck-nb-a" href="./notebooks/05-tiled-matmul.ipynb" download>Download notebook</a></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Instead of every student walking to the library for every book, a group borrows a shelf of books once, and everyone in the group reads them at the table.</p></div><div class="ld-p" data-ld="college" hidden><p>Plain: 2N per thread, 2N³ total. Tiled: 2⌈N/T⌉ per thread, 2N³/T total. Two __syncthreads per phase. T ≤ 32 for one output per thread.</p></div><div class="ld-p" data-ld="masters" hidden><p>Register tiling: each thread computes a 4 × 4 or 8 × 8 block of C, which raises AI far beyond T/4. Double buffering loads the next tile while computing the current one.</p></div><div class="ld-p" data-ld="research" hidden><p>CUTLASS splits the work in a hierarchy: thread block tiles, warp tiles, and tensor core fragments, with cp.async or TMA pipelines. cuBLAS reaches 80 to 90 percent of peak this way.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./reduction.html" data-topic="reduction"><small>Previous topic</small><b>Reduction</b></a><a class="next" href="./stencils.html" data-topic="stencils"><small>Next topic</small><b>Stencils</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "tiled-matmul", "topic": "tiled-matmul", "subject": "cuda", "title": "Tiled matrix multiplication", "codes": {"loads": {"src": "# Global loads per block and in total, plain against tiled (Quiz 1 Q2 and Q3)\nimport math\nN, T = 1024, 16\nthreads = T * T\nplain_per_thread = 2 * N\ntiled_per_thread = 2 * math.ceil(N / T)\nprint(\"plain per block:\", threads * plain_per_thread)     # Q2\nprint(\"tiled per block:\", threads * tiled_per_thread)     # Q3\nprint(\"saving factor:\", plain_per_thread // tiled_per_thread)\nprint(\"total plain:\", 2 * N ** 3, \"total tiled:\", 2 * N ** 3 // T)", "stdin": "", "out": "plain per block: 524288\ntiled per block: 32768\nsaving factor: 16\ntotal plain: 2147483648 total tiled: 134217728"}, "ragged": {"src": "# Ragged edges: n not a multiple of T\nimport math\ndef tiles(n, T):\n    nb = math.ceil(n / T)\n    threads = nb * nb * T * T\n    return {\"phases\": nb, \"blocks\": nb * nb, \"threads\": threads, \"idle\": threads - n * n,\n            \"reads tiled\": 2 * n * n * nb, \"reads plain\": 2 * n ** 3}\nprint(tiles(5, 4))\nprint(tiles(33, 32))", "stdin": "", "out": "{'phases': 2, 'blocks': 4, 'threads': 64, 'idle': 39, 'reads tiled': 100, 'reads plain': 250}\n{'phases': 2, 'blocks': 4, 'threads': 4096, 'idle': 3007, 'reads tiled': 4356, 'reads plain': 71874}"}}, "quiz": [{"lv": "e", "q": "Loads per thread in the plain kernel", "o": ["N", "2N", "N²", "2"], "a": 1, "hint": "Row of A and column of B.", "why": "2N."}, {"lv": "e", "q": "Each loaded value in a T × T tile is used", "o": ["Once", "T times", "T² times", "N times"], "a": 1, "hint": "Reuse.", "why": "T threads use it."}, {"lv": "e", "q": "Phases for N = 1024, T = 16", "o": ["16", "64", "1024", "256"], "a": 1, "hint": "N ÷ T.", "why": "64."}, {"lv": "m", "q": "Quiz 1 Q2: loads per block, plain, N = 1024, 16 × 16", "o": ["32,768", "262,144", "524,288", "2,048"], "a": 2, "hint": "256 × 2048.", "why": "524,288."}, {"lv": "m", "q": "Quiz 1 Q3: loads per block, tiled", "o": ["32,768", "65,536", "16,384", "524,288"], "a": 0, "hint": "256 × 128.", "why": "32,768."}, {"lv": "m", "q": "Why the second __syncthreads()?", "o": ["To start the kernel", "So no thread overwrites a tile still being read", "To load faster", "It is optional"], "a": 1, "hint": "Write after read.", "why": "Next phase overwrites the tile."}, {"lv": "m", "q": "Total loads tiled for n = 512, T = 16", "o": ["16,777,216", "268,435,456", "524,288", "1,048,576"], "a": 0, "hint": "2n³ ÷ T.", "why": "2 × 512³ ÷ 16."}, {"lv": "h", "q": "Quiz 1 Q4 answer (a and b without barriers)", "o": ["1", "2", "3", "4"], "a": 2, "hint": "Both can happen.", "why": "Both true."}, {"lv": "h", "q": "n = 33 with 32 × 32 tiles. Share of idle threads", "o": ["3 percent", "About 73 percent", "50 percent", "0"], "a": 1, "hint": "4 blocks, 4096 threads, 1089 outputs.", "why": "3007 ÷ 4096 ≈ 73.4 percent."}, {"lv": "h", "q": "Largest T for one output per thread", "o": ["16", "32", "64", "78"], "a": 1, "hint": "T² ≤ 1024.", "why": "32."}, {"lv": "x", "q": "Lecture 7 slide 8 says plain reads = Width². For Width = 1024 the true total is", "o": ["Same", "2048 times more", "1024 times less", "2 times more"], "a": 1, "hint": "2W³ ÷ W².", "why": "2W = 2048."}, {"lv": "x", "q": "n = 4096, T = 32 on an A100. Bound by", "o": ["Maths (7 ms)", "Memory (about 11 ms)", "Neither", "PCIe"], "a": 1, "hint": "Bytes 2n³/T × 4.", "why": "4096³ × 2 ÷ 32 × 4 bytes ÷ 1555 GB/s ≈ 11 ms against 7 ms of maths."}], "calc": [{"lv": "e", "q": "n = 1024, T = 32. Loads per thread tiled?", "ans": "64", "hint": "2 × n ÷ T.", "steps": ["Phases 1024 ÷ 32 = 32.", "2 per phase.", "<span class=\"eq\">64 (plain 2048)<\/span>"]}, {"lv": "e", "q": "n = 6 with 2 × 2 tiles. Blocks?", "ans": "9", "hint": "3 per side.", "steps": ["Phases ⌈6 ÷ 2⌉ = 3.", "Blocks 3 × 3.", "<span class=\"eq\">9 blocks<\/span>"]}, {"lv": "e", "q": "Quiz 1 Q2: loads per block, plain?", "ans": "524288", "hint": "256 × 2 × 1024.", "steps": ["256 threads.", "2048 loads each.", "<span class=\"eq\">524,288<\/span>"]}, {"lv": "m", "q": "Quiz 1 Q3: loads per block, tiled?", "ans": "32768", "hint": "256 × 2 × 64.", "steps": ["64 phases.", "2 loads per phase per thread = 128.", "<span class=\"eq\">256 × 128 = 32,768<\/span>"]}, {"lv": "m", "q": "n = 4, T = 2 (slide 21). Total loads?", "ans": "64", "hint": "2n³ ÷ T.", "steps": ["4 blocks × 4 threads × 2 phases × 2 loads.", "= 64.", "<span class=\"eq\">Check: 2 × 64 ÷ 2 = 64<\/span>"]}, {"lv": "m", "q": "n = 1000, T = 16. Tiled reads?", "ans": "126000000", "hint": "2n²⌈n/T⌉.", "steps": ["⌈1000 ÷ 16⌉ = 63 phases.", "2 × 10⁶ × 63.", "<span class=\"eq\">126,000,000 (about 15.9 times fewer than 2 × 10⁹)<\/span>"]}, {"lv": "m", "q": "Largest T allowed by 48 KB of shared memory for two float tiles?", "ans": "78", "hint": "8T² ≤ 49,152.", "steps": ["T² ≤ 6144.", "√6144 ≈ 78.4.", "<span class=\"eq\">T = 78 (but threads limit T to 32)<\/span>"]}, {"lv": "h", "q": "n = 5, 4 × 4 tiles. Idle threads?", "ans": "39", "hint": "64 − 25.", "steps": ["2 × 2 blocks of 16 threads = 64.", "Outputs 25.", "<span class=\"eq\">39 idle<\/span>"]}, {"lv": "h", "q": "n = 33, 32 × 32 tiles. Idle share in percent? (one decimal)", "ans": "73.4", "hint": "4096 threads.", "steps": ["4 blocks × 1024 = 4096 threads.", "Outputs 33² = 1089, idle 3007.", "<span class=\"eq\">3007 ÷ 4096 = 73.4 percent<\/span>"], "tol": 0.05}, {"lv": "h", "q": "T = 32 on the 530 GFLOP/s, 177 GB/s device: AI = T ÷ 4. Attainable GFLOP/s?", "ans": "530", "hint": "min(530, 8 × 177).", "steps": ["AI 8.", "8 × 177 = 1416 > 530.", "<span class=\"eq\">530 GFLOP/s, compute bound<\/span>"]}, {"lv": "x", "q": "n = 4096, T = 32, A100: memory time in ms (one decimal)?", "ans": "11.0", "hint": "bytes = 2n³ ÷ T × 4.", "steps": ["Loads 2 × 4096³ ÷ 32 = 4.295 × 10⁹ floats.", "× 4 bytes = 1.718 × 10¹⁰ bytes ÷ 1555 GB/s.", "<span class=\"eq\">≈ 11.0 ms (maths ≈ 7.0 ms)<\/span>"], "tol": 0.05}], "assign": [{"id": "tiledloads", "lv": "e", "title": "Loads per block", "task": "<p>Write <code>loads(N, T, tiled)<\/code>: global loads of A and B for one T × T block computing a T × T tile of C, plain or tiled.<\/p>", "starter": "def loads(N, T, tiled):\n    # your code here\n    pass\n", "tests": [{"call": "loads(1024, 16, False)", "want": 524288}, {"call": "loads(1024, 16, True)", "want": 32768}, {"call": "loads(1000, 16, True)", "want": 32256}], "solution": "def loads(N, T, tiled):\n    per_thread = 2 * ((N + T - 1) // T) if tiled else 2 * N\n    return T * T * per_thread\n", "hint": "Threads per block times loads per thread.", "why": "<p>For N = 1000 there are 63 phases, the last one partly padded with zeros.<\/p>"}, {"id": "mmtile", "lv": "h", "title": "Tiled matrix multiply in Python", "task": "<p>Write <code>matmul_tiled(A, B, T)<\/code> for square lists of lists of size n (any n). Loop over output tiles and phases like the CUDA kernel, treating values outside the matrix as 0. Return C.<\/p>", "starter": "def matmul_tiled(A, B, T):\n    # your code here\n    pass\n", "tests": [{"call": "matmul_tiled([[1, 2], [3, 4]], [[5, 6], [7, 8]], 1)", "want": [[19, 22], [43, 50]]}, {"call": "matmul_tiled([[1, 2, 3], [4, 5, 6], [7, 8, 9]], [[1, 0, 0], [0, 1, 0], [0, 0, 1]], 2)", "want": [[1, 2, 3], [4, 5, 6], [7, 8, 9]]}], "solution": "def matmul_tiled(A, B, T):\n    n = len(A)\n    C = [[0] * n for _ in range(n)]\n    nb = (n + T - 1) // T\n    for bi in range(nb):\n        for bj in range(nb):\n            for p in range(nb):\n                for i in range(bi * T, min(n, bi * T + T)):\n                    for j in range(bj * T, min(n, bj * T + T)):\n                        for k in range(p * T, min(n, p * T + T)):\n                            C[i][j] += A[i][k] * B[k][j]\n    return C\n", "hint": "Three tile loops, then three element loops limited by n.", "why": "<p>The identity test checks the ragged case n = 3, T = 2.<\/p>"}], "must": [["Plain", "2N loads per thread, 2N³ total (not N² as slide 8 says). Q2: 524,288 per block."], ["Tiled", "⌈N/T⌉ phases, 2⌈N/T⌉ loads per thread, 2N³/T total. Q3: 32,768 per block."], ["Barriers", "Sync after loading the tile and again before the next phase. Q4: without them both a and b happen (answer 3)."], ["Ragged", "Pad out of range loads with 0 and guard the store. n = 5, T = 4: 4 blocks, 39 idle."], ["Limits", "T² ≤ 1024 threads so T ≤ 32. Shared memory 8T² bytes. AI ≈ T/4."]], "summary": "<p>Tiling loads each value once per block and reuses it T times, so traffic falls from 2N³ to 2N³/T. Two barriers per phase keep it correct.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"loads": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"G.N": "1024", "G.T": "16"}}, {"l": 5, "ev": "line", "d": {"G.threads": "256"}}, {"l": 6, "ev": "line", "d": {"G.plain_per_thread": "2048"}}, {"l": 7, "ev": "line", "d": {"G.tiled_per_thread": "128"}}, {"l": 8, "ev": "line", "o": "plain per block: 524288\n"}, {"l": 9, "ev": "line", "o": "tiled per block: 32768\n"}, {"l": 10, "ev": "line", "o": "saving factor: 16\n"}, {"l": 10, "ev": "return", "o": "total plain: 2147483648 total tiled: 134217728\n"}], "tail": "", "err": null, "cut": false}, "ragged": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 8, "ev": "line", "d": {"G.tiles": "<function tiles>"}}, {"l": 3, "ev": "call", "s": ["module", "tiles()"], "d": {"L.n": "5", "L.T": "4"}}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"L.nb": "2"}}, {"l": 6, "ev": "line", "d": {"L.threads": "64"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.n": null, "L.T": null, "L.nb": null, "L.threads": null}, "o": "{'phases': 2, 'blocks': 4, 'threads': 64, 'idle': 39, 'reads tiled': 100, 'reads plain': 250}\n"}, {"l": 3, "ev": "call", "s": ["module", "tiles()"], "d": {"L.n": "33", "L.T": "32"}}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"L.nb": "2"}}, {"l": 6, "ev": "line", "d": {"L.threads": "4096"}}, {"l": 7, "ev": "line"}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 9, "ev": "return", "s": ["module"], "d": {"L.n": null, "L.T": null, "L.nb": null, "L.threads": null}, "o": "{'phases': 2, 'blocks': 4, 'threads': 4096, 'idle': 3007, 'reads tiled': 4356, 'reads plain': 71874}\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

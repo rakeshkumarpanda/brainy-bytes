@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam revision · GPU Programming</title>
+<meta name="description" content="A one week revision plan, formula sheets for speed and limits, threads and memory, and patterns and formats, a table of every slide correction, common exam traps, and five mixed problems on a T4 with full steps.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 10: Exam practice</span><span>›</span><span>Exam revision</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 10 · Topic 3 of 3 · Pro</div>
+    <h1>Exam revision</h1>
+    <p class="lead">The whole subject on a few screens: a one week plan, three formula sheets, every slide correction, the traps that cost marks, and mixed problems with fresh numbers.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">8 lessons</span><span class="cv-chip">10 animations</span><span class="cv-chip">24 formulas</span><span class="cv-chip">10 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#exam-revision" data-topic="cheatsheet" data-h="exam-revision">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#plan" data-l="plan"><span class="n">1</span><span class="t">How to revise in one week</span></a></li><li><a href="#limits" data-l="limits"><span class="n">2</span><span class="t">Formula sheet 1: speed and limits</span></a></li><li><a href="#threads" data-l="threads"><span class="n">3</span><span class="t">Formula sheet 2: threads and memory</span></a></li><li><a href="#patterns" data-l="patterns"><span class="n">4</span><span class="t">Formula sheet 3: patterns, concurrency and number formats</span></a></li><li><a href="#corrections" data-l="corrections"><span class="n">5</span><span class="t">Every slide correction in one table</span></a></li><li><a href="#traps" data-l="traps"><span class="n">6</span><span class="t">The traps that cost marks</span></a></li><li><a href="#mixed" data-l="mixed"><span class="n">7</span><span class="t">Mixed problems with fresh numbers</span></a></li><li><a href="#levels" data-l="levels"><span class="n">8</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="plan" data-l="plan" hidden><div class="cv-lno">Lesson 1 of 8</div><h2>How to revise in one week</h2>
+<p>This chapter collects the whole subject on a few screens. Use it the week before the exam, after you have worked through the chapters.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Day</th><th>What to do</th><th>Chapters</th></tr></thead><tbody><tr><td>1</td><td>Speed and limits: speedup, Amdahl, peak, roofline. Redo the formula cards below from memory.</td><td>1.1 to 1.3, 4.2</td></tr><tr><td>2</td><td>Threads: indexing forwards and backwards, warps, occupancy. Do the launch problem below by hand.</td><td>2.1 to 2.4</td></tr><tr><td>3</td><td>Memory: hierarchy, coalescing, banks, tiling. Draw one warp and count sectors.</td><td>3.1 to 3.3, 5.2</td></tr><tr><td>4</td><td>Patterns: reduction, stencils, convolution, scan, histogram.</td><td>5.1 to 5.5</td></tr><tr><td>5</td><td>Concurrency: divergence, streams, races, locks, barriers, atomics.</td><td>6.1 to 7.2</td></tr><tr><td>6</td><td>Modern GPUs: number formats, tensor cores, fast matmul, tools.</td><td>4.1, 8.1 to 9.2</td></tr><tr><td>7</td><td>Quiz 1 again under time, then three challenge problems.</td><td>10.1, 10.2</td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>Most lost marks come from counting the wrong thing: threads instead of warps, loads per thread instead of per block, bytes one way instead of both. Write the unit next to every number.</div></div>
+<p>The code below recomputes the mixed problems at the end of this chapter.</p>
+<div class="cv-code" data-k="mixed"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="limits" data-l="limits" hidden><div class="cv-lno">Lesson 2 of 8</div><h2>Formula sheet 1: speed and limits</h2>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Speedup and efficiency</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">S = T<sub>old</sub> ÷ T<sub>new</sub>, &nbsp; E = S ÷ N</div><div class="fx-n">Count copy in, kernel and copy out in T<sub>new</sub>.</div></div><div class="fx fx-key"><div class="fx-h"><span>Amdahl (fixed problem)</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">S(N) = 1 ÷ ((1 − P) + P ÷ N), &nbsp; ceiling 1 ÷ (1 − P)</div><div class="fx-n">P is the parallel fraction of the old time.</div></div><div class="fx"><div class="fx-h"><span>Gustafson (problem grows)</span></div><div class="fx-b">S(N) = (1 − P) + P N</div><div class="fx-n">Weak scaling: the parallel work grows with N.</div></div><div class="fx fx-key"><div class="fx-h"><span>Peak FLOP/s</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">peak = SMs × cores per SM × 2 × clock</div><div class="fx-n">The 2 is one FMA per core per cycle.</div></div><div class="fx"><div class="fx-h"><span>Little's law</span></div><div class="fx-b">in flight = latency × throughput</div><div class="fx-n">Warps needed = in flight ÷ 32. Bytes in flight = bandwidth × latency.</div></div><div class="fx fx-key"><div class="fx-h"><span>Arithmetic intensity</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">AI = FLOPs ÷ bytes moved</div><div class="fx-n">Count bytes read and written.</div></div><div class="fx fx-key"><div class="fx-h"><span>Roofline</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">attainable = min(peak, AI × bandwidth), &nbsp; ridge = peak ÷ bandwidth</div><div class="fx-n">Left of the ridge: memory bound. Right: compute bound.</div></div><div class="fx"><div class="fx-h"><span>Time bound</span></div><div class="fx-b">t ≥ max(FLOPs ÷ peak, bytes ÷ bandwidth)</div><div class="fx-n">The larger term tells you what to fix.</div></div></div>
+<div class="cvz" data-viz="amdahl"></div>
+<div class="cvz" data-viz="roofline"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="threads" data-l="threads" hidden><div class="cv-lno">Lesson 3 of 8</div><h2>Formula sheet 2: threads and memory</h2>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Global index and blocks</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">i = blockIdx.x × blockDim.x + threadIdx.x, &nbsp; blocks = ⌈N ÷ B⌉</div><div class="fx-n">Guard with i &lt; N. Idle threads = blocks × B − N.</div></div><div class="fx"><div class="fx-h"><span>Going backwards</span></div><div class="fx-b">block = ⌊g ÷ (B<sub>x</sub>B<sub>y</sub>)⌋, x = r mod B<sub>x</sub>, y = ⌊r ÷ B<sub>x</sub>⌋</div><div class="fx-n">r is the leftover g − block × B<sub>x</sub>B<sub>y</sub>.</div></div><div class="fx fx-key"><div class="fx-h"><span>Warps</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">warps per block = ⌈B ÷ 32⌉, &nbsp; lane = t mod 32</div><div class="fx-n">t = x + y B<sub>x</sub> + z B<sub>x</sub>B<sub>y</sub>, x moves fastest.</div></div><div class="fx fx-key"><div class="fx-h"><span>Occupancy</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">blocks per SM = min(threads, blocks, registers, shared memory limits)</div><div class="fx-n">Occupancy = active warps ÷ max warps per SM.</div></div><div class="fx"><div class="fx-h"><span>Coalescing</span></div><div class="fx-b">sectors per warp load = distinct 32 byte pieces touched</div><div class="fx-n">Floats: stride 1 gives 4 sectors, stride 8 or more gives 32.</div></div><div class="fx fx-key"><div class="fx-h"><span>Bank conflicts</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">degree = gcd(stride, 32)</div><div class="fx-n">Same word for all lanes is a broadcast. Pad rows to 33.</div></div><div class="fx fx-key"><div class="fx-h"><span>Matmul loads</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">naive 2N³, &nbsp; tiled 2N³ ÷ T</div><div class="fx-n">Per thread 2N against 2N ÷ T. Tile AI in FP32 is T ÷ 4.</div></div><div class="fx"><div class="fx-h"><span>Halo tiles</span></div><div class="fx-b">loads per output = (B + 2R)<sup>d</sup> ÷ B<sup>d</sup></div><div class="fx-n">d is the number of dimensions, R the radius.</div></div></div>
+<div class="cvz" data-viz="launch1d"></div>
+<div class="cvz" data-viz="occupancy"></div>
+<div class="cvz" data-viz="banks"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="patterns" data-l="patterns" hidden><div class="cv-lno">Lesson 4 of 8</div><h2>Formula sheet 3: patterns, concurrency and number formats</h2>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Reduction tree</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">log₂ B levels, B − 1 additions, 1 + log₂ B barriers</div><div class="fx-n">One atomic per block joins the blocks.</div></div><div class="fx fx-key"><div class="fx-h"><span>Scans</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">Hillis and Steele n log₂ n − (n − 1) adds in log₂ n steps, Blelloch 2(n − 1) adds in 2 log₂ n steps</div><div class="fx-n">Blelloch does less work, Hillis and Steele has fewer steps.</div></div><div class="fx"><div class="fx-h"><span>Divergence</span></div><div class="fx-b">efficiency = busy lane ticks ÷ (32 × total ticks)</div><div class="fx-n">Paths inside one warp run one after the other.</div></div><div class="fx fx-key"><div class="fx-h"><span>Pipeline</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">T = (a + b + c) + (n − 1) × max(a, b, c)</div><div class="fx-n">Equal stages give speedup 3n ÷ (n + 2).</div></div><div class="fx"><div class="fx-h"><span>Waves</span></div><div class="fx-b">waves = ⌈blocks ÷ (SMs × blocks per SM)⌉</div><div class="fx-n">A last wave that is almost empty wastes most of the GPU.</div></div><div class="fx fx-key"><div class="fx-h"><span>Float value</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">x = (−1)<sup>s</sup> × 1.m × 2<sup>e − bias</sup>, &nbsp; bias = 2<sup>E − 1</sup> − 1</div><div class="fx-n">FP32 1/8/23, FP16 1/5/10, BF16 1/8/7, TF32 1/8/10.</div></div><div class="fx"><div class="fx-h"><span>Symmetric INT8</span></div><div class="fx-b">s = max|x| ÷ 127, &nbsp; q = round(x ÷ s)</div><div class="fx-n">Error at most s ÷ 2 unless a value is clipped.</div></div><div class="fx"><div class="fx-h"><span>Interleavings</span></div><div class="fx-b">(n s)! ÷ (s!)<sup>n</sup></div><div class="fx-n">n threads with s steps each. Two threads of 3 steps: 20 orders.</div></div></div>
+<div class="cvz" data-viz="reduce"></div>
+<div class="cvz" data-viz="streams"></div>
+<div class="cvz" data-viz="formats"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="corrections" data-l="corrections" hidden><div class="cv-lno">Lesson 5 of 8</div><h2>Every slide correction in one table</h2>
+<p>While writing this subject every worked example in the notes was recomputed. These are the places where the slides or the class notes say something that does not hold. Each chapter explains the fix in full.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Where</th><th>The slide or class said</th><th>What is right</th><th>Chapter</th></tr></thead><tbody><tr><td>Lecture 3, slide 16</td><td>Global thread 343 has threadIdx (2, 3, 0)</td><td>It is (3, 3, 0). (2, 3, 0) is thread 342.</td><td>2.2</td></tr><tr><td>Lecture 3, mapping</td><td>Grids sit inside cores</td><td>A thread runs on a core lane, a block on one SM, a grid across the GPU.</td><td>2.3</td></tr><tr><td>Lecture 4, slide 11</td><td>Asynchrony is risky because kernels overwrite each other</td><td>Work in one stream runs in order. The risk is the CPU reading before the GPU is done.</td><td>6.2</td></tr><tr><td>Lecture 5 notes</td><td>1.00101 in binary = 1.5625</td><td>1.00101 in binary = 1.15625 = 37 ÷ 32.</td><td>4.1</td></tr><tr><td>Lecture 6, slide 14</td><td>Heat weights 0.25 centre and 0.1 for 6 neighbours</td><td>They add to 0.85, so heat leaks away. The centre must be 0.4.</td><td>5.3</td></tr><tr><td>Lecture 7, slide 6</td><td>Threads 0 to 21 write out of bounds</td><td>All 32 threads write out of bounds (indices 10 to 41).</td><td>9.1</td></tr><tr><td>Lecture 7, slide 8</td><td>The plain matmul reads Width² values</td><td>Each of the Width² threads reads 2 × Width, so 2 × Width³ in total.</td><td>5.2</td></tr><tr><td>Lecture 8</td><td>Sharpening pixel 30 gives 35</td><td>5 × 30 − (25 + 35 + 20 + 40) = 30.</td><td>5.4</td></tr><tr><td>Lecture 9, slide 11</td><td>Bars show exact format speeds</td><td>The bars are illustrative. TF32 is a compute mode, not a storage format.</td><td>8.1</td></tr><tr><td>Lecture 9, slide 16</td><td>The C tile lives in shared memory</td><td>In real kernels the C tile stays in registers. Only the epilogue uses shared memory.</td><td>8.2</td></tr><tr><td>Lecture 9 blog numbers</td><td>Ridge about 410</td><td>With the numbers used in class the ridge is about 378.</td><td>8.3</td></tr><tr><td>Lecture 10, slide 8</td><td>Attempt 2 deadlocks</td><td>Attempt 2 breaks mutual exclusion. Attempt 3 is the one that deadlocks.</td><td>7.1</td></tr><tr><td>Lecture 10, class</td><td>Peterson does not solve the problem</td><td>Peterson is correct when memory is in order, so on a GPU it needs fences.</td><td>7.1</td></tr><tr><td>Lecture 11 code</td><td>critical_kernel is safe as written</td><td>It can hang before Volta and needs __threadfence. The priority counter skips levels.</td><td>7.2</td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>If an exam question copies one of these slides, answer with the right value and add one line saying why. Markers reward the reasoning.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="traps" data-l="traps" hidden><div class="cv-lno">Lesson 6 of 8</div><h2>The traps that cost marks</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Trap</th><th>Do this instead</th></tr></thead><tbody><tr><td>Counting threads when the question asks for warps</td><td>Divide by 32 and round up per block, then multiply by blocks.</td></tr><tr><td>Loads per thread when the question says per block</td><td>Multiply by threads per block. Quiz 1 question 2: 256 × 2048 = 524,288.</td></tr><tr><td>Forgetting the write in bytes moved</td><td>SAXPY reads x and y and writes y: 12 bytes per element.</td></tr><tr><td>Taking FMA as 1 FLOP</td><td>One FMA is 2 FLOPs, a multiply and an add.</td></tr><tr><td>Putting __syncthreads inside a divergent if</td><td>Every thread of the block must reach every barrier.</td></tr><tr><td>Treating occupancy as the goal</td><td>Enough warps to hide latency is enough. Measure, do not maximise.</td></tr><tr><td>Reading GB as 2<sup>30</sup> bytes in bandwidth</td><td>Bandwidth uses 10<sup>9</sup> bytes per GB.</td></tr><tr><td>Forgetting the reserved 1 KB of shared memory per block</td><td>On CC 8.x, blocks = ⌊pool ÷ (bytes + 1 KB)⌋.</td></tr><tr><td>Thinking divergence happens across warps</td><td>Different warps may take different paths for free. Only lanes inside one warp diverge.</td></tr><tr><td>Amdahl with N where the question gives a speedup of a part</td><td>Use 1 ÷ ((1 − p) + p ÷ s) with s the speedup of that part.</td></tr></tbody></table></div>
+<div class="cvz" data-viz="diverge"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="mixed" data-l="mixed" hidden><div class="cv-lno">Lesson 7 of 8</div><h2>Mixed problems with fresh numbers</h2>
+<p>Each problem joins two or more chapters. The numbers are new, so you cannot remember the answer, you have to work it out.</p>
+<div class="walk"><div class="walk-h"><span>Problem A. A T4 has 40 SMs with 64 FP32 cores each at 1.59 GHz and 320 GB/s. A 3 × 3 blur does 9 multiplies and 8 adds per pixel. Is it memory or compute bound, without and with perfect reuse of input pixels?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Peak = 40 × 64 × 2 × 1.59 = 8140.8 GFLOP/s. Ridge = 8140.8 ÷ 320 = 25.44 FLOP/byte.</li><li>Without reuse each pixel reads 9 floats and writes 1: 40 bytes for 17 FLOPs, AI = 0.425. Attainable 0.425 × 320 = 136 GFLOP/s.</li><li>With perfect reuse each pixel reads 1 float and writes 1: 8 bytes, AI = 2.125, attainable 680 GFLOP/s.</li><li><span class="eq">Memory bound either way. Tiling gives up to 5 times, but the ceiling is still 680 of 8141 GFLOP/s</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Problem B. Launch one thread per element for N = 1,000,000 with 256 threads per block on that T4 (1024 threads and 16 blocks per SM). Give the blocks, idle threads, total warps and waves.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Blocks = ⌈1,000,000 ÷ 256⌉ = 3907. Threads launched = 1,000,192, so 192 are idle.</li><li>Warps = 3907 × 8 = 31,256.</li><li>Blocks per SM: threads allow 1024 ÷ 256 = 4, the block cap allows 16, so 4. One wave holds 40 × 4 = 160 blocks.</li><li><span class="eq">Waves = ⌈3907 ÷ 160⌉ = 25, the last one 42 percent full</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Problem C. Sum 2<sup>20</sup> floats with 512 threads per block, a tree in shared memory and one atomic per block. Count blocks, levels, barriers per block and all additions.</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Blocks = 2<sup>20</sup> ÷ 512 = 2048. Levels = log₂ 512 = 9. Barriers = 1 after loading + 9 = 10.</li><li>Additions inside blocks = 2048 × 511 = 1,046,528. Atomics = 2048.</li><li>Together 1,048,576 = 2<sup>20</sup>, one addition per input value counting the add onto the zero total.</li><li><span class="eq">Same work as a serial sum, in 9 levels instead of 1,048,575 steps</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Problem D. You sum 4096 ones in FP16. What do you get, and why does a tensor core avoid it?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>FP16 has 10 mantissa bits, so the gap between numbers at 2048 is 2<sup>11 − 10</sup> = 2.</li><li>2048 + 1 = 2049 lies halfway, and round to nearest even gives 2048. Every later add is lost.</li><li>Tensor cores take FP16 inputs but add in FP32, where the gap at 2048 is far below 1.</li><li><span class="eq">FP16 sum = 2048, FP32 accumulator = 4096</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Problem E. Copies take 20 percent of a job and the kernel takes 80 percent. You make the kernel 50 times faster. What is the overall speedup, and what should you do next?</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Speedup of a part: 1 ÷ ((1 − p) + p ÷ s) with p = 0.8 and s = 50.</li><li>1 ÷ (0.2 + 0.016) = 1 ÷ 0.216 = 4.63.</li><li>The copies are now 0.2 ÷ 0.216 = 93 percent of the time.</li><li><span class="eq">4.63 times. Next: keep data on the GPU or overlap the copies with streams</span></li></ol></div>
+<div class="cvz" data-viz="peak"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 8 of 8</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A GPU is fast when many small jobs run at once and the data is close by. Almost every formula here counts one of those two things.</p></div><div class="ld-p" data-ld="college" hidden><p>For any kernel, write down threads, warps, bytes, FLOPs and the limiting resource. Then pick the formula.</p></div><div class="ld-p" data-ld="masters" hidden><p>Combine models: roofline for the ceiling, occupancy and Little's law for latency hiding, waves for the tail, Amdahl for the copies.</p></div><div class="ld-p" data-ld="research" hidden><p>Research on GPU kernels checks these models against Nsight measurements and then attacks the gap, as in the fast matmul ladder of chapter 8.3.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./challenge-problems.html" data-topic="challenge-problems"><small>Previous topic</small><b>Challenge problems</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "exam-revision", "topic": "exam-revision", "subject": "cuda", "title": "Exam revision", "codes": {"mixed": {"src": "import math\npeak = 40 * 64 * 2 * 1.59            # T4 FP32 GFLOP/s\nprint(\"T4 peak:\", round(peak, 1), \" ridge:\", round(peak / 320, 2))\nprint(\"blur naive and cached:\", 17 / 40 * 320, 17 / 8 * 320)\nn, B = 1_000_000, 256\nblocks = math.ceil(n / B)\nprint(\"blocks:\", blocks, \" idle:\", blocks * B - n, \" warps:\", blocks * B // 32,\n      \" waves:\", math.ceil(blocks / (40 * (1024 // B))))\nprint(\"reduction adds:\", 2048 * 511, \" plus atomics:\", 2048)\nprint(\"Amdahl 80 percent at 50x:\", round(1 / (0.2 + 0.8 / 50), 2))", "stdin": "", "out": "T4 peak: 8140.8  ridge: 25.44\nblur naive and cached: 136.0 680.0\nblocks: 3907  idle: 192  warps: 31256  waves: 25\nreduction adds: 1046528  plus atomics: 2048\nAmdahl 80 percent at 50x: 4.63"}}, "quiz": [{"lv": "e", "q": "Ridge point of a GPU with 8 TFLOP/s and 320 GB/s", "o": ["2.5", "25", "40", "250"], "a": 1, "hint": "8000 ÷ 320.", "why": "25 FLOP per byte."}, {"lv": "e", "q": "Warps in a block of 100 threads", "o": ["3", "4", "100", "1"], "a": 1, "hint": "Round up.", "why": "⌈100 ÷ 32⌉ = 4."}, {"lv": "e", "q": "Global index of thread 5 in block 3 with 64 threads per block", "o": ["197", "200", "67", "320"], "a": 0, "hint": "3 × 64 + 5.", "why": "197."}, {"lv": "m", "q": "Stride 4 floats in shared memory", "o": ["Conflict free", "2 way", "4 way", "8 way"], "a": 2, "hint": "gcd(4, 32).", "why": "4 way."}, {"lv": "m", "q": "Lecture 3 slide 16: thread 343 in blocks of 5 × 5 has threadIdx", "o": ["(2, 3, 0)", "(3, 3, 0)", "(3, 2, 0)", "(18, 0, 0)"], "a": 1, "hint": "343 − 325 = 18.", "why": "The slide shows (2, 3, 0), which is thread 342."}, {"lv": "m", "q": "Heat weights 0.25 centre and 0.1 for 6 neighbours", "o": ["Are correct", "Leak heat, the centre should be 0.4", "Should be 0.5", "Are unstable for any step"], "a": 1, "hint": "Weights must add to 1.", "why": "0.25 + 0.6 = 0.85."}, {"lv": "m", "q": "Attempt 2 of Dekker breaks", "o": ["Progress", "Mutual exclusion", "Nothing", "Bounded waiting only"], "a": 1, "hint": "Both can enter.", "why": "The slide calls it a deadlock, which is attempt 3."}, {"lv": "h", "q": "A T4 runs 3907 blocks of 256 threads with 4 blocks per SM on 40 SMs. Waves", "o": ["24", "25", "98", "4"], "a": 1, "hint": "⌈3907 ÷ 160⌉.", "why": "25."}, {"lv": "h", "q": "Summing 4096 ones in FP16 gives", "o": ["4096", "2048", "4095", "Infinity"], "a": 1, "hint": "Gap at 2048 is 2.", "why": "2048 + 1 rounds back to 2048."}, {"lv": "h", "q": "A job with 20 percent copies and an 80 percent kernel made 50 times faster speeds up by", "o": ["50", "4.63", "5", "40"], "a": 1, "hint": "Amdahl for a part.", "why": "1 ÷ 0.216."}, {"lv": "x", "q": "A 3 × 3 FP32 blur on a T4 with perfect reuse is", "o": ["Compute bound", "Memory bound at about 680 GFLOP/s", "Bound by PCIe", "At the ridge"], "a": 1, "hint": "AI 2.125 against ridge 25.4.", "why": "Memory bound."}, {"lv": "x", "q": "In real tiled GEMM kernels the C tile lives during the main loop in", "o": ["Shared memory", "Registers", "Global memory", "Constant memory"], "a": 1, "hint": "Correction to lecture 9 slide 16.", "why": "Registers."}], "calc": [{"lv": "e", "q": "T4 FP32 peak in GFLOP/s: 40 SMs, 64 cores, 1.59 GHz (one decimal)?", "ans": "8140.8", "hint": "SMs × cores × 2 × clock.", "steps": ["40 × 64 = 2560 cores.", "× 2 × 1.59.", "<span class=\"eq\">8140.8 GFLOP/s<\/span>"], "tol": 0.1}, {"lv": "e", "q": "Blocks for N = 1,000,000 with 256 threads?", "ans": "3907", "hint": "Round up.", "steps": ["1,000,000 ÷ 256 = 3906.25.", "Round up.", "<span class=\"eq\">3907<\/span>"]}, {"lv": "e", "q": "Idle threads in that launch?", "ans": "192", "hint": "blocks × B − N.", "steps": ["3907 × 256 = 1,000,192.", "− 1,000,000.", "<span class=\"eq\">192<\/span>"]}, {"lv": "m", "q": "T4 ridge point (two decimals)?", "ans": "25.44", "hint": "peak ÷ bandwidth.", "steps": ["8140.8 ÷ 320.", "= 25.44.", "<span class=\"eq\">25.44 FLOP/byte<\/span>"], "tol": 0.01}, {"lv": "m", "q": "Attainable GFLOP/s of the naive 3 × 3 blur on a T4?", "ans": "136", "hint": "AI × bandwidth.", "steps": ["AI = 17 ÷ 40 = 0.425.", "× 320.", "<span class=\"eq\">136 GFLOP/s<\/span>"]}, {"lv": "m", "q": "Barriers per block in a 512 thread tree reduction?", "ans": "10", "hint": "1 + log₂ 512.", "steps": ["Load barrier 1.", "9 levels.", "<span class=\"eq\">10<\/span>"]}, {"lv": "m", "q": "Interleavings of two threads with 3 steps each?", "ans": "20", "hint": "6! ÷ (3! 3!).", "steps": ["720 ÷ 36.", "= 20.", "<span class=\"eq\">20<\/span>"]}, {"lv": "h", "q": "Waves for 3907 blocks, 4 blocks per SM, 40 SMs?", "ans": "25", "hint": "⌈3907 ÷ 160⌉.", "steps": ["One wave 160 blocks.", "3907 ÷ 160 = 24.4.", "<span class=\"eq\">25<\/span>"]}, {"lv": "h", "q": "Overall speedup: 80 percent kernel made 50 times faster (two decimals)?", "ans": "4.63", "hint": "1 ÷ (0.2 + 0.8 ÷ 50).", "steps": ["0.8 ÷ 50 = 0.016.", "1 ÷ 0.216.", "<span class=\"eq\">4.63<\/span>"], "tol": 0.01}, {"lv": "x", "q": "Symmetric INT8 scale for values in [−6.35, 6.35]?", "ans": "0.05", "hint": "s = max|x| ÷ 127.", "steps": ["6.35 ÷ 127.", "= 0.05.", "<span class=\"eq\">s = 0.05<\/span>"], "tol": 0.0001}], "assign": [{"id": "ridge", "lv": "m", "title": "Roofline in one function", "task": "<p>Write <code>roofline(peak, bw, flops, nbytes)<\/code> with peak in GFLOP/s and bw in GB/s. Return [ridge rounded to 2 decimals, \"memory\" or \"compute\", attainable GFLOP/s rounded to 1 decimal]. A kernel exactly at the ridge counts as \"compute\".<\/p>", "starter": "def roofline(peak, bw, flops, nbytes):\n    # your code here\n    pass\n", "tests": [{"call": "roofline(8140.8, 320, 17, 40)", "want": [25.44, "memory", 136.0]}, {"call": "roofline(19500, 1555, 2 * 4096 ** 3, 3 * 4 * 4096 ** 2)", "want": [12.54, "compute", 19500.0]}, {"call": "roofline(1000, 100, 10, 1)", "want": [10.0, "compute", 1000.0]}, {"call": "roofline(8140.8, 320, 2, 12)", "want": [25.44, "memory", 53.3]}], "solution": "def roofline(peak, bw, flops, nbytes):\n    ai = flops / nbytes\n    ridge = peak / bw\n    kind = \"compute\" if ai >= ridge else \"memory\"\n    return [round(ridge, 2), kind, round(float(min(peak, ai * bw)), 1)]\n", "hint": "AI = flops ÷ bytes, compare with peak ÷ bw.", "why": "<p>The second test is a 4096 FP32 matmul on an A100 with each matrix moved once: AI 682.7, far right of the ridge.<\/p>"}, {"id": "launch", "lv": "h", "title": "Plan a launch", "task": "<p>Write <code>launch_plan(n, block, sms, max_threads, max_blocks)<\/code>. Return [blocks, idle threads, warps per block, waves], where blocks per SM is the smaller of max_threads ÷ block (rounded down) and max_blocks.<\/p>", "starter": "def launch_plan(n, block, sms, max_threads, max_blocks):\n    # your code here\n    pass\n", "tests": [{"call": "launch_plan(1000000, 256, 40, 1024, 16)", "want": [3907, 192, 8, 25]}, {"call": "launch_plan(1000, 100, 2, 1024, 16)", "want": [10, 0, 4, 1]}, {"call": "launch_plan(2048, 32, 1, 2048, 32)", "want": [64, 0, 1, 2]}, {"call": "launch_plan(1, 1024, 108, 2048, 32)", "want": [1, 1023, 32, 1]}], "solution": "def launch_plan(n, block, sms, max_threads, max_blocks):\n    blocks = -(-n // block)\n    per_sm = min(max_threads // block, max_blocks)\n    waves = -(-blocks // (sms * per_sm))\n    return [blocks, blocks * block - n, -(-block // 32), waves]\n", "hint": "-(-a // b) is ceil for positive whole numbers.", "why": "<p>The third test hits the block cap: 2048 ÷ 32 = 64 threads allow 64 blocks, but only 32 fit.<\/p>"}], "must": [["Three formula groups", "Speed and limits (Amdahl, peak, roofline), threads and memory (index, warps, occupancy, banks, tiling), patterns (reduction, scan, pipeline, formats)."], ["Write the unit", "Threads or warps, per thread or per block, bytes read and written, FMA = 2 FLOPs, GB = 10⁹ bytes."], ["Slide corrections", "Thread 343 is (3, 3, 0). Heat centre 0.4. Width³ loads. Sharpen gives 30. Attempt 2 breaks mutual exclusion. C tile in registers."], ["T4 numbers", "40 SMs, 8.14 TFLOP/s FP32, 320 GB/s, ridge 25.4, 1024 threads and 16 blocks per SM."], ["Next step rule", "Memory bound: reuse data (tiles). Copy bound: keep data on the GPU or overlap. Latency bound: more warps or more independent work."]], "summary": "<p>Count the right thing with the right unit, pick the matching formula, and check against a second method. The tables in this chapter list every formula and every correction you need.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"mixed": {"steps": [{"l": 1, "ev": "line", "s": ["module"]}, {"l": 2, "ev": "line"}, {"l": 3, "ev": "line", "d": {"G.peak": "8140.8"}}, {"l": 4, "ev": "line", "o": "T4 peak: 8140.8  ridge: 25.44\n"}, {"l": 5, "ev": "line", "o": "blur naive and cached: 136.0 680.0\n"}, {"l": 6, "ev": "line", "d": {"G.n": "1000000", "G.B": "256"}}, {"l": 7, "ev": "line", "d": {"G.blocks": "3907"}}, {"l": 8, "ev": "line"}, {"l": 7, "ev": "line"}, {"l": 9, "ev": "line", "o": "blocks: 3907  idle: 192  warps: 31256  waves: 25\n"}, {"l": 10, "ev": "line", "o": "reduction adds: 1046528  plus atomics: 2048\n"}, {"l": 10, "ev": "return", "o": "Amdahl 80 percent at 50x: 4.63\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

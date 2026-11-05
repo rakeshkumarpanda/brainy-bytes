@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Low precision numbers and quantisation · GPU Programming</title>
+<meta name="description" content="Math limited and memory limited layers, the float formula and bias, range against detail, a six format comparison, TF32, loss scaling, mixed precision accumulation, symmetric and asymmetric quantisation with workbook 9.3, per channel scales and FP8 scaling.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 8: Tensor cores and fast matmul</span><span>›</span><span>Number formats</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 8 · Topic 1 of 3 · Pro</div>
+    <h1>Low precision numbers and quantisation</h1>
+    <p class="lead">Learn how FP32, TF32, FP16, BF16, FP8 and INT8 store a number, what each one loses, why sums stay in FP32, and how to quantise weights to 8 bits.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">9 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#number-formats" data-topic="cheatsheet" data-h="number-formats">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#why" data-l="why"><span class="n">1</span><span class="t">Why use fewer bits?</span></a></li><li><a href="#formats" data-l="formats"><span class="n">2</span><span class="t">How a float is stored, and the formats side by side</span></a></li><li><a href="#which" data-l="which"><span class="n">3</span><span class="t">Which format when, and why the sum stays wide</span></a></li><li><a href="#quant" data-l="quant"><span class="n">4</span><span class="t">Quantisation step by step</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="why" data-l="why" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Why use fewer bits?</h2>
+<p>A neural network is a chain of layers. Lecture 9 splits them into two families.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Family</th><th>Examples</th><th>Time goes into</th><th>Tensor cores help?</th></tr></thead><tbody><tr><td>Math limited</td><td>convolution, fully connected, recurrent</td><td>calculating</td><td>a lot</td></tr><tr><td>Memory limited</td><td>bias add, normalisation, ReLU, dropout</td><td>moving numbers</td><td>not at all</td></tr></tbody></table></div>
+<p>Fewer bits per number help both. The memory limited layers move half the bytes in FP16 and a quarter in INT8. The math limited layers get faster hardware: a tensor core does many more 16 bit multiplies than 32 bit ones in the same time.</p>
+<p>It works because networks forgive small errors. In class the example was accuracy falling from 92 to 91 percent, which is fine, against 92 to 82 percent, which is not. Scientific codes, such as nuclear or biological simulations, cannot accept that and stay in FP64.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Fewer bytes, higher intensity</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">AI = FLOPs ÷ bytes</div><div class="fx-n">Halve the bytes and the arithmetic intensity doubles. Batch 1 FC layer: AI ≈ 1 in FP16, ≈ 2 with INT8 weights.</div></div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="formats" data-l="formats" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>How a float is stored, and the formats side by side</h2>
+<p>Every floating point number has a sign bit, E exponent bits and M mantissa bits.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Value of a normal number</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">x = (−1)<sup>s</sup> × 1.m<sub>1</sub>m<sub>2</sub>…m<sub>M</sub> (binary) × 2<sup>e − bias</sup></div><div class="fx-n">The leading 1 is not stored, so M bits give M + 1 bits of precision.</div></div><div class="fx fx-key"><div class="fx-h"><span>Bias</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">bias = 2<sup>E − 1</sup> − 1</div><div class="fx-n">5 bits: 15. 8 bits: 127. 11 bits: 1023.</div></div><div class="fx"><div class="fx-h"><span>Gap after 1.0</span></div><div class="fx-b">ε = 2<sup>−M</sup></div><div class="fx-n">FP32 1.2 × 10⁻⁷, FP16 9.8 × 10⁻⁴, BF16 7.8 × 10⁻³.</div></div><div class="fx"><div class="fx-h"><span>Decimal digits</span></div><div class="fx-b">≈ (M + 1) × log<sub>10</sub> 2 ≈ 0.3 (M + 1)</div><div class="fx-n">FP32 about 7, FP16 about 3, BF16 about 2.4.</div></div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Format</th><th>E</th><th>M</th><th>Largest</th><th>Gap after 1.0</th><th>Digits</th></tr></thead><tbody><tr><td>FP64</td><td>11</td><td>52</td><td>1.8 × 10³⁰⁸</td><td>2.2 × 10⁻¹⁶</td><td>16</td></tr><tr><td>FP32</td><td>8</td><td>23</td><td>3.4 × 10³⁸</td><td>1.2 × 10⁻⁷</td><td>7.2</td></tr><tr><td>TF32</td><td>8</td><td>10</td><td>3.4 × 10³⁸</td><td>9.8 × 10⁻⁴</td><td>3.3</td></tr><tr><td>FP16</td><td>5</td><td>10</td><td>65,504</td><td>9.8 × 10⁻⁴</td><td>3.3</td></tr><tr><td>BF16</td><td>8</td><td>7</td><td>3.4 × 10³⁸</td><td>7.8 × 10⁻³</td><td>2.4</td></tr><tr><td>FP8 E4M3</td><td>4</td><td>3</td><td>448</td><td>0.125</td><td>about 1</td></tr><tr><td>FP8 E5M2</td><td>5</td><td>2</td><td>57,344</td><td>0.25</td><td>under 1</td></tr></tbody></table></div>
+<p>Exponent bits give <b>range</b>: each extra bit doubles how many powers of two are available. Mantissa bits give <b>detail</b>: they split each interval such as [1, 2) into 2<sup>M</sup> equal steps. Type any number below and see what each format keeps.</p>
+<div class="cvz" data-viz="formats"></div>
+<div class="walk"><div class="walk-h"><span>π in FP16</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>3.14159 = 1.5708 × 2¹.</li><li>Sign 0. Exponent 1 + 15 = 16 = 10000₂.</li><li>Mantissa: keep 10 bits of 0.5708, which is 1001001000₂.</li><li>Value 1.5703125 × 2 = 3.140625.</li><li><span class="eq">3.140625, about 3 correct digits (FP32 gives 3.1415927)</span></li></ol></div>
+<div class="cv-code" data-k="half"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="which" data-l="which" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Which format when, and why the sum stays wide</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Format</th><th>Used for</th><th>Watch out for</th></tr></thead><tbody><tr><td>FP32</td><td>master weights in training, science, anything delicate</td><td>slow on tensor cores</td></tr><tr><td>TF32</td><td>FP32 code on Ampere and later, about 8 times faster on an A100</td><td>not a storage format: memory still holds FP32</td></tr><tr><td>FP16</td><td>inference, training with loss scaling</td><td>tiny range: gradients underflow, 70,000 overflows</td></tr><tr><td>BF16</td><td>the default for training large models</td><td>only about 2 to 3 digits</td></tr><tr><td>FP8, FP4</td><td>Hopper and Blackwell training and inference</td><td>needs a scale factor per tensor or per block</td></tr><tr><td>INT8, INT4</td><td>inference after quantisation</td><td>needs a scale factor, accuracy must be checked</td></tr></tbody></table></div>
+<p>TF32 keeps FP32 in memory. The tensor core rounds the inputs to 10 mantissa bits inside, multiplies, and adds the results in FP32. The professor joked that it should have been called TF19, since it uses 1 + 8 + 10 bits.</p>
+<p><b>Mixed precision.</b> A and B are stored in a narrow format, but the running sum is kept in FP32. Why it matters: add 1 to an FP16 sum again and again. Once the sum reaches 2048, the gap between FP16 numbers is 2, so 2048 + 1 rounds back to 2048 and the sum stops growing.</p>
+<div class="walk"><div class="walk-h"><span>FP16 versus FP32 accumulator (dot product of 4096 FP16 numbers, from the notes)</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>True answer −18.16.</li><li>FP16 accumulator: −18.36, error 0.20.</li><li>FP32 accumulator: error 0.000026.</li><li><span class="eq">About 7600 times smaller error with the wide accumulator</span></li></ol></div>
+<div class="note note-tip"><b>Remember</b><div>Loss scaling for FP16 training: multiply the loss by a large number such as 1024 before back propagation so that small gradients do not round to 0, then divide the gradients by the same number. BF16 has the range of FP32 and does not need it.</div></div>
+<div class="note note-exam"><b>In the exam</b><div>Slide 11's bars (TF32, FP16 and BF16 at 4 times, FP8 at 8, FP4 at 16) are labelled illustrative. On an A100, TF32 is 8 times and FP16 16 times the FP32 CUDA core rate. Always use the data sheet of the GPU in front of you.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="quant" data-l="quant" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Quantisation step by step</h2>
+<p>In class the idea was "treat everything from 0.9 to 1.7 as 1". Real quantisation is a straight line map from real numbers to small integers.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Quantise</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">q = clip(round(x ÷ s) + z, q<sub>min</sub>, q<sub>max</sub>)</div><div class="fx-n">s is the scale, z the zero point.</div></div><div class="fx fx-key"><div class="fx-h"><span>Bring back</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">x̂ = s × (q − z)</div><div class="fx-n">The rounding error is at most s ÷ 2 unless the value was clipped.</div></div><div class="fx"><div class="fx-h"><span>Symmetric INT8</span></div><div class="fx-b">s = R ÷ 127, z = 0</div><div class="fx-n">For values between −R and R.</div></div><div class="fx"><div class="fx-h"><span>Asymmetric (UINT8)</span></div><div class="fx-b">s = (max − min) ÷ 255, z = round(−min ÷ s)</div><div class="fx-n">For values that are not centred on 0, such as ReLU outputs.</div></div></div>
+<div class="cvz" data-viz="quant"></div>
+<div class="walk"><div class="walk-h"><span>Workbook 9.3: store 0.3 with R = 1</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>s = 1 ÷ 127 = 0.007874.</li><li>0.3 ÷ 0.007874 = 38.1, round to 38.</li><li>Back: 38 × 0.007874 = 0.2992.</li><li><span class="eq">Error 0.0008, storage 1 byte instead of 4</span></li></ol></div>
+<div class="cv-code" data-k="quant"></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">quantise.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#include &lt;cuda_fp16.h&gt;</span><span class="ln" data-n="2">#include &lt;cuda_bf16.h&gt;</span><span class="ln" data-n="3">#include &lt;cstdint&gt;</span><span class="ln" data-n="4"> </span><span class="ln ck-has" data-n="5">__global__ void quantise(const float *w, int8_t *q, int n, float s) {</span><span class="ln" data-n="6">    int i = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="7">    if (i &lt; n) {</span><span class="ln ck-has" data-n="8">        float r = rintf(w[i] / s);                 // round to the nearest integer</span><span class="ln ck-has" data-n="9">        r = fminf(fmaxf(r, -127.0f), 127.0f);      // clip to the INT8 range</span><span class="ln ck-has" data-n="10">        q[i] = (int8_t)r;</span><span class="ln" data-n="11">    }</span><span class="ln" data-n="12">}</span><span class="ln" data-n="13"> </span><span class="ln" data-n="14">__global__ void dequantise(const int8_t *q, float *w, int n, float s) {</span><span class="ln" data-n="15">    int i = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln ck-has" data-n="16">    if (i &lt; n) w[i] = s * q[i];</span><span class="ln" data-n="17">}</span><span class="ln" data-n="18"> </span><span class="ln" data-n="19">__global__ void to_16bit(const float *x, __half *h, __nv_bfloat16 *b, int n) {</span><span class="ln" data-n="20">    int i = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="21">    if (i &lt; n) {</span><span class="ln ck-has" data-n="22">        h[i] = __float2half(x[i]);                 // FP16: 5 exponent bits, 10 mantissa bits</span><span class="ln" data-n="23">        b[i] = __float2bfloat16(x[i]);             // BF16: 8 exponent bits, 7 mantissa bits</span><span class="ln" data-n="24">    }</span><span class="ln" data-n="25">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="5"><b>Line 5</b><code>__global__ void quantise(const float *w, int8_t *q, int n, float s) {</code><span>One thread per weight. s is computed once on the host.</span></li><li data-n="8"><b>Line 8</b><code>float r = rintf(w[i] / s);                 // round to the nearest integer</code><span>rintf rounds to the nearest integer, with ties to even.</span></li><li data-n="9"><b>Line 9</b><code>r = fminf(fmaxf(r, -127.0f), 127.0f);      // clip to the INT8 range</code><span>Clip so that a weight outside the range does not wrap around.</span></li><li data-n="10"><b>Line 10</b><code>q[i] = (int8_t)r;</code><span>The integer is stored in a single byte.</span></li><li data-n="16"><b>Line 16</b><code>if (i &lt; n) w[i] = s * q[i];</code><span>Dequantise: multiply back by the scale.</span></li><li data-n="22"><b>Line 22</b><code>h[i] = __float2half(x[i]);                 // FP16: 5 exponent bits, 10 mantissa bits</code><span>Conversions to the two 16 bit formats are built in.</span></li></ol></details></div>
+<details class="deep"><summary>Going deeper: Per channel scales and FP8 scaling</summary><div class="deep-b"><p>One scale for a whole tensor is set by its largest value, so small channels get coarse steps. Real systems keep one scale per output channel or per block of 32 to 128 values. FP8 training on Hopper keeps a scale factor per tensor that is updated from the largest values seen recently, so numbers stay inside the 448 limit of E4M3.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A format is a ruler. The exponent decides how long it is, the mantissa how fine the marks are. FP16 is short with fine marks, BF16 is very long with coarse marks.</p></div><div class="ld-p" data-ld="college" hidden><p>x = (−1)<sup>s</sup> × 1.m × 2<sup>e − bias</sup>. FP16 fails on size, BF16 on detail. Accumulate in FP32. INT8: s = R ÷ 127, q = round(x ÷ s).</p></div><div class="ld-p" data-ld="masters" hidden><p>Pick the format per tensor: weights INT8 or FP8, activations BF16, sums FP32. Check overflow and underflow with real data. Batch 1 inference gains roughly in proportion to the bytes saved.</p></div><div class="ld-p" data-ld="research" hidden><p>Research uses 4 bit weights (GPTQ, AWQ), block scaled FP4 on Blackwell, stochastic rounding for training, and outlier handling such as SmoothQuant.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./barriers-atomics.html" data-topic="barriers-atomics"><small>Previous topic</small><b>Barriers and atomics</b></a><a class="next" href="./tensor-cores.html" data-topic="tensor-cores"><small>Next topic</small><b>Tensor cores</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "number-formats", "topic": "number-formats", "subject": "cuda", "title": "Low precision numbers and quantisation", "codes": {"half": {"src": "# Store numbers in FP16 and BF16 and read them back\nimport struct\ndef fp16(x):\n    return struct.unpack('e', struct.pack('e', x))[0]\ndef bf16(x):\n    b = struct.unpack('>I', struct.pack('>f', x))[0]\n    b = (b + 0x7FFF + ((b >> 16) & 1)) & 0xFFFF0000    # round to nearest even, keep top 16 bits\n    return struct.unpack('>f', struct.pack('>I', b))[0]\nfor x in (3.14159265, 300.7, 0.1):\n    print(x, \" FP16:\", fp16(x), \" BF16:\", bf16(x))\nprint(\"largest FP16:\", fp16(65504.0))\nprint(\"2048 + 1 in FP16:\", fp16(fp16(2048.0) + 1.0))", "stdin": "", "out": "3.14159265  FP16: 3.140625  BF16: 3.140625\n300.7  FP16: 300.75  BF16: 300.0\n0.1  FP16: 0.0999755859375  BF16: 0.10009765625\nlargest FP16: 65504.0\n2048 + 1 in FP16: 2048.0"}, "quant": {"src": "# Symmetric INT8 quantisation of weights in the range -R to R\nR, qmax = 1.0, 127\ns = R / qmax\nprint(\"scale s =\", round(s, 6))\nfor x in (0.3, -0.8, 1.0, -0.05):\n    q = max(-qmax, min(qmax, round(x / s)))\n    back = q * s\n    print(x, \"-> q =\", q, \"-> back\", round(back, 4), \" error\", round(abs(back - x), 4))", "stdin": "", "out": "scale s = 0.007874\n0.3 -> q = 38 -> back 0.2992  error 0.0008\n-0.8 -> q = -102 -> back -0.8031  error 0.0031\n1.0 -> q = 127 -> back 1.0  error 0.0\n-0.05 -> q = -6 -> back -0.0472  error 0.0028"}}, "quiz": [{"lv": "e", "q": "Exponent bits decide", "o": ["Precision", "Range", "Sign", "Speed"], "a": 1, "hint": "How big or small.", "why": "Mantissa bits decide the detail."}, {"lv": "e", "q": "BF16 has how many exponent bits?", "o": ["5", "7", "8", "10"], "a": 2, "hint": "Same as FP32.", "why": "8, so the same range as FP32."}, {"lv": "e", "q": "Largest FP16 number", "o": ["32,768", "65,504", "65,536", "3.4 × 10³⁸"], "a": 1, "hint": "(2 − 2⁻¹⁰) × 2¹⁵.", "why": "65,504."}, {"lv": "e", "q": "Which layer is memory limited?", "o": ["Fully connected with a big batch", "ReLU", "Convolution", "Large matmul"], "a": 1, "hint": "One operation per number.", "why": "ReLU moves data and barely computes."}, {"lv": "m", "q": "300.7 stored in BF16 gives", "o": ["300.75", "300.7", "300", "301"], "a": 2, "hint": "Only 7 mantissa bits.", "why": "Steps of 2 near 300."}, {"lv": "m", "q": "70,000 stored in FP16 gives", "o": ["70,000", "65,504", "infinity (overflow)", "0"], "a": 2, "hint": "Above 65,504.", "why": "Overflow."}, {"lv": "m", "q": "TF32 is", "o": ["A 19 bit storage format", "FP32 in memory, rounded to 10 mantissa bits inside the tensor core", "The same as FP16", "An integer format"], "a": 1, "hint": "Not stored.", "why": "Memory still holds FP32."}, {"lv": "m", "q": "INT8, R = 1. q for 0.3", "o": ["30", "38", "76", "127"], "a": 1, "hint": "0.3 ÷ (1 ÷ 127).", "why": "38.1 rounds to 38."}, {"lv": "h", "q": "Adding 1 to an FP16 sum stops growing at", "o": ["1024", "2048", "4096", "65,504"], "a": 1, "hint": "Gap becomes 2.", "why": "2048 + 1 rounds back to 2048."}, {"lv": "h", "q": "Why keep the accumulator in FP32?", "o": ["Faster", "Small products get lost when added to a large narrow sum", "Required by C++", "Saves memory"], "a": 1, "hint": "Gap grows with size.", "why": "Error about 7600 times smaller in the notes."}, {"lv": "x", "q": "Why is BF16 preferred over FP16 for training large models?", "o": ["More digits", "FP32 range, so no overflow or underflow and no loss scaling", "Fewer bits", "Only GPUs support it"], "a": 1, "hint": "Range beats detail.", "why": "Training breaks on overflow, not on the third digit."}, {"lv": "x", "q": "Per channel scales are used because", "o": ["They are faster", "One large value would make the steps coarse for every other channel", "They save memory", "They avoid rounding"], "a": 1, "hint": "Scale follows the largest value.", "why": "Small channels keep fine steps."}], "calc": [{"lv": "e", "q": "Bias for 8 exponent bits?", "ans": "127", "hint": "2^(E − 1) − 1.", "steps": ["2⁷ = 128.", "Minus 1.", "<span class=\"eq\">127<\/span>"]}, {"lv": "e", "q": "Bias for 5 exponent bits?", "ans": "15", "hint": "2⁴ − 1.", "steps": ["16 − 1.", "= 15.", "<span class=\"eq\">15<\/span>"]}, {"lv": "e", "q": "Gap after 1.0 in BF16 (M = 7)? (four decimals)", "ans": "0.0078", "hint": "2⁻⁷.", "steps": ["1 ÷ 128.", "= 0.0078125.", "<span class=\"eq\">≈ 0.0078<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "Largest FP16 number?", "ans": "65504", "hint": "(2 − 2⁻¹⁰) × 2¹⁵.", "steps": ["Largest exponent 30 − 15 = 15.", "(2 − 0.000977) × 32,768.", "<span class=\"eq\">65,504<\/span>"]}, {"lv": "m", "q": "INT8 with R = 1. q for 0.3?", "ans": "38", "hint": "round(0.3 × 127).", "steps": ["0.3 × 127 = 38.1.", "Round.", "<span class=\"eq\">q = 38<\/span>"]}, {"lv": "m", "q": "Bring q = 38 back with R = 1. (four decimals)", "ans": "0.2992", "hint": "38 ÷ 127.", "steps": ["s = 0.007874.", "38 × s.", "<span class=\"eq\">0.2992<\/span>"], "tol": 5e-05}, {"lv": "m", "q": "INT8 with R = 2. q for −0.8?", "ans": "-51", "hint": "round(−0.8 × 63.5).", "steps": ["s = 2 ÷ 127 = 0.015748.", "−0.8 ÷ s = −50.8.", "<span class=\"eq\">q = −51, back −0.8031<\/span>"]}, {"lv": "h", "q": "Decimal digits of FP32 (M = 23)? (one decimal)", "ans": "7.2", "hint": "24 × log₁₀ 2.", "steps": ["M + 1 = 24 bits.", "24 × 0.30103 = 7.22.", "<span class=\"eq\">≈ 7.2 digits<\/span>"], "tol": 0.05}, {"lv": "h", "q": "Store 300.7 in FP16. Value?", "ans": "300.75", "hint": "Step near 300.", "steps": ["300.7 is between 256 and 512, so the step is 2⁸ × 2⁻¹⁰ = 0.25.", "300.7 ÷ 0.25 = 1202.8, round to 1203.", "<span class=\"eq\">1203 × 0.25 = 300.75<\/span>"]}, {"lv": "x", "q": "Batch 1 FC layer 4096 × 4096. AI with INT8 weights and FP16 activations? (one decimal)", "ans": "2.0", "hint": "Weights dominate the bytes.", "steps": ["FLOPs 2 × 4096².", "Bytes: 4096² weights × 1 + (4096 + 4096) × 2 for input and output.", "<span class=\"eq\">≈ 2.0 FLOP/byte, twice the FP16 value<\/span>"], "tol": 0.05}, {"lv": "x", "q": "Worst rounding error for INT8 with R = 1 (no clipping)? (five decimals)", "ans": "0.00394", "hint": "s ÷ 2.", "steps": ["s = 1 ÷ 127 = 0.007874.", "Half a step.", "<span class=\"eq\">≈ 0.00394<\/span>"], "tol": 5e-06}], "assign": [{"id": "fmtinfo", "lv": "e", "title": "Facts about a format", "task": "<p>Write <code>fmt_info(E, M)<\/code> for an IEEE style format with E exponent bits and M mantissa bits. Return a list: the bias, the gap after 1.0, and the largest finite number (2 − 2<sup>−M<\/sup>) × 2<sup>2<sup>E<\/sup> − 2 − bias<\/sup>.<\/p>", "starter": "def fmt_info(E, M):\n    # your code here\n    pass\n", "tests": [{"call": "fmt_info(5, 10)", "want": [15, 0.0009765625, 65504.0]}, {"call": "fmt_info(5, 2)", "want": [15, 0.25, 57344.0]}, {"call": "fmt_info(8, 7)[0]", "want": 127}, {"call": "fmt_info(8, 7)[1]", "want": 0.0078125}], "solution": "def fmt_info(E, M):\n    bias = 2 ** (E - 1) - 1\n    gap = 2.0 ** -M\n    largest = (2 - 2.0 ** -M) * 2.0 ** (2 ** E - 2 - bias)\n    return [bias, gap, largest]\n", "hint": "The largest exponent field is all ones minus one.", "why": "<p>FP16 gives 65,504 and FP8 E5M2 gives 57,344.<\/p>"}, {"id": "quantise", "lv": "m", "title": "Quantise a list of weights", "task": "<p>Write <code>quantise(ws, R, bits)<\/code>. Use the symmetric scale s = R ÷ q<sub>max<\/sub> with q<sub>max<\/sub> = 2<sup>bits − 1<\/sup> − 1. Round each weight to the nearest integer q and clip it to −q<sub>max<\/sub> to q<sub>max<\/sub>. Return the list of q.<\/p>", "starter": "def quantise(ws, R, bits):\n    # your code here\n    pass\n", "tests": [{"call": "quantise([0.3], 1.0, 8)", "want": [38]}, {"call": "quantise([-0.8], 2.0, 8)", "want": [-51]}, {"call": "quantise([0.3, -0.8, 1.0], 1.0, 4)", "want": [2, -6, 7]}, {"call": "quantise([2.5, -3.0], 1.0, 8)", "want": [127, -127]}], "solution": "def quantise(ws, R, bits):\n    qmax = 2 ** (bits - 1) - 1\n    s = R / qmax\n    out = []\n    for x in ws:\n        q = round(x / s)\n        out.append(max(-qmax, min(qmax, q)))\n    return out\n", "hint": "Compute s once, then round and clip each weight.", "why": "<p>The last test shows clipping: values outside the range stick to the end.<\/p>"}], "must": [["The formula", "x = (−1)^s × 1.m × 2^(e − bias), bias = 2^(E−1) − 1, gap after 1.0 = 2^−M."], ["Range against detail", "Exponent bits give range, mantissa bits give detail. FP16 overflows at 65,504, BF16 keeps FP32 range with about 2 to 3 digits."], ["Which format", "FP32 master weights, BF16 training, FP16 with loss scaling, TF32 for FP32 code on tensor cores, INT8 or FP8 for inference."], ["Wide accumulator", "Narrow inputs, FP32 sums. In FP16, 2048 + 1 = 2048."], ["Quantisation", "q = round(x ÷ s) + z, x̂ = s(q − z). Symmetric INT8: s = R ÷ 127. Error at most s ÷ 2 unless clipped."]], "summary": "<p>Fewer bits move faster and multiply faster. Exponent bits give range, mantissa bits give detail. Keep sums in FP32, and quantise with a scale so that q = round(x ÷ s).<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"half": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.fp16": "<function fp16>"}}, {"l": 9, "ev": "line", "d": {"G.bf16": "<function bf16>"}}, {"l": 10, "ev": "line", "d": {"G.x": "3.14159265"}}, {"l": 3, "ev": "call", "s": ["module", "fp16()"], "d": {"L.x": "3.14159265"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return"}, {"l": 5, "ev": "call", "s": ["module", "bf16()"]}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"L.b": "1078530011"}}, {"l": 8, "ev": "line", "d": {"L.b": "1078525952"}}, {"l": 8, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.x": null, "L.b": null}, "o": "3.14159265  FP16: 3.140625  BF16: 3.140625\n"}, {"l": 10, "ev": "line", "d": {"G.x": "300.7"}}, {"l": 3, "ev": "call", "s": ["module", "fp16()"], "d": {"L.x": "300.7"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return"}, {"l": 5, "ev": "call", "s": ["module", "bf16()"]}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"L.b": "1133926810"}}, {"l": 8, "ev": "line", "d": {"L.b": "1133903872"}}, {"l": 8, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.x": null, "L.b": null}, "o": "300.7  FP16: 300.75  BF16: 300.0\n"}, {"l": 10, "ev": "line", "d": {"G.x": "0.1"}}, {"l": 3, "ev": "call", "s": ["module", "fp16()"], "d": {"L.x": "0.1"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return"}, {"l": 5, "ev": "call", "s": ["module", "bf16()"]}, {"l": 6, "ev": "line"}, {"l": 7, "ev": "line", "d": {"L.b": "1036831949"}}, {"l": 8, "ev": "line", "d": {"L.b": "1036845056"}}, {"l": 8, "ev": "return"}, {"l": 9, "ev": "line", "s": ["module"], "d": {"L.x": null, "L.b": null}, "o": "0.1  FP16: 0.0999755859375  BF16: 0.10009765625\n"}, {"l": 11, "ev": "line"}, {"l": 3, "ev": "call", "s": ["module", "fp16()"], "d": {"L.x": "65504.0"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return"}, {"l": 12, "ev": "line", "s": ["module"], "d": {"L.x": null}, "o": "largest FP16: 65504.0\n"}, {"l": 3, "ev": "call", "s": ["module", "fp16()"], "d": {"L.x": "2048.0"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return"}, {"l": 3, "ev": "call", "d": {"L.x": "2049.0"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "return"}, {"l": 12, "ev": "return", "s": ["module"], "d": {"L.x": null}, "o": "2048 + 1 in FP16: 2048.0\n"}], "tail": "", "err": null, "cut": false}, "quant": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.R": "1.0", "G.qmax": "127"}}, {"l": 4, "ev": "line", "d": {"G.s": "0.007874015748031496"}}, {"l": 5, "ev": "line", "o": "scale s = 0.007874\n"}, {"l": 6, "ev": "line", "d": {"G.x": "0.3"}}, {"l": 7, "ev": "line", "d": {"G.q": "38"}}, {"l": 8, "ev": "line", "d": {"G.back": "0.2992125984251969"}}, {"l": 5, "ev": "line", "o": "0.3 -> q = 38 -> back 0.2992  error 0.0008\n"}, {"l": 6, "ev": "line", "d": {"G.x": "-0.8"}}, {"l": 7, "ev": "line", "d": {"G.q": "-102"}}, {"l": 8, "ev": "line", "d": {"G.back": "-0.8031496062992126"}}, {"l": 5, "ev": "line", "o": "-0.8 -> q = -102 -> back -0.8031  error 0.0031\n"}, {"l": 6, "ev": "line", "d": {"G.x": "1.0"}}, {"l": 7, "ev": "line", "d": {"G.q": "127"}}, {"l": 8, "ev": "line", "d": {"G.back": "1.0"}}, {"l": 5, "ev": "line", "o": "1.0 -> q = 127 -> back 1.0  error 0.0\n"}, {"l": 6, "ev": "line", "d": {"G.x": "-0.05"}}, {"l": 7, "ev": "line", "d": {"G.q": "-6"}}, {"l": 8, "ev": "line", "d": {"G.back": "-0.047244094488188976"}}, {"l": 5, "ev": "line", "o": "-0.05 -> q = -6 -> back -0.0472  error 0.0028\n"}, {"l": 5, "ev": "return"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

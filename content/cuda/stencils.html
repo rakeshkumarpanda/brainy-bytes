@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stencils, halos and heat simulation · GPU Programming</title>
+<meta name="description" content="1-D, 2-D and 3-D stencils, neighbour indexing, halos in shared memory, reads per output, 3-D tile intensity and halo share, the explicit heat step, the slide 14 weight correction, stability and ping-pong buffers.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 5: Parallel patterns</span><span>›</span><span>Stencils</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 3 of 5 · College</div>
+    <h1>Stencils, halos and heat simulation</h1>
+    <p class="lead">Update every point from its neighbours, load each tile once with a halo around it, and keep a heat simulation stable.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">10 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#stencils" data-topic="cheatsheet" data-h="stencils">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#what" data-l="what"><span class="n">1</span><span class="t">What a stencil is</span></a></li><li><a href="#halo" data-l="halo"><span class="n">2</span><span class="t">Halos in shared memory</span></a></li><li><a href="#3d" data-l="3d"><span class="n">3</span><span class="t">3-D tiles: why big tiles still stay memory bound</span></a></li><li><a href="#heat" data-l="heat"><span class="n">4</span><span class="t">The heat equation and stability</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="what" data-l="what" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>What a stencil is</h2>
+<p>A <b>stencil</b> updates every point from a fixed pattern of neighbours. Blurs, edge filters, heat and wave simulations, and the Game of Life are all stencils. Every output can be computed at the same time, so one thread per output works well.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Stencil</th><th>Points</th><th>Example</th></tr></thead><tbody><tr><td>1-D radius R</td><td>2R + 1</td><td>moving sum, R = 3 gives 7</td></tr><tr><td>2-D plus (radius 1)</td><td>5</td><td>heat in a plate</td></tr><tr><td>2-D box radius r</td><td>(2r + 1)²</td><td>blur, r = 2 gives 25</td></tr><tr><td>3-D plus (radius 1)</td><td>7</td><td>heat in a block</td></tr><tr><td>3-D box radius 1</td><td>27</td><td>smoothing a volume</td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Neighbours in 2-D</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">N = i − W, S = i + W, W = i − 1, E = i + 1</div><div class="fx-n">Row major with width W. Pixel (row 10, col 20) of a 640 wide image is 6420.</div></div><div class="fx fx-key"><div class="fx-h"><span>Neighbours in 3-D</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">± 1, ± N, ± N²</div><div class="fx-n">Index i = (z × N + y) × N + x.</div></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: passing a rumour</div><p>Each pupil in a classroom grid listens to the four pupils next to them and repeats an average of what they heard. After a few rounds the news has spread. Every pupil can listen at the same moment, which is why a GPU suits it.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="halo" data-l="halo" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Halos in shared memory</h2>
+<p>Neighbouring outputs share most of their inputs. A block loads its B inputs into shared memory once, plus R extra values on each side called the <b>halo</b>, then every thread reads its 2R + 1 inputs from the fast tile.</p>
+<div class="cvz" data-viz="stencil"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Tile size</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">B + 2R values</div><div class="fx-n">R = 3, B = 256: 262.</div></div><div class="fx fx-key"><div class="fx-h"><span>Global reads per output</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">(B + 2R) ÷ B with the tile, 2R + 1 without</div><div class="fx-n">R = 3, B = 256: 1.023 against 7, about 6.8 times fewer.</div></div></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">stencil1d.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#define R 3</span><span class="ln" data-n="2">#define B 256</span><span class="ln" data-n="3"> </span><span class="ln" data-n="4">// out[i] = sum of in[i - R] .. in[i + R]. The input is padded with R values on each side.</span><span class="ln" data-n="5">__global__ void stencil1d(const int *in, int *out) {</span><span class="ln" data-n="6">    __shared__ int tile[B + 2 * R];</span><span class="ln ck-has" data-n="7">    int g = blockIdx.x * B + threadIdx.x + R;   // position in the padded input</span><span class="ln" data-n="8">    int s = threadIdx.x + R;                    // position in the tile</span><span class="ln ck-has" data-n="9">    tile[s] = in[g];</span><span class="ln ck-has" data-n="10">    if (threadIdx.x &lt; R) {</span><span class="ln" data-n="11">        tile[s - R] = in[g - R];                // left halo</span><span class="ln" data-n="12">        tile[s + B] = in[g + B];                // right halo</span><span class="ln" data-n="13">    }</span><span class="ln ck-has" data-n="14">    __syncthreads();</span><span class="ln" data-n="15">    int sum = 0;</span><span class="ln" data-n="16">    for (int k = -R; k &lt;= R; ++k)</span><span class="ln ck-has" data-n="17">        sum += tile[s + k];</span><span class="ln" data-n="18">    out[g - R] = sum;</span><span class="ln" data-n="19">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="7"><b>Line 7</b><code>int g = blockIdx.x * B + threadIdx.x + R;   // position in the padded input</code><span>g skips the R padding values at the start of the input.</span></li><li data-n="9"><b>Line 9</b><code>tile[s] = in[g];</code><span>Every thread loads its own centre value.</span></li><li data-n="10"><b>Line 10</b><code>if (threadIdx.x &lt; R) {</code><span>The first R threads also load the halos, R on the left and R on the right.</span></li><li data-n="14"><b>Line 14</b><code>__syncthreads();</code><span>Wait until the whole tile, halos included, is in shared memory.</span></li><li data-n="17"><b>Line 17</b><code>sum += tile[s + k];</code><span>All 2R + 1 reads come from shared memory.</span></li></ol></details></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="3d" data-l="3d" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>3-D tiles: why big tiles still stay memory bound</h2>
+<div class="fx-grid"><div class="fx"><div class="fx-h"><span>Without tiling</span></div><div class="fx-b">AI = 13 ÷ 28 ≈ 0.46</div><div class="fx-n">7 multiplies and 6 adds, 7 floats loaded.</div></div><div class="fx fx-key"><div class="fx-h"><span>With T × T × T tiles</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">AI(T) = 13 × (T − 2)³ ÷ (4T³)</div><div class="fx-n">Only the inner (T − 2)³ points make outputs.</div></div><div class="fx fx-key"><div class="fx-h"><span>Halo share</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">(T³ − (T − 2)³) ÷ T³</div><div class="fx-n">T = 8: 57.8 percent of loaded points are border.</div></div></div>
+<div class="cv-code" data-k="ai3d"></div>
+<p>AI can never pass 13 ÷ 4 = 3.25, and T = 8 already uses 512 threads. With one thread per point, a 3-D stencil stays memory bound on every modern GPU. Real codes use 2-D tiles that march through z, keeping three planes in registers.</p>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="heat" data-l="heat" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>The heat equation and stability</h2>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>3-D explicit heat step</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">T<sub>new</sub> = (1 − 6λ) T + λ × (sum of 6 neighbours)</div><div class="fx-n">λ = α Δt ÷ h². Weights add to 1, so a constant field stays constant.</div></div><div class="fx fx-key"><div class="fx-h"><span>Stability</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">λ ≤ 1/6 in 3-D, 1/4 in 2-D, 1/2 in 1-D</div><div class="fx-n">Above it the centre weight is negative and values oscillate and grow.</div></div><div class="fx"><div class="fx-h"><span>Largest time step</span></div><div class="fx-b">Δt ≤ h² ÷ (6α)</div><div class="fx-n">α = 0.0001, h = 0.01 gives Δt ≤ 0.167 s.</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Lecture 6 slide 14 uses 0.25 for the centre and 0.1 for each of the 6 neighbours. They add to 0.85, so a field of 100 drops to 85 every step. With neighbour weight 0.1 the centre must be 1 − 6 × 0.1 = 0.4.</div></div>
+<div class="cv-code" data-k="heat"></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">heat3d.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">// One explicit step of 3-D heat: Tnew = (1 - 6L) T + L (sum of 6 neighbours)</span><span class="ln" data-n="2">__global__ void heat3d(const float *T, float *Tn, int N, float L) {</span><span class="ln" data-n="3">    int x = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="4">    int y = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln" data-n="5">    int z = blockIdx.z * blockDim.z + threadIdx.z;</span><span class="ln" data-n="6">    if (x &lt; 1 || y &lt; 1 || z &lt; 1 || x &gt;= N - 1 || y &gt;= N - 1 || z &gt;= N - 1) return;</span><span class="ln ck-has" data-n="7">    int i = (z * N + y) * N + x;                 // x fastest, then y, then z</span><span class="ln ck-has" data-n="8">    float nb = T[i - 1] + T[i + 1] + T[i - N] + T[i + N] + T[i - N * N] + T[i + N * N];</span><span class="ln ck-has" data-n="9">    Tn[i] = (1.0f - 6.0f * L) * T[i] + L * nb;   // stable only when L &lt;= 1/6</span><span class="ln" data-n="10">}</span><span class="ln" data-n="11"> </span><span class="ln" data-n="12">void run(float *dA, float *dB, int N, float L, int steps) {</span><span class="ln" data-n="13">    dim3 blk(8, 8, 8), grd((N + 7) / 8, (N + 7) / 8, (N + 7) / 8);</span><span class="ln" data-n="14">    for (int s = 0; s &lt; steps; ++s) {</span><span class="ln" data-n="15">        heat3d&lt;&lt;&lt;grd, blk&gt;&gt;&gt;(dA, dB, N, L);</span><span class="ln ck-has" data-n="16">        float *t = dA; dA = dB; dB = t;         // ping-pong: new becomes old</span><span class="ln" data-n="17">    }</span><span class="ln" data-n="18">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="7"><b>Line 7</b><code>int i = (z * N + y) * N + x;                 // x fastest, then y, then z</code><span>x is the fastest index, so a warp reads neighbouring x values: coalesced.</span></li><li data-n="8"><b>Line 8</b><code>float nb = T[i - 1] + T[i + 1] + T[i - N] + T[i + N] + T[i - N * N] + T[i + N * N];</code><span>The six neighbours: x ± 1, y ± 1 (± N) and z ± 1 (± N²).</span></li><li data-n="9"><b>Line 9</b><code>Tn[i] = (1.0f - 6.0f * L) * T[i] + L * nb;   // stable only when L &lt;= 1/6</code><span>Weights 1 − 6L and L add to 1.</span></li><li data-n="16"><b>Line 16</b><code>float *t = dA; dA = dB; dB = t;         // ping-pong: new becomes old</code><span>Ping-pong: swap the pointers so the new grid becomes the old one. No copy is needed.</span></li></ol></details></div>
+<div class="ck-nb"><div class="ck-nb-i">ipynb</div><div class="ck-nb-t"><b>Notebook: a 3 × 3 stencil on an image</b><span>The blur kernel in this notebook is a stencil. Count its global reads and compare with a tiled version.</span><small>Open it in Google Colab (Runtime, Change runtime type, T4 GPU) or in Jupyter on a machine with an NVIDIA GPU. Every code line is explained in the cell under it.</small></div><a class="ck-nb-a" href="./notebooks/02-thread-indexing-2d.ipynb" download>Download notebook</a></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Each point looks at its neighbours and updates. Load a patch once with a border around it, and let everyone read the patch.</p></div><div class="ld-p" data-ld="college" hidden><p>Tile B + 2R, reads (B + 2R)/B against 2R + 1. 3-D AI = 13(T − 2)³/(4T³) ≤ 3.25. Heat stable for λ ≤ 1/6 in 3-D.</p></div><div class="ld-p" data-ld="masters" hidden><p>2.5-D blocking keeps three z planes in registers and marches up the grid. Temporal blocking does several time steps per load, trading extra halo for less traffic.</p></div><div class="ld-p" data-ld="research" hidden><p>Weather, seismic and CFD codes are mostly stencils. Implicit schemes avoid the stability limit by solving a linear system each step, which brings in sparse solvers and multigrid.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./tiled-matmul.html" data-topic="tiled-matmul"><small>Previous topic</small><b>Tiled matmul</b></a><a class="next" href="./convolution.html" data-topic="convolution"><small>Next topic</small><b>Convolution</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "stencils", "topic": "stencils", "subject": "cuda", "title": "Stencils, halos and heat simulation", "codes": {"ai3d": {"src": "# 3-D 7 point stencil: arithmetic intensity of a T x T x T tile\nfor T in [8, 10, 16, 32]:\n    inner = (T - 2) ** 3                 # points that produce an output\n    ai = 13 * inner / (4 * T ** 3)       # 13 operations each, 4 bytes per loaded point\n    halo = (T ** 3 - inner) / T ** 3\n    print(f\"T={T:2d}: AI {ai:.2f}, halo share {100 * halo:.1f}%\")\nprint(\"limit for large T: 13/4 =\", 13 / 4)", "stdin": "", "out": "T= 8: AI 1.37, halo share 57.8%\nT=10: AI 1.66, halo share 48.8%\nT=16: AI 2.18, halo share 33.0%\nT=32: AI 2.68, halo share 17.6%\nlimit for large T: 13/4 = 3.25"}, "heat": {"src": "# Stability of the explicit heat step in 1-D: centre weight 1 - 2L\ndef run(L, steps=6):\n    T = [0, 0, 0, 100, 0, 0, 0]\n    for _ in range(steps):\n        T = [0] + [round((1 - 2 * L) * T[i] + L * (T[i - 1] + T[i + 1]), 1) for i in range(1, 6)] + [0]\n    return T\nprint(\"L = 0.25:\", run(0.25))\nprint(\"L = 0.75:\", run(0.75))     # above 1/2: values flip sign and grow", "stdin": "", "out": "L = 0.25: [0, 10.4, 19.0, 22.5, 19.0, 10.4, 0]\nL = 0.75: [0, 568.7, -970.9, 1139.0, -970.9, 568.7, 0]"}}, "quiz": [{"lv": "e", "q": "Points in a 3-D plus stencil of radius 1", "o": ["5", "7", "9", "27"], "a": 1, "hint": "Centre + 6.", "why": "7."}, {"lv": "e", "q": "The halo is", "o": ["The output", "Extra inputs around a tile that neighbours need", "A cache", "A warp"], "a": 1, "hint": "Border.", "why": "R values on each side."}, {"lv": "e", "q": "2-D box stencil of radius 2 has", "o": ["9 points", "25 points", "13 points", "5 points"], "a": 1, "hint": "(2r + 1)².", "why": "25."}, {"lv": "m", "q": "R = 3, B = 256. Tile size?", "o": ["256", "259", "262", "263"], "a": 2, "hint": "B + 2R.", "why": "262."}, {"lv": "m", "q": "Width 640: pixel (row 10, col 20) index", "o": ["6420", "2010", "6400", "640"], "a": 0, "hint": "row × W + col.", "why": "6400 + 20."}, {"lv": "m", "q": "Why a barrier after loading the tile?", "o": ["To free memory", "Threads read values loaded by other threads", "For speed", "Not needed"], "a": 1, "hint": "Halo is loaded by a few threads.", "why": "All loads must finish first."}, {"lv": "m", "q": "Ping-pong buffers are used because", "o": ["They save memory", "Threads must read only old values while writing new ones", "They are faster to allocate", "Of bank conflicts"], "a": 1, "hint": "No mixing.", "why": "Read old, write new, then swap."}, {"lv": "h", "q": "AI of a 3-D 7 point stencil tile can never pass", "o": ["0.46", "1.37", "3.25", "13"], "a": 2, "hint": "T → ∞.", "why": "13 ÷ 4."}, {"lv": "h", "q": "Slide 14 weights (0.25 centre, 0.1 × 6) on a field of 100 give", "o": ["100", "85", "125", "60"], "a": 1, "hint": "0.25 + 0.6.", "why": "85: the weights do not add to 1."}, {"lv": "h", "q": "Largest stable λ for 3-D explicit heat", "o": ["1/2", "1/4", "1/6", "1"], "a": 2, "hint": "Centre 1 − 6λ ≥ 0.", "why": "1/6."}, {"lv": "x", "q": "Halo share at T = 32 for a 3-D tile", "o": ["5 percent", "17.6 percent", "33 percent", "57.8 percent"], "a": 1, "hint": "1 − (30/32)³.", "why": "≈ 17.6 percent."}, {"lv": "x", "q": "Tile T for AI ≥ 3", "o": ["T ≥ 16", "T ≥ 32", "T ≥ 76", "Never"], "a": 2, "hint": "3.25(1 − 2/T)³ ≥ 3.", "why": "T ≥ 76: impossible with one thread per point."}], "calc": [{"lv": "e", "q": "Points in a 2-D box of radius 2?", "ans": "25", "hint": "(2r + 1)².", "steps": ["2 × 2 + 1 = 5.", "5².", "<span class=\"eq\">25<\/span>"]}, {"lv": "e", "q": "Tile size for R = 2, B = 128?", "ans": "132", "hint": "B + 2R.", "steps": ["128 + 4.", "= 132.", "<span class=\"eq\">132 values<\/span>"]}, {"lv": "e", "q": "N = 100. Index of (x 4, y 3, z 2) with i = (z × N + y) × N + x?", "ans": "20304", "hint": "Expand.", "steps": ["z × N² = 20,000.", "y × N = 300, x = 4.", "<span class=\"eq\">20,304<\/span>"]}, {"lv": "m", "q": "R = 2, B = 128. Reads per output with the tile? (three decimals)", "ans": "1.031", "hint": "132 ÷ 128.", "steps": ["Tile 132 values.", "÷ 128 outputs.", "<span class=\"eq\">1.031 against 5 without<\/span>"], "tol": 0.0005}, {"lv": "m", "q": "Shared memory bytes for B = 512, R = 4 (ints)?", "ans": "2080", "hint": "(B + 2R) × 4.", "steps": ["512 + 8 = 520 ints.", "× 4 bytes.", "<span class=\"eq\">2080 bytes<\/span>"]}, {"lv": "m", "q": "3-D tile T = 8. AI? (two decimals)", "ans": "1.37", "hint": "13 × 6³ ÷ (4 × 8³).", "steps": ["Inner 216 points × 13 = 2808 operations.", "Loaded 512 × 4 = 2048 bytes.", "<span class=\"eq\">2808 ÷ 2048 ≈ 1.37<\/span>"], "tol": 0.005}, {"lv": "m", "q": "3-D tile T = 16. AI? (two decimals)", "ans": "2.18", "hint": "13 × 14³ ÷ (4 × 16³).", "steps": ["14³ = 2744, × 13 = 35,672.", "16³ × 4 = 16,384.", "<span class=\"eq\">≈ 2.18<\/span>"], "tol": 0.005}, {"lv": "h", "q": "Halo share at T = 16 in percent? (one decimal)", "ans": "33.0", "hint": "1 − (14/16)³.", "steps": ["(14/16)³ = 0.6699.", "1 − 0.6699.", "<span class=\"eq\">33.0 percent<\/span>"], "tol": 0.05}, {"lv": "h", "q": "α = 0.0001, h = 0.01, 3-D. Largest stable Δt in s? (three decimals)", "ans": "0.167", "hint": "h² ÷ (6α).", "steps": ["h² = 0.0001.", "÷ (6 × 0.0001) = 1/6.", "<span class=\"eq\">≈ 0.167 s<\/span>"], "tol": 0.0005}, {"lv": "h", "q": "1,000,000 outputs, R = 3, B = 256: blocks?", "ans": "3907", "hint": "⌈10⁶ ÷ 256⌉.", "steps": ["10⁶ ÷ 256 = 3906.25.", "Round up.", "<span class=\"eq\">3907 blocks, padded input 1,000,006<\/span>"]}, {"lv": "x", "q": "Same: total global reads with tiles?", "ans": "1023634", "hint": "Blocks × (B + 2R).", "steps": ["3907 blocks.", "× 262.", "<span class=\"eq\">1,023,634 reads<\/span>"]}], "assign": [{"id": "stencil1", "lv": "e", "title": "1-D stencil with zero padding", "task": "<p>Write <code>stencil(a, R)<\/code>: return a list where element i is the sum of a[i − R] to a[i + R], treating values outside the list as 0.<\/p>", "starter": "def stencil(a, R):\n    # your code here\n    pass\n", "tests": [{"call": "stencil([1, 2, 3, 4, 5], 1)", "want": [3, 6, 9, 12, 9]}, {"call": "stencil([1, 1, 1, 1], 2)", "want": [3, 4, 4, 3]}, {"call": "stencil([5], 3)", "want": [5]}], "solution": "def stencil(a, R):\n    n = len(a)\n    return [sum(a[j] for j in range(i - R, i + R + 1) if 0 <= j < n) for i in range(n)]\n", "hint": "Skip indices outside the list.", "why": "<p>Zero padding gives smaller sums at the ends.<\/p>"}, {"id": "heatstep", "lv": "m", "title": "One 2-D heat step", "task": "<p>Write <code>heat_step(T, lam)<\/code> for a square grid (list of lists). Border cells stay the same. Inner cells become (1 − 4λ)T + λ(up + down + left + right). Round each value to 4 decimals.<\/p>", "starter": "def heat_step(T, lam):\n    # your code here\n    pass\n", "tests": [{"call": "heat_step([[0, 0, 0], [0, 100, 0], [0, 0, 0]], 0.25)", "want": [[0, 0, 0], [0, 0.0, 0], [0, 0, 0]]}, {"call": "heat_step([[10, 10, 10], [10, 10, 10], [10, 10, 10]], 0.2)", "want": [[10, 10, 10], [10, 10.0, 10], [10, 10, 10]]}], "solution": "def heat_step(T, lam):\n    n = len(T)\n    N = [row[:] for row in T]\n    for i in range(1, n - 1):\n        for j in range(1, n - 1):\n            nb = T[i - 1][j] + T[i + 1][j] + T[i][j - 1] + T[i][j + 1]\n            N[i][j] = round((1 - 4 * lam) * T[i][j] + lam * nb, 4)\n    return N\n", "hint": "Copy the grid, then update only inner cells from the old grid.", "why": "<p>A constant field stays constant because the weights add to 1.<\/p>"}], "must": [["Stencil", "Each output from a fixed neighbour pattern. 2-D: ±1, ±W. 3-D: ±1, ±N, ±N²."], ["Halo", "Tile B + 2R. Reads per output (B + 2R)/B against 2R + 1. Barrier after loading."], ["3-D tiles", "AI = 13(T − 2)³/(4T³) ≤ 3.25. Halo share 57.8 percent at T = 8. Memory bound."], ["Heat", "Tnew = (1 − 6λ)T + λΣ6. Weights must add to 1 (slide 14 used 0.25 + 0.6). Stable for λ ≤ 1/6."], ["Ping-pong", "Read the old grid, write the new grid, swap pointers."]], "summary": "<p>Load a tile with an R wide halo once and every output reads from shared memory. Heat weights must add to 1 and λ must stay at or below 1/6 in 3-D.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"ai3d": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.T": "8"}}, {"l": 4, "ev": "line", "d": {"G.inner": "216"}}, {"l": 5, "ev": "line", "d": {"G.ai": "1.37109375"}}, {"l": 6, "ev": "line", "d": {"G.halo": "0.578125"}}, {"l": 2, "ev": "line", "o": "T= 8: AI 1.37, halo share 57.8%\n"}, {"l": 3, "ev": "line", "d": {"G.T": "10"}}, {"l": 4, "ev": "line", "d": {"G.inner": "512"}}, {"l": 5, "ev": "line", "d": {"G.ai": "1.664"}}, {"l": 6, "ev": "line", "d": {"G.halo": "0.488"}}, {"l": 2, "ev": "line", "o": "T=10: AI 1.66, halo share 48.8%\n"}, {"l": 3, "ev": "line", "d": {"G.T": "16"}}, {"l": 4, "ev": "line", "d": {"G.inner": "2744"}}, {"l": 5, "ev": "line", "d": {"G.ai": "2.17724609375"}}, {"l": 6, "ev": "line", "d": {"G.halo": "0.330078125"}}, {"l": 2, "ev": "line", "o": "T=16: AI 2.18, halo share 33.0%\n"}, {"l": 3, "ev": "line", "d": {"G.T": "32"}}, {"l": 4, "ev": "line", "d": {"G.inner": "27000"}}, {"l": 5, "ev": "line", "d": {"G.ai": "2.67791748046875"}}, {"l": 6, "ev": "line", "d": {"G.halo": "0.176025390625"}}, {"l": 2, "ev": "line", "o": "T=32: AI 2.68, halo share 17.6%\n"}, {"l": 7, "ev": "line"}, {"l": 7, "ev": "return", "o": "limit for large T: 13/4 = 3.25\n"}], "tail": "", "err": null, "cut": false}, "heat": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 7, "ev": "line", "d": {"G.run": "<function run>"}}, {"l": 2, "ev": "call", "s": ["module", "run()"], "d": {"L.L": "0.25", "L.steps": "6"}}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 0, 0, 100, 0, 0, 0]"}}, {"l": 5, "ev": "line", "d": {"L._": "0"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 0.0, 25.0, 50.0, 25.0, 0.0, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 6.2, 25.0, 37.5, 25.0, 6.2, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 9.3, 23.4, 31.2, 23.4, 9.3, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 10.5, 21.8, 27.3, 21.8, 10.5, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 10.7, 20.4, 24.6, 20.4, 10.7, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "5"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 10.4, 19.0, 22.5, 19.0, 10.4, 0]", "L.i": null}}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 8, "ev": "line", "s": ["module"], "d": {"L.L": null, "L.steps": null, "L.T": null, "L._": null}, "o": "L = 0.25: [0, 10.4, 19.0, 22.5, 19.0, 10.4, 0]\n"}, {"l": 2, "ev": "call", "s": ["module", "run()"], "d": {"L.L": "0.75", "L.steps": "6"}}, {"l": 3, "ev": "line"}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 0, 0, 100, 0, 0, 0]"}}, {"l": 5, "ev": "line", "d": {"L._": "0"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 0.0, 75.0, -50.0, 75.0, 0.0, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 56.2, -75.0, 137.5, -75.0, 56.2, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, -84.3, 182.8, -181.2, 182.8, -84.3, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 179.3, -290.5, 364.8, -290.5, 179.3, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, -307.5, 553.3, -618.1, 553.3, -307.5, 0]", "L.i": null}}, {"l": 5, "ev": "line", "d": {"L._": "5"}}, {"l": 5, "ev": "line", "d": {"L.i": "1"}}, {"l": 5, "ev": "line", "d": {"L.i": "2"}}, {"l": 5, "ev": "line", "d": {"L.i": "3"}}, {"l": 5, "ev": "line", "d": {"L.i": "4"}}, {"l": 5, "ev": "line", "d": {"L.i": "5"}}, {"l": 4, "ev": "line", "d": {"L.T": "[0, 568.7, -970.9, 1139.0, -970.9, 568.7, 0]", "L.i": null}}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return"}, {"l": 8, "ev": "return", "s": ["module"], "d": {"L.L": null, "L.steps": null, "L.T": null, "L._": null}, "o": "L = 0.75: [0, 568.7, -970.9, 1139.0, -970.9, 568.7, 0]\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

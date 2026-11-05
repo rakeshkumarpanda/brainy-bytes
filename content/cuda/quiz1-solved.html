@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz 1 solved step by step · GPU Programming</title>
+<meta name="description" content="Peak throughput of one SM and the two readings of Q1, kernel return types, global memory, global loads in naive and tiled matmul, the missing barriers of Q4, segments for a transposed store, tracing a matrix vector kernel, the sum of divergent thread ids and counting warps.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 10: Exam practice</span><span>›</span><span>Quiz 1 solved</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 10 · Topic 1 of 3 · Pro</div>
+    <h1>Quiz 1 solved step by step</h1>
+    <p class="lead">All ten Quiz 1 questions worked out with the reasoning, the traps and a widget for each, followed by new variants of every question for practice.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">7 animations</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#quiz1-solved" data-topic="cheatsheet" data-h="quiz1-solved">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#paper" data-l="paper"><span class="n">1</span><span class="t">The paper and the answers</span></a></li><li><a href="#q1" data-l="q1"><span class="n">2</span><span class="t">Q1, Q6 and Q8: peak, kernels and memory</span></a></li><li><a href="#q2" data-l="q2"><span class="n">3</span><span class="t">Q2 to Q4: loads and races in matrix multiply</span></a></li><li><a href="#q5" data-l="q5"><span class="n">4</span><span class="t">Q5: segments for a transposed store</span></a></li><li><a href="#q7" data-l="q7"><span class="n">5</span><span class="t">Q7, Q9 and Q10: tracing, divergence and warps</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="paper" data-l="paper" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>The paper and the answers</h2>
+<p>Quiz 1 had 10 questions on the first half of the course. The official answers, recomputed below, are:</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Q</th><th>Topic</th><th>Answer</th><th>Chapter</th></tr></thead><tbody><tr><td>1</td><td>peak FP32 throughput of one SM</td><td>2 (12 GFLOPS)</td><td>1.1, 4.2</td></tr><tr><td>2</td><td>global loads per block, naive matmul</td><td>524,288</td><td>5.2</td></tr><tr><td>3</td><td>global loads per block, tiled matmul</td><td>32,768</td><td>5.2</td></tr><tr><td>4</td><td>races in a tiled kernel without barriers</td><td>3 (both true)</td><td>5.2, 7.2</td></tr><tr><td>5</td><td>128 byte segments for a transposed store</td><td>32</td><td>3.2</td></tr><tr><td>6</td><td>return type of a kernel</td><td>5 (__global__ void)</td><td>1.4</td></tr><tr><td>7</td><td>trace a matrix vector kernel</td><td>13</td><td>2.1</td></tr><tr><td>8</td><td>memory visible to all SMs for the whole run</td><td>1 (global memory)</td><td>3.1</td></tr><tr><td>9</td><td>sum of thread ids in a divergent branch</td><td>120</td><td>6.1</td></tr><tr><td>10</td><td>warps launched</td><td>32,768</td><td>2.3</td></tr></tbody></table></div>
+<div class="cv-code" data-k="answers"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="q1" data-l="q1" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Q1, Q6 and Q8: peak, kernels and memory</h2>
+<p><b>Q1.</b> 80 SMs, 64 cores each, 1.5 GHz, and "every cycle each SM achieves the peak of 4 FMA operations per cycle". Peak of one SM?</p>
+<div class="walk"><div class="walk-h"><span>Q1</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Read the SM statement: one SM does 4 FMA per cycle.</li><li>Each FMA = 2 FLOPs, so 8 FLOPs per cycle.</li><li>8 × 1.5 × 10⁹ = 12 × 10⁹.</li><li><span class="eq">12 GFLOPS, inside 10.5 to 12.5: answer 2</span></li></ol></div>
+<div class="note note-exam"><b>In the exam</b><div>The other reading, 4 FMA per core, gives 64 × 4 × 2 × 1.5 = 768 GFLOPS per SM, which matches no option. When a question gives two numbers for the same thing, use the one that describes exactly what is asked (here the SM) and check the options.</div></div>
+<div class="cvz" data-viz="peak"></div>
+<p><b>Q6.</b> A kernel is marked <code>__global__</code> and must return <code>void</code>: the CPU launches it and continues at once, so there is nobody waiting to receive a value. Results go back through memory. Answer 5.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Qualifier</th><th>Runs on</th><th>Called from</th></tr></thead><tbody><tr><td>__global__</td><td>GPU</td><td>CPU (a launch), must return void</td></tr><tr><td>__device__</td><td>GPU</td><td>GPU code only, any return type</td></tr><tr><td>__host__</td><td>CPU</td><td>CPU (the default)</td></tr><tr><td>__shared__</td><td>not a function: a variable in shared memory</td><td></td></tr></tbody></table></div>
+<p><b>Q8.</b> Global memory is reachable by every SM and keeps its contents until freed or the program ends. Shared memory belongs to one block, and L1 and L2 are caches, not places you allocate. Answer 1.</p>
+<div class="cvz" data-viz="memhier"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="q2" data-l="q2" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Q2 to Q4: loads and races in matrix multiply</h2>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">q2_naive.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">__global__ void matMulNaive(const float *A, const float *B, float *C, int N) {</span><span class="ln" data-n="2">    int row = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln" data-n="3">    int col = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="4">    if (row &lt; N &amp;&amp; col &lt; N) {</span><span class="ln" data-n="5">        float sum = 0.0f;</span><span class="ln" data-n="6">        for (int k = 0; k &lt; N; k++) {</span><span class="ln ck-has" data-n="7">            sum += A[row * N + k] * B[k * N + col];</span><span class="ln" data-n="8">        }</span><span class="ln ck-has" data-n="9">        C[row * N + col] = sum;</span><span class="ln" data-n="10">    }</span><span class="ln" data-n="11">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="7"><b>Line 7</b><code>sum += A[row * N + k] * B[k * N + col];</code><span>Each pass of the loop loads one A and one B value from global memory.</span></li><li data-n="9"><b>Line 9</b><code>C[row * N + col] = sum;</code><span>One store per thread.</span></li></ol></details></div>
+<div class="walk"><div class="walk-h"><span>Q2: N = 1024, blocks of 16 × 16</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Each thread runs the loop N = 1024 times.</li><li>Each pass loads 2 values: 2048 loads per thread.</li><li>256 threads per block.</li><li><span class="eq">256 × 2048 = 524,288 loads per block</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Q3: tiled with 16 × 16 tiles</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The k loop runs N ÷ 16 = 64 phases.</li><li>In each phase every thread loads 1 value of A and 1 of B into shared memory.</li><li>64 × 256 × 2.</li><li><span class="eq">32,768 loads per block, 16 times fewer</span></li></ol></div>
+<div class="cvz" data-viz="tilemm"></div>
+<p><b>Q4.</b> The quiz kernel loads tiles and computes, with no barrier at all.</p>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">q4_fixed.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">__global__ void matMul(const float *A, const float *B, float *C, int N) {</span><span class="ln" data-n="2">    __shared__ float tileA[16][16];</span><span class="ln" data-n="3">    __shared__ float tileB[16][16];</span><span class="ln" data-n="4">    int row = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln" data-n="5">    int col = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="6">    float sum = 0.0f;</span><span class="ln" data-n="7">    for (int k = 0; k &lt; N / 16; k++) {</span><span class="ln ck-has" data-n="8">        tileA[threadIdx.y][threadIdx.x] = A[row * N + (k * 16 + threadIdx.x)];</span><span class="ln" data-n="9">        tileB[threadIdx.y][threadIdx.x] = B[(k * 16 + threadIdx.y) * N + col];</span><span class="ln ck-has" data-n="10">        __syncthreads();                  // missing in the quiz: statement a becomes false</span><span class="ln" data-n="11">        for (int t = 0; t &lt; 16; t++) {</span><span class="ln" data-n="12">            sum += tileA[threadIdx.y][t] * tileB[t][threadIdx.x];</span><span class="ln" data-n="13">        }</span><span class="ln ck-has" data-n="14">        __syncthreads();                  // missing in the quiz: statement b becomes false</span><span class="ln" data-n="15">    }</span><span class="ln" data-n="16">    C[row * N + col] = sum;</span><span class="ln" data-n="17">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="8"><b>Line 8</b><code>tileA[threadIdx.y][threadIdx.x] = A[row * N + (k * 16 + threadIdx.x)];</code><span>Each thread writes one element of each tile.</span></li><li data-n="10"><b>Line 10</b><code>__syncthreads();                  // missing in the quiz: statement a becomes false</code><span>Without this barrier a thread can start reading tileA[5][3] before thread (5, 3) wrote it. Statement a is true in the quiz.</span></li><li data-n="14"><b>Line 14</b><code>__syncthreads();                  // missing in the quiz: statement b becomes false</code><span>Without this barrier a fast thread starts the next phase and overwrites tileB while slower threads still read it. Statement b is true.</span></li></ol></details></div>
+<div class="note note-exam"><b>In the exam</b><div>Answer 3: both statements are true for the quiz code, because it has no __syncthreads. The fixed version above needs one barrier after loading and one after computing.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="q5" data-l="q5" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Q5: segments for a transposed store</h2>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">q5.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">__global__ void ValUpdate(float *A, float *B, int width, int height) {</span><span class="ln" data-n="2">    int x = blockIdx.x * blockDim.x + threadIdx.x;</span><span class="ln" data-n="3">    int y = blockIdx.y * blockDim.y + threadIdx.y;</span><span class="ln" data-n="4">    if (x &lt; width &amp;&amp; y &lt; height) {</span><span class="ln ck-has" data-n="5">        float val = A[y * width + x];     // a warp reads 32 neighbours: 1 segment</span><span class="ln ck-has" data-n="6">        B[x * height + y] = val;          // a warp writes 2048 floats apart: 32 segments</span><span class="ln" data-n="7">    }</span><span class="ln" data-n="8">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="5"><b>Line 5</b><code>float val = A[y * width + x];     // a warp reads 32 neighbours: 1 segment</code><span>Threads of one warp have x = 0 to 31 and the same y: 32 consecutive floats = 128 bytes = 1 segment.</span></li><li data-n="6"><b>Line 6</b><code>B[x * height + y] = val;          // a warp writes 2048 floats apart: 32 segments</code><span>The same threads write B[x × 2048 + y]: neighbours are 2048 floats = 8192 bytes apart, so each one needs its own segment.</span></li></ol></details></div>
+<div class="walk"><div class="walk-h"><span>Q5</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>A warp is 32 threads with consecutive x and one y.</li><li>Store address for thread x: (x × 2048 + y) × 4 bytes.</li><li>Neighbouring threads are 8192 bytes apart, far more than 128.</li><li><span class="eq">32 segments for one warp store</span></li></ol></div>
+<div class="cvz" data-viz="coalesce"></div>
+<p>The fix is the transpose trick of chapter 3.2: read a tile into shared memory, then write it out row by row, so both the read and the write are coalesced.</p>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="q7" data-l="q7" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Q7, Q9 and Q10: tracing, divergence and warps</h2>
+<p><b>Q7.</b> One thread per row of y = A x. Thread 2 owns row 2.</p>
+<div class="cvz" data-viz="matvec"></div>
+<p><b>Q9.</b> With <code>if (tid % 4 == 1)</code>, branch A is taken by tids 1, 5, 9, …, 29.</p>
+<div class="walk"><div class="walk-h"><span>Q9</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The tids form 1 + 4k for k = 0 to 7: 8 terms.</li><li>Sum of an arithmetic series = terms × (first + last) ÷ 2.</li><li>8 × (1 + 29) ÷ 2.</li><li><span class="eq">120</span></li></ol></div>
+<div class="cvz" data-viz="diverge"></div>
+<p><b>Q10.</b> N = 2²⁰ threads in blocks of 256.</p>
+<div class="walk"><div class="walk-h"><span>Q10</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Blocks = (2²⁰ + 255) ÷ 256 = 4096.</li><li>Warps per block = 256 ÷ 32 = 8.</li><li>4096 × 8.</li><li><span class="eq">32,768 warps (the latencies in the question are not needed)</span></li></ol></div>
+<div class="cvz" data-viz="launch1d"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Read each question twice, then draw one warp or one thread. Most quiz questions are about counting the right thing.</p></div><div class="ld-p" data-ld="college" hidden><p>Peak = units × 2 × clock. Naive matmul loads 2N per thread, tiled 2N ÷ T. Segments: look at neighbouring threads. Kernels return void. Warps = blocks × ⌈threads ÷ 32⌉.</p></div><div class="ld-p" data-ld="masters" hidden><p>Check each answer two ways: by formula and by a tiny Python loop, as in the code above.</p></div><div class="ld-p" data-ld="research" hidden><p>The same counting is how researchers model kernels before writing them: count loads, bytes and FLOPs, then place the kernel on the roofline.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./gpu-python.html" data-topic="gpu-python"><small>Previous topic</small><b>GPU Python</b></a><a class="next" href="./challenge-problems.html" data-topic="challenge-problems"><small>Next topic</small><b>Challenge problems</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "quiz1-solved", "topic": "quiz1-solved", "subject": "cuda", "title": "Quiz 1 solved step by step", "codes": {"answers": {"src": "# Recompute every Quiz 1 answer\nprint(\"Q1:\", 4 * 2 * 1.5, \"GFLOPS per SM  -> option 2\")\nN, threads = 1024, 16 * 16\nprint(\"Q2:\", threads * 2 * N)\nprint(\"Q3:\", (N // 16) * threads * 2)\nprint(\"Q5:\", 32, \"segments (each thread lands\", 2048 * 4, \"bytes from its neighbour)\")\nA = [[1, 2, 1, 0], [0, 1, 3, 1], [2, 0, 1, 2], [1, 1, 0, 1]]\nx = [1, 2, 3, 4]\nprint(\"Q7:\", sum(A[2][j] * x[j] for j in range(4)))\nprint(\"Q9:\", sum(t for t in range(32) if t % 4 == 1))\nprint(\"Q10:\", (1 << 20) // 256 * (256 // 32))", "stdin": "", "out": "Q1: 12.0 GFLOPS per SM  -> option 2\nQ2: 524288\nQ3: 32768\nQ5: 32 segments (each thread lands 8192 bytes from its neighbour)\nQ7: 13\nQ9: 120\nQ10: 32768"}}, "quiz": [{"lv": "e", "q": "Return type of a __global__ function", "o": ["int", "float", "void", "any"], "a": 2, "hint": "The CPU does not wait.", "why": "Kernels return void."}, {"lv": "e", "q": "Memory reachable by all SMs for the whole program", "o": ["Shared", "Registers", "Global", "L1"], "a": 2, "hint": "Device wide.", "why": "Global memory."}, {"lv": "e", "q": "One FMA counts as", "o": ["1 FLOP", "2 FLOPs", "4 FLOPs", "0.5 FLOP"], "a": 1, "hint": "Multiply and add.", "why": "2."}, {"lv": "e", "q": "Warps for 256 threads", "o": ["4", "8", "16", "32"], "a": 1, "hint": "256 ÷ 32.", "why": "8."}, {"lv": "m", "q": "Naive matmul, N = 1024. Global loads per thread", "o": ["1024", "2048", "32", "64"], "a": 1, "hint": "One A and one B per k.", "why": "2048."}, {"lv": "m", "q": "Tiled with T = 16 cuts global loads by", "o": ["2 times", "16 times", "256 times", "Not at all"], "a": 1, "hint": "Each value reused 16 times.", "why": "16."}, {"lv": "m", "q": "Quiz Q4 code: what fixes statement a?", "o": ["atomicAdd", "__syncthreads() after loading the tiles", "volatile", "A bigger tile"], "a": 1, "hint": "Barrier before reading.", "why": "Everyone writes before anyone reads."}, {"lv": "m", "q": "Thread ids with tid % 4 == 1 in one warp", "o": ["4", "8", "16", "32"], "a": 1, "hint": "1, 5, …, 29.", "why": "8."}, {"lv": "h", "q": "Q5 load from A uses how many 128 byte segments per warp?", "o": ["1", "4", "32", "2048"], "a": 0, "hint": "32 floats in a row.", "why": "128 bytes, aligned."}, {"lv": "h", "q": "Quiz Q4 code: what fixes statement b?", "o": ["A barrier at the end of each phase", "Removing the loop", "printf", "More registers"], "a": 0, "hint": "Wait before overwriting.", "why": "Second __syncthreads."}, {"lv": "x", "q": "Q1 with the per core reading (4 FMA per core) gives per SM", "o": ["12 GFLOPS", "96 GFLOPS", "768 GFLOPS", "61 TFLOPS"], "a": 2, "hint": "64 × 4 × 2 × 1.5.", "why": "Outside every option, so the per SM reading is meant."}, {"lv": "x", "q": "Q5 with blocks of 16 × 16 (a warp covers 2 rows of 16). Store segments per warp", "o": ["32", "16", "8", "2"], "a": 1, "hint": "Pairs y, y + 1 share a segment.", "why": "16."}], "calc": [{"lv": "e", "q": "Q1: 4 FMA per cycle per SM at 1.5 GHz. GFLOPS?", "ans": "12", "hint": "4 × 2 × 1.5.", "steps": ["8 FLOPs per cycle.", "× 1.5 × 10⁹.", "<span class=\"eq\">12 GFLOPS<\/span>"]}, {"lv": "e", "q": "Q10: warps for 2²⁰ threads in blocks of 256?", "ans": "32768", "hint": "Blocks × 8.", "steps": ["4096 blocks.", "× 8 warps.", "<span class=\"eq\">32,768<\/span>"]}, {"lv": "e", "q": "Q7 variant: y[0] with the same A and x?", "ans": "8", "hint": "Row 0 · x.", "steps": ["1·1 + 2·2 + 1·3 + 0·4.", "= 8.", "<span class=\"eq\">8<\/span>"]}, {"lv": "m", "q": "Q2 variant: naive, N = 512, blocks of 16 × 16. Loads per block?", "ans": "262144", "hint": "256 × 2 × 512.", "steps": ["Per thread 1024 loads.", "× 256 threads.", "<span class=\"eq\">262,144<\/span>"]}, {"lv": "m", "q": "Q3 variant: tiled, N = 512, T = 16. Loads per block?", "ans": "16384", "hint": "32 phases × 512.", "steps": ["512 ÷ 16 = 32 phases.", "32 × 256 × 2.", "<span class=\"eq\">16,384<\/span>"]}, {"lv": "m", "q": "Q9 variant: sum of tids with tid % 4 == 3?", "ans": "136", "hint": "3, 7, …, 31.", "steps": ["8 terms.", "8 × (3 + 31) ÷ 2.", "<span class=\"eq\">136<\/span>"]}, {"lv": "m", "q": "Q10 variant: N = 1,000,000, blocks of 256. Warps?", "ans": "31256", "hint": "3907 × 8.", "steps": ["Blocks ⌈10⁶ ÷ 256⌉ = 3907.", "× 8.", "<span class=\"eq\">31,256 warps<\/span>"]}, {"lv": "h", "q": "Q1 variant: 128 cores × 1 FMA × 2 × 1.8 GHz. GFLOPS per SM? (one decimal)", "ans": "460.8", "hint": "Multiply.", "steps": ["128 × 2 = 256 FLOPs per cycle.", "× 1.8 × 10⁹.", "<span class=\"eq\">460.8 GFLOPS<\/span>"], "tol": 0.05}, {"lv": "h", "q": "Naive, N = 1024, blocks of 32 × 32. Loads per block?", "ans": "2097152", "hint": "1024 × 2048.", "steps": ["1024 threads.", "× 2048 loads each.", "<span class=\"eq\">2,097,152<\/span>"]}, {"lv": "x", "q": "Q10 variant: 2²⁰ threads in blocks of 100. Warps launched?", "ans": "41944", "hint": "Blocks × ⌈100 ÷ 32⌉.", "steps": ["Blocks ⌈1,048,576 ÷ 100⌉ = 10,486.", "Each block needs 4 warps (the last one has 4 threads).", "<span class=\"eq\">41,944 warps<\/span>"]}, {"lv": "x", "q": "Q9 variant: sum of tids with tid % 8 == 0 in one warp?", "ans": "48", "hint": "0, 8, 16, 24.", "steps": ["4 terms.", "0 + 8 + 16 + 24.", "<span class=\"eq\">48<\/span>"]}], "assign": [{"id": "matloads", "lv": "e", "title": "Loads per block for naive and tiled matmul", "task": "<p>Write <code>loads(N, B, tiled)<\/code> for square blocks of B × B threads. Naive: every thread loads 2N values. Tiled with tile B: every thread loads 2 values per phase, N ÷ B phases. Return the total per block.<\/p>", "starter": "def loads(N, B, tiled):\n    # your code here\n    pass\n", "tests": [{"call": "loads(1024, 16, False)", "want": 524288}, {"call": "loads(1024, 16, True)", "want": 32768}, {"call": "loads(512, 16, True)", "want": 16384}, {"call": "loads(1024, 32, False)", "want": 2097152}], "solution": "def loads(N, B, tiled):\n    threads = B * B\n    if tiled:\n        return threads * 2 * (N // B)\n    return threads * 2 * N\n", "hint": "Per thread, then times B².", "why": "<p>The ratio is always B: the tile width.<\/p>"}, {"id": "warpsum", "lv": "m", "title": "Divergent branch ids and warps", "task": "<p>Write <code>branch(mod, r)<\/code>: the sum of thread ids 0 to 31 with tid % mod == r. Write <code>warps(n, block)<\/code>: blocks × ⌈block ÷ 32⌉ with enough blocks for n threads. Return both as a list [branch(...), warps(...)] from <code>both(mod, r, n, block)<\/code>.<\/p>", "starter": "def both(mod, r, n, block):\n    # your code here\n    pass\n", "tests": [{"call": "both(4, 1, 1 << 20, 256)", "want": [120, 32768]}, {"call": "both(4, 3, 1000000, 256)", "want": [136, 31256]}, {"call": "both(8, 0, 1 << 20, 100)", "want": [48, 41944]}, {"call": "both(2, 0, 32, 32)", "want": [240, 1]}], "solution": "def both(mod, r, n, block):\n    s = sum(t for t in range(32) if t % mod == r)\n    blocks = (n + block - 1) // block\n    w = blocks * ((block + 31) // 32)\n    return [s, w]\n", "hint": "Two ceiling divisions for the warps.", "why": "<p>The first test reproduces Q9 and Q10.<\/p>"}], "must": [["Q1", "Use the statement about the SM: 4 FMA × 2 × 1.5 GHz = 12 GFLOPS, option 2."], ["Q2 and Q3", "Naive: B² × 2N loads per block (524,288). Tiled: B² × 2 × N/B (32,768)."], ["Q4", "No __syncthreads: both races possible, answer 3. Fix with one barrier after loading and one after computing."], ["Q5 and Q10", "Column store with stride 2048 floats: 32 segments. Warps = blocks × threads per block ÷ 32 = 32,768."], ["Q6 to Q9", "__global__ void, y[2] = 13, global memory, tids 1 to 29 step 4 sum to 120."]], "summary": "<p>Quiz 1 is about counting the right thing: FLOPs per cycle, loads per thread, segments per warp, warps per block. Draw one warp, then count.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"answers": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "o": "Q1: 12.0 GFLOPS per SM  -> option 2\n"}, {"l": 4, "ev": "line", "d": {"G.N": "1024", "G.threads": "256"}}, {"l": 5, "ev": "line", "o": "Q2: 524288\n"}, {"l": 6, "ev": "line", "o": "Q3: 32768\n"}, {"l": 7, "ev": "line", "o": "Q5: 32 segments (each thread lands 8192 bytes from its neighbour)\n"}, {"l": 8, "ev": "line", "d": {"G.A": "[[1, 2, 1, 0], [0, 1, 3, 1], [2, 0, 1, 2], [1, 1, 0, 1]]"}}, {"l": 9, "ev": "line", "d": {"G.x": "[1, 2, 3, 4]"}}, {"l": 9, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<range_iterator object at 0x7fd9c7b6cbd0>"}}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "return", "d": {"L.j": "0"}}, {"l": 9, "ev": "call"}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "return", "d": {"L.j": "1"}}, {"l": 9, "ev": "call"}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "return", "d": {"L.j": "2"}}, {"l": 9, "ev": "call"}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "return", "d": {"L.j": "3"}}, {"l": 9, "ev": "call"}, {"l": 9, "ev": "line"}, {"l": 9, "ev": "return"}, {"l": 10, "ev": "line", "s": ["module"], "d": {"L..0": null, "L.j": null}, "o": "Q7: 13\n"}, {"l": 10, "ev": "call", "s": ["module", "<genexpr>()"], "d": {"L..0": "<range_iterator object at 0x7fd9c7b6cba0>"}}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.t": "0"}}, {"l": 10, "ev": "return", "d": {"L.t": "1"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.t": "2"}}, {"l": 10, "ev": "line", "d": {"L.t": "3"}}, {"l": 10, "ev": "line", "d": {"L.t": "4"}}, {"l": 10, "ev": "return", "d": {"L.t": "5"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.t": "6"}}, {"l": 10, "ev": "line", "d": {"L.t": "7"}}, {"l": 10, "ev": "line", "d": {"L.t": "8"}}, {"l": 10, "ev": "return", "d": {"L.t": "9"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.t": "10"}}, {"l": 10, "ev": "line", "d": {"L.t": "11"}}, {"l": 10, "ev": "line", "d": {"L.t": "12"}}, {"l": 10, "ev": "return", "d": {"L.t": "13"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.t": "14"}}, {"l": 10, "ev": "line", "d": {"L.t": "15"}}, {"l": 10, "ev": "line", "d": {"L.t": "16"}}, {"l": 10, "ev": "return", "d": {"L.t": "17"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.t": "18"}}, {"l": 10, "ev": "line", "d": {"L.t": "19"}}, {"l": 10, "ev": "line", "d": {"L.t": "20"}}, {"l": 10, "ev": "return", "d": {"L.t": "21"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.t": "22"}}, {"l": 10, "ev": "line", "d": {"L.t": "23"}}, {"l": 10, "ev": "line", "d": {"L.t": "24"}}, {"l": 10, "ev": "return", "d": {"L.t": "25"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.t": "26"}}, {"l": 10, "ev": "line", "d": {"L.t": "27"}}, {"l": 10, "ev": "line", "d": {"L.t": "28"}}, {"l": 10, "ev": "return", "d": {"L.t": "29"}}, {"l": 10, "ev": "call"}, {"l": 10, "ev": "line"}, {"l": 10, "ev": "line", "d": {"L.t": "30"}}, {"l": 10, "ev": "line", "d": {"L.t": "31"}}, {"l": 10, "ev": "return"}, {"l": 11, "ev": "line", "s": ["module"], "d": {"L..0": null, "L.t": null}, "o": "Q9: 120\n"}, {"l": 11, "ev": "return", "o": "Q10: 32768\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>

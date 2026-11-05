@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shared memory and bank conflicts · GPU Programming</title>
+<meta name="description" content="__shared__ and __syncthreads, dynamic shared memory, 32 banks, bank of an address, gcd rule for strides, broadcast, padding tiles to 33, output layout of the powers example and 64-bit accesses.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/cuda.css">
+</head>
+<body class="cvp cudap">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=cuda">GPU Programming learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=cuda" target="_top">GPU Programming</a><span>›</span><span>Step 3: GPU memory</span><span>›</span><span>Shared memory</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 3 of 3 · College</div>
+    <h1>Shared memory and bank conflicts</h1>
+    <p class="lead">Use shared memory as a fast scratch pad for a block, and learn how its 32 banks work, when lanes must wait for each other, and how padding fixes it.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">3 formulas</span><span class="cv-chip">11 worked problems</span><span class="cv-chip">12 quiz questions</span><span class="cv-chip">2 assignments</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#shared-memory" data-topic="cheatsheet" data-h="shared-memory">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Formulas</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="assign">Assignments</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#shared" data-l="shared"><span class="n">1</span><span class="t">Shared memory: a cache you control</span></a></li><li><a href="#banks" data-l="banks"><span class="n">2</span><span class="t">Banks and conflicts</span></a></li><li><a href="#padding" data-l="padding"><span class="n">3</span><span class="t">Padding and layout fixes</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="shared" data-l="shared" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Shared memory: a cache you control</h2>
+<p>Each SM has a small, very fast memory that the threads of a block share. You declare it with <code>__shared__</code>, fill it from global memory, call <code>__syncthreads()</code> so everyone sees the full tile, and then read it many times. Unlike a normal cache, nothing is loaded or kept unless you write the code for it.</p>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">reverse.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">#include &lt;cstdio&gt;</span><span class="ln" data-n="2"> </span><span class="ln" data-n="3">// Reverse each block of 256 elements using a shared memory buffer</span><span class="ln" data-n="4">__global__ void reverseBlock(int *d, int n) {</span><span class="ln ck-has" data-n="5">    __shared__ int s[256];                   // one copy per block, on the SM</span><span class="ln" data-n="6">    int t = threadIdx.x;</span><span class="ln" data-n="7">    int i = blockIdx.x * blockDim.x + t;</span><span class="ln ck-has" data-n="8">    if (i &lt; n) s[t] = d[i];                  // every thread loads one element</span><span class="ln ck-has" data-n="9">    __syncthreads();                         // wait until the whole tile is loaded</span><span class="ln ck-has" data-n="10">    int src = blockDim.x - 1 - t;</span><span class="ln" data-n="11">    if (i &lt; n) d[i] = s[src];                // read an element another thread loaded</span><span class="ln" data-n="12">}</span><span class="ln" data-n="13"> </span><span class="ln" data-n="14">int main() {</span><span class="ln" data-n="15">    const int n = 1024;</span><span class="ln" data-n="16">    int h[n], *d;</span><span class="ln" data-n="17">    for (int k = 0; k &lt; n; ++k) h[k] = k;</span><span class="ln" data-n="18">    cudaMalloc(&amp;d, n * sizeof(int));</span><span class="ln" data-n="19">    cudaMemcpy(d, h, n * sizeof(int), cudaMemcpyHostToDevice);</span><span class="ln" data-n="20">    reverseBlock&lt;&lt;&lt;n / 256, 256&gt;&gt;&gt;(d, n);</span><span class="ln" data-n="21">    cudaMemcpy(h, d, n * sizeof(int), cudaMemcpyDeviceToHost);</span><span class="ln" data-n="22">    printf("%d %d %d\n", h[0], h[255], h[256]);</span><span class="ln" data-n="23">    cudaFree(d);</span><span class="ln" data-n="24">    return 0;</span><span class="ln" data-n="25">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="5"><b>Line 5</b><code>__shared__ int s[256];                   // one copy per block, on the SM</code><span>256 ints = 1 KB of shared memory per block.</span></li><li data-n="8"><b>Line 8</b><code>if (i &lt; n) s[t] = d[i];                  // every thread loads one element</code><span>Each thread copies one element from slow global memory into the tile.</span></li><li data-n="9"><b>Line 9</b><code>__syncthreads();                         // wait until the whole tile is loaded</code><span>The barrier: no thread continues until every thread of the block has reached this line.</span></li><li data-n="10"><b>Line 10</b><code>int src = blockDim.x - 1 - t;</code><span>Thread t reads the element thread 255 − t wrote. Without the barrier it could read a value not loaded yet.</span></li></ol></details><div class="cc-cap">What it prints</div><pre class="cc-out">255 0 511</pre></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">dynamic_shared.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">// Dynamic shared memory: the size is chosen at launch time</span><span class="ln" data-n="2">__global__ void scaleTile(float *d, float a) {</span><span class="ln ck-has" data-n="3">    extern __shared__ float buf[];           // size comes from the third launch parameter</span><span class="ln" data-n="4">    int t = threadIdx.x, i = blockIdx.x * blockDim.x + t;</span><span class="ln" data-n="5">    buf[t] = d[i];</span><span class="ln" data-n="6">    __syncthreads();</span><span class="ln" data-n="7">    d[i] = a * buf[t];</span><span class="ln" data-n="8">}</span><span class="ln" data-n="9"> </span><span class="ln" data-n="10">void launch(float *d, int n, int threads) {</span><span class="ln" data-n="11">    size_t bytes = threads * sizeof(float);</span><span class="ln ck-has" data-n="12">    scaleTile&lt;&lt;&lt;n / threads, threads, bytes&gt;&gt;&gt;(d, 2.0f);</span><span class="ln" data-n="13">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="3"><b>Line 3</b><code>extern __shared__ float buf[];           // size comes from the third launch parameter</code><span>extern __shared__ with empty brackets means the size is decided at launch.</span></li><li data-n="12"><b>Line 12</b><code>scaleTile&lt;&lt;&lt;n / threads, threads, bytes&gt;&gt;&gt;(d, 2.0f);</code><span>The third value inside <<< >>> is the number of dynamic shared memory bytes per block.</span></li></ol></details></div>
+<div class="note note-warn"><b>Common mistake</b><div>__syncthreads() must be reached by every thread of the block. Putting it inside an if that only some threads enter can hang the block or give wrong results.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="banks" data-l="banks" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Banks and conflicts</h2>
+<p>Shared memory is split into 32 <b>banks</b>, each 4 bytes wide. Each bank can serve one 4 byte word per tick. If the 32 lanes of a warp hit 32 different banks, the access takes one pass. If several lanes need <b>different</b> words in the same bank, they take turns.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Bank of an address</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">bank = ⌊byte address ÷ 4⌋ mod 32</div><div class="fx-n">Word w lives in bank w mod 32. Byte 260 is word 65, bank 1.</div></div><div class="fx fx-key"><div class="fx-h"><span>Conflict for stride s</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">ways = gcd(s, 32)</div><div class="fx-n">Odd strides are always conflict free.</div></div><div class="fx"><div class="fx-h"><span>Broadcast</span></div><div class="fx-b">same word for many lanes → no conflict</div><div class="fx-n">One read is sent to every lane that asked for it.</div></div></div>
+<div class="cvz" data-viz="banks"></div>
+<div class="cv-code" data-k="banks"></div>
+<div class="scene"><div class="scene-h">Real world scenario: 32 ticket windows</div><p>A station has 32 ticket windows. If 32 travellers each go to a different window, everyone is served at once. If 8 travellers queue at window 0 for different tickets, the last one waits 8 turns. If 8 travellers all want the same newspaper, the clerk holds it up once and everyone reads it.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="padding" data-l="padding" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Padding and layout fixes</h2>
+<div class="walk"><div class="walk-h"><span>Workbook 11.2 worked example: thread t reads tile[t][0] of a 32 × 32 float tile</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Element [t][0] is word 32t, so bank (32t) mod 32 = 0 for every lane.</li><li>32 different words in bank 0: 32 passes.</li><li>Declare the tile as [32][33]: element [t][0] is word 33t, bank t mod 32.</li><li><span class="eq">32 different banks, 1 pass. The cost is 32 × 33 × 4 − 32 × 32 × 4 = 128 bytes</span></li></ol></div>
+<div class="walk"><div class="walk-h"><span>Workbook 11.3: 32 threads each store 32 powers</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Layout A writes A[32i + p]: at each p the lanes are 32 words apart, a 32-way conflict.</li><li>32 steps × 32 passes = 1024 passes.</li><li>Layout B writes B[32p + i]: lanes 1 word apart, 1 pass per step.</li><li><span class="eq">32 passes, 32 times faster</span></li></ol></div>
+<div class="cv-code ck-file"><div class="cc-bar"><span class="ck-path">powers.cu</span><span class="grow"></span><button type="button" class="ck-copy">Copy</button></div><pre class="cc-src ck-hl" data-hl="cuda"><span class="ln" data-n="1">// 32 threads, each computes 32 powers of its own number into shared memory</span><span class="ln" data-n="2">__global__ void powers(float *out, const float *x) {</span><span class="ln" data-n="3">    __shared__ float A[32 * 32];</span><span class="ln" data-n="4">    __shared__ float B[32 * 32];</span><span class="ln" data-n="5">    int i = threadIdx.x;</span><span class="ln" data-n="6">    float v = 1.0f;</span><span class="ln" data-n="7">    for (int p = 0; p &lt; 32; ++p) {</span><span class="ln" data-n="8">        v *= x[i];</span><span class="ln ck-has" data-n="9">        A[32 * i + p] = v;      // layout A: lanes 32 words apart, every lane in bank 0</span><span class="ln ck-has" data-n="10">        B[32 * p + i] = v;      // layout B: lanes 1 word apart, one lane per bank</span><span class="ln" data-n="11">    }</span><span class="ln ck-has" data-n="12">    __syncthreads();</span><span class="ln ck-has" data-n="13">    for (int k = i; k &lt; 32 * 32; k += 32) out[k] = A[k] + B[k];</span><span class="ln" data-n="14">}</span></pre><details class="ck-notes" open><summary>What each marked line does and why</summary><ol><li data-n="9"><b>Line 9</b><code>A[32 * i + p] = v;      // layout A: lanes 32 words apart, every lane in bank 0</code><span>Layout A: thread i owns a row of 32 values, so at one moment all lanes write column p: same bank.</span></li><li data-n="10"><b>Line 10</b><code>B[32 * p + i] = v;      // layout B: lanes 1 word apart, one lane per bank</code><span>Layout B: the 32 lanes write one row together: 32 different banks.</span></li><li data-n="12"><b>Line 12</b><code>__syncthreads();</code><span>Both tiles must be complete before they are copied out.</span></li><li data-n="13"><b>Line 13</b><code>for (int k = i; k &lt; 32 * 32; k += 32) out[k] = A[k] + B[k];</code><span>Copy out with consecutive lanes on consecutive words, which is also coalesced in global memory.</span></li></ol></details></div>
+<details class="deep"><summary>Going deeper: 8 byte values</summary><div class="deep-b"><p>A double covers two banks. Under the plain 32-bit model, lane t reading double t touches words 2t and 2t + 1, so 16 lanes fill the 32 banks and the warp needs 2 passes. Recent GPUs serve 64-bit accesses in two half warp phases, which gives the same 2 passes without any extra waiting.</p></div></details>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Shared memory is a fast shelf for a team. It has 32 doors. Spread the team over the doors, or let everyone read the same thing.</p></div><div class="ld-p" data-ld="college" hidden><p>bank = word mod 32, conflict = gcd(stride, 32). Pad 2-D tiles to an odd width. __syncthreads() between writing and reading a tile.</p></div><div class="ld-p" data-ld="masters" hidden><p>Shared memory and L1 share one SRAM per SM. You can ask for a bigger shared carve out with cudaFuncSetAttribute and cudaFuncAttributePreferredSharedMemoryCarveout. More shared memory per block lowers occupancy (chapter 2.4).</p></div><div class="ld-p" data-ld="research" hidden><p>Swizzled layouts (XOR of row and column bits) avoid conflicts without wasting padding. CUTLASS and the Hopper TMA use them for matrix tiles.</p></div></div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="assign" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./coalescing.html" data-topic="coalescing"><small>Previous topic</small><b>Coalescing</b></a><a class="next" href="./floating-point.html" data-topic="floating-point"><small>Next topic</small><b>Floating point</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "shared-memory", "topic": "shared-memory", "subject": "cuda", "title": "Shared memory and bank conflicts", "codes": {"banks": {"src": "# Bank conflicts for stride s: lanes share a bank every 32 / gcd(s, 32) lanes\nfrom math import gcd\nfor s in [1, 2, 6, 8, 32, 33]:\n    banks_used = len({(s * t) % 32 for t in range(32)})\n    print(\"stride\", s, \":\", 32 // banks_used, \"way, gcd rule\", gcd(s, 32))\nprint(\"broadcast: 1 way, every lane reads the same word\")", "stdin": "", "out": "stride 1 : 1 way, gcd rule 1\nstride 2 : 2 way, gcd rule 2\nstride 6 : 2 way, gcd rule 2\nstride 8 : 8 way, gcd rule 8\nstride 32 : 32 way, gcd rule 32\nstride 33 : 1 way, gcd rule 1\nbroadcast: 1 way, every lane reads the same word"}}, "quiz": [{"lv": "e", "q": "Shared memory is declared with", "o": ["__global__", "__shared__", "__device__", "cudaMalloc"], "a": 1, "hint": "Keyword.", "why": "__shared__."}, {"lv": "e", "q": "How many banks does shared memory have?", "o": ["16", "32", "64", "128"], "a": 1, "hint": "One per lane.", "why": "32 banks of 4 bytes."}, {"lv": "e", "q": "Why call __syncthreads() after loading a tile?", "o": ["To free memory", "So no thread reads before all threads have written", "To speed up loads", "To launch a kernel"], "a": 1, "hint": "Barrier.", "why": "Threads of a block run at different speeds."}, {"lv": "m", "q": "Bank of byte address 260", "o": ["0", "1", "4", "65"], "a": 1, "hint": "260 ÷ 4 = 65.", "why": "65 mod 32 = 1."}, {"lv": "m", "q": "Stride 8 words. Conflict?", "o": ["None", "2-way", "4-way", "8-way"], "a": 3, "hint": "gcd(8, 32).", "why": "8 lanes per bank."}, {"lv": "m", "q": "All 32 lanes read A[5]", "o": ["32-way conflict", "No conflict (broadcast)", "2-way", "Error"], "a": 1, "hint": "Same word.", "why": "Broadcast."}, {"lv": "m", "q": "Stride 6 words. Conflict?", "o": ["None", "2-way", "3-way", "6-way"], "a": 1, "hint": "gcd(6, 32).", "why": "2-way."}, {"lv": "h", "q": "Tile width 48 floats, threads read a column. Conflict and fix?", "o": ["None", "16-way, pad to 49", "48-way, pad to 64", "2-way, no fix"], "a": 1, "hint": "gcd(48, 32) = 16.", "why": "An odd width such as 49 removes it."}, {"lv": "h", "q": "extern __shared__ float buf[] gets its size from", "o": ["The compiler", "The third launch parameter in bytes", "blockDim", "cudaMalloc"], "a": 1, "hint": "Dynamic.", "why": "<<<grid, block, bytes>>>."}, {"lv": "h", "q": "Thread t reads double t under the 32-bit bank model", "o": ["No conflict", "2-way", "4-way", "32-way"], "a": 1, "hint": "Two words per lane.", "why": "64 words over 32 banks."}, {"lv": "x", "q": "Layout A in the powers example takes how many passes for 32 steps?", "o": ["32", "64", "256", "1024"], "a": 3, "hint": "32-way each step.", "why": "32 × 32."}, {"lv": "x", "q": "Stride 24 words for 32 steps. Total passes?", "o": ["32", "128", "256", "768"], "a": 2, "hint": "gcd(24, 32) = 8.", "why": "8 × 32 = 256."}], "calc": [{"lv": "e", "q": "Bank of word 70?", "ans": "6", "hint": "70 mod 32.", "steps": ["70 = 2 × 32 + 6.", "Remainder 6.", "<span class=\"eq\">Bank 6<\/span>"]}, {"lv": "e", "q": "Shared memory for a 32 × 32 float tile in bytes?", "ans": "4096", "hint": "1024 × 4.", "steps": ["32 × 32 = 1024 floats.", "× 4 bytes.", "<span class=\"eq\">4096 bytes<\/span>"]}, {"lv": "e", "q": "Stride 2 conflict (ways)?", "ans": "2", "hint": "gcd.", "steps": ["gcd(2, 32) = 2.", "Lanes 0 and 16 share bank 0.", "<span class=\"eq\">2-way<\/span>"]}, {"lv": "m", "q": "Bytes for a padded 32 × 33 float tile?", "ans": "4224", "hint": "32 × 33 × 4.", "steps": ["1056 floats.", "× 4.", "<span class=\"eq\">4224 bytes, 128 more<\/span>"]}, {"lv": "m", "q": "Row width 48, column read. Ways?", "ans": "16", "hint": "gcd(48, 32).", "steps": ["Element [t][0] = word 48t.", "gcd(48, 32) = 16.", "<span class=\"eq\">16-way<\/span>"]}, {"lv": "m", "q": "16 threads write out[16i]. Ways?", "ans": "8", "hint": "Banks 0 and 16 only.", "steps": ["Words 0, 16, 32, 48, ...", "Banks alternate 0, 16, 0, 16.", "<span class=\"eq\">8 lanes per bank: 8-way<\/span>"]}, {"lv": "m", "q": "Stride 33 words. Ways?", "ans": "1", "hint": "gcd(33, 32).", "steps": ["33 is odd.", "gcd = 1.", "<span class=\"eq\">Conflict free<\/span>"]}, {"lv": "h", "q": "Powers example layout A: total passes?", "ans": "1024", "hint": "32 steps × 32 ways.", "steps": ["Each step: lanes 32 words apart, 32-way.", "32 steps.", "<span class=\"eq\">1024 passes<\/span>"]}, {"lv": "h", "q": "Stride 24 for 32 steps: total passes?", "ans": "256", "hint": "gcd(24, 32) × 32.", "steps": ["gcd(24, 32) = 8.", "8 × 32.", "<span class=\"eq\">256 passes<\/span>"]}, {"lv": "x", "q": "A block uses a 64 × 65 float tile and an A100 SM offers 164 KB of shared memory (plus 1 KB reserved per block). Blocks by shared memory?", "ans": "9", "hint": "Bytes per block first.", "steps": ["64 × 65 × 4 = 16,640 bytes.", "+ 1024 reserved = 17,664.", "<span class=\"eq\">167,936 ÷ 17,664 = 9.5, so 9 blocks<\/span>"]}, {"lv": "x", "q": "Reverse 1024 ints with 256 thread blocks as in reverse.cu. Value at h[256] afterwards?", "ans": "511", "hint": "Block 1 reverses 256 to 511.", "steps": ["Block 1 holds elements 256 to 511.", "Position 256 is thread 0, which reads s[255] = 511.", "<span class=\"eq\">511<\/span>"]}], "assign": [{"id": "bankw", "lv": "e", "title": "Conflict degree", "task": "<p>Write <code>ways(words)<\/code>: given the word index each lane reads, return the largest number of <b>different<\/b> words that fall in one bank (32 banks).<\/p>", "starter": "def ways(words):\n    # your code here\n    pass\n", "tests": [{"call": "ways(list(range(32)))", "want": 1}, {"call": "ways([2 * t for t in range(32)])", "want": 2}, {"call": "ways([5] * 32)", "want": 1}, {"call": "ways([32 * t for t in range(32)])", "want": 32}], "solution": "def ways(words):\n    banks = {}\n    for w in words:\n        banks.setdefault(w % 32, set()).add(w)\n    return max(len(v) for v in banks.values())\n", "hint": "Use a set per bank so a broadcast counts once.", "why": "<p>The set makes the broadcast case count as one word.<\/p>"}, {"id": "pad", "lv": "m", "title": "Smallest conflict free padding", "task": "<p>Write <code>pad(width)<\/code>: the smallest padded width ≥ <code>width<\/code> such that reading a column (thread t reads word t × padded width, t = 0 to 31) has no bank conflict.<\/p>", "starter": "def pad(width):\n    # your code here\n    pass\n", "tests": [{"call": "pad(32)", "want": 33}, {"call": "pad(48)", "want": 49}, {"call": "pad(33)", "want": 33}, {"call": "pad(64)", "want": 65}], "solution": "from math import gcd\ndef pad(width):\n    w = width\n    while gcd(w, 32) != 1:\n        w += 1\n    return w\n", "hint": "Conflict free means gcd(width, 32) = 1.", "why": "<p>Any odd width works, so at most one extra column is needed.<\/p>"}], "must": [["Shared memory", "__shared__, one copy per block, fill then __syncthreads() then read. extern __shared__ size is the third launch value."], ["Banks", "32 banks × 4 bytes. bank = ⌊byte ÷ 4⌋ mod 32. Different words in one bank take turns."], ["Conflicts", "Stride s gives gcd(s, 32) ways. Same word is a broadcast, no conflict."], ["Padding", "Tile [32][33] makes column reads conflict free for 128 extra bytes."], ["Layout", "Let lanes write consecutive words: powers example 1024 passes against 32."]], "summary": "<p>Shared memory is fast only when the lanes of a warp hit different banks or the same word. Odd strides and padded tiles keep it conflict free.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{"banks": {"steps": [{"l": 2, "ev": "line", "s": ["module"]}, {"l": 3, "ev": "line", "d": {"G.gcd": "<builtin_function_or_method gcd>"}}, {"l": 4, "ev": "line", "d": {"G.s": "1"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.banks_used": "32"}}, {"l": 3, "ev": "line", "o": "stride 1 : 1 way, gcd rule 1\n"}, {"l": 4, "ev": "line", "d": {"G.s": "2"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.banks_used": "16"}}, {"l": 3, "ev": "line", "o": "stride 2 : 2 way, gcd rule 2\n"}, {"l": 4, "ev": "line", "d": {"G.s": "6"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line"}, {"l": 3, "ev": "line", "o": "stride 6 : 2 way, gcd rule 2\n"}, {"l": 4, "ev": "line", "d": {"G.s": "8"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.banks_used": "4"}}, {"l": 3, "ev": "line", "o": "stride 8 : 8 way, gcd rule 8\n"}, {"l": 4, "ev": "line", "d": {"G.s": "32"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.banks_used": "1"}}, {"l": 3, "ev": "line", "o": "stride 32 : 32 way, gcd rule 32\n"}, {"l": 4, "ev": "line", "d": {"G.s": "33"}}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 4, "ev": "line"}, {"l": 5, "ev": "line", "d": {"G.banks_used": "32"}}, {"l": 3, "ev": "line", "o": "stride 33 : 1 way, gcd rule 1\n"}, {"l": 6, "ev": "line"}, {"l": 6, "ev": "return", "o": "broadcast: 1 way, every lane reads the same word\n"}], "tail": "", "err": null, "cut": false}}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not isinstance(v, types.ModuleType)
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            exec(code, {'__name__': '__main__'})
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/cudalist.js"></script>
+<script src="../../assets/cudawidgets.js"></script>
+<script src="../../assets/cv.js"></script>
+</body>
+</html>
