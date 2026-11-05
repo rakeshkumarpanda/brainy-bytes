@@ -5237,6 +5237,17 @@ function nlpNeuralModules() {
         { id: "derive", title: "Tier 4: derivations, design and critique", emoji: "", group: "Lesson", keywords: ["derivation", "softmax gradient", "vanishing gradient proof", "GloVe derivation", "design", "critique"] },
         { id: "sheet", title: "Formula sheet and last minute checks", emoji: "", group: "Lesson", keywords: ["formula sheet", "numbers to remember", "last minute checks"] },
         { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "nn-fovl-assignment", title: "FoVL assignment: word embeddings for Indian languages", emoji: "5.2", page: "content/nlp/fovl-assignment.html",
+        summary: "The FoVL word embedding assignment for 7 Indian languages with the question paper, a full worked solution and an explained notebook.",
+        keywords: ["FOVL assignment", "word embeddings", "FastText", "IndicCorpV2", "OOV", "Spearman", "Indian languages", "Hindi", "Tamil", "Urdu"],
+        minutes: 45, counts: {"lessons": 3, "problems": 7, "quiz": 10, "assign": 0},
+        added: "2026-11-05",
+        sections: [
+        { id: "paper", title: "The question paper", emoji: "", group: "Lesson", keywords: ["FOVL assignment", "question paper", "IndicCorpV2", "word similarity", "Indian languages"] },
+        { id: "solution", title: "The worked solution", emoji: "", group: "Lesson", keywords: ["solution", "FastText", "OOV", "Spearman", "macro average", "t-SNE", "error analysis"] },
+        { id: "notebook", title: "The notebook", emoji: "", group: "Lesson", keywords: ["notebook", "ipynb", "download", "gensim"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
