@@ -6515,6 +6515,83 @@ function coreAiModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cai-bayes", title: "Probability and Bayesian networks", emoji: "9", step: 9, part: "core", level: "College", blurb: "Reason when facts are uncertain: probability, Bayesian networks, directed and undirected models, exact and sampling inference, and causality.", topics: [
+      { id: "probability-basics", title: "Probability for AI agents", emoji: "9.1", page: "content/ai/probability-basics.html",
+        summary: "Probability axioms, joint distributions, Bayes’ rule, independence and naive Bayes.",
+        keywords: ["probability", "joint distribution", "marginalisation", "conditional probability", "Bayes' rule", "base rate", "independence", "conditional independence", "naive Bayes"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "why", title: "Why agents need probability", emoji: "", group: "Lesson", keywords: ["uncertainty", "degree of belief", "Kolmogorov axioms", "Dutch book", "conditional probability", "qualification problem"] },
+        { id: "jointdist", title: "The full joint distribution and inference by enumeration", emoji: "", group: "Lesson", keywords: ["random variable", "full joint distribution", "marginalisation", "conditioning", "normalisation", "alpha", "inference by enumeration"] },
+        { id: "bayesrule", title: "Bayes' rule", emoji: "", group: "Lesson", keywords: ["Bayes' rule", "prior", "likelihood", "posterior", "total probability", "base rate fallacy", "odds", "likelihood ratio"] },
+        { id: "indep", title: "Independence, conditional independence and naive Bayes", emoji: "", group: "Lesson", keywords: ["independence", "conditional independence", "naive Bayes", "Laplace smoothing", "spam filter", "factoring the joint"] },
+        { id: "maths", title: "The maths: rules every probability step uses", emoji: "", group: "Lesson", keywords: ["product rule", "chain rule", "expected value", "variance", "Monty Hall", "frequentist", "Bayesian"] },
+        { id: "compare", title: "Probability compared with other ways to handle uncertainty", emoji: "", group: "Lesson", keywords: ["comparison", "certainty factors", "fuzzy logic", "Dempster Shafer", "default logic", "spam filter"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["conjugate prior", "MAP", "maximum likelihood", "probabilistic programming", "calibration"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "bayesian-networks", title: "Bayesian networks and Markov networks", emoji: "9.2", page: "content/ai/bayesian-networks.html",
+        summary: "Directed and undirected graphical models: CPTs, d-separation, Markov blankets, factors and Z.",
+        keywords: ["Bayesian network", "CPT", "d-separation", "explaining away", "Markov blanket", "noisy OR", "Markov network", "partition function", "directed model", "undirected model"],
+        minutes: 55, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 4},
+        added: "2026-10-27",
+        sections: [
+        { id: "bn", title: "Bayesian networks: a graph plus small tables", emoji: "", group: "Lesson", keywords: ["Bayesian network", "belief network", "CPT", "directed acyclic graph", "chain rule", "compactness", "causal order"] },
+        { id: "dsepl", title: "Reading independence from the graph: d-separation", emoji: "", group: "Lesson", keywords: ["d-separation", "chain", "fork", "collider", "explaining away", "Markov blanket", "local Markov property"] },
+        { id: "cpts", title: "Compact tables: deterministic nodes, noisy OR and continuous variables", emoji: "", group: "Lesson", keywords: ["noisy OR", "deterministic node", "linear Gaussian", "hybrid network", "canonical distribution"] },
+        { id: "undirected", title: "Undirected models: Markov networks", emoji: "", group: "Lesson", keywords: ["Markov network", "Markov random field", "undirected model", "factor", "clique", "partition function", "Hammersley Clifford", "moralisation", "Gibbs distribution"] },
+        { id: "maths", title: "The maths: counting parameters and checking independence", emoji: "", group: "Lesson", keywords: ["parameter count", "local Markov property", "Markov blanket", "moral graph", "partition function example"] },
+        { id: "compare", title: "Graphical models compared", emoji: "", group: "Lesson", keywords: ["comparison", "factor graph", "conditional random field", "Pathfinder", "NET-VISA", "troubleshooter"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["I-map", "Markov equivalence", "v-structure", "structure learning", "Markov logic"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "bn-inference", title: "Inference in Bayesian networks", emoji: "9.3", page: "content/ai/bn-inference.html",
+        summary: "Enumeration, variable elimination, complexity, rejection sampling, likelihood weighting and Gibbs sampling.",
+        keywords: ["inference", "enumeration", "variable elimination", "factor", "treewidth", "polytree", "rejection sampling", "likelihood weighting", "Gibbs sampling", "MCMC"],
+        minutes: 55, counts: {"lessons": 7, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "enumeration", title: "Exact inference by enumeration", emoji: "", group: "Lesson", keywords: ["inference by enumeration", "hidden variables", "enumeration tree", "normalisation", "repeated work"] },
+        { id: "ve", title: "Variable elimination", emoji: "", group: "Lesson", keywords: ["variable elimination", "factor", "pointwise product", "sum out", "elimination order", "treewidth", "polytree", "junction tree", "irrelevant variables"] },
+        { id: "sampling", title: "Approximate inference by sampling", emoji: "", group: "Lesson", keywords: ["sampling", "prior sampling", "rejection sampling", "likelihood weighting", "Gibbs sampling", "MCMC", "Markov blanket", "standard error"] },
+        { id: "maths", title: "The maths: why the samplers give the right answer", emoji: "", group: "Lesson", keywords: ["consistency", "sampling distribution", "stationary distribution", "detailed balance", "Gibbs step example"] },
+        { id: "compare", title: "Inference methods compared", emoji: "", group: "Lesson", keywords: ["comparison", "loopy belief propagation", "Hamiltonian Monte Carlo", "Stan", "Hugin", "turbo codes"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["#P-hard", "variational inference", "KL divergence", "amortised inference", "particle filter", "arithmetic circuits"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "causality", title: "Causality: seeing, doing and imagining", emoji: "9.4", page: "content/ai/causality.html",
+        summary: "Causal networks, the do operator, back door adjustment, Simpson’s paradox and counterfactuals.",
+        keywords: ["causality", "do operator", "intervention", "confounder", "back door criterion", "adjustment formula", "Simpson's paradox", "counterfactual", "structural causal model", "front door"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "ladder", title: "Seeing, doing and imagining: the ladder of causation", emoji: "", group: "Lesson", keywords: ["causality", "causal network", "ladder of causation", "association", "intervention", "counterfactual", "do operator", "correlation is not causation"] },
+        { id: "dooper", title: "The do operator and graph surgery", emoji: "", group: "Lesson", keywords: ["do operator", "graph surgery", "truncated factorisation", "manipulation", "average causal effect", "randomised controlled trial"] },
+        { id: "backdoor", title: "Confounders, the back door criterion and Simpson's paradox", emoji: "", group: "Lesson", keywords: ["confounder", "back door path", "back door criterion", "adjustment formula", "Simpson's paradox", "mediator", "collider", "Berkson's paradox"] },
+        { id: "counterfactual", title: "Counterfactuals with structural causal models", emoji: "", group: "Lesson", keywords: ["counterfactual", "structural causal model", "abduction action prediction", "do calculus", "front door adjustment", "identification"] },
+        { id: "maths", title: "The maths: adjustment, front door and effects", emoji: "", group: "Lesson", keywords: ["back door formula", "front door formula", "inverse probability weighting", "average causal effect"] },
+        { id: "compare", title: "Ways to learn what causes what", emoji: "", group: "Lesson", keywords: ["comparison", "randomised trial", "instrumental variables", "causal discovery", "PC algorithm", "A/B test", "fairness"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["do calculus", "causal representation learning", "causal reinforcement learning", "invariance"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

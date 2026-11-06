@@ -42,7 +42,7 @@ BASE = {
 PARTS = [
     {'part': 'core', 'part_name': 'Core AI', 'name': 'Artificial Intelligence', 'topics': os.path.join(HERE, 'core-topics'),
      'func': 'coreAiModules', 'marker': 'ai-core-build',
-     'widgets': ['cvviz.js', 'aiwidgets.js', 'coreai.js', 'coreai2.js'], 'body': 'cvp aip caip'},
+     'widgets': ['cvviz.js', 'aiwidgets.js', 'coreai.js', 'coreai2.js', 'coreai3.js'], 'body': 'cvp aip caip'},
     {'part': 'advanced', 'part_name': 'Advanced AI', 'name': 'Advanced AI', 'topics': os.path.join(HERE, 'topics'),
      'func': 'advAiModules', 'marker': 'ai-build', 'widgets': ['cvviz.js', 'aiwidgets.js', 'aigames.js']},
 ]
