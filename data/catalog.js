@@ -6334,6 +6334,46 @@ function coreAiModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "alpha-beta", title: "Alpha beta pruning", emoji: "6.2", page: "content/ai/alpha-beta.html",
+        summary: "Alpha and beta, the prune rule, the slide example, move ordering and the cost of alpha beta.",
+        keywords: ["alpha beta pruning", "alpha", "beta", "prune", "move ordering", "Knuth Moore", "Deep Blue", "effective branching factor"],
+        minutes: 45, counts: {"lessons": 9, "problems": 11, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Why we can skip parts of the tree", emoji: "", group: "Lesson", keywords: ["alpha beta pruning", "alpha", "beta", "lower bound", "upper bound", "prune", "alpha greater or equal beta"] },
+        { id: "example", title: "The worked example of the slides", emoji: "", group: "Lesson", keywords: ["alpha beta example", "slide example", "prune leaf 9", "prune subtree G"] },
+        { id: "algo", title: "The algorithm", emoji: "", group: "Lesson", keywords: ["alpha beta algorithm", "max value", "min value", "complexity", "data structures"] },
+        { id: "ordering", title: "Move ordering decides how much is pruned", emoji: "", group: "Lesson", keywords: ["move ordering", "best case", "worst case", "Knuth Moore", "killer moves", "iterative deepening", "transposition table"] },
+        { id: "maths", title: "The maths: how much faster, and how much deeper", emoji: "", group: "Lesson", keywords: ["effective branching factor", "square root of b", "double the depth", "negamax", "minimal tree"] },
+        { id: "food", title: "Food for thought from the slides", emoji: "", group: "Lesson", keywords: ["food for thought", "Deep Blue", "Stockfish", "principal variation search", "utility function"] },
+        { id: "compare", title: "Alpha beta against other game search methods", emoji: "", group: "Lesson", keywords: ["comparison", "aspiration window", "principal variation search", "NegaScout", "null move"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["Knuth and Moore", "Pearl", "SSS star", "MTD(f)", "NNUE"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "expectimax", title: "Games with chance: expectimax and Monte Carlo tree search", emoji: "6.3", page: "content/ai/expectimax.html",
+        summary: "Expectimax, expectiminimax, their problems, and Monte Carlo tree search with UCB1.",
+        keywords: ["expectimax", "expectiminimax", "chance node", "expected value", "Monte Carlo tree search", "MCTS", "UCB1", "backgammon", "AlphaGo"],
+        minutes: 50, counts: {"lessons": 9, "problems": 11, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "When dice decide part of the game", emoji: "", group: "Lesson", keywords: ["expectimax", "chance node", "expected value", "dice", "stochastic game", "backgammon"] },
+        { id: "example", title: "The expectimax example of the slides", emoji: "", group: "Lesson", keywords: ["expectimax example", "slide 11", "one third", "8 4 7"] },
+        { id: "emm", title: "Expectiminimax: chance and an opponent", emoji: "", group: "Lesson", keywords: ["expectiminimax", "slide 12", "1.7", "MIN node", "chance layer"] },
+        { id: "issues", title: "What problems do you see here?", emoji: "", group: "Lesson", keywords: ["problems with expectimax", "probability estimates", "biased coin", "tree size", "scale of values", "pruning chance nodes"] },
+        { id: "mcts", title: "Monte Carlo tree search", emoji: "", group: "Lesson", keywords: ["Monte Carlo tree search", "MCTS", "rollout", "UCB1", "exploration", "exploitation", "selection expansion simulation backpropagation"] },
+        { id: "maths", title: "The maths: expected value, UCB1 and cost", emoji: "", group: "Lesson", keywords: ["expected value", "linearity of expectation", "Hoeffding", "UCB1 derivation", "dice outcomes", "star minimax"] },
+        { id: "compare", title: "Which game search to use", emoji: "", group: "Lesson", keywords: ["comparison", "TD-Gammon", "AlphaGo", "AlphaZero", "Pac-Man"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["bandit", "regret", "UCT", "Bellman", "PUCT", "MuZero", "Libratus"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
