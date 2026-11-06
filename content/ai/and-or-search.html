@@ -61,15 +61,15 @@ function AND-SEARCH(states, path):
 <div class="cvz" data-viz="aostar" data-cfg="{&quot;hs&quot;: &quot;B 5, C 2, D 4, E 7, F 9, G 3, H 0, I 0, J 0&quot;, &quot;ec&quot;: 1}"></div>
 <div class="note note-warn"><b>Common mistake</b><div>Look closely at the slide numbers: h(D) = 4 but D really costs only 1 (D → J). So this h overestimates and is not admissible. Here AO* still ends at the best answer 5, but try the second tip (h(H) = 6): AO* stops at 9 while the true best is 7. Like A*, AO* is only guaranteed optimal when h never overestimates.</div></div>
 <div class="cv-code" data-k="aostar"></div>
-<div class="algo"><div class="algo-h">AO* (outline)</div><pre>G = graph with only the start node; mark it unsolved
+<div class="algo"><div class="algo-h">AO* (outline)</div><pre>G = graph with only the start node, marked unsolved
 loop until start is solved or its cost is ∞:
-    follow the marked best connectors from the start; pick an unexpanded tip n
+    follow the marked best connectors from the start and pick an unexpanded tip n
     expand n: add its successors, estimate each new node with h
     S = { n }
     while S is not empty:
         take a node m from S that has no descendant in S
         cost(m) = min over connectors of ∑ (edge cost + cost(child))
-        mark that connector; m is solved if all its children on it are solved
+        mark that connector. m is solved if all its children on it are solved
         if cost(m) changed or m became solved: add the parents of m to S</pre></div>
 <nav class="cv-lnav"></nav></article><article class="cv-lesson" id="maths" data-l="maths" hidden><div class="cv-lno">Lesson 5 of 8</div><h2>The maths: cost of a solution graph and complexity</h2>
 <div class="fx-grid"><div class="fx"><div class="fx-h"><span>Cost at an OR node</span></div><div class="fx-b">cost(n) = min<sub>connectors k</sub> cost(n, k)</div><div class="fx-n">The agent picks the cheapest way.</div></div><div class="fx fx-key"><div class="fx-h"><span>Cost of an AND connector</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">cost(n, k) = ∑<sub>children c of k</sub> (C(n, c) + cost(c))</div><div class="fx-n">All parts must be done, so their costs add.</div></div><div class="fx"><div class="fx-h"><span>Admissibility for AO*</span></div><div class="fx-b">h(n) ≤ the true cost of the best solution graph below n</div><div class="fx-n">With such an h, AO* returns an optimal solution graph (on graphs without cycles).</div></div></div>
@@ -218,6 +218,7 @@ if __name__ == '__main__':
 <script src="../../assets/aiwidgets.js"></script>
 <script src="../../assets/coreai.js"></script>
 <script src="../../assets/coreai2.js"></script>
+<script src="../../assets/coreai3.js"></script>
 <script src="../../assets/cv.js"></script>
 </body>
 </html>

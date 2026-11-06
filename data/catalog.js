@@ -6668,6 +6668,45 @@ function coreAiModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cai-review", title: "Challenge and revision", emoji: "11", step: 11, part: "core", level: "All levels", blurb: "Bring it all together: the hardest exam style problems across Core AI, then a revision guide from school level to top universities.", topics: [
+      { id: "core-challenge", title: "Challenge problems across Core AI", emoji: "11.1", page: "content/ai/core-challenge.html",
+        summary: "Hard exam style problems across every Core AI step, with proofs and a method guide.",
+        keywords: ["challenge problems", "hard questions", "proofs", "A* optimality", "alpha beta", "resolution", "Sussman anomaly", "Bayes rule", "value iteration", "Q-learning"],
+        minutes: 75, counts: {"lessons": 12, "problems": 13, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "how", title: "How to attack a hard Core AI problem", emoji: "", group: "Lesson", keywords: ["problem solving", "exam strategy", "challenge problems", "MIT", "Berkeley", "Stanford", "CMU", "IIT", "GATE"] },
+        { id: "search", title: "Challenge set 1: search and heuristics", emoji: "", group: "Lesson", keywords: ["admissible", "consistent", "inconsistent heuristic", "reopening", "graph search", "iterative deepening cost", "effective branching factor"] },
+        { id: "csp", title: "Challenge set 2: constraint satisfaction and local search", emoji: "", group: "Lesson", keywords: ["AC-3", "arc consistency", "tree structured CSP", "topological order", "simulated annealing", "acceptance probability"] },
+        { id: "games", title: "Challenge set 3: adversarial search", emoji: "", group: "Lesson", keywords: ["alpha beta", "pruning", "move ordering", "best case", "Knuth and Moore", "expectimax", "monotonic transformation"] },
+        { id: "logic", title: "Challenge set 4: logic and inference", emoji: "", group: "Lesson", keywords: ["resolution proof", "CNF", "model counting", "unification", "most general unifier", "occurs check", "forward chaining limits"] },
+        { id: "planning", title: "Challenge set 5: planning", emoji: "", group: "Lesson", keywords: ["Sussman anomaly", "sub-goal interaction", "interleaving", "regression", "threat", "promotion", "demotion"] },
+        { id: "bayes", title: "Challenge set 6: probability and Bayesian networks", emoji: "", group: "Lesson", keywords: ["Bayes rule", "base rate", "false positive", "parameter count", "d-separation", "collider", "explaining away"] },
+        { id: "rl", title: "Challenge set 7: MDPs and reinforcement learning", emoji: "", group: "Lesson", keywords: ["value iteration", "contraction", "number of iterations", "Q-learning update", "discount", "Bellman operator"] },
+        { id: "proofs", title: "Proofs examiners ask for", emoji: "", group: "Lesson", keywords: ["proof", "A* optimality", "consistency", "alpha beta correctness", "contraction mapping", "Banach", "soundness of resolution", "tree CSP"] },
+        { id: "choose", title: "Choosing the right method", emoji: "", group: "Lesson", keywords: ["method selection", "comparison", "which algorithm", "decision guide"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["AlphaZero", "MuZero", "neuro symbolic", "LLM planning", "causal RL", "research"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "core-revision", title: "Exam revision: from school to research universities", emoji: "11.2", page: "content/ai/core-revision.html",
+        summary: "Core AI exam questions from school level to research universities, with worked answers, a formula sheet and a mock quiz.",
+        keywords: ["exam", "revision", "formula sheet", "mock quiz", "numericals", "proofs", "IIT", "NPTEL", "GATE", "MIT", "Berkeley"],
+        minutes: 60, counts: {"lessons": 6, "problems": 12, "quiz": 12, "assign": 0},
+        added: "2026-10-27",
+        sections: [
+        { id: "map", title: "How Core AI is examined", emoji: "", group: "Lesson", keywords: ["exam pattern", "revision", "school", "university exam", "IIT", "NPTEL", "GATE", "GATE DA", "MIT", "Berkeley", "Stanford"] },
+        { id: "school", title: "Tier 1: school and first year", emoji: "", group: "Lesson", keywords: ["PEAS", "BFS order", "DFS order", "dice probability", "minimax by hand", "truth table rows", "short answer"] },
+        { id: "semester", title: "Tier 2: university semester and IIT course exams", emoji: "", group: "Lesson", keywords: ["UCS by hand", "A* by hand", "frontier table", "alpha beta by hand", "Bayes rule", "value iteration sweep", "CNF conversion"] },
+        { id: "mcq", title: "Tier 3: GATE and NPTEL style papers", emoji: "", group: "Lesson", keywords: ["MCQ", "MSQ", "numerical answer type", "GATE", "GATE DA", "NPTEL", "quick checks", "admissible heuristics", "rejection sampling"] },
+        { id: "derive", title: "Tier 4: proofs, derivations and critique", emoji: "", group: "Lesson", keywords: ["proof", "max of heuristics", "collider independence", "policy evaluation closed form", "UCS optimality", "critique", "MIT", "Berkeley", "Stanford", "CMU", "IISc"] },
+        { id: "sheet", title: "Formula sheet and last minute checks", emoji: "", group: "Lesson", keywords: ["formula sheet", "common mistakes", "last minute revision", "A*", "Bayes rule", "Bellman", "Q-learning"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
