@@ -135,15 +135,15 @@ K.lesson('aostar', 'AO*: best first search on AND OR graphs', f'''
 {note('Look closely at the slide numbers: h(D) = 4 but D really costs only 1 (D → J). So this h overestimates and is not admissible. Here AO* still ends at the best answer 5, but try the second tip (h(H) = 6): AO* stops at 9 while the true best is 7. Like A*, AO* is only guaranteed optimal when h never overestimates.', 'warn')}
 {code('aostar')}
 {algo('AO* (outline)', [
-    'G = graph with only the start node; mark it unsolved',
+    'G = graph with only the start node, marked unsolved',
     'loop until start is solved or its cost is ∞:',
-    '    follow the marked best connectors from the start; pick an unexpanded tip n',
+    '    follow the marked best connectors from the start and pick an unexpanded tip n',
     '    expand n: add its successors, estimate each new node with h',
     '    S = { n }',
     '    while S is not empty:',
     '        take a node m from S that has no descendant in S',
     '        cost(m) = min over connectors of ∑ (edge cost + cost(child))',
-    '        mark that connector; m is solved if all its children on it are solved',
+    '        mark that connector. m is solved if all its children on it are solved',
     '        if cost(m) changed or m became solved: add the parents of m to S'])}
 ''', kw=['AO*', 'AO star', 'best partial solution graph', 'connector', 'revise costs', 'solved'])
 

@@ -813,4 +813,358 @@
       if (f.done) tag(g, f.done === 'yes' ? 'query proved' : 'query not proved', z.W / 2, z.H - 14, { s: 13, fill: f.done === 'yes' ? c.green : c.red, stroke: f.done === 'yes' ? c.green : c.red, c: '#fff' });
     }
   });
+  /* =====================================================================================================
+     8.x  Planning: ground STRIPS actions, the blocks world, situation calculus and partial order planning
+     ===================================================================================================== */
+  const PL = (() => {
+    const act = (name, pre, add, del) => ({ name, pre, add, del });
+    function blocks(bs) {
+      const A = [];
+      bs.forEach(b => {
+        bs.forEach(x => { if (x !== b) A.push(act(`MoveToTable(${b}, ${x})`, [`On(${b}, ${x})`, `Clear(${b})`], [`On(${b}, Table)`, `Clear(${x})`], [`On(${b}, ${x})`])); });
+        bs.forEach(y => { if (y !== b) A.push(act(`Move(${b}, Table, ${y})`, [`On(${b}, Table)`, `Clear(${b})`, `Clear(${y})`], [`On(${b}, ${y})`], [`On(${b}, Table)`, `Clear(${y})`])); });
+        bs.forEach(x => bs.forEach(y => { if (x !== b && y !== b && x !== y) A.push(act(`Move(${b}, ${x}, ${y})`, [`On(${b}, ${x})`, `Clear(${b})`, `Clear(${y})`], [`On(${b}, ${y})`, `Clear(${x})`], [`On(${b}, ${x})`, `Clear(${y})`])); }));
+      });
+      return A;
+    }
+    /* "C on A, A on table, B on table" or "C/A B" style: stacks written bottom to top with slashes are not used; we parse "X on Y" pairs */
+    function parseBlocks(text) {
+      const on = {};
+      String(text).split(/[,;\n]+/).map(s => s.trim()).filter(Boolean).forEach(s => {
+        const m = s.match(/^([A-Za-z])\s+on\s+(table|[A-Za-z])$/i);
+        if (!m) throw new Error(`Please write each part as "X on Y" or "X on table", not "${s}".`);
+        on[m[1].toUpperCase()] = m[2].toLowerCase() === 'table' ? 'Table' : m[2].toUpperCase();
+      });
+      return on;
+    }
+    function stateOf(on) {
+      const bs = Object.keys(on).sort(), s = new Set();
+      bs.forEach(b => { s.add(`On(${b}, ${on[b]})`); if (!bs.some(x => on[x] === b)) s.add(`Clear(${b})`); });
+      return s;
+    }
+    const key = s => [...s].sort().join('|');
+    const apply = (s, a) => { const t = new Set(s); a.del.forEach(x => t.delete(x)); a.add.forEach(x => t.add(x)); return t; };
+    const ok = (s, a) => a.pre.every(p => s.has(p));
+    /* stacks of a state, bottom to top */
+    function stacks(s) {
+      const on = {};
+      [...s].forEach(f => { const m = f.match(/^On\((\w), (\w+)\)$/); if (m) on[m[1]] = m[2]; });
+      const out = [];
+      Object.keys(on).filter(b => on[b] === 'Table').sort().forEach(b => { const st = [b]; let top = b; for (;;) { const up = Object.keys(on).find(x => on[x] === top); if (!up) break; st.push(up); top = up; } out.push(st); });
+      return out;
+    }
+    return { act, blocks, parseBlocks, stateOf, key, apply, ok, stacks };
+  })();
+
+  function drawStacks(z, st, x0, y0, w, o = {}) {
+    const { g } = z, c = z.col, bw = o.bw || 34, bh = o.bh || 26;
+    D.line(g, x0, y0, x0 + w, y0, c.ink2, 2);
+    const n = st.length, gap = Math.min(bw + 24, w / Math.max(1, n));
+    st.forEach((s, i) => {
+      const x = x0 + gap * i + (gap - bw) / 2;
+      s.forEach((b, j) => {
+        const hot = o.hot && o.hot.includes(b);
+        rr(g, x, y0 - (j + 1) * bh, bw, bh - 2, 4, { fill: hot ? c.cv : c.surf, stroke: hot ? c.cv : c.ink2, w: 1.5 });
+        D.text(g, b, x + bw / 2, y0 - j * bh - bh / 2 + 1, { a: 'center', bl: 'middle', s: 14, b: true, c: hot ? '#fff' : c.ink });
+      });
+    });
+  }
+
+  /* =====================================================================================================
+     8.1  Situation calculus: fluents change only through successor state axioms
+     ===================================================================================================== */
+  trace('sitcalc', {
+    title: 'Situation calculus: what is true after each action',
+    sub: 'Each action makes a new situation: S1 = Result(a, S0) and so on. A successor state axiom decides each fluent: it is true after an action if the action made it true, or if it was true before and the action did not make it false.',
+    W: 640, H: 360, speed: 1300,
+    params: [
+      { k: 'plan', label: 'Actions, in order (Go(A), Go(B), Grab, Release)', type: 'text', v: 'Go(B), Grab, Go(A), Release' },
+      { k: 'start', label: 'Where is the gold in S0?', type: 'select', v: 'B', opts: [['A', 'Room A'], ['B', 'Room B']] }
+    ],
+    tips: [
+      { t: 'The robot starts in room A and the gold is in room B. Go to B, grab the gold, carry it to A, release it. Watch At(Gold, A) become true only through the axiom: the robot is holding the gold and goes to A.', set: { plan: 'Go(B), Grab, Go(A), Release', start: 'B' }, play: true },
+      { t: 'Grab when the gold is in another room. The precondition Poss(Grab, s) fails, so the plan is not executable from that point.', set: { plan: 'Grab, Go(B)', start: 'B' }, play: true },
+      { t: 'The frame problem: in each step most fluents keep their value. Count how many stay the same. Without successor state axioms we would need a frame axiom for every action and fluent pair.', set: { plan: 'Go(B), Go(A), Go(B)', start: 'A' }, play: true }
+    ],
+    frames(p, z) {
+      const acts = String(p.plan).split(/,(?![^(]*\))/).map(s => s.trim()).filter(Boolean);
+      if (acts.length > 6) throw new Error('Please use at most 6 actions so that the picture fits.');
+      const F = ['At(Robot, A)', 'At(Robot, B)', 'At(Gold, A)', 'At(Gold, B)', 'Holding(Gold)'];
+      let s = { 'At(Robot, A)': true, 'At(Robot, B)': false, 'At(Gold, A)': p.start === 'A', 'At(Gold, B)': p.start === 'B', 'Holding(Gold)': false };
+      const sits = [{ name: 'S0', act: '', s: { ...s } }];
+      const fr = [];
+      z.state.F = F;
+      fr.push({ sits: sits.slice(), say: `Situation S0: the robot is in room A, the gold is in room ${p.start}, the robot holds nothing. Fluents are relations whose truth changes from one situation to the next, so each takes the situation as its last argument: At(Robot, A, S0).` });
+      for (let i = 0; i < acts.length; i++) {
+        const a = acts[i], m = a.match(/^Go\(\s*([AB])\s*\)$/i);
+        const here = s['At(Robot, A)'] ? 'A' : 'B';
+        let poss = true, why = '';
+        if (m) { poss = true; }
+        else if (/^Grab$/i.test(a)) { poss = s[`At(Gold, ${here})`] && !s['Holding(Gold)']; why = `Poss(Grab, s) ⇔ At(Gold, x, s) ∧ At(Robot, x, s) ∧ ¬Holding(Gold, s). The gold is ${s['Holding(Gold)'] ? 'already held' : 'not in room ' + here}.`; }
+        else if (/^Release$/i.test(a)) { poss = s['Holding(Gold)']; why = 'Poss(Release, s) ⇔ Holding(Gold, s). The robot holds nothing.'; }
+        else throw new Error(`Unknown action "${a}". Use Go(A), Go(B), Grab or Release.`);
+        if (!poss) { fr.push({ sits: sits.slice(), bad: i, say: `Action ${i + 1}, ${a}: its precondition is false in ${sits[sits.length - 1].name}. ${why} So Result(${a}, ${sits[sits.length - 1].name}) is not a legal situation and the plan stops here.` }); return fr; }
+        const n = { ...s }, notes = [];
+        if (m) {
+          const to = m[1].toUpperCase();
+          n['At(Robot, A)'] = to === 'A'; n['At(Robot, B)'] = to === 'B';
+          if (s['Holding(Gold)']) { n['At(Gold, A)'] = to === 'A'; n['At(Gold, B)'] = to === 'B'; notes.push(`At(Gold, ${to}) becomes true: the robot holds the gold and goes to ${to}`); }
+          notes.unshift(`At(Robot, ${to}) is true because the action was Go(${to})${to !== here ? `, and At(Robot, ${here}) becomes false` : ' (it was already there)'}`);
+        } else if (/^Grab$/i.test(a)) { n['Holding(Gold)'] = true; notes.push('Holding(Gold) becomes true: the action was Grab and the gold was here'); }
+        else { n['Holding(Gold)'] = false; notes.push('Holding(Gold) becomes false: the action was Release'); }
+        const same = F.filter(f => n[f] === s[f]).length;
+        s = n;
+        sits.push({ name: 'S' + (i + 1), act: a, s: { ...s } });
+        fr.push({ sits: sits.slice(), cur: i + 1, say: `S${i + 1} = Result(${a}, S${i}). ${notes.join('. ')}. The other ${same} of ${F.length} fluents keep their value, because no axiom part changed them: that is how successor state axioms solve the frame problem.` });
+      }
+      fr.push({ sits: sits.slice(), done: true, say: `Done. The final situation is the nested term ${acts.reduce((acc, a) => `Result(${a}, ${acc})`, 'S0')}. In the final situation At(Gold, A) is ${s['At(Gold, A)'] ? 'true' : 'false'} and At(Robot, A) is ${s['At(Robot, A)'] ? 'true' : 'false'}.` });
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col, F = z.state.F;
+      const n = f.sits.length, cw = Math.min(88, (z.W - 150) / Math.max(1, n));
+      const x0 = 140;
+      F.forEach((fl, r) => D.text(g, fl, 12, 80 + r * 34, { s: 12, mono: true, c: c.ink }));
+      f.sits.forEach((st, i) => {
+        const x = x0 + i * cw + cw / 2;
+        tag(g, st.name, x, 22, { s: 12.5, fill: i === f.cur ? c.cv : c.surf, stroke: i === f.cur ? c.cv : c.line, c: i === f.cur ? '#fff' : c.ink });
+        if (st.act) D.text(g, st.act, x - cw / 2, 48, { a: 'center', s: fit(g, st.act, cw - 4, 11, { mono: true }), mono: true, c: c.cv });
+        if (i) D.line(g, x - cw + 22, 22, x - 22, 22, c.ink2, 1.3);
+        F.forEach((fl, r) => {
+          const v = st.s[fl], prev = i ? f.sits[i - 1].s[fl] : v, ch = v !== prev;
+          rr(g, x - 20, 68 + r * 34, 40, 22, 5, { fill: v ? 'rgba(34,197,94,.20)' : c.bg, stroke: ch ? c.orange : c.line, w: ch ? 2.4 : 1 });
+          D.text(g, v ? 'T' : 'F', x, 80 + r * 34, { a: 'center', bl: 'middle', s: 12, b: true, mono: true, c: v ? c.green : c.ink2 });
+        });
+      });
+      D.text(g, 'Orange edge: the value changed. Every other value is carried over by the successor state axioms.', 12, z.H - 14, { s: 11, c: c.ink2 });
+      if (f.bad !== undefined) tag(g, 'precondition fails', x0 + n * cw + 50, 22, { s: 11.5, fill: c.red, stroke: c.red, c: '#fff' });
+    }
+  });
+
+  /* =====================================================================================================
+     8.2  STRIPS planning in the blocks world: forward search, and solving sub goals one at a time
+     ===================================================================================================== */
+  trace('strips', {
+    title: 'Planning in the blocks world',
+    sub: 'States are sets of facts such as On(C, A) and Clear(B). An action can run when its preconditions hold, then it adds and deletes facts. Forward search looks for a shortest plan. Sub goal planning solves one goal at a time.',
+    W: 660, H: 400, speed: 1200,
+    params: [
+      { k: 'init', label: 'Start ("X on Y", separated by commas)', type: 'text', v: 'C on A, A on table, B on table' },
+      { k: 'goal', label: 'Goal ("X on Y", in the order to try them)', type: 'text', v: 'A on B, B on C' },
+      { k: 'mode', label: 'Planner', type: 'select', v: 'bfs', opts: [['bfs', 'Forward search (breadth first, shortest plan)'], ['sub', 'One sub goal at a time, in the order given (linear planning)']] }
+    ],
+    tips: [
+      { t: 'The Sussman anomaly with forward search. The shortest plan has 3 actions: put C on the table, B on C, then A on B.', set: { mode: 'bfs', init: 'C on A, A on table, B on table', goal: 'A on B, B on C' }, play: true },
+      { t: 'The Sussman anomaly with one sub goal at a time, A on B first. Building B on C later undoes A on B, so the planner must go round again.', set: { mode: 'sub', goal: 'A on B, B on C' }, play: true },
+      { t: 'The other order, B on C first. Now A on B needs C moved, which needs B moved off C first, undoing B on C. Neither order works without undoing a goal: the sub goals interact.', set: { mode: 'sub', goal: 'B on C, A on B' }, play: true },
+      { t: 'Independent sub goals: with all blocks on the table, B on C and then A on B never clash. Linear planning gives the shortest plan here.', set: { mode: 'sub', init: 'A on table, B on table, C on table', goal: 'B on C, A on B' }, play: true }
+    ],
+    frames(p, z) {
+      const on0 = PL.parseBlocks(p.init), goalOn = PL.parseBlocks(p.goal);
+      const bs = Object.keys(on0).sort();
+      if (bs.length > 4) throw new Error('Please use at most 4 blocks.');
+      Object.keys(goalOn).concat(Object.values(goalOn).filter(x => x !== 'Table')).forEach(b => { if (!bs.includes(b)) throw new Error(`Block ${b} is in the goal but not in the start.`); });
+      const A = PL.blocks(bs), s0 = PL.stateOf(on0);
+      const goals = Object.keys(goalOn).map(b => `On(${b}, ${goalOn[b]})`);
+      const fr = [];
+      const sat = (s, gs) => gs.every(x => s.has(x));
+      const bfs = (s, gs) => {
+        const seen = new Set([PL.key(s)]); let q = [{ s, plan: [] }], n = 0;
+        while (q.length) { const nq = []; for (const it of q) { if (sat(it.s, gs)) return { plan: it.plan, n }; for (const a of A) if (PL.ok(it.s, a)) { const t = PL.apply(it.s, a), k = PL.key(t); if (!seen.has(k)) { seen.add(k); n++; nq.push({ s: t, plan: it.plan.concat([a]) }); } } } q = nq; }
+        return null;
+      };
+      fr.push({ s: s0, plan: [], goals, say: `Start state: ${[...s0].sort().join(', ')}. Goal: ${goals.join(' ∧ ')}. There are ${A.length} ground actions for ${bs.length} blocks.` });
+      if (p.mode === 'bfs') {
+        const r = bfs(s0, goals);
+        if (!r) { fr.push({ s: s0, plan: [], goals, say: 'No plan reaches the goal.' }); return fr; }
+        fr.push({ s: s0, plan: [], goals, say: `Breadth first search over states generated ${r.n} new states and found a shortest plan with ${r.plan.length} action${r.plan.length === 1 ? '' : 's'}. Now run it step by step.` });
+        let s = s0;
+        r.plan.forEach((a, i) => {
+          s = PL.apply(s, a);
+          fr.push({ s, plan: r.plan.slice(0, i + 1), goals, hot: [a.name.match(/\((\w)/)[1]], say: `Action ${i + 1}: <b>${a.name}</b>. Preconditions ${a.pre.join(', ')} hold. Add ${a.add.join(', ')}. Delete ${a.del.join(', ')}.` });
+        });
+        fr.push({ s, plan: r.plan, goals, done: true, say: `Every goal holds. The plan is ${r.plan.map(a => a.name).join(', ')}.` });
+        return fr;
+      }
+      let s = s0, plan = [], rounds = 0;
+      while (!sat(s, goals) && rounds++ < 3) {
+        for (const gl of goals) {
+          if (s.has(gl)) { fr.push({ s, plan: plan.slice(), goals, cur: gl, say: `Sub goal ${gl} already holds. Move on.` }); continue; }
+          const r = bfs(s, [gl]);
+          if (!r) { fr.push({ s, plan, goals, say: `No plan reaches ${gl}.` }); return fr; }
+          const before = goals.filter(x => x !== gl && s.has(x));
+          fr.push({ s, plan: plan.slice(), goals, cur: gl, say: `Sub goal <b>${gl}</b>. Plan for it alone, ignoring the other goals: ${r.plan.map(a => a.name).join(', ')}.` });
+          r.plan.forEach(a => { s = PL.apply(s, a); plan.push(a); fr.push({ s, plan: plan.slice(), goals, cur: gl, hot: [a.name.match(/\((\w)/)[1]], say: `Do ${a.name}.` }); });
+          const lost = before.filter(x => !s.has(x));
+          if (lost.length) fr.push({ s, plan: plan.slice(), goals, cur: gl, clob: lost, say: `${gl} now holds, but the earlier sub goal <b>${lost.join(', ')}</b> was undone (clobbered) on the way. Solving the sub goals one after the other does not work here.` });
+        }
+        if (!sat(s, goals)) fr.push({ s, plan: plan.slice(), goals, say: 'Not every goal holds at the same time, so go round the list of sub goals again.' });
+      }
+      fr.push({ s, plan: plan.slice(), goals, done: sat(s, goals), say: sat(s, goals) ? `All goals hold, with a plan of ${plan.length} actions: ${plan.map(a => a.name).join(', ')}. ${plan.length > 3 && /C on A/i.test(p.init) ? 'The shortest plan has only 3 actions, so solving sub goals one at a time wasted work.' : ''}` : 'Stopped after 3 rounds without making every goal true at once.' });
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col;
+      drawStacks(z, PL.stacks(f.s), 20, 200, 260, { hot: f.hot });
+      D.text(g, 'State', 20, 24, { s: 12, b: true, c: c.ink2 });
+      D.text(g, 'Goal', 300, 24, { s: 12, b: true, c: c.ink2 });
+      f.goals.forEach((gl, i) => {
+        const h = f.s.has(gl), cur = gl === f.cur, cl = f.clob && f.clob.includes(gl);
+        tag(g, gl, 300 + tw(g, gl, { s: 12, mono: true, b: true }) / 2 + 8, 48 + i * 28, { s: 12, mono: true, fill: cl ? c.red : h ? 'rgba(34,197,94,.22)' : c.surf, stroke: cur ? c.cv : cl ? c.red : h ? c.green : c.line, lw: cur ? 2.4 : 1.2, c: cl ? '#fff' : c.ink });
+        D.text(g, cl ? 'undone' : h ? 'holds' : 'not yet', 440, 52 + i * 28, { s: 11.5, b: true, c: cl ? c.red : h ? c.green : c.ink2 });
+      });
+      D.text(g, 'Plan so far', 20, 236, { s: 12, b: true, c: c.ink2 });
+      let x = 20, y = 260;
+      f.plan.forEach((a, i) => { const s = `${i + 1}. ${a.name}`, w = tw(g, s, { s: 11.5, mono: true, b: true }) + 14; if (x + w > z.W - 20) { x = 20; y += 26; } tag(g, s, x + w / 2, y, { s: 11.5, mono: true, fill: i === f.plan.length - 1 ? c.cv : c.surf, stroke: i === f.plan.length - 1 ? c.cv : c.line, c: i === f.plan.length - 1 ? '#fff' : c.ink }); x += w + 6; });
+      if (f.done) tag(g, 'goal reached', z.W - 90, 200, { s: 13, fill: c.green, stroke: c.green, c: '#fff' });
+    }
+  });
+
+  /* =====================================================================================================
+     8.3  Partial order planning: causal links, threats, promotion and demotion
+     ===================================================================================================== */
+  const POPD = {
+    socks: { name: 'Socks and shoes', init: [], goal: ['RightShoeOn', 'LeftShoeOn'], acts: [
+      PL.act('RightSock', [], ['RightSockOn'], []), PL.act('RightShoe', ['RightSockOn'], ['RightShoeOn'], []),
+      PL.act('LeftSock', [], ['LeftSockOn'], []), PL.act('LeftShoe', ['LeftSockOn'], ['LeftShoeOn'], [])] },
+    tire: { name: 'Spare tyre', init: ['At(Flat, Axle)', 'At(Spare, Trunk)'], goal: ['At(Spare, Axle)'], acts: [
+      PL.act('Remove(Spare, Trunk)', ['At(Spare, Trunk)'], ['At(Spare, Ground)'], ['At(Spare, Trunk)']),
+      PL.act('Remove(Flat, Axle)', ['At(Flat, Axle)'], ['At(Flat, Ground)', 'Free(Axle)'], ['At(Flat, Axle)']),
+      PL.act('PutOn(Spare, Axle)', ['At(Spare, Ground)', 'Free(Axle)'], ['At(Spare, Axle)'], ['At(Spare, Ground)', 'Free(Axle)']),
+      PL.act('LeaveOvernight', [], [], ['At(Spare, Ground)', 'At(Spare, Axle)', 'At(Spare, Trunk)', 'At(Flat, Ground)', 'At(Flat, Axle)', 'Free(Axle)'])] },
+    sussman: { name: 'Sussman anomaly', init: ['On(C, A)', 'On(A, Table)', 'On(B, Table)', 'Clear(C)', 'Clear(B)'], goal: ['On(A, B)', 'On(B, C)'], acts: null }
+  };
+  trace('pop', {
+    title: 'Partial order planning: add steps, link them, fix threats',
+    sub: 'A partial plan has steps, ordering constraints (A before B) and causal links (A gives fact p to B). The planner picks an open precondition, finds a step that achieves it, and protects every causal link from steps that would delete its fact.',
+    W: 680, H: 430, speed: 1400,
+    params: [
+      { k: 'dom', label: 'Problem', type: 'select', v: 'socks', opts: [['socks', 'Socks and shoes'], ['tire', 'Spare tyre'], ['sussman', 'Sussman anomaly (blocks world)']] }
+    ],
+    tips: [
+      { t: 'Socks and shoes. The final plan only says each sock goes before its shoe. Left and right are not ordered: any of the 6 orders that keep sock before shoe works.', set: { dom: 'socks' }, play: true },
+      { t: 'The spare tyre. LeaveOvernight would delete facts that causal links need, so it is never added. Free(Axle) stands for the textbook precondition ¬At(Flat, Axle).', set: { dom: 'tire' }, play: true },
+      { t: 'The Sussman anomaly. Partial order planning handles the interacting sub goals by ordering steps around threats, and finds the 3 step plan.', set: { dom: 'sussman' }, play: true }
+    ],
+    frames(p, z) {
+      const Dm = POPD[p.dom];
+      const acts = Dm.acts || PL.blocks(['A', 'B', 'C']);
+      const fr = [];
+      const START = { id: 0, name: 'Start', pre: [], add: Dm.init, del: [] }, FIN = { id: 1, name: 'Finish', pre: Dm.goal, add: [], del: [] };
+      const before = (ord, a, b) => { const seen = new Set([a]), st = [a]; while (st.length) { const x = st.pop(); if (x === b) return true; ord.forEach(([u, v]) => { if (u === x && !seen.has(v)) { seen.add(v); st.push(v); } }); } return false; };
+      let rec = false, nodes = 0;
+      const snap = (P, say, ex = {}) => { if (rec) fr.push(Object.assign({ P: JSON.parse(JSON.stringify(P)), say }, ex)); };
+      function threats(P) {
+        const out = [];
+        P.links.forEach(([a, q, b]) => P.steps.forEach(c => { if (c.id !== a && c.id !== b && c.del.includes(q) && !before(P.ord, c.id, a) && !before(P.ord, b, c.id)) out.push({ a, q, b, c: c.id }); }));
+        return out;
+      }
+      const nm = (P, id) => P.steps.find(s => s.id === id).name;
+      function solve(P, limit) {
+        if (++nodes > 3000 || fr.length > 200) return null;
+        const th = threats(P);
+        if (th.length) {
+          const t = th[0];
+          const opts = [[t.c, t.a, 'demotion: put ' + nm(P, t.c) + ' before ' + nm(P, t.a)], [t.b, t.c, 'promotion: put ' + nm(P, t.c) + ' after ' + nm(P, t.b)]];
+          snap(P, `Threat: ${nm(P, t.c)} deletes ${t.q}, and it could run between ${nm(P, t.a)} and ${nm(P, t.b)}, breaking the causal link ${nm(P, t.a)} → ${nm(P, t.b)} for ${t.q}.`, { threat: t });
+          for (const [u, v, txt] of opts) {
+            if (u === 1 || v === 0 || before(P.ord, v, u)) continue;
+            const P2 = JSON.parse(JSON.stringify(P)); P2.ord.push([u, v]);
+            snap(P2, `Fix the threat by ${txt}.`);
+            const r = solve(P2, limit); if (r) return r;
+          }
+          snap(P, `Neither promotion nor demotion works here. Back up and try another choice.`, { back: true });
+          return null;
+        }
+        if (!P.open.length) return P;
+        const [q, need] = P.open[P.open.length - 1];
+        const rest = P.open.slice(0, -1);
+        const cands = [];
+        P.steps.forEach(s => { if (s.id !== need && s.add.includes(q) && !before(P.ord, need, s.id)) cands.push({ old: s }); });
+        if (P.steps.length - 2 < limit) acts.filter(a => a.add.includes(q)).map(a => ({ a, miss: a.pre.filter(x => !Dm.init.includes(x)).length })).sort((u, v) => u.miss - v.miss).forEach(({ a }) => cands.push({ neu: a }));
+        if (!cands.length) { snap(P, `No step can achieve ${q} for ${nm(P, need)}${P.steps.length - 2 >= limit ? ` within ${limit} actions` : ''}. Back up.`, { back: true }); return null; }
+        for (const cd of cands) {
+          const P2 = JSON.parse(JSON.stringify(P)); P2.open = rest.slice();
+          let sid;
+          if (cd.old) { sid = cd.old.id; }
+          else { sid = P2.next++; P2.steps.push({ id: sid, name: cd.neu.name, pre: cd.neu.pre, add: cd.neu.add, del: cd.neu.del }); P2.ord.push([0, sid], [sid, 1]); cd.neu.pre.forEach(x => P2.open.push([x, sid])); }
+          P2.ord.push([sid, need]); P2.links.push([sid, q, need]);
+          snap(P2, `Open precondition <b>${q}</b> of ${nm(P2, need)}. ${cd.old ? `The step ${cd.old.name} already in the plan achieves it, so reuse it` : `Add a new step <b>${cd.neu.name}</b>, which achieves it${cd.neu.pre.length ? `. Its preconditions ${cd.neu.pre.join(', ')} become open` : ''}`}. Add the causal link ${nm(P2, sid)} → ${nm(P2, need)} for ${q}, and order ${nm(P2, sid)} before ${nm(P2, need)}.`, { cur: sid });
+          const r = solve(P2, limit); if (r) return r;
+        }
+        return null;
+      }
+      const P0 = { steps: [START, FIN], ord: [[0, 1]], links: [], open: Dm.goal.slice().reverse().map(x => [x, 1]), next: 2 };
+      rec = true;
+      snap(P0, `The empty plan: Start (its effects are the initial state${Dm.init.length ? ': ' + Dm.init.join(', ') : ', here nothing'}) and Finish (its preconditions are the goal: ${Dm.goal.join(', ')}). Start comes before Finish. Every goal is an open precondition.`);
+      rec = false;
+      let res = null, lim = 0;
+      while (!res && lim < 6) { lim++; nodes = 0; res = solve(JSON.parse(JSON.stringify(P0)), lim); }
+      if (res) {
+        rec = true; nodes = 0;
+        snap(P0, `The planner allows at most ${lim} action${lim > 1 ? 's' : ''}${lim > 1 ? ` (a search with fewer found no plan)` : ''}. It always works on the most recent open precondition first.`);
+        res = solve(JSON.parse(JSON.stringify(P0)), lim);
+      }
+      if (res) {
+        const ids = res.steps.map(s => s.id).filter(i => i > 1);
+        const lin = [];
+        const left = new Set(ids);
+        while (left.size) { const nx = [...left].find(i => ![...left].some(j => j !== i && before(res.ord, j, i))); lin.push(nm(res, nx)); left.delete(nx); }
+        snap(res, `No open preconditions and no threats: the plan is complete. Any order that respects the constraints works, for example ${lin.join(', ')}.`, { done: true });
+      } else { rec = true; snap(P0, 'No plan found within the limits of this animation.'); }
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col, P = f.P;
+      const before = (a, b) => { const seen = new Set([a]), st = [a]; while (st.length) { const x = st.pop(); P.ord.forEach(([u, v]) => { if (u === x && !seen.has(v)) { seen.add(v); st.push(v); } }); } return seen.has(b) && a !== b; };
+      const rank = {};
+      const ids = P.steps.map(s => s.id);
+      ids.forEach(i => { rank[i] = 0; });
+      for (let k = 0; k < ids.length; k++) P.ord.forEach(([u, v]) => { if (rank[v] < rank[u] + 1) rank[v] = rank[u] + 1; });
+      const maxR = Math.max(...Object.values(rank));
+      const cols = {};
+      ids.forEach(i => { (cols[rank[i]] = cols[rank[i]] || []).push(i); });
+      const pos = {}, cw = (z.W - 60) / Math.max(1, maxR), H = 300;
+      const mid = 40 + H / 2;
+      Object.keys(cols).forEach(r => cols[r].forEach((i, k) => {
+        const n = cols[r].length;
+        let y = 40 + (k + 0.5) * (H / n);
+        const crowded = (cols[+r - 1] || []).length > 1 || (cols[+r + 1] || []).length > 1;
+        if (n === 1 && i > 1 && !crowded) y = mid + (r % 2 ? -70 : 70);
+        pos[i] = { x: 30 + r * cw, y };
+      }));
+      const name = i => P.steps.find(s => s.id === i).name;
+      const bw = i => Math.min(cw - 10, tw(g, name(i), { s: 11, b: true }) + 14);
+      let ek = 0;
+      const labs = [];
+      const edge = (u, v, col, w, dash, lab) => {
+        const a = pos[u], b = pos[v];
+        const x1 = a.x + (u === 0 ? 24 : bw(u) / 2), x2 = b.x - (v === 1 ? 24 : bw(v) / 2);
+        const span = Math.abs(rank[v] - rank[u]);
+        const side = (a.y + b.y) / 2 < mid - 5 ? -1 : (a.y + b.y) / 2 > mid + 5 ? 1 : ((ek++ % 2) ? 1 : -1);
+        const bend = span > 1 ? side * (46 + 30 * (span - 1)) : 0;
+        const cx = (x1 + x2) / 2, cy = (a.y + b.y) / 2 + bend;
+        g.save(); g.strokeStyle = col; g.lineWidth = w; if (dash) g.setLineDash(dash); g.beginPath(); g.moveTo(x1, a.y); g.quadraticCurveTo(cx, cy, x2, b.y); g.stroke(); g.restore();
+        const ang = Math.atan2(b.y - cy, x2 - cx);
+        g.save(); g.fillStyle = col; g.beginPath(); g.moveTo(x2, b.y); g.lineTo(x2 - 8 * Math.cos(ang - 0.4), b.y - 8 * Math.sin(ang - 0.4)); g.lineTo(x2 - 8 * Math.cos(ang + 0.4), b.y - 8 * Math.sin(ang + 0.4)); g.closePath(); g.fill(); g.restore();
+        if (lab) labs.push(() => { const mx = (x1 + 2 * cx + x2) / 4, my = (a.y + 2 * cy + b.y) / 4 - (bend ? 0 : 7); const fs = fit(g, lab, Math.max(60, Math.abs(x2 - x1) * 0.8), 10, { mono: true }), lw = tw(g, lab, { s: fs, mono: true }); rr(g, mx - lw / 2 - 3, my - fs + 1, lw + 6, fs + 4, 3, { fill: c.surf }); D.text(g, lab, mx, my, { a: 'center', s: fs, mono: true, c: col }); });
+      };
+      P.ord.forEach(([u, v]) => { if (!P.links.some(([a, q, b]) => a === u && b === v) && !(u === 0 && v === 1 && ids.length > 2) && !(u === 0 || v === 1)) edge(u, v, c.ink2, 1.2, [4, 4]); });
+      const grp = {};
+      P.links.forEach(([a, q, b]) => { const k = a + '>' + b; (grp[k] = grp[k] || { a, b, qs: [], th: false }).qs.push(q); if (f.threat && f.threat.a === a && f.threat.b === b && f.threat.q === q) grp[k].th = true; });
+      Object.values(grp).forEach(L => edge(L.a, L.b, L.th ? c.red : c.green, L.th ? 2.6 : 1.8, null, L.qs.join(', ')));
+      ids.forEach(i => {
+        const p = pos[i], w = i < 2 ? 48 : bw(i), hot = i === f.cur, th = f.threat && f.threat.c === i;
+        rr(g, p.x - w / 2, p.y - 13, w, 26, 6, { fill: i < 2 ? c.bg : hot ? c.cv : c.surf, stroke: th ? c.red : hot ? c.cv : c.ink2, w: th || hot ? 2.4 : 1.3 });
+        D.text(g, name(i), p.x, p.y + 1, { a: 'center', bl: 'middle', s: fit(g, name(i), w - 6, 11, { b: true }), b: true, c: hot ? '#fff' : c.ink });
+      });
+      labs.forEach(fn => fn());
+      const open = P.open.map(([q, n]) => `${q} for ${name(n)}`);
+      const shown = open.length > 3 ? open.slice(-3).join(', ') + ` and ${open.length - 3} more` : open.join(', ');
+      const ot = open.length ? 'Open preconditions (newest last): ' + shown : 'Open preconditions: none';
+      D.text(g, ot, 16, z.H - 34, { s: fit(g, ot, z.W - 32, 11.5), c: c.ink });
+      D.text(g, 'Green: causal link with its fact. Dashed: ordering constraint. Red: a threat.', 16, z.H - 14, { s: 11, c: c.ink2 });
+      if (f.done) tag(g, 'plan complete', z.W - 80, 20, { s: 12.5, fill: c.green, stroke: c.green, c: '#fff' });
+    }
+  });
 })();

@@ -128,7 +128,7 @@ K.lesson('ac3', 'The AC-3 algorithm', f'''
     '    revised = false',
     '    for each x in dom(X):',
     '        if no y in dom(Y) satisfies the constraint with x:',
-    '            delete x from dom(X); revised = true',
+    '            delete x from dom(X) and set revised = true',
     '    return revised'])}
 {steps('AC-3 on the slide network A &lt; B &lt; C with domains {1, 2, 3}', [
     'Arc (A, B): A = 3 has no larger B. Remove 3 from A. dom(A) = {1, 2}.',

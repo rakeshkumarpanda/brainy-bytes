@@ -6457,6 +6457,64 @@ function coreAiModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cai-planning", title: "Planning", emoji: "8", step: 8, part: "core", level: "College", blurb: "Find a sequence of actions with logic: situation calculus, deductive planning, STRIPS, sub goals and partial order planning.", topics: [
+      { id: "situation-calculus", title: "Situation calculus and deductive planning", emoji: "8.1", page: "content/ai/situation-calculus.html",
+        summary: "Situations, fluents, action axioms, the frame problem, successor state axioms and deductive planning.",
+        keywords: ["situation calculus", "fluent", "frame problem", "successor state axiom", "deductive planning", "Green", "Reiter", "possibility axiom"],
+        minutes: 45, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "plan", title: "What planning is", emoji: "", group: "Lesson", keywords: ["planning", "classical planning", "plan", "planning language", "PDDL"] },
+        { id: "sitcalc", title: "Situation calculus", emoji: "", group: "Lesson", keywords: ["situation calculus", "situation", "Result", "fluent", "possibility axiom", "effect axiom", "McCarthy"] },
+        { id: "frame", title: "The frame problem and successor state axioms", emoji: "", group: "Lesson", keywords: ["frame problem", "frame axiom", "successor state axiom", "Reiter", "qualification problem", "ramification problem", "unique action axioms"] },
+        { id: "deductive", title: "Deductive planning: a plan is a proof", emoji: "", group: "Lesson", keywords: ["deductive planning", "Green", "answer extraction", "constructive proof", "theorem proving"] },
+        { id: "maths", title: "The maths: counting axioms and situations", emoji: "", group: "Lesson", keywords: ["frame axioms count", "successor state axioms count", "situation terms", "worked example"] },
+        { id: "compare", title: "Situation calculus against other ways to describe actions", emoji: "", group: "Lesson", keywords: ["comparison", "event calculus", "GOLOG", "Shakey", "STRIPS assumption"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["regression", "basic action theory", "GOLOG", "epistemic planning"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "strips-planning", title: "STRIPS planning and sub goals", emoji: "8.2", page: "content/ai/strips-planning.html",
+        summary: "STRIPS actions, forward and backward search, planning heuristics, sub goals and the Sussman anomaly.",
+        keywords: ["STRIPS", "PDDL", "blocks world", "progression", "regression", "planning heuristic", "sub goal", "Sussman anomaly", "linear planning"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "strips", title: "STRIPS: actions with preconditions, add lists and delete lists", emoji: "", group: "Lesson", keywords: ["STRIPS", "PDDL", "precondition", "add list", "delete list", "STRIPS assumption", "action schema", "ground action"] },
+        { id: "search", title: "Searching forwards and backwards", emoji: "", group: "Lesson", keywords: ["forward search", "progression", "backward search", "regression", "relevant action", "consistent action"] },
+        { id: "heur", title: "Heuristics for planning", emoji: "", group: "Lesson", keywords: ["planning heuristic", "relaxation", "ignore preconditions", "ignore delete lists", "h plus", "FF", "sub goal independence"] },
+        { id: "subgoal", title: "Sub goals and the Sussman anomaly", emoji: "", group: "Lesson", keywords: ["sub goal", "linear planning", "goal stack", "Sussman anomaly", "interleaving", "clobbering", "independent sub goals"] },
+        { id: "maths", title: "The maths: how big planning problems are", emoji: "", group: "Lesson", keywords: ["number of ground actions", "blocks world states", "PSPACE", "Bylander", "regression worked example"] },
+        { id: "compare", title: "Ways to plan with STRIPS actions", emoji: "", group: "Lesson", keywords: ["comparison", "FF", "Fast Downward", "GraphPlan", "SATPlan", "Remote Agent", "goal oriented action planning"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["planning graph", "landmarks", "pattern databases", "generalised planning", "LLM planning"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "partial-order-planning", title: "Partial order planning", emoji: "8.3", page: "content/ai/partial-order-planning.html",
+        summary: "Partial order plans, causal links, threats, promotion and demotion, and the POP algorithm.",
+        keywords: ["partial order planning", "POP", "causal link", "threat", "promotion", "demotion", "least commitment", "linearization", "SNLP", "UCPOP"],
+        minutes: 50, counts: {"lessons": 7, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "partial", title: "Partial plans: steps, orderings and causal links", emoji: "", group: "Lesson", keywords: ["partial order plan", "least commitment", "causal link", "ordering constraint", "open precondition", "linearization", "Start and Finish"] },
+        { id: "threats", title: "Threats, promotion and demotion", emoji: "", group: "Lesson", keywords: ["threat", "clobbering", "promotion", "demotion", "separation", "protected link"] },
+        { id: "algorithm", title: "The POP algorithm", emoji: "", group: "Lesson", keywords: ["POP algorithm", "agenda", "soundness", "completeness", "choice points", "UCPOP", "Sussman anomaly"] },
+        { id: "maths", title: "The maths: counting orders and checking threats", emoji: "", group: "Lesson", keywords: ["linearizations", "multinomial coefficient", "number of causal links", "threat check cost", "reachability"] },
+        { id: "compare", title: "POP compared with other planners", emoji: "", group: "Lesson", keywords: ["comparison", "RePOP", "GraphPlan", "HTN", "hierarchical planning", "Remote Agent", "parallel plans"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["TWEAK", "Modal Truth Criterion", "SNLP", "UCPOP", "temporal planning", "simple temporal network", "plan repair"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
