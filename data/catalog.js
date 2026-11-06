@@ -6592,6 +6592,82 @@ function coreAiModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cai-rl", title: "Reinforcement learning", emoji: "10", step: 10, part: "core", level: "College", blurb: "Decide over time and learn from rewards: Markov decision processes, policies, Q-values, passive and active reinforcement learning, and policy search.", topics: [
+      { id: "mdp", title: "Markov decision processes", emoji: "10.1", page: "content/ai/mdp.html",
+        summary: "MDPs, the Bellman equation, value iteration, policy iteration and Q-values.",
+        keywords: ["MDP", "policy", "discount", "Bellman equation", "value iteration", "policy iteration", "Q-value", "contraction", "POMDP"],
+        minutes: 55, counts: {"lessons": 7, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "mdp", title: "Markov decision processes", emoji: "", group: "Lesson", keywords: ["MDP", "Markov decision process", "policy", "transition model", "reward", "discount", "utility", "Markov property"] },
+        { id: "bellmanl", title: "The Bellman equation and value iteration", emoji: "", group: "Lesson", keywords: ["Bellman equation", "Bellman update", "value iteration", "contraction", "convergence", "stopping rule"] },
+        { id: "pil", title: "Policy iteration and Q-values", emoji: "", group: "Lesson", keywords: ["policy iteration", "policy evaluation", "policy improvement", "modified policy iteration", "Q-value", "POMDP", "belief state"] },
+        { id: "maths", title: "The maths: bounds and counts", emoji: "", group: "Lesson", keywords: ["utility bound", "number of sweeps", "policy loss bound", "number of policies"] },
+        { id: "compare", title: "MDP solvers compared", emoji: "", group: "Lesson", keywords: ["comparison", "linear programming", "expectimax", "applications"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["P-complete", "factored MDP", "approximate dynamic programming", "MuZero"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "passive-rl", title: "Passive reinforcement learning", emoji: "10.2", page: "content/ai/passive-rl.html",
+        summary: "Direct utility estimation, adaptive dynamic programming and temporal difference learning for a fixed policy.",
+        keywords: ["passive reinforcement learning", "direct utility estimation", "adaptive dynamic programming", "temporal difference", "TD error", "learning rate", "TD lambda", "Monte Carlo"],
+        minutes: 45, counts: {"lessons": 7, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "passive", title: "Passive learning: judge a fixed policy without a model", emoji: "", group: "Lesson", keywords: ["reinforcement learning", "passive learning", "fixed policy", "trial", "reward to go", "direct utility estimation", "adaptive dynamic programming"] },
+        { id: "tdl", title: "Temporal difference learning", emoji: "", group: "Lesson", keywords: ["temporal difference", "TD(0)", "TD error", "learning rate", "Robbins Monro", "TD(lambda)", "eligibility trace"] },
+        { id: "adp", title: "Adaptive dynamic programming", emoji: "", group: "Lesson", keywords: ["adaptive dynamic programming", "model based", "learned model", "counts", "prioritised sweeping"] },
+        { id: "maths", title: "The maths: bias, variance and fixed points", emoji: "", group: "Lesson", keywords: ["Monte Carlo", "bias", "variance", "eligibility trace", "batch TD", "certainty equivalence"] },
+        { id: "compare", title: "Passive learners compared", emoji: "", group: "Lesson", keywords: ["comparison", "TD-Gammon", "self play", "Monte Carlo evaluation"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["stochastic approximation", "n step returns", "off policy evaluation", "deadly triad", "distributional RL"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "active-rl", title: "Active reinforcement learning", emoji: "10.3", page: "content/ai/active-rl.html",
+        summary: "Exploration, Q-learning, SARSA, function approximation and deep Q-networks.",
+        keywords: ["active reinforcement learning", "exploration", "epsilon greedy", "UCB", "Q-learning", "SARSA", "on policy", "off policy", "function approximation", "DQN"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "explore", title: "Active learning: explore or exploit", emoji: "", group: "Lesson", keywords: ["active reinforcement learning", "exploration", "exploitation", "epsilon greedy", "exploration function", "UCB1", "GLIE", "regret", "multi armed bandit"] },
+        { id: "ql", title: "Q-learning", emoji: "", group: "Lesson", keywords: ["Q-learning", "off policy", "model free", "Q table", "Watkins"] },
+        { id: "sarsal", title: "SARSA, on policy and off policy", emoji: "", group: "Lesson", keywords: ["SARSA", "on policy", "off policy", "cliff walking", "exploration cost"] },
+        { id: "approx", title: "Function approximation and deep Q-networks", emoji: "", group: "Lesson", keywords: ["function approximation", "features", "gradient TD", "deep Q-network", "DQN", "experience replay", "target network", "generalisation"] },
+        { id: "maths", title: "The maths: the Bellman equation for Q and convergence", emoji: "", group: "Lesson", keywords: ["Bellman optimality", "Q star", "convergence", "epsilon greedy probability", "regret bound"] },
+        { id: "compare", title: "Active learners compared", emoji: "", group: "Lesson", keywords: ["comparison", "model based", "model free", "AlphaGo", "AlphaZero", "MuZero", "RLHF"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["double Q-learning", "maximisation bias", "curiosity", "offline RL", "safe RL"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "policy-search", title: "Policy search and policy gradients", emoji: "10.4", page: "content/ai/policy-search.html",
+        summary: "Policy gradients, REINFORCE, baselines, actor critic and learning from experts.",
+        keywords: ["policy search", "policy gradient", "REINFORCE", "baseline", "softmax policy", "actor critic", "advantage", "PPO", "inverse reinforcement learning", "imitation learning"],
+        minutes: 45, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-10-27",
+        sections: [
+        { id: "search", title: "Policy search: tune the policy directly", emoji: "", group: "Lesson", keywords: ["policy search", "parameterised policy", "policy value", "softmax policy", "stochastic policy", "continuous actions", "finite differences"] },
+        { id: "reinforcel", title: "The policy gradient and REINFORCE", emoji: "", group: "Lesson", keywords: ["policy gradient", "policy gradient theorem", "REINFORCE", "log derivative trick", "baseline", "variance reduction"] },
+        { id: "ac", title: "Actor critic and other refinements", emoji: "", group: "Lesson", keywords: ["actor critic", "critic", "advantage", "TD error", "PEGASUS", "correlated sampling", "PPO"] },
+        { id: "apprentice", title: "Learning from an expert: imitation and inverse RL", emoji: "", group: "Lesson", keywords: ["imitation learning", "behaviour cloning", "inverse reinforcement learning", "apprenticeship learning", "reward learning", "helicopter"] },
+        { id: "maths", title: "The maths: deriving the policy gradient", emoji: "", group: "Lesson", keywords: ["log derivative trick", "score function", "policy gradient derivation", "baseline variance"] },
+        { id: "compare", title: "Value based and policy based methods compared", emoji: "", group: "Lesson", keywords: ["comparison", "value based", "policy based", "A3C", "SAC", "evolution strategies"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["natural gradient", "TRPO", "entropy regularisation", "RLHF", "DPO", "sim to real"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

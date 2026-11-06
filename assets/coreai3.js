@@ -4,8 +4,8 @@
   const { trace, esc } = CAI;
   const { D } = CVZ;
   const { tag, rr, tw, fit, wrap } = AIZ;
-  const f3 = v => (Math.round(v * 1000) / 1000).toString();
-  const f4 = v => (Math.round(v * 10000) / 10000).toString();
+  const f3 = v => (Math.round(v * 1000) / 1000).toString().replace('-', '−');
+  const f4 = v => (Math.round(v * 10000) / 10000).toString().replace('-', '−');
   const TF = v => v ? 'true' : 'false';
 
   /* ---------- a small toolkit for Bayesian networks with true or false variables ---------- */
@@ -647,6 +647,382 @@
       if (f.obs) { D.text(g, 'Seeing: P(R | T)', 20, y - 6, { s: 12, b: true, c: c.ink2 }); bar(y, `T = ${A}`, obs(A), c.orange); bar(y + 28, `T = ${B}`, obs(B), c.orange); y += 72; }
       if (f.pz) D.text(g, 'Weights: ' + f.pz.map(([zz, v]) => `P(${zz}) = ${f3(v)}`).join(', '), 20, y + 2, { s: 12, b: true, c: c.cv });
       if (f.dA !== undefined) { D.text(g, 'Doing: P(R | do(T))', 20, y + 30, { s: 12, b: true, c: c.ink2 }); bar(y + 36, `do(T = ${A})`, f.dA, c.green); bar(y + 64, `do(T = ${B})`, f.dB, c.green); }
+      if (f.done) tag(g, 'done', z.W - 40, z.H - 16, { s: 12, fill: c.green, stroke: c.green, c: '#fff' });
+    }
+  });
+
+  /* =====================================================================================================
+     10  The 4 x 3 grid world of AIMA chapter 17, shared by the MDP and reinforcement learning animations
+     ===================================================================================================== */
+  const GW = (() => {
+    const W = [2, 2], TERM = { '4,3': 1, '4,2': -1 };
+    const S = [];
+    for (let y = 3; y >= 1; y--) for (let x = 1; x <= 4; x++) if (!(x === W[0] && y === W[1])) S.push(x + ',' + y);
+    const A = { U: [0, 1], D: [0, -1], L: [-1, 0], R: [1, 0] }, PERP = { U: 'LR', D: 'LR', L: 'UD', R: 'UD' };
+    const ARW = { U: '↑', D: '↓', L: '←', R: '→' }, NAME = { U: 'Up', D: 'Down', L: 'Left', R: 'Right' };
+    const mv = (s, a) => { const [x, y] = s.split(',').map(Number), n = (x + A[a][0]) + ',' + (y + A[a][1]); return S.includes(n) ? n : s; };
+    function P(s, a, noise) {
+      const out = {};
+      [[a, 1 - noise], [PERP[a][0], noise / 2], [PERP[a][1], noise / 2]].forEach(([b, p]) => { if (p > 0) { const n = mv(s, b); out[n] = (out[n] || 0) + p; } });
+      return out;
+    }
+    const q = (s, a, U, R, g, noise) => R + g * Object.entries(P(s, a, noise)).reduce((t, [n, p]) => t + p * U[n], 0);
+    function vi(R, g, noise, eps = 1e-4, cap = 200) {
+      let U = {}; S.forEach(s => { U[s] = s in TERM ? TERM[s] : 0; });
+      for (let it = 0; it < cap; it++) {
+        const N = {}; let d = 0;
+        S.forEach(s => { N[s] = s in TERM ? TERM[s] : Math.max(...'UDLR'.split('').map(a => q(s, a, U, R, g, noise))); d = Math.max(d, Math.abs(N[s] - U[s])); });
+        U = N; if (d < eps) break;
+      }
+      return U;
+    }
+    function greedy(U, R, g, noise) {
+      const pi = {};
+      S.forEach(s => { if (!(s in TERM)) { let best = null, bv = -Infinity; 'URDL'.split('').forEach(a => { const v = q(s, a, U, R, g, noise); if (v > bv + 1e-9) { bv = v; best = a; } }); pi[s] = best; } });
+      return pi;
+    }
+    function step(s, a, noise, r) { const P0 = P(s, a, noise); let u = r(), acc = 0; for (const [n, p] of Object.entries(P0)) { acc += p; if (u < acc) return n; } return Object.keys(P0).pop(); }
+    /* draw the grid. vals: {s: number}, pol: {s: action}, o: { hi: s, path: [s...], fmt } */
+    function draw(z, box, vals, pol, o = {}) {
+      const { g } = z, c = z.col;
+      const [X0, Y0, cw] = box;
+      const xy = s => { const [x, y] = s.split(',').map(Number); return [X0 + (x - 1) * cw, Y0 + (3 - y) * cw]; };
+      for (let y = 3; y >= 1; y--) for (let x = 1; x <= 4; x++) {
+        const s = x + ',' + y, [px, py] = xy(s);
+        if (x === W[0] && y === W[1]) { D.rect(g, px, py, cw, cw, { fill: c.ink2 }); continue; }
+        const v = vals ? vals[s] : null;
+        let fill = c.surf;
+        if (s in TERM) fill = TERM[s] > 0 ? c.green : c.red;
+        else if (v !== null && v !== undefined && o.heat !== false) { const t = Math.max(-1, Math.min(1, v)); fill = t >= 0 ? `rgba(34,197,94,${0.08 + 0.4 * t})` : `rgba(239,68,68,${0.08 + 0.4 * -t})`; }
+        D.rect(g, px, py, cw, cw, { fill, stroke: s === o.hi ? c.cv : c.line, w: s === o.hi ? 3.5 : 1.2 });
+        if (o.changed && o.changed.includes(s)) D.rect(g, px + 3, py + 3, cw - 6, cw - 6, { stroke: c.orange, w: 2.5 });
+        D.text(g, `(${x},${y})`, px + 5, py + 13, { s: 9.5, c: s in TERM ? '#fff' : c.ink2 });
+        if (s in TERM) D.text(g, TERM[s] > 0 ? '+1' : '−1', px + cw / 2, py + cw / 2 + 7, { a: 'center', s: 20, b: true, c: '#fff' });
+        else {
+          if (v !== null && v !== undefined) D.text(g, (o.fmt || f3)(v), px + cw / 2, py + cw / 2 + (pol ? -6 : 5), { a: 'center', s: 13, b: true, mono: true, c: c.ink });
+          if (pol && pol[s]) D.text(g, ARW[pol[s]], px + cw / 2, py + cw / 2 + 24, { a: 'center', s: 20, b: true, c: c.cv });
+        }
+      }
+      if (o.path && o.path.length > 1) {
+        g.save(); g.strokeStyle = c.cv; g.lineWidth = 3; g.globalAlpha = 0.8; g.beginPath();
+        o.path.forEach((s, i) => { const [px, py] = xy(s), jx = (i % 3 - 1) * 4, jy = (i % 2) * 4 - 2; if (i) g.lineTo(px + cw / 2 + jx, py + cw / 2 + jy); else g.moveTo(px + cw / 2 + jx, py + cw / 2 + jy); });
+        g.stroke(); g.restore();
+        const [sx, sy] = xy(o.path[o.path.length - 1]); D.circle(g, sx + cw / 2, sy + cw / 2, 7, { fill: c.cv });
+      }
+    }
+    return { S, TERM, A, ARW, NAME, P, q, vi, greedy, step, draw, mv };
+  })();
+  const rnum = (s, what) => { const v = Number(String(s).replace(/−/g, '-')); if (!isFinite(v)) throw new Error(`${what} must be a number.`); return v; };
+
+  /* =====================================================================================================
+     10.1  Value iteration and policy iteration on the 4 x 3 world (AIMA 17.2 and 17.3)
+     ===================================================================================================== */
+  trace('gridmdp', {
+    title: 'Solve an MDP: value iteration and policy iteration',
+    sub: 'The robot moves Up, Down, Left or Right. It goes the intended way with probability 0.8 and slips to each side with 0.1 (it stays put if it hits a wall). Every step costs a little (the reward R). The two coloured squares end the game.',
+    W: 660, H: 330, speed: 900,
+    params: [
+      { k: 'alg', label: 'Method', type: 'select', v: 'vi', opts: [['vi', 'Value iteration'], ['pi', 'Policy iteration']] },
+      { k: 'R', label: 'Reward R for each non end square', type: 'text', v: '-0.04' },
+      { k: 'g', label: 'Discount γ', type: 'range', v: 1, min: 0.5, max: 1, step: 0.05 },
+      { k: 'noise', label: 'Chance of slipping sideways (total)', type: 'select', v: '0.2', opts: [['0', '0 (moves always go as planned)'], ['0.2', '0.2 (the textbook world)'], ['0.4', '0.4']] }
+    ],
+    tips: [
+      { t: 'The textbook world: R = −0.04, γ = 1. Value iteration settles in 22 sweeps at U(1,1) = 0.705, and the policy goes round the top, away from the −1 square.', set: { alg: 'vi', R: '-0.04', g: 1, noise: '0.2' }, play: true },
+      { t: 'Policy iteration on the same world. It starts with "always Right", evaluates it, improves it, and needs only a few rounds.', set: { alg: 'pi', R: '-0.04', g: 1, noise: '0.2' }, play: true },
+      { t: 'Life is painful, R = −2. The robot now heads for the nearest exit, even the −1 square.', set: { alg: 'vi', R: '-2', g: 1, noise: '0.2' }, play: true },
+      { t: 'Life is pleasant, R = +0.5, with γ = 0.9. Staying for ever is worth 0.5 ÷ (1 − 0.9) = 5, more than the +1 exit, so the robot avoids both exits.', set: { alg: 'vi', R: '0.5', g: 0.9, noise: '0.2' }, play: true }
+    ],
+    frames(p) {
+      const R = rnum(p.R, 'R'), g = +p.g, noise = +p.noise;
+      if (R > 0 && g >= 1) throw new Error('With a positive reward and γ = 1 the utilities grow without limit. Use γ below 1.');
+      if (Math.abs(R) > 10) throw new Error('Please keep R between −10 and 10.');
+      const fr = [], S = GW.S, T = GW.TERM;
+      const live = S.filter(s => !(s in T));
+      const disp = U => { const o = {}; S.forEach(s => { o[s] = U[s]; }); return o; };
+      fr.push({ U: null, say: `A Markov decision process: 11 squares (states), 4 actions, a transition model P(s′ | s, a) and a reward R(s) = ${f3(R)} for every square except the two end squares, worth +1 and −1. γ = ${g}. We want a policy π(s): which action to take in each square.` });
+      if (p.alg === 'vi') {
+        let U = {}; S.forEach(s => { U[s] = s in T ? T[s] : 0; });
+        fr.push({ U: disp(U), say: 'Value iteration starts with U(s) = 0 for every square (the end squares keep their reward).' });
+        const eps = g < 1 ? 1e-4 * (1 - g) / g : 1e-4;
+        for (let it = 1; it <= 150; it++) {
+          const N = {}; let d = 0;
+          live.forEach(s => { N[s] = Math.max(...'UDLR'.split('').map(a => GW.q(s, a, U, R, g, noise))); d = Math.max(d, Math.abs(N[s] - U[s])); });
+          Object.keys(T).forEach(s => { N[s] = T[s]; });
+          if (it === 1) {
+            const s = '3,3', qs = 'URDL'.split('').map(a => [a, GW.q(s, a, U, R, g, noise)]);
+            const best = qs.reduce((b, x) => x[1] > b[1] ? x : b);
+            const pr = GW.P(s, best[0], noise);
+            fr.push({ U: disp(N), hi: s, it, d, say: `Sweep 1. Each square gets the Bellman update U(s) ← R(s) + γ max over a of Σ P(s′ | s, a) U(s′). For square (3,3) the best action is ${GW.NAME[best[0]]}: ${f3(R)} + ${g} × (${Object.entries(pr).map(([n, q]) => `${f3(q)} × ${f3(U[n])}`).join(' + ')}) = ${f3(best[1])}. In this first sweep most squares just get R, and only squares next to an end square feel its value. Largest change δ = ${f3(d)}.` });
+          } else if (it <= 6 || it % 5 === 0 || d < eps) fr.push({ U: disp(N), it, d, say: `Sweep ${it}. The values spread out from the end squares. Largest change δ = ${f4(d)}.${d < eps ? ' This is below the stopping limit, so the values have converged.' : ''}` });
+          U = N;
+          if (d < eps) break;
+        }
+        const pol = GW.greedy(U, R, g, noise);
+        fr.push({ U: disp(U), pol, done: true, say: `The policy picks in each square the action with the highest expected utility: π(s) = argmax over a of Σ P(s′ | s, a) U(s′). U(1,1) = ${f3(U['1,1'])}. The arrows show the policy.` });
+      } else {
+        let pol = {}; live.forEach(s => { pol[s] = 'R'; });
+        fr.push({ U: null, pol: { ...pol }, say: 'Policy iteration starts from any policy. Here: always go Right.' });
+        for (let round = 1; round <= 12; round++) {
+          let U = {}; S.forEach(s => { U[s] = s in T ? T[s] : 0; });
+          for (let k = 0; k < 500; k++) { const N = {}; let d = 0; live.forEach(s => { N[s] = GW.q(s, pol[s], U, R, g, noise); d = Math.max(d, Math.abs(N[s] - U[s])); }); Object.keys(T).forEach(s => { N[s] = T[s]; }); U = N; if (d < 1e-6) break; }
+          fr.push({ U: disp(U), pol: { ...pol }, round, say: `Round ${round}, policy evaluation: compute U(s) for the current policy. With the action fixed there is no max, so these are ${live.length} linear equations U(s) = R(s) + γ Σ P(s′ | s, π(s)) U(s′). Here they are solved by repeated sweeps.` });
+          const changed = [];
+          const nw = {};
+          live.forEach(s => { let best = pol[s], bv = GW.q(s, pol[s], U, R, g, noise); 'URDL'.split('').forEach(a => { const v = GW.q(s, a, U, R, g, noise); if (v > bv + 1e-9) { bv = v; best = a; } }); nw[s] = best; if (best !== pol[s]) changed.push(s); });
+          pol = nw;
+          if (!changed.length) { fr.push({ U: disp(U), pol: { ...pol }, round, done: true, say: `Round ${round}, policy improvement: no square can do better by changing its action, so the policy is optimal. Policy iteration stopped after ${round} rounds. U(1,1) = ${f3(U['1,1'])}.` }); break; }
+          fr.push({ U: disp(U), pol: { ...pol }, changed, round, say: `Round ${round}, policy improvement: in each square, switch to the action with the best one step look ahead using these values. ${changed.length} square${changed.length > 1 ? 's' : ''} changed (orange boxes).` });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col;
+      GW.draw(z, [20, 26, 92], f.U, f.pol, { hi: f.hi, changed: f.changed });
+      const x0 = 410;
+      let y = 44;
+      const line = (s, col, b, size) => { y = wrap(g, s, x0, y, z.W - x0 - 14, { s: size || 12.5, b, c: col || c.ink, lh: 18 }) + 4; };
+      if (f.it) line(`Sweep ${f.it}`, c.cv, true, 15);
+      if (f.round) line(`Round ${f.round}`, c.cv, true, 15);
+      if (f.d !== undefined) line(`largest change δ = ${f4(f.d)}`, c.ink, true);
+      if (f.pol) line('Arrows: the policy π(s).', c.ink2);
+      if (f.changed) line('Orange box: the action changed in this round.', c.orange, true);
+      if (f.hi) line('Blue box: the square whose update is shown below.', c.cv, true);
+      if (f.U) line('Green squares have high utility, red squares low.', c.ink2);
+      if (f.done) tag(g, 'done', z.W - 40, z.H - 16, { s: 12, fill: c.green, stroke: c.green, c: '#fff' });
+    }
+  });
+
+  /* =====================================================================================================
+     10.2  Passive reinforcement learning: direct utility estimation and temporal difference learning (AIMA 21.2)
+     ===================================================================================================== */
+  trace('tdlearn', {
+    title: 'Learn the utilities of a fixed policy from trials',
+    sub: 'The agent follows a fixed policy (the arrows) but does not know the transition model or the rewards. It learns U(s) from what happens in each trial, from the start square (1,1) to an end square.',
+    W: 660, H: 380, speed: 900,
+    params: [
+      { k: 'alg', label: 'Method', type: 'select', v: 'td', opts: [['td', 'Temporal difference (TD) learning'], ['direct', 'Direct utility estimation (average reward to go)']] },
+      { k: 'n', label: 'Number of trials', type: 'range', v: 100, min: 10, max: 500, step: 10 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 1, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'TD learning with α = 60 ÷ (59 + n), as in the textbook. Each step moves U(s) a little towards R(s) + γ U(s′).', set: { alg: 'td', n: 100 }, play: true },
+      { t: 'Direct utility estimation: after each trial, the reward to go of every visited square is averaged in. It ignores how squares connect, so it learns slowly.', set: { alg: 'direct', n: 100 }, play: true },
+      { t: 'More trials. The estimates on the usual path stay close to the true values. Squares the policy rarely visits, such as (4,1), stay rough, which is why passive learning alone cannot learn a whole policy.', set: { alg: 'td', n: 500 }, play: true }
+    ],
+    frames(p) {
+      const R = -0.04, g = 1, noise = 0.2, T = GW.TERM;
+      const TRUE = GW.vi(R, g, noise, 1e-7), pol = GW.greedy(TRUE, R, g, noise);
+      const live = GW.S.filter(s => !(s in T));
+      const r = CVZ.rng(p.seed * 104729 + 7);
+      const U = {}, N = {}, sum = {};
+      GW.S.forEach(s => { U[s] = s in T ? T[s] : 0; N[s] = 0; sum[s] = 0; });
+      const main = ['1,1']; while (!(main[main.length - 1] in T) && main.length < 12) main.push(GW.mv(main[main.length - 1], pol[main[main.length - 1]]));
+      const on = main.filter(s => !(s in T));
+      const rms = () => Math.sqrt(on.reduce((t, s) => t + (U[s] - TRUE[s]) ** 2, 0) / on.length);
+      const hist = [];
+      const fr = [];
+      const snap = (ex, say) => fr.push({ U: { ...U }, pol, hist: hist.slice(), say, ...ex });
+      snap({}, `The policy is fixed (the arrows, the optimal policy for R = −0.04). The agent starts with U(s) = 0 and runs ${p.n} trials. The true utilities, which it never sees, give U(1,1) = ${f3(TRUE['1,1'])}.`);
+      const nT = Math.round(p.n);
+      const marks = new Set([2, 3, 5, 10, 20, 50, 100, 200, 300, 400, 500, nT]);
+      for (let t = 1; t <= nT; t++) {
+        let s = '1,1'; const path = [s], rews = [];
+        while (!(s in T) && path.length < 200) {
+          const s2 = GW.step(s, pol[s], noise, r);
+          const rew = R;
+          rews.push(rew);
+          if (p.alg === 'td') {
+            N[s]++;
+            const a = 60 / (59 + N[s]), old = U[s], tgt = rew + g * U[s2];
+            U[s] = old + a * (tgt - old);
+            if (t === 1 && path.length <= 6) snap({ path: path.concat([s2]), hi: s, t }, `Trial 1: in ${s.replace(',', ', ')} the policy says ${GW.NAME[pol[s]]}, and the agent lands in ${s2.replace(',', ', ')}. TD update with α = 60 ÷ (59 + ${N[s]}) = ${f3(a)}: U(${s}) ← ${f3(old)} + ${f3(a)} × (${f3(R)} + ${f3(U[s2])} − ${f3(old)}) = ${f3(U[s])}.`);
+          }
+          s = s2; path.push(s);
+        }
+        if (p.alg === 'direct') {
+          let togo = T[s];
+          for (let i = path.length - 2; i >= 0; i--) { togo += rews[i]; const st = path[i]; N[st]++; sum[st] += togo; U[st] = sum[st] / N[st]; }
+          if (t === 1) snap({ path, t }, `Trial 1 went ${path.map(x => '(' + x + ')').join(' ')} and ended with ${T[s] > 0 ? '+1' : '−1'}. The reward to go of each visited square is its sum of rewards from there to the end. Each square\'s estimate is the average of all its rewards to go so far.`);
+        }
+        hist.push([t, rms()]);
+        if (marks.has(t) || (t === 1 && p.alg === 'td')) snap({ path, t }, `After trial ${t}${t === 1 ? ` (it went ${path.map(x => '(' + x + ')').join(' ')})` : ''}: U(1,1) = ${f3(U['1,1'])} against the true ${f3(TRUE['1,1'])}. The root mean square error over the ${on.length} squares of the usual path (${on.map(x => '(' + x + ')').join(' ')}) is ${f3(rms())}.`);
+      }
+      const last = fr[fr.length - 1]; last.done = true;
+      last.say += p.alg === 'td' ? ' TD uses the link between neighbouring squares in every update, which is why it usually learns faster than direct estimation.' : ' Direct estimation treats every square on its own, so it misses that U(s) depends on the utilities of the squares after it.';
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col;
+      GW.draw(z, [20, 30, 88], f.U, f.pol, { hi: f.hi, path: f.path, heat: false });
+      const box = [440, 40, z.W - 470, z.H - 110];
+      const xmax = Math.max(10, ...f.hist.map(h => h[0]));
+      const ymax = Math.max(0.2, ...f.hist.map(h => h[1]));
+      const m = D.axes(g, z, box, [0, xmax], [0, ymax], { nx: 2, ny: 4, xl: 'trials', yl: 'error on the usual path', fx: v => String(Math.round(v)) });
+      if (f.hist.length > 1) { g.save(); g.strokeStyle = c.cv; g.lineWidth = 2; g.beginPath(); f.hist.forEach(([x, y], i) => { if (i) g.lineTo(m.sx(x), m.sy(y)); else g.moveTo(m.sx(x), m.sy(y)); }); g.stroke(); g.restore(); }
+      if (f.t) D.text(g, `trial ${f.t}`, 20, 22, { s: 13, b: true, c: c.cv });
+      if (f.done) tag(g, 'done', z.W - 40, z.H - 16, { s: 12, fill: c.green, stroke: c.green, c: '#fff' });
+    }
+  });
+
+  /* =====================================================================================================
+     10.3  Active reinforcement learning: Q-learning versus SARSA on the cliff (Sutton and Barto, example 6.6)
+     ===================================================================================================== */
+  trace('qlearn', {
+    title: 'Learn to act: Q-learning and SARSA on the cliff',
+    sub: 'Walk from S to G. Each step gives −1. Stepping into the cliff gives −100 and sends you back to S. The agent picks the best known action, but explores a random one with probability ε. It learns Q(s, a), the value of each action in each square.',
+    W: 680, H: 420, speed: 900,
+    params: [
+      { k: 'alg', label: 'Method', type: 'select', v: 'q', opts: [['q', 'Q-learning (off policy)'], ['sarsa', 'SARSA (on policy)']] },
+      { k: 'eps', label: 'Exploration ε', type: 'range', v: 0.1, min: 0, max: 0.5, step: 0.05 },
+      { k: 'alpha', label: 'Learning rate α', type: 'range', v: 0.5, min: 0.05, max: 1, step: 0.05 },
+      { k: 'n', label: 'Episodes', type: 'range', v: 300, min: 10, max: 500, step: 10 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 1, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'Q-learning learns the shortest path right along the cliff edge (13 steps), because its update uses the best next action, not the one it will actually take. While exploring it sometimes falls in.', set: { alg: 'q', eps: 0.1, alpha: 0.5, n: 300 }, play: true },
+      { t: 'SARSA learns from the actions it really takes, random ones included, so it learns a safer path one or two rows up and loses less while learning.', set: { alg: 'sarsa', eps: 0.1, alpha: 0.5, n: 300 }, play: true },
+      { t: 'No exploration, ε = 0. Because Q starts at 0 and every step costs −1, untried actions still look good, so the agent still tries new things (optimism) and finds a path.', set: { alg: 'q', eps: 0, alpha: 0.5, n: 100 }, play: true }
+    ],
+    frames(p) {
+      const Wd = 12, Ht = 4, start = [0, 3], goal = [11, 3];
+      const AS = ['U', 'R', 'D', 'L'], DV = { U: [0, -1], D: [0, 1], L: [-1, 0], R: [1, 0] };
+      const cliff = (x, y) => y === 3 && x >= 1 && x <= 10;
+      const Q = {};
+      for (let x = 0; x < Wd; x++) for (let y = 0; y < Ht; y++) AS.forEach(a => { Q[x + ',' + y + a] = 0; });
+      const r = CVZ.rng(p.seed * 7919 + 101);
+      const eps = +p.eps, al = +p.alpha;
+      const best = s => { let b = AS[0]; AS.forEach(a => { if (Q[s + a] > Q[s + b] + 1e-12) b = a; }); return b; };
+      const pick = s => r() < eps ? AS[Math.floor(r() * 4)] : (() => { const m = Math.max(...AS.map(a => Q[s + a])); const ties = AS.filter(a => Math.abs(Q[s + a] - m) < 1e-12); return ties[Math.floor(r() * ties.length)]; })();
+      const go = (x, y, a) => { const nx = Math.min(Wd - 1, Math.max(0, x + DV[a][0])), ny = Math.min(Ht - 1, Math.max(0, y + DV[a][1])); if (cliff(nx, ny)) return [start[0], start[1], -100, true]; return [nx, ny, -1, false]; };
+      const fr = [], hist = [];
+      const vmap = () => { const o = {}; for (let x = 0; x < Wd; x++) for (let y = 0; y < Ht; y++) o[x + ',' + y] = Math.max(...AS.map(a => Q[x + ',' + y + a])); return o; };
+      const greedyPath = () => { let x = start[0], y = start[1]; const path = [[x, y]]; for (let k = 0; k < 60 && !(x === goal[0] && y === goal[1]); k++) { const [nx, ny, rw, fell] = go(x, y, best(x + ',' + y)); if (fell) { path.push([nx, ny]); return { path, ok: false }; } x = nx; y = ny; path.push([x, y]); } return { path, ok: x === goal[0] && y === goal[1] }; };
+      const nm = p.alg === 'q' ? 'Q-learning' : 'SARSA';
+      fr.push({ V: null, hist: [], say: `${nm} with ε = ${eps}, α = ${al}, γ = 1. All Q values start at 0. The grid is 12 by 4. S is the start, G the goal, and the dark cells along the bottom are the cliff.` });
+      const n = Math.round(p.n), marks = new Set([1, 2, 5, 10, 20, 50, 100, 150, 200, 300, 400, 500, n]);
+      for (let ep = 1; ep <= n; ep++) {
+        let x = start[0], y = start[1], s = x + ',' + y, a = pick(s), total = 0, steps = 0, falls = 0;
+        const path = [[x, y]];
+        while (!(x === goal[0] && y === goal[1]) && steps < 2000) {
+          const [nx, ny, rw, fell] = go(x, y, a);
+          const s2 = nx + ',' + ny;
+          const a2 = pick(s2);
+          const done = nx === goal[0] && ny === goal[1];
+          const nextV = done ? 0 : p.alg === 'q' ? Q[s2 + best(s2)] : Q[s2 + a2];
+          const old = Q[s + a];
+          Q[s + a] = old + al * (rw + nextV - old);
+          if (ep === 1 && steps < 4) fr.push({ V: vmap(), hist: [], path: path.concat([[nx, ny]]), say: `Episode 1, step ${steps + 1}: in (${x}, ${y}) the agent takes ${GW.NAME[a]}${fell ? ', falls into the cliff (−100) and goes back to S' : ` and gets −1`}. ${nm} update: Q(s, ${a}) ← ${f3(old)} + ${al} × (${rw} + ${f3(nextV)} − ${f3(old)}) = ${f3(Q[s + a])}. ${p.alg === 'q' ? 'The target uses the best action in the next square.' : `The target uses the action the agent will really take next (${a2}).`}` });
+          total += rw; steps++; if (fell) falls++;
+          x = nx; y = ny; s = s2; a = a2; path.push([x, y]);
+        }
+        hist.push([ep, Math.max(-150, total)]);
+        if (marks.has(ep)) {
+          const gp = greedyPath();
+          fr.push({ V: vmap(), hist: hist.slice(), path: ep <= 2 ? path : null, gp: gp.path, say: `After episode ${ep}: this episode took ${steps} steps with ${falls} fall${falls === 1 ? '' : 's'} into the cliff, total reward ${total}. ${gp.ok ? `The greedy path (best action everywhere, drawn in green) now takes ${gp.path.length - 1} steps.` : 'The greedy path does not reach G yet.'}` });
+        }
+      }
+      const gp = greedyPath();
+      const last10 = hist.slice(-Math.min(50, hist.length)), avg = last10.reduce((t, h) => t + h[1], 0) / last10.length;
+      fr.push({ V: vmap(), hist: hist.slice(), gp: gp.path, done: true, say: `Done. ${gp.ok ? `The learned greedy path takes ${gp.path.length - 1} steps${gp.path.length - 1 === 13 ? ', the shortest path along the cliff edge' : ', a safer path away from the cliff edge'}.` : 'The greedy path does not reach G yet, so more episodes are needed.'} Average reward per episode over the last ${last10.length} episodes, exploration included: ${f3(avg)}.` });
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col;
+      const cw = 46, X0 = 32, Y0 = 26;
+      for (let x = 0; x < 12; x++) for (let y = 0; y < 4; y++) {
+        const px = X0 + x * cw, py = Y0 + y * cw, cl = y === 3 && x >= 1 && x <= 10;
+        const v = f.V ? f.V[x + ',' + y] : null;
+        let fill = c.surf;
+        if (cl) fill = c.ink2; else if (v !== null && v < 0) fill = `rgba(239,68,68,${Math.min(0.45, -v / 60)})`;
+        D.rect(g, px, py, cw, cw, { fill, stroke: c.line, w: 1 });
+      }
+      D.text(g, 'S', X0 + 4, Y0 + 3 * cw + 14, { s: 13, b: true, c: c.cv });
+      D.text(g, 'G', X0 + 11 * cw + 4, Y0 + 3 * cw + 14, { s: 13, b: true, c: c.green });
+      D.text(g, 'cliff: −100', X0 + 6 * cw, Y0 + 3 * cw + cw / 2 + 5, { a: 'center', s: 12, b: true, c: '#fff' });
+      const drawPath = (pts, col, w) => { g.save(); g.strokeStyle = col; g.lineWidth = w; g.globalAlpha = 0.85; g.beginPath(); pts.forEach(([x, y], i) => { const px = X0 + x * cw + cw / 2, py = Y0 + y * cw + cw / 2; if (i) g.lineTo(px, py); else g.moveTo(px, py); }); g.stroke(); g.restore(); };
+      if (f.path) drawPath(f.path, c.cv, 2);
+      if (f.gp) drawPath(f.gp, c.green, 4);
+      if (f.V) for (let x = 0; x < 12; x++) for (let y = 0; y < 4; y++) {
+        const v = f.V[x + ',' + y];
+        if ((y === 3 && x >= 1 && x <= 10) || Math.abs(v) < 1e-9) continue;
+        const t = String(Math.round(v)).replace('-', '−'), px = X0 + x * cw + cw / 2 + 4, py = Y0 + y * cw + cw / 2 + 9, w = tw(g, t, { s: 11, mono: true }) + 4;
+        rr(g, px - w / 2, py - 10, w, 13, 3, { fill: c.surf });
+        D.text(g, t, px, py, { a: 'center', s: 11, mono: true, c: c.ink });
+      }
+      if (f.hist.length) {
+        const box = [70, 236, z.W - 110, 120];
+        const xmax = Math.max(10, f.hist[f.hist.length - 1][0]);
+        const m = D.axes(g, z, box, [0, xmax], [-150, 0], { nx: 4, ny: 3, xl: 'episode', yl: 'reward', fx: v => String(Math.round(v)), fy: v => String(Math.round(v)) });
+        const sm = f.hist.map((h, i) => { const w = f.hist.slice(Math.max(0, i - 9), i + 1); return [h[0], w.reduce((t, q) => t + q[1], 0) / w.length]; });
+        g.save(); g.strokeStyle = c.cv; g.lineWidth = 2; g.beginPath(); sm.forEach(([x, y], i) => { if (i) g.lineTo(m.sx(x), m.sy(y)); else g.moveTo(m.sx(x), m.sy(y)); }); g.stroke(); g.restore();
+        D.text(g, 'reward per episode, average of the last 10', box[0] + box[2], box[1] - 6, { a: 'right', s: 11, c: c.ink2 });
+      }
+      if (f.done) tag(g, 'done', z.W - 40, 14, { s: 12, fill: c.green, stroke: c.green, c: '#fff' });
+    }
+  });
+
+  /* =====================================================================================================
+     10.4  Policy search: REINFORCE with a softmax policy on a three armed bandit (Williams, 1992)
+     ===================================================================================================== */
+  trace('pgrad', {
+    title: 'Policy gradient: push up the chance of actions that did well',
+    sub: 'The policy is a softmax over preferences θ: π(a) = e^θₐ ÷ Σ e^θ. After each pull, REINFORCE moves θ along (reward − baseline) × ∇ log π(a). Three slot machines pay on average 1, 2 and 1.5 (with random noise).',
+    W: 660, H: 380, speed: 900,
+    params: [
+      { k: 'alpha', label: 'Step size α', type: 'range', v: 0.1, min: 0.01, max: 0.5, step: 0.01 },
+      { k: 'base', label: 'Use a baseline (the average reward so far)', type: 'check', v: true },
+      { k: 'n', label: 'Pulls', type: 'range', v: 500, min: 20, max: 2000, step: 20 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 1, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'With a baseline. Rewards above average push an action up, rewards below push it down. The policy soon prefers machine 2.', set: { alpha: 0.1, base: true, n: 500 }, play: true },
+      { t: 'Without a baseline every reward is positive, so every chosen action is pushed up. The updates are much noisier, and with this seed the policy settles on machine 3 instead of the best machine 2.', set: { alpha: 0.1, base: false, n: 500 }, play: true },
+      { t: 'A large step size moves fast. With this seed it finds machine 2 quickly, but with other seeds it can lock onto a worse machine too early. Try a few seeds.', set: { alpha: 0.5, base: true, n: 500, seed: 3 }, play: true }
+    ],
+    frames(p) {
+      const mu = [1, 2, 1.5], r = CVZ.rng(p.seed * 15485863 + 3), al = +p.alpha;
+      const gauss = () => CVZ.gauss(r);
+      let th = [0, 0, 0], avg = 0;
+      const pi = () => { const m = Math.max(...th), e = th.map(t => Math.exp(t - m)), s = e.reduce((a, b) => a + b, 0); return e.map(v => v / s); };
+      const fr = [], hist = [];
+      fr.push({ th: th.slice(), P: pi(), hist: [], say: `All preferences θ start at 0, so each machine is picked with probability 1/3. Each pull: pick a machine from π, get a reward, then update θ with step size α = ${al}${p.base ? ' and the running average reward as the baseline' : ' and no baseline'}.` });
+      const n = Math.round(p.n), marks = new Set([10, 20, 50, 100, 200, 500, 1000, 1500, 2000, n]);
+      for (let t = 1; t <= n; t++) {
+        const P0 = pi();
+        let u = r(), a = 0; while (a < 2 && u > P0[a]) { u -= P0[a]; a++; }
+        const rew = mu[a] + gauss();
+        const b = p.base ? avg : 0;
+        const old = th.slice();
+        th = th.map((v, k) => v + al * (rew - b) * ((k === a ? 1 : 0) - P0[k]));
+        avg += (rew - avg) / t;
+        hist.push([t, pi()]);
+        if (t <= 4) fr.push({ th: th.slice(), P: pi(), hist: hist.slice(), a, say: `Pull ${t}: machine ${a + 1} (chosen with probability ${f3(P0[a])}) pays ${f3(rew)}. ${p.base ? `Baseline ${f3(b)}, so the advantage is ${f3(rew - b)}.` : 'No baseline.'} ∇ log π(a) for θ_k is (1 if k = a, else 0) − π(k). θ becomes ${th.map(f3).join(', ')} (it was ${old.map(f3).join(', ')}).` });
+        else if (marks.has(t)) fr.push({ th: th.slice(), P: pi(), hist: hist.slice(), say: `After ${t} pulls: π = ${pi().map(f3).join(', ')}. Average reward so far ${f3(avg)} (the best machine pays 2).` });
+      }
+      const last = fr[fr.length - 1]; last.done = true;
+      last.say += ` The policy ${pi()[1] > 0.6 ? 'now picks machine 2 most of the time' : pi()[1] === Math.max(...pi()) ? 'leans towards machine 2 but is still exploring' : 'has settled on a worse machine, which can happen with large steps or bad luck early on'}.`;
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col;
+      const cols = [c.orange, c.green, c.purple];
+      for (let k = 0; k < 3; k++) {
+        const x = 30 + k * 110, y = 40;
+        rr(g, x, y, 90, 70, 8, { fill: f.a === k ? c.cv + '22' : c.surf, stroke: f.a === k ? c.cv : c.line, w: f.a === k ? 2.5 : 1.2 });
+        D.text(g, `machine ${k + 1}`, x + 45, y + 18, { a: 'center', s: 12, b: true, c: c.ink });
+        D.text(g, `mean ${[1, 2, 1.5][k]}`, x + 45, y + 36, { a: 'center', s: 11, c: c.ink2 });
+        D.text(g, `θ = ${f3(f.th[k])}`, x + 45, y + 56, { a: 'center', s: 11.5, mono: true, c: c.ink });
+        const bh = 130 * f.P[k];
+        rr(g, x + 20, 270 - bh, 50, Math.max(2, bh), 4, { fill: cols[k] });
+        D.text(g, `π = ${f3(f.P[k])}`, x + 45, 290, { a: 'center', s: 12, b: true, c: c.ink });
+      }
+      D.text(g, 'probability of each machine', 30, 132, { s: 11.5, c: c.ink2 });
+      const box = [400, 40, z.W - 420, z.H - 110];
+      const xmax = Math.max(10, f.hist.length ? f.hist[f.hist.length - 1][0] : 10);
+      const m = D.axes(g, z, box, [0, xmax], [0, 1], { nx: 2, ny: 4, xl: 'pulls', yl: 'π(a)', fx: v => String(Math.round(v)) });
+      for (let k = 0; k < 3; k++) { if (f.hist.length < 2) break; g.save(); g.strokeStyle = cols[k]; g.lineWidth = 2; g.beginPath(); f.hist.forEach(([x, P], i) => { if (i) g.lineTo(m.sx(x), m.sy(P[k])); else g.moveTo(m.sx(x), m.sy(P[k])); }); g.stroke(); g.restore(); }
       if (f.done) tag(g, 'done', z.W - 40, z.H - 16, { s: 12, fill: c.green, stroke: c.green, c: '#fff' });
     }
   });
