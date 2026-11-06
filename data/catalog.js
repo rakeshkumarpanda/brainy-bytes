@@ -406,16 +406,16 @@ window.CATALOG = {
       emoji: '🧠',
       color: '#7c3aed',
       layout: 'path',
-      blurb: 'Two sections in one path. Core AI covers agents, search, logic, probability and learning. Advanced AI covers rational choice, risk, decisions over time and game theory.',
+      blurb: 'Two sections in one path. Core AI covers search, constraints, games, logic, planning, Bayesian networks and reinforcement learning. Advanced AI covers rational choice, risk, decisions over time and game theory.',
       intro: 'Pick a section, then follow its steps in order. Each topic explains the idea at school, college, masters and research depth, shows the maths with highlighted formulas and worked problems, and has animations whose every setting you can change, with suggestions of what to change and what to watch for.',
-      tags: ['Rational agents', 'Utility', 'Expected utility', 'Game theory', 'Dominance', 'Search', 'Logic'],
+      tags: ['Search', 'A*', 'CSP', 'Minimax', 'Logic', 'Planning', 'Bayesian networks', 'Reinforcement learning', 'Utility', 'Game theory'],
       parts: [
-        { id: 'core', title: 'Core AI', blurb: 'The foundations: intelligent agents, search, games, constraints, logic, planning, probability and learning.',
-          intro: 'Core AI is planned around the standard first course in artificial intelligence. The chapters below open one by one as they are written.' },
+        { id: 'core', title: 'Core AI', blurb: 'The foundations: agents, uninformed and informed search, local search, constraints, games, logic, planning, Bayesian networks, causality and reinforcement learning.',
+          intro: 'Core AI follows the course syllabus: search (uninformed, informed, memory bounded, AND-OR, local and evolutionary), constraint satisfaction, adversarial search, knowledge and reasoning in propositional and first order logic, planning, Bayesian networks with causality, and reinforcement learning. Every chapter explains what each idea is, why it is needed and how it works, compares it with the methods next to it, and has step by step animations you can feed your own input, Python you can run line by line, the maths with worked problems, quizzes from easy to the level of top university exams, and a practice notebook to download. Step 11 has challenge problems and an exam revision chapter.' },
         { id: 'advanced', title: 'Advanced AI', blurb: 'How a rational agent decides: preferences and utility, risk and lotteries, decisions over time, games, dominance and iterated elimination.',
           intro: 'Advanced AI follows the course lectures 1 to 6 and Quiz 1. You start with one agent choosing under certainty, add risk, then time, then other agents, and finish with dominance, iterated elimination, the solved quiz and an exam revision step.' }
       ],
-      modules: coreAiModules().concat(advAiModules(), [sheetModule('ai'), iqModule('ai')].map(m => Object.assign(m, { part: 'advanced' })))
+      modules: coreAiModules().concat(advAiModules(), sheetModule('ai'), iqModule('ai'))
     },
     {
       id: 'cuda',
@@ -1274,7 +1274,7 @@ function javaModules() {
 function sheetModule(sid) {
   const info = {
     'computer-vision': ['content/computer-vision/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Computer Vision chapters on one page, from pixels and filters to detection, segmentation and CLIP. Search it, filter it, print it or download the PDF.', ['image size formula', 'convolution output size', 'Sobel', 'Harris', 'optical flow', 'IoU', 'NMS', 'focal loss', 'mAP', 'Dice', 'mIoU']],
-    'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Advanced AI chapters on one page, from preferences and utility to expected utility, risk, discounting, Nash style games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['utility', 'expected utility', 'certainty equivalent', 'discount factor', 'value of information', 'Cournot', 'Pareto', 'dominance', 'IESDS']],
+    'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. Core AI runs from agents and BFS to A*, local search, CSPs, minimax and alpha beta, logic and resolution, planning, Bayesian networks, causality and reinforcement learning. Advanced AI runs from preferences and utility to expected utility, risk, discounting, games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['A*', 'admissible heuristic', 'alpha beta', 'arc consistency', 'resolution', 'unification', 'STRIPS', 'Bayes rule', 'd-separation', 'Bellman equation', 'Q learning', 'utility', 'expected utility', 'IESDS']],
     'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
@@ -4693,36 +4693,6 @@ function seModules() {
 
 /* Core AI: the first section of the Artificial Intelligence subject. Planned chapters, written by hand.
    A chapter opens when its topic gets a page. */
-function coreAiModules() {
-  const step = (n, id, title, level, blurb, rows) => ({
-    id: id, title: title, emoji: String(n), step: n, part: 'core', level: level, blurb: blurb,
-    topics: rows.map(([tid, t, summary], i) => ({ id: tid, title: t, emoji: n + '.' + (i + 1), summary: summary, soon: true }))
-  });
-  return [
-    step(1, 'core-agents', 'What AI is and intelligent agents', 'School and college', 'What artificial intelligence means, where it came from, and how an agent senses and acts in an environment.', [
-      ['core-what-is-ai', 'What AI is', 'Thinking and acting humanly or rationally, the Turing test, and a short history from 1956 to large language models.'],
-      ['core-agents-env', 'Agents and environments', 'Percepts, actions, PEAS descriptions, environment types and the four kinds of agent program.']]),
-    step(2, 'core-search', 'Solving problems by searching', 'College', 'Turn a goal into a search problem and explore it blindly, with a heuristic, or locally.', [
-      ['core-uninformed', 'Uninformed search', 'Breadth first, depth first, uniform cost and iterative deepening search, with completeness, optimality and complexity.'],
-      ['core-informed', 'Informed search and A*', 'Greedy best first and A*, admissible and consistent heuristics, and how to design a heuristic.'],
-      ['core-local', 'Local search and optimisation', 'Hill climbing, simulated annealing, local beam search and genetic algorithms.']]),
-    step(3, 'core-games', 'Adversarial search and constraints', 'College and masters', 'Play two player games with minimax and alpha beta, and solve puzzles stated as constraints.', [
-      ['core-adversarial', 'Adversarial search', 'Minimax, alpha beta pruning, evaluation functions and Monte Carlo tree search.'],
-      ['core-csp', 'Constraint satisfaction problems', 'Variables, domains and constraints, backtracking, forward checking and arc consistency.']]),
-    step(4, 'core-logic', 'Knowledge, logic and planning', 'College and masters', 'Represent what an agent knows with logic, draw conclusions, and plan a sequence of actions.', [
-      ['core-prop-logic', 'Propositional logic and inference', 'Syntax and semantics, entailment, resolution, forward and backward chaining.'],
-      ['core-fol', 'First order logic', 'Objects, relations, quantifiers, unification and inference in first order logic.'],
-      ['core-planning', 'Classical planning', 'STRIPS and PDDL, forward and backward state space planning, and planning graphs.']]),
-    step(5, 'core-uncertainty', 'Reasoning under uncertainty', 'Masters', 'Measure belief with probability, update it with Bayes, and reason over time.', [
-      ['core-probability', 'Probability and Bayes rule', 'Random variables, joint and conditional probability, independence and Bayes rule.'],
-      ['core-bayesnets', 'Bayesian networks', 'Conditional independence, network structure, exact and approximate inference.'],
-      ['core-temporal', 'Probabilistic reasoning over time', 'Markov chains, hidden Markov models, filtering, smoothing and the Kalman filter.']]),
-    step(6, 'core-learning', 'Learning agents', 'Masters', 'Let an agent improve from data and from reward.', [
-      ['core-supervised', 'Learning from examples', 'Decision trees, linear models, overfitting, validation and evaluation.'],
-      ['core-rl', 'Reinforcement learning', 'Markov decision processes, value iteration, Q learning and exploration.']])
-  ];
-}
-
 /* ===== ai-build: Advanced AI chapters. Generated by tools/ai-build/build.py, edit the topic files instead. ===== */
 function advAiModules() {
   return [
@@ -6083,3 +6053,289 @@ function cudaModules() {
   ];
 }
 /* ===== end of cuda-build ===== */
+
+/* ===== ai-core-build: Artificial Intelligence chapters. Generated by tools/ai-build/build.py, edit the topic files instead. ===== */
+function coreAiModules() {
+  return [
+    { id: "cai-found", title: "Intelligence, agents and problems", emoji: "1", step: 1, part: "core", level: "School and college", blurb: "What AI is, how an agent senses and acts, and how a goal becomes a search problem.", topics: [
+      { id: "what-is-ai", title: "What AI is and intelligent agents", emoji: "1.1", page: "content/ai/what-is-ai.html",
+        summary: "The four approaches to AI, rational agents, PEAS, environment types, the social machine and the five kinds of agent program.",
+        keywords: ["artificial intelligence", "rational agent", "PEAS", "Turing test", "environment types", "reflex agent", "agent program"],
+        minutes: 45, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "What intelligence and AI mean", emoji: "", group: "Lesson", keywords: ["intelligence", "artificial intelligence", "four approaches", "thinking humanly", "acting rationally", "Turing test", "baby machine"] },
+        { id: "social", title: "A social machine: the man machine symbiosis scene", emoji: "", group: "Lesson", keywords: ["social machine", "man machine symbiosis", "common sense", "intuitive physics", "Society of Mind", "Minsky", "reflective"] },
+        { id: "agents", title: "Agents, environments and PEAS", emoji: "", group: "Lesson", keywords: ["agent", "percept", "action", "agent function", "agent program", "rational agent", "PEAS", "performance measure", "vacuum world"] },
+        { id: "envtypes", title: "Kinds of environment and kinds of agent", emoji: "", group: "Lesson", keywords: ["environment types", "fully observable", "partially observable", "deterministic", "stochastic", "episodic", "sequential", "static", "dynamic", "simple reflex agent", "model based agent", "goal based agent", "utility based agent", "learning agent"] },
+        { id: "maths", title: "The maths behind a rational agent", emoji: "", group: "Lesson", keywords: ["performance measure", "expected utility", "geometric series", "table driven agent", "rational choice"] },
+        { id: "compare", title: "How the rational agent view compares", emoji: "", group: "Lesson", keywords: ["comparison", "four approaches", "agent types", "rational agent"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["bounded rationality", "value alignment", "Dartmouth 1956", "history of AI"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "search-problems", title: "Problems as search", emoji: "1.2", page: "content/ai/search-problems.html",
+        summary: "States, actions, start and goal, nodes and the frontier, tree against graph search, and the four properties of search.",
+        keywords: ["search problem", "state space", "successor function", "node", "frontier", "graph search", "water jugs", "Romania"],
+        minutes: 45, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Why search, and what a search problem is", emoji: "", group: "Lesson", keywords: ["search", "hypothetical reasoning", "state", "goal", "why search", "limits of search"] },
+        { id: "formal", title: "The formalism: states, actions, start, goal", emoji: "", group: "Lesson", keywords: ["state space", "actions", "initial state", "goal test", "abstraction", "water jugs", "Romania"] },
+        { id: "inout", title: "Inputs, outputs and nodes of a search algorithm", emoji: "", group: "Lesson", keywords: ["successor function", "action cost", "path cost", "node", "parent", "frontier", "OPEN", "tree search", "graph search", "explored set"] },
+        { id: "props", title: "The selection rule and the four properties", emoji: "", group: "Lesson", keywords: ["selection rule", "completeness", "optimality", "time complexity", "space complexity", "branching factor", "depth"] },
+        { id: "maths", title: "The maths behind search problems", emoji: "", group: "Lesson", keywords: ["state space size", "8 puzzle", "repeated states", "geometric series", "diamond"] },
+        { id: "compare", title: "How problem formulation choices compare", emoji: "", group: "Lesson", keywords: ["tree search", "graph search", "formulation", "8 queens"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["abstraction", "formulation", "inversions", "parity"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cai-uninformed", title: "Uninformed search", emoji: "2", step: 2, part: "core", level: "College", blurb: "Search with no hints: level by level, cheapest first, deepest first, and with growing limits.", topics: [
+      { id: "bfs-ucs", title: "Breadth first and uniform cost search", emoji: "2.1", page: "content/ai/bfs-ucs.html",
+        summary: "BFS with a FIFO queue, UCS with a priority queue on g(n), when each is optimal, their cost, and why UCS tests the goal late.",
+        keywords: ["breadth first search", "BFS", "uniform cost search", "UCS", "Dijkstra", "priority queue", "optimality proof"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Uninformed search and breadth first search", emoji: "", group: "Lesson", keywords: ["uninformed search", "blind search", "breadth first search", "BFS", "FIFO queue", "water jugs"] },
+        { id: "bfsprops", title: "Is BFS complete and optimal, and what does it cost", emoji: "", group: "Lesson", keywords: ["completeness", "optimality", "shortest path", "time complexity", "space complexity", "early goal test"] },
+        { id: "ucs", title: "Uniform cost search", emoji: "", group: "Lesson", keywords: ["uniform cost search", "UCS", "priority queue", "path cost", "Dijkstra", "Sibiu", "late goal test"] },
+        { id: "proof", title: "Why uniform cost search is optimal: the three lemmas", emoji: "", group: "Lesson", keywords: ["proof of optimality", "lemma", "uniform cost", "non decreasing cost"] },
+        { id: "maths", title: "The maths: geometric series and the cost bound", emoji: "", group: "Lesson", keywords: ["geometric series", "complexity bound", "C star over epsilon", "memory"] },
+        { id: "compare", title: "BFS against UCS against Dijkstra", emoji: "", group: "Lesson", keywords: ["BFS against UCS", "Dijkstra", "comparison"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ripples", "Dijkstra", "reduced costs", "external memory BFS"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "dfs-ids", title: "Depth first, iterative deepening and bidirectional search", emoji: "2.2", page: "content/ai/dfs-ids.html",
+        summary: "DFS, DLS, IDS and bidirectional search, their memory and time, path checking, and the full comparison table.",
+        keywords: ["depth first search", "DFS", "depth limited search", "iterative deepening", "IDS", "bidirectional search", "path checking"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "dfs", title: "Depth first search", emoji: "", group: "Lesson", keywords: ["depth first search", "DFS", "stack", "LIFO", "backtracking", "backtrack point", "cycle"] },
+        { id: "cycles", title: "Path checking and cycle checking", emoji: "", group: "Lesson", keywords: ["path checking", "cycle checking", "redundant paths", "graph search"] },
+        { id: "dls", title: "Depth limited and iterative deepening search", emoji: "", group: "Lesson", keywords: ["depth limited search", "iterative deepening", "IDS", "DLS", "cutoff", "depth limit"] },
+        { id: "idscost", title: "Is iterative deepening wasteful", emoji: "", group: "Lesson", keywords: ["iterative deepening cost", "overhead", "node count", "iterative lengthening"] },
+        { id: "bidir", title: "Bidirectional search", emoji: "", group: "Lesson", keywords: ["bidirectional search", "meet in the middle", "b to the d over 2"] },
+        { id: "compare", title: "All five uninformed methods side by side", emoji: "", group: "Lesson", keywords: ["comparison table", "uninformed search", "six degrees"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["maze", "asymptotic optimality", "MM algorithm", "frontier search"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cai-informed", title: "Informed search", emoji: "3", step: 3, part: "core", level: "College", blurb: "Search with a hint of where the goal is: greedy best first, A*, heuristic design, memory bounded and AND OR search.", topics: [
+      { id: "greedy-astar", title: "Greedy best first and A* search", emoji: "3.1", page: "content/ai/greedy-astar.html",
+        summary: "Greedy best first, A*, admissible and consistent heuristics, why A* is optimal, and weighted A*.",
+        keywords: ["A*", "A star", "greedy best first", "heuristic", "admissible", "consistent", "weighted A*"],
+        minutes: 55, counts: {"lessons": 9, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Heuristics: knowing roughly where the goal is", emoji: "", group: "Lesson", keywords: ["heuristic", "informed search", "h(n)", "straight line distance", "merit of a node"] },
+        { id: "greedy", title: "Greedy best first search", emoji: "", group: "Lesson", keywords: ["greedy best first search", "greedy", "trap", "Iasi", "Neamt", "not optimal"] },
+        { id: "astar", title: "A* search: f(n) = g(n) + h(n)", emoji: "", group: "Lesson", keywords: ["A star", "A*", "f = g + h", "evaluation function", "Romania A* trace"] },
+        { id: "conditions", title: "Admissible and consistent heuristics", emoji: "", group: "Lesson", keywords: ["admissible", "consistent", "monotone", "triangle inequality", "h star", "contours"] },
+        { id: "optimal", title: "Is A* optimal, and how fast is it", emoji: "", group: "Lesson", keywords: ["A* optimality", "optimally efficient", "reopening", "effective branching factor", "inconsistent heuristic"] },
+        { id: "maths", title: "The maths: weighted A* and the cost of a bad h", emoji: "", group: "Lesson", keywords: ["weighted A*", "bounded suboptimal", "heuristic error", "effective branching factor"] },
+        { id: "compare", title: "Greedy against UCS against A*", emoji: "", group: "Lesson", keywords: ["UCS against A*", "greedy against A*", "game pathfinding"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["hiker", "pathmax", "ARA*", "LRTA*", "learned heuristics"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "heuristic-design", title: "Designing and comparing heuristics", emoji: "3.2", page: "content/ai/heuristic-design.html",
+        summary: "8 puzzle heuristics, relaxed problems, dominance, max, pattern databases and the effective branching factor.",
+        keywords: ["heuristic design", "8 puzzle", "Manhattan distance", "relaxed problem", "dominance", "pattern database", "effective branching factor"],
+        minutes: 45, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Two heuristics for the 8 puzzle", emoji: "", group: "Lesson", keywords: ["8 puzzle", "misplaced tiles", "Manhattan distance", "h1", "h2", "admissible heuristic"] },
+        { id: "relax", title: "Relaxed problems: where heuristics come from", emoji: "", group: "Lesson", keywords: ["relaxed problem", "relaxation", "Gaschnig", "minimum spanning tree", "straight line distance"] },
+        { id: "dominance", title: "Dominance and combining heuristics", emoji: "", group: "Lesson", keywords: ["dominance", "max of heuristics", "effective branching factor", "experiment"] },
+        { id: "pdb", title: "Pattern databases and learned heuristics", emoji: "", group: "Lesson", keywords: ["pattern database", "disjoint pattern database", "learned heuristic", "DeepCubeA"] },
+        { id: "maths", title: "The maths: effective branching factor", emoji: "", group: "Lesson", keywords: ["effective branching factor", "bisection", "b star"] },
+        { id: "compare", title: "Comparing heuristics", emoji: "", group: "Lesson", keywords: ["heuristic comparison", "pattern database", "perfect heuristic"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["abstraction", "landmarks", "cost partitioning"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "memory-bounded", title: "Memory bounded heuristic search: IDA*, RBFS and SMA*", emoji: "3.3", page: "content/ai/memory-bounded.html",
+        summary: "IDA* with f cutoffs, RBFS with f-limits and backed up values, SMA*, and the memory against time trade.",
+        keywords: ["IDA*", "RBFS", "SMA*", "memory bounded search", "iterative deepening A*", "recursive best first search"],
+        minutes: 55, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Why A* runs out of memory", emoji: "", group: "Lesson", keywords: ["memory bounded search", "A* memory", "IDA*", "RBFS", "SMA*"] },
+        { id: "ida", title: "IDA*: iterative deepening A*", emoji: "", group: "Lesson", keywords: ["IDA*", "iterative deepening A*", "f limit", "contour", "cutoff"] },
+        { id: "rbfs", title: "RBFS: recursive best first search", emoji: "", group: "Lesson", keywords: ["RBFS", "recursive best first search", "f-limit", "backed up value", "unwind", "backtracking"] },
+        { id: "sma", title: "SMA*: use all the memory you have", emoji: "", group: "Lesson", keywords: ["SMA*", "simplified memory bounded A*", "drop worst leaf", "thrashing"] },
+        { id: "maths", title: "The maths: memory and repeated work", emoji: "", group: "Lesson", keywords: ["memory complexity", "IDA* iterations", "quadratic worst case"] },
+        { id: "compare", title: "BFS against IDS against IDA* against RBFS", emoji: "", group: "Lesson", keywords: ["comparison", "IDA* against RBFS", "15 puzzle", "Korf"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["transposition table", "external memory A*", "frontier search"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "and-or-search", title: "AND OR search and AO*", emoji: "3.4", page: "content/ai/and-or-search.html",
+        summary: "AND OR trees, conditional and cyclic plans, AND OR search on the erratic vacuum world, and AO* on the slide example.",
+        keywords: ["AND OR search", "AO*", "conditional plan", "contingency plan", "erratic vacuum world", "cyclic plan", "non deterministic"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "When actions do not always do the same thing", emoji: "", group: "Lesson", keywords: ["non deterministic actions", "contingency plan", "conditional plan", "AND OR tree", "AND node", "OR node", "problem reduction"] },
+        { id: "vacuum", title: "The erratic vacuum world and AND OR search", emoji: "", group: "Lesson", keywords: ["erratic vacuum world", "AND OR search", "conditional plan", "Suck", "state 5", "state 7"] },
+        { id: "cyclic", title: "Slippery worlds and cyclic plans", emoji: "", group: "Lesson", keywords: ["slippery vacuum world", "cyclic plan", "while loop", "label", "fairness"] },
+        { id: "aostar", title: "AO*: best first search on AND OR graphs", emoji: "", group: "Lesson", keywords: ["AO*", "AO star", "best partial solution graph", "connector", "revise costs", "solved"] },
+        { id: "maths", title: "The maths: cost of a solution graph and complexity", emoji: "", group: "Lesson", keywords: ["cost of solution graph", "AO* complexity", "data structures"] },
+        { id: "compare", title: "AND OR search against ordinary search", emoji: "", group: "Lesson", keywords: ["comparison", "LAO*", "MDP", "contingency planning"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["belief state", "FOND planning", "LAO*", "sensorless"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cai-local", title: "Local and evolutionary search", emoji: "4", step: 4, part: "core", level: "College", blurb: "Improve one state or a population step by step when the space is too big to explore: hill climbing, annealing and genetic algorithms.", topics: [
+      { id: "hill-climbing", title: "Local search: hill climbing and simulated annealing", emoji: "4.1", page: "content/ai/hill-climbing.html",
+        summary: "Hill climbing and its traps, sideways moves, restarts, beam search, and simulated annealing with cooling schedules.",
+        keywords: ["local search", "hill climbing", "simulated annealing", "cooling schedule", "8 queens", "local beam search", "random restart"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Local search: forget the path, improve the state", emoji: "", group: "Lesson", keywords: ["local search", "objective function", "state space landscape", "local maximum", "ridge", "plateau", "shoulder"] },
+        { id: "hc", title: "Hill climbing", emoji: "", group: "Lesson", keywords: ["hill climbing", "steepest ascent", "8 queens", "attacking pairs", "greedy local search"] },
+        { id: "variants", title: "Ways out: sideways moves, randomness and restarts", emoji: "", group: "Lesson", keywords: ["sideways moves", "stochastic hill climbing", "first choice", "random restart", "local beam search", "stochastic beam search"] },
+        { id: "sa", title: "Simulated annealing", emoji: "", group: "Lesson", keywords: ["simulated annealing", "temperature", "acceptance probability", "cooling schedule", "geometric cooling", "logarithmic cooling", "exploration", "exploitation"] },
+        { id: "maths", title: "The maths: acceptance, restarts and gradients", emoji: "", group: "Lesson", keywords: ["acceptance probability", "geometric cooling", "gradient ascent", "Newton Raphson", "restarts"] },
+        { id: "compare", title: "Comparing local search methods", emoji: "", group: "Lesson", keywords: ["comparison", "food for thought VI", "chip placement", "timetabling"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["fog", "marbles", "Markov chain", "parallel tempering", "tabu search", "quantum annealing"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "genetic-algorithms", title: "Genetic algorithms", emoji: "4.2", page: "content/ai/genetic-algorithms.html",
+        summary: "Population, fitness, selection, crossover and mutation, the slide x² example, and when a GA beats other local search.",
+        keywords: ["genetic algorithm", "crossover", "mutation", "roulette wheel", "tournament selection", "schema theorem", "evolutionary search"],
+        minutes: 45, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Search by evolution", emoji: "", group: "Lesson", keywords: ["genetic algorithm", "population", "chromosome", "gene", "fitness", "selection", "crossover", "mutation"] },
+        { id: "example", title: "The slide example: maximise x² with 5 bits", emoji: "", group: "Lesson", keywords: ["x squared example", "roulette wheel", "expected copies", "crossover point", "fitness table"] },
+        { id: "operators", title: "Selection, crossover and mutation in detail", emoji: "", group: "Lesson", keywords: ["roulette wheel", "tournament selection", "rank selection", "elitism", "one point crossover", "flip mutation", "swap mutation", "scramble"] },
+        { id: "queens", title: "A GA for 8 queens", emoji: "", group: "Lesson", keywords: ["8 queens GA", "non attacking pairs", "encoding", "building blocks"] },
+        { id: "maths", title: "The maths: selection pressure and schemata", emoji: "", group: "Lesson", keywords: ["schema theorem", "building blocks", "selection pressure", "mutation rate"] },
+        { id: "compare", title: "Comparing hill climbing, annealing and genetic algorithms", emoji: "", group: "Lesson", keywords: ["comparison", "slide 86", "NASA antenna", "evolutionary design"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["schema", "premature convergence", "CMA-ES", "genetic programming", "NEAT", "NSGA-II"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cai-csp", title: "Constraint satisfaction", emoji: "5", step: 5, part: "core", level: "College", blurb: "Problems made of variables, domains and constraints: arc consistency, backtracking with smart ordering, and local search.", topics: [
+      { id: "csp-basics", title: "Constraint satisfaction problems and arc consistency", emoji: "5.1", page: "content/ai/csp-basics.html",
+        summary: "CSP formulation, constraint types, node and arc consistency, AC-3 and its three outcomes.",
+        keywords: ["constraint satisfaction", "CSP", "AC-3", "arc consistency", "map colouring", "job scheduling", "N queens"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "What a constraint satisfaction problem is", emoji: "", group: "Lesson", keywords: ["constraint satisfaction problem", "CSP", "variables", "domains", "constraints", "map colouring", "constraint graph"] },
+        { id: "examples", title: "More CSPs: N queens and job scheduling", emoji: "", group: "Lesson", keywords: ["N queens CSP", "boolean variables", "job scheduling", "precedence constraint", "disjunctive constraint", "unary", "binary", "global constraint", "Alldiff"] },
+        { id: "consistency", title: "Node and arc consistency", emoji: "", group: "Lesson", keywords: ["constraint propagation", "node consistency", "domain consistency", "arc consistency", "constraint network", "support"] },
+        { id: "ac3", title: "The AC-3 algorithm", emoji: "", group: "Lesson", keywords: ["AC-3", "REVISE", "queue of arcs", "unique solution", "A less than B less than C"] },
+        { id: "fcvsac", title: "Forward checking against arc consistency", emoji: "", group: "Lesson", keywords: ["forward checking", "arc consistency", "MAC", "path consistency", "k consistency"] },
+        { id: "maths", title: "The maths: counting assignments and solutions", emoji: "", group: "Lesson", keywords: ["d to the n", "n factorial", "commutativity", "18 solutions"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["seating plan", "dual graph", "Alldiff propagator", "lazy clause generation", "tree width", "timetabling"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "csp-backtracking", title: "Backtracking search for CSPs", emoji: "5.2", page: "content/ai/csp-backtracking.html",
+        summary: "Backtracking, MRV, degree, LCV, forward checking, MAC, backjumping and learning.",
+        keywords: ["backtracking search", "MRV", "degree heuristic", "LCV", "forward checking", "MAC", "backjumping"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Backtracking search", emoji: "", group: "Lesson", keywords: ["backtracking search", "depth first", "commutativity", "undo", "Australia"] },
+        { id: "ordering", title: "Which variable next, which value first", emoji: "", group: "Lesson", keywords: ["MRV", "minimum remaining values", "most constrained variable", "fail first", "degree heuristic", "least constraining value", "LCV"] },
+        { id: "inference", title: "Forward checking and maintaining arc consistency", emoji: "", group: "Lesson", keywords: ["forward checking", "MAC", "maintaining arc consistency", "inference", "empty domain"] },
+        { id: "smarter", title: "Smarter backtracking: backjumping and learning", emoji: "", group: "Lesson", keywords: ["chronological backtracking", "backjumping", "conflict set", "conflict directed backjumping", "no good", "constraint learning", "symmetry breaking"] },
+        { id: "maths", title: "The maths: branching and pruning", emoji: "", group: "Lesson", keywords: ["NP complete", "worst case", "symmetry", "LCV count"] },
+        { id: "compare", title: "Comparing CSP search strategies", emoji: "", group: "Lesson", keywords: ["comparison", "Sudoku", "general heuristics"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["NP complete", "SAT solver", "CP-SAT", "phase transition", "heavy tailed"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "csp-local", title: "Local search for CSPs and problem structure", emoji: "5.3", page: "content/ai/csp-local.html",
+        summary: "Min-conflicts local search, tabu and weighting, tree CSPs, cutset conditioning and tree decomposition.",
+        keywords: ["min-conflicts", "local search CSP", "tree structured CSP", "cutset conditioning", "tree decomposition", "tabu search"],
+        minutes: 45, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Local search for CSPs: min-conflicts", emoji: "", group: "Lesson", keywords: ["min-conflicts", "local search for CSP", "complete assignment", "repair", "million queens", "Hubble"] },
+        { id: "landscape", title: "Plateaux, tabu search and constraint weighting", emoji: "", group: "Lesson", keywords: ["plateau", "tabu search", "constraint weighting", "random walk", "online repair"] },
+        { id: "structure", title: "Using the shape of the problem: independent parts and trees", emoji: "", group: "Lesson", keywords: ["tree structured CSP", "topological order", "directional arc consistency", "independent sub problems", "O(n d squared)"] },
+        { id: "cutset", title: "Cutset conditioning and tree decomposition", emoji: "", group: "Lesson", keywords: ["cutset conditioning", "cycle cutset", "tree decomposition", "tree width"] },
+        { id: "maths", title: "The maths of problem structure", emoji: "", group: "Lesson", keywords: ["complexity of CSP methods", "cutset example", "tree example"] },
+        { id: "compare", title: "Backtracking against min-conflicts against structure", emoji: "", group: "Lesson", keywords: ["comparison", "crew rescheduling", "complete", "local search"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["phase transition", "WalkSAT", "breakout", "tree width", "hybrid solvers"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cai-games", title: "Adversarial search", emoji: "6", step: 6, part: "core", level: "College", blurb: "Search when an opponent moves too: minimax, alpha beta pruning, and games with chance.", topics: [
+      { id: "minimax", title: "Games and minimax", emoji: "6.1", page: "content/ai/minimax.html",
+        summary: "Game formalism, minimax values, the slide examples, the cost of minimax and evaluation functions.",
+        keywords: ["minimax", "adversarial search", "game tree", "zero sum", "evaluation function", "tic-tac-toe", "horizon effect"],
+        minutes: 45, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        added: "2026-10-27",
+        sections: [
+        { id: "idea", title: "Games as search problems", emoji: "", group: "Lesson", keywords: ["adversarial search", "game", "zero sum", "perfect information", "utility", "terminal test", "strategic uncertainty"] },
+        { id: "minimax", title: "The minimax algorithm", emoji: "", group: "Lesson", keywords: ["minimax", "MAX node", "MIN node", "back up values", "optimal move", "game tree"] },
+        { id: "ttt", title: "The tic-tac-toe example of the slides", emoji: "", group: "Lesson", keywords: ["tic-tac-toe", "slide example", "minimax tic-tac-toe"] },
+        { id: "props", title: "Properties, and what to do when the tree is too big", emoji: "", group: "Lesson", keywords: ["complexity of minimax", "chess 10 to the 154", "evaluation function", "cutoff test", "quiescence", "horizon effect", "forward pruning"] },
+        { id: "maths", title: "The maths: zero sum games and evaluation", emoji: "", group: "Lesson", keywords: ["zero sum", "multiplayer", "material evaluation", "game tree size"] },
+        { id: "compare", title: "Minimax against other ways to choose a move", emoji: "", group: "Lesson", keywords: ["comparison", "Chinook", "security games", "robust planning"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["backward induction", "Zermelo", "NNUE", "AlphaZero", "CFR"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of ai-core-build ===== */

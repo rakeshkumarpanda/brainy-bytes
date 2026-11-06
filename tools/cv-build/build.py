@@ -183,7 +183,7 @@ def content_errors(T, known_viz):
 
 def viz_names():
     src = ''.join(open(os.path.join(ROOT, 'assets', f), encoding='utf-8').read() for f in CFG['widgets'])
-    return set(re.findall(r"def\('([\w-]+)'", src))
+    return set(re.findall(r"(?:def|trace)\('([\w-]+)'", src))
 
 
 # ---------- running Python ----------
