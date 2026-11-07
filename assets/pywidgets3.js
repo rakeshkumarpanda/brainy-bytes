@@ -394,3 +394,81 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 3.1  the journey of one request through Flask: server, URL matching, hooks, the view, the response
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const STAGES = ['Browser', 'WSGI server (Werkzeug, Gunicorn)', 'Match the URL to a route', 'before_request hooks', 'Your view function', 'Turn the result into a Response', 'after_request hooks'];
+  /* a step: stage index, new facts [name, value] added to the panel, say, bad = an error path */
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const CASES = {
+    get: [
+      S(0, [['request', 'GET /hello/ann?lang=fr']], 'The browser asks for <b>/hello/ann?lang=fr</b>.'),
+      S(1, [['environ["PATH_INFO"]', '/hello/ann'], ['environ["QUERY_STRING"]', 'lang=fr']], 'A <b>WSGI server</b> reads the HTTP text and calls the Flask app with a dict called environ. In development this is Werkzeug (flask run), in production often Gunicorn.'),
+      S(2, [['matched rule', '/hello/<name>'], ['endpoint', 'hello'], ['view_args', '{"name": "ann"}']], 'Flask compares the path with every <b>@app.route</b>. The rule /hello/&lt;name&gt; matches and takes "ann" out of the URL.'),
+      S(3, [['g.user', 'None (not logged in)']], 'Functions marked <b>@app.before_request</b> run first, for example to load the logged in user into <b>g</b>, a place for data that lives for one request.'),
+      S(4, [['call', 'hello(name="ann")'], ['request.args["lang"]', 'fr']], 'Flask calls your <b>view function</b> with the URL parts as arguments. Inside it, <b>request</b> holds everything else: args, form, JSON, headers, cookies.'),
+      S(4, [['returns', 'render_template("hello.html", ...)']], 'The view returns a string made from a <b>Jinja template</b>: "Bonjour, ann!".'),
+      S(5, [['response', '200 OK, text/html; charset=utf-8']], 'Flask turns a string into a <b>Response</b> with status 200 and Content-Type text/html. A dict or list would become JSON, a (body, status) pair sets the status.'),
+      S(6, [['header added', 'X-Time: 3 ms']], '<b>@app.after_request</b> functions can change the response, for example to add a header. Then the server sends it back.'),
+      S(0, [['page shown', 'Bonjour, ann!']], 'The browser shows the page. All of this took a few milliseconds.')
+    ],
+    post: [
+      S(0, [['request', 'POST /login'], ['form body', 'user=ann&pw=secret']], 'The user sends the login form. The browser makes a <b>POST</b> with the form fields in the body.'),
+      S(2, [['matched rule', '/login, methods GET and POST'], ['endpoint', 'login']], 'The rule allows POST because it says methods=["GET", "POST"]. Without that Flask would answer 405 Method Not Allowed.'),
+      S(4, [['request.form["user"]', 'ann'], ['password check', 'ok']], 'The view reads <b>request.form</b> and checks the password (in real apps against a hash, never plain text).'),
+      S(4, [['session["user"]', 'ann']], 'It stores the user in the <b>session</b>. Flask keeps the session in a cookie that is signed with app.secret_key, so the user cannot change it.'),
+      S(5, [['response', '302 Found'], ['Location', '/'], ['Set-Cookie', 'session=eyJ1c2Vy...']], 'The view returns <b>redirect(url_for("home"))</b>: status 302 with a Location header, plus the new session cookie.'),
+      S(0, [['next request', 'GET / with Cookie: session=...']], 'The browser follows the redirect with a GET. This is the <b>Post, Redirect, Get</b> pattern: pressing refresh now repeats the GET, not the login.')
+    ],
+    missing: [
+      S(0, [['request', 'GET /nope']], 'The browser asks for a page that does not exist.'),
+      S(1, [['environ["PATH_INFO"]', '/nope']], 'The server passes it to Flask as usual.'),
+      S(2, [['matched rule', 'none'], ['raised', 'werkzeug NotFound (404)']], 'No rule matches, so Flask raises a <b>NotFound</b> error instead of calling a view.', true),
+      S(4, [['error handler', 'not_found(error)']], 'If you wrote <b>@app.errorhandler(404)</b>, Flask calls that function. It can return a nice page or a JSON error.', true),
+      S(5, [['response', '404 Not Found'], ['body', '{"error": "not found"}']], 'The handler&#39;s result becomes the response with status 404. Without a handler Flask sends a short default HTML page.', true),
+      S(0, [['shown', 'the 404 page or JSON']], 'The same happens for abort(403) in a view, or for an exception in your code, which becomes a 500 error.', true)
+    ],
+    api: [
+      S(0, [['request', 'GET /api/books/2'], ['Accept', 'application/json']], 'A program, not a person, calls the JSON API.'),
+      S(2, [['matched rule', '/api/books/<int:book_id>'], ['view_args', '{"book_id": 2}']], 'The <b>int:</b> converter only matches whole numbers and turns "2" into the int 2. /api/books/two would be a 404.'),
+      S(4, [['call', 'get_book(book_id=2)'], ['returns', '{"id": 2, "title": "Emma"}']], 'The view finds the book and simply returns a <b>dict</b>.'),
+      S(5, [['response', '200 OK, application/json'], ['body', '{"id": 2, "title": "Emma"}']], 'Flask sees a dict and makes JSON with the right Content-Type, the same as jsonify(). For a missing book the view would return ({"error": ...}, 404).'),
+      S(0, [['client', 'r.json() gives the dict back']], 'The calling program reads it with requests or httpx, as in step 2.')
+    ]
+  };
+  trace('pyflask', {
+    title: 'One request through Flask',
+    sub: 'Pick a request. Each step moves it one stage further and shows what Flask knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Request', type: 'select', v: 'get', opts: [['get', 'GET a page with a template'], ['post', 'POST a login form'], ['missing', 'A page that does not exist'], ['api', 'GET from a JSON API']] }],
+    tips: [
+      { t: 'A page: route, view, template, response.', set: { case: 'get' }, play: true },
+      { t: 'A form: session cookie and redirect.', set: { case: 'post' }, play: true },
+      { t: '404: no route matches, an error handler answers.', set: { case: 'missing' }, play: true },
+      { t: 'An API: int converter and a dict that becomes JSON.', set: { case: 'api' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      STAGES.forEach((name, i) => {
+        const y = 14 + i * 54, on = i === f.stage;
+        box(z, 16, y, 236, 38, name, { s: 12, b: on, stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < STAGES.length - 1) D.arrow(g, 134, y + 39, 134, y + 53, c.ink2, 1.2, 5);
+      });
+      head(z, 'What Flask knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();

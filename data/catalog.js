@@ -7249,6 +7249,30 @@ function pyWebModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-w3", title: "Flask: small and flexible web apps", emoji: "3", step: 3, part: "web", level: "Intermediate", blurb: "Build websites and JSON APIs with Flask: routes, requests, templates, forms and sessions, then app structure, a database, logins, tests and deployment.", topics: [
+      { id: "py-flask", title: "Flask basics: routes, templates, forms and JSON", emoji: "3.1", page: "content/python/py-flask.html",
+        summary: "Flask routes, request and response, Jinja templates, forms and sessions, a JSON API and running the app.",
+        keywords: ["Flask", "route", "url_for", "request", "Jinja", "template", "session", "form", "JSON API", "test client"],
+        minutes: 100, counts: {"lessons": 11, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "What Flask is", emoji: "", group: "Lesson", keywords: ["Flask", "web framework", "microframework", "WSGI", "route", "view function", "request", "response", "Jinja", "Django", "FastAPI"] },
+        { id: "routes", title: "Routes and URLs", emoji: "", group: "Lesson", keywords: ["route", "@app.route", "converter", "int converter", "url_for", "methods", "url_map", "endpoint", "404", "405", "escape"] },
+        { id: "request", title: "The request and the response", emoji: "", group: "Lesson", keywords: ["request.args", "request.form", "get_json", "request.files", "headers", "make_response", "jsonify", "redirect", "abort", "errorhandler", "status code"] },
+        { id: "templates", title: "Templates with Jinja", emoji: "", group: "Lesson", keywords: ["Jinja", "template", "render_template", "extends", "block", "for loop", "filters", "autoescape", "XSS", "template inheritance"] },
+        { id: "forms", title: "Forms, sessions and flash messages", emoji: "", group: "Lesson", keywords: ["form", "POST", "session", "secret_key", "signed cookie", "flash", "redirect", "Post Redirect Get", "CSRF", "Flask-WTF"] },
+        { id: "api", title: "A JSON API in Flask", emoji: "", group: "Lesson", keywords: ["JSON API", "REST", "@app.get", "@app.post", "status codes", "201", "204", "404", "422", "validation", "Location header"] },
+        { id: "running", title: "Running a Flask app for real", emoji: "", group: "Lesson", keywords: ["flask run", "debug mode", "virtual environment", "Werkzeug", "Gunicorn", "nginx", "WSGI server", "production", "environment variables"] },
+        { id: "maths", title: "The maths: workers, time and limits", emoji: "", group: "Lesson", keywords: ["Little law", "workers", "Gunicorn", "throughput", "GIL", "cookie size", "error rate", "capacity planning"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "WSGI", "PEP 3333", "ASGI", "application context", "request context"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "strings", "stack", "trie", "parsing", "expression", "template expansion"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
