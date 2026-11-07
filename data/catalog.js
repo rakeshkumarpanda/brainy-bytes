@@ -7129,6 +7129,58 @@ function pyCoreModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-c6", title: "Object oriented programming", emoji: "6", step: 6, part: "core", level: "Intermediate", blurb: "Model things as objects with classes, attributes and methods, then reuse code with inheritance.", topics: [
+      { id: "py-classes", title: "Classes and objects: attributes, methods, self and encapsulation", emoji: "6.1", page: "content/python/py-classes.html",
+        summary: "classes, objects, __init__, self, instance and class attributes, __str__ and __repr__, introspection, name mangling, is and ==.",
+        keywords: ["class", "object", "instance", "__init__", "self", "method", "attribute", "__dict__", "__str__", "__repr__", "hasattr", "name mangling", "encapsulation", "OOP", "PCAP"],
+        minutes: 70, counts: {"lessons": 15, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Classes and objects", emoji: "", group: "Lesson", keywords: ["class", "object", "instance", "attribute", "method", "blueprint", "OOP", "object oriented programming"] },
+        { id: "self", title: "Methods, self and __init__", emoji: "", group: "Lesson", keywords: ["self", "__init__", "constructor", "method", "bound method", "__new__", "missing self"] },
+        { id: "attrs", title: "Instance attributes and class attributes", emoji: "", group: "Lesson", keywords: ["instance attribute", "class attribute", "__dict__", "attribute lookup", "shadowing", "del attribute"] },
+        { id: "shared", title: "The shared list trap", emoji: "", group: "Lesson", keywords: ["mutable class attribute", "shared list", "class attribute trap"] },
+        { id: "counter", title: "Class attributes as counters", emoji: "", group: "Lesson", keywords: ["class attribute", "counter", "instance count", "self.count trap"] },
+        { id: "strrepr", title: "__str__ and __repr__", emoji: "", group: "Lesson", keywords: ["__str__", "__repr__", "print object", "string representation", "dunder method", "magic method"] },
+        { id: "introspect", title: "Introspection: looking inside objects", emoji: "", group: "Lesson", keywords: ["introspection", "hasattr", "getattr", "setattr", "isinstance", "type", "__name__", "__module__", "__bases__", "vars", "dir"] },
+        { id: "private", title: "Encapsulation, _private and name mangling", emoji: "", group: "Lesson", keywords: ["encapsulation", "private", "name mangling", "_Account__balance", "underscore", "convention"] },
+        { id: "identity", title: "Identity and equality of objects", emoji: "", group: "Lesson", keywords: ["is", "==", "identity", "equality", "__eq__", "__hash__", "alias"] },
+        { id: "bank", title: "Putting it together: a bank account", emoji: "", group: "Lesson", keywords: ["bank account", "class design", "validation", "raise in method", "history"] },
+        { id: "compare", title: "Classes compared with other ways to group data", emoji: "", group: "Lesson", keywords: ["class vs dict", "procedural vs object oriented", "when to use a class", "data and behaviour"] },
+        { id: "maths", title: "The maths inside a class", emoji: "", group: "Lesson", keywords: ["vector class", "dot product", "vector length", "angle", "name mangling rule", "memory of objects"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "descriptors", "__getattribute__", "type", "__slots__", "metaclass"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "design problems", "min stack", "queue", "hash map", "LRU cache", "class design"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-inheritance", title: "Inheritance: super(), overriding, polymorphism and the MRO", emoji: "6.2", page: "content/python/py-inheritance.html",
+        summary: "inheritance, overriding, super(), isinstance, polymorphism, duck typing, abstract methods, mixins, MRO, composition.",
+        keywords: ["inheritance", "subclass", "override", "super", "isinstance", "issubclass", "polymorphism", "duck typing", "abstract", "mixin", "MRO", "C3", "diamond", "composition", "PCAP"],
+        minutes: 70, counts: {"lessons": 13, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Inheritance: reuse a class", emoji: "", group: "Lesson", keywords: ["inheritance", "subclass", "superclass", "parent class", "child class", "base class", "derived class", "is a"] },
+        { id: "override", title: "Overriding methods", emoji: "", group: "Lesson", keywords: ["override", "overriding", "method lookup", "Liskov substitution principle", "__str__ override"] },
+        { id: "super", title: "super(): use the parent version", emoji: "", group: "Lesson", keywords: ["super", "super().__init__", "extend method", "constructor chaining", "forgot super"] },
+        { id: "checks", title: "isinstance, issubclass and __bases__", emoji: "", group: "Lesson", keywords: ["isinstance", "issubclass", "type", "__bases__", "__mro__", "object", "bool is int"] },
+        { id: "poly", title: "Polymorphism and duck typing", emoji: "", group: "Lesson", keywords: ["polymorphism", "duck typing", "dynamic dispatch", "operator overloading", "len"] },
+        { id: "shapes", title: "Abstract methods and a shape family", emoji: "", group: "Lesson", keywords: ["abstract method", "NotImplementedError", "abc", "ABC", "abstractmethod", "shape area", "Heron formula"] },
+        { id: "multi", title: "Multiple inheritance and mixins", emoji: "", group: "Lesson", keywords: ["multiple inheritance", "mixin", "JsonMixin", "LoginRequiredMixin", "__bases__"] },
+        { id: "mro", title: "The MRO and the diamond problem", emoji: "", group: "Lesson", keywords: ["MRO", "method resolution order", "C3 linearisation", "diamond problem", "__mro__", "cooperative super", "inconsistent MRO"] },
+        { id: "compose", title: "Composition compared with inheritance", emoji: "", group: "Lesson", keywords: ["composition", "has a", "is a", "delegation", "favour composition over inheritance", "subclass list"] },
+        { id: "maths", title: "The maths: areas, MROs and lookup cost", emoji: "", group: "Lesson", keywords: ["circle area", "Heron formula", "MRO length", "C3 merge worked example", "lookup cost"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "monotonic", "__init_subclass__", "virtual subclass", "register"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "design problems", "iterator", "linked list", "trie", "composition"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

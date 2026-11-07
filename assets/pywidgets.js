@@ -2121,3 +2121,167 @@ const PYZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Core 6.1  classes and objects: where attributes live and how Python finds them
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D } = PYZ;
+  const CODE = {
+    make: ['class Dog:', '    species = "dog"', '    def __init__(self, name):', '        self.name = name', '    def bark(self):', '        return self.name + " says woof"', 'a = Dog("Rex")', 'b = Dog("Moti")', 'print(a.bark(), b.name)'],
+    lookup: ['class Dog:', '    species = "dog"', '    def __init__(self, name):', '        self.name = name', 'a = Dog("Rex")', 'b = Dog("Moti")', 'print(a.species)', 'a.species = "wolf"', 'print(a.species, b.species)', 'Dog.species = "canine"', 'print(a.species, b.species)'],
+    shared: ['class Dog:', '    tricks = []          # one list for ALL dogs', '    def __init__(self, name):', '        self.name = name', '    def learn(self, trick):', '        self.tricks.append(trick)', 'a = Dog("Rex")', 'b = Dog("Moti")', 'a.learn("sit")', 'print(b.tricks)']
+  };
+  /* each step: [line, classAttrs, objects {name: attrs}, lookup {obj, attr, where}, out, say] */
+  const S = {
+    make: [
+      [0, { species: '"dog"', __init__: 'function', bark: 'function' }, {}, null, '', 'The class statement runs its body once and makes a <b>class object</b> called Dog. species, __init__ and bark become its attributes. No dog exists yet.'],
+      [6, { species: '"dog"', __init__: 'function', bark: 'function' }, { a: {} }, null, '', 'Dog("Rex") makes a new, empty <b>instance</b> and calls __init__(self, "Rex") with self being that new object.'],
+      [3, { species: '"dog"', __init__: 'function', bark: 'function' }, { a: { name: '"Rex"' } }, null, '', 'self.name = name stores name on the instance itself, not on the class. Then the object is bound to a.'],
+      [7, { species: '"dog"', __init__: 'function', bark: 'function' }, { a: { name: '"Rex"' }, b: { name: '"Moti"' } }, null, '', 'Dog("Moti") makes a second instance with its own name. Both point to the same class.'],
+      [8, { species: '"dog"', __init__: 'function', bark: 'function' }, { a: { name: '"Rex"' }, b: { name: '"Moti"' } }, { obj: 'a', attr: 'bark', where: 'class' }, '', 'a.bark: bark is not in a, so Python looks in its class Dog and finds the function. a.bark() is the same as Dog.bark(a): Python passes a as self.'],
+      [8, { species: '"dog"', __init__: 'function', bark: 'function' }, { a: { name: '"Rex"' }, b: { name: '"Moti"' } }, { obj: 'b', attr: 'name', where: 'obj' }, 'Rex says woof Moti', 'b.name is found on b itself. Each object keeps its own data and shares the methods of the class.']],
+    lookup: [
+      [0, { species: '"dog"', __init__: 'function' }, {}, null, '', 'Dog has one <b>class attribute</b>, species, shared by every dog.'],
+      [5, { species: '"dog"', __init__: 'function' }, { a: { name: '"Rex"' }, b: { name: '"Moti"' } }, null, '', 'Two instances, each with its own <b>instance attribute</b> name.'],
+      [6, { species: '"dog"', __init__: 'function' }, { a: { name: '"Rex"' }, b: { name: '"Moti"' } }, { obj: 'a', attr: 'species', where: 'class' }, 'dog', 'a.species: not in a, so Python looks in the class and finds "dog".'],
+      [7, { species: '"dog"', __init__: 'function' }, { a: { name: '"Rex"', species: '"wolf"' }, b: { name: '"Moti"' } }, null, 'dog', 'a.species = "wolf" does <b>not</b> change the class. Assignment through an instance always creates or changes an attribute on that instance. Now a has its own species that hides (shadows) the class one.'],
+      [8, { species: '"dog"', __init__: 'function' }, { a: { name: '"Rex"', species: '"wolf"' }, b: { name: '"Moti"' } }, { obj: 'a', attr: 'species', where: 'obj' }, 'dog\nwolf dog', 'a.species is found on a first: wolf. b has none of its own, so b.species still comes from the class: dog.'],
+      [9, { species: '"canine"', __init__: 'function' }, { a: { name: '"Rex"', species: '"wolf"' }, b: { name: '"Moti"' } }, null, 'dog\nwolf dog', 'Dog.species = "canine" changes the class attribute itself.'],
+      [10, { species: '"canine"', __init__: 'function' }, { a: { name: '"Rex"', species: '"wolf"' }, b: { name: '"Moti"' } }, { obj: 'b', attr: 'species', where: 'class' }, 'dog\nwolf dog\nwolf canine', 'b sees the change because it reads species from the class. a does not, because its own species hides the class one.']],
+    shared: [
+      [0, { tricks: '[]', __init__: 'function', learn: 'function' }, {}, null, '', 'tricks = [] is a class attribute: one list object stored on the class.'],
+      [7, { tricks: '[]', __init__: 'function', learn: 'function' }, { a: { name: '"Rex"' }, b: { name: '"Moti"' } }, null, '', 'Two dogs. Neither has its own tricks.'],
+      [5, { tricks: '["sit"]', __init__: 'function', learn: 'function' }, { a: { name: '"Rex"' }, b: { name: '"Moti"' } }, { obj: 'a', attr: 'tricks', where: 'class' }, '', 'a.learn("sit") runs self.tricks.append(...). self.tricks is not on a, so it is the class list, and append <b>changes that shared list</b>. No assignment happened, so no instance attribute was made.'],
+      [9, { tricks: '["sit"]', __init__: 'function', learn: 'function' }, { a: { name: '"Rex"' }, b: { name: '"Moti"' } }, { obj: 'b', attr: 'tricks', where: 'class' }, "['sit']", 'b.tricks is the same class list, so Moti "knows" sit too. The fix: create the list in __init__ with self.tricks = [], so each dog gets its own.']]
+  };
+  trace('pyclass', {
+    title: 'Classes, objects and attribute lookup',
+    sub: 'Pick a program. Each step shows the class object, the instance objects and their attributes. When an attribute is read, Python looks in the instance first, then in its class.',
+    W: 600, H: 340,
+    params: [{ k: 'prog', label: 'Program', type: 'select', v: 'make', opts: [['make', 'Make objects and call a method'], ['lookup', 'Class attribute vs instance attribute'], ['shared', 'The shared list trap']] }],
+    tips: [
+      { t: 'Methods live on the class, data lives on each instance. self is the instance the method was called on.', set: { prog: 'make' }, play: true },
+      { t: 'Assigning through an instance never changes the class: it adds an instance attribute that hides the class one.', set: { prog: 'lookup' }, play: true },
+      { t: 'A mutable class attribute is shared by every instance. Changing it through one object changes it for all.', set: { prog: 'shared' }, play: true }
+    ],
+    frames(p) { return S[p.prog].map(s => ({ code: CODE[p.prog], line: s[0], cls: s[1], objs: s[2], look: s[3], out: s[4], say: s[5] })); },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Program', 16, 18);
+      codeView(z, f.code, f.line, 16, 26, 280, { s: 11.5, lh: 18 });
+      const ck = Object.keys(f.cls), ch = 30 + ck.length * 18;
+      head(z, 'Class object', 316, 18);
+      PYZ.rr(z.g, 316, 26, 268, ch, 8, { fill: c.surf, stroke: f.look && f.look.where === 'class' ? c.green : c.cv, w: 2 });
+      D.text(z.g, 'Dog', 326, 44, { s: 13, b: true, mono: true, c: c.cv });
+      ck.forEach((k, i) => D.text(z.g, `${k} = ${f.cls[k]}`, 334, 64 + i * 18, { s: 11.5, mono: true, b: f.look && f.look.where === 'class' && f.look.attr === k, c: f.look && f.look.where === 'class' && f.look.attr === k ? c.green : c.ink }));
+      const names = Object.keys(f.objs);
+      head(z, 'Instances', 316, ch + 50);
+      names.forEach((n, i) => {
+        const x = 316 + i * 138, y = ch + 58, attrs = f.objs[n], ak = Object.keys(attrs), h = 34 + Math.max(1, ak.length) * 18;
+        const on = f.look && f.look.obj === n;
+        PYZ.rr(z.g, x, y, 128, h, 8, { fill: c.surf, stroke: on ? (f.look.where === 'obj' ? c.green : c.orange) : c.line, w: on ? 2.5 : 1.5 });
+        D.text(z.g, `${n}  (a Dog)`, x + 8, y + 17, { s: 12, b: true, mono: true, c: c.orange });
+        if (!ak.length) D.text(z.g, '(empty)', x + 12, y + 37, { s: 11, c: c.ink2 });
+        ak.forEach((k, j) => D.text(z.g, `${k} = ${attrs[k]}`, x + 12, y + 37 + j * 18, { s: PYZ.fit(z.g, `${k} = ${attrs[k]}`, 110, 11.5, { mono: true }), mono: true, b: on && f.look.where === 'obj' && f.look.attr === k, c: on && f.look.where === 'obj' && f.look.attr === k ? c.green : c.ink }));
+        D.line(z.g, x + 64, y, x + 64, 26 + ch + 2, c.line, 1.2, [3, 3]);
+      });
+      if (f.look) D.text(z.g, `${f.look.obj}.${f.look.attr}: ${f.look.where === 'obj' ? 'found on the instance' : 'not on the instance, found on the class'}`, 316, 330, { s: 11.5, b: true, c: c.green });
+      if (f.out) consoleBox(z, f.out, 16, 222, 280, 100, { title: 'Output' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 6.2  the method resolution order: C3 linearisation, one merge step at a time
+   ===================================================================================================== */
+(() => {
+  const { trace, head, box, D, esc } = PYZ;
+  function parse(src) {
+    const cls = {}, order = [];
+    String(src).split(/[;\n]+/).map(s => s.trim()).filter(Boolean).forEach(part => {
+      const m = part.match(/^([A-Za-z_]\w*)\s*(?:\(([^)]*)\))?$/);
+      if (!m) throw new Error(`Write classes like  A; B(A); C(A); D(B, C).  I could not read "${part}".`);
+      const bases = (m[2] || '').split(',').map(s => s.trim()).filter(Boolean);
+      bases.forEach(b => { if (!(b in cls)) throw new Error(`${b} is used as a base before it is defined.`); });
+      if (new Set(bases).size !== bases.length) throw new Error(`TypeError: duplicate base class in ${m[1]}`);
+      cls[m[1]] = bases.length ? bases : ['object'];
+      order.push(m[1]);
+    });
+    if (!order.length) throw new Error('Type at least one class.');
+    return { cls, order };
+  }
+  trace('pymro', {
+    title: 'Method resolution order with C3',
+    sub: 'Type classes and their bases. Python works out the MRO of the last class by merging the MROs of its bases, one pick at a time.',
+    W: 600, H: 340,
+    params: [{ k: 'src', label: 'Classes (last one is shown)', type: 'text', v: 'A; B(A); C(A); D(B, C)' }],
+    tips: [
+      { t: 'The diamond: D inherits from B and C, which both inherit from A. A comes only once, after both B and C.', set: { src: 'A; B(A); C(A); D(B, C)' }, play: true },
+      { t: 'A bigger example from the paper that introduced C3 to Python 2.3.', set: { src: 'O; A(O); B(O); C(O); D(O); E(O); K1(A, B, C); K2(D, B, E); K3(D, A); Z(K1, K2, K3)' }, play: true },
+      { t: 'A and B list X and Y in opposite orders, so no order can respect both: Python refuses to create C.', set: { src: 'X; Y; A(X, Y); B(Y, X); C(A, B)' }, play: true }
+    ],
+    frames(p) {
+      const { cls, order } = parse(p.src), memo = { object: ['object'] }, fr = [];
+      const target = order[order.length - 1];
+      const lin = (k, top) => {
+        if (memo[k]) return memo[k];
+        const bases = cls[k], lists = bases.map(b => lin(b, false).slice()).concat([bases.slice()]);
+        const out = [k], show = top;
+        if (show) fr.push({ cls, order, target, lists: lists.map(l => l.slice()), out: out.slice(), say: `L[${k}] = ${k} + merge(${lists.map(l => '[' + l.join(', ') + ']').join(', ')}). Each list is the MRO of one base, and the last list is the bases in the order you wrote them.` });
+        while (lists.some(l => l.length)) {
+          let pick = null;
+          for (const l of lists) {
+            if (!l.length) continue;
+            const h = l[0];
+            const bad = lists.find(o => o.indexOf(h) > 0);
+            if (show) fr.push({ cls, order, target, lists: lists.map(x => x.slice()), out: out.slice(), cand: h, bad: !!bad, say: bad ? `Try ${h}, the head of a list. It also appears in the tail of [${bad.join(', ')}], so something must come before it there. Skip it for now.` : `Try ${h}. It is not in the tail of any list, so it is safe: <b>take ${h}</b>.` });
+            if (!bad) { pick = h; break; }
+          }
+          if (!pick) {
+            const heads = []; lists.forEach(l => { if (l.length && !heads.includes(l[0])) heads.push(l[0]); });
+            const msg = `TypeError: Cannot create a consistent method resolution order (MRO) for bases ${heads.join(', ')}`;
+            if (show) fr.push({ cls, order, target, lists: lists.map(x => x.slice()), out: out.slice(), err: msg, say: `Every head is blocked by another list, so no order keeps all the rules. Python raises <b>${esc(msg)}</b> and class ${k} is never created.` });
+            throw Object.assign(new Error(msg), { fr });
+          }
+          out.push(pick);
+          lists.forEach(l => { if (l[0] === pick) l.shift(); });
+          if (show) fr.push({ cls, order, target, lists: lists.map(x => x.slice()), out: out.slice(), took: pick, say: `${pick} is added to the result and removed from the front of every list. Result so far: [${out.join(', ')}].` });
+        }
+        memo[k] = out;
+        return out;
+      };
+      try {
+        order.forEach(k => { if (k !== target) lin(k, false); });
+        const res = lin(target, true);
+        fr.push({ cls, order, target, lists: [], out: res, done: true, say: `Done: ${target}.__mro__ is (${res.join(', ')}). Python searches this list, left to right, whenever you read an attribute or call a method, and super() moves to the next class in it.` });
+      } catch (e) { if (!e.fr) throw e; }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      /* draw the class graph by depth */
+      const depth = {}, get = k => k === 'object' ? 0 : (depth[k] ??= 1 + Math.max(...f.cls[k].map(get)));
+      f.order.forEach(get);
+      const levels = {};
+      ['object'].concat(f.order).forEach(k => { const d = k === 'object' ? 0 : depth[k]; (levels[d] ??= []).push(k); });
+      const maxD = Math.max(...Object.keys(levels).map(Number)), pos = {};
+      Object.entries(levels).forEach(([d, ks]) => ks.forEach((k, i) => { pos[k] = { x: 16 + (i + 0.5) * (300 / ks.length), y: 214 - (d / Math.max(1, maxD)) * 164, w: Math.min(60, 300 / ks.length - 6) }; }));
+      head(z, 'Classes (each line goes down to a base)', 16, 18);
+      f.order.forEach(k => f.cls[k].forEach(b => D.line(z.g, pos[k].x, pos[k].y + 10, pos[b].x, pos[b].y - 10, c.line, 1.4)));
+      Object.keys(pos).forEach(k => {
+        const inRes = f.out && f.out.includes(k), cand = f.cand === k;
+        box(z, pos[k].x - pos[k].w / 2, pos[k].y - 11, pos[k].w, 22, k, { mono: true, s: 11.5, b: true, fill: cand ? (f.bad ? c.red : c.green) : inRes ? c.cv : c.surf, stroke: inRes ? c.cv : c.line, c: cand || inRes ? '#fff' : c.ink });
+      });
+      head(z, 'Lists being merged', 340, 18);
+      (f.lists || []).forEach((l, i) => {
+        D.text(z.g, '[' + l.join(', ') + ']', 340, 40 + i * 20, { s: PYZ.fit(z.g, '[' + l.join(', ') + ']', 240, 12, { mono: true }), mono: true, c: l.length ? c.ink : c.ink2 });
+      });
+      head(z, `MRO of ${f.target}`, 16, 248);
+      const out = f.out || [];
+      const w = Math.min(64, 568 / Math.max(1, out.length));
+      out.forEach((k, i) => box(z, 16 + i * w, 256, w - 4, 26, k, { mono: true, s: Math.min(12, w * 0.22), b: true, fill: f.took === k ? c.green : c.surf, stroke: f.took === k ? c.green : c.cv, c: f.took === k ? '#fff' : c.ink }));
+      if (f.err) { PYZ.rr(z.g, 16, 294, 568, 38, 8, { fill: c.dark ? '#3b0d0d' : '#fef2f2', stroke: c.red }); D.text(z.g, f.err, 26, 318, { s: PYZ.fit(z.g, f.err, 548, 12, { mono: true }), mono: true, b: true, c: c.red }); }
+    }
+  });
+})();
