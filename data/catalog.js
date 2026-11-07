@@ -6896,6 +6896,28 @@ function pyAdvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-a3", title: "Professional code: style, testing and logging", emoji: "3", step: 3, part: "advanced", level: "Advanced", blurb: "Write code others can read, prove it works with tests, and find problems fast with logging and debugging.", topics: [
+      { id: "py-style", title: "Clean code: PEP 8, docstrings and type hints", emoji: "3.1", page: "content/python/py-style.html",
+        summary: "Zen of Python, PEP 8 layout and names, bug preventing habits, docstrings, doctest, type hints, ruff, black, mypy.",
+        keywords: ["PEP 8", "PEP 257", "PEP 20", "type hints", "mypy", "ruff", "black", "docstring", "doctest", "Protocol", "clean code", "PCPP"],
+        minutes: 70, counts: {"lessons": 9, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Clean code: style, docstrings and type hints", emoji: "", group: "Lesson", keywords: ["clean code", "PEP 8", "PEP 257", "PEP 20", "Zen of Python", "readability", "linter", "formatter", "type checker"] },
+        { id: "pep8", title: "PEP 8: layout and names", emoji: "", group: "Lesson", keywords: ["PEP 8", "indentation", "line length", "naming conventions", "snake_case", "CapWords", "imports order", "ruff", "black", "flake8"] },
+        { id: "recommend", title: "Rules that prevent bugs", emoji: "", group: "Lesson", keywords: ["is None", "truthiness", "isinstance", "endswith", "mutable default", "programming recommendations"] },
+        { id: "docstrings", title: "Docstrings and doctest (PEP 257)", emoji: "", group: "Lesson", keywords: ["docstring", "PEP 257", "__doc__", "help", "doctest", "testmod"] },
+        { id: "hints", title: "Type hints", emoji: "", group: "Lesson", keywords: ["type hints", "annotations", "mypy", "typing", "Optional", "Union", "Callable", "Protocol", "TypedDict", "Literal", "Final", "generics", "PEP 695"] },
+        { id: "maths", title: "The maths: complexity, paths and line budgets", emoji: "", group: "Lesson", keywords: ["cyclomatic complexity", "McCabe", "C901", "paths", "test cases", "line length"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "pre-commit", "pyproject.toml", "variance", "strict mypy"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "string rules", "formatting", "validation", "type hints"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

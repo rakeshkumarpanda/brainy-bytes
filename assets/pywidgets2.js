@@ -526,3 +526,48 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 3.1  cleaning messy code one PEP 8 rule at a time, then a docstring and type hints
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, D, box } = PYZ;
+  /* [code lines, changed line indexes, rule, say] */
+  const ST = [
+    [['import sys, math', 'def CircleArea( R ):', '  if R==None : return 0', '  A=math.pi*R**2', '  return A'], [], 'Working, but messy',
+      'This code works and gives the right answers. But it is hard to read and it breaks many rules of <b>PEP 8</b>, the official Python style guide. A linter such as ruff reports 8 problems here. We fix one rule per step.'],
+    [['import math', 'def CircleArea( R ):', '  if R==None : return 0', '  A=math.pi*R**2', '  return A'], [0], 'Imports: one per line, no unused ones',
+      'PEP 8 wants one import per line at the top of the file. sys was never used, so it simply goes (ruff calls this F401).'],
+    [['import math', '', '', 'def CircleArea( R ):', '  if R==None : return 0', '  A=math.pi*R**2', '  return A'], [1, 2], 'Two blank lines before a top level def',
+      'Top level functions and classes get two blank lines around them, methods inside a class get one. It lets the eye find where each part starts.'],
+    [['import math', '', '', 'def circle_area( radius ):', '  if radius==None : return 0', '  area=math.pi*radius**2', '  return area'], [3, 4, 5, 6], 'Names: snake_case that says what it holds',
+      'Functions and variables use lower_case_with_underscores. Classes use CapWords and constants UPPER_CASE. R and A told the reader nothing, radius and area do.'],
+    [['import math', '', '', 'def circle_area( radius ):', '    if radius==None : return 0', '    area=math.pi*radius**2', '    return area'], [4, 5, 6], 'Indent with 4 spaces',
+      'Use 4 spaces for each level, never tabs mixed with spaces. Python itself only needs the indents to match, but every Python reader expects 4.'],
+    [['import math', '', '', 'def circle_area(radius):', '    if radius == None : return 0', '    area = math.pi * radius**2', '    return area'], [3, 4, 5], 'Spaces: around = and ==, not inside brackets',
+      'No space just inside brackets. One space around =, == and other operators. With mixed operators PEP 8 lets the highest priority one hug: radius**2.'],
+    [['import math', '', '', 'def circle_area(radius):', '    if radius == None:', '        return 0', '    area = math.pi * radius**2', '    return area'], [4, 5], 'One statement per line',
+      'if ... : return 0 on one line hides the return. Put the body of if, for and while on its own indented line.'],
+    [['import math', '', '', 'def circle_area(radius):', '    if radius is None:', '        return 0', '    area = math.pi * radius**2', '    return area'], [4], 'Compare to None with is',
+      'None is a single object, so check it with is None. == None can be fooled by a class that changes __eq__. This rule changes behaviour, not just looks.'],
+    [['import math', '', '', 'def circle_area(radius):', '    """Return the area of a circle, or 0 if radius is missing."""', '    if radius is None:', '        return 0', '    area = math.pi * radius**2', '    return area'], [4], 'A docstring (PEP 257)',
+      'PEP 257: the first statement of a function is a docstring in triple double quotes, a one line summary that ends with a full stop. help(circle_area) now shows it.'],
+    [['import math', '', '', 'def circle_area(radius: float | None) -> float:', '    """Return the area of a circle, or 0 if radius is missing."""', '    if radius is None:', '        return 0', '    area = math.pi * radius**2', '    return area'], [3], 'Type hints (PEP 484)',
+      'Hints say radius is a float or None and the result is a float. Python ignores them at run time, but editors and mypy use them to catch mistakes before the program runs. The ruff report is now empty.']
+  ];
+  trace('pystyle', {
+    title: 'Cleaning code one rule at a time',
+    sub: 'Each step fixes one style rule. Changed lines are marked with a tick. The behaviour stays the same, the code gets easier to read.',
+    W: 600, H: 330,
+    tips: [{ t: 'Step 8 is the only rule that can change what the program does: is None cannot be fooled.', play: true }],
+    frames() { return ST.map((s, i) => ({ lines: s[0], changed: s[1], rule: s[2], n: i, say: s[3] })); },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Rule fixed in this step', 16, 18);
+      box(z, 16, 26, 568, 32, f.rule, { s: 13, b: true, fill: f.n ? (c.dark ? '#14321f' : '#dcfce7') : (c.dark ? '#3b1414' : '#fee2e2'), stroke: f.n ? c.green : c.red });
+      head(z, 'The code now', 16, 82);
+      codeView(z, f.lines, f.changed.length ? f.changed[0] : -1, 16, 90, 568, { s: 12, lh: 21, done: f.changed });
+      D.text(z.g, `Rules fixed: ${f.n} of ${ST.length - 1}`, 584, 82, { a: 'right', s: 12, b: true, c: c.ink2 });
+    }
+  });
+})();
