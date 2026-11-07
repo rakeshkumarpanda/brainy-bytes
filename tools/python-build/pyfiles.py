@@ -127,6 +127,13 @@ def write_all(chs, out_dir):
                 head += '# This program reads input. Type these lines when it asks:\n' + ''.join(f'#   {x}\n' for x in c['stdin'].split('\n') if x)
             open(os.path.join(d, k + '.py'), 'w', encoding='utf-8').write(head + '\n' + c['src'] + '\n')
             n += 1
+        for k, src in (T.get('gui') or {}).items():
+            if k in T['codes'] or k in ('practice', 'solutions', 'leetcode') or k in sys.stdlib_module_names:
+                raise SystemExit(f'{T["slug"]}: window program name "{k}" clashes with another download or a standard module')
+            compile(src, k + '.py', 'exec')
+            head = header(T, f'Window program "{k}" from the lesson. It opens a window, so run it on your own computer.')
+            open(os.path.join(d, k + '.py'), 'w', encoding='utf-8').write(head + '\n' + src + '\n')
+            n += 1
         if T['assign']:
             open(os.path.join(d, 'practice.py'), 'w', encoding='utf-8').write(practice(T, False))
             sp = os.path.join(d, 'solutions.py')

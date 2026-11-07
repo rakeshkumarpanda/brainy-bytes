@@ -7110,6 +7110,28 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-tkinter", title: "Desktop windows with tkinter", emoji: "6.4", page: "content/python/py-tkinter.html",
+        summary: "tkinter widgets, layouts, variables, events, Canvas animation with after() and responsive apps.",
+        keywords: ["tkinter", "GUI", "ttk", "mainloop", "grid", "pack", "Canvas", "bind", "after", "event loop"],
+        minutes: 90, counts: {"lessons": 11, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Windows, buttons and the event loop", emoji: "", group: "Lesson", keywords: ["GUI", "tkinter", "Tk", "widget", "event", "event loop", "mainloop", "event driven", "PySide6", "PyQt", "Kivy", "Textual"] },
+        { id: "first", title: "Your first window", emoji: "", group: "Lesson", keywords: ["Tk", "title", "geometry", "Label", "Button", "command", "pack", "mainloop", "config", "event queue", "callback"] },
+        { id: "layout", title: "Placing widgets: pack, grid and place", emoji: "", group: "Lesson", keywords: ["pack", "grid", "place", "sticky", "columnspan", "weight", "columnconfigure", "padx", "pady", "Entry", "get", "messagebox", "focus", "Frame"] },
+        { id: "vars", title: "Widgets and control variables", emoji: "", group: "Lesson", keywords: ["StringVar", "IntVar", "BooleanVar", "DoubleVar", "textvariable", "trace_add", "Radiobutton", "Checkbutton", "Scale", "Combobox", "Listbox", "Text", "ttk", "themes"] },
+        { id: "events", title: "Events, the Canvas and animation with after()", emoji: "", group: "Lesson", keywords: ["bind", "event", "Button-1", "Key", "keysym", "Canvas", "create_oval", "move", "coords", "after", "animation", "protocol", "WM_DELETE_WINDOW"] },
+        { id: "app", title: "A real app: classes, scrollbars and saving", emoji: "", group: "Lesson", keywords: ["class", "ttk.Frame", "Listbox", "Scrollbar", "curselection", "yscrollcommand", "json", "model view", "MVC", "testing GUI code"] },
+        { id: "freeze", title: "Long tasks without freezing the window", emoji: "", group: "Lesson", keywords: ["freeze", "not responding", "after", "threading", "queue", "Progressbar", "thread safe", "main thread", "ProcessPoolExecutor"] },
+        { id: "maths", title: "The maths: pixels, frames and how fast people click", emoji: "", group: "Lesson", keywords: ["coordinates", "centre window", "fps", "frame rate", "weight", "Fitts law", "Hick law", "usability"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "MVC", "themes", "accessibility", "high DPI", "Qt"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "geometry", "flood fill", "BFS", "rectangles", "overlap", "simulation", "coordinate compression"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

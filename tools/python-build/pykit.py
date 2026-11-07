@@ -22,12 +22,12 @@ import html as _h
 
 from cvkit import code, table, note
 
-STATE = {'slug': None, 'leet': [], 'local': set()}
+STATE = {'slug': None, 'leet': [], 'local': set(), 'gui': {}}
 LEVEL = {'e': 'Easy', 'm': 'Medium', 'h': 'Hard'}
 
 
 def chapter(slug):
-    STATE.update(slug=slug, leet=[], local=set())
+    STATE.update(slug=slug, leet=[], local=set(), gui={})
 
 
 def _dl(key, text='Download this program (.py)'):
@@ -52,6 +52,23 @@ def show(title, src, notes=None, lang='python'):
     nl = ''.join(f'<li><b>Line {n}</b> {t}</li>' for n, t in sorted(notes.items()))
     nb = f'<ol class="pl-notes">{nl}</ol>' if nl else ''
     return f'<div class="pl"><div class="pl-h"><span>{title}</span><small>{lang}</small></div><pre class="pl-b">{body}</pre>{nb}</div>'
+
+
+def gui(key, src, notes=None, img='', caption=''):
+    """A program that opens a window (tkinter). It cannot run in the page, so the page shows the listing with line
+    notes, a real screenshot taken under Xvfb with guishot.py (content/python/img/<slug>/<img>), and a
+    download link. pyfiles.py writes <key>.py and checks that it compiles."""
+    STATE['gui'][key] = src.strip('\n')
+    fig = (f'<figure class="py-shot"><img src="./img/{STATE["slug"]}/{img}" alt="{_h.escape(caption)}" loading="lazy">'
+           f'<figcaption>{caption}</figcaption></figure>') if img else ''
+    return (show(f'{key}.py', src, notes) + fig + '<div class="py-local"><b>Run this one on your own computer.</b> A window needs a real screen, '
+            'so it cannot run inside this page. The picture is a real screenshot of this program, taken with Python 3.14 and Tk 9.0 on Linux. '
+            'On Windows and macOS the window looks a little different.</div>'
+            f'<div class="py-dlrow">{_dl(key)}<span>Run it with <code>python3 {key}.py</code>. Close the window to end the program.</span></div>')
+
+
+def gui_files():
+    return dict(STATE['gui'])
 
 
 def term(lines, title='Terminal'):

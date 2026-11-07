@@ -1314,3 +1314,111 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 6.4  tkinter: what mainloop does with events, why a slow callback freezes the window, and how grid
+   places widgets in rows and columns
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, D, box } = PYZ;
+  const { rr } = AIZ;
+  const LOOP_CODE = ['root = tk.Tk()', 'label = tk.Label(root, text="Press the button")', 'button = tk.Button(root, text="Say hello", command=say_hello)', 'root.mainloop()', 'def say_hello(): label.config(text="Hello!")'];
+  const FREEZE_CODE = ['def bad_click():', '    time.sleep(3)', '    status.config(text="Done")', 'def good_click():', '    root.after(3000, finish)', 'def finish(): status.config(text="Done")'];
+  const GRID_CODE = ['ttk.Label(root, text="Name:").grid(row=0, column=0, sticky="e")', 'name_entry.grid(row=0, column=1, sticky="ew")', 'ttk.Label(root, text="Age:").grid(row=1, column=0, sticky="e")', 'age_entry.grid(row=1, column=1, sticky="w")', 'button.grid(row=2, column=0, columnspan=2)', 'root.columnconfigure(1, weight=1)'];
+  const CASES = {
+    loop: [
+      { cur: 0, win: 1, say: '<b>tk.Tk()</b> makes the main window, called root. It is still empty, and Python keeps running the next lines.' },
+      { cur: 1, win: 1, label: 'Press the button', say: 'A <b>Label</b> shows text. root is its parent, so it lives inside the window. (pack() or grid() places it, here we skip that line.)' },
+      { cur: 2, win: 1, label: 'Press the button', btn: 1, say: 'A <b>Button</b> with command=say_hello. Note: say_hello WITHOUT brackets. We hand Tk the function to call later, we do not call it now.' },
+      { cur: 3, win: 2, label: 'Press the button', btn: 1, loop: 'waiting', q: [], say: '<b>root.mainloop()</b> shows the window and starts the <b>event loop</b>: wait for an event, handle it, wait again. The program now stays on this line until the window closes.' },
+      { cur: 3, win: 2, label: 'Press the button', btn: 2, loop: 'waiting', q: ['click on button'], say: 'The user clicks the button. The operating system sends a mouse event, and Tk puts it in the <b>event queue</b>.' },
+      { cur: 4, win: 2, label: 'Press the button', btn: 2, loop: 'running say_hello()', q: [], say: 'mainloop takes the event from the queue, sees that the button has a command, and calls <b>say_hello()</b>.' },
+      { cur: 4, win: 2, label: 'Hello!', btn: 1, loop: 'redraw', q: [], hl: 1, say: 'label.config(text="Hello!") changes the label. When the function returns, mainloop <b>redraws</b> the window with the new text.' },
+      { cur: 3, win: 2, label: 'Hello!', btn: 1, loop: 'waiting', q: [], say: 'mainloop waits for the next event. Every GUI program works like this: your code runs only when an event calls one of your functions. This style is called <b>event driven</b> programming.' }
+    ],
+    freeze: [
+      { cur: 0, win: 2, label: 'Press a button', loop: 'running bad_click()', q: [], say: 'The user clicks "bad way". mainloop calls <b>bad_click()</b> and waits for it to return.' },
+      { cur: 1, win: 3, label: 'Press a button', loop: 'stuck in time.sleep(3)', q: ['redraw window'], say: '<b>time.sleep(3)</b> blocks. mainloop cannot take the next event, so the window cannot even redraw itself. It looks dead, and the system may say "Not Responding".' },
+      { cur: 1, win: 3, label: 'Press a button', loop: 'stuck in time.sleep(3)', q: ['redraw window', 'click on button', 'move window'], say: 'The user clicks again and drags the window. These events only pile up in the queue. Nothing happens on screen.' },
+      { cur: 2, win: 2, label: 'Done', loop: 'handling the pile', q: [], say: 'After 3 seconds bad_click returns. mainloop now handles the whole pile at once: the window jumps, and the second click runs bad_click AGAIN, freezing it for 3 more seconds.' },
+      { cur: 4, win: 2, label: 'Press a button', loop: 'running good_click()', timer: 'finish() in 3000 ms', q: [], say: 'Now "good way": <b>root.after(3000, finish)</b> only sets a timer and returns at once. after() means "call this function later, from the event loop".' },
+      { cur: 4, win: 2, label: 'Press a button', loop: 'waiting', timer: 'finish() in 1200 ms', q: [], live: 1, say: 'While the timer runs, mainloop keeps handling clicks, redraws and window moves. The window stays alive.' },
+      { cur: 5, win: 2, label: 'Done', loop: 'running finish()', q: [], hl: 1, say: 'The timer fires and mainloop calls <b>finish()</b>. The rule: every callback must return quickly. For long work use after() in small steps, or a thread that reports back through a queue.' }
+    ],
+    grid: [
+      { cur: 0, put: 1, say: '<b>grid</b> places widgets in a table of rows and columns. The "Name:" label goes in row 0, column 0. sticky="e" pushes it to the east (right) side of its cell.' },
+      { cur: 1, put: 2, say: 'The name entry goes in row 0, column 1. sticky="ew" stretches it from west to east, so it fills the width of its cell.' },
+      { cur: 2, put: 3, say: 'Row 1, column 0: the "Age:" label, again on the right of its cell, so the colons line up.' },
+      { cur: 3, put: 4, say: 'The age entry is short and sticks to the west (left) side. Each column is as wide as its widest widget.' },
+      { cur: 4, put: 5, say: '<b>columnspan=2</b> lets the button use both columns of row 2. Without sticky it sits in the middle.' },
+      { cur: 5, put: 5, grow: 1, say: 'The user makes the window wider. <b>columnconfigure(1, weight=1)</b> gives all the extra width to column 1, so the name entry grows and the labels stay the same. With weight 0 (the default) the extra space would stay empty.' }
+    ]
+  };
+  function windowBox(z, x, y, w, h, f, title) {
+    const c = z.col, g = z.g;
+    const dead = f.win === 3;
+    rr(g, x, y, w, h, 8, { fill: c.surf, stroke: f.win === 1 ? c.line : c.cv, w: 2, dash: f.win === 1 ? [5, 4] : null });
+    rr(g, x, y, w, 24, 8, { fill: dead ? (c.dark ? '#374151' : '#d1d5db') : (c.dark ? '#1e293b' : '#e2e8f0'), stroke: f.win === 1 ? c.line : c.cv, w: 2, dash: f.win === 1 ? [5, 4] : null });
+    D.text(g, title + (dead ? '  (Not Responding)' : f.win === 1 ? '  (not on screen yet)' : ''), x + 10, y + 16, { s: 11.5, b: true, c: dead ? c.red : c.ink });
+  }
+  function queue(z, f, x, y) {
+    const c = z.col, g = z.g;
+    head(z, 'Event queue', x, y);
+    const q = f.q || [];
+    if (!q.length) D.text(g, '(empty)', x, y + 24, { s: 12, c: c.ink2 });
+    q.forEach((e, i) => box(z, x, y + 10 + i * 32, 270, 26, e, { s: 12, stroke: c.orange, fill: c.dark ? '#3a2a10' : '#fff7ed' }));
+    head(z, 'mainloop is', x, y + 120);
+    box(z, x, y + 130, 270, 30, f.loop, { s: 13, b: true, mono: true, stroke: /stuck/.test(f.loop) ? c.red : c.cv, c: /stuck/.test(f.loop) ? c.red : undefined });
+    if (f.timer) box(z, x, y + 168, 270, 26, 'timer: ' + f.timer, { s: 12, mono: true, stroke: c.green });
+  }
+  trace('pytk', {
+    title: 'How a tkinter window works',
+    sub: 'Pick a case. Each step shows the window, the waiting events and what mainloop is doing.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Case', type: 'select', v: 'loop', opts: [['loop', 'mainloop and a button click'], ['freeze', 'A slow callback freezes the window'], ['grid', 'Placing widgets with grid']] }],
+    tips: [
+      { t: 'mainloop: your function runs only when an event arrives.', set: { case: 'loop' }, play: true },
+      { t: 'Freeze: time.sleep blocks the loop, after() does not.', set: { case: 'freeze' }, play: true },
+      { t: 'grid: sticky and weight decide where widgets sit and what grows.', set: { case: 'grid' }, play: true }
+    ],
+    frames(p) { return CASES[p.case].map(f => ({ ...f, mode: p.case })); },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      if (f.mode === 'grid') {
+        const wide = f.grow ? 150 : 0, x0 = 16, y0 = 40, cw = [90, 170 + wide], rh = 42;
+        windowBox(z, x0 - 6, y0 - 30, cw[0] + cw[1] + 12 + 160 * 0, rh * 3 + 40, { win: 2 }, 'Sign up');
+        for (let r = 0; r < 3; r++) for (let k = 0; k < 2; k++) {
+          const x = x0 + (k ? cw[0] : 0);
+          rr(g, x, y0 + r * rh, cw[k], rh, 2, { fill: 'transparent', stroke: c.line, w: 1, dash: [3, 3] });
+          D.text(g, `row ${r}, col ${k}`, x + 4, y0 + r * rh + 10, { s: 8.5, c: c.ink2 });
+        }
+        const P = f.put;
+        if (P >= 1) D.text(g, 'Name:', x0 + cw[0] - 8, y0 + 28, { a: 'right', s: 13, c: c.ink, b: f.cur === 0 });
+        if (P >= 2) box(z, x0 + cw[0] + 4, y0 + 13, cw[1] - 8, 24, '', { stroke: f.cur === 1 || f.grow ? c.cv : c.line, w: f.cur === 1 || f.grow ? 2.5 : 1.5, r: 4 });
+        if (P >= 3) D.text(g, 'Age:', x0 + cw[0] - 8, y0 + rh + 28, { a: 'right', s: 13, c: c.ink, b: f.cur === 2 });
+        if (P >= 4) box(z, x0 + cw[0] + 4, y0 + rh + 13, 60, 24, '', { stroke: f.cur === 3 ? c.cv : c.line, w: f.cur === 3 ? 2.5 : 1.5, r: 4 });
+        if (P >= 5) box(z, x0 + (cw[0] + cw[1]) / 2 - 40, y0 + 2 * rh + 9, 80, 26, 'Submit', { s: 12, stroke: f.cur === 4 ? c.cv : c.line, w: f.cur === 4 ? 2.5 : 1.5, r: 5 });
+        if (f.grow) {
+          D.arrow(g, x0 + cw[0] + 20, y0 + 3 * rh + 22, x0 + cw[0] + cw[1] - 10, y0 + 3 * rh + 22, c.green, 2, 7);
+          D.text(g, 'column 1 gets the extra width', x0 + cw[0] + 24, y0 + 3 * rh + 40, { s: 11.5, b: true, c: c.green });
+        }
+        codeView(z, GRID_CODE, f.cur, 16, 232, 568, { lh: 22, s: 12 });
+        return;
+      }
+      const loop = f.mode === 'loop';
+      windowBox(z, 16, 30, 270, 180, f, loop ? 'My first window' : 'Frozen or not');
+      if (f.win >= 1) {
+        if (f.label) D.text(g, f.label, 151, 92, { a: 'center', s: 15, b: !!f.hl, c: f.hl ? c.cv : (f.win === 3 ? c.ink2 : c.ink) });
+        if (loop && f.btn) box(z, 101, 120, 100, 30, 'Say hello', { s: 13, stroke: f.btn === 2 ? c.orange : c.line, w: f.btn === 2 ? 3 : 1.5, fill: f.btn === 2 ? (c.dark ? '#3a2a10' : '#fff7ed') : c.surf, r: 6 });
+        if (!loop) {
+          box(z, 46, 120, 100, 30, 'bad way', { s: 12, r: 6, stroke: f.cur <= 2 ? c.red : c.line });
+          box(z, 156, 120, 100, 30, 'good way', { s: 12, r: 6, stroke: f.cur >= 3 ? c.green : c.line });
+          if (f.live) D.text(g, 'window moves and redraws fine', 151, 182, { a: 'center', s: 11, c: c.green, b: true });
+        }
+        if (f.win === 3) rr(g, 18, 56, 266, 152, 6, { fill: c.dark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.55)', stroke: 'transparent' });
+      }
+      if (f.loop) queue(z, f, 314, 30);
+      codeView(z, loop ? LOOP_CODE : FREEZE_CODE, f.cur, 16, 240, 568, { lh: 22, s: 12, bad: !loop && f.cur === 1 ? 1 : undefined });
+    }
+  });
+})();

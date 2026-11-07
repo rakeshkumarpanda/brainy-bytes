@@ -47,3 +47,7 @@
 .pyp .pyt tr.on td{background:var(--cv-soft); font-weight:800}
 /* code must show <=, ==, ** and -> exactly as typed, never as joined ligature symbols */
 .pyp pre, .pyp code, .pyp textarea, .pyp .pl-b{font-variant-ligatures:none; font-feature-settings:"liga" 0, "calt" 0}
+/* real screenshots of window programs (tkinter) */
+.pyp .py-shot{margin:10px 0 8px; text-align:center}
+.pyp .py-shot img{max-width:100%; height:auto; border:1px solid var(--line); border-radius:8px; box-shadow:0 4px 14px rgba(15,23,42,.12); background:#fff}
+.pyp .py-shot figcaption{font-size:13px; color:var(--ink2); margin-top:6px}
