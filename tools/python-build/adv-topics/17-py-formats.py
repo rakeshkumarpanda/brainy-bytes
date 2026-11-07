@@ -233,8 +233,8 @@ K.lesson('maths', 'The maths: sizes and overheads', f'''
 {steps('Worked example: CSV or JSON for 10,000 orders with id, city and total?', [
     'A CSV row like "1042,Paris,29.90&#92;r&#92;n" is 16 characters plus 2 line ending bytes, so 18 bytes: 10,000 rows is about 180 KB.',
     'A JSON row like {"id": 1042, "city": "Paris", "total": 29.9}, is about 46 bytes: about 460 KB.',
-    'The keys repeat in every JSON row, so JSON is about 2.7 times bigger here.',
-    eq('CSV &asymp; 170 KB, JSON &asymp; 460 KB, but JSON keeps types and nesting')])}
+    'The keys repeat in every JSON row, so JSON is about 2.5 times bigger here.',
+    eq('CSV &asymp; 180 KB, JSON &asymp; 460 KB, but JSON keeps types and nesting')])}
 ''', kw=['file size', 'overhead', 'base64', 'unicode escape', 'csv vs json size'])
 
 K.lesson('levels', 'From beginner to expert', f'''

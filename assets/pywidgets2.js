@@ -1222,3 +1222,95 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 6.3  sqlite3: the order a SELECT really runs in, SQL injection against ? placeholders, and a
+   transaction that rolls back
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, D, box } = PYZ;
+  const R = (v, s) => ({ v, s: s || '' });
+  const ORDER_SQL = ['SELECT c.city, SUM(o.amount) AS total', 'FROM customers c JOIN orders o ON o.customer_id = c.id', 'WHERE o.amount >= 20', 'GROUP BY c.city', 'HAVING total > 60', 'ORDER BY total DESC', 'LIMIT 1'];
+  const JOINED = [['Ann', 'Paris', 30], ['Ann', 'Paris', 20], ['Bo', 'Rome', 70], ['Cy', 'Paris', 15], ['Cy', 'Paris', 25], ['Di', 'Oslo', 50]];
+  const G = { Paris: 'g0', Rome: 'g1', Oslo: 'g2' };
+  const INJ_SQL = ['name = input("User name: ")', 'sql = f"SELECT * FROM users WHERE name = \'{name}\'"', 'conn.execute(sql).fetchall()', 'conn.execute("SELECT * FROM users WHERE name = ?", (name,)).fetchall()'];
+  const USERS = [['ann', 's3cret'], ['bo', 'hunter2'], ['cy', 'pa55']];
+  const TXN_SQL = ['with conn:', '    conn.execute("UPDATE accounts SET balance = balance + 500 WHERE name = \'ann\'")', '    conn.execute("UPDATE accounts SET balance = balance - 500 WHERE name = \'bo\'")', 'print(conn.execute("SELECT * FROM accounts").fetchall())'];
+  const MODES = {
+    order: () => {
+      const cols = ['name', 'city', 'amount'], w = [0.3, 0.35, 0.35];
+      const groups = [['Paris', '30, 20, 25', 75], ['Rome', '70', 70], ['Oslo', '50', 50]];
+      return [
+        { cur: 1, cols, w, title: 'Rows after FROM and JOIN', rows: JOINED.map(r => R(r)), say: 'The database does not start with SELECT. It starts with <b>FROM</b>: the JOIN pairs every order with the customer it belongs to. Ed, a customer with no orders, is not here, because a plain (inner) JOIN keeps only rows that have a partner.' },
+        { cur: 2, cols, w, title: 'WHERE checks one row at a time', rows: JOINED.map(r => R(r, r[2] >= 20 ? '' : 'bad')), say: '<b>WHERE</b> looks at each row on its own and throws away the rows where the test is false. Cy\'s order of 15 is removed.' },
+        { cur: 3, cols, w, title: 'GROUP BY puts rows with the same city together', rows: JOINED.filter(r => r[2] >= 20).map(r => R(r, G[r[1]])), say: '<b>GROUP BY</b> c.city collects the rows that share a city. Each colour is one group. Every group will become ONE row in the result.' },
+        { cur: 4, cols: ['city', 'amounts in the group', 'SUM(o.amount)'], w: [0.3, 0.4, 0.3], title: 'One row per group, then HAVING', rows: groups.map(r => R(r, r[2] > 60 ? '' : 'bad')), say: 'SUM adds up each group: Paris 75, Rome 70, Oslo 50. <b>HAVING</b> is a WHERE for groups. It runs after the sums exist, so it can test total &gt; 60. Oslo is removed.' },
+        { cur: 0, cols: ['city', 'total'], w: [0.5, 0.5], title: 'SELECT picks the columns', rows: [R(['Paris', 75]), R(['Rome', 70])], say: 'Only now does <b>SELECT</b> run and give the columns their names. This is why WHERE cannot use the name total: it does not exist yet when WHERE runs.' },
+        { cur: 5, cols: ['city', 'total'], w: [0.5, 0.5], title: 'ORDER BY sorts the result', rows: [R(['Paris', 75], 'new'), R(['Rome', 70])], say: '<b>ORDER BY</b> total DESC sorts the finished rows, biggest first. Without ORDER BY the database may return rows in any order it likes.' },
+        { cur: 6, cols: ['city', 'total'], w: [0.5, 0.5], title: 'LIMIT keeps the first rows', rows: [R(['Paris', 75], 'ok'), R(['Rome', 70], 'dim')], out: "[('Paris', 75.0)]", say: '<b>LIMIT</b> 1 keeps only the first row. The full order is FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT, not the order the words are written in.' }
+      ];
+    },
+    inject: () => {
+      const cols = ['name', 'password'], w = [0.5, 0.5], all = USERS.map(r => R(r));
+      const typed = "nobody' OR '1'='1";
+      return [
+        { cur: 0, cols, w, title: 'Table users', rows: all, out: 'name = "' + typed + '"', say: 'A login form asks for a user name. An attacker types <b>' + typed + '</b>, with quote characters on purpose.' },
+        { cur: 1, cols, w, title: 'Table users', rows: all, out: "SELECT * FROM users WHERE name = 'nobody' OR '1'='1'", say: 'The f-string pastes the text straight into the SQL. Python does not know it is building SQL, so the quotes go in as they are.' },
+        { cur: 1, cols, w, title: 'Table users', rows: all, out: "name = 'nobody'   OR   '1'='1'", bad: true, say: 'The database reads the quote after nobody as the END of the string. The rest, <b>OR \'1\'=\'1\'</b>, is now SQL code, and \'1\'=\'1\' is true for every row.' },
+        { cur: 2, cols, w, title: 'Rows returned', rows: USERS.map(r => R(r, 'bad')), out: "[('ann', 's3cret'), ('bo', 'hunter2'), ('cy', 'pa55')]", say: 'Every user comes back, so the attacker is "logged in" without a password. This is <b>SQL injection</b>, one of the most common security holes on the web.' },
+        { cur: 3, cols, w, title: 'Table users', rows: all, out: 'SQL: ... WHERE name = ?      value: "' + typed + '"', say: 'With a <b>? placeholder</b> the SQL text and the value travel separately. The database first reads the SQL, then fills ? with the value as plain data. Quotes inside the value are just letters.' },
+        { cur: 3, cols, w, title: 'Rows returned', rows: USERS.map(r => R(r, 'dim')), out: '[]', say: 'No user has that strange name, so nothing comes back. Always use ? (or :name) for values. Never build SQL with f-strings, + or .format().' }
+      ];
+    },
+    txn: () => {
+      const cols = ['name', 'saved in the file', 'inside this transaction'], w = [0.25, 0.375, 0.375];
+      return [
+        { cur: 0, cols, w, title: 'Table accounts, CHECK (balance >= 0)', rows: [R(['ann', 100, 100]), R(['bo', 50, 50])], say: 'Bo sends 500 to Ann. <b>with conn:</b> starts a block. The first change will open a <b>transaction</b>: changes stay private until commit.' },
+        { cur: 1, cols, w, title: 'Table accounts, CHECK (balance >= 0)', rows: [R(['ann', 100, 600], 'new'), R(['bo', 50, 50])], say: 'The first UPDATE gives Ann 500 more. Inside the transaction she has 600, but nothing is saved yet: other connections still see 100.' },
+        { cur: 2, cols, w, title: 'Table accounts, CHECK (balance >= 0)', rows: [R(['ann', 100, 600], 'new'), R(['bo', 50, -450], 'bad')], bad: true, out: 'sqlite3.IntegrityError: CHECK constraint failed: balance >= 0', say: 'Bo only has 50. His new balance would be -450, so the CHECK rule fails and SQLite raises <b>IntegrityError</b>. Ann already got the money, so the data is now half done.' },
+        { cur: 0, cols, w, title: 'Table accounts, CHECK (balance >= 0)', rows: [R(['ann', 100, 100], 'ok'), R(['bo', 50, 50])], say: 'The exception leaves the with block, so <b>with conn</b> calls <b>rollback()</b>. Every change since the transaction began is undone, including Ann\'s 500.' },
+        { cur: 3, cols, w, title: 'Table accounts after the block', rows: [R(['ann', 100, 100], 'ok'), R(['bo', 50, 50], 'ok')], out: "[('ann', 100), ('bo', 50)]", say: 'Either both updates happen or neither does. This all or nothing rule is <b>atomicity</b>, the A in ACID. If the block had finished without an error, with conn would have called commit().' }
+      ];
+    }
+  };
+  trace('pysql', {
+    title: 'Inside a database query',
+    sub: 'Pick a case. Each step runs one part and shows the rows the database holds at that moment.',
+    W: 600, H: 420,
+    params: [{ k: 'case', label: 'Case', type: 'select', v: 'order', opts: [['order', 'The real order a SELECT runs in'], ['inject', 'SQL injection and ? placeholders'], ['txn', 'A transaction that rolls back']] }],
+    tips: [
+      { t: 'Order: WHERE runs before GROUP BY, and SELECT runs almost last.', set: { case: 'order' }, play: true },
+      { t: 'Injection: one quote in the input changes the meaning of the SQL.', set: { case: 'inject' }, play: true },
+      { t: 'Transaction: a failed second update undoes the first one.', set: { case: 'txn' }, play: true }
+    ],
+    frames(p) { return MODES[p.case]().map(f => ({ ...f, mode: p.case })); },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const sql = f.mode === 'order' ? ORDER_SQL : f.mode === 'inject' ? INJ_SQL : TXN_SQL;
+      head(z, f.mode === 'order' ? 'SQL as written' : 'Python code', 16, 18);
+      const y0 = codeView(z, sql, f.cur, 16, 26, 568, { lh: 21, s: 12, bad: f.bad ? f.cur : undefined }) + 26;
+      head(z, f.title, 16, y0);
+      const x0 = 16, W = 568, rh = 26;
+      let x = x0;
+      const xs = f.w.map(fr => { const a = x; x += fr * W; return a; });
+      f.cols.forEach((h, i) => {
+        box(z, xs[i], y0 + 8, f.w[i] * W - 4, rh, h, { s: 12, b: true, fill: c.dark ? '#1e293b' : '#e2e8f0' });
+      });
+      const gcol = { g0: c.cv, g1: c.orange, g2: c.dark ? '#c4b5fd' : '#7c3aed' };
+      f.rows.forEach((r, j) => {
+        const y = y0 + 8 + (j + 1) * (rh + 3);
+        const st = r.s;
+        const stroke = st === 'bad' ? c.red : st === 'new' ? c.orange : st === 'ok' ? c.green : gcol[st] || c.line;
+        const fill = st === 'bad' ? (c.dark ? '#3b1414' : '#fee2e2') : st === 'ok' ? (c.dark ? '#14321f' : '#dcfce7') : st === 'new' ? (c.dark ? '#3a2a10' : '#fff7ed') : c.surf;
+        r.v.forEach((v, i) => {
+          box(z, xs[i], y, f.w[i] * W - 4, rh, String(v), { s: 12.5, mono: true, stroke, fill, w: st && st !== 'dim' ? 2 : 1.5, c: st === 'dim' ? c.ink2 : st === 'bad' ? c.red : undefined });
+        });
+        if (st === 'bad' && f.mode === 'order') D.line(g, x0 + 6, y + rh / 2, x0 + W - 10, y + rh / 2, c.red, 1.5);
+      });
+      if (f.out) {
+        const yo = z.H - 46;
+        box(z, 16, yo, 568, 36, f.out, { mono: true, s: 13, b: true, stroke: f.bad ? c.red : c.cv, fill: f.bad ? (c.dark ? '#3b1414' : '#fee2e2') : (c.dark ? '#0f2742' : '#eff6ff'), c: f.bad ? c.red : undefined });
+      }
+    }
+  });
+})();

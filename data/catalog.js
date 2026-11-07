@@ -7089,6 +7089,27 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-sqlite", title: "Databases with sqlite3 and SQL", emoji: "6.3", page: "content/python/py-sqlite.html",
+        summary: "sqlite3, SQL queries and joins, placeholders against injection, transactions, constraints and indexes.",
+        keywords: ["sqlite3", "SQLite", "SQL", "database", "JOIN", "GROUP BY", "SQL injection", "transaction", "index", "IntegrityError"],
+        minutes: 90, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Databases and SQL from Python", emoji: "", group: "Lesson", keywords: ["database", "table", "row", "column", "SQL", "SQLite", "sqlite3", "index", "transaction", "PostgreSQL"] },
+        { id: "first", title: "Connect, execute, commit, fetch", emoji: "", group: "Lesson", keywords: ["connect", "cursor", "execute", "commit", "fetchone", "fetchall", "fetchmany", "close", ":memory:", "lastrowid", "types"] },
+        { id: "sql", title: "SQL in one lesson: SELECT, WHERE, JOIN, GROUP BY", emoji: "", group: "Lesson", keywords: ["SELECT", "WHERE", "ORDER BY", "GROUP BY", "HAVING", "JOIN", "LEFT JOIN", "COUNT", "SUM", "COALESCE", "LIMIT", "INSERT", "UPDATE", "DELETE", "CREATE TABLE"] },
+        { id: "params", title: "Placeholders and SQL injection", emoji: "", group: "Lesson", keywords: ["placeholder", "qmark", "named parameters", "executemany", "executescript", "SQL injection", "rowcount", "OperationalError"] },
+        { id: "txn", title: "Transactions and rules on the data", emoji: "", group: "Lesson", keywords: ["transaction", "commit", "rollback", "with conn", "ACID", "atomic", "IntegrityError", "CHECK", "UNIQUE", "NOT NULL", "foreign key", "PRAGMA", "autocommit"] },
+        { id: "rows", title: "Friendlier rows and fast lookups with indexes", emoji: "", group: "Lesson", keywords: ["row_factory", "sqlite3.Row", "dict rows", "index", "CREATE INDEX", "EXPLAIN QUERY PLAN", "B-tree", "ORM", "SQLAlchemy", "N+1"] },
+        { id: "maths", title: "The maths: indexes, joins and estimates", emoji: "", group: "Lesson", keywords: ["full scan", "B-tree height", "fan out", "binary search", "selectivity", "join size", "cost of commits", "page"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "normal forms", "window functions", "WAL", "isolation levels", "query planner", "migrations"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "SQL", "LEFT JOIN", "GROUP BY", "HAVING", "self join", "subquery", "DENSE_RANK", "PARTITION BY", "window function"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
