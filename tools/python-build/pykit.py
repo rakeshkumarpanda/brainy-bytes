@@ -40,7 +40,7 @@ def run(key):
 
 def local(key, why):
     STATE['local'].add(key)
-    return (code(key) + f'<div class="py-local"><b>Run this one on your own computer.</b> {why} The output above comes from a real run '
+    return (code(key).replace('"></div>', '" data-local="1"></div>', 1) + f'<div class="py-local"><b>Run this one on your own computer.</b> {why} The output above comes from a real run '
             f'with CPython when this page was built.</div><div class="py-dlrow">{_dl(key)}<span>Run it with <code>python3 {key}.py</code>.</span></div>')
 
 

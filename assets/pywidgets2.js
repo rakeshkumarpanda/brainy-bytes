@@ -851,3 +851,98 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 5.1  threads and processes on a timeline: the GIL, waiting for I/O, and real parallel work
+   ===================================================================================================== */
+(() => {
+  const { trace, head, D, box } = PYZ;
+  const MODES = {
+    io: { name: 'threads', work: [['run', 1], ['wait', 4], ['run', 1]], gil: true, what: 'download a page: a little Python work, a long wait for the network, a little work' },
+    cpu: { name: 'threads', work: [['run', 4]], gil: true, what: 'pure Python number crunching, with no waiting' },
+    proc: { name: 'processes', work: [['run', 4]], gil: false, what: 'the same number crunching, each in its own process with its own interpreter' }
+  };
+  function simulate(m) {
+    const ws = [0, 1, 2].map(() => ({ ph: m.work.map(p => [p[0], p[1]]), i: 0 }));
+    const cols = [];
+    let holder = -1, held = 0;
+    while (ws.some(w => w.i < w.ph.length) && cols.length < 30) {
+      const col = ws.map(w => (w.i >= w.ph.length ? 'done' : w.ph[w.i][0] === 'wait' ? 'wait' : 'ready'));
+      const runnable = col.map((s, k) => (s === 'ready' ? k : -1)).filter(k => k >= 0);
+      let runs = [];
+      if (!m.gil) runs = runnable;
+      else if (runnable.length) {
+        let pick = runnable.includes(holder) && held < 1 ? holder : runnable.find(k => k > holder);
+        if (pick === undefined) pick = runnable[0];
+        held = pick === holder ? held + 1 : 0;
+        holder = pick;
+        runs = [pick];
+      }
+      runs.forEach(k => { col[k] = 'run'; });
+      cols.push(col);
+      ws.forEach((w, k) => {
+        if (w.i >= w.ph.length) return;
+        const p = w.ph[w.i];
+        if (p[0] === 'wait' || runs.includes(k)) { p[1] -= 1; if (p[1] === 0) w.i += 1; }
+      });
+    }
+    return cols;
+  }
+  trace('pygil', {
+    title: 'Three workers on a timeline',
+    sub: 'Each column is one unit of time. Pick the kind of work and see what the GIL (global interpreter lock) allows to run at the same time.',
+    W: 600, H: 330,
+    params: [{ k: 'mode', label: 'Kind of work', type: 'select', v: 'io', opts: [['io', 'Waiting for I/O, with threads'], ['cpu', 'CPU work, with threads'], ['proc', 'CPU work, with processes']] }],
+    tips: [
+      { t: 'While one thread waits for the network, another can run. Threads help I/O bound work.', set: { mode: 'io' }, play: true },
+      { t: 'CPU work with threads: only one runs at a time, so it takes as long as doing the jobs one by one.', set: { mode: 'cpu' }, play: true },
+      { t: 'Processes each have their own GIL and run on different cores at the same time.', set: { mode: 'proc' }, play: true }
+    ],
+    frames(p) {
+      const m = MODES[p.mode];
+      const cols = simulate(m);
+      const seq = 3 * m.work.reduce((a, w) => a + w[1], 0);
+      const who = m.gil ? 'Thread' : 'Process';
+      const fr = [{ mode: p.mode, upto: 0, seq, total: cols.length, cols, say: `Three ${m.name} each have to ${m.what}. Done one after another, that takes ${seq} units of time.` }];
+      cols.forEach((col, t) => {
+        const run = col.map((s, k) => (s === 'run' ? `${who} ${k + 1}` : '')).filter(Boolean);
+        const wait = col.filter(s => s === 'wait').length, ready = col.map((s, k) => (s === 'ready' ? `${who} ${k + 1}` : '')).filter(Boolean);
+        let say = `Time ${t + 1}: ` + (run.length ? `${run.join(' and ')} ${run.length > 1 ? 'run' : 'runs'}` : 'nobody runs');
+        if (m.gil && run.length) say += ' while holding the GIL';
+        say += '.';
+        if (wait) say += ` ${wait} waiting for the network, and waiting does not need the GIL.`;
+        if (ready.length) say += ` ${ready.join(' and ')} ${ready.length > 1 ? 'are' : 'is'} ready but must wait for the GIL.`;
+        fr.push({ mode: p.mode, upto: t + 1, seq, total: cols.length, cols, say });
+      });
+      const verdict = p.mode === 'io' ? 'Threads finished much sooner because the waits overlapped.' : p.mode === 'cpu' ? 'No gain: the GIL let only one thread run Python code at a time.' : 'About three times faster: three cores worked at the same time.';
+      fr.push({ mode: p.mode, upto: cols.length, seq, total: cols.length, cols, end: true, say: `All done after ${cols.length} units instead of ${seq}. ${verdict}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const m = MODES[f.mode];
+      const fill = { run: c.dark ? '#14532d' : '#86efac', wait: c.dark ? '#1e3a5f' : '#bfdbfe', ready: c.dark ? '#5a3a10' : '#fed7aa', done: c.surf };
+      const cw = Math.min(46, 470 / Math.max(f.total, 8));
+      head(z, m.gil ? 'One process, one GIL, three threads' : 'Three processes, three GILs, three cores', 16, 18);
+      [0, 1, 2].forEach(k => {
+        const y = 34 + k * 46;
+        D.text(g, (m.gil ? 'Thread ' : 'Process ') + (k + 1), 16, y + 25, { s: 13, b: true, c: c.ink });
+        for (let t = 0; t < f.upto; t++) {
+          const s = f.cols[t][k];
+          D.rect(g, 100 + t * cw, y + 4, cw - 2, 32, { fill: fill[s], stroke: s === 'done' ? c.line : null });
+        }
+      });
+      D.line(g, 100, 178, 100 + Math.max(f.total, 1) * cw, 178, c.line, 1);
+      for (let t = 0; t <= f.total; t += 2) D.text(g, String(t), 100 + t * cw, 192, { a: 'center', s: 10, c: c.ink2 });
+      D.text(g, 'time', 100 + f.total * cw + 8, 192, { s: 10, c: c.ink2 });
+      const leg = [['run', 'running Python code'], ['wait', 'waiting for I/O'], ['ready', 'ready, waiting for the GIL'], ['done', 'finished']];
+      leg.forEach(([k, label], i) => {
+        const x = [16, 176, 306, 494][i];
+        D.rect(g, x, 210, 16, 16, { fill: fill[k], stroke: c.line });
+        D.text(g, label, x + 22, 223, { s: 11, c: c.ink2 });
+      });
+      if (f.upto) box(z, 16, 246, 280, 40, `Time so far: ${f.upto}`, { s: 14, b: true, stroke: c.cv });
+      if (f.end) box(z, 304, 246, 280, 40, `One by one: ${f.seq}. Here: ${f.total}`, { s: 14, b: true, stroke: f.total < f.seq ? c.green : c.red });
+    }
+  });
+})();

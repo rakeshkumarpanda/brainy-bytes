@@ -7004,6 +7004,28 @@ function pyAdvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-a5", title: "Doing many things at once: threads, processes and asyncio", emoji: "5", step: 5, part: "advanced", level: "Advanced", blurb: "Use waiting time and every CPU core: threads for I/O, processes for heavy work, and asyncio for thousands of connections.", topics: [
+      { id: "py-concurrency", title: "Threads and processes", emoji: "5.1", page: "content/python/py-concurrency.html",
+        summary: "threads, races and locks, worker queues, futures, the GIL, processes and free-threaded Python.",
+        keywords: ["concurrency", "parallelism", "threading", "Lock", "race condition", "deadlock", "queue", "concurrent.futures", "GIL", "multiprocessing", "free-threaded"],
+        minutes: 80, counts: {"lessons": 9, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Doing many things at once", emoji: "", group: "Lesson", keywords: ["concurrency", "parallelism", "thread", "process", "I/O bound", "CPU bound", "ThreadPoolExecutor", "GIL"] },
+        { id: "threads", title: "Threads: start, join and share", emoji: "", group: "Lesson", keywords: ["threading", "Thread", "start", "join", "daemon", "current_thread", "shared memory"] },
+        { id: "locks", title: "Race conditions and locks", emoji: "", group: "Lesson", keywords: ["race condition", "Lock", "RLock", "Semaphore", "Event", "Condition", "Barrier", "deadlock", "thread safety"] },
+        { id: "queues", title: "Worker threads with queue and futures", emoji: "", group: "Lesson", keywords: ["queue.Queue", "producer consumer", "worker threads", "sentinel", "concurrent.futures", "submit", "Future", "as_completed", "map"] },
+        { id: "gil", title: "The GIL and processes", emoji: "", group: "Lesson", keywords: ["GIL", "global interpreter lock", "multiprocessing", "ProcessPoolExecutor", "Pool", "__main__ guard", "pickle", "free-threaded", "python3.14t", "fork", "spawn", "forkserver", "subinterpreters"] },
+        { id: "maths", title: "The maths: speedup, Amdahl and pool sizes", emoji: "", group: "Lesson", keywords: ["speedup", "efficiency", "Amdahl's law", "Gustafson's law", "Little's law", "thread pool size", "parallel fraction"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "shared_memory", "lock free", "contention"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "concurrency", "Event", "Semaphore", "Barrier", "Condition", "dining philosophers", "scheduling"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
