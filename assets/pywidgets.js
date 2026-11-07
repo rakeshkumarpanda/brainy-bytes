@@ -1144,3 +1144,367 @@ const PYZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Core 3.1  string indexing and slicing, and UTF-8 bytes
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, D, esc } = PYZ;
+  const optInt = s => { s = String(s).trim(); if (s === '') return null; if (!/^-?\d+$/.test(s)) throw new Error('start, stop and step must be whole numbers or empty.'); return parseInt(s, 10); };
+  /* the same rules as CPython's PySlice_AdjustIndices */
+  function sliceIdx(n, a, b, c) {
+    const step = c === null ? 1 : c;
+    if (step === 0) throw new Error('ValueError: slice step cannot be zero');
+    const lower = step < 0 ? -1 : 0, upper = step < 0 ? n - 1 : n;
+    const fix = (v, dflt) => { if (v === null) return dflt; if (v < 0) { v += n; if (v < lower) v = lower; } else if (v > upper) v = upper; return v; };
+    const start = fix(a, step < 0 ? upper : lower), stop = fix(b, step < 0 ? lower : upper);
+    const idx = [];
+    for (let i = start; step > 0 ? i < stop : i > stop; i += step) idx.push(i);
+    return { start, stop, step, idx };
+  }
+  PYZ.sliceIdx = sliceIdx;
+  trace('pystr', {
+    title: 'Indexing and slicing a string',
+    sub: 'Every character has two numbers: a position from the left (0, 1, 2 ...) and one from the right (-1, -2 ...). A slice [start:stop:step] walks between them.',
+    W: 600, H: 280,
+    params: [
+      { k: 's', label: 'Text', type: 'text', v: 'PYTHON ROCKS' },
+      { k: 'a', label: 'start (empty for the default)', type: 'text', v: '1' },
+      { k: 'b', label: 'stop (empty for the default)', type: 'text', v: '8' },
+      { k: 'c', label: 'step (empty means 1)', type: 'text', v: '2' }
+    ],
+    tips: [
+      { t: '[::-1] reverses the text: start at the end, step backwards to the front.', set: { a: '', b: '', c: '-1' }, play: true },
+      { t: '[-5:] takes the last five characters. Negative numbers count from the right.', set: { a: '-5', b: '', c: '' }, play: true },
+      { t: '[3:100] does not fail: a slice quietly stops at the end. Only a single index like s[100] raises IndexError.', set: { a: '3', b: '100', c: '' }, play: true },
+      { t: '[8:2] is empty: with a positive step you cannot walk from 8 left to 2.', set: { a: '8', b: '2', c: '' }, play: true }
+    ],
+    frames(p) {
+      const s = [...String(p.s)].slice(0, 20), n = s.length, fr = [];
+      if (!n) throw new Error('Type some text first.');
+      const a = optInt(p.a), b = optInt(p.b), c = optInt(p.c);
+      const r = sliceIdx(n, a, b, c);
+      const txt = `[${p.a}:${p.b}${String(p.c).trim() === '' ? '' : ':' + p.c}]`;
+      fr.push({ s, say: `The text has ${n} characters. Positions go from 0 to ${n - 1} on the left, and from -1 to -${n} on the right. s[0] is "${esc(s[0])}" and s[-1] is "${esc(s[n - 1])}".` });
+      fr.push({ s, r, ph: 'norm', say: `Python first turns <code>${esc(txt)}</code> into real positions. ${a === null ? `No start, so it starts at ${r.step > 0 ? '0 (the beginning)' : 'the last character'}` : a < 0 ? `start ${a} counts from the right: ${a} + ${n} = ${a + n}${r.start !== a + n ? `, then it is moved into range: ${r.start}` : ''}` : `start is ${a}${r.start !== a ? `, which is past the end, so it becomes ${r.start}` : ''}`}. ${b === null ? `No stop, so it goes ${r.step > 0 ? 'to the end' : 'to the very first character'}` : b < 0 ? `stop ${b} becomes ${b} + ${n} = ${b + n}${r.stop !== b + n ? ` (moved to ${r.stop})` : ''}` : `stop is ${b}${r.stop !== b ? `, moved to ${r.stop}` : ''}`}. The step is ${r.step}. The stop position itself is never taken.` });
+      const got = [];
+      r.idx.forEach((i, k) => { got.push(s[i]); fr.push({ s, r, ph: 'walk', cur: i, got: got.slice(), say: `Take position ${i} (also ${i - n}): "${esc(s[i])}". ${k + 1 < r.idx.length ? `Next position: ${i} + ${r.step} = ${i + r.step}.` : `Next would be ${i + r.step}, which ${r.step > 0 ? 'is not before' : 'is not after'} the stop ${r.stop}, so we stop.`}` }); });
+      fr.push({ s, r, ph: 'done', got, say: r.idx.length ? `The slice is <b>"${esc(got.join(''))}"</b>, a new string of ${got.length} character${got.length === 1 ? '' : 's'}. The original text is not changed: strings are immutable.` : `No position fits between start ${r.start} and stop ${r.stop} with step ${r.step}, so the slice is the empty string "". A slice never raises IndexError.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, n = f.s.length, w = Math.min(44, 560 / n), x0 = (600 - n * w) / 2;
+      D.text(z.g, 'from the left', x0 - 6, 34, { a: 'right', s: 10, c: c.ink2 });
+      D.text(z.g, 'from the right', x0 - 6, 120, { a: 'right', s: 10, c: c.ink2 });
+      f.s.forEach((ch, i) => {
+        const x = x0 + i * w, inSl = f.r && f.r.idx.includes(i), taken = f.got && f.r.idx.indexOf(i) < f.got.length && inSl;
+        D.text(z.g, String(i), x + w / 2, 34, { a: 'center', s: 12, mono: true, b: true, c: c.cv });
+        box(z, x + 1, 44, w - 2, 50, ch === ' ' ? '·' : ch, { mono: true, b: true, s: Math.min(20, w * 0.5), fill: f.cur === i ? c.cv : taken ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf, stroke: inSl ? c.cv : c.line, c: f.cur === i ? '#fff' : c.ink });
+        D.text(z.g, String(i - n), x + w / 2, 120, { a: 'center', s: 12, mono: true, b: true, c: c.orange });
+      });
+      if (f.r) {
+        const pos = v => x0 + Math.max(-0.5, Math.min(n + 0.5, v)) * w + w / 2;
+        if (f.r.step > 0 || true) {
+          D.line(z.g, pos(f.r.start) - w / 2 + 2, 140, pos(f.r.start) - w / 2 + 2, 160, c.green, 3);
+          D.text(z.g, 'start ' + f.r.start, pos(f.r.start) - w / 2 + 6, 158, { s: 11, b: true, c: c.green });
+          D.line(z.g, pos(f.r.stop) - w / 2 + 2, 166, pos(f.r.stop) - w / 2 + 2, 186, c.red, 3);
+          D.text(z.g, 'stop ' + f.r.stop + ' (not taken)', pos(f.r.stop) - w / 2 + 6, 184, { s: 11, b: true, c: c.red });
+        }
+      }
+      if (f.got) {
+        head(z, 'Result so far', 20, 214);
+        box(z, 20, 222, 560, 40, '"' + f.got.join('') + '"', { mono: true, b: true, s: 16, stroke: c.green, fill: c.bg });
+      }
+    }
+  });
+
+  trace('pyutf8', {
+    title: 'From characters to bytes: Unicode code points and UTF-8',
+    sub: 'Each character has a Unicode number (code point). UTF-8 stores small numbers in 1 byte and bigger ones in 2, 3 or 4 bytes.',
+    W: 600, H: 300,
+    params: [{ k: 's', label: 'Text (try letters from any language)', type: 'text', v: 'Aé₹नम' }],
+    tips: [
+      { t: 'English letters and digits are 1 byte each, the same as old ASCII. That is why UTF-8 became the web standard.', set: { s: 'Hi 5' }, play: true },
+      { t: 'The rupee sign ₹ is U+20B9, so it needs 3 bytes. len("₹") is 1 but len("₹".encode()) is 3.', set: { s: '₹' }, play: true },
+      { t: 'Hindi letters such as न are 3 bytes each in UTF-8.', set: { s: 'नमस्ते' }, play: true }
+    ],
+    frames(p) {
+      const chars = [...String(p.s)].slice(0, 8), fr = [];
+      if (!chars.length) throw new Error('Type some text first.');
+      const rows = [];
+      fr.push({ rows: [], say: `The text has ${chars.length} characters, so len() is ${chars.length}. Python stores text as Unicode characters. To save it in a file or send it over the internet it must become <b>bytes</b>, and UTF-8 is the usual way.` });
+      let total = 0;
+      chars.forEach(ch => {
+        const cp = ch.codePointAt(0);
+        const bytes = [...new TextEncoder().encode(ch)];
+        total += bytes.length;
+        const tmpl = bytes.length === 1 ? '0xxxxxxx' : bytes.length === 2 ? '110xxxxx 10xxxxxx' : bytes.length === 3 ? '1110xxxx 10xxxxxx 10xxxxxx' : '11110xxx 10xxxxxx 10xxxxxx 10xxxxxx';
+        rows.push({ ch, cp, bytes, tmpl });
+        fr.push({ rows: rows.slice(), say: `"${esc(ch)}" has code point <b>U+${cp.toString(16).toUpperCase().padStart(4, '0')}</b> (ord gives ${cp}). ${cp < 0x80 ? 'Below 128, so 1 byte, the same as ASCII.' : cp < 0x800 ? 'Below 2,048, so 2 bytes.' : cp < 0x10000 ? 'Below 65,536, so 3 bytes.' : 'Above 65,535, so 4 bytes (emoji and rare scripts live here).'} The pattern is <code>${tmpl}</code> and the bits of ${cp} fill the x places: ${bytes.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ')}.` });
+      });
+      fr.push({ rows, total, say: `In total <code>len(text.encode("utf-8"))</code> is <b>${total}</b> bytes for ${chars.length} characters. Decoding the bytes with .decode("utf-8") gives the same text back. Reading bytes with the wrong encoding gives strange characters or UnicodeDecodeError.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      ['char', 'code point', 'UTF-8 bytes (hex)', 'bits'].forEach((h, i) => head(z, h, [16, 70, 190, 330][i], 18));
+      f.rows.forEach((r, i) => {
+        const y = 28 + i * 32;
+        box(z, 16, y, 40, 26, r.ch, { b: true, s: 15 });
+        D.text(g, 'U+' + r.cp.toString(16).toUpperCase().padStart(4, '0'), 70, y + 18, { s: 13, mono: true, b: true, c: c.cv });
+        r.bytes.forEach((b, k) => box(z, 190 + k * 34, y, 30, 26, b.toString(16).toUpperCase().padStart(2, '0'), { mono: true, s: 12, stroke: [c.cv, c.orange, c.green, c.purple][k] }));
+        const bits = r.bytes.map(b => b.toString(2).padStart(8, '0')).join(' ');
+        D.text(g, bits, 330, y + 18, { s: PYZ.fit(g, bits, 260, 11.5, { mono: true }), mono: true, c: c.ink });
+      });
+      if (f.total) D.text(g, `${f.rows.length} characters, ${f.total} bytes`, 16, 290, { s: 13, b: true, c: c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 3.2  lists: names, aliasing and copies, and how CPython grows a list
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, D, esc } = PYZ;
+  const lit = s => { const v = PYZ.literal(s); if (!v) throw new Error(`"${s}" is not a value. Use numbers or text in quotes.`); return PYZ.repr(v); };
+  const items = s => { s = s.trim(); if (!/^\[.*\]$/.test(s)) throw new Error(`Expected a list like [1, 2, 3], got ${s}`); const inner = s.slice(1, -1).trim(); return inner ? PYZ.splitArgs(inner).map(lit) : []; };
+  trace('pylist', {
+    title: 'Lists are shared, not copied: names, aliases and copies',
+    sub: 'Write a few list commands, one per line. Each step shows which name points to which list object, and how the lists change.',
+    W: 600, H: 330,
+    params: [{ k: 'code', label: 'Commands', type: 'area', v: 'a = [1, 2, 3]\nb = a\nc = a[:]\na.append(4)\nb[0] = 99\nc.insert(0, "x")\na = a + [5]' }],
+    tips: [
+      { t: 'b = a does not copy. b[0] = 99 changes the one list both names share, so a sees it too. c = a[:] made a real copy, so c is safe.', play: true },
+      { t: 'a += [5] changes the list in place (b sees it), but a = a + [5] builds a new list and moves only a.', set: { code: 'a = [1, 2]\nb = a\na += [5]\na = a + [6]' }, play: true },
+      { t: 'pop, remove and del also change the shared list. remove deletes the first match only.', set: { code: 'a = [3, 1, 3, 2]\nb = a\na.remove(3)\nb.pop()\ndel a[0]\na.sort()' }, play: true }
+    ],
+    frames(p) {
+      const lines = String(p.code).split('\n').map(s => s.trim()).filter(Boolean).slice(0, 9);
+      const objs = [], env = {}, fr = [];
+      let id = 0;
+      const mk = arr => { objs.push({ id: ++id, v: arr }); return id; };
+      const get = n => { if (!(n in env)) throw new Error(`NameError: name '${n}' is not defined`); return objs.find(o => o.id === env[n]); };
+      const snap = (i, say, hl) => fr.push({ lines, cur: i, env: { ...env }, objs: objs.map(o => ({ id: o.id, v: o.v.slice() })), hl, say });
+      lines.forEach((ln, i) => {
+        let m;
+        const L = `<code>${esc(ln)}</code>: `;
+        if ((m = ln.match(/^(\w+)\s*=\s*(\[.*\])$/))) { const nid = mk(items(m[2])); env[m[1]] = nid; snap(i, L + `Python builds a <b>new list</b> object #${nid} and points the name ${m[1]} at it.`, nid); }
+        else if ((m = ln.match(/^(\w+)\s*=\s*(\w+)(\[:\]|\.copy\(\)|)$/)) && !m[3]) { const o = get(m[2]); env[m[1]] = o.id; snap(i, L + `No copy is made. ${m[1]} becomes a second name for list #${o.id}. Now ${m[1]} is ${m[2]} is True. Changing the list through either name changes it for both.`, o.id); }
+        else if ((m = ln.match(/^(\w+)\s*=\s*(?:(\w+)\[:\]|(\w+)\.copy\(\)|list\((\w+)\))$/))) { const src = m[2] || m[3] || m[4], o = get(src); const nid = mk(o.v.slice()); env[m[1]] = nid; snap(i, L + `This makes a <b>new list</b> #${nid} with the same items (a shallow copy). From now on ${m[1]} and ${src} are independent.`, nid); }
+        else if ((m = ln.match(/^(\w+)\.append\((.+)\)$/))) { const o = get(m[1]); o.v.push(lit(m[2])); snap(i, L + `append adds ${esc(lit(m[2]))} at the end of list #${o.id}, <b>in place</b>. Every name pointing to #${o.id} sees it.`, o.id); }
+        else if ((m = ln.match(/^(\w+)\.insert\((-?\d+),\s*(.+)\)$/))) { const o = get(m[1]); let k = +m[2]; if (k < 0) k = Math.max(0, o.v.length + k); k = Math.min(k, o.v.length); o.v.splice(k, 0, lit(m[3])); snap(i, L + `insert puts ${esc(lit(m[3]))} before position ${m[2]}. Items after it move one place right, which costs time on long lists.`, o.id); }
+        else if ((m = ln.match(/^(\w+)\.extend\((\[.*\])\)$/)) || (m = ln.match(/^(\w+)\s*\+=\s*(\[.*\])$/))) { const o = get(m[1]); o.v.push(...items(m[2])); snap(i, L + `${ln.includes('+=') ? '+= on a list is the same as extend: it' : 'extend'} adds every item to the <b>same</b> list #${o.id}, in place.`, o.id); }
+        else if ((m = ln.match(/^(\w+)\s*=\s*(\w+)\s*\+\s*(\[.*\])$/))) { const o = get(m[2]); const nid = mk(o.v.concat(items(m[3]))); env[m[1]] = nid; snap(i, L + `+ builds a <b>brand new</b> list #${nid}. Only the name ${m[1]} moves to it. Other names still see the old list #${o.id}.`, nid); }
+        else if ((m = ln.match(/^(\w+)\[(-?\d+)\]\s*=\s*(.+)$/))) { const o = get(m[1]); let k = +m[2]; if (k < 0) k += o.v.length; if (k < 0 || k >= o.v.length) throw new Error('IndexError: list assignment index out of range'); o.v[k] = lit(m[3]); snap(i, L + `The item at position ${m[2]} of list #${o.id} is replaced by ${esc(lit(m[3]))}. Lists are mutable, so the object itself changes.`, o.id); }
+        else if ((m = ln.match(/^(\w+)\.pop\((-?\d*)\)$/))) { const o = get(m[1]); if (!o.v.length) throw new Error('IndexError: pop from empty list'); let k = m[2] === '' ? o.v.length - 1 : +m[2]; if (k < 0) k += o.v.length; const x = o.v.splice(k, 1)[0]; snap(i, L + `pop removes and returns ${esc(x)} from position ${k}. pop() with no number takes the last item, which is fast. pop(0) has to move every other item.`, o.id); }
+        else if ((m = ln.match(/^(\w+)\.remove\((.+)\)$/))) { const o = get(m[1]); const x = lit(m[2]), k = o.v.indexOf(x); if (k < 0) throw new Error(`ValueError: list.remove(x): x not in list`); o.v.splice(k, 1); snap(i, L + `remove finds the <b>first</b> ${esc(x)} (at position ${k}) and deletes it.`, o.id); }
+        else if ((m = ln.match(/^del\s+(\w+)\[(-?\d+)\]$/))) { const o = get(m[1]); let k = +m[2]; if (k < 0) k += o.v.length; if (k < 0 || k >= o.v.length) throw new Error('IndexError: list assignment index out of range'); const x = o.v.splice(k, 1)[0]; snap(i, L + `del removes ${esc(x)} at position ${m[2]}. Unlike pop it gives nothing back.`, o.id); }
+        else if ((m = ln.match(/^(\w+)\.(sort|reverse|clear)\(\)$/))) { const o = get(m[1]); if (m[2] === 'sort') { const num = o.v.every(x => /^-?[\d.]+$/.test(x)), str = o.v.every(x => /^['"]/.test(x)); if (!num && !str) throw new Error("TypeError: '<' not supported between instances of 'str' and 'int'"); o.v.sort((x, y) => num ? parseFloat(x) - parseFloat(y) : (x < y ? -1 : x > y ? 1 : 0)); } else if (m[2] === 'reverse') o.v.reverse(); else o.v.length = 0; snap(i, L + `${m[2]}() changes list #${o.id} in place and returns None. ${m[2] === 'sort' ? 'sorted(a) would instead make a new sorted list and leave a alone.' : ''}`, o.id); }
+        else throw new Error(`Line ${i + 1} is not one of the commands this animation knows: x = [..], x = y, x = y[:], x.append(v), x.insert(i, v), x.extend([..]), x += [..], x = y + [..], x[i] = v, x.pop(), x.remove(v), del x[i], x.sort(), x.reverse(), x.clear().`);
+      });
+      const shared = Object.entries(env).filter(([n, o]) => Object.values(env).filter(x => x === o).length > 1).map(([n]) => n);
+      fr.push({ lines, cur: -1, env: { ...env }, objs: objs.map(o => ({ id: o.id, v: o.v.slice() })), say: `Finished. ${Object.entries(env).map(([n, o]) => `${n} = [${objs.find(x => x.id === o).v.join(', ')}]`).join(', ')}. ${shared.length ? `${shared.join(' and ')} share one list.` : 'No two names share a list now.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Commands', 16, 18);
+      PYZ.codeView(z, f.lines, f.cur, 16, 26, 200, { s: 11.5, lh: 19 });
+      head(z, 'Names', 236, 18); head(z, 'List objects', 330, 18);
+      const live = f.objs.filter(o => Object.values(f.env).includes(o.id) || o.id === f.hl);
+      const oy = {};
+      live.forEach((o, i) => { oy[o.id] = 28 + i * 56; });
+      live.forEach(o => {
+        const y = oy[o.id];
+        D.text(z.g, '#' + o.id, 330, y + 12, { s: 10, c: c.ink2 });
+        const w = Math.min(36, 230 / Math.max(1, o.v.length));
+        if (!o.v.length) box(z, 352, y, 40, 34, '[ ]', { mono: true, stroke: o.id === f.hl ? c.cv : c.line });
+        o.v.forEach((v, k) => { box(z, 352 + k * w, y, w - 2, 34, v, { mono: true, s: Math.min(13, w * 0.42), stroke: o.id === f.hl ? c.cv : c.line, w: o.id === f.hl ? 2.2 : 1.2 }); D.text(z.g, String(k), 352 + k * w + w / 2, y + 46, { a: 'center', s: 9.5, c: c.ink2 }); });
+      });
+      Object.entries(f.env).forEach(([n, o], i) => {
+        const y = 28 + i * 40;
+        box(z, 236, y, 60, 28, n, { mono: true, b: true });
+        D.arrow(z.g, 298, y + 14, 348, (oy[o] ?? y) + 17, o === f.hl ? c.cv : c.ink2, 1.6);
+      });
+    }
+  });
+
+  /* ---------- how append grows the hidden array ---------- */
+  const grow = n => { if (n === 0) return 0; let a = (n + (n >> 3) + 6) & ~3; if (n - 0 > a - n && false) a = (n + 3) & ~3; return a; };
+  trace('pygrow', {
+    title: 'Why append is fast: CPython keeps spare room in a list',
+    sub: 'A list stores pointers in a hidden array. When it is full, CPython makes a bigger array and copies everything. Watch how rarely that happens.',
+    W: 600, H: 320,
+    params: [{ k: 'n', label: 'Number of appends', type: 'range', v: 30, min: 5, max: 100 }],
+    tips: [
+      { t: '30 appends cause only 5 resizes. Most appends just fill a spare slot.', set: { n: 30 }, play: true },
+      { t: '100 appends: the total number of items copied stays below about 4 per append, so append is O(1) on average (amortised).', set: { n: 100 }, play: true }
+    ],
+    frames(p) {
+      const fr = [];
+      let size = 0, cap = 0, copies = 0, resizes = 0;
+      const hist = [];
+      fr.push({ size, cap, copies, hist: [], say: 'Start with an empty list: a = []. The hidden array has room for 0 items.' });
+      for (let i = 1; i <= p.n; i++) {
+        if (i > cap) {
+          const nc = grow(i);
+          copies += size; resizes++;
+          hist.push({ at: i, from: cap, to: nc });
+          fr.push({ size: i, cap: nc, copies, hist: hist.slice(), resized: true, say: `Append number ${i}: the array (room for ${cap}) is full. CPython asks for a bigger one: new room = (n + n // 8 + 6) rounded down to a multiple of 4 = <b>${nc}</b>, then copies the ${size} old item${size === 1 ? '' : 's'}. Resizes so far: ${resizes}.` });
+          cap = nc;
+        } else if (i === p.n || (i <= 6) || i % 10 === 0) {
+          fr.push({ size: i, cap, copies, hist: hist.slice(), say: `Append number ${i}: there is a free slot, so the item just goes in. No copying. ${cap - i} spare slot${cap - i === 1 ? '' : 's'} left.` });
+        }
+        size = i;
+      }
+      fr.push({ size, cap, copies, hist, done: true, say: `${p.n} appends needed only ${resizes} resizes and ${copies} item copies in total, that is ${(copies / p.n).toFixed(2)} copies per append. Because the room grows by about 12.5% plus a little each time, the average cost of append stays constant: <b>amortised O(1)</b>.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, cols = 25, cw = 22;
+      head(z, `len(a) = ${f.size}, room = ${f.cap}`, 16, 18);
+      for (let k = 0; k < Math.min(f.cap, 100); k++) {
+        const x = 16 + (k % cols) * cw, y = 28 + Math.floor(k / cols) * 28;
+        PYZ.rr(z.g, x, y, cw - 3, 22, 4, { fill: k < f.size ? (f.resized && k === f.size - 1 ? c.orange : c.cv) : c.surf, stroke: c.line });
+      }
+      head(z, 'Resizes: when, and the new room', 16, 160);
+      f.hist.slice(-10).forEach((h, i) => D.text(z.g, `append ${h.at}: ${h.from} → ${h.to}`, 16 + (i % 5) * 116, 182 + Math.floor(i / 5) * 20, { s: 12, mono: true, c: c.ink }));
+      D.text(z.g, `items copied so far: ${f.copies}`, 16, 240, { s: 13, b: true, c: c.ink });
+      const bw = Math.min(560, f.copies * 2);
+      PYZ.rr(z.g, 16, 250, Math.max(2, bw), 14, 4, { fill: c.orange });
+      PYZ.rr(z.g, 16, 270, Math.max(2, Math.min(560, f.size * 2)), 14, 4, { fill: c.cv });
+      D.text(z.g, 'copies (orange) against appends (blue)', 16, 302, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 3.3  set operations on a Venn diagram
+   ===================================================================================================== */
+(() => {
+  const { trace, head, D, esc } = PYZ;
+  trace('pyset', {
+    title: 'Set operations on a picture',
+    sub: 'Type two sets. Each element goes into the left part, the middle or the right part. Then the chosen operation lights up its region.',
+    W: 600, H: 300,
+    params: [
+      { k: 'a', label: 'Set A', type: 'text', v: 'python, java, c, go' },
+      { k: 'b', label: 'Set B', type: 'text', v: 'go, rust, java, kotlin' },
+      { k: 'op', label: 'Operation', type: 'select', v: '&', opts: [['|', 'A | B  union: in A or B'], ['&', 'A & B  intersection: in both'], ['-', 'A - B  difference: in A, not in B'], ['^', 'A ^ B  symmetric difference: in exactly one']] }
+    ],
+    tips: [
+      { t: 'Union of two class lists gives every student once, even those in both classes.', set: { op: '|' }, play: true },
+      { t: 'Repeated items vanish: a set keeps only one copy. Type "a, a, b" as set A.', set: { a: 'a, a, b', b: 'b, c', op: '|' }, play: true },
+      { t: 'A - B is not the same as B - A. Order matters for difference, but not for | & ^.', set: { op: '-' }, play: true }
+    ],
+    frames(p) {
+      const uniq = s => [...new Set(PYZ.list(p[s]))];
+      const A = uniq('a'), B = uniq('b'), fr = [];
+      const only = A.filter(x => !B.includes(x)), both = A.filter(x => B.includes(x)), onlyB = B.filter(x => !A.includes(x));
+      fr.push({ A, B, shown: [], say: `A = {${A.join(', ')}} has ${A.length} element${A.length === 1 ? '' : 's'}${PYZ.list(p.a).length !== A.length ? ' (duplicates were dropped, a set stores each value once)' : ''}. B = {${B.join(', ')}} has ${B.length}. Sets have no order, so Python may print them in any order.` });
+      const shown = [];
+      A.concat(onlyB).forEach(x => {
+        shown.push(x);
+        const where = both.includes(x) ? 'in both A and B, so it goes in the middle' : A.includes(x) ? 'only in A, so it goes on the left' : 'only in B, so it goes on the right';
+        fr.push({ A, B, shown: shown.slice(), cur: x, say: `"${esc(x)}" is ${where}. Python checks "is it in B?" with a hash lookup, which takes about the same time however big the set is.` });
+      });
+      const res = p.op === '|' ? A.concat(onlyB) : p.op === '&' ? both : p.op === '-' ? only : only.concat(onlyB);
+      fr.push({ A, B, shown, op: p.op, res, say: `A ${p.op} B = {${res.join(', ')}}: ${res.length} element${res.length === 1 ? '' : 's'}. ${{ '|': 'Union takes all three regions.', '&': 'Intersection takes only the middle.', '-': 'Difference takes only the left part.', '^': 'Symmetric difference takes the two outer parts, not the middle.' }[p.op]} Size check: |A ∪ B| = |A| + |B| − |A ∩ B| = ${A.length} + ${B.length} − ${both.length} = ${A.length + B.length - both.length}.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const L = { x: 220, y: 150, r: 110 }, R = { x: 380, y: 150, r: 110 };
+      const region = (inA, inB) => { if (!f.op) return false; return { '|': inA || inB, '&': inA && inB, '-': inA && !inB, '^': inA !== inB }[f.op]; };
+      // shade regions by sampling
+      if (f.op) {
+        g.save(); g.globalAlpha = 0.28; g.fillStyle = c.cv;
+        for (let x = 100; x < 500; x += 4) for (let y = 30; y < 270; y += 4) {
+          const a = Math.hypot(x - L.x, y - L.y) < L.r, b = Math.hypot(x - R.x, y - R.y) < R.r;
+          if ((a || b) && region(a, b)) g.fillRect(x, y, 4, 4);
+        }
+        g.restore();
+      }
+      D.circle(g, L.x, L.y, L.r, { stroke: c.cv, w: 2.5 }); D.circle(g, R.x, R.y, R.r, { stroke: c.orange, w: 2.5 });
+      D.text(g, 'A', L.x - 90, 40, { s: 18, b: true, c: c.cv }); D.text(g, 'B', R.x + 80, 40, { s: 18, b: true, c: c.orange });
+      const spots = { l: [], m: [], r: [] };
+      f.shown.forEach(x => { const k = f.A.includes(x) && f.B.includes(x) ? 'm' : f.A.includes(x) ? 'l' : 'r'; spots[k].push(x); });
+      const place = (arr, cx) => arr.slice(0, 7).forEach((x, i) => { const y = 75 + i * 26 + (arr.length < 4 ? 40 : 0); D.text(g, x, cx, y, { a: 'center', s: PYZ.fit(g, x, 80, 13), b: x === f.cur, c: x === f.cur ? c.red : c.ink }); });
+      place(spots.l, 160); place(spots.m, 300); place(spots.r, 440);
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 3.4  a dictionary is a hash table: indices plus entries in insertion order
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, D, esc } = PYZ;
+  const toy = k => { if (/^-?\d+$/.test(k)) return Number(k) === -1 ? -2 : Number(k); let h = 0; for (const ch of k) h = (h * 31 + ch.codePointAt(0)) % 1000003; return h; };
+  trace('pydict', {
+    title: 'How a dict finds a key in one step: hashing',
+    sub: 'Type keys to insert. Each key is hashed to a number, the number picks a slot, and a collision tries another slot. Watch the table grow when it is two thirds full.',
+    W: 600, H: 330,
+    params: [
+      { k: 'keys', label: 'Keys to insert, in order', type: 'text', v: 'apple, mango, kiwi, fig, pear, plum, lime' },
+      { k: 'look', label: 'Then look up', type: 'text', v: 'fig' }
+    ],
+    tips: [
+      { t: 'The 6th key makes the table resize from 8 to 16 slots: a dict with 8 slots holds at most 5 keys (two thirds).', play: true },
+      { t: 'Whole number keys hash to themselves, so 3, 11 and 19 all want slot 3 in a table of 8 and must probe.', set: { keys: '3, 11, 19, 4', look: '19' }, play: true },
+      { t: 'Looking up a missing key also takes only a few probes, then hits an empty slot and raises KeyError (or get() returns None).', set: { look: 'banana' }, play: true }
+    ],
+    frames(p) {
+      const keys = [...new Set(PYZ.list(p.keys))].slice(0, 12), fr = [];
+      let size = 8, idx = new Array(8).fill(null), entries = [];
+      const probe = (h, sz, want) => {
+        const path = [];
+        let perturb = h, i = h & (sz - 1);
+        for (let t = 0; t < 40; t++) {
+          path.push(i);
+          if (want(i)) return path;
+          perturb = Math.floor(perturb / 32);
+          i = (5 * i + 1 + perturb) & (sz - 1);
+        }
+        return path;
+      };
+      fr.push({ size, idx: idx.slice(), entries: [], say: 'An empty dict starts with a table of 8 slots (the index) and an empty list of entries. Real Python hashes text with a random secret each run (PYTHONHASHSEED), so this picture uses a simpler hash. The steps are the same.' });
+      for (const k of keys) {
+        if ((entries.length + 1) > Math.floor(size * 2 / 3)) {
+          const ns = (() => { let s = 8; while (s < entries.length * 3) s *= 2; return s; })();
+          size = ns; idx = new Array(ns).fill(null);
+          entries.forEach((e, n) => { const pth = probe(e.h, size, i => idx[i] === null); idx[pth[pth.length - 1]] = n; });
+          fr.push({ size, idx: idx.slice(), entries: entries.map(e => ({ ...e })), resized: true, say: `The table would be more than two thirds full, so Python makes a bigger one: ${entries.length} keys × 3 = ${entries.length * 3}, next power of 2 is <b>${ns}</b>. Every key is placed again. The entries keep their order.` });
+        }
+        const h = toy(k);
+        const path = probe(h, size, i => idx[i] === null);
+        const slot = path[path.length - 1];
+        idx[slot] = entries.length;
+        entries.push({ k, h });
+        fr.push({ size, idx: idx.slice(), entries: entries.map(e => ({ ...e })), path, key: k, say: `Insert "${esc(k)}": hash = ${h}. Slot = hash % ${size} = ${h % size}${path.length > 1 ? `, but that slot is taken (a <b>collision</b>), so Python probes ${path.slice(1).join(', ')}` : ''}. Slot ${slot} gets entry number ${entries.length - 1}.` });
+      }
+      if (String(p.look).trim()) {
+        const k = String(p.look).trim(), h = toy(k);
+        const path = probe(h, size, i => idx[i] === null || entries[idx[i]].k === k);
+        const last = path[path.length - 1], hit = idx[last] !== null;
+        fr.push({ size, idx: idx.slice(), entries: entries.map(e => ({ ...e })), path, key: k, look: true, hit, say: `Look up "${esc(k)}": hash ${h}, start at slot ${h % size}. ${path.length > 1 ? `Probe ${path.join(', ')}. ` : ''}${hit ? `Slot ${last} points to entry ${idx[last]}, whose key matches. Found in ${path.length} probe${path.length > 1 ? 's' : ''}, no matter how many keys the dict holds: <b>O(1) on average</b>.` : `Slot ${last} is empty, so the key is not in the dict: d["${esc(k)}"] raises KeyError and d.get("${esc(k)}") returns None.`}` });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, n = f.size, w = Math.min(34, 560 / n);
+      head(z, `Index table: ${n} slots`, 16, 18);
+      for (let i = 0; i < n; i++) {
+        const onPath = f.path && f.path.includes(i), last = f.path && f.path[f.path.length - 1] === i;
+        box(z, 16 + i * w, 28, w - 3, 30, f.idx[i] === null ? '' : String(f.idx[i]), { mono: true, b: true, s: Math.min(13, w * 0.45), fill: last ? (f.look && !f.hit ? c.red : c.cv) : onPath ? (c.dark ? '#3b2a12' : '#fff1cc') : c.surf, stroke: onPath ? c.orange : c.line, c: last ? '#fff' : c.ink });
+        D.text(z.g, String(i), 16 + i * w + w / 2 - 1, 72, { a: 'center', s: 9.5, c: c.ink2 });
+      }
+      head(z, 'Entries, in insertion order', 16, 98);
+      f.entries.forEach((e, i) => {
+        const x = 16 + (i % 4) * 142, y = 106 + Math.floor(i / 4) * 36;
+        box(z, x, y, 136, 30, `${i}: ${e.k} (hash ${e.h})`, { mono: true, s: 11, stroke: e.k === f.key ? c.cv : c.line, w: e.k === f.key ? 2.4 : 1.2 });
+      });
+      D.text(z.g, `${f.entries.length} keys in ${n} slots, room for ${Math.floor(n * 2 / 3)} before the next resize`, 16, 318, { s: 12, b: true, c: f.resized ? c.orange : c.ink2 });
+    }
+  });
+})();

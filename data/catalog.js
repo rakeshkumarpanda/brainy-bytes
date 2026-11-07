@@ -6865,6 +6865,60 @@ function pyCoreModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-c3", title: "Data collections", emoji: "3", step: 3, part: "core", level: "Beginner", blurb: "Store and work with many values: strings, lists, tuples, sets and dictionaries.", topics: [
+      { id: "py-strings", title: "Strings: text, slicing, methods and Unicode", emoji: "3.1", page: "content/python/py-strings.html",
+        summary: "str, quotes, escapes, indexing, slicing, immutability, methods, split and join, Unicode, UTF-8, string maths.",
+        keywords: ["strings", "str", "slicing", "indexing", "string methods", "split", "join", "Unicode", "UTF-8", "ord", "chr", "immutable", "PCEP", "PCAP"],
+        minutes: 60, counts: {"lessons": 14, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "What a string is", emoji: "", group: "Lesson", keywords: ["string", "str", "text", "quotes", "multi line string", "len", "str()"] },
+        { id: "escape", title: "Escape characters and raw strings", emoji: "", group: "Lesson", keywords: ["escape sequence", "backslash", "newline", "tab", "raw string", "r string"] },
+        { id: "index", title: "Indexing and slicing", emoji: "", group: "Lesson", keywords: ["index", "negative index", "slice", "start stop step", "reverse string", "IndexError"] },
+        { id: "immut", title: "Strings never change", emoji: "", group: "Lesson", keywords: ["immutable", "TypeError", "item assignment", "new string", "interning", "is vs =="] },
+        { id: "ops", title: "Joining, repeating, searching and comparing", emoji: "", group: "Lesson", keywords: ["concatenation", "repetition", "in operator", "string comparison", "ord", "chr", "lexicographic"] },
+        { id: "methods", title: "The most used string methods", emoji: "", group: "Lesson", keywords: ["string methods", "strip", "upper", "lower", "replace", "find", "index", "count", "isdigit", "zfill", "casefold"] },
+        { id: "split", title: "split and join", emoji: "", group: "Lesson", keywords: ["split", "join", "rsplit", "partition", "splitlines", "separator", "string building"] },
+        { id: "build", title: "Working through text with loops", emoji: "", group: "Lesson", keywords: ["loop over string", "count characters", "Caesar cipher", "ord chr arithmetic"] },
+        { id: "unicode", title: "Unicode, code points and UTF-8", emoji: "", group: "Lesson", keywords: ["Unicode", "code point", "UTF-8", "ASCII", "encode", "decode", "bytes", "casefold"] },
+        { id: "versus", title: "str, bytes and lists of characters", emoji: "", group: "Lesson", keywords: ["str vs bytes", "bytearray", "PEP 393", "memory", "sys.getsizeof"] },
+        { id: "maths", title: "The maths of strings", emoji: "", group: "Lesson", keywords: ["substrings", "subsequences", "anagrams", "permutations", "Caesar cipher", "rolling hash", "Rabin Karp"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "normalisation", "grapheme", "unicodedata"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "reverse string", "valid palindrome", "longest common prefix", "roman to integer", "zigzag", "longest palindromic substring"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-lists", title: "Lists: storing, changing, sorting and copying", emoji: "3.2", page: "content/python/py-lists.html",
+        summary: "list methods, sort vs sorted, aliases and copies, matrices, bubble sort, unpacking, list growth and costs.",
+        keywords: ["lists", "list methods", "append", "sort", "sorted", "copy", "deepcopy", "matrix", "bubble sort", "mutable", "amortised", "PCEP"],
+        minutes: 65, counts: {"lessons": 16, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "What a list is", emoji: "", group: "Lesson", keywords: ["list", "mutable", "square brackets", "len", "min max sum", "in"] },
+        { id: "change", title: "Adding and changing items", emoji: "", group: "Lesson", keywords: ["append", "insert", "extend", "replace item", "slice assignment", "append vs extend"] },
+        { id: "remove", title: "Removing items", emoji: "", group: "Lesson", keywords: ["remove", "pop", "del", "clear", "ValueError", "IndexError", "remove while looping"] },
+        { id: "search", title: "Finding items", emoji: "", group: "Lesson", keywords: ["index", "count", "in", "linear search", "O(n)"] },
+        { id: "sort", title: "Sorting: sort() and sorted()", emoji: "", group: "Lesson", keywords: ["sort", "sorted", "key", "reverse", "stable sort", "Timsort", "None"] },
+        { id: "alias", title: "Names, aliases and copies", emoji: "", group: "Lesson", keywords: ["alias", "reference", "copy", "a[:]", "is vs ==", "mutable argument"] },
+        { id: "deep", title: "Shallow copy, deep copy and lists of lists", emoji: "", group: "Lesson", keywords: ["shallow copy", "deep copy", "deepcopy", "nested list", "2D list bug"] },
+        { id: "matrix", title: "Lists in lists: matrices", emoji: "", group: "Lesson", keywords: ["matrix", "2D list", "nested list", "transpose", "cube", "rows columns"] },
+        { id: "bubble", title: "Bubble sort, step by step", emoji: "", group: "Lesson", keywords: ["bubble sort", "swap", "pass", "O(n^2)", "early stop", "PCEP sorting"] },
+        { id: "unpack", title: "Unpacking, swapping and a first look at comprehensions", emoji: "", group: "Lesson", keywords: ["unpacking", "star unpacking", "swap", "list comprehension", "ValueError too many values"] },
+        { id: "growth", title: "How CPython makes append fast", emoji: "", group: "Lesson", keywords: ["capacity", "amortised", "append O(1)", "over allocation", "sys.getsizeof", "listobject.c"] },
+        { id: "versus", title: "Lists compared with other collections", emoji: "", group: "Lesson", keywords: ["list vs tuple", "list vs set", "time complexity", "deque", "choose collection"] },
+        { id: "maths", title: "The maths of lists", emoji: "", group: "Lesson", keywords: ["amortised analysis", "geometric series", "bubble sort maths", "binary search", "mean"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "dynamic array", "lower bound sorting", "Powersort"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "two pointers", "move zeroes", "best time to buy and sell stock", "rotate array", "spiral matrix", "Pascal's triangle"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
