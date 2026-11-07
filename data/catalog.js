@@ -6829,6 +6829,29 @@ function pyAdvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-a2", title: "Iterators, generators and context managers", emoji: "2", step: 2, part: "advanced", level: "Advanced", blurb: "Work with data one value at a time, use the itertools and functools toolbox, and manage resources safely with with.", topics: [
+      { id: "py-generators", title: "Iterators and generators", emoji: "2.1", page: "content/python/py-generators.html",
+        summary: "iterator protocol, iterator classes, yield, pipelines, yield from, send, throw, close, lazy built ins.",
+        keywords: ["iterator", "iterable", "generator", "yield", "next", "StopIteration", "yield from", "send", "pipeline", "lazy", "PCAP"],
+        minutes: 75, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Iterators and generators: one value at a time", emoji: "", group: "Lesson", keywords: ["iterable", "iterator", "iter", "next", "StopIteration", "for loop", "lazy", "generator"] },
+        { id: "classes", title: "Writing iterators as classes", emoji: "", group: "Lesson", keywords: ["__iter__", "__next__", "iterator class", "iterable class", "exhausted", "PEP 479"] },
+        { id: "generators", title: "Generator functions and yield", emoji: "", group: "Lesson", keywords: ["yield", "generator function", "generator object", "getgeneratorstate", "infinite generator", "fibonacci", "islice", "memory"] },
+        { id: "pipelines", title: "Generator pipelines", emoji: "", group: "Lesson", keywords: ["pipeline", "lazy evaluation", "chaining generators", "log processing", "streaming"] },
+        { id: "delegation", title: "yield from, send, throw and close", emoji: "", group: "Lesson", keywords: ["yield from", "delegation", "send", "throw", "close", "GeneratorExit", "coroutine", "return value"] },
+        { id: "lazy", title: "Lazy tools you already use", emoji: "", group: "Lesson", keywords: ["range", "dict views", "zip", "map", "enumerate", "reversed", "iter sentinel", "lazy built ins"] },
+        { id: "maths", title: "The maths: memory, early stopping and counting", emoji: "", group: "Lesson", keywords: ["memory", "early stopping", "running average", "combinations", "subsets", "pipeline cost"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "suspended frame", "PEP 479"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "generator", "yield from", "heapq.merge", "backtracking", "islice"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

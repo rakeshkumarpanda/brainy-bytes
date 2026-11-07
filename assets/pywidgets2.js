@@ -331,3 +331,48 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 2.1  a generator pauses at yield: who runs, where it waits, what it hands over
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D, box } = PYZ;
+  const GEN = ['def countdown(n):', '    print("start")', '    while n > 0:', '        yield n', '        n -= 1', '    print("done")'];
+  const CALL = ['g = countdown(2)', 'print(next(g))', 'print(next(g))', 'print(next(g, "end"))'];
+  /* [caller line, generator line or -1, state, n or '', handed value, output, say] */
+  const ST = [
+    [0, -1, 'CREATED', '2', '', '', 'Calling countdown(2) runs NONE of its body. Because the function contains yield, Python returns a generator object that waits before line 1, with n = 2 stored inside it.'],
+    [1, 1, 'RUNNING', '2', '', 'start', 'next(g) wakes the generator for the first time. It runs from the top, so "start" is printed. The caller waits while the generator runs.'],
+    [1, 2, 'RUNNING', '2', '', 'start', 'n > 0 is 2 > 0, which is True, so the loop body runs.'],
+    [1, 3, 'SUSPENDED', '2', '2', 'start\n2', 'yield n hands 2 to the caller and PAUSES right here. The local variable n and the position are kept. next(g) returns 2 and print shows it.'],
+    [2, 4, 'RUNNING', '1', '', 'start\n2', 'The second next(g) resumes the generator exactly after the yield. n -= 1 makes n = 1. Nothing starts again from the top.'],
+    [2, 2, 'RUNNING', '1', '', 'start\n2', '1 > 0 is True, so the loop goes round again.'],
+    [2, 3, 'SUSPENDED', '1', '1', 'start\n2\n1', 'yield hands over 1 and pauses again. The caller prints 1.'],
+    [3, 4, 'RUNNING', '0', '', 'start\n2\n1', 'The third call resumes after the yield. n -= 1 makes n = 0.'],
+    [3, 2, 'RUNNING', '0', '', 'start\n2\n1', '0 > 0 is False, so the loop ends.'],
+    [3, 5, 'RUNNING', '0', '', 'start\n2\n1\ndone', 'print("done") runs. The generator reaches the end of its body.'],
+    [3, -1, 'CLOSED', '', 'end', 'start\n2\n1\ndone\nend', 'Falling off the end raises StopIteration. next(g, "end") catches it and returns the default "end". The generator is now closed and every later next(g) stops at once.']
+  ];
+  const COL = { CREATED: 'cv', RUNNING: 'green', SUSPENDED: 'orange', CLOSED: 'red' };
+  trace('pygen', {
+    title: 'A generator pauses at yield',
+    sub: 'The caller on the right asks for values with next(). Each step shows which line runs, the state of the generator, its local variable n and the value it hands over.',
+    W: 600, H: 360,
+    tips: [{ t: 'Compare steps 4 and 5: after a pause the generator goes on from the line after yield, with n still in memory.', play: true }],
+    frames() { return ST.map(s => ({ cl: s[0], gl: s[1], st: s[2], n: s[3], val: s[4], out: s[5], say: s[6] })); },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Generator function', 16, 18);
+      codeView(z, GEN, f.gl, 16, 26, 260, { s: 12, lh: 22, hl: f.st === 'RUNNING' ? (c.dark ? '#14321f' : '#dcfce7') : undefined });
+      head(z, 'Caller', 300, 18);
+      codeView(z, CALL, f.cl, 300, 26, 284, { s: 12, lh: 22 });
+      head(z, 'Generator state', 16, 196);
+      box(z, 16, 204, 124, 32, f.st, { mono: true, b: true, s: 12.5, stroke: c[COL[f.st]] });
+      head(z, 'n inside it', 152, 196);
+      box(z, 152, 204, 124, 32, f.n === '' ? '(gone)' : 'n = ' + f.n, { mono: true, s: 12.5, stroke: c.cv });
+      head(z, 'Handed to the caller', 16, 262);
+      box(z, 16, 270, 260, 32, f.val || '(nothing yet)', { mono: true, b: !!f.val, s: 12.5, stroke: f.val ? c.orange : c.line, fill: f.val ? (c.dark ? '#3a2a10' : '#fff7ed') : c.surf });
+      if (f.out) consoleBox(z, f.out, 300, 160, 284, 140, { title: 'Output' });
+    }
+  });
+})();
