@@ -117,6 +117,192 @@ const CAI = (() => {
   });
 
   /* =====================================================================================================
+     1.1  AI, machine learning, deep learning and generative AI as nested circles
+     ===================================================================================================== */
+  function ell(g, cx, cy, rx, ry, fill, stroke, alpha) {
+    g.save(); g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    g.globalAlpha = alpha; g.fillStyle = fill; g.fill();
+    g.globalAlpha = 1; g.strokeStyle = stroke; g.lineWidth = 2.5; g.stroke(); g.restore();
+  }
+  const FAM = [
+    { id: 'ai', name: 'Artificial intelligence', short: 'AI', cx: 300, cy: 180, rx: 290, ry: 168, col: 'teal', tx: 26, tw: 116, ty: 150, ly: 30, dx: 84, dy: 240,
+      ex: 'Search, logic, planning, expert systems, game playing',
+      say: '<b>Artificial intelligence (AI)</b> is the biggest circle: any method that makes a machine act intelligently. Many AI programs follow rules and search methods written by people, such as A* route finding, logic and planning. Most of this course lives here.' },
+    { id: 'ml', name: 'Machine learning', short: 'ML', cx: 358, cy: 194, rx: 210, ry: 138, col: 'purple', tx: 162, tw: 110, ty: 160, ly: 76, dx: 214, dy: 266,
+      ex: 'Linear regression, decision trees, naive Bayes, k nearest neighbours',
+      say: '<b>Machine learning (ML)</b> sits inside AI. Instead of a person writing the rules, the program learns them from examples (data). Every ML method is an AI method, but not every AI method learns from data.' },
+    { id: 'dl', name: 'Deep learning', short: 'DL', cx: 414, cy: 210, rx: 132, ry: 102, col: 'orange', tx: 298, tw: 96, ty: 174, ly: 128, dx: 336, dy: 266,
+      ex: 'Neural networks with many layers: CNNs, RNNs, transformers',
+      say: '<b>Deep learning (DL)</b> sits inside ML. It uses neural networks with many layers, which learn their own features from raw data such as pixels or words. Older ML needs people to choose the features first.' },
+    { id: 'gen', name: 'Generative AI', short: 'GenAI', cx: 462, cy: 228, rx: 66, ry: 60, col: 'pink', tx: 462, tw: 112, ty: 214, ly: 196, dx: 462, dy: 268, center: true, notitle: true,
+      ex: 'Large language models, image makers',
+      say: '<b>Generative AI</b> sits inside DL. These deep networks create new text, pictures or sound, for example large language models such as GPT. Each circle is a special case of the circle around it.' }];
+  const FAMEX = {
+    astar: { t: 'A route finder that uses A* search', in: 'ai', why: 'People write the map, the step costs and the heuristic. Nothing is learned from data, so it is AI but not ML.' },
+    expert: { t: 'A medical expert system (MYCIN, 1970s)', in: 'ai', why: 'Doctors wrote its if then rules by hand. It reasons with rules, so it is AI but not ML.' },
+    spam: { t: 'A spam filter using naive Bayes', in: 'ml', why: 'It learns word probabilities from emails that people marked as spam or not spam. It learns from data but has no deep network, so it is ML but not DL.' },
+    house: { t: 'House prices from linear regression', in: 'ml', why: 'It fits a line to past sales. The features (size, rooms, area) are chosen by people, so it is ML but not DL.' },
+    face: { t: 'Face recognition with a convolutional network', in: 'dl', why: 'A deep network learns its own features (edges, eyes, faces) from millions of photos, so it is DL. It recognises faces but does not create new ones, so it is not generative.' },
+    alphago: { t: 'AlphaGo (2016)', in: 'dl', why: 'Deep networks learned from human games and self play, joined with Monte Carlo tree search, an AI search method from chapter 6.3. Its learned parts are DL.' },
+    chat: { t: 'A chatbot built on a large language model', in: 'gen', why: 'A deep transformer network learned from huge amounts of text and writes new text, so it is generative AI, and therefore also DL, ML and AI.' }
+  };
+  trace('aifamily', {
+    title: 'AI, machine learning, deep learning and generative AI',
+    sub: 'Each Step draws one circle inside the last. At the end, the example you pick is placed in the smallest circle it belongs to.',
+    W: 600, H: 390,
+    params: [
+      { k: 'ex', label: 'Example to place', type: 'select', v: 'spam', opts: Object.keys(FAMEX).map(k => [k, FAMEX[k].t]) }
+    ],
+    tips: [
+      { t: 'A spam filter learns from marked emails, so it lands in machine learning, inside AI, but outside deep learning.', set: { ex: 'spam' }, play: true },
+      { t: 'A route finder with A* learns nothing from data. It stays in the outer AI ring, like most of this course.', set: { ex: 'astar' }, play: true },
+      { t: 'Face recognition with a deep network lands in deep learning. It is inside ML and AI too.', set: { ex: 'face' }, play: true },
+      { t: 'A chatbot on a large language model lands in the smallest circle, generative AI.', set: { ex: 'chat' }, play: true }
+    ],
+    frames(p) {
+      const fr = FAM.map((c, i) => ({ n: i + 1, say: c.say }));
+      const e = FAMEX[p.ex] || FAMEX.spam, k = FAM.findIndex(c => c.id === e.in);
+      const chain = FAM.slice(0, k + 1).map(c => c.short).reverse().join(', then ');
+      fr.push({ n: 4, ex: e, say: `<b>${esc(e.t)}</b> goes in <b>${FAM[k].name}</b>. ${e.why} Reading from the inside out it is: ${chain}.` });
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col;
+      FAM.slice(0, f.n).forEach(r => ell(g, r.cx, r.cy, r.rx, r.ry, c[r.col], c[r.col], 0.1));
+      FAM.slice(0, f.n).forEach(r => {
+        D.text(g, r.notitle ? r.name : r.name + ' (' + r.short + ')', r.cx, r.ly, { a: 'center', s: r.notitle ? 13 : 14, b: true, c: c[r.col] });
+        if (r.center) wrap(g, r.ex, r.tx, r.ty, r.tw, { s: 11.5, a: 'center', c: c.ink });
+        else wrap(g, r.ex, r.tx, r.ty, r.tw, { s: 11.5, c: c.ink });
+      });
+      if (f.ex) {
+        const r = FAM.find(x => x.id === f.ex.in);
+        const px = r.dx, py = r.dy;
+        D.circle(g, px, py, 7, { fill: c[r.col], stroke: c.surf, w: 2 });
+        D.line(g, px, py + 7, 150, 368, c.ink2, 1.2, [4, 3]);
+        tag(g, f.ex.t, 150, 374, { s: 11.5, fill: c.surf, stroke: c[r.col], c: c.ink });
+      }
+    }
+  });
+
+  /* =====================================================================================================
+     1.1  How AI grew: a timeline from the Turing test to large language models
+     ===================================================================================================== */
+  const HIST = [
+    [1950, 'ai', 'Turing asks "can machines think?" and proposes the imitation game (Turing test).'],
+    [1956, 'ai', 'The Dartmouth workshop gives the field its name: artificial intelligence.'],
+    [1958, 'ml', 'Rosenblatt’s perceptron: a machine that learns weights from examples.'],
+    [1966, 'ai', 'ELIZA, a chatbot that follows hand written patterns.'],
+    [1969, 'ml', 'Minsky and Papert show the limits of one layer perceptrons.'],
+    [1973, 'ai', 'The Lighthill report cuts funding in the UK: the first AI winter.'],
+    [1980, 'ai', 'Expert systems boom, for example XCON configuring computers at DEC.'],
+    [1986, 'ml', 'Rumelhart, Hinton and Williams make backpropagation popular for multi layer networks.'],
+    [1987, 'ai', 'The expert system market collapses: the second AI winter.'],
+    [1995, 'ml', 'Support vector machines (Cortes and Vapnik): learning from data takes the lead.'],
+    [1997, 'ai', 'Deep Blue beats world chess champion Kasparov with search.'],
+    [2006, 'dl', 'Hinton and colleagues train deep belief networks: "deep learning" returns.'],
+    [2012, 'dl', 'AlexNet wins the ImageNet contest by a wide margin, using GPUs.'],
+    [2016, 'dl', 'AlphaGo beats Lee Sedol at Go: deep networks plus tree search.'],
+    [2017, 'dl', 'The transformer ("Attention is all you need") changes language models.'],
+    [2022, 'gen', 'ChatGPT brings large language models to the public.']];
+  const HCOL = { ai: 'teal', ml: 'purple', dl: 'orange', gen: 'pink' };
+  const HNAME = { ai: 'AI with rules and search', ml: 'machine learning', dl: 'deep learning', gen: 'generative AI' };
+  trace('aitimeline', {
+    title: 'How AI grew, from the Turing test to ChatGPT',
+    sub: 'Each Step adds one milestone. The colour shows which circle of the AI family it belongs to.',
+    W: 600, H: 420,
+    params: [
+      { k: 'from', label: 'From the year', type: 'range', v: 1950, min: 1950, max: 2022, step: 1 },
+      { k: 'to', label: 'To the year', type: 'range', v: 2022, min: 1950, max: 2022, step: 1 }
+    ],
+    tips: [
+      { t: 'The whole story. Watch the colours move from AI with rules (teal), to machine learning (purple), to deep learning (orange) and generative AI (pink).', set: { from: 1950, to: 2022 }, play: true },
+      { t: 'The early years, 1950 to 1979: rules, search and the first AI winter.', set: { from: 1950, to: 1979 }, play: true },
+      { t: 'The deep learning years, 2000 to 2022.', set: { from: 2000, to: 2022 }, play: true }
+    ],
+    frames(p) {
+      const a = Math.min(p.from, p.to), b = Math.max(p.from, p.to);
+      const items = HIST.filter(h => h[0] >= a && h[0] <= b);
+      if (!items.length) throw new Error(`No milestone falls between ${a} and ${b}. Widen the range of years.`);
+      const fr = items.map((h, i) => ({ items: items.slice(0, i + 1), say: `<b>${h[0]}.</b> ${esc(h[2])} This belongs to <b>${HNAME[h[1]]}</b>.` }));
+      const kinds = [...new Set(items.map(h => h[1]))].map(k => HNAME[k]);
+      fr.push({ items, end: true, say: `Done: ${items.length} milestones from ${items[0][0]} to ${items[items.length - 1][0]}, covering ${kinds.join(', ')}. Over time the field moved from rules written by people, to rules learned from data, to features learned by deep networks.` });
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col;
+      const top = 40, lh = Math.min(23, (z.H - top - 14) / Math.max(f.items.length, 1));
+      let lx = 20;
+      ['ai', 'ml', 'dl', 'gen'].forEach(k => { const w = tw(g, HNAME[k], { s: 11, b: true }) + 30; D.circle(g, lx + 6, 18, 6, { fill: c[HCOL[k]] }); D.text(g, HNAME[k], lx + 16, 22, { s: 11, b: true, c: c.ink2 }); lx += w; });
+      D.line(g, 70, top - 4, 70, top + lh * f.items.length - 6, c.line, 2);
+      f.items.forEach((h, i) => {
+        const y = top + i * lh + lh / 2;
+        D.circle(g, 70, y - 4, 6, { fill: c[HCOL[h[1]]], stroke: c.surf, w: 2 });
+        D.text(g, String(h[0]), 56, y, { a: 'right', s: 12, b: true, c: c.ink });
+        const s = fit(g, h[2], 505, 12);
+        D.text(g, h[2], 84, y, { s, b: i === f.items.length - 1 && !f.end, c: c.ink });
+      });
+    }
+  });
+
+  /* =====================================================================================================
+     1.1  Minsky's layers of natural contemplation as a pyramid (slide Set 1, slide 7)
+     ===================================================================================================== */
+  const MINSKY = [
+    { name: 'Instinctive reactions', dark: true, meaning: 'built in responses you are born with, set off when a signal crosses a threshold' },
+    { name: 'Learned reactions', meaning: 'habits and facts learned from practice, from the world or from experts, including common sense and intuitive physics' },
+    { name: 'Deliberative thinking', meaning: 'choosing between options A, B and C using the resources you have' },
+    { name: 'Reflective thinking', meaning: 'looking back at a choice and asking "what if I had done B instead?"' },
+    { name: 'Self-reflective thinking', dark: true, meaning: 'thinking about your own skills and goals, and deciding to improve them' },
+    { name: 'Self-conscious emotion', dark: true, meaning: 'seeing yourself from the outside: what do others think, is this good for society?' }];
+  const MEX = {
+    slide: ['I am scared → I run', 'I am scared → I should run quickly to a safe place', 'Action A does not solve my problem → Try Action B',
+      'Action A has become extensive → I should find an easier option', 'I never get this right → Should I learn the skills, or try something new?',
+      'I am really upset → Should I ask for help? Would it disturb?'],
+    robot: ['Bump sensor fires → stop the wheels', 'Doors here open outward → pull, do not push', 'Box is heavy → put my parcel down first, or call for help?',
+      'Last time I blocked the corridor → stand to the side', 'I keep failing at doors → ask for a software update to learn them',
+      'The person looks embarrassed → help quietly, do not make a fuss']
+  };
+  trace('minsky', {
+    title: 'Minsky’s six layers of thinking, as a pyramid',
+    sub: 'Each Step adds one layer, from the base to the top, with an example. The lecture said today’s agentic AI handles the yellow layers well and has not yet achieved the dark ones in full.',
+    W: 600, H: 450,
+    params: [
+      { k: 'sc', label: 'Examples', type: 'select', v: 'slide', opts: [['slide', 'The examples on the slide (being scared, a failing action)'], ['robot', 'A helpful office robot']] }
+    ],
+    tips: [
+      { t: 'The slide’s own examples. The same feeling, being scared, gives a plain reaction at the base and a reasoned plan one layer up.', set: { sc: 'slide' }, play: true },
+      { t: 'The office robot from the lesson. Notice how each layer adds a longer view: a reflex, a habit, a plan, a look back, a change of skills, and care for others.', set: { sc: 'robot' }, play: true }
+    ],
+    frames(p) {
+      const ex = MEX[p.sc] || MEX.slide;
+      const fr = [{ n: 0, say: 'The base: <b>innate urges and drives</b>, such as hunger and fear, push up into the layers. Minsky (Society of Mind, 1986, and The Emotion Machine, 2006) splits a mind into six layers on top of them.' }];
+      MINSKY.forEach((m, i) => fr.push({ n: i + 1, ex, say: `Layer ${i + 1}, <b>${m.name}</b>: ${m.meaning}. Example: ${esc(ex[i])}.` }));
+      fr.push({ n: 6, ex, top: true, say: 'The top: <b>values, censors, ideals and taboos</b> press down on every layer and limit what we allow ourselves to do. The lecture said information moves both ways between layers, and that today’s agentic AI handles the yellow layers (learned, deliberative, reflective) well. The dark layers are not yet achieved in full: a bump sensor reflex is easy, but human instincts that come from evolution and shift their thresholds with experience are not, and self-reflection and self-consciousness are still research.' });
+      return fr;
+    },
+    paint(z, f) {
+      const { g } = z, c = z.col;
+      const base = 400, h = 58, cx = 300, wb = 590, wt = 280;
+      const half = y => (wt + (wb - wt) * (y - (base - 6 * h)) / (6 * h)) / 2;
+      D.text(g, 'Innate, instinctive urges and drives', cx, base + 34, { a: 'center', s: 13, b: true, c: c.ink });
+      D.arrow(g, cx, base + 20, cx, base + 4, c.ink2, 2);
+      for (let i = 0; i < f.n; i++) {
+        const y1 = base - i * h, y0 = y1 - h, m = MINSKY[i];
+        g.save(); g.beginPath();
+        g.moveTo(cx - half(y1), y1); g.lineTo(cx + half(y1), y1); g.lineTo(cx + half(y0), y0); g.lineTo(cx - half(y0), y0); g.closePath();
+        g.fillStyle = m.dark ? '#0b1033' : '#fef9c3'; g.fill(); g.strokeStyle = c.surf; g.lineWidth = 2; g.stroke(); g.restore();
+        const ink = m.dark ? '#ffffff' : '#1f1300', w = 2 * half(y0) - 16;
+        D.text(g, m.name, cx, y0 + 18, { a: 'center', s: fit(g, m.name, w, 13, { b: true }), b: true, c: ink });
+        wrap(g, f.ex[i], cx, y0 + 35, w - 10, { a: 'center', s: 11, lh: 14, c: ink });
+      }
+      if (f.top) {
+        D.arrow(g, cx, base - 6 * h - 22, cx, base - 6 * h - 4, c.ink2, 2);
+        D.text(g, 'Values, censors, ideals and taboos', cx, base - 6 * h - 28, { a: 'center', s: 13, b: true, c: c.ink });
+      }
+    }
+  });
+
+  /* =====================================================================================================
      Graph search: one widget for BFS, DFS, depth limited, iterative deepening, uniform cost, greedy and A*
      ===================================================================================================== */
   const RO = {

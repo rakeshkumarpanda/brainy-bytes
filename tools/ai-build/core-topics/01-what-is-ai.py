@@ -47,6 +47,31 @@ for t in range(1, 6):
     print("lifetime", t, "steps needs", total_rows, "rows")
 ''')
 
+K.lesson('family', 'The big picture: AI, machine learning and deep learning', f'''
+{src('Goodfellow, Bengio and Courville, Deep Learning (2016), figure 1.4, for the nested circles, and Russell and Norvig, AIMA 4th edition, section 1.3, for the history. The uploaded slides do not have this diagram, so this lesson follows those textbooks.')}
+<p>People often use the words AI, machine learning, deep learning and generative AI as if they mean the same thing. They do not. They fit inside each other like circles, one inside the next. The biggest circle is AI. Machine learning is a part of AI. Deep learning is a part of machine learning. Generative AI, such as ChatGPT, is a part of deep learning.</p>
+{wwh('<b>Artificial intelligence (AI)</b> is any method that makes a machine act intelligently. <b>Machine learning (ML)</b> is the part of AI where the program learns its rules from data. <b>Deep learning (DL)</b> is the part of ML that uses neural networks with many layers. <b>Generative AI</b> is the part of DL that creates new text, pictures or sound.',
+     'Knowing which circle a system sits in tells you how it was built, how much data it needs, and how far you can trust and explain it. It also stops a common mistake: thinking that AI means only neural networks. Most of this course is AI that does not learn from data at all.',
+     'Each inner circle answers the question "where do the rules come from?" in a narrower way. In plain AI, people write the rules or the search method. In ML, the rules are learned from examples. In DL, even the features (what to look at in the data) are learned, by many layers of a network. In generative AI, the learned network produces new content.')}
+{viz('aifamily')}
+{table(['', 'AI with rules and search', 'Machine learning', 'Deep learning', 'Generative AI'], [
+    ['Who writes the rules', 'People', 'Learned from data', 'Learned from data', 'Learned from data'],
+    ['Who picks the features', 'People', 'Mostly people', 'The network learns them', 'The network learns them'],
+    ['Data needed', 'Little or none', 'Hundreds to thousands of examples', 'Often millions of examples', 'Huge amounts of text or images'],
+    ['Easy to explain', 'Yes, you can follow each rule', 'Often (trees, linear models)', 'Hard', 'Hard'],
+    ['Example', 'A* route finder, chess search, expert system', 'Spam filter, house price model', 'Face recognition, speech to text', 'ChatGPT, image generators'],
+    ['In this course', 'Steps 1 to 8', 'Parts of steps 9 and 10', 'Advanced courses', 'Advanced courses']])}
+{note('Goodfellow and colleagues draw one more circle between ML and DL: <b>representation learning</b>, methods that learn their own features, such as a shallow autoencoder. Deep learning is representation learning with many layers.', 'tip')}
+<h3>How AI grew</h3>
+<p>AI did not grow in a straight line. It began with rules and search in the 1950s, went through two "AI winters" when promises failed and funding was cut, moved to machine learning in the 1990s, and to deep learning after 2012 when big data and fast graphics chips (GPUs) arrived. Step through the timeline to see each milestone and which circle it belongs to.</p>
+{viz('aitimeline')}
+{steps('Worked example: place three systems in the circles', [
+    'A sudoku solver that uses backtracking and arc consistency (chapters 5.1 and 5.2). Nobody gives it data. People wrote the method. So it is AI, but not ML.',
+    'A loan approval model that learns a decision tree from 10,000 past loans. It learns its rules from data, but people chose the features (income, age, debt). So it is ML, but not DL.',
+    'A program that reads X-ray images with a 50 layer convolutional network. The network learns its own features from pixels. So it is DL, and therefore also ML and AI.',
+    eq('AI ⊃ ML ⊃ DL ⊃ generative AI: every inner circle is a special case of the outer one')])}
+''', kw=['AI vs machine learning', 'machine learning', 'deep learning', 'generative AI', 'nested circles', 'Venn diagram', 'representation learning', 'history of AI', 'AI winter', 'Dartmouth', 'perceptron', 'AlexNet', 'transformer'])
+
 K.lesson('idea', 'What intelligence and AI mean', f'''
 {src('slide Set 1 (Introduction) and the class of 18 January 2026. Agents and environments follow Russell and Norvig, chapter 2.')}
 <p>Think of the people around you. A friend sees you carrying heavy bags, guesses you need help, and holds the door. Nobody told them to. They noticed, understood, and acted. That everyday skill is what we call <b>intelligence</b>: taking in what is around you, making sense of it, and choosing a sensible action.</p>
@@ -73,7 +98,9 @@ K.lesson('social', 'A social machine: the man machine symbiosis scene', f'''
     ['Domain knowledge', 'Expert facts about the task', 'How a machine is repaired'],
     ['Intuitive physics', 'A feel for how objects move and fall', 'A ball rolls down a slope']])}
 <p>The slides then list the layers of behaviour such a machine shows, which come from Marvin Minsky's <b>Society of Mind</b> (1986): <b>instinctive</b> (built in reactions), <b>learned</b> (habits from experience), <b>deliberative</b> (thinking through options), <b>reflective</b> (thinking about its own thinking), <b>self reflective</b> (thinking about itself as a person with goals), and <b>self conscious</b> (caring about its values, such as "scoring a good deed point").</p>
-{scene('a delivery robot in an office', '<p>A delivery robot meets a person carrying a heavy box near a closed door. An <b>instinctive</b> layer stops it from bumping into them. A <b>learned</b> layer knows doors in this building open outward. A <b>deliberative</b> layer plans: put down my parcel, open the door, wait. A <b>reflective</b> layer notices "last time I blocked the corridor, so stand to the side". Today\'s robots do the first three layers well. The last layers are still research.</p>')}
+{scene('a delivery robot in an office', '<p>A delivery robot meets a person carrying a heavy box near a closed door. An <b>instinctive</b> layer stops it from bumping into them. A <b>learned</b> layer knows doors in this building open outward. A <b>deliberative</b> layer plans: put down my parcel, open the door, wait. A <b>reflective</b> layer notices "last time I blocked the corridor, so stand to the side". The lecture said today’s agentic AI is good at the learned, deliberative and reflective layers, while self-reflection and self-consciousness are still research.</p>')}
+<p>The slide draws these layers stacked one on top of the other, with innate urges and drives pushing up from below and values, censors, ideals and taboos pressing down from above. Step through it as a pyramid below. The base is the oldest and simplest kind of thinking, and each layer up looks further ahead.</p>
+{viz('minsky')}
 <p>The questions slide asks what thoughts are, how we build a model of the world, and what makes curiosity and creativity work. These are open research questions. This course focuses on the parts we can already build well: search, reasoning, planning, probability and learning.</p>
 ''', kw=['social machine', 'man machine symbiosis', 'common sense', 'intuitive physics', 'Society of Mind', 'Minsky', 'reflective'])
 
@@ -170,7 +197,9 @@ K.lesson('levels', 'From intuition to research', f'''
 
 K.lesson('recap', 'Chapter summary', f'''
 {recap([
+    'AI ⊃ machine learning ⊃ deep learning ⊃ generative AI. AI grew from rules and search (1950s), through two AI winters, to learning from data (1990s) and deep networks (2012 on).',
     'Intelligence means sensing, understanding and choosing a good action. AI builds machines that do this.',
+    'Minsky’s six layers run from instinctive reactions at the base to self-conscious emotion at the top. Today’s agentic AI handles the learned, deliberative and reflective layers.',
     'Four approaches: thinking or acting, humanly or rationally. This course builds <b>rational agents</b>: act to get the best expected performance.',
     'An agent maps percept sequences to actions. Describe a task with <b>PEAS</b> and the environment by observability, determinism, episodes, change, discreteness and number of agents.',
     'Agent programs grow from simple reflex to model based, goal based, utility based and learning agents. A table driven agent is impossible in practice because it needs ∑ |P|<sup>t</sup> rows.',
@@ -182,6 +211,12 @@ K.lesson('recap', 'Chapter summary', f'''
 # ---------------------------------------------------------------- quiz
 K.quiz('e', 'Which approach to AI does this course follow?', ['Thinking humanly', 'Acting humanly', 'Thinking rationally', 'Acting rationally'], 3,
        'Do the right thing.', 'We build rational agents: they act to get the best expected performance.')
+K.quiz('e', 'Which order is correct, from the biggest circle to the smallest?', ['ML, AI, DL', 'AI, ML, DL', 'DL, ML, AI', 'AI, DL, ML'], 1,
+       'The nested circles.', 'Deep learning is a part of machine learning, which is a part of AI.')
+K.quiz('m', 'A spam filter that learns word probabilities from marked emails with naive Bayes is', ['AI but not ML', 'ML but not DL', 'DL', 'not AI'], 1,
+       'Does it learn? Does it have a deep network?', 'It learns from data, so it is ML, but it has no many layer network.')
+K.quiz('m', 'In Minsky’s layers, "Action A does not solve my problem, so try action B" is', ['an instinctive reaction', 'a learned reaction', 'deliberative thinking', 'self-conscious emotion'], 2,
+       'Choosing between options.', 'Deliberation picks among options A, B and C. Reflection looks back afterwards.')
 K.quiz('e', 'What does the P in PEAS stand for?', ['Percept', 'Performance measure', 'Program', 'Probability'], 1,
        'How we score the agent.', 'PEAS = Performance measure, Environment, Actuators, Sensors.')
 K.quiz('e', 'A simple reflex agent chooses its action using', ['Its whole percept history', 'Only the current percept', 'A plan', 'A utility function'], 1,
@@ -263,14 +298,15 @@ K.must('PEAS', 'Describe any task by Performance measure, Environment, Actuators
 K.must('Environment types', 'Fully or partially observable, deterministic or stochastic, episodic or sequential, static or dynamic, discrete or continuous, single or multi agent.')
 K.must('Agent programs', 'Simple reflex, model based, goal based, utility based, learning. Table driven needs ∑ |P|<sup>t</sup> rows, so it is impossible.')
 K.must('Rational, not perfect', 'Rationality depends on the performance measure, prior knowledge, available actions and percepts so far. Bad luck is not irrational.')
+K.must('The AI family', 'AI ⊃ ML ⊃ DL ⊃ generative AI. ML learns rules from data, DL also learns the features with many layer networks. Most of Core AI is rules and search.')
 K.must('Social machine', 'Needs etiquette, intuitive psychology, common sense, intuitive physics and layers from instinctive to self conscious (Minsky, Society of Mind).')
 
 T = K.topic(
     slug='what-is-ai', topic='what-is-ai', step=(1, 'Intelligence, agents and problems', 'cai-found', 'What AI is, how an agent senses and acts, and how a goal becomes a search problem.', 'School and college'),
     title='What AI is and intelligent agents', short='What AI is', badge='1.1', minutes=45,
-    lead='See what intelligence and AI mean, the four approaches to AI, what a social machine needs, and how every AI system can be described as an agent that senses its environment and acts.',
-    desc='Intelligence and AI, the four approaches of Russell and Norvig, the Turing test, the social machine scene and Minsky layers from the slides, agents, PEAS, environment types and the five kinds of agent program.',
+    lead='See how AI, machine learning, deep learning and generative AI fit inside each other and how AI grew, what intelligence and AI mean, the four approaches to AI, what a social machine needs, and how every AI system can be described as an agent that senses its environment and acts.',
+    desc='AI, machine learning, deep learning and generative AI as nested circles, a timeline of AI from 1950 to 2022, intelligence and AI, the four approaches of Russell and Norvig, the Turing test, the social machine scene and Minsky’s six layers as a pyramid from the slides, agents, PEAS, environment types and the five kinds of agent program.',
     summary='The four approaches to AI, rational agents, PEAS, environment types, the social machine and the five kinds of agent program.',
-    keywords=['artificial intelligence', 'rational agent', 'PEAS', 'Turing test', 'environment types', 'reflex agent', 'agent program'],
+    keywords=['artificial intelligence', 'machine learning', 'deep learning', 'generative AI', 'history of AI', 'rational agent', 'PEAS', 'Turing test', 'environment types', 'reflex agent', 'agent program'],
     recap='<p>AI builds rational agents: given what they have sensed, they pick the action with the best expected performance. Describe the task with PEAS and choose the simplest agent program that copes with its environment.</p>',
     nb={'reflex': 'A simple reflex agent cleaning two squares', 'table': 'How fast a table driven agent grows'})

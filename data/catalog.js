@@ -6060,10 +6060,11 @@ function coreAiModules() {
     { id: "cai-found", title: "Intelligence, agents and problems", emoji: "1", step: 1, part: "core", level: "School and college", blurb: "What AI is, how an agent senses and acts, and how a goal becomes a search problem.", topics: [
       { id: "what-is-ai", title: "What AI is and intelligent agents", emoji: "1.1", page: "content/ai/what-is-ai.html",
         summary: "The four approaches to AI, rational agents, PEAS, environment types, the social machine and the five kinds of agent program.",
-        keywords: ["artificial intelligence", "rational agent", "PEAS", "Turing test", "environment types", "reflex agent", "agent program"],
-        minutes: 45, counts: {"lessons": 8, "problems": 10, "quiz": 12, "assign": 2},
+        keywords: ["artificial intelligence", "machine learning", "deep learning", "generative AI", "history of AI", "rational agent", "PEAS", "Turing test", "environment types", "reflex agent", "agent program"],
+        minutes: 45, counts: {"lessons": 9, "problems": 10, "quiz": 15, "assign": 2},
         added: "2026-10-27",
         sections: [
+        { id: "family", title: "The big picture: AI, machine learning and deep learning", emoji: "", group: "Lesson", keywords: ["AI vs machine learning", "machine learning", "deep learning", "generative AI", "nested circles", "Venn diagram", "representation learning", "history of AI", "AI winter", "Dartmouth", "perceptron", "AlexNet", "transformer"] },
         { id: "idea", title: "What intelligence and AI mean", emoji: "", group: "Lesson", keywords: ["intelligence", "artificial intelligence", "four approaches", "thinking humanly", "acting rationally", "Turing test", "baby machine"] },
         { id: "social", title: "A social machine: the man machine symbiosis scene", emoji: "", group: "Lesson", keywords: ["social machine", "man machine symbiosis", "common sense", "intuitive physics", "Society of Mind", "Minsky", "reflective"] },
         { id: "agents", title: "Agents, environments and PEAS", emoji: "", group: "Lesson", keywords: ["agent", "percept", "action", "agent function", "agent program", "rational agent", "PEAS", "performance measure", "vacuum world"] },
