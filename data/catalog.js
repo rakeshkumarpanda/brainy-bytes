@@ -7068,6 +7068,27 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-formats", title: "CSV, JSON, XML and settings files", emoji: "6.2", page: "content/python/py-formats.html",
+        summary: "CSV, JSON with custom types, XML with ElementTree, INI and TOML settings, pickle safety.",
+        keywords: ["csv", "json", "xml", "ElementTree", "configparser", "toml", "tomllib", "pickle", "serialization", "data format"],
+        minutes: 75, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Data formats: saving and sharing data", emoji: "", group: "Lesson", keywords: ["data format", "serialization", "parsing", "CSV", "JSON", "XML", "TOML", "INI", "pickle", "choosing a format"] },
+        { id: "csv", title: "CSV: tables as text", emoji: "", group: "Lesson", keywords: ["csv", "DictReader", "DictWriter", "newline", "delimiter", "quoting", "Sniffer", "dialect"] },
+        { id: "json", title: "JSON: nested data for the web", emoji: "", group: "Lesson", keywords: ["json", "dumps", "loads", "dump", "load", "indent", "sort_keys", "ensure_ascii", "default", "object_hook", "JSONDecodeError"] },
+        { id: "xml", title: "XML with ElementTree", emoji: "", group: "Lesson", keywords: ["xml", "ElementTree", "fromstring", "find", "findall", "iter", "XPath", "SubElement", "attributes", "defusedxml"] },
+        { id: "config", title: "Settings: INI and TOML", emoji: "", group: "Lesson", keywords: ["configparser", "INI", "sections", "getint", "getboolean", "fallback", "interpolation", "tomllib", "TOML", "pyproject.toml", "environment variables"] },
+        { id: "pickle", title: "pickle: Python objects as bytes", emoji: "", group: "Lesson", keywords: ["pickle", "dumps", "loads", "protocol", "__reduce__", "security", "untrusted data", "Parquet", "MessagePack", "struct"] },
+        { id: "maths", title: "The maths: sizes and overheads", emoji: "", group: "Lesson", keywords: ["file size", "overhead", "base64", "unicode escape", "csv vs json size"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "iterparse", "jsonschema", "pydantic", "Parquet", "streaming"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "parsing", "spreadsheet", "dates", "HTML entities", "nested list", "stack", "recursive descent"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

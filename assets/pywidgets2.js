@@ -1157,3 +1157,68 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 6.2  turning Python objects into JSON or CSV text and back, and what changes on the way
+   ===================================================================================================== */
+(() => {
+  const { trace, head, D, box, consoleBox } = PYZ;
+  const MODES = {
+    json: {
+      left: 'Python dict', right: 'json.dumps(order, indent=2)',
+      rows: [
+        ['order = {', '{', 'json.dumps starts. A Python <b>dict</b> becomes a JSON <b>object</b> in curly brackets.'],
+        ['    "id": 7,', '  "id": 7,', 'Strings and whole numbers look the same in JSON. JSON strings always use double quotes.'],
+        ['    "paid": True,', '  "paid": true,', 'True becomes <b>true</b> (lower case). False would become false.'],
+        ['    "items": ("tea", "cake"),', '  "items": ["tea", "cake"],', 'JSON has no tuples. A tuple (and a list) becomes an <b>array</b> in square brackets.', 1],
+        ['    "note": None,', '  "note": null,', 'None becomes <b>null</b>.'],
+        ['    2: "two",', '  "2": "two"', 'JSON object keys must be strings, so the int key 2 is turned into "2".', 1],
+        ['}', '}', 'The object closes. The result is plain text that any language can read.']
+      ],
+      back: 'json.loads(text)', backText: "{'id': 7, 'paid': True, 'items': ['tea', 'cake'],\n 'note': None, '2': 'two'}",
+      backSay: 'Reading the text back gives a dict again, but not the same one: items is now a <b>list</b>, not a tuple, and the key is the <b>string</b> "2". Sets, dates and your own classes cannot be written at all without a default= function.'
+    },
+    csv: {
+      left: 'Python list of dicts', right: 'csv.DictWriter output',
+      rows: [
+        ['fieldnames = ["name", "city", "age"]', 'name,city,age', 'writeheader() writes the field names as the first line.'],
+        ['{"name": "Ann", "city": "Paris", "age": 31}', 'Ann,Paris,31', 'writerow turns each value into text and puts commas between them.'],
+        ['{"name": "Smith, Bo", "city": "Rome", "age": 25}', '"Smith, Bo",Rome,25', 'This name contains a comma, so the writer puts it in double quotes. Never build CSV lines with ",".join yourself.', 1],
+        ['{"name": "Cy", "city": "Oslo"}', 'Cy,Oslo,', 'A missing key gives an empty field (restval="" by default).'],
+        ['(end of each row)', '\\r\\n', 'Every row ends with \\r\\n. Open the file with newline="" so Python does not change these line endings.']
+      ],
+      back: 'list(csv.DictReader(f))', backText: "[{'name': 'Ann', 'city': 'Paris', 'age': '31'},\n {'name': 'Smith, Bo', 'city': 'Rome', 'age': '25'},\n {'name': 'Cy', 'city': 'Oslo', 'age': ''}]",
+      backSay: 'Reading the file back gives dicts again. The quotes are removed, so "Smith, Bo" is one field, but every value is a <b>string</b>: 31 came back as "31". Convert numbers yourself with int().'
+    }
+  };
+  trace('pyformat', {
+    title: 'From Python objects to text and back',
+    sub: 'Each step writes one piece. The last step reads the text back and shows what changed on the way.',
+    W: 600, H: 400,
+    params: [{ k: 'mode', label: 'Format', type: 'select', v: 'json', opts: [['json', 'JSON (json.dumps and json.loads)'], ['csv', 'CSV (csv.DictWriter and DictReader)']] }],
+    tips: [
+      { t: 'JSON: watch the tuple and the int key change.', set: { mode: 'json' }, play: true },
+      { t: 'CSV: a comma inside a value needs quotes, and numbers come back as strings.', set: { mode: 'csv' }, play: true }
+    ],
+    frames(p) {
+      const m = MODES[p.mode];
+      const fr = m.rows.map((r, i) => ({ mode: p.mode, upto: i + 1, back: false, say: r[2] }));
+      fr.push({ mode: p.mode, upto: m.rows.length, back: true, say: m.backSay });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, m = MODES[f.mode];
+      head(z, m.left, 16, 18);
+      head(z, m.right, 316, 18);
+      m.rows.slice(0, f.upto).forEach((r, i) => {
+        const y = 28 + i * 34, cur = i === f.upto - 1 && !f.back, warn = r[3];
+        box(z, 16, y, 270, 28, '', { stroke: cur ? c.cv : c.line, b: cur });
+        D.text(g, r[0], 24, y + 18, { s: r[0].length > 34 ? 10 : 11.5, mono: true, c: c.ink });
+        D.arrow(g, 290, y + 14, 312, y + 14, cur ? c.cv : c.line, 2, 6);
+        box(z, 316, y, 268, 28, '', { stroke: warn ? c.orange : (cur ? c.cv : c.line), b: cur, fill: warn ? (c.dark ? '#3a2a10' : '#fff7ed') : c.surf });
+        D.text(g, r[1], 324, y + 18, { s: 11.5, mono: true, c: warn ? c.orange : c.ink });
+      });
+      if (f.back) consoleBox(z, m.backText, 16, 280, 568, 100, { title: m.back + ' gives' });
+    }
+  });
+})();
