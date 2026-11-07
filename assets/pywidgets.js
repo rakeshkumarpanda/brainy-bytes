@@ -17,7 +17,7 @@ const PYZ = (() => {
   const MONO = '"JetBrains Mono", monospace';
   /* JetBrains Mono joins <=, ==, ** and friends into one symbol (a ligature). Beginners must see the real
      characters they type, so monospace labels are drawn with ligatures switched off. */
-  if (!D.text.pyNoLig) {
+  if (D.text && !D.text.pyNoLig) {
     const plain = D.text;
     D.text = (g, s, x, y, o = {}) => {
       if (!(o && o.mono)) return plain(g, s, x, y, o);
@@ -1880,6 +1880,244 @@ const PYZ = (() => {
       const w = Math.min(56, 568 / Math.max(1, f.res.length));
       f.res.forEach((v, i) => box(z, 16 + i * w, 224, w - 4, 34, String(v), { mono: true, s: Math.min(13, w * 0.3), fill: f.add && i === f.res.length - 1 ? c.green : c.surf, stroke: f.add && i === f.res.length - 1 ? c.green : c.line, c: f.add && i === f.res.length - 1 ? '#fff' : c.ink }));
       if (!f.res.length) D.text(z.g, '[] (empty so far)', 16, 246, { s: 12, mono: true, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 5.1  try, except, else and finally: which blocks run
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D, esc, pyFloat } = PYZ;
+  /* int(text) the way CPython does it for base 10: spaces around, a sign, digits with single underscores between */
+  const pyInt = t => { const s = t.trim(); if (!/^[+-]?\d+(_\d+)*$/.test(s)) return null; return parseInt(s.replace(/_/g, ''), 10); };
+  const TREE = [['BaseException', 0], ['Exception', 1], ['ArithmeticError', 2], ['ZeroDivisionError', 3], ['ValueError', 2], ['LookupError', 2], ['KeyError', 3]];
+  const PARENT = { ZeroDivisionError: 'ArithmeticError', ArithmeticError: 'Exception', ValueError: 'Exception', LookupError: 'Exception', KeyError: 'LookupError', Exception: 'BaseException' };
+  const chain = e => { const out = [e]; while (PARENT[out[out.length - 1]]) out.push(PARENT[out[out.length - 1]]); return out; };
+  trace('pyexc', {
+    title: 'try, except, else, finally: which blocks run',
+    sub: 'Type the text the user enters and pick what the second handler catches. Each step runs one line. Watch where an exception jumps to.',
+    W: 600, H: 340,
+    params: [
+      { k: 'text', label: 'text = input()', type: 'text', v: '4' },
+      { k: 'h2', label: 'Second handler catches', type: 'select', v: 'ZeroDivisionError', opts: [['ZeroDivisionError', 'except ZeroDivisionError'], ['ArithmeticError', 'except ArithmeticError (a parent class)'], ['KeyError', 'except KeyError (wrong kind)']] }
+    ],
+    tips: [
+      { t: 'A good number: no exception, so else runs, then finally.', set: { text: '4' }, play: true },
+      { t: '"abc" makes int() raise ValueError. Python jumps straight to the matching except. else is skipped, finally still runs.', set: { text: 'abc' }, play: true },
+      { t: '0 passes int() but 100 / 0 raises ZeroDivisionError. A handler for its parent ArithmeticError catches it too.', set: { text: '0', h2: 'ArithmeticError' }, play: true },
+      { t: 'No handler matches: finally runs, then the exception leaves the try and the program stops. "after" is never printed.', set: { text: '0', h2: 'KeyError' }, play: true }
+    ],
+    frames(p) {
+      const lines = ['try:', '    n = int(text)', '    r = 100 / n', 'except ValueError:', '    print("not a number")', `except ${p.h2}:`, '    print("cannot divide")', 'else:', '    print("result", r)', 'finally:', '    print("done")', 'print("after")'];
+      const fr = [], out = [];
+      const push = (cur, say, o = {}) => fr.push({ lines, cur, out: out.join('\n'), say, ...o });
+      push(0, `Python enters the try block. text is ${esc(JSON.stringify(p.text))}.`);
+      const n = pyInt(p.text);
+      let err = null;
+      if (n === null) { err = 'ValueError'; push(1, `int(${esc(JSON.stringify(p.text))}) cannot turn this text into a whole number, so it <b>raises ValueError</b>. The rest of the try block is skipped.`, { err, bad: 1 }); }
+      else {
+        push(1, `int(${esc(JSON.stringify(p.text))}) gives ${n}. No problem, go on.`);
+        if (n === 0) { err = 'ZeroDivisionError'; push(2, '100 / 0 is impossible, so Python <b>raises ZeroDivisionError</b>. The rest of the try block is skipped.', { err, bad: 2 }); }
+        else push(2, `100 / ${n} = ${pyFloat(100 / n)}. The try block finished without an exception.`);
+      }
+      if (err) {
+        const ch = chain(err);
+        push(3, `Python checks the handlers from the top. Is ${err} a ValueError (or a child of it)? ${err === 'ValueError' ? '<b>Yes</b>.' : 'No.'}`, { err, chk: 'ValueError', hit: err === 'ValueError' });
+        if (err === 'ValueError') { out.push('not a number'); push(4, 'The ValueError handler runs. The exception is now handled. Other handlers are not checked.', { err, handled: 'ValueError' }); }
+        else {
+          const hit = ch.includes(p.h2);
+          push(5, `Is ${err} a ${p.h2}? ${hit ? (p.h2 === err ? '<b>Yes</b>, the same class.' : `<b>Yes</b>: ${err} is a child of ${p.h2}, and except catches child classes too.`) : `No. ${err} is not ${p.h2} or a child of it.`}`, { err, chk: p.h2, hit });
+          if (hit) { out.push('cannot divide'); push(6, `The ${p.h2} handler runs and handles the exception.`, { err, handled: p.h2 }); }
+          else {
+            out.push('done');
+            push(10, 'No handler matched. Before the exception leaves, <b>finally</b> still runs. It always runs.', { err, loose: true });
+            out.push(`ZeroDivisionError: division by zero`);
+            push(10, 'The exception was not handled, so it travels up and stops the program with a traceback. The last line, print("after"), never runs.', { err, loose: true, dead: true });
+            return fr;
+          }
+        }
+        push(7, 'else runs only when the try block raised <b>no</b> exception, so it is skipped.', { err, handled: true });
+      } else { out.push(`result ${pyFloat(100 / n)}`); push(8, 'No exception happened, so the <b>else</b> block runs. Put code here that should run only when the try part worked.'); }
+      out.push('done');
+      push(10, '<b>finally</b> runs in every case: after success, after a handled exception, and even when the exception is not handled. Use it to close files or release resources.', { err, handled: !!err });
+      out.push('after');
+      push(11, 'The try statement is finished and the program carries on normally.', { err, handled: !!err });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Program', 16, 18);
+      codeView(z, f.lines, f.cur, 16, 26, 300, { s: 12, lh: 19, bad: f.bad, hl: f.dead ? '#fecaca' : undefined });
+      head(z, 'Exception classes', 336, 18);
+      const ch = f.err ? chain(f.err) : [];
+      TREE.forEach(([name, lv], i) => {
+        const y = 28 + i * 22, x = 340 + lv * 18, on = ch.includes(name), chk = f.chk === name;
+        PYZ.rr(z.g, x, y, 150 - lv * 4, 19, 5, { fill: chk ? (f.hit ? c.green : c.red) : on ? (c.dark ? '#3b0d0d' : '#fee2e2') : c.surf, stroke: on ? c.red : c.line });
+        D.text(z.g, name, x + 6, y + 14, { s: 11.5, b: on || chk, c: chk ? '#fff' : on ? c.red : c.ink, mono: true });
+        if (lv) D.line(z.g, x - 10, y + 9, x - 2, y + 9, c.line, 1.2);
+      });
+      if (f.err) D.text(z.g, f.handled ? 'handled' : f.loose ? 'not handled' : 'raised', 584, 44, { a: 'right', s: 12, b: true, c: f.handled ? c.green : c.red });
+      consoleBox(z, f.out, 336, 192, 248, 130, { title: 'Output', err: f.dead });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 5.2  what import really does: sys.modules, sys.path and running the module once
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, D } = PYZ;
+  const MOD = ['# shapes.py', 'print("loading shapes")', 'PI = 3.14159', 'def area(r):', '    return PI * r * r', 'if __name__ == "__main__":', '    print("test:", area(1))'];
+  const S = {
+    first: { main: ['# main.py', 'import shapes', 'print(shapes.area(2))'], steps: [
+      [1, -1, {}, [], null, 'import shapes: Python first looks in <b>sys.modules</b>, its cache of modules already loaded. shapes is not there.'],
+      [1, -1, {}, [], 0, 'It searches the folders of <b>sys.path</b> in order. The first entry is the folder of the script you ran, and shapes.py is there.'],
+      [1, 1, {}, [], 0, 'Python makes a new module object, puts it in sys.modules, and runs shapes.py from the top. Its __name__ is "shapes". print shows "loading shapes".', 'loading shapes'],
+      [1, 4, { PI: '3.14159', area: 'function' }, [], 0, 'PI and def area run, so the module now holds two names.', 'loading shapes'],
+      [1, 5, { PI: '3.14159', area: 'function' }, [], 0, '__name__ is "shapes", not "__main__", so the test code at the bottom does not run.', 'loading shapes'],
+      [1, -1, { PI: '3.14159', area: 'function' }, ['shapes'], 0, 'Finally the name shapes is bound in main.py to the module object.', 'loading shapes'],
+      [2, -1, { PI: '3.14159', area: 'function' }, ['shapes'], 0, 'shapes.area(2) looks up area inside the module and calls it: 3.14159 &times; 2 &times; 2 = 12.56636.', 'loading shapes\n12.56636']] },
+    twice: { main: ['# main.py', 'import shapes', 'import shapes', 'import shapes as s', 'print(s is shapes)'], steps: [
+      [1, 1, { PI: '3.14159', area: 'function' }, ['shapes'], 0, 'The first import finds, runs and caches shapes.py, as before.', 'loading shapes'],
+      [2, -1, { PI: '3.14159', area: 'function' }, ['shapes'], null, 'The second import finds shapes in <b>sys.modules</b> straight away. The file is <b>not</b> run again, so "loading shapes" is printed only once.', 'loading shapes'],
+      [3, -1, { PI: '3.14159', area: 'function' }, ['shapes', 's'], null, 'import shapes as s also uses the cached module and binds it to a second name, s.', 'loading shapes'],
+      [4, -1, { PI: '3.14159', area: 'function' }, ['shapes', 's'], null, 's and shapes are the same object, so this prints True. To really reload a changed file, use importlib.reload(shapes).', 'loading shapes\nTrue']] },
+    from: { main: ['# main.py', 'from shapes import area', 'print(area(1))', 'print(PI)'], steps: [
+      [1, 4, { PI: '3.14159', area: 'function' }, [], 0, 'from shapes import area still loads and runs the <b>whole</b> module once and caches it.', 'loading shapes'],
+      [1, -1, { PI: '3.14159', area: 'function' }, ['area'], 0, 'But only the name area is bound in main.py. The name shapes is not.', 'loading shapes'],
+      [2, -1, { PI: '3.14159', area: 'function' }, ['area'], 0, 'area(1) works. Inside area, PI is found in the module\'s own globals.', 'loading shapes\n3.14159'],
+      [3, -1, { PI: '3.14159', area: 'function' }, ['area'], 0, 'print(PI) in main.py fails with NameError: PI was never imported into main.', 'loading shapes\n3.14159\nNameError: name \'PI\' is not defined', true]] },
+    script: { main: ['$ python shapes.py'], steps: [
+      [0, 1, {}, [], 0, 'Now shapes.py is run directly as the program. Python names this module "__main__".', 'loading shapes'],
+      [0, 4, { PI: '3.14159', area: 'function' }, [], 0, 'PI and area are defined as usual.', 'loading shapes'],
+      [0, 6, { PI: '3.14159', area: 'function' }, [], 0, '__name__ == "__main__" is True this time, so the test code runs: area(1) = 3.14159. This is how one file can be both a module and a script.', 'loading shapes\ntest: 3.14159']] },
+    missing: { main: ['# main.py', 'import shapez'], steps: [
+      [1, -1, {}, [], null, 'shapez is not in sys.modules.'],
+      [1, -1, {}, [], 0, 'It is not in the script folder.'],
+      [1, -1, {}, [], 1, 'It is not in the standard library folder.'],
+      [1, -1, {}, [], 2, 'It is not in site-packages, where pip installs packages.'],
+      [1, -1, {}, [], 3, 'Every folder failed, so Python raises <b>ModuleNotFoundError: No module named \'shapez\'</b>. Check the spelling, the folder, or install the package with pip.', 'ModuleNotFoundError', true]] }
+  };
+  const PATHS = ['(the script folder)', '.../lib/python3.14', '.../lib/python3.14/lib-dynload', '.../site-packages'];
+  trace('pyimport', {
+    title: 'What import does, step by step',
+    sub: 'Pick a scenario. Python checks its module cache, searches sys.path, runs the module file once, and binds a name.',
+    W: 600, H: 340,
+    params: [{ k: 'sc', label: 'Scenario', type: 'select', v: 'first', opts: [['first', 'import a module for the first time'], ['twice', 'import it again'], ['from', 'from shapes import area'], ['script', 'run shapes.py as the program'], ['missing', 'a module that does not exist']] }],
+    tips: [
+      { t: 'A module runs only once per program, however many times it is imported.', set: { sc: 'twice' }, play: true },
+      { t: 'if __name__ == "__main__": keeps test code from running when the file is imported.', set: { sc: 'script' }, play: true },
+      { t: 'from ... import binds only the names you ask for.', set: { sc: 'from' }, play: true }
+    ],
+    frames(p) {
+      const sc = S[p.sc];
+      return sc.steps.map(s => ({ main: sc.main, mline: s[0], sline: s[1], mod: s[2], names: s[3], path: s[4], say: s[5], out: s[6] || '', bad: s[7], cached: p.sc !== 'missing' && (s[1] >= 1 || Object.keys(s[2]).length > 0) }));
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, f.main[0].startsWith('$') ? 'Terminal' : 'main.py', 16, 18);
+      codeView(z, f.main, f.mline, 16, 26, 270, { s: 12, lh: 19, bad: f.bad ? f.mline : undefined });
+      head(z, 'shapes.py', 16, 150);
+      codeView(z, MOD, f.sline, 16, 158, 270, { s: 11.5, lh: 18 });
+      head(z, 'sys.path (searched in order)', 306, 18);
+      PATHS.forEach((p, i) => {
+        const on = f.path === i, past = f.path !== null && f.path !== undefined && i < f.path;
+        PYZ.rr(z.g, 306, 26 + i * 22, 278, 19, 5, { fill: on ? (f.bad ? c.red : c.cv) : c.surf, stroke: on ? (f.bad ? c.red : c.cv) : c.line });
+        D.text(z.g, p + (past ? '   not here' : on && !f.bad ? '   shapes.py found' : ''), 314, 40 + i * 22, { s: 11, mono: true, c: on ? '#fff' : past ? c.ink2 : c.ink });
+      });
+      head(z, 'sys.modules (the cache)', 306, 128);
+      PYZ.rr(z.g, 306, 136, 278, 30, 6, { fill: c.surf, stroke: f.cached ? c.green : c.line });
+      D.text(z.g, f.cached ? "'shapes': <module 'shapes'>" + (Object.keys(f.mod).length ? `  (${Object.keys(f.mod).join(', ')})` : '') : '(no shapes yet)', 314, 156, { s: 11, mono: true, c: f.cached ? c.green : c.ink2 });
+      head(z, 'Names in main', 306, 188);
+      D.text(z.g, f.names.length ? f.names.join(', ') : '(none yet)', 306, 208, { s: 12.5, mono: true, b: true, c: c.ink });
+      if (f.out) PYZ.consoleBox(z, f.out, 306, 222, 278, 100, { title: 'Output', err: f.bad });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 5.3  a file and its cursor: open modes, write, read, seek and tell
+   ===================================================================================================== */
+(() => {
+  const { trace, head, D, esc, showWS } = PYZ;
+  const STR = /^(['"])(.*)\1$/;
+  const unq = s => { const m = String(s).trim().match(STR); if (!m) throw new Error(`Write text in quotes, for example "Hi\\n". Got: ${s}`); return m[2].replace(/\\n/g, '\n').replace(/\\t/g, '\t'); };
+  trace('pyfile', {
+    title: 'A file and its cursor',
+    sub: 'Type file commands, one per line. The picture shows what is stored in the file, where the cursor is, and what each command returns.',
+    W: 600, H: 320,
+    params: [{ k: 'cmds', label: 'Commands (f is the open file)', type: 'area', v: 'open("w")\nwrite("Hi\\nBye\\n")\nclose()\nopen("r")\nreadline()\ntell()\nread(2)\nseek(0)\nread()\nopen("a")\nwrite("End\\n")' }],
+    tips: [
+      { t: '"w" empties the file first. "a" keeps the text and always writes at the end.', play: true },
+      { t: 'Reading moves the cursor forward. seek(0) jumps back to the start so you can read again.', set: { cmds: 'open("w")\nwrite("one\\ntwo\\n")\nopen("r")\nread()\nread()\nseek(0)\nread(3)' }, play: true },
+      { t: 'Writing to a file opened with "r" fails: the mode decides what you may do.', set: { cmds: 'open("w")\nwrite("data")\nopen("r")\nwrite("more")' }, play: true },
+      { t: '"x" creates a new file but refuses to touch one that already exists.', set: { cmds: 'open("x")\nwrite("v1")\nclose()\nopen("x")' }, play: true },
+      { t: 'Opening a file that does not exist for reading raises FileNotFoundError.', set: { cmds: 'open("r")' }, play: true }
+    ],
+    frames(p) {
+      let data = null, mode = null, pos = 0;
+      const fr = [], log = [];
+      const push = (cmd, say, ret, err) => { if (ret !== undefined) log.push(`${cmd}  ->  ${ret}`); fr.push({ data, mode, pos, cmd, ret, err, log: log.slice(-7), say }); };
+      fr.push({ data, mode, pos, log: [], say: 'There is no file called notes.txt yet. Each command below works on it.' });
+      for (const raw of String(p.cmds).split('\n').map(s => s.trim()).filter(Boolean)) {
+        const m = raw.match(/^(\w+)\((.*)\)$/);
+        if (!m) throw new Error(`I do not understand "${raw}". Use open("r"), write("text"), read(), read(3), readline(), seek(0), tell() or close().`);
+        const [, op, arg] = m;
+        const fail = (msg, e) => { push(raw, msg, undefined, e); return true; };
+        if (op === 'open') {
+          const md = unq(arg);
+          if (!['r', 'w', 'a', 'x', 'r+'].includes(md)) throw new Error('Use one of the modes "r", "w", "a", "x" or "r+".');
+          if ((md === 'r' || md === 'r+') && data === null) { if (fail(`open("notes.txt", "${md}") needs the file to exist, so it raises <b>FileNotFoundError</b>.`, 'FileNotFoundError: [Errno 2] No such file or directory')) break; }
+          if (md === 'x' && data !== null) { if (fail('Mode "x" means create a new file and fail if it exists. It exists, so Python raises <b>FileExistsError</b>. This protects files you do not want to overwrite.', 'FileExistsError: [Errno 17] File exists')) break; }
+          mode = md;
+          if (md === 'w' || md === 'x') { data = ''; pos = 0; push(raw, md === 'w' ? 'Mode "w" creates the file, or <b>empties it</b> if it already exists. The cursor is at 0.' : 'Mode "x" creates a new, empty file.'); }
+          else if (md === 'a') { if (data === null) data = ''; pos = data.length; push(raw, `Mode "a" (append) keeps the old text. Every write goes to the end, here position ${pos}.`); }
+          else { pos = 0; push(raw, `Mode "${md}" opens the file for reading${md === 'r+' ? ' and writing' : ''}. The cursor starts at 0, the first character.`); }
+        } else if (mode === null) { if (fail(`The file is closed. ${op}() on a closed file raises <b>ValueError: I/O operation on closed file</b>.`, 'ValueError: I/O operation on closed file.')) break; }
+        else if (op === 'close') { mode = null; push(raw, 'close() saves anything still waiting in memory to the disk and frees the file. A with block calls it for you.'); }
+        else if (op === 'write') {
+          if (mode === 'r') { if (fail('The file was opened with "r", so writing raises <b>io.UnsupportedOperation: not writable</b>.', 'io.UnsupportedOperation: not writable')) break; }
+          const t = unq(arg);
+          if (mode === 'a') pos = data.length;
+          data = data.slice(0, pos) + t + data.slice(pos + t.length);
+          pos += t.length;
+          push(raw, `write puts ${t.length} character${t.length === 1 ? '' : 's'} at the cursor and moves it to ${pos}. It returns the number of characters written. A new line only happens where you write a new line character.`, String(t.length));
+        } else if (op === 'read' || op === 'readline') {
+          if (mode === 'w' || mode === 'a' || mode === 'x') { if (fail(`The file was opened with "${mode}", so reading raises <b>io.UnsupportedOperation: not readable</b>.`, 'io.UnsupportedOperation: not readable')) break; }
+          let t;
+          if (op === 'readline') { const e = data.indexOf('\n', pos); t = e < 0 ? data.slice(pos) : data.slice(pos, e + 1); }
+          else if (arg.trim() === '') t = data.slice(pos);
+          else { const k = parseInt(arg, 10); if (isNaN(k)) throw new Error('read() takes a whole number.'); t = data.slice(pos, pos + k); }
+          pos += t.length;
+          push(raw, t === '' ? 'The cursor is at the end, so there is nothing left: read gives the empty string "". This is how a program knows it reached the end of the file.' : `${op}() returns ${esc(JSON.stringify(t))} and moves the cursor to ${pos}.${op === 'readline' ? ' readline stops after the new line character.' : ''}`, JSON.stringify(t));
+        } else if (op === 'seek') { const k = parseInt(arg, 10); if (isNaN(k) || k < 0) throw new Error('seek() takes a whole number from 0.'); pos = k; push(raw, `seek(${k}) moves the cursor to position ${k}. Nothing is read or written.`, String(k)); }
+        else if (op === 'tell') push(raw, `tell() reports where the cursor is: ${pos}.`, String(pos));
+        else throw new Error(`Unknown command ${op}().`);
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'notes.txt on disk', 16, 18);
+      D.text(z.g, f.mode ? `open, mode "${f.mode}"` : f.data === null ? 'does not exist' : 'closed', 584, 18, { a: 'right', s: 12, b: true, c: f.mode ? c.green : c.ink2 });
+      if (f.data !== null) {
+        const chars = [...f.data], n = Math.max(chars.length + 1, 8), w = Math.min(34, 568 / n);
+        chars.forEach((ch, i) => {
+          PYZ.rr(z.g, 16 + i * w, 30, w - 3, 34, 5, { fill: c.surf, stroke: c.line });
+          D.text(z.g, showWS(ch), 16 + i * w + (w - 3) / 2, 52, { a: 'center', s: Math.min(14, w * 0.5), mono: true, b: true, c: ch === '\n' ? c.orange : c.ink });
+          D.text(z.g, String(i), 16 + i * w + (w - 3) / 2, 78, { a: 'center', s: 9.5, c: c.ink2, mono: true });
+        });
+        if (!chars.length) D.text(z.g, '(empty file)', 16, 52, { s: 12, c: c.ink2 });
+        if (f.mode) {
+          const x = 16 + f.pos * w - 1.5;
+          D.line(z.g, x, 26, x, 90, c.red, 2.5);
+          D.text(z.g, `cursor ${f.pos}`, x + 4, 100, { s: 11, b: true, c: c.red });
+        }
+      }
+      head(z, 'Commands and what they return', 16, 128);
+      f.log.forEach((l, i) => D.text(z.g, l, 16, 150 + i * 19, { s: 12, mono: true, c: c.ink }));
+      if (f.err) { PYZ.rr(z.g, 16, 284, 568, 28, 6, { fill: c.dark ? '#3b0d0d' : '#fef2f2', stroke: c.red }); D.text(z.g, f.err, 26, 303, { s: 12, mono: true, b: true, c: c.red }); }
     }
   });
 })();
