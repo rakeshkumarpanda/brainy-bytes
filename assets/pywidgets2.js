@@ -163,3 +163,56 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 1.3  instance, class and static methods, and properties: what Python passes and where data goes
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D, box } = PYZ;
+  const CODE = {
+    kinds: ['class Pizza:', '    sizes = {"S": 20, "M": 25, "L": 30}', '    def __init__(self, cm):', '        self.cm = cm', '    def area(self):', '        return round(3.14 * (self.cm / 2) ** 2)', '    @classmethod', '    def from_code(cls, code):', '        return cls(cls.sizes[code])', '    @staticmethod', '    def is_valid(cm):', '        return 15 <= cm <= 40', 'p = Pizza.from_code("M")', 'print(p.area(), Pizza.is_valid(50))'],
+    prop: ['class Temperature:', '    def __init__(self, c):', '        self.celsius = c', '    @property', '    def celsius(self):', '        return self._c', '    @celsius.setter', '    def celsius(self, value):', '        if value < -273.15:', '            raise ValueError("too cold")', '        self._c = value', '    @property', '    def fahrenheit(self):', '        return self._c * 9 / 5 + 32', 't = Temperature(25)', 't.fahrenheit', 't.celsius = -300', 't.fahrenheit = 0']
+  };
+  /* [line, call, first argument, instance dict, out, say] */
+  const S = {
+    kinds: [
+      [12, 'Pizza.from_code("M")', 'cls = Pizza', '', '', 'from_code is a <b>class method</b>. Called on the class, Python passes the class itself as the first argument, named cls.'],
+      [8, 'cls.sizes["M"] is 25, then cls(25)', 'cls = Pizza', '', '', 'cls(25) is the same as Pizza(25). Because it uses cls and not the name Pizza, a child class calling from_code would get a child object. This is an <b>alternative constructor</b>.'],
+      [3, 'Pizza.__init__(new object, 25)', 'self = the new pizza', "'cm': 25", '', '__init__ is a normal <b>instance method</b>: its first argument is the object, self.'],
+      [12, 'p = the new Pizza', '', "'cm': 25", '', 'The class method returns the finished object, which is named p.'],
+      [5, 'p.area() is Pizza.area(p)', 'self = p', "'cm': 25", '', 'Calling a method on an object passes the object as self, so the method can read self.cm.'],
+      [11, 'Pizza.is_valid(50)', '(nothing extra)', "'cm': 25", '', 'is_valid is a <b>static method</b>: Python passes no self and no cls. It is a plain function that lives in the class because it belongs to the topic.'],
+      [13, 'print the results', '', "'cm': 25", '491 False', '3.14 &times; 12.5<sup>2</sup> rounds to 491, and 50 is not between 15 and 40.']],
+    prop: [
+      [14, 'Temperature(25) runs __init__', 'self = t', '', '', 'A new object is made and __init__ runs.'],
+      [2, 'self.celsius = 25 goes to the SETTER', 'value = 25', '', '', 'celsius is a property, so even inside __init__ the assignment calls the setter method instead of storing directly.'],
+      [10, 'the setter checks, then self._c = 25', 'value = 25', "'_c': 25", '', '25 is fine, so the real value is stored under _c. The instance dict holds _c, not celsius.'],
+      [15, 't.fahrenheit calls the GETTER', 'self = t', "'_c': 25", '', 'Reading a property runs its getter. fahrenheit is computed every time from _c: 25 &times; 9 / 5 + 32 = 77.0.'],
+      [16, 't.celsius = -300 calls the setter', 'value = -300', "'_c': 25", '', 'Assignment goes through the setter again.'],
+      [9, 'raise ValueError("too cold")', 'value = -300', "'_c': 25", 'ValueError: too cold', 'The check fails, so nothing is stored. The object can never hold an impossible temperature.'],
+      [17, 't.fahrenheit = 0: no setter', '', "'_c': 25", "ValueError: too cold\nAttributeError: property 'fahrenheit' of 'Temperature' object has no setter", 'fahrenheit has only a getter, so it is <b>read only</b>. Python raises AttributeError.']]
+  };
+  trace('pymethods', {
+    title: 'Method kinds and properties',
+    sub: 'Pick a program. Each step shows the call Python really makes, what it passes as the first argument, and what is stored in the object.',
+    W: 600, H: 360,
+    params: [{ k: 'prog', label: 'Program', type: 'select', v: 'kinds', opts: [['kinds', 'Instance, class and static methods'], ['prop', 'A property with a setter']] }],
+    tips: [
+      { t: 'self is the object, cls is the class, and a static method gets neither.', set: { prog: 'kinds' }, play: true },
+      { t: 'A property turns attribute reads and writes into method calls, so checks always run.', set: { prog: 'prop' }, play: true }
+    ],
+    frames(p) { return S[p.prog].map(s => ({ code: CODE[p.prog], line: s[0], call: s[1], arg: s[2], dict: s[3], out: s[4], say: s[5] })); },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Program', 16, 18);
+      codeView(z, f.code, f.line, 16, 26, 300, { s: 10.5, lh: 17 });
+      head(z, 'Python really does', 332, 18);
+      box(z, 332, 28, 252, 40, f.call, { mono: true, s: 11.5, fill: c.dark ? '#14321f' : '#dcfce7', stroke: c.green });
+      head(z, 'First argument', 332, 92);
+      box(z, 332, 100, 252, 32, f.arg || '(none)', { mono: true, s: 12, b: true, stroke: c.cv });
+      head(z, 'Inside the object (its __dict__)', 332, 156);
+      box(z, 332, 164, 252, 32, f.dict ? '{' + f.dict + '}' : '{}', { mono: true, s: 12, stroke: c.orange });
+      if (f.out) consoleBox(z, f.out, 332, 216, 252, 120, { title: 'Output', err: /Error/.test(f.out.split('\n').pop()) });
+    }
+  });
+})();

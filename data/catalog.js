@@ -6765,6 +6765,27 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-class-design", title: "Class design: methods, properties, abstract classes and dataclasses", emoji: "1.3", page: "content/python/py-class-design.html",
+        summary: "class and static methods, properties, cached_property, ABCs, dataclasses, __slots__, descriptors.",
+        keywords: ["classmethod", "staticmethod", "property", "setter", "cached_property", "abc", "abstractmethod", "dataclass", "frozen", "__slots__", "descriptor", "PCPP"],
+        minutes: 80, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Designing classes well", emoji: "", group: "Lesson", keywords: ["class design", "classmethod", "staticmethod", "property", "abstract class", "dataclass"] },
+        { id: "kinds", title: "Instance, class and static methods", emoji: "", group: "Lesson", keywords: ["instance method", "class method", "static method", "alternative constructor", "cls", "from_text"] },
+        { id: "property", title: "Properties: attributes with rules", emoji: "", group: "Lesson", keywords: ["property", "getter", "setter", "read only", "computed attribute", "cached_property", "encapsulation"] },
+        { id: "abc", title: "Abstract base classes", emoji: "", group: "Lesson", keywords: ["abc", "ABC", "abstractmethod", "abstract property", "contract", "collections.abc", "register", "virtual subclass"] },
+        { id: "dataclass", title: "Dataclasses: classes for data", emoji: "", group: "Lesson", keywords: ["dataclass", "field", "default_factory", "frozen", "order", "__post_init__", "asdict", "replace", "kw_only", "namedtuple"] },
+        { id: "slots", title: "__slots__ and descriptors", emoji: "", group: "Lesson", keywords: ["__slots__", "memory", "descriptor", "__get__", "__set__", "__set_name__", "tracemalloc"] },
+        { id: "maths", title: "The maths: conversions, ordering and memory", emoji: "", group: "Lesson", keywords: ["Fahrenheit", "Celsius", "tuple ordering", "lexicographic", "memory estimate"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "data descriptor", "non data descriptor", "lookup order"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "class design", "bisect", "heap", "snapshot", "text editor"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
