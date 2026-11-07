@@ -7272,6 +7272,28 @@ function pyWebModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-flask-apps", title: "Real Flask apps: structure, database, login and tests", emoji: "3.2", page: "content/python/py-flask-apps.html",
+        summary: "Application factory, blueprints, sqlite3, login with hashed passwords, pytest, config and deployment.",
+        keywords: ["application factory", "blueprint", "sqlite3", "login", "password hash", "pytest", "fixture", "config", "Gunicorn", "deployment"],
+        minutes: 100, counts: {"lessons": 11, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "From one file to a real app", emoji: "", group: "Lesson", keywords: ["application factory", "create_app", "blueprint", "project structure", "database", "login", "testing", "configuration", "deployment"] },
+        { id: "layout", title: "The application factory and blueprints", emoji: "", group: "Lesson", keywords: ["create_app", "application factory", "Blueprint", "register_blueprint", "url_prefix", "current_app", "project layout", "instance folder"] },
+        { id: "database", title: "A database with sqlite3", emoji: "", group: "Lesson", keywords: ["sqlite3", "g", "teardown_appcontext", "get_db", "sqlite3.Row", "placeholders", "SQL injection", "commit", "cli command", "Flask-SQLAlchemy", "migrations"] },
+        { id: "auth", title: "Users, passwords and login_required", emoji: "", group: "Lesson", keywords: ["authentication", "password hashing", "generate_password_hash", "check_password_hash", "salt", "scrypt", "PBKDF2", "login_required", "session", "before_app_request", "Flask-Login"] },
+        { id: "testing", title: "Testing a Flask app", emoji: "", group: "Lesson", keywords: ["pytest", "fixture", "conftest", "test_client", "test_cli_runner", "TESTING", "assert", "coverage", "unit test"] },
+        { id: "config", title: "Configuration, errors and logging", emoji: "", group: "Lesson", keywords: ["config", "from_mapping", "from_prefixed_env", "environment variables", "SECRET_KEY", "errorhandler", "HTTPException", "logging", "app.logger", "500"] },
+        { id: "deploy", title: "Deploying a Flask app", emoji: "", group: "Lesson", keywords: ["deployment", "Gunicorn", "nginx", "WSGI", "environment variables", "Docker", "PaaS", "PostgreSQL", "health check", "requirements.txt"] },
+        { id: "maths", title: "The maths: hashing cost, commits and capacity", emoji: "", group: "Lesson", keywords: ["password hashing cost", "PBKDF2 iterations", "brute force", "transactions", "birthday bound", "salt", "test speed"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "application context", "request context", "ORM", "CSRF", "monitoring"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "SQL", "sqlite3", "NULL", "GROUP BY", "self join", "window functions", "design"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

@@ -472,3 +472,92 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 3.2  a real Flask app: the factory builds it, a request uses the database and the login, a test runs it
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const CASES = {
+    build: {
+      stages: ['create_app(settings) is called', 'app = Flask(__name__)', 'Load the config', 'Set up the database helpers', 'Register the blueprints', 'The app is ready'],
+      steps: [
+        S(0, [['call', 'create_app()']], 'Nothing is made when Python imports the package. The app is built only when someone calls the <b>application factory</b> create_app().'),
+        S(1, [['app', 'Flask("shop")']], 'The factory makes a new Flask object. Calling it twice gives two separate apps, which is exactly what tests need.'),
+        S(2, [['SECRET_KEY', 'dev (default)'], ['DATABASE', 'instance/shop.sqlite'], ['from settings', 'TESTING=True (in tests)'], ['from environment', 'FLASK_SECRET_KEY=...']], 'Config comes in layers: safe defaults first, then the settings passed in, then environment variables. Later layers win, so production secrets never live in the code.'),
+        S(3, [['teardown_appcontext', 'close_db'], ['CLI command', 'flask init-db']], 'The database module registers <b>close_db</b> to run after every request and adds an <b>init-db</b> command for the terminal.'),
+        S(4, [['blueprint auth', '/auth/register, /auth/login'], ['blueprint books', '/, /create, /&lt;id&gt;/update'], ['blueprint api', '/api/books ...']], 'Each part of the site is a <b>Blueprint</b> in its own file. register_blueprint adds its routes, and url_prefix puts them under a path such as /api.'),
+        S(5, [['return', 'app']], 'The factory returns the app. Gunicorn calls it with gunicorn "shop:create_app()", and tests call it with their own settings.')
+      ]
+    },
+    request: {
+      stages: ['Request arrives', 'before_app_request: load the user', 'login_required check', 'View: get_db()', 'Run SQL with ? placeholders', 'Return the response', 'teardown_appcontext: close_db'],
+      steps: [
+        S(0, [['request', 'GET /books with a session cookie']], 'A logged in user opens the list of books.'),
+        S(1, [['session["user_id"]', '1'], ['g.user', 'row of user 1']], 'A function marked <b>@bp.before_app_request</b> reads the user id from the session and loads the user into <b>g.user</b>, for every request of the app.'),
+        S(2, [['@login_required', 'g.user is set, go on']], 'The <b>login_required</b> decorator checks g.user. Here it is set, so the view runs.'),
+        S(3, [['g.db', 'new sqlite3 connection']], 'The view calls <b>get_db()</b>. The first call in a request opens a connection and keeps it on g, later calls in the same request reuse it.'),
+        S(4, [['SQL', 'SELECT ... WHERE author_id = ?'], ['params', '(1,)']], 'Values always go in as <b>? placeholders</b>, never glued into the SQL text, so a title that contains SQL code is stored as plain text and never runs.'),
+        S(5, [['response', '200, rendered books.html']], 'The view renders the template with the rows and returns it.'),
+        S(6, [['g.db', 'closed']], 'After the response, Flask calls <b>close_db</b>, even if the view raised an error. Every request gets a fresh connection and nothing is left open.')
+      ]
+    },
+    login: {
+      stages: ['GET /orders, not logged in', 'login_required redirects', 'POST /auth/login', 'check_password_hash', 'Store the user in the session', 'Redirect back to /orders'],
+      steps: [
+        S(0, [['g.user', 'None']], 'Someone who is not logged in opens /orders.'),
+        S(1, [['response', '302, Location: /auth/login']], 'login_required sees g.user is None and returns a <b>redirect</b> to the login page instead of running the view.', true),
+        S(2, [['form', 'name=ann, password=...']], 'The user sends the login form.'),
+        S(3, [['stored', 'pbkdf2:sha256:1000000$salt$hash'], ['check', 'True']], 'The app NEVER stores passwords. It stores a slow, salted <b>hash</b> made by generate_password_hash, and check_password_hash hashes the typed password the same way and compares.'),
+        S(4, [['session', 'cleared, then user_id = 1']], 'session.clear() first, so no old data survives the login. Then the user id goes into the signed session cookie.'),
+        S(5, [['response', '302, Location: /orders'], ['next request', 'g.user = ann, view runs']], 'Back at /orders, before_app_request loads ann into g.user and the view runs.')
+      ]
+    },
+    test: {
+      stages: ['pytest finds test_ functions', 'Fixture app: create_app(TESTING)', 'Fixture: a fresh database', 'Fixture client: app.test_client()', 'The test sends requests', 'assert the answers', 'Clean up'],
+      steps: [
+        S(0, [['found', 'tests/test_notes.py::test_add_note']], 'pytest looks in the tests folder for files and functions whose names start with test_.'),
+        S(1, [['app', 'create_app({"TESTING": True, ...})']], 'The test asks for a <b>client</b> argument. pytest sees a <b>fixture</b> with that name in conftest.py and runs it first. It calls the factory with test settings.'),
+        S(2, [['DATABASE', '/tmp/pytest-.../test.sqlite'], ['init-db', 'done']], 'Each test gets its own empty database in a temporary file (or :memory:), so tests never depend on each other.'),
+        S(3, [['client', 'FlaskClient']], 'The fixture returns app.test_client(). It sends requests straight into the app, with no network and no server.'),
+        S(4, [['request', 'client.post("/api/notes", json=...)'], ['status', '201']], 'The test body uses the client like a browser or an API caller would.'),
+        S(5, [['assert', 'r.status_code == 201 passed'], ['assert', 'r.get_json()["text"] == "milk" passed']], 'Plain assert statements check the answers. When one fails, pytest shows both values.'),
+        S(6, [['cleanup', 'temporary database removed'], ['result', '1 passed']], 'After the test pytest finishes the fixture (code after yield), so the temporary database is deleted.')
+      ]
+    }
+  };
+  trace('pyflaskapp', {
+    title: 'Inside a real Flask app',
+    sub: 'Pick a view of the app. Each step moves one stage further and shows what the app knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Show', type: 'select', v: 'build', opts: [['build', 'The factory builds the app'], ['request', 'A request with the database'], ['login', 'Logging in'], ['test', 'A pytest test']] }],
+    tips: [
+      { t: 'create_app: config layers, database helpers, blueprints.', set: { case: 'build' }, play: true },
+      { t: 'A request: g.user, login_required, g.db, teardown.', set: { case: 'request' }, play: true },
+      { t: 'Login: redirect, password hash, session.', set: { case: 'login' }, play: true },
+      { t: 'A test: fixtures, a fresh app and database, the test client.', set: { case: 'test' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 16, name, { s: 12, b: on, stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 15, 134, y + gap - 1, c.ink2, 1.2, 5);
+      });
+      head(z, 'What the app knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();
