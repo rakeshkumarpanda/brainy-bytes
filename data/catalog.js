@@ -301,18 +301,19 @@ window.CATALOG = {
       title: 'Python',
       emoji: '🐍',
       color: '#3776ab',
-      blurb: 'Python from your first variable to classes, files, testing and automation scripts.',
-      intro: 'A full Python course for beginners and testers. It starts with how Python really runs your code, from the first character CPython reads to the last line of output, with an animation you can type into, real Python in your browser and a line by line viewer. Chapters on the core language, data structures, object oriented code, files, error handling, pytest and scripts that automate everyday work follow.',
-      tags: ['How Python runs', 'Bytecode', 'Basics', 'Collections', 'OOP', 'pytest'],
       layout: 'path',
-      modules: pyModules().concat(pySoonSteps([
-        ['Python basics', 'Variables, types, input and output.'],
-        ['Control flow and functions', 'Conditions, loops and reusable functions.'],
-        ['Lists, tuples, sets and dictionaries', 'The built in collections and when to use each.'],
-        ['Object oriented Python', 'Classes, inheritance and dunder methods.'],
-        ['Files and error handling', 'Read and write files and handle exceptions.'],
-        ['Testing with pytest', 'Fixtures, parametrize and plugins.']
-      ]))
+      blurb: 'Complete Python in three sections: Core Python from your first program to classes, Advanced Python to the professional certification level and beyond, and Web and APIs with requests, Flask, Django, Django REST framework and FastAPI.',
+      intro: 'Pick a section, then follow its steps in order. Every chapter explains what each idea is, why it is needed and how it works in simple words, compares it with similar ideas, and has step by step animations that start empty and fill in as you press Step, with your own input. Every program runs in your browser with real Python and can be stepped through line by line and downloaded as a .py file. Each chapter also has the maths behind the idea, worked problems, quizzes from easy to the level of top university exams, assignments checked by tests, LeetCode problems with downloadable solutions and a chapter summary. The sections follow the Python Institute PCEP, PCAP and PCPP1 syllabi and add what a working developer still needs.',
+      tags: ['Basics', 'Collections', 'Functions', 'OOP', 'Exceptions', 'Files', 'Decorators', 'Generators', 'Testing', 'Concurrency', 'requests', 'Flask', 'Django', 'FastAPI', 'PCEP', 'PCAP', 'PCPP'],
+      parts: [
+        { id: 'core', title: 'Core Python', blurb: 'From your first program to values, operators, control flow, strings, lists, tuples, sets, dictionaries, functions, exceptions, modules, files and object oriented code.',
+          intro: 'Core Python starts from zero and follows the PCEP-30-02 (entry level) and PCAP-31-03 (associate level) syllabi of the Python Institute, plus what a student still needs today: match statements, f-strings, exception groups, pathlib, JSON, virtual environments and pip. Step 7 is a practice exam for both certificates.' },
+        { id: 'advanced', title: 'Advanced Python', blurb: 'Professional Python: the data model and magic methods, decorators, properties and abstract classes, metaclasses, iterators and generators, context managers, PEPs and type hints, testing, complexity, collections, regular expressions, concurrency, files and databases, and how CPython runs your code.',
+          intro: 'Advanced Python follows the PCPP-32-101 (professional level 1) syllabus: advanced object oriented programming, coding conventions and PEPs, GUI programming with tkinter, network programming and file processing with sqlite3, CSV, XML, logging and configparser. It adds what senior developers use every day: generators, context managers, testing with pytest, performance and data structures, regular expressions and concurrency with threads, processes and asyncio. Step 8 is a professional level practice exam with problems in the style of top universities.' },
+        { id: 'web', title: 'Web and APIs', blurb: 'How the web works, HTTP and REST, sockets, calling APIs with requests, handling API data and errors, Flask, Django, Django REST framework, FastAPI and API security.',
+          intro: 'Web and APIs starts with what really happens when a browser asks a server for a page, then teaches you to call any web API from Python with requests, handle JSON, pagination, retries and errors, and build your own web apps and APIs with Flask, Django, Django REST framework and FastAPI, tested with their test clients. It ends with authentication, JWT, CORS, deployment and a revision step.' }
+      ],
+      modules: pyCoreModules().concat(pyAdvModules(), pyModules(), pyWebModules(), sheetModule('python'), iqModule('python'))
     },
     {
       id: 'ml-maths',
@@ -1277,6 +1278,7 @@ function sheetModule(sid) {
     'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. Core AI runs from agents and BFS to A*, local search, CSPs, minimax and alpha beta, logic and resolution, planning, Bayesian networks, causality and reinforcement learning. Advanced AI runs from preferences and utility to expected utility, risk, discounting, games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['A*', 'admissible heuristic', 'alpha beta', 'arc consistency', 'resolution', 'unification', 'STRIPS', 'Bayes rule', 'd-separation', 'Bellman equation', 'Q learning', 'utility', 'expected utility', 'IESDS']],
     'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
+    'python': ['content/python/cheatsheet.html', 'Every key idea, formula, table, memory aid and common mistake from all three sections on one page. Core Python runs from print() and types to strings, lists, dictionaries, functions, exceptions, files and classes. Advanced Python runs from magic methods, decorators and metaclasses to generators, testing, complexity, regular expressions and concurrency. Web and APIs runs from HTTP and REST to requests, Flask, Django, DRF, FastAPI and JWT. Search it, filter it, print it or download the PDF.', ['print sep end', 'integer division', 'operator precedence', 'slicing', 'list methods', 'dict methods', 'LEGB', '*args **kwargs', 'try except finally', 'file modes', 'MRO', 'magic methods', 'decorators', 'generators', 'big O', 'regex', 'GIL', 'HTTP status codes', 'Flask routes', 'Django ORM', 'FastAPI', 'JWT']],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
   }[sid];
   return {
@@ -1341,6 +1343,7 @@ function iqModule(sid) {
     'ml-maths': ['content/ml-maths/interview-questions.html', 'Maths questions from machine learning interviews and certification theory sections: dot products, matrix shapes, eigenvalues and PCA, derivatives, backpropagation, gradient descent and Adam, Bayes, distributions, confidence intervals, A/B tests, entropy, losses and metrics, each solved step by step.', ['dot product', 'cosine similarity', 'matrix multiplication', 'eigenvalues', 'PCA', 'chain rule', 'sigmoid derivative', 'gradient descent', 'Adam', 'Bayes theorem', 'central limit theorem', 'p-value', 'A/B test', 'cross entropy', 'precision recall', 'ROC AUC']],
     'playwright': ['content/playwright/interview-questions.html', 'Playwright questions from automation interviews in TypeScript, JavaScript, Python and Java: how Playwright works, locators and strict mode, auto waiting, network mocking, fixtures, framework design, traces and reports, CI, sharding, flaky tests and the AI test agents, with real scenario questions.', ['playwright vs selenium', 'browser context', 'getByRole', 'strict mode', 'auto waiting', 'web first assertions', 'page.route', 'storageState', 'test.extend', 'pytest fixtures', 'trace viewer', 'sharding', 'flaky tests', 'test agents', 'playwright mcp']],
     'ai': ['content/ai/interview-questions.html', 'Advanced AI interview and viva questions on rational preferences, utility representation, expected utility and risk attitudes, backward induction, discounting, value of information, normal form games, Pareto optimality, dominance and IESDS, with numerical questions solved step by step.', ['rational preference', 'utility function', 'ordinal vs cardinal', 'expected utility', 'certainty equivalent', 'St Petersburg', 'backward induction', 'discount factor', 'value of information', 'prisoners dilemma', 'Cournot', 'Bertrand', 'Pareto optimal', 'dominant strategy', 'IESDS']],
+    'python': ['content/python/interview-questions.html', 'Python interview questions for developers, data and QA engineers: mutable and immutable types, is against ==, copying, list and dict internals, comprehensions, *args and **kwargs, closures and decorators, generators, the GIL and concurrency, exceptions, OOP, MRO and magic methods, testing, and Flask, Django, REST and FastAPI questions, with output questions run on CPython.', ['mutable vs immutable', 'is vs ==', 'shallow vs deep copy', 'list vs tuple', 'dict internals', 'mutable default argument', 'args kwargs', 'closure', 'decorator', 'generator', 'GIL', 'multiprocessing', 'asyncio', 'MRO', 'dunder methods', 'pytest fixtures', 'Flask vs Django', 'REST', 'FastAPI', 'JWT']],
     'nlp': ['content/nlp/interview-questions.html', 'NLP interview questions on tokenisation, stemming and lemmatisation, Zipf, entropy, cross entropy and KL, perplexity, n-gram models, add-k, Good-Turing, Kneser-Ney, backoff and interpolation, HMM tagging, Viterbi, parsing and evaluation, with scenario questions.', ['tokenisation', 'stemming vs lemmatisation', 'Zipf law', 'entropy', 'cross entropy', 'perplexity', 'n-gram', 'Laplace smoothing', 'Kneser-Ney', 'interpolation', 'OOV', 'HMM', 'Viterbi', 'POS tagging', 'CKY', 'BLEU']],
     'cuda': ['content/cuda/interview-questions.html', 'GPU and CUDA interview questions for ML engineers, HPC developers and systems roles: the execution model, thread indexing, warps and divergence, occupancy, the memory hierarchy, coalescing, bank conflicts, the roofline, tiling, reductions, atomics, streams, tensor cores, profiling and debugging scenarios.', ['CUDA thread hierarchy', 'warp', 'SIMT', 'occupancy', 'coalescing', 'shared memory', 'bank conflict', '__syncthreads', 'atomicAdd', 'roofline', 'streams', 'pinned memory', 'tensor cores', 'Nsight']],
     'git': ['content/git/interview-questions.html', 'Git and CI/CD interview questions for developers and QA engineers: the three areas, reset, revert and restore, merge versus rebase, conflicts, reflog recovery, remotes and force pushes, internals, GitHub Actions and GitLab CI/CD pipelines, caches, artifacts, secrets, flaky tests and pipeline design scenarios.', ['git reset vs revert', 'merge vs rebase', 'fast forward', 'cherry-pick', 'reflog', 'detached HEAD', 'force-with-lease', 'git bisect', 'git objects', 'GitHub Actions', 'needs', 'matrix', 'artifacts', 'GitLab rules', 'cache vs artifacts', 'secrets']],
@@ -3281,8 +3284,8 @@ function mlMathModules() {
 /* ===== py-build: Python chapters. Generated by tools/py-build/build.py, edit the topic files instead. ===== */
 function pyModules() {
   return [
-    { id: "py-internals", title: "How Python Works", emoji: "1", step: 1, level: "Start here", blurb: "What CPython does with your code, from the first character it reads to the last line of output.", topics: [
-      { id: "py-how-python-runs", title: "How Python Runs: From Source Code to Output", emoji: "1.1", page: "content/python/py-how-python-runs.html",
+    { id: "py-internals", title: "How Python Works", emoji: "7", step: 7, part: "advanced", level: "Expert", blurb: "What CPython does with your code, from the first character it reads to the last line of output.", topics: [
+      { id: "py-how-python-runs", title: "How Python Runs: From Source Code to Output", emoji: "7.1", page: "content/python/py-how-python-runs.html",
         summary: "Compilers and interpreters side by side, then what CPython does with your file, step by step: tokens and indentation, the PEG parser and the syntax tree, the compiler, code objects and bytecode read with dis, __pycache__ and the .pyc header, the evaluation loop on a value stack, frames and tracebacks, the LEGB rule and UnboundLocalError, objects and names, reference counting and the cycle collector, the GIL, free threading and subinterpreters, the specializing interpreter and the JIT, imports and start up, inspection tools, what changed up to 3.14, pytest assertion rewriting and a module shadowing bug.",
         keywords: ["how Python works", "Python execution", "CPython internals", "interpreter", "compiler", "bytecode", "dis", "pyc", "__pycache__", "PVM", "evaluation loop", "AST", "tokenizer", "frames", "GIL", "garbage collection", "reference counting", "JIT", "free threading", "Python 3.14", "interview"],
         minutes: 50, counts: {"lessons": 21, "problems": 8, "quiz": 16, "assign": 5},
@@ -6712,3 +6715,46 @@ function coreAiModules() {
   ];
 }
 /* ===== end of ai-core-build ===== */
+
+/* ===== python-adv-build: Python chapters. Generated by tools/python-build/build.py, edit the topic files instead. ===== */
+function pyAdvModules() {
+  return [];
+}
+/* ===== end of python-adv-build ===== */
+
+/* ===== python-web-build: Python chapters. Generated by tools/python-build/build.py, edit the topic files instead. ===== */
+function pyWebModules() {
+  return [];
+}
+/* ===== end of python-web-build ===== */
+
+/* ===== python-core-build: Python chapters. Generated by tools/python-build/build.py, edit the topic files instead. ===== */
+function pyCoreModules() {
+  return [
+    { id: "py-c1", title: "Getting started", emoji: "1", step: 1, part: "core", level: "Beginner", blurb: "What a program is, how Python runs it, values, types, operators and input and output.", topics: [
+      { id: "py-start", title: "What a program is and your first Python program", emoji: "1.1", page: "content/python/py-start.html",
+        summary: "Programs, compiler and interpreter, CPython, REPL and scripts, print() with sep and end, keywords, indentation, error kinds, PEP 8.",
+        keywords: ["first program", "hello world", "print", "sep", "end", "interpreter", "compiler", "keywords", "indentation", "syntax error", "PEP 8", "PCEP"],
+        minutes: 40, counts: {"lessons": 11, "problems": 10, "quiz": 13, "assign": 2},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "What a program is", emoji: "", group: "Lesson", keywords: ["program", "instructions", "programming language", "machine code", "lexis", "syntax", "semantics", "why Python"] },
+        { id: "translate", title: "Compiler, interpreter and how Python runs your file", emoji: "", group: "Lesson", keywords: ["compiler", "interpreter", "CPython", "bytecode", "virtual machine", "PyPy", "MicroPython", "Pyodide"] },
+        { id: "setup", title: "Install Python and run your first program", emoji: "", group: "Lesson", keywords: ["install Python", "python.org", "PATH", "REPL", "interactive mode", "script mode", "IDLE", "VS Code", "version"] },
+        { id: "print", title: "print(): showing results on the screen", emoji: "", group: "Lesson", keywords: ["print", "function", "argument", "sep", "end", "new line", "str", "keyword argument", "flush"] },
+        { id: "structure", title: "Keywords, statements, comments and indentation", emoji: "", group: "Lesson", keywords: ["keywords", "keyword.kwlist", "soft keywords", "statement", "comment", "indentation", "IndentationError", "docstring", "block"] },
+        { id: "errors", title: "Three kinds of errors", emoji: "", group: "Lesson", keywords: ["syntax error", "runtime error", "exception", "logic error", "traceback", "SyntaxError", "NameError", "ZeroDivisionError"] },
+        { id: "style", title: "Writing code other people can read: PEP 8 and PEP 20", emoji: "", group: "Lesson", keywords: ["PEP 8", "PEP 20", "Zen of Python", "import this", "snake_case", "CapWords", "style guide", "readability"] },
+        { id: "maths", title: "The maths: counting what print() writes", emoji: "", group: "Lesson", keywords: ["count characters", "len", "sep length", "end length", "bytes"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "buffering", "flush", "PEG grammar"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "practice problems", "add two integers", "convert the temperature"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of python-core-build ===== */

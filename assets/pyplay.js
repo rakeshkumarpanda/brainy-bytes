@@ -74,11 +74,26 @@ const ready = loadPyodide({ indexURL: ${JSON.stringify(PYODIDE)} }).then(py => {
   return py;
 }).catch(e => { postMessage({ k: 'fatal', t: String(e && e.message || e) }); throw e; });
 let traceNs = null;
+/* packages from PyPI that some examples import (Flask, Django, requests ...). Pyodide's own packages, such as sqlite3
+   and pydantic, load with loadPackagesFromImports. Each one is installed once per page with micropip. */
+const PYPI = { flask: 'flask', django: 'django', rest_framework: 'djangorestframework', requests: 'requests', httpx: 'httpx', fastapi: 'fastapi', pytest: 'pytest' };
+const have = new Set();
+async function prep(py, code) {
+  if (!code) return;
+  try { await py.loadPackagesFromImports(code); } catch (e) { /* not a Pyodide package, micropip may still find it */ }
+  const want = Object.keys(PYPI).filter(m => !have.has(m) && new RegExp('^\\\\s*(from|import)\\\\s+' + m + '\\\\b', 'm').test(code));
+  if (!want.length) return;
+  postMessage({ k: 'wait', t: 'Installing ' + want.map(m => PYPI[m]).join(', ') + ' into the browser for this example. This happens once per page and can take half a minute.' });
+  await py.loadPackage('micropip');
+  const mp = py.pyimport('micropip');
+  for (const m of want) { await mp.install(PYPI[m]); have.add(m); }
+}
 onmessage = async ev => {
   const d = ev.data;
   let py;
   try { py = await ready; } catch (e) { return; }
   try {
+    await prep(py, d.code);
     if (d.mode === 'run') {
       stdinText = d.stdin || '';
       py.globals.get('_bb_run')(d.code);
@@ -126,9 +141,11 @@ onmessage = async ev => {
       const on = ev => {
         const m = ev.data;
         if (m.k === 'log' || m.k === 'error') { onMsg && onMsg(m.k, m.t); return; }
+        /* a package is being installed: show it and give the job more time */
+        if (m.k === 'wait') { onStatus && onStatus(m.t); clearTimeout(timer); timer = setTimeout(() => { kill(); end({ k: 'timeout' }); }, limit + 90000); return; }
         end(m);
       };
-      const timer = setTimeout(() => { kill(); end({ k: 'timeout' }); }, limit);
+      let timer = setTimeout(() => { kill(); end({ k: 'timeout' }); }, limit);
       current = { stop: () => { kill(); end({ k: 'stopped' }); } };
       w.addEventListener('message', on);
       w.postMessage(msg);

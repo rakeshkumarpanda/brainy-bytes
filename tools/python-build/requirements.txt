@@ -1,0 +1,8 @@
+flask
+django
+djangorestframework
+requests
+fastapi
+httpx
+pydantic
+pytest

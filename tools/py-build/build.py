@@ -522,6 +522,9 @@ def inline(s):
     return re.sub(r'<(?!/?' + INLINE_TAGS + r'[\s>/])', '&lt;', s)
 
 
+STEP_FIRST, PART = 7, 'advanced'
+
+
 def catalog(chapters):
     mods = []
     for T in chapters:
@@ -531,8 +534,10 @@ def catalog(chapters):
     L = ['function pyModules() {', '  return [']
     for mi, m in enumerate(mods):
         em, title, mid, blurb = m['key']
-        # step numbers drive the learning path on the subject page (layout: 'path', the same as Computer Vision)
-        L.append(f'    {{ id: {js(mid)}, title: {js(title)}, emoji: {js(str(mi + 1))}, step: {mi + 1}, level: {js(m["topics"][0].get("level", "Start here"))}, blurb: {js(blurb)}, topics: [')
+        # step numbers drive the learning path on the subject page (layout: 'path', the same as Computer Vision).
+        # Since November 2026 these chapters are step 7 of the Advanced Python section (tools/python-build builds the rest)
+        n = mi + STEP_FIRST
+        L.append(f'    {{ id: {js(mid)}, title: {js(title)}, emoji: {js(str(n))}, step: {n}, part: {js(PART)}, level: {js(m["topics"][0].get("level", "Expert"))}, blurb: {js(blurb)}, topics: [')
         for ti, T in enumerate(m['topics']):
             secs = []
             for p in T['parts']:
@@ -542,7 +547,7 @@ def catalog(chapters):
                 secs.append(f'        {{ id: {js(e["id"])}, title: {js(e["title"])}, emoji: "🏋️", group: {js(lvn[e["lv"]] + " practice")} }}')
             secs.append("        { id: 'quiz', title: 'Quiz', emoji: '🎯', group: 'Check yourself' }")
             secs.append("        { id: 'numbers', title: 'Number crunch', emoji: '🧮', group: 'Check yourself' }")
-            L.append(f'      {{ id: {js(T["slug"])}, title: {js(T["title"])}, emoji: {js(f"{mi + 1}.{ti + 1}")}, page: {js("content/python/" + T["slug"] + ".html")},')
+            L.append(f'      {{ id: {js(T["slug"])}, title: {js(T["title"])}, emoji: {js(f"{n}.{ti + 1}")}, page: {js("content/python/" + T["slug"] + ".html")},')
             L.append(f'        summary: {js(T["summary"])},')
             L.append(f'        keywords: {js(T["keywords"])},')
             L.append(f'        minutes: {T["minutes"]}, counts: {js({"lessons": len(T["parts"]), "problems": len(T["calc"]), "quiz": len(T["quiz"]), "assign": len(T["ex"])})},')
