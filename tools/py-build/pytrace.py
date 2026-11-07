@@ -95,7 +95,10 @@ def record(src, stdin_text=''):
         code = compile(src, FILE, 'exec')
         sys.settrace(tracer)
         try:
-            exec(code, {'__name__': '__main__'})
+            # A real __main__ module, so pickle can find classes the program defines.
+            main = types.ModuleType('__main__')
+            sys.modules['__main__'] = main
+            exec(code, main.__dict__)
         finally:
             sys.settrace(None)
     except KeyboardInterrupt:

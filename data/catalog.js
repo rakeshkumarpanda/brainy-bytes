@@ -6786,6 +6786,27 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-errors-copy", title: "Exceptions in depth, copying and serialisation", emoji: "1.4", page: "content/python/py-errors-copy.html",
+        summary: "exception hierarchies, chaining, tracebacks, notes, exception groups, warnings, shallow and deep copy, pickle and shelve.",
+        keywords: ["exception chaining", "__cause__", "__context__", "traceback", "add_note", "ExceptionGroup", "except*", "warnings", "copy", "deepcopy", "pickle", "shelve", "PCPP"],
+        minutes: 80, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Exceptions, copies and saved objects", emoji: "", group: "Lesson", keywords: ["custom exception", "exception hierarchy", "serialisation", "copy", "pickle", "err.args"] },
+        { id: "chain", title: "Chaining: __cause__ and __context__", emoji: "", group: "Lesson", keywords: ["exception chaining", "__cause__", "__context__", "raise from", "from None", "__suppress_context__", "PEP 3134"] },
+        { id: "trace", title: "Tracebacks, notes and exception groups", emoji: "", group: "Lesson", keywords: ["traceback", "extract_tb", "__traceback__", "add_note", "__notes__", "ExceptionGroup", "except*", "PEP 654", "PEP 678"] },
+        { id: "warn", title: "Warnings and assertions", emoji: "", group: "Lesson", keywords: ["warnings", "DeprecationWarning", "catch_warnings", "simplefilter", "assert", "python -O"] },
+        { id: "copying", title: "Shallow and deep copies", emoji: "", group: "Lesson", keywords: ["shallow copy", "deep copy", "copy.copy", "copy.deepcopy", "memo", "__copy__", "__deepcopy__", "aliasing"] },
+        { id: "pickling", title: "pickle and shelve: save objects", emoji: "", group: "Lesson", keywords: ["pickle", "dumps", "loads", "dump", "load", "protocol", "shelve", "security", "json vs pickle", "writeback"] },
+        { id: "maths", title: "The maths: retries, copies and sizes", emoji: "", group: "Lesson", keywords: ["probability of failure", "retries", "geometric distribution", "copy cost", "expected attempts"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "__reduce__", "__getstate__", "PEP 574", "pickle protocol"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "deep copy", "clone graph", "serialize tree", "parsing", "atoi"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

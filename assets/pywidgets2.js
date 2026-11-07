@@ -216,3 +216,52 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 1.4  assignment, shallow copy and deep copy: which objects are shared
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D, box } = PYZ;
+  const CODE = ['import copy', 'a = [[1, 2], [3, 4]]', 'b = a', 'c = a.copy()', 'd = copy.deepcopy(a)', 'c[0].append(9)', 'c.append([5])', 'print(a)', 'print(c)', 'print(d)'];
+  const POS = { O1: 64, O2: 160, O3: 256, I1: 46, I2: 94, I5: 160, I3: 236, I4: 284 };
+  const NAMEY = { a: 52, b: 82, c: 160, d: 256 };
+  const ST = [
+    [1, { a: 'O1' }, { O1: ['I1', 'I2'], I1: [1, 2], I2: [3, 4] }, [], '', 'a list holding two inner lists is made. There are three list objects: the outer one and two inner ones.'],
+    [2, { a: 'O1', b: 'O1' }, { O1: ['I1', 'I2'], I1: [1, 2], I2: [3, 4] }, ['O1'], '', 'b = a copies NOTHING. b is a second name for the very same outer list.'],
+    [3, { a: 'O1', b: 'O1', c: 'O2' }, { O1: ['I1', 'I2'], O2: ['I1', 'I2'], I1: [1, 2], I2: [3, 4] }, ['O2'], '', 'a.copy() is a <b>shallow copy</b>: a NEW outer list, but its slots point to the SAME inner lists.'],
+    [4, { a: 'O1', b: 'O1', c: 'O2', d: 'O3' }, { O1: ['I1', 'I2'], O2: ['I1', 'I2'], O3: ['I3', 'I4'], I1: [1, 2], I2: [3, 4], I3: [1, 2], I4: [3, 4] }, ['O3', 'I3', 'I4'], '', 'copy.deepcopy(a) is a <b>deep copy</b>: a new outer list AND new inner lists, all the way down. Nothing is shared with a.'],
+    [5, { a: 'O1', b: 'O1', c: 'O2', d: 'O3' }, { O1: ['I1', 'I2'], O2: ['I1', 'I2'], O3: ['I3', 'I4'], I1: [1, 2, 9], I2: [3, 4], I3: [1, 2], I4: [3, 4] }, ['I1'], '', 'c[0].append(9) changes the inner list that a, b and c all share. Only d has its own copy, so only d is safe.'],
+    [6, { a: 'O1', b: 'O1', c: 'O2', d: 'O3' }, { O1: ['I1', 'I2'], O2: ['I1', 'I2', 'I5'], O3: ['I3', 'I4'], I1: [1, 2, 9], I2: [3, 4], I5: [5], I3: [1, 2], I4: [3, 4] }, ['O2', 'I5'], '', 'c.append([5]) changes the OUTER list of c, which is c\'s own. a and b do not see it.'],
+    [9, { a: 'O1', b: 'O1', c: 'O2', d: 'O3' }, { O1: ['I1', 'I2'], O2: ['I1', 'I2', 'I5'], O3: ['I3', 'I4'], I1: [1, 2, 9], I2: [3, 4], I5: [5], I3: [1, 2], I4: [3, 4] }, [], '[[1, 2, 9], [3, 4]]\n[[1, 2, 9], [3, 4], [5]]\n[[1, 2], [3, 4]]', 'Shallow copies share what is inside. Deep copies share nothing. Assignment shares everything.']
+  ];
+  trace('pycopy', {
+    title: 'Assignment, shallow copy and deep copy',
+    sub: 'Each step runs one line. Names are on the left, outer lists in the middle and inner lists on the right. Lines show which object each slot points to.',
+    W: 600, H: 400,
+    tips: [{ t: 'Watch step 5: one append is seen through a, b and c, because they reach the same inner list.', play: true }],
+    frames() { return ST.map(s => ({ line: s[0], names: s[1], objs: s[2], hl: s[3], out: s[4], say: s[5] })); },
+    paint(z, f) {
+      const c = z.col;
+      codeView(z, CODE, f.line, 16, 16, 196, { s: 10.5, lh: 17 });
+      const NX = 228, OX = 290, IX = 450, W = 30;
+      head(z, 'Names', NX, 22); head(z, 'Outer lists', OX, 22); head(z, 'Inner lists', IX, 22);
+      Object.entries(f.names).forEach(([n, o]) => {
+        box(z, NX, NAMEY[n] - 12, 34, 24, n, { mono: true, b: true, s: 13, stroke: c.cv });
+        D.line(z.g, NX + 34, NAMEY[n], OX, POS[o], c.cv, 1.6);
+      });
+      Object.entries(f.objs).forEach(([id, v]) => {
+        const on = f.hl.includes(id);
+        if (id[0] === 'O') {
+          v.forEach((t, i) => {
+            box(z, OX + i * W, POS[id] - 13, W, 26, '', { r: 3, fill: on ? (c.dark ? '#14321f' : '#dcfce7') : c.surf, stroke: on ? c.green : c.ink2 });
+            D.line(z.g, OX + i * W + W / 2, POS[id], IX, POS[t], f.hl.includes(t) ? c.green : c.orange, 1.3);
+            D.circle(z.g, OX + i * W + W / 2, POS[id], 3, { fill: c.orange });
+          });
+        } else {
+          v.forEach((x, i) => box(z, IX + i * W, POS[id] - 13, W, 26, String(x), { r: 3, mono: true, s: 12, fill: on ? (c.dark ? '#14321f' : '#dcfce7') : c.surf, stroke: on ? c.green : c.ink2 }));
+        }
+      });
+      if (f.out) consoleBox(z, f.out, 16, 300, 300, 92, { title: 'Output' });
+    }
+  });
+})();
