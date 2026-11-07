@@ -196,3 +196,113 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 2.1  what one requests call does: the Python lines, the HTTP text it makes, and the Response object
+   ===================================================================================================== */
+(() => {
+  const { trace, head, D, codeView } = PYZ;
+  const { rr } = AIZ;
+  /* a step: cur = highlighted code line, wire = HTTP lines so far, resp = [name, value] rows of the Response object */
+  const S = (cur, wire, resp, say, bad) => ({ cur, wire, resp, say, bad });
+  const HDR = ['Host: api.example.com', 'User-Agent: python-requests/2.34', 'Accept-Encoding: gzip, deflate', 'Accept: */*', 'Connection: keep-alive'];
+  const CASES = {
+    get: {
+      code: ['import requests', 'r = requests.get(URL + "/books",', '        params={"q": "dune", "page": 2},', '        timeout=5)', 'r.raise_for_status()', 'books = r.json()'],
+      steps: () => {
+        const L1 = ['GET /books?q=dune&page=2 HTTP/1.1'], L2 = L1.concat(HDR), L3 = L2.concat(['', 'HTTP/1.1 200 OK', 'Content-Type: application/json', '[{"id": 1, "title": "Dune"}]']);
+        const R1 = [['r.status_code', '200'], ['r.ok', 'True'], ['r.url', '...books?q=dune&page=2'], ['r.headers["Content-Type"]', 'application/json']];
+        return [
+          S(0, [], [], '<b>requests</b> is not part of Python itself. Install it once with <b>pip install requests</b>, then import it.'),
+          S(1, [], [], '<b>requests.get</b> will send a GET request, which reads data. Nothing has been sent yet.'),
+          S(2, L1, [], '<b>params</b> is a normal dict. requests turns it into the query string <b>?q=dune&page=2</b> and encodes spaces and special letters for you.'),
+          S(3, L2, [], '<b>timeout=5</b> means: wait at most 5 seconds. Without a timeout, requests can wait for ever. requests also adds headers such as User-Agent and asks for gzip.'),
+          S(3, L3, R1, 'The answer arrives. requests puts it into a <b>Response</b> object: status_code is 200, ok is True, and the headers work like a dict that ignores upper and lower case.'),
+          S(4, L3, R1, '<b>raise_for_status()</b> does nothing for a 2xx answer. For 4xx or 5xx it raises an error, so a failed call can not go unnoticed.'),
+          S(5, L3, R1.concat([['r.text', '\'[{"id": 1, "title": "Dune"}]\''], ['r.json()', '[{\'id\': 1, \'title\': \'Dune\'}]']]), '<b>r.text</b> is the body as a string. <b>r.json()</b> turns the JSON text into Python lists and dicts that you can use at once.')
+        ];
+      }
+    },
+    post: {
+      code: ['payload = {"title": "Emma", "year": 1815}', 'r = requests.post(URL + "/books",', '        json=payload, timeout=5)', 'print(r.status_code, r.headers["Location"])', 'new_book = r.json()'],
+      steps: () => {
+        const L1 = ['POST /books HTTP/1.1', 'Host: api.example.com', 'Content-Type: application/json', 'Content-Length: 31', '', '{"title": "Emma", "year": 1815}'];
+        const L2 = L1.concat(['', 'HTTP/1.1 201 Created', 'Location: /books/3']);
+        const R1 = [['r.status_code', '201'], ['r.ok', 'True'], ['r.headers["Location"]', '/books/3']];
+        return [
+          S(0, [], [], 'The new book is a normal Python dict.'),
+          S(1, [], [], '<b>requests.post</b> sends data to create something new.'),
+          S(2, L1, [], '<b>json=payload</b> does two jobs: it turns the dict into JSON text (31 bytes) and sets <b>Content-Type: application/json</b>. Using data= instead would send a web form.'),
+          S(2, L2, R1, 'The server saved the book and answers <b>201 Created</b> with a <b>Location</b> header that holds the address of the new book.'),
+          S(3, L2, R1, 'print shows <b>201 /books/3</b>.'),
+          S(4, L2, R1.concat([['r.json()', '{\'id\': 3, \'title\': \'Emma\', ...}']]), 'r.json() gives the saved book back, now with the id that the server chose.')
+        ];
+      }
+    },
+    error: {
+      code: ['r = requests.get(URL + "/books/99", timeout=5)', 'print(r.status_code, r.ok)', 'r.raise_for_status()'],
+      steps: () => {
+        const L1 = ['GET /books/99 HTTP/1.1'].concat(HDR.slice(0, 2)), L2 = L1.concat(['', 'HTTP/1.1 404 Not Found', 'Content-Type: application/json', '{"error": "book 99 not found"}']);
+        const R1 = [['r.status_code', '404'], ['r.ok', 'False'], ['r.json()', '{\'error\': \'book 99 not found\'}']];
+        return [
+          S(0, L1, [], 'The program asks for book 99, which does not exist.'),
+          S(0, L2, R1, 'The server answers <b>404 Not Found</b>. requests still returns a normal Response object.'),
+          S(1, L2, R1, 'print shows <b>404 False</b>. Important: <b>no exception</b> happened. requests does not raise for 4xx or 5xx by itself.', 1),
+          S(2, L2, R1.concat([['raises', 'requests.HTTPError']]), '<b>raise_for_status()</b> raises <b>requests.HTTPError: 404 Client Error: Not Found</b>. Call it right after each request, or check r.ok yourself.', 2),
+          S(2, L2, R1.concat([['raises', 'requests.HTTPError']]), 'Catch it with <b>except requests.HTTPError as err</b>. err.response is the Response, so you can still read the error message from the server.', 2)
+        ];
+      }
+    },
+    timeout: {
+      code: ['try:', '    r = requests.get(URL + "/slow", timeout=(3, 2))', 'except requests.Timeout:', '    print("too slow, try again later")', 'except requests.ConnectionError:', '    print("cannot reach the server")'],
+      steps: () => {
+        const L1 = ['GET /slow HTTP/1.1'].concat(HDR.slice(0, 2)), L2 = L1.concat(['', '(1 s ... no answer)']), L3 = L1.concat(['', '(2 s ... still no answer)']);
+        return [
+          S(1, [], [], '<b>timeout=(3, 2)</b> is a pair: wait at most 3 s to <b>connect</b>, and at most 2 s for <b>each read</b> of the answer.'),
+          S(1, L1, [], 'The connection works quickly and the request is sent.'),
+          S(1, L2, [], 'The server is busy. One second passes and no byte of the answer has come.'),
+          S(1, L3, [['raises', 'requests.ReadTimeout']], 'After 2 seconds requests stops waiting and raises <b>ReadTimeout</b>, which is a kind of <b>requests.Timeout</b>.', 1),
+          S(3, L3, [['raises', 'requests.ReadTimeout']], 'The except block catches it and the program goes on. Without a timeout this program could hang for ever.'),
+          S(5, ['(no connection, nothing is sent)'], [['raises', 'requests.ConnectionError']], 'If the server is down or the name is wrong, no connection is made and requests raises <b>ConnectionError</b> instead. Both are kinds of <b>requests.RequestException</b>.')
+        ];
+      }
+    }
+  };
+  trace('pyreq', {
+    title: 'What one requests call does',
+    sub: 'Pick a case. Each step runs one line and shows the HTTP text it makes and what you get back in Python.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Case', type: 'select', v: 'get', opts: [['get', 'GET with params'], ['post', 'POST with json='], ['error', 'A 404 and raise_for_status'], ['timeout', 'Timeouts and connection errors']] }],
+    tips: [
+      { t: 'GET: params, timeout, the Response object and r.json().', set: { case: 'get' }, play: true },
+      { t: 'POST: json= writes the body and the Content-Type for you.', set: { case: 'post' }, play: true },
+      { t: 'A 404 is not an exception until raise_for_status().', set: { case: 'error' }, play: true },
+      { t: 'Always pass a timeout, and catch Timeout and ConnectionError.', set: { case: 'timeout' }, play: true }
+    ],
+    frames(p) { return CASES[p.case].steps(); },
+    paint(z, f) {
+      const c = z.col, g = z.g, P = CASES[z.p.case];
+      head(z, 'Your Python code', 16, 18);
+      const yEnd = codeView(z, P.code, f.cur, 16, 24, 568, { s: 12, lh: 19, bad: f.bad === undefined ? undefined : f.cur });
+      const top = yEnd + 24, hgt = 392 - top;
+      head(z, 'On the wire (HTTP text)', 16, top - 6);
+      rr(g, 16, top, 300, hgt, 8, { fill: c.dark ? '#0b1220' : '#111827', stroke: c.line });
+      const lh = Math.min(16, (hgt - 12) / Math.max(f.wire.length, 1));
+      const firstRes = f.wire.findIndex(x => /^HTTP\//.test(x));
+      f.wire.forEach((ln, i) => {
+        const s = ln === '' ? '(blank line)' : ln;
+        const isRes = firstRes >= 0 && i >= firstRes;
+        D.text(g, s, 24, top + 16 + i * lh, { s: PYZ.fit(g, s, 284, 10.5, { mono: true }), mono: true, c: ln === '' || /^\(/.test(ln) ? '#6b7280' : isRes ? '#fdba74' : '#93c5fd' });
+      });
+      head(z, 'The Response object', 328, top - 6);
+      rr(g, 326, top, 258, hgt, 8, { fill: c.surf, stroke: f.resp.some(r => r[0] === 'raises') ? c.red : c.line, w: f.resp.some(r => r[0] === 'raises') ? 2 : 1 });
+      const rh = Math.min(32, (hgt - 10) / Math.max(f.resp.length, 1));
+      f.resp.forEach(([k, v], i) => {
+        const y = top + 17 + i * rh, bad = k === 'raises';
+        D.text(g, k, 336, y, { s: PYZ.fit(g, k, 238, 11, { mono: true }), mono: true, b: true, c: bad ? c.red : c.cv });
+        D.text(g, v, 348, y + 14, { s: PYZ.fit(g, v, 228, 11.5, { mono: true }), mono: true, c: bad ? c.red : c.ink });
+      });
+      if (!f.resp.length) D.text(g, 'nothing yet', 455, top + hgt / 2, { a: 'center', s: 12, c: c.ink2 });
+    }
+  });
+})();

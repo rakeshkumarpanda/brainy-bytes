@@ -7205,6 +7205,29 @@ function pyWebModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-w2", title: "Calling web APIs", emoji: "2", step: 2, part: "web", level: "Intermediate", blurb: "Use real web APIs from Python: requests, errors and timeouts, sessions and auth, JSON, then pagination, retries, rate limits, validation and async clients.", topics: [
+      { id: "py-requests", title: "Calling web APIs with requests", emoji: "2.1", page: "content/python/py-requests.html",
+        summary: "requests: GET and POST, params and json, timeouts, errors, sessions, auth and JSON answers.",
+        keywords: ["requests", "web API", "GET", "POST", "JSON", "timeout", "raise_for_status", "Session", "Bearer token", "cookies"],
+        minutes: 90, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "What a web API is, and why requests", emoji: "", group: "Lesson", keywords: ["web API", "requests", "HTTP client", "JSON", "Response", "urllib.request", "httpx", "aiohttp", "pip install"] },
+        { id: "get", title: "Your first GET request", emoji: "", group: "Lesson", keywords: ["requests.get", "params", "timeout", "status_code", "ok", "headers", "text", "content", "json()", "url"] },
+        { id: "send", title: "Sending data: POST, PUT, PATCH and DELETE", emoji: "", group: "Lesson", keywords: ["POST", "PUT", "PATCH", "DELETE", "json=", "data=", "files=", "headers=", "form data", "multipart", "stream", "iter_content"] },
+        { id: "errors", title: "When a call fails", emoji: "", group: "Lesson", keywords: ["raise_for_status", "HTTPError", "ConnectionError", "Timeout", "ReadTimeout", "JSONDecodeError", "RequestException", "error handling"] },
+        { id: "session", title: "Sessions, cookies and authentication", emoji: "", group: "Lesson", keywords: ["Session", "cookies", "connection reuse", "keep alive", "authentication", "API key", "Bearer token", "Basic auth", "OAuth 2", "environment variable"] },
+        { id: "json", title: "Working with JSON answers", emoji: "", group: "Lesson", keywords: ["JSON", "json.loads", "json.dumps", "indent", "ensure_ascii", "dict.get", "nested data", "datetime.fromisoformat", "null"] },
+        { id: "maths", title: "The maths: round trips, timeouts and limits", emoji: "", group: "Lesson", keywords: ["pagination maths", "RTT", "connection reuse", "timeout", "rate limit", "probability", "retries"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "urllib3", "connection pool", "certifi", "verify", "TLS"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "sorting", "counting", "heap", "design", "time buckets", "ranking", "load balancing"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
