@@ -376,3 +376,84 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 2.2  product, permutations, combinations and combinations_with_replacement, one tuple per step
+   ===================================================================================================== */
+(() => {
+  const { trace, head, consoleBox, D, box } = PYZ;
+  const ITEMS = 'ABCD';
+  function make(fn, n, r) {
+    const out = [];
+    const idx = [];
+    (function walk() {
+      if (idx.length === r) { out.push(idx.slice()); return; }
+      for (let i = 0; i < n; i++) {
+        if (fn === 'permutations' && idx.includes(i)) continue;
+        if (fn === 'combinations' && idx.length && i <= idx[idx.length - 1]) continue;
+        if (fn === 'combinations_with_replacement' && idx.length && i < idx[idx.length - 1]) continue;
+        idx.push(i); walk(); idx.pop();
+      }
+    })();
+    return out;
+  }
+  const fact = k => (k <= 1 ? 1 : k * fact(k - 1));
+  function formula(fn, n, r) {
+    if (fn === 'product') return [`n^r = ${n}^${r}`, n ** r];
+    if (fn === 'permutations') return [`n! / (n - r)! = ${n}! / ${n - r}!`, fact(n) / fact(n - r)];
+    if (fn === 'combinations') return [`n! / (r! (n - r)!) = ${n}! / (${r}! ${n - r}!)`, n >= r ? fact(n) / (fact(r) * fact(n - r)) : 0];
+    return [`C(n + r - 1, r) = C(${n + r - 1}, ${r})`, fact(n + r - 1) / (fact(r) * fact(n - 1))];
+  }
+  const RULE = {
+    product: 'every position can be any item, and items may repeat',
+    permutations: 'order matters and an item cannot be used twice',
+    combinations: 'order does not matter, so only increasing positions are kept, and no item repeats',
+    combinations_with_replacement: 'order does not matter, but an item may be picked again'
+  };
+  trace('pycombo', {
+    title: 'itertools: product, permutations and combinations',
+    sub: 'Pick a function, how many items (n) and how long each tuple is (r). Each step makes the next tuple in the exact order Python gives them.',
+    W: 600, H: 380,
+    params: [
+      { k: 'fn', label: 'Function', type: 'select', v: 'combinations', opts: [['product', 'product(items, repeat=r)'], ['permutations', 'permutations(items, r)'], ['combinations', 'combinations(items, r)'], ['combinations_with_replacement', 'combinations_with_replacement(items, r)']] },
+      { k: 'n', label: 'Items (n)', type: 'select', v: '4', opts: [['2', '2: A B'], ['3', '3: A B C'], ['4', '4: A B C D']] },
+      { k: 'r', label: 'Tuple length (r)', type: 'select', v: '2', opts: [['1', '1'], ['2', '2'], ['3', '3']] }
+    ],
+    tips: [
+      { t: 'combinations of 4 items, 2 at a time: 6 tuples. AB and BA count once.', set: { fn: 'combinations', n: '4', r: '2' }, play: true },
+      { t: 'permutations of the same items: 12 tuples, because AB and BA are different.', set: { fn: 'permutations', n: '4', r: '2' }, play: true },
+      { t: 'product of 3 items with repeat=2: 9 tuples, AA and BB included.', set: { fn: 'product', n: '3', r: '2' }, play: true }
+    ],
+    frames(p) {
+      const n = Number(p.n), r = Number(p.r), all = make(p.fn, n, r);
+      const [f, total] = formula(p.fn, n, r);
+      if (!all.length) return [{ n, r, fn: p.fn, done: [], cur: null, f, total, say: `There are fewer items (${n}) than places (${r}), so combinations gives no tuples at all. The formula also gives 0.` }];
+      const fr = all.map((t, i) => ({ n, r, fn: p.fn, done: all.slice(0, i + 1), cur: t, f, total,
+        say: i === 0 ? `The first tuple is ${t.map(k => ITEMS[k]).join('')}. Rule for ${p.fn}: ${RULE[p.fn]}.` :
+          `Next comes ${t.map(k => ITEMS[k]).join('')}. Tuples come out in sorted order of positions, one per next() call, so nothing is stored in advance.` }));
+      fr.push({ ...fr[fr.length - 1], cur: null, end: true, say: `All ${all.length} tuples are done, matching the formula ${f} = ${total}. A further next() would raise StopIteration.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Items', 16, 20);
+      for (let i = 0; i < f.n; i++) {
+        const on = f.cur && f.cur.includes(i);
+        box(z, 16 + i * 46, 30, 38, 34, ITEMS[i], { mono: true, b: true, s: 15, stroke: on ? c.green : c.cv, fill: on ? (c.dark ? '#14321f' : '#dcfce7') : c.surf });
+      }
+      head(z, 'This step', 220, 20);
+      box(z, 220, 30, 150, 34, f.cur ? '(' + f.cur.map(k => "'" + ITEMS[k] + "'").join(', ') + ')' : (f.end ? 'StopIteration next' : '(none)'), { mono: true, s: 13, b: true, stroke: f.cur ? c.green : c.line });
+      head(z, 'How many', 390, 20);
+      box(z, 390, 30, 194, 34, `${f.done.length} of ${f.total}`, { s: 14, b: true, stroke: c.orange });
+      head(z, 'Tuples so far', 16, 92);
+      const big = f.total > 24, per = big ? 8 : 6, w = big ? 68 : 92, rh = big ? 22 : 30;
+      f.done.forEach((t, i) => {
+        const col = i % per, row = Math.floor(i / per);
+        const last = f.cur && i === f.done.length - 1;
+        box(z, 16 + col * (w + 4), 100 + row * rh, w, rh - 4, t.map(k => ITEMS[k]).join(''), { mono: true, s: 13, r: 5, stroke: last ? c.green : c.line, fill: last ? (c.dark ? '#14321f' : '#dcfce7') : c.surf });
+      });
+      head(z, 'Formula', 16, 330);
+      box(z, 16, 338, 568, 32, `${f.f} = ${f.total}`, { mono: true, s: 13, stroke: c.cv });
+    }
+  });
+})();

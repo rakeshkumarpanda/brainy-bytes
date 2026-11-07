@@ -6851,6 +6851,29 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-itertools", title: "itertools, functools and operator", emoji: "2.2", page: "content/python/py-itertools.html",
+        summary: "endless iterators, slicing, joining, groupby, combinatorics with formulas, reduce, partial, singledispatch, operator.",
+        keywords: ["itertools", "functools", "operator", "groupby", "product", "permutations", "combinations", "accumulate", "partial", "reduce", "singledispatch", "itemgetter"],
+        minutes: 75, counts: {"lessons": 12, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "The iterator toolbox", emoji: "", group: "Lesson", keywords: ["itertools", "functools", "operator", "count", "cycle", "repeat", "islice", "lazy"] },
+        { id: "filtering", title: "Taking and dropping items", emoji: "", group: "Lesson", keywords: ["takewhile", "dropwhile", "filter", "filterfalse", "compress", "islice"] },
+        { id: "combining", title: "Joining, pairing and running totals", emoji: "", group: "Lesson", keywords: ["chain", "from_iterable", "zip_longest", "pairwise", "batched", "starmap", "accumulate", "tee", "prefix sum"] },
+        { id: "grouping", title: "groupby: runs of equal keys", emoji: "", group: "Lesson", keywords: ["groupby", "run length", "sort first", "defaultdict", "Counter"] },
+        { id: "combos", title: "Combinations and permutations", emoji: "", group: "Lesson", keywords: ["product", "permutations", "combinations", "combinations_with_replacement", "math.comb", "math.perm", "brute force"] },
+        { id: "functools", title: "functools: reduce, partial, singledispatch and caches", emoji: "", group: "Lesson", keywords: ["reduce", "partial", "singledispatch", "lru_cache", "cache_info", "fold"] },
+        { id: "operators", title: "operator: itemgetter, attrgetter, methodcaller", emoji: "", group: "Lesson", keywords: ["itemgetter", "attrgetter", "methodcaller", "operator.add", "operator.mul", "sort key"] },
+        { id: "recipes", title: "Recipes built from the tools", emoji: "", group: "Lesson", keywords: ["recipes", "sliding_window", "deque", "unique_everseen", "first_true", "more-itertools"] },
+        { id: "maths", title: "The maths: counting, prefix sums and folds", emoji: "", group: "Lesson", keywords: ["permutations formula", "combinations formula", "stars and bars", "Pascal's rule", "prefix sum", "left fold"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "complexity", "tee memory"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "accumulate", "prefix sum", "groupby", "product", "permutations"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
