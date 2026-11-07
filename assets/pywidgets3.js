@@ -96,3 +96,103 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 1.2  sockets as a timeline: the TCP handshake and close, a byte stream with no message borders,
+   a lost TCP segment that is sent again, and UDP datagrams with no handshake and no resend
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box } = PYZ;
+  /* a row: dir ('cs' client to server, 'sc' server to client, '' no arrow), label on the arrow,
+     left = what the client program calls, right = what the server program calls, lost = the packet never arrives */
+  const R = (dir, label, left, right, say, lost) => ({ dir, label, left, right, say, lost });
+  const CASES = {
+    tcp: [
+      R('', '', '', 'socket(), bind(), listen()', 'The server makes a socket, <b>binds</b> it to a port (here 8000) and calls <b>listen()</b>. Now it waits in <b>accept()</b> for clients.'),
+      R('cs', 'SYN  seq=100', 'create_connection()', '', 'The client calls <b>socket.create_connection(("server", 8000))</b>. TCP sends a <b>SYN</b> packet: "I want to talk, my numbers start at 100".'),
+      R('sc', 'SYN-ACK  seq=300 ack=101', '', '', 'The server answers <b>SYN-ACK</b>: "OK, my numbers start at 300, and I got your byte 100, so send 101 next".'),
+      R('cs', 'ACK  ack=301', 'connect() returns', 'accept() returns', 'The client sends <b>ACK</b>. This is the <b>three way handshake</b>. It costs one round trip, and only now does accept() give the server a NEW socket for this one client.'),
+      R('cs', 'data "hello" (5 bytes)', 'sendall(b"hello")', '', 'The client sends 5 bytes with <b>sendall()</b>. Sockets send <b>bytes</b>, so text must be encoded first.'),
+      R('sc', 'ACK  ack=106', '', 'recv(1024) gives b"hello"', 'The server TCP confirms it got bytes 101 to 105. The server program calls <b>recv(1024)</b> and gets b"hello".'),
+      R('sc', 'data "HELLO" (5 bytes)', 'recv(1024) gives b"HELLO"', 'sendall(b"HELLO")', 'The server answers on the same connection. TCP is <b>two way</b>: both sides can send at any time.'),
+      R('cs', 'FIN', 'close()', '', 'The client is done and calls <b>close()</b>. TCP sends <b>FIN</b>: "I will send nothing more".'),
+      R('sc', 'ACK + FIN', '', 'recv() gives b""', 'On the server, recv() now returns <b>b""</b> (empty bytes). That is how a program learns the other side closed. The server closes too.'),
+      R('cs', 'ACK', 'closed', 'closed', 'A last ACK and the connection is gone. A with block (with socket ... as s) calls close() for you even when an error happens.')
+    ],
+    stream: [
+      R('', '', '', 'connection is open', 'A TCP connection is already open. Watch what happens to two separate sendall() calls.'),
+      R('cs', '"hi"', 'sendall(b"hi")', '', 'The client sends the message b"hi".'),
+      R('cs', '"there"', 'sendall(b"there")', '', 'Right after, it sends a second message, b"there".'),
+      R('', '', '', 'recv(1024) gives b"hithere"', 'The server calls recv(1024) once and gets <b>b"hithere"</b>. The two messages are glued together. TCP is a <b>stream of bytes</b>, it does not keep message borders.'),
+      R('', '', '', 'or: b"hit", then b"here"', 'Another time the same sends can arrive as b"hit" and then b"here". recv() returns <b>whatever bytes have arrived</b>, from 1 byte up to the size you asked for.'),
+      R('cs', '00 00 00 02 "hi"', 'send length + data', '', 'The fix is <b>framing</b>. Put the length in front of every message: 4 bytes made with struct.pack("!I", 2), then the 2 bytes of data.'),
+      R('cs', '00 00 00 05 "there"', 'send length + data', '', 'Same for the second message: length 5, then 5 bytes.'),
+      R('', '', '', 'read 4 bytes: size 2, read 2: "hi"', 'The server reads exactly 4 bytes to learn the size, then exactly that many bytes. It loops on recv() until it has them all.'),
+      R('', '', '', 'read 4 bytes: size 5, read 5: "there"', 'Now each message comes out whole, however TCP cut the stream. HTTP does the same job with Content-Length, and other protocols end each message with a new line.')
+    ],
+    lost: [
+      R('', '', 'connection is open', 'connection is open', 'A TCP connection is open. The network between the two computers is busy and sometimes drops a packet.'),
+      R('cs', 'data seq=101 "hello"', 'sendall(b"hello")', '', 'The client sends 5 bytes. On the way a router is full and <b>drops</b> the packet.', true),
+      R('', '', 'timer runs out, no ACK', 'recv() is still waiting', 'The client TCP started a timer when it sent the data. No ACK came back before the timer ran out.'),
+      R('cs', 'data seq=101 "hello" (again)', 'TCP sends it again', '', 'So TCP <b>sends the same bytes again</b>. The Python program did nothing: this all happens inside the operating system.'),
+      R('sc', 'ACK  ack=106', '', 'recv(1024) gives b"hello"', 'This time it arrives. The server program gets b"hello" as if nothing went wrong.'),
+      R('', '', 'it was only slower', '', 'This is why TCP is <b>reliable</b>: no loss, no duplicates, the right order. The price is delay: bytes after a lost packet wait until it is sent again.')
+    ],
+    udp: [
+      R('', '', '', 'socket(SOCK_DGRAM), bind()', 'With UDP the receiver makes a SOCK_DGRAM socket and binds a port. There is <b>no listen() and no accept()</b>.'),
+      R('cs', '"ping 0"', 'sendto(b"ping 0", addr)', '', 'The sender calls <b>sendto()</b> with the address. No handshake: the first packet already carries data.'),
+      R('cs', '"ping 1"', 'sendto(b"ping 1", addr)', '', 'The second datagram is lost on the way.', true),
+      R('cs', '"ping 2"', 'sendto(b"ping 2", addr)', '', 'The third one arrives.'),
+      R('', '', '', 'recvfrom(): b"ping 0", b"ping 2"', 'The receiver calls <b>recvfrom()</b> and gets each datagram whole, with the address of the sender. Message borders are kept.'),
+      R('', '', 'nobody tells the sender', 'ping 1 is just missing', 'Nobody sends the lost one again and nobody tells the sender. If the program cares, it must notice and resend by itself.'),
+      R('', '', 'fast and simple', '', 'UDP is used where speed matters more than every packet: DNS questions, video calls, online games. HTTP/3 (QUIC) builds its own reliability on top of UDP.')
+    ]
+  };
+  trace('pysock', {
+    title: 'Sockets on a timeline',
+    sub: 'Time runs down the page. Each step adds one packet between the client and the server, with the Python call that caused it.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Case', type: 'select', v: 'tcp', opts: [['tcp', 'TCP: connect, talk, close'], ['stream', 'TCP is a stream: framing'], ['lost', 'A lost TCP packet is sent again'], ['udp', 'UDP: datagrams, no handshake']] }],
+    tips: [
+      { t: 'TCP: the three way handshake, data and ACKs, then FIN.', set: { case: 'tcp' }, play: true },
+      { t: 'Two sends can arrive as one recv. Framing fixes it.', set: { case: 'stream' }, play: true },
+      { t: 'TCP hides a lost packet by sending it again.', set: { case: 'lost' }, play: true },
+      { t: 'UDP keeps message borders but never resends.', set: { case: 'udp' }, play: true }
+    ],
+    frames(p) {
+      const rows = CASES[p.case];
+      return rows.map((r, i) => ({ rows: rows.slice(0, i + 1), say: r.say }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const CX = 185, SX = 355;
+      box(z, CX - 60, 8, 120, 32, 'Client', { s: 13, b: true, stroke: c.cv });
+      box(z, SX - 60, 8, 120, 32, 'Server', { s: 13, b: true, stroke: c.orange });
+      for (let y = 44; y < 392; y += 10) {
+        D.line(g, CX, y, CX, y + 5, c.line, 1.5);
+        D.line(g, SX, y, SX, y + 5, c.line, 1.5);
+      }
+      const n = f.rows.length, gap = n > 9 ? 33 : 36;
+      f.rows.forEach((r, i) => {
+        const y = 62 + i * gap, now = i === n - 1;
+        const ink = now ? c.ink : c.ink2;
+        if (r.dir) {
+          const x1 = r.dir === 'cs' ? CX : SX, x2 = r.dir === 'cs' ? SX : CX, col = r.dir === 'cs' ? c.cv : c.orange;
+          const drop = 16;
+          if (r.lost) {
+            const mx = (x1 + x2) / 2, my = y + drop / 2;
+            D.line(g, x1, y, mx, my, c.red, now ? 2.5 : 1.5);
+            D.line(g, mx - 6, my - 6, mx + 6, my + 6, c.red, 2.5);
+            D.line(g, mx - 6, my + 6, mx + 6, my - 6, c.red, 2.5);
+            D.text(g, 'lost', mx + 10, my + 4, { s: 10.5, b: true, c: c.red });
+          } else D.arrow(g, x1, y, x2, y + drop, now ? col : c.ink2, now ? 2.5 : 1.5, 7);
+          const s = r.label;
+          D.text(g, s, (CX + SX) / 2, y - 4, { a: 'center', s: PYZ.fit ? PYZ.fit(g, s, 160, 11.5, { mono: true }) : 11, mono: true, b: now, c: r.lost ? c.red : ink });
+        }
+        const sz = (s, w) => PYZ.fit ? PYZ.fit(g, s, w, 11, { mono: true }) : 10;
+        if (r.left) D.text(g, r.left, CX - 8, y + 10, { a: 'right', s: sz(r.left, 170), mono: true, b: now, c: now ? c.cv : c.ink2 });
+        if (r.right) D.text(g, r.right, SX + 8, y + 10, { s: sz(r.right, 236), mono: true, b: now, c: now ? c.orange : c.ink2 });
+      });
+    }
+  });
+})();

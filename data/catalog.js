@@ -7182,6 +7182,28 @@ function pyWebModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-sockets", title: "Sockets, TCP and UDP: under HTTP", emoji: "1.2", page: "content/python/py-sockets.html",
+        summary: "TCP and UDP sockets, bytes and struct, message framing, many clients with asyncio, IP addresses and subnets.",
+        keywords: ["socket", "TCP", "UDP", "bytes", "struct", "framing", "asyncio", "ipaddress", "subnet", "port"],
+        minutes: 90, counts: {"lessons": 11, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "What a socket is", emoji: "", group: "Lesson", keywords: ["socket", "IP address", "port", "TCP", "UDP", "stream", "datagram", "Unix domain socket", "QUIC", "handshake"] },
+        { id: "bytes", title: "Bytes: what really travels", emoji: "", group: "Lesson", keywords: ["bytes", "str", "encode", "decode", "UTF-8", "struct", "pack", "unpack", "big endian", "network byte order", "to_bytes", "from_bytes"] },
+        { id: "tcp", title: "A TCP client and server", emoji: "", group: "Lesson", keywords: ["socket", "bind", "listen", "accept", "connect", "create_connection", "create_server", "send", "sendall", "recv", "close", "timeout", "ConnectionRefusedError", "SO_REUSEADDR", "localhost"] },
+        { id: "framing", title: "TCP is a stream: framing messages", emoji: "", group: "Lesson", keywords: ["stream", "message boundary", "framing", "length prefix", "delimiter", "buffer", "partial recv", "MSS", "Nagle"] },
+        { id: "udp", title: "UDP: single packets, no promises", emoji: "", group: "Lesson", keywords: ["UDP", "SOCK_DGRAM", "sendto", "recvfrom", "datagram", "packet loss", "DNS", "TCP vs UDP"] },
+        { id: "many", title: "Serving many clients at once", emoji: "", group: "Lesson", keywords: ["concurrency", "threading", "socketserver", "ThreadingTCPServer", "selectors", "epoll", "asyncio", "start_server", "open_connection", "event loop"] },
+        { id: "addresses", title: "IP addresses, ports and layers", emoji: "", group: "Lesson", keywords: ["IP address", "IPv4", "IPv6", "CIDR", "subnet", "netmask", "broadcast", "ipaddress", "port", "well known ports", "layers", "TCP/IP model"] },
+        { id: "maths", title: "The maths: windows, round trips and loss", emoji: "", group: "Lesson", keywords: ["MTU", "MSS", "window", "RTT", "bandwidth delay product", "throughput", "Mathis formula", "packet loss", "subnet size"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "TCP_NODELAY", "keep alive", "TIME_WAIT", "congestion control", "protocol design"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "graph", "BFS", "Dijkstra", "Bellman Ford", "union find", "Tarjan", "bridges", "bits"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
