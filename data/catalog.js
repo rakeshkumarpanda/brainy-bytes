@@ -313,7 +313,8 @@ window.CATALOG = {
         { id: 'web', title: 'Web and APIs', blurb: 'How the web works, HTTP and REST, sockets, calling APIs with requests, handling API data and errors, Flask, Django, Django REST framework, FastAPI and API security.',
           intro: 'Web and APIs starts with what really happens when a browser asks a server for a page, then teaches you to call any web API from Python with requests, handle JSON, pagination, retries and errors, and build your own web apps and APIs with Flask, Django, Django REST framework and FastAPI, tested with their test clients. It ends with authentication, JWT, CORS, deployment and a revision step.' }
       ],
-      modules: pyCoreModules().concat(pyAdvModules(), pyModules(), pyWebModules(), sheetModule('python'), iqModule('python'))
+      /* Advanced steps 1 to 6 come from tools/python-build, step 7 (How Python Works) from tools/py-build, step 8 (exam practice) from tools/python-build again */
+      modules: pyCoreModules().concat(pyAdvModules().filter(m => m.step < 7), pyModules(), pyAdvModules().filter(m => m.step >= 7), pyWebModules(), sheetModule('python'), iqModule('python'))
     },
     {
       id: 'ml-maths',
@@ -7132,6 +7133,26 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "py-a8", title: "Exam practice", emoji: "8", step: 8, part: "advanced", level: "All levels", blurb: "Practise for the PCPP1 exam with four papers, a bug hunt, the traps, a mock quiz and timed problems.", topics: [
+      { id: "py-adv-exam", title: "Exam practice: PCPP1 style papers", emoji: "8.1", page: "content/python/py-adv-exam.html",
+        summary: "Four PCPP1 style papers, a bug hunt, the traps table, exam technique and a mock quiz.",
+        keywords: ["PCPP1", "PCPP-32-101", "exam practice", "mock quiz", "predict output", "find the bug", "traps", "certification", "revision"],
+        minutes: 100, counts: {"lessons": 10, "problems": 10, "quiz": 30, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "map", title: "The PCPP1 exam and how to use this chapter", emoji: "", group: "Lesson", keywords: ["PCPP1", "PCPP-32-101", "exam", "certification", "Python Institute", "pass mark", "syllabus", "revision"] },
+        { id: "paper_a", title: "Paper A: advanced object oriented programming", emoji: "", group: "Lesson", keywords: ["special methods", "__hash__", "MRO", "super", "classmethod", "staticmethod", "property", "abc", "decorator", "metaclass", "__slots__", "deepcopy"] },
+        { id: "paper_b", title: "Paper B: generators, context managers and exceptions", emoji: "", group: "Lesson", keywords: ["generator", "send", "yield from", "iterator", "itertools", "groupby", "contextmanager", "__exit__", "raise from", "ExceptionGroup", "except*"] },
+        { id: "paper_c", title: "Paper C: the standard library", emoji: "", group: "Lesson", keywords: ["re", "match search fullmatch", "greedy", "json", "csv", "Counter", "deque", "heapq", "namedtuple", "sqlite3"] },
+        { id: "paper_d", title: "Paper D: functions, data classes and modern syntax", emoji: "", group: "Lesson", keywords: ["lru_cache", "partial", "reduce", "wraps", "dataclass", "Enum", "positional only", "keyword only", "annotations", "walrus", "match"] },
+        { id: "bugs", title: "Find the bug", emoji: "", group: "Lesson", keywords: ["find the bug", "decorator return", "generator used twice", "unhashable", "shared class attribute", "swallowed exception", "raw string regex"] },
+        { id: "traps", title: "The traps in one table", emoji: "", group: "Lesson", keywords: ["exam traps", "common mistakes", "gotchas", "tricky questions"] },
+        { id: "plan", title: "Exam technique and a study plan", emoji: "", group: "Lesson", keywords: ["exam technique", "time per question", "pass mark", "study plan", "PCPP2"] },
+        { id: "leetcode", title: "LeetCode review set", emoji: "", group: "Lesson", keywords: ["LeetCode", "review", "generator", "cache", "dynamic programming", "sliding window", "OrderedDict"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
