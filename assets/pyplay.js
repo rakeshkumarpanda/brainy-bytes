@@ -18,12 +18,15 @@ const PYPLAY = (() => {
 
   /* ---------- the worker ---------- */
   const HELPERS = `
-import sys, json, traceback, linecache
+import sys, json, traceback, linecache, types
 def _bb_run(src):
     linecache.cache['main.py'] = (len(src), None, src.splitlines(True), 'main.py')
+    saved_main = sys.modules.get('__main__')
     try:
         code = compile(src, 'main.py', 'exec')
-        exec(code, {'__name__': '__main__'})
+        main = types.ModuleType('__main__')     # a real module, so pickle, doctest and unittest find the program
+        sys.modules['__main__'] = main
+        exec(code, main.__dict__)
     except SystemExit:
         pass
     except BaseException as e:
@@ -32,6 +35,8 @@ def _bb_run(src):
             tb = tb.tb_next
         sys.stdout.flush()
         traceback.print_exception(type(e), e, tb)
+    finally:
+        sys.modules['__main__'] = saved_main
     sys.stdout.flush(); sys.stderr.flush()
 
 def _bb_norm(v):

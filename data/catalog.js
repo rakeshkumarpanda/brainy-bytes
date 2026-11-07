@@ -6917,6 +6917,28 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-testing", title: "Testing: unittest, pytest and mocks", emoji: "3.2", page: "content/python/py-testing.html",
+        summary: "unittest, fixtures, failures and errors, mocks, pytest, coverage, property based testing, test strategy.",
+        keywords: ["testing", "unittest", "pytest", "mock", "patch", "fixture", "parametrize", "coverage", "Hypothesis", "TDD", "PCPP"],
+        minutes: 80, counts: {"lessons": 11, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Why we test, and a first test suite", emoji: "", group: "Lesson", keywords: ["testing", "unit test", "unittest", "TestCase", "assertEqual", "assertRaises", "Arrange Act Assert", "TDD", "red green refactor"] },
+        { id: "fixtures", title: "setUp, subTest and skip", emoji: "", group: "Lesson", keywords: ["setUp", "tearDown", "setUpClass", "subTest", "skip", "expectedFailure", "discover", "test isolation"] },
+        { id: "failures", title: "Reading failures and errors", emoji: "", group: "Lesson", keywords: ["FAIL", "ERROR", "AssertionError", "traceback", "TestResult", "wasSuccessful"] },
+        { id: "mocking", title: "Mocks: replacing what you cannot test", emoji: "", group: "Lesson", keywords: ["mock", "Mock", "MagicMock", "patch", "patch.object", "side_effect", "return_value", "dependency injection", "test double"] },
+        { id: "pytest", title: "pytest: the most used test runner", emoji: "", group: "Lesson", keywords: ["pytest", "fixture", "parametrize", "approx", "raises", "tmp_path", "monkeypatch", "coverage", "-k", "-v"] },
+        { id: "property", title: "Property based testing", emoji: "", group: "Lesson", keywords: ["property based testing", "Hypothesis", "given", "strategies", "float rounding", "invariant"] },
+        { id: "strategy", title: "What to test and how much", emoji: "", group: "Lesson", keywords: ["test pyramid", "unit test", "integration test", "end to end", "edge cases", "boundary values", "regression test", "CI"] },
+        { id: "maths", title: "The maths: coverage, boundaries and binary search", emoji: "", group: "Lesson", keywords: ["coverage formula", "boundary value analysis", "pairwise testing", "binary search", "git bisect", "probability"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "mutation testing", "testability"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "binary search", "edge cases", "off by one", "git bisect", "fake API"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

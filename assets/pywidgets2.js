@@ -571,3 +571,56 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 3.2  a test run: collect, run each test, red, fix, green, refactor
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D, box } = PYZ;
+  const V1 = ['def discount(price, percent):', '    if percent < 0 or percent > 100:', '        raise ValueError("percent must be 0 to 100")', '    return price - price * percent // 100'];
+  const V2 = V1.slice(0, 3).concat(['    return price - price * percent / 100']);
+  const V3 = V1.slice(0, 3).concat(['    return price * (100 - percent) / 100']);
+  const TESTS = ['test_no_discount', 'test_half_price', 'test_ten_percent', 'test_bad_percent'];
+  const CHECKS = ['discount(100, 0) == 100', 'discount(80, 50) == 40', 'discount(99, 10) == 89.1', 'raises(ValueError): discount(10, 150)'];
+  /* [code, code line, statuses, check text, result text, summary, say] */
+  const P = 'PASSED', F = 'FAILED', W = 'waiting';
+  const ST = [
+    [V1, -1, [W, W, W, W], '', '', 'collected 4 items', 'pytest looks in files named test_*.py for functions whose names start with test_. It finds 4 tests. Nothing has run yet.'],
+    [V1, 3, [P, W, W, W], CHECKS[0], '100 == 100', '', 'test_no_discount calls discount(100, 0). 100 &minus; 100 &times; 0 // 100 is 100, so assert 100 == 100 holds: PASSED.'],
+    [V1, 3, [P, P, W, W], CHECKS[1], '40 == 40', '', 'test_half_price: 80 &minus; 80 &times; 50 // 100 = 80 &minus; 40 = 40. PASSED.'],
+    [V1, 3, [P, P, F, W], CHECKS[2], 'assert 90 == 89.1', '', 'test_ten_percent: 99 &times; 10 // 100 is 990 // 100 = 9, because // throws the decimals away. 99 &minus; 9 = 90, not 89.1. The assert fails and pytest shows both values: FAILED.'],
+    [V1, 2, [P, P, F, P], CHECKS[3], 'ValueError raised, as expected', '', 'test_bad_percent expects an error. 150 is above 100, so ValueError is raised, which is exactly what pytest.raises wants: PASSED.'],
+    [V1, -1, [P, P, F, P], '', '', '1 failed, 3 passed', 'The run is <b>red</b>: one test failed. The failing test points straight at the bug, the // on line 4.'],
+    [V2, 3, [W, W, W, W], '', '', 'code changed', 'Fix the bug: use / (true division) instead of //. Now 99 &times; 10 / 100 is 9.9.'],
+    [V2, -1, [P, P, P, P], CHECKS[2], '89.1 == 89.1', '4 passed', 'Run all the tests again, not only the one that failed. All 4 pass: the run is <b>green</b>, and the fix broke nothing else.'],
+    [V3, 3, [P, P, P, P], '', '', '4 passed', 'Refactor: rewrite the formula as price &times; (100 &minus; percent) / 100, which avoids a tiny rounding error at 100 %. The tests still pass, so the change is safe. Red, green, refactor is the TDD cycle.']
+  ];
+  const COL = { PASSED: 'green', FAILED: 'red', waiting: 'line' };
+  trace('pyunit', {
+    title: 'A test run: red, green, refactor',
+    sub: 'The code under test is on the left, the tests on the right. Each step runs one test or changes the code.',
+    W: 600, H: 340,
+    tips: [{ t: 'Step 4 shows why tests matter: the bug only appears for prices whose discount is not a whole number.', play: true }],
+    frames() { return ST.map(s => ({ code: s[0], line: s[1], st: s[2], check: s[3], res: s[4], sum: s[5], say: s[6] })); },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'shop.py (code under test)', 16, 18);
+      codeView(z, f.code, f.line, 16, 26, 568, { s: 11.5, lh: 21 });
+      head(z, 'test_shop.py', 16, 136);
+      f.st.forEach((s, i) => {
+        const y = 144 + i * 30;
+        box(z, 16, y, 200, 26, TESTS[i], { mono: true, s: 11.5, r: 5 });
+        box(z, 222, y, 86, 26, s, { b: s !== W, s: 11.5, r: 5, stroke: c[COL[s]], c: s === F ? c.red : (s === P ? c.green : c.ink2) });
+      });
+      head(z, 'Check', 330, 136);
+      box(z, 330, 144, 254, 30, f.check || '(none)', { mono: true, s: 11, stroke: c.cv });
+      head(z, 'Result', 330, 196);
+      const bad = /^assert/.test(f.res);
+      box(z, 330, 204, 254, 30, f.res || '(none)', { mono: true, s: 11.5, b: !!f.res, stroke: bad ? c.red : (f.res ? c.green : c.line), fill: bad ? (c.dark ? '#3b1414' : '#fee2e2') : c.surf });
+      if (f.sum) {
+        const red = /failed/.test(f.sum), green = /passed/.test(f.sum) && !red;
+        box(z, 16, 278, 568, 40, f.sum, { s: 15, b: true, stroke: red ? c.red : (green ? c.green : c.cv), fill: red ? (c.dark ? '#3b1414' : '#fee2e2') : (green ? (c.dark ? '#14321f' : '#dcfce7') : c.surf) });
+      }
+    }
+  });
+})();
