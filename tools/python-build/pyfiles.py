@@ -118,6 +118,8 @@ def write_all(chs, out_dir):
         d = os.path.join(out_dir, T['slug'])
         os.makedirs(d, exist_ok=True)
         for k, c in T['codes'].items():
+            if k in ('practice', 'solutions', 'leetcode'):
+                raise SystemExit(f'{T["slug"]}: code key "{k}" clashes with the {k}.py download, rename it')
             head = header(T, f'Example "{k}" from the lesson.')
             if c['stdin']:
                 head += '# This program reads input. Type these lines when it asks:\n' + ''.join(f'#   {x}\n' for x in c['stdin'].split('\n') if x)

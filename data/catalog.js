@@ -6939,6 +6939,26 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-logging", title: "Logging and debugging", emoji: "3.3", page: "content/python/py-logging.html",
+        summary: "log levels, loggers, handlers, formatters, habits, dictConfig, rotation, print, assert and pdb debugging.",
+        keywords: ["logging", "logger", "handler", "formatter", "basicConfig", "dictConfig", "RotatingFileHandler", "pdb", "breakpoint", "assert", "debugging"],
+        minutes: 70, counts: {"lessons": 9, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Logging: a diary for your program", emoji: "", group: "Lesson", keywords: ["logging", "log levels", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "basicConfig", "debugging"] },
+        { id: "loggers", title: "Loggers, handlers and formatters", emoji: "", group: "Lesson", keywords: ["getLogger", "__name__", "logger hierarchy", "propagate", "StreamHandler", "FileHandler", "Formatter", "Filter", "format fields"] },
+        { id: "practice", title: "Good logging habits", emoji: "", group: "Lesson", keywords: ["lazy formatting", "f-string in logging", "logger.exception", "isEnabledFor", "sensitive data", "print vs logging"] },
+        { id: "config", title: "Configuring logging for a whole app", emoji: "", group: "Lesson", keywords: ["dictConfig", "logging.config", "RotatingFileHandler", "TimedRotatingFileHandler", "QueueHandler", "library logging", "disable_existing_loggers"] },
+        { id: "debugging", title: "Debugging: print, assert and pdb", emoji: "", group: "Lesson", keywords: ["debugging", "print debugging", "f-string =", "assert", "__debug__", "-O", "pdb", "breakpoint", "IDE debugger"] },
+        { id: "maths", title: "The maths: log volume, rotation and bisecting", emoji: "", group: "Lesson", keywords: ["log volume", "storage", "rotation", "sampling", "bisect", "error budget", "SLO"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "structured logging", "JSON logs", "pdb.pm"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "logs", "sliding window", "parsing", "sorting", "time windows"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

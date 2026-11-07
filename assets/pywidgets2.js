@@ -624,3 +624,71 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 3.3  the journey of a log record: logger level, handler levels, formatter, output
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D, box } = PYZ;
+  const NUM = { DEBUG: 10, INFO: 20, WARNING: 30, ERROR: 40, CRITICAL: 50 };
+  const LV = Object.keys(NUM).map(k => [k, k + ' (' + NUM[k] + ')']);
+  const MSG = { DEBUG: 'reading cart 42', INFO: 'cart total is 280', WARNING: 'stock is low', ERROR: 'payment failed', CRITICAL: 'database is down' };
+  trace('pylog', {
+    title: 'The journey of a log record',
+    sub: 'Pick the level of the message, the level of the logger and the level of the console handler. The file handler takes everything from DEBUG up.',
+    W: 600, H: 380,
+    params: [
+      { k: 'msg', label: 'Message level', type: 'select', v: 'INFO', opts: LV },
+      { k: 'lg', label: 'Logger level', type: 'select', v: 'DEBUG', opts: LV.slice(0, 4) },
+      { k: 'con', label: 'Console handler level', type: 'select', v: 'WARNING', opts: LV.slice(0, 4) }
+    ],
+    tips: [
+      { t: 'An INFO message reaches the file but not the console, whose level is WARNING.', set: { msg: 'INFO', lg: 'DEBUG', con: 'WARNING' }, play: true },
+      { t: 'With the logger at WARNING a DEBUG message stops at once: no record is even made.', set: { msg: 'DEBUG', lg: 'WARNING', con: 'DEBUG' }, play: true },
+      { t: 'An ERROR passes everywhere.', set: { msg: 'ERROR', lg: 'INFO', con: 'WARNING' }, play: true }
+    ],
+    frames(p) {
+      const m = NUM[p.msg], lg = NUM[p.lg], con = NUM[p.con], text = MSG[p.msg];
+      const call = `logger.${p.msg.toLowerCase()}("${text}")`;
+      const line = `${p.msg} shop.cart: ${text}`;
+      const base = { call, msg: p.msg, lg: p.lg, con: p.con, stage: 0, rec: false, conOut: '', fileOut: '', conOk: null, fileOk: null };
+      const fr = [{ ...base, say: `The program calls ${call}. The message level is ${p.msg}, which is the number ${m}.` }];
+      if (m < lg) {
+        fr.push({ ...base, stage: 1, blocked: true, say: `The logger's level is ${p.lg} (${lg}). ${m} &lt; ${lg}, so the logger drops the message right here. No record is made and no handler is asked. That is why debug lines cost almost nothing when they are switched off.` });
+        return fr;
+      }
+      fr.push({ ...base, stage: 1, say: `The logger's level is ${p.lg} (${lg}). ${m} &ge; ${lg}, so the message passes.` });
+      fr.push({ ...base, stage: 2, rec: true, say: 'The logger builds a <b>LogRecord</b>: the logger name (shop.cart), the level, the message, the time, the file and the line number. It hands the record to each of its handlers.' });
+      const cOk = m >= con;
+      fr.push({ ...base, stage: 3, rec: true, conOk: cOk, conOut: cOk ? line : '', say: cOk ? `The console handler's level is ${p.con} (${con}). ${m} &ge; ${con}, so its formatter turns the record into text and prints it.` : `The console handler's level is ${p.con} (${con}). ${m} &lt; ${con}, so this handler ignores the record. Each handler filters on its own.` });
+      fr.push({ ...base, stage: 4, rec: true, conOk: cOk, conOut: cOk ? line : '', fileOk: true, fileOut: '10:00:00 ' + line, say: 'The file handler has level DEBUG (10), so it takes every record and writes it to app.log with the time in front. Files usually keep more detail than the screen.' });
+      fr.push({ ...base, stage: 5, rec: true, conOk: cOk, conOut: cOk ? line : '', fileOk: true, fileOut: '10:00:00 ' + line, say: 'Last, the record <b>propagates</b> to the parent loggers shop and then the root logger, which would pass it to their handlers too. Here they have none, so the journey ends.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      const green = c.dark ? '#14321f' : '#dcfce7', red = c.dark ? '#3b1414' : '#fee2e2';
+      head(z, 'The call', 16, 18);
+      box(z, 16, 26, 568, 30, f.call, { mono: true, s: 12.5, stroke: c.cv });
+      head(z, 'Logger shop.cart', 16, 82);
+      box(z, 16, 90, 180, 46, `level ${f.lg} (${NUM[f.lg]})`, { mono: true, s: 12, b: f.stage === 1, stroke: f.stage >= 1 ? (f.blocked ? c.red : c.green) : c.line, fill: f.stage >= 1 ? (f.blocked ? red : green) : c.surf });
+      if (f.blocked) D.text(z.g, 'stopped here', 106, 156, { a: 'center', s: 12, b: true, c: c.red });
+      if (f.rec) {
+        head(z, 'LogRecord', 216, 82);
+        box(z, 216, 90, 160, 46, `${f.msg} | shop.cart`, { mono: true, s: 11, stroke: c.orange, fill: c.dark ? '#3a2a10' : '#fff7ed' });
+        D.line(z.g, 196, 113, 216, 113, c.ink2, 1.5);
+      }
+      head(z, 'Console handler', 396, 82);
+      box(z, 396, 90, 188, 46, `level ${f.con} (${NUM[f.con]})`, { mono: true, s: 11.5, stroke: f.conOk === null ? c.line : (f.conOk ? c.green : c.red), fill: f.conOk === null ? c.surf : (f.conOk ? green : red) });
+      head(z, 'File handler', 396, 160);
+      box(z, 396, 168, 188, 46, 'level DEBUG (10)', { mono: true, s: 11.5, stroke: f.fileOk ? c.green : c.line, fill: f.fileOk ? green : c.surf });
+      if (f.rec) { D.line(z.g, 376, 113, 396, 113, c.ink2, 1.5); D.line(z.g, 376, 113, 396, 191, c.ink2, 1.5); }
+      if (f.stage >= 5) {
+        head(z, 'Propagates to', 16, 160);
+        box(z, 16, 168, 180, 46, 'shop, then root', { mono: true, s: 12, stroke: c.cv });
+      }
+      consoleBox(z, f.conOut || '(nothing printed)', 16, 236, 280, 128, { title: 'Screen' });
+      consoleBox(z, f.fileOut || '(nothing written)', 304, 236, 280, 128, { title: 'app.log' });
+    }
+  });
+})();
