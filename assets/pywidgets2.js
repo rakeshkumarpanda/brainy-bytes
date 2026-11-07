@@ -946,3 +946,79 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 5.2  the asyncio event loop: ready queue, sleeping tasks, the clock, and what blocking does
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D, box } = PYZ;
+  const CODE = {
+    gather: ['async def make_tea(name, seconds):', '    print(f"{name}: start")', '    await asyncio.sleep(seconds)', '    print(f"{name}: ready")', '', 'async def main():', '    await asyncio.gather(make_tea("green", 0.3), make_tea("black", 0.2))'],
+    seq: ['async def make_tea(name, seconds):', '    print(f"{name}: start")', '    await asyncio.sleep(seconds)', '    print(f"{name}: ready")', '', 'async def main():', '    await make_tea("green", 0.3)', '    await make_tea("black", 0.2)'],
+    block: ['async def make_tea(name, seconds):', '    print(f"{name}: start")', '    time.sleep(seconds)          # does not await!', '    print(f"{name}: ready")', '', 'async def main():', '    await asyncio.gather(make_tea("green", 0.3), make_tea("black", 0.2))']
+  };
+  function script(mode) {
+    const S = [];
+    let s = { clock: 0, run: '', ready: ['main'], wait: [], out: [], line: 5 };
+    const add = (ch, say) => { s = { ...s, ...ch }; S.push({ ...s, ready: s.ready.slice(), wait: s.wait.slice(), out: s.out.slice(), say }); };
+    add({}, 'asyncio.run(main()) makes an <b>event loop</b>, wraps main() in a task and puts it in the ready queue. One thread runs everything.');
+    if (mode === 'seq') {
+      add({ run: 'main', ready: [], line: 6, out: ['green: start'] }, 'The loop runs main. <b>await make_tea(...)</b> on a coroutine runs it straight away inside main. No new task is made, and black has not even been created yet.');
+      add({ run: '', wait: ['main (in green) until 0.3'], line: 2 }, 'await asyncio.sleep(0.3) pauses main and hands control back to the loop, with a wake up time of 0.3.');
+      add({ clock: 0.3, run: 'main', wait: [], line: 3, out: [...s.out, 'green: ready'] }, 'Nothing else is ready, so the loop waits until 0.3. main wakes up and green finishes.');
+      add({ line: 7, out: [...s.out, 'black: start'] }, 'Only now does main reach the second await and start black.');
+      add({ run: '', wait: ['main (in black) until 0.5'], line: 2 }, 'black sleeps for 0.2 s, so main parks until 0.3 + 0.2 = 0.5.');
+      add({ clock: 0.5, run: 'main', wait: [], line: 3, out: [...s.out, 'black: ready'] }, 'At 0.5 black finishes and main returns.');
+      add({ run: '', line: -1, done: true }, 'Total 0.5 s: awaiting coroutines one after another runs them one after another. To overlap the waits you need tasks, for example with gather.');
+      return S;
+    }
+    add({ run: 'main', ready: ['green', 'black'], wait: ['main until both finish'], line: 6 }, 'The loop runs main. gather wraps both coroutines in <b>tasks</b> and puts them in the ready queue. main waits until both are done.');
+    add({ run: 'green', ready: ['black'], line: 1, out: ['green: start'] }, 'The loop takes the first ready task, green, and runs it until it reaches an await.');
+    if (mode === 'block') {
+      add({ clock: 0.3, line: 2 }, '<b>time.sleep</b> is a normal function, not an await. It blocks the only thread for 0.3 s. black is ready but the loop cannot run it: the loop is stuck inside green.');
+      add({ run: '', ready: ['black'], line: 3, out: [...s.out, 'green: ready'] }, 'green finishes at 0.3 without ever giving control back.');
+      add({ run: 'black', ready: [], line: 1, out: [...s.out, 'black: start'] }, 'Only now can black start.');
+      add({ clock: 0.5, line: 2 }, 'black blocks the thread with time.sleep for its own 0.2 s, until 0.5.');
+      add({ line: 3, out: [...s.out, 'black: ready'] }, 'black finishes at 0.5.');
+      add({ run: 'main', wait: [], line: 6 }, 'Both tasks are done, so main wakes up and gather returns.');
+      add({ run: '', line: -1, done: true }, 'Total 0.5 s, as slow as doing it in a row. One blocking call freezes every task. Use await asyncio.sleep, an async library, or asyncio.to_thread for blocking code.');
+      return S;
+    }
+    add({ run: '', wait: ['main until both finish', 'green until 0.3'], line: 2 }, 'await asyncio.sleep(0.3) pauses green. It goes to the waiting list with a wake up time of 0.3, and the loop is free again.');
+    add({ run: 'black', ready: [], line: 1, out: [...s.out, 'black: start'] }, 'The loop runs the next ready task, black, at the same moment, time 0.');
+    add({ run: '', wait: ['main until both finish', 'green until 0.3', 'black until 0.2'], line: 2 }, 'black sleeps too, until 0.2. Now nothing is ready.');
+    add({ clock: 0.2, run: 'black', wait: ['main until both finish', 'green until 0.3'], line: 3, out: [...s.out, 'black: ready'] }, 'The loop waits until the earliest wake up time, 0.2. black wakes up and finishes.');
+    add({ clock: 0.3, run: 'green', wait: ['main until both finish'], line: 3, out: [...s.out, 'green: ready'] }, 'At 0.3 green wakes up and finishes.');
+    add({ run: 'main', wait: [], line: 6 }, 'Both tasks are done, so main wakes up and gather returns ["green", "black"], in the order they were passed in.');
+    add({ run: '', line: -1, done: true }, 'Total 0.3 s instead of 0.5 s: the two waits happened at the same time, in one thread, with no locks.');
+    return S;
+  }
+  trace('pyloop', {
+    title: 'Inside the asyncio event loop',
+    sub: 'One thread, one loop. Watch tasks move between running, ready and waiting while the clock advances.',
+    W: 600, H: 410,
+    params: [{ k: 'mode', label: 'How main runs the two teas', type: 'select', v: 'gather', opts: [['gather', 'asyncio.gather (overlap the waits)'], ['seq', 'await one after the other'], ['block', 'gather, but with time.sleep inside']] }],
+    tips: [
+      { t: 'gather: both teas wait at the same time, 0.3 s in total.', set: { mode: 'gather' }, play: true },
+      { t: 'Awaiting one coroutine after another: 0.5 s.', set: { mode: 'seq' }, play: true },
+      { t: 'One time.sleep blocks the whole loop.', set: { mode: 'block' }, play: true }
+    ],
+    frames(p) { return script(p.mode).map(f => ({ ...f, mode: p.mode })); },
+    paint(z, f) {
+      const c = z.col;
+      codeView(z, CODE[f.mode], f.line, 16, 8, 568, { s: 11.5, lh: 17 });
+      const y0 = 160;
+      head(z, 'Clock', 16, y0);
+      box(z, 16, y0 + 8, 100, 40, f.clock.toFixed(1) + ' s', { mono: true, s: 16, b: true, stroke: c.cv });
+      head(z, 'Running now', 130, y0);
+      box(z, 130, y0 + 8, 140, 40, f.run || (f.done ? 'finished' : '(the loop)'), { mono: true, s: 13, b: !!f.run, stroke: f.run ? c.green : c.line, fill: f.run ? (c.dark ? '#14321f' : '#dcfce7') : c.surf });
+      head(z, 'Ready queue', 284, y0);
+      if (!f.ready.length) box(z, 284, y0 + 8, 300, 40, '(empty)', { s: 12, c: c.ink2 });
+      f.ready.forEach((r, i) => box(z, 284 + i * 104, y0 + 8, 96, 40, r, { mono: true, s: 13, stroke: c.orange, fill: c.dark ? '#3a2a10' : '#fff7ed' }));
+      head(z, 'Waiting (awaiting a sleep or another task)', 16, y0 + 74);
+      if (!f.wait.length) box(z, 16, y0 + 82, 568, 34, '(nobody)', { s: 12, c: c.ink2 });
+      f.wait.forEach((w, i) => box(z, 16 + i * 192, y0 + 82, 184, 34, w, { mono: true, s: 11, stroke: c.cv }));
+      consoleBox(z, f.out.join('\n') || '(nothing printed yet)', 16, y0 + 130, 568, 100, { title: 'Output' });
+    }
+  });
+})();

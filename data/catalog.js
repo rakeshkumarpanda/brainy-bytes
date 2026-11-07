@@ -7025,6 +7025,26 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-asyncio", title: "asyncio: async and await", emoji: "5.2", page: "content/python/py-asyncio.html",
+        summary: "coroutines, the event loop, gather and TaskGroup, timeouts, limits, queues and httpx.",
+        keywords: ["asyncio", "async", "await", "coroutine", "event loop", "gather", "TaskGroup", "Semaphore", "asyncio.Queue", "httpx", "to_thread"],
+        minutes: 80, counts: {"lessons": 9, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "asyncio: many waits in one thread", emoji: "", group: "Lesson", keywords: ["asyncio", "async def", "await", "coroutine", "event loop", "asyncio.run", "gather", "never awaited"] },
+        { id: "tasks", title: "Tasks, TaskGroup and as_completed", emoji: "", group: "Lesson", keywords: ["create_task", "Task", "gather", "TaskGroup", "ExceptionGroup", "except*", "as_completed", "asyncio.wait", "structured concurrency"] },
+        { id: "control", title: "Timeouts, cancelling and limits", emoji: "", group: "Lesson", keywords: ["asyncio.timeout", "wait_for", "TimeoutError", "cancel", "CancelledError", "Semaphore", "rate limit"] },
+        { id: "queues", title: "Pipelines with asyncio.Queue", emoji: "", group: "Lesson", keywords: ["asyncio.Queue", "producer consumer", "back pressure", "async generator", "async for", "async with", "async comprehension"] },
+        { id: "real", title: "Real network code, and blocking calls", emoji: "", group: "Lesson", keywords: ["httpx", "AsyncClient", "aiohttp", "blocking call", "to_thread", "run_in_executor", "threads vs asyncio"] },
+        { id: "maths", title: "The maths: waits that overlap", emoji: "", group: "Lesson", keywords: ["latency", "throughput", "overlap", "semaphore limit", "Little's law", "C10k"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "uvloop", "streams", "structured concurrency"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "promises", "asyncio", "debounce", "promise pool", "time limit", "generators", "cancellation"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
