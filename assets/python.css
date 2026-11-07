@@ -1,0 +1,53 @@
+/* ===== Complete Python chapter pages (body class pyp): the AI subject layout (cv.css + ai.css) in Python blue,
+   with download links, listings that are not run on the page, LeetCode tables and the three level boxes ===== */
+:root{--cv:#2b6cb0; --cv-soft:#eaf2fb; --cv-line:#9cc0e8; --pyy:#f5c518}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cv:#7ab3ef; --cv-soft:#14263b; --cv-line:#33557d}}
+:root[data-theme="dark"]{--cv:#7ab3ef; --cv-soft:#14263b; --cv-line:#33557d}
+
+.pyp .py-dlrow{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:-4px 0 14px; font-size:13.5px; color:var(--ink2)}
+.pyp .py-dl{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--cv-line); background:var(--cv-soft); color:var(--cv) !important;
+  font-weight:800; text-decoration:none; border-radius:9px; padding:4px 10px; font-size:13px}
+.pyp .py-dl::before{content:"⤓"; font-weight:800}
+.pyp .py-dl:hover{background:var(--cv); color:#fff !important}
+.pyp .py-local{border-left:4px solid var(--pyy); background:var(--surface2); border-radius:8px; padding:7px 12px; margin:6px 0 8px; font-size:14.5px; line-height:1.5}
+.pyp .py-dl2{display:flex; gap:8px; flex-wrap:wrap}
+.pyp .ck-nb-a.alt{background:var(--surface); color:var(--cv) !important; border:1px solid var(--cv)}
+
+/* a listing that is not run on the page, with line numbers and notes */
+.pyp .pl{border:1px solid var(--line); border-radius:12px; margin:14px 0; overflow:hidden; background:var(--surface)}
+.pyp .pl-h{display:flex; justify-content:space-between; gap:8px; background:var(--cv-soft); color:var(--cv); font-weight:800; padding:6px 12px; font-size:14px}
+.pyp .pl-h small{font-family:"JetBrains Mono", monospace; font-weight:700; opacity:.8}
+.pyp .pl-b{margin:0; padding:8px 0; font:500 13px/1.6 "JetBrains Mono", monospace; overflow-x:auto; white-space:pre}
+.pyp .pl-r{display:flex}
+.pyp .pl-n{flex:none; width:38px; text-align:right; padding-right:10px; color:var(--ink2); opacity:.7; user-select:none}
+.pyp .pl-c{padding-right:12px}
+.pyp .pl-t .pl-b{padding:8px 12px}
+.pyp .pl-notes{margin:0; padding:8px 14px 10px 34px; border-top:1px dashed var(--line); font-size:14px; line-height:1.5}
+.pyp .pl-notes li{margin:3px 0}
+.pyp .pl-notes b{color:var(--cv); margin-right:4px}
+
+/* LeetCode table */
+.pyp .lc-t td:first-child{font-family:"JetBrains Mono", monospace; font-weight:700}
+.pyp .lc-e, .pyp .lc-m, .pyp .lc-h{font-weight:800; font-size:13px; border-radius:6px; padding:1px 7px; white-space:nowrap}
+.pyp .lc-e{color:#0f7b3f; background:#dcf5e6}
+.pyp .lc-m{color:#8a5a00; background:#fff1cc}
+.pyp .lc-h{color:#a3122a; background:#fde1e5}
+
+/* beginner, intermediate and expert boxes */
+.pyp .py-grow{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin:16px 0}
+@media (max-width:760px){.pyp .py-grow{grid-template-columns:1fr}}
+.pyp .pg-c{border:1px solid var(--line); border-radius:14px; padding:10px 14px; background:var(--surface2); font-size:15px; line-height:1.55}
+.pyp .pg-c b{display:block; font-size:13px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px}
+.pyp .pg-b b{color:#15803d} .pyp .pg-m b{color:var(--cv)} .pyp .pg-x b{color:#b45309}
+
+/* readout table used by several animations */
+.pyp .pyt{border-collapse:collapse; font-size:13px; margin:6px 0 0}
+.pyp .pyt td, .pyp .pyt th{border:1px solid var(--line); padding:2px 8px; text-align:left; font-family:"JetBrains Mono", monospace}
+.pyp .pyt th{background:var(--cv-soft); font-family:Nunito, system-ui, sans-serif}
+.pyp .pyt tr.on td{background:var(--cv-soft); font-weight:800}
+/* code must show <=, ==, ** and -> exactly as typed, never as joined ligature symbols */
+.pyp pre, .pyp code, .pyp textarea, .pyp .pl-b{font-variant-ligatures:none; font-feature-settings:"liga" 0, "calt" 0}
+/* real screenshots of window programs (tkinter) */
+.pyp .py-shot{margin:10px 0 8px; text-align:center}
+.pyp .py-shot img{max-width:100%; height:auto; border:1px solid var(--line); border-radius:8px; box-shadow:0 4px 14px rgba(15,23,42,.12); background:#fff}
+.pyp .py-shot figcaption{font-size:13px; color:var(--ink2); margin-top:6px}

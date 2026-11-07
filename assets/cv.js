@@ -169,7 +169,7 @@
     box.dataset.ready = '1';
     const c = D.codes[box.dataset.k];
     const usesInput = /\binput\(/.test(c.src);
-    box.innerHTML = `<div class="cc-bar"><span class="lbl">Python</span><button type="button" class="b-step">Run line by line</button><button type="button" class="b-edit">Edit and run</button><button type="button" class="b-copy">Copy</button></div>
+    box.innerHTML = `<div class="cc-bar"><span class="lbl">Python</span><button type="button" class="b-step">Run line by line</button>${box.dataset.local ? '' : '<button type="button" class="b-edit">Edit and run</button>'}<button type="button" class="b-copy">Copy</button></div>
       <pre class="cc-src">${hl(c.src)}</pre>
       <div class="cc-cap">Output${usesInput ? ` with the sample input ${esc(JSON.stringify(c.stdin.replace(/\n$/, '')))}` : ''}</div><pre class="cc-out">${esc(c.out)}</pre>
       <div class="cc-live"></div>`;
@@ -187,6 +187,7 @@
       e.target.classList.add('on');
       stepper(live, c.src, REC[box.dataset.k], 'Recorded with CPython when this page was built.');
     };
+    if (box.dataset.local) return;
     $('.b-edit', box).onclick = e => {
       const on = !e.target.classList.contains('on');
       $$('.cc-bar button', box).forEach(b => b.classList.remove('on'));
