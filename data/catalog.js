@@ -7046,6 +7046,29 @@ function pyAdvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-a6", title: "The standard library toolbox: text, data, databases and GUIs", emoji: "6", step: 6, part: "advanced", level: "Advanced", blurb: "Find patterns in text, read and write data formats, store data in SQLite, and build desktop windows with tkinter.", topics: [
+      { id: "py-regex", title: "Regular expressions", emoji: "6.1", page: "content/python/py-regex.html",
+        summary: "regex syntax, the re functions, groups, sub and split, flags, greedy and lazy, lookarounds.",
+        keywords: ["regex", "regular expression", "re", "search", "findall", "groups", "sub", "split", "lookahead", "greedy", "lazy"],
+        minutes: 75, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Regular expressions: patterns for text", emoji: "", group: "Lesson", keywords: ["regular expression", "regex", "re module", "pattern", "raw string", "search", "match object", "character class", "quantifier"] },
+        { id: "functions", title: "search, match, fullmatch, findall, finditer", emoji: "", group: "Lesson", keywords: ["re.search", "re.match", "re.fullmatch", "re.findall", "re.finditer", "group", "span", "validation"] },
+        { id: "groups", title: "Groups: pulling parts out", emoji: "", group: "Lesson", keywords: ["capture group", "named group", "groupdict", "non-capturing group", "backreference", "alternation"] },
+        { id: "subsplit", title: "sub, split, flags and compile", emoji: "", group: "Lesson", keywords: ["re.sub", "replacement function", "re.subn", "re.split", "flags", "IGNORECASE", "MULTILINE", "DOTALL", "VERBOSE", "re.compile", "re.escape"] },
+        { id: "greedy", title: "Greedy, lazy, anchors and lookarounds", emoji: "", group: "Lesson", keywords: ["greedy", "lazy", "backtracking", "word boundary", "lookahead", "lookbehind", "password validation", "catastrophic backtracking", "ReDoS", "possessive"] },
+        { id: "parsing", title: "Parsing real text", emoji: "", group: "Lesson", keywords: ["log parsing", "verbose regex", "named groups", "backtracking engine", "automaton", "RE2"] },
+        { id: "maths", title: "The maths: languages and automata", emoji: "", group: "Lesson", keywords: ["regular language", "finite automaton", "counting strings", "backtracking complexity", "linear time"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "NFA", "DFA", "Thompson", "NP-hard"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "regex", "findall", "re.escape", "dynamic programming", "pattern matching", "stack"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

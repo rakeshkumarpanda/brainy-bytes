@@ -1022,3 +1022,138 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 6.1  how the regex engine walks the text: try a start, match token by token, back off, give up
+   ===================================================================================================== */
+(() => {
+  const { trace, head, D, box, esc } = PYZ;
+  const CASES = {
+    phone: { pat: '\\d{3}-\\d{4}', text: 'call 555-1234 now' },
+    greedy: { pat: '<.+>', text: 'x <b>hi</b>' },
+    lazy: { pat: '<.+?>', text: 'x <b>hi</b>' },
+    word: { pat: '\\bcat\\b', text: 'concat cat' }
+  };
+  function tokens(p) {
+    const out = [];
+    let i = 0;
+    while (i < p.length) {
+      let atom = p[i], kind = 'lit';
+      if (p[i] === '\\') { atom = p.slice(i, i + 2); kind = { d: 'digit', w: 'word', s: 'space', b: 'edge' }[p[i + 1]] || 'lit'; if (kind === 'lit') atom = p[i + 1]; i += 2; }
+      else { if (p[i] === '.') kind = 'any'; i += 1; }
+      let min = 1, max = 1, lazy = false, q = '';
+      const m = /^(\{(\d+)\}|\+|\*|\?)(\?)?/.exec(p.slice(i));
+      if (m) {
+        q = m[0];
+        if (m[2]) { min = max = +m[2]; } else if (m[1] === '+') { min = 1; max = 99; } else if (m[1] === '*') { min = 0; max = 99; } else { min = 0; max = 1; }
+        lazy = !!m[3];
+        i += m[0].length;
+      }
+      out.push({ src: (kind === 'lit' ? atom : (atom.length > 1 ? atom : atom)) + q, kind, ch: atom, min, max, lazy });
+    }
+    return out;
+  }
+  const isW = c => /\w/.test(c || '');
+  function ok(t, c) {
+    if (c === undefined) return false;
+    if (t.kind === 'digit') return /\d/.test(c);
+    if (t.kind === 'word') return /\w/.test(c);
+    if (t.kind === 'space') return /\s/.test(c);
+    if (t.kind === 'any') return c !== '\n';
+    return c === t.ch;
+  }
+  function frames(pat, text) {
+    const T = tokens(pat), fr = [];
+    const add = (o, say) => fr.push({ T, text, pat, ...o, spans: (o.spans || []).map(s => s.slice()), say: esc(say).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>') });
+    add({ start: -1, pos: -1, tok: -1 }, `re.search(r"${pat}", "${text}") looks for the pattern anywhere in the text. The engine tries each starting place from left to right.`);
+    let steps = 0;
+    function walk(start, ti, j, spans) {
+      if (steps++ > 60) return false;
+      if (ti === T.length) return true;
+      const t = T[ti];
+      if (t.kind === 'edge') {
+        const edge = isW(text[j - 1]) !== isW(text[j]);
+        add({ start, pos: j, tok: ti, spans, bad: !edge }, edge ? `\\b checks for a word edge between "${text[j - 1] || 'start'}" and "${text[j] || 'end'}": there is one. It uses up no characters.` : `\\b needs a word edge here, between "${text[j - 1] || 'start'}" and "${text[j] || 'end'}", but both sides are letters. Fail.`);
+        return edge && walk(start, ti + 1, j, spans);
+      }
+      let n = 0;
+      while (n < t.max && ok(t, text[j + n])) n++;
+      if (n < t.min) {
+        add({ start, pos: j + n, tok: ti, spans, bad: true }, `${t.src} needs ${t.min === 1 && t.max === 1 ? 'one character like that' : 'at least ' + t.min + ' of them'}, but finds "${text[j + n] === undefined ? 'the end' : text[j + n]}". This start fails.`);
+        return false;
+      }
+      const order = [];
+      if (t.lazy) for (let k = t.min; k <= n; k++) order.push(k); else for (let k = n; k >= t.min; k--) order.push(k);
+      for (let a = 0; a < order.length; a++) {
+        const k = order[a];
+        const sp = spans.concat([[ti, j, j + k]]);
+        let say;
+        if (a === 0) say = t.max === 1 && t.min === 1 ? `The token ${t.src} matches "${text[j]}".` : t.lazy ? `${t.src} is **lazy**: it takes as FEW as it may, ${k} character${k === 1 ? '' : 's'} ("${text.slice(j, j + k)}"), and only takes more if the rest fails.` : `${t.src} is **greedy**: it takes as MANY as it can, ${k} character${k === 1 ? '' : 's'}: "${text.slice(j, j + k)}".`;
+        else say = t.lazy ? `The rest failed, so the lazy ${t.src} takes one more: "${text.slice(j, j + k)}".` : `The rest failed, so ${t.src} **backtracks**: it gives back one character and keeps "${text.slice(j, j + k)}".`;
+        add({ start, pos: j + k, tok: ti, spans: sp }, say);
+        if (walk(start, ti + 1, j + k, sp)) return true;
+      }
+      return false;
+    }
+    for (let s = 0; s <= text.length; s++) {
+      add({ start: s, pos: s, tok: 0, spans: [] }, `Try starting at index ${s} ("${text[s] === undefined ? 'end' : text[s]}").`);
+      const before = fr.length;
+      if (walk(s, 0, s, [])) {
+        const last = fr[fr.length - 1];
+        const end = last.spans.length ? Math.max(...last.spans.map(x => x[2])) : s;
+        add({ start: s, pos: end, tok: -1, spans: last.spans, done: [s, end] }, `Every token matched. The match is "${text.slice(s, end)}", span (${s}, ${end}). search stops at the FIRST match.`);
+        return fr;
+      }
+      if (fr.length - before > 0 && fr.length > 40) {
+        fr.splice(before);
+        add({ start: s, pos: s, tok: 0, spans: [], bad: true }, `Index ${s} fails too.`);
+      }
+    }
+    add({ start: -1, pos: -1, tok: -1, spans: [], none: true }, 'No starting place worked: search returns None.');
+    return fr;
+  }
+  trace('pyregex', {
+    title: 'How the regex engine walks through the text',
+    sub: 'Pick a pattern. The engine tries each start, matches token by token, and backs off when the rest does not fit.',
+    W: 600, H: 300,
+    params: [{ k: 'case', label: 'Pattern and text', type: 'select', v: 'phone', opts: [['phone', '\\d{3}-\\d{4} in "call 555-1234 now"'], ['greedy', '<.+> (greedy) in "x <b>hi</b>"'], ['lazy', '<.+?> (lazy) in "x <b>hi</b>"'], ['word', '\\bcat\\b in "concat cat"']] }],
+    tips: [
+      { t: 'Greedy .+ runs to the end of the text and then backs off to the LAST >.', set: { case: 'greedy' }, play: true },
+      { t: 'Lazy .+? stops at the FIRST > that lets the match finish.', set: { case: 'lazy' }, play: true },
+      { t: '\\b refuses the "cat" inside "concat".', set: { case: 'word' }, play: true }
+    ],
+    frames(p) { const c = CASES[p.case]; return frames(c.pat, c.text); },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const cols = [c.cv, c.orange, c.green, c.dark ? '#c4b5fd' : '#7c3aed', c.red];
+      head(z, 'Pattern r"' + f.pat + '" as tokens', 16, 18);
+      let x = 16;
+      f.T.forEach((t, i) => {
+        const w = Math.max(44, t.src.length * 10 + 18);
+        box(z, x, 28, w, 34, t.src, { mono: true, s: 14, b: i === f.tok, stroke: i === f.tok ? (f.bad ? c.red : cols[i % 5]) : c.line, fill: i === f.tok && f.bad ? (c.dark ? '#3b1414' : '#fee2e2') : c.surf });
+        x += w + 8;
+      });
+      head(z, 'Text', 16, 92);
+      const cw = Math.min(32, 568 / f.text.length);
+      for (let i = 0; i < f.text.length; i++) {
+        const xi = 16 + i * cw;
+        const sp = f.spans.find(s => i >= s[1] && i < s[2]);
+        const fill = sp ? cols[sp[0] % 5] : (f.done && i >= f.done[0] && i < f.done[1] ? c.green : c.surf);
+        D.rect(g, xi, 102, cw - 2, 38, { fill: sp ? (c.dark ? '#1f2937' : '#f1f5f9') : c.surf, stroke: sp ? fill : c.line, w: sp ? 2.5 : 1 });
+        D.text(g, f.text[i] === ' ' ? '·' : f.text[i], xi + cw / 2 - 1, 127, { a: 'center', s: 15, b: !!sp, c: sp ? fill : c.ink, mono: true });
+        D.text(g, String(i), xi + cw / 2 - 1, 154, { a: 'center', s: 10, c: c.ink2 });
+      }
+      if (f.start >= 0) {
+        const xs = 16 + f.start * cw + cw / 2 - 1;
+        D.text(g, 'start', xs, 172, { a: 'center', s: 11, b: true, c: c.cv });
+        D.line(g, xs, 160, xs, 146, c.cv, 2);
+      }
+      if (f.pos >= 0 && !f.done) {
+        const xp = 16 + f.pos * cw - 1;
+        D.line(g, xp, 98, xp, 144, f.bad ? c.red : c.orange, 3);
+      }
+      if (f.done) box(z, 16, 196, 568, 44, `match: "${f.text.slice(f.done[0], f.done[1])}"   span (${f.done[0]}, ${f.done[1]})`, { mono: true, s: 15, b: true, stroke: c.green, fill: c.dark ? '#14321f' : '#dcfce7' });
+      if (f.none) box(z, 16, 196, 568, 44, 'None: no match', { mono: true, s: 15, b: true, stroke: c.red });
+    }
+  });
+})();
