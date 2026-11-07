@@ -45,3 +45,5 @@
 .pyp .pyt td, .pyp .pyt th{border:1px solid var(--line); padding:2px 8px; text-align:left; font-family:"JetBrains Mono", monospace}
 .pyp .pyt th{background:var(--cv-soft); font-family:Nunito, system-ui, sans-serif}
 .pyp .pyt tr.on td{background:var(--cv-soft); font-weight:800}
+/* code must show <=, ==, ** and -> exactly as typed, never as joined ligature symbols */
+.pyp pre, .pyp code, .pyp textarea, .pyp .pl-b{font-variant-ligatures:none; font-feature-settings:"liga" 0, "calt" 0}

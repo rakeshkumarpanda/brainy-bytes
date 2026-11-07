@@ -206,7 +206,7 @@ def run_code(key, c):
         rec = json.loads(t.stdout)
         if rec['err']:
             raise SystemExit(f'example {key} raised while recording:\n{rec["err"]}')
-        if rec['cut']:
+        if rec['cut'] and not c.get('long'):
             raise SystemExit(f'the recording of {key} was cut at 600 steps, make the example shorter')
         return r.stdout.rstrip('\n'), rec
 

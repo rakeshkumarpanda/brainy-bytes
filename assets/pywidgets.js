@@ -15,6 +15,19 @@ const PYZ = (() => {
   const esc = CVZ.esc;
   const MAXF = 240;
   const MONO = '"JetBrains Mono", monospace';
+  /* JetBrains Mono joins <=, ==, ** and friends into one symbol (a ligature). Beginners must see the real
+     characters they type, so monospace labels are drawn with ligatures switched off. */
+  if (!D.text.pyNoLig) {
+    const plain = D.text;
+    D.text = (g, s, x, y, o = {}) => {
+      if (!(o && o.mono)) return plain(g, s, x, y, o);
+      const tr = g.textRendering, ls = g.letterSpacing;
+      g.textRendering = 'optimizeSpeed'; g.letterSpacing = '0.01px';
+      plain(g, s, x, y, o);
+      g.textRendering = tr; g.letterSpacing = ls;
+    };
+    D.text.pyNoLig = true;
+  }
 
   function blank(z) {
     D.text(z.g, 'Press Step to begin. The picture builds up one step at a time.', z.W / 2, z.H / 2, { a: 'center', s: 14, c: z.col.ink2 });
@@ -1508,6 +1521,365 @@ const PYZ = (() => {
         box(z, x, y, 136, 30, `${i}: ${e.k} (hash ${e.h})`, { mono: true, s: 11, stroke: e.k === f.key ? c.cv : c.line, w: e.k === f.key ? 2.4 : 1.2 });
       });
       D.text(z.g, `${f.entries.length} keys in ${n} slots, room for ${Math.floor(n * 2 / 3)} before the next resize`, 16, 318, { s: 12, b: true, c: f.resized ? c.orange : c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 4.1  how Python matches the arguments of a call to the parameters of a function
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, D, esc, splitArgs } = PYZ;
+  const ID = /^[A-Za-z_]\w*$/;
+  function parseSig(s) {
+    const ps = [];
+    let kind = 'pos';
+    const toks = splitArgs(s);
+    if (toks.includes('/')) { const k = toks.indexOf('/'); toks.slice(0, k).forEach((t, i) => { toks[i] = { posonly: t }; }); }
+    toks.forEach(t => {
+      if (t === '/') return;
+      const po = typeof t === 'object';
+      const raw = po ? t.posonly : t;
+      if (raw === '*') { kind = 'kwonly'; return; }
+      if (raw.startsWith('**')) { const n = raw.slice(2).trim(); if (!ID.test(n)) throw new Error(`"${raw}" is not a valid parameter.`); ps.push({ n, k: 'kw' }); return; }
+      if (raw.startsWith('*')) { const n = raw.slice(1).trim(); if (!ID.test(n)) throw new Error(`"${raw}" is not a valid parameter.`); ps.push({ n, k: 'args' }); kind = 'kwonly'; return; }
+      const m = raw.match(/^([A-Za-z_]\w*)\s*(?:=\s*(.+))?$/);
+      if (!m) throw new Error(`"${raw}" is not a valid parameter.`);
+      ps.push({ n: m[1], k: po ? 'posonly' : kind, d: m[2] });
+    });
+    const names = ps.map(p => p.n);
+    if (new Set(names).size !== names.length) throw new Error('SyntaxError: duplicate argument in function definition');
+    const pos = ps.filter(p => p.k === 'posonly' || p.k === 'pos');
+    let seenD = false;
+    pos.forEach(p => { if (p.d !== undefined) seenD = true; else if (seenD) throw new Error('SyntaxError: parameter without a default follows parameter with a default'); });
+    return ps;
+  }
+  function parseCall(s) {
+    return splitArgs(s).map(t => { const m = t.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/); return m ? { kw: m[1], v: m[2].trim() } : { v: t }; });
+  }
+  const listNames = a => a.length === 1 ? `'${a[0]}'` : a.length === 2 ? `'${a[0]}' and '${a[1]}'` : a.slice(0, -1).map(x => `'${x}'`).join(', ') + `, and '${a[a.length - 1]}'`;
+  trace('pyargs', {
+    title: 'Matching arguments to parameters',
+    sub: 'Type a parameter list and a call. Python fills the parameters in a fixed order: positional arguments first, then keyword arguments, then defaults.',
+    W: 600, H: 300,
+    params: [
+      { k: 'sig', label: 'def f( ... ):', type: 'text', v: 'a, b=2, *args, c, d=4, **kw' },
+      { k: 'call', label: 'f( ... )', type: 'text', v: '1, 5, 6, 7, c=3, e=9' }
+    ],
+    tips: [
+      { t: 'Positional 1 and 5 fill a and b. The extra 6 and 7 go into the tuple args. c=3 fills c, e=9 has no parameter so it goes into the dict kw, and d keeps its default 4.', play: true },
+      { t: 'c comes after *args, so it is keyword-only. Leaving it out is an error.', set: { sig: 'a, b=2, *args, c, d=4, **kw', call: '1, 2' }, play: true },
+      { t: 'a is filled twice: once by position and once by name.', set: { sig: 'a, b', call: '1, a=5' }, play: true },
+      { t: 'Parameters before / are positional-only: you may not pass them by name.', set: { sig: 'a, /, b', call: 'a=1, b=2' }, play: true },
+      { t: 'Without *args there is no place for a third positional argument.', set: { sig: 'a, b=0', call: '1, 2, 3' }, play: true }
+    ],
+    frames(p) {
+      const ps = parseSig(p.sig), call = parseCall(p.call), fr = [];
+      let seenKw = false;
+      call.forEach(a => { if (a.kw) seenKw = true; else if (seenKw) throw new Error('SyntaxError: positional argument follows keyword argument'); });
+      const val = {}, star = [], kwd = [], posP = ps.filter(q => q.k === 'posonly' || q.k === 'pos');
+      const argsP = ps.find(q => q.k === 'args'), kwP = ps.find(q => q.k === 'kw');
+      const snap = (o) => ({ ps, call, val: { ...val }, star: star.slice(), kwd: kwd.slice(), ...o });
+      const fail = (msg, o) => { fr.push(snap({ err: msg, ...o, say: `Python stops with <b>TypeError: f() ${esc(msg)}</b>. The function body never runs.` })); return fr; };
+      fr.push(snap({ say: `The function has ${ps.length} parameter${ps.length === 1 ? '' : 's'}: ${ps.map(q => `<code>${q.k === 'args' ? '*' : q.k === 'kw' ? '**' : ''}${q.n}</code> (${{ posonly: 'positional-only', pos: 'positional or keyword', kwonly: 'keyword-only', args: 'collects extra positional arguments', kw: 'collects extra keyword arguments' }[q.k]}${q.d !== undefined ? ', default ' + esc(q.d) : ''})`).join(', ')}. The call passes ${call.length} argument${call.length === 1 ? '' : 's'}.` }));
+      const posArgs = call.filter(a => !a.kw);
+      for (let i = 0; i < posArgs.length; i++) {
+        const a = posArgs[i];
+        if (i < posP.length) { val[posP[i].n] = a.v; fr.push(snap({ cur: call.indexOf(a), slot: posP[i].n, say: `Positional argument ${i + 1}, <code>${esc(a.v)}</code>, goes to the next free positional parameter, <code>${posP[i].n}</code>.` })); }
+        else if (argsP) { star.push(a.v); fr.push(snap({ cur: call.indexOf(a), slot: argsP.n, say: `There are no more positional parameters, so <code>${esc(a.v)}</code> is added to the tuple <code>${argsP.n}</code>, which is now (${star.join(', ')}${star.length === 1 ? ',' : ''}).` })); }
+        else {
+          const req = posP.filter(q => q.d === undefined).length, max = posP.length;
+          return fail(`takes ${req === max ? max : `from ${req} to ${max}`} positional argument${max === 1 ? '' : 's'} but ${posArgs.length} ${posArgs.length === 1 ? 'was' : 'were'} given`, { cur: call.indexOf(a) });
+        }
+      }
+      for (const a of call.filter(x => x.kw)) {
+        const q = ps.find(x => x.n === a.kw && (x.k === 'pos' || x.k === 'kwonly' || x.k === 'posonly'));
+        if (q && q.k === 'posonly' && !kwP) return fail(`got some positional-only arguments passed as keyword arguments: '${a.kw}'`, { cur: call.indexOf(a) });
+        if (q && q.k !== 'posonly') {
+          if (a.kw in val) return fail(`got multiple values for argument '${a.kw}'`, { cur: call.indexOf(a), slot: a.kw });
+          val[a.kw] = a.v;
+          fr.push(snap({ cur: call.indexOf(a), slot: a.kw, say: `Keyword argument <code>${a.kw}=${esc(a.v)}</code> goes to the parameter with that name, whatever its position.` }));
+        } else if (kwP) {
+          if (kwd.some(x => x[0] === a.kw)) return fail(`got multiple values for keyword argument '${a.kw}'`, { cur: call.indexOf(a) });
+          kwd.push([a.kw, a.v]);
+          fr.push(snap({ cur: call.indexOf(a), slot: kwP.n, say: `No parameter is called <code>${a.kw}</code>${q ? ' (that name is positional-only)' : ''}, so the pair is stored in the dict <code>${kwP.n}</code> as '${a.kw}': ${esc(a.v)}.` }));
+        } else return fail(`got an unexpected keyword argument '${a.kw}'`, { cur: call.indexOf(a) });
+      }
+      const missP = [], missK = [];
+      ps.forEach(q => {
+        if (q.k === 'args' || q.k === 'kw' || q.n in val) return;
+        if (q.d !== undefined) { val[q.n] = q.d; fr.push(snap({ slot: q.n, dflt: true, say: `Nothing was passed for <code>${q.n}</code>, so it gets its default value <code>${esc(q.d)}</code>.` })); }
+        else (q.k === 'kwonly' ? missK : missP).push(q.n);
+      });
+      if (missP.length) return fail(`missing ${missP.length} required positional argument${missP.length === 1 ? '' : 's'}: ${listNames(missP)}`);
+      if (missK.length) return fail(`missing ${missK.length} required keyword-only argument${missK.length === 1 ? '' : 's'}: ${listNames(missK)}`);
+      fr.push(snap({ done: true, say: `Every parameter has a value, so the body can run with ${ps.map(q => q.k === 'args' ? `${q.n} = (${star.join(', ')}${star.length === 1 ? ',' : ''})` : q.k === 'kw' ? `${q.n} = {${kwd.map(x => `'${x[0]}': ${esc(x[1])}`).join(', ')}}` : `${q.n} = ${esc(val[q.n])}`).join(', ')}.` }));
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'The call', 16, 18);
+      let x = 16;
+      f.call.forEach((a, i) => {
+        const t = a.kw ? `${a.kw}=${a.v}` : a.v, w = Math.min(120, Math.max(40, PYZ.tw(z.g, t, 12, { mono: true }) + 18));
+        box(z, x, 28, w, 28, t, { mono: true, s: 12, fill: i === f.cur ? (f.err ? c.red : c.cv) : c.surf, stroke: i === f.cur ? (f.err ? c.red : c.cv) : c.line, c: i === f.cur ? '#fff' : c.ink });
+        x += w + 6;
+      });
+      head(z, 'The parameters and what they hold', 16, 92);
+      const n = f.ps.length, w = Math.min(130, (568 - (n - 1) * 8) / n);
+      const kc = { posonly: c.purple, pos: c.cv, kwonly: c.teal, args: c.orange, kw: c.orange };
+      f.ps.forEach((q, i) => {
+        const xx = 16 + i * (w + 8), on = f.slot === q.n;
+        D.text(z.g, (q.k === 'args' ? '*' : q.k === 'kw' ? '**' : '') + q.n, xx + w / 2, 116, { a: 'center', s: PYZ.fit(z.g, q.n, w - 6, 14, { mono: true }), b: true, mono: true, c: kc[q.k] });
+        D.text(z.g, { posonly: 'positional only', pos: 'pos or keyword', kwonly: 'keyword only', args: 'extra positional', kw: 'extra keyword' }[q.k], xx + w / 2, 132, { a: 'center', s: PYZ.fit(z.g, 'extra positional', w - 4, 10), c: c.ink2 });
+        let v = '';
+        if (q.k === 'args') v = f.star.length || f.done ? `(${f.star.join(', ')}${f.star.length === 1 ? ',' : ''})` : '';
+        else if (q.k === 'kw') v = f.kwd.length || f.done ? `{${f.kwd.map(e => `'${e[0]}': ${e[1]}`).join(', ')}}` : '';
+        else v = f.val[q.n] ?? '';
+        box(z, xx, 142, w, 40, v, { mono: true, s: 13, fill: on ? (f.err ? '#fee2e2' : (c.dark ? '#1e3a5f' : '#dbeafe')) : c.surf, stroke: on ? (f.err ? c.red : kc[q.k]) : c.line, w: on ? 2.5 : 1.5, c: c.ink });
+        if (q.d !== undefined) D.text(z.g, `default ${q.d}`, xx + w / 2, 198, { a: 'center', s: PYZ.fit(z.g, `default ${q.d}`, w - 4, 11), c: f.val[q.n] === q.d && f.slot === q.n && f.dflt ? c.green : c.ink2 });
+      });
+      if (f.err) { PYZ.rr(z.g, 16, 222, 568, 54, 8, { fill: c.dark ? '#3b0d0d' : '#fef2f2', stroke: c.red }); D.text(z.g, 'TypeError: f() ' + f.err, 28, 254, { s: PYZ.fit(z.g, 'TypeError: f() ' + f.err, 545, 13, { mono: true }), mono: true, c: c.red, b: true }); }
+      if (f.done) { PYZ.rr(z.g, 16, 222, 568, 54, 8, { fill: c.dark ? '#052e1a' : '#ecfdf5', stroke: c.green }); D.text(z.g, 'All parameters are bound. The function body runs now.', 28, 254, { s: 13, c: c.green, b: true }); }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 4.2  scope: where Python finds a name (LEGB), global and nonlocal
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, codeView, consoleBox, D } = PYZ;
+  /* each program is hand traced. A step names the line, the scopes and what is in them, and the lookup path */
+  const P = {
+    local: { code: ['x = "global"', 'def outer():', '    x = "enclosing"', '    def inner():', '        x = "local"', '        print(x)', '    inner()', 'outer()'],
+      steps: [
+        [0, { G: { x: '"global"' } }, null, 'Line 1 makes x in the <b>global</b> scope (the module).'],
+        [1, { G: { x: '"global"', outer: 'function' } }, null, 'def outer() makes a function object and binds the name outer in the global scope. The body does not run yet.'],
+        [7, { G: { x: '"global"', outer: 'function' }, E: {} }, null, 'outer() is called. Python makes a new scope for this call.'],
+        [2, { G: { x: '"global"', outer: 'function' }, E: { x: '"enclosing"' } }, null, 'x = "enclosing" makes a new x inside outer. It does not touch the global x.'],
+        [3, { G: { x: '"global"', outer: 'function' }, E: { x: '"enclosing"', inner: 'function' } }, null, 'def inner() binds the name inner inside outer.'],
+        [6, { G: { x: '"global"', outer: 'function' }, E: { x: '"enclosing"', inner: 'function' }, L: {} }, null, 'inner() is called. Its scope is the <b>local</b> scope. outer is now its <b>enclosing</b> scope.'],
+        [4, { G: { x: '"global"', outer: 'function' }, E: { x: '"enclosing"', inner: 'function' }, L: { x: '"local"' } }, null, 'x = "local" makes a third x, local to inner.'],
+        [5, { G: { x: '"global"', outer: 'function' }, E: { x: '"enclosing"', inner: 'function' }, L: { x: '"local"' } }, ['L'], 'print(x) looks for x in L (local) first and finds it at once: it prints <b>local</b>.', 'local']] },
+    enclosing: { code: ['x = "global"', 'def outer():', '    x = "enclosing"', '    def inner():', '        print(x)', '    inner()', 'outer()'],
+      steps: [
+        [0, { G: { x: '"global"' } }, null, 'x is made in the global scope.'],
+        [1, { G: { x: '"global"', outer: 'function' } }, null, 'def outer() binds outer.'],
+        [6, { G: { x: '"global"', outer: 'function' }, E: {} }, null, 'outer() runs in a new scope.'],
+        [2, { G: { x: '"global"', outer: 'function' }, E: { x: '"enclosing"' } }, null, 'outer makes its own x.'],
+        [3, { G: { x: '"global"', outer: 'function' }, E: { x: '"enclosing"', inner: 'function' } }, null, 'def inner() binds inner inside outer.'],
+        [5, { G: { x: '"global"', outer: 'function' }, E: { x: '"enclosing"', inner: 'function' }, L: {} }, null, 'inner() runs. Its local scope is empty: inner never assigns to x.'],
+        [4, { G: { x: '"global"', outer: 'function' }, E: { x: '"enclosing"', inner: 'function' }, L: {} }, ['L', 'E'], 'print(x): not in L, so Python moves out to E (the enclosing function) and finds x there. It prints <b>enclosing</b>.', 'enclosing']] },
+    global: { code: ['x = "global"', 'def show():', '    print(x)', 'show()'],
+      steps: [
+        [0, { G: { x: '"global"' } }, null, 'x is made in the global scope.'],
+        [1, { G: { x: '"global"', show: 'function' } }, null, 'def show() binds show. A function defined at the top level has no enclosing function.'],
+        [3, { G: { x: '"global"', show: 'function' }, L: {} }, null, 'show() runs with an empty local scope.'],
+        [2, { G: { x: '"global"', show: 'function' }, L: {} }, ['L', 'G'], 'print(x): not in L, there is no E, so Python looks in G and finds it. It prints <b>global</b>.', 'global']] },
+    builtin: { code: ['names = ["a", "b"]', 'def size():', '    return len(names)', 'print(size())'],
+      steps: [
+        [0, { G: { names: '["a", "b"]' } }, null, 'names is a global list.'],
+        [1, { G: { names: '["a", "b"]', size: 'function' } }, null, 'def size() binds size.'],
+        [3, { G: { names: '["a", "b"]', size: 'function' }, L: {} }, null, 'print(size()) first calls size().'],
+        [2, { G: { names: '["a", "b"]', size: 'function' }, L: {} }, ['L', 'G', 'B'], 'len is not in L and not in G. The last place is B, the <b>built-in</b> scope, where Python keeps print, len, range, int and the rest. len is found there.'],
+        [3, { G: { names: '["a", "b"]', size: 'function' } }, null, 'size returns 2 and its local scope disappears. print shows <b>2</b>.', '2']] },
+    unbound: { code: ['x = 1', 'def f():', '    print(x)', '    x = 2', 'f()'],
+      steps: [
+        [0, { G: { x: '1' } }, null, 'x = 1 in the global scope.'],
+        [1, { G: { x: '1', f: 'function' } }, null, 'When Python compiles f it sees x = 2 inside it, so it decides that <b>x is local in the whole of f</b>, even on lines before the assignment.'],
+        [4, { G: { x: '1', f: 'function' }, L: { x: '(no value yet)' } }, null, 'f() runs. The local x exists but has no value yet.'],
+        [2, { G: { x: '1', f: 'function' }, L: { x: '(no value yet)' } }, ['L'], 'print(x) looks only in L because x is local. It has no value, so Python raises <b>UnboundLocalError</b>: cannot access local variable \'x\' where it is not associated with a value. The global x is not used.', 'UnboundLocalError', true]] },
+    globalkw: { code: ['count = 0', 'def add():', '    global count', '    count += 1', 'add()', 'add()', 'print(count)'],
+      steps: [
+        [0, { G: { count: '0' } }, null, 'count = 0 in the global scope.'],
+        [1, { G: { count: '0', add: 'function' } }, null, 'def add() binds add. Inside, <code>global count</code> tells Python that count in add means the global name.'],
+        [4, { G: { count: '0', add: 'function' }, L: {} }, null, 'First call. The local scope stays empty: count is not local.'],
+        [3, { G: { count: '1', add: 'function' }, L: {} }, ['G'], 'count += 1 reads the global count (0) and writes 1 back to the global scope.'],
+        [5, { G: { count: '2', add: 'function' }, L: {} }, ['G'], 'Second call: the global count becomes 2.'],
+        [6, { G: { count: '2', add: 'function' } }, ['G'], 'print(count) shows <b>2</b>. Without the global line, count += 1 would raise UnboundLocalError.', '2']] },
+    nonlocal: { code: ['def counter():', '    n = 0', '    def step():', '        nonlocal n', '        n += 1', '        return n', '    return step', 'c = counter()', 'print(c(), c())'],
+      steps: [
+        [0, { G: { counter: 'function' } }, null, 'def counter() binds counter.'],
+        [7, { G: { counter: 'function' }, E: {} }, null, 'counter() runs in a new scope.'],
+        [1, { G: { counter: 'function' }, E: { n: '0' } }, null, 'n = 0 is local to counter.'],
+        [2, { G: { counter: 'function' }, E: { n: '0', step: 'function' } }, null, 'def step() makes a function that uses n from counter. Python keeps n alive in a <b>cell</b> so step can still reach it later. step is a <b>closure</b>.'],
+        [6, { G: { counter: 'function', c: 'step function' }, E: { n: '0', step: 'function' } }, null, 'counter returns step, and c now names it. counter has finished, but n lives on inside the closure.'],
+        [4, { G: { counter: 'function', c: 'step function' }, E: { n: '1', step: 'function' }, L: {} }, ['L', 'E'], 'c() runs step. <code>nonlocal n</code> says n is the one in the enclosing scope, so n += 1 makes it 1.'],
+        [8, { G: { counter: 'function', c: 'step function' }, E: { n: '2', step: 'function' }, L: {} }, ['L', 'E'], 'The second c() makes n 2. print shows <b>1 2</b>: the closure remembers its own n between calls.', '1 2']] }
+  };
+  trace('pylegb', {
+    title: 'Where does Python find a name? L, E, G, B',
+    sub: 'Pick a program. Each step runs one line and shows the scopes that exist. When a name is read, Python searches Local, then Enclosing, then Global, then Built-in.',
+    W: 600, H: 330,
+    params: [{ k: 'prog', label: 'Program', type: 'select', v: 'local', opts: [['local', 'Three x names: local wins'], ['enclosing', 'No local x: enclosing wins'], ['global', 'Plain function: global x'], ['builtin', 'len comes from built-ins'], ['unbound', 'UnboundLocalError'], ['globalkw', 'The global statement'], ['nonlocal', 'nonlocal and a closure']] }],
+    tips: [
+      { t: 'Three different x names live in three scopes. The innermost one wins.', set: { prog: 'local' }, play: true },
+      { t: 'An assignment anywhere in a function makes the name local in the whole function. Reading it before the assignment fails.', set: { prog: 'unbound' }, play: true },
+      { t: 'nonlocal lets an inner function change a variable of the outer function. This is how closures keep state.', set: { prog: 'nonlocal' }, play: true }
+    ],
+    frames(p) {
+      const pr = P[p.prog];
+      return pr.steps.map(s => ({ code: pr.code, line: s[0], sc: s[1], path: s[2], say: s[3], out: s[4], bad: s[5] }));
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Program', 16, 18);
+      codeView(z, f.code, f.line, 16, 26, 268, { s: 12, lh: 19, bad: f.bad ? f.line : undefined });
+      const order = [['B', 'Built-in', c.ink2], ['G', 'Global (module)', c.cv], ['E', 'Enclosing function', c.teal], ['L', 'Local (this call)', c.orange]];
+      let y = 26;
+      head(z, 'Scopes', 300, 18);
+      order.forEach(([k, name, col]) => {
+        const vars = k === 'B' ? { 'print, len, range, ...': '' } : f.sc[k];
+        if (!vars) return;
+        const keys = Object.keys(vars), h = 26 + Math.max(1, keys.length) * 17;
+        const on = f.path && f.path.includes(k), last = f.path && f.path[f.path.length - 1] === k;
+        PYZ.rr(z.g, 300, y, 284, h, 8, { fill: last ? (c.dark ? '#1e3a5f' : '#eff6ff') : c.surf, stroke: on ? col : c.line, w: on ? 2.5 : 1.2 });
+        D.text(z.g, `${k}  ${name}`, 310, y + 16, { s: 12, b: true, c: col });
+        if (f.path && on) D.text(z.g, last ? (f.bad ? 'no value' : 'found here') : 'not here', 574, y + 16, { a: 'right', s: 11, b: true, c: last ? (f.bad ? c.red : c.green) : c.ink2 });
+        if (!keys.length) D.text(z.g, '(empty)', 318, y + 36, { s: 12, c: c.ink2 });
+        keys.forEach((n, i) => D.text(z.g, vars[n] ? `${n} = ${vars[n]}` : n, 318, y + 36 + i * 17, { s: PYZ.fit(z.g, `${n} = ${vars[n]}`, 255, 12, { mono: true }), mono: true, c: c.ink }));
+        y += h + 8;
+      });
+      if (f.out) consoleBox(z, f.bad ? 'UnboundLocalError' : f.out, 16, 248, 268, 64, { title: 'Output', err: f.bad });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 4.2  recursion: the call stack grows and shrinks
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, D } = PYZ;
+  const F = {
+    fact: { code: ['def fact(n):', '    if n <= 1:', '        return 1', '    return n * fact(n - 1)'], name: n => `fact(${n})` },
+    power: { code: ['def power(b, n):', '    if n == 0:', '        return 1', '    return b * power(b, n - 1)'], name: n => `power(2, ${n})` },
+    sumdig: { code: ['def digit_sum(n):', '    if n < 10:', '        return n', '    return n % 10 + digit_sum(n // 10)'], name: n => `digit_sum(${n})` },
+    fib: { code: ['def fib(n):', '    if n < 2:', '        return n', '    return fib(n - 1) + fib(n - 2)'], name: n => `fib(${n})` }
+  };
+  trace('pystack', {
+    title: 'Recursion and the call stack',
+    sub: 'Each call gets its own frame with its own n. Frames pile up until the base case, then return one by one with their results.',
+    W: 600, H: 340,
+    params: [
+      { k: 'fn', label: 'Function', type: 'select', v: 'fact', opts: [['fact', 'factorial: fact(n)'], ['power', 'power(2, n)'], ['sumdig', 'digit_sum(n)'], ['fib', 'fib(n), two calls per frame']] },
+      { k: 'n', label: 'n', type: 'range', v: 4, min: 0, max: 7 }
+    ],
+    tips: [
+      { t: 'fact(4) goes down to fact(1), the base case, then multiplies on the way back: 1, 2, 6, 24.', set: { fn: 'fact', n: 4 }, play: true },
+      { t: 'fib makes two calls in each frame, so the same values are worked out again and again. Count the calls at the end.', set: { fn: 'fib', n: 5 }, play: true },
+      { t: 'n = 0 hits the base case at once: one frame, no recursion.', set: { fn: 'power', n: 0 }, play: true }
+    ],
+    frames(p) {
+      const spec = F[p.fn], fr = [], stack = [];
+      let calls = 0, depthMax = 0;
+      const arg = p.fn === 'sumdig' ? [7, 42, 905, 1234, 50607, 999999, 1234567, 98765432][p.n] : p.n;
+      const push = (st, o) => fr.push({ code: spec.code, stack: stack.map(s => ({ ...s })), calls, ...o, say: st });
+      function call(n, depth) {
+        calls++;
+        stack.push({ label: spec.name(n), note: '' });
+        depthMax = Math.max(depthMax, stack.length);
+        push(`Call <b>${spec.name(n)}</b>. Python pushes a new frame on the stack with its own n = ${n}. Stack depth: ${stack.length}.`, { line: 0 });
+        let r;
+        const base = p.fn === 'fact' ? n <= 1 : p.fn === 'power' ? n === 0 : p.fn === 'sumdig' ? n < 10 : n < 2;
+        if (base) {
+          r = p.fn === 'fact' ? 1 : p.fn === 'power' ? 1 : n;
+          stack[stack.length - 1].note = `= ${r}`;
+          push(`Base case: ${p.fn === 'fact' ? `${n} <= 1` : p.fn === 'power' ? 'n == 0' : p.fn === 'sumdig' ? `${n} < 10` : `${n} < 2`} is True, so this call returns <b>${r}</b> without calling itself. The base case is what stops the recursion.`, { line: 2 });
+        } else if (p.fn === 'fib') {
+          stack[stack.length - 1].note = 'waits for fib(' + (n - 1) + ')';
+          push(`${n} is not below 2. fib(${n}) must first get fib(${n - 1}), so it pauses and calls it.`, { line: 3 });
+          const a = call(n - 1, depth + 1);
+          stack[stack.length - 1].note = `has ${a}, waits for fib(${n - 2})`;
+          push(`Back in fib(${n}) with fib(${n - 1}) = ${a}. Now it calls fib(${n - 2}).`, { line: 3 });
+          const b = call(n - 2, depth + 1);
+          r = a + b;
+          stack[stack.length - 1].note = `${a} + ${b} = ${r}`;
+          push(`fib(${n}) adds ${a} + ${b} = <b>${r}</b> and returns it.`, { line: 3 });
+        } else {
+          const m = p.fn === 'sumdig' ? Math.floor(n / 10) : n - 1;
+          stack[stack.length - 1].note = `waits for ${spec.name(m)}`;
+          push(`Not the base case. ${spec.name(n)} needs ${spec.name(m)} first, so it waits and calls it. The paused frame keeps its n = ${n}.`, { line: 3 });
+          const sub = call(m, depth + 1);
+          r = p.fn === 'fact' ? n * sub : p.fn === 'power' ? 2 * sub : n % 10 + sub;
+          stack[stack.length - 1].note = p.fn === 'fact' ? `${n} * ${sub} = ${r}` : p.fn === 'power' ? `2 * ${sub} = ${r}` : `${n % 10} + ${sub} = ${r}`;
+          push(`${spec.name(m)} returned ${sub}. Now ${spec.name(n)} finishes: ${stack[stack.length - 1].note}, and returns <b>${r}</b>.`, { line: 3 });
+        }
+        stack.pop();
+        push(stack.length ? `The frame of ${spec.name(n)} is popped off the stack. Control goes back to ${stack[stack.length - 1].label}.` : `The last frame is popped. The answer is <b>${r}</b>, after ${calls} call${calls === 1 ? '' : 's'} in total.${p.fn === 'fib' ? ` fib makes about 1.6<sup>n</sup> calls, which is why memoisation (lru_cache) matters.` : ` The stack was ${depthMax} frame${depthMax === 1 ? '' : 's'} deep at most.`}`, { line: 3, ret: r });
+        return r;
+      }
+      call(arg, 1);
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Function', 16, 18);
+      codeView(z, f.code, f.line, 16, 26, 290, { s: 12, lh: 20 });
+      D.text(z.g, `calls so far: ${f.calls}`, 16, 140, { s: 13, b: true, c: c.ink });
+      if (f.ret !== undefined && !f.stack.length) D.text(z.g, `result: ${f.ret}`, 16, 164, { s: 15, b: true, c: c.green });
+      head(z, 'Call stack (newest on top)', 330, 18);
+      const shown = f.stack.slice(-9), h = Math.min(32, 290 / Math.max(1, shown.length));
+      shown.forEach((s, i) => {
+        const y = 320 - (i + 1) * h, top = i === shown.length - 1;
+        PYZ.rr(z.g, 330, y, 254, h - 4, 6, { fill: top ? c.cv : c.surf, stroke: top ? c.cv : c.line });
+        D.text(z.g, s.label, 340, y + h / 2 + 2, { s: 12.5, b: true, mono: true, c: top ? '#fff' : c.ink, bl: 'middle' });
+        if (s.note) D.text(z.g, s.note, 576, y + h / 2 + 2, { a: 'right', s: PYZ.fit(z.g, s.note, 130, 11), c: top ? '#e0f2fe' : c.ink2, bl: 'middle' });
+      });
+      if (f.stack.length > 9) D.text(z.g, `+${f.stack.length - 9} older frames below`, 330, 334, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Core 4.3  a list comprehension is a loop that builds a list
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, codeView, D } = PYZ;
+  const EX = { 'x * x': x => x * x, 'x + 1': x => x + 1, 'x % 3': x => ((x % 3) + 3) % 3, '-x': x => -x, '2 ** x': x => 2 ** x, 'str(x)': x => `'${x}'` };
+  const CO = { none: null, 'x % 2 == 0': x => x % 2 === 0, 'x > 3': x => x > 3, 'x % 3 != 0': x => x % 3 !== 0 };
+  trace('pycomp', {
+    title: 'A list comprehension, unrolled',
+    sub: 'The one line on top does the same work as the loop below it. Each step takes one x, tests the condition, and adds the expression to the new list.',
+    W: 600, H: 300,
+    params: [
+      { k: 'ex', label: 'Expression', type: 'select', v: 'x * x', opts: Object.keys(EX).map(k => [k, k]) },
+      { k: 'stop', label: 'x in range(stop)', type: 'range', v: 7, min: 1, max: 10 },
+      { k: 'co', label: 'Condition', type: 'select', v: 'x % 2 == 0', opts: Object.keys(CO).map(k => [k, k === 'none' ? 'no if' : 'if ' + k]) }
+    ],
+    tips: [
+      { t: 'Even squares: only the x values that pass the if are used.', set: { ex: 'x * x', co: 'x % 2 == 0', stop: 7 }, play: true },
+      { t: 'No condition: every x gives one item, so the new list has as many items as range(stop).', set: { co: 'none', ex: '2 ** x' }, play: true }
+    ],
+    frames(p) {
+      const fx = EX[p.ex], cond = CO[p.co], fr = [], res = [];
+      const one = `[${p.ex} for x in range(${p.stop})${cond ? ' if ' + p.co : ''}]`;
+      const loop = ['result = []', `for x in range(${p.stop}):`].concat(cond ? [`    if ${p.co}:`, `        result.append(${p.ex})`] : [`    result.append(${p.ex})`]);
+      const base = { one, loop };
+      fr.push({ ...base, cur: 0, res: [], say: `The comprehension <code>${one}</code> is short for the loop below it. First an empty list is made.` });
+      for (let x = 0; x < p.stop; x++) {
+        fr.push({ ...base, cur: 1, x, res: res.slice(), say: `x = ${x}.` });
+        if (cond && !cond(x)) { fr.push({ ...base, cur: 2, x, res: res.slice(), skip: true, say: `${p.co.replace(/x/g, x)} is False, so ${x} is skipped. Nothing is added.` }); continue; }
+        res.push(fx(x));
+        fr.push({ ...base, cur: cond ? 3 : 2, x, res: res.slice(), add: true, say: `${cond ? `${p.co.replace(/x/g, x)} is True. ` : ''}${p.ex.replace(/x/g, x)} = ${fx(x)} is appended.` });
+      }
+      fr.push({ ...base, cur: -1, res: res.slice(), say: `Done. The new list is [${res.join(', ')}] with ${res.length} item${res.length === 1 ? '' : 's'}. The comprehension gives exactly the same list in one readable line, and it runs a little faster because it does not look up result.append each turn.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'One line', 16, 18);
+      PYZ.rr(z.g, 16, 26, 568, 32, 8, { fill: c.bg, stroke: c.cv, w: 2 });
+      D.text(z.g, f.one, 28, 47, { s: PYZ.fit(z.g, f.one, 545, 14, { mono: true }), mono: true, b: true, c: c.cv });
+      head(z, 'The same as this loop', 16, 82);
+      codeView(z, f.loop, f.cur, 16, 90, 330, { s: 12.5, lh: 21 });
+      head(z, 'x', 370, 82);
+      if (f.x !== undefined) box(z, 370, 92, 60, 36, String(f.x), { mono: true, s: 16, b: true, fill: f.skip ? c.surf : c.cv, stroke: f.skip ? c.red : c.cv, c: f.skip ? c.red : '#fff' });
+      if (f.skip) D.text(z.g, 'skipped', 440, 116, { s: 12, b: true, c: c.red });
+      head(z, 'result', 16, 214);
+      const w = Math.min(56, 568 / Math.max(1, f.res.length));
+      f.res.forEach((v, i) => box(z, 16 + i * w, 224, w - 4, 34, String(v), { mono: true, s: Math.min(13, w * 0.3), fill: f.add && i === f.res.length - 1 ? c.green : c.surf, stroke: f.add && i === f.res.length - 1 ? c.green : c.line, c: f.add && i === f.res.length - 1 ? '#fff' : c.ink }));
+      if (!f.res.length) D.text(z.g, '[] (empty so far)', 16, 246, { s: 12, mono: true, c: c.ink2 });
     }
   });
 })();
